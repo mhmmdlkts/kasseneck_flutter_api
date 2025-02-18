@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class LogoService {
@@ -19,7 +20,9 @@ class LogoService {
         _logoBytes[imageUrl] = response.bodyBytes;
       }
     } catch (e) {
-      print('Fehler beim Laden des Bildes: $e');
+      if (kDebugMode) {
+        print('Fehler beim Laden des Bildes: $e');
+      }
     }
   }
 

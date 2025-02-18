@@ -1,5 +1,3 @@
-import 'package:kasseneck_api/models/kasseneck_receipt.dart';
-
 import '../enums/vat_rate.dart';
 
 class KasseneckItem {
