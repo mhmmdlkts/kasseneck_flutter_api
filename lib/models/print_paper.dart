@@ -109,7 +109,7 @@ class PrintPaper {
       }
       bytes += generator.feed(1);
     }
-    if (receipt.isSigFailed || true) {
+    if (receipt.isSigFailed) {
       bytes += generator.text(RKSVService.signatureDeviceDamagedKey, styles: PosStyles(align: PosAlign.center));
       bytes += generator.feed(1);
     }
