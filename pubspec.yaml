@@ -1,6 +1,6 @@
 name: kasseneck_api
 description: "A Flutter package for interacting with the Kasseneck Cashregister API. By Kreiseck."
-version: 1.1.1
+version: 1.1.2
 homepage: https://github.com/mhmmdlkts/kasseneck_flutter_api
 
 environment:
