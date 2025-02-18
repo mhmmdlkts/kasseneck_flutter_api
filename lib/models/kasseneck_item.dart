@@ -1,3 +1,5 @@
+import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+
 import '../enums/vat_rate.dart';
 
 class KasseneckItem {
@@ -41,4 +43,13 @@ class KasseneckItem {
   }
 
   bool get isValid => name.isNotEmpty && amount > 0;
+
+  KasseneckItem get negative {
+    return KasseneckItem(
+      name: name,
+      amount: amount,
+      vat: vat,
+      priceOne: -priceOne,
+    );
+  }
 }
