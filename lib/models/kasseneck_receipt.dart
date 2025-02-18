@@ -43,7 +43,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   String? cardPaymentId;
   Map<String, dynamic>? cardPaymentData; // you can store the card payment data here
   String? logoUrl;
-  String? signatureSuccess;
+  bool? signatureSuccess;
 
   KasseneckReceipt({
     required this.receiptId,
