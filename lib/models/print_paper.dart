@@ -65,7 +65,7 @@ class PrintPaper {
       } else {
         amount += ' x ';
       }
-      bytes += _addDoubleText(generator, '$amount${item.name.check() * 12}', '${item.priceOne.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
+      bytes += _addDoubleText(generator, '$amount${item.name.check()}', '${item.priceOne.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
     }
     bytes += generator.feed(1);
 
