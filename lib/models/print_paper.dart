@@ -6,7 +6,6 @@ import '../enums/vat_rate.dart';
 import '../services/rksv_service.dart';
 import 'kasseneck_item.dart';
 import 'package:image/image.dart';
-import 'dart:convert';
 
 class PrintPaper {
   final PaperSize paperSize;
