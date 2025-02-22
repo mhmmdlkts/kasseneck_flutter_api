@@ -48,4 +48,6 @@ class ReportMonth {
   String toString() {
     return '${month.name}_$year';
   }
+
+  String get readable => '${month.germanName} $year';
 }
