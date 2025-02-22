@@ -1,5 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../enums/credit_card_provider.dart';
 import '../enums/vat_rate.dart';
@@ -8,48 +13,49 @@ import 'kasseneck_item.dart';
 import 'package:image/image.dart';
 
 class PrintPaper {
-  final PaperSize paperSize;
+  final KeckPaperSize paperSize;
   final List<Map<String, dynamic>> commands = [];
-  List<int> bytes = [];
+  List<Uint8List> bytes = [];
 
   PrintPaper({required this.paperSize});
 
-  Future setKeckReceipt(KasseneckReceipt receipt) async {
+  Future setKeckReceipt(KasseneckReceipt receipt, {bool qrAsImage = false}) async {
     final profile = await CapabilityProfile.load();
-    final generator = Generator(paperSize, profile);
+    final generator = Generator(paperSize.paperSize, profile);
 
     bytes.clear();
 
     if (receipt.logo != null) {
       Image image = decodeImage(receipt.logo!)!;
-      Image resized = copyResize(image, width: 500);
-      bytes += generator.image(resized);
-      bytes += generator.feed(1);
+      Image resized = copyResize(image, width: paperSize.imageWidth);
+      // bytes += generator.image(resized);
+      bytes.add(Uint8List.fromList(generator.image(resized)));
+      bytes.add(Uint8List.fromList(generator.feed(1)));
     }
 
-    bytes += generator.text(receipt.companyName, styles: PosStyles(align: PosAlign.center, bold: true)); // fontSize 32
-    bytes += generator.text(receipt.street, styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('${receipt.zip} ${receipt.city}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text(receipt.uid, styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text(receipt.phone, styles: PosStyles(align: PosAlign.center));
+    bytes.add(Uint8List.fromList(generator.text(receipt.companyName, styles: PosStyles(align: PosAlign.center, bold: true)))); // fontSize 32
+    bytes.add(Uint8List.fromList(generator.text(receipt.street, styles: PosStyles(align: PosAlign.center))));
+    bytes.add(Uint8List.fromList(generator.text('${receipt.zip} ${receipt.city}', styles: PosStyles(align: PosAlign.center))));
+    bytes.add(Uint8List.fromList(generator.text(receipt.uid, styles: PosStyles(align: PosAlign.center))));
+    bytes.add(Uint8List.fromList(generator.text(receipt.phone, styles: PosStyles(align: PosAlign.center))));
 
     if (receipt.customerDetails.isNotEmpty) {
-      bytes += generator.feed(1);
+      bytes.add(Uint8List.fromList(generator.feed(1)));
 
       for (int i = 0; i < receipt.customerDetails.length; i++) {
         if (i == 0) {
-          bytes += _addDoubleText(generator, 'Kunde:', receipt.customerDetails[i]);
+          bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Kunde:', receipt.customerDetails[i])));
         } else {
-          bytes += generator.text(receipt.customerDetails[i], styles: PosStyles(align: PosAlign.right));
+          bytes.add(Uint8List.fromList(generator.text(receipt.customerDetails[i], styles: PosStyles(align: PosAlign.right))));
         }
       }
     }
 
-    bytes += generator.feed(1);
-    bytes += _addDoubleText(generator, 'Datum:', receipt.readableTime);
-    bytes += _addDoubleText(generator, 'Kassen-ID:', receipt.cashregisterId);
-    bytes += _addDoubleText(generator, 'Beleg-ID:', receipt.receiptId);
-    bytes += generator.feed(1);
+    bytes.add(Uint8List.fromList(generator.feed(1)));
+    bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Datum:', receipt.readableTime, leftWidth: 4, rightWidth: 8)));
+    bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Kassen-ID:', receipt.cashregisterId)));
+    bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Beleg-ID:', receipt.receiptId)));
+    bytes.add(Uint8List.fromList(generator.feed(1)));
 
     Map<VatRate, List<KasseneckItem>> itemsByVat = {};
     for (KasseneckItem item in receipt.items) {
@@ -65,11 +71,11 @@ class PrintPaper {
       } else {
         amount += ' x ';
       }
-      bytes += _addDoubleText(generator, '$amount${item.name.check()}', '${item.priceOne.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
+      bytes.add(Uint8List.fromList(_addDoubleText(generator, '$amount${item.name.check()}', '${item.priceOne.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5)));
     }
-    bytes += generator.feed(1);
+    bytes.add(Uint8List.fromList(generator.feed(1)));
 
-    bytes += _addTable(generator, 'MwSt%', 'MwSt', 'Netto', 'Brutto');
+    bytes.add(Uint8List.fromList(_addTable(generator, paperSize, 'MwSt%', 'MwSt', 'Netto', 'Brutto')));
 
     itemsByVat.forEach((key, value) {
       double brutto = 0;
@@ -82,77 +88,100 @@ class PrintPaper {
 
       double mwst = brutto - netto;
 
-      bytes += _addTable(generator, '${key.category} ${key.rate}%', mwst.toStringAsFixed(2), netto.toStringAsFixed(2), brutto.toStringAsFixed(2));
+      bytes.add(Uint8List.fromList(_addTable(generator, paperSize, '${key.category} ${key.rate}%', mwst.toStringAsFixed(2), netto.toStringAsFixed(2), brutto.toStringAsFixed(2))));
     });
 
-    bytes += generator.hr(ch: '-');
-    bytes += _addDoubleText(generator, 'Gesamt:', '${receipt.sum.toStringAsFixed(2)} EUR');
+    bytes.add(Uint8List.fromList(generator.hr(ch: '-')));
+    bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Gesamt:', '${receipt.sum.toStringAsFixed(2)} EUR')));
 
 
     if (receipt.customerDetails.isNotEmpty) {
-      bytes += generator.feed(1);
+      bytes.add(Uint8List.fromList(generator.feed(1)));
 
       for (int i = 0; i < receipt.customerDetails.length; i++) {
         if (i == 0) {
-          bytes += _addDoubleText(generator, 'Kunde:', receipt.customerDetails[i]);
+          bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Kunde:', receipt.customerDetails[i])));
         } else {
-          bytes += generator.text(receipt.customerDetails[i], styles: PosStyles(align: PosAlign.right));
+          bytes.add(Uint8List.fromList(generator.text(receipt.customerDetails[i], styles: PosStyles(align: PosAlign.right))));
         }
       }
     }
 
-    bytes += generator.feed(1);
+    bytes.add(Uint8List.fromList(generator.feed(1)));
 
     if (receipt.legalMessage.isNotEmpty) {
       for (String line in receipt.legalMessage) {
-        bytes += generator.text(line, styles: PosStyles(align: PosAlign.center));
+        bytes.add(Uint8List.fromList(generator.text(line, styles: PosStyles(align: PosAlign.center))));
       }
-      bytes += generator.feed(1);
+      bytes.add(Uint8List.fromList(generator.feed(1)));
     }
     if (receipt.isSigFailed) {
-      bytes += generator.text(RKSVService.signatureDeviceDamagedKey, styles: PosStyles(align: PosAlign.center));
-      bytes += generator.feed(1);
+      bytes.add(Uint8List.fromList(generator.text(RKSVService.signatureDeviceDamagedKey, styles: PosStyles(align: PosAlign.center))));
+      bytes.add(Uint8List.fromList(generator.feed(1)));
     }
 
-    bytes += generator.qrcode(receipt.qr, size: QRSize.size6);
-    bytes += generator.feed(1);
+    if (qrAsImage) {
+      QrPainter painter = QrPainter(
+        data: receipt.qr,
+        version: QrVersions.auto,
+        gapless: true,
+      );
+      ByteData? byteData = await painter.toImageData(250);
+      if (byteData == null) {
+        if (kDebugMode) {
+          print('Error decoding image');
+        }
+      }
+      Image? img = decodeImage(byteData!.buffer.asUint8List());
+      if (img == null) {
+        if (kDebugMode) {
+          print('Error decoding image');
+        }
+      }
+      bytes.add(Uint8List.fromList(generator.image(img!, align: PosAlign.center)));
+    } else {
+      bytes.add(Uint8List.fromList(generator.qrcode(receipt.qr, size: QRSize.size6)));
+    }
+
+    bytes.add(Uint8List.fromList(generator.feed(1)));
 
     if (receipt.cardPaymentData != null) {
       try {
         switch (receipt.creditCardProvider) {
           case CreditCardProvider.gpTomAndroid:
           case CreditCardProvider.gpTomIos:
-            bytes += _gpTom(generator, receipt.cardPaymentData!);
+            bytes.add(Uint8List.fromList(_gpTom(generator, receipt.cardPaymentData!)));
             break;
           case CreditCardProvider.hobexCloudApi:
-            bytes += _hobexApi(generator, receipt.cardPaymentData!);
+            bytes.add(Uint8List.fromList(_hobexApi(generator, receipt.cardPaymentData!)));
             break;
           default:
             break;
         }
-        generator.feed(1);
+        bytes.add(Uint8List.fromList(generator.feed(1)));
       } catch (e) {}
     }
 
     if (receipt.thanksMessage.isNotEmpty) {
-      bytes += generator.feed(1);
+      bytes.add(Uint8List.fromList(generator.feed(1)));
       for (String message in receipt.thanksMessage) {
-        bytes += generator.text(message, styles: PosStyles(align: PosAlign.center));
+        bytes.add(Uint8List.fromList(generator.text(message, styles: PosStyles(align: PosAlign.center))));
       }
     }
 
-    bytes += generator.text(receipt.footer1, styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text(receipt.footer2, styles: PosStyles(align: PosAlign.center));
+    bytes.add(Uint8List.fromList(generator.text(receipt.footer1, styles: PosStyles(align: PosAlign.center))));
+    bytes.add(Uint8List.fromList(generator.text(receipt.footer2, styles: PosStyles(align: PosAlign.center))));
     if (receipt.footer3 != null) {
-      bytes += generator.text(receipt.footer3!, styles: PosStyles(align: PosAlign.center));
+      bytes.add(Uint8List.fromList(generator.text(receipt.footer3!, styles: PosStyles(align: PosAlign.center))));
     }
     if (receipt.footer4 != null) {
-      bytes += generator.text(receipt.footer4!, styles: PosStyles(align: PosAlign.center));
+      bytes.add(Uint8List.fromList(generator.text(receipt.footer4!, styles: PosStyles(align: PosAlign.center))));
     }
-    bytes += generator.cut();
+    bytes.add(Uint8List.fromList(generator.cut()));
   }
 
-  List<int> _addTable(Generator generator, String val1, String val2, String val3, String val4) {
+  List<int> _addTable(Generator generator, KeckPaperSize size, String val1, String val2, String val3, String val4) {
+    bool isBig = size >= KeckPaperSize.mm80;
     return generator.row([
       PosColumn(
         text: val1,
@@ -161,7 +190,7 @@ class PrintPaper {
       ),
       PosColumn(
         text: val2,
-        width: 4,
+        width: isBig ? 4 : 3,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
@@ -171,7 +200,7 @@ class PrintPaper {
       ),
       PosColumn(
         text: val4,
-        width: 2,
+        width: isBig ? 2 : 3,
         styles: PosStyles(align: PosAlign.right),
       ),
     ]);

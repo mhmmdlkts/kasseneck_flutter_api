@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
+import 'package:kasseneck_api/enums/receipt_print_type.dart';
 import 'package:kasseneck_api/models/hobex_receipt.dart';
 import 'package:kasseneck_api/models/report_month.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
@@ -19,11 +20,13 @@ class KasseneckApi {
   static final String downloadBaseUrl = 'https://europe-west1-kasseneck.cloudfunctions.net/downloadReceipt';
   final String apiKey;
   final String cashregisterToken;
+  final ReceiptPrintType? printType;
   String? printerAddress;
 
   KasseneckApi({
     required this.apiKey,
-    required this.cashregisterToken
+    required this.cashregisterToken,
+    this.printType
   });
 
   Future<dynamic> _kasseneckPostRequest(
@@ -228,10 +231,10 @@ class KasseneckApi {
 
   Future initPrinter(String macAddress, KeckPaperSize size) async {
     printerAddress = macAddress;
-    return PrinterService.initPrinter(macAddress, size.paperSize);
+    return KeckPrinterService.initPrinter(macAddress, size);
   }
 
-  static Future openCashDrawer() => PrinterService.openCashDrawer();
+  static Future openCashDrawer() => KeckPrinterService.openCashDrawer();
 
   Future<HobexReceipt> hobexPay({required String transactionId, required double amount, double tip = 0, String? reference}) async {
     final Map<String, dynamic> resJson = await _kasseneckPostRequest(

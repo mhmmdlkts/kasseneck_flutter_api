@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
@@ -196,7 +197,9 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
 
   Future init() => LogoService.loadLogo(logoUrl);
 
-  Future printReceipt() => PrinterService.printReceipt(this);
+  Future printReceipt() => KeckPrinterService.printReceipt(this);
+
+  Future<List<Uint8List>> getPrintBytes({required KeckPaperSize paperSize, bool qrAsImage = false}) => KeckPrinterService.getBytesFromReceipt(this, paperSize, qrAsImage: qrAsImage);
 
   bool get isSigFailed => !RKSVService.isSigSuccess(sig);
 }

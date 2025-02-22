@@ -1,0 +1,4 @@
+enum ReceiptPrintType {
+  wifi,
+  bluetooth;
+}
