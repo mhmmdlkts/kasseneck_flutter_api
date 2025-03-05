@@ -1,3 +1,5 @@
+import '../enums/credit_card_provider.dart';
+
 class HobexReceipt {
 
   String transactionId;
@@ -58,7 +60,7 @@ class HobexReceipt {
     );
   }
 
-  Map<String, String> toPrintData() {
+  Map<String, String> toCardPaymentData() {
     return {
       'transactionId': transactionId,
       'date': transactionDate,
@@ -80,4 +82,6 @@ class HobexReceipt {
 
   @override
   int get hashCode => transactionId.hashCode;
+
+  CreditCardProvider get creditCardProvider => CreditCardProvider.hobexCloudApi;
 }

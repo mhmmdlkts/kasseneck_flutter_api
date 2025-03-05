@@ -8,13 +8,13 @@ import 'package:kasseneck_api/services/printer_service.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
 
 import '../enums/credit_card_provider.dart';
-import '../enums/payment_method.dart';
+import '../enums/keck_payment_method.dart';
 import 'kasseneck_item.dart';
 
 class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   final String receiptId;
   final String receiptType;
-  final PaymentMethod paymentMethod;
+  final KeckPaymentMethod paymentMethod;
   final List<KasseneckItem> items;
 
   String companyName;
@@ -45,6 +45,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   Map<String, dynamic>? cardPaymentData; // you can store the card payment data here
   String? logoUrl;
   bool? signatureSuccess;
+  String? customProjectId;
 
   KasseneckReceipt({
     required this.receiptId,
@@ -77,6 +78,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.cardPaymentId,
     this.cardPaymentData,
     this.signatureSuccess,
+    this.customProjectId
   });
 
   factory KasseneckReceipt.create({
@@ -100,7 +102,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       certificateSerialNumber: receipt['certificateSerialNumber'],
       signaturePreviousReceipt: receipt['signaturePreviousReceipt'],
       turnoverCounterAES256ICM: receipt['turnoverCounterAES256ICM'],
-      paymentMethod: PaymentMethod.values.firstWhere((element) => element.name == receipt['paymentMethod'], orElse: () => PaymentMethod.cash),
+      paymentMethod: KeckPaymentMethod.values.firstWhere((element) => element.name == receipt['paymentMethod'], orElse: () => KeckPaymentMethod.cash),
       items: receipt['items'].map<KasseneckItem>((e) => KasseneckItem.fromJson(e)).toList(),
       timeStamp: DateTime.parse(receipt['timeStamp']),
       cashregisterId: receipt['cashregisterId'],
@@ -125,6 +127,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       footer2: footer2,
       footer3: footer3,
       footer4: footer4,
+      customProjectId: receipt['customProjectId']
     );
   }
 

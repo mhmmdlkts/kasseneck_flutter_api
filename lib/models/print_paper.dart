@@ -1,9 +1,10 @@
-import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/services/printer_service.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../enums/credit_card_provider.dart';
@@ -15,47 +16,104 @@ import 'package:image/image.dart';
 class PrintPaper {
   final KeckPaperSize paperSize;
   final List<Map<String, dynamic>> commands = [];
+  final Generator generator;
   List<Uint8List> bytes = [];
 
-  PrintPaper({required this.paperSize});
+  PrintPaper({required this.paperSize}) : generator = Generator(paperSize.paperSize, KeckPrinterService.profile!) {
+    bytes.clear();
+    reset();
+  }
+
+  void addBytes(Uint8List byte) {
+    bytes.add(byte);
+  }
+
+  void addText(String text, {PosStyles styles = const PosStyles()}) {
+    bytes.add(Uint8List.fromList(generator.text(text, styles: styles)));
+  }
+
+  void addCut() {
+    bytes.add(Uint8List.fromList(generator.cut()));
+  }
+
+  void addFeed({int lines = 1}) {
+    if (lines < 1) {
+      lines = 1;
+    }
+    bytes.add(Uint8List.fromList(generator.feed(lines)));
+  }
+
+  void addReverseFeed({int lines = 1}) {
+    if (lines < 1) {
+      lines = 1;
+    }
+    bytes.add(Uint8List.fromList(generator.reverseFeed(lines)));
+  }
+
+  void addFullHorizontalLine({String ch = '-'}) {
+    bytes.add(Uint8List.fromList(generator.hr(ch: ch)));
+  }
+
+  void addImage(Image image, {PosAlign align = PosAlign.center}) {
+    bytes.add(Uint8List.fromList(generator.image(image)));
+  }
+
+  void addBase64Image(String base64, {PosAlign align = PosAlign.center}) {
+    Image image = decodeImage(base64Decode(base64))!;
+    addImage(image, align: align);
+  }
+
+  void addUint8ListImage(Uint8List image, {PosAlign align = PosAlign.center}) {
+    Image img = decodeImage(image)!;
+    addImage(img, align: align);
+  }
+
+  void addQrCode(String data, {QRSize size = QRSize.size6}) {
+    bytes.add(Uint8List.fromList(generator.qrcode(data)));
+  }
+
+  void reset() {
+    bytes.add(Uint8List.fromList(generator.reset()));
+    bytes.add(Uint8List.fromList(generator.clearStyle()));
+  }
 
   Future setKeckReceipt(KasseneckReceipt receipt, {bool qrAsImage = false}) async {
-    final profile = await CapabilityProfile.load();
-    final generator = Generator(paperSize.paperSize, profile);
+    if (KeckPrinterService.profile == null) {
+      throw Exception('Printer not initialized');
+    }
 
     bytes.clear();
-
     if (receipt.logo != null) {
       Image image = decodeImage(receipt.logo!)!;
       Image resized = copyResize(image, width: paperSize.imageWidth);
-      // bytes += generator.image(resized);
-      bytes.add(Uint8List.fromList(generator.image(resized)));
-      bytes.add(Uint8List.fromList(generator.feed(1)));
+
+      addImage(resized);
+      addFeed();
     }
 
-    bytes.add(Uint8List.fromList(generator.text(receipt.companyName, styles: PosStyles(align: PosAlign.center, bold: true)))); // fontSize 32
-    bytes.add(Uint8List.fromList(generator.text(receipt.street, styles: PosStyles(align: PosAlign.center))));
-    bytes.add(Uint8List.fromList(generator.text('${receipt.zip} ${receipt.city}', styles: PosStyles(align: PosAlign.center))));
-    bytes.add(Uint8List.fromList(generator.text(receipt.uid, styles: PosStyles(align: PosAlign.center))));
-    bytes.add(Uint8List.fromList(generator.text(receipt.phone, styles: PosStyles(align: PosAlign.center))));
+    addText(receipt.companyName, styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(receipt.street, styles: PosStyles(align: PosAlign.center));
+    addText('${receipt.zip} ${receipt.city}', styles: PosStyles(align: PosAlign.center));
+    addText(receipt.uid, styles: PosStyles(align: PosAlign.center));
+    addText(receipt.phone, styles: PosStyles(align: PosAlign.center));
 
     if (receipt.customerDetails.isNotEmpty) {
-      bytes.add(Uint8List.fromList(generator.feed(1)));
+      addFeed();
 
       for (int i = 0; i < receipt.customerDetails.length; i++) {
         if (i == 0) {
-          bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Kunde:', receipt.customerDetails[i])));
+          addDoubleText('Kunde:', receipt.customerDetails[i], leftWidth: 5, rightWidth: 7);
         } else {
-          bytes.add(Uint8List.fromList(generator.text(receipt.customerDetails[i], styles: PosStyles(align: PosAlign.right))));
+          addDoubleText('', receipt.customerDetails[i], leftWidth: 1, rightWidth: 11);
         }
       }
     }
 
-    bytes.add(Uint8List.fromList(generator.feed(1)));
-    bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Datum:', receipt.readableTime, leftWidth: 4, rightWidth: 8)));
-    bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Kassen-ID:', receipt.cashregisterId)));
-    bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Beleg-ID:', receipt.receiptId)));
-    bytes.add(Uint8List.fromList(generator.feed(1)));
+    addFeed();
+    addDoubleText('Datum:', receipt.readableTime, leftWidth: 4, rightWidth: 8);
+    addDoubleText('Kassen-ID:', receipt.cashregisterId);
+    addDoubleText('Beleg-ID:', receipt.receiptId);
+    addFeed();
 
     Map<VatRate, List<KasseneckItem>> itemsByVat = {};
     for (KasseneckItem item in receipt.items) {
@@ -71,11 +129,11 @@ class PrintPaper {
       } else {
         amount += ' x ';
       }
-      bytes.add(Uint8List.fromList(_addDoubleText(generator, '$amount${item.name.check()}', '${item.priceOne.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5)));
+      addDoubleText('$amount${item.name.check()}', '${item.priceOne.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
     }
-    bytes.add(Uint8List.fromList(generator.feed(1)));
+    addFeed();
 
-    bytes.add(Uint8List.fromList(_addTable(generator, paperSize, 'MwSt%', 'MwSt', 'Netto', 'Brutto')));
+    _addTable('MwSt%', 'MwSt', 'Netto', 'Brutto');
 
     itemsByVat.forEach((key, value) {
       double brutto = 0;
@@ -88,36 +146,23 @@ class PrintPaper {
 
       double mwst = brutto - netto;
 
-      bytes.add(Uint8List.fromList(_addTable(generator, paperSize, '${key.category} ${key.rate}%', mwst.toStringAsFixed(2), netto.toStringAsFixed(2), brutto.toStringAsFixed(2))));
+      _addTable('${key.category} ${key.rate}%', mwst.toStringAsFixed(2), netto.toStringAsFixed(2), brutto.toStringAsFixed(2));
     });
 
-    bytes.add(Uint8List.fromList(generator.hr(ch: '-')));
-    bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Gesamt:', '${receipt.sum.toStringAsFixed(2)} EUR')));
+    addFullHorizontalLine();
+    addDoubleText('Gesamt:', '${receipt.sum.toStringAsFixed(2)} EUR');
 
-
-    if (receipt.customerDetails.isNotEmpty) {
-      bytes.add(Uint8List.fromList(generator.feed(1)));
-
-      for (int i = 0; i < receipt.customerDetails.length; i++) {
-        if (i == 0) {
-          bytes.add(Uint8List.fromList(_addDoubleText(generator, 'Kunde:', receipt.customerDetails[i])));
-        } else {
-          bytes.add(Uint8List.fromList(generator.text(receipt.customerDetails[i], styles: PosStyles(align: PosAlign.right))));
-        }
-      }
-    }
-
-    bytes.add(Uint8List.fromList(generator.feed(1)));
+    addFeed();
 
     if (receipt.legalMessage.isNotEmpty) {
       for (String line in receipt.legalMessage) {
-        bytes.add(Uint8List.fromList(generator.text(line, styles: PosStyles(align: PosAlign.center))));
+        addText(line, styles: PosStyles(align: PosAlign.center));
       }
-      bytes.add(Uint8List.fromList(generator.feed(1)));
+      addFeed();
     }
     if (receipt.isSigFailed) {
-      bytes.add(Uint8List.fromList(generator.text(RKSVService.signatureDeviceDamagedKey, styles: PosStyles(align: PosAlign.center))));
-      bytes.add(Uint8List.fromList(generator.feed(1)));
+      addText(RKSVService.signatureDeviceDamagedKey, styles: PosStyles(align: PosAlign.center));
+      addFeed();
     }
 
     if (qrAsImage) {
@@ -138,51 +183,51 @@ class PrintPaper {
           print('Error decoding image');
         }
       }
-      bytes.add(Uint8List.fromList(generator.image(img!, align: PosAlign.center)));
+      addImage(img!);
     } else {
-      bytes.add(Uint8List.fromList(generator.qrcode(receipt.qr, size: QRSize.size6)));
+      addQrCode(receipt.qr);
     }
 
-    bytes.add(Uint8List.fromList(generator.feed(1)));
+    addFeed();
 
     if (receipt.cardPaymentData != null) {
       try {
         switch (receipt.creditCardProvider) {
           case CreditCardProvider.gpTomAndroid:
           case CreditCardProvider.gpTomIos:
-            bytes.add(Uint8List.fromList(_gpTom(generator, receipt.cardPaymentData!)));
+            _gpTom(receipt.cardPaymentData!);
             break;
           case CreditCardProvider.hobexCloudApi:
-            bytes.add(Uint8List.fromList(_hobexApi(generator, receipt.cardPaymentData!)));
+            _hobexApi(receipt.cardPaymentData!);
             break;
           default:
             break;
         }
-        bytes.add(Uint8List.fromList(generator.feed(1)));
+        addFeed();
       } catch (e) {}
     }
 
     if (receipt.thanksMessage.isNotEmpty) {
-      bytes.add(Uint8List.fromList(generator.feed(1)));
+      addFeed();
       for (String message in receipt.thanksMessage) {
-        bytes.add(Uint8List.fromList(generator.text(message, styles: PosStyles(align: PosAlign.center))));
+        addText(message, styles: PosStyles(align: PosAlign.center));
       }
     }
 
-    bytes.add(Uint8List.fromList(generator.text(receipt.footer1, styles: PosStyles(align: PosAlign.center))));
-    bytes.add(Uint8List.fromList(generator.text(receipt.footer2, styles: PosStyles(align: PosAlign.center))));
+    addText(receipt.footer1, styles: PosStyles(align: PosAlign.center));
+    addText(receipt.footer2, styles: PosStyles(align: PosAlign.center));
     if (receipt.footer3 != null) {
-      bytes.add(Uint8List.fromList(generator.text(receipt.footer3!, styles: PosStyles(align: PosAlign.center))));
+      addText(receipt.footer3!, styles: PosStyles(align: PosAlign.center));
     }
     if (receipt.footer4 != null) {
-      bytes.add(Uint8List.fromList(generator.text(receipt.footer4!, styles: PosStyles(align: PosAlign.center))));
+      addText(receipt.footer4!, styles: PosStyles(align: PosAlign.center));
     }
-    bytes.add(Uint8List.fromList(generator.cut()));
+    addCut();
   }
 
-  List<int> _addTable(Generator generator, KeckPaperSize size, String val1, String val2, String val3, String val4) {
-    bool isBig = size >= KeckPaperSize.mm80;
-    return generator.row([
+  void _addTable(String val1, String val2, String val3, String val4) {
+    bool isBig = paperSize >= KeckPaperSize.mm80;
+    List<int> bytes = generator.row([
       PosColumn(
         text: val1,
         width: 3,
@@ -204,10 +249,12 @@ class PrintPaper {
         styles: PosStyles(align: PosAlign.right),
       ),
     ]);
+
+    this.bytes.add(Uint8List.fromList(bytes));
   }
 
-  List<int> _addDoubleText(Generator generator, String leftValue, String rightValue, {leftWidth = 6, rightWidth = 6}) {
-    return generator.row([
+  void addDoubleText(String leftValue, String rightValue, {leftWidth = 6, rightWidth = 6}) {
+    List<int> bytes = generator.row([
       PosColumn(
         text: leftValue,
         width: leftWidth,
@@ -219,39 +266,37 @@ class PrintPaper {
         styles: PosStyles(align: PosAlign.right),
       ),
     ]);
+
+    this.bytes.add(Uint8List.fromList(bytes));
   }
 
-  List<int> _hobexApi(Generator generator, Map<String, dynamic> data) {
-    List<int> bytes = [];
-    bytes += _addDoubleText(generator, 'Datum:', data['date']);
-    bytes += _addDoubleText(generator, 'TID:', data['tid']);
-    bytes += _addDoubleText(generator, 'Nr.:', data['no']);
-    bytes += _addDoubleText(generator, 'Art:', data['type']);
-    bytes += _addDoubleText(generator, 'Karte:', data['cardBrand']);
-    bytes += _addDoubleText(generator, 'PAN:', data['cardNumber']);
-    bytes += _addDoubleText(generator, 'RC:', data['responseCode']);
+  void _hobexApi(Map<String, dynamic> data) {
+    addDoubleText('Datum:', data['date']);
+    addDoubleText('TID:', data['tid']);
+    addDoubleText('Nr.:', data['no']);
+    addDoubleText('Art:', data['type']);
+    addDoubleText('Karte:', data['cardBrand']);
+    addDoubleText('PAN:', data['cardNumber']);
+    addDoubleText('RC:', data['responseCode']);
     if (data['cvm'] == '1') {
-      bytes += generator.feed(2);
-      bytes += generator.text('------------------', styles: PosStyles(align: PosAlign.center));
-      bytes += generator.text('Unterschrift', styles: PosStyles(align: PosAlign.center));
+      addFeed(lines: 2);
+      addText('------------------', styles: PosStyles(align: PosAlign.center));
+      addText('Unterschrift', styles: PosStyles(align: PosAlign.center));
     }
-    bytes += generator.feed(1);
-    return bytes;
+    addFeed();
   }
 
-  List<int> _gpTom(Generator generator, Map<String, dynamic> data) {
-    List<int> bytes = [];
-    bytes += generator.text('Batch: ${data['batchNumber']}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('Receipt: ${data['externalTransactionID']}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('TID: ${data['terminalID']}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('${data['emvAid']}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('${data['emvAppLabel']} ${data['cardDataEntry']}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('${data['cardNumber']}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('${data['transactionType']} Amount ${data['currencyCode']} ${data['amount']?.toStringAsFixed(2)}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text(data['pinOk'] ? 'PIN OK' : 'PIN NOT OK', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
-    bytes += generator.text('Sequence Number: ${data['sequenceNumber']}', styles: PosStyles(align: PosAlign.center));
-    return bytes;
+  void _gpTom(Map<String, dynamic> data) {
+    addText('Batch: ${data['batchNumber']}', styles: PosStyles(align: PosAlign.center));
+    addText('Receipt: ${data['externalTransactionID']}', styles: PosStyles(align: PosAlign.center));
+    addText('TID: ${data['terminalID']}', styles: PosStyles(align: PosAlign.center));
+    addText('${data['emvAid']}', styles: PosStyles(align: PosAlign.center));
+    addText('${data['emvAppLabel']} ${data['cardDataEntry']}', styles: PosStyles(align: PosAlign.center));
+    addText('${data['cardNumber']}', styles: PosStyles(align: PosAlign.center));
+    addText('${data['transactionType']} Amount ${data['currencyCode']} ${data['amount']?.toStringAsFixed(2)}', styles: PosStyles(align: PosAlign.center));
+    addText(data['pinOk'] ? 'PIN OK' : 'PIN NOT OK', styles: PosStyles(align: PosAlign.center));
+    addText('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
+    addText('Sequence Number: ${data['sequenceNumber']}', styles: PosStyles(align: PosAlign.center));
   }
 }
 

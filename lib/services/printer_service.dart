@@ -11,17 +11,23 @@ import '../enums/keck_paper_size.dart';
 class KeckPrinterService {
 
   static PrinterNetworkManager? _networkPrinter;
+  static CapabilityProfile? _profile;
   static KeckPaperSize paperSize = KeckPaperSize.mm58;
 
-  static Future<bool> initPrinter(String macAddress, KeckPaperSize size) async {
+  static Future<bool> initPrinter(String ipAddress, KeckPaperSize size) async {
     paperSize = size;
-    PrinterNetworkManager printer = PrinterNetworkManager(macAddress);
+    PrinterNetworkManager printer = PrinterNetworkManager(ipAddress);
     final PosPrintResult res = await printer.connect();
     if (res == PosPrintResult.success) {
       _networkPrinter = printer;
+      _profile = await CapabilityProfile.load();
     }
     return _networkPrinter != null;
   }
+
+  static PrinterNetworkManager? get networkPrinter => _networkPrinter;
+
+  static CapabilityProfile? get profile => _profile;
 
   static Future<List<int>> _getListIntBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize) async {
     List<Uint8List> bytes = await getBytesFromReceipt(receipt, paperSize);

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:kasseneck_api/enums/cashbox_status.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/receipt_print_type.dart';
@@ -9,8 +10,9 @@ import 'package:kasseneck_api/models/hobex_receipt.dart';
 import 'package:kasseneck_api/models/report_month.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
 
-import 'enums/payment_method.dart';
+import 'enums/keck_payment_method.dart';
 import 'enums/receipt_type.dart';
+import 'enums/signature_status.dart';
 import 'models/kasseneck_item.dart';
 import 'models/kasseneck_receipt.dart';
 
@@ -56,7 +58,43 @@ class KasseneckApi {
     }
   }
 
-  Future<Uint8List?> downloadReport(ReportMonth reportMonth) async => _kasseneckPostRequest(
+  Future<dynamic> _financeWebServicePostRequest(
+      {required String method, Map<String, dynamic> params = const {}}) async {
+    Uri uri = Uri.parse('$_baseUrl/financeWebService');
+
+    final headers = {
+      'Authorization': 'Bearer $apiKey',
+      'cashregister-token': cashregisterToken,
+      'Content-Type': 'application/json',
+    };
+
+    final response = await http.post(
+      uri,
+      headers: headers,
+      body: jsonEncode({
+        'params': params,
+        'method': method,
+      }),
+    );
+
+    if (response.statusCode == 200 && response.body.isNotEmpty) {
+      return response.body;
+    } else {
+      throw Exception(
+        'Server-Fehler beim Aufruf von financeWebService $method: ${response.statusCode} - ${response.body}',
+      );
+    }
+  }
+
+  Future<Uint8List?> downloadDailyReport(DateTime dateTime) async => _kasseneckPostRequest(
+      endpoint: 'downloadDailyReport',
+      params: {
+        'year': dateTime.year,
+        'month': dateTime.month,
+        'day': dateTime.day
+      }).then((value) => Uint8List.fromList(value.codeUnits));
+
+  Future<Uint8List?> downloadMonthlyReport(ReportMonth reportMonth) async => _kasseneckPostRequest(
     endpoint: 'downloadReport',
     params: {
       'month': reportMonth.month.id,
@@ -77,7 +115,7 @@ class KasseneckApi {
 
   Future<KasseneckReceipt?> cancelReceipt({
     required KasseneckReceipt receipt,
-    PaymentMethod? paymentMethod,
+    KeckPaymentMethod? paymentMethod,
     CreditCardProvider? creditCardProvider,
     String? customProjectId,
     String? cardPaymentId,
@@ -103,7 +141,7 @@ class KasseneckApi {
   }
 
   Future<KasseneckReceipt?> sellReceipt({
-    required PaymentMethod paymentMethod,
+    required KeckPaymentMethod paymentMethod,
     required List<KasseneckItem> items,
     List<String>? customerDetails,
     List<String>? legalMessage,
@@ -127,7 +165,7 @@ class KasseneckApi {
 
   Future<KasseneckReceipt?> _createReceipt({
     required ReceiptType receiptType,
-    PaymentMethod? paymentMethod,
+    KeckPaymentMethod? paymentMethod,
     CreditCardProvider? creditCardProvider,
     String? customProjectId,
     String? cardPaymentId,
@@ -159,7 +197,7 @@ class KasseneckApi {
     if (paymentMethod != null) {
       params['paymentMethod'] = paymentMethod.name;
       creditCardProvider ??= CreditCardProvider.custom;
-      if (paymentMethod == PaymentMethod.creditCard) {
+      if (paymentMethod == KeckPaymentMethod.creditCard) {
         if (cardPaymentId != null) {
           params['cardPaymentId'] = cardPaymentId;
           params['creditCardProvider'] = creditCardProvider.name;
@@ -229,9 +267,40 @@ class KasseneckApi {
     }
   }
 
-  Future initPrinter(String macAddress, KeckPaperSize size) async {
-    printerAddress = macAddress;
-    return KeckPrinterService.initPrinter(macAddress, size);
+  Future initPrinter(String ipAddress, KeckPaperSize size) async {
+    printerAddress = ipAddress;
+    return KeckPrinterService.initPrinter(ipAddress, size);
+  }
+
+  Future<CashboxStatus?> getCashboxStatus() async {
+    final Map<String, dynamic> resJson = await _financeWebServicePostRequest(
+      method: 'status_cashbox',
+    ).then((value) => json.decode(value));
+    try {
+      String res = resJson['data']['rkdbMessage']['status'];
+      return CashboxStatus.values.where((element) => element.name == res).firstOrNull;
+    } catch (e) {
+      throw Exception('Fehler beim Parsen des Cashbox-Status: $e');
+    }
+  }
+
+  Future<SignatureStatus?> getSignatureStatus(String zertifikatNrHex) async {
+    final Map<String, dynamic> resJson = await _financeWebServicePostRequest(
+      method: 'status_signature',
+      params: {
+        'zertifikatnr_hex': zertifikatNrHex
+      },
+    ).then((value) => json.decode(value));
+    try {
+      String rc = resJson['data']['rkdbMessage']['rc'];
+      if (rc == 'B33') {
+        return SignatureStatus.NOT_REGISTERED;
+      }
+      String res = resJson['data']['rkdbMessage']['status'];
+      return SignatureStatus.values.where((element) => element.name == res).firstOrNull;
+    } catch (e) {
+      throw Exception('Fehler beim Parsen des Signature-Status: $e');
+    }
   }
 
   static Future openCashDrawer() => KeckPrinterService.openCashDrawer();

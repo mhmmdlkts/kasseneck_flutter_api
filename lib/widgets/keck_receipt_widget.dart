@@ -8,9 +8,10 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 class KeckReceiptWidget extends StatefulWidget {
   final Color paperColor;
+  final Color qrColor;
   final KasseneckReceipt receipt;
 
-  const KeckReceiptWidget({required this.receipt, this.paperColor = Colors.white10, super.key});
+  const KeckReceiptWidget({required this.receipt, this.paperColor = Colors.white10, this.qrColor = Colors.black, super.key});
 
   @override
   State<KeckReceiptWidget> createState() => _KeckReceiptWidgetState();
@@ -151,7 +152,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 children: e.where((element) => element.runtimeType==String).map((e) => Text(e, style: textStyle)).toList(),
               )).toList(),
             ),
-            Divider(color: Theme.of(context).dividerColor),
+            Divider(color: widget.qrColor),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -174,7 +175,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             QrImageView(
               data: widget.receipt.qr,
               size: 200,
-              foregroundColor: Theme.of(context).colorScheme.onBackground,
+              foregroundColor: widget.qrColor,
               backgroundColor: Colors.transparent,
             ),
             if (widget.receipt.creditCardProvider != null && widget.receipt.creditCardProvider != CreditCardProvider.custom && widget.receipt.cardPaymentData != null && widget.receipt.cardPaymentData!.isNotEmpty)
