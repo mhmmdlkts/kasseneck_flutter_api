@@ -124,15 +124,38 @@ class KasseneckApi {
   }) async {
     paymentMethod ??= receipt.paymentMethod;
     return _createReceipt(
-      receiptType: ReceiptType.cancellation,
-      customerDetails: receipt.customerDetails,
-      items: receipt.items.map((item) => item.negative).toList(),
-      paymentMethod: paymentMethod,
-      cardPaymentData: cardPaymentData,
-      cardPaymentId: cardPaymentId,
-      creditCardProvider: creditCardProvider,
-      customProjectId: customProjectId,
-      legalMessage: legalMessage
+        receiptType: ReceiptType.cancellation,
+        customerDetails: receipt.customerDetails,
+        items: receipt.items.map((item) => item.negative).toList(),
+        paymentMethod: paymentMethod,
+        cardPaymentData: cardPaymentData,
+        cardPaymentId: cardPaymentId,
+        creditCardProvider: creditCardProvider,
+        customProjectId: customProjectId,
+        legalMessage: legalMessage
+    );
+  }
+
+  Future<KasseneckReceipt?> createCancelReceipt({
+    required KeckPaymentMethod paymentMethod,
+    required List<KasseneckItem> items,
+    List<String>? customerDetails,
+    CreditCardProvider? creditCardProvider,
+    String? customProjectId,
+    String? cardPaymentId,
+    Map<String, dynamic>? cardPaymentData,
+    List<String>? legalMessage,
+  }) async {
+    return _createReceipt(
+        receiptType: ReceiptType.cancellation,
+        customerDetails: customerDetails,
+        items: items,
+        paymentMethod: paymentMethod,
+        cardPaymentData: cardPaymentData,
+        cardPaymentId: cardPaymentId,
+        creditCardProvider: creditCardProvider,
+        customProjectId: customProjectId,
+        legalMessage: legalMessage
     );
   }
 

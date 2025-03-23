@@ -20,6 +20,20 @@ class KasseneckItem {
     required this.priceOne,
   });
 
+  factory KasseneckItem.cancel({
+    required String name,
+    required int amount,
+    required VatRate vat,
+    required double priceOne,
+  }) {
+    return KasseneckItem(
+      name: name,
+      amount: -amount,
+      vat: vat,
+      priceOne: priceOne,
+    );
+  }
+
   /// Umwandlung ins JSON-Format
   Map<String, dynamic> toJson() {
     return {
@@ -43,11 +57,11 @@ class KasseneckItem {
   bool get isValid => name.isNotEmpty && amount > 0;
 
   KasseneckItem get negative {
-    return KasseneckItem(
+    return KasseneckItem.cancel(
       name: name,
       amount: amount,
       vat: vat,
-      priceOne: -priceOne,
+      priceOne: priceOne,
     );
   }
 }
