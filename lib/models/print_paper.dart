@@ -121,15 +121,15 @@ class PrintPaper {
         itemsByVat[item.vat] = [];
       }
       itemsByVat[item.vat]!.add(item);
-      String amount = item.amount.toString().padRight(2);
-      if (item.amount
+      String amount = item.quantity.toString().padRight(2);
+      if (item.quantity
           .toString()
           .length > 2) {
         amount += ' x';
       } else {
         amount += ' x ';
       }
-      addDoubleText('$amount${item.name.check()}', '${item.priceOne.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
+      addDoubleText('$amount${item.name.check()}', '${item.singlePrice.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
     }
     addFeed();
 
@@ -138,7 +138,7 @@ class PrintPaper {
     itemsByVat.forEach((key, value) {
       double brutto = 0;
       for (KasseneckItem element in value) {
-        brutto += element.priceOne * element.amount;
+        brutto += element.singlePrice * element.quantity;
       }
       int mwstSatz = key.rate;
 

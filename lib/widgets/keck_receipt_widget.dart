@@ -41,7 +41,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       double brutto = 0;
       for (KasseneckItem element in widget.receipt.items) {
         if (element.vat == key) {
-          brutto += element.priceOne * element.amount;
+          brutto += element.singlePrice * element.quantity;
         }
       }
       int mwstSatz = key.rate;
@@ -136,9 +136,9 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text('${item.amount} x ${item.name}', style: textStyle),
+                    child: Text('${item.quantity} x ${item.name}', style: textStyle),
                   ),
-                  Text('${(item.priceOne * item.amount).toStringAsFixed(2)} ${item.vat.category}', style: textStyle),
+                  Text('${(item.singlePrice * item.quantity).toStringAsFixed(2)} ${item.vat.category}', style: textStyle),
                 ],
               ),
 

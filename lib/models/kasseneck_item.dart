@@ -5,19 +5,19 @@ class KasseneckItem {
   final String name;
 
   /// Menge (z. B. 1 Stück, 2 Stück)
-  final int amount;
+  final int quantity;
 
   /// Steuersatz (z. B. 0, 10, 13, 19, 20)
   final VatRate vat;
 
   /// Einzelpreis
-  final double priceOne;
+  final double singlePrice;
 
   KasseneckItem({
     required this.name,
-    required this.amount,
+    required this.quantity,
     required this.vat,
-    required this.priceOne,
+    required this.singlePrice,
   });
 
   factory KasseneckItem.cancel({
@@ -28,9 +28,9 @@ class KasseneckItem {
   }) {
     return KasseneckItem(
       name: name,
-      amount: -amount,
+      quantity: amount,
       vat: vat,
-      priceOne: priceOne,
+      singlePrice: -priceOne,
     );
   }
 
@@ -38,9 +38,9 @@ class KasseneckItem {
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'amount': amount,
+      'amount': quantity,
       'vat': vat.rate,
-      'priceOne': priceOne,
+      'priceOne': singlePrice,
     };
   }
 
@@ -48,20 +48,20 @@ class KasseneckItem {
   factory KasseneckItem.fromJson(Map<String, dynamic> json) {
     return KasseneckItem(
       name: json['name'] as String,
-      amount: json['amount'] as int,
+      quantity: json['amount'] as int,
       vat: VatRate.values.firstWhere((e) => e.rate == json['vat'], orElse: () => VatRate.vat0),
-      priceOne: (json['priceOne'] as num).toDouble(),
+      singlePrice: (json['priceOne'] as num).toDouble(),
     );
   }
 
-  bool get isValid => name.isNotEmpty && amount > 0;
+  bool get isValid => name.isNotEmpty && quantity > 0;
 
   KasseneckItem get negative {
     return KasseneckItem.cancel(
       name: name,
-      amount: amount,
+      amount: quantity,
       vat: vat,
-      priceOne: priceOne,
+      priceOne: singlePrice,
     );
   }
 }

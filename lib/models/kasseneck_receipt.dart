@@ -175,7 +175,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   double get sum {
     double sum = 0;
     for (KasseneckItem item in items) {
-      sum += item.amount * item.priceOne;
+      sum += item.quantity * item.singlePrice;
     }
     return sum;
   }
