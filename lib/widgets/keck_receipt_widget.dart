@@ -26,8 +26,6 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
     return receiptWidget();
   }
 
-
-
   setTemp() {
     temp = [
       [CrossAxisAlignment.start, 'MwSt%'],
@@ -56,7 +54,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
 
 
   TextStyle textStyle = TextStyle(
-      fontFamily: 'Courier'
+    fontFamily: 'Courier'
   );
 
 
@@ -230,8 +228,10 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
         Text('Receipt: ${inquire['externalTransactionID']}', style: textStyle),
         Text('TID: ${inquire['terminalID']}', style: textStyle),
         Text('${inquire['emvAid']}', style: textStyle),
-        Text('${inquire['emvAppLable']} ${inquire['cardDataEntry']}', style: textStyle),
-        Text(inquire['cardNumber'], style: textStyle),
+        if (inquire['emvAppLable'] != null || inquire['cardDataEntry'] != null)
+          Text('${inquire['emvAppLable']??''} ${inquire['cardDataEntry']??''}', style: textStyle),
+        if (inquire['cardNumber'] != null)
+          Text('Card Number: ${inquire['cardNumber']}', style: textStyle),
         Text('$transactionType Amount ${inquire['currencyCode']} ${inquire['amount'].toStringAsFixed(2)}', style: textStyle.copyWith(fontWeight: FontWeight.bold)),
         Text(inquire['pinOk'] == true ? 'PIN OK' : 'PIN NOT OK', style: textStyle),
         Text('Authorization Code ${inquire['approvedCode']}', style: textStyle),

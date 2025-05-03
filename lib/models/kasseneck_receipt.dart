@@ -9,11 +9,12 @@ import 'package:kasseneck_api/services/rksv_service.dart';
 
 import '../enums/credit_card_provider.dart';
 import '../enums/keck_payment_method.dart';
+import '../enums/receipt_type.dart';
 import 'kasseneck_item.dart';
 
 class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   final String receiptId;
-  final String receiptType;
+  final ReceiptType receiptType;
   final KeckPaymentMethod paymentMethod;
   final List<KasseneckItem> items;
 
@@ -106,7 +107,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       items: receipt['items'].map<KasseneckItem>((e) => KasseneckItem.fromJson(e)).toList(),
       timeStamp: DateTime.parse(receipt['timeStamp']),
       cashregisterId: receipt['cashregisterId'],
-      receiptType: receipt['receiptType'],
+      receiptType: ReceiptType.values.firstWhere((element) => element.name == receipt['receiptType'], orElse: () => ReceiptType.standard),
       receiptId: receipt['receiptId'],
       fullReceiptId: receipt['fullReceiptId'] ?? '',
       creditCardProvider: receipt['creditCardProvider'] != null ? CreditCardProvider.values.firstWhere((element) => element.name == receipt['creditCardProvider']) : null,

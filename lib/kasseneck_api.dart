@@ -19,7 +19,7 @@ import 'models/kasseneck_receipt.dart';
 /// Hauptklasse für Kasseneck-API-Aufrufe
 class KasseneckApi {
   static final String _baseUrl = 'https://europe-west1-kasseneck.cloudfunctions.net';
-  static final String downloadBaseUrl = 'https://europe-west1-kasseneck.cloudfunctions.net/downloadReceipt';
+  static final String downloadBaseUrl = 'https://receipt.kreiseck.com/downloadReceipt';
   final String apiKey;
   final String cashregisterToken;
   final ReceiptPrintType? printType;
@@ -290,9 +290,13 @@ class KasseneckApi {
     }
   }
 
-  Future initPrinter(String ipAddress, KeckPaperSize size) async {
+  Future initWifiPrinter(String ipAddress, KeckPaperSize size) async {
     printerAddress = ipAddress;
-    return KeckPrinterService.initPrinter(ipAddress, size);
+    return KeckPrinterService.initWifiPrinter(ipAddress, size);
+  }
+
+  Future initBluetoothPrinter({KeckPaperSize size = KeckPaperSize.mm58}) async {
+    return KeckPrinterService.initBluetoothPrinter(size: size);
   }
 
   Future<CashboxStatus?> getCashboxStatus() async {

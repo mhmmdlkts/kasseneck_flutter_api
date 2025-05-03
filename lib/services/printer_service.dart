@@ -14,7 +14,7 @@ class KeckPrinterService {
   static CapabilityProfile? _profile;
   static KeckPaperSize paperSize = KeckPaperSize.mm58;
 
-  static Future<bool> initPrinter(String ipAddress, KeckPaperSize size) async {
+  static Future<bool> initWifiPrinter(String ipAddress, KeckPaperSize size) async {
     paperSize = size;
     PrinterNetworkManager printer = PrinterNetworkManager(ipAddress);
     final PosPrintResult res = await printer.connect();
@@ -23,6 +23,12 @@ class KeckPrinterService {
       _profile = await CapabilityProfile.load();
     }
     return _networkPrinter != null;
+  }
+
+  static Future<bool> initBluetoothPrinter({KeckPaperSize size = KeckPaperSize.mm58}) async {
+    paperSize = size;
+    _profile = await CapabilityProfile.load();
+    return true;
   }
 
   static PrinterNetworkManager? get networkPrinter => _networkPrinter;

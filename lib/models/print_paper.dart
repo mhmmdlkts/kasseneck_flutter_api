@@ -291,8 +291,12 @@ class PrintPaper {
     addText('Receipt: ${data['externalTransactionID']}', styles: PosStyles(align: PosAlign.center));
     addText('TID: ${data['terminalID']}', styles: PosStyles(align: PosAlign.center));
     addText('${data['emvAid']}', styles: PosStyles(align: PosAlign.center));
-    addText('${data['emvAppLabel']} ${data['cardDataEntry']}', styles: PosStyles(align: PosAlign.center));
-    addText('${data['cardNumber']}', styles: PosStyles(align: PosAlign.center));
+    if (data['emvAppLable'] != null || data['cardDataEntry'] != null) {
+      addText('${data['emvAppLable'] ?? ''} ${data['cardDataEntry'] ?? ''}', styles: PosStyles(align: PosAlign.center));
+    }
+    if (data['cardNumber'] != null) {
+      addText('${data['cardNumber']}', styles: PosStyles(align: PosAlign.center));
+    }
     addText('${data['transactionType']} Amount ${data['currencyCode']} ${data['amount']?.toStringAsFixed(2)}', styles: PosStyles(align: PosAlign.center));
     addText(data['pinOk'] ? 'PIN OK' : 'PIN NOT OK', styles: PosStyles(align: PosAlign.center));
     addText('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
@@ -317,7 +321,7 @@ extension CP437Checker on String {
     0x2569, 0x2566, 0x2560, 0x2550, 0x256C, 0x2567, 0x2568, 0x2564, 0x2565, 0x2559, 0x2558, 0x2552, 0x2553,
     0x256B, 0x256A, 0x2518, 0x250C, 0x2588, 0x2584, 0x258C, 0x2590, 0x2580, 0x3B1, 0xDF, 0x393, 0x3C0, 0x3A3,
     0x3C3, 0xB5, 0x3C4, 0x3A6, 0x398, 0x3A9, 0x3B4, 0x221E, 0x3C6, 0x3B5, 0x2229, 0x2261, 0xB1, 0x2265,
-    0x2264, 0x2320, 0x2321, 0xF7, 0x2248, 0xB0, 0x2219, 0xB7, 0x221A, 0x207F, 0xB2, 0x25A0, 0xA0
+    0x2264, 0x2320, 0x2321, 0xF7, 0x2248, 0xB0, 0x2219, 0xB7, 0x221A, 0x207F, 0xB2, 0x25A0
   };
 
   String check() {
