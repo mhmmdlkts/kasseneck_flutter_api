@@ -15,6 +15,7 @@ dependencies:
   qr_flutter: ^4.1.0
   flutter_blue_plus: ^2.2.1
   esc_pos_utils: ^1.1.0
+  image: ^3.3.0 # don't update
 
   sumup: ^0.13.1
     #path: ../sumup_flutter_plugin
