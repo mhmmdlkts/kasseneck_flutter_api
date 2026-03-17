@@ -1,9 +1,8 @@
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:esc_pos_utils/esc_pos_utils.dart';
 
 enum KeckPaperSize {
-  mm58(PaperSize.mm58, 32, 58, 300),
-  mm72(PaperSize.mm72, 42, 72, 400), // TODO: what is the correct char count?
-  mm80(PaperSize.mm80, 48, 80, 500);
+  mm58(PaperSize.mm58, 32, 58, 296),
+  mm80(PaperSize.mm80, 48, 80, 504);
 
   final int mm;
   final int defaultCharCount;

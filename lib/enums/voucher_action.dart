@@ -1,0 +1,4 @@
+enum VoucherAction {
+  sell,
+  redeem,
+}

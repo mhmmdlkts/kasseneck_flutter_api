@@ -1,6 +1,13 @@
 enum KeckPaymentMethod {
   cash(false),
-  creditCard(true);
+  creditCard(true),
+  online(false),
+  uberApp(false),
+  uberCash(false),
+  uberCard(true),
+  boltApp(false),
+  boltCash(false),
+  boltCard(true);
 
   final bool needsCreditCard;
 

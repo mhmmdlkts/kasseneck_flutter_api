@@ -9,6 +9,7 @@ class KeckUser {
   int cashregisterCount;
   int signatureCount;
 
+  bool isSmallBusiness;
   String taxnr;
   bool isProduction;
 
@@ -41,6 +42,7 @@ class KeckUser {
     required this.createTime,
     required this.cashregisterCount,
     required this.signatureCount,
+    required this.isSmallBusiness,
     required this.taxnr,
     required this.isProduction,
     required this.addressCity,
@@ -69,6 +71,7 @@ class KeckUser {
       createTime: json['create_time'].toDate(),
       cashregisterCount: json['metadata']['cashregister_count'] as int,
       signatureCount: json['metadata']['signature_count'] as int,
+      isSmallBusiness: json['tax_details']['is_small_business'] as bool,
       taxnr: json['tax_details']['taxnr'] as String,
       isProduction: json['production'] == true,
       apiKey: json['api_key'] as String?,
@@ -91,6 +94,8 @@ class KeckUser {
 
   Map<String, dynamic> receiptMetadata() => {
     'uid': uid,
+    'taxnr': taxnr,
+    'is_small_business': isSmallBusiness,
     'company': companyName,
     'phone': phone,
     'street': addressStreet,

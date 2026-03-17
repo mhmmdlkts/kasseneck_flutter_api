@@ -1,39 +1,46 @@
 import 'dart:convert';
 
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
-import 'package:kasseneck_api/services/printer_service.dart';
+import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../enums/credit_card_provider.dart';
 import '../enums/vat_rate.dart';
+import '../enums/voucher_action.dart';
+import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
 import 'kasseneck_item.dart';
 import 'package:image/image.dart';
+
+import 'keck_voucher.dart';
 
 class PrintPaper {
   final KeckPaperSize paperSize;
   final List<Map<String, dynamic>> commands = [];
   final Generator generator;
   List<Uint8List> bytes = [];
+  final MyPosPaper myPosPaper = MyPosPaper();
 
-  PrintPaper({required this.paperSize}) : generator = Generator(paperSize.paperSize, KeckPrinterService.profile!) {
-    bytes.clear();
+  PrintPaper({required this.paperSize, required CapabilityProfile profile}) : generator = Generator(paperSize.paperSize, profile) {
     reset();
   }
 
   void addBytes(Uint8List byte) {
     bytes.add(byte);
+    // myPosPaper does not support raw bytes
   }
 
   void addText(String text, {PosStyles styles = const PosStyles()}) {
     bytes.add(Uint8List.fromList(generator.text(text, styles: styles)));
+    myPosPaper.addText(text, alignment: styles.myposAlign);
   }
 
   void addCut() {
     bytes.add(Uint8List.fromList(generator.cut()));
+    // myPosPaper does not support cut
   }
 
   void addFeed({int lines = 1}) {
@@ -41,6 +48,7 @@ class PrintPaper {
       lines = 1;
     }
     bytes.add(Uint8List.fromList(generator.feed(lines)));
+    myPosPaper.addSpace(lines);
   }
 
   void addReverseFeed({int lines = 1}) {
@@ -48,14 +56,19 @@ class PrintPaper {
       lines = 1;
     }
     bytes.add(Uint8List.fromList(generator.reverseFeed(lines)));
+    // myPosPaper does not support reverse feed
   }
 
   void addFullHorizontalLine({String ch = '-'}) {
     bytes.add(Uint8List.fromList(generator.hr(ch: ch)));
+    myPosPaper.addText(ch * 32, alignment: PrinterAlignment.left);
   }
 
   void addImage(Image image, {PosAlign align = PosAlign.center}) {
-    bytes.add(Uint8List.fromList(generator.image(image)));
+    bytes.add(Uint8List.fromList(generator.imageRaster(image)));
+
+    final pngBytes = encodePng(image); // oder encodeJpg(src, quality: 90)
+    myPosPaper.addImage(pngBytes);
   }
 
   void addBase64Image(String base64, {PosAlign align = PosAlign.center}) {
@@ -68,21 +81,49 @@ class PrintPaper {
     addImage(img, align: align);
   }
 
-  void addQrCode(String data, {QRSize size = QRSize.size6}) {
-    bytes.add(Uint8List.fromList(generator.qrcode(data)));
+  void addQrCode(String data, {QRSize size = QRSize.Size6}) {
+    bytes.add(Uint8List.fromList(generator.qrcode(data, size: size)));
+    myPosPaper.addQrCode(data, size: 280);
+  }
+
+  Future<void> addQrCodeAsImage(String data, {int size = 280}) async {
+    try {
+      final QrPainter painter = QrPainter(
+        data: data,
+        version: QrVersions.auto,
+        gapless: false,
+      );
+      final ByteData? byteData = await painter.toImageData(size.toDouble());
+      if (byteData == null) {
+        print('Error: QR ByteData is null');
+        return;
+      }
+
+      final Uint8List qrBytes = byteData.buffer.asUint8List();
+      final Image? img = decodeImage(qrBytes);
+      if (img == null) {
+        print('Error decoding QR image');
+        return;
+      }
+
+      // Wenn dein Drucker Probleme mit image hat, kannst du auch imageRaster probieren:
+      bytes.add(Uint8List.fromList(generator.image(img)));
+      myPosPaper.addImage(encodePng(img));
+    } catch (e) {
+      print('Error in addQrCodeAsImage: $e');
+    }
   }
 
   void reset() {
+    bytes.clear();
     bytes.add(Uint8List.fromList(generator.reset()));
-    bytes.add(Uint8List.fromList(generator.clearStyle()));
+    bytes.add(Uint8List.fromList(generator.setGlobalCodeTable('CP1252')));
+    myPosPaper.commands.clear();
   }
 
   Future setKeckReceipt(KasseneckReceipt receipt, {bool qrAsImage = false}) async {
-    if (KeckPrinterService.profile == null) {
-      throw Exception('Printer not initialized');
-    }
+    reset();
 
-    bytes.clear();
     if (receipt.logo != null) {
       Image image = decodeImage(receipt.logo!)!;
       Image resized = copyResize(image, width: paperSize.imageWidth);
@@ -94,7 +135,7 @@ class PrintPaper {
     addText(receipt.companyName, styles: PosStyles(align: PosAlign.center, bold: true));
     addText(receipt.street, styles: PosStyles(align: PosAlign.center));
     addText('${receipt.zip} ${receipt.city}', styles: PosStyles(align: PosAlign.center));
-    addText(receipt.uid, styles: PosStyles(align: PosAlign.center));
+    addText(receipt.taxInfo, styles: PosStyles(align: PosAlign.center));
     addText(receipt.phone, styles: PosStyles(align: PosAlign.center));
 
     if (receipt.customerDetails.isNotEmpty) {
@@ -129,28 +170,103 @@ class PrintPaper {
       } else {
         amount += ' x ';
       }
-      addDoubleText('$amount${item.name.check()}', '${item.singlePrice.toStringAsFixed(2)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
+      addDoubleText('$amount${item.name.check()}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', '${formatAmount(item.singlePrice * item.quantity)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
     }
+
+    double totalPromoVoucherValue = 0;
+    for (KeckVoucher voucher in receipt.vouchers??[]) {
+
+      if (voucher.isValid && voucher.action == VoucherAction.sell) {
+        itemsByVat[VatRate.vat0] ??= [];
+        itemsByVat[VatRate.vat0]!.add(KasseneckItem(
+          name: voucher.receipText,
+          quantity: 1,
+          singlePrice: voucher.value ?? 0,
+          vat: VatRate.vat0
+        ));
+      }
+      if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
+        String amount = '1  x ';
+        addDoubleText('$amount${voucher.receipText}', '${formatAmount(voucher.value??0)} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
+      }
+      if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
+        totalPromoVoucherValue += voucher.value ?? 0;
+        addDoubleText(voucher.receipText, '-${formatAmount(voucher.value??0)} EUR', leftWidth: 7, rightWidth: 5);
+      }
+    }
+
+    final Map<VatRate, int> vatTableBruttoByVatCents = {
+      for (final VatRate key in itemsByVat.keys) key: 0,
+    };
+
+    itemsByVat.forEach((key, value) {
+      int bruttoCents = 0;
+      for (final KasseneckItem element in value) {
+        bruttoCents += euroToCent(element.singlePrice * element.quantity);
+      }
+      vatTableBruttoByVatCents[key] = bruttoCents;
+    });
+
+    final int totalPromoVoucherValueCents = euroToCent(totalPromoVoucherValue);
+    final int totalAmountCents = vatTableBruttoByVatCents.values.fold(0, (sum, value) => sum + value);
+    final int usablePromoVoucherValueCents =
+        totalPromoVoucherValueCents > totalAmountCents ? totalAmountCents : totalPromoVoucherValueCents;
+
+    if (usablePromoVoucherValueCents > 0 && totalAmountCents > 0) {
+      final Map<VatRate, int> promoByVatCents = {
+        for (final VatRate key in vatTableBruttoByVatCents.keys) key: 0,
+      };
+
+      int usedPromoCents = 0;
+      vatTableBruttoByVatCents.forEach((key, bruttoCents) {
+        final int proportionalCents = (usablePromoVoucherValueCents * bruttoCents) ~/ totalAmountCents;
+        promoByVatCents[key] = proportionalCents;
+        usedPromoCents += proportionalCents;
+      });
+
+      final int remainingPromoCents = usablePromoVoucherValueCents - usedPromoCents;
+      if (remainingPromoCents > 0) {
+        final List<MapEntry<VatRate, int>> sortedGroups = vatTableBruttoByVatCents.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
+        if (sortedGroups.isNotEmpty && sortedGroups.first.value > 0) {
+          promoByVatCents[sortedGroups.first.key] =
+              (promoByVatCents[sortedGroups.first.key] ?? 0) + remainingPromoCents;
+        }
+      }
+
+      promoByVatCents.forEach((key, promoCents) {
+        vatTableBruttoByVatCents[key] = (vatTableBruttoByVatCents[key] ?? 0) - promoCents;
+      });
+    }
+
     addFeed();
 
     _addTable('MwSt%', 'MwSt', 'Netto', 'Brutto');
 
-    itemsByVat.forEach((key, value) {
-      double brutto = 0;
-      for (KasseneckItem element in value) {
-        brutto += element.singlePrice * element.quantity;
-      }
-      int mwstSatz = key.rate;
+    vatTableBruttoByVatCents.forEach((key, bruttoCents) {
+      final double brutto = centToEuro(bruttoCents);
+      final int mwstSatz = key.rate;
+      final double netto = brutto / (1 + (mwstSatz / 100));
+      final double mwst = brutto - netto;
 
-      double netto = brutto / (1 + (mwstSatz / 100));
-
-      double mwst = brutto - netto;
-
-      _addTable('${key.category} ${key.rate}%', mwst.toStringAsFixed(2), netto.toStringAsFixed(2), brutto.toStringAsFixed(2));
+      _addTable('${key.category} ${key.rate}%', formatAmount(mwst), formatAmount(netto), formatAmount(brutto));
     });
 
     addFullHorizontalLine();
-    addDoubleText('Gesamt:', '${receipt.sum.toStringAsFixed(2)} EUR');
+
+    if (receipt.sum != receipt.subSum) {
+      addDoubleText('Zwischensumme', '${formatAmount(receipt.subSum)} EUR');
+
+      for (KeckVoucher voucher in receipt.vouchers??[]) {
+        if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value) {
+          addDoubleText(voucher.receipText, '-${formatAmount(voucher.value??0)} EUR');
+        }
+      }
+
+      addFullHorizontalLine();
+    }
+    addDoubleText('Gesamt:', '${formatAmount(receipt.sum)} EUR');
 
     addFeed();
 
@@ -165,34 +281,18 @@ class PrintPaper {
       addFeed();
     }
 
+
     if (qrAsImage) {
-      QrPainter painter = QrPainter(
-        data: receipt.qr,
-        version: QrVersions.auto,
-        gapless: true,
-      );
-      ByteData? byteData = await painter.toImageData(250);
-      if (byteData == null) {
-        if (kDebugMode) {
-          print('Error decoding image');
-        }
-      }
-      Image? img = decodeImage(byteData!.buffer.asUint8List());
-      if (img == null) {
-        if (kDebugMode) {
-          print('Error decoding image');
-        }
-      }
-      addImage(img!);
+      await addQrCodeAsImage(receipt.qr);
     } else {
       addQrCode(receipt.qr);
     }
 
     addFeed();
 
-    if (receipt.cardPaymentData != null) {
+    if (receipt.cardPaymentData != null && receipt.creditCardProvider != null) {
       try {
-        switch (receipt.creditCardProvider) {
+        switch (receipt.creditCardProvider!) {
           case CreditCardProvider.gpTomAndroid:
           case CreditCardProvider.gpTomIos:
             _gpTom(receipt.cardPaymentData!);
@@ -200,7 +300,13 @@ class PrintPaper {
           case CreditCardProvider.hobexCloudApi:
             _hobexApi(receipt.cardPaymentData!);
             break;
-          default:
+          case CreditCardProvider.sumup:
+            _sumup(receipt.cardPaymentData!);
+            break;
+          case CreditCardProvider.custom:
+            break;
+          case CreditCardProvider.myposPro:
+            _mypos(receipt.cardPaymentData!);
             break;
         }
         addFeed();
@@ -251,9 +357,15 @@ class PrintPaper {
     ]);
 
     this.bytes.add(Uint8List.fromList(bytes));
+    int len = 32~/4;
+    val1 = val1.padRight(len).substring(0, len);
+    val2 = val2.padLeft(len).substring(0, len);
+    val3 = val3.padLeft(len).substring(0, len);
+    val4 = val4.padLeft(len).substring(0, len);
+    myPosPaper.addText('$val1$val2$val3$val4');
   }
 
-  void addDoubleText(String leftValue, String rightValue, {leftWidth = 6, rightWidth = 6}) {
+  void addDoubleText(String leftValue, String rightValue, {int leftWidth = 6, int rightWidth = 6}) {
     List<int> bytes = generator.row([
       PosColumn(
         text: leftValue,
@@ -268,9 +380,13 @@ class PrintPaper {
     ]);
 
     this.bytes.add(Uint8List.fromList(bytes));
+    myPosPaper.addDoubleText(leftValue, rightValue);
   }
 
+
+
   void _hobexApi(Map<String, dynamic> data) {
+    addText('Hobex Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('Datum:', data['date']);
     addDoubleText('TID:', data['tid']);
     addDoubleText('Nr.:', data['no']);
@@ -286,7 +402,44 @@ class PrintPaper {
     addFeed();
   }
 
+  void _sumup(Map<String, dynamic> data) {
+    addText('Sumup Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
+    addDoubleText('Kartentyp:', data['cardType'] ?? 'n/a');
+    addDoubleText('Kartennummer:', '**** **** **** ${data['cardLastDigits'] ?? ''}');
+    addDoubleText('Zahlungstyp:', data['paymentType'] ?? 'n/a');
+    addDoubleText('Gesamtbetrag:', '${data['amount'] != null ? formatAmount(data['amount'] as num) : '-'} ${data['currency'] ?? ''}');
+    addDoubleText('Transaktionscode:', data['transactionCode'] ?? '-');
+    addDoubleText('Modus:', (data['entryMode'] ?? '').toUpperCase());
+    addFeed();
+  }
+
+  void _mypos(Map<String, dynamic> data) {
+    addText('MyPos Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
+    addDoubleText('TERMINAL ID:', data['TID'] ?? '-');
+    String dateTime = data['date_time'];
+    String day = dateTime.substring(4, 6);
+    String month = dateTime.substring(2, 4);
+    String year = '20${dateTime.substring(0, 2)}';
+    String hour = dateTime.substring(6, 8);
+    String minute = dateTime.substring(8, 10);
+    String second = dateTime.substring(10, 12);
+    String formattedDate = '$day.$month.$year $hour:$minute:$second';
+    addDoubleText('DATUM:', formattedDate);
+    addText(data['application_name'] ?? '', styles: PosStyles(align: PosAlign.center, bold: true));
+    addDoubleText('KARTE:', data['pan'] ?? '-');
+    if (data['signature_required'] == true) {
+      addFeed(lines: 2);
+      addText('------------------', styles: PosStyles(align: PosAlign.center));
+      addText('Unterschrift', styles: PosStyles(align: PosAlign.center));
+    }
+    addDoubleText('STAN:', data['STAN']?.toString().padLeft(6, '0') ?? '-');
+    addDoubleText('AUTH. CODE:', data['authorization_code'] ?? '-');
+    addDoubleText('RRN:', data['reference_number'] ?? '-');
+    addDoubleText('AID:', data['AID'] ?? '-');
+  }
+
   void _gpTom(Map<String, dynamic> data) {
+    addText('GP Tom Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
     addText('Batch: ${data['batchNumber']}', styles: PosStyles(align: PosAlign.center));
     addText('Receipt: ${data['externalTransactionID']}', styles: PosStyles(align: PosAlign.center));
     addText('TID: ${data['terminalID']}', styles: PosStyles(align: PosAlign.center));
@@ -297,10 +450,23 @@ class PrintPaper {
     if (data['cardNumber'] != null) {
       addText('${data['cardNumber']}', styles: PosStyles(align: PosAlign.center));
     }
-    addText('${data['transactionType']} Amount ${data['currencyCode']} ${data['amount']?.toStringAsFixed(2)}', styles: PosStyles(align: PosAlign.center));
+    addText('${data['transactionType']} Amount ${data['currencyCode']} ${data['amount'] != null ? formatAmount(data['amount'] as num) : '-'}', styles: PosStyles(align: PosAlign.center));
     addText(data['pinOk'] ? 'PIN OK' : 'PIN NOT OK', styles: PosStyles(align: PosAlign.center));
     addText('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
     addText('Sequence Number: ${data['sequenceNumber']}', styles: PosStyles(align: PosAlign.center));
+  }
+}
+
+extension on PosStyles {
+  PrinterAlignment get myposAlign {
+    switch (align) {
+      case PosAlign.left:
+        return PrinterAlignment.left;
+      case PosAlign.center:
+        return PrinterAlignment.center;
+      case PosAlign.right:
+        return PrinterAlignment.right;
+    }
   }
 }
 
@@ -327,4 +493,16 @@ extension CP437Checker on String {
   String check() {
     return runes.map((r) => cp437Set.contains(r) ? String.fromCharCode(r) : '?').join();
   }
+}
+
+int euroToCent(num value) {
+  return (value * 100).round();
+}
+
+double centToEuro(int value) {
+  return value / 100;
+}
+
+String formatAmount(num value) {
+  return value.toStringAsFixed(2).replaceAll('.', ',');
 }

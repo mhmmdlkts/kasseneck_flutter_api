@@ -1,18 +1,25 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:kasseneck_api/enums/cashbox_status.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/receipt_print_type.dart';
+import 'package:kasseneck_api/enums/stripe_link_mode.dart';
 import 'package:kasseneck_api/models/hobex_receipt.dart';
+import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/models/report_month.dart';
+import 'package:kasseneck_api/models/stripe_url_seesion.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
+import 'package:kasseneck_api/services/sumup_service.dart';
 
 import 'enums/keck_payment_method.dart';
 import 'enums/receipt_type.dart';
 import 'enums/signature_status.dart';
+import 'enums/voucher_action.dart';
+import 'enums/voucher_type.dart';
 import 'models/kasseneck_item.dart';
 import 'models/kasseneck_receipt.dart';
 
@@ -166,6 +173,7 @@ class KasseneckApi {
   Future<KasseneckReceipt?> sellReceipt({
     required KeckPaymentMethod paymentMethod,
     required List<KasseneckItem> items,
+    List<KeckVoucher>? vouchers,
     List<String>? customerDetails,
     List<String>? legalMessage,
     CreditCardProvider? creditCardProvider,
@@ -177,6 +185,7 @@ class KasseneckApi {
       receiptType: ReceiptType.standard,
       customerDetails: customerDetails,
       items: items,
+      vouchers: vouchers,
       paymentMethod: paymentMethod,
       cardPaymentData: cardPaymentData,
       cardPaymentId: cardPaymentId,
@@ -186,6 +195,51 @@ class KasseneckApi {
     );
   }
 
+  Future<bool> checkSumup({required String affiliateKey}) async {
+    return await SumupService.init(affiliateKey);
+  }
+
+  String? checkVoucherCombinationError(List<KeckVoucher> vouchers, List<KasseneckItem> items) {
+    int countRedeemValueVoucher = 0;
+    int countSellValueVoucher = 0;
+    int countRedeemPromoVoucher = 0;
+    int countSellPromoVoucher = 0;
+    int countRedeemTotalVoucher = 0;
+    int countSellTotalVoucher = 0;
+
+    for (var voucher in vouchers) {
+      if (voucher.type == VoucherType.value && voucher.action == VoucherAction.redeem) {
+        countRedeemValueVoucher++;
+      } else if (voucher.type == VoucherType.value && voucher.action == VoucherAction.sell) {
+        countSellValueVoucher++;
+      } else if (voucher.type == VoucherType.promo && voucher.action == VoucherAction.redeem) {
+        countRedeemPromoVoucher++;
+      } else if (voucher.type == VoucherType.promo && voucher.action == VoucherAction.sell) {
+        countSellPromoVoucher++;
+      }
+    }
+
+    countRedeemTotalVoucher = countRedeemValueVoucher + countRedeemPromoVoucher;
+    countSellTotalVoucher = countSellValueVoucher + countSellPromoVoucher;
+
+    if (countSellPromoVoucher > 0) {
+      return 'Ungültige Daten: Gutscheine mit type promo dürfen nicht verkauft werden';
+    }
+    if (countRedeemPromoVoucher > 1) {
+      return 'Ungültige Daten: Es darf nur ein Gutschein mit type promo eingelöst werden';
+    }
+    if (countRedeemPromoVoucher > 0 && countRedeemTotalVoucher > 1) {
+      return 'Ungültige Daten: Ein Gutschein mit type promo darf nicht mit anderen Gutscheinen kombiniert werden';
+    }
+    if (countRedeemPromoVoucher > 0 && countSellTotalVoucher > 0) {
+      return 'Ungültige Daten: Mit einem Gutschein mit type promo dürfen nicht andere Gutscheine verkauft werden';
+    }
+    if (countRedeemTotalVoucher > 0 && items.isEmpty) {
+      return 'Ungültige Daten: Gutscheine mit action redeem benötigen mindestens ein item';
+    }
+    return null;
+  }
+
   Future<KasseneckReceipt?> _createReceipt({
     required ReceiptType receiptType,
     KeckPaymentMethod? paymentMethod,
@@ -193,6 +247,7 @@ class KasseneckApi {
     String? customProjectId,
     String? cardPaymentId,
     List<KasseneckItem>? items,
+    List<KeckVoucher>? vouchers,
     List<String>? customerDetails,
     List<String>? legalMessage,
     Map<String, dynamic>? cardPaymentData
@@ -213,6 +268,21 @@ class KasseneckApi {
     final Map<String, dynamic> params = {
       'receiptType': receiptType.name,
     };
+
+    if (vouchers != null && vouchers.isNotEmpty) {
+      if (!receiptType.allowsVouchers) {
+        throw ArgumentError('Vouchers sind nicht erlaubt bei receiptType "$receiptType".');
+      }
+      if (vouchers.any((voucher) => !voucher.isValid)) {
+        throw ArgumentError('Ungültige Vouchers übergeben.');
+      }
+      String? voucherError = checkVoucherCombinationError(vouchers, items ?? []);
+      if (voucherError != null) {
+        throw ArgumentError(voucherError);
+      }
+      params['vouchers'] = vouchers.map((e) => e.toJson()).toList();
+    }
+
 
     if (items != null && items.isNotEmpty) {
       params['items'] = items.map((e) => e.toJson()).toList();
@@ -295,8 +365,10 @@ class KasseneckApi {
     return KeckPrinterService.initWifiPrinter(ipAddress, size);
   }
 
-  Future initBluetoothPrinter({KeckPaperSize size = KeckPaperSize.mm58}) async {
-    return KeckPrinterService.initBluetoothPrinter(size: size);
+  BluetoothDevice get devicePrinter => KeckPrinterService.devicePrinter;
+
+  Future initBluetoothPrinter({KeckPaperSize size = KeckPaperSize.mm58, required String printerAddress}) async {
+    return await KeckPrinterService.initBluetoothPrinter(size: size, printerAddress: printerAddress);
   }
 
   Future<CashboxStatus?> getCashboxStatus() async {
@@ -330,7 +402,54 @@ class KasseneckApi {
     }
   }
 
-  static Future openCashDrawer() => KeckPrinterService.openCashDrawer();
+  //static Future openCashDrawer() => KeckPrinterService.openCashDrawer();
+
+  Future<StripeUrlSession?> createStripeLink({
+    required List<KasseneckItem> items,
+    required bool createReceiptAfterPayment,
+    required StripeLinkMode mode,
+    String? webhookId,
+    String? customerPhone,
+    String? customerEmail,
+  }) async {
+    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+        endpoint: 'createPaymentLinkStripe',
+        params: {
+          'items': items.map((e) => e.toJson()).toList(),
+          'createReceiptAfterPayment': createReceiptAfterPayment,
+          'mode': mode.name,
+          if (webhookId != null) 'webhookId': webhookId,
+          if (customerPhone != null) 'customerPhone': customerPhone,
+          if (customerEmail != null) 'customerEmail': customerEmail
+        },
+    ).then((value) => json.decode(value));
+    try {
+      return StripeUrlSession.fromJson(resJson['data']);
+    } catch (e) {
+      throw Exception('Fehler beim Erstellen des Stripe-Links: $e');
+    }
+  }
+
+  Future<StripeUrlSession?> stripeCaptureIntent({
+    required String stripeSessionId,
+  }) async {
+    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+        endpoint: 'stripeCaptureIntent',
+        params: {
+          'stripe_sessions_id': stripeSessionId
+        },
+    ).then((value) => json.decode(value));
+    try {
+      return StripeUrlSession.fromJson(resJson['data']);
+    } catch (e) {
+      throw Exception('Fehler beim Erstellen des Stripe-Links: $e');
+    }
+  }
+
+  String get cashregisterId {
+    final decoded = utf8.decode(base64.decode(cashregisterToken));
+    return decoded.split(':').first;
+  }
 
   Future<HobexReceipt> hobexPay({required String transactionId, required double amount, double tip = 0, String? reference}) async {
     final Map<String, dynamic> resJson = await _kasseneckPostRequest(

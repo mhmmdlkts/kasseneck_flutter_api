@@ -1,0 +1,4 @@
+enum VoucherType {
+  value,
+  promo
+}

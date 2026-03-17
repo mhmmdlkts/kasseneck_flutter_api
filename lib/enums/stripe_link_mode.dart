@@ -1,0 +1,4 @@
+enum StripeLinkMode {
+  payment,
+  authorization,
+}
