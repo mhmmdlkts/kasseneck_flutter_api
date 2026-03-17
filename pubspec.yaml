@@ -19,8 +19,8 @@ dependencies:
 
   sumup: ^0.13.1
     #path: ../sumup_flutter_plugin
-  my_pos:
-    path: ../mypos_flutter_package/my_pos/my_pos
+  my_pos: 0.3.0
+    #path: ../mypos_flutter_package/my_pos/my_pos
 
 dependency_overrides:
   image: ^4.8.0
