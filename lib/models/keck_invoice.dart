@@ -40,7 +40,6 @@ class KeckInvoice {
   });
 
   factory KeckInvoice.fromJson(Map<String, dynamic> json) {
-    print(json);
     return KeckInvoice(
       invoiceNumber: json['invoiceNumber'] as String,
       invoiceDate: json['invoiceDate'].toDate(),

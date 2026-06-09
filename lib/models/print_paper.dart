@@ -313,7 +313,9 @@ class PrintPaper {
             break;
         }
         addFeed();
-      } catch (e) {}
+      } catch (_) {
+        // Fehlerhafte cardPaymentData darf den Beleg-Druck nicht abbrechen
+      }
     }
 
     if (receipt.thanksMessage.isNotEmpty) {

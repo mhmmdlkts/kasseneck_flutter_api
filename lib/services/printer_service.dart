@@ -38,7 +38,9 @@ class KeckPrinterService {
     _profile ??= await CapabilityProfile.load();
 
     if (_devicePrinter == null || !_devicePrinter!.isConnected) {
-      await FlutterBluePlus.adapterState.firstWhere((s) => s == BluetoothAdapterState.on);
+      await FlutterBluePlus.adapterState
+          .firstWhere((s) => s == BluetoothAdapterState.on)
+          .timeout(const Duration(seconds: 10));
       _devicePrinter = BluetoothDevice.fromId(printerAddress);
       await _devicePrinter!.connect(autoConnect: false, license: License.free);
     }

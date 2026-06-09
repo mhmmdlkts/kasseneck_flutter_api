@@ -60,8 +60,8 @@ class HobexReceipt {
       responseCode: json['responseCode'],
       transactionType: json['transactionType'],
       currency: json['currency'],
-      amount: json['amount'] + 0.0,
-      tip: json['tip'] + 0.0,
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      tip: (json['tip'] as num?)?.toDouble() ?? 0,
       cvm: json['cvm'].toString(),
     );
   }
