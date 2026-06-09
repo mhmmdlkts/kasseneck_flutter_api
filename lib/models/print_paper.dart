@@ -246,11 +246,11 @@ class PrintPaper {
 
     vatTableBruttoByVatCents.forEach((key, bruttoCents) {
       final double brutto = centToEuro(bruttoCents);
-      final int mwstSatz = key.rate;
+      final num mwstSatz = key.rate;
       final double netto = brutto / (1 + (mwstSatz / 100));
       final double mwst = brutto - netto;
 
-      _addTable('${key.category} ${key.rate}%', formatAmount(mwst), formatAmount(netto), formatAmount(brutto));
+      _addTable('${key.category} ${key.rate.toString().replaceAll('.', ',')}%', formatAmount(mwst), formatAmount(netto), formatAmount(brutto));
     });
 
     addFullHorizontalLine();

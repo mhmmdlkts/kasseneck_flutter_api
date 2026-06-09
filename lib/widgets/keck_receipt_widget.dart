@@ -101,10 +101,10 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       final int promoCents = promoByVatCents[key] ?? 0;
       final int bruttoCents = bruttoCentsBeforePromo - promoCents;
       final double brutto = centToEuro(bruttoCents);
-      int mwstSatz = key.rate;
+      num mwstSatz = key.rate;
       double netto = brutto / (1 + (mwstSatz / 100));
       double mwst = brutto - netto;
-      temp[0].add('${key.category} $mwstSatz%');
+      temp[0].add('${key.category} ${key.rate.toString().replaceAll('.', ',')}%');
       temp[1].add(formatAmount(mwst));
       temp[2].add(formatAmount(netto));
       temp[3].add(formatAmount(brutto));
