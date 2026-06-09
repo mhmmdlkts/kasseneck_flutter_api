@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'dart:io';
 
-import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
@@ -66,7 +66,13 @@ class KeckPrinterService {
   }
 
   static Future<void> _sendToSocketPrinter(List<int> bytes) async {
-    Socket socket = await Socket.connect(ipAddress, port, timeout: const Duration(seconds: 5));
+    final String? ip = ipAddress;
+    if (ip == null || ip.isEmpty) {
+      // Kein WLAN-Drucker konfiguriert -> WLAN-Druck ueberspringen, statt mit
+      // null in Socket.connect zu crashen ("Null is not a subtype of String").
+      return;
+    }
+    Socket socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
     socket.add(bytes);
     await socket.flush();
     await socket.close();

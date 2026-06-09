@@ -1,4 +1,5 @@
 import '../enums/credit_card_provider.dart';
+import '../src/hobex_hps/transaction_response.dart';
 
 class HobexReceipt {
 
@@ -19,6 +20,10 @@ class HobexReceipt {
   double tip;
   String cvm;
 
+  /// Welcher Provider die Zahlung durchgefuehrt hat. Cloud-Hobex -> hobexCloudApi
+  /// (Default), lokales HPS -> hobexHps. Steuert u.a. das Beleg-Rendering.
+  CreditCardProvider creditCardProvider;
+
 
   HobexReceipt({
     required this.transactionId,
@@ -37,6 +42,7 @@ class HobexReceipt {
     required this.amount,
     required this.tip,
     required this.cvm,
+    this.creditCardProvider = CreditCardProvider.hobexCloudApi,
   });
 
   factory HobexReceipt.fromJson(Map<String, dynamic> json) {
@@ -60,8 +66,35 @@ class HobexReceipt {
     );
   }
 
+  /// Adaptiert ein lokales **HPS**-Ergebnis ([TransactionResponse]) auf das
+  /// gemeinsame Beleg-Format. Provider = hobexHps (gleiche cardPaymentData-Keys
+  /// wie Cloud -> selbes Beleg-Rendering).
+  factory HobexReceipt.fromHps(TransactionResponse res) {
+    String s(Object? v) => (v ?? '').toString();
+    final String date = s(res.transactionDate).split('.').first.replaceAll('T', ' ');
+    return HobexReceipt(
+      transactionId: s(res.transactionId),
+      tid: s(res.tid),
+      receipt: s(res.receipt),
+      approvalCode: s(res.approvalCode),
+      reference: res.reference,
+      transactionDate: date,
+      cardNumber: s(res.cardNumber),
+      cardExpiry: s(res.cardExpiry),
+      brand: s(res.brand),
+      cardIssuer: s(res.cardIssuer),
+      responseCode: s(res.responseCode),
+      transactionType: s(res.transactionType),
+      currency: s(res.currency),
+      amount: (res.amount ?? 0).toDouble(),
+      tip: (res.tip ?? 0).toDouble(),
+      cvm: s(res.raw['cvm']),
+      creditCardProvider: CreditCardProvider.hobexHps,
+    );
+  }
+
   Map<String, String> toCardPaymentData() {
-    return {
+    final Map<String, String> data = {
       'transactionId': transactionId,
       'date': transactionDate,
       'tid': tid,
@@ -72,6 +105,17 @@ class HobexReceipt {
       'responseCode': responseCode,
       'cvm': cvm,
     };
+    // HPS liefert mehr Felder als die Cloud -> zusaetzlich aufnehmen. Das
+    // Rendering (case hobexHps in print_paper/keck_receipt_widget) liest genau
+    // diese Keys.
+    if (creditCardProvider == CreditCardProvider.hobexHps) {
+      data['approvalCode'] = approvalCode;
+      data['cardExpiry'] = cardExpiry;
+      data['cardIssuer'] = cardIssuer;
+      data['amount'] = amount.toStringAsFixed(2);
+      data['currency'] = currency;
+    }
+    return data;
   }
 
   bool get needSignature => cvm == '1';
@@ -82,6 +126,4 @@ class HobexReceipt {
 
   @override
   int get hashCode => transactionId.hashCode;
-
-  CreditCardProvider get creditCardProvider => CreditCardProvider.hobexCloudApi;
 }

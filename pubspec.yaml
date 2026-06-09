@@ -13,17 +13,15 @@ dependencies:
   http: ^1.6.0
   path_provider: ^2.1.5
   qr_flutter: ^4.1.0
-  flutter_blue_plus: ^2.2.1
-  esc_pos_utils: ^1.1.0
-  image: ^3.3.0 # don't update
+  flutter_blue_plus: ^2.3.4
+  # esc_pos_utils: ^1.1.0
+  esc_pos_utils_plus: ^2.0.4
+  image: ^4.8.0
 
-  sumup: ^0.13.1
+  sumup: ^0.13.1 # 0.14.x zieht den gated Tap-to-Pay-SDK (privates Maven-Repo, Credentials nötig) – wird nicht genutzt
     #path: ../sumup_flutter_plugin
   my_pos: 0.3.0
     #path: ../mypos_flutter_package/my_pos/my_pos
-
-dependency_overrides:
-  image: ^4.8.0
 
 dev_dependencies:
   flutter_test:

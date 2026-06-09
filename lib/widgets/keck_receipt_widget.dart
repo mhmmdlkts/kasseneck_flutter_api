@@ -211,7 +211,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text('1 x ${voucher.receipText}', style: textStyle),
+                      child: Text('1 x ${voucher.receiptText}', style: textStyle),
                     ),
                     Text('${formatAmount(voucher.value??0)} ${VatRate.vat0.category}', style: textStyle),
                   ],
@@ -224,7 +224,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Text(voucher.receipText, style: textStyle),
+                        child: Text(voucher.receiptText, style: textStyle),
                       ),
                       Text('-${formatAmount(voucher.value??0)} EUR', style: textStyle),
                     ],
@@ -258,7 +258,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(voucher.receipText, style: textStyle),
+                          child: Text(voucher.receiptText, style: textStyle),
                         ),
                         Text('-${formatAmount(voucher.value??0)} EUR', style: textStyle),
                       ],
@@ -328,6 +328,8 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
         return _myPosProPart(widget.receipt.cardPaymentData!);
       case CreditCardProvider.hobexCloudApi:
         return _hobexApiPart(widget.receipt.cardPaymentData!);
+      case CreditCardProvider.hobexHps:
+        return _hobexHpsPart(widget.receipt.cardPaymentData!);
       case CreditCardProvider.custom:
         return Container();
     }
@@ -469,7 +471,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
 
   Widget _gpTomPart(Map<String, dynamic> inquire) {
     String transactionType = '';
-    switch (inquire[transactionType]) {
+    switch (inquire['transactionType']) {
       case 1: transactionType = 'Sale'; break;
       case 2: transactionType = 'Void'; break;
       case 4: transactionType = 'Close Batch'; break;
@@ -490,10 +492,43 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
           Text('${inquire['emvAppLable']??''} ${inquire['cardDataEntry']??''}', style: textStyle),
         if (inquire['cardNumber'] != null)
           Text('Card Number: ${inquire['cardNumber']}', style: textStyle),
-        Text('$transactionType Amount ${inquire['currencyCode']} ${formatAmount(inquire['amount'] as num)}', style: textStyle.copyWith(fontWeight: FontWeight.bold)),
+        Text('${transactionType!=''?'$transactionType ':''}Amount ${inquire['currencyCode']} ${formatAmount(inquire['amount'] as num)}', style: textStyle.copyWith(fontWeight: FontWeight.bold)),
         Text(inquire['pinOk'] == true ? 'PIN OK' : 'PIN NOT OK', style: textStyle),
         Text('Authorization Code ${inquire['approvedCode']}', style: textStyle),
         Text('Sequence Number: ${inquire['sequenceNumber']}', style: textStyle),
+      ],
+    );
+  }
+
+  Widget _hobexHpsPart(Map<String, dynamic> data) {
+    String v(String k) => (data[k] ?? '').toString();
+    final List<List<String>> rows = [
+      ['Datum:', v('date')],
+      ['TID:', v('tid')],
+      ['Nr.:', v('no')],
+      ['Art:', v('type')],
+      ['Karte:', v('cardBrand')],
+      ['PAN:', v('cardNumber')],
+      if (v('cardExpiry').isNotEmpty) ['Gueltig:', v('cardExpiry')],
+      if (v('approvalCode').isNotEmpty) ['Genehmigung:', v('approvalCode')],
+      ['RC:', v('responseCode')],
+    ];
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Hobex Beleg', style: textStyle.copyWith(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        for (final r in rows)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(r[0], style: textStyle),
+              Text(r[1], style: textStyle),
+            ],
+          ),
       ],
     );
   }

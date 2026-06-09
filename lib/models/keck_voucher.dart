@@ -7,14 +7,14 @@ class KeckVoucher {
   final String? code;
   final VoucherAction action;
   final VoucherType type;
-  final double? value;
+  double value;
 
   KeckVoucher({
     this.name,
     this.code,
     required this.action,
     required this.type,
-    this.value
+    required this.value
   });
 
   factory KeckVoucher.fromJson(Map<String, dynamic> json) {
@@ -23,7 +23,7 @@ class KeckVoucher {
       code: json['code'] as String?,
       action: VoucherAction.values.firstWhere((e) => e.name == json['action'], orElse: () => VoucherAction.sell),
       type: VoucherType.values.firstWhere((e) => e.name == json['type'], orElse: () => VoucherType.promo),
-      value: (json['value'] as num?)?.toDouble(),
+      value: (json['value'] as num?)?.toDouble()??0,
     );
   }
 
@@ -53,7 +53,7 @@ class KeckVoucher {
     return true;
   }
 
-  String get receipText {
+  String get receiptText {
     String text = '';
     if (type == VoucherType.value) {
       text += 'Wertgutschein';

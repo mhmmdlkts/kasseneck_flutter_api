@@ -181,6 +181,60 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     );
   }
 
+  // Nur die Beleg-Daten (ohne Firma/Metadaten)
+  Map<String, dynamic> toReceiptJson() {
+    return {
+      'qr': qr,
+      'sig': sig,
+      'certificateSerialNumber': certificateSerialNumber,
+      'signaturePreviousReceipt': signaturePreviousReceipt,
+      'turnoverCounterAES256ICM': turnoverCounterAES256ICM,
+      'paymentMethod': paymentMethod.name,
+      'items': items.map((e) => e.toJson()).toList(),
+      'vouchers': vouchers?.map((e) => e.toJson()).toList(),
+      'timeStamp': timeStamp.toIso8601String(),
+      'cashregisterId': cashregisterId,
+      'receiptType': receiptType.name,
+      'receiptId': receiptId,
+      'fullReceiptId': fullReceiptId,
+      'creditCardProvider': creditCardProvider?.name,
+      'cardPaymentId': cardPaymentId,
+      'cardPaymentData': cardPaymentData,
+      'customerDetails': customerDetails.join('\n'),
+      'legalMessage': legalMessage.join('\n'),
+      'signatureSuccess': signatureSuccess,
+      'customProjectId': customProjectId,
+    };
+  }
+
+// Nur die Metadaten (Firma, Adresse, etc.)
+  Map<String, dynamic> toMetadataJson() {
+    return {
+      'is_small_business': isSmallBusiness,
+      'uid': uid,
+      'taxnr': taxnr,
+      'phone': phone,
+      'company': companyName,
+      'street': street,
+      'zip': zip,
+      'city': city,
+      'footer1': footer1,
+      'footer2': footer2,
+      'footer3': footer3,
+      'footer4': footer4,
+      'logo_url': logoUrl,
+      'thanks_message': thanksMessage.join(r'\n'),
+    };
+  }
+
+// Kombiniert — für lokale Speicherung (Isar)
+  Map<String, dynamic> toJson() {
+    return {
+      'receipt': toReceiptJson(),
+      ...toMetadataJson(),
+    };
+  }
+
   factory KasseneckReceipt.fromMetadata(Map<String, dynamic> receipt, Map<String, dynamic> metadata) {
     return KasseneckReceipt.create(
       receipt: receipt,

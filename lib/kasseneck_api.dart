@@ -172,7 +172,7 @@ class KasseneckApi {
 
   Future<KasseneckReceipt?> sellReceipt({
     required KeckPaymentMethod paymentMethod,
-    required List<KasseneckItem> items,
+    List<KasseneckItem>? items,
     List<KeckVoucher>? vouchers,
     List<String>? customerDetails,
     List<String>? legalMessage,
@@ -196,7 +196,8 @@ class KasseneckApi {
   }
 
   Future<bool> checkSumup({required String affiliateKey}) async {
-    return await SumupService.init(affiliateKey);
+    return false;
+    // return await SumupService.init(affiliateKey); TODO
   }
 
   String? checkVoucherCombinationError(List<KeckVoucher> vouchers, List<KasseneckItem> items) {
@@ -254,13 +255,14 @@ class KasseneckApi {
   }) async {
 
     if (receiptType.needsItems) {
-      if (items == null || items.isEmpty) {
+      bool hasSellVoucher = vouchers?.any((v) => v.action == VoucherAction.sell)??false;
+      if ((items == null || items.isEmpty) && !hasSellVoucher) {
         throw ArgumentError(
           'Items sind Pflicht bei receiptType "$receiptType" und dürfen nicht leer sein.',
         );
       }
 
-      if (items.any((item) => !item.isValid)) {
+      if (items?.any((item) => !item.isValid)??false) {
         throw ArgumentError('Ungültige Items übergeben.');
       }
     }
@@ -402,7 +404,7 @@ class KasseneckApi {
     }
   }
 
-  //static Future openCashDrawer() => KeckPrinterService.openCashDrawer();
+  static Future openCashDrawer() => KeckPrinterService.openCashDrawer();
 
   Future<StripeUrlSession?> createStripeLink({
     required List<KasseneckItem> items,

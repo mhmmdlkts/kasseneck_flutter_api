@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
@@ -81,7 +81,7 @@ class PrintPaper {
     addImage(img, align: align);
   }
 
-  void addQrCode(String data, {QRSize size = QRSize.Size6}) {
+  void addQrCode(String data, {QRSize size = QRSize.size6}) {
     bytes.add(Uint8List.fromList(generator.qrcode(data, size: size)));
     myPosPaper.addQrCode(data, size: 280);
   }
@@ -179,7 +179,7 @@ class PrintPaper {
       if (voucher.isValid && voucher.action == VoucherAction.sell) {
         itemsByVat[VatRate.vat0] ??= [];
         itemsByVat[VatRate.vat0]!.add(KasseneckItem(
-          name: voucher.receipText,
+          name: voucher.receiptText,
           quantity: 1,
           singlePrice: voucher.value ?? 0,
           vat: VatRate.vat0
@@ -187,11 +187,11 @@ class PrintPaper {
       }
       if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
         String amount = '1  x ';
-        addDoubleText('$amount${voucher.receipText}', '${formatAmount(voucher.value??0)} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
+        addDoubleText('$amount${voucher.receiptText}', '${formatAmount(voucher.value??0)} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
       }
       if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
         totalPromoVoucherValue += voucher.value ?? 0;
-        addDoubleText(voucher.receipText, '-${formatAmount(voucher.value??0)} EUR', leftWidth: 7, rightWidth: 5);
+        addDoubleText(voucher.receiptText, '-${formatAmount(voucher.value??0)} EUR', leftWidth: 7, rightWidth: 5);
       }
     }
 
@@ -260,7 +260,7 @@ class PrintPaper {
 
       for (KeckVoucher voucher in receipt.vouchers??[]) {
         if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value) {
-          addDoubleText(voucher.receipText, '-${formatAmount(voucher.value??0)} EUR');
+          addDoubleText(voucher.receiptText, '-${formatAmount(voucher.value??0)} EUR');
         }
       }
 
@@ -299,6 +299,9 @@ class PrintPaper {
             break;
           case CreditCardProvider.hobexCloudApi:
             _hobexApi(receipt.cardPaymentData!);
+            break;
+          case CreditCardProvider.hobexHps:
+            _hobexHps(receipt.cardPaymentData!);
             break;
           case CreditCardProvider.sumup:
             _sumup(receipt.cardPaymentData!);
@@ -385,6 +388,29 @@ class PrintPaper {
 
 
 
+  void _hobexHps(Map<String, dynamic> data) {
+    addText('Hobex Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
+    addDoubleText('Datum:', data['date']);
+    addDoubleText('TID:', data['tid']);
+    addDoubleText('Nr.:', data['no']);
+    addDoubleText('Art:', data['type']);
+    addDoubleText('Karte:', data['cardBrand']);
+    addDoubleText('PAN:', data['cardNumber']);
+    if ((data['cardExpiry'] ?? '').toString().isNotEmpty) {
+      addDoubleText('Gueltig:', data['cardExpiry']);
+    }
+    if ((data['approvalCode'] ?? '').toString().isNotEmpty) {
+      addDoubleText('Genehmigung:', data['approvalCode']);
+    }
+    addDoubleText('RC:', data['responseCode']);
+    if (data['cvm'] == '1') {
+      addFeed(lines: 2);
+      addText('------------------', styles: PosStyles(align: PosAlign.center));
+      addText('Unterschrift', styles: PosStyles(align: PosAlign.center));
+    }
+    addFeed();
+  }
+
   void _hobexApi(Map<String, dynamic> data) {
     addText('Hobex Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('Datum:', data['date']);
@@ -439,6 +465,12 @@ class PrintPaper {
   }
 
   void _gpTom(Map<String, dynamic> data) {
+    String transactionType = '';
+    switch (data['transactionType']) {
+      case 1: transactionType = 'Sale'; break;
+      case 2: transactionType = 'Void'; break;
+      case 4: transactionType = 'Close Batch'; break;
+    }
     addText('GP Tom Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
     addText('Batch: ${data['batchNumber']}', styles: PosStyles(align: PosAlign.center));
     addText('Receipt: ${data['externalTransactionID']}', styles: PosStyles(align: PosAlign.center));
@@ -450,7 +482,7 @@ class PrintPaper {
     if (data['cardNumber'] != null) {
       addText('${data['cardNumber']}', styles: PosStyles(align: PosAlign.center));
     }
-    addText('${data['transactionType']} Amount ${data['currencyCode']} ${data['amount'] != null ? formatAmount(data['amount'] as num) : '-'}', styles: PosStyles(align: PosAlign.center));
+    addText('${transactionType!=''?'$transactionType ':''}Amount ${data['currencyCode']} ${data['amount'] != null ? formatAmount(data['amount'] as num) : '-'}', styles: PosStyles(align: PosAlign.center));
     addText(data['pinOk'] ? 'PIN OK' : 'PIN NOT OK', styles: PosStyles(align: PosAlign.center));
     addText('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
     addText('Sequence Number: ${data['sequenceNumber']}', styles: PosStyles(align: PosAlign.center));
