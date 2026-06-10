@@ -136,7 +136,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       receiptType: ReceiptType.values.firstWhere((element) => element.name == receipt['receiptType'], orElse: () => ReceiptType.standard),
       receiptId: receipt['receiptId'],
       fullReceiptId: receipt['fullReceiptId'] ?? '',
-      creditCardProvider: receipt['creditCardProvider'] != null ? CreditCardProvider.values.firstWhere((element) => element.name == receipt['creditCardProvider']) : null,
+      creditCardProvider: receipt['creditCardProvider'] != null ? CreditCardProvider.values.firstWhere((element) => element.name == receipt['creditCardProvider'], orElse: () => CreditCardProvider.custom) : null,
       cardPaymentId: receipt['cardPaymentId'],
       cardPaymentData: receipt['cardPaymentData'],
       customerDetails: List<String>.from(receipt['customerDetails']?.toString().split('\n')??[]),

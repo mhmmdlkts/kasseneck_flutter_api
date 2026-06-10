@@ -351,11 +351,11 @@ class KasseneckApi {
     }).then((value) => json.decode(value));
     if (resJson['status'] == 'success') {
       Map<String, dynamic> metadata = resJson['data']['metadata'];
-      return (resJson['data']['receipts'] as List).map((r) {
-        KasseneckReceipt receipt = KasseneckReceipt.fromMetadata(r, metadata);
-        receipt.init();
-        return receipt;
-      }).toList();
+      final receipts = (resJson['data']['receipts'] as List)
+          .map((r) => KasseneckReceipt.fromMetadata(r, metadata))
+          .toList();
+      await Future.wait(receipts.map((r) => r.init()));
+      return receipts;
     } else {
       final msg = resJson['message'] ?? 'Unbekannter Fehler';
       throw Exception('getReceipts fehlgeschlagen: $msg');

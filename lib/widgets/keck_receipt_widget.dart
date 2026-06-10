@@ -318,20 +318,25 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
     if (widget.receipt.creditCardProvider == null) {
       return Container();
     }
-    switch (widget.receipt.creditCardProvider!) {
-      case CreditCardProvider.gpTomAndroid:
-      case CreditCardProvider.gpTomIos:
-        return _gpTomPart(widget.receipt.cardPaymentData!);
-      case CreditCardProvider.sumup:
-        return _sumupPart(SumupCheckoutResponse.fromMap(widget.receipt.cardPaymentData!));
-      case CreditCardProvider.myposPro:
-        return _myPosProPart(widget.receipt.cardPaymentData!);
-      case CreditCardProvider.hobexCloudApi:
-        return _hobexApiPart(widget.receipt.cardPaymentData!);
-      case CreditCardProvider.hobexHps:
-        return _hobexHpsPart(widget.receipt.cardPaymentData!);
-      case CreditCardProvider.custom:
-        return Container();
+    try {
+      switch (widget.receipt.creditCardProvider!) {
+        case CreditCardProvider.gpTomAndroid:
+        case CreditCardProvider.gpTomIos:
+          return _gpTomPart(widget.receipt.cardPaymentData!);
+        case CreditCardProvider.sumup:
+          return _sumupPart(SumupCheckoutResponse.fromMap(widget.receipt.cardPaymentData!));
+        case CreditCardProvider.myposPro:
+          return _myPosProPart(widget.receipt.cardPaymentData!);
+        case CreditCardProvider.hobexCloudApi:
+          return _hobexApiPart(widget.receipt.cardPaymentData!);
+        case CreditCardProvider.hobexHps:
+          return _hobexHpsPart(widget.receipt.cardPaymentData!);
+        case CreditCardProvider.custom:
+          return Container();
+      }
+    } catch (_) {
+      // Unerwartete/fehlende cardPaymentData darf die Beleg-Anzeige nicht crashen
+      return const SizedBox.shrink();
     }
   }
 
