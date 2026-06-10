@@ -19,3 +19,4 @@ export 'src/hobex_hps/diagnosis.dart' show Diagnosis;
 export 'src/hobex_hps/enums.dart' show HpsTransactionType, Cvm;
 export 'src/hobex_hps/exceptions.dart'
     show HpsException, HpsHttpException, HpsConnectionException;
+export 'models/hobex_receipt.dart' show HobexReceipt;

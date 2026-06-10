@@ -48,6 +48,41 @@ void main() async {
 }
 ```
 
+## hobex Payment Service (HPS)
+
+Direct driver for a **local hobex terminal** (REST API on `http://127.0.0.1:8080` when the
+app runs on the terminal itself). Deliberately separate from the older cloud-based Hobex
+(`KasseneckApi.hobexPay` / `hobexRefund`).
+
+```dart
+import 'package:kasseneck_api/hobex_hps.dart'; // HpsClient, TransactionResponse, HobexReceipt
+
+final hps = HpsClient(tid: '3600335'); // TID without leading zero
+
+// 1) Trigger the card payment on the terminal
+final res = await hps.payment(amount: 12.50);
+if (!res.isApproved) {
+  // declined -> res.responseCode / res.responseText
+  return;
+}
+
+// 2) Turn the terminal result into Kasseneck card-payment data
+final hobexReceipt = HobexReceipt.fromHps(res);
+
+// 3) Create the RKSV receipt (the card data is rendered on the printout)
+final receipt = await kasseneck.sellReceipt(
+  paymentMethod: KeckPaymentMethod.creditCard,
+  creditCardProvider: hobexReceipt.creditCardProvider, // hobexHps
+  cardPaymentId: hobexReceipt.transactionId,
+  cardPaymentData: hobexReceipt.toCardPaymentData(),
+  items: [KasseneckItem(name: 'Brot', quantity: 1, vat: VatRate.vat10, singlePrice: 1.20)],
+);
+```
+
+Further operations: `hps.refund(...)`, `hps.cancel(...)`, `hps.transactionStatus(...)`,
+`hps.diagnosis()` (health check). Errors are thrown as `HpsException` / `HpsHttpException` /
+`HpsConnectionException`; a **declined** payment is not an exception but `res.isApproved == false`.
+
 Support
 
 For questions or support inquiries, feel free to contact office@kreiseck.com.
