@@ -10,10 +10,10 @@
 </p>
 
 <p align="center">
-  <a href="https://pub.dev/packages/kasseneck_api"><img src="https://img.shields.io/pub/v/kasseneck_api?color=A31E22&label=pub" alt="pub version"></a>
-  <a href="https://pub.dev/packages/kasseneck_api/score"><img src="https://img.shields.io/pub/points/kasseneck_api?color=A31E22" alt="pub points"></a>
-  <img src="https://img.shields.io/badge/platform-Android-A31E22" alt="platform">
-  <img src="https://img.shields.io/badge/RKSV-compliant-A31E22" alt="RKSV compliant">
+  <a href="https://pub.dev/packages/kasseneck_api"><img src="https://img.shields.io/pub/v/kasseneck_api?color=930C0C&label=pub" alt="pub version"></a>
+  <a href="https://pub.dev/packages/kasseneck_api/score"><img src="https://img.shields.io/pub/points/kasseneck_api?color=930C0C" alt="pub points"></a>
+  <img src="https://img.shields.io/badge/platform-Android-930C0C" alt="platform">
+  <img src="https://img.shields.io/badge/RKSV-compliant-930C0C" alt="RKSV compliant">
   <a href="https://kreiseck.com"><img src="https://img.shields.io/badge/by-Kreiseck-111111" alt="by Kreiseck"></a>
 </p>
 
