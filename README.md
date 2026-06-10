@@ -1,90 +1,178 @@
-# Kasseneck Flutter API
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mhmmdlkts/kasseneck_flutter_api/main/doc/kreiseck_logo.png" alt="Kreiseck — Software Solutions" width="300">
+</p>
 
-A Flutter package providing a simple interface to the Austrian **Kasseneck** cash register system.  
-You will need a valid **API Key** and **Cashregister Token** to operate your Kasseneck cash register via this API.
+<h1 align="center">Kasseneck Flutter API</h1>
 
-## Installation
+<p align="center">
+  <b>The Austrian RKSV-compliant cash register, right inside your Flutter app.</b><br>
+  Issue signed receipts, take card payments and print — in a few lines of Dart.
+</p>
 
-Add the following line to the `dependencies` section of your `pubspec.yaml`:
+<p align="center">
+  <a href="https://pub.dev/packages/kasseneck_api"><img src="https://img.shields.io/pub/v/kasseneck_api?color=A31E22&label=pub" alt="pub version"></a>
+  <a href="https://pub.dev/packages/kasseneck_api/score"><img src="https://img.shields.io/pub/points/kasseneck_api?color=A31E22" alt="pub points"></a>
+  <img src="https://img.shields.io/badge/platform-Android-A31E22" alt="platform">
+  <img src="https://img.shields.io/badge/RKSV-compliant-A31E22" alt="RKSV compliant">
+  <a href="https://kreiseck.com"><img src="https://img.shields.io/badge/by-Kreiseck-111111" alt="by Kreiseck"></a>
+</p>
+
+---
+
+`kasseneck_api` is the official Flutter client for **Kasseneck** — a fully **RKSV-compliant**
+(Austrian _Registrierkassensicherheitsverordnung_) point-of-sale backend by
+**[Kreiseck Software Solutions](https://kreiseck.com)**. It takes care of the signed
+_Datenerfassungsprotokoll_, card-payment terminals, receipt printing and PDF reports, so you
+can focus on your app.
+
+> 🔑 **You need an API key & a cashregister token to operate a register.**
+> Request yours at **[office@kreiseck.com](mailto:office@kreiseck.com)** · **[kreiseck.com](https://kreiseck.com)**
+
+## ✨ Features
+
+- 🧾 **RKSV receipts** — standard, cancellation, zero & training; signed JWS chain + QR code
+- 💶 **All Austrian VAT rates** — incl. the new **4.9 % _Grundnahrungsmittel_** rate (from 1 Jul 2026)
+- 💳 **Card payments out of the box** — Hobex (Cloud & on-terminal **HPS**), myPOS, GP Tom, SumUp — **and any other method** via `CreditCardProvider.custom`
+- 🎟️ **Vouchers** — value & promo, sell & redeem, with proportional VAT split
+- 🖨️ **Printing** — Bluetooth & Wi-Fi (ESC/POS) plus the myPOS built-in printer
+- 📱 **Drop-in receipt widget** for on-screen display
+- 📊 **Reports & invoices** — daily / monthly PDF
+- 🔗 **Stripe payment links** for remote & online payments
+
+## 🧩 Requirements
+
+- Flutter · Dart `>= 3.6`
+- A Kasseneck **API key** + **cashregister token** (→ Kreiseck)
+- An **Android** device/terminal for card payments & Bluetooth printing
+
+## 📦 Installation
 
 ```yaml
 dependencies:
-  kasseneck_api: ^1.0.0
+  kasseneck_api: ^2.1.0
 ```
-
-Then run:
 
 ```bash
 flutter pub get
 ```
 
-## Usage
+## 🚀 Quick start
 
 ```dart
 import 'package:kasseneck_api/kasseneck_api.dart';
+import 'package:kasseneck_api/models/kasseneck_item.dart';
+import 'package:kasseneck_api/enums/vat_rate.dart';
+import 'package:kasseneck_api/enums/keck_payment_method.dart';
 
-void main() async {
-  // Create an instance with your Kasseneck credentials
-  final kasseneck = KasseneckApi(
-    apiKey: 'YOUR_API_KEY',
-    cashregisterToken: 'YOUR_CASHREGISTER_TOKEN',
-  );
+final kasseneck = KasseneckApi(
+  apiKey: 'YOUR_API_KEY',
+  cashregisterToken: 'YOUR_CASHREGISTER_TOKEN',
+);
 
-  // Example: Create a standard receipt
-  try {
-    final receipt = await kasseneck.createReceipt(
-      receiptType: 'standard',
-      paymentMethod: 'cash',
-      items: [
-        KasseneckItem(name: 'Trip', amount: 1, vat: 10, priceOne: 19.99),
-      ],
-      customerDetails: 'John Doe',
-    );
+// A cash sale with two items
+final receipt = await kasseneck.sellReceipt(
+  paymentMethod: KeckPaymentMethod.cash,
+  customerDetails: ['Max Mustermann'],
+  items: [
+    KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20,      singlePrice: 3.20),
+    KasseneckItem(name: 'Bread',  quantity: 1, vat: VatRate.vat4komma9, singlePrice: 2.40),
+  ],
+);
 
-    print('Receipt created: ${receipt?.receiptId}');
-  } catch (error) {
-    print('Error creating receipt: $error');
-  }
-}
+print('Receipt ${receipt?.receiptId} — signed: ${receipt?.signatureSuccess}');
 ```
 
-## hobex Payment Service (HPS)
+> 💡 Models & enums live in their own files — import the ones you use
+> (`models/…`, `enums/…`). Payment, refund, cancellation, zero & training receipts all run
+> through the same `KasseneckApi` instance.
 
-Direct driver for a **local hobex terminal** (REST API on `http://127.0.0.1:8080` when the
-app runs on the terminal itself). Deliberately separate from the older cloud-based Hobex
-(`KasseneckApi.hobexPay` / `hobexRefund`).
+## 💳 Card payments
+
+Card payments work **out of the box** with several terminals — and you're **never locked in**:
+
+| Method | How |
+|---|---|
+| **Hobex Cloud** | `kasseneck.hobexPay(...)` / `hobexRefund(...)` |
+| **Hobex HPS** (local terminal) | `import 'package:kasseneck_api/hobex_hps.dart';` → `HpsClient` |
+| **myPOS · GP Tom · SumUp** | supported & rendered on the receipt |
+| **Any other terminal/method** | `CreditCardProvider.custom` — just pass your own card data |
+
+Whatever terminal you use, hand the result to `sellReceipt(...)` as `cardPaymentData` and it is
+stored and printed on the receipt.
+
+<details>
+<summary><b>Example — local Hobex terminal (HPS) → signed receipt</b></summary>
 
 ```dart
 import 'package:kasseneck_api/hobex_hps.dart'; // HpsClient, TransactionResponse, HobexReceipt
 
 final hps = HpsClient(tid: '3600335'); // TID without leading zero
 
-// 1) Trigger the card payment on the terminal
+// 1) Charge the card on the terminal
 final res = await hps.payment(amount: 12.50);
-if (!res.isApproved) {
-  // declined -> res.responseCode / res.responseText
-  return;
-}
+if (!res.isApproved) return; // declined -> res.responseCode / res.responseText
 
-// 2) Turn the terminal result into Kasseneck card-payment data
-final hobexReceipt = HobexReceipt.fromHps(res);
-
-// 3) Create the RKSV receipt (the card data is rendered on the printout)
-final receipt = await kasseneck.sellReceipt(
+// 2) Adapt the terminal result, 3) create the signed receipt
+final card = HobexReceipt.fromHps(res);
+await kasseneck.sellReceipt(
   paymentMethod: KeckPaymentMethod.creditCard,
-  creditCardProvider: hobexReceipt.creditCardProvider, // hobexHps
-  cardPaymentId: hobexReceipt.transactionId,
-  cardPaymentData: hobexReceipt.toCardPaymentData(),
-  items: [KasseneckItem(name: 'Brot', quantity: 1, vat: VatRate.vat10, singlePrice: 1.20)],
+  creditCardProvider: card.creditCardProvider, // hobexHps
+  cardPaymentId: card.transactionId,
+  cardPaymentData: card.toCardPaymentData(),
+  items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, singlePrice: 12.50)],
 );
 ```
 
-Further operations: `hps.refund(...)`, `hps.cancel(...)`, `hps.transactionStatus(...)`,
-`hps.diagnosis()` (health check). Errors are thrown as `HpsException` / `HpsHttpException` /
-`HpsConnectionException`; a **declined** payment is not an exception but `res.isApproved == false`.
+Also available: `hps.refund(...)`, `hps.cancel(...)`, `hps.transactionStatus(...)`,
+`hps.diagnosis()`. A **declined** payment is not an exception — it's `res.isApproved == false`.
+</details>
 
-Support
+## 🖨️ Printing
 
-For questions or support inquiries, feel free to contact office@kreiseck.com.
+```dart
+// Bluetooth (ESC/POS)
+await kasseneck.initBluetoothPrinter(printerAddress: 'AA:BB:CC:DD:EE:FF');
+await receipt!.printReceiptBluetooth();
 
-Happy coding with the Kasseneck Flutter API!
+// Wi-Fi
+await kasseneck.initWifiPrinter('192.168.0.50', KeckPaperSize.mm80);
+await receipt.printReceiptWifi();
+
+// Open the cash drawer
+await KasseneckApi.openCashDrawer();
+```
+
+## 📱 On-screen receipt
+
+A ready-made widget renders the full receipt (logo, items, VAT table, QR, card details):
+
+```dart
+KeckReceiptWidget(receipt: receipt);
+```
+
+## 📊 Reports & invoices
+
+```dart
+final monthly = await kasseneck.downloadMonthlyReport(ReportMonth.now()); // Uint8List (PDF)
+final daily   = await kasseneck.downloadDailyReport(DateTime.now());
+final history = await kasseneck.getReceipts(start, end);
+```
+
+## 🇦🇹 RKSV compliance
+
+Every receipt is chained and signed (ES256 / JWS) and exposed as the machine-readable QR
+payload, exactly as required by the Austrian RKSV. Signature-device outages are detected
+(`receipt.signatureSuccess` / `receipt.isSigFailed`) and printed on the receipt.
+
+## 🗂️ Versioning
+
+This package follows semantic versioning — see the [CHANGELOG](CHANGELOG.md).
+Latest: **2.1.0** — Hobex HPS integration, 4.9 % _Grundnahrungsmittel_ rate, robustness hardening.
+
+## 💬 Support
+
+**Kreiseck Software Solutions** — [office@kreiseck.com](mailto:office@kreiseck.com) · [kreiseck.com](https://kreiseck.com)
+
+## 📄 License
+
+See [LICENSE](LICENSE).
