@@ -1,3 +1,6 @@
+## 2.1.1
+- New README, a runnable `example/` and inline API documentation (dartdoc)
+- Added repository & issue tracker metadata
 ## 2.1.0
 - hobex Payment Service (HPS): lokaler Terminal-Client (HpsClient) mit Zahlung, Pre-Auth, Capture, Refund, Storno, Status, Abbruch, AVT und Diagnose
 - HobexReceipt.fromHps + Karten-Beleg-Rendering (Provider hobexHps); HobexReceipt aus dem hobex_hps-Barrel exportiert
