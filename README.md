@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mhmmdlkts/kasseneck_flutter_api/main/doc/kreiseck_logo.png" alt="Kreiseck — Software Solutions" width="300">
+  <img src="doc/kreiseck_logo.png" alt="Kreiseck — Software Solutions" width="300">
 </p>
 
 <h1 align="center">Kasseneck Flutter API</h1>
