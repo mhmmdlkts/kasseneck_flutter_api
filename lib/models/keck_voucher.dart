@@ -106,10 +106,12 @@ class KeckVoucher {
 
 
 
+  /// Ganze Betraege kurz ("10"), krumme exakt mit 2 Nachkommastellen ("1,50") —
+  /// frueher wurde gerundet ("~2"), was auf dem Beleg wie ein falscher Betrag wirkte.
   String formatVoucherAmount(num value) {
-    if (value.ceil() != value) {
-      return '~${value.toStringAsFixed(0).replaceAll('.', ',')}';
+    if (value % 1 != 0) {
+      return value.toStringAsFixed(2).replaceAll('.', ',');
     }
-    return value.toStringAsFixed(0).replaceAll('.', ',');
+    return value.toStringAsFixed(0);
   }
 }
