@@ -106,8 +106,9 @@ class PrintPaper {
         return;
       }
 
-      // Wenn dein Drucker Probleme mit image hat, kannst du auch imageRaster probieren:
-      bytes.add(Uint8List.fromList(generator.image(img)));
+      // GS v 0 (imageRaster) wird von deutlich mehr Thermodruckern unterstuetzt als das
+      // alte ESC * (generator.image) -> sonst druckt der Drucker den Bildbefehl als Zeichensalat.
+      bytes.add(Uint8List.fromList(generator.imageRaster(img)));
       myPosPaper.addImage(encodePng(img));
     } catch (e) {
       print('Error in addQrCodeAsImage: $e');
