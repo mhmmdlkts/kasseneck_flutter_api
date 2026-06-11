@@ -27,9 +27,10 @@ void main() {
         name: 'Brot',
         quantity: 1,
         vat: VatRate.vat4komma9,
-        singlePrice: 1.20,
+        priceCents: 120,
       );
       expect(item.toJson()['vat'], 4.9);
+      expect(item.toJson()['priceOne'], 1.20); // Wire-Format bleibt Euro
     });
 
     test('Regression: bestehende Saetze unveraendert', () {

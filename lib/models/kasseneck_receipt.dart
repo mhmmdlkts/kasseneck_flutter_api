@@ -260,31 +260,39 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
 
   String get readableTime => '${timeStamp.day.toString().padLeft(2, '0')}.${timeStamp.month.toString().padLeft(2, '0')}.${timeStamp.year} ${timeStamp.hour.toString().padLeft(2, '0')}:${timeStamp.minute.toString().padLeft(2, '0')}:${timeStamp.second.toString().padLeft(2, '0')}';
 
-  double get subSum {
-    double sum = 0;
+  /// Zwischensumme in **Cent** (exakte Integer-Arithmetik, keine Gleitkommafehler).
+  int get subSumCents {
+    int cents = 0;
     for (KasseneckItem item in items) {
-      sum += item.quantity * item.singlePrice;
+      cents += item.totalCents;
     }
     for (KeckVoucher voucher in vouchers??[]) {
       if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
-        sum -= voucher.value ?? 0;
+        cents -= voucher.valueCents ?? 0;
       }
       if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
-        sum += voucher.value ?? 0;
+        cents += voucher.valueCents ?? 0;
       }
     }
-    return sum;
+    return cents;
   }
 
-  double get sum {
-    double sum = subSum;
+  /// Gesamtsumme in **Cent** (exakte Integer-Arithmetik).
+  int get sumCents {
+    int cents = subSumCents;
     for (KeckVoucher voucher in vouchers??[]) {
       if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value) {
-        sum -= voucher.value??0;
+        cents -= voucher.valueCents ?? 0;
       }
     }
-    return sum;
+    return cents;
   }
+
+  /// Zwischensumme in Euro (Anzeige — fuer Arithmetik [subSumCents] nutzen).
+  double get subSum => subSumCents / 100;
+
+  /// Gesamtsumme in Euro (Anzeige — fuer Arithmetik [sumCents] nutzen).
+  double get sum => sumCents / 100;
 
   @override
   int compareTo(KasseneckReceipt other) {
@@ -316,13 +324,17 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
 
   String get taxInfo => (uid?.isNotEmpty??false)?uid!:taxnr;
 
-  double get totalPromoVoucherValue {
-    double value = 0;
+  /// Summe der eingeloesten Promo-Gutscheine in **Cent** (exakt).
+  int get totalPromoVoucherValueCents {
+    int cents = 0;
     for (KeckVoucher voucher in vouchers??[]) {
       if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
-        value += voucher.value ?? 0;
+        cents += voucher.valueCents ?? 0;
       }
     }
-    return value;
+    return cents;
   }
+
+  /// Summe der eingeloesten Promo-Gutscheine in Euro (Anzeige).
+  double get totalPromoVoucherValue => totalPromoVoucherValueCents / 100;
 }

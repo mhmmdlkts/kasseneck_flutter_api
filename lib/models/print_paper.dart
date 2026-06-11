@@ -187,10 +187,10 @@ class PrintPaper {
       } else {
         amount += ' x ';
       }
-      addDoubleText('$amount${item.name.check()}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', '${formatAmount(item.singlePrice * item.quantity)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
+      addDoubleText('$amount${item.name.check()}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', '${formatCents(item.totalCents)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
     }
 
-    double totalPromoVoucherValue = 0;
+    int totalPromoVoucherValueCents = 0;
     for (KeckVoucher voucher in receipt.vouchers??[]) {
 
       if (voucher.isValid && voucher.action == VoucherAction.sell) {
@@ -198,17 +198,17 @@ class PrintPaper {
         itemsByVat[VatRate.vat0]!.add(KasseneckItem(
           name: voucher.receiptText,
           quantity: 1,
-          singlePrice: voucher.value ?? 0,
+          priceCents: voucher.valueCents ?? 0,
           vat: VatRate.vat0
         ));
       }
       if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
         String amount = '1  x ';
-        addDoubleText('$amount${voucher.receiptText}', '${formatAmount(voucher.value??0)} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
+        addDoubleText('$amount${voucher.receiptText}', '${formatCents(voucher.valueCents??0)} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
       }
       if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
-        totalPromoVoucherValue += voucher.value ?? 0;
-        addDoubleText(voucher.receiptText, '-${formatAmount(voucher.value??0)} EUR', leftWidth: 7, rightWidth: 5);
+        totalPromoVoucherValueCents += voucher.valueCents ?? 0;
+        addDoubleText(voucher.receiptText, '-${formatCents(voucher.valueCents??0)} EUR', leftWidth: 7, rightWidth: 5);
       }
     }
 
@@ -219,12 +219,11 @@ class PrintPaper {
     itemsByVat.forEach((key, value) {
       int bruttoCents = 0;
       for (final KasseneckItem element in value) {
-        bruttoCents += euroToCent(element.singlePrice * element.quantity);
+        bruttoCents += element.totalCents;
       }
       vatTableBruttoByVatCents[key] = bruttoCents;
     });
 
-    final int totalPromoVoucherValueCents = euroToCent(totalPromoVoucherValue);
     final int totalAmountCents = vatTableBruttoByVatCents.values.fold(0, (sum, value) => sum + value);
     final int usablePromoVoucherValueCents =
         totalPromoVoucherValueCents > totalAmountCents ? totalAmountCents : totalPromoVoucherValueCents;
@@ -272,18 +271,18 @@ class PrintPaper {
 
     addFullHorizontalLine();
 
-    if (receipt.sum != receipt.subSum) {
-      addDoubleText('Zwischensumme', '${formatAmount(receipt.subSum)} EUR');
+    if (receipt.sumCents != receipt.subSumCents) {
+      addDoubleText('Zwischensumme', '${formatCents(receipt.subSumCents)} EUR');
 
       for (KeckVoucher voucher in receipt.vouchers??[]) {
         if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value) {
-          addDoubleText(voucher.receiptText, '-${formatAmount(voucher.value??0)} EUR');
+          addDoubleText(voucher.receiptText, '-${formatCents(voucher.valueCents??0)} EUR');
         }
       }
 
       addFullHorizontalLine();
     }
-    addDoubleText('Gesamt:', '${formatAmount(receipt.sum)} EUR');
+    addDoubleText('Gesamt:', '${formatCents(receipt.sumCents)} EUR');
 
     addFeed();
 
@@ -562,4 +561,9 @@ double centToEuro(int value) {
 
 String formatAmount(num value) {
   return value.toStringAsFixed(2).replaceAll('.', ',');
+}
+
+/// Formatiert einen Cent-Betrag als Euro-String (z. B. 1999 -> "19,99").
+String formatCents(int cents) {
+  return formatAmount(cents / 100);
 }

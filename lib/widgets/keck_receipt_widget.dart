@@ -41,8 +41,6 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       [CrossAxisAlignment.end, 'Brutto'],
     ];
 
-    final double totalPromoVoucherValue = widget.receipt.totalPromoVoucherValue;
-
     final Map<VatRate, int> bruttoByVatCents = {
       for (final VatRate key in widget.receipt.vatCategories) key: 0,
     };
@@ -50,8 +48,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
     for (final KasseneckItem element in widget.receipt.items) {
       if (bruttoByVatCents.containsKey(element.vat)) {
         bruttoByVatCents[element.vat] =
-            (bruttoByVatCents[element.vat] ?? 0) +
-                euroToCent(element.singlePrice * element.quantity);
+            (bruttoByVatCents[element.vat] ?? 0) + element.totalCents;
       }
     }
 
@@ -59,12 +56,12 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       for (final KeckVoucher voucher in widget.receipt.vouchers ?? []) {
         if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
           bruttoByVatCents[VatRate.vat0] =
-              (bruttoByVatCents[VatRate.vat0] ?? 0) + euroToCent(voucher.value ?? 0);
+              (bruttoByVatCents[VatRate.vat0] ?? 0) + (voucher.valueCents ?? 0);
         }
       }
     }
 
-    final int totalPromoVoucherValueCents = euroToCent(totalPromoVoucherValue);
+    final int totalPromoVoucherValueCents = widget.receipt.totalPromoVoucherValueCents;
     final int totalAmountCents = bruttoByVatCents.values.fold(0, (sum, value) => sum + value);
     final int totalRedeemPromoVoucherUsableValueCents =
         totalPromoVoucherValueCents > totalAmountCents ? totalAmountCents : totalPromoVoucherValueCents;
@@ -201,7 +198,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                   Expanded(
                     child: Text('${item.quantity} x ${item.name}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', style: textStyle),
                   ),
-                  Text('${formatAmount(item.singlePrice * item.quantity)} ${item.vat.category}', style: textStyle),
+                  Text('${formatCents(item.totalCents)} ${item.vat.category}', style: textStyle),
                 ],
               ),
             for (KeckVoucher voucher in widget.receipt.vouchers??[])
@@ -213,7 +210,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                     Expanded(
                       child: Text('1 x ${voucher.receiptText}', style: textStyle),
                     ),
-                    Text('${formatAmount(voucher.value??0)} ${VatRate.vat0.category}', style: textStyle),
+                    Text('${formatCents(voucher.valueCents??0)} ${VatRate.vat0.category}', style: textStyle),
                   ],
                 )
               else if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo)
@@ -226,7 +223,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                       Expanded(
                         child: Text(voucher.receiptText, style: textStyle),
                       ),
-                      Text('-${formatAmount(voucher.value??0)} EUR', style: textStyle),
+                      Text('-${formatCents(voucher.valueCents??0)} EUR', style: textStyle),
                     ],
                   ),
                 ],
@@ -242,13 +239,13 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
               )).toList(),
             ),
             Divider(color: widget.qrColor),
-            if (widget.receipt.sum != widget.receipt.subSum)
+            if (widget.receipt.sumCents != widget.receipt.subSumCents)
               ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Zwischensumme', style: textStyle),
-                    Text('${formatAmount(widget.receipt.subSum)} EUR', style: textStyle)
+                    Text('${formatCents(widget.receipt.subSumCents)} EUR', style: textStyle)
                   ],
                 ),
                 for (KeckVoucher voucher in widget.receipt.vouchers??[])
@@ -260,7 +257,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                         Expanded(
                           child: Text(voucher.receiptText, style: textStyle),
                         ),
-                        Text('-${formatAmount(voucher.value??0)} EUR', style: textStyle),
+                        Text('-${formatCents(voucher.valueCents??0)} EUR', style: textStyle),
                       ],
                     ),
                 Divider(color: widget.qrColor),
@@ -269,7 +266,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Gesamt:', style: textStyle),
-                Text('${formatAmount(widget.receipt.sum)} EUR', style: textStyle)
+                Text('${formatCents(widget.receipt.sumCents)} EUR', style: textStyle)
               ],
             ),
             const SizedBox(height: 32),

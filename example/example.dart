@@ -24,8 +24,9 @@ Future<void> main() async {
     paymentMethod: KeckPaymentMethod.cash,
     customerDetails: ['Max Mustermann'],
     items: [
-      KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20, singlePrice: 3.20),
-      KasseneckItem(name: 'Bread', quantity: 1, vat: VatRate.vat4komma9, singlePrice: 2.40),
+      // Preise in Cent (320 = 3,20 EUR) — alternativ KasseneckItem.euro(singlePrice: 3.20)
+      KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20, priceCents: 320),
+      KasseneckItem(name: 'Bread', quantity: 1, vat: VatRate.vat4komma9, priceCents: 240),
     ],
   );
   print('Receipt ${receipt?.receiptId} — signed: ${receipt?.signatureSuccess}');
@@ -54,6 +55,6 @@ Future<void> cardSale(KasseneckApi kasseneck) async {
     creditCardProvider: card.creditCardProvider,
     cardPaymentId: card.transactionId,
     cardPaymentData: card.toCardPaymentData(),
-    items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, singlePrice: 12.50)],
+    items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
   );
 }

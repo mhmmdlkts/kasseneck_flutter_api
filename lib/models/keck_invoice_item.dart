@@ -10,39 +10,65 @@ class KeckInvoiceItem {
   /// Einheit der Menge (z. B. "Stück", "Liter", "kg")
   String quantityUnit;
 
-  /// Steuersatz (z. B. 0, 10, 13, 19, 20)
+  /// Steuersatz (z. B. 0, 4.9, 10, 13, 19, 20)
   VatRate vat;
 
-  /// Einzelpreis
-  double singlePrice;
+  /// Einzelpreis in **Cent** (z. B. 1999 = 19,99 EUR).
+  ///
+  /// Geld wird intern exakt in Integer-Cent gerechnet. Das JSON-Format
+  /// Richtung Backend bleibt unveraendert in Euro (siehe [toJson]).
+  int priceCents;
 
   KeckInvoiceItem({
     required this.name,
     required this.quantity,
     required this.quantityUnit,
     required this.vat,
-    required this.singlePrice,
+    required this.priceCents,
   });
 
-  /// Umwandlung ins JSON-Format
+  /// Komfort-Konstruktor mit Einzelpreis in **Euro** (einmalige Rundung auf Cent).
+  factory KeckInvoiceItem.euro({
+    required String name,
+    required int quantity,
+    required String quantityUnit,
+    required VatRate vat,
+    required double singlePrice,
+  }) {
+    return KeckInvoiceItem(
+      name: name,
+      quantity: quantity,
+      quantityUnit: quantityUnit,
+      vat: vat,
+      priceCents: (singlePrice * 100).round(),
+    );
+  }
+
+  /// Einzelpreis in Euro (Anzeige/Format — fuer Arithmetik [priceCents] nutzen).
+  double get singlePrice => priceCents / 100;
+
+  /// Zeilensumme in Cent (exakt, ohne Gleitkomma).
+  int get totalCents => priceCents * quantity;
+
+  /// Umwandlung ins JSON-Format (Wire-Format unveraendert: Euro).
   Map<String, dynamic> toJson() {
     return {
       'name': name,
       'quantity': quantity,
       'vatRate': vat.rate,
-      'singlePrice': singlePrice,
+      'singlePrice': priceCents / 100,
       'quantityUnit': quantityUnit,
     };
   }
 
-  /// Erzeugt ein KasseneckItem aus einem JSON-Objekt
+  /// Erzeugt ein KeckInvoiceItem aus einem JSON-Objekt (Euro -> Cent, einmalige Rundung)
   factory KeckInvoiceItem.fromJson(Map<String, dynamic> json) {
     return KeckInvoiceItem(
       name: json['name'] as String,
       quantityUnit: json['quantityUnit'] as String,
       quantity: json['quantity'] as int,
       vat: VatRate.values.firstWhere((e) => e.rate == json['vatRate'], orElse: () => VatRate.vat0),
-      singlePrice: (json['singlePrice'] as num).toDouble(),
+      priceCents: ((json['singlePrice'] as num) * 100).round(),
     );
   }
 
