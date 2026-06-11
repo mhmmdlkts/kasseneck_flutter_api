@@ -1,3 +1,6 @@
+## 2.1.2
+- Cleaner static analysis (0 warnings): `KeckVoucher.value` is now nullable; removed dead null-aware code and unused SumUp leftovers
+- Loosened the `my_pos` version constraint to `^0.3.0`
 ## 2.1.1
 - New README, a runnable `example/` and inline API documentation (dartdoc)
 - Added repository & issue tracker metadata

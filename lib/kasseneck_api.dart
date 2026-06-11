@@ -13,7 +13,6 @@ import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/models/report_month.dart';
 import 'package:kasseneck_api/models/stripe_url_seesion.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
-import 'package:kasseneck_api/services/sumup_service.dart';
 
 import 'enums/keck_payment_method.dart';
 import 'enums/receipt_type.dart';

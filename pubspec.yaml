@@ -1,6 +1,6 @@
 name: kasseneck_api
 description: "A Flutter package for interacting with the Kasseneck Cashregister API. By Kreiseck."
-version: 2.1.1
+version: 2.1.2
 homepage: https://github.com/mhmmdlkts/kasseneck_flutter_api
 repository: https://github.com/mhmmdlkts/kasseneck_flutter_api
 issue_tracker: https://github.com/mhmmdlkts/kasseneck_flutter_api/issues
@@ -22,7 +22,7 @@ dependencies:
 
   sumup: ^0.13.1 # 0.14.x zieht den gated Tap-to-Pay-SDK (privates Maven-Repo, Credentials nötig) – wird nicht genutzt
     #path: ../sumup_flutter_plugin
-  my_pos: 0.3.0
+  my_pos: ^0.3.0
     #path: ../mypos_flutter_package/my_pos/my_pos
 
 dev_dependencies:

@@ -7,7 +7,7 @@ class KeckVoucher {
   final String? code;
   final VoucherAction action;
   final VoucherType type;
-  double value;
+  double? value;
 
   KeckVoucher({
     this.name,
@@ -23,7 +23,7 @@ class KeckVoucher {
       code: json['code'] as String?,
       action: VoucherAction.values.firstWhere((e) => e.name == json['action'], orElse: () => VoucherAction.sell),
       type: VoucherType.values.firstWhere((e) => e.name == json['type'], orElse: () => VoucherType.promo),
-      value: (json['value'] as num?)?.toDouble()??0,
+      value: (json['value'] as num?)?.toDouble(),
     );
   }
 

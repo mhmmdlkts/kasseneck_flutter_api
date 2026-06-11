@@ -3,9 +3,7 @@ import 'package:sumup/sumup.dart';
 import '../models/sumup_checkout_response.dart';
 
 class SumupService {
-  static String? _affiliateKey;
   static Future<bool> init(String affiliateKey) async {
-    _affiliateKey = affiliateKey;
     SumupPluginResponse initRes = await Sumup.init(affiliateKey);
     if (!initRes.status) {
       return false;
