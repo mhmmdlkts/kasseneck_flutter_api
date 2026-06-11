@@ -11,6 +11,7 @@ import 'package:my_pos/enums/my_pos_print_response.dart';
 import 'package:my_pos/my_pos.dart';
 
 import '../enums/keck_paper_size.dart';
+import '../enums/qr_print_mode.dart';
 
 class KeckPrinterService {
 
@@ -55,15 +56,16 @@ class KeckPrinterService {
     return List<int>.from(bytes.expand((Uint8List uint8List) => uint8List));
   }
 
-  static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {bool qrAsImage = false}) async {
+  static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
     PrintPaper paper = PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile??await CapabilityProfile.load());
-    await paper.setKeckReceipt(receipt, qrAsImage: qrAsImage);
+    await paper.setKeckReceipt(receipt, qrMode: qrMode);
     return paper.bytes;
   }
 
   static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt) async {
     PrintPaper paper = PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile??await CapabilityProfile.load());
-    await paper.setKeckReceipt(receipt, qrAsImage: false);
+    // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
+    await paper.setKeckReceipt(receipt, qrMode: QrPrintMode.native);
     return paper.myPosPaper;
   }
 
@@ -92,8 +94,8 @@ class KeckPrinterService {
 
   static BluetoothDevice get devicePrinter => _devicePrinter!;
 
-  static Future printReceiptBluetooth(KasseneckReceipt receipt, {bool qrAsImage = true}) async {
-    final List<Uint8List> parts = await receipt.getPrintBytes(paperSize: paperSize, qrAsImage: qrAsImage);
+  static Future printReceiptBluetooth(KasseneckReceipt receipt, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
+    final List<Uint8List> parts = await receipt.getPrintBytes(paperSize: paperSize, qrMode: qrMode);
     // Ein durchgehender Byte-Strom -> einheitliches Chunking ueber den ganzen Beleg.
     final List<int> data = <int>[for (final p in parts) ...p];
 

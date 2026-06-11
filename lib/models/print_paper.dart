@@ -8,6 +8,7 @@ import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../enums/credit_card_provider.dart';
+import '../enums/qr_print_mode.dart';
 import '../enums/vat_rate.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
@@ -86,7 +87,9 @@ class PrintPaper {
     myPosPaper.addQrCode(data, size: 280);
   }
 
-  Future<void> addQrCodeAsImage(String data, {int size = 280}) async {
+  /// QR als Bild. [raster] true → GS v 0 (imageRaster), false → ESC * (image).
+  /// Welcher Befehl funktioniert, hängt vom Drucker ab — daher umschaltbar.
+  Future<void> addQrCodeAsImage(String data, {int size = 280, bool raster = true}) async {
     try {
       final QrPainter painter = QrPainter(
         data: data,
@@ -100,15 +103,28 @@ class PrintPaper {
       }
 
       final Uint8List qrBytes = byteData.buffer.asUint8List();
-      final Image? img = decodeImage(qrBytes);
-      if (img == null) {
+      final Image? decoded = decodeImage(qrBytes);
+      if (decoded == null) {
         print('Error decoding QR image');
         return;
       }
 
-      // GS v 0 (imageRaster) wird von deutlich mehr Thermodruckern unterstuetzt als das
-      // alte ESC * (generator.image) -> sonst druckt der Drucker den Bildbefehl als Zeichensalat.
-      bytes.add(Uint8List.fromList(generator.imageRaster(img)));
+      // QrPainter liefert schwarze Module auf TRANSPARENTEM Grund. Der ESC/POS-
+      // Generator (grayscale + invert) ignoriert den Alpha-Kanal — transparente
+      // Pixel (RGB 0,0,0, Alpha 0) würden wie Schwarz gedruckt → komplett
+      // schwarzes Quadrat. Daher auf weißen Hintergrund kompositieren, mit
+      // weißem Rand als Ruhezone für die Scanner-Lesbarkeit.
+      const int quietZone = 16;
+      final Image img = Image(
+        width: decoded.width + quietZone * 2,
+        height: decoded.height + quietZone * 2,
+      );
+      fill(img, color: ColorRgb8(255, 255, 255));
+      compositeImage(img, decoded, dstX: quietZone, dstY: quietZone);
+
+      bytes.add(Uint8List.fromList(
+        raster ? generator.imageRaster(img) : generator.image(img),
+      ));
       myPosPaper.addImage(encodePng(img));
     } catch (e) {
       print('Error in addQrCodeAsImage: $e');
@@ -122,7 +138,7 @@ class PrintPaper {
     myPosPaper.commands.clear();
   }
 
-  Future setKeckReceipt(KasseneckReceipt receipt, {bool qrAsImage = false}) async {
+  Future setKeckReceipt(KasseneckReceipt receipt, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
     reset();
 
     if (receipt.logo != null) {
@@ -283,10 +299,16 @@ class PrintPaper {
     }
 
 
-    if (qrAsImage) {
-      await addQrCodeAsImage(receipt.qr);
-    } else {
-      addQrCode(receipt.qr);
+    switch (qrMode) {
+      case QrPrintMode.imageRaster:
+        await addQrCodeAsImage(receipt.qr, raster: true);
+        break;
+      case QrPrintMode.imageBitImage:
+        await addQrCodeAsImage(receipt.qr, raster: false);
+        break;
+      case QrPrintMode.native:
+        addQrCode(receipt.qr);
+        break;
     }
 
     addFeed();
