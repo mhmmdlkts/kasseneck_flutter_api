@@ -1,3 +1,6 @@
+## 2.1.3
+- Reliable Bluetooth thermal printing: flow control via write-with-response (backpressure), negotiated MTU with matching chunk size, and pacing for write-without-response printers
+- QR codes are now printed as `GS v 0` raster (`imageRaster`) instead of legacy `ESC *` — fixes garbled output and aborts on printers without `ESC *` support
 ## 2.1.2
 - Cleaner static analysis (0 warnings): `KeckVoucher.value` is now nullable; removed dead null-aware code and unused SumUp leftovers
 - Loosened the `my_pos` version constraint to `^0.3.0`
