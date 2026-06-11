@@ -1,3 +1,9 @@
+## 3.0.1
+- `getReceipts` no longer fails wholesale when a single receipt can't be parsed — broken receipts are skipped (and logged in debug builds)
+- Zero receipts (no items) parse correctly; item quantities also accept `1.0`
+- All HTTP requests time out after 30 s instead of hanging silently forever
+- Odd voucher amounts are displayed exactly (e.g. € 1,50 instead of ~2)
+
 ## 3.0.0
 **Breaking: money is now integer cents** — exact arithmetic, no floating-point drift. No backend update is required: requests carry BOTH representations (`priceOne`/`value` in euro for the current backend and `priceOneCents`/`valueCents`/`singlePriceCents`, preferred by newer backends). When reading, the cents fields are preferred; euro-only data (old receipts) still parses — the euro↔cents round-trip is lossless (verified by property tests).
 
