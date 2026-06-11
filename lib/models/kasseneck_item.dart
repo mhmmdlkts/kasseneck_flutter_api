@@ -81,7 +81,8 @@ class KasseneckItem {
     final cents = json['priceOneCents'];
     return KasseneckItem(
       name: json['name'] as String,
-      quantity: json['amount'] as int,
+      // num statt int: manche Quellen liefern 1.0 statt 1.
+      quantity: (json['amount'] as num).toInt(),
       vat: VatRate.values.firstWhere((e) => e.rate == json['vat'], orElse: () => VatRate.vat0),
       priceCents: cents is num ? cents.round() : ((json['priceOne'] as num) * 100).round(),
     );

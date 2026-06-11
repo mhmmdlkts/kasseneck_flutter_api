@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:kasseneck_api/enums/cashbox_status.dart';
@@ -65,7 +66,9 @@ class KasseneckApi {
       body: jsonEncode({
         'params': params,
       }),
-    );
+      // Ohne Timeout bleibt ein hängender Request für immer offen — der Aufrufer
+      // bekommt weder Ergebnis noch Fehler (z. B. blieb so der Belege-Cache still leer).
+    ).timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200 && response.body.isNotEmpty) {
       return response.body;
@@ -367,11 +370,21 @@ class KasseneckApi {
       'start': start.toIso8601String().split('.').first,
       'end': end.toIso8601String().split('.').first
     }).then((value) => json.decode(value));
+    debugPrint('getReportV2 $start–$end: status=${resJson['status']} '
+        'receipts=${(resJson['data']?['receipts'] as List?)?.length ?? 'null'}');
     if (resJson['status'] == 'success') {
       Map<String, dynamic> metadata = resJson['data']['metadata'];
-      final receipts = (resJson['data']['receipts'] as List)
-          .map((r) => KasseneckReceipt.fromMetadata(r, metadata))
-          .toList();
+      // Pro Beleg parsen: EIN defekter/unerwarteter Beleg (z. B. Nullbeleg ohne
+      // items) darf nicht den gesamten Abruf kippen — sonst bleibt der ganze
+      // Tages-/Zeitraums-Cache leer und keine Buchung findet ihren Beleg.
+      final List<KasseneckReceipt> receipts = [];
+      for (final r in (resJson['data']['receipts'] as List)) {
+        try {
+          receipts.add(KasseneckReceipt.fromMetadata(r, metadata));
+        } catch (e) {
+          debugPrint('getReceipts: Beleg übersprungen (${r is Map ? r['receiptId'] : r}): $e');
+        }
+      }
       await Future.wait(receipts.map((r) => r.init()));
       return receipts;
     } else {

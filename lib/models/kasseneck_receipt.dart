@@ -130,7 +130,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       signaturePreviousReceipt: receipt['signaturePreviousReceipt'],
       turnoverCounterAES256ICM: receipt['turnoverCounterAES256ICM'],
       paymentMethod: KeckPaymentMethod.values.firstWhere((element) => element.name == receipt['paymentMethod'], orElse: () => KeckPaymentMethod.cash),
-      items: receipt['items'].map<KasseneckItem>((e) => KasseneckItem.fromJson(e)).toList(),
+      // Nullbelege haben keine Positionen → items kann fehlen/null sein.
+      items: ((receipt['items'] as List?) ?? []).map<KasseneckItem>((e) => KasseneckItem.fromJson(e)).toList(),
       vouchers: receipt['vouchers'] != null ? (receipt['vouchers'] as List).map((e) => KeckVoucher.fromJson(e)).toList() : null,
       timeStamp: DateTime.parse(receipt['timeStamp']),
       cashregisterId: receipt['cashregisterId'],
