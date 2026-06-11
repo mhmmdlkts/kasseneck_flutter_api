@@ -136,6 +136,9 @@ Also available: `hps.refund(...)`, `hps.cancel(...)`, `hps.transactionStatus(...
 await kasseneck.initBluetoothPrinter(printerAddress: 'AA:BB:CC:DD:EE:FF');
 await receipt!.printReceiptBluetooth();
 
+// QR garbled or missing? Printers differ in which command they support:
+await receipt.printReceiptBluetooth(qrMode: QrPrintMode.imageBitImage); // or .native
+
 // Wi-Fi
 await kasseneck.initWifiPrinter('192.168.0.50', KeckPaperSize.mm80);
 await receipt.printReceiptWifi();
@@ -169,7 +172,7 @@ payload, exactly as required by the Austrian RKSV. Signature-device outages are 
 ## 🗂️ Versioning
 
 This package follows semantic versioning — see the [CHANGELOG](CHANGELOG.md).
-Latest: **2.1.0** — Hobex HPS integration, 4.9 % _Grundnahrungsmittel_ rate, robustness hardening.
+Latest: **3.0.1** — integer-cent money (exact arithmetic), QR print modes, resilient report parsing.
 
 ## 💬 Support
 

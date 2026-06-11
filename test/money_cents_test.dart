@@ -79,6 +79,36 @@ void main() {
     });
   });
 
+  group('Dual-Send: Euro (Legacy-Backend) + Cents (neues Backend)', () {
+    test('toJson enthaelt beide Felder, konsistent', () {
+      final j = KasseneckItem(name: 'x', quantity: 1, vat: VatRate.vat20, priceCents: 1999).toJson();
+      expect(j['priceOneCents'], 1999);
+      expect(j['priceOne'], 19.99);
+      final v = KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 500).toJson();
+      expect(v['valueCents'], 500);
+      expect(v['value'], 5.0);
+    });
+
+    test('fromJson bevorzugt Cents (bei widerspruechlichen Feldern gewinnt Cents)', () {
+      final item = KasseneckItem.fromJson({
+        'name': 'x', 'amount': 1, 'vat': 20,
+        'priceOne': 99.99, 'priceOneCents': 1234, // absichtlich widerspruechlich
+      });
+      expect(item.priceCents, 1234);
+      final voucher = KeckVoucher.fromJson({
+        'action': 'sell', 'type': 'value', 'value': 99.0, 'valueCents': 500,
+      });
+      expect(voucher.valueCents, 500);
+    });
+
+    test('Legacy-JSON (nur Euro, z. B. alte Belege) parst weiterhin', () {
+      final item = KasseneckItem.fromJson({'name': 'x', 'amount': 2, 'vat': 10, 'priceOne': 1.05});
+      expect(item.priceCents, 105);
+      final voucher = KeckVoucher.fromJson({'action': 'redeem', 'type': 'promo', 'value': 1.5});
+      expect(voucher.valueCents, 150);
+    });
+  });
+
   group('Klassische double-Fallen sind jetzt exakt', () {
     test('0,10 + 0,20 = 0,30 (statt 0.30000000000000004)', () {
       final r = receipt(items: [

@@ -50,25 +50,28 @@ class KeckInvoiceItem {
   /// Zeilensumme in Cent (exakt, ohne Gleitkomma).
   int get totalCents => priceCents * quantity;
 
-  /// Umwandlung ins JSON-Format (Wire-Format unveraendert: Euro).
+  /// Umwandlung ins JSON-Format. Sendet BEIDE Felder: `singlePrice` (Euro,
+  /// altes Backend) + `singlePriceCents` (neu, exakt).
   Map<String, dynamic> toJson() {
     return {
       'name': name,
       'quantity': quantity,
       'vatRate': vat.rate,
       'singlePrice': priceCents / 100,
+      'singlePriceCents': priceCents,
       'quantityUnit': quantityUnit,
     };
   }
 
-  /// Erzeugt ein KeckInvoiceItem aus einem JSON-Objekt (Euro -> Cent, einmalige Rundung)
+  /// `singlePriceCents` wird bevorzugt (exakt); Fallback: Euro mit einmaliger Rundung.
   factory KeckInvoiceItem.fromJson(Map<String, dynamic> json) {
+    final cents = json['singlePriceCents'];
     return KeckInvoiceItem(
       name: json['name'] as String,
       quantityUnit: json['quantityUnit'] as String,
       quantity: json['quantity'] as int,
       vat: VatRate.values.firstWhere((e) => e.rate == json['vatRate'], orElse: () => VatRate.vat0),
-      priceCents: ((json['singlePrice'] as num) * 100).round(),
+      priceCents: cents is num ? cents.round() : ((json['singlePrice'] as num) * 100).round(),
     );
   }
 

@@ -62,23 +62,29 @@ class KasseneckItem {
   /// Zeilensumme in Cent (exakt, ohne Gleitkomma).
   int get totalCents => priceCents * quantity;
 
-  /// Umwandlung ins JSON-Format (Wire-Format unveraendert: Euro).
+  /// Umwandlung ins JSON-Format. Es werden BEIDE Felder gesendet: `priceOne`
+  /// (Euro, fuer das alte Backend) und `priceOneCents` (vom neuen Backend
+  /// bevorzugt, exakt). So funktioniert der Client unabhaengig vom Backend-Stand.
   Map<String, dynamic> toJson() {
     return {
       'name': name,
       'amount': quantity,
       'vat': vat.rate,
       'priceOne': priceCents / 100,
+      'priceOneCents': priceCents,
     };
   }
 
-  /// Erzeugt ein KasseneckItem aus einem JSON-Objekt (Euro -> Cent, einmalige Rundung)
+  /// Erzeugt ein KasseneckItem aus einem JSON-Objekt.
+  /// `priceOneCents` wird bevorzugt (exakt); Fallback: Euro mit einmaliger Rundung.
   factory KasseneckItem.fromJson(Map<String, dynamic> json) {
+    final cents = json['priceOneCents'];
     return KasseneckItem(
       name: json['name'] as String,
-      quantity: json['amount'] as int,
+      // num statt int: manche Quellen liefern 1.0 statt 1.
+      quantity: (json['amount'] as num).toInt(),
       vat: VatRate.values.firstWhere((e) => e.rate == json['vat'], orElse: () => VatRate.vat0),
-      priceCents: ((json['priceOne'] as num) * 100).round(),
+      priceCents: cents is num ? cents.round() : ((json['priceOne'] as num) * 100).round(),
     );
   }
 
