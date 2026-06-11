@@ -20,7 +20,9 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze
+        # Infos (z. B. avoid_print, Legacy-Enum-Namen in oeffentlicher API) sind
+        # nicht release-blockierend; Errors und Warnings schon.
+        run: flutter analyze --no-fatal-infos
 
       - name: Tests
         run: flutter test
