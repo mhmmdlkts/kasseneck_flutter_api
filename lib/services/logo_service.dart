@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 class LogoService {
   static final Map<String, Uint8List> _logoBytes = {};
 
+  /// HTTP-Client; austauschbar (Tests/Mocking).
+  static http.Client httpClient = http.Client();
+
   /// Lädt das Bild nur einmal und speichert es
   static Future<void> loadLogo(String? imageUrl) async {
     if (imageUrl == null) {
@@ -15,7 +18,7 @@ class LogoService {
     }
 
     try {
-      final response = await http.get(Uri.parse(imageUrl));
+      final response = await httpClient.get(Uri.parse(imageUrl));
       if (response.statusCode == 200) {
         _logoBytes[imageUrl] = response.bodyBytes;
       }

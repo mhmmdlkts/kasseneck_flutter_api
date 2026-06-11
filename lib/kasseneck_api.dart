@@ -44,11 +44,15 @@ class KasseneckApi {
   final ReceiptPrintType? printType;
   String? printerAddress;
 
+  /// HTTP-Client; im Konstruktor austauschbar (Tests/Mocking).
+  final http.Client _http;
+
   KasseneckApi({
     required this.apiKey,
     required this.cashregisterToken,
-    this.printType
-  });
+    this.printType,
+    http.Client? httpClient,
+  }) : _http = httpClient ?? http.Client();
 
   Future<dynamic> _kasseneckPostRequest(
       {required String endpoint, Map<String, dynamic> params = const {}}) async {
@@ -60,7 +64,7 @@ class KasseneckApi {
       'Content-Type': 'application/json',
     };
 
-    final response = await http.post(
+    final response = await _http.post(
       uri,
       headers: headers,
       body: jsonEncode({
@@ -89,14 +93,14 @@ class KasseneckApi {
       'Content-Type': 'application/json',
     };
 
-    final response = await http.post(
+    final response = await _http.post(
       uri,
       headers: headers,
       body: jsonEncode({
         'params': params,
         'method': method,
       }),
-    );
+    ).timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200 && response.body.isNotEmpty) {
       return response.body;

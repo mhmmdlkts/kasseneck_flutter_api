@@ -172,7 +172,7 @@ payload, exactly as required by the Austrian RKSV. Signature-device outages are 
 ## 🗂️ Versioning
 
 This package follows semantic versioning — see the [CHANGELOG](CHANGELOG.md).
-Latest: **3.0.1** — integer-cent money (exact arithmetic), QR print modes, resilient report parsing.
+Latest: **3.1.0** — comprehensive test suite, injectable HTTP client, CI.
 
 ## 💬 Support
 

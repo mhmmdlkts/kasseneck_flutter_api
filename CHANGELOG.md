@@ -1,3 +1,9 @@
+## 3.1.0
+- Comprehensive test suite (~100 new tests): money & receipt math, JSON round-trips and fallback parsing, voucher rules, mocked API client, and a print↔widget consistency check that guards the two independent VAT-table renderers against drift
+- `KasseneckApi` and `LogoService` accept an injectable `http.Client` (useful for testing/mocking; default behaviour unchanged)
+- `financeWebService` requests now also time out after 30 s
+- Continuous integration: analyze + tests run on every push
+
 ## 3.0.1
 - `getReceipts` no longer fails wholesale when a single receipt can't be parsed — broken receipts are skipped (and logged in debug builds)
 - Zero receipts (no items) parse correctly; item quantities also accept `1.0`
