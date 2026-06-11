@@ -1,3 +1,13 @@
+## 3.0.0
+**Breaking: money is now integer cents** — exact arithmetic, no floating-point drift. The JSON wire format towards the backend is unchanged (still euro), so no backend update is required; the euro↔cents round-trip is lossless (verified by property tests).
+
+Migration:
+- `KasseneckItem(singlePrice: 19.99)` → `KasseneckItem(priceCents: 1999)` or `KasseneckItem.euro(singlePrice: 19.99)`
+- `KeckVoucher(value: 5.0)` → `KeckVoucher(valueCents: 500)` or `KeckVoucher.euro(value: 5.0)`
+- `KeckInvoiceItem(singlePrice: …)` → `priceCents` / `KeckInvoiceItem.euro(…)`
+- Reading: `item.singlePrice`, `voucher.value`, `receipt.sum` / `subSum` still exist as euro views; for arithmetic use `priceCents` / `valueCents` / `sumCents` / `subSumCents` / `totalCents`
+- Terminal APIs (`hobexPay`, `HpsClient`, SumUp) keep euro amounts — they mirror the external providers' formats
+
 ## 2.1.3
 - Reliable Bluetooth thermal printing: flow control via write-with-response (backpressure), negotiated MTU with matching chunk size, and pacing for write-without-response printers
 - Fixed garbled QR output: the QR image is now composited onto a white background with a quiet zone (QrPainter renders on transparent, which ESC/POS rasterization printed as solid black)

@@ -32,6 +32,7 @@ can focus on your app.
 
 - 🧾 **RKSV receipts** — standard, cancellation, zero & training; signed JWS chain + QR code
 - 💶 **All Austrian VAT rates** — incl. the new **4.9 % _Grundnahrungsmittel_** rate (from 1 Jul 2026)
+- 🪙 **Exact money** — amounts are integer **cents** internally (no floating-point drift)
 - 💳 **Card payments out of the box** — Hobex (Cloud & on-terminal **HPS**), myPOS, GP Tom, SumUp — **and any other method** via `CreditCardProvider.custom`
 - 🎟️ **Vouchers** — value & promo, sell & redeem, with proportional VAT split
 - 🖨️ **Printing** — Bluetooth & Wi-Fi (ESC/POS) plus the myPOS built-in printer
@@ -49,7 +50,7 @@ can focus on your app.
 
 ```yaml
 dependencies:
-  kasseneck_api: ^2.1.0
+  kasseneck_api: ^3.0.0
 ```
 
 ```bash
@@ -69,13 +70,14 @@ final kasseneck = KasseneckApi(
   cashregisterToken: 'YOUR_CASHREGISTER_TOKEN',
 );
 
-// A cash sale with two items
+// A cash sale with two items — prices are integer cents (320 = € 3.20)
 final receipt = await kasseneck.sellReceipt(
   paymentMethod: KeckPaymentMethod.cash,
   customerDetails: ['Max Mustermann'],
   items: [
-    KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20,      singlePrice: 3.20),
-    KasseneckItem(name: 'Bread',  quantity: 1, vat: VatRate.vat4komma9, singlePrice: 2.40),
+    KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20,      priceCents: 320),
+    KasseneckItem(name: 'Bread',  quantity: 1, vat: VatRate.vat4komma9, priceCents: 240),
+    // or, if you have euro doubles: KasseneckItem.euro(..., singlePrice: 3.20)
   ],
 );
 
@@ -119,7 +121,7 @@ await kasseneck.sellReceipt(
   creditCardProvider: card.creditCardProvider, // hobexHps
   cardPaymentId: card.transactionId,
   cardPaymentData: card.toCardPaymentData(),
-  items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, singlePrice: 12.50)],
+  items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
 );
 ```
 
