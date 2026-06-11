@@ -1,5 +1,5 @@
 ## 3.0.0
-**Breaking: money is now integer cents** — exact arithmetic, no floating-point drift. The JSON wire format towards the backend is unchanged (still euro), so no backend update is required; the euro↔cents round-trip is lossless (verified by property tests).
+**Breaking: money is now integer cents** — exact arithmetic, no floating-point drift. No backend update is required: requests carry BOTH representations (`priceOne`/`value` in euro for the current backend and `priceOneCents`/`valueCents`/`singlePriceCents`, preferred by newer backends). When reading, the cents fields are preferred; euro-only data (old receipts) still parses — the euro↔cents round-trip is lossless (verified by property tests).
 
 Migration:
 - `KasseneckItem(singlePrice: 19.99)` → `KasseneckItem(priceCents: 1999)` or `KasseneckItem.euro(singlePrice: 19.99)`

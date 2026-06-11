@@ -42,16 +42,21 @@ class KeckVoucher {
   /// Wert in Euro (Anzeige/Format — fuer Arithmetik [valueCents] nutzen).
   double? get value => valueCents == null ? null : valueCents! / 100;
 
+  /// `valueCents` wird bevorzugt (exakt); Fallback: Euro mit einmaliger Rundung.
   factory KeckVoucher.fromJson(Map<String, dynamic> json) {
+    final cents = json['valueCents'];
     return KeckVoucher(
       name: json['name'] as String?,
       code: json['code'] as String?,
       action: VoucherAction.values.firstWhere((e) => e.name == json['action'], orElse: () => VoucherAction.sell),
       type: VoucherType.values.firstWhere((e) => e.name == json['type'], orElse: () => VoucherType.promo),
-      valueCents: json['value'] == null ? null : ((json['value'] as num) * 100).round(),
+      valueCents: cents is num
+          ? cents.round()
+          : (json['value'] == null ? null : ((json['value'] as num) * 100).round()),
     );
   }
 
+  /// Sendet BEIDE Felder: `value` (Euro, altes Backend) + `valueCents` (neu, exakt).
   Map <String, dynamic> toJson() {
     return {
       'name': name,
@@ -59,6 +64,7 @@ class KeckVoucher {
       'action': action.name,
       'type': type.name,
       'value': valueCents == null ? null : valueCents! / 100,
+      'valueCents': valueCents,
     };
   }
 
