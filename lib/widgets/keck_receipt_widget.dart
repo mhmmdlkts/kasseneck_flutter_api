@@ -33,7 +33,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
     return receiptWidget();
   }
 
-  setTemp() {
+  void setTemp() {
     temp = [
       [CrossAxisAlignment.start, 'MwSt%'],
       [CrossAxisAlignment.start, 'MwSt'],
@@ -284,7 +284,8 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             QrImageView(
               data: widget.receipt.qr,
               size: 200,
-              foregroundColor: widget.qrColor,
+              eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: widget.qrColor),
+              dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: widget.qrColor),
               backgroundColor: Colors.transparent,
             ),
             if (widget.receipt.creditCardProvider != null && widget.receipt.creditCardProvider != CreditCardProvider.custom && widget.receipt.cardPaymentData != null && widget.receipt.cardPaymentData!.isNotEmpty)

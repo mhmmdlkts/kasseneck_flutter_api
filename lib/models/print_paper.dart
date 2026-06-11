@@ -98,14 +98,14 @@ class PrintPaper {
       );
       final ByteData? byteData = await painter.toImageData(size.toDouble());
       if (byteData == null) {
-        print('Error: QR ByteData is null');
+        if (kDebugMode) print('Error: QR ByteData is null');
         return;
       }
 
       final Uint8List qrBytes = byteData.buffer.asUint8List();
       final Image? decoded = decodeImage(qrBytes);
       if (decoded == null) {
-        print('Error decoding QR image');
+        if (kDebugMode) print('Error decoding QR image');
         return;
       }
 
@@ -127,7 +127,7 @@ class PrintPaper {
       ));
       myPosPaper.addImage(encodePng(img));
     } catch (e) {
-      print('Error in addQrCodeAsImage: $e');
+      if (kDebugMode) print('Error in addQrCodeAsImage: $e');
     }
   }
 

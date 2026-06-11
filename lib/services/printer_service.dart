@@ -28,7 +28,7 @@ class KeckPrinterService {
       _profile = await CapabilityProfile.load();
       return true;
     } catch (e) {
-      print('Failed to connect to printer: $e');
+      if (kDebugMode) print('Failed to connect to printer: $e');
       return false;
     }
   }
@@ -42,7 +42,7 @@ class KeckPrinterService {
           .firstWhere((s) => s == BluetoothAdapterState.on)
           .timeout(const Duration(seconds: 10));
       _devicePrinter = BluetoothDevice.fromId(printerAddress);
-      await _devicePrinter!.connect(autoConnect: false, license: License.free);
+      await _devicePrinter!.connect(autoConnect: false, license: License.nonprofit);
     }
 
     return true;
@@ -83,7 +83,7 @@ class KeckPrinterService {
 
   static Future<PrintResponse> printReceiptMypos(KasseneckReceipt receipt) async {
     MyPosPaper paper = await getMyPosPaperFromReceipt(receipt);
-    print('Printing receipt with MyPos: ${paper.commands.length} lines');
+    if (kDebugMode) print('Printing receipt with MyPos: ${paper.commands.length} lines');
     return await MyPos.printPaper(paper);
   }
 
