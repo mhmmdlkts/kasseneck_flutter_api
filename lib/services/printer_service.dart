@@ -93,27 +93,44 @@ class KeckPrinterService {
   static BluetoothDevice get devicePrinter => _devicePrinter!;
 
   static Future printReceiptBluetooth(KasseneckReceipt receipt, {bool qrAsImage = true}) async {
-    List<Uint8List> bytes = await receipt.getPrintBytes(paperSize: paperSize, qrAsImage: qrAsImage);
-    const int maxChunkSize = 150;
+    final List<Uint8List> parts = await receipt.getPrintBytes(paperSize: paperSize, qrAsImage: qrAsImage);
+    // Ein durchgehender Byte-Strom -> einheitliches Chunking ueber den ganzen Beleg.
+    final List<int> data = <int>[for (final p in parts) ...p];
 
-    List<BluetoothService> services = await _devicePrinter!.discoverServices();
+    // Groessere MTU aushandeln, wo unterstuetzt (Android); sonst aktuellen Wert nehmen.
+    int mtu;
+    try {
+      mtu = await _devicePrinter!.requestMtu(512);
+    } catch (_) {
+      mtu = _devicePrinter!.mtuNow;
+    }
+    final int chunkSize = (mtu - 3).clamp(20, 182).toInt();
 
-    for (var service in services) {
-      for (var characteristic in service.characteristics) {
-        // Check if the characteristic is writable
-        if (characteristic.properties.write || characteristic.properties.writeWithoutResponse) {
-          try {
-            for (var element in bytes) {
-              for (int i = 0; i < element.length; i += maxChunkSize) {
-                int end = (i + maxChunkSize < element.length) ? i + maxChunkSize : element.length;
-                await characteristic.write(element.sublist(i, end), withoutResponse: true);
-              }
+    final List<BluetoothService> services = await _devicePrinter!.discoverServices();
+
+    for (final service in services) {
+      for (final characteristic in service.characteristics) {
+        final bool canWrite = characteristic.properties.write;
+        final bool canWriteNoResp = characteristic.properties.writeWithoutResponse;
+        if (!canWrite && !canWriteNoResp) continue;
+
+        // Kernproblem war fehlendes Flow-Control: grosse Raster (QR/Logo) wurden mit
+        // withoutResponse ohne Backpressure rausgeblasen -> der Drucker-Puffer laeuft
+        // ueber -> Zeichensalat + Abbruch. Loesung: write-with-response (wartet aufs
+        // ACK = Backpressure) wo moeglich, sonst withoutResponse mit Pacing.
+        final bool withoutResponse = !canWrite;
+        try {
+          for (int i = 0; i < data.length; i += chunkSize) {
+            final int end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
+            await characteristic.write(data.sublist(i, end), withoutResponse: withoutResponse);
+            if (withoutResponse) {
+              await Future.delayed(const Duration(milliseconds: 20));
             }
-            return true; // Successfully sent to a writable characteristic, exit early
-          } catch (e) {
-            if (kDebugMode) {
-              print("Fehler beim Senden an ${characteristic.uuid}: $e");
-            }
+          }
+          return true; // erfolgreich gesendet
+        } catch (e) {
+          if (kDebugMode) {
+            print("Fehler beim Senden an ${characteristic.uuid}: $e");
           }
         }
       }
