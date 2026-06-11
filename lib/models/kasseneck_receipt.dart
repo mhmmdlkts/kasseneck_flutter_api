@@ -69,6 +69,11 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   bool? signatureSuccess;
   String? customProjectId;
 
+  /// Kreiseck-Branding am Belegende ("powered by kreiseck.com") — gesteuert
+  /// ueber das Firestore-Flag users/{uid}.branding.kreiseck_logo, das das
+  /// Backend als Metadatum `kreiseck_logo` mitliefert.
+  bool showKreiseckLogo;
+
   KasseneckReceipt({
     required this.receiptId,
     required this.cashregisterId,
@@ -103,7 +108,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.cardPaymentId,
     this.cardPaymentData,
     this.signatureSuccess,
-    this.customProjectId
+    this.customProjectId,
+    this.showKreiseckLogo = false,
   });
 
   factory KasseneckReceipt.create({
@@ -122,6 +128,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     String? footer3,
     String? footer4,
     required List<String> thanksMessage,
+    bool showKreiseckLogo = false,
   }) {
     return KasseneckReceipt(
       qr: receipt['qr'],
@@ -158,7 +165,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       footer2: footer2,
       footer3: footer3,
       footer4: footer4,
-      customProjectId: receipt['customProjectId']
+      customProjectId: receipt['customProjectId'],
+      showKreiseckLogo: showKreiseckLogo,
     );
   }
 
@@ -180,6 +188,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       footer4: json['footer4'],
       logoUrl: json['logo_url'],
       thanksMessage: List<String>.from(json['thanks_message']?.toString().split(r'\n')??[]),
+      showKreiseckLogo: json['kreiseck_logo'] == true,
     );
   }
 
@@ -226,6 +235,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'footer4': footer4,
       'logo_url': logoUrl,
       'thanks_message': thanksMessage.join(r'\n'),
+      'kreiseck_logo': showKreiseckLogo,
     };
   }
 
@@ -254,6 +264,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       footer4: metadata['footer4'],
       logoUrl: metadata['logo_url'],
       thanksMessage: List<String>.from(metadata['thanks_message']?.toString().split(r'\n')??[]),
+      showKreiseckLogo: metadata['kreiseck_logo'] == true,
     );
   }
 
