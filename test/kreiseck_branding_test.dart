@@ -30,20 +30,19 @@ void main() {
   });
 
   group('Druck', () {
-    test('Flag an: powered-by-Zeile + Logo als letzter Block vor dem Cut', () async {
+    test('Flag an: "powered by" UEBER dem Logo als letzter Block vor dem Cut', () async {
       final p = await render(buildReceipt(items: cartA().items, showKreiseckLogo: true));
       final t = texts(p);
-      expect(t, contains('powered by kreiseck.com'));
-      // letzter Text-Befehl ist die powered-by-Zeile (nach den Footern)
-      expect(t.last, 'powered by kreiseck.com');
-      // und davor kommt ein Bild (das Logo)
+      // letzter Text-Befehl ist die powered-by-Zeile (nach den Footern) ...
+      expect(t.last, 'powered by');
+      // ... und das Logo-Bild kommt DANACH (Text ueber Logo)
       final cmds = p.myPosPaper.commands;
-      final poweredIdx = cmds.lastIndexWhere((c) => c['value'] == 'powered by kreiseck.com');
-      expect(cmds.sublist(0, poweredIdx).any((c) => c['type'] == 'image'), isTrue);
+      final poweredIdx = cmds.lastIndexWhere((c) => c['value'] == 'powered by');
+      expect(cmds.sublist(poweredIdx + 1).any((c) => c['type'] == 'image'), isTrue);
     });
     test('Flag aus: kein Branding', () async {
       final p = await render(buildReceipt(items: cartA().items));
-      expect(texts(p), isNot(contains('powered by kreiseck.com')));
+      expect(texts(p), isNot(contains('powered by')));
     });
   });
 
@@ -54,7 +53,7 @@ void main() {
           child: KeckReceiptWidget(receipt: buildReceipt(items: cartA().items, showKreiseckLogo: true)),
         )),
       ));
-      expect(find.text('powered by kreiseck.com'), findsOneWidget);
+      expect(find.text('powered by'), findsOneWidget);
       expect(
         find.byWidgetPredicate((w) =>
             w is Image && w.image is AssetImage && (w.image as AssetImage).assetName.contains('kreiseck_logo_print')),
@@ -67,7 +66,7 @@ void main() {
           child: KeckReceiptWidget(receipt: buildReceipt(items: cartA().items)),
         )),
       ));
-      expect(find.text('powered by kreiseck.com'), findsNothing);
+      expect(find.text('powered by'), findsNothing);
     });
   });
 }

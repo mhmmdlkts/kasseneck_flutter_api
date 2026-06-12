@@ -389,11 +389,11 @@ class PrintPaper {
     if (logo == null) return; // Branding darf den Druck nie verhindern
 
     addFeed();
+    addText('powered by', styles: PosStyles(align: PosAlign.center));
     // Breite muss ein Vielfaches von 8 sein — sonst crasht die Rasterisierung
     // des ESC/POS-Generators beim Byte-Padding (fixed-length list).
-    final int width = ((paperSize.imageWidth * 0.55) ~/ 8) * 8;
+    final int width = ((paperSize.imageWidth * 0.7) ~/ 8) * 8;
     addImage(copyResize(logo, width: width));
-    addText('powered by kreiseck.com', styles: PosStyles(align: PosAlign.center));
   }
 
   void _addTable(String val1, String val2, String val3, String val4) {
