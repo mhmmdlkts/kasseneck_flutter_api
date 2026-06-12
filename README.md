@@ -172,7 +172,7 @@ payload, exactly as required by the Austrian RKSV. Signature-device outages are 
 ## 🗂️ Versioning
 
 This package follows semantic versioning — see the [CHANGELOG](CHANGELOG.md).
-Latest: **3.1.0** — comprehensive test suite, injectable HTTP client, CI.
+Latest: **3.2.0** — optional Kreiseck branding at the end of receipts (print, widget & PDF).
 
 ## 💬 Support
 

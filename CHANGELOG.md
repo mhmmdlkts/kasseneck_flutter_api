@@ -1,3 +1,8 @@
+## 3.2.0
+- Kreiseck branding on receipts: when the backend metadata flag `kreiseck_logo` is set (Firestore `users/{uid}.branding.kreiseck_logo`), the receipt ends with "powered by" and the Kreiseck logo — on thermal prints (85 % paper width), in `KeckReceiptWidget` and survives JSON round-trips for reprints
+- The logo ships as a package asset (printing works offline; the backend only sends the flag); branding can never break receipt printing
+- Fixed an ESC/POS rasterizer crash for images whose width is not a multiple of 8
+
 ## 3.1.1
 - Zero analyzer issues: debug-only logging, migrated deprecated APIs (`License.nonprofit`, QR `eyeStyle`/`dataModuleStyle`), removed redundant imports; FinanzOnline status enum names are intentionally kept verbatim (they must match the `rkdbMessage` values)
 - CI runs `flutter analyze` in strict mode again
