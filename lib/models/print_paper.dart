@@ -392,7 +392,7 @@ class PrintPaper {
     addText('powered by', styles: PosStyles(align: PosAlign.center));
     // Breite muss ein Vielfaches von 8 sein — sonst crasht die Rasterisierung
     // des ESC/POS-Generators beim Byte-Padding (fixed-length list).
-    final int width = ((paperSize.imageWidth * 0.7) ~/ 8) * 8;
+    final int width = ((paperSize.imageWidth * 0.85) ~/ 8) * 8;
     addImage(copyResize(logo, width: width));
   }
 
