@@ -306,6 +306,17 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
               Text(widget.receipt.footer3!, style: textStyle),
             if (widget.receipt.footer4 != null)
               Text(widget.receipt.footer4!, style: textStyle),
+            if (widget.receipt.showKreiseckLogo)
+              ...[
+                const SizedBox(height: 24),
+                Text('powered by', style: textStyle.copyWith(fontSize: 11)),
+                const SizedBox(height: 4),
+                Image.asset(
+                  'assets/kreiseck_logo_print.png',
+                  package: 'kasseneck_api',
+                  width: 140,
+                ),
+              ],
           ],
         ),
       ),

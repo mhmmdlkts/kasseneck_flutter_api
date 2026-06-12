@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
@@ -355,7 +356,44 @@ class PrintPaper {
     if (receipt.footer4 != null) {
       addText(receipt.footer4!, styles: PosStyles(align: PosAlign.center));
     }
+
+    if (receipt.showKreiseckLogo) {
+      await _addKreiseckBranding();
+    }
+
     addCut();
+  }
+
+  /// Dezentes Kreiseck-Branding als allerletzter Block vor dem Cut.
+  /// Das s/w-Logo liegt als Package-Asset bei (Druck funktioniert offline,
+  /// das Backend liefert nur das Flag `kreiseck_logo`).
+  static Image? _kreiseckLogo;
+
+  Future<void> _addKreiseckBranding() async {
+    if (_kreiseckLogo == null) {
+      // Asset-Key unterscheidet sich je nach Kontext (eigenes Paket vs. App).
+      for (final key in [
+        'packages/kasseneck_api/assets/kreiseck_logo_print.png',
+        'assets/kreiseck_logo_print.png',
+      ]) {
+        try {
+          final data = await rootBundle.load(key);
+          _kreiseckLogo = decodeImage(data.buffer.asUint8List());
+          break;
+        } catch (_) {
+          // naechsten Key probieren
+        }
+      }
+    }
+    final logo = _kreiseckLogo;
+    if (logo == null) return; // Branding darf den Druck nie verhindern
+
+    addFeed();
+    addText('powered by', styles: PosStyles(align: PosAlign.center));
+    // Breite muss ein Vielfaches von 8 sein — sonst crasht die Rasterisierung
+    // des ESC/POS-Generators beim Byte-Padding (fixed-length list).
+    final int width = ((paperSize.imageWidth * 0.85) ~/ 8) * 8;
+    addImage(copyResize(logo, width: width));
   }
 
   void _addTable(String val1, String val2, String val3, String val4) {
