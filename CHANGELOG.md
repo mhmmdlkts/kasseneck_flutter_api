@@ -1,3 +1,7 @@
+## 3.2.1
+- GP Tom card details render correctly with `gptom_aidl_plugin` ≥ 0.1.0: `cardPaymentData` amounts arrive as integer cents and are now formatted as such (older stored receipts with euro doubles keep working); applies to thermal print and `KeckReceiptWidget`
+- GP Tom transaction type is recognized via both `transactionType` and the plugin's `transacitonType` key; `Refund` (type 3) is now labelled
+
 ## 3.2.0
 - Kreiseck branding on receipts: when the backend metadata flag `kreiseck_logo` is set (Firestore `users/{uid}.branding.kreiseck_logo`), the receipt ends with "powered by" and the Kreiseck logo — on thermal prints (85 % paper width), in `KeckReceiptWidget` and survives JSON round-trips for reprints
 - The logo ships as a package asset (printing works offline; the backend only sends the flag); branding can never break receipt printing

@@ -484,12 +484,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
   }
 
   Widget _gpTomPart(Map<String, dynamic> inquire) {
-    String transactionType = '';
-    switch (inquire['transactionType']) {
-      case 1: transactionType = 'Sale'; break;
-      case 2: transactionType = 'Void'; break;
-      case 4: transactionType = 'Close Batch'; break;
-    }
+    final String transactionType = gpTomTransactionType(inquire);
     return Column(
       children: [
         Row(
@@ -506,7 +501,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
           Text('${inquire['emvAppLable']??''} ${inquire['cardDataEntry']??''}', style: textStyle),
         if (inquire['cardNumber'] != null)
           Text('Card Number: ${inquire['cardNumber']}', style: textStyle),
-        Text('${transactionType!=''?'$transactionType ':''}Amount ${inquire['currencyCode']} ${formatAmount(inquire['amount'] as num)}', style: textStyle.copyWith(fontWeight: FontWeight.bold)),
+        Text('${transactionType!=''?'$transactionType ':''}Amount ${inquire['currencyCode']} ${formatGpTomAmount(inquire['amount'])}', style: textStyle.copyWith(fontWeight: FontWeight.bold)),
         Text(inquire['pinOk'] == true ? 'PIN OK' : 'PIN NOT OK', style: textStyle),
         Text('Authorization Code ${inquire['approvedCode']}', style: textStyle),
         Text('Sequence Number: ${inquire['sequenceNumber']}', style: textStyle),

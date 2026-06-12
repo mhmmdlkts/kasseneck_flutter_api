@@ -527,12 +527,7 @@ class PrintPaper {
   }
 
   void _gpTom(Map<String, dynamic> data) {
-    String transactionType = '';
-    switch (data['transactionType']) {
-      case 1: transactionType = 'Sale'; break;
-      case 2: transactionType = 'Void'; break;
-      case 4: transactionType = 'Close Batch'; break;
-    }
+    final String transactionType = gpTomTransactionType(data);
     addText('GP Tom Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
     addText('Batch: ${data['batchNumber']}', styles: PosStyles(align: PosAlign.center));
     addText('Receipt: ${data['externalTransactionID']}', styles: PosStyles(align: PosAlign.center));
@@ -544,7 +539,7 @@ class PrintPaper {
     if (data['cardNumber'] != null) {
       addText('${data['cardNumber']}', styles: PosStyles(align: PosAlign.center));
     }
-    addText('${transactionType!=''?'$transactionType ':''}Amount ${data['currencyCode']} ${data['amount'] != null ? formatAmount(data['amount'] as num) : '-'}', styles: PosStyles(align: PosAlign.center));
+    addText('${transactionType!=''?'$transactionType ':''}Amount ${data['currencyCode']} ${formatGpTomAmount(data['amount'])}', styles: PosStyles(align: PosAlign.center));
     addText(data['pinOk'] ? 'PIN OK' : 'PIN NOT OK', styles: PosStyles(align: PosAlign.center));
     addText('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
     addText('Sequence Number: ${data['sequenceNumber']}', styles: PosStyles(align: PosAlign.center));
@@ -604,4 +599,24 @@ String formatAmount(num value) {
 /// Formatiert einen Cent-Betrag als Euro-String (z. B. 1999 -> "19,99").
 String formatCents(int cents) {
   return formatAmount(cents / 100);
+}
+
+/// Betrag aus GP-Tom-`cardPaymentData`: das Plugin liefert ab 0.1.0 Cent
+/// (int), auf älteren gespeicherten Belegen steht Euro (double). null → '-'.
+String formatGpTomAmount(dynamic value) {
+  if (value == null) return '-';
+  final num n = value as num;
+  return n is int ? formatCents(n) : formatAmount(n);
+}
+
+/// GP-Tom-`transactionType` aus `cardPaymentData`: das Plugin-`toMap`
+/// schreibt den Key mit Tippfehler (`transacitonType`), ältere Daten ohne.
+String gpTomTransactionType(Map<String, dynamic> data) {
+  switch (data['transactionType'] ?? data['transacitonType']) {
+    case 1: return 'Sale';
+    case 2: return 'Void';
+    case 3: return 'Refund';
+    case 4: return 'Close Batch';
+  }
+  return '';
 }
