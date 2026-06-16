@@ -159,8 +159,8 @@ void main() {
       expect(buildReceipt(uid: null).taxInfo, '12 345/6789');
       expect(buildReceipt(uid: '').taxInfo, '12 345/6789');
     });
-    test('downloadUrl enthaelt fullReceiptId', () {
-      expect(buildReceipt().downloadUrl, contains('fullReceiptId=enc-full-id'));
+    test('downloadUrl ist beleg-Domain mit Token im Pfad', () {
+      expect(buildReceipt().downloadUrl, 'https://beleg.kasseneck.at/enc-full-id');
     });
   });
 

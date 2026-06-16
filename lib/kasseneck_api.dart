@@ -37,7 +37,7 @@ import 'models/kasseneck_receipt.dart';
 /// ```
 class KasseneckApi {
   static final String _baseUrl = 'https://europe-west1-kasseneck.cloudfunctions.net';
-  static final String downloadBaseUrl = 'https://receipt.kreiseck.com/downloadReceipt';
+  static final String downloadBaseUrl = 'https://beleg.kasseneck.at';
   final String apiKey;
   final String cashregisterToken;
   final ReceiptPrintType? printType;

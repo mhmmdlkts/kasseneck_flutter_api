@@ -268,7 +268,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     );
   }
 
-  String get downloadUrl => '${KasseneckApi.downloadBaseUrl}?fullReceiptId=$fullReceiptId';
+  String get downloadUrl => '${KasseneckApi.downloadBaseUrl}/$fullReceiptId';
 
   String get readableTime => '${timeStamp.day.toString().padLeft(2, '0')}.${timeStamp.month.toString().padLeft(2, '0')}.${timeStamp.year} ${timeStamp.hour.toString().padLeft(2, '0')}:${timeStamp.minute.toString().padLeft(2, '0')}:${timeStamp.second.toString().padLeft(2, '0')}';
 
