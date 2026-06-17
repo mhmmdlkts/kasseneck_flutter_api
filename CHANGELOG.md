@@ -1,3 +1,6 @@
+## 3.3.0
+- Receipt download links now use the branded path-based URL `https://beleg.kasseneck.at/<token>` instead of `https://receipt.kreiseck.com/downloadReceipt?fullReceiptId=<token>`. The backend serves both the new path form and the old query form, so links on already printed or shared receipts keep working.
+
 ## 3.2.1
 - GP Tom card details render correctly with `gptom_aidl_plugin` ≥ 0.1.0: `cardPaymentData` amounts arrive as integer cents and are now formatted as such (older stored receipts with euro doubles keep working); applies to thermal print and `KeckReceiptWidget`
 - GP Tom transaction type is recognized via both `transactionType` and the plugin's `transacitonType` key; `Refund` (type 3) is now labelled
