@@ -111,8 +111,8 @@ List<List<int>> toColumnFormat(RasterImage img, int lineHeight) {
   int left = 0;
   while (left < widthPx) {
     final blob = <int>[];
-    for (int x = left; x < left + lineHeight; x++) {
-      for (int y = 0; y < heightPx; y++) {
+    for (int y = 0; y < heightPx; y++) {
+      for (int x = left; x < left + lineHeight; x++) {
         final p = (y * widthPx + x) * 4;
         blob.add(luma(canvas[p], canvas[p + 1], canvas[p + 2]));
       }

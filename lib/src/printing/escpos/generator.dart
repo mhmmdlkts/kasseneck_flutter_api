@@ -61,7 +61,7 @@ class EscPosGenerator {
 
   Uint8List _encode(String text) {
     text = text
-        .replaceAll('‘', "'")
+        .replaceAll('’', "'")
         .replaceAll('´', "'")
         .replaceAll('»', '"')
         .replaceAll('•', '.');

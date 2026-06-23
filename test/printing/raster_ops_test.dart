@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/src/printing/raster/raster_image.dart';
 import 'package:kasseneck_api/src/printing/raster/raster_ops.dart';
@@ -61,5 +63,17 @@ void main() {
     final img = RasterImage.filled(8, 8, 0, 0, 0, 255); // 8 % 8 == 0
     final blobs = toColumnFormat(img, 8);
     expect(blobs.length, 2); // 8 -> gepadded auf 16 -> 2 Slices (gewollt)
+  });
+
+  test('toColumnFormat: Slice ist zeilen-major (wie esc_pos_utils 1.1.0 getBytes(luminance))', () {
+    // 2x2 Bild; lineHeight 2 -> Breite 2 wird auf 4 gepadded (2 schwarze Spalten rechts).
+    // Erster Slice deckt x=0..1 ab. Pixel (x,y) bekommen unterschiedliche Graustufen.
+    final img = RasterImage(2, 2, Uint8List.fromList([
+      10, 10, 10, 255,  20, 20, 20, 255,   // y=0: x0=10, x1=20
+      30, 30, 30, 255,  40, 40, 40, 255,   // y=1: x0=30, x1=40
+    ]));
+    final blobs = toColumnFormat(img, 2);
+    // Erster Slice (x=0..1), zeilen-major: y0(x0,x1), y1(x0,x1) = [10,20,30,40]
+    expect(blobs.first.sublist(0, 4), [10, 20, 30, 40]);
   });
 }
