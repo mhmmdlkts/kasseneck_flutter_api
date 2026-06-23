@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
@@ -16,8 +16,7 @@ import 'helpers/test_receipts.dart';
 /// Asset-/Bild-I/O funktioniert direkt.
 
 Future<PrintPaper> render(KasseneckReceipt receipt, {QrPrintMode qrMode = QrPrintMode.native}) async {
-  final profile = await CapabilityProfile.load();
-  final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: profile);
+  final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
   await paper.setKeckReceipt(receipt, qrMode: qrMode);
   return paper;
 }

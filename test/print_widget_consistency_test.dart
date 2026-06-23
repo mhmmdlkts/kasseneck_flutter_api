@@ -1,5 +1,5 @@
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
@@ -27,8 +27,7 @@ class VatRow {
 
 Future<({List<VatRow> rows, List<({String left, String right})> doubles, List<String> texts})>
     renderPrint(KasseneckReceipt receipt) async {
-  final profile = await CapabilityProfile.load();
-  final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: profile);
+  final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
   // native QR -> kein Bild-Rendering noetig; auf die Werte hat das keinen Einfluss
   await paper.setKeckReceipt(receipt, qrMode: QrPrintMode.native);
 

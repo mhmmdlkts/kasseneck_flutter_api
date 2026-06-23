@@ -1,3 +1,8 @@
+## 4.0.0
+- Druck-Stack von den Paketen `image` und `esc_pos_utils_plus` entkoppelt: der ESC/POS-Generator und der (korrekte) Rasterizer aus esc_pos_utils 1.1.0 sind jetzt intern unter `lib/src/printing/`, PNG-De/Encode laeuft ueber `dart:ui`. Dadurch gibt es **keine** `image`-Versionssperre mehr fuer Apps, die dieses Paket nutzen.
+- Behebt den Bluetooth-/Thermo-Druckfehler bei Bildbreiten, die kein Vielfaches von 8 sind (Crash im `esc_pos_utils_plus`-Rasterizer); QR- und Logo-Druck unveraendert in Funktion (nativer QR byte-identisch, Bild-QR weiter auf weissem Grund mit Ruhezone).
+- Breaking: `KeckPaperSize.paperSize` hat jetzt den Typ `EscPaperSize` (intern) statt `PaperSize` aus esc_pos_utils.
+
 ## 3.3.0
 - Receipt download links now use the branded path-based URL `https://beleg.kasseneck.at/<token>` instead of `https://receipt.kreiseck.com/downloadReceipt?fullReceiptId=<token>`. The backend serves both the new path form and the old query form, so links on already printed or shared receipts keep working.
 
