@@ -55,4 +55,11 @@ void main() {
     expect(blobs.length, 2);
     expect(blobs[0].length, 8 * 8); // lineHeight*height Luminanzbytes
   });
+
+  test('toColumnFormat: bei bereits durch lineHeight teilbarer Breite wird '
+      'bewusst eine zusaetzliche Spaltengruppe gepadded (wie esc_pos_utils 1.1.0)', () {
+    final img = RasterImage.filled(8, 8, 0, 0, 0, 255); // 8 % 8 == 0
+    final blobs = toColumnFormat(img, 8);
+    expect(blobs.length, 2); // 8 -> gepadded auf 16 -> 2 Slices (gewollt)
+  });
 }

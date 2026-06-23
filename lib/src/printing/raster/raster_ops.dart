@@ -86,6 +86,10 @@ List<int> toEscPosRaster(RasterImage img) {
 /// aufgefuellt, dann je [lineHeight] breiter Slice die Luminanz jedes Pixels.
 /// Entspricht _toColumnFormat aus esc_pos_utils 1.1.0.
 List<List<int>> toColumnFormat(RasterImage img, int lineHeight) {
+  // Diese Formel ist bewusst identisch zu esc_pos_utils 1.1.0: sie paddet auch
+  // dann eine volle Spaltengruppe an, wenn die Breite bereits durch lineHeight
+  // teilbar ist (img.width % lineHeight == 0). Dies ist gewollt und bewahrt
+  // das bewaehrte ESC/POS-Verhalten byte-genau.
   final int widthPx = (img.width + lineHeight) - (img.width % lineHeight);
   final int heightPx = img.height;
   // Schwarzer Canvas, Originalbild oben-links eingesetzt.
