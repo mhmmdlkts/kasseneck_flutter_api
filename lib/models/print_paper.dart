@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -15,18 +15,18 @@ import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
 import 'kasseneck_item.dart';
-import 'package:image/image.dart';
 
 import 'keck_voucher.dart';
 
 class PrintPaper {
   final KeckPaperSize paperSize;
   final List<Map<String, dynamic>> commands = [];
-  final Generator generator;
+  final EscPosGenerator generator;
   List<Uint8List> bytes = [];
   final MyPosPaper myPosPaper = MyPosPaper();
 
-  PrintPaper({required this.paperSize, required CapabilityProfile profile}) : generator = Generator(paperSize.paperSize, profile) {
+  PrintPaper({required this.paperSize, required CapabilityProfile profile})
+      : generator = EscPosGenerator(paperSize.paperSize, profile) {
     reset();
   }
 
@@ -117,36 +117,21 @@ class PrintPaper {
     myPosPaper.addText(ch * 32, alignment: PrinterAlignment.left);
   }
 
-  void addImage(Image image, {PosAlign align = PosAlign.center}) {
-    // Der ESC/POS-Generator rastert per grayscale+invert und ignoriert den
-    // Alpha-Kanal: transparente Pixel (RGB 0,0,0 / Alpha 0) wuerden als Schwarz
-    // gedruckt -> z.B. SVG-Klamotten-Icons als komplett schwarzes Viereck.
-    // Daher zuerst auf weissen Hintergrund kompositieren.
-    final Image flat = _onWhite(image);
+  Future<void> addImage(RasterImage image, {PosAlign align = PosAlign.center}) async {
+    final RasterImage flat = compositeOnWhite(image);
     bytes.add(Uint8List.fromList(generator.imageRaster(flat)));
-
-    final pngBytes = encodePng(flat); // oder encodeJpg(src, quality: 90)
+    final pngBytes = await encodePng(flat);
     myPosPaper.addImage(pngBytes);
   }
 
-  /// Komponiert ein evtl. transparentes Bild auf weissen Hintergrund, damit der
-  /// alpha-ignorierende ESC/POS-Generator transparente Bereiche nicht schwarz
-  /// druckt. Opake Bilder bleiben optisch unveraendert.
-  static Image _onWhite(Image src) {
-    final Image bg = Image(width: src.width, height: src.height);
-    fill(bg, color: ColorRgb8(255, 255, 255));
-    compositeImage(bg, src);
-    return bg;
+  Future<void> addBase64Image(String base64, {PosAlign align = PosAlign.center}) async {
+    final image = await decodePng(base64Decode(base64));
+    await addImage(image, align: align);
   }
 
-  void addBase64Image(String base64, {PosAlign align = PosAlign.center}) {
-    Image image = decodeImage(base64Decode(base64))!;
-    addImage(image, align: align);
-  }
-
-  void addUint8ListImage(Uint8List image, {PosAlign align = PosAlign.center}) {
-    Image img = decodeImage(image)!;
-    addImage(img, align: align);
+  Future<void> addUint8ListImage(Uint8List image, {PosAlign align = PosAlign.center}) async {
+    final img = await decodePng(image);
+    await addImage(img, align: align);
   }
 
   void addQrCode(String data, {QRSize size = QRSize.size6}) {
@@ -170,29 +155,19 @@ class PrintPaper {
       }
 
       final Uint8List qrBytes = byteData.buffer.asUint8List();
-      final Image? decoded = decodeImage(qrBytes);
-      if (decoded == null) {
-        if (kDebugMode) print('Error decoding QR image');
-        return;
-      }
-
-      // QrPainter liefert schwarze Module auf TRANSPARENTEM Grund. Der ESC/POS-
-      // Generator (grayscale + invert) ignoriert den Alpha-Kanal — transparente
-      // Pixel (RGB 0,0,0, Alpha 0) würden wie Schwarz gedruckt → komplett
-      // schwarzes Quadrat. Daher auf weißen Hintergrund kompositieren, mit
-      // weißem Rand als Ruhezone für die Scanner-Lesbarkeit.
+      final RasterImage decoded = await decodePng(qrBytes);
       const int quietZone = 16;
-      final Image img = Image(
-        width: decoded.width + quietZone * 2,
-        height: decoded.height + quietZone * 2,
+      final RasterImage img = compositeOnWhite(
+        decoded,
+        canvasWidth: decoded.width + quietZone * 2,
+        canvasHeight: decoded.height + quietZone * 2,
+        dstX: quietZone,
+        dstY: quietZone,
       );
-      fill(img, color: ColorRgb8(255, 255, 255));
-      compositeImage(img, decoded, dstX: quietZone, dstY: quietZone);
-
       bytes.add(Uint8List.fromList(
         raster ? generator.imageRaster(img) : generator.image(img),
       ));
-      myPosPaper.addImage(encodePng(img));
+      myPosPaper.addImage(await encodePng(img));
     } catch (e) {
       if (kDebugMode) print('Error in addQrCodeAsImage: $e');
     }
@@ -209,10 +184,9 @@ class PrintPaper {
     reset();
 
     if (receipt.logo != null) {
-      Image image = decodeImage(receipt.logo!)!;
-      Image resized = copyResize(image, width: paperSize.imageWidth);
-
-      addImage(resized);
+      final RasterImage image = await decodePng(receipt.logo!);
+      final RasterImage resized = resizeWidth(image, paperSize.imageWidth);
+      await addImage(resized);
       addFeed();
     }
 
@@ -433,7 +407,7 @@ class PrintPaper {
   /// Dezentes Kreiseck-Branding als allerletzter Block vor dem Cut.
   /// Das s/w-Logo liegt als Package-Asset bei (Druck funktioniert offline,
   /// das Backend liefert nur das Flag `kreiseck_logo`).
-  static Image? _kreiseckLogo;
+  static RasterImage? _kreiseckLogo;
 
   Future<void> _addKreiseckBranding() async {
     if (_kreiseckLogo == null) {
@@ -444,7 +418,7 @@ class PrintPaper {
       ]) {
         try {
           final data = await rootBundle.load(key);
-          _kreiseckLogo = decodeImage(data.buffer.asUint8List());
+          _kreiseckLogo = await decodePng(data.buffer.asUint8List());
           break;
         } catch (_) {
           // naechsten Key probieren
@@ -459,7 +433,7 @@ class PrintPaper {
     // Breite muss ein Vielfaches von 8 sein — sonst crasht die Rasterisierung
     // des ESC/POS-Generators beim Byte-Padding (fixed-length list).
     final int width = ((paperSize.imageWidth * 0.85) ~/ 8) * 8;
-    addImage(copyResize(logo, width: width));
+    await addImage(resizeWidth(logo, width));
   }
 
   void _addTable(String val1, String val2, String val3, String val4) {

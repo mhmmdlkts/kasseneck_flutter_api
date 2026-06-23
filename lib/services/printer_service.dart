@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
@@ -24,18 +24,13 @@ class KeckPrinterService {
     paperSize = size;
     KeckPrinterService.ipAddress = ipAddress;
     KeckPrinterService.port = port;
-    try {
-      _profile = await CapabilityProfile.load();
-      return true;
-    } catch (e) {
-      if (kDebugMode) print('Failed to connect to printer: $e');
-      return false;
-    }
+    _profile = CapabilityProfile();
+    return true;
   }
 
   static Future<bool> initBluetoothPrinter({KeckPaperSize size = KeckPaperSize.mm58, required String printerAddress}) async {
     paperSize = size;
-    _profile ??= await CapabilityProfile.load();
+    _profile ??= CapabilityProfile();
 
     if (_devicePrinter == null || !_devicePrinter!.isConnected) {
       await FlutterBluePlus.adapterState
@@ -56,13 +51,13 @@ class KeckPrinterService {
   }
 
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
-    PrintPaper paper = PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile??await CapabilityProfile.load());
+    PrintPaper paper = PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     await paper.setKeckReceipt(receipt, qrMode: qrMode);
     return paper.bytes;
   }
 
   static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt) async {
-    PrintPaper paper = PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile??await CapabilityProfile.load());
+    PrintPaper paper = PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
     await paper.setKeckReceipt(receipt, qrMode: QrPrintMode.native);
     return paper.myPosPaper;
@@ -141,7 +136,7 @@ class KeckPrinterService {
   }
 
   static Future openCashDrawer() async {
-    final generator = Generator(paperSize.paperSize, await CapabilityProfile.load());
+    final generator = EscPosGenerator(paperSize.paperSize, CapabilityProfile());
     final drawerBytes = generator.drawer();
     await _sendToSocketPrinter(drawerBytes);
   }
