@@ -6,7 +6,7 @@ import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:qr/qr.dart';
 
 import '../enums/credit_card_provider.dart';
 import '../enums/qr_print_mode.dart';
@@ -141,29 +141,15 @@ class PrintPaper {
 
   /// QR als Bild. [raster] true → GS v 0 (imageRaster), false → ESC * (image).
   /// Welcher Befehl funktioniert, hängt vom Drucker ab — daher umschaltbar.
+  ///
+  /// Der QR wird direkt aus der Modul-Matrix gerastert: jedes Modul wird auf ein
+  /// ganzzahliges `scale×scale`-Quadrat abgebildet (rein schwarz/weiss, kein
+  /// Anti-Aliasing). Dadurch sind die Kanten scharf per Konstruktion und das
+  /// Bild ist deutlich kleiner/schneller ueber Bluetooth als der fruehere
+  /// QrPainter→PNG-Roundtrip.
   Future<void> addQrCodeAsImage(String data, {int size = 280, bool raster = true}) async {
     try {
-      final QrPainter painter = QrPainter(
-        data: data,
-        version: QrVersions.auto,
-        gapless: false,
-      );
-      final ByteData? byteData = await painter.toImageData(size.toDouble());
-      if (byteData == null) {
-        if (kDebugMode) print('Error: QR ByteData is null');
-        return;
-      }
-
-      final Uint8List qrBytes = byteData.buffer.asUint8List();
-      final RasterImage decoded = await decodePng(qrBytes);
-      const int quietZone = 16;
-      final RasterImage img = compositeOnWhite(
-        decoded,
-        canvasWidth: decoded.width + quietZone * 2,
-        canvasHeight: decoded.height + quietZone * 2,
-        dstX: quietZone,
-        dstY: quietZone,
-      );
+      final RasterImage img = renderQrMatrix(data, size: size);
       bytes.add(Uint8List.fromList(
         raster ? generator.imageRaster(img) : generator.image(img),
       ));
@@ -171,6 +157,46 @@ class PrintPaper {
     } catch (e) {
       if (kDebugMode) print('Error in addQrCodeAsImage: $e');
     }
+  }
+
+  /// Rastert die QR-Modul-Matrix von [data] in ein reines schwarz/weiss-Bild
+  /// (RGBA, Werte nur 0 oder 255 — kein Anti-Aliasing, keine Graustufen).
+  ///
+  /// Quiet-Zone = 4 Module rundum. Der ganzzahlige Modul-Scale wird aus [size]
+  /// abgeleitet (`floor`, mind. 2, max. 64), sodass jedes Modul exakt
+  /// `scale×scale` Pixel belegt. Ergebnis ist quadratisch mit Kantenlaenge
+  /// `(moduleCount + 8) * scale`.
+  static RasterImage renderQrMatrix(String data, {int size = 280}) {
+    final QrCode qr = QrCode.fromData(
+      data: data,
+      errorCorrectLevel: QrErrorCorrectLevel.M,
+    );
+    final QrImage qi = QrImage(qr);
+    final int n = qr.moduleCount;
+    const int quiet = 4; // Module Quiet-Zone rundum
+    final int full = n + quiet * 2;
+    final int scale = (size / full).floor().clamp(2, 64);
+    final int dim = full * scale;
+
+    final RasterImage img = RasterImage.filled(dim, dim, 255, 255, 255, 255);
+    for (int r = 0; r < n; r++) {
+      for (int c = 0; c < n; c++) {
+        if (!qi.isDark(r, c)) continue;
+        final int x0 = (c + quiet) * scale;
+        final int y0 = (r + quiet) * scale;
+        for (int dy = 0; dy < scale; dy++) {
+          int idx = ((y0 + dy) * dim + x0) * 4;
+          for (int dx = 0; dx < scale; dx++) {
+            img.rgba[idx] = 0; // R
+            img.rgba[idx + 1] = 0; // G
+            img.rgba[idx + 2] = 0; // B
+            img.rgba[idx + 3] = 255; // A (voll deckend schwarz)
+            idx += 4;
+          }
+        }
+      }
+    }
+    return img;
   }
 
   void reset() {

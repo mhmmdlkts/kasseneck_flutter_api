@@ -1,3 +1,6 @@
+## 4.2.0
+- **Crisp image QR:** the image-based QR (`addQrCodeAsImage`, used by the imageRaster/bitImage print modes) is now rasterized directly from the QR module matrix with an integer per-module scale and no anti-aliasing — pure black/white pixels, sharp by construction. This replaces the previous `QrPainter → PNG encode/decode` path, whose non-integer pixel size (280 px over a variable module count) produced fringed edges and a larger image that was slow over Bluetooth; the new bitmap is smaller and faster to send. The native QR command (`addQrCode`) and the Bluetooth send path are unchanged.
+
 ## 4.1.1
 - Cleans up the WiFi raw-print API from 4.1.0: dropped the unused `size` parameter (raw bytes are already rendered), renamed the result type `PrintResult` → **`KeckPrintResult`** (avoids clashing with app-level `PrintResult` types), documented that `success` means *sent* (bytes written to the socket) — not guaranteed *printed* (raw TCP to a thermal printer has no application ACK), and de-duplicated the socket send behind a shared internal helper. Final shape: `KeckPrinterService.printRawBytesWifi(bytes, {required ip, port = 9100, timeout = 5s}) → Future<KeckPrintResult>`.
 
