@@ -92,7 +92,13 @@ class KeckPrinterService {
     final List<Uint8List> parts = await receipt.getPrintBytes(paperSize: paperSize, qrMode: qrMode);
     // Ein durchgehender Byte-Strom -> einheitliches Chunking ueber den ganzen Beleg.
     final List<int> data = <int>[for (final p in parts) ...p];
+    return _sendToBluetoothPrinter(data);
+  }
 
+  /// Sendet einen fertigen Byte-Strom an den aktuell verbundenen Bluetooth-Drucker.
+  /// Nutzt exakt den Sende-Pfad (MTU-Aushandlung, Flow-Control/Pacing) von
+  /// [printReceiptBluetooth].
+  static Future _sendToBluetoothPrinter(List<int> data) async {
     // Groessere MTU aushandeln, wo unterstuetzt (Android); sonst aktuellen Wert nehmen.
     int mtu;
     try {
@@ -139,5 +145,159 @@ class KeckPrinterService {
     final generator = EscPosGenerator(paperSize.paperSize, CapabilityProfile());
     final drawerBytes = generator.drawer();
     await _sendToSocketPrinter(drawerBytes);
+  }
+
+  // ************************ Custom-Print-API ************************
+  // Additive, generische Druck-Schnittstelle auf Basis des vendierten
+  // [EscPosGenerator]. Bricht die RKSV-Beleglogik nicht — sie nutzt denselben
+  // Sende-Pfad wie printReceiptBluetooth/printReceiptWifi.
+
+  /// Frischer Generator mit aktueller Papiergroesse und dem initialisierten
+  /// CapabilityProfile (Fallback: Default-Profil).
+  static EscPosGenerator _generator() =>
+      EscPosGenerator(paperSize.paperSize, _profile ?? CapabilityProfile());
+
+  /// Sendet einen fertigen Byte-Strom an den aktuell initialisierten Drucker.
+  ///
+  /// Wenn ein Bluetooth-Drucker verbunden ist, geht es ueber den BT-Pfad
+  /// (MTU/Chunking/Flow-Control wie beim Beleg-Druck); sonst ueber den
+  /// WLAN-Socket-Pfad. So funktionieren die Custom-Befehle unabhaengig davon,
+  /// welcher Drucker gerade aktiv ist.
+  static Future<void> _sendToActivePrinter(List<int> bytes) async {
+    if (bytes.isEmpty) return;
+    if (_devicePrinter != null && _devicePrinter!.isConnected) {
+      await _sendToBluetoothPrinter(bytes);
+    } else {
+      await _sendToSocketPrinter(bytes);
+    }
+  }
+
+  /// Sendet beliebige, bereits fertige ESC/POS-Bytes an den aktiven Drucker.
+  static Future<void> printRawBytes(List<int> bytes) => _sendToActivePrinter(bytes);
+
+  /// Druckt einen Text (mit optionalen [styles]) und sendet ihn sofort.
+  static Future<void> printText(String text, {PosStyles? styles}) async {
+    final gen = _generator();
+    await _sendToActivePrinter(
+      gen.text(text, styles: styles ?? const PosStyles()),
+    );
+  }
+
+  /// Druckt einen QR-Code und sendet ihn sofort. [size] entspricht den
+  /// nativen ESC/POS-QR-Groessen 1–8.
+  static Future<void> printQr(String data, {int size = 4}) async {
+    final gen = _generator();
+    await _sendToActivePrinter(gen.qrcode(data, size: _qrSize(size)));
+  }
+
+  /// Schneidet das Papier ab (falls vom Drucker unterstuetzt).
+  static Future<void> cut() async {
+    await _sendToActivePrinter(_generator().cut());
+  }
+
+  /// Oeffnet die Kassenlade am aktiven Drucker.
+  static Future<void> openDrawer() async {
+    await _sendToActivePrinter(_generator().drawer());
+  }
+
+  /// Papiervorschub um [n] Zeilen.
+  static Future<void> feed(int n) async {
+    await _sendToActivePrinter(_generator().feed(n));
+  }
+
+  /// Druckt einen zusammengesetzten Auftrag in EINEM Sendevorgang
+  /// (bevorzugt fuer Bluetooth — ein einziger Byte-Strom statt vieler Writes).
+  static Future<void> printJob(CustomPrintJob job) async {
+    await _sendToActivePrinter(job.build(_generator()));
+  }
+
+  /// Mappt eine Groessenzahl 1–8 auf die passende [QRSize].
+  static QRSize _qrSize(int size) {
+    switch (size.clamp(1, 8)) {
+      case 1:
+        return QRSize.size1;
+      case 2:
+        return QRSize.size2;
+      case 3:
+        return QRSize.size3;
+      case 5:
+        return QRSize.size5;
+      case 6:
+        return QRSize.size6;
+      case 7:
+        return QRSize.size7;
+      case 8:
+        return QRSize.size8;
+      case 4:
+      default:
+        return QRSize.size4;
+    }
+  }
+  // ************************ (end) Custom-Print-API ************************
+}
+
+/// Sammelt mehrere Custom-Druckbefehle und baut daraus EINEN Byte-Strom, der
+/// mit [KeckPrinterService.printJob] in einem einzigen Sendevorgang gedruckt
+/// wird (fuer Bluetooth deutlich robuster als viele Einzel-Sends).
+///
+/// Fluent-API — die Aufrufe lassen sich verketten:
+/// ```dart
+/// final job = CustomPrintJob()
+///   ..text('Hallo')
+///   ..qr('https://kasseneck.at')
+///   ..feed(2)
+///   ..cut();
+/// await KeckPrinterService.printJob(job);
+/// ```
+class CustomPrintJob {
+  // Die Befehle werden erst beim [build] gegen einen konkreten Generator
+  // aufgeloest — so gilt immer die aktuelle Papiergroesse/das Profil.
+  final List<List<int> Function(EscPosGenerator)> _ops =
+      <List<int> Function(EscPosGenerator)>[];
+
+  /// Text (mit optionalen [styles]).
+  CustomPrintJob text(String text, {PosStyles? styles}) {
+    _ops.add((gen) => gen.text(text, styles: styles ?? const PosStyles()));
+    return this;
+  }
+
+  /// QR-Code. [size] = native ESC/POS-QR-Groesse 1–8.
+  CustomPrintJob qr(String data, {int size = 4}) {
+    _ops.add((gen) => gen.qrcode(data, size: KeckPrinterService._qrSize(size)));
+    return this;
+  }
+
+  /// Papier abschneiden.
+  CustomPrintJob cut({PosCutMode mode = PosCutMode.full}) {
+    _ops.add((gen) => gen.cut(mode: mode));
+    return this;
+  }
+
+  /// Kassenlade oeffnen.
+  CustomPrintJob drawer({PosDrawer pin = PosDrawer.pin2}) {
+    _ops.add((gen) => gen.drawer(pin: pin));
+    return this;
+  }
+
+  /// Papiervorschub um [n] Zeilen.
+  CustomPrintJob feed(int n) {
+    _ops.add((gen) => gen.feed(n));
+    return this;
+  }
+
+  /// Beliebige, bereits fertige ESC/POS-Bytes.
+  CustomPrintJob raw(List<int> bytes) {
+    _ops.add((_) => bytes);
+    return this;
+  }
+
+  /// Loest alle gesammelten Befehle gegen [gen] auf und liefert EINEN
+  /// zusammenhaengenden Byte-Strom.
+  List<int> build(EscPosGenerator gen) {
+    final List<int> bytes = <int>[];
+    for (final op in _ops) {
+      bytes.addAll(op(gen));
+    }
+    return bytes;
   }
 }

@@ -43,7 +43,7 @@ void main() {
 
       await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]);
 
-      expect(captured.url.toString(), 'https://europe-west1-kasseneck.cloudfunctions.net/createReceipt');
+      expect(captured.url.toString(), 'https://api.kasseneck.at/v1/createReceipt');
       expect(captured.headers['Authorization'], 'Bearer test-key');
       expect(captured.headers['cashregister-token'], base64Encode(utf8.encode('CASHBOX-9:secret')));
       expect(captured.headers['content-type'], startsWith('application/json'));
@@ -54,8 +54,9 @@ void main() {
       expect(params['receiptType'], 'standard');
       expect(params['paymentMethod'], 'cash');
       final item = (params['items'] as List).first as Map<String, dynamic>;
-      expect(item['priceOne'], 1.0);
-      expect(item['priceOneCents'], 100); // Dual-Send
+      expect(item['quantity'], 1);
+      expect(item['unitPriceCents'], 100); // v2: ganze Cent (Integer)
+      expect(item['vatRate'], 20);
     });
 
     test('sellReceipt parst die Antwort zu einem Beleg', () async {
@@ -162,7 +163,7 @@ void main() {
 
       final params = (jsonDecode(captured.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
       expect(params['receiptType'], 'cancellation');
-      final cents = (params['items'] as List).map((i) => i['priceOneCents'] as int).toList();
+      final cents = (params['items'] as List).map((i) => i['unitPriceCents'] as int).toList();
       expect(cents, [-1999, -29, -105]);
     });
     test('zeroReceipt sendet keine Items', () async {

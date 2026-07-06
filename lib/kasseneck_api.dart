@@ -36,7 +36,7 @@ import 'models/kasseneck_receipt.dart';
 /// );
 /// ```
 class KasseneckApi {
-  static final String _baseUrl = 'https://europe-west1-kasseneck.cloudfunctions.net';
+  static final String _baseUrl = 'https://api.kasseneck.at/v1';
   static final String downloadBaseUrl = 'https://beleg.kasseneck.at';
   final String apiKey;
   final String cashregisterToken;

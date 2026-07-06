@@ -62,29 +62,36 @@ class KasseneckItem {
   /// Zeilensumme in Cent (exakt, ohne Gleitkomma).
   int get totalCents => priceCents * quantity;
 
-  /// Umwandlung ins JSON-Format. Es werden BEIDE Felder gesendet: `priceOne`
-  /// (Euro, fuer das alte Backend) und `priceOneCents` (vom neuen Backend
-  /// bevorzugt, exakt). So funktioniert der Client unabhaengig vom Backend-Stand.
+  /// Umwandlung ins JSON-Format (v2, empfohlen): `{ name, quantity,
+  /// unitPriceCents, vatRate }`. Der Preis wird als ganze Cent (Integer)
+  /// gesendet — keine Gleitkomma-Betraege. Das Backend akzeptiert weiterhin
+  /// die alte v1-Form; gelesen werden beide (siehe [fromJson]).
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'amount': quantity,
-      'vat': vat.rate,
-      'priceOne': priceCents / 100,
-      'priceOneCents': priceCents,
+      'quantity': quantity,
+      'unitPriceCents': priceCents,
+      'vatRate': vat.rate,
     };
   }
 
   /// Erzeugt ein KasseneckItem aus einem JSON-Objekt.
-  /// `priceOneCents` wird bevorzugt (exakt); Fallback: Euro mit einmaliger Rundung.
+  ///
+  /// Liest sowohl die neue v2-Form (`unitPriceCents` / `quantity` / `vatRate`)
+  /// als auch die alte v1-Form (`priceOneCents` bzw. `priceOne` / `amount` /
+  /// `vat`) — so parsen alte gespeicherte Belege weiterhin. Cent-Felder werden
+  /// bevorzugt (exakt), Euro nur als Fallback mit einmaliger Rundung.
   factory KasseneckItem.fromJson(Map<String, dynamic> json) {
-    final cents = json['priceOneCents'];
+    final cents = json['unitPriceCents'] ?? json['priceOneCents'];
+    final euro = json['priceOne'];
+    final quantity = json['quantity'] ?? json['amount'];
+    final rate = json['vatRate'] ?? json['vat'];
     return KasseneckItem(
-      name: json['name'] as String,
+      name: (json['name'] as String?) ?? '',
       // num statt int: manche Quellen liefern 1.0 statt 1.
-      quantity: (json['amount'] as num).toInt(),
-      vat: VatRate.values.firstWhere((e) => e.rate == json['vat'], orElse: () => VatRate.vat0),
-      priceCents: cents is num ? cents.round() : ((json['priceOne'] as num) * 100).round(),
+      quantity: quantity is num ? quantity.toInt() : 0,
+      vat: VatRate.values.firstWhere((e) => e.rate == rate, orElse: () => VatRate.vat0),
+      priceCents: cents is num ? cents.round() : (euro is num ? (euro * 100).round() : 0),
     );
   }
 
