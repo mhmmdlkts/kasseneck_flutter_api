@@ -1,3 +1,8 @@
+## 3.4.0
+- Item requests now use the recommended **v2 item shape**: `{ name, quantity, unitPriceCents, vatRate }` — the unit price is sent as whole integer cents (no floating-point amounts). This applies wherever items are serialized (`createReceipt`, cancellations, Stripe links).
+- Reading stays backward compatible: `KasseneckItem.fromJson` accepts both the v2 shape and the old v1 shape (`amount`/`vat`/`priceOne`/`priceOneCents`), so previously stored receipts keep parsing. Cent fields win over euro fields; missing fields are tolerated.
+- The API base URL is unchanged (`https://api.kasseneck.at/v1`); only the item JSON shape changed.
+
 ## 3.3.0
 - API calls now go through the branded, versioned API domain `https://api.kasseneck.at/v1` instead of the raw Cloud Functions URL. Fully transparent to package users (same methods, same behaviour); the previous endpoints keep working, this only changes the base URL the package targets.
 - The receipt download link (`downloadBaseUrl`) is unchanged.

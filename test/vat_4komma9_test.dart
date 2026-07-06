@@ -22,15 +22,15 @@ void main() {
       expect(item.vat.rate, 4.9);
     });
 
-    test('toJson schickt 4.9 als vat ans Backend', () {
+    test('toJson schickt 4.9 als vatRate ans Backend (v2-Form)', () {
       final item = KasseneckItem(
         name: 'Brot',
         quantity: 1,
         vat: VatRate.vat4komma9,
         priceCents: 120,
       );
-      expect(item.toJson()['vat'], 4.9);
-      expect(item.toJson()['priceOne'], 1.20); // Wire-Format bleibt Euro
+      expect(item.toJson()['vatRate'], 4.9);
+      expect(item.toJson()['unitPriceCents'], 120); // Wire-Format: ganze Cent
     });
 
     test('Regression: bestehende Saetze unveraendert', () {

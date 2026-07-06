@@ -55,20 +55,64 @@ void main() {
     });
   });
 
+  group('toJson (v2-Form)', () {
+    test('sendet quantity/unitPriceCents/vatRate als ganze Cent', () {
+      final j = KasseneckItem(name: 'Kaffee', quantity: 2, vat: VatRate.vat20, priceCents: 1999).toJson();
+      expect(j['name'], 'Kaffee');
+      expect(j['quantity'], 2);
+      expect(j['unitPriceCents'], 1999);
+      expect(j['vatRate'], 20);
+      // v1-Felder sind entfallen
+      expect(j.containsKey('amount'), isFalse);
+      expect(j.containsKey('priceOne'), isFalse);
+      expect(j.containsKey('priceOneCents'), isFalse);
+      expect(j.containsKey('vat'), isFalse);
+    });
+    test('unitPriceCents ist immer Integer (keine Floats)', () {
+      final j = KasseneckItem(name: 'x', quantity: 1, vat: VatRate.vat10, priceCents: -105).toJson();
+      expect(j['unitPriceCents'], isA<int>());
+      expect(j['unitPriceCents'], -105);
+    });
+  });
+
   group('fromJson Grenzfaelle', () {
     test('unbekannter vat-Satz faellt auf vat0 zurueck (dokumentiertes Verhalten)', () {
-      final item = KasseneckItem.fromJson({'name': 'x', 'amount': 1, 'vat': 7, 'priceOne': 1.0});
+      final item = KasseneckItem.fromJson({'name': 'x', 'quantity': 1, 'vatRate': 7, 'unitPriceCents': 100});
       expect(item.vat, VatRate.vat0);
     });
-    test('alle bekannten Saetze mappen korrekt', () {
+    test('alle bekannten Saetze mappen korrekt (v2)', () {
       for (final rate in VatRate.values) {
-        final item = KasseneckItem.fromJson({'name': 'x', 'amount': 1, 'vat': rate.rate, 'priceOne': 1.0});
+        final item = KasseneckItem.fromJson({'name': 'x', 'quantity': 1, 'vatRate': rate.rate, 'unitPriceCents': 100});
         expect(item.vat, rate, reason: 'Satz ${rate.rate}');
       }
     });
-    test('priceOneCents als double (JSON kennt kein int) wird gerundet', () {
-      final item = KasseneckItem.fromJson({'name': 'x', 'amount': 1, 'vat': 20, 'priceOneCents': 1999.0});
+    test('unitPriceCents als double (JSON kennt kein int) wird gerundet', () {
+      final item = KasseneckItem.fromJson({'name': 'x', 'quantity': 1, 'vatRate': 20, 'unitPriceCents': 1999.0});
       expect(item.priceCents, 1999);
+    });
+    test('liest weiterhin alte v1-Belege (amount/vat/priceOne(Cents))', () {
+      final v1cents = KasseneckItem.fromJson({'name': 'x', 'amount': 3, 'vat': 10, 'priceOneCents': 250});
+      expect(v1cents.quantity, 3);
+      expect(v1cents.vat, VatRate.vat10);
+      expect(v1cents.priceCents, 250);
+      final v1euro = KasseneckItem.fromJson({'name': 'x', 'amount': 2, 'vat': 20, 'priceOne': 1.05});
+      expect(v1euro.priceCents, 105);
+    });
+    test('robust gegen fehlende Felder', () {
+      final empty = KasseneckItem.fromJson({});
+      expect(empty.name, '');
+      expect(empty.quantity, 0);
+      expect(empty.priceCents, 0);
+      expect(empty.vat, VatRate.vat0);
+    });
+    test('v2 hat Vorrang bei gemischten Feldern', () {
+      final item = KasseneckItem.fromJson({
+        'name': 'x', 'quantity': 5, 'amount': 1, 'vatRate': 20, 'vat': 10,
+        'unitPriceCents': 1234, 'priceOneCents': 9999, 'priceOne': 88.0,
+      });
+      expect(item.quantity, 5);
+      expect(item.vat, VatRate.vat20);
+      expect(item.priceCents, 1234);
     });
   });
 

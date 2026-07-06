@@ -13,10 +13,10 @@ import 'package:kasseneck_api/models/keck_voucher.dart';
 
 /// Geld als Integer-Cent: Beweis-Tests fuer die v3-Migration.
 ///
-/// Das Wichtigste ist der Wire-Roundtrip: das JSON-Format Richtung Backend
-/// bleibt Euro (`priceOne: 19.99`). cents -> /100 -> double -> *100 -> round
-/// muss fuer JEDEN Betrag verlustfrei sein, sonst waere die Migration nicht
-/// backend-kompatibel.
+/// Das Wichtigste ist der Wire-Roundtrip: KasseneckItem sendet in der v2-Form
+/// ganze Cent (`unitPriceCents`), fromJson liest v2 und die alte v1-Form. Der
+/// Roundtrip toJson -> fromJson muss fuer JEDEN Betrag verlustfrei sein.
+/// KeckVoucher/KeckInvoiceItem senden weiterhin dual (Euro + Cent).
 void main() {
   KasseneckReceipt receipt({required List<KasseneckItem> items, List<KeckVoucher>? vouchers}) {
     return KasseneckReceipt(
@@ -79,11 +79,13 @@ void main() {
     });
   });
 
-  group('Dual-Send: Euro (Legacy-Backend) + Cents (neues Backend)', () {
-    test('toJson enthaelt beide Felder, konsistent', () {
+  group('Item v2-Form + Voucher Dual-Send', () {
+    test('KasseneckItem.toJson sendet v2 (ganze Cent), Voucher weiterhin dual', () {
       final j = KasseneckItem(name: 'x', quantity: 1, vat: VatRate.vat20, priceCents: 1999).toJson();
-      expect(j['priceOneCents'], 1999);
-      expect(j['priceOne'], 19.99);
+      expect(j['unitPriceCents'], 1999);
+      expect(j['vatRate'], 20);
+      expect(j['quantity'], 1);
+      expect(j.containsKey('priceOne'), isFalse);
       final v = KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 500).toJson();
       expect(v['valueCents'], 500);
       expect(v['value'], 5.0);
@@ -91,8 +93,8 @@ void main() {
 
     test('fromJson bevorzugt Cents (bei widerspruechlichen Feldern gewinnt Cents)', () {
       final item = KasseneckItem.fromJson({
-        'name': 'x', 'amount': 1, 'vat': 20,
-        'priceOne': 99.99, 'priceOneCents': 1234, // absichtlich widerspruechlich
+        'name': 'x', 'quantity': 1, 'vatRate': 20,
+        'priceOne': 99.99, 'unitPriceCents': 1234, // absichtlich widerspruechlich
       });
       expect(item.priceCents, 1234);
       final voucher = KeckVoucher.fromJson({
@@ -101,9 +103,11 @@ void main() {
       expect(voucher.valueCents, 500);
     });
 
-    test('Legacy-JSON (nur Euro, z. B. alte Belege) parst weiterhin', () {
+    test('Legacy-JSON (v1 / nur Euro, z. B. alte Belege) parst weiterhin', () {
       final item = KasseneckItem.fromJson({'name': 'x', 'amount': 2, 'vat': 10, 'priceOne': 1.05});
       expect(item.priceCents, 105);
+      expect(item.quantity, 2);
+      expect(item.vat, VatRate.vat10);
       final voucher = KeckVoucher.fromJson({'action': 'redeem', 'type': 'promo', 'value': 1.5});
       expect(voucher.valueCents, 150);
     });
