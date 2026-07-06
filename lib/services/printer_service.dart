@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
-import 'package:kasseneck_api/models/print_result.dart';
+import 'package:kasseneck_api/models/keck_print_result.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:my_pos/enums/my_pos_print_response.dart';
 import 'package:my_pos/my_pos.dart';
@@ -64,6 +64,22 @@ class KeckPrinterService {
     return paper.myPosPaper;
   }
 
+  /// Öffnet eine kurzlebige TCP-Verbindung zu [ip]:[port], sendet [bytes] und
+  /// schließt wieder. Wirft bei Verbindungs-/Sendefehler. Gemeinsame Basis für
+  /// den WLAN-Beleg-Druck und [printRawBytesWifi].
+  static Future<void> _rawSocketSend(List<int> bytes, String ip, int port, Duration timeout) async {
+    Socket? socket;
+    try {
+      socket = await Socket.connect(ip, port, timeout: timeout);
+      socket.add(bytes);
+      await socket.flush().timeout(timeout);
+    } finally {
+      try {
+        await socket?.close();
+      } catch (_) {/* Schließen-Fehler ignorieren — gesendet ist gesendet. */}
+    }
+  }
+
   static Future<void> _sendToSocketPrinter(List<int> bytes) async {
     final String? ip = ipAddress;
     if (ip == null || ip.isEmpty) {
@@ -71,10 +87,7 @@ class KeckPrinterService {
       // null in Socket.connect zu crashen ("Null is not a subtype of String").
       return;
     }
-    Socket socket = await Socket.connect(ip, port, timeout: const Duration(seconds: 5));
-    socket.add(bytes);
-    await socket.flush();
-    await socket.close();
+    await _rawSocketSend(bytes, ip, port, const Duration(seconds: 5));
   }
 
   /// Sendet fertige ESC/POS-Bytes direkt an einen WiFi-Drucker — ohne den
@@ -82,29 +95,21 @@ class KeckPrinterService {
   ///
   /// Stateless: nutzt eine eigene, kurzlebige Socket-Verbindung zu [ip]:[port]
   /// und rührt weder [ipAddress]/[port] noch den initialisierten Drucker an.
-  /// [bytes] sollten bereits zur Papierbreite [size] passen (der Aufrufer hat
-  /// sie so gerendert). Wirft nicht — Fehler kommen im [PrintResult].
-  static Future<PrintResult> printRawBytesWifi(
+  /// Wirft nicht — das Ergebnis kommt im [KeckPrintResult]. `success` heißt
+  /// **gesendet**, nicht garantiert *gedruckt* (kein TCP-ACK; siehe [KeckPrintResult]).
+  static Future<KeckPrintResult> printRawBytesWifi(
     List<int> bytes, {
     required String ip,
     int port = 9100,
-    KeckPaperSize size = KeckPaperSize.mm80,
     Duration timeout = const Duration(seconds: 5),
   }) async {
-    if (bytes.isEmpty) return const PrintResult.failure('Keine Bytes zum Drucken.');
-    if (ip.trim().isEmpty) return const PrintResult.failure('Keine Drucker-IP angegeben.');
-    Socket? socket;
+    if (bytes.isEmpty) return const KeckPrintResult.failure('Keine Bytes zum Drucken.');
+    if (ip.trim().isEmpty) return const KeckPrintResult.failure('Keine Drucker-IP angegeben.');
     try {
-      socket = await Socket.connect(ip, port, timeout: timeout);
-      socket.add(bytes);
-      await socket.flush().timeout(timeout);
-      return const PrintResult.success();
+      await _rawSocketSend(bytes, ip, port, timeout);
+      return const KeckPrintResult.success();
     } catch (e) {
-      return PrintResult.failure('WiFi-Druck fehlgeschlagen ($ip:$port): $e');
-    } finally {
-      try {
-        await socket?.close();
-      } catch (_) {/* Schließen-Fehler ignorieren — gesendet ist gesendet. */}
+      return KeckPrintResult.failure('WiFi-Druck fehlgeschlagen ($ip:$port): $e');
     }
   }
 

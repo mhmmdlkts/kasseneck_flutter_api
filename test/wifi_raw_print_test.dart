@@ -16,7 +16,7 @@ void main() {
         });
       });
 
-      final res = await KeckPrinterService.printRawBytesWifi(
+      final KeckPrintResult res = await KeckPrinterService.printRawBytesWifi(
         [10, 20, 30, 40],
         ip: '127.0.0.1',
         port: server.port,

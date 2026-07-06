@@ -31,4 +31,4 @@ export 'src/printing/escpos/qrcode.dart' show QRSize, QRCorrection, QRCode;
 export 'src/printing/escpos/capability_profile.dart' show CapabilityProfile;
 export 'src/printing/raster/raster_image.dart' show RasterImage;
 export 'services/printer_service.dart' show KeckPrinterService, CustomPrintJob;
-export 'models/print_result.dart' show PrintResult;
+export 'models/keck_print_result.dart' show KeckPrintResult;
