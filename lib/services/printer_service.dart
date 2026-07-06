@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
+import 'package:kasseneck_api/models/print_result.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:my_pos/enums/my_pos_print_response.dart';
 import 'package:my_pos/my_pos.dart';
@@ -74,6 +75,37 @@ class KeckPrinterService {
     socket.add(bytes);
     await socket.flush();
     await socket.close();
+  }
+
+  /// Sendet fertige ESC/POS-Bytes direkt an einen WiFi-Drucker — ohne den
+  /// globalen aktiven Drucker zu verändern. Liefert Erfolg/Fehler zurück.
+  ///
+  /// Stateless: nutzt eine eigene, kurzlebige Socket-Verbindung zu [ip]:[port]
+  /// und rührt weder [ipAddress]/[port] noch den initialisierten Drucker an.
+  /// [bytes] sollten bereits zur Papierbreite [size] passen (der Aufrufer hat
+  /// sie so gerendert). Wirft nicht — Fehler kommen im [PrintResult].
+  static Future<PrintResult> printRawBytesWifi(
+    List<int> bytes, {
+    required String ip,
+    int port = 9100,
+    KeckPaperSize size = KeckPaperSize.mm80,
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    if (bytes.isEmpty) return const PrintResult.failure('Keine Bytes zum Drucken.');
+    if (ip.trim().isEmpty) return const PrintResult.failure('Keine Drucker-IP angegeben.');
+    Socket? socket;
+    try {
+      socket = await Socket.connect(ip, port, timeout: timeout);
+      socket.add(bytes);
+      await socket.flush().timeout(timeout);
+      return const PrintResult.success();
+    } catch (e) {
+      return PrintResult.failure('WiFi-Druck fehlgeschlagen ($ip:$port): $e');
+    } finally {
+      try {
+        await socket?.close();
+      } catch (_) {/* Schließen-Fehler ignorieren — gesendet ist gesendet. */}
+    }
   }
 
   static Future<PrintResponse> printReceiptMypos(KasseneckReceipt receipt) async {

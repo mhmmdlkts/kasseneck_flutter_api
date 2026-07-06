@@ -1,3 +1,6 @@
+## 4.1.0
+- **Direct WiFi raw printing:** `KeckPrinterService.printRawBytesWifi(bytes, ip:, port:, size:, timeout:)` sends finished ESC/POS bytes straight to a network printer over a short-lived socket, **without touching the globally initialized printer** (`ipAddress`/`port`/the active device stay untouched). It never throws — the outcome is reported as a new `PrintResult` (`success` + optional `error`), so callers can retry or show a hint. Both are exported from `package:kasseneck_api/printing.dart`.
+
 ## 4.0.0
 - **Decoupled print stack.** The ESC/POS generator and the (correct) rasterizer from esc_pos_utils 1.1.0 are now vendored internally under `lib/src/printing/`; PNG de/encoding runs via `dart:ui`. The runtime no longer depends on `esc_pos_utils_plus`, and `image` is a dev-only dependency — apps that use this package are no longer version-locked to `image` and pull in no print dependencies at runtime.
 - Fixes the Bluetooth/thermal print failure for image widths that are not a multiple of 8 (a crash in the old `esc_pos_utils_plus` rasterizer). QR and logo printing are unchanged in behaviour (native QR is byte-identical, image-QR keeps its white background and quiet zone).
