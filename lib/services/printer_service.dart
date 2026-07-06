@@ -304,6 +304,27 @@ class CustomPrintJob {
     return this;
   }
 
+  /// 1D-Barcode (GS k, Form 2). [type] waehlt die Symbologie, [data] den
+  /// Inhalt; [height]/[width]/[hri] steuern Hoehe, Modulbreite und Klartext.
+  CustomPrintJob barcode(
+    BarcodeType type,
+    String data, {
+    PosAlign align = PosAlign.center,
+    int height = 100,
+    int width = 3,
+    BarcodeHri hri = BarcodeHri.below,
+  }) {
+    _ops.add((gen) => gen.barcode(
+          type,
+          data,
+          align: align,
+          height: height,
+          width: width,
+          hri: hri,
+        ));
+    return this;
+  }
+
   /// Papier abschneiden.
   CustomPrintJob cut({PosCutMode mode = PosCutMode.full}) {
     _ops.add((gen) => gen.cut(mode: mode));

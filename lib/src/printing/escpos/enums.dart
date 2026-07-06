@@ -3,6 +3,35 @@ enum PosCutMode { full, partial }
 enum PosFontType { fontA, fontB }
 enum PosDrawer { pin2, pin5 }
 
+/// 1D-Barcode-Symbologien fuer GS k (Form 2). Der Wert [m] ist der
+/// ESC/POS-Selektor (65..73) im Befehl `GS k m n <payload>`.
+enum BarcodeType {
+  upcA(65),
+  upcE(66),
+  ean13(67),
+  ean8(68),
+  code39(69),
+  itf(70),
+  codabar(71),
+  code93(72),
+  code128(73);
+
+  final int m;
+  const BarcodeType(this.m);
+}
+
+/// Position der HRI-Klartextzeichen (Human Readable Interpretation) relativ
+/// zum Barcode. Der Wert geht als n in `GS H n`.
+enum BarcodeHri {
+  none(0),
+  above(1),
+  below(2),
+  both(3);
+
+  final int value;
+  const BarcodeHri(this.value);
+}
+
 /// bitImageRaster: GS v 0 (obsolete); graphics: GS ( L
 enum PosImageFn { bitImageRaster, graphics }
 

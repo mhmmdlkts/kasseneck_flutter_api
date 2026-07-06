@@ -24,7 +24,9 @@ export 'src/printing/escpos/enums.dart'
         PosDrawer,
         PosImageFn,
         PosTextSize,
-        EscPaperSize;
+        EscPaperSize,
+        BarcodeType,
+        BarcodeHri;
 export 'src/printing/escpos/pos_styles.dart' show PosStyles;
 export 'src/printing/escpos/pos_column.dart' show PosColumn;
 export 'src/printing/escpos/qrcode.dart' show QRSize, QRCorrection, QRCode;

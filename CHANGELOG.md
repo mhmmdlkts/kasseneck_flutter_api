@@ -1,3 +1,6 @@
+## 4.3.0
+- **1D barcode support** in the vendored ESC/POS engine: `EscPosGenerator.barcode(type, data, {align, height, width, hri})` and the fluent `CustomPrintJob.barcode(...)`. Emits GS k form 2 (length-prefixed) with the symbologies UPC-A, UPC-E, EAN-13, EAN-8, CODE39, ITF, CODABAR, CODE93 and CODE128 (auto code-set B — `{B` is prepended unless the data already starts a code-set sequence), plus height (GS h), width (GS w) and HRI position (GS H) options. `BarcodeType` and `BarcodeHri` are exported from `package:kasseneck_api/printing.dart`. This closes the last gap vs. esc_pos_utils_plus — the print stack is now fully self-contained.
+
 ## 4.2.0
 - **Crisp image QR:** the image-based QR (`addQrCodeAsImage`, used by the imageRaster/bitImage print modes) is now rasterized directly from the QR module matrix with an integer per-module scale and no anti-aliasing — pure black/white pixels, sharp by construction. This replaces the previous `QrPainter → PNG encode/decode` path, whose non-integer pixel size (280 px over a variable module count) produced fringed edges and a larger image that was slow over Bluetooth; the new bitmap is smaller and faster to send. The native QR command (`addQrCode`) and the Bluetooth send path are unchanged.
 

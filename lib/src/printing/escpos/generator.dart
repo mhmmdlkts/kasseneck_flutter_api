@@ -364,6 +364,47 @@ class EscPosGenerator {
     return bytes;
   }
 
+  /// Print a 1D barcode using GS k (Form 2, laengen-praefigiert).
+  ///
+  /// [type] waehlt die Symbologie (m = 65..73). [data] ist der Nutzinhalt.
+  /// [height] setzt die Barcode-Hoehe in Dots (GS h, 1..255), [width] die
+  /// Modulbreite (GS w, 2..6), [hri] die Position der Klartextzeichen (GS H).
+  ///
+  /// Fuer CODE128 wird — sofern [data] nicht bereits mit `{` beginnt — der
+  /// Code-Set B vorangestellt (`{B`), wie es der Drucker fuer Form 2 erwartet.
+  List<int> barcode(
+    BarcodeType type,
+    String data, {
+    PosAlign align = PosAlign.center,
+    int height = 100,
+    int width = 3,
+    BarcodeHri hri = BarcodeHri.below,
+  }) {
+    List<int> bytes = [];
+    // Set alignment
+    bytes += setStyles(const PosStyles().copyWith(align: align));
+    // GS h n -> Barcode-Hoehe
+    bytes += [0x1D, 0x68, height.clamp(1, 255)];
+    // GS w n -> Modulbreite
+    bytes += [0x1D, 0x77, width.clamp(2, 6)];
+    // GS H n -> HRI-Position
+    bytes += [0x1D, 0x48, hri.value];
+    // GS k m n <payload> (Form 2)
+    final List<int> payload = _barcodePayload(type, data);
+    bytes += [0x1D, 0x6B, type.m, payload.length, ...payload];
+    return bytes;
+  }
+
+  /// Baut die Byte-Nutzlast fuer [barcode]. Standardmaessig ASCII (latin1);
+  /// fuer CODE128 wird der Code-Set B vorangestellt (`{B`), sofern nicht schon
+  /// eine Code-Set-Sequenz (`{`) am Anfang steht.
+  List<int> _barcodePayload(BarcodeType type, String data) {
+    if (type == BarcodeType.code128 && !data.startsWith('{')) {
+      data = '{B$data';
+    }
+    return latin1.encode(data);
+  }
+
   /// Open cash drawer
   List<int> drawer({PosDrawer pin = PosDrawer.pin2}) {
     List<int> bytes = [];
