@@ -1,3 +1,7 @@
+## 3.3.0
+- API calls now go through the branded, versioned API domain `https://api.kasseneck.at/v1` instead of the raw Cloud Functions URL. Fully transparent to package users (same methods, same behaviour); the previous endpoints keep working, this only changes the base URL the package targets.
+- The receipt download link (`downloadBaseUrl`) is unchanged.
+
 ## 3.2.1
 - GP Tom card details render correctly with `gptom_aidl_plugin` ≥ 0.1.0: `cardPaymentData` amounts arrive as integer cents and are now formatted as such (older stored receipts with euro doubles keep working); applies to thermal print and `KeckReceiptWidget`
 - GP Tom transaction type is recognized via both `transactionType` and the plugin's `transacitonType` key; `Refund` (type 3) is now labelled

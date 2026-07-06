@@ -36,8 +36,65 @@ class PrintPaper {
   }
 
   void addText(String text, {PosStyles styles = const PosStyles()}) {
-    bytes.add(Uint8List.fromList(generator.text(text, styles: styles)));
+    // ESC/POS kodiert per latin1 -> Zeichen > 0xFF wuerden werfen und den
+    // gesamten Druck abbrechen. Daher fuer den Generator entschaerfen; MyPos
+    // vertraegt Unicode und bekommt den Originaltext.
+    bytes.add(Uint8List.fromList(generator.text(_printable(text), styles: styles)));
     myPosPaper.addText(text, alignment: styles.myposAlign);
+  }
+
+  /// Macht Text fuer den ESC/POS-Drucker sicher: der Generator kodiert per
+  /// latin1 und wirft bei Zeichen ausserhalb (typografische Anfuehrungszeichen,
+  /// Gedankenstriche, Euro, Emoji, ...). Gaengige Zeichen -> ASCII, Emoji werden
+  /// entfernt, alles andere durch '?' ersetzt. Latin-1 (inkl. Umlaute) bleibt.
+  static String _printable(String text) {
+    const Map<int, String> repl = {
+      0x2013: '-', 0x2014: '-', 0x2011: '-', 0x2212: '-', // – — ‑ −
+      0x201C: '"', 0x201D: '"', 0x201E: '"', 0x201F: '"', // “ ” „ ‟
+      0x2018: "'", 0x2019: "'", 0x201A: "'", 0x2032: "'", // ‘ ’ ‚ ′
+      0x2026: '...', 0x2022: '*', // … •
+      0x2713: 'x', 0x2714: 'x', // ✓ ✔
+      0x20AC: 'EUR', 0x2122: 'TM', 0x20BA: 'TL', // € ™ ₺
+    };
+    final StringBuffer sb = StringBuffer();
+    for (final int rune in text.runes) {
+      final String? mapped = repl[rune];
+      if (mapped != null) {
+        sb.write(mapped);
+      } else if (rune <= 0xFF) {
+        sb.writeCharCode(rune); // Latin-1 (inkl. Umlaute) -> unveraendert
+      } else if (_isEmojiOrZeroWidth(rune)) {
+        // Emoji/Modifier/Nullbreiten-Zeichen ersatzlos entfernen.
+      } else {
+        sb.write('?'); // sonstiges Zeichen (z.B. andere Schrift) -> Platzhalter
+      }
+    }
+    return sb.toString();
+  }
+
+  /// Emoji-, Modifier- und Nullbreiten-/Steuerzeichen, die auf dem Beleg nichts
+  /// verloren haben und sonst als '?' erscheinen wuerden.
+  static bool _isEmojiOrZeroWidth(int r) {
+    return r == 0x200D || // Zero-Width Joiner
+        (r >= 0x200B && r <= 0x200F) ||
+        r == 0x2060 ||
+        r == 0xFEFF ||
+        (r >= 0xFE00 && r <= 0xFE0F) || // Variation Selectors
+        (r >= 0x1F3FB && r <= 0x1F3FF) || // Hautton-Modifier
+        (r >= 0x1F000 && r <= 0x1FAFF) || // Emoji-Bloecke
+        (r >= 0x2600 && r <= 0x27BF) || // Symbole + Dingbats
+        (r >= 0x2B00 && r <= 0x2BFF) || // Symbole & Pfeile
+        (r >= 0x2300 && r <= 0x23FF); // technische Symbole (z.B. ⌚⏰)
+  }
+
+  /// Komponiert ein evtl. transparentes Bild auf weissen Hintergrund, damit der
+  /// alpha-ignorierende ESC/POS-Generator transparente Bereiche nicht schwarz
+  /// druckt (z.B. SVG-Icons als schwarzes Viereck). Opake Bilder unveraendert.
+  static Image _onWhite(Image src) {
+    final Image bg = Image(width: src.width, height: src.height);
+    fill(bg, color: ColorRgb8(255, 255, 255));
+    compositeImage(bg, src);
+    return bg;
   }
 
   void addCut() {
@@ -67,9 +124,12 @@ class PrintPaper {
   }
 
   void addImage(Image image, {PosAlign align = PosAlign.center}) {
-    bytes.add(Uint8List.fromList(generator.imageRaster(image)));
+    // Transparente Pixel wuerden vom ESC/POS-Generator schwarz gedruckt ->
+    // zuerst auf weissen Grund kompositieren (SVG-Icons sonst schwarzes Viereck).
+    final Image flat = _onWhite(image);
+    bytes.add(Uint8List.fromList(generator.imageRaster(flat)));
 
-    final pngBytes = encodePng(image); // oder encodeJpg(src, quality: 90)
+    final pngBytes = encodePng(flat); // oder encodeJpg(src, quality: 90)
     myPosPaper.addImage(pngBytes);
   }
 
@@ -400,22 +460,22 @@ class PrintPaper {
     bool isBig = paperSize >= KeckPaperSize.mm80;
     List<int> bytes = generator.row([
       PosColumn(
-        text: val1,
+        text: _printable(val1),
         width: 3,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
-        text: val2,
+        text: _printable(val2),
         width: isBig ? 4 : 3,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
-        text: val3,
+        text: _printable(val3),
         width: 3,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
-        text: val4,
+        text: _printable(val4),
         width: isBig ? 2 : 3,
         styles: PosStyles(align: PosAlign.right),
       ),
@@ -433,12 +493,12 @@ class PrintPaper {
   void addDoubleText(String leftValue, String rightValue, {int leftWidth = 6, int rightWidth = 6}) {
     List<int> bytes = generator.row([
       PosColumn(
-        text: leftValue,
+        text: _printable(leftValue),
         width: leftWidth,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
-        text: rightValue,
+        text: _printable(rightValue),
         width: rightWidth,
         styles: PosStyles(align: PosAlign.right),
       ),

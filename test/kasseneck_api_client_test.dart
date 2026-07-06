@@ -43,7 +43,7 @@ void main() {
 
       await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]);
 
-      expect(captured.url.toString(), 'https://europe-west1-kasseneck.cloudfunctions.net/createReceipt');
+      expect(captured.url.toString(), 'https://api.kasseneck.at/v1/createReceipt');
       expect(captured.headers['Authorization'], 'Bearer test-key');
       expect(captured.headers['cashregister-token'], base64Encode(utf8.encode('CASHBOX-9:secret')));
       expect(captured.headers['content-type'], startsWith('application/json'));
