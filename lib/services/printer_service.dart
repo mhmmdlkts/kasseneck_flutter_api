@@ -134,48 +134,9 @@ class KeckPrinterService {
 
   /// Sendet einen fertigen Byte-Strom an den aktuell verbundenen Bluetooth-Drucker.
   /// Nutzt exakt den Sende-Pfad (MTU-Aushandlung, Flow-Control/Pacing) von
-  /// [printReceiptBluetooth].
+  /// [printReceiptBluetooth] — ausgelagert nach [writeToBluetoothDevice].
   static Future _sendToBluetoothPrinter(List<int> data) async {
-    // Groessere MTU aushandeln, wo unterstuetzt (Android); sonst aktuellen Wert nehmen.
-    int mtu;
-    try {
-      mtu = await _devicePrinter!.requestMtu(512);
-    } catch (_) {
-      mtu = _devicePrinter!.mtuNow;
-    }
-    final int chunkSize = (mtu - 3).clamp(20, 182).toInt();
-
-    final List<BluetoothService> services = await _devicePrinter!.discoverServices();
-
-    for (final service in services) {
-      for (final characteristic in service.characteristics) {
-        final bool canWrite = characteristic.properties.write;
-        final bool canWriteNoResp = characteristic.properties.writeWithoutResponse;
-        if (!canWrite && !canWriteNoResp) continue;
-
-        // Kernproblem war fehlendes Flow-Control: grosse Raster (QR/Logo) wurden mit
-        // withoutResponse ohne Backpressure rausgeblasen -> der Drucker-Puffer laeuft
-        // ueber -> Zeichensalat + Abbruch. Loesung: write-with-response (wartet aufs
-        // ACK = Backpressure) wo moeglich, sonst withoutResponse mit Pacing.
-        final bool withoutResponse = !canWrite;
-        try {
-          for (int i = 0; i < data.length; i += chunkSize) {
-            final int end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
-            await characteristic.write(data.sublist(i, end), withoutResponse: withoutResponse);
-            if (withoutResponse) {
-              await Future.delayed(const Duration(milliseconds: 20));
-            }
-          }
-          return true; // erfolgreich gesendet
-        } catch (e) {
-          if (kDebugMode) {
-            print("Fehler beim Senden an ${characteristic.uuid}: $e");
-          }
-        }
-      }
-    }
-
-    throw Exception("Kein geeignetes Bluetooth-Charakteristikum zum Schreiben gefunden.");
+    await writeToBluetoothDevice(_devicePrinter!, data);
   }
 
   static Future openCashDrawer() async {
@@ -358,4 +319,58 @@ class CustomPrintJob {
     }
     return bytes;
   }
+}
+
+/// Schreibt einen fertigen Byte-Strom an ein konkretes [device] — die
+/// geraeteverifizierte Sendelogik (MTU-Aushandlung, Discover, Chunking,
+/// Flow-Control/Pacing) an einer Stelle.
+///
+/// Ausgelagert aus `KeckPrinterService._sendToBluetoothPrinter`, damit sowohl
+/// der statische, globale Pfad ([KeckPrinterService.printReceiptBluetooth]) als
+/// auch die transport-basierte [BluetoothTransport] dieselbe, in der Praxis
+/// bewaehrte Logik nutzen — verhaltensgleich, nur unabhaengig vom globalen
+/// [KeckPrinterService._devicePrinter].
+///
+/// Wirft, wenn kein schreibbares Charakteristikum gefunden wird.
+Future<void> writeToBluetoothDevice(BluetoothDevice device, List<int> data) async {
+  // Groessere MTU aushandeln, wo unterstuetzt (Android); sonst aktuellen Wert nehmen.
+  int mtu;
+  try {
+    mtu = await device.requestMtu(512);
+  } catch (_) {
+    mtu = device.mtuNow;
+  }
+  final int chunkSize = (mtu - 3).clamp(20, 182).toInt();
+
+  final List<BluetoothService> services = await device.discoverServices();
+
+  for (final service in services) {
+    for (final characteristic in service.characteristics) {
+      final bool canWrite = characteristic.properties.write;
+      final bool canWriteNoResp = characteristic.properties.writeWithoutResponse;
+      if (!canWrite && !canWriteNoResp) continue;
+
+      // Kernproblem war fehlendes Flow-Control: grosse Raster (QR/Logo) wurden mit
+      // withoutResponse ohne Backpressure rausgeblasen -> der Drucker-Puffer laeuft
+      // ueber -> Zeichensalat + Abbruch. Loesung: write-with-response (wartet aufs
+      // ACK = Backpressure) wo moeglich, sonst withoutResponse mit Pacing.
+      final bool withoutResponse = !canWrite;
+      try {
+        for (int i = 0; i < data.length; i += chunkSize) {
+          final int end = (i + chunkSize < data.length) ? i + chunkSize : data.length;
+          await characteristic.write(data.sublist(i, end), withoutResponse: withoutResponse);
+          if (withoutResponse) {
+            await Future.delayed(const Duration(milliseconds: 20));
+          }
+        }
+        return; // erfolgreich gesendet
+      } catch (e) {
+        if (kDebugMode) {
+          print("Fehler beim Senden an ${characteristic.uuid}: $e");
+        }
+      }
+    }
+  }
+
+  throw Exception("Kein geeignetes Bluetooth-Charakteristikum zum Schreiben gefunden.");
 }
