@@ -14,10 +14,17 @@ class DemoCredentials {
   static DemoCredentials? tryLoad() {
     final file = File('test/integration/credentials.local.json');
     if (!file.existsSync()) return null;
-    final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
-    return DemoCredentials(
-      apiKey: json['apiKey'] as String,
-      cashregisterToken: json['cashregisterToken'] as String,
-    );
+    try {
+      final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      return DemoCredentials(
+        apiKey: json['apiKey'] as String,
+        cashregisterToken: json['cashregisterToken'] as String,
+      );
+    } catch (e) {
+      throw FormatException(
+        'test/integration/credentials.local.json ist fehlerhaft '
+        '(erwartet: {"apiKey": "...", "cashregisterToken": "..."}): $e',
+      );
+    }
   }
 }
