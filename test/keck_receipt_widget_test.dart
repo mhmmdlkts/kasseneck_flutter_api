@@ -6,7 +6,7 @@ import 'package:kasseneck_api/services/rksv_service.dart';
 import 'package:kasseneck_api/widgets/keck_receipt_widget.dart';
 
 import 'helpers/test_receipts.dart';
-import 'print_rendering_test.dart' show helperMarker;
+import 'print_rendering_test.dart' show helperMarker, expectedStripePaidAt;
 
 Future<List<String>> pump(WidgetTester tester, KasseneckReceipt receipt) async {
   await tester.pumpWidget(MaterialApp(
@@ -62,6 +62,60 @@ void main() {
       ));
       expect(texts.where((t) => t.contains('Beleg') && t != 'Beleg-ID:'), isEmpty);
     });
+
+    testWidgets('stripe (Karte): Titel, maskierte Nummer, Referenz', (tester) async {
+      final texts = await pump(tester, buildReceipt(
+        items: cartA().items,
+        cardProvider: CreditCardProvider.stripe,
+        cardPaymentId: 'pi_3Txxxxxxxxxxxxxx',
+        cardPaymentData: {
+          'paymentMethodType': 'card',
+          'amount': 1250,
+          'currency': 'eur',
+          'receiptUrl': 'https://pay.stripe.com/receipts/xyz',
+          'paidAt': 1784300000,
+          'statementDescriptor': 'KASSENECK',
+          'cardBrand': 'visa',
+          'cardLastDigits': '4242',
+          'wallet': 'apple_pay',
+          'cardFunding': 'debit',
+          'threeDSecure': 'authenticated',
+        },
+      ));
+      expect(texts, containsAll([
+        'Online-Zahlung (Stripe)',
+        'visa Debitkarte (Apple Pay)',
+        '**** **** **** 4242',
+        '3-D Secure: ja',
+        'Gesamtbetrag 12,50 EUR',
+        'Bezahlt: ${expectedStripePaidAt(1784300000)}',
+        'Abrechnung: KASSENECK',
+        'Referenz: pi_3Txxxxxxxxxxxxxx',
+      ]));
+      expect(texts.any((t) => t.contains('pay.stripe.com')), isFalse);
+    });
+
+    testWidgets('stripe (EPS): EPS-Zeile statt Kartenzeilen', (tester) async {
+      final texts = await pump(tester, buildReceipt(
+        items: cartA().items,
+        cardProvider: CreditCardProvider.stripe,
+        cardPaymentId: 'pi_epsxxxxxxxxxxxx',
+        cardPaymentData: {
+          'paymentMethodType': 'eps',
+          'epsBank': 'bank_austria',
+          'amount': 500,
+          'currency': 'eur',
+        },
+      ));
+      expect(texts, containsAll([
+        'Online-Zahlung (Stripe)',
+        'EPS - Bank Austria',
+        'Gesamtbetrag 5,00 EUR',
+        'Referenz: pi_epsxxxxxxxxxxxx',
+      ]));
+      expect(texts.where((t) => t.startsWith('3-D Secure')), isEmpty);
+      expect(texts.where((t) => t.startsWith('****')), isEmpty);
+    });
   });
 
   group('Crash-Guard: kaputte cardPaymentData', () {
@@ -69,6 +123,7 @@ void main() {
       (CreditCardProvider.myposPro, {'TID': 'x'}),            // date_time fehlt
       (CreditCardProvider.sumup, {'amount': 'kein-bool'}),     // success fehlt/cast bricht
       (CreditCardProvider.gpTomAndroid, {'amount': 'abc'}),    // amount-cast bricht
+      (CreditCardProvider.stripe, {'paymentMethodType': 'card', 'wallet': 42}), // Wallet kein String
     ]) {
       testWidgets('$provider mit kaputten Daten -> kein roter Screen, Beleg rendert', (tester) async {
         final texts = await pump(tester, buildReceipt(

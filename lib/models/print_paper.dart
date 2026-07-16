@@ -400,6 +400,9 @@ class PrintPaper {
           case CreditCardProvider.myposPro:
             _mypos(receipt.cardPaymentData!);
             break;
+          case CreditCardProvider.stripe:
+            _stripe(receipt.cardPaymentData!, receipt.cardPaymentId);
+            break;
         }
         addFeed();
       } catch (_) {
@@ -610,6 +613,13 @@ class PrintPaper {
     addText('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
     addText('Sequence Number: ${data['sequenceNumber']}', styles: PosStyles(align: PosAlign.center));
   }
+
+  void _stripe(Map<String, dynamic> data, String? cardPaymentId) {
+    addText('Online-Zahlung (Stripe)', styles: PosStyles(align: PosAlign.center, bold: true));
+    for (final String line in stripeReceiptLines(data, cardPaymentId)) {
+      addText(line, styles: PosStyles(align: PosAlign.center));
+    }
+  }
 }
 
 extension on PosStyles {
@@ -685,4 +695,100 @@ String gpTomTransactionType(Map<String, dynamic> data) {
     case 4: return 'Close Batch';
   }
   return '';
+}
+
+/// Stripe-`cardPaymentData` (Online-Zahlung via Payment-Link) als Anzeige-Zeilen.
+/// Gemeinsam fuer Druck (`PrintPaper._stripe`) und Beleg-Widget
+/// (`_KeckReceiptWidgetState._stripePart`), damit beide Pfade zwingend
+/// denselben Betrag/dieselben Kernwerte zeigen (siehe
+/// stripe_render_consistency_test.dart). Jedes Feld kann fehlen/null sein —
+/// die jeweilige Zeile wird dann einfach ausgelassen. `receiptUrl` wird nie
+/// gerendert.
+List<String> stripeReceiptLines(Map<String, dynamic> data, String? cardPaymentId) {
+  final List<String> lines = [];
+  final String? type = data['paymentMethodType']?.toString();
+
+  if (type == 'card') {
+    final String brandLine = _stripeCardBrandLine(data);
+    if (brandLine.isNotEmpty) {
+      lines.add(brandLine);
+    }
+    if (data['cardLastDigits'] != null) {
+      lines.add('**** **** **** ${data['cardLastDigits']}');
+    }
+    if (data['threeDSecure'] == 'authenticated') {
+      lines.add('3-D Secure: ja');
+    }
+  } else if (type == 'eps') {
+    if (data['epsBank'] != null) {
+      lines.add('EPS - ${_stripeEpsBankLabel(data['epsBank'].toString())}');
+    }
+  } else if (type != null) {
+    lines.add(type.toUpperCase());
+  }
+
+  final dynamic amount = data['amount'];
+  if (amount is int) {
+    final String currency = data['currency']?.toString().toUpperCase() ?? 'EUR';
+    lines.add('Gesamtbetrag ${formatCents(amount)} $currency');
+  }
+
+  final dynamic paidAt = data['paidAt'];
+  if (paidAt is int) {
+    lines.add('Bezahlt: ${_formatStripePaidAt(paidAt)}');
+  }
+
+  if (data['statementDescriptor'] != null) {
+    lines.add('Abrechnung: ${data['statementDescriptor']}');
+  }
+
+  if (cardPaymentId != null) {
+    lines.add('Referenz: $cardPaymentId');
+  }
+
+  return lines;
+}
+
+const Map<String, String> _stripeFundingLabels = {
+  'debit': 'Debitkarte',
+  'credit': 'Kreditkarte',
+  'prepaid': 'Prepaid-Karte',
+};
+
+const Map<String, String> _stripeWalletLabels = {
+  'apple_pay': 'Apple Pay',
+  'google_pay': 'Google Pay',
+};
+
+String _stripeCardBrandLine(Map<String, dynamic> data) {
+  final List<String> parts = [];
+  if (data['cardBrand'] != null) {
+    parts.add(data['cardBrand'].toString());
+  }
+  final String? fundingLabel = _stripeFundingLabels[data['cardFunding']];
+  if (fundingLabel != null) {
+    parts.add(fundingLabel);
+  }
+  String line = parts.join(' ');
+  if (data['wallet'] != null) {
+    final String walletLabel = _stripeWalletLabels[data['wallet']] ?? data['wallet'].toString();
+    line = line.isEmpty ? '($walletLabel)' : '$line ($walletLabel)';
+  }
+  return line;
+}
+
+/// EPS-Bank-Slug (z. B. 'bank_austria') -> Anzeigename ('Bank Austria').
+String _stripeEpsBankLabel(String slug) {
+  return slug
+      .split('_')
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1))
+      .join(' ');
+}
+
+/// Unix-Sekunden -> 'DD.MM.YYYY HH:mm' in Geraet-Lokalzeit (kein intl noetig).
+String _formatStripePaidAt(int paidAtSeconds) {
+  final DateTime dt = DateTime.fromMillisecondsSinceEpoch(paidAtSeconds * 1000, isUtc: true).toLocal();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(dt.day)}.${two(dt.month)}.${dt.year} ${two(dt.hour)}:${two(dt.minute)}';
 }
