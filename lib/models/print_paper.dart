@@ -14,6 +14,7 @@ import '../enums/vat_rate.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
+import '../services/vienna_time.dart';
 import 'kasseneck_item.dart';
 
 import 'keck_voucher.dart';
@@ -786,9 +787,11 @@ String _stripeEpsBankLabel(String slug) {
       .join(' ');
 }
 
-/// Unix-Sekunden -> 'DD.MM.YYYY HH:mm' in Geraet-Lokalzeit (kein intl noetig).
+/// Unix-Sekunden -> 'DD.MM.YYYY HH:mm' in WIENER Zeit (Geschaeftszeitzone,
+/// identisch zum Backend-Beleg-PDF — nicht Geraete-Lokalzeit).
 String _formatStripePaidAt(int paidAtSeconds) {
-  final DateTime dt = DateTime.fromMillisecondsSinceEpoch(paidAtSeconds * 1000, isUtc: true).toLocal();
+  final DateTime dt = ViennaTime.toWallClock(
+      DateTime.fromMillisecondsSinceEpoch(paidAtSeconds * 1000, isUtc: true));
   String two(int n) => n.toString().padLeft(2, '0');
   return '${two(dt.day)}.${two(dt.month)}.${dt.year} ${two(dt.hour)}:${two(dt.minute)}';
 }

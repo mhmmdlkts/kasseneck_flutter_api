@@ -290,10 +290,16 @@ String helperMarker() {
 }
 
 /// Erwarteter 'DD.MM.YYYY HH:mm'-String fuer einen Stripe-`paidAt` (Unix-Sekunden)
-/// in der Lokalzeit des Test-Geraets — unabhaengig von der Produktionslogik
-/// berechnet, damit der Test eine echte Spezifikation ist, keine Tautologie.
+/// in WIENER Zeit (Geschaeftszeitzone, identisch zum Backend-Beleg-PDF) — als
+/// feste Konstante je Fixture, unabhaengig von Geraete-Zeitzone und
+/// Produktionslogik, damit der Test eine echte Spezifikation ist.
 String expectedStripePaidAt(int paidAtSeconds) {
-  final DateTime dt = DateTime.fromMillisecondsSinceEpoch(paidAtSeconds * 1000, isUtc: true).toLocal();
-  String two(int n) => n.toString().padLeft(2, '0');
-  return '${two(dt.day)}.${two(dt.month)}.${dt.year} ${two(dt.hour)}:${two(dt.minute)}';
+  const known = {
+    1784300000: '17.07.2026 16:53', // = 2026-07-17T14:53:20Z, Wien Sommerzeit UTC+2
+  };
+  final s = known[paidAtSeconds];
+  if (s == null) {
+    throw ArgumentError('Kein erwarteter Wien-String fuer paidAt=$paidAtSeconds hinterlegt');
+  }
+  return s;
 }
