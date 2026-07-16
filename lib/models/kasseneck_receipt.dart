@@ -7,6 +7,7 @@ import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
+import 'package:kasseneck_api/services/vienna_time.dart';
 
 import '../enums/credit_card_provider.dart';
 import '../enums/keck_payment_method.dart';
@@ -140,7 +141,9 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       // Nullbelege haben keine Positionen → items kann fehlen/null sein.
       items: ((receipt['items'] as List?) ?? []).map<KasseneckItem>((e) => KasseneckItem.fromJson(e)).toList(),
       vouchers: receipt['vouchers'] != null ? (receipt['vouchers'] as List).map((e) => KeckVoucher.fromJson(e)).toList() : null,
-      timeStamp: DateTime.parse(receipt['timeStamp']),
+      // Server liefert Wiener Wanduhrzeit ohne Offset → in echten Zeitpunkt
+      // umrechnen, sonst verrutscht der Beleg bei fremder Geräte-Zeitzone.
+      timeStamp: ViennaTime.parseServerTimeStamp(receipt['timeStamp']),
       cashregisterId: receipt['cashregisterId'],
       receiptType: ReceiptType.values.firstWhere((element) => element.name == receipt['receiptType'], orElse: () => ReceiptType.standard),
       receiptId: receipt['receiptId'],
@@ -203,7 +206,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'paymentMethod': paymentMethod.name,
       'items': items.map((e) => e.toJson()).toList(),
       'vouchers': vouchers?.map((e) => e.toJson()).toList(),
-      'timeStamp': timeStamp.toIso8601String(),
+      'timeStamp': timeStamp.toUtc().toIso8601String(),
       'cashregisterId': cashregisterId,
       'receiptType': receiptType.name,
       'receiptId': receiptId,
@@ -270,7 +273,11 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
 
   String get downloadUrl => '${KasseneckApi.downloadBaseUrl}/$fullReceiptId';
 
-  String get readableTime => '${timeStamp.day.toString().padLeft(2, '0')}.${timeStamp.month.toString().padLeft(2, '0')}.${timeStamp.year} ${timeStamp.hour.toString().padLeft(2, '0')}:${timeStamp.minute.toString().padLeft(2, '0')}:${timeStamp.second.toString().padLeft(2, '0')}';
+  /// Beleg-Zeit in Wiener Zeit (RKSV-Zeitzone), unabhängig von der Geräte-Zeitzone.
+  String get readableTime {
+    final t = ViennaTime.toWallClock(timeStamp);
+    return '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year} ${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:${t.second.toString().padLeft(2, '0')}';
+  }
 
   /// Zwischensumme in **Cent** (exakte Integer-Arithmetik, keine Gleitkommafehler).
   int get subSumCents {
