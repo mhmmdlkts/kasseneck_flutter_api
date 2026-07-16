@@ -5,5 +5,6 @@ enum CreditCardProvider {
   hobexHps,
   sumup,
   myposPro,
+  stripe,
   custom
 }
