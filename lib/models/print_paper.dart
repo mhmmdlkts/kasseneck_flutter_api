@@ -351,6 +351,7 @@ class PrintPaper {
       addFullHorizontalLine();
     }
     addDoubleText('Gesamt:', '${formatCents(receipt.sumCents)} EUR');
+    addDoubleText('Zahlungsart:', receipt.paymentMethod.label);
 
     addFeed();
 

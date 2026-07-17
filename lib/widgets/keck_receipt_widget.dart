@@ -269,6 +269,13 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 Text('${formatCents(widget.receipt.sumCents)} EUR', style: textStyle)
               ],
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Zahlungsart:', style: textStyle),
+                Text(widget.receipt.paymentMethod.label, style: textStyle)
+              ],
+            ),
             const SizedBox(height: 32),
             if (widget.receipt.legalMessage.isNotEmpty)
               ...[

@@ -1,3 +1,6 @@
+## 4.6.0
+- **Zahlungsart-Zeile auf jedem Beleg** (Druck + `KeckReceiptWidget`): direkt unter dem Gesamtbetrag steht `Zahlungsart: Barzahlung/Kartenzahlung/Onlinezahlung/…` (`KeckPaymentMethod.label`, Labels identisch zum Backend-Beleg-PDF) — auch wenn zusätzlich ein Provider-Kartenblock folgt.
+
 ## 4.5.0
 - **`ViennaTime`: Geschäftszeitzone Europe/Vienna** (`package:kasseneck_api/services/vienna_time.dart`). Der Kasseneck-Server liefert Beleg-Timestamps als Wiener Wanduhrzeit ohne Offset; auf Geräten mit fremder Zeitzone (z. B. im Ausland) verrutschten dadurch Beleg- und Buchungs-Tage gegeneinander. `ViennaTime` rechnet deterministisch per EU-Sommerzeitregel (letzter Sonntag März/Oktober, 01:00 UTC — kein tz-Paket nötig): `fromWallClock`/`toWallClock`, `parseServerTimeStamp`, `dayKey`, `now`/`today`, `deviceDiffersFromVienna`.
 - `KasseneckReceipt.timeStamp` ist jetzt immer ein echter Zeitpunkt (UTC): Server-Timestamps werden beim Parsen als Wiener Wanduhrzeit interpretiert (`ViennaTime.parseServerTimeStamp`); `toReceiptJson` serialisiert UTC mit `Z` (Roundtrip-kompatibel, alte naive Strings werden weiterhin korrekt gelesen). `readableTime` zeigt unverändert Wiener Zeit — jetzt auch bei fremder Geräte-Zeitzone.
