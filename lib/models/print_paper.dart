@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:qr/qr.dart';
 
 import '../enums/credit_card_provider.dart';
 import '../enums/qr_print_mode.dart';
@@ -14,19 +14,20 @@ import '../enums/vat_rate.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
+import '../services/vienna_time.dart';
 import 'kasseneck_item.dart';
-import 'package:image/image.dart';
 
 import 'keck_voucher.dart';
 
 class PrintPaper {
   final KeckPaperSize paperSize;
   final List<Map<String, dynamic>> commands = [];
-  final Generator generator;
+  final EscPosGenerator generator;
   List<Uint8List> bytes = [];
   final MyPosPaper myPosPaper = MyPosPaper();
 
-  PrintPaper({required this.paperSize, required CapabilityProfile profile}) : generator = Generator(paperSize.paperSize, profile) {
+  PrintPaper({required this.paperSize, required CapabilityProfile profile})
+      : generator = EscPosGenerator(paperSize.paperSize, profile) {
     reset();
   }
 
@@ -36,8 +37,59 @@ class PrintPaper {
   }
 
   void addText(String text, {PosStyles styles = const PosStyles()}) {
-    bytes.add(Uint8List.fromList(generator.text(text, styles: styles)));
+    // ESC/POS kodiert per latin1 -> Zeichen > 0xFF wuerden werfen und den
+    // gesamten Druck abbrechen. Daher fuer den Generator entschaerfen; MyPos
+    // vertraegt Unicode und bekommt den Originaltext.
+    bytes.add(Uint8List.fromList(generator.text(_printable(text), styles: styles)));
     myPosPaper.addText(text, alignment: styles.myposAlign);
+  }
+
+  /// Macht Text fuer den ESC/POS-Drucker sicher: der Generator kodiert per
+  /// latin1 und wirft bei Zeichen ausserhalb (typografische Anfuehrungszeichen,
+  /// Gedankenstriche, Euro, Emoji, ...). Gaengige Zeichen werden auf ein
+  /// ASCII-Aequivalent gemappt, alles andere durch '?' ersetzt -> der Druck
+  /// laeuft durch statt komplett auszufallen. Latin-1-Zeichen (inkl. Umlaute,
+  /// 0..0xFF) bleiben unveraendert.
+  static String _printable(String text) {
+    const Map<int, String> repl = {
+      0x2013: '-', 0x2014: '-', 0x2011: '-', 0x2212: '-', // – — ‑ −
+      0x201C: '"', 0x201D: '"', 0x201E: '"', 0x201F: '"', // “ ” „ ‟
+      0x2018: "'", 0x2019: "'", 0x201A: "'", 0x2032: "'", // ‘ ’ ‚ ′
+      0x2026: '...', 0x2022: '*', // … •
+      0x2713: 'x', 0x2714: 'x', // ✓ ✔
+      0x20AC: 'EUR', 0x2122: 'TM', 0x20BA: 'TL', // € ™ ₺
+    };
+    final StringBuffer sb = StringBuffer();
+    for (final int rune in text.runes) {
+      final String? mapped = repl[rune];
+      if (mapped != null) {
+        sb.write(mapped);
+      } else if (rune <= 0xFF) {
+        sb.writeCharCode(rune); // Latin-1 (inkl. Umlaute) -> unveraendert
+      } else if (_isEmojiOrZeroWidth(rune)) {
+        // Emoji/Modifier/Nullbreiten-Zeichen ersatzlos entfernen – sonst wuerde
+        // ein einzelnes (oft aus mehreren Code-Points bestehendes) Emoji als
+        // ein oder mehrere '?' auf dem Bon landen.
+      } else {
+        sb.write('?'); // sonstiges Zeichen (z.B. andere Schrift) -> Platzhalter
+      }
+    }
+    return sb.toString();
+  }
+
+  /// Emoji-, Modifier- und Nullbreiten-/Steuerzeichen, die auf dem Beleg nichts
+  /// verloren haben und sonst als '?' erscheinen wuerden.
+  static bool _isEmojiOrZeroWidth(int r) {
+    return r == 0x200D || // Zero-Width Joiner
+        (r >= 0x200B && r <= 0x200F) ||
+        r == 0x2060 ||
+        r == 0xFEFF ||
+        (r >= 0xFE00 && r <= 0xFE0F) || // Variation Selectors
+        (r >= 0x1F3FB && r <= 0x1F3FF) || // Hautton-Modifier
+        (r >= 0x1F000 && r <= 0x1FAFF) || // Emoji-Bloecke
+        (r >= 0x2600 && r <= 0x27BF) || // Symbole + Dingbats
+        (r >= 0x2B00 && r <= 0x2BFF) || // Symbole & Pfeile
+        (r >= 0x2300 && r <= 0x23FF); // technische Symbole (z.B. ⌚⏰)
   }
 
   void addCut() {
@@ -66,21 +118,21 @@ class PrintPaper {
     myPosPaper.addText(ch * 32, alignment: PrinterAlignment.left);
   }
 
-  void addImage(Image image, {PosAlign align = PosAlign.center}) {
-    bytes.add(Uint8List.fromList(generator.imageRaster(image)));
-
-    final pngBytes = encodePng(image); // oder encodeJpg(src, quality: 90)
+  Future<void> addImage(RasterImage image, {PosAlign align = PosAlign.center}) async {
+    final RasterImage flat = compositeOnWhite(image);
+    bytes.add(Uint8List.fromList(generator.imageRaster(flat)));
+    final pngBytes = await encodePng(flat);
     myPosPaper.addImage(pngBytes);
   }
 
-  void addBase64Image(String base64, {PosAlign align = PosAlign.center}) {
-    Image image = decodeImage(base64Decode(base64))!;
-    addImage(image, align: align);
+  Future<void> addBase64Image(String base64, {PosAlign align = PosAlign.center}) async {
+    final image = await decodePng(base64Decode(base64));
+    await addImage(image, align: align);
   }
 
-  void addUint8ListImage(Uint8List image, {PosAlign align = PosAlign.center}) {
-    Image img = decodeImage(image)!;
-    addImage(img, align: align);
+  Future<void> addUint8ListImage(Uint8List image, {PosAlign align = PosAlign.center}) async {
+    final img = await decodePng(image);
+    await addImage(img, align: align);
   }
 
   void addQrCode(String data, {QRSize size = QRSize.size6}) {
@@ -90,46 +142,62 @@ class PrintPaper {
 
   /// QR als Bild. [raster] true → GS v 0 (imageRaster), false → ESC * (image).
   /// Welcher Befehl funktioniert, hängt vom Drucker ab — daher umschaltbar.
+  ///
+  /// Der QR wird direkt aus der Modul-Matrix gerastert: jedes Modul wird auf ein
+  /// ganzzahliges `scale×scale`-Quadrat abgebildet (rein schwarz/weiss, kein
+  /// Anti-Aliasing). Dadurch sind die Kanten scharf per Konstruktion und das
+  /// Bild ist deutlich kleiner/schneller ueber Bluetooth als der fruehere
+  /// QrPainter→PNG-Roundtrip.
   Future<void> addQrCodeAsImage(String data, {int size = 280, bool raster = true}) async {
     try {
-      final QrPainter painter = QrPainter(
-        data: data,
-        version: QrVersions.auto,
-        gapless: false,
-      );
-      final ByteData? byteData = await painter.toImageData(size.toDouble());
-      if (byteData == null) {
-        if (kDebugMode) print('Error: QR ByteData is null');
-        return;
-      }
-
-      final Uint8List qrBytes = byteData.buffer.asUint8List();
-      final Image? decoded = decodeImage(qrBytes);
-      if (decoded == null) {
-        if (kDebugMode) print('Error decoding QR image');
-        return;
-      }
-
-      // QrPainter liefert schwarze Module auf TRANSPARENTEM Grund. Der ESC/POS-
-      // Generator (grayscale + invert) ignoriert den Alpha-Kanal — transparente
-      // Pixel (RGB 0,0,0, Alpha 0) würden wie Schwarz gedruckt → komplett
-      // schwarzes Quadrat. Daher auf weißen Hintergrund kompositieren, mit
-      // weißem Rand als Ruhezone für die Scanner-Lesbarkeit.
-      const int quietZone = 16;
-      final Image img = Image(
-        width: decoded.width + quietZone * 2,
-        height: decoded.height + quietZone * 2,
-      );
-      fill(img, color: ColorRgb8(255, 255, 255));
-      compositeImage(img, decoded, dstX: quietZone, dstY: quietZone);
-
+      final RasterImage img = renderQrMatrix(data, size: size);
       bytes.add(Uint8List.fromList(
         raster ? generator.imageRaster(img) : generator.image(img),
       ));
-      myPosPaper.addImage(encodePng(img));
+      myPosPaper.addImage(await encodePng(img));
     } catch (e) {
       if (kDebugMode) print('Error in addQrCodeAsImage: $e');
     }
+  }
+
+  /// Rastert die QR-Modul-Matrix von [data] in ein reines schwarz/weiss-Bild
+  /// (RGBA, Werte nur 0 oder 255 — kein Anti-Aliasing, keine Graustufen).
+  ///
+  /// Quiet-Zone = 4 Module rundum. Der ganzzahlige Modul-Scale wird aus [size]
+  /// abgeleitet (`floor`, mind. 2, max. 64), sodass jedes Modul exakt
+  /// `scale×scale` Pixel belegt. Ergebnis ist quadratisch mit Kantenlaenge
+  /// `(moduleCount + 8) * scale`.
+  static RasterImage renderQrMatrix(String data, {int size = 280}) {
+    final QrCode qr = QrCode.fromData(
+      data: data,
+      errorCorrectLevel: QrErrorCorrectLevel.M,
+    );
+    final QrImage qi = QrImage(qr);
+    final int n = qr.moduleCount;
+    const int quiet = 4; // Module Quiet-Zone rundum
+    final int full = n + quiet * 2;
+    final int scale = (size / full).floor().clamp(2, 64);
+    final int dim = full * scale;
+
+    final RasterImage img = RasterImage.filled(dim, dim, 255, 255, 255, 255);
+    for (int r = 0; r < n; r++) {
+      for (int c = 0; c < n; c++) {
+        if (!qi.isDark(r, c)) continue;
+        final int x0 = (c + quiet) * scale;
+        final int y0 = (r + quiet) * scale;
+        for (int dy = 0; dy < scale; dy++) {
+          int idx = ((y0 + dy) * dim + x0) * 4;
+          for (int dx = 0; dx < scale; dx++) {
+            img.rgba[idx] = 0; // R
+            img.rgba[idx + 1] = 0; // G
+            img.rgba[idx + 2] = 0; // B
+            img.rgba[idx + 3] = 255; // A (voll deckend schwarz)
+            idx += 4;
+          }
+        }
+      }
+    }
+    return img;
   }
 
   void reset() {
@@ -143,10 +211,9 @@ class PrintPaper {
     reset();
 
     if (receipt.logo != null) {
-      Image image = decodeImage(receipt.logo!)!;
-      Image resized = copyResize(image, width: paperSize.imageWidth);
-
-      addImage(resized);
+      final RasterImage image = await decodePng(receipt.logo!);
+      final RasterImage resized = resizeWidth(image, paperSize.imageWidth);
+      await addImage(resized);
       addFeed();
     }
 
@@ -284,6 +351,7 @@ class PrintPaper {
       addFullHorizontalLine();
     }
     addDoubleText('Gesamt:', '${formatCents(receipt.sumCents)} EUR');
+    addDoubleText('Zahlungsart:', receipt.paymentMethod.label);
 
     addFeed();
 
@@ -334,6 +402,9 @@ class PrintPaper {
           case CreditCardProvider.myposPro:
             _mypos(receipt.cardPaymentData!);
             break;
+          case CreditCardProvider.stripe:
+            _stripe(receipt.cardPaymentData!, receipt.cardPaymentId);
+            break;
         }
         addFeed();
       } catch (_) {
@@ -367,7 +438,7 @@ class PrintPaper {
   /// Dezentes Kreiseck-Branding als allerletzter Block vor dem Cut.
   /// Das s/w-Logo liegt als Package-Asset bei (Druck funktioniert offline,
   /// das Backend liefert nur das Flag `kreiseck_logo`).
-  static Image? _kreiseckLogo;
+  static RasterImage? _kreiseckLogo;
 
   Future<void> _addKreiseckBranding() async {
     if (_kreiseckLogo == null) {
@@ -378,7 +449,7 @@ class PrintPaper {
       ]) {
         try {
           final data = await rootBundle.load(key);
-          _kreiseckLogo = decodeImage(data.buffer.asUint8List());
+          _kreiseckLogo = await decodePng(data.buffer.asUint8List());
           break;
         } catch (_) {
           // naechsten Key probieren
@@ -393,29 +464,29 @@ class PrintPaper {
     // Breite muss ein Vielfaches von 8 sein — sonst crasht die Rasterisierung
     // des ESC/POS-Generators beim Byte-Padding (fixed-length list).
     final int width = ((paperSize.imageWidth * 0.85) ~/ 8) * 8;
-    addImage(copyResize(logo, width: width));
+    await addImage(resizeWidth(logo, width));
   }
 
   void _addTable(String val1, String val2, String val3, String val4) {
     bool isBig = paperSize >= KeckPaperSize.mm80;
     List<int> bytes = generator.row([
       PosColumn(
-        text: val1,
+        text: _printable(val1),
         width: 3,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
-        text: val2,
+        text: _printable(val2),
         width: isBig ? 4 : 3,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
-        text: val3,
+        text: _printable(val3),
         width: 3,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
-        text: val4,
+        text: _printable(val4),
         width: isBig ? 2 : 3,
         styles: PosStyles(align: PosAlign.right),
       ),
@@ -433,12 +504,12 @@ class PrintPaper {
   void addDoubleText(String leftValue, String rightValue, {int leftWidth = 6, int rightWidth = 6}) {
     List<int> bytes = generator.row([
       PosColumn(
-        text: leftValue,
+        text: _printable(leftValue),
         width: leftWidth,
         styles: PosStyles(align: PosAlign.left),
       ),
       PosColumn(
-        text: rightValue,
+        text: _printable(rightValue),
         width: rightWidth,
         styles: PosStyles(align: PosAlign.right),
       ),
@@ -544,6 +615,13 @@ class PrintPaper {
     addText('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
     addText('Sequence Number: ${data['sequenceNumber']}', styles: PosStyles(align: PosAlign.center));
   }
+
+  void _stripe(Map<String, dynamic> data, String? cardPaymentId) {
+    addText('Online-Zahlung (Stripe)', styles: PosStyles(align: PosAlign.center, bold: true));
+    for (final String line in stripeReceiptLines(data, cardPaymentId)) {
+      addText(line, styles: PosStyles(align: PosAlign.center));
+    }
+  }
 }
 
 extension on PosStyles {
@@ -619,4 +697,102 @@ String gpTomTransactionType(Map<String, dynamic> data) {
     case 4: return 'Close Batch';
   }
   return '';
+}
+
+/// Stripe-`cardPaymentData` (Online-Zahlung via Payment-Link) als Anzeige-Zeilen.
+/// Gemeinsam fuer Druck (`PrintPaper._stripe`) und Beleg-Widget
+/// (`_KeckReceiptWidgetState._stripePart`), damit beide Pfade zwingend
+/// denselben Betrag/dieselben Kernwerte zeigen (siehe
+/// stripe_render_consistency_test.dart). Jedes Feld kann fehlen/null sein —
+/// die jeweilige Zeile wird dann einfach ausgelassen. `receiptUrl` wird nie
+/// gerendert.
+List<String> stripeReceiptLines(Map<String, dynamic> data, String? cardPaymentId) {
+  final List<String> lines = [];
+  final String? type = data['paymentMethodType']?.toString();
+
+  if (type == 'card') {
+    final String brandLine = _stripeCardBrandLine(data);
+    if (brandLine.isNotEmpty) {
+      lines.add(brandLine);
+    }
+    if (data['cardLastDigits'] != null) {
+      lines.add('**** **** **** ${data['cardLastDigits']}');
+    }
+    if (data['threeDSecure'] == 'authenticated') {
+      lines.add('3-D Secure: ja');
+    }
+  } else if (type == 'eps') {
+    if (data['epsBank'] != null) {
+      lines.add('EPS - ${_stripeEpsBankLabel(data['epsBank'].toString())}');
+    }
+  } else if (type != null) {
+    lines.add(type.toUpperCase());
+  }
+
+  final dynamic amount = data['amount'];
+  if (amount is int) {
+    final String currency = data['currency']?.toString().toUpperCase() ?? 'EUR';
+    lines.add('Gesamtbetrag ${formatCents(amount)} $currency');
+  }
+
+  final dynamic paidAt = data['paidAt'];
+  if (paidAt is int) {
+    lines.add('Bezahlt: ${_formatStripePaidAt(paidAt)}');
+  }
+
+  if (data['statementDescriptor'] != null) {
+    lines.add('Abrechnung: ${data['statementDescriptor']}');
+  }
+
+  if (cardPaymentId != null) {
+    lines.add('Referenz: $cardPaymentId');
+  }
+
+  return lines;
+}
+
+const Map<String, String> _stripeFundingLabels = {
+  'debit': 'Debitkarte',
+  'credit': 'Kreditkarte',
+  'prepaid': 'Prepaid-Karte',
+};
+
+const Map<String, String> _stripeWalletLabels = {
+  'apple_pay': 'Apple Pay',
+  'google_pay': 'Google Pay',
+};
+
+String _stripeCardBrandLine(Map<String, dynamic> data) {
+  final List<String> parts = [];
+  if (data['cardBrand'] != null) {
+    parts.add(data['cardBrand'].toString());
+  }
+  final String? fundingLabel = _stripeFundingLabels[data['cardFunding']];
+  if (fundingLabel != null) {
+    parts.add(fundingLabel);
+  }
+  String line = parts.join(' ');
+  if (data['wallet'] != null) {
+    final String walletLabel = _stripeWalletLabels[data['wallet']] ?? data['wallet'].toString();
+    line = line.isEmpty ? '($walletLabel)' : '$line ($walletLabel)';
+  }
+  return line;
+}
+
+/// EPS-Bank-Slug (z. B. 'bank_austria') -> Anzeigename ('Bank Austria').
+String _stripeEpsBankLabel(String slug) {
+  return slug
+      .split('_')
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1))
+      .join(' ');
+}
+
+/// Unix-Sekunden -> 'DD.MM.YYYY HH:mm' in WIENER Zeit (Geschaeftszeitzone,
+/// identisch zum Backend-Beleg-PDF — nicht Geraete-Lokalzeit).
+String _formatStripePaidAt(int paidAtSeconds) {
+  final DateTime dt = ViennaTime.toWallClock(
+      DateTime.fromMillisecondsSinceEpoch(paidAtSeconds * 1000, isUtc: true));
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(dt.day)}.${two(dt.month)}.${dt.year} ${two(dt.hour)}:${two(dt.minute)}';
 }

@@ -1,4 +1,5 @@
 import 'package:kasseneck_api/enums/keck_month.dart';
+import 'package:kasseneck_api/services/vienna_time.dart';
 
 class ReportMonth {
   final KeckMonth month;
@@ -11,7 +12,9 @@ class ReportMonth {
   }
 
   factory ReportMonth.now() {
-    return ReportMonth.fromDateTime(DateTime.now());
+    // Wiener Zeit: Monatswechsel richtet sich nach der Kassen-Zeitzone,
+    // nicht nach der Geräte-Zeitzone.
+    return ReportMonth.fromDateTime(ViennaTime.now());
   }
 
   ReportMonth previousMonth() {

@@ -70,6 +70,33 @@ void main() {
       final item = KasseneckItem.fromJson({'name': 'x', 'amount': 1, 'vat': 20, 'priceOneCents': 1999.0});
       expect(item.priceCents, 1999);
     });
+    test('v2-Form (unitPriceCents/quantity/vatRate) wird gelesen', () {
+      final item = KasseneckItem.fromJson({
+        'name': 'Brot', 'quantity': 3, 'vatRate': 10, 'unitPriceCents': 249,
+      });
+      expect(item.name, 'Brot');
+      expect(item.quantity, 3);
+      expect(item.vat, VatRate.vat10);
+      expect(item.priceCents, 249);
+    });
+    test('v2 gewinnt gegen v1 bei gemischten Feldern', () {
+      final item = KasseneckItem.fromJson({
+        'name': 'x', 'quantity': 5, 'amount': 1,
+        'vatRate': 20, 'vat': 10,
+        'unitPriceCents': 500, 'priceOneCents': 100, 'priceOne': 99.0,
+      });
+      expect(item.quantity, 5);
+      expect(item.vat, VatRate.vat20);
+      expect(item.priceCents, 500);
+    });
+    test('toJson->fromJson Round-Trip (v2)', () {
+      final orig = KasseneckItem(name: 'Kaffee', quantity: 2, vat: VatRate.vat13, priceCents: 320);
+      final back = KasseneckItem.fromJson(orig.toJson());
+      expect(back.name, 'Kaffee');
+      expect(back.quantity, 2);
+      expect(back.vat, VatRate.vat13);
+      expect(back.priceCents, 320);
+    });
   });
 
   group('singlePrice-Getter (Euro-Sicht)', () {

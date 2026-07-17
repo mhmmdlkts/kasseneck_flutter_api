@@ -11,6 +11,7 @@ import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
+import 'package:kasseneck_api/services/vienna_time.dart';
 
 import 'helpers/test_receipts.dart';
 
@@ -29,7 +30,9 @@ void main() {
 
       expect(back.receiptId, original.receiptId);
       expect(back.cashregisterId, original.cashregisterId);
-      expect(back.timeStamp, original.timeStamp);
+      // timeStamp ist ein Zeitpunkt (UTC-Instant) — der Roundtrip erhält den
+      // Zeitpunkt, nicht das DateTime-Flag des Eingabewerts.
+      expect(back.timeStamp, original.timeStamp.toUtc());
       expect(back.receiptType, original.receiptType);
       expect(back.paymentMethod, original.paymentMethod);
       expect(back.sig, original.sig);
@@ -151,8 +154,10 @@ void main() {
       expect(a == b, isTrue);
       expect(a.hashCode, b.hashCode);
     });
-    test('readableTime mit fuehrenden Nullen', () {
-      expect(buildReceipt(timeStamp: DateTime(2026, 6, 1, 9, 5, 3)).readableTime, '01.06.2026 09:05:03');
+    test('readableTime mit fuehrenden Nullen (Wiener Zeit)', () {
+      // readableTime zeigt Wiener Wanduhrzeit — unabhängig von der Geräte-Zeitzone.
+      final wien = ViennaTime.fromWallClock(DateTime(2026, 6, 1, 9, 5, 3));
+      expect(buildReceipt(timeStamp: wien).readableTime, '01.06.2026 09:05:03');
     });
     test('taxInfo: UID bevorzugt, sonst Steuernummer', () {
       expect(buildReceipt(uid: 'ATU99999999').taxInfo, 'ATU99999999');

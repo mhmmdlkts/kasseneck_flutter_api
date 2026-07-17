@@ -29,8 +29,8 @@ void main() {
         vat: VatRate.vat4komma9,
         priceCents: 120,
       );
-      expect(item.toJson()['vat'], 4.9);
-      expect(item.toJson()['priceOne'], 1.20); // Wire-Format bleibt Euro
+      expect(item.toJson()['vatRate'], 4.9);
+      expect(item.toJson()['unitPriceCents'], 120); // v2: ganze Cent (Integer)
     });
 
     test('Regression: bestehende Saetze unveraendert', () {

@@ -19,6 +19,7 @@ KasseneckReceipt buildReceipt({
   String? uid = 'ATU12345678',
   Map<String, dynamic>? cardPaymentData,
   cardProvider,
+  String? cardPaymentId,
   bool showKreiseckLogo = false,
 }) {
   return KasseneckReceipt(
@@ -48,6 +49,7 @@ KasseneckReceipt buildReceipt({
     customerDetails: const [],
     creditCardProvider: cardProvider,
     cardPaymentData: cardPaymentData,
+    cardPaymentId: cardPaymentId,
     showKreiseckLogo: showKreiseckLogo,
   );
 }

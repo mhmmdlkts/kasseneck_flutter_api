@@ -269,6 +269,13 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 Text('${formatCents(widget.receipt.sumCents)} EUR', style: textStyle)
               ],
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Zahlungsart:', style: textStyle),
+                Text(widget.receipt.paymentMethod.label, style: textStyle)
+              ],
+            ),
             const SizedBox(height: 32),
             if (widget.receipt.legalMessage.isNotEmpty)
               ...[
@@ -340,6 +347,8 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
           return _hobexApiPart(widget.receipt.cardPaymentData!);
         case CreditCardProvider.hobexHps:
           return _hobexHpsPart(widget.receipt.cardPaymentData!);
+        case CreditCardProvider.stripe:
+          return _stripePart(widget.receipt.cardPaymentData!, widget.receipt.cardPaymentId);
         case CreditCardProvider.custom:
           return Container();
       }
@@ -606,6 +615,21 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             Text('------------------', style: textStyle),
             Text('Unterschrift', style: textStyle),
           ],
+      ],
+    );
+  }
+
+  Widget _stripePart(Map<String, dynamic> data, String? cardPaymentId) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Online-Zahlung (Stripe)', style: textStyle.copyWith(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        for (final String line in stripeReceiptLines(data, cardPaymentId))
+          Text(line, style: textStyle),
       ],
     );
   }

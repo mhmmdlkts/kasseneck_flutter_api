@@ -79,11 +79,12 @@ void main() {
     });
   });
 
-  group('Dual-Send: Euro (Legacy-Backend) + Cents (neues Backend)', () {
-    test('toJson enthaelt beide Felder, konsistent', () {
+  group('Wire-Format: v2 (ganze Cent) senden, v1+v2 lesen', () {
+    test('toJson sendet v2-Form mit Integer-Cent', () {
       final j = KasseneckItem(name: 'x', quantity: 1, vat: VatRate.vat20, priceCents: 1999).toJson();
-      expect(j['priceOneCents'], 1999);
-      expect(j['priceOne'], 19.99);
+      expect(j['unitPriceCents'], 1999);
+      expect(j['quantity'], 1);
+      expect(j['vatRate'], 20);
       final v = KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 500).toJson();
       expect(v['valueCents'], 500);
       expect(v['value'], 5.0);

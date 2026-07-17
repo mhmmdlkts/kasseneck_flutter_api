@@ -1,7 +1,8 @@
-import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
+import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
@@ -27,8 +28,7 @@ class VatRow {
 
 Future<({List<VatRow> rows, List<({String left, String right})> doubles, List<String> texts})>
     renderPrint(KasseneckReceipt receipt) async {
-  final profile = await CapabilityProfile.load();
-  final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: profile);
+  final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
   // native QR -> kein Bild-Rendering noetig; auf die Werte hat das keinen Einfluss
   await paper.setKeckReceipt(receipt, qrMode: QrPrintMode.native);
 
@@ -142,4 +142,17 @@ void main() {
     expect(print.doubles.firstWhere((d) => d.left == 'Beleg-ID:').right, 'TEST-ID-1');
     expect(widgetTexts, contains('TEST-ID-1'));
   });
+
+  for (final method in [KeckPaymentMethod.cash, KeckPaymentMethod.creditCard]) {
+    testWidgets('Zahlungsart konsistent ($method): Print und Widget zeigen dasselbe Label', (tester) async {
+      final receipt = buildReceipt(items: cartA().items, paymentMethod: method);
+      final print = (await tester.runAsync(() => renderPrint(receipt)))!;
+      final widgetTexts = await renderWidget(tester, receipt);
+
+      final zahlungsartPrint = print.doubles.firstWhere((d) => d.left == 'Zahlungsart:').right;
+      expect(zahlungsartPrint, method.label);
+      expect(widgetTexts, contains('Zahlungsart:'));
+      expect(widgetTexts, contains(method.label));
+    });
+  }
 }
