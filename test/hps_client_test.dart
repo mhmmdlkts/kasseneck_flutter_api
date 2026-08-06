@@ -116,6 +116,33 @@ void main() {
       expect(c.log[0].url.path, '/api/terminals/3600335/batchtotal/2026-06-12T09:05:03');
       expect(c.log[1].url.path, '/api/terminals/3600335/closebatch/2026-06-12T09:05:03');
     });
+
+    test('terminalStatus: GET status; 200 -> true, 503 -> false', () async {
+      final ok = clientWith(status: 200, body: '');
+      expect(await ok.client.terminalStatus(), isTrue);
+      expect(ok.log.single.method, 'GET');
+      expect(ok.log.single.url.path, '/api/terminals/3600335/status');
+
+      final down = clientWith(status: 503, body: '');
+      expect(await down.client.terminalStatus(), isFalse);
+    });
+
+    test('terminals: GET /api/terminals + Array-Parsing', () async {
+      final c = clientWith(
+        body: '[{"tid":"3600335","merchantName":"Shop","terminalType":"POS",'
+            '"active":true,"header":["Zeile 1","Zeile 2"],"fax":null}]',
+      );
+      final list = await c.client.terminals();
+      expect(c.log.single.method, 'GET');
+      expect(c.log.single.url.path, '/api/terminals');
+      expect(list, hasLength(1));
+      expect(list.single.tid, '3600335');
+      expect(list.single.merchantName, 'Shop');
+      expect(list.single.terminalType, 'POS');
+      expect(list.single.active, isTrue);
+      expect(list.single.header, ['Zeile 1', 'Zeile 2']);
+      expect(list.single.fax, isNull);
+    });
   });
 
   group('URL-Joining (Basis mit/ohne Slash)', () {

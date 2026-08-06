@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'diagnosis.dart';
 import 'enums.dart';
 import 'exceptions.dart';
+import 'terminal_info.dart';
 import 'transaction_response.dart';
 
 /// Client for the local **hobex Payment Service (HPS)** REST API.
@@ -233,6 +234,52 @@ class HpsClient {
     return Diagnosis.fromJson(json);
   }
 
+  /// Lightweight readiness check: `GET /api/terminals/{tid}/status`.
+  ///
+  /// Returns `true` when the terminal is ready (HTTP 200) and `false` when it
+  /// reports *not operable* (HTTP 503). Other status codes / transport failures
+  /// throw ([HpsHttpException] / [HpsConnectionException]).
+  ///
+  /// This endpoint carries no response body — the state is signalled purely via
+  /// the HTTP status code. For a richer, field-based health snapshot use
+  /// [diagnosis].
+  Future<bool> terminalStatus() async {
+    final response =
+        await _send('GET', _uri('api/terminals/$tid/status', null), null);
+    if (response.statusCode == 200) return true;
+    if (response.statusCode == 503) return false;
+    throw HpsHttpException(
+      response.statusCode,
+      _errorMessage(response.body, response.statusCode),
+      body: response.body,
+    );
+  }
+
+  /// Lists the **terminals** known to this device: `GET /api/terminals`.
+  ///
+  /// Returns the configured terminal objects (id, merchant/company, receipt
+  /// header lines, type, …) as [TerminalInfo]. The REST spec and its example
+  /// disagree on the exact field set, so every field is optional; unmodelled
+  /// keys stay available via [TerminalInfo.raw].
+  Future<List<TerminalInfo>> terminals() async {
+    final response = await _send('GET', _uri('api/terminals', null), null);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw HpsHttpException(
+        response.statusCode,
+        _errorMessage(response.body, response.statusCode),
+        body: response.body,
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is List) {
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map(TerminalInfo.fromJson)
+          .toList();
+    }
+    return const <TerminalInfo>[];
+  }
+
   /// Returns the **batch totals** (reconciliation sums) for the period starting
   /// at [since].
   ///
@@ -310,7 +357,17 @@ class HpsClient {
     return TransactionResponse.fromJson(json);
   }
 
-  Future<Map<String, dynamic>> _request(
+  /// Sendet einen HTTP-Request und liefert die ROHE Antwort (ohne Status-/
+  /// JSON-Auswertung). Fuer die JSON-Variante siehe [_request].
+  ///
+  /// Das hobex-Terminal schliesst inaktive Keep-Alive-Verbindungen. Ein
+  /// wiederverwendeter (bereits geschlossener) Socket fuehrt sonst zu
+  /// "Connection closed before full header was received" -- und das
+  /// http-Paket wiederholt nicht. Deshalb bei selbst erzeugtem Client pro
+  /// Request eine FRISCHE Verbindung; ein injizierter Client (Tests) bleibt
+  /// unveraendert. Bewusst KEIN Auto-Retry: bei Zahlung/Refund waere ein
+  /// Wiederholen gefaehrlich (Doppelbuchung).
+  Future<http.Response> _send(
     String method,
     Uri uri,
     Map<String, dynamic>? body,
@@ -320,19 +377,10 @@ class HpsClient {
     request.headers['Accept'] = 'application/json';
     if (body != null) request.body = jsonEncode(body);
 
-    // Das hobex-Terminal schliesst inaktive Keep-Alive-Verbindungen. Ein
-    // wiederverwendeter (bereits geschlossener) Socket fuehrt sonst zu
-    // "Connection closed before full header was received" -- und das
-    // http-Paket wiederholt nicht. Deshalb bei selbst erzeugtem Client pro
-    // Request eine FRISCHE Verbindung; ein injizierter Client (Tests) bleibt
-    // unveraendert. Bewusst KEIN Auto-Retry: bei Zahlung/Refund waere ein
-    // Wiederholen gefaehrlich (Doppelbuchung).
     final http.Client client = _http ?? http.Client();
-
-    final http.Response response;
     try {
       final streamed = await client.send(request).timeout(timeout);
-      response = await http.Response.fromStream(streamed);
+      return await http.Response.fromStream(streamed);
     } on HpsException {
       rethrow;
     } catch (error) {
@@ -340,7 +388,14 @@ class HpsClient {
     } finally {
       if (_ownsHttpClient) client.close();
     }
+  }
 
+  Future<Map<String, dynamic>> _request(
+    String method,
+    Uri uri,
+    Map<String, dynamic>? body,
+  ) async {
+    final response = await _send(method, uri, body);
     final text = response.body;
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw HpsHttpException(

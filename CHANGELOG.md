@@ -1,3 +1,10 @@
+## 4.8.0
+- **hobex HPS: lokale Terminal-Abfragen ergänzt** (rein additiv, keine bestehende Signatur geändert). Zwei neue read-only Methoden im `HpsClient`:
+  - `terminalStatus()` → `GET /api/terminals/{tid}/status`: leichter Readiness-Check. `true` bei HTTP 200 (bereit), `false` bei 503 (nicht betriebsbereit); dieser Endpoint hat keinen Response-Body (im Gegensatz zum feldreichen `diagnosis()`).
+  - `terminals()` → `GET /api/terminals`: Liste der konfigurierten Terminals als neues Modell **`TerminalInfo`** (tid, company/merchantName, Beleg-`header`-Zeilen, `terminalType`, `active`, …). Alle Felder optional, da Spec-Tabelle und Beispiel-Response divergieren; unmodellierte Keys bleiben über `TerminalInfo.raw` erreichbar.
+  - Intern wurde das Senden in `_send()` extrahiert (frische-Verbindung-Logik aus 4.7.0 unverändert), damit `terminalStatus()` den 503-Status als Wert statt als Ausnahme behandeln kann.
+- Bewusst NICHT enthalten: Beleg-Download (`/api/transaction/download`) und die Profil-Flags `canVoid`/`canRefund` sind reine **Cloud**-Endpoints (`online.hobex.at`, JWT-Auth) und gehören nicht in den authlosen lokalen HPS-Client. Ein `responseCode`-Fehlercode-Katalog ist nicht enthalten, da die REST-Spec v1.13 außer `"0"` (=OK) keine Codes enumeriert (weitere Codes stammen vom Acquirer).
+
 ## 4.7.0
 - **hobex HPS: Storno/Refund-Robustheit.** Zwei Fehler behoben, die Rückabwicklungen am HPS-Terminal unzuverlässig machten:
   - **Verbindungs-Wiederverwendung:** `HpsClient` hielt eine Keep-Alive-Verbindung offen und verwendete sie wieder; das Terminal schließt inaktive Sockets aber, wodurch der nächste Request (typisch: Storno/Refund nach einer Bedien-Pause) mit „Connection closed before full header" abbrach — ohne Retry. Selbst erzeugte Clients bauen jetzt **pro Request eine frische Verbindung** auf (injizierte Clients für Tests bleiben unverändert; bewusst kein Auto-Retry wegen Doppelbuchungsgefahr bei Zahlung/Refund). `close()` ist damit ein No-op.
