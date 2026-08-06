@@ -71,12 +71,16 @@ void main() {
       expect(c.log[2].url.path, '/api/transaction/preauth');
     });
 
-    test('cancel: DELETE auf payment/{tid}/{tx} + technicalCancel-Query', () async {
+    test('cancel: DELETE auf payment/{tid}/{tx} + amount/currency/technicalCancel-Query', () async {
       final c = clientWith();
-      await c.client.cancel(transactionId: 'TX-9');
-      await c.client.cancel(transactionId: 'TX-9', technicalCancel: true);
+      await c.client.cancel(transactionId: 'TX-9', amount: 1.5);
+      await c.client.cancel(transactionId: 'TX-9', amount: 1.5, technicalCancel: true);
       expect(c.log[0].method, 'DELETE');
       expect(c.log[0].url.path, '/api/transaction/payment/3600335/TX-9');
+      // amount ist Pflicht (sonst 400 Missing amount), currency faellt auf den
+      // EUR-Default -> beide gehen immer als Query mit.
+      expect(c.log[0].url.queryParameters['amount'], '1.5');
+      expect(c.log[0].url.queryParameters['currency'], 'EUR');
       expect(c.log[0].url.queryParameters.containsKey('technicalCancel'), isFalse);
       expect(c.log[1].url.queryParameters['technicalCancel'], 'true');
     });

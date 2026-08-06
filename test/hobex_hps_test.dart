@@ -1,8 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:kasseneck_api/hobex_hps.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 
@@ -110,35 +106,6 @@ void main() {
       expect(d.isInOperation, isTrue);
       expect(d.isAuthorized, isTrue);
       expect(d.isTestEnvironment, isTrue);
-    });
-  });
-
-  group('HpsClient Requests (Mock)', () {
-    test('cancel() -> DELETE mit amount+currency als Query (Void-Fix)', () async {
-      late Uri capturedUrl;
-      late String capturedMethod;
-      final mock = MockClient((request) async {
-        capturedUrl = request.url;
-        capturedMethod = request.method;
-        return http.Response(
-          jsonEncode({'transactionType': 'VOID', 'responseCode': '0'}),
-          200,
-        );
-      });
-      final client = HpsClient(
-        tid: '3556988',
-        baseUrl: Uri.parse('http://127.0.0.1:8080'),
-        httpClient: mock,
-      );
-
-      final res = await client.cancel(transactionId: '123456', amount: 1.5);
-
-      expect(capturedMethod, 'DELETE');
-      expect(capturedUrl.path, '/api/transaction/payment/3556988/123456');
-      expect(capturedUrl.queryParameters['amount'], '1.5');
-      expect(capturedUrl.queryParameters['currency'], 'EUR');
-      expect(res.isApproved, isTrue);
-      client.close();
     });
   });
 }
