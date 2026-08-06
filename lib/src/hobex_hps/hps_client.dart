@@ -26,7 +26,7 @@ class HpsClient {
     this.timeout = const Duration(minutes: 3),
     http.Client? httpClient,
   }) : baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'),
-       _http = httpClient ?? http.Client(),
+       _http = httpClient,
        _ownsHttpClient = httpClient == null;
 
   /// Base URL of the HPS. Defaults to `http://127.0.0.1:8080`.
@@ -45,7 +45,9 @@ class HpsClient {
   /// block until the cardholder has interacted with the terminal.
   final Duration timeout;
 
-  final http.Client _http;
+  /// Injizierter HTTP-Client (Tests). `null`, wenn der Client selbst erzeugt
+  /// wird -> dann pro Request eine frische, kurzlebige Verbindung.
+  final http.Client? _http;
   final bool _ownsHttpClient;
 
   // ---------------------------------------------------------------------------
@@ -160,15 +162,26 @@ class HpsClient {
   /// **Voids / cancels / reverses** an existing transaction identified by
   /// [transactionId]. Must be activated by hobex.
   ///
+  /// [amount] ist ERFORDERLICH: das Terminal weist einen Void ohne Betrag mit
+  /// `400 Missing amount` ab (am HPS empirisch bestaetigt). Die REST-PDF v1.13
+  /// listet den Parameter zwar nicht, die Postman-Collection und die Firmware
+  /// verlangen ihn. [currency]/[language] fallen auf die Client-Defaults zurueck.
+  ///
   /// Set [technicalCancel] to indicate a technical cancellation.
   Future<TransactionResponse> cancel({
     required String transactionId,
+    required num amount,
+    String? currency,
+    String? language,
     bool technicalCancel = false,
   }) {
-    final uri = _uri(
-      'api/transaction/payment/$tid/$transactionId',
-      technicalCancel ? const {'technicalCancel': 'true'} : null,
-    );
+    final lang = language ?? defaultLanguage;
+    final uri = _uri('api/transaction/payment/$tid/$transactionId', {
+      'amount': amount.toString(),
+      'currency': currency ?? defaultCurrency,
+      if (lang != null) 'language': lang,
+      if (technicalCancel) 'technicalCancel': 'true',
+    });
     return _sendTransactionUri('DELETE', uri, null);
   }
 
@@ -244,10 +257,10 @@ class HpsClient {
     return _request('GET', uri, null);
   }
 
-  /// Releases the underlying HTTP client (only if it was created internally).
-  void close() {
-    if (_ownsHttpClient) _http.close();
-  }
+  /// Gibt Ressourcen frei. Selbst erzeugte Verbindungen werden bereits pro
+  /// Request geschlossen; ein injizierter Client gehoert dem Aufrufer und wird
+  /// hier NICHT geschlossen. Bleibt aus API-Kompatibilitaet als sicherer No-op.
+  void close() {}
 
   // ---------------------------------------------------------------------------
   // Internals
@@ -307,14 +320,25 @@ class HpsClient {
     request.headers['Accept'] = 'application/json';
     if (body != null) request.body = jsonEncode(body);
 
+    // Das hobex-Terminal schliesst inaktive Keep-Alive-Verbindungen. Ein
+    // wiederverwendeter (bereits geschlossener) Socket fuehrt sonst zu
+    // "Connection closed before full header was received" -- und das
+    // http-Paket wiederholt nicht. Deshalb bei selbst erzeugtem Client pro
+    // Request eine FRISCHE Verbindung; ein injizierter Client (Tests) bleibt
+    // unveraendert. Bewusst KEIN Auto-Retry: bei Zahlung/Refund waere ein
+    // Wiederholen gefaehrlich (Doppelbuchung).
+    final http.Client client = _http ?? http.Client();
+
     final http.Response response;
     try {
-      final streamed = await _http.send(request).timeout(timeout);
+      final streamed = await client.send(request).timeout(timeout);
       response = await http.Response.fromStream(streamed);
     } on HpsException {
       rethrow;
     } catch (error) {
       throw HpsConnectionException(error);
+    } finally {
+      if (_ownsHttpClient) client.close();
     }
 
     final text = response.body;

@@ -1,3 +1,8 @@
+## 4.7.0
+- **hobex HPS: Storno/Refund-Robustheit.** Zwei Fehler behoben, die Rückabwicklungen am HPS-Terminal unzuverlässig machten:
+  - **Verbindungs-Wiederverwendung:** `HpsClient` hielt eine Keep-Alive-Verbindung offen und verwendete sie wieder; das Terminal schließt inaktive Sockets aber, wodurch der nächste Request (typisch: Storno/Refund nach einer Bedien-Pause) mit „Connection closed before full header" abbrach — ohne Retry. Selbst erzeugte Clients bauen jetzt **pro Request eine frische Verbindung** auf (injizierte Clients für Tests bleiben unverändert; bewusst kein Auto-Retry wegen Doppelbuchungsgefahr bei Zahlung/Refund). `close()` ist damit ein No-op.
+  - **Void ohne Betrag (`400 Missing amount`):** `cancel()` sendete keinen Betrag. Signatur jetzt `cancel({required transactionId, required amount, currency, language, technicalCancel})` — sendet `amount`/`currency` (+ optional `language`) als Query-Parameter (wie in der hobex-Postman-Collection; die REST-PDF v1.13 listet den Parameter nicht, die Firmware verlangt ihn). **Breaking:** `amount` ist jetzt Pflicht.
+
 ## 4.6.0
 - **Zahlungsart-Zeile auf jedem Beleg** (Druck + `KeckReceiptWidget`): direkt unter dem Gesamtbetrag steht `Zahlungsart: Barzahlung/Kartenzahlung/Onlinezahlung/…` (`KeckPaymentMethod.label`, Labels identisch zum Backend-Beleg-PDF) — auch wenn zusätzlich ein Provider-Kartenblock folgt.
 
