@@ -456,8 +456,11 @@ class KasseneckApi {
           'createReceiptAfterPayment': createReceiptAfterPayment,
           'mode': mode.name,
           if (webhookId != null) 'webhookId': webhookId,
-          if (customerPhone != null) 'customerPhone': customerPhone,
-          if (customerEmail != null) 'customerEmail': customerEmail
+          // Die Namen des Backends (createPaymentLinkStripe: customer_email,
+          // customer_phone) -- camelCase fiel dort still unter den Tisch, der
+          // Gast bekam nie eine Bestaetigung.
+          if (customerPhone != null) 'customer_phone': customerPhone,
+          if (customerEmail != null) 'customer_email': customerEmail
         },
     ).then((value) => json.decode(value));
     try {
