@@ -64,6 +64,7 @@ class EscPosGenerator {
         .replaceAll('’', "'")
         .replaceAll('´', "'")
         .replaceAll('»', '"')
+        .replaceAll('«', '"')
         .replaceAll('•', '.');
     return latin1.encode(text);
   }

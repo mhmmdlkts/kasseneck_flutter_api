@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kasseneck_api/src/vat_math.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/voucher_action.dart';
@@ -97,14 +98,15 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       final int bruttoCentsBeforePromo = bruttoByVatCents[key] ?? 0;
       final int promoCents = promoByVatCents[key] ?? 0;
       final int bruttoCents = bruttoCentsBeforePromo - promoCents;
-      final double brutto = centToEuro(bruttoCents);
-      num mwstSatz = key.rate;
-      double netto = brutto / (1 + (mwstSatz / 100));
-      double mwst = brutto - netto;
+      // Ganzzahlig zerlegen und die MwSt als Differenz nehmen -- getrennt aus
+      // Gleitkommazahlen gerundet ging die Zeile nicht auf (39 Cent zu 20 %
+      // zeigten 0,33 + 0,07 zu 0,39). Dieselbe Regel wie im JS-Zwilling.
+      final int nettoCents = nettoCentsAusBrutto(bruttoCents, key.rate);
+      final int mwstCents = bruttoCents - nettoCents;
       temp[0].add('${key.category} ${key.rate.toString().replaceAll('.', ',')}%');
-      temp[1].add(formatAmount(mwst));
-      temp[2].add(formatAmount(netto));
-      temp[3].add(formatAmount(brutto));
+      temp[1].add(formatCents(mwstCents));
+      temp[2].add(formatCents(nettoCents));
+      temp[3].add(formatCents(bruttoCents));
     }
   }
 
