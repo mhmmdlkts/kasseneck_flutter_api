@@ -156,4 +156,25 @@ void main() {
       expect(texts, containsAll(['Fahrzeug: W-1', 'Danke!']));
     });
   });
+
+  group('Verdeckter QR (qrCovered)', () {
+    testWidgets('Vorgabe: QR sofort lesbar, kein Aufdeck-Knopf', (tester) async {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: KeckReceiptWidget(receipt: cartA())))));
+      expect(find.byKey(const Key('keck-receipt-qr-toggle')), findsNothing);
+      expect(find.byType(ImageFiltered), findsNothing);
+    });
+    testWidgets('qrCovered: weichgezeichnet mit Hinweis, ein Tipp macht ihn lesbar, ein zweiter verdeckt wieder', (tester) async {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: KeckReceiptWidget(receipt: cartA(), qrCovered: true)))));
+      expect(find.byType(ImageFiltered), findsOneWidget);
+      expect(find.text('Antippen zum Anzeigen'), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const Key('keck-receipt-qr-toggle')));
+      await tester.tap(find.byKey(const Key('keck-receipt-qr-toggle')));
+      await tester.pump();
+      expect(find.byType(ImageFiltered), findsNothing);
+      expect(find.text('Antippen zum Anzeigen'), findsNothing);
+      await tester.tap(find.byKey(const Key('keck-receipt-qr-toggle')));
+      await tester.pump();
+      expect(find.byType(ImageFiltered), findsOneWidget);
+    });
+  });
 }

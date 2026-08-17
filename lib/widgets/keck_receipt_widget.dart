@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:kasseneck_api/src/vat_math.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
@@ -19,7 +21,23 @@ class KeckReceiptWidget extends StatefulWidget {
   final Color qrColor;
   final KasseneckReceipt receipt;
 
-  const KeckReceiptWidget({required this.receipt, this.paperColor = Colors.white10, this.qrColor = Colors.black, super.key});
+  /// QR zunächst verdeckt (weichgezeichnet, nicht scannbar) zeigen; ein Tipp
+  /// macht ihn lesbar. Für Bildschirme, auf denen der Beleg nur zur Kontrolle
+  /// steht — der Signatur-QR gehört dem Kunden und wird erst auf Verlangen
+  /// freigegeben. Vorgabe: false (wie bisher).
+  final bool qrCovered;
+
+  /// Text auf dem verdeckten QR.
+  final String qrCoveredText;
+
+  const KeckReceiptWidget({
+    required this.receipt,
+    this.paperColor = Colors.white10,
+    this.qrColor = Colors.black,
+    this.qrCovered = false,
+    this.qrCoveredText = 'Antippen zum Anzeigen',
+    super.key,
+  });
 
   @override
   State<KeckReceiptWidget> createState() => _KeckReceiptWidgetState();
@@ -28,6 +46,38 @@ class KeckReceiptWidget extends StatefulWidget {
 class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
 
   List<List<dynamic>> temp = [];
+
+  /// Verdeckter QR aufgedeckt? (nur relevant bei [KeckReceiptWidget.qrCovered])
+  bool _qrRevealed = false;
+
+  Widget _qr() {
+    final qr = QrImageView(
+      data: widget.receipt.qr,
+      size: 200,
+      eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: widget.qrColor),
+      dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: widget.qrColor),
+      backgroundColor: Colors.transparent,
+    );
+    if (!widget.qrCovered) return qr;
+    final revealed = _qrRevealed;
+    return Semantics(
+      button: true,
+      label: revealed ? 'QR-Code verdecken' : 'QR-Code anzeigen',
+      child: GestureDetector(
+        key: const Key('keck-receipt-qr-toggle'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _qrRevealed = !_qrRevealed),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (revealed) qr else ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6), child: qr),
+            if (!revealed)
+              Text(widget.qrCoveredText, style: TextStyle(color: widget.qrColor, fontWeight: FontWeight.bold, fontSize: 12), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -290,13 +340,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 Text(RKSVService.signatureDeviceDamagedKey, style: textStyle, textAlign: TextAlign.center),
                 const SizedBox(height: 16),
               ],
-            QrImageView(
-              data: widget.receipt.qr,
-              size: 200,
-              eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: widget.qrColor),
-              dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: widget.qrColor),
-              backgroundColor: Colors.transparent,
-            ),
+            _qr(),
             if (widget.receipt.creditCardProvider != null && widget.receipt.creditCardProvider != CreditCardProvider.custom && widget.receipt.cardPaymentData != null && widget.receipt.cardPaymentData!.isNotEmpty)
               ...[
                 const SizedBox(height: 32),
