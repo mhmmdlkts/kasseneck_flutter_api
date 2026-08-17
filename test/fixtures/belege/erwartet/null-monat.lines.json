@@ -1,0 +1,122 @@
+{
+  "lines": [
+    {
+      "kind": "text",
+      "text": "Bäckerei Muster",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Hauptplatz 1",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "4830 Hallstatt",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "ATU12345678",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "+43 6134 12345",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "banner",
+      "text": "MONATSBELEG",
+      "ton": "belegart"
+    },
+    {
+      "kind": "text",
+      "text": "Nullbeleg 08/2026",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Datum:",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "31.08.2026 23:59:30",
+          "width": 8,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kassen-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "KASSE1",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Beleg-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "AT0-KASSE1-47",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Betrag: 0,00 €",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "qr",
+      "data": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR"
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    }
+  ],
+  "paperSize": "mm80",
+  "regelwerk": 1
+}

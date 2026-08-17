@@ -1,3 +1,9 @@
+## 4.10.0
+- **Beleg-Zeilenmodell des Backends** (rein additiv): `KasseneckReceipt.layout` (`BelegLayout`, aus `getReceipt` → `layout`), dazu `testKasse`, `testSignatur`, `kopfId`. Das Backend friert Kopf/Fuß je Beleg ein und baut das Zeilenmodell mit dem Belegart-Aufdruck (STORNOBELEG, TRAININGSBELEG, NULLBELEG/STARTBELEG/MONATSBELEG/JAHRESBELEG/SCHLUSSBELEG — RKSV § 11 Abs. 3), reduziertem Nullbeleg und TESTKASSE/TESTSIGNATUR-Warnrahmen.
+  - `KeckReceiptLinesWidget(layout:, qrCovered:)` zeichnet das Modell in der App; `PrintPaper.setBelegLayout(layout)` druckt es (Banner fett, doppelt hoch, Warnungen invers).
+  - Damit zeigen App, Bondrucker, Browser-Kasse und Beleg-PDF **dieselben Zeilen**; die 17 Golden-Belege des JS-Pakets liegen als Kopie unter `test/fixtures/belege` und werden per Prüfsumme gegen dessen Manifest gehalten.
+  - Empfehlung: `layout != null` → Zeilenmodell zeichnen/drucken; sonst wie bisher `KeckReceiptWidget`/`setKeckReceipt` (Altbelege, altes Backend).
+
 ## 4.9.0
 - **`KeckReceiptWidget.qrCovered`** (Vorgabe `false`, rein additiv): der RKSV-QR wird zunächst weichgezeichnet und nicht scannbar gezeigt (mit Hinweis `qrCoveredText`, Vorgabe „Antippen zum Anzeigen"); ein Tipp macht ihn lesbar, ein zweiter verdeckt ihn wieder. Für Bildschirme, auf denen der Beleg nur zur Kontrolle steht — der Signatur-QR gehört dem Kunden und wird erst auf Verlangen freigegeben. Druck und Belegdaten sind unberührt.
 

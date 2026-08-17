@@ -27,6 +27,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   image: ^4.8.0
+  crypto: ^3.0.3
 
 flutter:
   assets:

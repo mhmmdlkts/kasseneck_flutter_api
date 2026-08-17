@@ -1,0 +1,73 @@
+{
+  "regelwerk": 1,
+  "belege": {
+    "langer-artikelname": {
+      "eingabe": "a9a8832989937db8c2abb0e548f31549040c89ae46d707102aff545e3a1a8c21",
+      "erwartet": "5e62347ba5bc8d08dda2c956fc2cf24396ecd7d1347ece1e95d75d1df7296717"
+    },
+    "null-ausfall": {
+      "eingabe": "b90676ede193da9a80806c9b8fb5c69b78ffa34112965e8e8cdcef3d6a2eed5e",
+      "erwartet": "94319ba0f8beab5cacbae4f44af2105a157ea9b204958a5d7436b85b13b92bbd"
+    },
+    "null-jahr": {
+      "eingabe": "184e1ce691be1ae9481624f67547d5913ede8243eaecbdba100c1b982a82dd3e",
+      "erwartet": "c9e9d37bc9c2cb9353247a0cf820483d6261515df593e8ed0571256d09c19427"
+    },
+    "null-monat": {
+      "eingabe": "3d0c1f09f22d79ef649c67752102dd3c873779dced7348fd1d3354cd2ba39cb8",
+      "erwartet": "2e75b9aaa203a94ad625ca0645536f407e35284bd4a2b3bf38db36538b23dfc1"
+    },
+    "null-pruef": {
+      "eingabe": "1bca8f7db3deb57a45c5b4d2acb0768efe9c5159a0565667fb7067f89c4f2632",
+      "erwartet": "eabc6305f01c4d0bae8c6a4bb842880238e3e5f48a522763de37831366306094"
+    },
+    "null-schluss": {
+      "eingabe": "4d295a271fe19cfd07201b85411c2aef1467f081b7eae8b3365b3ab4ce92e3b7",
+      "erwartet": "1273c95d249f2260b0fbb8991fc1b1f7b96b3c48f50e1d4ebfdfc2fee0740aae"
+    },
+    "null-start": {
+      "eingabe": "9e841bd010faeabc2c1b081a3872c61ca520b72da25ca3d56a7ddf65eb7095de",
+      "erwartet": "4dbb97d64a23262546b0153923beb5e52c32c047a9d6cb6530d1a9ce4e5da623"
+    },
+    "rabattzeilen": {
+      "eingabe": "b30836a268c227812df826b5f8579b28fd57d6fa51923b5d35e1e3c195daf0e9",
+      "erwartet": "f4794ded4cda312a18327adea19af38b08956138cd31bc1c2598a2a95b790ae8"
+    },
+    "signaturausfall-verkauf": {
+      "eingabe": "c84c9cb97e2cbf0ead3ce537399d2227ab501a90adc2ead79233e95b3a30b8c2",
+      "erwartet": "aba1b0cf170f43ee855a0c3c996793111f7ab723fc1d059bb8a256c08d206bdc"
+    },
+    "storno-teil": {
+      "eingabe": "777551f6180b4a8a701262472e53171e04109d4eb6240e7092095725eb0a2717",
+      "erwartet": "7eb12fd0a00688ab412816776a2d9e1dde8cce88e795306d514316186777d298"
+    },
+    "storno-voll": {
+      "eingabe": "53ecbfa12576bee3e3077bbf104324794790008e5d54efe6135664388fdab80d",
+      "erwartet": "abb9278ffd363c57e7b8ba41d9665f0f03b2b29eb0eec7d59f2ac48e9e1bd492"
+    },
+    "testkasse-verkauf": {
+      "eingabe": "5cd594029a3d7af4a7c502719763d8b5df0063ff7e46da43c9c7dc4fd2638e1f",
+      "erwartet": "b46217f2d1327c6700602918bac873c8bcb20fbfdfae41ee51eaaa229feed562"
+    },
+    "testsignatur-verkauf": {
+      "eingabe": "d56eec2e877fe23b02564240ca0af23ab00c99aeb51ae15fcb8080265dc56465",
+      "erwartet": "84acbec6b4efa0f11c7ecfcb8ca782f11d96fc6962489b5631faaa3807370e8c"
+    },
+    "training": {
+      "eingabe": "4bc356192020d159b396badf474357485d8a2033cfa47c8c160f41e3b0e5411c",
+      "erwartet": "0de2527f3e537df543d9d97580575995c8b90a9d1019fb82fdcd1a61c2773b52"
+    },
+    "verkauf-bar": {
+      "eingabe": "272523f758d809edacc8eb2f26b90f8ae58a47c023d4bf6a6308ec495f53cebe",
+      "erwartet": "f19af091e8a8894b3f2d3164fd52ecbdde62f7fa1e3b41d78f5ef8080447d685"
+    },
+    "verkauf-karte": {
+      "eingabe": "94990f6141c0cc7677d5383eb935a41bd1b14217d43ab46380acc3277e6db571",
+      "erwartet": "abb8467bbe5291454babdcc03f126ab7549e057f7e81ccea43fc2f6917c5477d"
+    },
+    "verkauf-kleinunternehmer": {
+      "eingabe": "9949de21f217f32ee9ee9ea5897d2fb34fa1a8e318bf49076bf14fddcf85f59a",
+      "erwartet": "ba383c980ddec8773ddc422e3b6abbaa1a97fc936eba0b39aeb67813cf7a4e88"
+    }
+  }
+}
