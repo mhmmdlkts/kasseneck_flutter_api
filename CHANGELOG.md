@@ -1,3 +1,6 @@
+## 4.9.0
+- **`KeckReceiptWidget.qrCovered`** (Vorgabe `false`, rein additiv): der RKSV-QR wird zunächst weichgezeichnet und nicht scannbar gezeigt (mit Hinweis `qrCoveredText`, Vorgabe „Antippen zum Anzeigen"); ein Tipp macht ihn lesbar, ein zweiter verdeckt ihn wieder. Für Bildschirme, auf denen der Beleg nur zur Kontrolle steht — der Signatur-QR gehört dem Kunden und wird erst auf Verlangen freigegeben. Druck und Belegdaten sind unberührt.
+
 ## 4.6.0
 - **Zahlungsart-Zeile auf jedem Beleg** (Druck + `KeckReceiptWidget`): direkt unter dem Gesamtbetrag steht `Zahlungsart: Barzahlung/Kartenzahlung/Onlinezahlung/…` (`KeckPaymentMethod.label`, Labels identisch zum Backend-Beleg-PDF) — auch wenn zusätzlich ein Provider-Kartenblock folgt.
 
