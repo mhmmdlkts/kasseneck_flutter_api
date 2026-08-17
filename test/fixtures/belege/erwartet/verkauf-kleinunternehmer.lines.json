@@ -1,0 +1,226 @@
+{
+  "lines": [
+    {
+      "kind": "text",
+      "text": "Nagelstudio Anna",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Hauptplatz 1",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "4830 Hallstatt",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "12-345/6789",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "+43 6134 12345",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Datum:",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "13.08.2026 10:15:30",
+          "width": 8,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kassen-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "KASSE1",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Beleg-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "AT0-KASSE1-42",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "1  x Maniküre",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "35,00 D",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "MwSt%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "MwSt",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Netto",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Brutto",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "D 0%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "0,00",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "35,00",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "35,00",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamt:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "35,00 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Zahlungsart:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "Barzahlung",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Umsatzsteuerbefreit – Kleinunternehmer gemäß § 6 Abs. 1 Z 27 UStG.",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "qr",
+      "data": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR"
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Vielen Dank für Ihren Einkauf",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "www.baeckerei-muster.at",
+      "align": "center",
+      "bold": false
+    }
+  ],
+  "paperSize": "mm58",
+  "regelwerk": 1
+}

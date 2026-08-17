@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
@@ -75,6 +76,16 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Backend als Metadatum `kreiseck_logo` mitliefert.
   bool showKreiseckLogo;
 
+  /// Zeilenmodell des Backends (Kopf/Fuß wie beim Ausstellen, Belegart-
+  /// Aufdruck, Regelwerk des Belegs); null bei altem Backend.
+  BelegLayout? layout;
+  /// Beleg einer Testumgebung (Aufdruck TESTKASSE).
+  bool testKasse;
+  /// Produktionskonto mit Test-Signatureinheit (Aufdruck TESTSIGNATUR).
+  bool testSignatur;
+  /// Kennung der eingefrorenen Kopf/Fuß-Version.
+  String? kopfId;
+
   KasseneckReceipt({
     required this.receiptId,
     required this.cashregisterId,
@@ -111,6 +122,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.signatureSuccess,
     this.customProjectId,
     this.showKreiseckLogo = false,
+    this.layout,
+    this.testKasse = false,
+    this.testSignatur = false,
+    this.kopfId,
   });
 
   factory KasseneckReceipt.create({
@@ -130,6 +145,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     String? footer4,
     required List<String> thanksMessage,
     bool showKreiseckLogo = false,
+    BelegLayout? layout,
+    bool testKasse = false,
+    bool testSignatur = false,
+    String? kopfId,
   }) {
     return KasseneckReceipt(
       qr: receipt['qr'],
@@ -170,6 +189,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       footer4: footer4,
       customProjectId: receipt['customProjectId'],
       showKreiseckLogo: showKreiseckLogo,
+      layout: layout,
+      testKasse: testKasse,
+      testSignatur: testSignatur,
+      kopfId: kopfId,
     );
   }
 
@@ -192,6 +215,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       logoUrl: json['logo_url'],
       thanksMessage: List<String>.from(json['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: json['kreiseck_logo'] == true,
+      layout: BelegLayout.fromJson(json['layout']),
+      testKasse: json['testKasse'] == true,
+      testSignatur: json['testSignatur'] == true,
+      kopfId: json['kopfId'] is String ? json['kopfId'] as String : null,
     );
   }
 

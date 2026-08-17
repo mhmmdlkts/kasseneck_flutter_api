@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
+import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
@@ -500,6 +501,42 @@ class PrintPaper {
     val4 = val4.padLeft(len).substring(0, len);
     myPosPaper.addText('$val1$val2$val3$val4');
   }
+
+  /// Druckt ein Beleg-Zeilenmodell des Backends (`KasseneckReceipt.layout`):
+  /// dieselben Zeilen wie Browser-Kasse und PDF — Kopf/Fuß wie beim
+  /// Ausstellen, Belegart-Aufdruck, reduzierter Nullbeleg. Bevorzugt gegenüber
+  /// [setKeckReceipt], sobald ein Layout vorliegt.
+  void setBelegLayout(BelegLayout layout, {bool cut = true}) {
+    reset();
+    for (final z in layout.lines) {
+      switch (z) {
+        case BelegText():
+          addText(z.text, styles: PosStyles(align: _posAlign(z.align), bold: z.bold));
+        case BelegBanner():
+          // Belegart/Warnung: fett, zentriert, doppelte Höhe; Warnungen invers.
+          addText(z.text, styles: PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, reverse: z.warnung));
+        case BelegSpalten():
+          final zeile = generator.row(z.columns
+              .map((c) => PosColumn(text: _printable(c.text), width: c.width, styles: PosStyles(align: _posAlign(c.align))))
+              .toList());
+          bytes.add(Uint8List.fromList(zeile));
+          myPosPaper.addText(z.columns.map((c) => c.text).join(' '));
+        case BelegLinie():
+          bytes.add(Uint8List.fromList(generator.hr(ch: _printable(z.char).isEmpty ? '-' : _printable(z.char))));
+        case BelegLeerraum():
+          addFeed(lines: z.lines);
+        case BelegQr():
+          addQrCode(z.data);
+      }
+    }
+    if (cut) addCut();
+  }
+
+  static PosAlign _posAlign(BelegAlign a) => switch (a) {
+        BelegAlign.center => PosAlign.center,
+        BelegAlign.right => PosAlign.right,
+        BelegAlign.left => PosAlign.left,
+      };
 
   void addDoubleText(String leftValue, String rightValue, {int leftWidth = 6, int rightWidth = 6}) {
     List<int> bytes = generator.row([
