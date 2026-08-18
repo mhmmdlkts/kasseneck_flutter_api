@@ -1,0 +1,25 @@
+                Bäckerei Muster                 
+                  Hauptplatz 1                  
+                 4830 Hallstatt                 
+                  ATU12345678                   
+                 +43 6134 12345                 
+                                                
+                  JAHRESBELEG                   
+      Nullbeleg 2026 — Prüfung mit BMF-App      
+                                                
+Datum:                       31.12.2026 23:59:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-48
+                                                
+------------------------------------------------
+                  Prüfangaben                   
+Barumsatz:                                0,00 €
+Signatur:                               signiert
+Signaturkarte:                        0x6F0404F0
+Zertifizierungsdienst:             A-Trust (AT1)
+Karte registriert:                    12.03.2024
+Kasse registriert:                    12.03.2024
+------------------------------------------------
+                                                
+                   [QR-Code]                    
+                                                

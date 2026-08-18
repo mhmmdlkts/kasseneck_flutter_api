@@ -1,0 +1,25 @@
+                Bäckerei Muster                 
+                  Hauptplatz 1                  
+                 4830 Hallstatt                 
+                  ATU12345678                   
+                 +43 6134 12345                 
+                                                
+Datum:                       13.08.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-42
+                                                
+2  x Hausgemachte                         2,98 B
+Bio-Dinkelvollkornsemmel                        
+mit Kürbiskernen und                            
+Sonnenblumenkernen je 1,49                      
+                                                
+MwSt%       MwSt        Netto             Brutto
+B 10%       0,27        2,71                2,98
+------------------------------------------------
+Gesamt:                                   2,98 €
+Zahlungsart:                          Barzahlung
+                                                
+                   [QR-Code]                    
+                                                
+         Vielen Dank für Ihren Einkauf          
+            www.baeckerei-muster.at             

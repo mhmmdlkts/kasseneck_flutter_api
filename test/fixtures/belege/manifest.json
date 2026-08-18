@@ -3,71 +3,105 @@
   "belege": {
     "langer-artikelname": {
       "eingabe": "a9a8832989937db8c2abb0e548f31549040c89ae46d707102aff545e3a1a8c21",
-      "erwartet": "5509728a11c99483d70a957d6f75a9d7dcdb6fc34990d5a2ff132f97177a63f8"
+      "erwartet": "5509728a11c99483d70a957d6f75a9d7dcdb6fc34990d5a2ff132f97177a63f8",
+      "grid32": "11ac8ac51f52aa258856bf56f4709b51cafa2d45accc8416f44f7379de09b413",
+      "grid48": "ad7d01efa9dcc102bcb49d463062c67c2bb4f094f1fd1b33a5262de2eb96a43b"
     },
     "null-ausfall": {
       "eingabe": "3a0a6bb819b1432f5e0d9f0746e6a3c91ed8e542705219d28a6ac053392e5768",
-      "erwartet": "2771191e0fcf4757d7793439eecb874773e65020c78b00ce1fb3186108b2d165"
+      "erwartet": "2771191e0fcf4757d7793439eecb874773e65020c78b00ce1fb3186108b2d165",
+      "grid32": "dbb95ec317db7b2ba887d44b361dafd064247005c8ffa04b7764cdda0ed5fefd",
+      "grid48": "197a157ea6c67777d326e20c8db715c61a8547f230a6aff956f48f57965f9bec"
     },
     "null-jahr": {
       "eingabe": "89b71acdff4fba787f2d633c50a95ac4c149e43a19c995394b6dec3b69055366",
-      "erwartet": "cdefdd72af1c22abf3af756239bc53ac6c17f72e8077053f6dcfa420d88ad1ca"
+      "erwartet": "cdefdd72af1c22abf3af756239bc53ac6c17f72e8077053f6dcfa420d88ad1ca",
+      "grid32": "fc54ec1bb827507021ff0f36e52207e87f680c2b550b192934d3172b85786817",
+      "grid48": "3fb56f28c97d14d783dba064ae90976fa0f8c7878a1525675202fb7bfe7a9645"
     },
     "null-monat": {
       "eingabe": "7251752ad1a25009b44a5342dad491b1e9eb06680fabe97dc7e2d4e1fa8ba0b2",
-      "erwartet": "4fce602aa6fb2d9e73693b51b6fa24f8548e64d575dd2a6a425199b16f70f498"
+      "erwartet": "4fce602aa6fb2d9e73693b51b6fa24f8548e64d575dd2a6a425199b16f70f498",
+      "grid32": "b45ad2670fd405ae15c8ae083a1986f4a074a950e9345ed5e0208b7f4f38bf12",
+      "grid48": "fab23b7fc1cc940e50a5fa820e8362efaeb10c00adfff3ab4099ae2d1cd47b15"
     },
     "null-pruef": {
       "eingabe": "a4237023049b3c7b56b05858005b72fdfe31bb940ff291e098f916bb6ce21f84",
-      "erwartet": "5f75008e45068c323ee2212bebb00210fa7f2fbe334b7071c5249ab320407db6"
+      "erwartet": "5f75008e45068c323ee2212bebb00210fa7f2fbe334b7071c5249ab320407db6",
+      "grid32": "5a5529ac05cc10f7bdd0369be1a03c60f1fe635238a394fa3fcc2ed3790aba50",
+      "grid48": "0430a1c331e574f159441e746efc3814c00a02b68a8e6a3f286e7e6372e8fad4"
     },
     "null-schluss": {
       "eingabe": "91c1eb9863cc4a6e52fe0c64385e4e4ea8d0c264817ba554ce5ce6a733837359",
-      "erwartet": "7530191d4461c332266dd2779a109bcfab83bf0eb20c10f2c063b9fcd1e3e12f"
+      "erwartet": "7530191d4461c332266dd2779a109bcfab83bf0eb20c10f2c063b9fcd1e3e12f",
+      "grid32": "ef52b131fb540716d9912da427e7c96c5eb4dc2f67483a1d14d3cf2f8d445c4c",
+      "grid48": "27725ca279517e360381946e3e4912f896aa5383235569ef2328bc9f84d9b213"
     },
     "null-start": {
       "eingabe": "3999878177c54dffde05b8b933355af23cd2781a98d54cf9b990824c0602014a",
-      "erwartet": "115d350efbb9d84e8e111a46202430f3e28ce4d6dababe2e4b10046bf3cb62e3"
+      "erwartet": "115d350efbb9d84e8e111a46202430f3e28ce4d6dababe2e4b10046bf3cb62e3",
+      "grid32": "0b20a96fa594e620877d1eb3921a962641c9c2fbaad1394539434f89277d537e",
+      "grid48": "bbc791a39c42f9f07817ec466a09eceabddf31e2d06b70e4114b52e8c3a5acf4"
     },
     "rabattzeilen": {
       "eingabe": "b30836a268c227812df826b5f8579b28fd57d6fa51923b5d35e1e3c195daf0e9",
-      "erwartet": "f73e7e2b8b7f6e1e7d0b9693fc36615294a939ac9292fd6911249e8ebbefcf22"
+      "erwartet": "f73e7e2b8b7f6e1e7d0b9693fc36615294a939ac9292fd6911249e8ebbefcf22",
+      "grid32": "ed01870a294fd7ace4c7fcd33c7abea327d53ac668c2f2e1a14d969fff77d03d",
+      "grid48": "6bb1c025b806cc0f7b7d6317b1f39e33326951c3810a1b16ac5330b023a9adb5"
     },
     "signaturausfall-verkauf": {
       "eingabe": "c84c9cb97e2cbf0ead3ce537399d2227ab501a90adc2ead79233e95b3a30b8c2",
-      "erwartet": "359e95cf0292885d590b4793a3942413e51315196ccaf91e4875f232f971ff20"
+      "erwartet": "359e95cf0292885d590b4793a3942413e51315196ccaf91e4875f232f971ff20",
+      "grid32": "8383293779de81652130af8244fab5f9a9738b2bbafb436a02d10c32f7cad21c",
+      "grid48": "e0f4e73c873ae0a70623c7c05673a5ca9b736822375c13f6ed0cd3351ab767f9"
     },
     "storno-teil": {
-      "eingabe": "777551f6180b4a8a701262472e53171e04109d4eb6240e7092095725eb0a2717",
-      "erwartet": "b42025a9efdacc0d99912490252b41ce381e3170a3d7caaace8f8606a726259f"
+      "eingabe": "80320cbc1f48fa6b1668662f8aad766733ae7e0695c9c1680f8a115e0c927239",
+      "erwartet": "5638fe514e620d8bad9531f706d9a986fff386b41b8cfd1126302272fca55f5b",
+      "grid32": "d36d0e37bf342a1e50d6b8aa41f4664196fa61fa1c5c43fc0097db77d8e89c90",
+      "grid48": "2e2b691119144cbb5e7c4d5ccadee7e46454723a62371fabc2d30766d7d42e1b"
     },
     "storno-voll": {
       "eingabe": "53ecbfa12576bee3e3077bbf104324794790008e5d54efe6135664388fdab80d",
-      "erwartet": "069700f0321116b427d47ee38bc2a3d9a1cacc49673d482b3bbb82e5d1cc62ab"
+      "erwartet": "069700f0321116b427d47ee38bc2a3d9a1cacc49673d482b3bbb82e5d1cc62ab",
+      "grid32": "cb9950d335a90d58a0445014100ac1c9040326928965053d079fb6144dede380",
+      "grid48": "7509be1eb23ceedff40edc5b070e4bc20cd72d15b6d6d4acb4d7771bc86dec21"
     },
     "testkasse-verkauf": {
       "eingabe": "5cd594029a3d7af4a7c502719763d8b5df0063ff7e46da43c9c7dc4fd2638e1f",
-      "erwartet": "b888d2549d3905a43de7bdf450c561a44fc40e320ebe7ebd2f6842e201cb5841"
+      "erwartet": "b888d2549d3905a43de7bdf450c561a44fc40e320ebe7ebd2f6842e201cb5841",
+      "grid32": "ee76c74631e9244374f5811607b9b3e6bea9df724f958f8763610374957855da",
+      "grid48": "9c1243ea8e5d9acc092ceb9c47e0ad9d21ba8f89ce4717e3efb9f6f0f5b984ba"
     },
     "testsignatur-verkauf": {
       "eingabe": "d56eec2e877fe23b02564240ca0af23ab00c99aeb51ae15fcb8080265dc56465",
-      "erwartet": "72162373f1bd4cdd1b2c51a1ff68d641dba0b039b2b08e80de65ea31279893a3"
+      "erwartet": "72162373f1bd4cdd1b2c51a1ff68d641dba0b039b2b08e80de65ea31279893a3",
+      "grid32": "1deed573538774ed249fc2d2ffe2df6c7fd29955c5e8007f781ccaac14cd3a4a",
+      "grid48": "93071cf395e9ae6e9a452180fc5151e75d9c2b0cd5700b172d58c4fc2388372d"
     },
     "training": {
       "eingabe": "4bc356192020d159b396badf474357485d8a2033cfa47c8c160f41e3b0e5411c",
-      "erwartet": "241e4513855a7aabb51632499e0dc4cfd14af713b4d7737f0c5593d8e93eb127"
+      "erwartet": "241e4513855a7aabb51632499e0dc4cfd14af713b4d7737f0c5593d8e93eb127",
+      "grid32": "bed3cb45595717acc2ea18c3b9bf7c850b773ee805900269ec0f06a13b1a5f9d",
+      "grid48": "7005745d800d38ff3d33bd8d10aa8f140105c43f4c31ecd26032c88e01b9af05"
     },
     "verkauf-bar": {
       "eingabe": "272523f758d809edacc8eb2f26b90f8ae58a47c023d4bf6a6308ec495f53cebe",
-      "erwartet": "cbb4cd4c692995ae0c9f32a1edf24e8a57efe0b0cc4f952f3378779b51da49d5"
+      "erwartet": "cbb4cd4c692995ae0c9f32a1edf24e8a57efe0b0cc4f952f3378779b51da49d5",
+      "grid32": "176f54d22e690c25a3a562067fcd8a3dd50d3a88718572cbd2601a367f841337",
+      "grid48": "f8fa7ced142af62f83d69af5a4bfc7d7cc767436775e18d22c461c62c9c42a36"
     },
     "verkauf-karte": {
       "eingabe": "94990f6141c0cc7677d5383eb935a41bd1b14217d43ab46380acc3277e6db571",
-      "erwartet": "f5a401ffa5f148858fd4abd327b5d1ff69e9d1a68dc9d791427110d9a7f597bf"
+      "erwartet": "f5a401ffa5f148858fd4abd327b5d1ff69e9d1a68dc9d791427110d9a7f597bf",
+      "grid32": "3231111db4a9775d707024426f9720d64554c4a4863da5d673bcc9b88669bfe3",
+      "grid48": "4e0a767e8bbfd4dcfdbda42663a19611bce95813056b0a4b7336c67b79f20cec"
     },
     "verkauf-kleinunternehmer": {
       "eingabe": "9949de21f217f32ee9ee9ea5897d2fb34fa1a8e318bf49076bf14fddcf85f59a",
-      "erwartet": "236a6bcf1373aa4afe43c368aa291e46958cbdbdbd5543fc924a4fdd058987bb"
+      "erwartet": "236a6bcf1373aa4afe43c368aa291e46958cbdbdbd5543fc924a4fdd058987bb",
+      "grid32": "7f76b0c47e5ae09d215ed500256f8876e62d7412c3452a7e6aea5c1a7fd6aa05",
+      "grid48": "d331b2b69874f3ee13f196067a5e993f0b5844d8dd021758fce2c625031b776b"
     }
   }
 }

@@ -1,0 +1,26 @@
+                Bäckerei Muster                 
+                  Hauptplatz 1                  
+                 4830 Hallstatt                 
+                  ATU12345678                   
+                 +43 6134 12345                 
+                                                
+                  STORNOBELEG                   
+      Stornobuchung zu Beleg AT0-KASSE1-42      
+               Grund: Fehleingabe               
+                                                
+Datum:                       13.08.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-44
+                                                
+-1 x Semmel                              -0,79 B
+                                                
+MwSt%       MwSt        Netto             Brutto
+B 10%       -0,07       -0,72              -0,79
+------------------------------------------------
+Gesamt:                                  -0,79 €
+Zahlungsart:                          Barzahlung
+                                                
+                   [QR-Code]                    
+                                                
+         Vielen Dank für Ihren Einkauf          
+            www.baeckerei-muster.at             
