@@ -32,6 +32,10 @@
     "zeroKind": "outage_end"
   },
   "options": {
-    "paperSize": "mm80"
+    "paperSize": "mm80",
+    "pruefangaben": {
+      "karteRegistriertAm": "2024-03-12",
+      "kasseRegistriertAm": "2024-03-12"
+    }
   }
 }

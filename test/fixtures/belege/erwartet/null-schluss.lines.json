@@ -99,10 +99,108 @@
       "lines": 1
     },
     {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
       "kind": "text",
-      "text": "Betrag: 0,00 €",
+      "text": "Prüfangaben",
       "align": "center",
       "bold": true
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Barumsatz:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "0,00 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Signatur:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "signiert",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Signaturkarte:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "6F0404F0",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Zertifizierungsdienst:",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "A-Trust (AT1)",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Karte registriert:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "12.03.2024",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kasse registriert:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "12.03.2024",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
     },
     {
       "kind": "space",
@@ -118,5 +216,5 @@
     }
   ],
   "paperSize": "mm80",
-  "regelwerk": 1
+  "regelwerk": 2
 }

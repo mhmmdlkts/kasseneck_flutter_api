@@ -23,8 +23,8 @@ void main() {
   final manifest = _json('${_wurzel.path}/manifest.json');
   final namen = (manifest['belege'] as Map<String, dynamic>).keys.toList()..sort();
 
-  test('Golden-Kopien stimmen mit dem Manifest des JS-Pakets ueberein (Regelwerk 1, 17 Belege)', () {
-    expect(manifest['regelwerk'], 1);
+  test('Golden-Kopien stimmen mit dem Manifest des JS-Pakets ueberein (Regelwerk 2, 17 Belege)', () {
+    expect(manifest['regelwerk'], 2);
     expect(namen.length, greaterThanOrEqualTo(17));
     for (final n in namen) {
       final e = (manifest['belege'] as Map)[n] as Map;
@@ -40,7 +40,7 @@ void main() {
       final roh = _json('${_wurzel.path}/erwartet/$n.lines.json');
       final layout = BelegLayout.fromJson(roh)!;
       expect(layout.lines.length, (roh['lines'] as List).length, reason: n);
-      expect(layout.regelwerk, 1);
+      expect(layout.regelwerk, 2);
       expect(layout.qrDaten, isNotNull, reason: '$n ohne QR');
     }
     // Belegart-Aufdruck der Fixtures
@@ -49,6 +49,11 @@ void main() {
     final monat = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/null-monat.lines.json'))!;
     expect(monat.bannerTexte, ['MONATSBELEG']);
     expect(monat.lines.whereType<BelegText>().any((t) => t.text == 'Nullbeleg 08/2026'), isTrue);
+    // Regelwerk 2: Nullbeleg mit Block "Prüfangaben" statt Summenzeile
+    final monatTexte = monat.lines.whereType<BelegText>().map((t) => t.text).toList();
+    expect(monatTexte, contains('Prüfangaben'));
+    expect(monatTexte, isNot(contains('Betrag: 0,00 €')));
+    expect(monat.lines.whereType<BelegSpalten>().any((s) => s.columns.first.text == 'Karte registriert:'), isTrue);
     final testkasse = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/testkasse-verkauf.lines.json'))!;
     expect(testkasse.bannerTexte.first, startsWith('TESTKASSE'));
     expect(testkasse.bannerTexte.last, startsWith('TESTKASSE'));
