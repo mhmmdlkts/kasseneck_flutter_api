@@ -7,27 +7,27 @@
     },
     "null-ausfall": {
       "eingabe": "3a0a6bb819b1432f5e0d9f0746e6a3c91ed8e542705219d28a6ac053392e5768",
-      "erwartet": "c7e5a4e5a2e38febd0e595e1cbf8d0f36f4dea78dddb30e3c3beb94d2ff54cbd"
+      "erwartet": "2771191e0fcf4757d7793439eecb874773e65020c78b00ce1fb3186108b2d165"
     },
     "null-jahr": {
       "eingabe": "89b71acdff4fba787f2d633c50a95ac4c149e43a19c995394b6dec3b69055366",
-      "erwartet": "d1b9fa68f85f3db972fafa62688cd5b2f83d9e42eaa86cff14f15b125a8b5fae"
+      "erwartet": "cdefdd72af1c22abf3af756239bc53ac6c17f72e8077053f6dcfa420d88ad1ca"
     },
     "null-monat": {
       "eingabe": "7251752ad1a25009b44a5342dad491b1e9eb06680fabe97dc7e2d4e1fa8ba0b2",
-      "erwartet": "1f23a310db5e2f5e632989f98c1009e23b64f612646cb3d2ebcb5e8324369be5"
+      "erwartet": "4fce602aa6fb2d9e73693b51b6fa24f8548e64d575dd2a6a425199b16f70f498"
     },
     "null-pruef": {
       "eingabe": "a4237023049b3c7b56b05858005b72fdfe31bb940ff291e098f916bb6ce21f84",
-      "erwartet": "0df58497cb4ff47b229e688d46861fbd8747566f6af377076650127f69a40d94"
+      "erwartet": "5f75008e45068c323ee2212bebb00210fa7f2fbe334b7071c5249ab320407db6"
     },
     "null-schluss": {
       "eingabe": "91c1eb9863cc4a6e52fe0c64385e4e4ea8d0c264817ba554ce5ce6a733837359",
-      "erwartet": "601bc6cf8f3fb9cc0e6758d9d87d4015225012238630e18115c9bd16a3ec1398"
+      "erwartet": "7530191d4461c332266dd2779a109bcfab83bf0eb20c10f2c063b9fcd1e3e12f"
     },
     "null-start": {
       "eingabe": "3999878177c54dffde05b8b933355af23cd2781a98d54cf9b990824c0602014a",
-      "erwartet": "0fe2371d511e1c5f16fb8efd930a7c339f5a0994257a996bfe821f7b01384340"
+      "erwartet": "115d350efbb9d84e8e111a46202430f3e28ce4d6dababe2e4b10046bf3cb62e3"
     },
     "rabattzeilen": {
       "eingabe": "b30836a268c227812df826b5f8579b28fd57d6fa51923b5d35e1e3c195daf0e9",
