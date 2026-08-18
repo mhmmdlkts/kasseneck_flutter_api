@@ -1,0 +1,26 @@
+        Nagelstudio Anna        
+          Hauptplatz 1          
+         4830 Hallstatt         
+          12-345/6789           
+         +43 6134 12345         
+                                
+Datum:       13.08.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-42
+                                
+1  x Maniküre            35,00 D
+                                
+MwSt%   MwSt    Netto     Brutto
+D 0%    0,00    35,00      35,00
+--------------------------------
+Gesamt:                  35,00 €
+Zahlungsart:          Barzahlung
+                                
+     Umsatzsteuerbefreit –      
+Kleinunternehmer gemäß § 6 Abs. 
+          1 Z 27 UStG.          
+                                
+           [QR-Code]            
+                                
+ Vielen Dank für Ihren Einkauf  
+    www.baeckerei-muster.at     

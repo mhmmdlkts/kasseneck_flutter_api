@@ -96,6 +96,16 @@ void main() {
       }
       // Kopf steht drin, QR-Befehl (GS ( k) und Schnitt (GS V) sind da
       expect(text, contains('B'), reason: n);
+      // Rasterzeilen (80 mm = 48 Zeichen): die Gesamt-Zeile steht als eine
+      // Textzeile im Bytestrom, Preis buendig rechts (EUR statt Euro-Zeichen,
+      // gerastert NACH dem Druckbarmachen -> weiterhin exakt 48 Zeichen).
+      final soll = File('${_wurzel.path}/erwartet/$n.grid48.txt').readAsStringSync().split('\n');
+      final gesamtZeile = soll.firstWhere((z) => z.startsWith('Gesamt:'), orElse: () => '');
+      if (gesamtZeile.isNotEmpty) {
+        final treffer = RegExp(r'Gesamt: +-?[\d.,]+ EUR').firstMatch(text);
+        expect(treffer, isNotNull, reason: '$n: Gesamt-Zeile nicht als Rasterzeile im Bytestrom');
+        expect(treffer!.group(0)!.length, 48, reason: '$n: Gesamt-Zeile nicht 48 Zeichen breit');
+      }
       expect(bytes, containsAllInOrder([0x1D, 0x28, 0x6B]), reason: '$n: kein QR');
       expect(bytes.sublist(bytes.length - 6), contains(0x56), reason: '$n: kein Schnitt');
     }

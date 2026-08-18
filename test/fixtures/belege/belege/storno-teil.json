@@ -40,7 +40,7 @@
       "receiptId": "AT0-KASSE1-42",
       "fullReceiptId": null
     },
-    "cancellationReason": "falsch_erfasst"
+    "cancellationReason": "fehleingabe"
   },
   "options": {
     "paperSize": "mm58"
