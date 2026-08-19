@@ -1,3 +1,8 @@
+## 4.18.0
+- **Belegaufrufe der Kasse** (`package:kasseneck_api/kasse.dart`): `RegisterReceiptClient` mit `verkaufen` (Normalbeleg samt Belegkopf in einer Antwort), `auflisten` (Zusammenfassungen mit Summe in ganzen Cent, Bediener, Storno-Stand), `holen` und `stornieren` (voll oder in Teilen, mit Grund und Restmengen). Der Verkauf ist der einzige nicht folgenlos wiederholbare Aufruf — es geht genau ein Aufruf hinaus, auch nach einem Netzhaenger.
+- **Gemeinsamer Weg der laufenden Sitzung**: `RegisterTransport` (ID-Token als Bearer, Sitzung als Kopfzeile `register-session`, Kasse als Parameter, eigene Frist je Aufruf). `RegisterSessionClient` laeuft jetzt darueber, statt die Huelle ein zweites Mal zu fuehren; sein Verhalten aendert sich nicht.
+- Eine leere Storno-Positionsliste ist ein Fehler und **kein** Vollstorno — sonst wuerde aus einem missglueckten Teilstorno still ein voller.
+
 ## 4.17.0
 - **Warenkorb und Kassieren** (`package:kasseneck_api/kasse.dart`), Zwilling von `warenkorb.ts` und `kassieren.ts` der Browser-Kasse: `Warenkorb` (erfassen, Menge setzen, Höchstmenge je Beleg, verkaufte Positionen abziehen, Anzeigezeilen je Mengenmodus), `betragAusText`/`alsEuro` (jeder Betrag eine ganze Zahl in Cent — gelesen über die Ziffern, nie über Fließkomma), `zahlungsarten`, `rabattCents`, `zuZahlen`, `rueckgeld`, `schnellbetraege`, `abschlussPruefung`, `ustCents`/`ustSumme`.
 - `verteileRabatt`: Rabatt als negative Position je Steuersatz mit Rundung nach größtem Rest — die Summe der Zeilen ist immer genau der Rabatt, keine Zeile größer als der Umsatz ihres Satzes.

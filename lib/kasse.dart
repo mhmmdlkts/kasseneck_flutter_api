@@ -1,7 +1,8 @@
-/// Kassen-Einstellungen der Browser- und der App-Kasse.
+/// Die Kasse am Tresen: Einstellungen, Warenkorb, Kassieren und Belege —
+/// gemeinsam von Browser-Kasse und App.
 ///
-/// Zwilling von `kasse/settings.ts` im JS-Paket und von
-/// `functions/kasse-settings-core.js` im Backend. Die Golden-Datei
+/// Zwilling von `kasse/settings.ts` bzw. `client/receipts.ts` im JS-Paket und
+/// von `functions/kasse-settings-core.js` im Backend. Die Golden-Datei
 /// `fixtures/kasse-settings-standard.json` hält die Standardwerte deckungsgleich.
 library;
 
@@ -10,6 +11,8 @@ library;
 export 'enums/keck_payment_method.dart';
 export 'enums/vat_rate.dart';
 export 'models/kasseneck_item.dart';
+export 'models/kasseneck_receipt.dart';
+export 'src/kasse/belege.dart';
 export 'src/kasse/einstellungen.dart';
 export 'src/kasse/kassieren.dart';
 export 'src/kasse/warenkorb.dart';

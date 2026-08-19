@@ -3,6 +3,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../kasse/einstellungen.dart';
+import 'fehler.dart';
+import 'transport.dart';
+
+export 'fehler.dart';
+export 'transport.dart' show RegisterTransport, kRegisterBaseUrl;
 
 /// Kopplung und Anmeldung eines Kassengeräts — der Zwilling von
 /// `register/pairing.ts` im JS-Paket `@kreiseck/kasseneck-api`.
@@ -28,55 +33,6 @@ import '../kasse/einstellungen.dart';
 /// 4. [RegisterClient.registerUserLogin] bzw. [RegisterClient.registerPinLogin]
 ///    eröffnet die Sitzung: Custom Token (→ Firebase → ID-Token) plus
 ///    `sessionId`.
-
-/// Basis-Adresse der Kopplungs- und Sitzungsaufrufe.
-///
-/// **Nicht** `api.kasseneck.at/v1` — das ist die api_key-Schnittstelle für
-/// Kassengeräte (siehe `KasseneckApi`). Die Aufrufe rund um Kopplung und
-/// Anmeldung liegen hinter den Hosting-Umschreibungen der Browser-Kasse; die
-/// App spricht dieselbe Adresse an wie sie.
-const String kRegisterBaseUrl = 'https://kasse.kasseneck.at/api';
-
-/// Der Aufrufer hat etwas nicht mitgegeben, oder die Antwort trug nicht, was
-/// der Aufruf zusagt. Die Meldung nennt immer nur das **Feld**, nie seinen
-/// Wert — sonst stünde ein Gerätegeheimnis im Protokoll.
-class KasseneckValidationError implements Exception {
-  const KasseneckValidationError(this.functionName, this.reason, this.kind);
-
-  final String functionName;
-  final String reason;
-
-  /// `request` = der Aufruf war unvollständig, `response` = die Antwort.
-  final String kind;
-
-  @override
-  String toString() => 'KasseneckValidationError($functionName, $kind): $reason';
-}
-
-/// Fachlicher Fehler des Backends (PIN falsch, Kasse belegt, Gerät gesperrt …).
-class KasseneckApiError implements Exception {
-  const KasseneckApiError(this.functionName, this.message);
-
-  final String functionName;
-  final String message;
-
-  @override
-  String toString() => 'KasseneckApiError($functionName): $message';
-}
-
-/// Die Antwort war keine brauchbare Hülle `{status, data}` oder der HTTP-Weg
-/// scheiterte. Trägt bewusst **nichts** aus dem Rumpf: dort könnten Werte
-/// stehen, die wir gerade nicht ins Protokoll lassen wollen.
-class KasseneckHttpError implements Exception {
-  const KasseneckHttpError(this.functionName, this.statusCode, this.reason);
-
-  final String functionName;
-  final int statusCode;
-  final String reason;
-
-  @override
-  String toString() => 'KasseneckHttpError($functionName): HTTP $statusCode ($reason)';
-}
 
 /// Was das Gerät über sich sagt — fürs Panel („welches Gerät ist das?").
 class RegisterClientInfo {
@@ -334,7 +290,7 @@ class RegisterUserSession {
 /// Die anmeldungsfreien Aufrufe rund um Kopplung und Anmeldung.
 class RegisterClient {
   RegisterClient({String? baseUrl, http.Client? httpClient, Duration? timeout})
-      : _baseUrl = _ohneSchraegstrich(baseUrl ?? kRegisterBaseUrl),
+      : _baseUrl = ohneSchraegstrich(baseUrl ?? kRegisterBaseUrl),
         _http = httpClient ?? http.Client(),
         _timeout = timeout ?? const Duration(seconds: 30);
 
@@ -657,42 +613,34 @@ String _pflichtfeld(String functionName, Map<String, dynamic> daten, String feld
 /// Leere Zeichenkette statt `null` — Anzeigefelder dürfen leer sein.
 String _text(Object? wert) => wert is String ? wert : '';
 
-String _ohneSchraegstrich(String url) => url.replaceAll(RegExp(r'/+$'), '');
-
 /// Die beiden Aufrufe der **laufenden** Sitzung.
 ///
-/// Anders als Kopplung und Anmeldung haben sie eine Identität: das
-/// Firebase-ID-Token als Bearer, die laufende Sitzung als Kopfzeile
-/// `register-session`, die Kasse als Parameter. Eigene Parameter führen sie
-/// keine — welche Sitzung gemeint ist, steht im Ausweis.
-///
-/// Token **und** Sitzung werden bei jedem Aufruf frisch erfragt: ID-Tokens
-/// laufen nach einer Stunde ab, die Kassen-Sitzung lebt sogar nur 90 Sekunden.
-/// Ein einmal gemerkter Wert wäre bald tot.
+/// Sie führen keine eigenen Parameter — welche Sitzung gemeint ist, steht im
+/// Ausweis, den der [RegisterTransport] anlegt.
 class RegisterSessionClient {
   RegisterSessionClient({
-    required this.idToken,
-    required this.sessionId,
-    required this.cashregisterId,
+    required Future<String?> Function() idToken,
+    required Future<String?> Function() sessionId,
+    required String cashregisterId,
     String? baseUrl,
     http.Client? httpClient,
     Duration? timeout,
-  })  : _baseUrl = _ohneSchraegstrich(baseUrl ?? kRegisterBaseUrl),
-        _http = httpClient ?? http.Client(),
-        _timeout = timeout ?? const Duration(seconds: 30);
+  }) : transport = RegisterTransport(
+          idToken: idToken,
+          sessionId: sessionId,
+          cashregisterId: cashregisterId,
+          baseUrl: baseUrl,
+          httpClient: httpClient,
+          timeout: timeout,
+        );
 
-  /// Liefert ein gültiges Firebase-ID-Token (darf erneuern).
-  final Future<String?> Function() idToken;
+  /// Aus einem bestehenden Transport — so teilen Sitzung, Belege und
+  /// Einstellungen einen Ausweis statt drei.
+  RegisterSessionClient.aus(this.transport);
 
-  /// Liefert die laufende Sitzung.
-  final Future<String?> Function() sessionId;
+  final RegisterTransport transport;
 
-  /// Kasse, an der die Sitzung läuft.
-  final String cashregisterId;
-
-  final String _baseUrl;
-  final http.Client _http;
-  final Duration _timeout;
+  String get cashregisterId => transport.cashregisterId;
 
   /// Sitzung verlängern; liefert den neuen Ablauf (Millisekunden seit 1970).
   ///
@@ -701,7 +649,7 @@ class RegisterSessionClient {
   /// anmelden.") — dann hilft nur eine neue Anmeldung.
   Future<int> renewRegisterSession() async {
     const name = 'renewRegisterSession';
-    final daten = await _rufen(name);
+    final daten = await transport.rufen(name);
     final bis = daten['expiresAt'];
     if (bis is! int) {
       // Ohne brauchbaren Ablaufzeitpunkt weiß die Kasse nicht, wann sie das
@@ -712,51 +660,5 @@ class RegisterSessionClient {
   }
 
   /// Sitzung beenden (Abmelden am Tresen).
-  Future<void> endRegisterSession() => _rufen('endRegisterSession');
-
-  Future<Map<String, dynamic>> _rufen(String name) async {
-    // Beides frisch — siehe Klassenkommentar.
-    final token = await idToken();
-    final sitzung = await sessionId();
-    if (token == null || token.isEmpty) {
-      throw KasseneckValidationError(name, 'idToken lieferte kein Token', 'request');
-    }
-    if (sitzung == null || sitzung.isEmpty) {
-      throw KasseneckValidationError(name, 'sessionId lieferte keine Sitzung', 'request');
-    }
-
-    final http.Response antwort;
-    try {
-      antwort = await _http
-          .post(
-            Uri.parse('$_baseUrl/$name'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-              'register-session': sitzung,
-            },
-            body: jsonEncode({
-              'params': {'cashregisterId': cashregisterId},
-            }),
-          )
-          .timeout(_timeout);
-    } on Object {
-      throw KasseneckHttpError(name, 0, 'network');
-    }
-
-    Object? roh;
-    try {
-      roh = jsonDecode(antwort.body);
-    } on FormatException {
-      throw KasseneckHttpError(name, antwort.statusCode, 'not-json');
-    }
-    if (roh is! Map) throw KasseneckHttpError(name, antwort.statusCode, 'missing-status');
-    final huelle = Map<String, dynamic>.from(roh);
-    if (huelle['status'] == 'success') {
-      final daten = huelle['data'];
-      return daten is Map ? Map<String, dynamic>.from(daten) : <String, dynamic>{};
-    }
-    final meldung = huelle['message'];
-    throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.');
-  }
+  Future<void> endRegisterSession() => transport.rufen('endRegisterSession');
 }
