@@ -1,3 +1,7 @@
+## 4.17.0
+- **Warenkorb und Kassieren** (`package:kasseneck_api/kasse.dart`), Zwilling von `warenkorb.ts` und `kassieren.ts` der Browser-Kasse: `Warenkorb` (erfassen, Menge setzen, Höchstmenge je Beleg, verkaufte Positionen abziehen, Anzeigezeilen je Mengenmodus), `betragAusText`/`alsEuro` (jeder Betrag eine ganze Zahl in Cent — gelesen über die Ziffern, nie über Fließkomma), `zahlungsarten`, `rabattCents`, `zuZahlen`, `rueckgeld`, `schnellbetraege`, `abschlussPruefung`, `ustCents`/`ustSumme`.
+- `verteileRabatt`: Rabatt als negative Position je Steuersatz mit Rundung nach größtem Rest — die Summe der Zeilen ist immer genau der Rabatt, keine Zeile größer als der Umsatz ihres Satzes.
+
 ## 4.16.0
 - **Behoben:** die Kopplungs- und Sitzungsaufrufe zeigten auf `api.kasseneck.at/v1` — dort antwortet auf sie eine HTML-404, die Kopplung schlug also immer fehl. Sie liegen hinter den Hosting-Umschreibungen der Kasse; die Vorgabe ist jetzt `https://kasse.kasseneck.at/api`.
 
