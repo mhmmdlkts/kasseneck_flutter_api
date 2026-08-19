@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:kasseneck_api/kasse.dart';
 import 'package:kasseneck_api/register.dart';
 
 /// Kopplung und Anmeldung eines Kassengeräts — der Zwilling von
@@ -68,6 +69,8 @@ const anmeldeAntwort = {
 };
 
 void main() {
+  einstellungen();
+
   group('Kopplung', () {
     test('tauscht den Code gegen den Ausweis des Geräts', () async {
       final f = clientWith(erfolg(kopplungsAntwort));
@@ -325,5 +328,31 @@ void main() {
       }
       expect(f.log, isEmpty);
     });
+  });
+}
+
+void einstellungen() {
+  test('die Kassen-Einstellungen kommen gemischt mit den Standardwerten', () async {
+    final f = clientWith(erfolg({
+      'users': [],
+      'settings': {
+        'betrieb': {'zahlKarte': true, 'kartenanbieter': 'hobex'},
+        'geraet': {'layout': 'vollbild'},
+      },
+    }));
+    final antwort = await f.client.listRegisterUsersForDevice(
+      ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
+    );
+    expect(antwort.settings.betrieb.kartenAktiv, isTrue);
+    expect(antwort.settings.geraet.layout, KasseLayout.vollbild);
+    expect(antwort.settings.betrieb.zahlBar, isTrue, reason: 'ungenanntes bleibt beim Standard');
+  });
+
+  test('ohne Einstellungen in der Antwort gelten die Standardwerte', () async {
+    final f = clientWith(erfolg({'users': []}));
+    final antwort = await f.client.listRegisterUsersForDevice(
+      ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
+    );
+    expect(antwort.settings.toJson(), const KasseSettings.standard().toJson());
   });
 }
