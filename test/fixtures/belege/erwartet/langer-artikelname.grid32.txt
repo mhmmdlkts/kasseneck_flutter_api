@@ -9,11 +9,9 @@ Kassen-ID:                KASSE1
 Beleg-ID:          AT0-KASSE1-42
                                 
 2  x Hausgemachte         2,98 B
-Bio-Dinkelvollkor               
-nsemmel mit                     
+Bio-Dinkelvollkornsemmel mit    
 Kürbiskernen und                
-Sonnenblumenkerne               
-n je 1,49                       
+Sonnenblumenkernen je 1,49      
                                 
 MwSt%   MwSt    Netto     Brutto
 B 10%   0,27    2,71        2,98

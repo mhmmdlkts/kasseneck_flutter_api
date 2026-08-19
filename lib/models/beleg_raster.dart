@@ -33,7 +33,11 @@ class RasterZeile {
   const RasterZeile({required this.text, required this.art, this.bold = false, this.warnung = false, this.qr});
 }
 
-/// Wortweiser Umbruch auf höchstens [max] Zeichen (Zwilling von `wortzeilenText`).
+const String _nbsp = '\u00a0';
+
+/// Wortweiser Umbruch auf höchstens [max] Zeichen (Zwilling von `wortzeilenText`):
+/// geschütztes Leerzeichen bricht nie (wird als Leerzeichen ausgegeben), ein
+/// überlanges Wort bricht nach einem Bindestrich, sonst hart.
 List<String> wortzeilen(String text, int max) {
   final grenze = max < 1 ? 1 : max;
   final out = <String>[];
@@ -45,17 +49,34 @@ List<String> wortzeilen(String text, int max) {
       while (i > 0 && rest[i] != ' ') {
         i -= 1;
       }
-      if (i > 0) schnitt = i;
+      if (i > 0) {
+        schnitt = i;
+      } else {
+        var h = grenze - 1;
+        while (h > 0 && rest[h] != '-') {
+          h -= 1;
+        }
+        if (h > 0) schnitt = h + 1;
+      }
     }
-    out.add(rest.substring(0, schnitt).replaceFirst(RegExp(r' +$'), ''));
+    out.add(rest.substring(0, schnitt).replaceFirst(RegExp(r' +$'), '').replaceAll(_nbsp, ' '));
     var weiter = schnitt;
     while (weiter < rest.length && rest[weiter] == ' ') {
       weiter += 1;
     }
     rest = rest.substring(weiter);
   }
-  out.add(rest);
+  out.add(rest.replaceAll(_nbsp, ' '));
   return out;
+}
+
+/// Text hinter der ersten Umbruchzeile (Präfix des Textes ohne Endleerzeichen).
+String _restNach(String text, String erste) {
+  var i = erste.length;
+  while (i < text.length && text[i] == ' ') {
+    i += 1;
+  }
+  return text.substring(i);
 }
 
 /// Zwölftel → Zeichen je Spalte (ganze Zeichen, Rest an die letzte, mindestens 1).
@@ -118,9 +139,15 @@ class BelegRaster {
           final breiten = rasterSpaltenBreiten(z.columns.map((c) => c.width).toList(), n);
           final inhalt = <int>[for (var i = 0; i < breiten.length; i++) i < breiten.length - 1 ? (breiten[i] - 1 < 1 ? 1 : breiten[i] - 1) : breiten[i]];
           final teile = <List<String>>[for (var i = 0; i < z.columns.length; i++) wortzeilen(z.columns[i].text, inhalt[i])];
+          // Fließregel (wie renderReceiptGrid): läuft nur EINE Spalte über die erste Zeile
+          // hinaus, bekommt ihr Rest die volle Breite; laufen mehrere weiter, bleibt das Raster.
+          final weiterlaufend = <int>[for (var i = 0; i < teile.length; i++) if (teile[i].length > 1) i];
+          final fliesst = weiterlaufend.length == 1 && z.columns.length > 1;
           var zeilen = 1;
-          for (final t in teile) {
-            if (t.length > zeilen) zeilen = t.length;
+          if (!fliesst) {
+            for (final t in teile) {
+              if (t.length > zeilen) zeilen = t.length;
+            }
           }
           for (var r = 0; r < zeilen; r++) {
             final sb = StringBuffer();
@@ -130,6 +157,13 @@ class BelegRaster {
             }
             final text = sb.toString();
             out.add(RasterZeile(text: text.length == n ? text : _ausrichten(text, n, BelegAlign.left), art: RasterArt.columns));
+          }
+          if (fliesst) {
+            final i = weiterlaufend.first;
+            final rest = _restNach(z.columns[i].text, teile[i].first);
+            for (final t in wortzeilen(rest, n)) {
+              out.add(RasterZeile(text: _ausrichten(t, n, z.columns[i].align), art: RasterArt.columns));
+            }
           }
       }
     }

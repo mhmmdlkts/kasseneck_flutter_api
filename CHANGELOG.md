@@ -1,6 +1,12 @@
+## 4.12.0
+- **Kopplung und Anmeldung eines Kassengeräts** (`package:kasseneck_api/register.dart`), Zwilling von `register/pairing.ts` im JS-Paket: `RegisterClient` mit `pairRegisterDevice` (achtstelliger Code aus dem Panel → dauerhafter Geräte-Ausweis), `listRegisterUsersForDevice` (Benutzer, PIN-Regel, Anmeldemodus, Standortsperre), `registerUserLogin` / `registerPinLogin` (Sitzung: Custom Token + `sessionId`) und `unpairRegisterDevice`. Diese Aufrufe laufen ohne Anmeldung — der Code bzw. das Gerätegeheimnis ist der Nachweis; sie stehen deshalb neben `KasseneckApi` und nicht darin.
+- Rechte werden gelesen wie im Backend: Schalter als ja/nein, `cancelScope`/`receiptsScope` als Reichweite (`none|own|all`), Altbestand ohne Reichweite migriert (`cancel` entscheidet, Belege gelten als „alle"). Ein fehlendes Recht gilt als nicht erteilt.
+- Fehlerarten: `KasseneckValidationError` (Aufruf oder Antwort unvollständig), `KasseneckApiError` (fachlicher Fehler des Backends), `KasseneckHttpError`. Weder PIN noch Gerätegeheimnis stehen je in einer Meldung.
+
 ## 4.11.0
 - **Zeichenraster `BelegRaster`** (`models/beleg_raster.dart`), Zwilling von `renderReceiptGrid` im JS-Paket: der Beleg als Zeilen mit exakt 32 (58 mm) bzw. 48 (80 mm) Zeichen — Spalten in ganzen Zeichen, rechte Spalte bündig, mindestens ein Leerzeichen zwischen Spalten, wortweiser Umbruch. Golden-Vergleich gegen `grid32.txt`/`grid48.txt` des JS-Pakets.
 - `PrintPaper.setBelegLayout` druckt jetzt genau diese Rasterzeilen (keine eigene Spaltenrechnung mehr, kein `ESC $`) — dieselben Zeilen wie Browser-Kasse, Labor und Beleg-PDF. Verhalten von `setKeckReceipt` unverändert.
+- 58-mm-Regeln des Rasters (wie JS-Paket 0.6.7): läuft in einer Spaltenzeile nur eine Spalte über die erste Zeile hinaus, bekommt ihr Rest die volle Breite (lange Artikelnamen); überlange Wörter brechen am Bindestrich; geschütztes Leerzeichen bricht nie („je 0,79“ bleibt zusammen). Fixtures auf Stand 0.6.7.
 
 ## 4.10.0
 - **Beleg-Zeilenmodell des Backends** (rein additiv): `KasseneckReceipt.layout` (`BelegLayout`, aus `getReceipt` → `layout`), dazu `testKasse`, `testSignatur`, `kopfId`. Das Backend friert Kopf/Fuß je Beleg ein und baut das Zeilenmodell mit dem Belegart-Aufdruck (STORNOBELEG, TRAININGSBELEG, NULLBELEG/STARTBELEG/MONATSBELEG/JAHRESBELEG/SCHLUSSBELEG — RKSV § 11 Abs. 3), reduziertem Nullbeleg und TESTKASSE/TESTSIGNATUR-Warnrahmen.
