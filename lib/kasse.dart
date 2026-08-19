@@ -12,7 +12,12 @@ export 'enums/keck_payment_method.dart';
 export 'enums/vat_rate.dart';
 export 'models/kasseneck_item.dart';
 export 'models/kasseneck_receipt.dart';
+// Die Storno-Regeln fragen nach der Reichweite eines Rechts; wer sie benutzt,
+// braucht den Typ.
+export 'src/register/pairing.dart' show RegisterScope;
 export 'src/kasse/belege.dart';
+export 'src/kasse/belegliste.dart';
 export 'src/kasse/einstellungen.dart';
 export 'src/kasse/kassieren.dart';
+export 'src/kasse/storno.dart';
 export 'src/kasse/warenkorb.dart';

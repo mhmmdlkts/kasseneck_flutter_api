@@ -86,6 +86,11 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Kennung der eingefrorenen Kopf/Fuß-Version.
   String? kopfId;
 
+  /// Was von diesem Beleg schon storniert (oder gerade reserviert) ist — roh,
+  /// wie das Backend es führt. Gedeutet wird es in `restmengen`; hier steht es
+  /// nur, damit der Storno-Dialog Reste zeigen kann, bevor er den Server fragt.
+  List<Map<String, dynamic>> cancellations;
+
   KasseneckReceipt({
     required this.receiptId,
     required this.cashregisterId,
@@ -126,6 +131,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.testKasse = false,
     this.testSignatur = false,
     this.kopfId,
+    this.cancellations = const [],
   });
 
   factory KasseneckReceipt.create({
@@ -188,6 +194,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       footer3: footer3,
       footer4: footer4,
       customProjectId: receipt['customProjectId'],
+      cancellations: [
+        for (final e in (receipt['cancellations'] as List?) ?? const [])
+          if (e is Map) Map<String, dynamic>.from(e),
+      ],
       showKreiseckLogo: showKreiseckLogo,
       layout: layout,
       testKasse: testKasse,
