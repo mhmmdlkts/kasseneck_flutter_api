@@ -327,6 +327,30 @@ void main() {
     });
   });
 
+  group('Kacheldaten laden', () {
+    test('Gruppen und Artikel kommen gelesen zurück', () async {
+      final f = clientMit([
+        {
+          'status': 'success',
+          'data': {
+            'groups': [
+              {'id': 'g1', 'name': 'Getränke', 'color': '#1B46F5', 'sort': 0},
+            ],
+          },
+        },
+      ]);
+      final gruppen = await f.client.artikelgruppen();
+
+      expect(gruppen.single.name, 'Getränke');
+      expect(f.log.single.url.toString(), endsWith('/listMyArticleGroups'));
+    });
+
+    test('eine fehlende Liste ist ein Antwortfehler, keine leere Liste', () async {
+      final f = clientMit([{'status': 'success', 'data': {}}]);
+      await expectLater(f.client.artikel(), throwsA(isA<KasseneckValidationError>()));
+    });
+  });
+
   group('einzelnen Beleg holen', () {
     test('holt Beleg samt Firmendaten', () async {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);

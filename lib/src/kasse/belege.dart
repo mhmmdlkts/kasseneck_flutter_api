@@ -22,6 +22,7 @@ import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
 import '../register/fehler.dart';
 import '../register/transport.dart';
+import 'artikel.dart';
 
 /// Storno-Stand eines Belegs. Ein unbekannter künftiger Wert gilt als
 /// [StornoStand.offen] — beim Lesen ist dieses Paket tolerant, die Grenze
@@ -319,6 +320,27 @@ class RegisterReceiptClient {
       originalFullReceiptId: bezug['fullReceiptId'] is String ? bezug['fullReceiptId'] as String : null,
       restmengen: rest.cast<int>(),
     );
+  }
+
+  /// Artikelgruppen (Kategorien der Kachel-Kasse).
+  Future<List<Artikelgruppe>> artikelgruppen() async =>
+      _liste('listMyArticleGroups', 'groups', Artikelgruppe.aus);
+
+  /// Artikel in der Form, die die Kacheln brauchen.
+  Future<List<KasseArtikel>> artikel() async => _liste('listMyArticles', 'articles', KasseArtikel.aus);
+
+  Future<List<T>> _liste<T>(String name, String feld, T Function(Map<String, dynamic>) lesen) async {
+    final daten = await transport.rufen(name);
+    final roh = daten[feld];
+    if (roh is! List) {
+      // Keine Liste ist etwas anderes als eine leere Liste: „noch keine
+      // Artikel angelegt" darf nicht aussehen wie „Antwort kaputt".
+      throw KasseneckValidationError(name, 'Antwort enthaelt keine Liste (data.$feld fehlt)', 'response');
+    }
+    return [
+      for (final e in roh)
+        if (e is Map) lesen(Map<String, dynamic>.from(e)),
+    ];
   }
 
   /// Beleg samt Belegkopf aus der Antworthülle. Fehlt der Beleg, ist das ein
