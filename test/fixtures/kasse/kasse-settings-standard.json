@@ -1,0 +1,107 @@
+{
+  "betrieb": {
+    "logoText": "K",
+    "logoAn": true,
+    "logoGroesse": "M",
+    "wasserzeichen": "anmeldung",
+    "farbe": "#1B46F5",
+    "stil": "klar",
+    "schrift": "M",
+    "schriftEinst": "S",
+    "kachelstil": "streifen",
+    "uhr": true,
+    "sperrbild": true,
+    "foto": true,
+    "autoAbMin": 0,
+    "abNachVerkauf": false,
+    "schnellLogin": true,
+    "preisAnzeigen": true,
+    "ustAnzeigen": false,
+    "emoji": true,
+    "katFarben": true,
+    "freiErlaubt": true,
+    "saetze": {
+      "0": true,
+      "10": true,
+      "13": true,
+      "19": false,
+      "20": true,
+      "4.9": true
+    },
+    "menge": "x",
+    "notiz": false,
+    "suche": false,
+    "rabatt": "aus",
+    "zahlBar": true,
+    "zahlKarte": false,
+    "kartenanbieter": "keiner",
+    "trinkgeld": false,
+    "tgModus": "beides",
+    "tgStufen": {
+      "5": true,
+      "10": true,
+      "15": false,
+      "20": false
+    },
+    "tgChips": [
+      5,
+      10
+    ],
+    "tgSplit": true,
+    "rueckgeld": true,
+    "schnellbar": false,
+    "kassierenModus": "seite",
+    "belegAusgabe": "qr",
+    "fertigSekunden": 0
+  },
+  "geraet": {
+    "layout": "rechts",
+    "katpos": "oben",
+    "spaltenExtra": 0,
+    "hoehe": "M",
+    "touch": false,
+    "tasten": {
+      "kassieren": [
+        "Enter"
+      ],
+      "abschliessen": [
+        "Enter"
+      ],
+      "abbrechen": [
+        "Escape"
+      ],
+      "frei": [
+        "Mod+F"
+      ],
+      "bar": [
+        "Mod+B"
+      ],
+      "karte": [
+        "Mod+K"
+      ],
+      "passend": [
+        "Mod+P"
+      ],
+      "belege": [
+        "Mod+E"
+      ],
+      "letzteZurueck": [
+        "Mod+Backspace"
+      ]
+    },
+    "druckerAn": false,
+    "druckerArt": "sdp",
+    "druckerIp": "",
+    "druckerPort": 9100,
+    "druckerBt": "",
+    "druckerId": "",
+    "druckerDevid": "local_printer",
+    "papier": "mm80",
+    "zeichensatz": "CP1252",
+    "schnitt": "partial",
+    "ladeAn": false,
+    "ladeAuto": "bar",
+    "terminalIp": "",
+    "terminalPort": 20008
+  }
+}

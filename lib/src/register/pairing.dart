@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../kasse/einstellungen.dart';
+
 /// Kopplung und Anmeldung eines Kassengeräts — der Zwilling von
 /// `register/pairing.ts` im JS-Paket `@kreiseck/kasseneck-api`.
 ///
@@ -193,9 +195,9 @@ class RegisterDeviceUsers {
   /// Der Betrieb verlangt die Ortung beim Login.
   final bool standortsperre;
 
-  /// Kassen-Einstellungen (betriebsweit + Gerät) als Rohdaten; das getippte
-  /// Einstellungs-Modell folgt mit dem Verkaufsbildschirm.
-  final Map<String, dynamic> settings;
+  /// Kassen-Einstellungen (betriebsweit + Gerät), mit den Standardwerten
+  /// gemischt — die Kasse bekommt nie ein halbes Bild.
+  final KasseSettings settings;
 
   /// Belegkopf des Betriebs als Rohdaten (Name, Anschrift, UID, Fußzeilen).
   final Map<String, dynamic>? betriebsdaten;
@@ -406,7 +408,7 @@ class RegisterClient {
       policy: _regel(daten['policy']),
       loginMode: daten['loginMode'] == 'pin' ? RegisterLoginMode.pin : RegisterLoginMode.auswahl,
       standortsperre: daten['standortsperre'] == true,
-      settings: settings is Map ? Map<String, dynamic>.from(settings) : const {},
+      settings: KasseSettings.aus(settings is Map ? Map<String, dynamic>.from(settings) : null),
       betriebsdaten: betriebsdaten is Map ? Map<String, dynamic>.from(betriebsdaten) : null,
     );
   }

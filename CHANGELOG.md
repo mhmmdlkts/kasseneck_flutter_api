@@ -1,3 +1,7 @@
+## 4.15.0
+- **Kassen-Einstellungen** (`package:kasseneck_api/kasse.dart`): `KasseSettings` mit allen 38 Betriebs- und 20 Gerätefeldern als Zwilling von `kasse/settings.ts` und `kasse-settings-core.js`. Standardwerte gegen die Golden-Datei des JS-Pakets geprüft; Gespeichertes wird gemischt (Landkarten je Schlüssel, damit neue Steuersätze beim Altbestand ankommen), Unbekanntes fällt auf den Standard zurück statt zu raten. Dazu `kartenAktiv` (Karte nur mit eingerichtetem Anbieter) und `aktiveSaetze` (feste Reihenfolge für den Bildschirm).
+- `listRegisterUsersForDevice` liefert `settings` jetzt als `KasseSettings` statt als Rohdaten.
+
 ## 4.14.0
 - `RegisterClient.sitzung(...)` liefert den `RegisterSessionClient` mit derselben Adresse, demselben HTTP-Client und demselben Zeitlimit — eine Verbindung statt zweier, und ein für Tests eingesetzter HTTP-Client erwischt beide Wege.
 
