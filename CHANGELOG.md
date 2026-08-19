@@ -1,6 +1,7 @@
 ## 4.11.0
 - **Zeichenraster `BelegRaster`** (`models/beleg_raster.dart`), Zwilling von `renderReceiptGrid` im JS-Paket: der Beleg als Zeilen mit exakt 32 (58 mm) bzw. 48 (80 mm) Zeichen — Spalten in ganzen Zeichen, rechte Spalte bündig, mindestens ein Leerzeichen zwischen Spalten, wortweiser Umbruch. Golden-Vergleich gegen `grid32.txt`/`grid48.txt` des JS-Pakets.
 - `PrintPaper.setBelegLayout` druckt jetzt genau diese Rasterzeilen (keine eigene Spaltenrechnung mehr, kein `ESC $`) — dieselben Zeilen wie Browser-Kasse, Labor und Beleg-PDF. Verhalten von `setKeckReceipt` unverändert.
+- 58-mm-Regeln des Rasters (wie JS-Paket 0.6.7): läuft in einer Spaltenzeile nur eine Spalte über die erste Zeile hinaus, bekommt ihr Rest die volle Breite (lange Artikelnamen); überlange Wörter brechen am Bindestrich; geschütztes Leerzeichen bricht nie („je 0,79“ bleibt zusammen). Fixtures auf Stand 0.6.7.
 
 ## 4.10.0
 - **Beleg-Zeilenmodell des Backends** (rein additiv): `KasseneckReceipt.layout` (`BelegLayout`, aus `getReceipt` → `layout`), dazu `testKasse`, `testSignatur`, `kopfId`. Das Backend friert Kopf/Fuß je Beleg ein und baut das Zeilenmodell mit dem Belegart-Aufdruck (STORNOBELEG, TRAININGSBELEG, NULLBELEG/STARTBELEG/MONATSBELEG/JAHRESBELEG/SCHLUSSBELEG — RKSV § 11 Abs. 3), reduziertem Nullbeleg und TESTKASSE/TESTSIGNATUR-Warnrahmen.

@@ -16,8 +16,8 @@ Datum:       13.08.2026 10:15:30
 Kassen-ID:                KASSE1
 Beleg-ID:          AT0-KASSE1-45
                                 
-4  x Semmel je            3,16 B
-0,79                            
+4  x Semmel               3,16 B
+je 0,79                         
 1  x Kaffee klein         2,80 A
                                 
 MwSt%   MwSt      Netto   Brutto

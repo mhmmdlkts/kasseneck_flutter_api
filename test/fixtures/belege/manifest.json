@@ -3,9 +3,9 @@
   "belege": {
     "langer-artikelname": {
       "eingabe": "a9a8832989937db8c2abb0e548f31549040c89ae46d707102aff545e3a1a8c21",
-      "erwartet": "5509728a11c99483d70a957d6f75a9d7dcdb6fc34990d5a2ff132f97177a63f8",
-      "grid32": "11ac8ac51f52aa258856bf56f4709b51cafa2d45accc8416f44f7379de09b413",
-      "grid48": "ad7d01efa9dcc102bcb49d463062c67c2bb4f094f1fd1b33a5262de2eb96a43b"
+      "erwartet": "97405d2030efc2e8eb092d0051fd4567b4c0d5ba88050c3e063d9996d10c4313",
+      "grid32": "bb2c6e8b50c321441f9729d4baad6165d9075523a92d8932671687b49c0953d0",
+      "grid48": "80dbf16d8b7e9eb1f5d3987b94f3e27af4acb71086955058b8ca9668f75fd976"
     },
     "null-ausfall": {
       "eingabe": "3a0a6bb819b1432f5e0d9f0746e6a3c91ed8e542705219d28a6ac053392e5768",
@@ -45,14 +45,14 @@
     },
     "rabattzeilen": {
       "eingabe": "b30836a268c227812df826b5f8579b28fd57d6fa51923b5d35e1e3c195daf0e9",
-      "erwartet": "f73e7e2b8b7f6e1e7d0b9693fc36615294a939ac9292fd6911249e8ebbefcf22",
-      "grid32": "ed01870a294fd7ace4c7fcd33c7abea327d53ac668c2f2e1a14d969fff77d03d",
+      "erwartet": "8c72ebacd6e3d42c47e72f4cc5a912f7cb8034ed6483c446f160127d24005f59",
+      "grid32": "36f7445e684c564e3a441b45b77258ed326fd8b39b1c7f062135fca8869a0c13",
       "grid48": "6bb1c025b806cc0f7b7d6317b1f39e33326951c3810a1b16ac5330b023a9adb5"
     },
     "signaturausfall-verkauf": {
       "eingabe": "c84c9cb97e2cbf0ead3ce537399d2227ab501a90adc2ead79233e95b3a30b8c2",
-      "erwartet": "359e95cf0292885d590b4793a3942413e51315196ccaf91e4875f232f971ff20",
-      "grid32": "8383293779de81652130af8244fab5f9a9738b2bbafb436a02d10c32f7cad21c",
+      "erwartet": "0ce2c1d6f30dc12d4f32bb2d03616645f88b6ef782b9e0764fd1b632d5a782e3",
+      "grid32": "c7e3cc1ad61b942e819c438a728ab59b013b2354c78981429fa3a4fa483e8073",
       "grid48": "e0f4e73c873ae0a70623c7c05673a5ca9b736822375c13f6ed0cd3351ab767f9"
     },
     "storno-teil": {
@@ -69,32 +69,32 @@
     },
     "testkasse-verkauf": {
       "eingabe": "5cd594029a3d7af4a7c502719763d8b5df0063ff7e46da43c9c7dc4fd2638e1f",
-      "erwartet": "b888d2549d3905a43de7bdf450c561a44fc40e320ebe7ebd2f6842e201cb5841",
-      "grid32": "ee76c74631e9244374f5811607b9b3e6bea9df724f958f8763610374957855da",
+      "erwartet": "90abdfd08ef7f924939c6d4a05bdf2b8f633ef24d0f928939f6dfcf0f7c91342",
+      "grid32": "38f96d85377f2588a8cf9ccc855f0d53361952d9eb74a5ed3b02f76086378329",
       "grid48": "9c1243ea8e5d9acc092ceb9c47e0ad9d21ba8f89ce4717e3efb9f6f0f5b984ba"
     },
     "testsignatur-verkauf": {
       "eingabe": "d56eec2e877fe23b02564240ca0af23ab00c99aeb51ae15fcb8080265dc56465",
-      "erwartet": "72162373f1bd4cdd1b2c51a1ff68d641dba0b039b2b08e80de65ea31279893a3",
-      "grid32": "1deed573538774ed249fc2d2ffe2df6c7fd29955c5e8007f781ccaac14cd3a4a",
+      "erwartet": "ff03332eada98c7c37902a84671a81eb404cf27eb8e65a218305a1ffe697fe96",
+      "grid32": "95ac0b1d37802d8383aa23f6fbc7830587650e81795055be9836eafe299b2738",
       "grid48": "93071cf395e9ae6e9a452180fc5151e75d9c2b0cd5700b172d58c4fc2388372d"
     },
     "training": {
       "eingabe": "4bc356192020d159b396badf474357485d8a2033cfa47c8c160f41e3b0e5411c",
-      "erwartet": "241e4513855a7aabb51632499e0dc4cfd14af713b4d7737f0c5593d8e93eb127",
-      "grid32": "bed3cb45595717acc2ea18c3b9bf7c850b773ee805900269ec0f06a13b1a5f9d",
+      "erwartet": "f0739c073a70c326c42469b189971663f36ddfc8a476a8760a2efc1ff387c90e",
+      "grid32": "cdea48bbed82ba765b74895665956bf4712fc8dbe4fa3911b57c4d95cf3d8c57",
       "grid48": "7005745d800d38ff3d33bd8d10aa8f140105c43f4c31ecd26032c88e01b9af05"
     },
     "verkauf-bar": {
       "eingabe": "272523f758d809edacc8eb2f26b90f8ae58a47c023d4bf6a6308ec495f53cebe",
-      "erwartet": "cbb4cd4c692995ae0c9f32a1edf24e8a57efe0b0cc4f952f3378779b51da49d5",
-      "grid32": "176f54d22e690c25a3a562067fcd8a3dd50d3a88718572cbd2601a367f841337",
+      "erwartet": "7ad60145b59a89c32031bb10b2f1467db3257af4395ebdbf5dc363842cf11c8a",
+      "grid32": "5320fcb263fb9f56f009a2e0840241901fba642e4875e046b74bd20312ab1aa7",
       "grid48": "f8fa7ced142af62f83d69af5a4bfc7d7cc767436775e18d22c461c62c9c42a36"
     },
     "verkauf-karte": {
       "eingabe": "94990f6141c0cc7677d5383eb935a41bd1b14217d43ab46380acc3277e6db571",
-      "erwartet": "f5a401ffa5f148858fd4abd327b5d1ff69e9d1a68dc9d791427110d9a7f597bf",
-      "grid32": "3231111db4a9775d707024426f9720d64554c4a4863da5d673bcc9b88669bfe3",
+      "erwartet": "31248e914f7189e65005533cf897c3317a0126cc10adfe004842a8660e2afc34",
+      "grid32": "cab1b35c45cc604f290ea780b7d13e7dc4f88f02906a390482a9f1800d3c9a64",
       "grid48": "4e0a767e8bbfd4dcfdbda42663a19611bce95813056b0a4b7336c67b79f20cec"
     },
     "verkauf-kleinunternehmer": {
