@@ -35,6 +35,17 @@ class Artikelgruppe {
         sort: json['sort'] is num ? (json['sort'] as num).toInt() : 0,
         steuersatz: json['vatRate'] is num ? json['vatRate'] as num : null,
       );
+
+  /// Zurück in die Form, aus der [Artikelgruppe.aus] wieder liest — für
+  /// Zwischenspeicher, nicht fürs Backend.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'color': farbe,
+        'symbol': symbol,
+        'sort': sort,
+        'vatRate': steuersatz,
+      };
 }
 
 /// Mengenregel eines Artikels.
@@ -153,6 +164,22 @@ class KasseArtikel {
       maxMenge: json['maxMenge'] is num ? json['maxMenge'] as num : null,
     );
   }
+
+  /// Zurück in die Form, aus der [KasseArtikel.aus] wieder liest — für
+  /// Zwischenspeicher, nicht fürs Backend.
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'unitPriceCents': preisCents,
+        'vatRate': steuersatz,
+        'unit': einheit,
+        'groupId': gruppeId,
+        'kasse': {'sichtbar': sichtbar, 'sort': sort},
+        'active': aktiv,
+        'mengenregel': mengenregel?.name,
+        'mengeFragen': mengeFragen,
+        'maxMenge': maxMenge,
+      };
 }
 
 /// Deckelt eine gewünschte Menge an der Höchstmenge des Artikels.

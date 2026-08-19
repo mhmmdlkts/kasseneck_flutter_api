@@ -222,6 +222,39 @@ void main() {
     });
   });
 
+  group('Hin und zurück', () {
+    test('ein Artikel überlebt den Weg durch JSON unverändert', () {
+      // Der Zwischenspeicher der Kasse schreibt und liest ihn so.
+      final vorher = artikel(maxMenge: 3, einheit: 'kg');
+      final nachher = KasseArtikel.aus(vorher.toJson());
+
+      expect(nachher.id, vorher.id);
+      expect(nachher.name, vorher.name);
+      expect(nachher.preisCents, vorher.preisCents);
+      expect(nachher.steuersatz, vorher.steuersatz);
+      expect(nachher.einheit, vorher.einheit);
+      expect(nachher.gruppeId, vorher.gruppeId);
+      expect(nachher.sichtbar, vorher.sichtbar);
+      expect(nachher.maxMenge, vorher.maxMenge);
+    });
+
+    test('auch ein Artikel ohne Preis und Gruppe kommt heil zurück', () {
+      final vorher = artikel(preisCents: null, satz: null, gruppe: null);
+      final nachher = KasseArtikel.aus(vorher.toJson());
+      expect(nachher.preisCents, isNull);
+      expect(nachher.steuersatz, isNull);
+      expect(nachher.gruppeId, isNull);
+    });
+
+    test('eine Gruppe ebenso', () {
+      final vorher = gruppe(farbe: '#ABCDEF', sort: 3);
+      final nachher = Artikelgruppe.aus(vorher.toJson());
+      expect(nachher.farbe, '#ABCDEF');
+      expect(nachher.sort, 3);
+      expect(nachher.name, vorher.name);
+    });
+  });
+
   group('Kachelfarbe', () {
     test('auf Dunkel steht heller Text, auf Hell dunkler', () {
       expect(textAuf('#1B46F5'), '#ffffff');
