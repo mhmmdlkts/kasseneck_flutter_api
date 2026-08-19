@@ -1,3 +1,8 @@
+## 4.12.0
+- **Kopplung und Anmeldung eines Kassengeräts** (`package:kasseneck_api/register.dart`), Zwilling von `register/pairing.ts` im JS-Paket: `RegisterClient` mit `pairRegisterDevice` (achtstelliger Code aus dem Panel → dauerhafter Geräte-Ausweis), `listRegisterUsersForDevice` (Benutzer, PIN-Regel, Anmeldemodus, Standortsperre), `registerUserLogin` / `registerPinLogin` (Sitzung: Custom Token + `sessionId`) und `unpairRegisterDevice`. Diese Aufrufe laufen ohne Anmeldung — der Code bzw. das Gerätegeheimnis ist der Nachweis; sie stehen deshalb neben `KasseneckApi` und nicht darin.
+- Rechte werden gelesen wie im Backend: Schalter als ja/nein, `cancelScope`/`receiptsScope` als Reichweite (`none|own|all`), Altbestand ohne Reichweite migriert (`cancel` entscheidet, Belege gelten als „alle"). Ein fehlendes Recht gilt als nicht erteilt.
+- Fehlerarten: `KasseneckValidationError` (Aufruf oder Antwort unvollständig), `KasseneckApiError` (fachlicher Fehler des Backends), `KasseneckHttpError`. Weder PIN noch Gerätegeheimnis stehen je in einer Meldung.
+
 ## 4.11.0
 - **Zeichenraster `BelegRaster`** (`models/beleg_raster.dart`), Zwilling von `renderReceiptGrid` im JS-Paket: der Beleg als Zeilen mit exakt 32 (58 mm) bzw. 48 (80 mm) Zeichen — Spalten in ganzen Zeichen, rechte Spalte bündig, mindestens ein Leerzeichen zwischen Spalten, wortweiser Umbruch. Golden-Vergleich gegen `grid32.txt`/`grid48.txt` des JS-Pakets.
 - `PrintPaper.setBelegLayout` druckt jetzt genau diese Rasterzeilen (keine eigene Spaltenrechnung mehr, kein `ESC $`) — dieselben Zeilen wie Browser-Kasse, Labor und Beleg-PDF. Verhalten von `setKeckReceipt` unverändert.
