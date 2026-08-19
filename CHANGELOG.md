@@ -1,3 +1,6 @@
+## 4.13.0
+- **Laufende Sitzung** (`register.dart`): `RegisterSessionClient` mit `renewRegisterSession` (liefert den neuen Ablauf) und `endRegisterSession`. ID-Token und Sitzung werden bei jedem Aufruf frisch erfragt — Tokens laufen nach einer Stunde ab, die Kassen-Sitzung schon nach 90 Sekunden.
+
 ## 4.12.0
 - **Kopplung und Anmeldung eines Kassengeräts** (`package:kasseneck_api/register.dart`), Zwilling von `register/pairing.ts` im JS-Paket: `RegisterClient` mit `pairRegisterDevice` (achtstelliger Code aus dem Panel → dauerhafter Geräte-Ausweis), `listRegisterUsersForDevice` (Benutzer, PIN-Regel, Anmeldemodus, Standortsperre), `registerUserLogin` / `registerPinLogin` (Sitzung: Custom Token + `sessionId`) und `unpairRegisterDevice`. Diese Aufrufe laufen ohne Anmeldung — der Code bzw. das Gerätegeheimnis ist der Nachweis; sie stehen deshalb neben `KasseneckApi` und nicht darin.
 - Rechte werden gelesen wie im Backend: Schalter als ja/nein, `cancelScope`/`receiptsScope` als Reichweite (`none|own|all`), Altbestand ohne Reichweite migriert (`cancel` entscheidet, Belege gelten als „alle"). Ein fehlendes Recht gilt als nicht erteilt.
