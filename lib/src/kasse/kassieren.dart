@@ -93,6 +93,125 @@ AbschlussPruefung abschlussPruefung({
   return const AbschlussPruefung(bereit: true);
 }
 
+/// Was der Kassier am Kassieren-Bildschirm eingestellt hat.
+class Kassierstand {
+  const Kassierstand({
+    required this.zahlungsart,
+    this.rabattCents = 0,
+    this.gegebenCents,
+    this.trinkgeldCents = 0,
+  });
+
+  /// Startstand: die erste Zahlungsart, die der Betrieb anbietet. Ein Betrieb
+  /// ohne Bargeld darf nicht mit „Bar" vorbelegt beginnen.
+  factory Kassierstand.start(KasseSettingsBetrieb betrieb) =>
+      Kassierstand(zahlungsart: zahlungsarten(betrieb).first);
+
+  final KeckPaymentMethod zahlungsart;
+  final int rabattCents;
+
+  /// Bar gegeben; `null`, solange nichts getippt wurde — das ist etwas anderes
+  /// als „null Euro gegeben".
+  final int? gegebenCents;
+  final int trinkgeldCents;
+
+  Kassierstand kopie({
+    KeckPaymentMethod? zahlungsart,
+    int? rabattCents,
+    int? gegebenCents,
+    bool gegebenLoeschen = false,
+    int? trinkgeldCents,
+  }) =>
+      Kassierstand(
+        zahlungsart: zahlungsart ?? this.zahlungsart,
+        rabattCents: rabattCents ?? this.rabattCents,
+        gegebenCents: gegebenLoeschen ? null : (gegebenCents ?? this.gegebenCents),
+        trinkgeldCents: trinkgeldCents ?? this.trinkgeldCents,
+      );
+}
+
+/// Alle Beträge des Kassiervorgangs auf einen Blick.
+class Kassierrechnung {
+  const Kassierrechnung({
+    required this.summeCents,
+    required this.rabattCents,
+    required this.zuZahlenCents,
+    required this.trinkgeldCents,
+    required this.gesamtCents,
+    required this.bar,
+    required this.gegebenCents,
+    required this.fehltCents,
+    required this.rueckgeldCents,
+    required this.bereit,
+    this.grund,
+  });
+
+  /// Warenkorb ohne Rabatt.
+  final int summeCents;
+  final int rabattCents;
+
+  /// **Belegbetrag** nach Rabatt — ohne Trinkgeld.
+  final int zuZahlenCents;
+
+  /// Trinkgeld; steht nicht im Belegbetrag, aber im Gegebenen.
+  final int trinkgeldCents;
+
+  /// Was der Gast tatsächlich gibt: [zuZahlenCents] + [trinkgeldCents].
+  final int gesamtCents;
+
+  /// Wird bar mit Rückgeld gerechnet?
+  final bool bar;
+
+  /// Nur bei [bar]: was gegeben wurde.
+  final int? gegebenCents;
+
+  /// Was noch fehlt; 0, solange nichts getippt wurde.
+  final int fehltCents;
+  final int rueckgeldCents;
+
+  final bool bereit;
+  final String? grund;
+}
+
+/// Die ganze Rechnung des Kassierens — Zwilling von `kassierenRechnung` der
+/// Browser-Kasse.
+///
+/// **Trinkgeld erhöht, was der Gast gibt, nicht den Belegbetrag.** Der Beleg
+/// trägt den Warenwert; das Trinkgeld bucht das Backend als eigene Positionen.
+/// Für das Rückgeld zählt trotzdem beides zusammen — sonst bekäme der Gast sein
+/// Trinkgeld als Wechselgeld zurück.
+Kassierrechnung kassierrechnung(Warenkorb warenkorb, KasseSettingsBetrieb betrieb, Kassierstand stand) {
+  final summe = warenkorb.summeCents;
+  final rabatt = stand.rabattCents > summe ? summe : (stand.rabattCents < 0 ? 0 : stand.rabattCents);
+  final zahlen = zuZahlen(warenkorb, rabatt);
+  final trinkgeld = betrieb.trinkgeld && stand.trinkgeldCents > 0 ? stand.trinkgeldCents : 0;
+  final gesamt = zahlen + trinkgeld;
+  final bar = stand.zahlungsart == KeckPaymentMethod.cash && betrieb.rueckgeld;
+  final gegeben = bar ? stand.gegebenCents : null;
+  final pruefung = abschlussPruefung(
+    zahlungsart: stand.zahlungsart,
+    zuZahlen: gesamt,
+    gegeben: stand.gegebenCents,
+    rueckgeldAn: betrieb.rueckgeld,
+    leer: warenkorb.istLeer,
+  );
+  return Kassierrechnung(
+    summeCents: summe,
+    rabattCents: rabatt,
+    zuZahlenCents: zahlen,
+    trinkgeldCents: trinkgeld,
+    gesamtCents: gesamt,
+    bar: bar,
+    gegebenCents: gegeben,
+    // Nichts getippt heißt nicht „zu wenig": der Kassier ist schlicht noch
+    // nicht fertig, und dafür gibt es keine rote Meldung.
+    fehltCents: bar && gegeben != null && gegeben > 0 && gegeben < gesamt ? gesamt - gegeben : 0,
+    rueckgeldCents: bar && gegeben != null ? rueckgeld(gesamt, gegeben) : 0,
+    bereit: pruefung.bereit,
+    grund: pruefung.grund,
+  );
+}
+
 /// Enthaltene MwSt aus dem Bruttobetrag (ganzzahlig, wie im Backend).
 int ustCents(int brutto, num satz) => (brutto * satz / (100 + satz)).round();
 

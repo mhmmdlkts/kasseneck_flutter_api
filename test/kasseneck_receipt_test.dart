@@ -183,5 +183,13 @@ void main() {
       expect(RKSVService.isSigSuccess('h.p.$damagedMarker'), isFalse);
       expect(RKSVService.isSigSuccess('h.p.xyz'), isTrue);
     });
+    test('eine Signatur ohne drei Teile stuerzt nicht ab, sondern gilt als nicht bestaetigt', () {
+      // Sie kommt so nie vom Backend — aber wenn doch, darf der Belegbildschirm
+      // nicht abstuerzen. Und „nicht pruefbar" ist naeher an „ausgefallen" als
+      // an „in Ordnung".
+      for (final kaputt in ['', 'sig', 'h.p', 'h..']) {
+        expect(RKSVService.isSigSuccess(kaputt), isFalse, reason: 'sig=$kaputt');
+      }
+    });
   });
 }
