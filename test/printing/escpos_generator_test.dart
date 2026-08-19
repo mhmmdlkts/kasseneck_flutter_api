@@ -41,6 +41,34 @@ void main() {
     expect(gen().image(img), isNotEmpty);
   });
 
+  group('Zeichen ausserhalb Latin-1', () {
+    // Artikelnamen kommen aus dem Panel und koennen alles enthalten. Ein
+    // Beleg, der beim Drucken abstuerzt, ist am Tresen viel schlimmer als
+    // einer mit einem Ersatzzeichen: der Beleg ist laengst signiert, nur das
+    // Papier fehlt dann.
+    test('ein Emoji im Artikelnamen stuerzt den Druck nicht ab', () {
+      expect(() => gen().text('Kaffee \u2615'), returnsNormally);
+    });
+
+    test('unbekannte Zeichen werden zu ?, der Rest bleibt lesbar', () {
+      final bytes = gen().text('Cafe \u2615 Bar');
+      final text = String.fromCharCodes(bytes.where((b) => b >= 32 && b < 127));
+      expect(text, contains('Cafe ? Bar'));
+    });
+
+    test('das Euro-Zeichen wird lesbar ersetzt, nicht weggeworfen', () {
+      // 0,50 ? waere eine Zumutung; 0,50 EUR ist eine Auskunft.
+      final bytes = gen().text('0,50 \u20ac');
+      final text = String.fromCharCodes(bytes.where((b) => b >= 32 && b < 127));
+      expect(text, contains('0,50 EUR'));
+    });
+
+    test('Umlaute bleiben Umlaute', () {
+      final bytes = gen().text('Grün');
+      expect(bytes, contains(0xFC), reason: 'ü ist Latin-1 0xFC');
+    });
+  });
+
   test('reset + setGlobalCodeTable(CP1252) setzt Codepage-Byte 16', () {
     final g = gen();
     g.reset();

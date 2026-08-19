@@ -59,14 +59,33 @@ class EscPosGenerator {
     return charsPerLine;
   }
 
+  /// Text in Druckerbytes.
+  ///
+  /// **Ein unbekanntes Zeichen darf den Druck nie abstürzen lassen.**
+  /// Artikelnamen kommen aus dem Panel und können alles enthalten — ein Emoji,
+  /// ein fremdes Alphabet. Ein Beleg mit einem `?` darin ist am Tresen weit
+  /// besser als eine Ausnahme: der Beleg ist längst signiert und im DEP, es
+  /// fehlte dann nur das Papier.
+  ///
+  /// Häufige Zeichen bekommen vorher eine lesbare Entsprechung, statt zu `?`
+  /// zu werden: „0,50 ?" wäre eine Zumutung, „0,50 EUR" ist eine Auskunft.
   Uint8List _encode(String text) {
     text = text
         .replaceAll('’', "'")
         .replaceAll('´', "'")
         .replaceAll('»', '"')
         .replaceAll('«', '"')
-        .replaceAll('•', '.');
-    return latin1.encode(text);
+        .replaceAll('•', '.')
+        .replaceAll('€', 'EUR')
+        .replaceAll('–', '-')
+        .replaceAll('—', '-')
+        .replaceAll('„', '"')
+        .replaceAll('“', '"')
+        .replaceAll('”', '"')
+        .replaceAll('…', '...');
+    return Uint8List.fromList([
+      for (final zeichen in text.runes) zeichen <= 0xFF ? zeichen : 0x3F, // '?'
+    ]);
   }
 
   /// Generate multiple bytes for a number: In lower and higher parts, or more parts as needed.
