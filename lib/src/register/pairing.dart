@@ -29,8 +29,13 @@ import '../kasse/einstellungen.dart';
 ///    eröffnet die Sitzung: Custom Token (→ Firebase → ID-Token) plus
 ///    `sessionId`.
 
-/// Basis-Adresse der Produktion.
-const String kRegisterBaseUrl = 'https://api.kasseneck.at/v1';
+/// Basis-Adresse der Kopplungs- und Sitzungsaufrufe.
+///
+/// **Nicht** `api.kasseneck.at/v1` — das ist die api_key-Schnittstelle für
+/// Kassengeräte (siehe `KasseneckApi`). Die Aufrufe rund um Kopplung und
+/// Anmeldung liegen hinter den Hosting-Umschreibungen der Browser-Kasse; die
+/// App spricht dieselbe Adresse an wie sie.
+const String kRegisterBaseUrl = 'https://kasse.kasseneck.at/api';
 
 /// Der Aufrufer hat etwas nicht mitgegeben, oder die Antwort trug nicht, was
 /// der Aufruf zusagt. Die Meldung nennt immer nur das **Feld**, nie seinen
