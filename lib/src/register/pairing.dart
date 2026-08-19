@@ -493,6 +493,25 @@ class RegisterClient {
     return _sitzung(name, daten);
   }
 
+  /// Der Client für die **laufende** Sitzung — mit derselben Adresse, demselben
+  /// HTTP-Client und demselben Zeitlimit wie dieser. So hängt die Kasse an
+  /// einer Verbindung statt an zweien, und wer für Tests einen anderen
+  /// HTTP-Client einsetzt, erwischt beide Wege.
+  RegisterSessionClient sitzung({
+    required Future<String?> Function() idToken,
+    required Future<String?> Function() sessionId,
+    required String cashregisterId,
+  }) {
+    return RegisterSessionClient(
+      idToken: idToken,
+      sessionId: sessionId,
+      cashregisterId: cashregisterId,
+      baseUrl: _baseUrl,
+      httpClient: _http,
+      timeout: _timeout,
+    );
+  }
+
   /// Ein Aufruf ohne jede Anmeldung: nur `{params: …}` im Rumpf.
   Future<Map<String, dynamic>> _rufen(String name, Map<String, dynamic> params) async {
     final http.Response antwort;

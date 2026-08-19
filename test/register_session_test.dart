@@ -36,6 +36,8 @@ import 'package:kasseneck_api/register.dart';
 }
 
 void main() {
+  ausClient();
+
   test('verlängern: Ausweis in den Kopfzeilen, Kasse im Rumpf, neuer Ablauf zurück', () async {
     final f = clientWith({'status': 'success', 'data': {'expiresAt': 1776000180000}});
     final bis = await f.client.renewRegisterSession();
@@ -102,5 +104,24 @@ void main() {
     await f.client.endRegisterSession();
     expect(f.log.single.url.toString(), endsWith('/endRegisterSession'));
     expect(f.log.single.headers['register-session'], 'sess-1');
+  });
+}
+
+void ausClient() {
+  test('der Sitzungs-Client erbt Adresse und Verbindung des RegisterClient', () async {
+    final log = <http.Request>[];
+    final mock = MockClient((r) async {
+      log.add(r);
+      return http.Response(jsonEncode({'status': 'success', 'data': {'expiresAt': 7}}), 200);
+    });
+    final client = RegisterClient(baseUrl: 'https://test.example/v9', httpClient: mock);
+    final sitzung = client.sitzung(
+      idToken: () async => 'tok',
+      sessionId: () async => 'sess',
+      cashregisterId: 'KASSE2',
+    );
+    expect(await sitzung.renewRegisterSession(), 7);
+    expect(log.single.url.toString(), 'https://test.example/v9/renewRegisterSession');
+    expect(log.single.headers['Authorization'], 'Bearer tok');
   });
 }
