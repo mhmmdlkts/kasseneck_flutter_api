@@ -65,13 +65,19 @@ class _KeckReceiptLinesWidgetState extends State<KeckReceiptLinesWidget> {
     );
   }
 
-  Widget _zeile(BelegZeile z) {
+  /// [nummer] ist die Stelle der Zeile im Layout. Sie gehört in den Schlüssel:
+  /// ein Beleg trägt durchaus **zwei** Warn-Aufdrucke (Testkasse plus
+  /// Test-Signatureinheit, Storno plus Ausfall), und zwei gleiche Schlüssel im
+  /// selben Column sind ein Absturz — ausgerechnet dann, wenn der Kassier den
+  /// Beleg ansehen will. Am Text darf er auch nicht hängen: derselbe Aufdruck
+  /// zweimal wäre wieder derselbe Fall.
+  Widget _zeile(BelegZeile z, int nummer) {
     switch (z) {
       case BelegText():
         return Text(z.text, textAlign: _ta(z.align), style: _mono.copyWith(fontWeight: z.bold ? FontWeight.bold : FontWeight.normal));
       case BelegBanner():
         return Container(
-          key: Key('keck-receipt-banner-${z.warnung ? 'warnung' : 'belegart'}'),
+          key: Key('keck-receipt-banner-${z.warnung ? 'warnung' : 'belegart'}-$nummer'),
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 6),
           decoration: BoxDecoration(
@@ -103,7 +109,9 @@ class _KeckReceiptLinesWidgetState extends State<KeckReceiptLinesWidget> {
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: widget.layout.lines.map(_zeile).toList(),
+        children: [
+          for (final (nummer, zeile) in widget.layout.lines.indexed) _zeile(zeile, nummer),
+        ],
       ),
     );
   }

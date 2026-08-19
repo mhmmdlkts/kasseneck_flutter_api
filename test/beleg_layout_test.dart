@@ -111,17 +111,66 @@ void main() {
     }
   });
 
+  /// Aufdrucke tragen ihre Zeilennummer im Schluessel (sonst kollidieren zwei
+  /// gleiche). Gesucht wird deshalb ueber den Anfang, nicht ueber den ganzen
+  /// Schluessel -- sonst haengt der Test daran, an welcher Stelle im Beleg der
+  /// Aufdruck gerade steht.
+  Finder aufdruck(String art) => find.byWidgetPredicate(
+        (w) => w.key is Key && '${w.key}'.contains('keck-receipt-banner-$art-'),
+      );
+
   testWidgets('KeckReceiptLinesWidget zeigt Zeilen, Aufdruck und (verdeckten) QR', (tester) async {
     final layout = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/training.lines.json'))!;
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: KeckReceiptLinesWidget(layout: layout, qrCovered: true)))));
     expect(find.text('TRAININGSBELEG'), findsOneWidget);
-    expect(find.byKey(const Key('keck-receipt-banner-belegart')), findsOneWidget);
+    expect(aufdruck('belegart'), findsOneWidget);
     expect(find.textContaining('kein Kauf, keine Zahlung'), findsOneWidget);
     expect(find.text('Antippen zum Anzeigen'), findsOneWidget);
     // Rot-Probe: normaler Verkauf ohne Aufdruck
     final verkauf = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/verkauf-bar.lines.json'))!;
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: KeckReceiptLinesWidget(layout: verkauf)))));
-    expect(find.byKey(const Key('keck-receipt-banner-belegart')), findsNothing);
+    expect(aufdruck('belegart'), findsNothing);
     expect(find.text('Bäckerei Muster'), findsOneWidget);
+  });
+
+  testWidgets('zwei Warn-Aufdrucke auf einem Beleg stuerzen nicht ab', (tester) async {
+    // Kommt vor: eine Testkasse mit Test-Signatureinheit traegt beide
+    // Aufdrucke. Gleiche Schluessel im selben Column sind ein Absturz -- und
+    // zwar genau dann, wenn der Kassier den Beleg ansehen will.
+    const layout = BelegLayout(
+      paperSize: 'mm58',
+      regelwerk: 1,
+      lines: [
+        BelegBanner(text: 'TESTKASSE', warnung: true),
+        BelegBanner(text: 'TESTSIGNATUR', warnung: true),
+        BelegText(text: 'Bäckerei Muster'),
+      ],
+    );
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(body: SingleChildScrollView(child: KeckReceiptLinesWidget(layout: layout))),
+    ));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('TESTKASSE'), findsOneWidget);
+    expect(find.text('TESTSIGNATUR'), findsOneWidget);
+  });
+
+  testWidgets('auch zwei gleich lautende Aufdrucke stoeren einander nicht', (tester) async {
+    // Der Schluessel darf nicht am Text haengen: dann waere derselbe Text
+    // zweimal wieder ein Absturz.
+    const layout = BelegLayout(
+      paperSize: 'mm58',
+      regelwerk: 1,
+      lines: [
+        BelegBanner(text: 'STORNO', warnung: true),
+        BelegBanner(text: 'STORNO', warnung: true),
+      ],
+    );
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(body: SingleChildScrollView(child: KeckReceiptLinesWidget(layout: layout))),
+    ));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('STORNO'), findsNWidgets(2));
   });
 }
