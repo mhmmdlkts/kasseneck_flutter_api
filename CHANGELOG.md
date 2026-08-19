@@ -1,3 +1,6 @@
+## 4.16.0
+- **Behoben:** die Kopplungs- und Sitzungsaufrufe zeigten auf `api.kasseneck.at/v1` — dort antwortet auf sie eine HTML-404, die Kopplung schlug also immer fehl. Sie liegen hinter den Hosting-Umschreibungen der Kasse; die Vorgabe ist jetzt `https://kasse.kasseneck.at/api`.
+
 ## 4.15.0
 - **Kassen-Einstellungen** (`package:kasseneck_api/kasse.dart`): `KasseSettings` mit allen 38 Betriebs- und 20 Gerätefeldern als Zwilling von `kasse/settings.ts` und `kasse-settings-core.js`. Standardwerte gegen die Golden-Datei des JS-Pakets geprüft; Gespeichertes wird gemischt (Landkarten je Schlüssel, damit neue Steuersätze beim Altbestand ankommen), Unbekanntes fällt auf den Standard zurück statt zu raten. Dazu `kartenAktiv` (Karte nur mit eingerichtetem Anbieter) und `aktiveSaetze` (feste Reihenfolge für den Bildschirm).
 - `listRegisterUsersForDevice` liefert `settings` jetzt als `KasseSettings` statt als Rohdaten.

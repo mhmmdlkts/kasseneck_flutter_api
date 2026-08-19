@@ -44,7 +44,7 @@ void main() {
 
     expect(bis, 1776000180000);
     final anfrage = f.log.single;
-    expect(anfrage.url.toString(), 'https://api.kasseneck.at/v1/renewRegisterSession');
+    expect(anfrage.url.toString(), 'https://kasse.kasseneck.at/api/renewRegisterSession');
     expect(anfrage.headers['Authorization'], 'Bearer id-token-1');
     expect(anfrage.headers['register-session'], 'sess-1');
     expect(jsonDecode(anfrage.body)['params'], {'cashregisterId': 'KASSE1'});
