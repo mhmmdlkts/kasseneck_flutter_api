@@ -1,3 +1,6 @@
+## 4.14.0
+- `RegisterClient.sitzung(...)` liefert den `RegisterSessionClient` mit derselben Adresse, demselben HTTP-Client und demselben Zeitlimit — eine Verbindung statt zweier, und ein für Tests eingesetzter HTTP-Client erwischt beide Wege.
+
 ## 4.13.0
 - **Laufende Sitzung** (`register.dart`): `RegisterSessionClient` mit `renewRegisterSession` (liefert den neuen Ablauf) und `endRegisterSession`. ID-Token und Sitzung werden bei jedem Aufruf frisch erfragt — Tokens laufen nach einer Stunde ab, die Kassen-Sitzung schon nach 90 Sekunden.
 
