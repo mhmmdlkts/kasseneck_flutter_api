@@ -206,4 +206,19 @@ void main() {
       }
     });
   });
+
+  group('Vorgabefarbe', () {
+    test('ist die Farbe der Marke, nicht irgendein Blau', () {
+      // Ein Betrieb, der nichts einstellt, bekommt die Farbe des Produkts —
+      // dieselbe, die auf dem Icon und dem Startbildschirm steht. Ein fremdes
+      // Blau daneben sieht aus wie zwei Programme.
+      const stand = KasseSettings.standard();
+      expect(stand.betrieb.farbe.toUpperCase(), '#116B6B');
+    });
+
+    test('und sie taugt als Marke', () {
+      // Sie traegt die Knoepfe, mit denen kassiert wird.
+      expect(markeTaugt(Farbe.ausHex(const KasseSettings.standard().betrieb.farbe)), isTrue);
+    });
+  });
 }

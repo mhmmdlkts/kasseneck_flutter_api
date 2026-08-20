@@ -133,7 +133,11 @@ class KasseSettingsBetrieb {
     this.logoAn = true,
     this.logoGroesse = KasseGroesse.m,
     this.wasserzeichen = KasseWasserzeichen.anmeldung,
-    this.farbe = '#1B46F5',
+    // Die Farbe der Marke Kasseneck. Ein Betrieb, der nichts einstellt,
+    // bekommt die Farbe des Produkts — dieselbe, die auf dem App-Zeichen und
+    // dem Startbildschirm steht. Ein fremdes Blau daneben sähe aus wie zwei
+    // Programme.
+    this.farbe = '#116B6B',
     this.stil = KasseStil.klar,
     this.schrift = KasseSchrift.m,
     this.schriftEinst = KasseEinstellSchrift.s,
