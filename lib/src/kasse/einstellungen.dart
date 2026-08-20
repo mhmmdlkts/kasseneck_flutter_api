@@ -52,9 +52,15 @@ enum KasseMenge { aus, x, kg }
 
 enum KasseRabatt { aus, an }
 
-/// Karte gibt es erst mit eingerichtetem Anbieter; `extern` = eigenes Terminal
-/// ohne Anbindung.
-enum KasseKartenanbieter { keiner, extern, hobex, mypos, stripe }
+/// Karte gibt es erst mit eingerichtetem Anbieter.
+///
+/// - `extern`: ein Terminal, das die Kasse nicht anspricht. Der Kassier tippt
+///   den Betrag dort selbst ein und bestätigt in der Kasse — das ist ein
+///   gültiger Weg, kein Notbehelf.
+/// - `gptom`: GP Tom, angesprochen über die Terminal-App auf demselben Gerät.
+/// - `hobex`: Hobex HPS über die Terminal-Adresse im Kassennetz
+///   ([KasseSettingsGeraet.terminalIp] / `terminalPort`).
+enum KasseKartenanbieter { keiner, extern, gptom, hobex, mypos, stripe }
 
 enum KasseTgModus { betrag, gesamt, beides }
 
