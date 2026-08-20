@@ -50,6 +50,7 @@ void main() {
       expect(k.flaeche, Farbe.ausHex('#FFFFFF'));
       expect(k.linie, greaterThan(klar.linie));
       expect(k.radius, lessThan(klar.radius));
+      expect(k.radiusKlein, lessThan(klar.radiusKlein));
       expect(k.schattenTiefe, 0.0);
     });
 
@@ -62,6 +63,20 @@ void main() {
         expect(kontrast(t.text, t.flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: Text auf Flaeche');
         // Nebentext darf leiser sein, aber nicht unlesbar.
         expect(kontrast(t.leise, t.flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: Nebentext');
+      }
+    });
+  });
+
+  group('Radien', () {
+    test('kleine Bedienelemente sind leicht gerundet, nie vollrund', () {
+      // Eine Pille sieht nach Etikett aus; die Auswahl an einer Kasse ist ein
+      // Schalter. Die Grenze: deutlich weniger als die halbe Hoehe eines
+      // Chips (rund 32 dp) waere vollrund.
+      for (final stil in KasseStil.values) {
+        final t = themaMit({'stil': stil.name});
+        expect(t.radiusKlein, greaterThan(0), reason: '${stil.name}: gar keine Rundung waere hart');
+        expect(t.radiusKlein, lessThan(12), reason: '${stil.name}: zu rund');
+        expect(t.radiusKlein, lessThanOrEqualTo(t.radiusKachel));
       }
     });
   });

@@ -174,6 +174,7 @@ class Kassenthema {
     required this.kachelhoehe,
     required this.radius,
     required this.radiusKachel,
+    required this.radiusKlein,
     required this.linie,
     required this.schattenTiefe,
     required this.kachelstil,
@@ -212,6 +213,9 @@ class Kassenthema {
       kachelhoehe: kachelhoehen[geraet?.hoehe ?? KasseHoehe.m]!,
       radius: scharf ? 6 : 14,
       radiusKachel: scharf ? 6 : 12,
+      // Bewusst KEIN Vollrund: eine Pille sieht nach Etikett aus, und die
+      // Auswahl an einer Kasse ist ein Schalter, kein Etikett.
+      radiusKlein: scharf ? 4 : 8,
       linie: scharf ? 2 : 1,
       // Schatten sind Tiefe; im Kontraststil sind sie Unschärfe.
       schattenTiefe: scharf ? 0 : (dunkel ? 0.5 : 1),
@@ -240,6 +244,10 @@ class Kassenthema {
   final double kachelhoehe;
   final double radius;
   final double radiusKachel;
+
+  /// Kleine Bedienelemente: Auswahl, Steuersatz, Schnellbetrag.
+  final double radiusKlein;
+
   final double linie;
 
   /// 0 = keine Schatten (Kontraststil), 1 = volle Tiefe.

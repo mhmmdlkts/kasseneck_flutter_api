@@ -34,6 +34,7 @@ Map<String, dynamic> stilWerte(Kassenthema t) => {
       'aufMarke': t.aufMarke.hex,
       'radius': t.radius,
       'radiusKachel': t.radiusKachel,
+      'radiusKlein': t.radiusKlein,
       'linie': t.linie,
       'schattenTiefe': t.schattenTiefe,
     };
