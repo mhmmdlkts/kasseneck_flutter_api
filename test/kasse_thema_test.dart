@@ -82,42 +82,20 @@ void main() {
   });
 
   group('Betriebsfarbe', () {
-    test('sie wird zur Markenfarbe', () {
-      expect(themaMit({'farbe': '#1B46F5'}).marke, Farbe.ausHex('#1B46F5'));
-    });
-
-    test('im Nachtstil wird sie aufgehellt', () {
-      // Ein sattes Blau auf fast schwarzem Grund ist kaum zu sehen; die Marke
-      // muss der Knopf sein, den man findet.
-      final tag = themaMit({'farbe': '#1B46F5'});
-      final nacht = themaMit({'farbe': '#1B46F5', 'stil': 'nacht'});
-      expect(nacht.marke.helligkeit, greaterThan(tag.marke.helligkeit));
+    test('färbt die Kasse nicht mehr — auch keine kaputte Angabe', () {
+      // Sie bleibt im Datenmodell (Panel und Rechnungs-PDF lesen sie), aber
+      // die Knöpfe der Kasse gehören zum Produkt. Damit kann auch ein
+      // Tippfehler aus dem Panel hier nichts mehr anrichten.
+      for (final wert in ['#1B46F5', '#FFE066', '', 'blau', '#12345']) {
+        expect(themaMit({'farbe': wert}).marke, markenfarbe, reason: wert);
+      }
     });
 
     test('auf der Marke steht immer lesbarer Text', () {
-      // Eine helle Betriebsfarbe (Gelb) braucht dunklen Text, eine dunkle
-      // hellen. Wer hier fest Weiß nimmt, macht gelbe Knöpfe unlesbar.
-      for (final farbe in ['#1B46F5', '#FFE066', '#0F7B4F', '#000000', '#FFFFFF']) {
-        for (final stil in KasseStil.values) {
-          final t = themaMit({'farbe': farbe, 'stil': stil.name});
-          expect(kontrast(t.aufMarke, t.marke), greaterThanOrEqualTo(4.5), reason: '$farbe / ${stil.name}');
-        }
+      for (final stil in KasseStil.values) {
+        final t = themaMit({'stil': stil.name});
+        expect(kontrast(t.aufMarke, t.marke), greaterThanOrEqualTo(4.5), reason: stil.name);
       }
-    });
-
-    test('eine kaputte Farbangabe fällt auf die Vorgabe zurück', () {
-      // Sie kommt aus dem Panel; ein Tippfehler darf keine unsichtbare Kasse
-      // ergeben.
-      for (final murks in ['', 'blau', '#12345', 'rgb(1,2,3)']) {
-        expect(themaMit({'farbe': murks}).marke, Farbe.ausHex('#1B46F5'), reason: murks);
-      }
-    });
-
-    test('die gedrückte Marke ist dunkler als die Marke selbst', () {
-      // Sie liegt unter dem Knopf und gibt ihm Tiefe; gleich hell waere sie
-      // unsichtbar.
-      final t = themaMit({'farbe': '#1B46F5'});
-      expect(t.markeTief.helligkeit, lessThan(t.marke.helligkeit));
     });
   });
 
@@ -207,18 +185,26 @@ void main() {
     });
   });
 
-  group('Vorgabefarbe', () {
-    test('ist die Farbe der Marke, nicht irgendein Blau', () {
-      // Ein Betrieb, der nichts einstellt, bekommt die Farbe des Produkts —
-      // dieselbe, die auf dem Icon und dem Startbildschirm steht. Ein fremdes
-      // Blau daneben sieht aus wie zwei Programme.
-      const stand = KasseSettings.standard();
-      expect(stand.betrieb.farbe.toUpperCase(), '#116B6B');
+  group('Markenfarbe', () {
+    test('steht fest — eine eingestellte Betriebsfarbe färbt die Knöpfe nicht', () {
+      // Die Knöpfe, mit denen kassiert wird, sind Teil des Produkts. Wer sie
+      // je Betrieb umfärben kann, bekommt Kassen, die einander nicht mehr
+      // ähneln — und eine Hausfarbe, die auf einem Knopf nicht mehr lesbar
+      // ist, merkt niemand vor dem Tresen.
+      final eigen = themaMit({'farbe': '#B3261E'});
+      expect(eigen.marke.hex.toUpperCase(), '#116B6B');
+      expect(themaMit({}).marke.hex.toUpperCase(), '#116B6B');
     });
 
-    test('und sie taugt als Marke', () {
-      // Sie traegt die Knoepfe, mit denen kassiert wird.
-      expect(markeTaugt(Farbe.ausHex(const KasseSettings.standard().betrieb.farbe)), isTrue);
+    test('im Nachtstil wird sie aufgehellt, bleibt aber die Marke', () {
+      // Ein sattes Petrol auf fast schwarzem Grund ist kaum zu sehen.
+      final nacht = themaMit({'stil': 'nacht'});
+      expect(nacht.marke.hex, isNot('#116B6B'));
+      expect(nacht.marke.g, greaterThan(nacht.marke.r));
+    });
+
+    test('und sie traegt lesbare Schrift', () {
+      expect(markeTaugt(const Farbe(0x11, 0x6B, 0x6B)), isTrue);
     });
   });
 }

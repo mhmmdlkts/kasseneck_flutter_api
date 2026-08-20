@@ -162,6 +162,11 @@ const Map<KasseHoehe, double> kachelhoehen = {
   KasseHoehe.l: 108,
 };
 
+/// Petrol — die Farbe der Marke Kasseneck und damit jede Handlung in der
+/// Kasse. Zwilling von `markeFarbe` im Flutter-Paket `kasseneck_marke` und der
+/// Farbe im App-Zeichen.
+const Farbe markenfarbe = Farbe(0x11, 0x6B, 0x6B);
+
 class Kassenthema {
   const Kassenthema({
     required this.stil,
@@ -191,7 +196,13 @@ class Kassenthema {
     final dunkel = stil == KasseStil.nacht;
     final scharf = stil == KasseStil.kontrast;
 
-    final gewaehlt = Farbe.ausHex(betrieb.farbe);
+    // **Die Marke steht fest.** Die Knöpfe, mit denen kassiert wird, sind
+    // Teil des Produkts: Kassen, die einander nicht mehr ähneln, kosten jeden
+    // neuen Kassier eine Eingewöhnung — und eine Hausfarbe, auf der „Bar
+    // passend" nicht mehr lesbar ist, merkt niemand vor dem Tresen.
+    // `betrieb.farbe` bleibt im Datenmodell (Panel und Rechnungs-PDF lesen
+    // es), färbt hier aber nichts mehr.
+    const gewaehlt = markenfarbe;
     // Im Nachtstil wird die Marke aufgehellt: ein sattes Blau auf fast
     // schwarzem Grund ist kaum zu sehen, und die Marke muss der Knopf sein,
     // den man findet.
