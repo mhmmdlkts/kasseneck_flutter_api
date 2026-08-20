@@ -330,6 +330,7 @@ class KasseSettingsGeraet {
     this.druckerIp = '',
     this.druckerPort = 9100,
     this.druckerBt = '',
+    this.druckerName = '',
     this.druckerId = '',
     this.druckerDevid = 'local_printer',
     this.papier = KassePapier.mm80,
@@ -356,6 +357,11 @@ class KasseSettingsGeraet {
   final String druckerIp;
   final int druckerPort;
   final String druckerBt;
+
+  /// Wie sich der gemerkte Drucker nennt. Ohne ihn stünde in den Einstellungen
+  /// eine nackte Bluetooth-Adresse — daran erkennt niemand sein Gerät wieder,
+  /// und beim nächsten Wechsel sucht man von vorn.
+  final String druckerName;
 
   /// Kennung des Netzwerk-Druckers (Server Direct Print); '' = keiner gewählt.
   final String druckerId;
@@ -386,6 +392,7 @@ class KasseSettingsGeraet {
       druckerIp: _text(g['druckerIp'], druckerIp),
       druckerPort: _ganz(g['druckerPort'], 1, 65535, druckerPort),
       druckerBt: _text(g['druckerBt'], druckerBt),
+      druckerName: _text(g['druckerName'], druckerName),
       druckerId: _text(g['druckerId'], druckerId),
       druckerDevid: _text(g['druckerDevid'], druckerDevid),
       papier: _enumName(g['papier'], KassePapier.values, papier),
@@ -410,6 +417,7 @@ class KasseSettingsGeraet {
         'druckerIp': druckerIp,
         'druckerPort': druckerPort,
         'druckerBt': druckerBt,
+        'druckerName': druckerName,
         'druckerId': druckerId,
         'druckerDevid': druckerDevid,
         'papier': papier.name,

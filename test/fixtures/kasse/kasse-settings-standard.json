@@ -94,6 +94,7 @@
     "druckerIp": "",
     "druckerPort": 9100,
     "druckerBt": "",
+    "druckerName": "",
     "druckerId": "",
     "druckerDevid": "local_printer",
     "papier": "mm80",
