@@ -77,6 +77,7 @@ class PairedRegisterDevice {
     required this.cashregisterId,
     required this.companyName,
     required this.cashregisterLabel,
+    this.testUmgebung = false,
   });
 
   /// Kunde, unter dem das Gerät hängt.
@@ -88,6 +89,11 @@ class PairedRegisterDevice {
 
   /// Kasse, an die die Kopplung dieses Gerät gebunden hat.
   final String cashregisterId;
+
+  /// Das Gerät hängt an einer Test-Umgebung. Die Kasse muss es zeigen: ein
+  /// Beleg von dort ist kein gültiger Beleg, und wer das nicht sieht, hält
+  /// ihn für einen.
+  final bool testUmgebung;
 
   /// Firmenname des Betriebs — Anzeige, kann leer sein.
   final String companyName;
@@ -141,6 +147,7 @@ class RegisterDeviceUsers {
     required this.policy,
     required this.loginMode,
     required this.standortsperre,
+    this.testUmgebung = false,
     required this.settings,
     required this.betriebsdaten,
   });
@@ -155,6 +162,9 @@ class RegisterDeviceUsers {
 
   /// Der Betrieb verlangt die Ortung beim Login.
   final bool standortsperre;
+
+  /// Das Gerät hängt an einer Test-Umgebung — siehe [PairedRegisterDevice].
+  final bool testUmgebung;
 
   /// Kassen-Einstellungen (betriebsweit + Gerät), mit den Standardwerten
   /// gemischt — die Kasse bekommt nie ein halbes Bild.
@@ -331,6 +341,7 @@ class RegisterClient {
       cashregisterId: _pflichtfeld(name, daten, 'cashregisterId'),
       companyName: _text(daten['betrieb']),
       cashregisterLabel: _text(daten['kasse']),
+      testUmgebung: daten['testUmgebung'] == true,
     );
   }
 
@@ -374,6 +385,7 @@ class RegisterClient {
       policy: _regel(daten['policy']),
       loginMode: daten['loginMode'] == 'pin' ? RegisterLoginMode.pin : RegisterLoginMode.auswahl,
       standortsperre: daten['standortsperre'] == true,
+      testUmgebung: daten['testUmgebung'] == true,
       settings: KasseSettings.aus(settings is Map ? Map<String, dynamic>.from(settings) : null),
       betriebsdaten: betriebsdaten is Map ? Map<String, dynamic>.from(betriebsdaten) : null,
     );
