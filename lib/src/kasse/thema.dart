@@ -172,6 +172,7 @@ class Kassenthema {
     required this.aufMarke,
     required this.schriftfaktor,
     required this.kachelhoehe,
+    required this.spaltenExtra,
     required this.radius,
     required this.radiusKachel,
     required this.radiusKlein,
@@ -211,6 +212,7 @@ class Kassenthema {
       aufMarke: lesbarAuf(marke, dunkel: farben.text.helligkeit < 0.2 ? farben.text : const Farbe(0x0F, 0x17, 0x2A)),
       schriftfaktor: schriftfaktoren[betrieb.schrift]!,
       kachelhoehe: kachelhoehen[geraet?.hoehe ?? KasseHoehe.m]!,
+      spaltenExtra: geraet?.spaltenExtra ?? 0,
       radius: scharf ? 6 : 14,
       radiusKachel: scharf ? 6 : 12,
       // Bewusst KEIN Vollrund: eine Pille sieht nach Etikett aus, und die
@@ -242,6 +244,11 @@ class Kassenthema {
 
   final double schriftfaktor;
   final double kachelhoehe;
+
+  /// Wie viele Kachelspalten mehr (oder mit Minus: weniger) als die Vorgabe
+  /// nebeneinander stehen sollen. Gehört zum Gerät, nicht zum Betrieb: ein
+  /// Tablet an der Theke und ein Handy im Gastgarten wollen Verschiedenes.
+  final int spaltenExtra;
   final double radius;
   final double radiusKachel;
 
