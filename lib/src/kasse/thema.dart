@@ -157,9 +157,9 @@ const Map<KasseSchrift, double> schriftfaktoren = {
 /// Kachelhöhen in dp. Auch die flachste bleibt ein Fingerziel: unter 48 dp
 /// trifft ein Finger nicht mehr verlässlich.
 const Map<KasseHoehe, double> kachelhoehen = {
-  KasseHoehe.s: 72,
-  KasseHoehe.m: 96,
-  KasseHoehe.l: 124,
+  KasseHoehe.s: 62,
+  KasseHoehe.m: 82,
+  KasseHoehe.l: 108,
 };
 
 class Kassenthema {
@@ -272,9 +272,13 @@ class Kassenthema {
   ///
   /// Die Skala ist bewusst kurz: fünf Größen, jede mit einer Aufgabe. Mehr
   /// Stufen heißt nur, dass niemand mehr weiß, welche gemeint ist.
-  double get riesig => 44 * schriftfaktor; // der Betrag, das Rückgeld
-  double get gross => 28 * schriftfaktor; // Summen
-  double get titel => 20 * schriftfaktor; // Überschriften
-  double get normal => 16 * schriftfaktor; // alles Übrige
-  double get klein => 13 * schriftfaktor; // Nebentext
+  ///
+  /// **Die Vorgabe ist zurückhaltend.** Wer größer braucht, stellt `schrift`
+  /// auf L oder XL — dafür ist die Einstellung da. Eine Kasse, die von Haus
+  /// aus schreit, lässt sich nicht kleiner machen, ohne dass sie eng wirkt.
+  double get riesig => 36 * schriftfaktor; // der Betrag, das Rückgeld
+  double get gross => 24 * schriftfaktor; // Summen
+  double get titel => 18 * schriftfaktor; // Überschriften
+  double get normal => 15 * schriftfaktor; // alles Übrige
+  double get klein => 12.5 * schriftfaktor; // Nebentext
 }
