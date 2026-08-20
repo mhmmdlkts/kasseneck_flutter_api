@@ -178,4 +178,32 @@ void main() {
       expect(Farbe.ausHex('#1b46f5').hex, '#1B46F5');
     });
   });
+
+  group('freie Farbwahl', () {
+    test('HSV ergibt die erwarteten Ecken', () {
+      expect(farbeAusHsv(0, 1, 1), Farbe.ausHex('#FF0000'));
+      expect(farbeAusHsv(120, 1, 1), Farbe.ausHex('#00FF00'));
+      expect(farbeAusHsv(240, 1, 1), Farbe.ausHex('#0000FF'));
+      expect(farbeAusHsv(0, 0, 1), Farbe.ausHex('#FFFFFF'));
+      expect(farbeAusHsv(0, 0, 0), Farbe.ausHex('#000000'));
+    });
+
+    test('der Farbton läuft rundherum weiter', () {
+      expect(farbeAusHsv(360, 1, 1), farbeAusHsv(0, 1, 1));
+      expect(farbeAusHsv(-120, 1, 1), farbeAusHsv(240, 1, 1));
+    });
+
+    test('eine zu blasse Farbe taugt nicht als Marke', () {
+      // Sie ergäbe einen Knopf, der auf weißem Grund verschwindet — und das
+      // merkt der Chef erst am Tresen.
+      expect(markeTaugt(Farbe.ausHex('#FFF9C4')), isFalse);
+      expect(markeTaugt(Farbe.ausHex('#FFFFFF')), isFalse);
+    });
+
+    test('kräftige Farben taugen — auch helle wie Orange', () {
+      for (final hex in ['#1B46F5', '#0F7B4F', '#B3261E', '#C2410C', '#000000']) {
+        expect(markeTaugt(Farbe.ausHex(hex)), isTrue, reason: hex);
+      }
+    });
+  });
 }

@@ -66,6 +66,44 @@ class Farbe {
   String toString() => hex;
 }
 
+/// Aus Farbton, Sättigung und Helligkeit (HSV) eine Farbe.
+///
+/// [ton] in Grad (0–360), [saettigung] und [helligkeit] von 0 bis 1. Gebraucht
+/// für eine freie Farbwahl: ein Regler je Größe ist begreiflicher als sechs
+/// Hexzeichen.
+Farbe farbeAusHsv(double ton, double saettigung, double helligkeit) {
+  final h = (ton % 360 + 360) % 360;
+  final s = saettigung.clamp(0.0, 1.0);
+  final v = helligkeit.clamp(0.0, 1.0);
+  final c = v * s;
+  final x = c * (1 - ((h / 60) % 2 - 1).abs());
+  final m = v - c;
+  final (r, g, b) = switch (h ~/ 60) {
+    0 => (c, x, 0.0),
+    1 => (x, c, 0.0),
+    2 => (0.0, c, x),
+    3 => (0.0, x, c),
+    4 => (x, 0.0, c),
+    _ => (c, 0.0, x),
+  };
+  int acht(double f) => ((f + m) * 255).round().clamp(0, 255);
+  return Farbe(acht(r), acht(g), acht(b));
+}
+
+/// Taugt diese Farbe als Betriebsfarbe?
+///
+/// Sie sitzt auf dem Knopf, den der Kassier sucht. Ein zu blasser Ton ergibt
+/// einen Knopf, der auf weißem Grund verschwindet — und das merkt der Chef
+/// erst am Tresen. Geprüft wird gegen **beide** hellen Gründe, weil ein Betrieb
+/// den Stil wechseln kann.
+bool markeTaugt(Farbe farbe) {
+  const helleGruende = [Farbe(0xFF, 0xFF, 0xFF), Farbe(0xF1, 0xF4, 0xF9)];
+  for (final grund in helleGruende) {
+    if (kontrast(farbe, grund) < 2.0) return false;
+  }
+  return true;
+}
+
 /// Kontrastverhältnis nach WCAG: 1 (gleich) bis 21 (Schwarz auf Weiß).
 ///
 /// 4,5 ist die Schwelle für Fließtext, 3 für große Schrift. Die Kasse hält

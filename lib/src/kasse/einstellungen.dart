@@ -222,6 +222,13 @@ class KasseSettingsBetrieb {
   List<double> get aktiveSaetze =>
       kasseSaetzeReihenfolge.where((s) => saetze[_satzSchluessel(s)] == true).toList();
 
+  /// Diesen Stand mit einer Änderung mischen.
+  ///
+  /// Gebraucht, wo eine Einstellung **sofort** gelten soll, während der Server
+  /// noch antwortet: der Bildschirm zeigt, was der Chef gewählt hat, und
+  /// nimmt es zurück, falls der Server ablehnt.
+  KasseSettingsBetrieb mit(Map<String, dynamic> aenderung) => _mit(aenderung);
+
   KasseSettingsBetrieb _mit(Map<String, dynamic> g) {
     return KasseSettingsBetrieb(
       logoText: _text(g['logoText'], logoText),
@@ -362,6 +369,9 @@ class KasseSettingsGeraet {
   final KasseLadeAuto ladeAuto;
   final String terminalIp;
   final int terminalPort;
+
+  /// Siehe [KasseSettingsBetrieb.mit].
+  KasseSettingsGeraet mit(Map<String, dynamic> aenderung) => _mit(aenderung);
 
   KasseSettingsGeraet _mit(Map<String, dynamic> g) {
     return KasseSettingsGeraet(

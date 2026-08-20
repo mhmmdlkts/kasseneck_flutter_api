@@ -99,4 +99,28 @@ void main() {
     final e = KasseSettings.aus({'betrieb': {'saetze': {'19': true, '10': false}}});
     expect(e.betrieb.aktiveSaetze, [20.0, 19.0, 13.0, 4.9, 0.0]);
   });
+
+  group('mit()', () {
+    test('mischt eine Änderung in den Stand', () {
+      // Gebraucht, wo eine Einstellung sofort gelten soll, während der Server
+      // noch antwortet.
+      const stand = KasseSettingsBetrieb();
+      final neu = stand.mit({'uhr': false});
+      expect(neu.uhr, isFalse);
+      expect(neu.zahlBar, stand.zahlBar, reason: 'alles Übrige bleibt');
+    });
+
+    test('lässt den Ausgangsstand unberührt', () {
+      // Sonst gäbe es nichts, worauf man zurückspringen könnte.
+      const stand = KasseSettingsBetrieb();
+      stand.mit({'uhr': false});
+      expect(stand.uhr, isTrue);
+    });
+
+    test('auch am Gerät', () {
+      const g = KasseSettingsGeraet();
+      expect(g.mit({'touch': true}).touch, isTrue);
+      expect(g.touch, isFalse);
+    });
+  });
 }
