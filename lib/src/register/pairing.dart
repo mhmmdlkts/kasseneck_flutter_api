@@ -305,16 +305,21 @@ class RegisterClient {
   /// halbes Gerät. Groß-/Kleinschreibung und Leerzeichen sind gleichgültig:
   /// das Backend beschneidet selbst; dieses Paket prüft das Format **nicht**
   /// (es kennt das Alphabet nicht und würde eine Erweiterung ausschließen).
+  /// [takeover] gilt nur für dauerhafte Kopplungs-Codes: die tragen immer nur
+  /// **ein** Gerät. Ist schon eines gekoppelt, antwortet das Backend
+  /// abweisend; erst mit `takeover: true` wird das andere Gerät entkoppelt.
   Future<PairedRegisterDevice> pairRegisterDevice({
     required String code,
     String? label,
     RegisterClientInfo? client,
     RegisterGeo? geo,
+    bool takeover = false,
   }) async {
     const name = 'pairRegisterDevice';
     _pflicht(name, 'code', code);
     final daten = await _rufen(name, {
       'code': code,
+      if (takeover) 'takeover': true,
       if (label != null) 'label': label,
       if (client != null) 'client': client.toJson(),
       if (geo != null) 'geo': geo.toJson(),
