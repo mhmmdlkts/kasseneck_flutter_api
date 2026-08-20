@@ -44,6 +44,9 @@ Map<String, dynamic> jetzigesThema() => {
           'Die Browser-Kasse liest dieselben Werte, damit App und Browser nicht auseinanderlaufen.',
       'schriftfaktoren': {for (final e in schriftfaktoren.entries) e.key.wert: e.value},
       'kachelhoehen': {for (final e in kachelhoehen.entries) e.key.wert: e.value},
+      'kachelhoeheRegel': 'kachelhoehen[hoehe] * schriftfaktoren[schrift] — eine Kachel ist '
+          'so hoch, wie Name und Preis sie brauchen. Eine feste Höhe schneidet bei großer '
+          'Schrift die Unterlänge des Namens ab.',
       'stile': {
         for (final stil in KasseStil.values)
           stil.name: stilWerte(Kassenthema.aus(KasseSettings.aus({

@@ -11,6 +11,7 @@
     "M": 82.0,
     "L": 108.0
   },
+  "kachelhoeheRegel": "kachelhoehen[hoehe] * schriftfaktoren[schrift] — eine Kachel ist so hoch, wie Name und Preis sie brauchen. Eine feste Höhe schneidet bei großer Schrift die Unterlänge des Namens ab.",
   "stile": {
     "klar": {
       "grund": "#F1F4F9",

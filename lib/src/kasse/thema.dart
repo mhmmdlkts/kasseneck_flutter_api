@@ -211,7 +211,11 @@ class Kassenthema {
       // sonst sind die Knöpfe unlesbar.
       aufMarke: lesbarAuf(marke, dunkel: farben.text.helligkeit < 0.2 ? farben.text : const Farbe(0x0F, 0x17, 0x2A)),
       schriftfaktor: schriftfaktoren[betrieb.schrift]!,
-      kachelhoehe: kachelhoehen[geraet?.hoehe ?? KasseHoehe.m]!,
+      // **Mal Schriftfaktor.** Die Höhe einer Kachel ist keine feste Zahl,
+      // sondern das, was Name und Preis brauchen. Bei Schrift XL in eine
+      // Kachel für Schrift M gepresst, wird dem Namen die Unterlänge
+      // abgeschnitten — und „Leistung" ohne das g liest sich falsch.
+      kachelhoehe: kachelhoehen[geraet?.hoehe ?? KasseHoehe.m]! * schriftfaktoren[betrieb.schrift]!,
       spaltenExtra: geraet?.spaltenExtra ?? 0,
       radius: scharf ? 6 : 14,
       radiusKachel: scharf ? 6 : 12,
@@ -274,6 +278,10 @@ class Kassenthema {
   Farbe get leise => farben.leise;
   Farbe get rand => farben.rand;
   Farbe get strich => farben.strich;
+  Farbe get gut => farben.gut;
+  Farbe get warnung => farben.warnung;
+  Farbe get fehler => farben.fehler;
+  Farbe get fehlerHell => farben.fehlerHell;
 
   /// Schriftgrößen in dp, bereits mit dem Faktor des Betriebs.
   ///
