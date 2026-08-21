@@ -73,7 +73,7 @@
           "align": "left"
         },
         {
-          "text": "AT0-KASSE1-42",
+          "text": "AT0-KASSE1-82",
           "width": 6,
           "align": "right"
         }
@@ -154,6 +154,27 @@
       "bold": false
     },
     {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Trinkgeld",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "2,00 *",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "text",
+      "text": "* davon 0,94 A, 1,06 B",
+      "align": "left",
+      "bold": false
+    },
+    {
       "kind": "space",
       "lines": 1
     },
@@ -191,17 +212,17 @@
           "align": "left"
         },
         {
-          "text": "0,26",
+          "text": "0,35",
           "width": 4,
           "align": "left"
         },
         {
-          "text": "2,58",
+          "text": "3,55",
           "width": 3,
           "align": "left"
         },
         {
-          "text": "2,84",
+          "text": "3,90",
           "width": 2,
           "align": "right"
         }
@@ -216,17 +237,17 @@
           "align": "left"
         },
         {
-          "text": "0,42",
+          "text": "0,58",
           "width": 4,
           "align": "left"
         },
         {
-          "text": "2,10",
+          "text": "2,88",
           "width": 3,
           "align": "left"
         },
         {
-          "text": "2,52",
+          "text": "3,46",
           "width": 2,
           "align": "right"
         }
@@ -245,7 +266,7 @@
           "align": "left"
         },
         {
-          "text": "5,36 €",
+          "text": "7,36 €",
           "width": 6,
           "align": "right"
         }

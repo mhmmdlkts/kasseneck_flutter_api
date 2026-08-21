@@ -73,7 +73,7 @@
           "align": "left"
         },
         {
-          "text": "AT0-KASSE1-42",
+          "text": "AT0-KASSE1-83",
           "width": 6,
           "align": "right"
         }
@@ -87,27 +87,12 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "4  x Semmel je 0,79",
+          "text": "1  x Maniküre klassisch",
           "width": 7,
           "align": "left"
         },
         {
-          "text": "3,16 B",
-          "width": 5,
-          "align": "right"
-        }
-      ]
-    },
-    {
-      "kind": "columns",
-      "columns": [
-        {
-          "text": "1  x Kaffee klein",
-          "width": 7,
-          "align": "left"
-        },
-        {
-          "text": "2,80 A",
+          "text": "29,00 A",
           "width": 5,
           "align": "right"
         }
@@ -126,7 +111,7 @@
           "align": "left"
         },
         {
-          "text": "5,96  ",
+          "text": "29,00  ",
           "width": 4,
           "align": "right"
         }
@@ -136,22 +121,16 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "Rabatt 10 %",
+          "text": "Rabatt 15 %",
           "width": 8,
           "align": "left"
         },
         {
-          "text": "-0,60 *",
+          "text": "-4,35 A",
           "width": 4,
           "align": "right"
         }
       ]
-    },
-    {
-      "kind": "text",
-      "text": "* davon -0,28 A, -0,32 B",
-      "align": "left",
-      "bold": false
     },
     {
       "kind": "space",
@@ -186,47 +165,22 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "B 10%",
-          "width": 3,
-          "align": "left"
-        },
-        {
-          "text": "0,26",
-          "width": 4,
-          "align": "left"
-        },
-        {
-          "text": "2,58",
-          "width": 3,
-          "align": "left"
-        },
-        {
-          "text": "2,84",
-          "width": 2,
-          "align": "right"
-        }
-      ]
-    },
-    {
-      "kind": "columns",
-      "columns": [
-        {
           "text": "A 20%",
           "width": 3,
           "align": "left"
         },
         {
-          "text": "0,42",
+          "text": "4,11",
           "width": 4,
           "align": "left"
         },
         {
-          "text": "2,10",
+          "text": "20,54",
           "width": 3,
           "align": "left"
         },
         {
-          "text": "2,52",
+          "text": "24,65",
           "width": 2,
           "align": "right"
         }
@@ -245,7 +199,7 @@
           "align": "left"
         },
         {
-          "text": "5,36 €",
+          "text": "24,65 €",
           "width": 6,
           "align": "right"
         }

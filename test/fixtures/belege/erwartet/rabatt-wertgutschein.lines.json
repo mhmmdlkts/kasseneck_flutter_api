@@ -73,7 +73,7 @@
           "align": "left"
         },
         {
-          "text": "AT0-KASSE1-42",
+          "text": "AT0-KASSE1-58",
           "width": 6,
           "align": "right"
         }
@@ -240,12 +240,46 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "Gesamt:",
+          "text": "Zwischensumme",
           "width": 6,
           "align": "left"
         },
         {
           "text": "5,36 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Wertgutschein GS-1",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "-3,00 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamt:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "2,36 €",
           "width": 6,
           "align": "right"
         }

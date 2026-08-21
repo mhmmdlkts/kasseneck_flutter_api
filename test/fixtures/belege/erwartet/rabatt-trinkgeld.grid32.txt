@@ -6,7 +6,7 @@
                                 
 Datum:       13.08.2026 10:15:30
 Kassen-ID:                KASSE1
-Beleg-ID:          AT0-KASSE1-42
+Beleg-ID:          AT0-KASSE1-62
                                 
 4  x Semmel               3,16 B
 je 0,79                         
@@ -15,12 +15,14 @@ je 0,79
 Zwischensumme             5,96  
 Rabatt 10 %              -0,60 *
 * davon -0,28 A, -0,32 B        
+Trinkgeld Personal        1,00 D
                                 
 MwSt%   MwSt      Netto   Brutto
 B 10%   0,26      2,58      2,84
 A 20%   0,42      2,10      2,52
+D 0%    0,00      1,00      1,00
 --------------------------------
-Gesamt:                   5,36 €
+Gesamt:                   6,36 €
 Zahlungsart:          Barzahlung
                                 
            [QR-Code]            

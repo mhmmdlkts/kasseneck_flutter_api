@@ -142,4 +142,46 @@ void main() {
       expect(VatRate.vat20.category, 'A');
     });
   });
+
+  group('kind/recipient/articleId (Zwilling von ReceiptItem im JS-Paket)', () {
+    test('articleId reist durch toJson und fromJson; leer bleibt weg', () {
+      final mit = KasseneckItem(name: 'Semmel', quantity: 4, vat: VatRate.vat10, priceCents: 65, articleId: 'a_semmel');
+      final json = mit.toJson();
+      expect(json['articleId'], 'a_semmel');
+      final zurueck = KasseneckItem.fromJson(json);
+      expect(zurueck.articleId, 'a_semmel');
+      // Rot-Probe: ohne articleId KEIN Feld in der Nutzlast (Golden-Belege, deepEqual)
+      final ohne = KasseneckItem(name: 'Semmel', quantity: 1, vat: VatRate.vat10, priceCents: 65);
+      expect(ohne.toJson().containsKey('articleId'), isFalse);
+      expect(KasseneckItem.fromJson({'name': 'X', 'quantity': 1, 'unitPriceCents': 1, 'vatRate': 10, 'articleId': ''}).articleId, isNull);
+    });
+
+    test('kind discount reist mit; negative erhaelt alle Kennzeichnungen (Storno-Spiegelung)', () {
+      final rabatt = KasseneckItem(name: 'Rabatt 10 %', quantity: 1, vat: VatRate.vat20, priceCents: -60, kind: 'discount');
+      expect(rabatt.isDiscount, isTrue);
+      expect(rabatt.toJson()['kind'], 'discount');
+      final storno = rabatt.negative;
+      expect(storno.priceCents, 60);
+      expect(storno.kind, 'discount');
+      // Warenzeile ohne kind bleibt schlank
+      final ware = KasseneckItem(name: 'Semmel', quantity: 1, vat: VatRate.vat10, priceCents: 65);
+      expect(ware.toJson().containsKey('kind'), isFalse);
+      expect(ware.isTip, isFalse);
+      expect(ware.isDiscount, isFalse);
+    });
+
+    test('kind tip traegt recipient und paymentMethod; unbekanntes kind wird beim Lesen verworfen', () {
+      final tip = KasseneckItem.fromJson({
+        'name': 'Trinkgeld Personal', 'quantity': 1, 'unitPriceCents': 100, 'vatRate': 0,
+        'kind': 'tip', 'recipient': {'registerUserId': 'ru1', 'name': 'Anna'}, 'paymentMethod': 'cash',
+      });
+      expect(tip.isTip, isTrue);
+      expect(tip.recipient!['registerUserId'], 'ru1');
+      final json = tip.toJson();
+      expect(json['kind'], 'tip');
+      expect(json['recipient'], {'registerUserId': 'ru1', 'name': 'Anna'});
+      expect(json['paymentMethod'], 'cash');
+      expect(KasseneckItem.fromJson({'name': 'X', 'quantity': 1, 'unitPriceCents': 1, 'vatRate': 10, 'kind': 'hologramm'}).kind, isNull);
+    });
+  });
 }

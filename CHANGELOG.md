@@ -1,3 +1,10 @@
+## 4.19.0
+
+- `KasseneckItem`: neue optionale Felder `kind` (`'tip'`/`'discount'`), `recipient`, `paymentMethod`, `articleId` — Zwilling von `ReceiptItem` im JS-Paket 0.6.44. Die Kennzeichnungen reisen durch `toJson`/`fromJson` und `negative` (Storno-Spiegelung); Zeilen ohne bleiben schlank.
+- `verteileRabatt` kennzeichnet seine Zeilen als `kind: 'discount'` — der Bon fasst sie zu einer Summenzeile mit Zwischensumme zusammen, der Bericht führt sie als „Rabatte“.
+- `articleId` an Positionen ist die Grundlage der Erlösgruppen-Zuordnung im Monatsbericht.
+- Golden-Belege auf den Stand des JS-Pakets 0.6.44 gehoben: 22 Fälle (neu: rabatt-einfach, rabatt-trinkgeld, rabatt-chef-trinkgeld, storno-rabatt, rabatt-wertgutschein).
+
 ## 4.18.0
 - **Belegaufrufe der Kasse** (`package:kasseneck_api/kasse.dart`): `RegisterReceiptClient` mit `verkaufen` (Normalbeleg samt Belegkopf in einer Antwort), `auflisten` (Zusammenfassungen mit Summe in ganzen Cent, Bediener, Storno-Stand), `holen` und `stornieren` (voll oder in Teilen, mit Grund und Restmengen). Der Verkauf ist der einzige nicht folgenlos wiederholbare Aufruf — es geht genau ein Aufruf hinaus, auch nach einem Netzhaenger.
 - **Gemeinsamer Weg der laufenden Sitzung**: `RegisterTransport` (ID-Token als Bearer, Sitzung als Kopfzeile `register-session`, Kasse als Parameter, eigene Frist je Aufruf). `RegisterSessionClient` laeuft jetzt darueber, statt die Huelle ein zweites Mal zu fuehren; sein Verhalten aendert sich nicht.

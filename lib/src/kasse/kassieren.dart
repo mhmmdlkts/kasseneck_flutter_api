@@ -269,7 +269,10 @@ List<KasseneckItem> verteileRabatt(List<KasseneckItem> positionen, int rabattCen
   final zeilen = <KasseneckItem>[];
   for (var i = 0; i < saetze.length; i++) {
     if (anteile[i] <= 0) continue;
-    zeilen.add(KasseneckItem(name: name, quantity: 1, priceCents: -anteile[i], vat: saetze[i]));
+    // kind 'discount': der Bon fasst die Zeilen zu einer Summenzeile mit
+    // Zwischensumme zusammen, der Bericht fuehrt sie als "Rabatte"
+    // (Zwilling von verteileRabatt im JS-Paket seit 0.6.42).
+    zeilen.add(KasseneckItem(name: name, quantity: 1, priceCents: -anteile[i], vat: saetze[i], kind: 'discount'));
   }
   return zeilen;
 }
