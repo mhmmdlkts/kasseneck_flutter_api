@@ -14,7 +14,7 @@
     "showKreiseckLogo": false
   },
   "receipt": {
-    "receiptId": "AT0-KASSE1-42",
+    "receiptId": "AT0-KASSE1-62",
     "cashregisterId": "KASSE1",
     "timeStamp": "2026-08-13T10:15:30",
     "items": [
@@ -43,6 +43,18 @@
         "unitPriceCents": -28,
         "vatRate": 20,
         "kind": "discount"
+      },
+      {
+        "name": "Trinkgeld Personal",
+        "quantity": 1,
+        "unitPriceCents": 100,
+        "vatRate": 0,
+        "kind": "tip",
+        "recipient": {
+          "registerUserId": "ru1",
+          "name": "Anna"
+        },
+        "paymentMethod": "cash"
       }
     ],
     "vouchers": [],

@@ -14,33 +14,20 @@
     "showKreiseckLogo": false
   },
   "receipt": {
-    "receiptId": "AT0-KASSE1-42",
+    "receiptId": "AT0-KASSE1-83",
     "cashregisterId": "KASSE1",
     "timeStamp": "2026-08-13T10:15:30",
     "items": [
       {
-        "name": "Semmel",
-        "quantity": 4,
-        "unitPriceCents": 79,
-        "vatRate": 10
-      },
-      {
-        "name": "Kaffee klein",
+        "name": "Maniküre klassisch",
         "quantity": 1,
-        "unitPriceCents": 280,
+        "unitPriceCents": 2900,
         "vatRate": 20
       },
       {
-        "name": "Rabatt 10 %",
+        "name": "Rabatt 15 %",
         "quantity": 1,
-        "unitPriceCents": -32,
-        "vatRate": 10,
-        "kind": "discount"
-      },
-      {
-        "name": "Rabatt 10 %",
-        "quantity": 1,
-        "unitPriceCents": -28,
+        "unitPriceCents": -435,
         "vatRate": 20,
         "kind": "discount"
       }

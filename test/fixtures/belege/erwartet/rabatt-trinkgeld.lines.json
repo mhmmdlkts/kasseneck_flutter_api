@@ -73,7 +73,7 @@
           "align": "left"
         },
         {
-          "text": "AT0-KASSE1-42",
+          "text": "AT0-KASSE1-62",
           "width": 6,
           "align": "right"
         }
@@ -152,6 +152,21 @@
       "text": "* davon -0,28 A, -0,32 B",
       "align": "left",
       "bold": false
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Trinkgeld Personal",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "1,00 D",
+          "width": 4,
+          "align": "right"
+        }
+      ]
     },
     {
       "kind": "space",
@@ -233,6 +248,31 @@
       ]
     },
     {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "D 0%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "0,00",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "1,00",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "1,00",
+          "width": 2,
+          "align": "right"
+        }
+      ]
+    },
+    {
       "kind": "rule",
       "char": "-"
     },
@@ -245,7 +285,7 @@
           "align": "left"
         },
         {
-          "text": "5,36 €",
+          "text": "6,36 €",
           "width": 6,
           "align": "right"
         }

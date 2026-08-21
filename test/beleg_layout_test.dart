@@ -23,7 +23,7 @@ void main() {
   final manifest = _json('${_wurzel.path}/manifest.json');
   final namen = (manifest['belege'] as Map<String, dynamic>).keys.toList()..sort();
 
-  test('Golden-Kopien stimmen mit dem Manifest des JS-Pakets ueberein (Regelwerk 2, 17 Belege)', () {
+  test('Golden-Kopien stimmen mit dem Manifest des JS-Pakets ueberein (Regelwerk 2, 22 Belege)', () {
     expect(manifest['regelwerk'], 2);
     expect(namen.length, greaterThanOrEqualTo(17));
     for (final n in namen) {

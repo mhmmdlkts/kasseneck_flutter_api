@@ -43,17 +43,47 @@
       "grid32": "0b20a96fa594e620877d1eb3921a962641c9c2fbaad1394539434f89277d537e",
       "grid48": "bbc791a39c42f9f07817ec466a09eceabddf31e2d06b70e4114b52e8c3a5acf4"
     },
+    "rabatt-chef-trinkgeld": {
+      "eingabe": "ca7d8996e9e6dff17eb7a86c68a7760222c6f8abf78d6d70cb376787cc35feea",
+      "erwartet": "00c23751a269d39b1fda2e5f22da770cbd843c27640307ebee6acb465672efbf",
+      "grid32": "be28ba90768afdc8bfa3524f5e79f99552d59dd17dc6edda8b0bd9084581a955",
+      "grid48": "471748fcecefd7962b15d57db92194013ed46330be8b2c88c46183cf5c379342"
+    },
+    "rabatt-einfach": {
+      "eingabe": "78f7d6710b09d1553d5c623748df9788d826c3d5495d7cec47af485b6561f29b",
+      "erwartet": "4c935c7de85874eb8ccf115e2b000c1f27836b239a86f5e99d42f6f6f3977471",
+      "grid32": "0cf218c0cd752a1d02e1597971342d989deb2407966fa0d56b763ebd18e965be",
+      "grid48": "2429714cd6b2036e41f44f319bd77ac26e0997f2fd078e9b8e21f32dbd23ad1c"
+    },
+    "rabatt-trinkgeld": {
+      "eingabe": "011ab5d531477726cc35bced87f0c212fda2729adf0cd644df6a2af0adff3770",
+      "erwartet": "0efb064b8f20eea29be2948575b9a4d6d509dd4ac5fa8c10e4559326e911842b",
+      "grid32": "8a6876699e500e45605ea0c46dbf71ec4c90cbeb968a24324c36b4030bdbe216",
+      "grid48": "e85172a54003b9a2d8b11c145c34e909c8c3edef4a63d1364949ec1648708386"
+    },
+    "rabatt-wertgutschein": {
+      "eingabe": "1ea18b2feedc924f65537a806f58489e4f839e18e81c6e8b46f60364f44856a8",
+      "erwartet": "4945a64cf0c386560a1155561433fc81e531908890ca35391eed711345a1bfc3",
+      "grid32": "7178707063a9178cb433ee6928ad663503242cab32f961c2ef9a105d551ffac5",
+      "grid48": "3aeebcfe2a846af8b0b1267a946cc7242085b7e02722ea427c03ee736555cb1c"
+    },
     "rabattzeilen": {
-      "eingabe": "b30836a268c227812df826b5f8579b28fd57d6fa51923b5d35e1e3c195daf0e9",
-      "erwartet": "8c72ebacd6e3d42c47e72f4cc5a912f7cb8034ed6483c446f160127d24005f59",
-      "grid32": "36f7445e684c564e3a441b45b77258ed326fd8b39b1c7f062135fca8869a0c13",
-      "grid48": "6bb1c025b806cc0f7b7d6317b1f39e33326951c3810a1b16ac5330b023a9adb5"
+      "eingabe": "746b4fa54aadd62925a08a828632f9ff1829475d63a2839b8310c0451cda4766",
+      "erwartet": "3395fead05ccdd43eefc1f063ddb1c5ffb4f56aa00a264d8dfdcad48913acd8d",
+      "grid32": "175f207c673b7cdef2175cf8b0cf0aebb5c82cb714804dacac8208d9742f97fb",
+      "grid48": "29d21112a7cde5db0f546233c9580451199c0490ab01dcfa4365d79c066218a0"
     },
     "signaturausfall-verkauf": {
       "eingabe": "c84c9cb97e2cbf0ead3ce537399d2227ab501a90adc2ead79233e95b3a30b8c2",
       "erwartet": "0ce2c1d6f30dc12d4f32bb2d03616645f88b6ef782b9e0764fd1b632d5a782e3",
       "grid32": "c7e3cc1ad61b942e819c438a728ab59b013b2354c78981429fa3a4fa483e8073",
       "grid48": "e0f4e73c873ae0a70623c7c05673a5ca9b736822375c13f6ed0cd3351ab767f9"
+    },
+    "storno-rabatt": {
+      "eingabe": "80021cbf2da292c6d82baf92c51fb7fb67ad5bb3d55a452efaa67bf2cc6b4c72",
+      "erwartet": "7a0ce1111094dcc8effb1fffde56f0f69de621318212eec3ac375cc188a5cb56",
+      "grid32": "85a0dae903f3bf81b8c1736f4d5ea252472b684d14c26cc77483818080c59a69",
+      "grid48": "6cb23805cff69c09d7941f184b5b741667010a9da660eb3e06fec095995988dc"
     },
     "storno-teil": {
       "eingabe": "80320cbc1f48fa6b1668662f8aad766733ae7e0695c9c1680f8a115e0c927239",

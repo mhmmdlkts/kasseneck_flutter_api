@@ -35,6 +35,27 @@
       "lines": 1
     },
     {
+      "kind": "banner",
+      "text": "STORNOBELEG",
+      "ton": "belegart"
+    },
+    {
+      "kind": "text",
+      "text": "Stornobuchung zu Beleg AT0-KASSE1-55",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Grund: Fehleingabe",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
       "kind": "columns",
       "columns": [
         {
@@ -73,7 +94,7 @@
           "align": "left"
         },
         {
-          "text": "AT0-KASSE1-42",
+          "text": "AT0-KASSE1-58",
           "width": 6,
           "align": "right"
         }
@@ -87,12 +108,12 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "4  x Semmel je 0,79",
+          "text": "4  x Semmel je -0,79",
           "width": 7,
           "align": "left"
         },
         {
-          "text": "3,16 B",
+          "text": "-3,16 B",
           "width": 5,
           "align": "right"
         }
@@ -107,7 +128,7 @@
           "align": "left"
         },
         {
-          "text": "2,80 A",
+          "text": "-2,80 A",
           "width": 5,
           "align": "right"
         }
@@ -126,7 +147,7 @@
           "align": "left"
         },
         {
-          "text": "5,96  ",
+          "text": "-5,96  ",
           "width": 4,
           "align": "right"
         }
@@ -141,7 +162,7 @@
           "align": "left"
         },
         {
-          "text": "-0,60 *",
+          "text": "0,60 *",
           "width": 4,
           "align": "right"
         }
@@ -149,7 +170,7 @@
     },
     {
       "kind": "text",
-      "text": "* davon -0,28 A, -0,32 B",
+      "text": "* davon 0,28 A, 0,32 B",
       "align": "left",
       "bold": false
     },
@@ -191,17 +212,17 @@
           "align": "left"
         },
         {
-          "text": "0,26",
+          "text": "-0,26",
           "width": 4,
           "align": "left"
         },
         {
-          "text": "2,58",
+          "text": "-2,58",
           "width": 3,
           "align": "left"
         },
         {
-          "text": "2,84",
+          "text": "-2,84",
           "width": 2,
           "align": "right"
         }
@@ -216,17 +237,17 @@
           "align": "left"
         },
         {
-          "text": "0,42",
+          "text": "-0,42",
           "width": 4,
           "align": "left"
         },
         {
-          "text": "2,10",
+          "text": "-2,10",
           "width": 3,
           "align": "left"
         },
         {
-          "text": "2,52",
+          "text": "-2,52",
           "width": 2,
           "align": "right"
         }
@@ -245,7 +266,7 @@
           "align": "left"
         },
         {
-          "text": "5,36 €",
+          "text": "-5,36 €",
           "width": 6,
           "align": "right"
         }

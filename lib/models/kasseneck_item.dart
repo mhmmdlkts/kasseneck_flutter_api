@@ -17,12 +17,38 @@ class KasseneckItem {
   /// unverändert in Euro (siehe [toJson]).
   final int priceCents;
 
+  /// Positions-Kennzeichnung: `'tip'` (Trinkgeld, vom Backend aus dem
+  /// Parameter `tip` erzeugt) oder `'discount'` (Rabatt, [verteileRabatt]).
+  /// Steuert nur die Beleg-Darstellung und die Berichts-Zuordnung, nie die
+  /// Beträge. Zwilling von `ReceiptItem.kind` im JS-Paket.
+  final String? kind;
+
+  /// Empfänger einer Trinkgeld-Position: `{registerUserId, name, owner?}`.
+  final Map<String, dynamic>? recipient;
+
+  /// Zahlart der Trinkgeld-Position (kann von der des Belegs abweichen).
+  final String? paymentMethod;
+
+  /// Artikel-Verweis (Artikelstamm) — Grundlage der Erlösgruppen-Zuordnung
+  /// im Bericht. Optional; Handeingaben haben keinen.
+  final String? articleId;
+
   KasseneckItem({
     required this.name,
     required this.quantity,
     required this.vat,
     required this.priceCents,
+    this.kind,
+    this.recipient,
+    this.paymentMethod,
+    this.articleId,
   });
+
+  /// Trinkgeld-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
+  bool get isTip => kind == 'tip';
+
+  /// Rabatt-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
+  bool get isDiscount => kind == 'discount';
 
   /// Komfort-Konstruktor mit Einzelpreis in **Euro**.
   ///
@@ -33,12 +59,14 @@ class KasseneckItem {
     required int quantity,
     required VatRate vat,
     required double singlePrice,
+    String? articleId,
   }) {
     return KasseneckItem(
       name: name,
       quantity: quantity,
       vat: vat,
       priceCents: (singlePrice * 100).round(),
+      articleId: articleId,
     );
   }
 
@@ -72,6 +100,16 @@ class KasseneckItem {
       'quantity': quantity,
       'unitPriceCents': priceCents,
       'vatRate': vat.rate,
+      // Kennzeichnungen reisen mit (Zwilling von toReceiptItemPayload im
+      // JS-Paket): sonst käme ein Storno dieser Positionen am Bon wieder
+      // als gewöhnliche Warenzeile an. Zeilen ohne bleiben schlank.
+      if (kind == 'tip') ...{
+        'kind': 'tip',
+        'recipient': recipient,
+        if (paymentMethod != null) 'paymentMethod': paymentMethod,
+      },
+      if (kind == 'discount') 'kind': 'discount',
+      if (articleId != null && articleId!.isNotEmpty) 'articleId': articleId,
     };
   }
 
@@ -86,23 +124,34 @@ class KasseneckItem {
     final euro = json['priceOne'];
     final quantity = json['quantity'] ?? json['amount'];
     final rate = json['vatRate'] ?? json['vat'];
+    final kind = json['kind'];
     return KasseneckItem(
       name: (json['name'] as String?) ?? '',
       // num statt int: manche Quellen liefern 1.0 statt 1.
       quantity: quantity is num ? quantity.toInt() : 0,
       vat: VatRate.values.firstWhere((e) => e.rate == rate, orElse: () => VatRate.vat0),
       priceCents: cents is num ? cents.round() : (euro is num ? (euro * 100).round() : 0),
+      kind: kind == 'tip' || kind == 'discount' ? kind as String : null,
+      recipient: json['recipient'] is Map ? Map<String, dynamic>.from(json['recipient'] as Map) : null,
+      paymentMethod: json['paymentMethod'] as String?,
+      articleId: json['articleId'] is String && (json['articleId'] as String).isNotEmpty ? json['articleId'] as String : null,
     );
   }
 
   bool get isValid => name.isNotEmpty && quantity > 0;
 
   KasseneckItem get negative {
-    return KasseneckItem.cancel(
+    return KasseneckItem(
       name: name,
-      amount: quantity,
+      quantity: quantity,
       vat: vat,
-      priceCents: priceCents,
+      priceCents: -priceCents,
+      // Kennzeichnungen bleiben erhalten — die Storno-Spiegelung trägt sie
+      // weiter (wie storno-core im Backend).
+      kind: kind,
+      recipient: recipient,
+      paymentMethod: paymentMethod,
+      articleId: articleId,
     );
   }
 }

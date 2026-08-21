@@ -14,7 +14,7 @@
     "showKreiseckLogo": false
   },
   "receipt": {
-    "receiptId": "AT0-KASSE1-42",
+    "receiptId": "AT0-KASSE1-58",
     "cashregisterId": "KASSE1",
     "timeStamp": "2026-08-13T10:15:30",
     "items": [
@@ -45,7 +45,14 @@
         "kind": "discount"
       }
     ],
-    "vouchers": [],
+    "vouchers": [
+      {
+        "type": "value",
+        "action": "redeem",
+        "valueCents": 300,
+        "code": "GS-1"
+      }
+    ],
     "paymentMethod": "cash",
     "turnoverCounterAES256ICM": "UMSATZ",
     "signaturePreviousReceipt": "VORGAENGER",

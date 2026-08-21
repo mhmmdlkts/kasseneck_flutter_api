@@ -14,7 +14,7 @@
     "showKreiseckLogo": false
   },
   "receipt": {
-    "receiptId": "AT0-KASSE1-42",
+    "receiptId": "AT0-KASSE1-82",
     "cashregisterId": "KASSE1",
     "timeStamp": "2026-08-13T10:15:30",
     "items": [
@@ -43,6 +43,32 @@
         "unitPriceCents": -28,
         "vatRate": 20,
         "kind": "discount"
+      },
+      {
+        "name": "Trinkgeld",
+        "quantity": 1,
+        "unitPriceCents": 106,
+        "vatRate": 10,
+        "kind": "tip",
+        "recipient": {
+          "registerUserId": "ru2",
+          "name": "Chef",
+          "owner": true
+        },
+        "paymentMethod": "cash"
+      },
+      {
+        "name": "Trinkgeld",
+        "quantity": 1,
+        "unitPriceCents": 94,
+        "vatRate": 20,
+        "kind": "tip",
+        "recipient": {
+          "registerUserId": "ru2",
+          "name": "Chef",
+          "owner": true
+        },
+        "paymentMethod": "cash"
       }
     ],
     "vouchers": [],
