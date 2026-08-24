@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 
-final _wurzel = Directory('test/fixtures/belege');
+final _wurzel = Directory('test/fixtures/vertrag');
 
 Map<String, dynamic> _json(String pfad) =>
     jsonDecode(File(pfad).readAsStringSync()) as Map<String, dynamic>;

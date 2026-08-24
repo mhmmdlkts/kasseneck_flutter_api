@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../aufrufe.dart';
 import '../kasse/einstellungen.dart';
 import 'fehler.dart';
 import 'transport.dart';
@@ -200,6 +201,11 @@ class RegisterUserPerms {
     this.weitere = const {},
   });
 
+  /// Rechte aus der Antwort des Backends lesen. Derselbe Weg, den auch die
+  /// Anmeldung nimmt — offen gelegt, damit die Zwillingsprüfung ihn benutzen
+  /// kann, ohne einen zweiten Parser zu bauen.
+  factory RegisterUserPerms.aus(Map<String, dynamic> roh) => _rechte(roh);
+
   /// Belege ausstellen.
   final bool sell;
 
@@ -325,7 +331,7 @@ class RegisterClient {
     RegisterGeo? geo,
     bool takeover = false,
   }) async {
-    const name = 'pairRegisterDevice';
+    const name = Aufrufe.pairRegisterDevice;
     _pflicht(name, 'code', code);
     final daten = await _rufen(name, {
       'code': code,
@@ -353,7 +359,7 @@ class RegisterClient {
     required String deviceId,
     required String deviceSecret,
   }) async {
-    const name = 'listRegisterUsersForDevice';
+    const name = Aufrufe.listRegisterUsersForDevice;
     _ausweisPflicht(name, ownerUid, deviceId, deviceSecret);
     final daten = await _rufen(name, {
       'ownerUid': ownerUid,
@@ -364,7 +370,7 @@ class RegisterClient {
     final liste = daten['users'];
     if (liste is! List) {
       throw const KasseneckValidationError(
-          'listRegisterUsersForDevice', 'Antwort enthaelt keine Benutzerliste (data.users fehlt)', 'response');
+          Aufrufe.listRegisterUsersForDevice, 'Antwort enthaelt keine Benutzerliste (data.users fehlt)', 'response');
     }
     final users = liste.map((eintrag) {
       final roh = eintrag is Map ? Map<String, dynamic>.from(eintrag) : <String, dynamic>{};
@@ -399,7 +405,7 @@ class RegisterClient {
     required String deviceId,
     required String deviceSecret,
   }) async {
-    const name = 'unpairRegisterDevice';
+    const name = Aufrufe.unpairRegisterDevice;
     _ausweisPflicht(name, ownerUid, deviceId, deviceSecret);
     await _rufen(name, {'ownerUid': ownerUid, 'deviceId': deviceId, 'deviceSecret': deviceSecret});
   }
@@ -422,7 +428,7 @@ class RegisterClient {
     RegisterClientInfo? client,
     RegisterGeo? geo,
   }) async {
-    const name = 'registerUserLogin';
+    const name = Aufrufe.registerUserLogin;
     _ausweisPflicht(name, ownerUid, deviceId, deviceSecret);
     _pflicht(name, 'userId', userId);
     _pflicht(name, 'pin', pin);
@@ -456,7 +462,7 @@ class RegisterClient {
     RegisterClientInfo? client,
     RegisterGeo? geo,
   }) async {
-    const name = 'registerPinLogin';
+    const name = Aufrufe.registerPinLogin;
     _ausweisPflicht(name, ownerUid, deviceId, deviceSecret);
     _pflicht(name, 'pin', pin);
     _pflicht(name, 'cashregisterId', cashregisterId);
@@ -665,7 +671,7 @@ class RegisterSessionClient {
   /// übernommen, antwortet das Backend fachlich („Sitzung beendet — bitte neu
   /// anmelden.") — dann hilft nur eine neue Anmeldung.
   Future<int> renewRegisterSession() async {
-    const name = 'renewRegisterSession';
+    const name = Aufrufe.renewRegisterSession;
     final daten = await transport.rufen(name);
     final bis = daten['expiresAt'];
     if (bis is! int) {
@@ -677,5 +683,5 @@ class RegisterSessionClient {
   }
 
   /// Sitzung beenden (Abmelden am Tresen).
-  Future<void> endRegisterSession() => transport.rufen('endRegisterSession');
+  Future<void> endRegisterSession() => transport.rufen(Aufrufe.endRegisterSession);
 }

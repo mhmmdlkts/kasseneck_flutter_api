@@ -169,7 +169,10 @@ class KasseSettingsBetrieb {
     this.rueckgeld = true,
     this.schnellbar = false,
     this.kassierenModus = KasseKassierenModus.seite,
-    this.belegAusgabe = KasseBelegAusgabe.qr,
+    // Die Fertig-Seite fragt: QR oder Bon. So halten es Backend und
+    // Browser-Kasse längst — ein Betrieb ohne eigene Einstellung soll am
+    // Tresen nicht ungefragt auf den QR festgelegt sein.
+    this.belegAusgabe = KasseBelegAusgabe.fragen,
     this.fertigSekunden = 0,
   });
 

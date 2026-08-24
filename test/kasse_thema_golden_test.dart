@@ -60,9 +60,20 @@ void main() {
     final datei = File('test/fixtures/kasse/kasse-thema.json');
     final jetzt = jetzigesThema();
 
-    if (Platform.environment['KECK_GOLDEN'] == 'schreiben' || !datei.existsSync()) {
+    if (Platform.environment['KECK_GOLDEN'] == 'schreiben') {
       datei.writeAsStringSync('${const JsonEncoder.withIndent('  ').convert(jetzt)}\n');
     }
+
+    // Fehlt die Golden-Datei, ist der Test rot. Sie hier stillschweigend
+    // anzulegen hiesse, das Thema gegen sich selbst zu pruefen: der Test koennte
+    // dann nie mehr fehlschlagen, sondern normte jede Aenderung neu ein.
+    expect(
+      datei.existsSync(),
+      isTrue,
+      reason: 'Die Golden-Datei ${datei.path} fehlt. Sie wird nicht automatisch '
+          'angelegt — neu erzeugen mit: '
+          'KECK_GOLDEN=schreiben flutter test test/kasse_thema_golden_test.dart',
+    );
 
     final gespeichert = jsonDecode(datei.readAsStringSync()) as Map<String, dynamic>;
     expect(gespeichert, jetzt);

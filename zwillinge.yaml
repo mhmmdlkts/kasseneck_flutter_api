@@ -1,0 +1,136 @@
+# Woran dieses Paket geprüft wird.
+#
+# Das npm-Paket @kreiseck/kasseneck-api ist die Quelle: es gibt in fixtures/
+# zwei Beschreibungsdateien aus (Standardwerte, Oberfläche), die im
+# veröffentlichten Tarball mitreisen. Dieses Repo hält eine Kopie unter
+# test/fixtures/vertrag/, damit `flutter test` ohne Netz vollständig ist — die
+# CI beweist byteweise, dass die Kopie echt ist.
+#
+# Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
+# Der Testlauf sagt dann genau, was fehlt.
+npm_version: 0.6.45
+
+# Was dieses Paket bewusst NICHT hat. Zwei Arten:
+#   nicht_zutreffend — dauerhaft, braucht einen Grund
+#   offen            — Schuld, braucht eine Issue-Nummer
+#
+# Alle 31 Einträge sind derzeit "offen". Keiner ist "nicht zutreffend": ein
+# Gerät kann in den Einstellungen auf einen Wert gesetzt sein, den dieses Paket
+# nicht kennt — dann fällt es still auf den Standard zurück, und am Tresen
+# steht ein Schalter anders als im Panel. Kennen muss das Paket den Wert also
+# auch dort, wo es ihn (noch) nicht auswerten kann.
+#
+# Wer eine Lücke schließt, streicht die Zeile hier. Wer die Zeile streicht,
+# ohne die Lücke zu schließen, wird rot.
+ausnahmen:
+  # ---- Issue #22: Server Direct Print ----
+  # Druckjobs über das Backend anlegen und abfragen; dieses Paket druckt nur
+  # direkt (ePOS/IP, Bluetooth, USB).
+  - eintrag: aufrufe.listMyPrinters
+    art: offen
+    issue: 22
+  - eintrag: aufrufe.createPrintJob
+    art: offen
+    issue: 22
+  - eintrag: aufrufe.getPrintJob
+    art: offen
+    issue: 22
+
+  # ---- Issue #23: Druckweg connect und Terminal-Anbindung ----
+  # Kasseneck Connect als vierter Druckweg, dazu terminalVia/terminalArt/
+  # terminalTid. Ein auf "connect" gestelltes Gerät druckt hier heute anders
+  # als eingestellt.
+  - eintrag: enums.druckerArt.connect
+    art: offen
+    issue: 23
+  - eintrag: enums.terminalVia.direkt
+    art: offen
+    issue: 23
+  - eintrag: enums.terminalVia.connect
+    art: offen
+    issue: 23
+  - eintrag: enums.terminalArt.keins
+    art: offen
+    issue: 23
+  - eintrag: enums.terminalArt.hps
+    art: offen
+    issue: 23
+
+  # ---- Issue #24: fehlende Einstellungsfelder ----
+  # logoBild, wzSeite, wzPos, wzPosV, wzStaerke, logoSkala, wzSkala, glas,
+  # hinweise, rabattChips, tastenMarken. Weil die Felder fehlen, übersteht auch
+  # keiner ihrer Werte das Einlesen.
+  - eintrag: enums.wzSeite.links
+    art: offen
+    issue: 24
+  - eintrag: enums.wzSeite.mitte
+    art: offen
+    issue: 24
+  - eintrag: enums.wzSeite.rechts
+    art: offen
+    issue: 24
+  - eintrag: enums.wzStaerke.3
+    art: offen
+    issue: 24
+  - eintrag: enums.wzStaerke.6
+    art: offen
+    issue: 24
+  - eintrag: enums.wzStaerke.10
+    art: offen
+    issue: 24
+  - eintrag: enums.wzStaerke.16
+    art: offen
+    issue: 24
+  - eintrag: enums.logoSkala.S
+    art: offen
+    issue: 24
+  - eintrag: enums.logoSkala.M
+    art: offen
+    issue: 24
+  - eintrag: enums.logoSkala.L
+    art: offen
+    issue: 24
+  - eintrag: enums.logoSkala.XL
+    art: offen
+    issue: 24
+  - eintrag: enums.wzSkala.S
+    art: offen
+    issue: 24
+  - eintrag: enums.wzSkala.M
+    art: offen
+    issue: 24
+  - eintrag: enums.wzSkala.L
+    art: offen
+    issue: 24
+  - eintrag: enums.wzSkala.XL
+    art: offen
+    issue: 24
+
+  # ---- Issue #25: sechs Tasten-Aktionen ----
+  # Der Vertrag ordnet 15 Aktionen einer Taste zu, kasseTastenAktionen kennt 9.
+  - eintrag: tastenAktionen.einstellungen
+    art: offen
+    issue: 25
+  - eintrag: tastenAktionen.abmelden
+    art: offen
+    issue: 25
+  - eintrag: tastenAktionen.trinkgeld
+    art: offen
+    issue: 25
+  - eintrag: tastenAktionen.vollbild
+    art: offen
+    issue: 25
+  - eintrag: tastenAktionen.gegebenLeeren
+    art: offen
+    issue: 25
+  - eintrag: tastenAktionen.korbLeeren
+    art: offen
+    issue: 25
+
+  # ---- Issue #26: zwei Aufrufe ----
+  - eintrag: aufrufe.generateFullReceiptId
+    art: offen
+    issue: 26
+  - eintrag: aufrufe.listMyCashregisters
+    art: offen
+    issue: 26

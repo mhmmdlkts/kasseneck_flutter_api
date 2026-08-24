@@ -22,6 +22,7 @@ import 'enums/voucher_type.dart';
 import 'models/kasseneck_item.dart';
 import 'models/keck_tip.dart';
 import 'models/kasseneck_receipt.dart';
+import 'src/aufrufe.dart';
 
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///
@@ -85,7 +86,7 @@ class KasseneckApi {
 
   Future<dynamic> _financeWebServicePostRequest(
       {required String method, Map<String, dynamic> params = const {}}) async {
-    Uri uri = Uri.parse('$_baseUrl/financeWebService');
+    Uri uri = Uri.parse('$_baseUrl/${Aufrufe.financeWebService}');
 
     final headers = {
       'Authorization': 'Bearer $apiKey',
@@ -113,7 +114,7 @@ class KasseneckApi {
 
   /// Downloads the daily report PDF for [dateTime] as raw bytes.
   Future<Uint8List?> downloadDailyReport(DateTime dateTime) async => _kasseneckPostRequest(
-      endpoint: 'downloadDailyReport',
+      endpoint: Aufrufe.downloadDailyReport,
       params: {
         'year': dateTime.year,
         'month': dateTime.month,
@@ -122,14 +123,14 @@ class KasseneckApi {
 
   /// Downloads the monthly report PDF for [reportMonth] as raw bytes.
   Future<Uint8List?> downloadMonthlyReport(ReportMonth reportMonth) async => _kasseneckPostRequest(
-    endpoint: 'downloadReport',
+    endpoint: Aufrufe.downloadReport,
     params: {
       'month': reportMonth.month.id,
       'year': reportMonth.year
     }).then((value) => Uint8List.fromList(value.codeUnits));
 
   Future<ReportMonth?> getFirstReceiptDate() async {
-    final resJson = await _kasseneckPostRequest(endpoint: 'getFirstReceiptDate').then((value) => json.decode(value));
+    final resJson = await _kasseneckPostRequest(endpoint: Aufrufe.getFirstReceiptDate).then((value) => json.decode(value));
 
     if (resJson['status'] == 'success') {
       DateTime dateTime = DateTime.parse(resJson['data']);
@@ -359,7 +360,7 @@ class KasseneckApi {
       params['legalMessage'] = legalMessage.join('\n');
     }
 
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: 'createReceipt', params: params).then((value) => json.decode(value));
+    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: Aufrufe.createReceipt, params: params).then((value) => json.decode(value));
 
     if (resJson['status'] == 'success') {
       KasseneckReceipt receipt = KasseneckReceipt.fromJson(resJson['data'] as Map<String, dynamic>);
@@ -373,7 +374,7 @@ class KasseneckApi {
 
   /// Fetches a single receipt by its [receiptId].
   Future<KasseneckReceipt?> getReceipt(String receiptId) async {
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: 'getReceipt', params: {
+    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: Aufrufe.getReceipt, params: {
       'receiptId': receiptId
     }).then((value) => json.decode(value));
 
@@ -393,7 +394,7 @@ class KasseneckApi {
       throw ArgumentError('start darf nicht nach end sein.');
     }
 
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: 'getReportV2', params: {
+    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: Aufrufe.getReportV2, params: {
       'start': start.toIso8601String().split('.').first,
       'end': end.toIso8601String().split('.').first
     }).then((value) => json.decode(value));
@@ -474,7 +475,7 @@ class KasseneckApi {
     String? customerEmail,
   }) async {
     final Map<String, dynamic> resJson = await _kasseneckPostRequest(
-        endpoint: 'createPaymentLinkStripe',
+        endpoint: Aufrufe.createPaymentLinkStripe,
         params: {
           'items': items.map((e) => e.toJson()).toList(),
           'createReceiptAfterPayment': createReceiptAfterPayment,
@@ -498,7 +499,7 @@ class KasseneckApi {
     required String stripeSessionId,
   }) async {
     final Map<String, dynamic> resJson = await _kasseneckPostRequest(
-        endpoint: 'stripeCaptureIntent',
+        endpoint: Aufrufe.stripeCaptureIntent,
         params: {
           'stripe_sessions_id': stripeSessionId
         },
@@ -518,7 +519,7 @@ class KasseneckApi {
   /// Charges a card via the **Hobex Cloud** API and returns the resulting [HobexReceipt].
   Future<HobexReceipt> hobexPay({required String transactionId, required double amount, double tip = 0, String? reference}) async {
     final Map<String, dynamic> resJson = await _kasseneckPostRequest(
-        endpoint: 'hobexPayApi',
+        endpoint: Aufrufe.hobexPayApi,
         params: {
           'transactionId': transactionId,
           'amount': amount,
@@ -536,7 +537,7 @@ class KasseneckApi {
   /// Refunds a previous **Hobex Cloud** transaction.
   Future<bool> hobexRefund({required String transactionId, required double amount, double tip = 0}) async {
     final Map<String, dynamic> resJson = await _kasseneckPostRequest(
-        endpoint: 'hobexRefundApi',
+        endpoint: Aufrufe.hobexRefundApi,
         params: {
           'transactionId': transactionId,
           'amount': amount,
