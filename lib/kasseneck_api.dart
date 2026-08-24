@@ -20,6 +20,7 @@ import 'enums/signature_status.dart';
 import 'enums/voucher_action.dart';
 import 'enums/voucher_type.dart';
 import 'models/kasseneck_item.dart';
+import 'models/keck_tip.dart';
 import 'models/kasseneck_receipt.dart';
 
 /// Client for the **Kasseneck** RKSV cash-register backend.
@@ -202,9 +203,11 @@ class KasseneckApi {
     String? cardPaymentId,
     String? customProjectId,
     Map<String, dynamic>? cardPaymentData,
+    KeckTip? tip,
   }) async {
     return _createReceipt(
       receiptType: ReceiptType.standard,
+      tip: tip,
       customerDetails: customerDetails,
       items: items,
       vouchers: vouchers,
@@ -273,7 +276,8 @@ class KasseneckApi {
     List<KeckVoucher>? vouchers,
     List<String>? customerDetails,
     List<String>? legalMessage,
-    Map<String, dynamic>? cardPaymentData
+    Map<String, dynamic>? cardPaymentData,
+    KeckTip? tip,
   }) async {
 
     if (receiptType.needsItems) {
@@ -310,6 +314,26 @@ class KasseneckApi {
 
     if (items != null && items.isNotEmpty) {
       params['items'] = items.map((e) => e.toJson()).toList();
+    }
+
+    if (tip != null) {
+      // Trinkgeld wird NICHT als Position geschickt: Das Backend baut sie aus
+      // diesem Parameter, weil erst dort feststeht, ob der Empfaenger Inhaber
+      // ist (Entgelt, anteilig auf die Steuersaetze) oder Mitarbeiter
+      // (durchlaufender Posten, 0 %). Eine Position vom Client wird abgelehnt.
+      if (!receiptType.allowsTip) {
+        throw ArgumentError(
+            'Trinkgeld ist nur auf Standard- und Trainingsbelegen moeglich.');
+      }
+      // Ein Beleg nur mit Trinkgeld ist keiner — es haengt an einer Leistung.
+      if (items == null || items.isEmpty) {
+        throw ArgumentError('Trinkgeld: Beleg braucht mindestens eine Position');
+      }
+      final tipFehler = tip.fehler;
+      if (tipFehler != null) {
+        throw ArgumentError(tipFehler);
+      }
+      params['tip'] = tip.toJson();
     }
     if (paymentMethod != null) {
       params['paymentMethod'] = paymentMethod.name;

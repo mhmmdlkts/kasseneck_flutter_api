@@ -35,6 +35,7 @@ can focus on your app.
 - 🪙 **Exact money** — amounts are integer **cents** internally (no floating-point drift)
 - 💳 **Card payments out of the box** — Hobex (Cloud & on-terminal **HPS**), myPOS, GP Tom, SumUp — **and any other method** via `CreditCardProvider.custom`
 - 🎟️ **Vouchers** — value & promo, sell & redeem, with proportional VAT split
+- 💛 **Tips** — per register user, cash or card; staff tips run as 0 % pass-through, owner tips as revenue split across the receipt's VAT rates
 - 🖨️ **Printing** — Bluetooth & Wi-Fi (ESC/POS) plus the myPOS built-in printer
 - 📱 **Drop-in receipt widget** for on-screen display
 - 📊 **Reports & invoices** — daily / monthly PDF
