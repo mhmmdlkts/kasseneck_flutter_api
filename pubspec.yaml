@@ -28,6 +28,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   image: ^4.8.0
   crypto: ^3.0.3
+  yaml: ^3.1.2 # nur für die Zwillingsprüfung; nicht Teil der veröffentlichten Abhängigkeiten
 
 flutter:
   assets:

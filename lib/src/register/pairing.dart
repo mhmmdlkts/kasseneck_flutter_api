@@ -201,6 +201,11 @@ class RegisterUserPerms {
     this.weitere = const {},
   });
 
+  /// Rechte aus der Antwort des Backends lesen. Derselbe Weg, den auch die
+  /// Anmeldung nimmt — offen gelegt, damit die Zwillingsprüfung ihn benutzen
+  /// kann, ohne einen zweiten Parser zu bauen.
+  factory RegisterUserPerms.aus(Map<String, dynamic> roh) => _rechte(roh);
+
   /// Belege ausstellen.
   final bool sell;
 
