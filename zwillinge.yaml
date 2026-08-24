@@ -10,18 +10,25 @@
 # Der Testlauf sagt dann genau, was fehlt.
 npm_version: 0.6.45
 
-# Was dieses Paket bewusst NICHT hat. Zwei Arten:
+# Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
+# unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
+#
+#   ausnahmen       — was der Vertrag führt und dieses Paket nicht
+#   wert_ausnahmen  — Felder, die es hier gibt, deren Standardwert aber abweicht
+#
+# Zwei Arten, in beiden Abschnitten:
 #   nicht_zutreffend — dauerhaft, braucht einen Grund
 #   offen            — Schuld, braucht eine Issue-Nummer
 #
-# Alle 31 Einträge sind derzeit "offen". Keiner ist "nicht zutreffend": ein
+# Alle 33 Einträge sind derzeit "offen". Keiner ist "nicht zutreffend": ein
 # Gerät kann in den Einstellungen auf einen Wert gesetzt sein, den dieses Paket
 # nicht kennt — dann fällt es still auf den Standard zurück, und am Tresen
 # steht ein Schalter anders als im Panel. Kennen muss das Paket den Wert also
 # auch dort, wo es ihn (noch) nicht auswerten kann.
 #
 # Wer eine Lücke schließt, streicht die Zeile hier. Wer die Zeile streicht,
-# ohne die Lücke zu schließen, wird rot.
+# ohne die Lücke zu schließen, wird rot — und wer die Lücke schließt, ohne die
+# Zeile zu streichen, ebenfalls: sonst sänke die Zahl in der CI nie.
 ausnahmen:
   # ---- Issue #22: Server Direct Print ----
   # Druckjobs über das Backend anlegen und abfragen; dieses Paket druckt nur
@@ -134,3 +141,19 @@ ausnahmen:
   - eintrag: aufrufe.listMyCashregisters
     art: offen
     issue: 26
+
+# Felder, die es hier gibt, deren Standardwert aber vom Vertrag abweicht.
+# Geprüft von test/kasse_einstellungen_test.dart — für jedes andere Feld gilt
+# dort weiterhin: gleicher Name, gleicher Standardwert wie im Vertrag.
+wert_ausnahmen:
+  # Der Vertrag belegt 15 Aktionen, dieses Paket kennt 9. Für die sechs neuen
+  # sind dort auch `frei` (Mod+D) und `belege` (Mod+J) verschoben worden —
+  # Mod+F gehört jetzt dem Vollbild.
+  - eintrag: geraet.tasten
+    art: offen
+    issue: 25
+  # Vertrag 8080, hier 20008. Welcher Port gilt, entscheidet sich mit
+  # terminalVia/terminalArt — deshalb am Terminal-Umbau.
+  - eintrag: geraet.terminalPort
+    art: offen
+    issue: 23
