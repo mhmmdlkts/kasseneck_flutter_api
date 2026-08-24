@@ -42,13 +42,24 @@ jobs:
       # Version mit neuen Feldern oder Enum-Werten steht: die Kopie wäre echt
       # und trotzdem veraltet.
       #
-      # WARNUNG, KEIN TOR — zweifach abgesichert: das Werkzeug endet von sich
-      # aus immer mit 0 (auch ohne Netz), und `continue-on-error` hält den Lauf
-      # selbst dann grün, wenn `dart run` scheitert. Nachgezogen wird von Hand;
-      # eine Veröffentlichung in einem fremden Repository darf den Bau hier
-      # nicht anhalten.
+      # WARNUNG, KEIN TOR — dreifach abgesichert: das Werkzeug endet von sich
+      # aus immer mit 0 (auch ohne Netz), es deckelt seinen Abruf mit einer
+      # Frist über Verbindung, Antwortkopf UND Rumpf, und `continue-on-error`
+      # hält den Lauf selbst dann grün, wenn `dart run` scheitert. Nachgezogen
+      # wird von Hand; eine Veröffentlichung in einem fremden Repository darf
+      # den Bau hier nicht anhalten.
+      #
+      # `timeout-minutes` ist der Gürtel zum Hosenträger. Der eigentliche
+      # Deckel sitzt im Werkzeug: `continue-on-error` fängt einen Fehlschlag
+      # ab, aber kein HÄNGEN — eine Gegenstelle, die den Kopf schickt und den
+      # Rumpf schuldig bleibt, ließe den Lauf sonst bis zum Sechs-Stunden-Limit
+      # stehen. Die Zeile hier steht am SCHRITT, nicht am Job: zusammen mit
+      # `continue-on-error` gilt ein überschrittener Schritt als
+      # fehlgeschlagen und der Lauf geht weiter, während ein Deckel am Job den
+      # ganzen Job abbräche — und ein Cancel ist kein „continue".
       - name: Stand der Anheftung (nur Hinweis)
         continue-on-error: true
+        timeout-minutes: 2
         run: dart run tool/vertrag_stand.dart
 
       - name: Analyze

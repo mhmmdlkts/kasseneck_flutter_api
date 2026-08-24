@@ -81,26 +81,57 @@ String? _angeheftet() {
   }
 }
 
+/// Frist für den GESAMTEN Abruf — Verbindung, Antwortkopf und Rumpf zusammen.
+const _frist = Duration(seconds: 20);
+
 /// Die Version hinter dem dist-tag `latest`; `null`, wenn die Registry
 /// schweigt, langsam ist oder etwas Unerwartetes antwortet.
+///
+/// Die Frist liegt über dem GANZEN Abruf, nicht über einzelnen Schritten. Ein
+/// Deckel allein auf `close()` deckte nur den Antwortkopf ab: eine Gegenstelle,
+/// die die Verbindung annimmt, HTTP 200 samt Kopf schickt und den Rumpf dann
+/// stehen lässt, hinge unbegrenzt. Dafür braucht es keinen Ausfall der
+/// Registry — ein Captive Portal oder eine halbtote CDN-Kante genügt.
+///
+/// Das wäre schlimmer als gar keine Prüfung: `continue-on-error` in der CI
+/// fängt einen Fehlschlag ab, aber kein Hängen. Der Lauf stünde bis zum
+/// Sechs-Stunden-Limit und würde dann abgebrochen — ein Cancel ist kein
+/// „continue". Ein Hinweisschritt, der den Bau anhalten kann, ist schlechter
+/// als keiner.
+///
+/// Aus demselben Grund NICHT je Teilschritt gedeckelt: mit tröpfelnden Bytes
+/// ließe sich eine Kette von Einzelfristen beliebig verlängern. Eine Frist über
+/// das gesamte Future greift auch dann, wenn der Rumpf zur Hälfte ankommt und
+/// dann stockt.
 Future<String?> _veroeffentlicht() async {
   final klient = HttpClient()..connectionTimeout = const Duration(seconds: 10);
   try {
     final ziel = Uri.parse('$_wurzel/${Uri.encodeComponent(_paket)}/latest');
-    final antwort = await klient
-        .getUrl(ziel)
-        .then((anfrage) => anfrage.close())
-        .timeout(const Duration(seconds: 20));
-    if (antwort.statusCode != 200) return null;
-    final rumpf = await antwort.transform(utf8.decoder).join();
-    final version = (jsonDecode(rumpf) as Map<String, dynamic>)['version'];
-    final text = version?.toString().trim() ?? '';
-    return text.isEmpty ? null : text;
+    return await _abrufen(klient, ziel).timeout(_frist);
   } catch (_) {
     return null;
   } finally {
+    // Auch nach abgelaufener Frist: schneidet die noch offene Verbindung ab,
+    // statt das Programm auf sie warten zu lassen.
     klient.close(force: true);
   }
+}
+
+/// Der Abruf selbst — bewusst ohne eigene Frist, die liegt in
+/// [_veroeffentlicht] über dem Ganzen.
+Future<String?> _abrufen(HttpClient klient, Uri ziel) async {
+  final anfrage = await klient.getUrl(ziel);
+  final antwort = await anfrage.close();
+  if (antwort.statusCode != 200) {
+    // Den Rumpf trotzdem abnehmen: eine nicht ausgelesene Antwort hielte die
+    // Verbindung offen. Innerhalb der Frist, also ohne Hängerisiko.
+    await antwort.drain<void>();
+    return null;
+  }
+  final rumpf = await antwort.transform(utf8.decoder).join();
+  final version = (jsonDecode(rumpf) as Map<String, dynamic>)['version'];
+  final text = version?.toString().trim() ?? '';
+  return text.isEmpty ? null : text;
 }
 
 /// Negativ, wenn [a] älter ist als [b]. Vorabversionen ("0.7.0-rc.1") werden
