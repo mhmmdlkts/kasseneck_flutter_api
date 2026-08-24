@@ -52,9 +52,15 @@ enum KasseMenge { aus, x, kg }
 
 enum KasseRabatt { aus, an }
 
-/// Karte gibt es erst mit eingerichtetem Anbieter; `extern` = eigenes Terminal
-/// ohne Anbindung.
-enum KasseKartenanbieter { keiner, extern, hobex, mypos, stripe }
+/// Karte gibt es erst mit eingerichtetem Anbieter.
+///
+/// - `extern`: ein Terminal, das die Kasse nicht anspricht. Der Kassier tippt
+///   den Betrag dort selbst ein und bestätigt in der Kasse — das ist ein
+///   gültiger Weg, kein Notbehelf.
+/// - `gptom`: GP Tom, angesprochen über die Terminal-App auf demselben Gerät.
+/// - `hobex`: Hobex HPS über die Terminal-Adresse im Kassennetz
+///   ([KasseSettingsGeraet.terminalIp] / `terminalPort`).
+enum KasseKartenanbieter { keiner, extern, gptom, hobex, mypos, stripe }
 
 enum KasseTgModus { betrag, gesamt, beides }
 
@@ -127,7 +133,11 @@ class KasseSettingsBetrieb {
     this.logoAn = true,
     this.logoGroesse = KasseGroesse.m,
     this.wasserzeichen = KasseWasserzeichen.anmeldung,
-    this.farbe = '#1B46F5',
+    // Die Farbe der Marke Kasseneck. Ein Betrieb, der nichts einstellt,
+    // bekommt die Farbe des Produkts — dieselbe, die auf dem App-Zeichen und
+    // dem Startbildschirm steht. Ein fremdes Blau daneben sähe aus wie zwei
+    // Programme.
+    this.farbe = '#116B6B',
     this.stil = KasseStil.klar,
     this.schrift = KasseSchrift.m,
     this.schriftEinst = KasseEinstellSchrift.s,
@@ -221,6 +231,13 @@ class KasseSettingsBetrieb {
   /// Die eingeschalteten Steuersätze in der Reihenfolge des Bildschirms.
   List<double> get aktiveSaetze =>
       kasseSaetzeReihenfolge.where((s) => saetze[_satzSchluessel(s)] == true).toList();
+
+  /// Diesen Stand mit einer Änderung mischen.
+  ///
+  /// Gebraucht, wo eine Einstellung **sofort** gelten soll, während der Server
+  /// noch antwortet: der Bildschirm zeigt, was der Chef gewählt hat, und
+  /// nimmt es zurück, falls der Server ablehnt.
+  KasseSettingsBetrieb mit(Map<String, dynamic> aenderung) => _mit(aenderung);
 
   KasseSettingsBetrieb _mit(Map<String, dynamic> g) {
     return KasseSettingsBetrieb(
@@ -323,6 +340,7 @@ class KasseSettingsGeraet {
     this.druckerIp = '',
     this.druckerPort = 9100,
     this.druckerBt = '',
+    this.druckerName = '',
     this.druckerId = '',
     this.druckerDevid = 'local_printer',
     this.papier = KassePapier.mm80,
@@ -350,6 +368,11 @@ class KasseSettingsGeraet {
   final int druckerPort;
   final String druckerBt;
 
+  /// Wie sich der gemerkte Drucker nennt. Ohne ihn stünde in den Einstellungen
+  /// eine nackte Bluetooth-Adresse — daran erkennt niemand sein Gerät wieder,
+  /// und beim nächsten Wechsel sucht man von vorn.
+  final String druckerName;
+
   /// Kennung des Netzwerk-Druckers (Server Direct Print); '' = keiner gewählt.
   final String druckerId;
 
@@ -362,6 +385,9 @@ class KasseSettingsGeraet {
   final KasseLadeAuto ladeAuto;
   final String terminalIp;
   final int terminalPort;
+
+  /// Siehe [KasseSettingsBetrieb.mit].
+  KasseSettingsGeraet mit(Map<String, dynamic> aenderung) => _mit(aenderung);
 
   KasseSettingsGeraet _mit(Map<String, dynamic> g) {
     return KasseSettingsGeraet(
@@ -376,6 +402,7 @@ class KasseSettingsGeraet {
       druckerIp: _text(g['druckerIp'], druckerIp),
       druckerPort: _ganz(g['druckerPort'], 1, 65535, druckerPort),
       druckerBt: _text(g['druckerBt'], druckerBt),
+      druckerName: _text(g['druckerName'], druckerName),
       druckerId: _text(g['druckerId'], druckerId),
       druckerDevid: _text(g['druckerDevid'], druckerDevid),
       papier: _enumName(g['papier'], KassePapier.values, papier),
@@ -400,6 +427,7 @@ class KasseSettingsGeraet {
         'druckerIp': druckerIp,
         'druckerPort': druckerPort,
         'druckerBt': druckerBt,
+        'druckerName': druckerName,
         'druckerId': druckerId,
         'druckerDevid': druckerDevid,
         'papier': papier.name,
