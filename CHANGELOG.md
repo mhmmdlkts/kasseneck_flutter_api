@@ -3,6 +3,8 @@
 - `KeckTip.fuer(registerUserId, cents: …)` für den Regelfall, `KeckTip.euro(…)` mit einmaliger Rundung, `KeckTipRecipient` für die Aufteilung auf mehrere.
 - Geprüft wird schon im Client, mit dem Wortlaut des Backends: Betrag als ganze Zahl in Cent > 0, Empfängerliste nicht leer, Summe der Anteile gleich dem Betrag, keine Person zweimal. Ein falscher Betrag verursacht damit keinen Netzweg.
 - `ReceiptType.allowsTip`: nur `standard` und `training`. Ein Storno spiegelt die Positionen des Originals — über den Parameter entstünde beim Zurücknehmen neues Trinkgeld. Ein Beleg nur mit Trinkgeld wird abgelehnt (er hängt an einer Leistung).
+- **Trinkgeld auslesen**: `KasseneckReceipt.tipItems`/`tipCents`/`tip` sowie getrennt `staffTipCents` (durchlaufender Posten — bei Karte der Betrag, der weitergegeben werden muss) und `ownerTipCents` (Entgelt, in `sumCents` enthalten). An der Position: `KasseneckItem.isOwnerTip`, `tipRecipientId`, `tipRecipientName`. Gerechnet wird aus den Positionen, nicht aus dem abgeleiteten `tipCents` des Belegdokuments — signiert sind die Positionen.
+- Nachgewiesen an den Golden-Belegen des JS-Pakets (`rabatt-trinkgeld`, `rabatt-chef-trinkgeld`) und gegen die **echte Demo-Kasse**: Beleg mit Trinkgeld ausstellen, 0-%-Position und Gesamtbetrag prüfen, stornieren — die Spiegelung nimmt das Trinkgeld vorzeichengetreu zurück.
 - Ohne `tip` geht kein Feld hinaus; der Aufruf ist unverändert.
 
 ## 4.19.0

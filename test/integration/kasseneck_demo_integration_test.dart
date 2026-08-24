@@ -10,6 +10,7 @@ import 'package:kasseneck_api/enums/receipt_type.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
+import 'package:kasseneck_api/models/keck_tip.dart';
 
 import 'credentials.dart';
 
@@ -60,6 +61,97 @@ void main() {
       expect(cancel!.receiptType, ReceiptType.cancellation);
       expect(cancel.sumCents, -receipt.sumCents);
     }, timeout: const Timeout(Duration(minutes: 3)));
+
+    test('Trinkgeld kommt als eigene Position zurück (räumt sich selbst auf)',
+        () async {
+      final receipt = await api.sellReceipt(
+        paymentMethod: KeckPaymentMethod.cash,
+        items: [
+          KasseneckItem(
+            name: 'Integrationstest Leistung',
+            quantity: 1,
+            vat: VatRate.vat20,
+            priceCents: 2000,
+          ),
+        ],
+        // Ohne Empfänger: Über den API-Schlüssel ist niemand als
+        // Kassen-Benutzer angemeldet, das Trinkgeld bleibt „nicht zugeordnet".
+        // Genau dieser Fall trifft jede Anbindung ohne Kassen-Sitzung.
+        tip: const KeckTip(cents: 150),
+      );
+
+      expect(receipt, isNotNull);
+      // Der Server baut die Position — der Client hat nur den Betrag geschickt.
+      expect(receipt!.tipItems.length, 1);
+      expect(receipt.tipCents, 150);
+      // Durchlaufender Posten: 0 %, und im Gesamtbetrag enthalten.
+      expect(receipt.tipItems.single.vat.rate, 0);
+      expect(receipt.staffTipCents, 150);
+      expect(receipt.ownerTipCents, 0);
+      expect(receipt.sumCents, 2150);
+      expect(receipt.sig, isNotEmpty);
+      expect(receipt.qr, isNotEmpty);
+
+      final cancel = await api.cancelReceipt(receipt: receipt);
+      expect(cancel, isNotNull);
+      expect(cancel!.receiptType, ReceiptType.cancellation);
+      expect(cancel.sumCents, -receipt.sumCents);
+      // Die Spiegelung nimmt auch das Trinkgeld zurück — sonst bliebe der Topf
+      // der Mitarbeiterin voll, obwohl der Beleg storniert ist.
+      expect(cancel.tipCents, -150);
+    }, timeout: const Timeout(Duration(minutes: 3)));
+
+    test('Trinkgeld an einen Kassen-Benutzer (räumt sich selbst auf)',
+        () async {
+      final receipt = await api.sellReceipt(
+        paymentMethod: KeckPaymentMethod.creditCard,
+        items: [
+          KasseneckItem(
+            name: 'Integrationstest Leistung',
+            quantity: 1,
+            vat: VatRate.vat20,
+            priceCents: 2000,
+          ),
+        ],
+        tip: KeckTip.fuer(creds!.registerUserId!, cents: 200),
+      );
+
+      expect(receipt, isNotNull);
+      expect(receipt!.tipCents, 200);
+      final pos = receipt.tipItems.single;
+      expect(pos.tipRecipientId, creds.registerUserId);
+      expect(pos.tipRecipientName, isNotNull);
+      // Zahlart des Trinkgelds: ohne Angabe die des Belegs.
+      expect(pos.paymentMethod, 'creditCard');
+
+      final cancel = await api.cancelReceipt(receipt: receipt);
+      expect(cancel, isNotNull);
+      expect(cancel!.tipCents, -200);
+    },
+        timeout: const Timeout(Duration(minutes: 3)),
+        skip: creds?.registerUserId == null
+            ? 'registerUserId fehlt in credentials.local.json'
+            : null);
+
+    test('ein abgelehnter Betrag verursacht keinen Beleg', () async {
+      // Die Prüfung liegt im Client — hier steht, dass sie auch scharf ist,
+      // wenn eine echte Kasse dahinterhängt.
+      expect(
+        () => api.sellReceipt(
+          paymentMethod: KeckPaymentMethod.cash,
+          items: [
+            KasseneckItem(
+              name: 'Integrationstest Leistung',
+              quantity: 1,
+              vat: VatRate.vat20,
+              priceCents: 2000,
+            ),
+          ],
+          tip: const KeckTip(cents: 0),
+        ),
+        throwsArgumentError,
+      );
+    }, timeout: const Timeout(Duration(minutes: 1)));
 
     test('ungültiger API-Key → sauberer Serverfehler, kein Crash', () async {
       final bad = KasseneckApi(

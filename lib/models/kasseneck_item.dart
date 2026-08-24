@@ -50,6 +50,26 @@ class KasseneckItem {
   /// Rabatt-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
   bool get isDiscount => kind == 'discount';
 
+  /// Trinkgeld an den Inhaber? Dann ist es Entgelt (§ 4 UStG) und traegt den
+  /// Steuersatz der Leistung; Trinkgeld an Mitarbeiter ist durchlaufender
+  /// Posten mit 0 % (Erlass 2.4.6 / 2.4.2.1). Der Vermerk ist eine
+  /// Momentaufnahme vom Belegzeitpunkt — aendert sich das `inhaber`-Flag der
+  /// Person spaeter, wirkt das nicht zurueck.
+  bool get isOwnerTip => isTip && recipient?['owner'] == true;
+
+  /// Kassen-Benutzer, dem diese Trinkgeld-Position zusteht — `null`, wenn
+  /// keiner angegeben war („nicht zugeordnet").
+  String? get tipRecipientId {
+    final id = recipient?['registerUserId'];
+    return id is String && id.isNotEmpty ? id : null;
+  }
+
+  /// Name des Empfaengers, wie er beim Ausstellen galt (Momentaufnahme).
+  String? get tipRecipientName {
+    final name = recipient?['name'];
+    return name is String && name.isNotEmpty ? name : null;
+  }
+
   /// Komfort-Konstruktor mit Einzelpreis in **Euro**.
   ///
   /// Der Betrag wird genau einmal — hier, an der API-Grenze — auf Cent

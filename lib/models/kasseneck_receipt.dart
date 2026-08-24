@@ -393,4 +393,44 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
 
   /// Summe der eingeloesten Promo-Gutscheine in Euro (Anzeige).
   double get totalPromoVoucherValue => totalPromoVoucherValueCents / 100;
+
+  /// Trinkgeld-Positionen dieses Belegs.
+  ///
+  /// Die Positionen sind die Wahrheit — das Backend fuehrt am Belegdokument
+  /// zwar ein abgeleitetes `tipCents`, gerechnet wird hier aber aus dem, was
+  /// auch signiert wurde.
+  List<KasseneckItem> get tipItems => items.where((item) => item.isTip).toList(growable: false);
+
+  /// Trinkgeld gesamt in **Cent**. Auf einem Storno negativ.
+  int get tipCents {
+    int cents = 0;
+    for (final item in tipItems) {
+      cents += item.totalCents;
+    }
+    return cents;
+  }
+
+  /// Trinkgeld an Mitarbeiter in **Cent** — durchlaufender Posten, kein Umsatz
+  /// des Betriebs. Bei Kartenzahlung ist das der Betrag, der weitergegeben
+  /// werden muss.
+  int get staffTipCents {
+    int cents = 0;
+    for (final item in tipItems) {
+      if (!item.isOwnerTip) cents += item.totalCents;
+    }
+    return cents;
+  }
+
+  /// Trinkgeld an den Inhaber in **Cent** — Entgelt, in [sumCents] und in der
+  /// USt-Bemessung enthalten.
+  int get ownerTipCents {
+    int cents = 0;
+    for (final item in tipItems) {
+      if (item.isOwnerTip) cents += item.totalCents;
+    }
+    return cents;
+  }
+
+  /// Trinkgeld gesamt in Euro (Anzeige — fuer Arithmetik [tipCents] nutzen).
+  double get tip => tipCents / 100;
 }
