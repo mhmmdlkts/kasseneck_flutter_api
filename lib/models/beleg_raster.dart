@@ -10,7 +10,7 @@
 ///   innerhalb der Breite, Leerzeichen fällt weg; ohne Leerzeichen hart).
 /// - Trennlinie über die volle Breite, Leerraum als Leerzeilen, QR als eigene
 ///   Zeile mit Nutzlast (der Zeichner setzt das Bild).
-/// Die Golden-Dateien `test/fixtures/belege/erwartet/*.grid32.txt|grid48.txt`
+/// Die Golden-Dateien `test/fixtures/vertrag/erwartet/*.grid32.txt|grid48.txt`
 /// des JS-Pakets halten beide Seiten zeichengenau gleich.
 library;
 
