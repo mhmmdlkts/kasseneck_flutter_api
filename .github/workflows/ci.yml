@@ -19,6 +19,24 @@ jobs:
       - name: pub get
         run: flutter pub get
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Die Kopie unter test/fixtures/vertrag/ ist die Grundlage aller
+      # Zwillingsprüfungen. Geschrieben wird sie nur von
+      # `tool/zwillinge.sh ziehen` — hier wird byteweise bewiesen, dass sie
+      # das veröffentlichte Paket ist und nicht von Hand nachgebessert wurde.
+      - name: Vertrag — ist die Kopie echt?
+        run: tool/zwillinge.sh pruefen
+
+      # Sichtbar machen, was noch aussteht: jede Zeile ist ein benannter
+      # Eintrag mit Issue-Nummer in zwillinge.yaml.
+      - name: Offene Zwillings-Einträge
+        run: |
+          offen=$(grep -c 'art: offen' zwillinge.yaml || true)
+          echo "Offene Einträge gegenüber dem JS-Paket: $offen"
+
       - name: Analyze
         run: flutter analyze
 

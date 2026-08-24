@@ -1,3 +1,12 @@
+## 4.21.0
+- **Zwillingsprüfung**: Das Paket prüft sich gegen den Vertrag des JS-Pakets `@kreiseck/kasseneck-api` (angeheftete Version in `zwillinge.yaml`). Die Vertragsdateien werden mit `tool/zwillinge.sh ziehen` geholt und nie von Hand geändert; die CI vergleicht die Kopie byteweise mit dem veröffentlichten Tarball.
+- Vier Prüfungen in `flutter test`: Standardwerte, Enum-Werte (jeder Wert muss das Einlesen überstehen), Rechte-Schlüssel (kein Schlüssel darf im Auffangbecken landen) und Aufrufnamen. Was fehlt, muss in `zwillinge.yaml` benannt werden — dauerhaft mit Grund oder als offene Schuld mit Issue-Nummer.
+- Damit sind **31 Lücken** benannt, die dieses Paket bisher stillschweigend hatte: 20 Enum-Werte, 5 Aufrufe, 6 Tasten-Aktionen. Alle stehen als `art: offen` mit Issue-Nummer in `zwillinge.yaml` (#22 bis #26); die CI schreibt bei jedem Lauf, wie viele es noch sind.
+- **Vorgabefarbe ist `#116B6B`** (Petrol aus der Markenpalette) — betrifft Betriebe ohne eigene Farbe.
+- **`belegAusgabe` steht standardmäßig auf `fragen`**: die Fertig-Seite bietet QR und Bon an, wie Backend und Browser-Kasse es längst tun.
+- Die Aufrufnamen stehen als Konstanten in `Aufrufe` an einer Stelle.
+- Zwei Standardwerte weichen weiterhin ab und sind in `test/kasse_einstellungen_test.dart` namentlich ausgenommen: die Tastenbelegung `tasten` (Issue #25) und `terminalPort` (Issue #23).
+
 ## 4.20.0
 - **Trinkgeld am Beleg** (`models/keck_tip.dart`): `sellReceipt(tip: …)` reicht Betrag, Zahlart und Empfänger an `createReceipt` durch; die Positionen baut das Backend (`tip-core`). Absicht: Ob ein Anteil Entgelt ist (Inhaber, anteilig auf die Steuersätze der Warenpositionen) oder durchlaufender Posten mit 0 % (Mitarbeiter, Erlass 2.4.6/2.4.2.1), entscheidet dort das `inhaber`-Flag des Kassen-Benutzers — der Aufrufer schickt für beide dasselbe.
 - `KeckTip.fuer(registerUserId, cents: …)` für den Regelfall, `KeckTip.euro(…)` mit einmaliger Rundung, `KeckTipRecipient` für die Aufteilung auf mehrere.
