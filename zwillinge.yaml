@@ -44,9 +44,17 @@ ausnahmen:
     issue: 22
 
   # ---- Issue #23: Druckweg connect und Terminal-Anbindung ----
-  # Kasseneck Connect als vierter Druckweg, dazu terminalVia/terminalArt/
-  # terminalTid. Ein auf "connect" gestelltes Gerät druckt hier heute anders
-  # als eingestellt.
+  # Kasseneck Connect als vierter Druckweg, dazu die vier Felder
+  # connectDruckerId, terminalVia, terminalArt und terminalTid. Ein auf
+  # "connect" gestelltes Gerät druckt hier heute anders als eingestellt — und
+  # ohne connectDruckerId wüsste es selbst dann nicht, welcher Drucker am
+  # Helfer gemeint ist.
+  #
+  # Die Felder selbst tragen unten keine eigene Zeile: aufgezählt sind hier
+  # die WERTE, die der Vertrag führt und dieses Paket nicht, und ein Feld ohne
+  # Aufzählung hat keine. Aufgeschrieben sein müssen sie trotzdem —
+  # connectDruckerId war eine Zeitlang weder hier noch in einer Wertezeile
+  # genannt und damit die einzige Lücke, die nur im Issue stand.
   - eintrag: enums.druckerArt.connect
     art: offen
     issue: 23
