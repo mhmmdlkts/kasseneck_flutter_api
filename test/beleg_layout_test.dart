@@ -11,11 +11,11 @@ import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:kasseneck_api/widgets/keck_receipt_lines_widget.dart';
 
-/// Golden-Belege des JS-Pakets `@kreiseck/kasseneck-api` (fixtures/): Kopien
-/// unter test/fixtures/belege. Das Manifest traegt die Pruefsummen; weichen die
-/// Kopien ab, ist die Kopie veraltet -- dann `fixtures` aus dem JS-Paket neu
-/// uebernehmen. So zeigen App, Bondrucker, Browser-Kasse und PDF dieselben Zeilen.
-final _wurzel = Directory('test/fixtures/belege');
+/// Golden-Belege des JS-Pakets `@kreiseck/kasseneck-api`, gezogen nach
+/// test/fixtures/vertrag (siehe zwillinge.yaml und tool/zwillinge.sh). Die
+/// Kopie wird nie von Hand geändert; die CI vergleicht sie mit dem
+/// veröffentlichten Tarball.
+final _wurzel = Directory('test/fixtures/vertrag');
 
 Map<String, dynamic> _json(String pfad) => jsonDecode(File(pfad).readAsStringSync()) as Map<String, dynamic>;
 

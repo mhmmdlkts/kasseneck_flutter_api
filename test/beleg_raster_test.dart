@@ -9,7 +9,7 @@ import 'package:kasseneck_api/models/beleg_raster.dart';
 /// jede Golden-Fixture muss der Klartext zeichengenau den `grid32.txt` und
 /// `grid48.txt` des Pakets entsprechen. Damit setzen App-Druck, Kasse,
 /// Backend-PDF und Labor exakt dieselben Zeilen.
-final _wurzel = Directory('test/fixtures/belege');
+final _wurzel = Directory('test/fixtures/vertrag');
 
 void main() {
   final manifest = jsonDecode(File('${_wurzel.path}/manifest.json').readAsStringSync()) as Map<String, dynamic>;

@@ -51,7 +51,22 @@
     "rueckgeld": true,
     "schnellbar": false,
     "kassierenModus": "seite",
-    "belegAusgabe": "qr",
+    "logoBild": "",
+    "wzSeite": "mitte",
+    "wzPos": 50,
+    "wzPosV": 50,
+    "wzStaerke": 6,
+    "logoSkala": "M",
+    "wzSkala": "M",
+    "glas": true,
+    "hinweise": true,
+    "rabattChips": [
+      5,
+      10,
+      15,
+      20
+    ],
+    "belegAusgabe": "fragen",
     "fertigSekunden": 0
   },
   "geraet": {
@@ -71,7 +86,7 @@
         "Escape"
       ],
       "frei": [
-        "Mod+F"
+        "Mod+D"
       ],
       "bar": [
         "Mod+B"
@@ -83,10 +98,28 @@
         "Mod+P"
       ],
       "belege": [
-        "Mod+E"
+        "Mod+J"
       ],
       "letzteZurueck": [
         "Mod+Backspace"
+      ],
+      "einstellungen": [
+        "Mod+S"
+      ],
+      "abmelden": [
+        "Mod+L"
+      ],
+      "trinkgeld": [
+        "Mod+G"
+      ],
+      "vollbild": [
+        "Mod+F"
+      ],
+      "gegebenLeeren": [
+        "Mod+C"
+      ],
+      "korbLeeren": [
+        "Mod+C"
       ]
     },
     "druckerAn": false,
@@ -97,12 +130,17 @@
     "druckerName": "",
     "druckerId": "",
     "druckerDevid": "local_printer",
+    "connectDruckerId": "",
     "papier": "mm80",
     "zeichensatz": "CP1252",
     "schnitt": "partial",
     "ladeAn": false,
     "ladeAuto": "bar",
     "terminalIp": "",
-    "terminalPort": 20008
+    "terminalPort": 8080,
+    "terminalVia": "direkt",
+    "terminalArt": "keins",
+    "terminalTid": "",
+    "tastenMarken": true
   }
 }

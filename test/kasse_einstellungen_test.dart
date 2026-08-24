@@ -10,7 +10,7 @@ import 'package:kasseneck_api/kasse.dart';
 /// weicht sie ab, steht am Tresen ein Schalter anders als im Panel.
 
 Map<String, dynamic> golden() => jsonDecode(
-      File('test/fixtures/kasse/kasse-settings-standard.json').readAsStringSync(),
+      File('test/fixtures/vertrag/kasse-settings-standard.json').readAsStringSync(),
     ) as Map<String, dynamic>;
 
 void main() {

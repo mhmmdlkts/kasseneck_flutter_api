@@ -1,0 +1,16 @@
+# Woran dieses Paket geprüft wird.
+#
+# Das npm-Paket @kreiseck/kasseneck-api ist die Quelle: es gibt in fixtures/
+# zwei Beschreibungsdateien aus (Standardwerte, Oberfläche), die im
+# veröffentlichten Tarball mitreisen. Dieses Repo hält eine Kopie unter
+# test/fixtures/vertrag/, damit `flutter test` ohne Netz vollständig ist — die
+# CI beweist byteweise, dass die Kopie echt ist.
+#
+# Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
+# Der Testlauf sagt dann genau, was fehlt.
+npm_version: 0.6.45
+
+# Was dieses Paket bewusst NICHT hat. Zwei Arten:
+#   nicht_zutreffend — dauerhaft, braucht einen Grund
+#   offen            — Schuld, braucht eine Issue-Nummer
+ausnahmen: []
