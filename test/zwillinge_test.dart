@@ -5,6 +5,12 @@
 /// Vier Prüfungen, absichtlich unterschiedlich streng — jede sagt selbst, was
 /// sie beweist und was nicht. Was hier fehlschlägt, muss entweder nachgebaut
 /// oder in zwillinge.yaml benannt werden; stillschweigend abweichen geht nicht.
+///
+/// **Die Richtung ist nur eine:** geprüft wird Vertrag ⊆ Paket — jeder Eintrag
+/// des Zwillings muss hier ankommen. Der umgekehrte Weg bleibt ungeprüft: was
+/// dieses Paket zusätzlich führt und der Vertrag nicht kennt, fällt nicht auf
+/// (`Aufrufe.getReportV2` etwa). Das ist so gewollt — das Dart-Paket darf mehr
+/// können —, aber wer hier nach einem Zuviel sucht, sucht vergeblich.
 library;
 
 import 'dart:convert';
@@ -47,30 +53,48 @@ Set<String> _ausnahmen() {
   return erlaubt;
 }
 
-void main() {
-  final vertrag = _vertrag();
-  final ausnahmen = _ausnahmen();
+/// Die Funde einer einzelnen Prüfung — gesammelt statt sofort gemeldet, weil
+/// eine Prüfung, die beim ersten Fund abbricht, alles Dahinterliegende
+/// verdeckt. Der rote Lauf soll die vollständige Arbeitsliste sein.
+///
+/// Zwei Vorkehrungen, beide gegen denselben Fehler — eine Prüfung, die grün
+/// meldet und nichts hält:
+///   * Eigene Liste je Prüfung. Eine geteilte würde Funde einer abgebrochenen
+///     Schleife unter der Überschrift der nächsten Prüfung auftauchen lassen.
+///   * [addTearDown] prüft am Ende jedes Tests, dass nichts Gesammeltes liegen
+///     blieb. Wer [melden] vergisst, bekommt rot statt eines stillen Grüns.
+class _Funde {
+  _Funde(this._ausnahmen) {
+    addTearDown(() {
+      expect(_liste, isEmpty,
+          reason: 'Diese Prüfung hat Abweichungen gesammelt und nie gemeldet — '
+              'der Aufruf von melden() am Ende fehlt');
+    });
+  }
 
-  // Gesammelt statt sofort: eine Prüfung, die beim ersten Fund abbricht,
-  // verdeckt alles Dahinterliegende. Der rote Lauf soll aber die vollständige
-  // Arbeitsliste sein, nicht ein einzelner Hinweis.
-  final luecken = <String>[];
+  final Set<String> _ausnahmen;
+  final List<String> _liste = [];
 
   void fehltNicht(String eintrag, bool vorhanden, String was) {
-    if (vorhanden || ausnahmen.contains(eintrag)) return;
-    luecken.add('$was fehlt in diesem Paket und steht nicht in zwillinge.yaml '
+    if (vorhanden || _ausnahmen.contains(eintrag)) return;
+    _liste.add('$was fehlt in diesem Paket und steht nicht in zwillinge.yaml '
         '— Eintrag: $eintrag');
   }
 
   /// Am Ende jeder Prüfung: alles Gefundene auf einmal melden.
-  void ergebnis() {
-    if (luecken.isEmpty) return;
-    final gefunden = List<String>.from(luecken);
-    luecken.clear();
+  void melden() {
+    if (_liste.isEmpty) return;
+    final gefunden = List<String>.from(_liste);
+    _liste.clear();
     fail('${gefunden.length} Abweichung(en) gegenüber dem Vertrag. Entweder '
         'nachbauen oder als Ausnahme in zwillinge.yaml benennen:\n'
         '${gefunden.join('\n')}');
   }
+}
+
+void main() {
+  final vertrag = _vertrag();
+  final ausnahmen = _ausnahmen();
 
   test('Vertrag und Anheftung nennen dieselbe Version', () {
     final doc = loadYaml(File('zwillinge.yaml').readAsStringSync()) as YamlMap;
@@ -85,8 +109,23 @@ void main() {
     // zurueck — und genau das sieht der Test. Woran die Pruefung scheitert:
     // an einem Wert, den `KasseSettings.aus` verwirft, und an einem Feld, das
     // es hier ueberhaupt nicht gibt (dann kommt gar nichts zurueck).
+    //
+    // Ihr blinder Fleck: je Feld genau ein Wert — der Dart-Standard. Faellt der
+    // Parser auf den Standard zurueck, ist das Ergebnis fuer diesen einen Wert
+    // nicht von echtem Einlesen zu unterscheiden (`druckerArt.sdp`,
+    // `stil.klar`, `autoAbMin.0`). Ein kaputter Parser bliebe dort unentdeckt;
+    // alle uebrigen Werte des Feldes wuerden ihn verraten.
     test('jeder Wert des Vertrags übersteht das Einlesen', () {
+      final funde = _Funde(ausnahmen);
       final enums = vertrag['enums'] as Map<String, dynamic>;
+      // Annahme, kein Beweis: welches Feld in welchem Teil steht. Fuer Felder,
+      // die es hier noch gar nicht gibt (logoSkala, wzSkala, wzSeite,
+      // wzStaerke -> betrieb; terminalArt, terminalVia -> geraet), nimmt diese
+      // Liste die kuenftige Zuordnung vorweg. Baut ein spaeterer Task eines
+      // davon in den anderen Teil, bleibt die Pruefung rot, obwohl die
+      // Umsetzung stimmt — dann gehoert die Zuordnung hier korrigiert, nicht
+      // die Umsetzung. Gefaehrlich ist das nicht: es entsteht hoechstens ein
+      // falscher Roter, nie ein falscher Gruener.
       const betriebsfelder = {
         'stil', 'schrift', 'wasserzeichen', 'menge', 'tgModus', 'kassierenModus',
         'kartenanbieter', 'belegAusgabe',
@@ -104,10 +143,10 @@ void main() {
             teil: {feld: wert},
           }).toJson();
           final zurueck = (gelesen[teil] as Map)[feld];
-          fehltNicht('enums.$feld.$wert', zurueck == wert, 'Der Wert "$wert" für $feld');
+          funde.fehltNicht('enums.$feld.$wert', zurueck == wert, 'Der Wert "$wert" für $feld');
         }
       }
-      ergebnis();
+      funde.melden();
     });
   });
 
@@ -116,13 +155,14 @@ void main() {
     // NICHT als gekannt: die Oberflaeche kann ihn dann nicht abfragen. Woran
     // die Pruefung scheitert: an genau diesem Fall.
     test('kein Schlüssel des Vertrags landet im Auffangbecken', () {
+      final funde = _Funde(ausnahmen);
       final rechte = (vertrag['rechte'] as List).cast<String>();
       final roh = <String, dynamic>{for (final r in rechte) r: r.endsWith('Scope') ? 'all' : true};
       final perms = RegisterUserPerms.aus(roh);
       for (final r in rechte) {
-        fehltNicht('rechte.$r', !perms.weitere.containsKey(r), 'Das Recht "$r"');
+        funde.fehltNicht('rechte.$r', !perms.weitere.containsKey(r), 'Das Recht "$r"');
       }
-      ergebnis();
+      funde.melden();
     });
   });
 
@@ -131,10 +171,11 @@ void main() {
     // nicht dass der Aufruf funktioniert. Trotzdem findet sie genau das, was
     // ein Wertevergleich nie findet — einen Aufruf, den es hier gar nicht gibt.
     test('jeder Aufruf des Vertrags ist hier bekannt', () {
+      final funde = _Funde(ausnahmen);
       for (final name in (vertrag['aufrufe'] as List).cast<String>()) {
-        fehltNicht('aufrufe.$name', Aufrufe.alle.contains(name), 'Der Aufruf "$name"');
+        funde.fehltNicht('aufrufe.$name', Aufrufe.alle.contains(name), 'Der Aufruf "$name"');
       }
-      ergebnis();
+      funde.melden();
     });
   });
 
@@ -143,11 +184,12 @@ void main() {
     // zuordnen kann und dieses Paket nicht — die Belegung waere dann nicht
     // uebertragbar.
     test('jede Aktion des Vertrags ist hier bekannt', () {
+      final funde = _Funde(ausnahmen);
       for (final aktion in (vertrag['tastenAktionen'] as List).cast<String>()) {
-        fehltNicht('tastenAktionen.$aktion', kasseTastenAktionen.contains(aktion),
+        funde.fehltNicht('tastenAktionen.$aktion', kasseTastenAktionen.contains(aktion),
             'Die Tasten-Aktion "$aktion"');
       }
-      ergebnis();
+      funde.melden();
     });
   });
 
