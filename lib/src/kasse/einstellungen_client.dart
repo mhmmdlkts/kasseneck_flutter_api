@@ -10,6 +10,7 @@
 /// Gespeichertes. Die Kasse bekommt nie ein halbes Bild.
 library;
 
+import '../aufrufe.dart';
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'einstellungen.dart';
@@ -26,7 +27,7 @@ class KasseEinstellungenClient {
   /// gemischt.
   Future<KasseSettings> laden() async {
     final daten = await transport.rufen(
-      'getKasseSettings',
+      Aufrufe.getKasseSettings,
       params: {if (deviceId.trim().isNotEmpty) 'deviceId': deviceId},
     );
     return KasseSettings.aus(daten);
@@ -34,7 +35,7 @@ class KasseEinstellungenClient {
 
   /// Betriebsweite Einstellungen schreiben (Recht `layout`).
   Future<KasseSettingsBetrieb> betriebSpeichern(Map<String, dynamic> aenderung) async {
-    const name = 'setMyKasseSettings';
+    const name = Aufrufe.setMyKasseSettings;
     _nichtLeer(name, aenderung);
     final daten = await transport.rufen(name, params: {'betrieb': aenderung});
     return KasseSettings.aus({'betrieb': daten['betrieb']}).betrieb;
@@ -42,7 +43,7 @@ class KasseEinstellungenClient {
 
   /// Einstellungen dieses Geräts schreiben (Recht `layout`).
   Future<KasseSettingsGeraet> geraetSpeichern(Map<String, dynamic> aenderung) async {
-    const name = 'setMyRegisterDeviceSettings';
+    const name = Aufrufe.setMyRegisterDeviceSettings;
     if (deviceId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'deviceId fehlt', 'request');
     }

@@ -20,6 +20,7 @@ library;
 import '../../enums/keck_payment_method.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
+import '../aufrufe.dart';
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'artikel.dart';
@@ -183,7 +184,7 @@ class RegisterReceiptClient {
     String? kartenzahlungId,
     Map<String, dynamic>? kartenzahlungsdaten,
   }) async {
-    const name = 'createReceipt';
+    const name = Aufrufe.createReceipt;
     if (positionen.isEmpty) {
       // Ein leerer Verkauf ist kein Verkauf — und der Fehler soll fallen,
       // bevor irgendetwas in die Signaturkette gerät.
@@ -218,7 +219,7 @@ class RegisterReceiptClient {
   /// [von] und [bis] sind Wiener Kalendertage (`YYYY-MM-DD`); der Server
   /// deckelt das Fenster auf 90 Tage und die Anzahl auf 200.
   Future<List<Belegzusammenfassung>> auflisten({String? von, String? bis, int? hoechstens}) async {
-    const name = 'listMyReceipts';
+    const name = Aufrufe.listMyReceipts;
     for (final (feld, wert) in [('von', von), ('bis', bis)]) {
       if (wert != null && !RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(wert)) {
         throw KasseneckValidationError(name, '$feld muss mit YYYY-MM-DD beginnen', 'request');
@@ -253,7 +254,7 @@ class RegisterReceiptClient {
 
   /// Einen Beleg vollständig holen — samt Belegkopf, für Nachdruck und Storno.
   Future<KasseneckReceipt> holen(String receiptId) async {
-    const name = 'getReceipt';
+    const name = Aufrufe.getReceipt;
     if (receiptId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'receiptId fehlt', 'request');
     }
@@ -275,7 +276,7 @@ class RegisterReceiptClient {
     String? anmerkung,
     KeckPaymentMethod? zahlungsart,
   }) async {
-    const name = 'cancelReceipt';
+    const name = Aufrufe.cancelReceipt;
     if (originalReceiptId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'originalReceiptId fehlt', 'request');
     }
@@ -324,10 +325,10 @@ class RegisterReceiptClient {
 
   /// Artikelgruppen (Kategorien der Kachel-Kasse).
   Future<List<Artikelgruppe>> artikelgruppen() async =>
-      _liste('listMyArticleGroups', 'groups', Artikelgruppe.aus);
+      _liste(Aufrufe.listMyArticleGroups, 'groups', Artikelgruppe.aus);
 
   /// Artikel in der Form, die die Kacheln brauchen.
-  Future<List<KasseArtikel>> artikel() async => _liste('listMyArticles', 'articles', KasseArtikel.aus);
+  Future<List<KasseArtikel>> artikel() async => _liste(Aufrufe.listMyArticles, 'articles', KasseArtikel.aus);
 
   Future<List<T>> _liste<T>(String name, String feld, T Function(Map<String, dynamic>) lesen) async {
     final daten = await transport.rufen(name);
