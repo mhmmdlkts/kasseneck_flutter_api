@@ -31,11 +31,10 @@ jobs:
         run: tool/zwillinge.sh pruefen
 
       # Sichtbar machen, was noch aussteht: jede Zeile ist ein benannter
-      # Eintrag mit Issue-Nummer in zwillinge.yaml.
+      # Eintrag mit Issue-Nummer in zwillinge.yaml. Gezählt wird geparst statt
+      # gegrept und über beide Abschnitte — siehe tool/offene_eintraege.dart.
       - name: Offene Zwillings-Einträge
-        run: |
-          offen=$(grep -c 'art: offen' zwillinge.yaml || true)
-          echo "Offene Einträge gegenüber dem JS-Paket: $offen"
+        run: dart run tool/offene_eintraege.dart
 
       - name: Analyze
         run: flutter analyze

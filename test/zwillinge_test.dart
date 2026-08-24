@@ -20,38 +20,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/kasse.dart';
 import 'package:kasseneck_api/src/aufrufe.dart';
 import 'package:kasseneck_api/src/register/pairing.dart';
-import 'package:yaml/yaml.dart';
+
+import 'zwillinge_liste.dart';
 
 Map<String, dynamic> _vertrag() => jsonDecode(
       File('test/fixtures/vertrag/oberflaeche.json').readAsStringSync(),
     ) as Map<String, dynamic>;
-
-/// Die benannten Abweichungen. Ein Eintrag ohne Grund bzw. ohne Issue ist ein
-/// Fehler — sonst wird die Liste zum Ablageort für Unerledigtes.
-Set<String> _ausnahmen() {
-  final doc = loadYaml(File('zwillinge.yaml').readAsStringSync()) as YamlMap;
-  final liste = (doc['ausnahmen'] as YamlList?) ?? YamlList();
-  final erlaubt = <String>{};
-  for (final e in liste) {
-    final m = e as YamlMap;
-    final eintrag = m['eintrag'] as String?;
-    final art = m['art'] as String?;
-    if (eintrag == null || art == null) {
-      fail('Ausnahme ohne "eintrag" oder "art" in zwillinge.yaml: $e');
-    }
-    if (art == 'nicht_zutreffend' && (m['grund'] as String?)?.isNotEmpty != true) {
-      fail('Ausnahme "$eintrag" ist nicht_zutreffend, nennt aber keinen Grund');
-    }
-    if (art == 'offen' && m['issue'] == null) {
-      fail('Ausnahme "$eintrag" ist offen, nennt aber keine Issue-Nummer');
-    }
-    if (art != 'nicht_zutreffend' && art != 'offen') {
-      fail('Ausnahme "$eintrag" hat unbekannte art "$art"');
-    }
-    erlaubt.add(eintrag);
-  }
-  return erlaubt;
-}
 
 /// Die Funde einer einzelnen Prüfung — gesammelt statt sofort gemeldet, weil
 /// eine Prüfung, die beim ersten Fund abbricht, alles Dahinterliegende
@@ -63,6 +37,10 @@ Set<String> _ausnahmen() {
 ///     Schleife unter der Überschrift der nächsten Prüfung auftauchen lassen.
 ///   * [addTearDown] prüft am Ende jedes Tests, dass nichts Gesammeltes liegen
 ///     blieb. Wer [melden] vergisst, bekommt rot statt eines stillen Grüns.
+///
+/// [fehltNicht] sieht in **beide** Richtungen: eine Lücke ohne Eintrag ist ein
+/// Fehler, ein Eintrag ohne Lücke aber auch. Sonst bliebe die Ausnahmeliste
+/// stehen, nachdem die Arbeit getan ist, und die Zahl in der CI sänke nie.
 class _Funde {
   _Funde(this._ausnahmen) {
     addTearDown(() {
@@ -72,11 +50,20 @@ class _Funde {
     });
   }
 
-  final Set<String> _ausnahmen;
+  final Map<String, Ausnahme> _ausnahmen;
   final List<String> _liste = [];
 
   void fehltNicht(String eintrag, bool vorhanden, String was) {
-    if (vorhanden || _ausnahmen.contains(eintrag)) return;
+    final ausnahme = _ausnahmen[eintrag];
+    if (vorhanden) {
+      if (ausnahme != null) {
+        _liste.add('$was gibt es hier — die Lücke ist geschlossen, die Ausnahme '
+            'steht aber weiter in zwillinge.yaml (${ausnahme.beleg}) und '
+            'gehört gestrichen — Eintrag: $eintrag');
+      }
+      return;
+    }
+    if (ausnahme != null) return;
     _liste.add('$was fehlt in diesem Paket und steht nicht in zwillinge.yaml '
         '— Eintrag: $eintrag');
   }
@@ -86,19 +73,19 @@ class _Funde {
     if (_liste.isEmpty) return;
     final gefunden = List<String>.from(_liste);
     _liste.clear();
-    fail('${gefunden.length} Abweichung(en) gegenüber dem Vertrag. Entweder '
-        'nachbauen oder als Ausnahme in zwillinge.yaml benennen:\n'
+    fail('${gefunden.length} Punkt(e) zwischen Vertrag, Paket und '
+        'zwillinge.yaml. Was fehlt, gehört nachgebaut oder benannt; was nicht '
+        'mehr fehlt, gehört aus der Liste gestrichen:\n'
         '${gefunden.join('\n')}');
   }
 }
 
 void main() {
   final vertrag = _vertrag();
-  final ausnahmen = _ausnahmen();
+  final ausnahmen = ausnahmenAus('ausnahmen');
 
   test('Vertrag und Anheftung nennen dieselbe Version', () {
-    final doc = loadYaml(File('zwillinge.yaml').readAsStringSync()) as YamlMap;
-    expect(vertrag['version'], doc['npm_version'],
+    expect(vertrag['version'], zwillingeDoc()['npm_version'],
         reason: 'zwillinge.yaml zeigt auf eine andere Version als die gezogene Kopie — '
             'tool/zwillinge.sh ziehen');
   });
@@ -193,9 +180,11 @@ void main() {
     });
   });
 
-  test('keine Ausnahme ohne Gegenstück — erledigte Einträge fliegen raus', () {
-    // Sonst bleibt die Liste stehen, nachdem die Luecke geschlossen wurde, und
-    // behauptet Schulden, die es nicht mehr gibt.
+  test('keine Ausnahme ohne Gegenstück im Vertrag', () {
+    // Zweite Hälfte des Aufräumens: hier faellt auf, wenn der Vertrag einen
+    // Eintrag gar nicht mehr kennt (das JS-Paket hat ihn abgeschafft). Dass
+    // eine Lücke geschlossen wurde und die Zeile trotzdem stehen blieb, findet
+    // die jeweilige Prüfung selbst — siehe _Funde.fehltNicht.
     final alle = <String>{
       for (final e in (vertrag['enums'] as Map<String, dynamic>).entries)
         for (final w in (e.value as List)) 'enums.${e.key}.$w',
@@ -203,7 +192,7 @@ void main() {
       for (final a in (vertrag['aufrufe'] as List)) 'aufrufe.$a',
       for (final t in (vertrag['tastenAktionen'] as List)) 'tastenAktionen.$t',
     };
-    for (final e in ausnahmen) {
+    for (final e in ausnahmen.keys) {
       expect(alle, contains(e),
           reason: 'zwillinge.yaml nennt "$e" — den Eintrag gibt es im Vertrag nicht (mehr)');
     }
