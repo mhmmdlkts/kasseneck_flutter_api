@@ -36,6 +36,21 @@ jobs:
       - name: Offene Zwillings-Einträge
         run: dart run tool/offene_eintraege.dart
 
+      # Der Schritt weiter oben beweist, dass die Kopie zu `npm_version`
+      # gehört — nicht, dass `npm_version` noch aktuell ist. Ohne diesen
+      # Schritt bliebe der Lauf auch dann grün, wenn auf npm längst eine
+      # Version mit neuen Feldern oder Enum-Werten steht: die Kopie wäre echt
+      # und trotzdem veraltet.
+      #
+      # WARNUNG, KEIN TOR — zweifach abgesichert: das Werkzeug endet von sich
+      # aus immer mit 0 (auch ohne Netz), und `continue-on-error` hält den Lauf
+      # selbst dann grün, wenn `dart run` scheitert. Nachgezogen wird von Hand;
+      # eine Veröffentlichung in einem fremden Repository darf den Bau hier
+      # nicht anhalten.
+      - name: Stand der Anheftung (nur Hinweis)
+        continue-on-error: true
+        run: dart run tool/vertrag_stand.dart
+
       - name: Analyze
         run: flutter analyze
 
