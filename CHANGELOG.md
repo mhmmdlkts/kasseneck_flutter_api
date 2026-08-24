@@ -1,3 +1,10 @@
+## 4.20.0
+- **Trinkgeld am Beleg** (`models/keck_tip.dart`): `sellReceipt(tip: …)` reicht Betrag, Zahlart und Empfänger an `createReceipt` durch; die Positionen baut das Backend (`tip-core`). Absicht: Ob ein Anteil Entgelt ist (Inhaber, anteilig auf die Steuersätze der Warenpositionen) oder durchlaufender Posten mit 0 % (Mitarbeiter, Erlass 2.4.6/2.4.2.1), entscheidet dort das `inhaber`-Flag des Kassen-Benutzers — der Aufrufer schickt für beide dasselbe.
+- `KeckTip.fuer(registerUserId, cents: …)` für den Regelfall, `KeckTip.euro(…)` mit einmaliger Rundung, `KeckTipRecipient` für die Aufteilung auf mehrere.
+- Geprüft wird schon im Client, mit dem Wortlaut des Backends: Betrag als ganze Zahl in Cent > 0, Empfängerliste nicht leer, Summe der Anteile gleich dem Betrag, keine Person zweimal. Ein falscher Betrag verursacht damit keinen Netzweg.
+- `ReceiptType.allowsTip`: nur `standard` und `training`. Ein Storno spiegelt die Positionen des Originals — über den Parameter entstünde beim Zurücknehmen neues Trinkgeld. Ein Beleg nur mit Trinkgeld wird abgelehnt (er hängt an einer Leistung).
+- Ohne `tip` geht kein Feld hinaus; der Aufruf ist unverändert.
+
 ## 4.19.0
 
 - `KasseneckItem`: neue optionale Felder `kind` (`'tip'`/`'discount'`), `recipient`, `paymentMethod`, `articleId` — Zwilling von `ReceiptItem` im JS-Paket 0.6.44. Die Kennzeichnungen reisen durch `toJson`/`fromJson` und `negative` (Storno-Spiegelung); Zeilen ohne bleiben schlank.
