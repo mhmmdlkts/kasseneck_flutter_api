@@ -89,7 +89,7 @@ class HpsClient {
       tip: tip,
       forceTip: forceTip,
       reference: reference,
-      transactionId: transactionId ?? _newTransactionId(),
+      transactionId: transactionId ?? newTransactionId(),
       currency: currency,
       language: language,
       transactionType: HpsTransactionType.sale.code,
@@ -109,7 +109,7 @@ class HpsClient {
     final body = _txBody(
       amount: amount,
       reference: reference,
-      transactionId: transactionId ?? _newTransactionId(),
+      transactionId: transactionId ?? newTransactionId(),
       currency: currency,
       language: language,
     );
@@ -166,7 +166,7 @@ class HpsClient {
     final body = _txBody(
       amount: amount,
       reference: reference,
-      transactionId: transactionId ?? _newTransactionId(),
+      transactionId: transactionId ?? newTransactionId(),
       currency: currency,
       language: language,
       originalTransactionId: originalTransactionId,
@@ -234,7 +234,7 @@ class HpsClient {
     final body = _txBody(
       amount: 0,
       reference: reference,
-      transactionId: transactionId ?? _newTransactionId(),
+      transactionId: transactionId ?? newTransactionId(),
       currency: currency,
     );
     return _sendTransaction('POST', 'api/transaction/avt/', body);
@@ -523,7 +523,11 @@ class HpsClient {
   /// 13 Stellen Zeitstempel in Millisekunden, dazu 5 Stellen Zufall. Der
   /// Zeitstempel allein reichte nicht -- zwei Vorgaenge in derselben
   /// Millisekunde bekamen dieselbe Kennung.
-  static String _newTransactionId() {
+  ///
+  /// Oeffentlich, damit ein Aufrufer die Kennung VOR dem Request festlegen
+  /// kann -- ohne das ist sie nach einem Abbruch verloren, und damit sind
+  /// Statusabfrage und Storno unerreichbar.
+  static String newTransactionId() {
     final ms = DateTime.now().millisecondsSinceEpoch.toString();
     final suffix = _idRandom.nextInt(100000).toString().padLeft(5, '0');
     return '$ms$suffix';
