@@ -351,6 +351,53 @@ void main() {
     });
   });
 
+  group('Trinkgeld-Empfaenger laden', () {
+    test('ruft listMyTipRecipients und liest data.recipients', () async {
+      final f = clientMit([
+        {
+          'status': 'success',
+          'data': {
+            'recipients': [
+              {'registerUserId': 'ru_1', 'name': 'Anna', 'owner': false},
+              {'registerUserId': 'ru_2', 'name': 'Chef', 'owner': true},
+            ],
+          },
+        },
+      ]);
+      final personen = await f.client.tipEmpfaenger();
+
+      expect(f.log.single.url.toString(), endsWith('/listMyTipRecipients'));
+      expect(personen.map((p) => p.registerUserId), ['ru_1', 'ru_2']);
+      expect(personen.first.name, 'Anna');
+      // Am Flag haengt die Bezeichnung am Beleg — „Trinkgeld Personal"
+      // (durchlaufender Posten) gegen „Trinkgeld" (Entgelt des Betriebs).
+      expect(personen.first.owner, isFalse);
+      expect(personen.last.owner, isTrue);
+    });
+
+    test('aus der Liste laesst sich der Anteil bauen, ohne die Kennung abzutippen', () async {
+      final f = clientMit([
+        {
+          'status': 'success',
+          'data': {
+            'recipients': [
+              {'registerUserId': 'ru_1', 'name': 'Anna', 'owner': false},
+            ],
+          },
+        },
+      ]);
+      final anteil = (await f.client.tipEmpfaenger()).single.mit(cents: 500);
+
+      expect(anteil.registerUserId, 'ru_1');
+      expect(anteil.cents, 500);
+    });
+
+    test('eine fehlende Liste ist ein Antwortfehler, keine leere Liste', () async {
+      final f = clientMit([{'status': 'success', 'data': {}}]);
+      await expectLater(f.client.tipEmpfaenger(), throwsA(isA<KasseneckValidationError>()));
+    });
+  });
+
   group('einzelnen Beleg holen', () {
     test('holt Beleg samt Firmendaten', () async {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);

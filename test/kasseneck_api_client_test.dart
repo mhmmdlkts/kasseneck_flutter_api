@@ -184,6 +184,55 @@ void main() {
       final api = apiWith(neverCalled());
       expect(api.cashregisterId, 'CASHBOX-9');
     });
+    group('listTipRecipients', () {
+      MockClient empfaengerClient(void Function(http.Request) capture, Object daten) =>
+          MockClient((request) async {
+            capture(request);
+            return http.Response(
+              jsonEncode({'status': 'success', 'data': daten}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          });
+
+      test('ruft listMyTipRecipients und liest data.recipients', () async {
+        late http.Request captured;
+        final api = apiWith(empfaengerClient((r) => captured = r, {
+          'recipients': [
+            {'registerUserId': 'ru_1', 'name': 'Anna', 'owner': false},
+            {'registerUserId': 'ru_2', 'name': 'Chef', 'owner': true},
+          ],
+        }));
+
+        final personen = await api.listTipRecipients();
+
+        expect(captured.url.toString(), 'https://api.kasseneck.at/v1/listMyTipRecipients');
+        expect(captured.headers['Authorization'], 'Bearer test-key');
+        expect(personen.map((p) => p.registerUserId), ['ru_1', 'ru_2']);
+        expect(personen.first.name, 'Anna');
+        // Am Flag haengt die steuerliche Behandlung; es darf nicht verloren gehen.
+        expect(personen.first.owner, isFalse);
+        expect(personen.last.owner, isTrue);
+      });
+
+      test('aus der Liste laesst sich der Anteil bauen', () async {
+        final api = apiWith(empfaengerClient((_) {}, {
+          'recipients': [
+            {'registerUserId': 'ru_1', 'name': 'Anna', 'owner': false},
+          ],
+        }));
+
+        final anteil = (await api.listTipRecipients()).single.mit(cents: 500);
+
+        expect(anteil.registerUserId, 'ru_1');
+        expect(anteil.cents, 500);
+      });
+
+      test('fehlende Liste -> Exception, keine leere Liste', () async {
+        final api = apiWith(empfaengerClient((_) {}, <String, dynamic>{}));
+        await expectLater(api.listTipRecipients(), throwsA(isA<Exception>()));
+      });
+    });
     test('newHobexTransactionId: 19 Zeichen, rein numerisch', () {
       final id = KasseneckApi.newHobexTransactionId();
       expect(id.length, 19);
