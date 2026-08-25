@@ -11,6 +11,7 @@ import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
+import 'package:kasseneck_api/services/vienna_time.dart';
 
 import 'helpers/test_receipts.dart';
 
@@ -207,20 +208,23 @@ void main() {
       pruefe('volle Stellen', DateTime(2026, 12, 31, 23, 59, 59, 999, 999));
     });
 
-    test('newHobexTransactionId: Zeitpunkt steht in den ersten 18 Stellen', () {
+    test('newHobexTransactionId: Zeitanteil in den ersten 15, Zufall in den letzten 4 Stellen', () {
       final id = KasseneckApi.newHobexTransactionId(
-          zeitpunkt: DateTime(2026, 1, 2, 3, 4, 5, 6, 7));
-      expect(id.substring(0, 18), '260102030405006007');
-      expect(int.parse(id.substring(18)), inInclusiveRange(1, 9));
+          zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0));
+      expect(id.substring(0, 15), '260102030405000');
+      expect(int.parse(id.substring(15)), inInclusiveRange(0, 9999));
+      expect(id.substring(15).length, 4, reason: 'der Zufallsanteil ist immer vierstellig');
     });
 
-    test('newHobexTransactionId: Format unveraendert gegenueber der bisherigen Bildung', () {
-      // Bisherige Bildung, wortgleich: aus DateTime.toString() alle Trenner
-      // heraus, die Jahrhundertziffern weg. Sie stimmt fuer jeden Zeitpunkt mit
-      // Mikrosekunden != 0 -- also ueberall dort, wo sie frueher nicht abstuerzte.
+    test('newHobexTransactionId: Zeitanteil folgt der Wiener Wanduhrzeit ueber 500 Zeitpunkte', () {
+      // Der Zeitanteil ist die Wiener Wanduhrzeit des Zeitpunkts, Stelle fuer
+      // Stelle aufgefuellt -- nicht die Geraetezeit. Ueber Winter und Sommer
+      // hinweg gerechnet; welche Umstellung dabei gilt, nageln die beiden
+      // Golden-Werte weiter unten fest.
+      String zwei(int wert) => wert.toString().padLeft(2, '0');
       final zufall = Random(4711);
       for (var i = 0; i < 500; i++) {
-        final zeitpunkt = DateTime(
+        final zeitpunkt = DateTime.utc(
           2020 + zufall.nextInt(30),
           1 + zufall.nextInt(12),
           1 + zufall.nextInt(28),
@@ -230,16 +234,84 @@ void main() {
           zufall.nextInt(1000),
           1 + zufall.nextInt(999),
         );
-        final alt = zeitpunkt
-            .toString()
-            .replaceAll('-', '')
-            .replaceAll(':', '')
-            .replaceAll(' ', '')
-            .replaceAll('.', '')
-            .substring(2);
-        final neu = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt);
-        expect(neu.substring(0, 18), alt, reason: 'Zeitanteil von $zeitpunkt');
+        final wand = ViennaTime.toWallClock(zeitpunkt);
+        final erwartet = '${zwei(wand.year % 100)}${zwei(wand.month)}${zwei(wand.day)}'
+            '${zwei(wand.hour)}${zwei(wand.minute)}${zwei(wand.second)}'
+            '${wand.millisecond.toString().padLeft(3, '0')}';
+        final id = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt);
+        expect(id.length, 19, reason: 'Kennung zu $zeitpunkt');
+        expect(id.substring(0, 15), erwartet, reason: 'Zeitanteil von $zeitpunkt');
       }
+    });
+
+    // --- Gemeinsame Golden-Werte mit dem JS-Zwilling -----------------------
+    //
+    // **Dieselben zwei Zeichenketten stehen im npm-Paket
+    // @kreiseck/kasseneck-api in test/payments.test.ts** ("Golden-Wert
+    // Winterzeit/Sommerzeit, wie im Dart-Zwilling"). Beide Pakete bilden die
+    // Kennung nach demselben Verfahren und rechnen die Wiener Wanduhrzeit
+    // jedes fuer sich aus. Weicht eine Seite kuenftig ab -- anderer Aufbau,
+    // andere Auffuellung, andere Sommerzeitgrenze --, faellt ihr Test, statt
+    // dass es am Terminal auffaellt.
+    //
+    // Der Zeitpunkt ist so gewaehlt, dass er etwas beweist: einstellige Werte
+    // in Monat, Tag und Stunde und Millisekunde 0 -- genau die Stellen, an
+    // denen das Auffuellen zaehlt. Der feste Zufallswert 0.00071 ergibt 7 und
+    // muss auf vier Stellen aufgefuellt werden.
+    test('newHobexTransactionId: Golden-Wert Winterzeit (wie im JS-Zwilling)', () {
+      // 02.01.2026 02:04:05.000 UTC = 03:04:05.000 Wiener Zeit (CET, +1).
+      final id = KasseneckApi.newHobexTransactionId(
+        zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0),
+        zufall: () => 0.00071,
+      );
+      expect(id, '2601020304050000007');
+      expect(RegExp(r'^\d{19}$').hasMatch(id), isTrue);
+    });
+
+    test('newHobexTransactionId: Golden-Wert Sommerzeit (wie im JS-Zwilling)', () {
+      // 08.07.2026 07:04:05.000 UTC = 09:04:05.000 Wiener Zeit (CEST, +2).
+      // Gegen den Winter-Wert steht hier allein die Sommerzeit: rechnet eine
+      // der beiden Seiten die Umstellung anders, faellt genau dieser Wert.
+      final id = KasseneckApi.newHobexTransactionId(
+        zeitpunkt: DateTime.utc(2026, 7, 8, 7, 4, 5, 0),
+        zufall: () => 0.00071,
+      );
+      expect(id, '2607080904050000007');
+      expect(RegExp(r'^\d{19}$').hasMatch(id), isTrue);
+    });
+
+    test('newHobexTransactionId: Wiener Tageswechsel, nicht der des Geraets', () {
+      // 13.08.2026 22:30:05.123 UTC = 14.08.2026 00:30:05.123 in Wien. Der
+      // Tageswechsel liegt zwischen beiden -- die Kennung muss den Wiener
+      // Geschaeftstag tragen. Auch dieser Wert steht so im JS-Zwilling.
+      final id = KasseneckApi.newHobexTransactionId(
+        zeitpunkt: DateTime.utc(2026, 8, 13, 22, 30, 5, 123),
+        zufall: () => 0.5,
+      );
+      expect(id, '2608140030051235000');
+    });
+
+    test('newHobexTransactionId: fremde Zufallsquelle bleibt in vier Stellen', () {
+      // Eine eingespeiste Quelle haelt sich nicht an [0, 1). 1 ergaebe ohne
+      // Begrenzung 10000 -- also eine 20-stellige Kennung.
+      expect(KasseneckApi.newHobexTransactionId(
+              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => 1.0)
+          .substring(15), '9999');
+      expect(KasseneckApi.newHobexTransactionId(
+              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => -3.0)
+          .substring(15), '0000');
+      expect(KasseneckApi.newHobexTransactionId(
+              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => double.nan)
+          .substring(15), '0000');
+    });
+
+    test('newHobexTransactionId: zwei Kennungen derselben Millisekunde unterscheiden sich', () {
+      final zeitpunkt = DateTime.utc(2026, 8, 13, 22, 30, 5, 123);
+      final erste = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt, zufall: () => 0.1234);
+      final zweite = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt, zufall: () => 0.9876);
+      expect(erste, isNot(zweite),
+          reason: 'ohne Zufallsanteil waeren zwei Zahlungen derselben Millisekunde dieselbe Kennung');
+      expect(erste.substring(0, 15), zweite.substring(0, 15), reason: 'der Zeitanteil ist derselbe');
     });
 
     test('newHobexTransactionId: 2000 Aufrufe ohne Parameter, immer 19 Stellen', () {
