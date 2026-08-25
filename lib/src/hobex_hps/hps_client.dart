@@ -379,8 +379,10 @@ class HpsClient {
 
     final http.Client client = _http ?? http.Client();
     try {
-      final streamed = await client.send(request).timeout(timeout);
-      return await http.Response.fromStream(streamed);
+      // Die Frist deckt Verbindungsaufbau, Antwortkopf UND das Auslesen des
+      // Rumpfes. Lag sie nur auf send(), hielt eine Gegenstelle, die den Kopf
+      // schickt und den Rumpf stehen laesst, den Aufrufer unbegrenzt fest.
+      return await _sendAndRead(client, request).timeout(timeout);
     } on HpsException {
       rethrow;
     } catch (error) {
@@ -388,6 +390,14 @@ class HpsClient {
     } finally {
       if (_ownsHttpClient) client.close();
     }
+  }
+
+  static Future<http.Response> _sendAndRead(
+    http.Client client,
+    http.Request request,
+  ) async {
+    final streamed = await client.send(request);
+    return http.Response.fromStream(streamed);
   }
 
   Future<Map<String, dynamic>> _request(

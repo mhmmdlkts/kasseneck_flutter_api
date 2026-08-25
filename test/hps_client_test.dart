@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -228,6 +229,28 @@ void main() {
       expect(HpsTransactionType.preAuth.code, 2);
       expect(HpsTransactionType.preAuthCancel.code, 7);
       expect(HpsTransactionType.preAuthCapture.code, 8);
+    });
+  });
+
+  group('Frist deckt den ganzen Abruf', () {
+    test('haengender Rumpf loest die Frist aus, nicht erst der Antwortkopf', () async {
+      // Kopf kommt sofort, der Rumpf nie -- genau das Verhalten, das die alte
+      // Frist nicht abdeckte: sie lag allein auf send().
+      final never = StreamController<List<int>>();
+      addTearDown(never.close);
+      final mock = MockClient.streaming((request, bodyStream) async {
+        return http.StreamedResponse(never.stream, 200,
+            headers: {'content-type': 'application/json'});
+      });
+      final client = HpsClient(
+        tid: '3600335',
+        httpClient: mock,
+        timeout: const Duration(milliseconds: 200),
+      );
+      await expectLater(
+        client.payment(amount: 1),
+        throwsA(isA<HpsConnectionException>()),
+      );
     });
   });
 }
