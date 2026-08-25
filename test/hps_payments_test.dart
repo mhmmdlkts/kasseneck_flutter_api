@@ -111,7 +111,9 @@ class _Transport implements Exception {
 HpsPayments paymentsFor(
   FakeTerminal terminal, {
   Duration? budget,
+  Duration? maxBackoff,
   HpsObserver? observer,
+  List<Duration>? pausen,
 }) {
   final client = HpsClient(
     tid: '3600335',
@@ -121,8 +123,10 @@ HpsPayments paymentsFor(
   return HpsPayments(
     client,
     resolveBudget: budget ?? const Duration(seconds: 5),
-    // Kein echtes Warten im Test -- der Backoff laeuft, aber ohne Zeitverlust.
-    sleep: (_) async {},
+    maxBackoff: maxBackoff ?? const Duration(seconds: 10),
+    // Kein echtes Warten im Test -- der Backoff laeuft, aber ohne Zeitverlust;
+    // [pausen] schreibt die Wartezeiten mit, damit sie pruefbar werden.
+    sleep: (d) async => pausen?.add(d),
     observer: observer,
   );
 }
@@ -184,6 +188,39 @@ void main() {
         t.log.any((r) => r.url.path.contains('/api/transaction/abort/')),
         isTrue,
       );
+      // Der quittierte Abbruch allein reicht nicht: er wird nachgeprueft.
+      expect(t.callsOn('status'), 2);
+    });
+
+    test('quittierter Abbruch, aber Terminal meldet genehmigt -> approved',
+        () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'transactionId': 'TX-5b'}),
+          // Die bestaetigende Abfrage widerspricht dem quittierten Abbruch.
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-5b'}),
+        ],
+        abort: [(_) => json({'transactionId': 'TX-5b'})],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5b');
+      expect(res.outcome, HpsOutcome.approved,
+          reason: 'ein 2xx auf dem Abbruchweg darf eine echte Belastung nicht '
+              'zu "nichts belastet" erklaeren');
+      expect(t.callsOn('abort'), 1);
+    });
+
+    test('quittierter Abbruch, Bestaetigung scheitert -> unresolved', () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [(_) => json({'transactionId': 'TX-5c'}), boom],
+        abort: [(_) => json({'transactionId': 'TX-5c'})],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5c');
+      expect(res.outcome, HpsOutcome.unresolved,
+          reason: 'ohne Bestaetigung bleibt der Ausgang offen, er wird nicht '
+              'zu declined geraten');
+      expect(res.transactionId, 'TX-5c');
     });
 
     test('laeuft noch, Abbruch scheitert, danach genehmigt -> approved',
@@ -219,14 +256,20 @@ void main() {
     test('Budget erschoepft -> unresolved, niemals declined', () async {
       final t = FakeTerminal(
         payment: [boom],
+        // Das Terminal sagt dauerhaft "laeuft noch" und lehnt den Abbruch ab:
+        // die Klaerung kommt zu keinem Ergebnis und laeuft ins Budget.
         status: [(_) => json({'transactionId': 'TX-7'})],
-        abort: [(_) => fehler(400, 'nope')],
+        abort: [(_) => fehler(400, 'already tapped')],
       );
-      final res = await paymentsFor(t, budget: Duration.zero)
+      final res = await paymentsFor(t, budget: const Duration(milliseconds: 50))
           .pay(amount: 25, transactionId: 'TX-7');
       expect(res.outcome, HpsOutcome.unresolved);
       expect(res.transactionId, 'TX-7');
       expect(res.mayRetrySafely, isFalse);
+      expect(t.callsOn('status'), greaterThan(0),
+          reason: 'es muss wirklich geklaert worden sein, nicht nur das '
+              'Budget geprueft');
+      expect(t.callsOn('abort'), 1);
     });
 
     test('Terminal durchgehend unerreichbar -> unresolved, nicht declined',
@@ -316,6 +359,58 @@ void main() {
       );
     });
 
+    test('unlesbarer Rumpf trotz 200 -> Ergebnis mit Kennung, kein Wurf',
+        () async {
+      final t = FakeTerminal(
+        // 200, aber kein JSON: das Auswerten wirft eine FormatException,
+        // NACHDEM der Zahlungs-Request draussen und beantwortet war.
+        payment: [(_) => http.Response('<html>Fehlerseite</html>', 200)],
+        status: [(_) => http.Response('<html>Fehlerseite</html>', 200)],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-14');
+      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.transactionId, 'TX-14',
+          reason: 'ohne Kennung waere der Vorgang unauffindbar -- genau der '
+              'Vorfall');
+    });
+
+    test('unerwarteter Feldtyp -> Ergebnis mit Kennung, kein Wurf', () async {
+      final t = FakeTerminal(
+        // transactionId als Zahl: der harte Cast in TransactionResponse wirft
+        // einen TypeError, keine HpsException.
+        payment: [(_) => json({'transactionId': 12345})],
+        status: [(_) => json({'transactionId': 12345})],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-15');
+      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.transactionId, 'TX-15');
+    });
+
+    test('unlesbare Abbruch-Antwort reisst die Klaerung nicht mit', () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'transactionId': 'TX-16'}),
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-16'}),
+        ],
+        // 200, aber die Auswertung wirft.
+        abort: [(_) => http.Response('kein JSON', 200)],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-16');
+      expect(res.outcome, HpsOutcome.approved);
+    });
+
+    test('eine zu lange Kennung wirft weiterhin -- da ging nichts hinaus',
+        () async {
+      final t = FakeTerminal(payment: [boom]);
+      await expectLater(
+        paymentsFor(t).pay(amount: 25, transactionId: '1234567890123456789'),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(t.log, isEmpty,
+          reason: 'die Laengenpruefung schlaegt zu, bevor etwas gesendet wird');
+    });
+
     test('ein werfender Beobachter reisst den Zahlweg nicht mit', () async {
       final t = FakeTerminal(
         payment: [(_) => json({'responseCode': '0', 'transactionId': 'TX-13'})],
@@ -325,6 +420,75 @@ void main() {
         observer: (_) => throw StateError('Protokoll kaputt'),
       ).pay(amount: 25, transactionId: 'TX-13');
       expect(res.outcome, HpsOutcome.approved);
+    });
+  });
+
+  group('Backoff zwischen den Statusabfragen', () {
+    /// Ein Terminal, das [runden] mal "laeuft noch" sagt und danach genehmigt;
+    /// der Abbruch wird abgelehnt, damit die Klaerung wirklich weiterlaeuft.
+    FakeTerminal zaeh(int runden) => FakeTerminal(
+          payment: [boom],
+          status: [
+            for (var i = 0; i < runden; i++)
+              (_) => json({'transactionId': 'TX-B'}),
+            (_) => json({'responseCode': '0', 'transactionId': 'TX-B'}),
+          ],
+          abort: [(_) => fehler(400, 'already tapped')],
+        );
+
+    test('die erste Abfrage laeuft sofort, dann wird verdoppelt', () async {
+      final pausen = <Duration>[];
+      final res = await paymentsFor(zaeh(4), pausen: pausen)
+          .pay(amount: 25, transactionId: 'TX-B');
+      expect(res.outcome, HpsOutcome.approved);
+      expect(pausen, const [
+        Duration(seconds: 1),
+        Duration(seconds: 2),
+        Duration(seconds: 4),
+        Duration(seconds: 8),
+      ]);
+    });
+
+    test('maxBackoff deckelt die Verdopplung', () async {
+      final pausen = <Duration>[];
+      final res = await paymentsFor(zaeh(6), pausen: pausen)
+          .pay(amount: 25, transactionId: 'TX-B');
+      expect(res.outcome, HpsOutcome.approved);
+      expect(pausen, const [
+        Duration(seconds: 1),
+        Duration(seconds: 2),
+        Duration(seconds: 4),
+        Duration(seconds: 8),
+        // 16 s waeren an der Reihe, die Vorgabe deckelt auf 10 s.
+        Duration(seconds: 10),
+        Duration(seconds: 10),
+      ]);
+    });
+
+    test('ein eigener maxBackoff wird beachtet', () async {
+      final pausen = <Duration>[];
+      final res = await paymentsFor(
+        zaeh(4),
+        maxBackoff: const Duration(seconds: 3),
+        pausen: pausen,
+      ).pay(amount: 25, transactionId: 'TX-B');
+      expect(res.outcome, HpsOutcome.approved);
+      expect(pausen, const [
+        Duration(seconds: 1),
+        Duration(seconds: 2),
+        Duration(seconds: 3),
+        Duration(seconds: 3),
+      ]);
+    });
+
+    test('auch gescheiterte Statusabfragen warten laenger', () async {
+      final pausen = <Duration>[];
+      final t = FakeTerminal(payment: [boom], status: [boom]);
+      final res = await paymentsFor(t, pausen: pausen)
+          .pay(amount: 25, transactionId: 'TX-B2');
+      expect(res.outcome, HpsOutcome.unresolved);
+      // Drei Versuche, dazwischen zwei Pausen.
+      expect(pausen, const [Duration(seconds: 1), Duration(seconds: 2)]);
     });
   });
 

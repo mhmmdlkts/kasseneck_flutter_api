@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'exceptions.dart';
 import 'hps_client.dart';
 import 'hps_result.dart';
@@ -34,6 +36,14 @@ class HpsPayments {
   final HpsClient _client;
 
   /// Wie lange insgesamt geklaert wird, bevor der Ausgang offen bleibt.
+  ///
+  /// Die Zusage gilt fuer die Klaerung als Ganzes, nicht nur fuer die Pausen
+  /// dazwischen: jede Abfrage der Klaerung wird zusaetzlich mit der
+  /// Restlaufzeit gedeckelt. Ohne das haette eine einzelne Abfrage bis
+  /// [HpsClient.timeout] laufen duerfen (Vorgabe drei Minuten) und drei
+  /// Zeitueberschreitungen in Folge haetten aus 90 Sekunden Budget neun
+  /// Minuten gemacht. Die Zahlung selbst laeuft davor und unterliegt weiterhin
+  /// [HpsClient.timeout] -- sie muss auf den Karteninhaber warten duerfen.
   final Duration resolveBudget;
 
   /// Obergrenze fuer den Abstand zwischen zwei Statusabfragen.
@@ -75,7 +85,19 @@ class HpsPayments {
       final settled = _fromResponse(res, id, steps);
       if (settled != null) return settled;
       steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
-    } on HpsException catch (e) {
+    } on ArgumentError {
+      // Einzige Ausnahme, die durchgereicht wird: die Laengenpruefung der
+      // Kennung schlaegt zu, BEVOR etwas gesendet wurde. Hier ist nachweislich
+      // nichts passiert, und ein Aufruffehler soll sichtbar bleiben statt als
+      // offener Ausgang zu enden.
+      rethrow;
+    } catch (e) {
+      // Bewusst ALLES andere, nicht nur [HpsException]. Eine 200-Antwort mit
+      // unlesbarem Rumpf wirft eine FormatException, ein unerwarteter Feldtyp
+      // einen TypeError -- beide erst, nachdem der Zahlungs-Request draussen
+      // war und beantwortet wurde. Fiele so etwas an pay() vorbei, bekaeme der
+      // Aufrufer kein Ergebnis und damit keine Kennung: genau der Mechanismus
+      // des Vorfalls vom 24.08.2026, nur mit anderem Ausloeser.
       steps.add('Zahlung abgebrochen: $e');
     }
 
@@ -120,9 +142,15 @@ class HpsPayments {
 
       TransactionResponse status;
       try {
-        status = await _client.transactionStatus(transactionId: id);
+        status = await _withinBudget(
+          clock,
+          () => _client.transactionStatus(transactionId: id),
+        );
         transportFailures = 0;
-      } on HpsException catch (e) {
+      } catch (e) {
+        // Bewusst jede Ausnahme, nicht nur [HpsException]: auch ein unlesbarer
+        // Rumpf oder ein unerwarteter Feldtyp darf die Klaerung nur verzoegern,
+        // niemals an pay() vorbei nach draussen.
         transportFailures++;
         steps.add('Statusabfrage gescheitert ($transportFailures): $e');
         if (transportFailures >= maxTransportFailures) {
@@ -141,34 +169,97 @@ class HpsPayments {
       if (!abortTried) {
         abortTried = true;
         try {
-          await _client.abort(transactionId: id);
-          steps.add('Abbruch gelungen -- es lag keine Karte an, nichts '
-              'belastet');
-          _emit(HpsEventKind.resolved, steps.last, id);
-          return HpsResult(
-            outcome: HpsOutcome.declined,
-            transactionId: id,
-            steps: List<String>.unmodifiable(steps),
-          );
-        } on HpsException catch (e) {
-          // Genau der erwartete Fall, wenn die Karte schon aufgelegt wurde.
-          // Der Vorgang laeuft weiter, also weiter abfragen statt raten.
-          steps.add(
-            'Abbruch abgelehnt ($e) -- Karte lag bereits an, weiter abfragen',
-          );
+          await _withinBudget(clock, () => _client.abort(transactionId: id));
+        } catch (e) {
+          // Der Text darf keine Ursache behaupten, die nicht feststeht:
+          // [steps] ist der Nachweis, der im Belastungsstreit angezeigt wird.
+          steps.add(e is HpsConnectionException
+              ? 'Abbruch nicht zugestellt ($e) -- ob er wirkte, ist offen, '
+                  'weiter abfragen'
+              : 'Abbruch abgelehnt ($e) -- Karte lag bereits an, weiter '
+                  'abfragen');
+          wait = _nextWait(wait);
+          continue;
         }
+        return _confirmAbort(id, steps, clock);
       }
 
       wait = _nextWait(wait);
     }
 
     steps.add('Ausgang bleibt offen');
+    return _open(id, steps);
+  }
+
+  /// Prueft einen quittierten Abbruch mit einer zusaetzlichen Statusabfrage
+  /// nach, bevor daraus [HpsOutcome.declined] wird.
+  ///
+  /// Ein 2xx auf dem Abbruchweg allein beweist NICHT, dass nichts belastet
+  /// wurde. Dass das Terminal einen Abbruch nach dem Auflegen der Karte mit
+  /// einem Fehler quittiert, ist mangels Testterminal ungeprueft. Traefe das
+  /// nicht zu, wuerde hier eine echte Belastung zu "nichts belastet" erklaert
+  /// -- genau der Schaden, den dieses Paket verhindern soll. Deshalb entsteht
+  /// [HpsOutcome.declined] erst, wenn auch die Abfrage nichts Genehmigtes
+  /// zeigt; scheitert sie, bleibt der Ausgang offen.
+  Future<HpsResult> _confirmAbort(
+    String id,
+    List<String> steps,
+    Stopwatch clock,
+  ) async {
+    steps.add('Abbruch quittiert -- wird durch eine Statusabfrage bestaetigt');
+
+    TransactionResponse status;
+    try {
+      status = await _withinBudget(
+        clock,
+        () => _client.transactionStatus(transactionId: id),
+      );
+    } catch (e) {
+      steps.add('Bestaetigung gescheitert ($e) -- Ausgang bleibt offen');
+      return _open(id, steps);
+    }
+
+    if (status.isApproved) {
+      steps.add('Trotz quittiertem Abbruch meldet das Terminal: genehmigt');
+      _emit(HpsEventKind.resolved, steps.last, id);
+      return HpsResult(
+        outcome: HpsOutcome.approved,
+        transactionId: id,
+        response: status,
+        steps: List<String>.unmodifiable(steps),
+      );
+    }
+
+    steps.add('Abbruch bestaetigt -- es lag keine Karte an, nichts belastet');
+    _emit(HpsEventKind.resolved, steps.last, id);
+    return HpsResult(
+      outcome: HpsOutcome.declined,
+      transactionId: id,
+      response: status,
+      steps: List<String>.unmodifiable(steps),
+    );
+  }
+
+  /// Der Ausgang bleibt offen. Die Kennung ist gesetzt, damit Statusabfrage
+  /// und Storno erreichbar bleiben.
+  HpsResult _open(String id, List<String> steps) {
     _emit(HpsEventKind.resolved, steps.last, id);
     return HpsResult(
       outcome: HpsOutcome.unresolved,
       transactionId: id,
       steps: List<String>.unmodifiable(steps),
     );
+  }
+
+  /// Fuehrt [call] aus, aber hoechstens so lange, wie vom [resolveBudget]
+  /// uebrig ist -- sonst waere die Klaerung nicht durch das Budget begrenzt,
+  /// sondern durch [HpsClient.timeout] je einzelnem Request.
+  Future<T> _withinBudget<T>(Stopwatch clock, Future<T> Function() call) {
+    final left = resolveBudget - clock.elapsed;
+    if (left <= Duration.zero) {
+      throw TimeoutException('Klaerungsbudget aufgebraucht', resolveBudget);
+    }
+    return call().timeout(left);
   }
 
   Duration _nextWait(Duration current) {
