@@ -87,6 +87,18 @@
 ## 4.9.0
 - **`KeckReceiptWidget.qrCovered`** (Vorgabe `false`, rein additiv): der RKSV-QR wird zunächst weichgezeichnet und nicht scannbar gezeigt (mit Hinweis `qrCoveredText`, Vorgabe „Antippen zum Anzeigen"); ein Tipp macht ihn lesbar, ein zweiter verdeckt ihn wieder. Für Bildschirme, auf denen der Beleg nur zur Kontrolle steht — der Signatur-QR gehört dem Kunden und wird erst auf Verlangen freigegeben. Druck und Belegdaten sind unberührt.
 
+## 4.8.0
+- **hobex HPS: lokale Terminal-Abfragen ergänzt** (rein additiv, keine bestehende Signatur geändert). Zwei neue read-only Methoden im `HpsClient`:
+  - `terminalStatus()` → `GET /api/terminals/{tid}/status`: leichter Readiness-Check. `true` bei HTTP 200 (bereit), `false` bei 503 (nicht betriebsbereit); dieser Endpoint hat keinen Response-Body (im Gegensatz zum feldreichen `diagnosis()`).
+  - `terminals()` → `GET /api/terminals`: Liste der konfigurierten Terminals als neues Modell **`TerminalInfo`** (tid, company/merchantName, Beleg-`header`-Zeilen, `terminalType`, `active`, …). Alle Felder optional, da Spec-Tabelle und Beispiel-Response divergieren; unmodellierte Keys bleiben über `TerminalInfo.raw` erreichbar.
+  - Intern wurde das Senden in `_send()` extrahiert (frische-Verbindung-Logik aus 4.7.0 unverändert), damit `terminalStatus()` den 503-Status als Wert statt als Ausnahme behandeln kann.
+- Bewusst NICHT enthalten: Beleg-Download (`/api/transaction/download`) und die Profil-Flags `canVoid`/`canRefund` sind reine **Cloud**-Endpoints (`online.hobex.at`, JWT-Auth) und gehören nicht in den authlosen lokalen HPS-Client. Ein `responseCode`-Fehlercode-Katalog ist nicht enthalten, da die REST-Spec v1.13 außer `"0"` (=OK) keine Codes enumeriert (weitere Codes stammen vom Acquirer).
+
+## 4.7.0
+- **hobex HPS: Storno/Refund-Robustheit.** Zwei Fehler behoben, die Rückabwicklungen am HPS-Terminal unzuverlässig machten:
+  - **Verbindungs-Wiederverwendung:** `HpsClient` hielt eine Keep-Alive-Verbindung offen und verwendete sie wieder; das Terminal schließt inaktive Sockets aber, wodurch der nächste Request (typisch: Storno/Refund nach einer Bedien-Pause) mit „Connection closed before full header" abbrach — ohne Retry. Selbst erzeugte Clients bauen jetzt **pro Request eine frische Verbindung** auf (injizierte Clients für Tests bleiben unverändert; bewusst kein Auto-Retry wegen Doppelbuchungsgefahr bei Zahlung/Refund). `close()` ist damit ein No-op.
+  - **Void ohne Betrag (`400 Missing amount`):** `cancel()` sendete keinen Betrag. Signatur jetzt `cancel({required transactionId, required amount, currency, language, technicalCancel})` — sendet `amount`/`currency` (+ optional `language`) als Query-Parameter (wie in der hobex-Postman-Collection; die REST-PDF v1.13 listet den Parameter nicht, die Firmware verlangt ihn). **Breaking:** `amount` ist jetzt Pflicht.
+
 ## 4.6.0
 - **Zahlungsart-Zeile auf jedem Beleg** (Druck + `KeckReceiptWidget`): direkt unter dem Gesamtbetrag steht `Zahlungsart: Barzahlung/Kartenzahlung/Onlinezahlung/…` (`KeckPaymentMethod.label`, Labels identisch zum Backend-Beleg-PDF) — auch wenn zusätzlich ein Provider-Kartenblock folgt.
 

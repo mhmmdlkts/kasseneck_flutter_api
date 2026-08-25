@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'diagnosis.dart';
 import 'enums.dart';
 import 'exceptions.dart';
+import 'terminal_info.dart';
 import 'transaction_response.dart';
 
 /// Client for the local **hobex Payment Service (HPS)** REST API.
@@ -26,7 +27,7 @@ class HpsClient {
     this.timeout = const Duration(minutes: 3),
     http.Client? httpClient,
   }) : baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'),
-       _http = httpClient ?? http.Client(),
+       _http = httpClient,
        _ownsHttpClient = httpClient == null;
 
   /// Base URL of the HPS. Defaults to `http://127.0.0.1:8080`.
@@ -45,7 +46,9 @@ class HpsClient {
   /// block until the cardholder has interacted with the terminal.
   final Duration timeout;
 
-  final http.Client _http;
+  /// Injizierter HTTP-Client (Tests). `null`, wenn der Client selbst erzeugt
+  /// wird -> dann pro Request eine frische, kurzlebige Verbindung.
+  final http.Client? _http;
   final bool _ownsHttpClient;
 
   // ---------------------------------------------------------------------------
@@ -160,15 +163,26 @@ class HpsClient {
   /// **Voids / cancels / reverses** an existing transaction identified by
   /// [transactionId]. Must be activated by hobex.
   ///
+  /// [amount] ist ERFORDERLICH: das Terminal weist einen Void ohne Betrag mit
+  /// `400 Missing amount` ab (am HPS empirisch bestaetigt). Die REST-PDF v1.13
+  /// listet den Parameter zwar nicht, die Postman-Collection und die Firmware
+  /// verlangen ihn. [currency]/[language] fallen auf die Client-Defaults zurueck.
+  ///
   /// Set [technicalCancel] to indicate a technical cancellation.
   Future<TransactionResponse> cancel({
     required String transactionId,
+    required num amount,
+    String? currency,
+    String? language,
     bool technicalCancel = false,
   }) {
-    final uri = _uri(
-      'api/transaction/payment/$tid/$transactionId',
-      technicalCancel ? const {'technicalCancel': 'true'} : null,
-    );
+    final lang = language ?? defaultLanguage;
+    final uri = _uri('api/transaction/payment/$tid/$transactionId', {
+      'amount': amount.toString(),
+      'currency': currency ?? defaultCurrency,
+      if (lang != null) 'language': lang,
+      if (technicalCancel) 'technicalCancel': 'true',
+    });
     return _sendTransactionUri('DELETE', uri, null);
   }
 
@@ -220,6 +234,52 @@ class HpsClient {
     return Diagnosis.fromJson(json);
   }
 
+  /// Lightweight readiness check: `GET /api/terminals/{tid}/status`.
+  ///
+  /// Returns `true` when the terminal is ready (HTTP 200) and `false` when it
+  /// reports *not operable* (HTTP 503). Other status codes / transport failures
+  /// throw ([HpsHttpException] / [HpsConnectionException]).
+  ///
+  /// This endpoint carries no response body — the state is signalled purely via
+  /// the HTTP status code. For a richer, field-based health snapshot use
+  /// [diagnosis].
+  Future<bool> terminalStatus() async {
+    final response =
+        await _send('GET', _uri('api/terminals/$tid/status', null), null);
+    if (response.statusCode == 200) return true;
+    if (response.statusCode == 503) return false;
+    throw HpsHttpException(
+      response.statusCode,
+      _errorMessage(response.body, response.statusCode),
+      body: response.body,
+    );
+  }
+
+  /// Lists the **terminals** known to this device: `GET /api/terminals`.
+  ///
+  /// Returns the configured terminal objects (id, merchant/company, receipt
+  /// header lines, type, …) as [TerminalInfo]. The REST spec and its example
+  /// disagree on the exact field set, so every field is optional; unmodelled
+  /// keys stay available via [TerminalInfo.raw].
+  Future<List<TerminalInfo>> terminals() async {
+    final response = await _send('GET', _uri('api/terminals', null), null);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw HpsHttpException(
+        response.statusCode,
+        _errorMessage(response.body, response.statusCode),
+        body: response.body,
+      );
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is List) {
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map(TerminalInfo.fromJson)
+          .toList();
+    }
+    return const <TerminalInfo>[];
+  }
+
   /// Returns the **batch totals** (reconciliation sums) for the period starting
   /// at [since].
   ///
@@ -244,10 +304,10 @@ class HpsClient {
     return _request('GET', uri, null);
   }
 
-  /// Releases the underlying HTTP client (only if it was created internally).
-  void close() {
-    if (_ownsHttpClient) _http.close();
-  }
+  /// Gibt Ressourcen frei. Selbst erzeugte Verbindungen werden bereits pro
+  /// Request geschlossen; ein injizierter Client gehoert dem Aufrufer und wird
+  /// hier NICHT geschlossen. Bleibt aus API-Kompatibilitaet als sicherer No-op.
+  void close() {}
 
   // ---------------------------------------------------------------------------
   // Internals
@@ -297,7 +357,17 @@ class HpsClient {
     return TransactionResponse.fromJson(json);
   }
 
-  Future<Map<String, dynamic>> _request(
+  /// Sendet einen HTTP-Request und liefert die ROHE Antwort (ohne Status-/
+  /// JSON-Auswertung). Fuer die JSON-Variante siehe [_request].
+  ///
+  /// Das hobex-Terminal schliesst inaktive Keep-Alive-Verbindungen. Ein
+  /// wiederverwendeter (bereits geschlossener) Socket fuehrt sonst zu
+  /// "Connection closed before full header was received" -- und das
+  /// http-Paket wiederholt nicht. Deshalb bei selbst erzeugtem Client pro
+  /// Request eine FRISCHE Verbindung; ein injizierter Client (Tests) bleibt
+  /// unveraendert. Bewusst KEIN Auto-Retry: bei Zahlung/Refund waere ein
+  /// Wiederholen gefaehrlich (Doppelbuchung).
+  Future<http.Response> _send(
     String method,
     Uri uri,
     Map<String, dynamic>? body,
@@ -307,16 +377,25 @@ class HpsClient {
     request.headers['Accept'] = 'application/json';
     if (body != null) request.body = jsonEncode(body);
 
-    final http.Response response;
+    final http.Client client = _http ?? http.Client();
     try {
-      final streamed = await _http.send(request).timeout(timeout);
-      response = await http.Response.fromStream(streamed);
+      final streamed = await client.send(request).timeout(timeout);
+      return await http.Response.fromStream(streamed);
     } on HpsException {
       rethrow;
     } catch (error) {
       throw HpsConnectionException(error);
+    } finally {
+      if (_ownsHttpClient) client.close();
     }
+  }
 
+  Future<Map<String, dynamic>> _request(
+    String method,
+    Uri uri,
+    Map<String, dynamic>? body,
+  ) async {
+    final response = await _send(method, uri, body);
     final text = response.body;
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw HpsHttpException(

@@ -71,12 +71,16 @@ void main() {
       expect(c.log[2].url.path, '/api/transaction/preauth');
     });
 
-    test('cancel: DELETE auf payment/{tid}/{tx} + technicalCancel-Query', () async {
+    test('cancel: DELETE auf payment/{tid}/{tx} + amount/currency/technicalCancel-Query', () async {
       final c = clientWith();
-      await c.client.cancel(transactionId: 'TX-9');
-      await c.client.cancel(transactionId: 'TX-9', technicalCancel: true);
+      await c.client.cancel(transactionId: 'TX-9', amount: 1.5);
+      await c.client.cancel(transactionId: 'TX-9', amount: 1.5, technicalCancel: true);
       expect(c.log[0].method, 'DELETE');
       expect(c.log[0].url.path, '/api/transaction/payment/3600335/TX-9');
+      // amount ist Pflicht (sonst 400 Missing amount), currency faellt auf den
+      // EUR-Default -> beide gehen immer als Query mit.
+      expect(c.log[0].url.queryParameters['amount'], '1.5');
+      expect(c.log[0].url.queryParameters['currency'], 'EUR');
       expect(c.log[0].url.queryParameters.containsKey('technicalCancel'), isFalse);
       expect(c.log[1].url.queryParameters['technicalCancel'], 'true');
     });
@@ -111,6 +115,33 @@ void main() {
       await c.client.closeBatch(since);
       expect(c.log[0].url.path, '/api/terminals/3600335/batchtotal/2026-06-12T09:05:03');
       expect(c.log[1].url.path, '/api/terminals/3600335/closebatch/2026-06-12T09:05:03');
+    });
+
+    test('terminalStatus: GET status; 200 -> true, 503 -> false', () async {
+      final ok = clientWith(status: 200, body: '');
+      expect(await ok.client.terminalStatus(), isTrue);
+      expect(ok.log.single.method, 'GET');
+      expect(ok.log.single.url.path, '/api/terminals/3600335/status');
+
+      final down = clientWith(status: 503, body: '');
+      expect(await down.client.terminalStatus(), isFalse);
+    });
+
+    test('terminals: GET /api/terminals + Array-Parsing', () async {
+      final c = clientWith(
+        body: '[{"tid":"3600335","merchantName":"Shop","terminalType":"POS",'
+            '"active":true,"header":["Zeile 1","Zeile 2"],"fax":null}]',
+      );
+      final list = await c.client.terminals();
+      expect(c.log.single.method, 'GET');
+      expect(c.log.single.url.path, '/api/terminals');
+      expect(list, hasLength(1));
+      expect(list.single.tid, '3600335');
+      expect(list.single.merchantName, 'Shop');
+      expect(list.single.terminalType, 'POS');
+      expect(list.single.active, isTrue);
+      expect(list.single.header, ['Zeile 1', 'Zeile 2']);
+      expect(list.single.fax, isNull);
     });
   });
 
