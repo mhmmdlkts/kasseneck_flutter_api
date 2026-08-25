@@ -12,6 +12,10 @@ export 'enums/keck_payment_method.dart';
 export 'enums/vat_rate.dart';
 export 'models/kasseneck_item.dart';
 export 'models/kasseneck_receipt.dart';
+// Wer Trinkgeld zuweist, braucht die Personenliste und den Anteil, der daraus
+// entsteht.
+export 'models/keck_tip.dart';
+export 'models/keck_tip_person.dart';
 // Die Storno-Regeln fragen nach der Reichweite eines Rechts; wer sie benutzt,
 // braucht den Typ.
 export 'src/register/pairing.dart' show RegisterScope;

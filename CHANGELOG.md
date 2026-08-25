@@ -1,3 +1,11 @@
+## 4.24.0
+- **Trinkgeld-Empfänger abrufen** (`listMyTipRecipients`): `tipEmpfaenger()` am Kassen-Client und derselbe Aufruf auf dem `api_key`-Weg liefern die Personen, denen sich Trinkgeld zuweisen lässt — je Person `registerUserId`, `name` und `owner` — dieselbe Gestalt wie der Empfänger am Beleg-Item.
+- Es ist **dieselbe Menge, die der Verkauf akzeptiert**: Wer in der Liste steht, wird von `createReceipt` nicht zurückgewiesen. Entschieden wird das im Backend an einer Stelle, die Liste und Annahme gemeinsam benutzen.
+- `KeckTipPerson.mit(cents:)` macht aus einer Person einen `KeckTipRecipient`. Wer die Liste benutzt, kann keine Kennung erwischen, die der Server ablehnt.
+- **`owner` entscheidet die Bezeichnung am Beleg**: „Trinkgeld" (Inhaber — Entgelt des Betriebs) gegen „Trinkgeld Personal" (durchlaufender Posten). Deshalb reist das Flag mit — als nicht nullbares `bool`, denn ein fehlendes Flag gäbe es bei dieser Frage nicht.
+- Ist ein Kassen-Benutzer **ohne** das Recht `tipAssign` angemeldet, steht nur er selbst in der Liste.
+- Vertrag auf `@kreiseck/kasseneck-api` **0.6.46** angehoben.
+
 ## 4.23.0
 - **Die Hobex-Transaktionskennung entsteht jetzt nach demselben Verfahren wie im JS-Zwilling** (`@kreiseck/kasseneck-api`, `newHobexTransactionId` in `src/payments/hobex.ts`). Bisher rechneten beide Pakete unterschiedlich: hier Geraetezeit plus Mikrosekunden-Rest und eine Zufallsziffer, dort Wiener Wanduhrzeit plus vier Zufallsziffern. Ein Verfahren statt zweier.
 - **Wiener Zeit statt Geraetezeit** (`ViennaTime.toWallClock`): zwei Kassen desselben Betriebs in verschiedenen Zeitzonen trugen sonst Kennungen, die sich um Stunden unterscheiden, und der Tageswechsel in der Kennung fand nicht zum Geschaeftstag statt.
