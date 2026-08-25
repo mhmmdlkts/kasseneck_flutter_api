@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
@@ -489,9 +490,17 @@ class HpsClient {
     return stripped.isEmpty ? raw : stripped;
   }
 
-  /// A unique, numeric transaction id (≤ 18 digits) based on the current time.
-  static String _newTransactionId() =>
-      DateTime.now().millisecondsSinceEpoch.toString();
+  static final Random _idRandom = Random();
+
+  /// Eine eindeutige, numerische Kennung mit hoechstens 18 Stellen:
+  /// 13 Stellen Zeitstempel in Millisekunden, dazu 5 Stellen Zufall. Der
+  /// Zeitstempel allein reichte nicht -- zwei Vorgaenge in derselben
+  /// Millisekunde bekamen dieselbe Kennung.
+  static String _newTransactionId() {
+    final ms = DateTime.now().millisecondsSinceEpoch.toString();
+    final suffix = _idRandom.nextInt(100000).toString().padLeft(5, '0');
+    return '$ms$suffix';
+  }
 
   /// Formats [dt] as `yyyy-MM-ddTHH:mm:ss` (no millis, no timezone), the form
   /// the batch endpoints expect.

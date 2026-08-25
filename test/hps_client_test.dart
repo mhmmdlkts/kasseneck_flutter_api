@@ -281,6 +281,21 @@ void main() {
     });
   });
 
+  group('Erzeugte Kennung', () {
+    test('2000 Kennungen in Folge sind eindeutig und passen in 18 Stellen', () async {
+      final c = clientWith();
+      final ids = <String>{};
+      for (var i = 0; i < 2000; i++) {
+        await c.client.payment(amount: 1);
+        final id = txBody(c.log.last)['transactionId'] as String;
+        expect(id.length, lessThanOrEqualTo(18));
+        expect(RegExp(r'^\d+$').hasMatch(id), isTrue);
+        ids.add(id);
+      }
+      expect(ids.length, 2000);
+    });
+  });
+
   group('Frist deckt den ganzen Abruf', () {
     test('haengender Rumpf loest die Frist aus, nicht erst der Antwortkopf', () async {
       // Kopf kommt sofort, der Rumpf nie -- genau das Verhalten, das die alte
