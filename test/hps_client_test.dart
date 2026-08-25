@@ -232,6 +232,32 @@ void main() {
     });
   });
 
+  group('Kennung wird vor dem Netzweg geprueft', () {
+    test('19 Stellen -> ArgumentError, und es geht kein Request hinaus', () async {
+      final c = clientWith();
+      expect(
+        () => c.client.payment(amount: 5, transactionId: '2608261401590000001'),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(c.log, isEmpty);
+    });
+
+    test('leere Kennung -> ArgumentError', () async {
+      final c = clientWith();
+      expect(
+        () => c.client.payment(amount: 5, transactionId: ''),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(c.log, isEmpty);
+    });
+
+    test('18 Stellen sind erlaubt', () async {
+      final c = clientWith();
+      await c.client.payment(amount: 5, transactionId: '260826140159000001');
+      expect(txBody(c.log.single)['transactionId'], '260826140159000001');
+    });
+  });
+
   group('Frist deckt den ganzen Abruf', () {
     test('haengender Rumpf loest die Frist aus, nicht erst der Antwortkopf', () async {
       // Kopf kommt sofort, der Rumpf nie -- genau das Verhalten, das die alte

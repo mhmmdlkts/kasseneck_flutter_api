@@ -51,6 +51,11 @@ class HpsClient {
   final http.Client? _http;
   final bool _ownsHttpClient;
 
+  /// Laengengrenze der Transaktionskennung laut HPS-REST-Spezifikation.
+  /// Bewusst NUR die Laenge: ob das Terminal eine nicht rein numerische
+  /// Kennung annimmt, ist ungeprueft (der Bestandstest schickt 'TX-7').
+  static const int _maxTransactionIdLength = 18;
+
   // ---------------------------------------------------------------------------
   // Transactions
   // ---------------------------------------------------------------------------
@@ -176,6 +181,14 @@ class HpsClient {
     String? language,
     bool technicalCancel = false,
   }) {
+    if (transactionId.isEmpty ||
+        transactionId.length > _maxTransactionIdLength) {
+      throw ArgumentError.value(
+        transactionId,
+        'transactionId',
+        'HPS erlaubt 1 bis $_maxTransactionIdLength Zeichen',
+      );
+    }
     final lang = language ?? defaultLanguage;
     final uri = _uri('api/transaction/payment/$tid/$transactionId', {
       'amount': amount.toString(),
@@ -189,6 +202,14 @@ class HpsClient {
   /// **Aborts** an ongoing transaction *before* a card has been tapped.
   /// Returns the transaction id of the aborted transaction, if provided.
   Future<String?> abort({required String transactionId}) async {
+    if (transactionId.isEmpty ||
+        transactionId.length > _maxTransactionIdLength) {
+      throw ArgumentError.value(
+        transactionId,
+        'transactionId',
+        'HPS erlaubt 1 bis $_maxTransactionIdLength Zeichen',
+      );
+    }
     final uri = _uri('api/transaction/abort/$tid/$transactionId', null);
     final json = await _request('POST', uri, null);
     return json['transactionId'] as String?;
@@ -222,6 +243,14 @@ class HpsClient {
   Future<TransactionResponse> transactionStatus({
     required String transactionId,
   }) {
+    if (transactionId.isEmpty ||
+        transactionId.length > _maxTransactionIdLength) {
+      throw ArgumentError.value(
+        transactionId,
+        'transactionId',
+        'HPS erlaubt 1 bis $_maxTransactionIdLength Zeichen',
+      );
+    }
     final uri = _uri('api/v2/transactions/$tid/$transactionId', null);
     return _sendTransactionUri('GET', uri, null);
   }
@@ -324,6 +353,16 @@ class HpsClient {
     String? originalTransactionId,
     int? transactionType,
   }) {
+    if (transactionId != null) {
+      if (transactionId.isEmpty ||
+          transactionId.length > _maxTransactionIdLength) {
+        throw ArgumentError.value(
+          transactionId,
+          'transactionId',
+          'HPS erlaubt 1 bis $_maxTransactionIdLength Zeichen',
+        );
+      }
+    }
     final tx = <String, dynamic>{
       'tid': tid,
       'amount': amount,
