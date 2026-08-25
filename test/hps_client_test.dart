@@ -317,6 +317,50 @@ void main() {
       );
     });
   });
+
+  group('Beobachter', () {
+    test('meldet Start und Erfolg eines Requests', () async {
+      final events = <HpsEvent>[];
+      final mock = MockClient((_) async => http.Response(
+          '{"responseCode":"0","transactionId":"TX-9"}', 200,
+          headers: {'content-type': 'application/json'}));
+      final client = HpsClient(tid: '3600335', httpClient: mock, observer: events.add);
+
+      await client.payment(amount: 1, transactionId: 'TX-9');
+
+      expect(events.map((e) => e.kind),
+          containsAllInOrder([HpsEventKind.requestStarted, HpsEventKind.requestSucceeded]));
+    });
+
+    test('meldet den Fehlschlag samt Ursache', () async {
+      final events = <HpsEvent>[];
+      final mock = MockClient((_) async => throw const SocketExceptionStub());
+      final client = HpsClient(tid: '3600335', httpClient: mock, observer: events.add);
+
+      await expectLater(client.payment(amount: 1), throwsA(isA<HpsConnectionException>()));
+
+      final failed = events.firstWhere((e) => e.kind == HpsEventKind.requestFailed);
+      expect(failed.error, isNotNull);
+    });
+
+    test('ein werfender Beobachter reisst den Zahlweg nicht mit', () async {
+      final mock = MockClient((_) async => http.Response(
+          '{"responseCode":"0"}', 200, headers: {'content-type': 'application/json'}));
+      final client = HpsClient(
+        tid: '3600335',
+        httpClient: mock,
+        observer: (_) => throw StateError('Protokoll kaputt'),
+      );
+      final res = await client.payment(amount: 1);
+      expect(res.isApproved, isTrue);
+    });
+  });
+}
+
+class SocketExceptionStub implements Exception {
+  const SocketExceptionStub();
+  @override
+  String toString() => 'SocketExceptionStub';
 }
 
 class _TrackingClient extends http.BaseClient {

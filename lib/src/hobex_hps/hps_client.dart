@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'diagnosis.dart';
 import 'enums.dart';
 import 'exceptions.dart';
+import 'observer.dart';
 import 'terminal_info.dart';
 import 'transaction_response.dart';
 
@@ -28,10 +29,12 @@ class HpsClient {
     this.defaultLanguage,
     this.timeout = const Duration(minutes: 3),
     http.Client? httpClient,
+    HpsObserver? observer,
   }) : baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'),
        tid = _normalizeTid(tid),
        _http = httpClient,
-       _ownsHttpClient = httpClient == null;
+       _ownsHttpClient = httpClient == null,
+       _observer = observer;
 
   /// Base URL of the HPS. Defaults to `http://127.0.0.1:8080`.
   final Uri baseUrl;
@@ -53,6 +56,9 @@ class HpsClient {
   /// wird -> dann pro Request eine frische, kurzlebige Verbindung.
   final http.Client? _http;
   final bool _ownsHttpClient;
+
+  /// Beobachter fuer Ereignisse im Zahlweg (Protokoll der App). Optional.
+  final HpsObserver? _observer;
 
   /// Laengengrenze der Transaktionskennung laut HPS-REST-Spezifikation.
   /// Bewusst NUR die Laenge: ob das Terminal eine nicht rein numerische
@@ -419,18 +425,39 @@ class HpsClient {
     request.headers['Accept'] = 'application/json';
     if (body != null) request.body = jsonEncode(body);
 
+    _emit(HpsEvent(HpsEventKind.requestStarted, '${request.method} ${uri.path}'));
+
     final http.Client client = _http ?? http.Client();
     try {
       // Die Frist deckt Verbindungsaufbau, Antwortkopf UND das Auslesen des
       // Rumpfes. Lag sie nur auf send(), hielt eine Gegenstelle, die den Kopf
       // schickt und den Rumpf stehen laesst, den Aufrufer unbegrenzt fest.
-      return await _sendAndRead(client, request).timeout(timeout);
-    } on HpsException {
+      final response = await _sendAndRead(client, request).timeout(timeout);
+      _emit(HpsEvent(HpsEventKind.requestSucceeded,
+          '${request.method} ${uri.path} -> ${response.statusCode}'));
+      return response;
+    } on HpsException catch (error) {
+      _emit(HpsEvent(HpsEventKind.requestFailed, '${request.method} ${uri.path}',
+          error: error));
       rethrow;
     } catch (error) {
+      _emit(HpsEvent(HpsEventKind.requestFailed, '${request.method} ${uri.path}',
+          error: error));
       throw HpsConnectionException(error);
     } finally {
       if (_ownsHttpClient) client.close();
+    }
+  }
+
+  /// Meldet ein Ereignis. Ein werfender Beobachter wird geschluckt: das
+  /// Protokoll darf den Zahlweg niemals mitreissen.
+  void _emit(HpsEvent event) {
+    final observer = _observer;
+    if (observer == null) return;
+    try {
+      observer(event);
+    } catch (_) {
+      // bewusst still
     }
   }
 
