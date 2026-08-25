@@ -258,6 +258,29 @@ void main() {
     });
   });
 
+  group('tid-Normalisierung', () {
+    test('fuehrende Nullen fallen weg -- im Body und im Pfad', () async {
+      final log = <http.Request>[];
+      final mock = MockClient((request) async {
+        log.add(request);
+        return http.Response('{}', 200, headers: {'content-type': 'application/json'});
+      });
+      final client = HpsClient(tid: '03600335', httpClient: mock);
+      expect(client.tid, '3600335');
+
+      await client.payment(amount: 1);
+      expect(txBody(log.first)['tid'], '3600335');
+
+      await client.transactionStatus(transactionId: 'TX-1');
+      expect(log.last.url.path, '/api/v2/transactions/3600335/TX-1');
+    });
+
+    test('eine tid aus lauter Nullen bleibt unveraendert statt leer zu werden', () {
+      final client = HpsClient(tid: '000', httpClient: MockClient((_) async => http.Response('{}', 200)));
+      expect(client.tid, '000');
+    });
+  });
+
   group('Frist deckt den ganzen Abruf', () {
     test('haengender Rumpf loest die Frist aus, nicht erst der Antwortkopf', () async {
       // Kopf kommt sofort, der Rumpf nie -- genau das Verhalten, das die alte

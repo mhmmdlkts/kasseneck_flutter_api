@@ -16,24 +16,26 @@ import 'transaction_response.dart';
 /// pass a [baseUrl] pointing at the terminal's IP, e.g.
 /// `Uri.parse('http://192.168.0.187:8080')`.
 ///
-/// The [tid] must be given **without a leading zero** (e.g. `3600335`, not
-/// `03600335`).
+/// The [tid] is normalized by the client itself: a leading zero (e.g.
+/// `03600335`) is stripped, so callers may pass the tid as printed on the
+/// terminal without worrying about the format HPS expects.
 class HpsClient {
   HpsClient({
     Uri? baseUrl,
-    required this.tid,
+    required String tid,
     this.defaultCurrency = 'EUR',
     this.defaultLanguage,
     this.timeout = const Duration(minutes: 3),
     http.Client? httpClient,
   }) : baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'),
+       tid = _normalizeTid(tid),
        _http = httpClient,
        _ownsHttpClient = httpClient == null;
 
   /// Base URL of the HPS. Defaults to `http://127.0.0.1:8080`.
   final Uri baseUrl;
 
-  /// Terminal identifier — **without leading zero**.
+  /// Terminal identifier — normalisiert (ohne fuehrende Null).
   final String tid;
 
   /// Currency used when a request does not specify one. Defaults to `EUR`.
@@ -478,6 +480,13 @@ class HpsClient {
         : baseUrl.path;
     final suffix = path.startsWith('/') ? path : '/$path';
     return baseUrl.replace(path: '$basePath$suffix', queryParameters: query);
+  }
+
+  /// HPS verlangt die TID OHNE fuehrende Null (z.B. 3600335, nicht 03600335).
+  /// Eine Kennung aus lauter Nullen bleibt unveraendert, statt leer zu werden.
+  static String _normalizeTid(String raw) {
+    final stripped = raw.replaceFirst(RegExp(r'^0+'), '');
+    return stripped.isEmpty ? raw : stripped;
   }
 
   /// A unique, numeric transaction id (≤ 18 digits) based on the current time.
