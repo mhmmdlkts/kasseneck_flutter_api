@@ -20,6 +20,7 @@ library;
 import '../../enums/keck_payment_method.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
+import '../../models/keck_tip_person.dart';
 import '../aufrufe.dart';
 import '../register/fehler.dart';
 import '../register/transport.dart';
@@ -329,6 +330,12 @@ class RegisterReceiptClient {
 
   /// Artikel in der Form, die die Kacheln brauchen.
   Future<List<KasseArtikel>> artikel() async => _liste(Aufrufe.listMyArticles, 'articles', KasseArtikel.aus);
+
+  /// Personen, denen sich Trinkgeld zuweisen lässt. Dieselbe Menge, die der
+  /// Verkauf akzeptiert; ohne das Recht `tipAssign` steht nur der Angemeldete
+  /// darin.
+  Future<List<KeckTipPerson>> tipEmpfaenger() async =>
+      _liste(Aufrufe.listMyTipRecipients, 'recipients', KeckTipPerson.aus);
 
   Future<List<T>> _liste<T>(String name, String feld, T Function(Map<String, dynamic>) lesen) async {
     final daten = await transport.rufen(name);

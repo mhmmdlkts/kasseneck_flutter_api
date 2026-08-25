@@ -22,6 +22,7 @@ import 'enums/voucher_action.dart';
 import 'enums/voucher_type.dart';
 import 'models/kasseneck_item.dart';
 import 'models/keck_tip.dart';
+import 'models/keck_tip_person.dart';
 import 'models/kasseneck_receipt.dart';
 import 'src/aufrufe.dart';
 
@@ -371,6 +372,33 @@ class KasseneckApi {
       final msg = resJson['message'] ?? 'Unbekannter Fehler';
       throw Exception('createReceipt fehlgeschlagen: $msg');
     }
+  }
+
+  /// Personen, denen sich Trinkgeld zuweisen laesst.
+  ///
+  /// Es ist **dieselbe Menge, die [sellReceipt] akzeptiert**: Wer hier steht,
+  /// wird beim Verkauf nicht zurueckgewiesen. Aus einer Person macht
+  /// [KeckTipPerson.mit] den Anteil fuer [KeckTip.recipients] — so kann keine
+  /// Kennung danebengreifen, die der Server ablehnt.
+  Future<List<KeckTipPerson>> listTipRecipients() async {
+    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+      endpoint: Aufrufe.listMyTipRecipients,
+    ).then((value) => json.decode(value));
+
+    if (resJson['status'] != 'success') {
+      final msg = resJson['message'] ?? 'Unbekannter Fehler';
+      throw Exception('listMyTipRecipients fehlgeschlagen: $msg');
+    }
+    final roh = resJson['data'] is Map ? resJson['data']['recipients'] : null;
+    if (roh is! List) {
+      // Keine Liste ist etwas anderes als eine leere Liste: „niemand
+      // zuweisbar" darf nicht aussehen wie „Antwort kaputt".
+      throw Exception('listMyTipRecipients: Antwort enthaelt keine Liste (data.recipients fehlt)');
+    }
+    return [
+      for (final e in roh)
+        if (e is Map) KeckTipPerson.aus(Map<String, dynamic>.from(e)),
+    ];
   }
 
   /// Fetches a single receipt by its [receiptId].
