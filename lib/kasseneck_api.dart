@@ -13,6 +13,7 @@ import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/models/report_month.dart';
 import 'package:kasseneck_api/models/stripe_url_seesion.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
+import 'package:kasseneck_api/services/vienna_time.dart';
 
 import 'enums/keck_payment_method.dart';
 import 'enums/receipt_type.dart';
@@ -547,34 +548,49 @@ class KasseneckApi {
     return resJson['status'] == 'success';
   }
 
+  /// Zufallsquelle der Hobex-Transaktionskennung. Eine Quelle fuer alle
+  /// Aufrufe: `Random()` je Aufruf neu zu bauen kostet, ohne die Folge besser
+  /// zu machen.
+  static final Random _hobexZufall = Random();
+
   /// Erzeugt eine Transaktionskennung fuer Hobex: 19 Stellen, rein numerisch.
   ///
-  /// Aufbau mit fester Stellenzahl je Bestandteil:
-  /// Jahr (2, ohne Jahrhundert), Monat, Tag, Stunde, Minute, Sekunde (je 2),
-  /// Millisekunde (3), Mikrosekunden-Rest (3) und eine Zufallsziffer 1-9.
+  /// Aufbau mit fester Stellenzahl je Bestandteil, gerechnet nach **Wiener
+  /// Wanduhrzeit**: Jahr (2, ohne Jahrhundert), Monat, Tag, Stunde, Minute,
+  /// Sekunde (je 2), Millisekunde (3) und vier Zufallsziffern.
   ///
-  /// Bewusst NICHT aus [DateTime.toString()] zurechtgeschnitten: Dart laesst
-  /// den Mikrosekunden-Rest dort weg, wenn er 0 ist. Der Zwischenstring war
-  /// dann drei Stellen zu kurz und der Zuschnitt warf einen RangeError -- rund
-  /// bei jedem tausendsten Aufruf, mitten im Zahlungsweg.
+  /// **Dasselbe Verfahren wie `newHobexTransactionId` im JS-Zwilling**
+  /// (@kreiseck/kasseneck-api, src/payments/hobex.ts). Beide Seiten pinnen
+  /// dieselben Golden-Werte in ihrer Testsuite; weicht eine ab, faellt ihr
+  /// Test.
   ///
-  /// [zeitpunkt] dient nur dem Test; ohne Angabe gilt `DateTime.now()`.
-  static String newHobexTransactionId({DateTime? zeitpunkt}) {
-    final DateTime jetzt = zeitpunkt ?? DateTime.now();
+  /// Wiener Zeit statt Geraetezeit: sonst haetten zwei Kassen desselben
+  /// Betriebs in verschiedenen Zeitzonen Kennungen, die sich um Stunden
+  /// unterscheiden, und der Tageswechsel in der Kennung faende nicht zum
+  /// Geschaeftstag statt.
+  ///
+  /// [zeitpunkt] und [zufall] dienen dem Test; ohne Angabe gelten
+  /// `DateTime.now()` und `Random.nextDouble`.
+  static String newHobexTransactionId({DateTime? zeitpunkt, double Function()? zufall}) {
+    final DateTime wand = ViennaTime.toWallClock(zeitpunkt ?? DateTime.now());
+    final double Function() quelle = zufall ?? _hobexZufall.nextDouble;
     String zwei(int wert) => wert.toString().padLeft(2, '0');
-    String drei(int wert) => wert.toString().padLeft(3, '0');
     final StringBuffer kennung = StringBuffer()
-      ..write(zwei(jetzt.year % 100))
-      ..write(zwei(jetzt.month))
-      ..write(zwei(jetzt.day))
-      ..write(zwei(jetzt.hour))
-      ..write(zwei(jetzt.minute))
-      ..write(zwei(jetzt.second))
-      ..write(drei(jetzt.millisecond))
-      ..write(drei(jetzt.microsecond))
-      // Bisher wurde eine Zahl 10-99 angehaengt und danach auf 19 Stellen
-      // gekuerzt -- uebrig blieb genau deren erste Ziffer, 1-9 gleichverteilt.
-      ..write(Random().nextInt(9) + 1);
+      ..write(zwei(wand.year % 100))
+      ..write(zwei(wand.month))
+      ..write(zwei(wand.day))
+      ..write(zwei(wand.hour))
+      ..write(zwei(wand.minute))
+      ..write(zwei(wand.second))
+      ..write(wand.millisecond.toString().padLeft(3, '0'))
+      // Vier Ziffern, immer vierstellig: eine kuerzere Zahl wuerde die Kennung
+      // verkuerzen und damit ihre Form verlassen. Der Wert wird auf [0, 1)
+      // begrenzt -- eine fremde Zufallsquelle koennte 1 liefern.
+      ..write((_hobexBegrenzt(quelle()) * 10000).floor().toString().padLeft(4, '0'));
     return kennung.toString();
   }
+
+  /// Auf `[0, 1)` begrenzen -- eine fremde Zufallsquelle haelt sich nicht daran.
+  static double _hobexBegrenzt(double wert) =>
+      wert.isFinite ? wert.clamp(0.0, 0.9999999) : 0.0;
 }
