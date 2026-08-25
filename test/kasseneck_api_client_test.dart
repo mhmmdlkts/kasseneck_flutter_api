@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -186,6 +187,69 @@ void main() {
       final id = KasseneckApi.newHobexTransactionId();
       expect(id.length, 19);
       expect(RegExp(r'^\d+$').hasMatch(id), isTrue);
+    });
+    // Der Aufruf ohne Parameter wuerfelte bisher: nur wenn die Mikrosekunden
+    // zufaellig 0 waren, liess Dart sie in toString() weg und der Zuschnitt
+    // stuerzte ab (RangeError). Die folgenden Faelle treffen genau das.
+    group('newHobexTransactionId mit gesetztem Zeitpunkt', () {
+      void pruefe(String was, DateTime zeitpunkt) {
+        test(was, () {
+          final id = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt);
+          expect(id.length, 19, reason: 'Hobex erwartet genau 19 Stellen');
+          expect(RegExp(r'^\d+$').hasMatch(id), isTrue, reason: 'rein numerisch');
+        });
+      }
+
+      pruefe('Mikrosekunden 0', DateTime(2026, 8, 24, 13, 45, 12, 789, 0));
+      pruefe('Millisekunden und Mikrosekunden 0', DateTime(2026, 8, 24, 13, 45, 12, 0, 0));
+      pruefe('einstellige Werte in Monat, Tag und Stunde', DateTime(2026, 1, 2, 3, 4, 5, 6, 7));
+      pruefe('Jahreswechsel, Mikrosekunden 0', DateTime(2027, 1, 1, 0, 0, 0, 0, 0));
+      pruefe('volle Stellen', DateTime(2026, 12, 31, 23, 59, 59, 999, 999));
+    });
+
+    test('newHobexTransactionId: Zeitpunkt steht in den ersten 18 Stellen', () {
+      final id = KasseneckApi.newHobexTransactionId(
+          zeitpunkt: DateTime(2026, 1, 2, 3, 4, 5, 6, 7));
+      expect(id.substring(0, 18), '260102030405006007');
+      expect(int.parse(id.substring(18)), inInclusiveRange(1, 9));
+    });
+
+    test('newHobexTransactionId: Format unveraendert gegenueber der bisherigen Bildung', () {
+      // Bisherige Bildung, wortgleich: aus DateTime.toString() alle Trenner
+      // heraus, die Jahrhundertziffern weg. Sie stimmt fuer jeden Zeitpunkt mit
+      // Mikrosekunden != 0 -- also ueberall dort, wo sie frueher nicht abstuerzte.
+      final zufall = Random(4711);
+      for (var i = 0; i < 500; i++) {
+        final zeitpunkt = DateTime(
+          2020 + zufall.nextInt(30),
+          1 + zufall.nextInt(12),
+          1 + zufall.nextInt(28),
+          zufall.nextInt(24),
+          zufall.nextInt(60),
+          zufall.nextInt(60),
+          zufall.nextInt(1000),
+          1 + zufall.nextInt(999),
+        );
+        final alt = zeitpunkt
+            .toString()
+            .replaceAll('-', '')
+            .replaceAll(':', '')
+            .replaceAll(' ', '')
+            .replaceAll('.', '')
+            .substring(2);
+        final neu = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt);
+        expect(neu.substring(0, 18), alt, reason: 'Zeitanteil von $zeitpunkt');
+      }
+    });
+
+    test('newHobexTransactionId: 2000 Aufrufe ohne Parameter, immer 19 Stellen', () {
+      // Der Absturz traf rund 1 von 1000 Aufrufen; diese Runde faengt ihn auch
+      // dann, wenn die Naht einmal nicht benutzt wird.
+      for (var i = 0; i < 2000; i++) {
+        final id = KasseneckApi.newHobexTransactionId();
+        expect(id.length, 19);
+        expect(RegExp(r'^\d+$').hasMatch(id), isTrue);
+      }
     });
   });
 }
