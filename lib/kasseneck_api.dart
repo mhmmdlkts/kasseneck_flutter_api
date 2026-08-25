@@ -547,9 +547,34 @@ class KasseneckApi {
     return resJson['status'] == 'success';
   }
 
-  static String newHobexTransactionId() {
-    String date = DateTime.now().toString().replaceAll('-', '').replaceAll(':', '').replaceAll(' ', '').replaceAll('.', '');
-    date = date.substring(2, date.length) + (Random().nextInt(90) + 10).toString();
-    return date.substring(0, 19);
+  /// Erzeugt eine Transaktionskennung fuer Hobex: 19 Stellen, rein numerisch.
+  ///
+  /// Aufbau mit fester Stellenzahl je Bestandteil:
+  /// Jahr (2, ohne Jahrhundert), Monat, Tag, Stunde, Minute, Sekunde (je 2),
+  /// Millisekunde (3), Mikrosekunden-Rest (3) und eine Zufallsziffer 1-9.
+  ///
+  /// Bewusst NICHT aus [DateTime.toString()] zurechtgeschnitten: Dart laesst
+  /// den Mikrosekunden-Rest dort weg, wenn er 0 ist. Der Zwischenstring war
+  /// dann drei Stellen zu kurz und der Zuschnitt warf einen RangeError -- rund
+  /// bei jedem tausendsten Aufruf, mitten im Zahlungsweg.
+  ///
+  /// [zeitpunkt] dient nur dem Test; ohne Angabe gilt `DateTime.now()`.
+  static String newHobexTransactionId({DateTime? zeitpunkt}) {
+    final DateTime jetzt = zeitpunkt ?? DateTime.now();
+    String zwei(int wert) => wert.toString().padLeft(2, '0');
+    String drei(int wert) => wert.toString().padLeft(3, '0');
+    final StringBuffer kennung = StringBuffer()
+      ..write(zwei(jetzt.year % 100))
+      ..write(zwei(jetzt.month))
+      ..write(zwei(jetzt.day))
+      ..write(zwei(jetzt.hour))
+      ..write(zwei(jetzt.minute))
+      ..write(zwei(jetzt.second))
+      ..write(drei(jetzt.millisecond))
+      ..write(drei(jetzt.microsecond))
+      // Bisher wurde eine Zahl 10-99 angehaengt und danach auf 19 Stellen
+      // gekuerzt -- uebrig blieb genau deren erste Ziffer, 1-9 gleichverteilt.
+      ..write(Random().nextInt(9) + 1);
+    return kennung.toString();
   }
 }
