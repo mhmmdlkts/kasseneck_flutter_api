@@ -238,6 +238,24 @@ void main() {
       expect(nachher.maxMenge, vorher.maxMenge);
     });
 
+    test('ein Preis mit Gleitkomma-Rest wird gerundet, nicht abgeschnitten', () {
+      // Das Backend rechnet in JavaScript aus Euro hoch: 19.99 * 100 ist dort
+      // exakt 1998.9999999999998. Abgeschnitten verkaufte sich der Artikel
+      // dauerhaft einen Cent zu billig — auf einen signierten Beleg.
+      for (final (double euro, int cents) in [
+        (19.99, 1999),
+        (8.70, 870),
+        (1.15, 115),
+        (0.29, 29),
+      ]) {
+        final a = KasseArtikel.aus({'id': 'a1', 'name': 'Ware', 'unitPriceCents': euro * 100});
+        expect(a.preisCents, cents, reason: '$euro EUR');
+      }
+      // Ganze Werte bleiben, wie sie sind.
+      expect(KasseArtikel.aus({'unitPriceCents': 1999}).preisCents, 1999);
+      expect(KasseArtikel.aus({'unitPriceCents': null}).preisCents, isNull);
+    });
+
     test('auch ein Artikel ohne Preis und Gruppe kommt heil zurück', () {
       final vorher = artikel(preisCents: null, satz: null, gruppe: null);
       final nachher = KasseArtikel.aus(vorher.toJson());
