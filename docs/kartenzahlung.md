@@ -109,6 +109,32 @@ Das ist der entscheidende Unterschied zur **Aufhebung**: Bei `refund` ist die
 die der längst abgeschlossenen Originalzahlung — ein Abbruch könnte dort nur
 `100010` ernten. Deshalb hat `cancel` eine eigene Klärung.
 
+### Das Terminal serialisiert — die Klärung kann sich selbst im Weg stehen
+
+Eine zweite Anfrage, während eine läuft, wird mit **HTTP 409**, `text/plain`,
+Rumpf `Terminal is busy` abgewiesen. Der Client macht daraus eine
+`HpsHttpException` mit genau dieser Meldung — kein `FormatException`, obwohl es
+kein JSON ist.
+
+Das ist keine Randnotiz: Bei einem Polling im 200-ms-Takt kam ein parallel
+abgesetzter Void **gar nicht durch**. Wer die Klärung zu dicht taktet, hungert
+den Vorgang aus, den er klären will. Der Backoff ist deshalb kein Schönheits-,
+sondern ein Funktionsmerkmal.
+
+Offen zur Entscheidung: `409 "Terminal is busy"` heißt streng genommen
+„ich habe diese Anfrage **nicht angenommen**" — eine Aussage, kein Nichtwissen.
+Für die abgewiesene Anfrage ist damit nachweislich nichts belastet. Derzeit
+behandelt der Code sie wie einen Transportfehler; als `declined` wäre sie
+schneller und immer noch korrekt.
+
+### Nach einem gelandeten Void schlägt der Status sofort um
+
+Kein Nachlauf: Sobald der Void am Terminal durch ist, antwortet die
+Statusabfrage `9011`. Das `'0'`-Fenster ist genau die Ausführungsdauer des
+Voids — nicht eine Verzögerung danach. Wer nach einem abgerissenen
+Void-Request `'0'` sieht, sieht also entweder einen Void, der nie ankam, oder
+einen, der noch läuft.
+
 ## Weitere Messwerte
 
 - **Void ohne `amount`** → `HTTP 400 "Missing amount"`. Der Pflichtparameter ist
