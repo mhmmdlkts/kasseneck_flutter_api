@@ -96,11 +96,35 @@ void main() {
       final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
       await expectLater(
         api.hobexGetStatus(transactionId: 'TX-1'),
-        throwsA(isA<Exception>().having(
-          (e) => e.toString(),
-          'Meldung',
-          contains('hobexGetStatus'),
-        )),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.functionName, 'functionName', contains('hobexGetStatus'))
+            .having((e) => e.reason, 'reason', 'missing-status')),
+      );
+    });
+
+    test('hobexGetStatus: die Meldung traegt den Antwortrumpf nicht', () async {
+      // Der Rumpf kann tragen, was nicht ins Protokoll gehoert. Die
+      // Klaerschleife schreibt ihre Ausnahmen in den Nachweistext, der im
+      // Belastungsstreit gelesen wird -- dieselbe Regel wie in _huelle.
+      final mock = MockClient((_) async => http.Response('["GEHEIM-4711"]', 200));
+      final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
+      await expectLater(
+        api.hobexGetStatus(transactionId: 'TX-1'),
+        throwsA(isA<Exception>()
+            .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('GEHEIM')))),
+      );
+    });
+
+    test('hobexGetStatus: 200 mit HTML ist ein benannter Fehler, keine rohe FormatException', () async {
+      // Captive Portal oder CDN-Fehlerseite. json.decode stand hier
+      // ungesichert -- die FormatException traegt ihre Eingabe im Text.
+      final mock = MockClient((_) async => http.Response('<html>Gateway GEHEIM-4711</html>', 200));
+      final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
+      await expectLater(
+        api.hobexGetStatus(transactionId: 'TX-1'),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', 'not-json')
+            .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('GEHEIM')))),
       );
     });
   });

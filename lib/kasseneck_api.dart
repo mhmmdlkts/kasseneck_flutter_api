@@ -768,22 +768,17 @@ class KasseneckApi {
   /// Eine Abfrage, kein Kartenfluss -- daher die kurze Lesefrist statt der
   /// Kartenfrist.
   Future<HobexReceipt?> hobexGetStatus({required String transactionId}) async {
-    final dynamic decoded = await _kasseneckPostRequest(
+    // Ueber dieselbe Huelle wie jeder andere Aufruf: ein unerwarteter Rumpf
+    // (Array, Skalar, HTML einer Fehlerseite) ist ein Transportfehler -- wir
+    // konnten den Dienst nicht sinnvoll befragen -- und wirft benannt. Die
+    // frueher hier gebaute Meldung hing den ganzen Rumpf an; die Ausnahmen der
+    // Klaerschleife landen im Nachweistext, und der wird im Belastungsstreit
+    // gelesen. Auch das ungesicherte json.decode faellt damit weg.
+    final Map<String, dynamic> resJson = await _kasseneckJson(
       endpoint: Aufrufe.hobexGetStatus,
       params: {'transactionId': transactionId},
       deadline: readTimeout,
-    ).then((value) => json.decode(value));
-
-    // Ein unerwarteter Rumpf (Array, Skalar, ...) ist ein Transportfehler --
-    // wir konnten den Dienst nicht sinnvoll befragen. Explizit geprueft statt
-    // ueber eine implizite Zuweisung: sonst entstuende ein roher TypeError,
-    // dessen Meldung fuer den Nachweistext der Klaerschleife unbrauchbar ist.
-    if (decoded is! Map<String, dynamic>) {
-      throw Exception(
-        'hobexGetStatus: unerwartetes Antwortformat (kein Objekt): $decoded',
-      );
-    }
-    final Map<String, dynamic> resJson = decoded;
+    );
 
     if (resJson['status'] != 'success' || resJson['data'] == null) return null;
     try {
