@@ -590,18 +590,42 @@ class KasseneckApi {
     return resJson['status'] == 'success';
   }
 
-  /// Fragt den Stand einer Hobex-Cloud-Transaktion ab. `null`, wenn der Dienst
-  /// zu dieser Kennung nichts kennt.
+  /// Fragt den Stand einer Hobex-Cloud-Transaktion ab.
   ///
   /// Das ist die Klaerstufe des Cloud-Wegs: nach einem Abbruch beantwortet sie
-  /// die Frage, ob die Zahlung trotzdem durchgelaufen ist. Eine Abfrage, kein
-  /// Kartenfluss -- daher die kurze Lesefrist statt der Kartenfrist.
+  /// die Frage, ob die Zahlung trotzdem durchgelaufen ist. Der Vertrag
+  /// unterscheidet bewusst zwei Ausgaenge, die NICHT gleich behandelt werden
+  /// duerfen:
+  ///
+  /// * Rueckgabe `null`: der Dienst hat geantwortet und kennt zu
+  ///   [transactionId] nichts, oder der gelieferte Beleg war nicht lesbar.
+  ///   Das ist eine Aussage -- weiter klaeren/pollen ist sinnvoll.
+  /// * Eine geworfene Ausnahme: wir konnten den Dienst gar nicht erst fragen
+  ///   (Server-Fehler, Netzwerk, unerwartetes Antwortformat). Das ist ein
+  ///   Transportfehler und KEINE Aussage ueber den Vorgang -- er darf niemals
+  ///   als "nicht belastet" gelesen werden. Genau diese Vermischung von
+  ///   Nichtwissen und Aussage fuehrte zu einer durchgelaufenen Zahlung, die
+  ///   als Fehlschlag gemeldet wurde.
+  ///
+  /// Eine Abfrage, kein Kartenfluss -- daher die kurze Lesefrist statt der
+  /// Kartenfrist.
   Future<HobexReceipt?> hobexGetStatus({required String transactionId}) async {
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+    final dynamic decoded = await _kasseneckPostRequest(
       endpoint: Aufrufe.hobexGetStatus,
       params: {'transactionId': transactionId},
       deadline: readTimeout,
     ).then((value) => json.decode(value));
+
+    // Ein unerwarteter Rumpf (Array, Skalar, ...) ist ein Transportfehler --
+    // wir konnten den Dienst nicht sinnvoll befragen. Explizit geprueft statt
+    // ueber eine implizite Zuweisung: sonst entstuende ein roher TypeError,
+    // dessen Meldung fuer den Nachweistext der Klaerschleife unbrauchbar ist.
+    if (decoded is! Map<String, dynamic>) {
+      throw Exception(
+        'hobexGetStatus: unerwartetes Antwortformat (kein Objekt): $decoded',
+      );
+    }
+    final Map<String, dynamic> resJson = decoded;
 
     if (resJson['status'] != 'success' || resJson['data'] == null) return null;
     try {

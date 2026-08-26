@@ -81,5 +81,27 @@ void main() {
       final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
       expect(await api.hobexGetStatus(transactionId: 'TX-unbekannt'), isNull);
     });
+
+    test('hobexGetStatus: Server-Fehler ist ein Transportfehler und darf NICHT als null (unbelastet) gelesen werden', () async {
+      final mock = MockClient((_) async => http.Response('server explodiert', 500));
+      final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
+      await expectLater(
+        api.hobexGetStatus(transactionId: 'TX-1'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('hobexGetStatus: unerwarteter Rumpf (kein Objekt) wirft eine aussagekraeftige Ausnahme statt eines rohen TypeError', () async {
+      final mock = MockClient((_) async => http.Response('[1,2,3]', 200));
+      final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
+      await expectLater(
+        api.hobexGetStatus(transactionId: 'TX-1'),
+        throwsA(isA<Exception>().having(
+          (e) => e.toString(),
+          'Meldung',
+          contains('hobexGetStatus'),
+        )),
+      );
+    });
   });
 }
