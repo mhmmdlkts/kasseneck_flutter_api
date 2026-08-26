@@ -133,8 +133,13 @@ switch (result.outcome) {
     return; // definitely no money moved — safe to retry
   case CardPaymentOutcome.unresolved:
     // Not settled within the resolve budget (90 s by default, configurable).
-    // Do NOT retry automatically — keep `transactionId` and resolve later,
-    // e.g. by calling hps.pay(transactionId: transactionId) again.
+    // Do NOT just call pay() again with the same transactionId and assume it's safe:
+    // that assumption — that the terminal recognizes a repeated transactionId as the
+    // same transaction rather than starting a new one — is itself listed as unconfirmed
+    // in this release's CHANGELOG ("Offen, unbestätigt"). Keep `transactionId`, resolve
+    // the outcome first (e.g. via the underlying `HpsClient.transactionStatus(...)`),
+    // and only retry once the outcome is known, e.g. by calling
+    // hps.pay(amount: 12.50, transactionId: transactionId) again.
     return;
 }
 
@@ -165,7 +170,17 @@ final cloud = HobexCloudPayments(kasseneck);
 final transactionId = KasseneckApi.newHobexTransactionId();
 
 final result = await cloud.pay(transactionId: transactionId, amount: 12.50);
-if (result.outcome != CardPaymentOutcome.approved) return; // declined or unresolved
+
+switch (result.outcome) {
+  case CardPaymentOutcome.approved:
+    break; // proceed below
+  case CardPaymentOutcome.declined:
+    return; // definitely no money moved — safe to retry
+  case CardPaymentOutcome.unresolved:
+    // Not settled within the resolve budget. Do NOT retry blindly — keep
+    // `transactionId` and resolve later, see the HPS example above.
+    return;
+}
 
 final card = result.receipt!;
 await kasseneck.sellReceipt(
