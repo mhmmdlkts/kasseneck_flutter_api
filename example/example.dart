@@ -44,12 +44,43 @@ Future<void> main() async {
 /// Charges a card on a local Hobex terminal (HPS) and turns the result into a
 /// signed Kasseneck receipt. Any other terminal works the same way — or use
 /// `CreditCardProvider.custom` to pass your own card data.
+///
+/// Use [HpsPayments], not [HpsClient.payment] directly. Two reasons, both paid
+/// for in real money on 2026-08-24:
+///
+///  * It fixes the transaction id **before** the first request goes out. Let
+///    the client generate it and you only learn it from the response — so if
+///    the response never arrives, you cannot query or void the transaction,
+///    and every retry is a second, independent charge.
+///  * It answers the only question a caller has — may I retry? — with three
+///    values instead of a boolean. `!isApproved` lumps "declined" together
+///    with "still running" and with "no idea".
 Future<void> cardSale(KasseneckApi kasseneck) async {
-  final hps = HpsClient(tid: '3600335'); // TID without leading zero
-  final res = await hps.payment(amount: 12.50);
-  if (!res.isApproved) return; // declined -> res.responseCode / res.responseText
+  final payments = HpsPayments(
+    HpsClient(tid: '3600335'), // TID without leading zero
+  );
 
-  final card = HobexReceipt.fromHps(res);
+  // Fix the id first; persist it if you want to survive an app restart.
+  final txId = HpsClient.newTransactionId();
+  final res = await payments.pay(amount: 12.50, transactionId: txId);
+
+  switch (res.outcome) {
+    case CardPaymentOutcome.declined:
+      // Proven: nothing was charged. Retrying is safe.
+      print('Declined (${res.response?.responseCode}) — safe to retry');
+      return;
+    case CardPaymentOutcome.unresolved:
+      // NOT the same as declined. The card may well have been charged.
+      // Never retry silently: warn, and keep res.transactionId — it is the
+      // only handle left for transactionStatus() or cancel().
+      print('Outcome unknown for ${res.transactionId} — do NOT charge again');
+      print(res.steps.join('\n'));
+      return;
+    case CardPaymentOutcome.approved:
+      break;
+  }
+
+  final card = HobexReceipt.fromHps(res.response!);
   await kasseneck.sellReceipt(
     paymentMethod: KeckPaymentMethod.creditCard,
     creditCardProvider: card.creditCardProvider,

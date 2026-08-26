@@ -8,9 +8,19 @@
 /// ```dart
 /// import 'package:kasseneck_api/hobex_hps.dart';
 ///
-/// final hps = HpsClient(tid: '3600335');
-/// final res = await hps.payment(amount: 1.00);
+/// final payments = HpsPayments(HpsClient(tid: '3600335'));
+/// final res = await payments.pay(
+///   amount: 1.00,
+///   transactionId: HpsClient.newTransactionId(),
+/// );
+/// // res.outcome: approved | declined | unresolved
 /// ```
+///
+/// Fuer eine Zahlung immer [HpsPayments], nicht [HpsClient.payment] direkt:
+/// dort steht die Kennung erst mit der Antwort fest, und `isApproved == false`
+/// wirft "abgelehnt" mit "laeuft noch" in einen Topf. Genau daraus entstand am
+/// 24.08.2026 eine Doppelbelastung. [HpsClient] bleibt oeffentlich fuer alles
+/// Uebrige (Diagnose, Batch, Statusabfrage).
 library;
 
 export 'src/hobex_hps/hps_client.dart' show HpsClient;

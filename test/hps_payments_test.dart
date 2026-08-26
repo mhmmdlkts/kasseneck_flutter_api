@@ -455,9 +455,18 @@ void main() {
       // ohne eine einzige Statusabfrage -- der Klaerweg komplett verloren.
       // Hier: Budget 600 ms, Abbruch also auf 100 ms gedeckelt.
       //
-      // Einziger Test mit echter (aber gedeckelter) Wartezeit: eine Frist
-      // laesst sich nicht mit einer Uhr nachbilden, die nur durch Pausen
-      // vorrueckt. Deshalb hier bewusst die echte Uhr.
+      // Einziger Test mit echter (aber gedeckelter) Wartezeit, ~100 ms.
+      // Der Grund ist genauer als "geht nicht": mit den Naehten DIESES
+      // Doppels geht es nicht, weil Future.timeout an einem echten Timer
+      // haengt -- die injizierte Uhr rueckt nur durch Pausen vor und sieht
+      // eine Frist nie. Sauber loesen liesse sich das mit package:fake_async
+      // (virtuelle Zeit fuer genau solche Timer). Bewusst nicht gemacht:
+      // fake_async liegt zwar transitiv ueber flutter_test im Paketgraph,
+      // aber direkt importieren duerfte man es erst als eigenes
+      // dev_dependency -- ein neues Abhaengigkeitsglied fuer einen einzigen
+      // Test, dessen Wanduhrzeit gedeckelt und deterministisch ist. Die
+      // Reserve ist bewusst grosszuegig (600 ms Budget gegen ~100 ms
+      // Frist), damit eine ausgelastete Maschine den Test nicht kippt.
       final t = FakeTerminal(
         payment: [boom],
         status: [
@@ -630,6 +639,43 @@ void main() {
       expect(t.callsOn('status'), greaterThan(0),
           reason: 'ein leerer Code muss wie ein fehlender weiter geklaert '
               'werden, nicht sofort als declined durchgehen');
+    });
+
+    test('der Verlauf behauptet bei 9027 keinen fehlenden Ergebniscode',
+        () async {
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '9027', 'transactionId': 'TX-9d'})
+        ],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-9d'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-9d');
+      expect(res.steps.any((s) => s.contains('ohne Ergebniscode')), isFalse,
+          reason: 'ein 9027 IST ein Ergebniscode -- er traegt nur keine '
+              'Aussage');
+      expect(res.steps.any((s) => s.contains('ohne Aussage (9027)')), isTrue);
+    });
+
+    test('der Verlauf nennt einen wirklich fehlenden Code als solchen',
+        () async {
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'transactionId': 'TX-9e'})
+        ],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-9e'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-9e');
+      expect(res.steps.any((s) => s.contains('ohne Ergebniscode')), isTrue);
     });
 
     test('Trinkgeld und Referenz gehen mit hinaus', () async {
@@ -1170,6 +1216,25 @@ void main() {
           reason: 'der mehrdeutige Direktcode wird nicht geraten, sondern am '
               'Zustand der Originalzahlung geklaert');
       expect(t.callsOn('status'), greaterThan(0));
+    });
+
+    test('cancel: der Verlauf behauptet bei 9011 keinen fehlenden Code',
+        () async {
+      // [steps] ist der Nachweis, der im Belastungsstreit angezeigt wird.
+      // "Antwort ohne Ergebniscode" waere dort unwahr: ein Code WAR da, er
+      // war nur mehrdeutig.
+      final t = FakeTerminal(
+        cancel: [
+          (_) => json({'responseCode': '9011'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9011'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).cancel(transactionId: 'TX-13d', amount: 25);
+      expect(res.steps.any((s) => s.contains('ohne Ergebniscode')), isFalse);
+      expect(res.steps.any((s) => s.contains('mehrdeutig')), isTrue);
     });
 
     test('cancel: 9011 direkt, aber die Klaerung findet nichts -> unresolved',

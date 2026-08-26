@@ -186,7 +186,7 @@ class HpsPayments {
     if (res != null) {
       final settled = _fromResponse(res, id, steps);
       if (settled != null) return settled;
-      steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
+      steps.add(_offeneAntwort(res));
     }
 
     return _resolve(id, steps);
@@ -228,7 +228,7 @@ class HpsPayments {
     if (res != null) {
       final settled = _fromResponse(res, id, steps);
       if (settled != null) return settled;
-      steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
+      steps.add(_offeneAntwort(res));
     }
 
     return _resolve(id, steps);
@@ -264,7 +264,9 @@ class HpsPayments {
     if (res != null) {
       final settled = _fromCancelResponse(res, transactionId, steps);
       if (settled != null) return settled;
-      steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
+      // Kein Sammel-Eintrag fuer 9011: [_fromCancelResponse] hat dafuer
+      // bereits den zutreffenden Eintrag gesetzt.
+      if (!res.isCanceled) steps.add(_offeneAntwort(res));
     }
 
     return _resolveCancel(transactionId, steps);
@@ -303,6 +305,19 @@ class HpsPayments {
     }
     return _fromResponse(res, id, steps);
   }
+
+  /// Verlaufseintrag fuer eine Antwort, die den Ausgang NICHT festschreibt.
+  ///
+  /// Unterscheidet die beiden Gruende, weil [steps] der Nachweis ist, der im
+  /// Belastungsstreit angezeigt wird: "Antwort ohne Ergebniscode" waere
+  /// unwahr, wo sehr wohl einer da war -- er trug nur keine Aussage
+  /// ([TransactionResponse.noStatementCode]). Eine Unwahrheit im Nachweis ist
+  /// schlimmer als eine Luecke darin.
+  static String _offeneAntwort(TransactionResponse res) =>
+      res.responseCode == null
+          ? 'Antwort ohne Ergebniscode -- Ausgang wird geklaert'
+          : 'Antwort ohne Aussage (${res.responseCode}) -- Ausgang wird '
+              'geklaert';
 
   /// Ordnet eine Terminal-Antwort ein. `null`, wenn sie nichts entscheidet.
   ///
@@ -599,6 +614,16 @@ class HpsPayments {
   /// [CardPaymentOutcome.unresolved] -- wir sagen dann, dass wir es nicht
   /// wissen, statt es zu raten.
   ///
+  /// AUCH DAS IST EINE ANNAHME, und sie ist als solche zu lesen: die Karenz
+  /// deckt das plausible Fenster ab, nicht das garantierte. Wie lange ein
+  /// GELANDETER Void nach dem abgerissenen Request noch `'0'` liefert, ist
+  /// ungemessen -- er laeuft ueber einen Host-Roundtrip (auf dem Testgeraet
+  /// `tecstest.hobex.at`) und nicht nur ueber das lokale Terminal. Braucht er
+  /// laenger als die erste Backoff-Pause, meldet auch die zweite Abfrage noch
+  /// `'0'`, und das voreilige "hat nicht gegriffen" entsteht doch. Die
+  /// Karenz macht diesen Fall unwahrscheinlich, nicht unmoeglich; abschliessen
+  /// laesst er sich nur mit einer Messung dieses Fensters.
+  ///
   /// [TransactionResponse.state] `== 'VOID'` gilt zusaetzlich als Beleg, aber
   /// niemals als notwendige Bedingung. Bis 26.08.2026 war es die einzige
   /// Bedingung -- ein Fehler: auf dieser Firmware ist `state` in JEDER
@@ -707,6 +732,23 @@ class HpsPayments {
   /// braucht Millisekunden, nicht Sekunden. Was darueber liegt, ist ein
   /// haengendes Terminal, und dann ist die Zeit in Statusabfragen besser
   /// angelegt.
+  ///
+  /// Der Deckel hat einen Preis, und der gehoert benannt: ein Abbruch, der
+  /// laenger als [_abortBudget] braucht und DANN mit `'0'` geantwortet
+  /// haette, verliert sein beweisbares [CardPaymentOutcome.declined]. Die
+  /// Klaerung faellt fuer ihn auf die Statusabfrage zurueck, die auf einen
+  /// nicht genehmigten Vorgang mit [TransactionResponse.noStatementCode]
+  /// antwortet -- der Ausgang endet also bei
+  /// [CardPaymentOutcome.unresolved]. Sichere Richtung, aber eine verlorene
+  /// Aussage, nicht bloss verlorene Zeit.
+  ///
+  /// Und: `Future.timeout` bricht den HTTP-Request NICHT ab, es gibt ihn nur
+  /// auf. Die verlassene Abbruch-Anfrage laeuft am Terminal weiter. Faellt
+  /// die unmittelbar folgende Statusabfrage in dieses Fenster, kann das
+  /// Terminal sie mit `409` beantworten ("ein anderer Request laeuft") --
+  /// das ist heute ein Transportfehler wie jeder andere, zaehlt in
+  /// [maxTransportFailures] und wird nie zu einem Ausgang. Sicher, aber
+  /// ungenau; eine eigene Behandlung von `409` ist vorgemerkt.
   Duration get _abortBudget => resolveBudget ~/ _abortBudgetDivisor;
 
   Duration _nextWait(Duration current) {
