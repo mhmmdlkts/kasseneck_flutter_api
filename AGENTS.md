@@ -82,6 +82,18 @@ Und: kein Aufruf ohne Frist, auch kein scheinbar harmloser.
 nicht feststeht — „ob es wirkte, ist offen" ist besser als eine erfundene
 Erklärung.
 
+**8. Eine Ursachenbehauptung hängt an einer benannten Konstante.** Wer im
+Nachweistext schreibt, *warum* etwas passiert ist, darf das nur für einen Code
+tun, der gemessen und im Modell benannt ist — so wie `notAbortableCode`,
+`noStatementCode`, `transactionCanceledCode`. Ein `else`-Zweig, der für **jeden**
+anderen Code dieselbe Erklärung ausgibt, verallgemeinert eine einzelne Messung
+zu einer Regel, und kein Test schlägt an.
+
+Das ist keine Theorie: derselbe Fehler ist in diesem Paket zweimal aufgetreten
+und beide Male erst in der Review gefunden worden. Formulier neutral, wo du
+nichts weißt, und schreib einen Test, der rot wird, wenn jemand die Erklärung
+später wieder auf alle Codes ausdehnt.
+
 ## Geld
 
 Beträge sind **ganze Zahlen in Cent**. Euro als `double` gibt es nur an
