@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -11,6 +12,7 @@ import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
+import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/services/vienna_time.dart';
 
 import 'helpers/test_receipts.dart';
@@ -371,6 +373,41 @@ void main() {
         expect(id.length, 19);
         expect(RegExp(r'^\d+$').hasMatch(id), isTrue);
       }
+    });
+  });
+
+  group('Logo haelt den Verkauf nicht auf', () {
+    setUp(() {
+      LogoService.frist = LogoService.standardFrist;
+      LogoService.httpClient = http.Client();
+    });
+
+    test('haengender Logo-Host: sellReceipt kehrt trotzdem zurueck', () async {
+      // Der Logo-Abruf laeuft HINTER dem bereits signierten Beleg. Haengt er,
+      // steht die Kasse mit dem Gast am Tresen — und ein Neustart mit erneutem
+      // Kassieren erzeugt einen zweiten Umsatz in der Signaturkette.
+      LogoService.frist = const Duration(milliseconds: 20);
+      LogoService.httpClient = MockClient((_) => Completer<http.Response>().future);
+
+      final api = apiWith(MockClient((_) async => http.Response(
+            jsonEncode({
+              'status': 'success',
+              'data': {
+                ...buildReceipt().toJson(),
+                'logo_url': 'https://example.test/haengendes-logo.png',
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          )));
+
+      final beleg = await api
+          .sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem])
+          .timeout(const Duration(seconds: 5),
+              onTimeout: () => fail('sellReceipt haengt am Logo-Abruf'));
+
+      expect(beleg!.receiptId, 'TEST-ID-1', reason: 'der Beleg kommt heraus, nur ohne Logo');
+      expect(beleg.logo, isNull);
     });
   });
 }
