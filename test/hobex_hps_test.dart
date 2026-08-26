@@ -74,6 +74,16 @@ void main() {
       expect(r.isApproved, isFalse);
       expect(r.isConclusive, isTrue);
     });
+    test('100010 ist der gemessene Fehlschlag eines Abbruchs', () {
+      final r = TransactionResponse.fromJson({'responseCode': '100010'});
+      expect(r.isNotAbortable, isTrue);
+      expect(r.isApproved, isFalse);
+      expect(r.isConclusive, isTrue);
+      expect(
+        TransactionResponse.fromJson({'responseCode': '77777'}).isNotAbortable,
+        isFalse,
+      );
+    });
     test('ein echter Ablehnungscode bleibt schluessig', () {
       expect(
         TransactionResponse.fromJson({'responseCode': '100003'}).isConclusive,

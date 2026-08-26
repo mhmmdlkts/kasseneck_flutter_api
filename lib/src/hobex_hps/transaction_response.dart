@@ -4,8 +4,20 @@ import 'enums.dart';
 /// AVT) or of a transaction-status (v2) query.
 ///
 /// A response object is returned even when a payment is **declined**: declines
-/// are signalled by [isApproved] being `false` (i.e. [responseCode] != `"0"`),
-/// not by an exception. Exceptions are only thrown for HTTP/transport errors.
+/// are signalled in the body, not by an exception. Exceptions are only thrown
+/// for HTTP/transport errors.
+///
+/// **Careful — `responseCode != "0"` is NOT the test for a decline.** That
+/// reading is what caused the double charge of 2026-08-24: [noStatementCode]
+/// (`9027`) is a code other than `"0"` and yet says nothing at all — it stands
+/// for "still running" just as much as for "aborted" or "never seen". Reading
+/// it as a decline reports "nothing was charged, safe to retry" for a payment
+/// that is running right now.
+///
+/// A decline is a **conclusive** code other than `"0"`. Use [isConclusive] to
+/// ask whether this response settles anything, and only then [isApproved] to
+/// ask which way; [isNoStatement] names the gap. A response that is not
+/// conclusive is a reason to keep clarifying, never an outcome.
 class TransactionResponse {
   const TransactionResponse({
     required this.raw,
@@ -166,6 +178,15 @@ class TransactionResponse {
   /// mehr belastet.
   static const String transactionCanceledCode = '9011';
 
+  /// Ergebniscode `100010`: der Vorgang ist NICHT MEHR ABBRECHBAR.
+  ///
+  /// Am 26.08.2026 gemessen: [HpsClient.abort] antwortet damit, sobald der
+  /// Vorgang abgeschlossen (genehmigt) ist -- die genehmigte Zahlung bleibt
+  /// dabei unangetastet. Es ist der einzige gemessene Fehlschlagcode des
+  /// Abbruchs; jeder ANDERE Code ungleich `"0"` auf dem Abbruchweg ist
+  /// unbekannten Ursprungs und rechtfertigt keine Aussage ueber die Ursache.
+  static const String notAbortableCode = '100010';
+
   /// `true` when the transaction was approved (`responseCode == "0"`).
   bool get isApproved => responseCode == '0';
 
@@ -176,6 +197,10 @@ class TransactionResponse {
   /// sondern [noStatementCode]. Ein fehlender Code bleibt trotzdem eine
   /// Nicht-Aussage und wird genauso behandelt -- siehe [isConclusive].
   bool get isInProgress => responseCode == null;
+
+  /// `true`, wenn ein [HpsClient.abort] daran scheiterte, dass der Vorgang
+  /// nicht mehr abbrechbar war ([notAbortableCode]).
+  bool get isNotAbortable => responseCode == notAbortableCode;
 
   /// `true`, wenn das Terminal zu dieser Kennung keine Auskunft gibt
   /// ([noStatementCode]).

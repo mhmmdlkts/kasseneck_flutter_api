@@ -381,6 +381,27 @@ void main() {
           reason: 'eine Nicht-Aussage darf nicht als Beleg mitgegeben werden');
     });
 
+    test('ein UNGEMESSENER Abbruch-Fehlercode behauptet keine Ursache',
+        () async {
+      // Gemessen ist nur 100010 ("nicht mehr abbrechbar"). Fuer jeden anderen
+      // Code darf [steps] -- der Nachweis im Belastungsstreit -- keine Ursache
+      // erfinden.
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-5u'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '77777'})
+        ],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5u');
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(res.steps.any((s) => s.contains('nicht mehr abbrechbar')), isFalse,
+          reason: 'die Ursache ist fuer diesen Code nicht belegt');
+      expect(res.steps.any((s) => s.contains('Grund unbekannt')), isTrue);
+    });
+
     test('Abbruch abgelehnt, Nachfrage scheitert -> unresolved', () async {
       final t = FakeTerminal(
         payment: [boom],

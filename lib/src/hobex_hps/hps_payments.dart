@@ -470,8 +470,14 @@ class HpsPayments {
       return null;
     }
     if (!res.isApproved) {
-      steps.add('Abbruch abgelehnt (${res.responseCode}) -- der Vorgang ist '
-          'nicht mehr abbrechbar, Ausgang wird abgefragt');
+      // Die Ursache wird nur fuer den GEMESSENEN Code benannt. Jeder andere
+      // Fehlschlagcode des Abbruchs ist unbekannten Ursprungs -- und [steps]
+      // ist der Nachweis, der im Belastungsstreit angezeigt wird.
+      steps.add(res.isNotAbortable
+          ? 'Abbruch abgelehnt (${res.responseCode}) -- der Vorgang ist '
+              'nicht mehr abbrechbar, Ausgang wird abgefragt'
+          : 'Abbruch abgelehnt (${res.responseCode}) -- Grund unbekannt, '
+              'Ausgang wird abgefragt');
       return null;
     }
 
@@ -615,14 +621,18 @@ class HpsPayments {
   /// wissen, statt es zu raten.
   ///
   /// AUCH DAS IST EINE ANNAHME, und sie ist als solche zu lesen: die Karenz
-  /// deckt das plausible Fenster ab, nicht das garantierte. Wie lange ein
-  /// GELANDETER Void nach dem abgerissenen Request noch `'0'` liefert, ist
-  /// ungemessen -- er laeuft ueber einen Host-Roundtrip (auf dem Testgeraet
-  /// `tecstest.hobex.at`) und nicht nur ueber das lokale Terminal. Braucht er
-  /// laenger als die erste Backoff-Pause, meldet auch die zweite Abfrage noch
-  /// `'0'`, und das voreilige "hat nicht gegriffen" entsteht doch. Die
-  /// Karenz macht diesen Fall unwahrscheinlich, nicht unmoeglich; abschliessen
-  /// laesst er sich nur mit einer Messung dieses Fensters.
+  /// deckt das plausible Fenster ab, nicht das garantierte. Einen Nachlauf
+  /// gibt es nicht -- gemessen schlaegt die Statusabfrage sofort auf `9011`
+  /// um, sobald der Void am Terminal durch ist (`docs/kartenzahlung.md`,
+  /// "Nach einem gelandeten Void schlaegt der Status sofort um"). Das
+  /// `'0'`-Fenster ist genau die AUSFUEHRUNGSDAUER eines noch UNTERWEGS
+  /// befindlichen Voids, und die ist ungemessen: er laeuft ueber einen
+  /// Host-Roundtrip (auf dem Testgeraet `tecstest.hobex.at`) und nicht nur
+  /// ueber das lokale Terminal. Dauert seine Ausfuehrung laenger als die
+  /// erste Backoff-Pause, meldet auch die zweite Abfrage noch `'0'`, und das
+  /// voreilige "hat nicht gegriffen" entsteht doch. Die Karenz macht diesen
+  /// Fall unwahrscheinlich, nicht unmoeglich; abschliessen laesst er sich nur
+  /// mit einer Messung dieser Dauer.
   ///
   /// [TransactionResponse.state] `== 'VOID'` gilt zusaetzlich als Beleg, aber
   /// niemals als notwendige Bedingung. Bis 26.08.2026 war es die einzige

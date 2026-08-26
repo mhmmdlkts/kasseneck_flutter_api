@@ -14,6 +14,9 @@
 ///   transactionId: HpsClient.newTransactionId(),
 /// );
 /// // res.outcome: approved | declined | unresolved
+/// // Geldregel: nur declined heisst "nichts belastet, Wiederholung
+/// // gefahrlos". unresolved darf NIE erneut belastet werden -- warnen und
+/// // ueber res.transactionId klaeren.
 /// ```
 ///
 /// Fuer eine Zahlung immer [HpsPayments], nicht [HpsClient.payment] direkt:

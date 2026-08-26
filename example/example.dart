@@ -67,7 +67,12 @@ Future<void> cardSale(KasseneckApi kasseneck) async {
   switch (res.outcome) {
     case CardPaymentOutcome.declined:
       // Proven: nothing was charged. Retrying is safe.
-      print('Declined (${res.response?.responseCode}) — safe to retry');
+      //
+      // Print the last clarification step, not res.response?.responseCode:
+      // when the proof came from a successful abort, that response is the
+      // ABORT's, and its code is '0' — which means "approved" everywhere
+      // else.
+      print('Declined: ${res.steps.last} — safe to retry');
       return;
     case CardPaymentOutcome.unresolved:
       // NOT the same as declined. The card may well have been charged.
