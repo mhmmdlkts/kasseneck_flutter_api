@@ -26,6 +26,9 @@ import 'models/keck_tip_person.dart';
 import 'models/kasseneck_receipt.dart';
 import 'src/aufrufe.dart';
 
+export 'src/hobex_cloud/hobex_cloud_payments.dart'
+    show HobexCloudPayments, HobexCloudResult;
+
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///
 /// Create one instance with your [apiKey] and [cashregisterToken] (request both
