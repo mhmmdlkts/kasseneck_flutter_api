@@ -196,6 +196,58 @@ void main() {
       expect(r.isSmallBusiness, isFalse);
     });
 
+    group('Pflichtangaben nach § 132a Abs. 3 BAO', () {
+      test('fehlende Firma ist ein Mangel — der Beleg bleibt trotzdem erhalten', () {
+        // Z 1 verlangt die eindeutige Bezeichnung des leistenden
+        // Unternehmers. Bis hierher entstand daraus stumm ein Pflichtbeleg
+        // mit leerer erster Zeile. Werfen ist keine Antwort: der Beleg ist
+        // signiert und in der Kette.
+        final r = KasseneckReceipt.fromJson(baseJson()..remove('company'));
+
+        expect(r.receiptId, 'TEST-ID-1', reason: 'der Beleg kommt heraus');
+        expect(r.fehlendePflichtangaben, ['company']);
+        expect(r.pflichtangabenVollstaendig, isFalse);
+      });
+
+      test('eine Firma aus lauter Leerzeichen zaehlt nicht als Bezeichnung', () {
+        final r = KasseneckReceipt.fromJson(baseJson()..['company'] = '   ');
+        expect(r.fehlendePflichtangaben, ['company']);
+      });
+
+      test('falsch getippte Firma ebenso', () {
+        final r = KasseneckReceipt.fromJson(baseJson()..['company'] = 42);
+        expect(r.fehlendePflichtangaben, ['company']);
+      });
+
+      test('fromMetadata fuehrt dieselbe Pruefung', () {
+        final receipt = baseJson()['receipt'] as Map<String, dynamic>;
+        expect(KasseneckReceipt.fromMetadata(receipt, const {}).fehlendePflichtangaben, ['company']);
+        expect(
+            KasseneckReceipt.fromMetadata(receipt, {'company': 'Kasseneck Test GmbH'})
+                .fehlendePflichtangaben,
+            isEmpty);
+      });
+
+      test('ein vollstaendiger Beleg meldet keinen Mangel', () {
+        expect(cartA().fehlendePflichtangaben, isEmpty);
+        expect(cartA().pflichtangabenVollstaendig, isTrue);
+      });
+
+      test('Anschrift, Steuerangabe und Fusszeilen bleiben Zierde', () {
+        // Auf einem Beleg sind sie keine Pflichtangaben — erst auf einer
+        // Rechnung nach § 11 UStG. Ein Mangel hier wuerde jeden Beleg eines
+        // Betriebs ohne Fusszeile als unvollstaendig melden.
+        final j = baseJson()
+          ..remove('taxnr')
+          ..remove('street')
+          ..remove('zip')
+          ..remove('city')
+          ..remove('footer1')
+          ..remove('footer2');
+        expect(KasseneckReceipt.fromJson(j).fehlendePflichtangaben, isEmpty);
+      });
+    });
+
     test('logo_url mit falschem Typ kippt den Beleg nicht', () {
       final j = baseJson()..['logo_url'] = 42;
       expect(KasseneckReceipt.fromJson(j).logoUrl, isNull);

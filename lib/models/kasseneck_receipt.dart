@@ -328,6 +328,37 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     );
   }
 
+  /// Pflichtangaben nach § 132a Abs. 3 BAO, die auf diesem Beleg **fehlen** —
+  /// leer, solange er vollstaendig ist. Feldnamen wie in der Antwort
+  /// (`'company'`), nie deren Werte.
+  ///
+  /// Warum ein abgeleitetes Merkmal und kein Wurf: der Beleg ist an dieser
+  /// Stelle bereits signiert und in der Kette. Ihn wegen einer fehlenden
+  /// Kopfzeile zu verwerfen kostet genau den Beleg, den die
+  /// Belegerteilungspflicht verlangt — dieselbe Abwaegung, die weiter unten
+  /// die Grenze zwischen Signatur und Zierde zieht. Er darf aber auch nicht
+  /// stumm bleiben: bis hierher entstand aus einem fehlenden `company` ein
+  /// Pflichtbeleg mit **leerer erster Zeile**, ohne jedes Signal.
+  ///
+  /// Als Ableitung statt als gespeichertes Feld, damit die Aussage auf jedem
+  /// Bauweg gilt — [KasseneckReceipt.create], [fromJson], [fromMetadata], der
+  /// Konstruktor selbst und ein aus Isar zurueckgelesener Beleg — und damit
+  /// sie nicht veraltet, wenn der Kopf nachgetragen wird.
+  ///
+  /// **Nur die Bezeichnung des leistenden Unternehmers** steht hier: `taxnr`,
+  /// Anschrift und Fusszeilen sind auf einem Beleg keine Pflichtangaben (erst
+  /// auf einer Rechnung nach § 11 UStG). Die Signatur- und Identitaetsfelder
+  /// laufen weiter ueber `_pflichttext` und werfen.
+  List<String> get fehlendePflichtangaben => [
+        // § 132a Abs. 3 Z 1 BAO: eindeutige Bezeichnung des liefernden oder
+        // leistenden Unternehmers.
+        if (companyName.trim().isEmpty) 'company',
+      ];
+
+  /// `false`, wenn dem Beleg eine Pflichtangabe fehlt — siehe
+  /// [fehlendePflichtangaben].
+  bool get pflichtangabenVollstaendig => fehlendePflichtangaben.isEmpty;
+
   String get downloadUrl => '${KasseneckApi.downloadBaseUrl}/$fullReceiptId';
 
   /// Beleg-Zeit in Wiener Zeit (RKSV-Zeitzone), unabhängig von der Geräte-Zeitzone.
