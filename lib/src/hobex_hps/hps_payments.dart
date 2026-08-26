@@ -69,16 +69,23 @@ import 'transaction_response.dart';
 /// [CardPaymentOutcome.unresolved]: ohne sie sind Statusabfrage und Storno
 /// unerreichbar.
 ///
-/// [refund] bekommt exakt dieselbe Klaerung wie [pay], Abbruch eingeschlossen.
-/// Die Kennung ist dort die des NEUEN Vorgangs (der Gutschrift selbst), eine
-/// Statusabfrage darauf liefert also genau deren Ausgang, und
-/// `POST /api/transaction/abort/{tid}/{tx}` kennt keinen Transaktionstyp --
-/// er adressiert den laufenden Vorgang unter dieser Kennung. Ohne Abbruch
-/// haette die Klaerung einer Gutschrift gar keinen Diskriminator mehr und
-/// endete fast immer bei `unresolved`, weil die Statusabfrage auch hier `9027`
-/// antwortet. Ein abgerissener Gutschriftlauf kostet den Kunden nichts: er
-/// bekommt sein Geld einen Vorgang spaeter, waehrend eine falsche
-/// "gefahrlos wiederholbar"-Meldung eine doppelte Gutschrift ausloesen wuerde.
+/// [refund] bekommt exakt dieselbe Klaerung wie [pay], Abbruch eingeschlossen
+/// -- und das ist GEMESSEN, nicht nur analog geschlossen. Am 26.08.2026
+/// nachgemessen: `abort` auf eine LAUFENDE Gutschrift antwortet ebenfalls mit
+/// `responseCode '0'`, und die Gutschrift endet daraufhin mit `100002`
+/// "Aborted". Der Abbruch ist dort also derselbe Diskriminator wie bei einer
+/// Zahlung.
+///
+/// Dazu passt der Aufbau: die Kennung ist bei [refund] die des NEUEN Vorgangs
+/// (der Gutschrift selbst), eine Statusabfrage darauf liefert also genau deren
+/// Ausgang, und `POST /api/transaction/abort/{tid}/{tx}` kennt keinen
+/// Transaktionstyp -- er adressiert den laufenden Vorgang unter dieser
+/// Kennung. Ohne Abbruch haette die Klaerung einer Gutschrift gar keinen
+/// Diskriminator mehr und endete fast immer bei `unresolved`, weil die
+/// Statusabfrage auch hier `9027` antwortet. Ein abgerissener Gutschriftlauf
+/// kostet den Kunden nichts: er bekommt sein Geld einen Vorgang spaeter,
+/// waehrend eine falsche "gefahrlos wiederholbar"-Meldung eine doppelte
+/// Gutschrift ausloesen wuerde.
 ///
 /// [cancel] ist die Ausnahme, und zwar in beiden Richtungen -- siehe
 /// [_resolveCancel]: die uebergebene Kennung ist die der URSPRUENGLICHEN
@@ -255,12 +262,46 @@ class HpsPayments {
     }
 
     if (res != null) {
-      final settled = _fromResponse(res, transactionId, steps);
+      final settled = _fromCancelResponse(res, transactionId, steps);
       if (settled != null) return settled;
       steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
     }
 
     return _resolveCancel(transactionId, steps);
+  }
+
+  /// Ordnet die DIREKTE Antwort auf einen Aufhebungs-Request ein.
+  ///
+  /// Fast dasselbe wie [_fromResponse] -- diese Antwort betrifft ja die
+  /// Aufhebung selbst und traegt deren eigenen `responseCode`. Mit genau einer
+  /// Ausnahme: [TransactionResponse.transactionCanceledCode] (`9011`).
+  ///
+  /// Ueber [_fromResponse] wuerde `9011` als "Code ungleich '0'" zu
+  /// [CardPaymentOutcome.declined] -- also zu "die Aufhebung hat nicht
+  /// gegriffen, es ist weiterhin belastet". Das waere die teure Richtung: es
+  /// meldet "belastet" fuer einen Vorgang, der aufgehoben ist, und laedt damit
+  /// zu einer Rueckerstattung ein, die der Kunde ein zweites Mal bekaeme. Es
+  /// widerspraeche ausserdem [_fromCancelStatus], die aus demselben Code das
+  /// Gegenteil ableitet.
+  ///
+  /// Was `9011` auf dem DIREKTEN Weg genau heisst, ist ungemessen -- am
+  /// naechstliegenden "der Vorgang ist (bereits) aufgehoben", aber das ist
+  /// eine Lesart, keine Messung. Deshalb wird es hier weder als Erfolg noch
+  /// als Ablehnung gewertet, sondern als NICHT SCHLUESSIG: die Klaerung fragt
+  /// den Zustand der Originalzahlung ab und entscheidet ihn dort mit dem
+  /// gemessenen Diskriminator, statt hier zu raten.
+  HpsResult? _fromCancelResponse(
+    TransactionResponse res,
+    String id,
+    List<String> steps,
+  ) {
+    if (res.isCanceled) {
+      steps.add('Aufhebung mit '
+          '${TransactionResponse.transactionCanceledCode} beantwortet -- '
+          'mehrdeutig, der Zustand der Originalzahlung wird abgefragt');
+      return null;
+    }
+    return _fromResponse(res, id, steps);
   }
 
   /// Ordnet eine Terminal-Antwort ein. `null`, wenn sie nichts entscheidet.
@@ -307,7 +348,9 @@ class HpsPayments {
   /// - Der Abbruch laeuft ebenfalls unter [resolveBudget] (ueber
   ///   [_withinBudget]) -- sonst haette er die Zusage um bis zu
   ///   [HpsClient.timeout] ueberzogen, bevor die erste Abfrage ueberhaupt
-  ///   losgeht.
+  ///   losgeht. Zusaetzlich ist er auf [_abortBudget] gedeckelt: er startet
+  ///   bei `elapsed == 0` und koennte sonst haengend das GANZE Budget
+  ///   verbrauchen, sodass keine einzige Statusabfrage mehr stattfaende.
   /// - Die erste Statusabfrage kommt ohne Pause, direkt nach dem Abbruch. Der
   ///   Backoff beginnt erst danach (1 s, 2 s, 4 s, ...), wie bisher.
   /// - Ein am Transport gescheiterter Abbruch zaehlt NICHT in
@@ -390,7 +433,11 @@ class HpsPayments {
   ) async {
     TransactionResponse res;
     try {
-      res = await _withinBudget(clock, () => _client.abort(transactionId: id));
+      res = await _withinBudget(
+        clock,
+        () => _client.abort(transactionId: id),
+        cap: _abortBudget,
+      );
     } catch (e) {
       // Der Text darf keine Ursache behaupten, die nicht feststeht: [steps]
       // ist der Nachweis, der im Belastungsstreit angezeigt wird. Ein
@@ -448,6 +495,10 @@ class HpsPayments {
     var wait = Duration.zero;
     var transportFailures = 0;
 
+    /// Zaehlt nur BEANTWORTETE Statusabfragen -- Grundlage der Karenz fuer
+    /// den `'0'`-Fall, siehe [_fromCancelStatus].
+    var beantworteteAbfragen = 0;
+
     while (clock.elapsed < resolveBudget) {
       if (wait > Duration.zero) {
         final left = resolveBudget - clock.elapsed;
@@ -462,6 +513,7 @@ class HpsPayments {
           () => _client.transactionStatus(transactionId: id),
         );
         transportFailures = 0;
+        beantworteteAbfragen++;
       } catch (e) {
         transportFailures++;
         steps.add('Statusabfrage gescheitert ($transportFailures): $e');
@@ -474,12 +526,21 @@ class HpsPayments {
         continue;
       }
 
-      final settled = _fromCancelStatus(status, id, steps);
+      final settled = _fromCancelStatus(
+        status,
+        id,
+        steps,
+        ersteAbfrage: beantworteteAbfragen == 1,
+      );
       if (settled != null) return settled;
 
-      steps.add(status.isNoStatement
-          ? 'Status: keine Auskunft (${TransactionResponse.noStatementCode})'
-          : 'Status: Aufhebung noch nicht bestaetigt');
+      // Der `'0'`-Karenzfall hat seinen eigenen, aussagekraeftigeren Eintrag
+      // schon in [_fromCancelStatus] gesetzt.
+      if (!status.isApproved) {
+        steps.add(status.isNoStatement
+            ? 'Status: keine Auskunft (${TransactionResponse.noStatementCode})'
+            : 'Status: Aufhebung noch nicht bestaetigt');
+      }
       wait = _nextWait(wait);
     }
 
@@ -502,8 +563,9 @@ class HpsPayments {
   /// - `'0'` -> die Originalzahlung steht unveraendert da, die Aufhebung hat
   ///   also NICHT gewirkt -> [CardPaymentOutcome.declined]. Das ist hier keine
   ///   schlechte Nachricht ueber die Zahlung, sondern eine ueber die
-  ///   Aufhebung: es ist weiterhin belastet, und ein erneuter Void ist
-  ///   gefahrlos, weil nachweislich noch keiner gegriffen hat.
+  ///   Aufhebung: es ist weiterhin belastet, und die Aufhebung muss wiederholt
+  ///   werden. ABER erst ab der ZWEITEN beantworteten Abfrage, siehe
+  ///   [ersteAbfrage].
   /// - [TransactionResponse.noStatementCode] (`9027`) und jeder andere oder
   ///   fehlende Code -> keine Auskunft, weiter klaeren; am Ende
   ///   [CardPaymentOutcome.unresolved], niemals ein geratenes Ergebnis.
@@ -513,13 +575,29 @@ class HpsPayments {
   /// NIE als Erfolg der Aufhebung gelesen -- `'0'` heisst hier ausdruecklich
   /// das Gegenteil.
   ///
-  /// Bewusst hingenommen: faellt eine Abfrage genau in den Moment, in dem der
-  /// Void beim Terminal noch nicht verbucht ist, antwortet sie `'0'` und die
-  /// Klaerung endet zu frueh mit "nicht gegriffen". Der Schaden davon ist
-  /// klein und einseitig -- der Mitarbeiter wiederholt eine Aufhebung, die das
-  /// Terminal dann als bereits aufgehoben abweist. Eine Kundenbelastung
-  /// entsteht dabei nicht; die umgekehrte Richtung (eine nicht gegriffene
-  /// Aufhebung als Erfolg melden) waere die teure.
+  /// ## Warum `'0'` eine Karenz braucht
+  ///
+  /// Die Klaerung startet unmittelbar, nachdem der Void-Request abgerissen
+  /// ist, und ihre erste Abfrage laeuft ohne Pause (`wait == Duration.zero`).
+  /// Anders als bei [pay] liegt kein Abbruch-Roundtrip dazwischen, der Zeit
+  /// verstreichen liesse. Genau in diesem Fenster kann der Void beim Terminal
+  /// noch unterwegs sein und die Abfrage trotzdem schon `'0'` melden.
+  ///
+  /// Ein voreiliges "hat nicht gegriffen" ist NICHT harmlos. Was der
+  /// Mitarbeiter danach tut, ist nicht zwingend ein zweiter Void: nach dem
+  /// Tagesabschluss ist die Folgehandlung eine RUECKERSTATTUNG -- und dann
+  /// bekommt der Kunde sein Geld zweimal. (Die naheliegende Beruhigung, das
+  /// Terminal weise eine Wiederholung ohnehin als "bereits aufgehoben" ab,
+  /// ist eine ANNAHME: sie steht in keiner Messtabelle und in keinem Test.
+  /// Auf so einer Annahme zu bauen, ist die Fehlerklasse, gegen die dieses
+  /// Vorhaben gebaut ist.)
+  ///
+  /// Deshalb entscheidet `'0'` erst ab der zweiten beantworteten Abfrage. Ein
+  /// tatsaechlich nicht gelandeter Void antwortet eine Sekunde spaeter wieder
+  /// `'0'`; der Preis ist diese eine Sekunde. Reicht das Budget nur fuer eine
+  /// einzige Abfrage, endet die Klaerung bei
+  /// [CardPaymentOutcome.unresolved] -- wir sagen dann, dass wir es nicht
+  /// wissen, statt es zu raten.
   ///
   /// [TransactionResponse.state] `== 'VOID'` gilt zusaetzlich als Beleg, aber
   /// niemals als notwendige Bedingung. Bis 26.08.2026 war es die einzige
@@ -531,11 +609,17 @@ class HpsPayments {
   /// bleibt nur mitgelesen, weil ein ausdrueckliches `'VOID'` -- wo eine
   /// Firmware es denn liefert -- eine unmissverstaendliche positive Aussage
   /// ist, die kein falsches `approved` erzeugen kann.
+  ///
+  /// [ersteAbfrage] ist `true`, wenn dies die erste BEANTWORTETE Statusabfrage
+  /// dieser Klaerung ist. Gescheiterte Abfragen zaehlen nicht mit: sie lassen
+  /// zwar Zeit verstreichen, liefern aber keine Auskunft, an der sich ein
+  /// `'0'` bestaetigen liesse.
   HpsResult? _fromCancelStatus(
     TransactionResponse status,
     String id,
-    List<String> steps,
-  ) {
+    List<String> steps, {
+    required bool ersteAbfrage,
+  }) {
     final voided = status.isCanceled ||
         // Gross-/Kleinschreibung und Leerzeichen toleriert: eine tolerantere
         // Erkennung von 'VOID' fuehrt hoechstens frueher zu einer ohnehin
@@ -554,6 +638,13 @@ class HpsPayments {
     }
 
     if (status.isApproved) {
+      if (ersteAbfrage) {
+        // Karenz: der Void kann noch unterwegs sein. Siehe oben, "Warum '0'
+        // eine Karenz braucht".
+        steps.add('Terminal: Originalzahlung noch unveraendert (0) -- die '
+            'Aufhebung koennte noch unterwegs sein, wird erneut abgefragt');
+        return null;
+      }
       steps.add('Terminal: Originalzahlung steht unveraendert (0) -- die '
           'Aufhebung hat nicht gegriffen');
       _emit(HpsEventKind.resolved, steps.last, id);
@@ -582,13 +673,41 @@ class HpsPayments {
   /// Fuehrt [call] aus, aber hoechstens so lange, wie vom [resolveBudget]
   /// uebrig ist -- sonst waere die Klaerung nicht durch das Budget begrenzt,
   /// sondern durch [HpsClient.timeout] je einzelnem Request.
-  Future<T> _withinBudget<T>(Stopwatch clock, Future<T> Function() call) {
-    final left = resolveBudget - clock.elapsed;
+  ///
+  /// [cap] deckelt zusaetzlich, wenn ein einzelner Schritt nicht das ganze
+  /// verbleibende Budget verbrauchen darf -- siehe [_abortBudget].
+  Future<T> _withinBudget<T>(
+    Stopwatch clock,
+    Future<T> Function() call, {
+    Duration? cap,
+  }) {
+    var left = resolveBudget - clock.elapsed;
+    if (cap != null && cap < left) left = cap;
     if (left <= Duration.zero) {
       throw TimeoutException('Klaerungsbudget aufgebraucht', resolveBudget);
     }
     return call().timeout(left);
   }
+
+  /// Teiler, mit dem [_abortBudget] aus [resolveBudget] entsteht.
+  static const int _abortBudgetDivisor = 6;
+
+  /// Wie lange der einmalige Abbruchversuch hoechstens laufen darf: ein
+  /// Sechstel des [resolveBudget], bei der Vorgabe also 15 s von 90 s.
+  ///
+  /// Ohne diesen Deckel haette ein HAENGENDER Abbruch das gesamte Budget
+  /// aufgebraucht -- er startet bei `elapsed == 0`, also mit dem vollen
+  /// Budget im Ruecken. Danach waere die Schleife sofort vorbei, ohne eine
+  /// einzige Statusabfrage, und das Ergebnis stets
+  /// [CardPaymentOutcome.unresolved]. Das ist zwar die sichere Richtung, aber
+  /// der Klaerweg waere dabei komplett verloren: gerade die Statusabfrage
+  /// haette den Ausgang noch feststellen koennen.
+  ///
+  /// Ein Sechstel, weil der Abbruch ein einzelner lokaler Roundtrip ist -- er
+  /// braucht Millisekunden, nicht Sekunden. Was darueber liegt, ist ein
+  /// haengendes Terminal, und dann ist die Zeit in Statusabfragen besser
+  /// angelegt.
+  Duration get _abortBudget => resolveBudget ~/ _abortBudgetDivisor;
 
   Duration _nextWait(Duration current) {
     if (current == Duration.zero) return const Duration(seconds: 1);

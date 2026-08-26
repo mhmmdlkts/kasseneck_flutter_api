@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -6,7 +7,10 @@ import 'package:http/testing.dart';
 import 'package:kasseneck_api/hobex_hps.dart';
 
 /// Eine Antwort des Terminal-Doppels auf genau einen Request.
-typedef Responder = http.Response Function(http.Request request);
+///
+/// `FutureOr`, damit ein Weg auch HAENGEN kann (eine nie erfuellte Zusage) --
+/// anders liesse sich ein haengendes Terminal nicht nachbilden.
+typedef Responder = FutureOr<http.Response> Function(http.Request request);
 
 /// Ein Terminal-Doppel, das nach dem URL-PFAD antwortet statt nach der
 /// Aufrufreihenfolge.
@@ -58,7 +62,7 @@ class FakeTerminal {
         _calls[route] = index + 1;
         final handler =
             handlers[index < handlers.length ? index : handlers.length - 1];
-        return handler(request);
+        return await handler(request);
       });
 
   /// Wie oft ein Weg aufgerufen wurde.
@@ -252,6 +256,13 @@ void main() {
       // ohnehin nur 9027 antworten wuerde.
       final t = FakeTerminal(
         payment: [boom],
+        // Ein hinterlegter Status-Weg, der das Ergebnis KIPPEN wuerde, falls
+        // er doch abgefragt wird. Ohne ihn koennte die Zusicherung "keine
+        // Statusabfrage" gar nicht fehlschlagen: FakeTerminal wirft fuer einen
+        // Weg ohne Responder, BEVOR der Zaehler hochgeht.
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-5'})
+        ],
         abort: [
           (_) => json({'responseCode': '0', 'transactionId': 'TX-5'})
         ],
@@ -262,7 +273,8 @@ void main() {
       expect(res.transactionId, 'TX-5');
       expect(res.response, isNotNull);
       expect(t.callsOn('abort'), 1);
-      expect(t.callsOn('status'), 0,
+      // Gegen den Log geprueft, nicht gegen den Zaehler.
+      expect(t.log.where((r) => r.url.path.contains('/api/v2/')), isEmpty,
           reason: 'ein bewiesener Abbruch braucht keine Nachfrage mehr');
     });
 
@@ -435,6 +447,42 @@ void main() {
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-6t');
       expect(res.outcome, CardPaymentOutcome.unresolved);
       expect(t.callsOn('status'), 3);
+    });
+
+    test('ein haengender Abbruch frisst nicht das ganze Klaerbudget', () async {
+      // Der Abbruch startet bei elapsed == 0 und haette ohne eigenen Deckel
+      // das VOLLE Budget im Ruecken. Danach waere die Schleife sofort vorbei,
+      // ohne eine einzige Statusabfrage -- der Klaerweg komplett verloren.
+      // Hier: Budget 600 ms, Abbruch also auf 100 ms gedeckelt.
+      //
+      // Einziger Test mit echter (aber gedeckelter) Wartezeit: eine Frist
+      // laesst sich nicht mit einer Uhr nachbilden, die nur durch Pausen
+      // vorrueckt. Deshalb hier bewusst die echte Uhr.
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-6c'})
+        ],
+        abort: [(_) => Completer<http.Response>().future],
+      );
+      final zahlweg = HpsPayments(
+        HpsClient(
+          tid: '3600335',
+          httpClient: t.client,
+          timeout: const Duration(seconds: 2),
+        ),
+        resolveBudget: const Duration(milliseconds: 600),
+        sleep: (_) async {},
+      );
+      final res = await zahlweg.pay(amount: 25, transactionId: 'TX-6c');
+      expect(res.outcome, CardPaymentOutcome.approved,
+          reason: 'nach dem gedeckelten Abbruch muss noch Budget fuer die '
+              'Statusabfrage uebrig sein');
+      expect(t.callsOn('status'), 1);
+      expect(
+        res.steps.any((s) => s.contains('Abbruch nicht bestaetigt')),
+        isTrue,
+      );
     });
 
     test('der Abbruch wird nur ein einziges Mal versucht', () async {
@@ -866,6 +914,11 @@ void main() {
       // unresolved -- die Statusabfrage antwortet auch hier 9027.
       final t = FakeTerminal(
         refund: [boom],
+        // Ein Status-Weg, der das Ergebnis kippen wuerde, falls doch gepollt
+        // wird -- siehe die gleiche Begruendung beim Zahlweg.
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'RF-4'})
+        ],
         abort: [
           (_) => json({'responseCode': '0', 'transactionId': 'RF-4'})
         ],
@@ -875,7 +928,7 @@ void main() {
       expect(res.outcome, CardPaymentOutcome.declined);
       expect(res.mayRetrySafely, isTrue);
       expect(t.callsOn('abort'), 1);
-      expect(t.callsOn('status'), 0);
+      expect(t.log.where((r) => r.url.path.contains('/api/v2/')), isEmpty);
       expect(t.log.any((r) => r.url.path.contains('/abort/3600335/RF-4')),
           isTrue,
           reason: 'der Abbruch adressiert die Kennung der GUTSCHRIFT');
@@ -996,9 +1049,8 @@ void main() {
             (_) => json({'responseCode': '0', 'transactionId': 'TX-11'}),
           ],
         );
-        final res =
-            await paymentsFor(t, budget: const Duration(milliseconds: 50))
-                .cancel(transactionId: 'TX-11', amount: 25);
+        final res = await paymentsFor(t, budget: const Duration(seconds: 5))
+            .cancel(transactionId: 'TX-11', amount: 25);
         expect(res.outcome, CardPaymentOutcome.declined,
             reason: 'declined heisst hier "die Aufhebung hat nicht gegriffen" '
                 '-- keinesfalls "die Aufhebung war erfolgreich"');
@@ -1008,8 +1060,53 @@ void main() {
           res.steps.any((s) => s.contains('steht unveraendert')),
           isTrue,
         );
+        expect(t.callsOn('status'), 2,
+            reason: 'ein einzelnes "0" entscheidet nicht -- es wird '
+                'bestaetigt');
       },
     );
+
+    test(
+      'cancel: ein einzelnes "0" entscheidet nichts -- der Void kann noch '
+      'unterwegs sein',
+      () async {
+        // Die erste Abfrage laeuft ohne Pause, unmittelbar nachdem der
+        // Void-Request abgerissen ist. Genau in diesem Fenster kann der Void
+        // noch unterwegs sein. Ein voreiliges "hat nicht gegriffen" ist NICHT
+        // harmlos: nach dem Tagesabschluss ist die Folgehandlung eine
+        // Rueckerstattung, und der Kunde bekaeme sein Geld zweimal.
+        final t = FakeTerminal(
+          cancel: [boom],
+          status: [
+            (_) => json({'responseCode': '0', 'transactionId': 'TX-11b'})
+          ],
+        );
+        final res =
+            await paymentsFor(t, budget: const Duration(milliseconds: 50))
+                .cancel(transactionId: 'TX-11b', amount: 25);
+        expect(res.outcome, CardPaymentOutcome.unresolved,
+            reason: 'reicht das Budget nur fuer eine Abfrage, sagen wir, dass '
+                'wir es nicht wissen');
+        expect(t.callsOn('status'), 1);
+      },
+    );
+
+    test('cancel: der Void landet zwischen erster und zweiter Abfrage',
+        () async {
+      final t = FakeTerminal(
+        cancel: [boom],
+        status: [
+          // Noch unterwegs: die Originalzahlung sieht unveraendert aus.
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-11c'}),
+          // Eine Sekunde spaeter ist er verbucht.
+          (_) => json({'responseCode': '9011'}),
+        ],
+      );
+      final res =
+          await paymentsFor(t).cancel(transactionId: 'TX-11c', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.approved,
+          reason: 'die Karenz faengt genau diesen Fall');
+    });
 
     test('cancel: 9027 entscheidet nichts -> unresolved, kein Raten', () async {
       final t = FakeTerminal(
@@ -1051,6 +1148,45 @@ void main() {
       final res =
           await paymentsFor(t).cancel(transactionId: 'TX-12c', amount: 25);
       expect(res.outcome, CardPaymentOutcome.approved);
+    });
+
+    test('cancel: 9011 auf dem DIREKTEN Weg wird nie zu declined', () async {
+      // Ueber das generische _fromResponse waere 9011 ein "Code ungleich 0"
+      // und damit declined = "weiterhin belastet". Das ist das Gegenteil
+      // dessen, was _fromCancelStatus aus demselben Code ableitet -- und die
+      // teure Richtung: es laedt zu einer Rueckerstattung ein.
+      final t = FakeTerminal(
+        cancel: [
+          (_) => json({'responseCode': '9011'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9011'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).cancel(transactionId: 'TX-13b', amount: 25);
+      expect(res.outcome, isNot(CardPaymentOutcome.declined));
+      expect(res.outcome, CardPaymentOutcome.approved,
+          reason: 'der mehrdeutige Direktcode wird nicht geraten, sondern am '
+              'Zustand der Originalzahlung geklaert');
+      expect(t.callsOn('status'), greaterThan(0));
+    });
+
+    test('cancel: 9011 direkt, aber die Klaerung findet nichts -> unresolved',
+        () async {
+      final t = FakeTerminal(
+        cancel: [
+          (_) => json({'responseCode': '9011'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 5))
+          .cancel(transactionId: 'TX-13c', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.unresolved,
+          reason: 'was 9011 auf dem Direktweg heisst, ist ungemessen -- es '
+              'darf auch keinen Erfolg vortaeuschen');
     });
 
     test('cancel: Transportfehler durchgehend -> unresolved', () async {
