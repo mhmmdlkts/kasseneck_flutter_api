@@ -465,6 +465,28 @@ void main() {
       expect(t.callsOn('status'), greaterThan(0));
     });
 
+    test('Antwort mit LEEREM Ergebniscode wird geklaert, nicht abgelehnt',
+        () async {
+      // Ein "responseCode": "" vom Terminal ist kein Ergebniscode -- er darf
+      // nicht wie ein vorhandener, nicht-"0"-Code als Ablehnung gelesen
+      // werden. Genau das war C-2: TransactionResponse.isInProgress prueft
+      // auf null, und ein Leerstring ist nicht null.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '', 'transactionId': 'TX-9b'})
+        ],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-9b'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: 'TX-9b');
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(t.callsOn('status'), greaterThan(0),
+          reason: 'ein leerer Code muss wie ein fehlender weiter geklaert '
+              'werden, nicht sofort als declined durchgehen');
+    });
+
     test('Trinkgeld und Referenz gehen mit hinaus', () async {
       final t = FakeTerminal(
         payment: [

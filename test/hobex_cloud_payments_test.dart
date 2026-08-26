@@ -165,6 +165,27 @@ void main() {
       expect(callCount(), 1);
     });
 
+    test('leerer Ergebniscode -> weiter geklaert, nicht declined', () async {
+      // Ein "responseCode": "" ist kein Ergebniscode -- die isEmpty-Zeile in
+      // _fromReceipt muss ihn wie einen fehlenden behandeln, sonst wird ein
+      // unentschiedener Vorgang faelschlich als declined gemeldet.
+      final (:api, :callCount) = apiWith([
+        () => http.Response(
+            '{"data":${receiptJson(responseCode: '', transactionId: 'TX-4c')}}',
+            200),
+        () => http.Response(
+            '{"status":"success","data":${receiptJson(responseCode: '0', transactionId: 'TX-4c')}}',
+            200),
+      ]);
+      final res =
+          await cloudPaymentsFor(api).pay(transactionId: 'TX-4c', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(res.transactionId, 'TX-4c');
+      expect(callCount(), 2,
+          reason: 'ein leerer Code entscheidet nichts -- es muss '
+              'nachgefragt werden');
+    });
+
     test(
         'Statusabfrage scheitert dreimal in Folge -> unresolved, nie '
         'declined, vorzeitig beendet', () async {

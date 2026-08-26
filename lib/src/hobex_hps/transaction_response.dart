@@ -86,7 +86,11 @@ class TransactionResponse {
   final num? tip;
 
   /// Response code. `"0"` means approved. `null` (status v2 only) means the
-  /// transaction is still in progress — see [isInProgress].
+  /// transaction is still in progress — see [isInProgress]. An empty string
+  /// from the terminal is normalised to `null` by [fromJson]: an empty code
+  /// carries no more information than a missing one, and treating it as a
+  /// real (non-`"0"`) code would misreport an unresolved outcome as
+  /// declined.
   final String? responseCode;
 
   /// Human readable response text.
@@ -155,7 +159,7 @@ class TransactionResponse {
       currency: json['currency'] as String?,
       amount: _num(json['amount']),
       tip: _num(json['tip']),
-      responseCode: json['responseCode']?.toString(),
+      responseCode: _nonEmpty(json['responseCode']?.toString()),
       responseText: json['responseText'] as String?,
       cvm: Cvm.fromValue(json['cvm']),
       bin: json['bin'] as String?,
@@ -176,6 +180,11 @@ class TransactionResponse {
     if (v is num) return v;
     return num.tryParse(v.toString());
   }
+
+  /// Ein leerer String ist kein Ergebniscode -- er traegt keine Aussage und
+  /// wird deshalb wie ein fehlendes Feld behandelt (`isInProgress == true`),
+  /// statt ueber `!= '0'` faelschlich als Ablehnung durchzugehen.
+  static String? _nonEmpty(String? v) => (v == null || v.isEmpty) ? null : v;
 
   @override
   String toString() {
