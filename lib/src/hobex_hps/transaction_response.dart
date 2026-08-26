@@ -91,6 +91,9 @@ class TransactionResponse {
   /// carries no more information than a missing one, and treating it as a
   /// real (non-`"0"`) code would misreport an unresolved outcome as
   /// declined.
+  ///
+  /// Nicht jeder vorhandene Code ungleich `"0"` ist eine Ablehnung:
+  /// [noStatementCode] ist eine Wissensluecke, siehe [isConclusive].
   final String? responseCode;
 
   /// Human readable response text.
@@ -134,12 +137,60 @@ class TransactionResponse {
   /// The raw decoded JSON, for fields not modelled explicitly.
   final Map<String, dynamic> raw;
 
+  /// Ergebniscode `9027` ("Original Tx not found"): das Terminal hat
+  /// geantwortet, sagt zu dieser Kennung aber NICHTS aus.
+  ///
+  /// Am 26.08.2026 an einem hobex-HPS gemessen (TID 3600335, HPS 1.10.0,
+  /// Firmware 7.3.6, Host `tecstest.hobex.at`): die Statusabfrage antwortet
+  /// mit `9027` gleichermassen auf eine Kennung, die das Terminal nie gesehen
+  /// hat, auf einen gerade LAUFENDEN Kartenfluss, auf einen Vorgang, bei dem
+  /// die Karte nicht aufgelegt wurde, und auf einen abgebrochenen Vorgang.
+  /// Nur eine bereits genehmigte Zahlung antwortet mit `"0"`, und dieser Wert
+  /// bleibt danach erhalten.
+  ///
+  /// Die Zahl ist deshalb nicht willkuerlich gewaehlt: sie ist der einzige
+  /// Code, mit dem diese Firmware "keine Auskunft" ausdrueckt. Sie ist
+  /// ausdruecklich KEIN Ergebnis. `9027` ueber `!= "0"` als Ablehnung zu
+  /// lesen, erklaert einen laufenden Vorgang zu "nichts belastet, Wiederholung
+  /// gefahrlos" -- und erzeugt damit genau die Doppelbelastung vom
+  /// 24.08.2026.
+  static const String noStatementCode = '9027';
+
+  /// Ergebniscode `9011` ("Transaction Canceled"): der Vorgang unter dieser
+  /// Kennung wurde aufgehoben.
+  ///
+  /// Ebenfalls am 26.08.2026 gemessen: nach einem erfolgreichen Void
+  /// antwortet die Statusabfrage auf die Kennung der ORIGINALZAHLUNG mit
+  /// `9011` / "Transaction Canceled" -- waehrend [state] auf dieser Firmware
+  /// `null` bleibt. Fuer die Zahlung selbst heisst `9011`: es steht nichts
+  /// mehr belastet.
+  static const String transactionCanceledCode = '9011';
+
   /// `true` when the transaction was approved (`responseCode == "0"`).
   bool get isApproved => responseCode == '0';
 
   /// `true` when a status query reports the transaction is still running
   /// (`responseCode == null`).
+  ///
+  /// Achtung: die gemessene Firmware nutzt dafuer NICHT den fehlenden Code,
+  /// sondern [noStatementCode]. Ein fehlender Code bleibt trotzdem eine
+  /// Nicht-Aussage und wird genauso behandelt -- siehe [isConclusive].
   bool get isInProgress => responseCode == null;
+
+  /// `true`, wenn das Terminal zu dieser Kennung keine Auskunft gibt
+  /// ([noStatementCode]).
+  bool get isNoStatement => responseCode == noStatementCode;
+
+  /// `true`, wenn der Vorgang aufgehoben wurde ([transactionCanceledCode]).
+  bool get isCanceled => responseCode == transactionCanceledCode;
+
+  /// `true`, wenn diese Antwort ueberhaupt eine Aussage ueber den Ausgang
+  /// traegt -- also einen Ergebniscode nennt, der weder fehlt noch
+  /// [noStatementCode] ist.
+  ///
+  /// Nur eine solche Antwort darf einen Ausgang festschreiben. Alles andere
+  /// ist ein Grund weiterzuklaeren, niemals ein Ergebnis.
+  bool get isConclusive => responseCode != null && !isNoStatement;
 
   factory TransactionResponse.fromJson(Map<String, dynamic> json) {
     return TransactionResponse(
@@ -190,6 +241,8 @@ class TransactionResponse {
   String toString() {
     final outcome = isInProgress
         ? 'IN_PROGRESS'
+        : isNoStatement
+        ? 'NO_STATEMENT($responseCode)'
         : isApproved
         ? 'APPROVED'
         : 'DECLINED($responseCode)';

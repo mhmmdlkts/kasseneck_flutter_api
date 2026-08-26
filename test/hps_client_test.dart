@@ -86,11 +86,27 @@ void main() {
       expect(c.log[1].url.queryParameters['technicalCancel'], 'true');
     });
 
-    test('abort liefert die transactionId aus der Antwort', () async {
-      final c = clientWith(body: '{"transactionId": "ABORTED-1"}');
-      final id = await c.client.abort(transactionId: 'TX-1');
-      expect(id, 'ABORTED-1');
+    test('abort liefert die volle Antwort, nicht nur die transactionId',
+        () async {
+      final c = clientWith(
+        body: '{"transactionId": "ABORTED-1", "responseCode": "0"}',
+      );
+      final res = await c.client.abort(transactionId: 'TX-1');
+      expect(res.transactionId, 'ABORTED-1');
+      expect(res.responseCode, '0');
       expect(c.log.single.url.path, '/api/transaction/abort/3600335/TX-1');
+    });
+
+    test('abort: gescheiterter Abbruch kommt mit HTTP 200 und 100010', () async {
+      // Genau die Lage, an der die alte Fassung scheiterte: sie warf nur bei
+      // Nicht-2xx und gab sonst die transactionId heraus -- ein gescheiterter
+      // Abbruch saehe damit aus wie ein geglueckter.
+      final c = clientWith(
+        body: '{"responseCode": "100010", "responseText": "Not abortable"}',
+      );
+      final res = await c.client.abort(transactionId: 'TX-1');
+      expect(res.responseCode, '100010');
+      expect(res.isApproved, isFalse);
     });
 
     test('transactionStatus: GET auf v2-Endpoint', () async {

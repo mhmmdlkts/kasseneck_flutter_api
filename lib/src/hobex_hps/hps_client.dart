@@ -177,9 +177,18 @@ class HpsClient {
   /// [transactionId]. Must be activated by hobex.
   ///
   /// [amount] ist ERFORDERLICH: das Terminal weist einen Void ohne Betrag mit
-  /// `400 Missing amount` ab (am HPS empirisch bestaetigt). Die REST-PDF v1.13
-  /// listet den Parameter zwar nicht, die Postman-Collection und die Firmware
-  /// verlangen ihn. [currency]/[language] fallen auf die Client-Defaults zurueck.
+  /// `400 Missing amount` ab. Die REST-PDF v1.13 listet den Parameter zwar
+  /// nicht, die Postman-Collection und die Firmware verlangen ihn; am
+  /// 26.08.2026 am HPS nachgemessen und bestaetigt.
+  /// [currency]/[language] fallen auf die Client-Defaults zurueck.
+  ///
+  /// Die Antwort auf diesen Aufruf betrifft die AUFHEBUNG selbst: gemessen
+  /// `responseCode '0'`, `transactionType 'VOID'`, eigener Beleg,
+  /// `originalTransactionId` auf die Originalzahlung -- und eine EIGENE, neue
+  /// `transactionId` fuer die Aufhebung. Die hier uebergebene
+  /// [transactionId] bleibt die der Originalzahlung; eine spaetere
+  /// Statusabfrage darauf liefert deren Zustand, nicht den der Aufhebung
+  /// (siehe `HpsPayments.cancel`).
   ///
   /// Set [technicalCancel] to indicate a technical cancellation.
   Future<TransactionResponse> cancel({
@@ -207,9 +216,30 @@ class HpsClient {
     return _sendTransactionUri('DELETE', uri, null);
   }
 
-  /// **Aborts** an ongoing transaction *before* a card has been tapped.
-  /// Returns the transaction id of the aborted transaction, if provided.
-  Future<String?> abort({required String transactionId}) async {
+  /// **Aborts** an ongoing transaction, as long as it has not passed the point
+  /// where the terminal can still take it back.
+  ///
+  /// Liefert die volle [TransactionResponse] -- der `responseCode` ist die
+  /// eigentliche Auskunft, nicht der HTTP-Status.
+  ///
+  /// Am 26.08.2026 an einem hobex-HPS gemessen (TID 3600335, HPS 1.10.0,
+  /// Firmware 7.3.6):
+  ///
+  /// - laeuft der Kartenfluss noch, antwortet der Abbruch mit
+  ///   `responseCode == '0'` und greift;
+  /// - ist der Vorgang abgeschlossen (genehmigt), antwortet er mit
+  ///   `responseCode == '100010'` und greift NICHT -- die genehmigte Zahlung
+  ///   bleibt dabei unangetastet.
+  ///
+  /// Und zwar beides mit **HTTP 200**. Deshalb reicht es nicht, nur bei
+  /// Nicht-2xx zu werfen und sonst die `transactionId` herauszugeben: ein
+  /// gescheiterter Abbruch saehe dann aus wie ein geglueckter, und aus einer
+  /// echten Belastung wuerde "nichts belastet".
+  ///
+  /// Der Abbruch ist damit der Diskriminator, den die Statusabfrage nicht
+  /// liefert: sie antwortet auf jeden nicht genehmigten Vorgang mit
+  /// [TransactionResponse.noStatementCode].
+  Future<TransactionResponse> abort({required String transactionId}) {
     if (transactionId.isEmpty ||
         transactionId.length > _maxTransactionIdLength) {
       throw ArgumentError.value(
@@ -219,8 +249,7 @@ class HpsClient {
       );
     }
     final uri = _uri('api/transaction/abort/$tid/$transactionId', null);
-    final json = await _request('POST', uri, null);
-    return json['transactionId'] as String?;
+    return _sendTransactionUri('POST', uri, null);
   }
 
   /// Starts an **account verification transaction** (AVT) — a zero-amount check
@@ -246,8 +275,20 @@ class HpsClient {
   /// Queries the **status** of a transaction (v2). Useful to recover the result
   /// after a connection dropped mid-payment.
   ///
-  /// When the returned response has [TransactionResponse.isInProgress] `true`,
-  /// the transaction is still running and should be polled again.
+  /// Achtung, am 26.08.2026 gemessen: diese Abfrage unterscheidet WENIGER, als
+  /// ihr Name nahelegt. Sie antwortet nur fuer eine genehmigte Zahlung mit
+  /// `'0'`; auf alles andere -- laufender Kartenfluss, Karte nicht aufgelegt,
+  /// abgebrochen, Kennung nie gesehen -- antwortet sie einheitlich mit
+  /// [TransactionResponse.noStatementCode] (`9027`, "Original Tx not found").
+  /// Nach einer Aufhebung antwortet sie auf die Kennung der Originalzahlung
+  /// mit [TransactionResponse.transactionCanceledCode] (`9011`).
+  ///
+  /// `9027` ist deshalb KEIN Ergebnis, sondern ein Grund, weiterzufragen --
+  /// siehe [TransactionResponse.isConclusive]. Wer einen laufenden Vorgang
+  /// vom abgebrochenen trennen will, braucht [abort], nicht diese Abfrage.
+  ///
+  /// [TransactionResponse.isInProgress] (`responseCode == null`) wurde auf
+  /// dieser Firmware nie beobachtet, bleibt aber ebenfalls eine Nicht-Aussage.
   Future<TransactionResponse> transactionStatus({
     required String transactionId,
   }) {
@@ -298,6 +339,11 @@ class HpsClient {
   /// header lines, type, …) as [TerminalInfo]. The REST spec and its example
   /// disagree on the exact field set, so every field is optional; unmodelled
   /// keys stay available via [TerminalInfo.raw].
+  ///
+  /// Nicht ueberall vorhanden: am 26.08.2026 antwortete HPS 1.10.0 /
+  /// Firmware 7.3.6 hier mit `404 Endpoint not implemented`. Der Aufruf
+  /// wirft dann eine [HpsHttpException] -- er ist kein verlaesslicher
+  /// Bestandteil des Zahlwegs.
   Future<List<TerminalInfo>> terminals() async {
     final response = await _send('GET', _uri('api/terminals', null), null);
     if (response.statusCode < 200 || response.statusCode >= 300) {
