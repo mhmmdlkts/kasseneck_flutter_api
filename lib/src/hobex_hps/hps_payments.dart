@@ -623,7 +623,7 @@ class HpsPayments {
   /// AUCH DAS IST EINE ANNAHME, und sie ist als solche zu lesen: die Karenz
   /// deckt das plausible Fenster ab, nicht das garantierte. Einen Nachlauf
   /// gibt es nicht -- gemessen schlaegt die Statusabfrage sofort auf `9011`
-  /// um, sobald der Void am Terminal durch ist (`docs/kartenzahlung.md`,
+  /// um, sobald der Void am Terminal durch ist (`doc/kartenzahlung.md`,
   /// "Nach einem gelandeten Void schlaegt der Status sofort um"). Das
   /// `'0'`-Fenster ist genau die AUSFUEHRUNGSDAUER eines noch UNTERWEGS
   /// befindlichen Voids, und die ist ungemessen: er laeuft ueber einen

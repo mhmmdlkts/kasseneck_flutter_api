@@ -5,7 +5,7 @@
 # suchen. AGENTS.md ebenso — die Regeln des Zahlwegs gelten auch fuer Aufrufer.
 
 .superpowers/
-docs/superpowers/
+# (docs/ gibt es nicht mehr - Konvention ist doc/)
 .github/
 .idea/
 .dart_tool/

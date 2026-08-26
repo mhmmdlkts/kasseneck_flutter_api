@@ -34,7 +34,7 @@ den Vertrag. Wer hier etwas an der gemeinsamen Oberfläche ändert, prüft dort.
 
 - **Kommentare in `.dart`-Dateien: deutsch, OHNE Umlaute** (`ue`, `ae`, `oe`,
   `ss`). Der Bestand ist so; ein durchgerutschtes `ü` fällt sofort auf.
-- **Markdown (CHANGELOG, README, `docs/`): normale Umlaute.**
+- **Markdown (CHANGELOG, README, `doc/`): normale Umlaute.**
 - Kommentare sagen **warum**, nicht was. Ein Kommentar, der die Codezeile
   darunter nacherzählt, ist Ballast; einer, der eine Messung oder eine
   verworfene Alternative festhält, ist Gold.
@@ -45,7 +45,7 @@ den Vertrag. Wer hier etwas an der gemeinsamen Oberfläche ändert, prüft dort.
 
 Am 24.08.2026 wurde ein Kunde zweimal mit 25 € belastet, weil ein **unbekannter**
 Ausgang wie ein **fehlgeschlagener** behandelt wurde. Die vollständige Aufarbeitung
-samt Messwerten steht in [`docs/kartenzahlung.md`](docs/kartenzahlung.md). **Lies
+samt Messwerten steht in [`doc/kartenzahlung.md`](doc/kartenzahlung.md). **Lies
 das, bevor du irgendetwas am Zahlweg anfasst.** Die folgenden Regeln sind daraus
 destilliert und nicht verhandelbar.
 

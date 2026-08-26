@@ -51,7 +51,7 @@ can focus on your app.
 
 ```yaml
 dependencies:
-  kasseneck_api: ^3.0.0
+  kasseneck_api: ^5.0.0
 ```
 
 ```bash
@@ -140,7 +140,7 @@ switch (result.outcome) {
     //
     // Keep `transactionId`, resolve the outcome first — `HpsClient.transactionStatus(...)`
     // once the terminal answers again — and act only on a known outcome.
-    // docs/kartenzahlung.md documents what each response code actually means.
+    // doc/kartenzahlung.md documents what each response code actually means.
     return;
 }
 
