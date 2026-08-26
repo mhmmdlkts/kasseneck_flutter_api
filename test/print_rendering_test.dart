@@ -5,6 +5,8 @@ import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
+import 'package:kasseneck_api/enums/vat_rate.dart';
+import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
@@ -277,6 +279,36 @@ void main() {
       expect('äöüÄÖÜß'.check(), 'äöüÄÖÜß');
       expect('Preis: 5€'.check(), 'Preis: 5?');
       expect('Hi 🙂'.check(), 'Hi ?'); // runes: das Emoji ist EINE Rune -> ein ?
+    });
+  });
+
+  group('MyPos-Textfallback der MwSt-Tabelle', () {
+    /// Die Tabellenzeile aus der MyPos-Textrepraesentation, ohne Kopfzeile.
+    Future<List<String>> tabelle(int bruttoCents, KeckPaperSize size) async {
+      final paper = PrintPaper(paperSize: size, profile: CapabilityProfile());
+      await paper.setKeckReceipt(
+        buildReceipt(items: [
+          KasseneckItem(name: 'Ware', quantity: 1, vat: VatRate.vat20, priceCents: bruttoCents),
+        ]),
+        qrMode: QrPrintMode.native,
+      );
+      return texts(paper).where((t) => t.trimLeft().startsWith('A 20%')).toList();
+    }
+
+    test('grosse Betraege werden nicht mehr abgeschnitten', () async {
+      // 100.000,00 EUR sind neun Zeichen; padLeft(8).substring(0, 8) machte
+      // daraus "100000,0" -- die letzte Stelle des Betrags fiel weg.
+      final zeile = (await tabelle(10000000, KeckPaperSize.mm58)).single;
+      expect(zeile, contains('100000,00'));
+      expect(zeile, contains('83333,33')); // Netto
+      expect(zeile, contains('16666,67')); // MwSt
+    });
+
+    test('80 mm nutzt 48 Zeichen statt der fest verdrahteten 32', () async {
+      final schmal = (await tabelle(1999, KeckPaperSize.mm58)).single;
+      final breit = (await tabelle(1999, KeckPaperSize.mm80)).single;
+      expect(schmal.length, 32);
+      expect(breit.length, 48);
     });
   });
 }

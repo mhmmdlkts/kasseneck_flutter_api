@@ -97,6 +97,22 @@ void main() {
       }
     });
 
+    test('der beschriebene Deckel existiert jetzt auch', () {
+      // hoechstbetragCent wurde bis hierher an keiner Stelle gelesen: der
+      // Kommentar beschrieb einen Schutz, den es nicht gab.
+      expect(betragAusText('100000'), hoechstbetragCent);
+      expect(betragAusText('100000,00'), hoechstbetragCent);
+      expect(betragAusText('100000,01'), isNull);
+      expect(betragAusText('999999'), isNull);
+    });
+
+    test('sehr viele Ziffern liefern null statt zu werfen', () {
+      // int.parse warf hier eine FormatException — erreichbar ueber eine
+      // haengende Taste oder eine eingefuegte Zeichenkette.
+      expect(betragAusText('99999999999999999999'), isNull);
+      expect(betragAusText('9' * 400), isNull);
+    });
+
     test('für den Schirm: Tausenderpunkt, Komma, Euro dahinter', () {
       expect(alsEuro(250), '2,50 €');
       expect(alsEuro(0), '0,00 €');

@@ -224,16 +224,24 @@ const int hoechstbetragCent = 10000000;
 /// alles andere, insbesondere **drei Nachkommastellen** (eine falsche Eingabe,
 /// keine Aufforderung zum Runden — wer hier rundete, entschiede am Kassier
 /// vorbei über Geld) und **0,00 oder negativ** (ein Nullbeleg entsteht nicht
-/// hier, und ein Storno ist eine eigene Handlung mit eigenem Beleg).
+/// hier, und ein Storno ist eine eigene Handlung mit eigenem Beleg) sowie
+/// alles über [hoechstbetragCent] — der Deckel, den der Kommentar dort seit
+/// jeher beschreibt und den bis hierher niemand prüfte.
 int? betragAusText(String text) {
   final treffer = RegExp(r'^(\d+)(?:[.,](\d{1,2}))?$').firstMatch(text.trim());
   if (treffer == null) return null;
-  final ganze = int.parse(treffer.group(1)!);
+  final ganzeText = treffer.group(1)!;
+  // Mehr Stellen, als der Deckel je zulässt: hier warf `int.parse` ab 19
+  // Ziffern eine `FormatException`, statt wie zugesagt `null` zu liefern —
+  // erreichbar über eine hängende Taste oder eine eingefügte Zeichenkette.
+  if (ganzeText.length > 9) return null;
+  final ganze = int.parse(ganzeText);
   // Auf zwei Stellen aufgefüllt: „4,5" sind 50 Cent und nicht 5.
   final nachkommaText = (treffer.group(2) ?? '').padRight(2, '0');
   final nachkomma = nachkommaText.isEmpty ? 0 : int.parse(nachkommaText);
   final cents = ganze * 100 + nachkomma;
-  return cents > 0 ? cents : null;
+  if (cents <= 0 || cents > hoechstbetragCent) return null;
+  return cents;
 }
 
 /// Betrag für den Schirm: „2,50 €".

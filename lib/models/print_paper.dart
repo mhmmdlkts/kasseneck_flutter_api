@@ -561,12 +561,14 @@ class PrintPaper {
     ]);
 
     this.bytes.add(Uint8List.fromList(bytes));
-    int len = 32~/4;
-    val1 = val1.padRight(len).substring(0, len);
-    val2 = val2.padLeft(len).substring(0, len);
-    val3 = val3.padLeft(len).substring(0, len);
-    val4 = val4.padLeft(len).substring(0, len);
-    myPosPaper.addText('$val1$val2$val3$val4');
+    // Spaltenbreite aus der Papierbreite statt fest 32 -- auf 80 mm blieb der
+    // MyPos-Text sonst in einer 58-mm-Aufteilung stehen. Und aufgefuellt wird
+    // nur, nie gekuerzt: das fruehere substring(0, len) schnitt ab 100.000,00
+    // die letzte Stelle des Betrags ab ("100000,00" -> "100000,0"). Eine Zeile,
+    // die zu breit wird, ist unschoen; ein gekuerzter Betrag ist falsch.
+    final int len = paperSize.defaultCharCount ~/ 4;
+    myPosPaper.addText(
+        '${val1.padRight(len)}${val2.padLeft(len)}${val3.padLeft(len)}${val4.padLeft(len)}');
   }
 
   /// Druckt ein Beleg-Zeilenmodell des Backends (`KasseneckReceipt.layout`)
