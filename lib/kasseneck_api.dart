@@ -564,8 +564,6 @@ class KasseneckApi {
       'start': start.toIso8601String().split('.').first,
       'end': end.toIso8601String().split('.').first
     });
-    debugPrint('getReportV2 $start–$end: status=${resJson['status']} '
-        'receipts=${(resJson['data']?['receipts'] as List?)?.length ?? 'null'}');
     if (resJson['status'] == 'success') {
       final daten = _daten(Aufrufe.getReportV2, resJson);
       final rohMetadata = daten['metadata'];
@@ -579,6 +577,12 @@ class KasseneckApi {
         // nichts verkauft" darf nicht aussehen wie „Antwort kaputt".
         throw Exception('getReceipts: Antwort enthaelt keine Belegliste (data.receipts fehlt)');
       }
+      // Gezaehlt wird erst HIER. Die Zeile stand vorher ueber den Pruefungen
+      // und las `data['receipts']` mit einem String-Index: bei `data: [...]`
+      // oder `data: "text"` griff das in eine Liste bzw. einen Text, bei
+      // `receipts: {...}` scheiterte der Cast — in allen drei Faellen ein
+      // roher TypeError, genau vor der Stelle, die ihn verhindern soll.
+      debugPrint('getReportV2 $start–$end: ${rohBelege.length} Belege');
       // Pro Beleg parsen: EIN defekter/unerwarteter Beleg (z. B. Nullbeleg ohne
       // items) darf nicht den gesamten Abruf kippen — sonst bleibt der ganze
       // Tages-/Zeitraums-Cache leer und keine Buchung findet ihren Beleg.

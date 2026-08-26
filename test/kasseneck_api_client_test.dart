@@ -549,6 +549,38 @@ void main() {
       );
     });
 
+    test('getReceipts: data als Array laeuft nicht in einen TypeError', () async {
+      // Die Absicherung stand hinter einem debugPrint, das `data['receipts']`
+      // schon vorher las: bei einem Array griff der String-Index in eine
+      // Liste — roher TypeError, also genau der Fall, den _daten verhindert.
+      final api = apiMit(jsonEncode({'status': 'success', 'data': <dynamic>[]}));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('getReceipts: data als Text laeuft nicht in einen TypeError', () async {
+      final api = apiMit(jsonEncode({'status': 'success', 'data': 'Wartung'}));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<Exception>()
+            .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('Wartung')))),
+      );
+    });
+
+    test('getReceipts: data.receipts als Objekt laeuft nicht in einen TypeError', () async {
+      // `as List?` auf einer Map wirft — vor jeder Pruefung.
+      final api = apiMit(jsonEncode({
+        'status': 'success',
+        'data': {'metadata': <String, dynamic>{}, 'receipts': <String, dynamic>{}},
+      }));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('keine Belegliste'))),
+      );
+    });
+
     test('getCashboxStatus: 200 mit Array laeuft nicht in einen TypeError', () async {
       final api = apiMit('[]');
       await expectLater(
