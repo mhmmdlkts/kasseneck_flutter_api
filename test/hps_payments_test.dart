@@ -108,6 +108,47 @@ class _Transport implements Exception {
   String toString() => 'Leitung abgebrochen';
 }
 
+/// Eine Uhr, die nicht an der Wanduhr haengt, sondern nur durch die Pausen
+/// vorrueckt, die die Klaerung selbst einlegt.
+///
+/// Damit ist das Ablaufen des Budgets exakt nachrechenbar, statt davon
+/// abzuhaengen, wie ausgelastet die Maschine gerade ist: ohne echtes Warten
+/// verginge sonst gar keine Zeit, und mit echtem Warten waere jede Zusicherung
+/// ein Wettlauf gegen die Maschine.
+class TestUhr implements Stopwatch {
+  Duration _elapsed = Duration.zero;
+
+  /// Ruecke die Uhr um [d] vor. Wird vom sleep-Doppel aufgerufen.
+  void vor(Duration d) => _elapsed += d;
+
+  @override
+  Duration get elapsed => _elapsed;
+
+  @override
+  void start() {}
+
+  @override
+  void stop() {}
+
+  @override
+  void reset() => _elapsed = Duration.zero;
+
+  @override
+  int get elapsedMicroseconds => _elapsed.inMicroseconds;
+
+  @override
+  int get elapsedMilliseconds => _elapsed.inMilliseconds;
+
+  @override
+  int get elapsedTicks => _elapsed.inMicroseconds;
+
+  @override
+  int get frequency => Duration.microsecondsPerSecond;
+
+  @override
+  bool get isRunning => true;
+}
+
 HpsPayments paymentsFor(
   FakeTerminal terminal, {
   Duration? budget,
@@ -120,13 +161,19 @@ HpsPayments paymentsFor(
     httpClient: terminal.client,
     timeout: const Duration(milliseconds: 200),
   );
+  final uhr = TestUhr();
   return HpsPayments(
     client,
-    resolveBudget: budget ?? const Duration(seconds: 5),
+    resolveBudget: budget ?? const Duration(minutes: 10),
     maxBackoff: maxBackoff ?? const Duration(seconds: 10),
-    // Kein echtes Warten im Test -- der Backoff laeuft, aber ohne Zeitverlust;
-    // [pausen] schreibt die Wartezeiten mit, damit sie pruefbar werden.
-    sleep: (d) async => pausen?.add(d),
+    // Kein echtes Warten im Test: die Pause wird mitgeschrieben und laesst
+    // stattdessen die Uhr vorruecken. Nur so vergeht Zeit -- ein Test kann
+    // deshalb genau ausrechnen, wann das Budget aufgebraucht ist.
+    sleep: (d) async {
+      pausen?.add(d);
+      uhr.vor(d);
+    },
+    clock: () => uhr,
     observer: observer,
   );
 }
@@ -175,20 +222,24 @@ void main() {
       expect(res.mayRetrySafely, isTrue);
     });
 
-    test('laeuft noch, Abbruch gelingt -> declined (keine Karte aufgelegt)',
-        () async {
+    test('quittierter Abbruch plus Ergebniscode -> declined', () async {
       final t = FakeTerminal(
         payment: [boom],
-        status: [(_) => json({'transactionId': 'TX-5'})],
+        status: [
+          (_) => json({'transactionId': 'TX-5'}),
+          // Erst diese Antwort entscheidet: ein echter, negativer Code.
+          (_) => json({'responseCode': '17', 'responseText': 'abgebrochen'}),
+        ],
         abort: [(_) => json({'transactionId': 'TX-5'})],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5');
       expect(res.outcome, HpsOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
       expect(
         t.log.any((r) => r.url.path.contains('/api/transaction/abort/')),
         isTrue,
       );
-      // Der quittierte Abbruch allein reicht nicht: er wird nachgeprueft.
+      // Der quittierte Abbruch allein reicht nicht: es wird nachgefragt.
       expect(t.callsOn('status'), 2);
     });
 
@@ -198,7 +249,7 @@ void main() {
         payment: [boom],
         status: [
           (_) => json({'transactionId': 'TX-5b'}),
-          // Die bestaetigende Abfrage widerspricht dem quittierten Abbruch.
+          // Die Nachfrage widerspricht dem quittierten Abbruch.
           (_) => json({'responseCode': '0', 'transactionId': 'TX-5b'}),
         ],
         abort: [(_) => json({'transactionId': 'TX-5b'})],
@@ -210,7 +261,47 @@ void main() {
       expect(t.callsOn('abort'), 1);
     });
 
-    test('quittierter Abbruch, Bestaetigung scheitert -> unresolved', () async {
+    test('quittierter Abbruch, danach "laeuft noch", dann genehmigt '
+        '-> approved', () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'transactionId': 'TX-5d'}),
+          // Direkt nach dem quittierten Abbruch weiss das Terminal noch
+          // nichts. Das ist KEINE Aussage ueber Nichtbelastung.
+          (_) => json({'transactionId': 'TX-5d'}),
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-5d'}),
+        ],
+        abort: [(_) => json({'transactionId': 'TX-5d'})],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5d');
+      expect(res.outcome, HpsOutcome.approved,
+          reason: '"laeuft noch" darf nach einem quittierten Abbruch nicht zu '
+              'declined werden -- das hiesse "gefahrlos wiederholbar" fuer '
+              'einen laufenden Vorgang');
+      expect(t.callsOn('abort'), 1);
+      expect(t.callsOn('status'), 3);
+    });
+
+    test('quittierter Abbruch, danach nur noch "laeuft noch" -> unresolved',
+        () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [(_) => json({'transactionId': 'TX-5e'})],
+        abort: [(_) => json({'transactionId': 'TX-5e'})],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 5))
+          .pay(amount: 25, transactionId: 'TX-5e');
+      expect(res.outcome, HpsOutcome.unresolved,
+          reason: 'ohne Ergebniscode steht nichts fest, auch nicht nach einem '
+              'quittierten Abbruch');
+      expect(res.mayRetrySafely, isFalse);
+      expect(res.transactionId, 'TX-5e');
+      expect(res.response, isNull,
+          reason: 'ein "laeuft noch" darf nicht als Beleg mitgegeben werden');
+    });
+
+    test('quittierter Abbruch, Nachfrage scheitert -> unresolved', () async {
       final t = FakeTerminal(
         payment: [boom],
         status: [(_) => json({'transactionId': 'TX-5c'}), boom],
@@ -218,7 +309,7 @@ void main() {
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5c');
       expect(res.outcome, HpsOutcome.unresolved,
-          reason: 'ohne Bestaetigung bleibt der Ausgang offen, er wird nicht '
+          reason: 'ohne Ergebniscode bleibt der Ausgang offen, er wird nicht '
               'zu declined geraten');
       expect(res.transactionId, 'TX-5c');
     });
@@ -254,6 +345,7 @@ void main() {
     });
 
     test('Budget erschoepft -> unresolved, niemals declined', () async {
+      final pausen = <Duration>[];
       final t = FakeTerminal(
         payment: [boom],
         // Das Terminal sagt dauerhaft "laeuft noch" und lehnt den Abbruch ab:
@@ -261,15 +353,25 @@ void main() {
         status: [(_) => json({'transactionId': 'TX-7'})],
         abort: [(_) => fehler(400, 'already tapped')],
       );
-      final res = await paymentsFor(t, budget: const Duration(milliseconds: 50))
-          .pay(amount: 25, transactionId: 'TX-7');
+      final res =
+          await paymentsFor(t, budget: const Duration(seconds: 5), pausen: pausen)
+              .pay(amount: 25, transactionId: 'TX-7');
       expect(res.outcome, HpsOutcome.unresolved);
       expect(res.transactionId, 'TX-7');
       expect(res.mayRetrySafely, isFalse);
-      expect(t.callsOn('status'), greaterThan(0),
+      expect(t.callsOn('status'), 3,
           reason: 'es muss wirklich geklaert worden sein, nicht nur das '
               'Budget geprueft');
       expect(t.callsOn('abort'), 1);
+      // Die letzte Pause waere 4 s gewesen; nach 3 s verbrauchtem Budget
+      // bleiben nur 2 s. Die Klaerung ueberzieht also nicht.
+      expect(pausen, const [
+        Duration(seconds: 1),
+        Duration(seconds: 2),
+        Duration(seconds: 2),
+      ]);
+      expect(pausen.fold(Duration.zero, (a, b) => a + b),
+          const Duration(seconds: 5));
     });
 
     test('Terminal durchgehend unerreichbar -> unresolved, nicht declined',
@@ -398,6 +500,50 @@ void main() {
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-16');
       expect(res.outcome, HpsOutcome.approved);
+      // Der Verlauf darf hier keine Ursache behaupten: dass die Karte anlag,
+      // ist gerade NICHT belegt -- es kam nur keine lesbare Antwort.
+      expect(
+        res.steps.any((s) => s.contains('Karte lag bereits an')),
+        isFalse,
+      );
+      expect(
+        res.steps.any((s) => s.contains('Abbruch nicht bestaetigt')),
+        isTrue,
+      );
+    });
+
+    test('nur eine echte Ablehnung des Terminals nennt die Karte als Ursache',
+        () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'transactionId': 'TX-16b'}),
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-16b'}),
+        ],
+        abort: [(_) => fehler(400, 'already tapped')],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-16b');
+      expect(res.outcome, HpsOutcome.approved);
+      expect(
+        res.steps.any((s) => s.contains('Karte lag bereits an')),
+        isTrue,
+      );
+    });
+
+    test('ein eigener Auswertungsfehler bleibt nicht stumm', () async {
+      final ereignisse = <HpsEvent>[];
+      final t = FakeTerminal(
+        payment: [(_) => http.Response('<html>Fehlerseite</html>', 200)],
+        status: [(_) => http.Response('<html>Fehlerseite</html>', 200)],
+      );
+      await paymentsFor(t, observer: ereignisse.add)
+          .pay(amount: 25, transactionId: 'TX-17');
+      final eigen = ereignisse.where((e) => e.error is FormatException);
+      expect(eigen, isNotEmpty,
+          reason: 'ein Fehler im eigenen Auswerten darf nicht lautlos zu '
+              'einem Klaerungslauf werden');
+      expect(eigen.every((e) => e.kind == HpsEventKind.requestFailed), isTrue);
+      expect(eigen.every((e) => e.transactionId == 'TX-17'), isTrue);
     });
 
     test('eine zu lange Kennung wirft weiterhin -- da ging nichts hinaus',

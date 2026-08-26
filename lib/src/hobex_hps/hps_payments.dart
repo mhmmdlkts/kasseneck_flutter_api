@@ -13,11 +13,18 @@ import 'transaction_response.dart';
 /// [HpsClient.transactionStatus] geklaert statt als Fehlschlag gemeldet.
 ///
 /// Regel, von der nicht abgewichen wird: [HpsOutcome.declined] entsteht
-/// ausschliesslich aus einer Aussage des Terminals oder einem gelungenen
-/// [HpsClient.abort]. Ein Transportfehler fuehrt NIE zu declined -- er trennt
-/// "nicht angekommen" nicht von "angekommen, Antwort verloren". Genau diese
-/// Verwechslung hat am 24.08.2026 eine echte Belastung als unbelastet
-/// ausgewiesen und den Kunden ein zweites Mal belastet.
+/// ausschliesslich aus einem echten Ergebniscode des Terminals -- also einer
+/// Antwort, die `responseCode` traegt und nicht `"0"` lautet. Weder ein
+/// Transportfehler noch ein quittierter [HpsClient.abort] noch ein "laeuft
+/// noch" reichen dafuer: keines davon ist eine Aussage darueber, dass nichts
+/// belastet wurde. Ein Transportfehler trennt "nicht angekommen" nicht von
+/// "angekommen, Antwort verloren" -- genau diese Verwechslung hat am
+/// 24.08.2026 eine echte Belastung als unbelastet ausgewiesen und den Kunden
+/// ein zweites Mal belastet.
+///
+/// [HpsClient.abort] wird genau einmal versucht und beendet die Klaerung
+/// nicht: er schiebt den Vorgang nur in einen Zustand, in dem das Terminal
+/// einen Ergebniscode nennen kann.
 ///
 /// Die Kennung ist in JEDEM Ergebnis gesetzt, auch bei
 /// [HpsOutcome.unresolved]: ohne sie sind Statusabfrage und Storno
@@ -29,17 +36,20 @@ class HpsPayments {
     this.maxBackoff = const Duration(seconds: 10),
     this.maxTransportFailures = 3,
     Future<void> Function(Duration)? sleep,
+    Stopwatch Function()? clock,
     HpsObserver? observer,
   })  : _sleep = sleep ?? _realSleep,
+        _clock = clock ?? Stopwatch.new,
         _observer = observer;
 
   final HpsClient _client;
 
   /// Wie lange insgesamt geklaert wird, bevor der Ausgang offen bleibt.
   ///
-  /// Die Zusage gilt fuer die Klaerung als Ganzes, nicht nur fuer die Pausen
-  /// dazwischen: jede Abfrage der Klaerung wird zusaetzlich mit der
-  /// Restlaufzeit gedeckelt. Ohne das haette eine einzelne Abfrage bis
+  /// Die Zusage gilt fuer die Klaerung als Ganzes: sowohl jede Abfrage als
+  /// auch jede Pause dazwischen wird mit der Restlaufzeit gedeckelt. Ohne das
+  /// haette eine Pause die Zusage um bis zu [maxBackoff] ueberzogen und eine
+  /// einzelne Abfrage haette bis
   /// [HpsClient.timeout] laufen duerfen (Vorgabe drei Minuten) und drei
   /// Zeitueberschreitungen in Folge haetten aus 90 Sekunden Budget neun
   /// Minuten gemacht. Die Zahlung selbst laeuft davor und unterliegt weiterhin
@@ -56,6 +66,12 @@ class HpsPayments {
   final int maxTransportFailures;
 
   final Future<void> Function(Duration) _sleep;
+
+  /// Quelle der Uhr fuer das Budget. Wie [_sleep] eine Naht fuer Tests: eine
+  /// Uhr, die nur durch die Pausen vorrueckt, macht das Ablaufen des Budgets
+  /// nachpruefbar, statt es der Wanduhr zu ueberlassen.
+  final Stopwatch Function() _clock;
+
   final HpsObserver? _observer;
 
   static Future<void> _realSleep(Duration d) => Future<void>.delayed(d);
@@ -75,16 +91,17 @@ class HpsPayments {
     final String id = transactionId ?? HpsClient.newTransactionId();
     final steps = <String>[];
 
+    // Das try liegt bewusst ENG um den Netzweg: was danach kommt, ist unser
+    // eigenes Auswerten und soll nicht stillschweigend als "Terminal hat nicht
+    // geantwortet" durchgehen.
+    TransactionResponse? res;
     try {
-      final res = await _client.payment(
+      res = await _client.payment(
         amount: amount,
         tip: tip,
         reference: reference,
         transactionId: id,
       );
-      final settled = _fromResponse(res, id, steps);
-      if (settled != null) return settled;
-      steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
     } on ArgumentError {
       // Einzige Ausnahme, die durchgereicht wird: die Laengenpruefung der
       // Kennung schlaegt zu, BEVOR etwas gesendet wurde. Hier ist nachweislich
@@ -99,6 +116,13 @@ class HpsPayments {
       // Aufrufer kein Ergebnis und damit keine Kennung: genau der Mechanismus
       // des Vorfalls vom 24.08.2026, nur mit anderem Ausloeser.
       steps.add('Zahlung abgebrochen: $e');
+      _noteUnexpected(e, id);
+    }
+
+    if (res != null) {
+      final settled = _fromResponse(res, id, steps);
+      if (settled != null) return settled;
+      steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
     }
 
     return _resolve(id, steps);
@@ -132,13 +156,19 @@ class HpsPayments {
   Future<HpsResult> _resolve(String id, List<String> steps) async {
     _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
 
-    final clock = Stopwatch()..start();
+    final clock = _clock()..start();
     var wait = Duration.zero;
     var transportFailures = 0;
     var abortTried = false;
 
     while (clock.elapsed < resolveBudget) {
-      if (wait > Duration.zero) await _sleep(wait);
+      if (wait > Duration.zero) {
+        // Auch die Pause zaehlt gegen das Budget: ungedeckelt haette eine
+        // Pause von maxBackoff die Zusage um bis zu zehn Sekunden ueberzogen.
+        final left = resolveBudget - clock.elapsed;
+        await _sleep(wait < left ? wait : left);
+        if (clock.elapsed >= resolveBudget) break;
+      }
 
       TransactionResponse status;
       try {
@@ -153,6 +183,7 @@ class HpsPayments {
         // niemals an pay() vorbei nach draussen.
         transportFailures++;
         steps.add('Statusabfrage gescheitert ($transportFailures): $e');
+        _noteUnexpected(e, id);
         if (transportFailures >= maxTransportFailures) {
           steps.add('Terminal antwortet nicht -- Ausgang bleibt offen');
           break;
@@ -170,18 +201,33 @@ class HpsPayments {
         abortTried = true;
         try {
           await _withinBudget(clock, () => _client.abort(transactionId: id));
+          // Quittiert -- aber das allein entscheidet NICHTS. Ob das Terminal
+          // einen Abbruch nach dem Auflegen der Karte wirklich mit einem
+          // Fehler quittiert, ist mangels Testterminal ungeprueft; traefe das
+          // nicht zu, wuerde hier eine echte Belastung zu "nichts belastet"
+          // erklaert. Deshalb geht es zurueck in die Schleife: erst wenn das
+          // Terminal dazu einen echten Ergebniscode nennt, steht der Ausgang
+          // fest. Ohne Pause, damit die Nachfrage sofort kommt.
+          steps.add(
+            'Abbruch quittiert -- der Ausgang wird noch nachgefragt',
+          );
+          wait = Duration.zero;
+          continue;
         } catch (e) {
           // Der Text darf keine Ursache behaupten, die nicht feststeht:
           // [steps] ist der Nachweis, der im Belastungsstreit angezeigt wird.
-          steps.add(e is HpsConnectionException
-              ? 'Abbruch nicht zugestellt ($e) -- ob er wirkte, ist offen, '
-                  'weiter abfragen'
-              : 'Abbruch abgelehnt ($e) -- Karte lag bereits an, weiter '
-                  'abfragen');
+          // Nur eine echte Antwort des Terminals belegt, dass die Karte schon
+          // anlag; ein Leitungsabriss, eine Zeitueberschreitung oder eine
+          // unlesbare Antwort belegen gar nichts.
+          steps.add(e is HpsHttpException
+              ? 'Abbruch abgelehnt ($e) -- Karte lag bereits an, weiter '
+                  'abfragen'
+              : 'Abbruch nicht bestaetigt ($e) -- ob er wirkte, ist offen, '
+                  'weiter abfragen');
+          _noteUnexpected(e, id);
           wait = _nextWait(wait);
           continue;
         }
-        return _confirmAbort(id, steps, clock);
       }
 
       wait = _nextWait(wait);
@@ -189,55 +235,6 @@ class HpsPayments {
 
     steps.add('Ausgang bleibt offen');
     return _open(id, steps);
-  }
-
-  /// Prueft einen quittierten Abbruch mit einer zusaetzlichen Statusabfrage
-  /// nach, bevor daraus [HpsOutcome.declined] wird.
-  ///
-  /// Ein 2xx auf dem Abbruchweg allein beweist NICHT, dass nichts belastet
-  /// wurde. Dass das Terminal einen Abbruch nach dem Auflegen der Karte mit
-  /// einem Fehler quittiert, ist mangels Testterminal ungeprueft. Traefe das
-  /// nicht zu, wuerde hier eine echte Belastung zu "nichts belastet" erklaert
-  /// -- genau der Schaden, den dieses Paket verhindern soll. Deshalb entsteht
-  /// [HpsOutcome.declined] erst, wenn auch die Abfrage nichts Genehmigtes
-  /// zeigt; scheitert sie, bleibt der Ausgang offen.
-  Future<HpsResult> _confirmAbort(
-    String id,
-    List<String> steps,
-    Stopwatch clock,
-  ) async {
-    steps.add('Abbruch quittiert -- wird durch eine Statusabfrage bestaetigt');
-
-    TransactionResponse status;
-    try {
-      status = await _withinBudget(
-        clock,
-        () => _client.transactionStatus(transactionId: id),
-      );
-    } catch (e) {
-      steps.add('Bestaetigung gescheitert ($e) -- Ausgang bleibt offen');
-      return _open(id, steps);
-    }
-
-    if (status.isApproved) {
-      steps.add('Trotz quittiertem Abbruch meldet das Terminal: genehmigt');
-      _emit(HpsEventKind.resolved, steps.last, id);
-      return HpsResult(
-        outcome: HpsOutcome.approved,
-        transactionId: id,
-        response: status,
-        steps: List<String>.unmodifiable(steps),
-      );
-    }
-
-    steps.add('Abbruch bestaetigt -- es lag keine Karte an, nichts belastet');
-    _emit(HpsEventKind.resolved, steps.last, id);
-    return HpsResult(
-      outcome: HpsOutcome.declined,
-      transactionId: id,
-      response: status,
-      steps: List<String>.unmodifiable(steps),
-    );
   }
 
   /// Der Ausgang bleibt offen. Die Kennung ist gesetzt, damit Statusabfrage
@@ -266,6 +263,29 @@ class HpsPayments {
     if (current == Duration.zero) return const Duration(seconds: 1);
     final doubled = current * 2;
     return doubled > maxBackoff ? maxBackoff : doubled;
+  }
+
+  /// Meldet eine Ausnahme, die KEINE [HpsException] ist -- also einen Fehler
+  /// im eigenen Auswerten statt einen am Terminal.
+  ///
+  /// Der Zahlweg laeuft trotzdem konservativ weiter (der Ausgang bleibt offen,
+  /// statt geraten zu werden), aber stumm bleiben darf so etwas nicht: sonst
+  /// sieht niemand, dass hier ein eigener Fehler und nicht das Terminal die
+  /// Klaerung ausgeloest hat.
+  void _noteUnexpected(Object error, String id) {
+    if (error is HpsException) return;
+    final observer = _observer;
+    if (observer == null) return;
+    try {
+      observer(HpsEvent(
+        HpsEventKind.requestFailed,
+        'Unerwarteter Fehler beim Auswerten der Terminal-Antwort',
+        transactionId: id,
+        error: error,
+      ));
+    } catch (_) {
+      // bewusst still -- das Protokoll darf den Zahlweg nie mitreissen
+    }
   }
 
   void _emit(HpsEventKind kind, String message, String id) {
