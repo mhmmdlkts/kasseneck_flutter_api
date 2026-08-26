@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Verbindliche Regeln fuer alle, die an diesem Paket arbeiten — Menschen wie Werkzeuge.
 
 ## Keine Spuren / no footprint
 

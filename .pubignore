@@ -1,1 +1,17 @@
-docs/
+# Was nicht ins veroeffentlichte Paket gehoert.
+#
+# docs/ reist bewusst MIT: dort steht, wie sich das Kartenterminal tatsaechlich
+# verhaelt. Wer das Paket einbindet, soll das lesen koennen, ohne das Repo zu
+# suchen. AGENTS.md ebenso — die Regeln des Zahlwegs gelten auch fuer Aufrufer.
+
+.superpowers/
+docs/superpowers/
+.github/
+.idea/
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+.DS_Store
+*.iml
