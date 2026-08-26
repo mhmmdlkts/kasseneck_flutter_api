@@ -138,9 +138,54 @@ class PrintPaper {
     await addImage(img, align: align);
   }
 
+  /// Der QR-Code, der auf diesem Beleg nicht entstehen konnte — `null`, solange
+  /// alles gut ging. Der QR ist gesetzlich gefordert; ein Aufrufer, der den
+  /// Bon nachdrucken oder den Beleg elektronisch ausgeben will, muss davon
+  /// erfahren, ohne den Bytestrom zu durchsuchen. Wird von [reset] geleert.
+  String? qrFehler;
+
+  /// Nativer QR-Befehl. Die Nutzlast wird ausdruecklich **nicht** durch
+  /// [_printable] geschickt: der QR traegt Daten, keine Schrift. Ein durch '?'
+  /// ersetztes Zeichen ergaebe einen QR, der sich sauber lesen laesst und
+  /// trotzdem nicht mehr zum signierten Beleg passt — falsche Daten sind
+  /// schlimmer als keine. Kodiert wird UTF-8 (siehe [QRCode]).
   void addQrCode(String data, {QRSize size = QRSize.size6}) {
-    bytes.add(Uint8List.fromList(generator.qrcode(data, size: size)));
-    myPosPaper.addQrCode(data, size: 280);
+    if (data.isEmpty) {
+      _qrAusfall(data, 'leere Nutzlast');
+      return;
+    }
+    try {
+      bytes.add(Uint8List.fromList(generator.qrcode(data, size: size)));
+      myPosPaper.addQrCode(data, size: 280);
+    } catch (e) {
+      _qrAusfall(data, e);
+    }
+  }
+
+  /// Ein QR, der nicht entstehen konnte, wird **sichtbar** — nicht
+  /// verschwiegen und nicht mit einem Abbruch bezahlt.
+  ///
+  /// Abwaegung: Ein Abbruch haelt die Kasse an, waehrend ein Kunde davor
+  /// steht, und hilft dem Beleg nicht — der ist an dieser Stelle laengst
+  /// signiert und im DEP, kein Papier macht ihn nicht rechtmaessiger. Ein
+  /// stiller Ausfall wiederum liefert einen Pflichtbeleg, der vollstaendig
+  /// aussieht und keiner ist; er faellt niemandem auf und laesst sich hinterher
+  /// nicht mehr zuordnen. Also: der Bon laeuft durch, traegt aber einen
+  /// Aufdruck und die Belegdaten in Klarschrift, sodass der Kassier den Ausfall
+  /// sieht und der Inhalt trotzdem auf dem Papier steht. [qrFehler] meldet
+  /// dasselbe an den Aufrufer.
+  void _qrAusfall(String data, Object grund) {
+    qrFehler = grund.toString();
+    if (kDebugMode) print('QR-Code nicht druckbar: $grund');
+    addFeed();
+    addText('!! QR-CODE FEHLT !!', styles: PosStyles(align: PosAlign.center, bold: true));
+    if (data.isEmpty) return;
+    addText('Belegdaten:', styles: PosStyles(align: PosAlign.center));
+    final int breite = paperSize.defaultCharCount;
+    for (int i = 0; i < data.length; i += breite) {
+      final int ende = i + breite;
+      addText(data.substring(i, ende > data.length ? data.length : ende));
+    }
   }
 
   /// QR als Bild. [raster] true → GS v 0 (imageRaster), false → ESC * (image).
@@ -152,6 +197,10 @@ class PrintPaper {
   /// Bild ist deutlich kleiner/schneller ueber Bluetooth als der fruehere
   /// QrPainter→PNG-Roundtrip.
   Future<void> addQrCodeAsImage(String data, {int size = 280, bool raster = true}) async {
+    if (data.isEmpty) {
+      _qrAusfall(data, 'leere Nutzlast');
+      return;
+    }
     try {
       final RasterImage img = renderQrMatrix(data, size: size);
       bytes.add(Uint8List.fromList(
@@ -159,7 +208,9 @@ class PrintPaper {
       ));
       myPosPaper.addImage(await encodePng(img));
     } catch (e) {
-      if (kDebugMode) print('Error in addQrCodeAsImage: $e');
+      // Frueher endete der Fehler hier in einem kDebugMode-print: im Release
+      // entstand ein Pflichtbeleg ohne QR, ohne jedes Signal.
+      _qrAusfall(data, e);
     }
   }
 
@@ -205,6 +256,7 @@ class PrintPaper {
 
   void reset() {
     bytes.clear();
+    qrFehler = null;
     bytes.add(Uint8List.fromList(generator.reset()));
     bytes.add(Uint8List.fromList(generator.setGlobalCodeTable('CP1252')));
     myPosPaper.commands.clear();
@@ -533,6 +585,10 @@ class PrintPaper {
         BelegBanner() => BelegBanner(text: _printable(z.text), warnung: z.warnung),
         BelegSpalten() => BelegSpalten(z.columns.map((c) => BelegSpalte(text: _printable(c.text), width: c.width, align: c.align)).toList()),
         BelegLinie() => BelegLinie(char: _printable(z.char).isEmpty ? '-' : _printable(z.char)),
+        // BelegQr bleibt bewusst unangetastet: die QR-Nutzlast ist Datum,
+        // nicht Schrift — ein Ersatzzeichen ergaebe einen lesbaren QR mit
+        // falschem Inhalt. Sie ueberlebt den Druck trotzdem, seit der native
+        // Befehl UTF-8 statt Latin-1 kodiert (siehe [addQrCode]).
         _ => z,
       }).toList(),
       paperSize: layout.paperSize,
