@@ -163,9 +163,9 @@ class KasseneckApi {
     }
   }
 
-  /// Ruft [endpoint] und gibt die Hülle `{status, data}` **geprüft** zurück.
+  /// Ruft [endpoint] und gibt die Huelle `{status, data}` **geprueft** zurueck.
   ///
-  /// Der Umweg über diese Stelle ersetzt die implizite Zuweisung
+  /// Der Umweg ueber diese Stelle ersetzt die implizite Zuweisung
   /// `final Map<String, dynamic> resJson = … json.decode(value)`, die an jeder
   /// Aufrufstelle stand. Sie erzeugte bei einem `200` mit Array, Skalar oder
   /// `null` einen rohen `TypeError` — im Verkauf **nach** der Signatur, mit
@@ -214,7 +214,7 @@ class KasseneckApi {
     return roh;
   }
 
-  /// Das `data`-Objekt einer erfolgreichen Antwort — geprüft statt gecastet.
+  /// Das `data`-Objekt einer erfolgreichen Antwort — geprueft statt gecastet.
   static Map<String, dynamic> _daten(String endpoint, Map<String, dynamic> huelle) {
     final daten = huelle['data'];
     if (daten is! Map) {

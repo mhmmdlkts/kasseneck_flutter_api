@@ -46,13 +46,18 @@ void main() {
     expect(paper.myPosPaper.commands.firstWhere((c) => c['type'] == 'qrCode')['value'], daten);
   });
 
-  test('reines ASCII bleibt byteweise, wie es war (Latin-1 == UTF-8)', () {
+  test('Rahmen des nativen QR-Befehls: Koepfe, Laengenfeld und Reihenfolge', () {
+    // Reiner Rahmen-Test. Er sagt ueber die Kodierung NICHTS aus: 'ABC' ist
+    // ASCII, und da sind Latin-1 und UTF-8 byteweise gleich -- ein Rueckbau
+    // auf latin1 koennte diese Zusicherung nicht rot machen. Rot wird sie bei
+    // einem falschen Kopf, einem falschen Laengenfeld oder vertauschter
+    // Reihenfolge. Die Kodierung haelt der Test darueber ('€漢' als UTF-8).
     final qr = QRCode('ABC', QRSize.size6, QRCorrection.L);
     final h = '\x1D(k'.codeUnits;
     expect(qr.bytes, [
       ...h, 0x03, 0x00, 0x31, 0x43, 0x06,
       ...h, 0x03, 0x00, 0x31, 0x45, 48,
-      ...h, 3 + 3, 0x00, 0x31, 0x50, 0x30, ...latin1.encode('ABC'),
+      ...h, 3 + 3, 0x00, 0x31, 0x50, 0x30, ...utf8.encode('ABC'),
       ...h, 0x03, 0x00, 0x31, 0x52, 0x30,
       ...h, 0x03, 0x00, 0x31, 0x51, 0x30,
     ]);
