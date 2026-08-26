@@ -63,6 +63,13 @@ class HobexCloudResult {
 ///
 /// Die Kennung ist in JEDEM zurueckgegebenen Ergebnis gesetzt, auch bei
 /// [CardPaymentOutcome.unresolved] -- ohne sie ist der Vorgang unauffindbar.
+///
+/// [HpsObserver]: derselbe Typ wie beim HPS-Zwilling -- er ist zahlwegneutral
+/// und meldet hier dieselben Ereignisse (`resolving`/`resolved` sowie
+/// unerwartete Fehler). Die Begruendung des Beobachters gilt fuer den
+/// Cloud-Weg genauso: ohne Protokoll gibt es beim naechsten Vorfall wieder
+/// keine Daten. Ein werfender Beobachter darf den Zahlweg NIEMALS mitreissen
+/// -- siehe [_emit].
 class HobexCloudPayments {
   HobexCloudPayments(
     this._api, {
@@ -71,8 +78,10 @@ class HobexCloudPayments {
     this.maxTransportFailures = 3,
     Future<void> Function(Duration)? sleep,
     Stopwatch Function()? clock,
+    HpsObserver? observer,
   })  : _sleep = sleep ?? ((d) => Future<void>.delayed(d)),
-        _clock = clock ?? Stopwatch.new;
+        _clock = clock ?? Stopwatch.new,
+        _observer = observer;
 
   final KasseneckApi _api;
 
@@ -97,6 +106,8 @@ class HobexCloudPayments {
   /// Uhr, die nur durch die Pausen vorrueckt, macht das Ablaufen des Budgets
   /// nachpruefbar, statt es der Wanduhr zu ueberlassen.
   final Stopwatch Function() _clock;
+
+  final HpsObserver? _observer;
 
   /// Kartenzahlung mit geklaertem Ausgang.
   ///
@@ -137,6 +148,7 @@ class HobexCloudPayments {
       // draussen dringen -- genau der Mechanismus des Vorfalls vom
       // 24.08.2026.
       steps.add('Zahlung abgebrochen: $e');
+      _noteUnexpected(e, transactionId);
     }
 
     if (receipt != null) {
@@ -164,6 +176,7 @@ class HobexCloudPayments {
     if (code.isEmpty) return null;
     final approved = code == '0';
     steps.add(approved ? 'Hobex: genehmigt' : 'Hobex: abgelehnt ($code)');
+    _emit(HpsEventKind.resolved, steps.last, id);
     return HobexCloudResult(
       outcome:
           approved ? CardPaymentOutcome.approved : CardPaymentOutcome.declined,
@@ -177,6 +190,8 @@ class HobexCloudPayments {
   /// der Dienst etwas sagt oder das Budget aufgebraucht ist. Kein Abbruch:
   /// den kennt der Cloud-Weg nicht.
   Future<HobexCloudResult> _resolve(String id, List<String> steps) async {
+    _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
+
     final clock = _clock()..start();
     var wait = Duration.zero;
     var transportFailures = 0;
@@ -211,6 +226,7 @@ class HobexCloudPayments {
         // Vorgang und darf niemals als "nicht belastet" gelesen werden.
         transportFailures++;
         steps.add('Statusabfrage gescheitert ($transportFailures): $e');
+        _noteUnexpected(e, id);
         if (transportFailures >= maxTransportFailures) {
           steps.add('Dienst antwortet nicht -- Ausgang bleibt offen');
           break;
@@ -227,6 +243,7 @@ class HobexCloudPayments {
     }
 
     steps.add('Ausgang bleibt offen');
+    _emit(HpsEventKind.resolved, steps.last, id);
     return HobexCloudResult(
       outcome: CardPaymentOutcome.unresolved,
       transactionId: id,
@@ -238,6 +255,35 @@ class HobexCloudPayments {
     if (current == Duration.zero) return const Duration(seconds: 1);
     final doubled = current * 2;
     return doubled > maxBackoff ? maxBackoff : doubled;
+  }
+
+  /// Meldet einen Fehler, der beim Netzweg oder beim eigenen Auswerten
+  /// auftrat. Anders als beim HPS-Zwilling gibt es hier keine typisierte
+  /// Ausnahme, die einen erwarteten Terminal-Fehler von einem eigenen Bug
+  /// unterscheidet -- jede Ausnahme, die hier ankommt, ist deshalb meldenswert.
+  void _noteUnexpected(Object error, String id) {
+    final observer = _observer;
+    if (observer == null) return;
+    try {
+      observer(HpsEvent(
+        HpsEventKind.requestFailed,
+        'Unerwarteter Fehler im Cloud-Zahlweg',
+        transactionId: id,
+        error: error,
+      ));
+    } catch (_) {
+      // bewusst still -- das Protokoll darf den Zahlweg nie mitreissen
+    }
+  }
+
+  void _emit(HpsEventKind kind, String message, String id) {
+    final observer = _observer;
+    if (observer == null) return;
+    try {
+      observer(HpsEvent(kind, message, transactionId: id));
+    } catch (_) {
+      // bewusst still -- das Protokoll darf den Zahlweg nie mitreissen
+    }
   }
 
   /// Fuehrt [call] aus, aber hoechstens so lange, wie vom [resolveBudget]

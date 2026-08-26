@@ -33,6 +33,10 @@ export 'src/hobex_cloud/hobex_cloud_payments.dart'
 // Barrel importiert, den Typ von HobexCloudResult.outcome nicht benennen.
 export 'src/payments/card_payment_outcome.dart' show CardPaymentOutcome;
 export 'models/hobex_receipt.dart' show HobexReceipt;
+// HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
+// entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
+// nicht benennbar.
+export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
 
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///

@@ -96,6 +96,7 @@ HobexCloudPayments cloudPaymentsFor(
   Duration? budget,
   Duration? maxBackoff,
   List<Duration>? pausen,
+  HpsObserver? observer,
 }) {
   final uhr = TestUhr();
   return HobexCloudPayments(
@@ -110,6 +111,7 @@ HobexCloudPayments cloudPaymentsFor(
       uhr.vor(d);
     },
     clock: () => uhr,
+    observer: observer,
   );
 }
 
@@ -274,6 +276,42 @@ void main() {
       );
       expect(callCount(), 0,
           reason: 'die Pruefung schlaegt zu, bevor etwas gesendet wird');
+    });
+  });
+
+  group('Beobachter', () {
+    test('erfaehrt von Klaerung und Ausgang', () async {
+      final ereignisse = <HpsEvent>[];
+      final (:api, :callCount) = apiWith([
+        () => throw Exception('Verbindung weg'), // pay()
+        () => http.Response(
+            '{"status":"success","data":${receiptJson(responseCode: '0', transactionId: 'TX-7')}}',
+            200),
+      ]);
+      await cloudPaymentsFor(api, observer: ereignisse.add)
+          .pay(transactionId: 'TX-7', amount: 25);
+      expect(ereignisse.any((e) => e.kind == HpsEventKind.resolving), isTrue);
+      expect(ereignisse.any((e) => e.kind == HpsEventKind.resolved), isTrue);
+      expect(
+        ereignisse.every((e) => e.transactionId == 'TX-7'),
+        isTrue,
+        reason: 'jedes Ereignis muss die Kennung tragen',
+      );
+      expect(callCount(), 2);
+    });
+
+    test('ein werfender Beobachter reisst den Zahlweg nicht mit', () async {
+      final (:api, :callCount) = apiWith([
+        () => http.Response(
+            '{"data":${receiptJson(responseCode: '0', transactionId: 'TX-8')}}',
+            200),
+      ]);
+      final res = await cloudPaymentsFor(
+        api,
+        observer: (_) => throw StateError('Protokoll kaputt'),
+      ).pay(transactionId: 'TX-8', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(callCount(), 1);
     });
   });
 }
