@@ -2,7 +2,7 @@ import 'transaction_response.dart';
 
 /// Ausgang eines Zahlvorgangs -- die einzige Frage, die der Aufrufer wirklich
 /// hat: darf ich es nochmal versuchen?
-enum HpsOutcome {
+enum CardPaymentOutcome {
   /// Geld ist geflossen. Buchen, nicht wiederholen.
   approved,
 
@@ -16,9 +16,9 @@ enum HpsOutcome {
 
 /// Ergebnis eines Zahlvorgangs samt Kennung und Klaerungsverlauf.
 ///
-/// [transactionId] ist IMMER gesetzt, auch bei [HpsOutcome.unresolved] -- ohne
-/// sie sind Statusabfrage und Storno unerreichbar, und genau daran ist der
-/// Vorfall vom 24.08.2026 gescheitert.
+/// [transactionId] ist IMMER gesetzt, auch bei [CardPaymentOutcome.unresolved]
+/// -- ohne sie sind Statusabfrage und Storno unerreichbar, und genau daran ist
+/// der Vorfall vom 24.08.2026 gescheitert.
 class HpsResult {
   const HpsResult({
     required this.outcome,
@@ -27,7 +27,7 @@ class HpsResult {
     this.steps = const <String>[],
   });
 
-  final HpsOutcome outcome;
+  final CardPaymentOutcome outcome;
   final String transactionId;
 
   /// Die letzte Antwort des Terminals, sofern eine ankam.
@@ -36,12 +36,13 @@ class HpsResult {
   /// Verlauf der Klaerung, in Reihenfolge -- fuer Anzeige und Protokoll.
   final List<String> steps;
 
-  bool get isApproved => outcome == HpsOutcome.approved;
+  bool get isApproved => outcome == CardPaymentOutcome.approved;
 
-  /// Nur bei [HpsOutcome.declined] steht fest, dass nichts belastet wurde.
-  bool get mayRetrySafely => outcome == HpsOutcome.declined;
+  /// Nur bei [CardPaymentOutcome.declined] steht fest, dass nichts belastet
+  /// wurde.
+  bool get mayRetrySafely => outcome == CardPaymentOutcome.declined;
 
-  bool get isUnresolved => outcome == HpsOutcome.unresolved;
+  bool get isUnresolved => outcome == CardPaymentOutcome.unresolved;
 
   @override
   String toString() =>

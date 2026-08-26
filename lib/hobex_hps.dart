@@ -21,6 +21,6 @@ export 'src/hobex_hps/enums.dart' show HpsTransactionType, Cvm;
 export 'src/hobex_hps/exceptions.dart'
     show HpsException, HpsHttpException, HpsConnectionException;
 export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
-export 'src/hobex_hps/hps_result.dart' show HpsOutcome, HpsResult;
+export 'src/hobex_hps/hps_result.dart' show CardPaymentOutcome, HpsResult;
 export 'src/hobex_hps/hps_payments.dart' show HpsPayments;
 export 'models/hobex_receipt.dart' show HobexReceipt;

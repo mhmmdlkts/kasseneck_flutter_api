@@ -204,7 +204,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-1');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(res.transactionId, 'TX-1');
       expect(res.response, isNotNull);
     });
@@ -216,7 +216,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-2');
-      expect(res.outcome, HpsOutcome.declined);
+      expect(res.outcome, CardPaymentOutcome.declined);
       expect(res.mayRetrySafely, isTrue);
       expect(res.transactionId, 'TX-2');
     });
@@ -229,7 +229,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-3');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(res.transactionId, 'TX-3');
     });
 
@@ -241,7 +241,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-4');
-      expect(res.outcome, HpsOutcome.declined);
+      expect(res.outcome, CardPaymentOutcome.declined);
       expect(res.mayRetrySafely, isTrue);
     });
 
@@ -258,7 +258,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5');
-      expect(res.outcome, HpsOutcome.declined);
+      expect(res.outcome, CardPaymentOutcome.declined);
       expect(res.mayRetrySafely, isTrue);
       expect(
         t.log.any((r) => r.url.path.contains('/api/transaction/abort/')),
@@ -282,7 +282,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5b');
-      expect(res.outcome, HpsOutcome.approved,
+      expect(res.outcome, CardPaymentOutcome.approved,
           reason: 'ein 2xx auf dem Abbruchweg darf eine echte Belastung nicht '
               'zu "nichts belastet" erklaeren');
       expect(t.callsOn('abort'), 1);
@@ -305,7 +305,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5d');
-      expect(res.outcome, HpsOutcome.approved,
+      expect(res.outcome, CardPaymentOutcome.approved,
           reason: '"laeuft noch" darf nach einem quittierten Abbruch nicht zu '
               'declined werden -- das hiesse "gefahrlos wiederholbar" fuer '
               'einen laufenden Vorgang');
@@ -326,7 +326,7 @@ void main() {
       );
       final res = await paymentsFor(t, budget: const Duration(seconds: 5))
           .pay(amount: 25, transactionId: 'TX-5e');
-      expect(res.outcome, HpsOutcome.unresolved,
+      expect(res.outcome, CardPaymentOutcome.unresolved,
           reason: 'ohne Ergebniscode steht nichts fest, auch nicht nach einem '
               'quittierten Abbruch');
       expect(res.mayRetrySafely, isFalse);
@@ -347,7 +347,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5c');
-      expect(res.outcome, HpsOutcome.unresolved,
+      expect(res.outcome, CardPaymentOutcome.unresolved,
           reason: 'ohne Ergebniscode bleibt der Ausgang offen, er wird nicht '
               'zu declined geraten');
       expect(res.transactionId, 'TX-5c');
@@ -364,7 +364,7 @@ void main() {
         abort: [(_) => fehler(400, 'already tapped')],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-6');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
     });
 
     test('der Abbruch wird nur ein einziges Mal versucht', () async {
@@ -378,7 +378,7 @@ void main() {
         abort: [(_) => fehler(400, 'already tapped')],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-6b');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(t.callsOn('abort'), 1);
       expect(t.callsOn('status'), 3);
     });
@@ -397,7 +397,7 @@ void main() {
       final res = await paymentsFor(t,
               budget: const Duration(seconds: 5), pausen: pausen)
           .pay(amount: 25, transactionId: 'TX-7');
-      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
       expect(res.transactionId, 'TX-7');
       expect(res.mayRetrySafely, isFalse);
       expect(t.callsOn('status'), 3,
@@ -419,7 +419,7 @@ void main() {
         () async {
       final t = FakeTerminal(payment: [boom], status: [boom]);
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-8');
-      expect(res.outcome, HpsOutcome.unresolved,
+      expect(res.outcome, CardPaymentOutcome.unresolved,
           reason: 'ein Transportfehler beweist nicht, dass nichts gestartet '
               'wurde');
       expect(res.transactionId, 'TX-8');
@@ -434,7 +434,7 @@ void main() {
       final res = await paymentsFor(t).pay(amount: 25);
       expect(res.transactionId, isNotEmpty);
       expect(res.transactionId.length, lessThanOrEqualTo(18));
-      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
     });
 
     test('die erzeugte Kennung steht schon im ersten Request', () async {
@@ -461,7 +461,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-9');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(t.callsOn('status'), greaterThan(0));
     });
 
@@ -521,7 +521,7 @@ void main() {
         status: [(_) => http.Response('<html>Fehlerseite</html>', 200)],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-14');
-      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
       expect(res.transactionId, 'TX-14',
           reason: 'ohne Kennung waere der Vorgang unauffindbar -- genau der '
               'Vorfall');
@@ -539,7 +539,7 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-15');
-      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
       expect(res.transactionId, 'TX-15');
     });
 
@@ -554,7 +554,7 @@ void main() {
         abort: [(_) => http.Response('kein JSON', 200)],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-16');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       // Der Verlauf darf hier keine Ursache behaupten: dass die Karte anlag,
       // ist gerade NICHT belegt -- es kam nur keine lesbare Antwort.
       expect(
@@ -578,7 +578,7 @@ void main() {
         abort: [(_) => fehler(400, 'already tapped')],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-16b');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(
         res.steps.any((s) => s.contains('Karte lag bereits an')),
         isTrue,
@@ -622,7 +622,7 @@ void main() {
         t,
         observer: (_) => throw StateError('Protokoll kaputt'),
       ).pay(amount: 25, transactionId: 'TX-13');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
     });
   });
 
@@ -643,7 +643,7 @@ void main() {
       final pausen = <Duration>[];
       final res = await paymentsFor(zaeh(4), pausen: pausen)
           .pay(amount: 25, transactionId: 'TX-B');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(pausen, const [
         Duration(seconds: 1),
         Duration(seconds: 2),
@@ -656,7 +656,7 @@ void main() {
       final pausen = <Duration>[];
       final res = await paymentsFor(zaeh(6), pausen: pausen)
           .pay(amount: 25, transactionId: 'TX-B');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(pausen, const [
         Duration(seconds: 1),
         Duration(seconds: 2),
@@ -675,7 +675,7 @@ void main() {
         maxBackoff: const Duration(seconds: 3),
         pausen: pausen,
       ).pay(amount: 25, transactionId: 'TX-B');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(pausen, const [
         Duration(seconds: 1),
         Duration(seconds: 2),
@@ -689,7 +689,7 @@ void main() {
       final t = FakeTerminal(payment: [boom], status: [boom]);
       final res = await paymentsFor(t, pausen: pausen)
           .pay(amount: 25, transactionId: 'TX-B2');
-      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
       // Drei Versuche, dazwischen zwei Pausen.
       expect(pausen, const [Duration(seconds: 1), Duration(seconds: 2)]);
     });
@@ -708,7 +708,7 @@ void main() {
         transactionId: 'RF-1',
         originalTransactionId: 'TX-1',
       );
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(res.transactionId, 'RF-1');
       expect(txBodyOf(t.log.single)['originalTransactionId'], 'TX-1');
     });
@@ -723,7 +723,7 @@ void main() {
       );
       final res =
           await paymentsFor(t).refund(amount: 25, transactionId: 'RF-2');
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(res.transactionId, 'RF-2');
     });
 
@@ -735,7 +735,7 @@ void main() {
       );
       final res =
           await paymentsFor(t).refund(amount: 25, transactionId: 'RF-3');
-      expect(res.outcome, HpsOutcome.declined);
+      expect(res.outcome, CardPaymentOutcome.declined);
     });
 
     test(
@@ -772,7 +772,7 @@ void main() {
       );
       final res =
           await paymentsFor(t).cancel(transactionId: 'TX-9b', amount: 25);
-      expect(res.outcome, HpsOutcome.declined);
+      expect(res.outcome, CardPaymentOutcome.declined);
       expect(res.mayRetrySafely, isTrue);
       expect(res.transactionId, 'TX-9b');
     });
@@ -787,7 +787,7 @@ void main() {
       );
       final res =
           await paymentsFor(t).cancel(transactionId: 'TX-9', amount: 25);
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(res.transactionId, 'TX-9');
       expect(t.log.single.url.path, contains('TX-9'));
     });
@@ -802,7 +802,7 @@ void main() {
       );
       final res =
           await paymentsFor(t).cancel(transactionId: 'TX-10', amount: 25);
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(res.transactionId, 'TX-10');
     });
 
@@ -821,7 +821,7 @@ void main() {
         final res =
             await paymentsFor(t, budget: const Duration(milliseconds: 50))
                 .cancel(transactionId: 'TX-11', amount: 25);
-        expect(res.outcome, HpsOutcome.unresolved);
+        expect(res.outcome, CardPaymentOutcome.unresolved);
         expect(res.transactionId, 'TX-11');
       },
     );
@@ -837,7 +837,7 @@ void main() {
       );
       final res = await paymentsFor(t, budget: const Duration(milliseconds: 50))
           .cancel(transactionId: 'TX-12', amount: 25);
-      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
     });
 
     test('cancel: state FAILED entscheidet nichts -- kein geratenes declined',
@@ -850,14 +850,14 @@ void main() {
       );
       final res = await paymentsFor(t, budget: const Duration(milliseconds: 50))
           .cancel(transactionId: 'TX-12b', amount: 25);
-      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
     });
 
     test('cancel: Transportfehler durchgehend -> unresolved', () async {
       final t = FakeTerminal(cancel: [boom], status: [boom]);
       final res =
           await paymentsFor(t).cancel(transactionId: 'TX-13', amount: 25);
-      expect(res.outcome, HpsOutcome.unresolved);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
       expect(res.transactionId, 'TX-13');
     });
 
@@ -872,7 +872,7 @@ void main() {
       );
       final res =
           await paymentsFor(t).cancel(transactionId: 'TX-14', amount: 25);
-      expect(res.outcome, HpsOutcome.approved);
+      expect(res.outcome, CardPaymentOutcome.approved);
       // callsOn('abort') waere hier immer 0 -- auch wenn abort() versucht
       // wuerde, denn ohne abort-Handler wirft FakeTerminal einen StateError,
       // BEVOR der Zaehler hochgeht, und dieser Fehler wuerde als

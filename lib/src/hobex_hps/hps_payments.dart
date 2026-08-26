@@ -12,7 +12,7 @@ import 'transaction_response.dart';
 /// dem ersten Netzweg fest, und ein abgebrochener Vorgang wird ueber
 /// [HpsClient.transactionStatus] geklaert statt als Fehlschlag gemeldet.
 ///
-/// Regel, von der nicht abgewichen wird: [HpsOutcome.declined] entsteht
+/// Regel, von der nicht abgewichen wird: [CardPaymentOutcome.declined] entsteht
 /// ausschliesslich aus einem echten Ergebniscode des Terminals -- also einer
 /// Antwort, die `responseCode` traegt und nicht `"0"` lautet. Weder ein
 /// Transportfehler noch ein quittierter [HpsClient.abort] noch ein "laeuft
@@ -27,7 +27,7 @@ import 'transaction_response.dart';
 /// einen Ergebniscode nennen kann.
 ///
 /// Die Kennung ist in JEDEM Ergebnis gesetzt, auch bei
-/// [HpsOutcome.unresolved]: ohne sie sind Statusabfrage und Storno
+/// [CardPaymentOutcome.unresolved]: ohne sie sind Statusabfrage und Storno
 /// unerreichbar.
 ///
 /// [refund] und [cancel] bekommen dieselbe Klaerung wie [pay] -- bei beiden
@@ -78,7 +78,8 @@ class HpsPayments {
   /// Nach so vielen Statusabfragen in Folge, die am Transport scheitern, wird
   /// abgebrochen -- ein offensichtlich unerreichbares Terminal soll den
   /// Mitarbeiter nicht das ganze Budget lang warten lassen. Das Ergebnis ist
-  /// dann [HpsOutcome.unresolved], niemals [HpsOutcome.declined].
+  /// dann [CardPaymentOutcome.unresolved], niemals
+  /// [CardPaymentOutcome.declined].
   final int maxTransportFailures;
 
   final Future<void> Function(Duration) _sleep;
@@ -238,7 +239,8 @@ class HpsPayments {
         : 'Terminal: abgelehnt (${res.responseCode})');
     _emit(HpsEventKind.resolved, steps.last, id);
     return HpsResult(
-      outcome: approved ? HpsOutcome.approved : HpsOutcome.declined,
+      outcome:
+          approved ? CardPaymentOutcome.approved : CardPaymentOutcome.declined,
       transactionId: id,
       response: res,
       steps: List<String>.unmodifiable(steps),
@@ -417,8 +419,8 @@ class HpsPayments {
   ///   gescheitert". `'VOID'` ist die einzige beobachtbare Folge einer
   ///   geglueckten Aufhebung; jeder andere Wert traegt schlicht keine
   ///   Aussage ueber sie. Bleibt der Zustand dabei, laeuft die Klaerung bis
-  ///   zum Budget und endet bei [HpsOutcome.unresolved] -- niemals bei einem
-  ///   geratenen [HpsOutcome.declined].
+  ///   zum Budget und endet bei [CardPaymentOutcome.unresolved] -- niemals bei einem
+  ///   geratenen [CardPaymentOutcome.declined].
   HpsResult? _fromCancelStatus(
     TransactionResponse status,
     String id,
@@ -428,7 +430,7 @@ class HpsPayments {
     steps.add('Terminal: Aufhebung bestaetigt (VOID)');
     _emit(HpsEventKind.resolved, steps.last, id);
     return HpsResult(
-      outcome: HpsOutcome.approved,
+      outcome: CardPaymentOutcome.approved,
       transactionId: id,
       response: status,
       steps: List<String>.unmodifiable(steps),
@@ -440,7 +442,7 @@ class HpsPayments {
   HpsResult _open(String id, List<String> steps) {
     _emit(HpsEventKind.resolved, steps.last, id);
     return HpsResult(
-      outcome: HpsOutcome.unresolved,
+      outcome: CardPaymentOutcome.unresolved,
       transactionId: id,
       steps: List<String>.unmodifiable(steps),
     );
