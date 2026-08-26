@@ -912,8 +912,14 @@ void main() {
     });
 
     test('zwei Kennungen in derselben Millisekunde sind verschieden', () {
+      // Streng statt "greaterThan(190)": der Erzeuger ist deterministisch
+      // kollisionsfrei (Snowflake-Verfahren, siehe HpsClient.newTransactionId),
+      // kein Zufallsverfahren mehr. Eine lockere Toleranz bliebe auch dann
+      // gruen, wenn er auf Zufall zurueckfiele -- ausgerechnet bei der
+      // Eigenschaft, deren Verletzung den Vorfall vom 24.08.2026 ausgeloest
+      // hat.
       final ids = List.generate(200, (_) => HpsClient.newTransactionId());
-      expect(ids.toSet().length, greaterThan(190));
+      expect(ids.toSet().length, 200);
     });
   });
 }
