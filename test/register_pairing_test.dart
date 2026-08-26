@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -372,5 +373,39 @@ void basisadresse() {
     );
     await client.pairRegisterDevice(code: 'ABCD1234');
     expect(log.single.url.toString(), 'https://kasse.kasseneck.at/api/pairRegisterDevice');
+  });
+
+  group('Zeitablauf ist etwas anderes als ein Netzfehler', () {
+    // Der Kopplungs-Code wird beim Aufruf verbraucht und das Geraetegeheimnis
+    // genau einmal ausgeliefert. Laeuft die Frist auf dem Rueckweg ab, kann die
+    // Kopplung serverseitig vollzogen sein — ein neuer Versuch mit demselben
+    // Code laeuft dann ins Leere. Als blosses 'network' war das von „nie
+    // angekommen" nicht zu unterscheiden.
+    test('abgelaufene Frist: reason "timeout" mit Ursachentyp', () async {
+      final client = RegisterClient(
+        httpClient: MockClient((_) => Completer<http.Response>().future),
+        timeout: const Duration(milliseconds: 20),
+      );
+
+      await expectLater(
+        client.pairRegisterDevice(code: 'ABCD1234'),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)
+            .having((e) => e.causeType, 'causeType', 'TimeoutException')),
+      );
+    });
+
+    test('Verbindungsfehler bleibt "network" — und traegt keinen Rumpfwert', () async {
+      final client = RegisterClient(
+        httpClient: MockClient((_) async => throw http.ClientException('pin=$pin')),
+      );
+
+      await expectLater(
+        client.pairRegisterDevice(code: 'ABCD1234'),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', KasseneckHttpError.netz)
+            .having((e) => e.toString(), 'toString', isNot(contains(pin)))),
+      );
+    });
   });
 }
