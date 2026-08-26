@@ -12,8 +12,13 @@ library;
 import '../../enums/keck_payment_method.dart';
 import '../../enums/vat_rate.dart';
 import '../../models/kasseneck_item.dart';
+import '../vat_math.dart';
 import 'einstellungen.dart';
 import 'warenkorb.dart';
+
+// Die USt-Zerlegung gehoert zur Kassieren-Schnittstelle: wer die enthaltene
+// MwSt anzeigt, braucht dieselbe Regel wie der Beleg — und nicht eine eigene.
+export '../vat_math.dart' show nettoCentsAusBrutto, ustCentsAusBrutto;
 
 /// Welche Zahlungsarten der Betrieb anbietet — nie keine (dann Bar).
 List<KeckPaymentMethod> zahlungsarten(KasseSettingsBetrieb betrieb) {
@@ -212,11 +217,32 @@ Kassierrechnung kassierrechnung(Warenkorb warenkorb, KasseSettingsBetrieb betrie
   );
 }
 
-/// Enthaltene MwSt aus dem Bruttobetrag (ganzzahlig, wie im Backend).
-int ustCents(int brutto, num satz) => (brutto * satz / (100 + satz)).round();
+/// Enthaltene MwSt des Warenkorbs — **wie sie auf dem Beleg stehen wird**.
+///
+/// Zwei Dinge, die die frueheren Fassungen falsch hatten:
+///
+/// 1. **Je Steuersatz gerundet, nicht je Position.** Dreimal 0,33 € zu 20 %
+///    ergaben einzeln gerundet 0,18 €, als eine Position mit Menge 3 dagegen
+///    0,17 € — der Beleg weist fuer dieselbe Ware 0,16 € aus. Der Steuersatz
+///    ist die Gruppe, nicht die Zeile.
+/// 2. **Der Rabatt zaehlt mit.** Ein Korb ueber 12,00 € zu 20 % mit 2,00 €
+///    Rabatt enthaelt 1,67 € MwSt, nicht 2,00 € — der Rabatt ist eine negative
+///    Belegposition ([verteileRabatt]) und senkt den Umsatz seines Satzes.
+///
+/// [rabattCents] ist derselbe Wert, der auch in [belegPositionen] geht.
+int ustSumme(Warenkorb warenkorb, {int rabattCents = 0}) =>
+    ustSummePositionen(belegPositionen(warenkorb, rabattCents));
 
-int ustSumme(Warenkorb warenkorb) =>
-    warenkorb.positionen.fold(0, (s, p) => s + ustCents(p.zeilensummeCents, p.vat.rate));
+/// Enthaltene MwSt einer Belegpositionsliste — je Steuersatz gruppiert, dann
+/// einmal zerlegt. Fuer Aufrufer, die die Positionen schon haben (Storno,
+/// Nachdruck), und die gemeinsame Rechnung hinter [ustSumme].
+int ustSummePositionen(List<KasseneckItem> positionen) {
+  final brutto = <VatRate, int>{};
+  for (final p in positionen) {
+    brutto[p.vat] = (brutto[p.vat] ?? 0) + p.totalCents;
+  }
+  return brutto.entries.fold(0, (s, e) => s + ustCentsAusBrutto(e.value, e.key.rate));
+}
 
 /// Rabatt als negative Position(en) — eine je Steuersatz, anteilig zum
 /// Bruttoumsatz dieses Satzes.

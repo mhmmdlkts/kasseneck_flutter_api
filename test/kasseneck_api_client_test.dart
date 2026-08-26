@@ -376,6 +376,89 @@ void main() {
     });
   });
 
+  group('Fristen', () {
+    /// Ein Client, der die Verbindung annimmt und nie antwortet — der Fall,
+    /// gegen den die Fristen ueberhaupt da sind.
+    MockClient haengt() => MockClient((_) => Completer<http.Response>().future);
+
+    /// Die Frist steht in der Meldung der `TimeoutException`. Sie ist damit
+    /// pruefbar, ohne auf die Wanduhr zu warten: welche der drei Fristen ein
+    /// Aufruf zieht, steht schwarz auf weiss im Fehler.
+    Matcher fristAbgelaufen(Duration frist) =>
+        isA<TimeoutException>().having((e) => e.duration, 'duration', frist);
+
+    test('Verkauf zieht signatureTimeout, nicht readTimeout', () async {
+      // Ein Abbruch beendet nur das Warten der Kasse, nicht die Arbeit des
+      // Servers: laeuft die Frist ab, kann der Beleg laengst signiert sein.
+      // Die Fristen sind hier absichtlich verdreht (Lesefrist laenger als die
+      // Signaturfrist) — wer wieder auf readTimeout zurueckfaellt, faellt auf.
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: base64Encode(utf8.encode('CASHBOX-9:secret')),
+        httpClient: haengt(),
+        readTimeout: const Duration(milliseconds: 300),
+        signatureTimeout: const Duration(milliseconds: 40),
+      );
+
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(fristAbgelaufen(const Duration(milliseconds: 40))),
+      );
+    });
+
+    test('Storno und Nullbeleg ziehen dieselbe Signaturfrist', () async {
+      // Der Storno erzeugt genauso einen signierten, unumkehrbaren Beleg.
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: base64Encode(utf8.encode('CASHBOX-9:secret')),
+        httpClient: haengt(),
+        readTimeout: const Duration(milliseconds: 300),
+        signatureTimeout: const Duration(milliseconds: 40),
+      );
+
+      await expectLater(api.cancelReceipt(receipt: cartA()),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+      await expectLater(api.zeroReceipt(),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+    });
+
+    test('Lesende Aufrufe bleiben bei readTimeout', () async {
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: base64Encode(utf8.encode('CASHBOX-9:secret')),
+        httpClient: haengt(),
+        readTimeout: const Duration(milliseconds: 40),
+        signatureTimeout: const Duration(milliseconds: 300),
+      );
+
+      await expectLater(api.getReceipt('R-1'),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+    });
+
+    test('financeWebService zieht readTimeout statt einer verdrahteten Spanne', () async {
+      // Vorher stand hier eine feste halbe Minute; wer readTimeout setzte,
+      // erreichte getCashboxStatus/getSignatureStatus damit nicht.
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: base64Encode(utf8.encode('CASHBOX-9:secret')),
+        httpClient: haengt(),
+        readTimeout: const Duration(milliseconds: 40),
+      );
+
+      await expectLater(api.getCashboxStatus(),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+      await expectLater(api.getSignatureStatus('ab12'),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+    });
+
+    test('Vorgabe der Signaturfrist sind 90 Sekunden — wie auf dem Kassen-Weg', () {
+      final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dA==');
+      expect(api.signatureTimeout, const Duration(seconds: 90));
+      expect(api.readTimeout, const Duration(seconds: 30));
+      expect(api.cardTimeout, const Duration(minutes: 3));
+    });
+  });
+
   group('Logo haelt den Verkauf nicht auf', () {
     setUp(() {
       LogoService.frist = LogoService.standardFrist;

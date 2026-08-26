@@ -69,10 +69,24 @@ class KasseneckApi {
     http.Client? httpClient,
     this.readTimeout = const Duration(seconds: 30),
     this.cardTimeout = const Duration(minutes: 3),
+    this.signatureTimeout = const Duration(seconds: 90),
   }) : _http = httpClient ?? http.Client();
 
-  /// Frist fuer lesende und schreibende Aufrufe ohne Kartenfluss.
+  /// Frist fuer lesende Aufrufe und fuer schreibende ohne Signatur.
   final Duration readTimeout;
+
+  /// Frist fuer Aufrufe, an denen die **Signatureinheit** haengt — also
+  /// `createReceipt` in allen drei Gestalten (Verkauf, Storno, Nullbeleg).
+  ///
+  /// Getrennt von [readTimeout], weil hier etwas anderes auf dem Spiel steht:
+  /// ein Abbruch beendet nur das Warten der Kasse, nicht die Arbeit des
+  /// Servers. Laeuft die Frist ab, ist der Beleg womoeglich laengst signiert
+  /// und in der Kette — der Aufrufer bekommt aber eine `TimeoutException` und
+  /// liest sie als Fehlschlag. Je knapper die Frist, desto oefter passiert
+  /// genau das. Der Kassen-Weg (`RegisterReceiptClient.abschlussFrist`) gibt
+  /// aus demselben Grund seit jeher 90 Sekunden; die pauschalen 30 Sekunden
+  /// hier waren ein uebersehener Rest.
+  final Duration signatureTimeout;
 
   /// Frist fuer Aufrufe, an denen ein Kartenterminal haengt. Deutlich laenger,
   /// weil der Karteninhaber am Geraet steht: Karte einstecken, PIN, Autorisierung.
@@ -111,7 +125,7 @@ class KasseneckApi {
   }
 
   Future<dynamic> _financeWebServicePostRequest(
-      {required String method, Map<String, dynamic> params = const {}}) async {
+      {required String method, Map<String, dynamic> params = const {}, Duration? deadline}) async {
     Uri uri = Uri.parse('$_baseUrl/${Aufrufe.financeWebService}');
 
     final headers = {
@@ -127,7 +141,9 @@ class KasseneckApi {
         'params': params,
         'method': method,
       }),
-    ).timeout(const Duration(seconds: 30));
+      // Dieselbe Frist wie nebenan: eine fest verdrahtete Spanne liess den
+      // Konstruktorparameter `readTimeout` hier wirkungslos.
+    ).timeout(deadline ?? readTimeout);
 
     if (response.statusCode == 200 && response.body.isNotEmpty) {
       return response.body;
@@ -386,7 +402,11 @@ class KasseneckApi {
       params['legalMessage'] = legalMessage.join('\n');
     }
 
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: Aufrufe.createReceipt, params: params).then((value) => json.decode(value));
+    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+      endpoint: Aufrufe.createReceipt,
+      params: params,
+      deadline: signatureTimeout,
+    ).then((value) => json.decode(value));
 
     if (resJson['status'] == 'success') {
       KasseneckReceipt receipt = KasseneckReceipt.fromJson(resJson['data'] as Map<String, dynamic>);

@@ -17,6 +17,7 @@ import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
 import '../services/vienna_time.dart';
+import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
 
 import 'keck_voucher.dart';
@@ -331,12 +332,15 @@ class PrintPaper {
     _addTable('MwSt%', 'MwSt', 'Netto', 'Brutto');
 
     vatTableBruttoByVatCents.forEach((key, bruttoCents) {
-      final double brutto = centToEuro(bruttoCents);
-      final num mwstSatz = key.rate;
-      final double netto = brutto / (1 + (mwstSatz / 100));
-      final double mwst = brutto - netto;
+      // Ganzzahlig zerlegen und die MwSt als Differenz nehmen -- getrennt aus
+      // Gleitkommazahlen gerundet ging die gedruckte Zeile nicht auf (39 Cent
+      // zu 20 % druckten 0,07 + 0,33 zu 0,39). Dieselbe Regel und dieselbe
+      // Funktion wie im Beleg-Widget, sonst laufen Papier und Bildschirm
+      // wieder auseinander.
+      final int nettoCents = nettoCentsAusBrutto(bruttoCents, key.rate);
+      final int mwstCents = bruttoCents - nettoCents;
 
-      _addTable('${key.category} ${key.rate.toString().replaceAll('.', ',')}%', formatAmount(mwst), formatAmount(netto), formatAmount(brutto));
+      _addTable('${key.category} ${key.rate.toString().replaceAll('.', ',')}%', formatCents(mwstCents), formatCents(nettoCents), formatCents(bruttoCents));
     });
 
     addFullHorizontalLine();
