@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
@@ -517,19 +516,60 @@ class HpsClient {
     return stripped.isEmpty ? raw : stripped;
   }
 
-  static final Random _idRandom = Random();
+  /// Letzte vergebene Millisekunde bzw. laufender Zaehler innerhalb dieser
+  /// Millisekunde -- Prozessweiter Zustand fuer [newTransactionId].
+  static int? _lastTransactionMs;
+  static int _transactionCounter = 0;
 
   /// Eine eindeutige, numerische Kennung mit hoechstens 18 Stellen:
-  /// 13 Stellen Zeitstempel in Millisekunden, dazu 5 Stellen Zufall. Der
-  /// Zeitstempel allein reichte nicht -- zwei Vorgaenge in derselben
-  /// Millisekunde bekamen dieselbe Kennung.
+  /// 13 Stellen Zeitstempel in Millisekunden, dazu ein 5-stelliger Zaehler
+  /// je Millisekunde (statt Zufall). Der Zeitstempel allein reichte nicht --
+  /// zwei Vorgaenge in derselben Millisekunde bekamen dieselbe Kennung, und
+  /// ein Zufallsanteil kann (selten, aber nachweislich geschehen) genauso
+  /// kollidieren.
+  ///
+  /// Die Zaehlung ist eine logische Uhr, angelehnt an das Snowflake-Verfahren:
+  /// die zuletzt vergebene Millisekunde [_lastTransactionMs] laeuft niemals
+  /// rueckwaerts. Liefert die Systemuhr (oder das injizierte [nowMillis])
+  /// keinen groesseren Wert als beim letzten Aufruf -- egal ob wegen
+  /// derselben Millisekunde oder einer zurueckspringenden Uhr (Zeitumstellung,
+  /// NTP-Korrektur) -- bleibt die Millisekunde stehen und nur der Zaehler
+  /// steigt. Ist der Zaehler einer Millisekunde ausgeschoepft (100000
+  /// Kennungen), schaltet die Millisekunde gedanklich um eins weiter und der
+  /// Zaehler beginnt neu bei 0; dieser Sprung nach vorn wird zur neuen
+  /// Referenz, gegen die weiter verglichen wird. So liefert diese Methode
+  /// innerhalb EINES Prozesses garantiert nie zweimal dieselbe Kennung --
+  /// unabhaengig von Aufrufrate oder Uhrsprung.
+  ///
+  /// Diese Garantie gilt ausdruecklich nur innerhalb des einen Prozesses, der
+  /// den statischen Zustand haelt: zwei getrennte Prozesse oder Geraete, die
+  /// in derselben Millisekunde eine Kennung bilden, koennen weiterhin
+  /// kollidieren, weil sie voneinander nichts wissen. Fuer den Einsatz hier
+  /// passt das: die App laeuft je Terminal in genau einem Prozess.
   ///
   /// Oeffentlich, damit ein Aufrufer die Kennung VOR dem Request festlegen
   /// kann -- ohne das ist sie nach einem Abbruch verloren, und damit sind
   /// Statusabfrage und Storno unerreichbar.
-  static String newTransactionId() {
-    final ms = DateTime.now().millisecondsSinceEpoch.toString();
-    final suffix = _idRandom.nextInt(100000).toString().padLeft(5, '0');
+  ///
+  /// [nowMillis] ersetzt die Systemuhr; ausschliesslich fuer Tests gedacht,
+  /// die eine feste oder rueckwaerts springende Zeit erzwingen wollen.
+  static String newTransactionId({int? nowMillis}) {
+    final now = nowMillis ?? DateTime.now().millisecondsSinceEpoch;
+    final lastMs = _lastTransactionMs;
+    int ms;
+    if (lastMs == null || now > lastMs) {
+      ms = now;
+      _transactionCounter = 0;
+    } else {
+      ms = lastMs;
+      _transactionCounter++;
+      if (_transactionCounter >= 100000) {
+        ms++;
+        _transactionCounter = 0;
+      }
+    }
+    _lastTransactionMs = ms;
+    final suffix = _transactionCounter.toString().padLeft(5, '0');
     return '$ms$suffix';
   }
 
