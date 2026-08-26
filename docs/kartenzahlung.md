@@ -98,6 +98,17 @@ Dabei gilt weiterhin die Trennung, ohne die es gefährlich wird: Der `responseCo
 der **Originalzahlung** ist niemals der Erfolg der **Aufhebung**. Ein `0` dort
 heißt ausdrücklich, dass die Aufhebung **nicht** gewirkt hat.
 
+### Gutschriften verhalten sich wie Zahlungen
+
+`abort` auf eine laufende **Gutschrift** liefert ebenfalls `responseCode "0"`,
+und die Gutschrift endet mit `100002 Aborted`. Der Klärweg oben gilt dort
+unverändert.
+
+Das ist der entscheidende Unterschied zur **Aufhebung**: Bei `refund` ist die
+übergebene Kennung die des *neuen* Vorgangs, wie bei `pay`. Bei `cancel` ist sie
+die der längst abgeschlossenen Originalzahlung — ein Abbruch könnte dort nur
+`100010` ernten. Deshalb hat `cancel` eine eigene Klärung.
+
 ## Weitere Messwerte
 
 - **Void ohne `amount`** → `HTTP 400 "Missing amount"`. Der Pflichtparameter ist
