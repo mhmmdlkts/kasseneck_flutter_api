@@ -55,10 +55,21 @@ class KasseneckApi {
     required this.cashregisterToken,
     this.printType,
     http.Client? httpClient,
+    this.readTimeout = const Duration(seconds: 30),
+    this.cardTimeout = const Duration(minutes: 3),
   }) : _http = httpClient ?? http.Client();
 
+  /// Frist fuer lesende und schreibende Aufrufe ohne Kartenfluss.
+  final Duration readTimeout;
+
+  /// Frist fuer Aufrufe, an denen ein Kartenterminal haengt. Deutlich laenger,
+  /// weil der Karteninhaber am Geraet steht: Karte einstecken, PIN, Autorisierung.
+  /// Die frueher pauschalen 30 s galten einem haengenden Belege-Cache und haben
+  /// im Zahlweg eine durchgelaufene Zahlung als Fehlschlag gemeldet.
+  final Duration cardTimeout;
+
   Future<dynamic> _kasseneckPostRequest(
-      {required String endpoint, Map<String, dynamic> params = const {}}) async {
+      {required String endpoint, Map<String, dynamic> params = const {}, Duration? deadline}) async {
     Uri uri = Uri.parse('$_baseUrl/$endpoint');
 
     final headers = {
@@ -73,9 +84,10 @@ class KasseneckApi {
       body: jsonEncode({
         'params': params,
       }),
-      // Ohne Timeout bleibt ein hängender Request für immer offen — der Aufrufer
-      // bekommt weder Ergebnis noch Fehler (z. B. blieb so der Belege-Cache still leer).
-    ).timeout(const Duration(seconds: 30));
+      // Ohne Frist bleibt ein haengender Request fuer immer offen — der Aufrufer
+      // bekommt weder Ergebnis noch Fehler. Die Frist ist je Aufruf waehlbar:
+      // ein Kartenaufruf braucht deutlich mehr Zeit als eine Belegabfrage.
+    ).timeout(deadline ?? readTimeout);
 
     if (response.statusCode == 200 && response.body.isNotEmpty) {
       return response.body;
@@ -554,7 +566,8 @@ class KasseneckApi {
           'amount': amount,
           'tip': tip,
           'reference': reference
-        }
+        },
+        deadline: cardTimeout,
     ).then((value) => json.decode(value));
     try {
       return HobexReceipt.fromJson(resJson['data']);
@@ -571,7 +584,8 @@ class KasseneckApi {
           'transactionId': transactionId,
           'amount': amount,
           'tip': tip,
-        }
+        },
+        deadline: cardTimeout,
     ).then((value) => json.decode(value));
     return resJson['status'] == 'success';
   }

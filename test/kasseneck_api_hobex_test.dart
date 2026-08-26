@@ -1,0 +1,55 @@
+import 'dart:async';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:kasseneck_api/kasseneck_api.dart';
+
+void main() {
+  group('Fristen im Cloud-Weg', () {
+    test('hobexPay bekommt die Kartenfrist, nicht die kurze Lesefrist', () async {
+      // Eine Antwort, die laenger braucht als die Lesefrist, aber kuerzer als
+      // die Kartenfrist: die Zahlung darf daran NICHT scheitern.
+      final mock = MockClient((request) async {
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+        return http.Response(
+          '{"data":{"transactionId":"TX-1","tid":"T1","receipt":"1","'
+          'approvalCode":"A1","transactionDate":"2026-08-24T10:00:00",'
+          '"cardNumber":"1234","cardExpiry":"1230","brand":"visa",'
+          '"cardIssuer":"bank","responseCode":"0","transactionType":"purchase",'
+          '"currency":"EUR","cvm":"0"}}',
+          200,
+        );
+      });
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: 'dGVzdDp0ZXN0',
+        httpClient: mock,
+        readTimeout: const Duration(milliseconds: 30),
+        cardTimeout: const Duration(seconds: 2),
+      );
+
+      final receipt = await api.hobexPay(transactionId: 'TX-1', amount: 25);
+      expect(receipt.responseCode, '0');
+    });
+
+    test('eine lesende Abfrage laeuft weiterhin in die kurze Frist', () async {
+      final mock = MockClient((request) async {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        return http.Response('{"data":[]}', 200);
+      });
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: 'dGVzdDp0ZXN0',
+        httpClient: mock,
+        readTimeout: const Duration(milliseconds: 30),
+        cardTimeout: const Duration(seconds: 2),
+      );
+
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 24), DateTime(2026, 8, 25)),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+  });
+}
