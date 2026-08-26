@@ -52,4 +52,34 @@ void main() {
       );
     });
   });
+
+  group('hobexGetStatus', () {
+    test('hobexGetStatus liefert den Beleg zur Kennung', () async {
+      late http.Request seen;
+      final mock = MockClient((request) async {
+        seen = request;
+        return http.Response(
+          '{"status":"success","data":{"transactionId":"TX-1","tid":"T1",'
+          '"receipt":"1","approvalCode":"A1","transactionDate":'
+          '"2026-08-24T10:00:00","cardNumber":"1234","cardExpiry":"1230",'
+          '"brand":"visa","cardIssuer":"bank","responseCode":"0",'
+          '"transactionType":"purchase","currency":"EUR","cvm":"0"}}',
+          200,
+        );
+      });
+      final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
+
+      final receipt = await api.hobexGetStatus(transactionId: 'TX-1');
+
+      expect(receipt, isNotNull);
+      expect(receipt!.transactionId, 'TX-1');
+      expect(seen.url.path, contains('hobexGetStatus'));
+    });
+
+    test('hobexGetStatus: unbekannte Kennung -> null statt Ausnahme', () async {
+      final mock = MockClient((_) async => http.Response('{"status":"error"}', 200));
+      final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
+      expect(await api.hobexGetStatus(transactionId: 'TX-unbekannt'), isNull);
+    });
+  });
 }

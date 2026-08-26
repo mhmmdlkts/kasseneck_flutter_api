@@ -23,6 +23,7 @@ abstract final class Aufrufe {
   static const getKasseSettings = 'getKasseSettings';
   static const getReceipt = 'getReceipt';
   static const getReportV2 = 'getReportV2';
+  static const hobexGetStatus = 'hobexGetStatus';
   static const hobexPayApi = 'hobexPayApi';
   static const hobexRefundApi = 'hobexRefundApi';
   static const listMyArticleGroups = 'listMyArticleGroups';
@@ -52,6 +53,7 @@ abstract final class Aufrufe {
     getKasseSettings,
     getReceipt,
     getReportV2,
+    hobexGetStatus,
     hobexPayApi,
     hobexRefundApi,
     listMyArticleGroups,

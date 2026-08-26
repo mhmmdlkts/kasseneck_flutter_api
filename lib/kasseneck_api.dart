@@ -590,6 +590,27 @@ class KasseneckApi {
     return resJson['status'] == 'success';
   }
 
+  /// Fragt den Stand einer Hobex-Cloud-Transaktion ab. `null`, wenn der Dienst
+  /// zu dieser Kennung nichts kennt.
+  ///
+  /// Das ist die Klaerstufe des Cloud-Wegs: nach einem Abbruch beantwortet sie
+  /// die Frage, ob die Zahlung trotzdem durchgelaufen ist. Eine Abfrage, kein
+  /// Kartenfluss -- daher die kurze Lesefrist statt der Kartenfrist.
+  Future<HobexReceipt?> hobexGetStatus({required String transactionId}) async {
+    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+      endpoint: Aufrufe.hobexGetStatus,
+      params: {'transactionId': transactionId},
+      deadline: readTimeout,
+    ).then((value) => json.decode(value));
+
+    if (resJson['status'] != 'success' || resJson['data'] == null) return null;
+    try {
+      return HobexReceipt.fromJson(resJson['data']);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Zufallsquelle der Hobex-Transaktionskennung. Eine Quelle fuer alle
   /// Aufrufe: `Random()` je Aufruf neu zu bauen kostet, ohne die Folge besser
   /// zu machen.
