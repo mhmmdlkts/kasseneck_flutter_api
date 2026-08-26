@@ -29,6 +29,22 @@ import 'transaction_response.dart';
 /// Die Kennung ist in JEDEM Ergebnis gesetzt, auch bei
 /// [HpsOutcome.unresolved]: ohne sie sind Statusabfrage und Storno
 /// unerreichbar.
+///
+/// [refund] und [cancel] bekommen dieselbe Klaerung wie [pay] -- bei beiden
+/// geht es genauso um Geld. Fuer [refund] gilt dieselbe Rechnung wie fuer
+/// [pay]: die Kennung ist die des NEUEN Vorgangs, eine Statusabfrage darauf
+/// liefert also genau dessen Ausgang.
+///
+/// [cancel] ist die Ausnahme: die uebergebene Kennung ist die der
+/// URSPRUENGLICHEN Zahlung, die aufgehoben werden soll. Eine Statusabfrage
+/// darauf liefert den Zustand DIESER Zahlung -- und deren `responseCode`
+/// bleibt fuer immer `'0'`, weil sie seinerzeit genehmigt wurde. Wuerde die
+/// Klaerung das wie bei [pay]/[refund] auswerten, laese sie aus dem laengst
+/// bekannten Erfolg der Originalzahlung faelschlich "die Aufhebung war
+/// erfolgreich" -- derselbe Fehler wie am 24.08.2026, nur mit vertauschten
+/// Vorzeichen. Die Klaerung einer offenen Aufhebung fragt deshalb ueber
+/// [TransactionResponse.state] ab (nur bei Status v2 gefuellt): ausschliesslich
+/// `'VOID'` belegt, dass die Aufhebung griff. Siehe [_resolveCancel].
 class HpsPayments {
   HpsPayments(
     this._client, {
@@ -126,6 +142,84 @@ class HpsPayments {
     }
 
     return _resolve(id, steps);
+  }
+
+  /// Gutschrift mit geklaertem Ausgang.
+  ///
+  /// [amount] ist in Hauptwaehrungseinheiten. [transactionId] ist -- wie bei
+  /// [pay] -- die Kennung des NEUEN Vorgangs (der Gutschrift selbst), nicht
+  /// die der Zahlung, auf die sie sich ueber [originalTransactionId]
+  /// referenzieren kann. Deshalb passt dieselbe Klaerung wie bei [pay]
+  /// unveraendert: eine Statusabfrage auf [transactionId] liefert genau den
+  /// Ausgang DIESER Gutschrift.
+  Future<HpsResult> refund({
+    required num amount,
+    String? originalTransactionId,
+    String? transactionId,
+  }) async {
+    final String id = transactionId ?? HpsClient.newTransactionId();
+    final steps = <String>[];
+
+    // Das try liegt bewusst ENG um den Netzweg -- siehe Begruendung in [pay].
+    TransactionResponse? res;
+    try {
+      res = await _client.refund(
+        amount: amount,
+        originalTransactionId: originalTransactionId,
+        transactionId: id,
+      );
+    } on ArgumentError {
+      // Einzige Ausnahme, die durchgereicht wird: die Laengenpruefung der
+      // Kennung schlaegt zu, BEVOR etwas gesendet wurde.
+      rethrow;
+    } catch (e) {
+      steps.add('Gutschrift abgebrochen: $e');
+      _noteUnexpected(e, id);
+    }
+
+    if (res != null) {
+      final settled = _fromResponse(res, id, steps);
+      if (settled != null) return settled;
+      steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
+    }
+
+    return _resolve(id, steps);
+  }
+
+  /// Aufhebung (Storno/Void) einer bestehenden Zahlung mit geklaertem
+  /// Ausgang.
+  ///
+  /// [transactionId] ist die vom TERMINAL vergebene Kennung der
+  /// URSPRUENGLICHEN Zahlung -- nicht die eines neuen Vorgangs. Der direkte
+  /// Antwortweg wird trotzdem ueber [_fromResponse] eingeordnet: die
+  /// Direktantwort auf einen Aufhebungs-Request traegt einen eigenen
+  /// `responseCode` fuer die Aufhebung selbst (siehe [TransactionResponse]-Doku,
+  /// die "void" ausdruecklich als Transaktionstyp mit eigener Antwort fuehrt).
+  /// Erst wenn dieser direkte Weg abbricht und nachgefragt werden muss, aendert
+  /// sich die Frage: siehe [_resolveCancel].
+  Future<HpsResult> cancel({
+    required String transactionId,
+    required num amount,
+  }) async {
+    final steps = <String>[];
+
+    TransactionResponse? res;
+    try {
+      res = await _client.cancel(transactionId: transactionId, amount: amount);
+    } on ArgumentError {
+      rethrow;
+    } catch (e) {
+      steps.add('Aufhebung abgebrochen: $e');
+      _noteUnexpected(e, transactionId);
+    }
+
+    if (res != null) {
+      final settled = _fromResponse(res, transactionId, steps);
+      if (settled != null) return settled;
+      steps.add('Antwort ohne Ergebniscode -- Ausgang wird geklaert');
+    }
+
+    return _resolveCancel(transactionId, steps);
   }
 
   /// Ordnet eine Terminal-Antwort ein. `null`, wenn sie nichts entscheidet.
@@ -235,6 +329,106 @@ class HpsPayments {
 
     steps.add('Ausgang bleibt offen');
     return _open(id, steps);
+  }
+
+  /// Klaert eine offene Aufhebung -- eigene Fassung statt [_resolve], weil
+  /// die Kennung hier die der URSPRUENGLICHEN Zahlung ist.
+  ///
+  /// Zwei Unterschiede zu [_resolve]:
+  ///
+  /// 1. Die Antwort der Statusabfrage wird ueber [_fromCancelStatus]
+  ///    eingeordnet, NICHT ueber [_fromResponse]. Der `responseCode` der
+  ///    Originalzahlung bleibt fuer immer `'0'` -- ihn hier wie bei [pay]
+  ///    auszuwerten, wuerde eine laengst genehmigte Zahlung mit einer
+  ///    erfolgreichen Aufhebung verwechseln. Massgeblich ist stattdessen
+  ///    [TransactionResponse.state]; siehe dort.
+  /// 2. Kein [HpsClient.abort]-Versuch. [HpsClient.abort] gehoert zu einer
+  ///    laufenden Zahlung VOR dem Kartenkontakt -- die Originalzahlung, deren
+  ///    Kennung hier vorliegt, ist laengst abgeschlossen. Ein Abbruchversuch
+  ///    darauf waere sinnlos und koennte hoechstens fehlleiten.
+  ///
+  /// Budget, Backoff und Transportfehler-Deckelung sind unveraendert aus
+  /// [_resolve] uebernommen.
+  Future<HpsResult> _resolveCancel(String id, List<String> steps) async {
+    _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
+
+    final clock = _clock()..start();
+    var wait = Duration.zero;
+    var transportFailures = 0;
+
+    while (clock.elapsed < resolveBudget) {
+      if (wait > Duration.zero) {
+        final left = resolveBudget - clock.elapsed;
+        await _sleep(wait < left ? wait : left);
+        if (clock.elapsed >= resolveBudget) break;
+      }
+
+      TransactionResponse status;
+      try {
+        status = await _withinBudget(
+          clock,
+          () => _client.transactionStatus(transactionId: id),
+        );
+        transportFailures = 0;
+      } catch (e) {
+        transportFailures++;
+        steps.add('Statusabfrage gescheitert ($transportFailures): $e');
+        _noteUnexpected(e, id);
+        if (transportFailures >= maxTransportFailures) {
+          steps.add('Terminal antwortet nicht -- Ausgang bleibt offen');
+          break;
+        }
+        wait = _nextWait(wait);
+        continue;
+      }
+
+      final settled = _fromCancelStatus(status, id, steps);
+      if (settled != null) return settled;
+
+      steps.add('Status: Aufhebung noch nicht bestaetigt');
+      wait = _nextWait(wait);
+    }
+
+    steps.add('Ausgang bleibt offen');
+    return _open(id, steps);
+  }
+
+  /// Ordnet die Statusabfrage einer OFFENEN AUFHEBUNG ein. `null`, wenn sie
+  /// nichts entscheidet.
+  ///
+  /// Bewusst NICHT ueber `responseCode`: der bleibt bei der Originalzahlung
+  /// fuer immer `'0'`. Ausschliesslich [TransactionResponse.state] `== 'VOID'`
+  /// belegt, dass die Aufhebung griff.
+  ///
+  /// Jeder andere Wert -- `'OK'`, `'FAILED'`, ein unbekannter Wert, oder
+  /// `null` -- entscheidet NICHTS und fuehrt zu weiterem Klaeren:
+  /// - `null` ist die Norm ausserhalb von Status v2 und darf nicht als "kein
+  ///   Void" gegen die Aufhebung gewertet werden.
+  /// - `'OK'` heisst nur, dass die Originalzahlung (weiterhin) genehmigt ist
+  ///   -- das ist unabhaengig davon wahr, ob die Aufhebung gerade erst
+  ///   unterwegs ist oder ob sie nie ankam.
+  /// - `'FAILED'` ist mangels Testterminal nicht sicher der AUFHEBUNG
+  ///   zuzuordnen statt irgendeinem anderen Zustand der Originalzahlung. Ihn
+  ///   trotzdem als "Aufhebung endgueltig gescheitert" zu werten, waere
+  ///   genau das Raten, das diese Klasse verhindern soll -- ein
+  ///   Fehlschluss in dieselbe Familie wie der Vorfall vom 24.08.2026, nur
+  ///   mit vertauschten Vorzeichen. Bleibt der Zustand dabei, laeuft die
+  ///   Klaerung bis zum Budget und endet bei [HpsOutcome.unresolved] --
+  ///   niemals bei einem geratenen [HpsOutcome.declined].
+  HpsResult? _fromCancelStatus(
+    TransactionResponse status,
+    String id,
+    List<String> steps,
+  ) {
+    if (status.state != 'VOID') return null;
+    steps.add('Terminal: Aufhebung bestaetigt (VOID)');
+    _emit(HpsEventKind.resolved, steps.last, id);
+    return HpsResult(
+      outcome: HpsOutcome.approved,
+      transactionId: id,
+      response: status,
+      steps: List<String>.unmodifiable(steps),
+    );
   }
 
   /// Der Ausgang bleibt offen. Die Kennung ist gesetzt, damit Statusabfrage
