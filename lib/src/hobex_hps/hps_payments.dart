@@ -398,7 +398,11 @@ class HpsPayments {
   ///
   /// Bewusst NICHT ueber `responseCode`: der bleibt bei der Originalzahlung
   /// fuer immer `'0'`. Ausschliesslich [TransactionResponse.state] `== 'VOID'`
-  /// belegt, dass die Aufhebung griff.
+  /// belegt, dass die Aufhebung griff -- Gross-/Kleinschreibung und
+  /// umgebende Leerzeichen werden dabei toleriert, ohne die Rateflaeche zu
+  /// vergroessern: eine tolerantere Erkennung von `'VOID'` fuehrt hoechstens
+  /// frueher zu einer laengst zutreffenden Bestaetigung, niemals zu einem
+  /// Ergebnis, das das Terminal nicht ausgesagt hat.
   ///
   /// Jeder andere Wert -- `'OK'`, `'FAILED'`, ein unbekannter Wert, oder
   /// `null` -- entscheidet NICHTS und fuehrt zu weiterem Klaeren:
@@ -407,20 +411,20 @@ class HpsPayments {
   /// - `'OK'` heisst nur, dass die Originalzahlung (weiterhin) genehmigt ist
   ///   -- das ist unabhaengig davon wahr, ob die Aufhebung gerade erst
   ///   unterwegs ist oder ob sie nie ankam.
-  /// - `'FAILED'` ist mangels Testterminal nicht sicher der AUFHEBUNG
-  ///   zuzuordnen statt irgendeinem anderen Zustand der Originalzahlung. Ihn
-  ///   trotzdem als "Aufhebung endgueltig gescheitert" zu werten, waere
-  ///   genau das Raten, das diese Klasse verhindern soll -- ein
-  ///   Fehlschluss in dieselbe Familie wie der Vorfall vom 24.08.2026, nur
-  ///   mit vertauschten Vorzeichen. Bleibt der Zustand dabei, laeuft die
-  ///   Klaerung bis zum Budget und endet bei [HpsOutcome.unresolved] --
-  ///   niemals bei einem geratenen [HpsOutcome.declined].
+  /// - `'FAILED'` beschreibt -- wie jeder Wert dieses Feldes -- einen Zustand
+  ///   der ORIGINALTRANSAKTION, nicht der Aufhebung: es heisst "die
+  ///   Originalzahlung ist in einem Fehlzustand", nicht "die Aufhebung ist
+  ///   gescheitert". `'VOID'` ist die einzige beobachtbare Folge einer
+  ///   geglueckten Aufhebung; jeder andere Wert traegt schlicht keine
+  ///   Aussage ueber sie. Bleibt der Zustand dabei, laeuft die Klaerung bis
+  ///   zum Budget und endet bei [HpsOutcome.unresolved] -- niemals bei einem
+  ///   geratenen [HpsOutcome.declined].
   HpsResult? _fromCancelStatus(
     TransactionResponse status,
     String id,
     List<String> steps,
   ) {
-    if (status.state != 'VOID') return null;
+    if (status.state?.trim().toUpperCase() != 'VOID') return null;
     steps.add('Terminal: Aufhebung bestaetigt (VOID)');
     _emit(HpsEventKind.resolved, steps.last, id);
     return HpsResult(

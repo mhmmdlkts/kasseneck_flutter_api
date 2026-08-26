@@ -739,6 +739,45 @@ void main() {
     });
 
     test(
+        'refund: eine zu lange Kennung wirft weiterhin -- da ging nichts '
+        'hinaus', () async {
+      final t = FakeTerminal(refund: [boom]);
+      await expectLater(
+        paymentsFor(t).refund(amount: 25, transactionId: '1234567890123456789'),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(t.log, isEmpty,
+          reason: 'die Laengenpruefung schlaegt zu, bevor etwas gesendet '
+              'wird');
+    });
+
+    test(
+        'cancel: eine zu lange Kennung wirft weiterhin -- da ging nichts '
+        'hinaus', () async {
+      final t = FakeTerminal(cancel: [boom]);
+      await expectLater(
+        paymentsFor(t).cancel(transactionId: '1234567890123456789', amount: 25),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(t.log, isEmpty,
+          reason: 'die Laengenpruefung schlaegt zu, bevor etwas gesendet '
+              'wird');
+    });
+
+    test('cancel: direkte Ablehnung -> declined', () async {
+      final t = FakeTerminal(
+        cancel: [
+          (_) => json({'responseCode': '51', 'responseText': 'abgelehnt'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).cancel(transactionId: 'TX-9b', amount: 25);
+      expect(res.outcome, HpsOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(res.transactionId, 'TX-9b');
+    });
+
+    test(
         'cancel: direkte Genehmigung -> approved, Kennung bleibt die '
         'urspruengliche', () async {
       final t = FakeTerminal(
@@ -834,7 +873,12 @@ void main() {
       final res =
           await paymentsFor(t).cancel(transactionId: 'TX-14', amount: 25);
       expect(res.outcome, HpsOutcome.approved);
-      expect(t.callsOn('abort'), 0);
+      // callsOn('abort') waere hier immer 0 -- auch wenn abort() versucht
+      // wuerde, denn ohne abort-Handler wirft FakeTerminal einen StateError,
+      // BEVOR der Zaehler hochgeht, und dieser Fehler wuerde als
+      // Transportfehler geschluckt. Der Log ist der einzige verlaessliche
+      // Beleg: er wird schon vor diesem Wurf gefuellt.
+      expect(t.log.where((r) => r.url.path.contains('/abort/')), isEmpty);
     });
   });
 
