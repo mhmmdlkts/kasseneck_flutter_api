@@ -28,6 +28,11 @@ import 'src/aufrufe.dart';
 
 export 'src/hobex_cloud/hobex_cloud_payments.dart'
     show HobexCloudPayments, HobexCloudResult;
+// Der Ausgangs-Enum und der Beleg sind Teil der oeffentlichen Signatur von
+// HobexCloudResult -- ohne diese Exporte koennte ein Aufrufer, der nur dieses
+// Barrel importiert, den Typ von HobexCloudResult.outcome nicht benennen.
+export 'src/payments/card_payment_outcome.dart' show CardPaymentOutcome;
+export 'models/hobex_receipt.dart' show HobexReceipt;
 
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///

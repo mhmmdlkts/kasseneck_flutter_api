@@ -1,18 +1,5 @@
+import '../payments/card_payment_outcome.dart';
 import 'transaction_response.dart';
-
-/// Ausgang eines Zahlvorgangs -- die einzige Frage, die der Aufrufer wirklich
-/// hat: darf ich es nochmal versuchen?
-enum CardPaymentOutcome {
-  /// Geld ist geflossen. Buchen, nicht wiederholen.
-  approved,
-
-  /// Definitiv kein Geld geflossen: das Terminal hat abgelehnt, oder der
-  /// Vorgang wurde nachweislich abgebrochen. Wiederholung gefahrlos.
-  declined,
-
-  /// Ausgang unbekannt. Eine Wiederholung kann ein zweites Mal belasten.
-  unresolved,
-}
 
 /// Ergebnis eines Zahlvorgangs samt Kennung und Klaerungsverlauf.
 ///

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../payments/card_payment_outcome.dart';
 import 'exceptions.dart';
 import 'hps_client.dart';
 import 'hps_result.dart';
