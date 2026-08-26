@@ -308,13 +308,24 @@ class RegisterReceiptClient {
       frist: abschlussFrist,
     );
 
+    // Ab hier ist der Storno-Beleg ausgestellt und signiert. Jeder Fehler
+    // dieses Abschnitts traegt deshalb die Kennung mit, sofern die Antwort sie
+    // mitbrachte: ohne sie ist der gesetzlich vorgeschriebene Storno-Beleg da,
+    // aber fuer die Kasse unerreichbar — sie kann ihn weder drucken noch
+    // nachholen, und ein zweiter Storno waere eine zweite Ruecknahme.
+    final String? kennung = _kennungAus(daten);
+
     final bezug = daten['cancellationOf'];
     if (bezug is! Map || bezug['receiptId'] is! String) {
-      throw const KasseneckValidationError(name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response');
+      throw KasseneckValidationError(
+          name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response',
+          receiptId: kennung);
     }
     final rest = daten['remaining'];
     if (rest is! List || rest.any((n) => n is! int)) {
-      throw const KasseneckValidationError(name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response');
+      throw KasseneckValidationError(
+          name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response',
+          receiptId: kennung);
     }
     return Stornoergebnis(
       beleg: _belegAus(daten, name),

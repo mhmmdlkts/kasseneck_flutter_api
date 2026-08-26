@@ -12,7 +12,7 @@ library;
 /// der Aufruf zusagt. Die Meldung nennt immer nur das **Feld**, nie seinen
 /// Wert — sonst stünde ein Gerätegeheimnis im Protokoll.
 class KasseneckValidationError implements Exception {
-  const KasseneckValidationError(this.functionName, this.reason, this.kind);
+  const KasseneckValidationError(this.functionName, this.reason, this.kind, {this.receiptId});
 
   final String functionName;
   final String reason;
@@ -20,8 +20,18 @@ class KasseneckValidationError implements Exception {
   /// `request` = der Aufruf war unvollständig, `response` = die Antwort.
   final String kind;
 
+  /// Die Belegkennung, **sofern** der Vorgang schon einen Beleg erzeugt hatte
+  /// und die Antwort ihn mitbrachte.
+  ///
+  /// Betrifft die verändernden Aufrufe: bei `cancelReceipt` ist der gesetzlich
+  /// vorgeschriebene Storno-Beleg zu diesem Zeitpunkt bereits signiert und in
+  /// der Kette. Ohne die Kennung bliebe dem Aufrufer nichts zum Nachholen —
+  /// derselbe Faden wie in [KasseneckReceiptFormatError].
+  final String? receiptId;
+
   @override
-  String toString() => 'KasseneckValidationError($functionName, $kind): $reason';
+  String toString() => 'KasseneckValidationError($functionName, $kind): $reason'
+      '${receiptId == null ? '' : ' [receiptId: $receiptId]'}';
 }
 
 /// Fachlicher Fehler des Backends (PIN falsch, Kasse belegt, Gerät gesperrt …).

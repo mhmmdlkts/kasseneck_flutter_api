@@ -325,6 +325,31 @@ void main() {
         throwsA(isA<KasseneckValidationError>()),
       );
     });
+
+    test('kaputte Antwort verliert den signierten Storno-Beleg nicht: die Kennung faehrt mit', () async {
+      // Der Storno-Beleg ist zu diesem Zeitpunkt ausgestellt, signiert und in
+      // der Kette — RKSV schreibt ihn vor. Ohne die Kennung kaeme der Aufrufer
+      // nicht mehr an ihn heran: weder drucken noch nachholen, und ein zweiter
+      // Storno waere eine zweite Ruecknahme.
+      for (final kaputt in [
+        {...huelleMitBeleg(receiptId: 'KASSE1-ID-43'), 'remaining': [0]},
+        {...huelleMitBeleg(receiptId: 'KASSE1-ID-43'), 'cancellationOf': {'receiptId': 'KASSE1-ID-42'}},
+        {
+          ...huelleMitBeleg(receiptId: 'KASSE1-ID-43'),
+          'cancellationOf': {'receiptId': 'KASSE1-ID-42'},
+          'remaining': [1.0],
+        },
+      ]) {
+        final f = clientMit([{'status': 'success', 'data': kaputt}]);
+        await expectLater(
+          f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'fehleingabe'),
+          throwsA(isA<KasseneckValidationError>()
+              .having((e) => e.kind, 'kind', 'response')
+              .having((e) => e.receiptId, 'receiptId', 'KASSE1-ID-43')),
+          reason: '$kaputt',
+        );
+      }
+    });
   });
 
   group('Kacheldaten laden', () {
