@@ -214,10 +214,20 @@ class PrintPaper {
     reset();
 
     if (receipt.logo != null) {
-      final RasterImage image = await decodePng(receipt.logo!);
-      final RasterImage resized = resizeWidth(image, paperSize.imageWidth);
-      await addImage(resized);
-      addFeed();
+      // Ein Logo ist Zierde, der Beleg ist Pflicht. Die Bytes stammen aus
+      // einem HTTP-Abruf, der nur den Status prueft (LogoService) -- eine
+      // Fehlerseite vom CDN, ein abgebrochener Download oder ein falscher
+      // Content-Type kamen bisher ungefangen aus decodePng zurueck und rissen
+      // den gesamten Beleg mit, samt des gesetzlich vorgeschriebenen
+      // QR-Codes, der erst viel weiter unten entsteht.
+      try {
+        final RasterImage image = await decodePng(receipt.logo!);
+        final RasterImage resized = resizeWidth(image, paperSize.imageWidth);
+        await addImage(resized);
+        addFeed();
+      } catch (e) {
+        if (kDebugMode) print('Logo nicht druckbar, Beleg laeuft ohne: $e');
+      }
     }
 
     addText(receipt.companyName, styles: PosStyles(align: PosAlign.center, bold: true));
