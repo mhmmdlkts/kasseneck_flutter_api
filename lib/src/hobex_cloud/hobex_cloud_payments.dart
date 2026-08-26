@@ -1,6 +1,6 @@
+import 'dart:async';
+
 import '../../kasseneck_api.dart';
-import '../../models/hobex_receipt.dart';
-import '../hobex_hps/hps_result.dart';
 
 /// Ergebnis einer Cloud-Kartenzahlung. Traegt IMMER die Kennung, damit der
 /// Ausgang spaeter noch geklaert werden kann.
@@ -70,7 +70,9 @@ class HobexCloudPayments {
     this.maxBackoff = const Duration(seconds: 10),
     this.maxTransportFailures = 3,
     Future<void> Function(Duration)? sleep,
-  }) : _sleep = sleep ?? ((d) => Future<void>.delayed(d));
+    Stopwatch Function()? clock,
+  })  : _sleep = sleep ?? ((d) => Future<void>.delayed(d)),
+        _clock = clock ?? Stopwatch.new;
 
   final KasseneckApi _api;
 
@@ -91,6 +93,11 @@ class HobexCloudPayments {
 
   final Future<void> Function(Duration) _sleep;
 
+  /// Quelle der Uhr fuer das Budget. Wie [_sleep] eine Naht fuer Tests: eine
+  /// Uhr, die nur durch die Pausen vorrueckt, macht das Ablaufen des Budgets
+  /// nachpruefbar, statt es der Wanduhr zu ueberlassen.
+  final Stopwatch Function() _clock;
+
   /// Kartenzahlung mit geklaertem Ausgang.
   ///
   /// [amount] und [tip] sind in Hauptwaehrungseinheiten (25 = 25,00 Euro).
@@ -100,6 +107,16 @@ class HobexCloudPayments {
     num tip = 0,
     String? reference,
   }) async {
+    if (transactionId.isEmpty) {
+      // Ohne Kennung ist die Zusage "Kennung in JEDEM Ergebnis gesetzt"
+      // wertlos -- geprueft, BEVOR ein Request hinausgeht.
+      throw ArgumentError.value(
+        transactionId,
+        'transactionId',
+        'darf nicht leer sein',
+      );
+    }
+
     final steps = <String>[];
 
     // Das try liegt bewusst ENG um den Netzweg: was danach kommt, ist unser
@@ -142,8 +159,9 @@ class HobexCloudPayments {
     String id,
     List<String> steps,
   ) {
-    final code = receipt?.responseCode;
-    if (receipt == null || code == null || code.isEmpty) return null;
+    if (receipt == null) return null;
+    final code = receipt.responseCode;
+    if (code.isEmpty) return null;
     final approved = code == '0';
     steps.add(approved ? 'Hobex: genehmigt' : 'Hobex: abgelehnt ($code)');
     return HobexCloudResult(
@@ -159,7 +177,7 @@ class HobexCloudPayments {
   /// der Dienst etwas sagt oder das Budget aufgebraucht ist. Kein Abbruch:
   /// den kennt der Cloud-Weg nicht.
   Future<HobexCloudResult> _resolve(String id, List<String> steps) async {
-    final clock = Stopwatch()..start();
+    final clock = _clock()..start();
     var wait = Duration.zero;
     var transportFailures = 0;
 
@@ -174,7 +192,14 @@ class HobexCloudPayments {
 
       HobexReceipt? receipt;
       try {
-        receipt = await _api.hobexGetStatus(transactionId: id);
+        // Ueber [_withinBudget]: sonst waere die Klaerung nicht durch
+        // [resolveBudget] begrenzt, sondern durch den vollen readTimeout je
+        // einzelner Abfrage -- eine kurz vor Budgetende gestartete Abfrage
+        // haette die Zusage um bis zu readTimeout ueberziehen koennen.
+        receipt = await _withinBudget(
+          clock,
+          () => _api.hobexGetStatus(transactionId: id),
+        );
         // Nur eine BEANTWORTETE Abfrage setzt den Zaehler zurueck -- egal, ob
         // sie einen Beleg lieferte oder `null` (Dienst kennt die Kennung
         // noch nicht). Beides ist eine Aussage des Dienstes, kein
@@ -213,5 +238,16 @@ class HobexCloudPayments {
     if (current == Duration.zero) return const Duration(seconds: 1);
     final doubled = current * 2;
     return doubled > maxBackoff ? maxBackoff : doubled;
+  }
+
+  /// Fuehrt [call] aus, aber hoechstens so lange, wie vom [resolveBudget]
+  /// uebrig ist -- sonst waere die Klaerung nicht durch das Budget begrenzt,
+  /// sondern durch den readTimeout je einzelnem Request.
+  Future<T> _withinBudget<T>(Stopwatch clock, Future<T> Function() call) {
+    final left = resolveBudget - clock.elapsed;
+    if (left <= Duration.zero) {
+      throw TimeoutException('Klaerungsbudget aufgebraucht', resolveBudget);
+    }
+    return call().timeout(left);
   }
 }
