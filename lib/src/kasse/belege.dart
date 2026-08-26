@@ -358,8 +358,29 @@ class RegisterReceiptClient {
     if (daten['receipt'] is! Map) {
       throw KasseneckValidationError(name, 'Antwort enthaelt keinen Beleg (data.receipt fehlt)', 'response');
     }
-    return KasseneckReceipt.fromJson(daten);
+    try {
+      return KasseneckReceipt.fromJson(daten);
+    } on KasseneckReceiptFormatError {
+      // Traegt die Kennung bereits — durchreichen, nicht neu verpacken.
+      rethrow;
+    } catch (e) {
+      // Der Beleg ist an dieser Stelle ausgestellt und signiert. Ohne die
+      // Kennung bliebe nichts, womit er sich nachholen liesse, und der
+      // naheliegende zweite Versuch waere ein zweiter Umsatz.
+      throw KasseneckReceiptFormatError(
+        'receipt',
+        receiptId: _kennungAus(daten),
+        causeType: e.runtimeType.toString(),
+      );
+    }
   }
+}
+
+/// Die Belegkennung aus einer Antworthülle — defensiv, wirft nie.
+String? _kennungAus(Map<String, dynamic> daten) {
+  final beleg = daten['receipt'];
+  final wert = beleg is Map ? beleg['receiptId'] : null;
+  return wert is String && wert.isNotEmpty ? wert : null;
 }
 
 /// Euro-Betrag des Backends in ganze Cent. Einmal gerundet, damit sich der

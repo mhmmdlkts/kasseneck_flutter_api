@@ -459,6 +459,105 @@ void main() {
     });
   });
 
+  group('Kaputte Antwort auf dem api_key-Weg', () {
+    // Jede Antwort von aussen ist fremd. Bis 5.0.0 stand an zehn Stellen eine
+    // implizite Zuweisung `final Map<String, dynamic> resJson = json.decode(…)`
+    // — ein 200 mit Array, Skalar oder HTML gab daraus einen rohen TypeError
+    // bzw. eine FormatException, im Verkauf NACH der Signatur.
+    KasseneckApi apiMit(String rumpf) => apiWith(MockClient(
+        (_) async => http.Response(rumpf, 200, headers: {'content-type': 'application/json'})));
+
+    test('200 mit JSON-Array statt Objekt: benannter Fehler, kein TypeError', () async {
+      final api = apiMit('[1,2,3]');
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung',
+            allOf(contains('createReceipt'), contains('kein Objekt')))),
+      );
+    });
+
+    test('200 mit HTML im Rumpf: benannter Fehler, keine rohe FormatException', () async {
+      // Captive Portal oder CDN-Fehlerseite — der Rumpf selbst bleibt draussen.
+      final api = apiMit('<html>Gateway</html>');
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<Exception>()
+            .having((e) => e.toString(), 'Meldung', contains('kein JSON'))
+            .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('Gateway')))),
+      );
+    });
+
+    test('Erfolg ohne data-Objekt: benannter Fehler', () async {
+      final api = apiMit(jsonEncode({'status': 'success', 'data': null}));
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('kein data-Objekt'))),
+      );
+    });
+
+    test('Beleg unlesbar: der Fehler traegt die receiptId — der Faden zum Beleg', () async {
+      // DER Fall: der Beleg ist signiert und in der Kette, nur ein Feld der
+      // Antwort fehlt. Ohne die Kennung waere er fuer die Kasse verloren und
+      // der naheliegende zweite Versuch ein zweiter Umsatz.
+      final daten = buildReceipt().toJson();
+      (daten['receipt'] as Map<String, dynamic>).remove('qr');
+      final api = apiMit(jsonEncode({'status': 'success', 'data': daten}));
+
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<KasseneckReceiptFormatError>()
+            .having((e) => e.field, 'field', 'qr')
+            .having((e) => e.receiptId, 'receiptId', 'TEST-ID-1')),
+      );
+    });
+
+    test('Beleg mit kaputter Position: auch der Sammelfang haelt die Kennung', () async {
+      final daten = buildReceipt().toJson();
+      (daten['receipt'] as Map<String, dynamic>)['items'] = ['keine Position'];
+      final api = apiMit(jsonEncode({'status': 'success', 'data': daten}));
+
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<KasseneckReceiptFormatError>()
+            .having((e) => e.receiptId, 'receiptId', 'TEST-ID-1')
+            .having((e) => e.causeType, 'causeType', isNotNull)),
+      );
+    });
+
+    test('getReceipts: fehlende Belegliste ist ein Fehler, keine leere Liste', () async {
+      // „Im Zeitraum nichts verkauft" darf nicht aussehen wie „Antwort kaputt"
+      // — in einer Fiskalliste ist das der Unterschied zwischen Nulltag und
+      // verschwiegenem Umsatz.
+      final api = apiMit(jsonEncode({
+        'status': 'success',
+        'data': {'metadata': <String, dynamic>{}},
+      }));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('keine Belegliste'))),
+      );
+    });
+
+    test('getReceipts: fehlende Metadaten ebenso', () async {
+      final api = apiMit(jsonEncode({
+        'status': 'success',
+        'data': {'receipts': <dynamic>[]},
+      }));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('keine Metadaten'))),
+      );
+    });
+
+    test('getCashboxStatus: 200 mit Array laeuft nicht in einen TypeError', () async {
+      final api = apiMit('[]');
+      await expectLater(
+        api.getCashboxStatus(),
+        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('kein Objekt'))),
+      );
+    });
+  });
+
   group('Logo haelt den Verkauf nicht auf', () {
     setUp(() {
       LogoService.frist = LogoService.standardFrist;

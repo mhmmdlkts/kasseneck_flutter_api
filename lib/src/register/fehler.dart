@@ -1,5 +1,6 @@
 /// Die Fehler der Kassen-Aufrufe — geteilt von Kopplung, Sitzung und allem,
-/// was danach über den [RegisterTransport] läuft.
+/// was danach über den [RegisterTransport] läuft, sowie vom Einlesen eines
+/// Belegs (der auf beiden Wegen dasselbe Modell füllt).
 ///
 /// Sie stehen in einer eigenen Datei, weil sonst jede neue Aufrufgruppe
 /// entweder `pairing.dart` importieren müsste (obwohl sie mit Kopplung nichts
@@ -32,6 +33,45 @@ class KasseneckApiError implements Exception {
 
   @override
   String toString() => 'KasseneckApiError($functionName): $message';
+}
+
+/// Ein Beleg kam an, ließ sich aber nicht lesen — ein Pflichtfeld fehlt oder
+/// hat den falschen Typ.
+///
+/// **Der Beleg existiert an dieser Stelle bereits.** Er ist signiert, steht in
+/// der Signaturkette und im DEP; unbrauchbar ist nur die Antwort darüber. Ein
+/// roher `TypeError` wäre hier der schlimmste Fall: für den Aufrufer nicht von
+/// „Verkauf fehlgeschlagen" zu unterscheiden, und mit der verworfenen Antwort
+/// ginge die [receiptId] verloren — dann bliebe nichts, womit sich der Beleg
+/// nachholen ließe, und der naheliegende zweite Versuch wäre ein zweiter
+/// Umsatz in der Signaturkette.
+///
+/// Deshalb trägt dieser Fehler die Kennung mit, sooft sie in der Antwort
+/// stand. Sie ist der Faden zum Beleg: `KasseneckApi.getReceipt(receiptId)`
+/// bzw. `RegisterReceiptClient.holen(receiptId)` holt ihn nach.
+class KasseneckReceiptFormatError implements Exception {
+  const KasseneckReceiptFormatError(this.field, {this.receiptId, this.causeType});
+
+  /// Das Feld, das fehlt oder den falschen Typ hat — nie sein Wert.
+  final String field;
+
+  /// Die Belegkennung, **sofern** sie in der Antwort stand. `null` heißt: der
+  /// Beleg ist von hier aus nicht mehr auffindbar.
+  final String? receiptId;
+
+  /// Die **Art** der zugrunde liegenden Ausnahme (`TypeError`,
+  /// `FormatException` …), wenn das Einlesen an einer anderen Stelle scheiterte.
+  ///
+  /// Nur der Typname, nie die Meldung: eine `FormatException` trägt ihre
+  /// Eingabe im Text, und Antwortinhalte gehören nicht ins Protokoll — dieselbe
+  /// Regel, die [KasseneckHttpError] befolgt.
+  final String? causeType;
+
+  @override
+  String toString() => 'KasseneckReceiptFormatError('
+      '${receiptId ?? 'ohne receiptId'}): '
+      'Feld "$field" fehlt oder hat den falschen Typ'
+      '${causeType == null ? '' : ' ($causeType)'}';
 }
 
 /// Die Antwort war keine brauchbare Hülle `{status, data}` oder der HTTP-Weg

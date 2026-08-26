@@ -8,6 +8,7 @@ import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
+import 'package:kasseneck_api/kasse.dart' show KasseneckReceiptFormatError;
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
@@ -117,6 +118,97 @@ void main() {
       final r = KasseneckReceipt.fromJson(j);
       expect(r.customerDetails, isEmpty);
       expect(r.legalMessage, ['Zeile1', 'Zeile2']);
+    });
+  });
+
+  group('Antwort unvollstaendig — der Beleg ist da, die Antwort nicht', () {
+    // Der Beleg ist an dieser Stelle signiert und in der Kette. Ein roher
+    // TypeError waere hier der schlimmste Fall: nicht von „Verkauf
+    // fehlgeschlagen" zu unterscheiden, und mit der verworfenen Antwort ginge
+    // die Kennung verloren — es bliebe nichts zum Nachholen.
+    Map<String, dynamic> baseJson() => cartA().toJson();
+
+    Matcher lesefehler(String feld, String? kennung) => isA<KasseneckReceiptFormatError>()
+        .having((e) => e.field, 'field', feld)
+        .having((e) => e.receiptId, 'receiptId', kennung);
+
+    for (final feld in [
+      'qr',
+      'sig',
+      'certificateSerialNumber',
+      'signaturePreviousReceipt',
+      'turnoverCounterAES256ICM',
+      'cashregisterId',
+      'timeStamp',
+    ]) {
+      test('fehlendes $feld: benannter Fehler MIT Kennung, kein TypeError', () {
+        final j = baseJson();
+        (j['receipt'] as Map<String, dynamic>).remove(feld);
+        expect(() => KasseneckReceipt.fromJson(j), throwsA(lesefehler(feld, 'TEST-ID-1')));
+      });
+
+      test('$feld mit falschem Typ: ebenso', () {
+        final j = baseJson();
+        (j['receipt'] as Map<String, dynamic>)[feld] = 42;
+        expect(() => KasseneckReceipt.fromJson(j), throwsA(lesefehler(feld, 'TEST-ID-1')));
+      });
+    }
+
+    test('unlesbarer timeStamp wird zum Lesefehler, nicht zur FormatException', () {
+      final j = baseJson();
+      (j['receipt'] as Map<String, dynamic>)['timeStamp'] = 'kein Datum';
+      expect(() => KasseneckReceipt.fromJson(j), throwsA(lesefehler('timeStamp', 'TEST-ID-1')));
+    });
+
+    test('fehlende receiptId: der Faden ist ab — und das steht im Fehler', () {
+      final j = baseJson();
+      (j['receipt'] as Map<String, dynamic>).remove('receiptId');
+      expect(() => KasseneckReceipt.fromJson(j), throwsA(lesefehler('receiptId', null)));
+    });
+
+    test('kein receipt-Objekt: Fehler ohne Kennung', () {
+      expect(() => KasseneckReceipt.fromJson({'receipt': null}),
+          throwsA(lesefehler('receipt', null)));
+      expect(() => KasseneckReceipt.fromJson({'receipt': <dynamic>[]}),
+          throwsA(lesefehler('receipt', null)));
+    });
+
+    test('Kopf- und Fusszeilen duerfen fehlen — dafuer wird kein Beleg verworfen', () {
+      // Rein darstellend: null und '' drucken gleich. Einen signierten Beleg
+      // wegen einer fehlenden Fusszeile zu verlieren waere die teurere
+      // Verwechslung.
+      final j = baseJson()
+        ..remove('taxnr')
+        ..remove('company')
+        ..remove('phone')
+        ..remove('street')
+        ..remove('zip')
+        ..remove('city')
+        ..remove('footer1')
+        ..remove('footer2')
+        ..remove('is_small_business');
+
+      final r = KasseneckReceipt.fromJson(j);
+      expect(r.receiptId, 'TEST-ID-1');
+      expect(r.taxnr, '');
+      expect(r.companyName, '');
+      expect(r.footer1, '');
+      expect(r.isSmallBusiness, isFalse);
+    });
+
+    test('logo_url mit falschem Typ kippt den Beleg nicht', () {
+      final j = baseJson()..['logo_url'] = 42;
+      expect(KasseneckReceipt.fromJson(j).logoUrl, isNull);
+    });
+
+    test('fromMetadata: kaputte Metadaten kippen den Beleg nicht, kaputter Beleg schon', () {
+      final receipt = baseJson()['receipt'] as Map<String, dynamic>;
+      final r = KasseneckReceipt.fromMetadata(receipt, {'company': 7, 'is_small_business': 'ja'});
+      expect(r.companyName, '');
+      expect(r.isSmallBusiness, isFalse);
+
+      expect(() => KasseneckReceipt.fromMetadata('kein Beleg', const {}),
+          throwsA(lesefehler('receipt', null)));
     });
   });
 

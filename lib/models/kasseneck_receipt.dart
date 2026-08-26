@@ -156,29 +156,40 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     bool testSignatur = false,
     String? kopfId,
   }) {
+    // Zuerst die Kennung: geht danach etwas schief, ist sie das Einzige,
+    // womit sich der bereits signierte Beleg nachholen laesst.
+    final String? kennung = _kennung(receipt);
+
     return KasseneckReceipt(
-      qr: receipt['qr'],
-      sig: receipt['sig'],
-      certificateSerialNumber: receipt['certificateSerialNumber'],
-      signaturePreviousReceipt: receipt['signaturePreviousReceipt'],
-      turnoverCounterAES256ICM: receipt['turnoverCounterAES256ICM'],
+      qr: _pflichttext(receipt, 'qr', kennung),
+      sig: _pflichttext(receipt, 'sig', kennung),
+      certificateSerialNumber: _pflichttext(receipt, 'certificateSerialNumber', kennung),
+      signaturePreviousReceipt: _pflichttext(receipt, 'signaturePreviousReceipt', kennung),
+      turnoverCounterAES256ICM: _pflichttext(receipt, 'turnoverCounterAES256ICM', kennung),
       paymentMethod: KeckPaymentMethod.values.firstWhere((element) => element.name == receipt['paymentMethod'], orElse: () => KeckPaymentMethod.cash),
       // Nullbelege haben keine Positionen → items kann fehlen/null sein.
-      items: ((receipt['items'] as List?) ?? []).map<KasseneckItem>((e) => KasseneckItem.fromJson(e)).toList(),
-      vouchers: receipt['vouchers'] != null ? (receipt['vouchers'] as List).map((e) => KeckVoucher.fromJson(e)).toList() : null,
+      items: [
+        for (final e in (receipt['items'] is List ? receipt['items'] as List : const []))
+          KasseneckItem.fromJson(e),
+      ],
+      vouchers: receipt['vouchers'] is List
+          ? [for (final e in receipt['vouchers'] as List) KeckVoucher.fromJson(e)]
+          : null,
       // Server liefert Wiener Wanduhrzeit ohne Offset → in echten Zeitpunkt
       // umrechnen, sonst verrutscht der Beleg bei fremder Geräte-Zeitzone.
-      timeStamp: ViennaTime.parseServerTimeStamp(receipt['timeStamp']),
-      cashregisterId: receipt['cashregisterId'],
+      timeStamp: _zeitpunkt(receipt, kennung),
+      cashregisterId: _pflichttext(receipt, 'cashregisterId', kennung),
       receiptType: ReceiptType.values.firstWhere((element) => element.name == receipt['receiptType'], orElse: () => ReceiptType.standard),
-      receiptId: receipt['receiptId'],
-      fullReceiptId: receipt['fullReceiptId'] ?? '',
+      receiptId: kennung ?? (throw KasseneckReceiptFormatError('receiptId')),
+      fullReceiptId: _text(receipt['fullReceiptId']),
       creditCardProvider: receipt['creditCardProvider'] != null ? CreditCardProvider.values.firstWhere((element) => element.name == receipt['creditCardProvider'], orElse: () => CreditCardProvider.custom) : null,
-      cardPaymentId: receipt['cardPaymentId'],
-      cardPaymentData: receipt['cardPaymentData'],
+      cardPaymentId: receipt['cardPaymentId'] is String ? receipt['cardPaymentId'] as String : null,
+      cardPaymentData: receipt['cardPaymentData'] is Map
+          ? Map<String, dynamic>.from(receipt['cardPaymentData'] as Map)
+          : null,
       customerDetails: List<String>.from(receipt['customerDetails']?.toString().split('\n')??[]),
       legalMessage: List<String>.from(receipt['legalMessage']?.toString().split('\n')??[]),
-      signatureSuccess: receipt['signatureSuccess'],
+      signatureSuccess: receipt['signatureSuccess'] is bool ? receipt['signatureSuccess'] as bool : null,
       thanksMessage: thanksMessage,
       companyName: companyName,
       phone: phone,
@@ -193,7 +204,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       footer2: footer2,
       footer3: footer3,
       footer4: footer4,
-      customProjectId: receipt['customProjectId'],
+      customProjectId: receipt['customProjectId'] is String ? receipt['customProjectId'] as String : null,
       cancellations: [
         for (final e in (receipt['cancellations'] as List?) ?? const [])
           if (e is Map) Map<String, dynamic>.from(e),
@@ -208,21 +219,27 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
 
 
   factory KasseneckReceipt.fromJson(Map<String, dynamic> json) {
+    final roh = json['receipt'];
+    if (roh is! Map) {
+      // Ohne Belegteil gibt es auch keine Kennung — der Beleg ist von hier aus
+      // nicht mehr auffindbar. Das gehoert benannt, nicht als TypeError.
+      throw const KasseneckReceiptFormatError('receipt');
+    }
     return KasseneckReceipt.create(
-      receipt: json['receipt'],
-      isSmallBusiness: json['is_small_business'],
-      uid: json['uid'],
-      taxnr: json['taxnr'],
-      phone: json['phone'],
-      companyName: json['company'],
-      street: json['street'],
-      zip: json['zip'],
-      city: json['city'],
-      footer1: json['footer1'],
-      footer2: json['footer2'],
-      footer3: json['footer3'],
-      footer4: json['footer4'],
-      logoUrl: json['logo_url'],
+      receipt: Map<String, dynamic>.from(roh),
+      isSmallBusiness: json['is_small_business'] == true,
+      uid: json['uid'] is String ? json['uid'] as String : null,
+      taxnr: _text(json['taxnr']),
+      phone: _text(json['phone']),
+      companyName: _text(json['company']),
+      street: _text(json['street']),
+      zip: _text(json['zip']),
+      city: _text(json['city']),
+      footer1: _text(json['footer1']),
+      footer2: _text(json['footer2']),
+      footer3: json['footer3'] is String ? json['footer3'] as String : null,
+      footer4: json['footer4'] is String ? json['footer4'] as String : null,
+      logoUrl: json['logo_url'] is String ? json['logo_url'] as String : null,
       thanksMessage: List<String>.from(json['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: json['kreiseck_logo'] == true,
       layout: BelegLayout.fromJson(json['layout']),
@@ -287,22 +304,25 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     };
   }
 
-  factory KasseneckReceipt.fromMetadata(Map<String, dynamic> receipt, Map<String, dynamic> metadata) {
+  factory KasseneckReceipt.fromMetadata(Object? receipt, Map<String, dynamic> metadata) {
+    if (receipt is! Map) {
+      throw const KasseneckReceiptFormatError('receipt');
+    }
     return KasseneckReceipt.create(
-      receipt: receipt,
-      uid: metadata['uid'],
-      taxnr: metadata['taxnr'],
-      isSmallBusiness: metadata['is_small_business'],
-      phone: metadata['phone'],
-      companyName: metadata['company'],
-      street: metadata['street'],
-      zip: metadata['zip'],
-      city: metadata['city'],
-      footer1: metadata['footer1'],
-      footer2: metadata['footer2'],
-      footer3: metadata['footer3'],
-      footer4: metadata['footer4'],
-      logoUrl: metadata['logo_url'],
+      receipt: Map<String, dynamic>.from(receipt),
+      uid: metadata['uid'] is String ? metadata['uid'] as String : null,
+      taxnr: _text(metadata['taxnr']),
+      isSmallBusiness: metadata['is_small_business'] == true,
+      phone: _text(metadata['phone']),
+      companyName: _text(metadata['company']),
+      street: _text(metadata['street']),
+      zip: _text(metadata['zip']),
+      city: _text(metadata['city']),
+      footer1: _text(metadata['footer1']),
+      footer2: _text(metadata['footer2']),
+      footer3: metadata['footer3'] is String ? metadata['footer3'] as String : null,
+      footer4: metadata['footer4'] is String ? metadata['footer4'] as String : null,
+      logoUrl: metadata['logo_url'] is String ? metadata['logo_url'] as String : null,
       thanksMessage: List<String>.from(metadata['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: metadata['kreiseck_logo'] == true,
     );
@@ -434,3 +454,49 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Trinkgeld gesamt in Euro (Anzeige — fuer Arithmetik [tipCents] nutzen).
   double get tip => tipCents / 100;
 }
+
+// ── Antwort lesen ───────────────────────────────────────────────────────────
+//
+// Jede Antwort von aussen ist fremd. Bis 5.0.0 wurden die `dynamic`-Werte hier
+// ungeprueft an nicht nullbare Felder zugewiesen: ein einziges fehlendes Feld
+// erzeugte einen `TypeError` NACH der Signatur, und mit der verworfenen
+// Antwort ging die Kennung verloren — es blieb nichts zum Nachholen.
+//
+// Die Grenze verlaeuft zwischen zwei Arten von Feldern:
+//
+// * **Signatur und Identitaet** (`receiptId`, `cashregisterId`, `timeStamp`,
+//   `qr`, `sig`, `certificateSerialNumber`, `signaturePreviousReceipt`,
+//   `turnoverCounterAES256ICM`) — hier wird nichts erfunden. Ein Ersatzwert
+//   waere keine Toleranz, sondern eine Behauptung ueber RKSV-Daten. Fehlt
+//   eines, wirft [KasseneckReceiptFormatError] **mit der Kennung**, sofern sie
+//   in der Antwort stand.
+// * **Kopf- und Fusszeilen** (Firma, Anschrift, Steuerangabe, Fusszeilen) —
+//   rein darstellend. `null` und `''` drucken gleich. Hier zu werfen hiesse,
+//   einen signierten Beleg wegen einer fehlenden Fusszeile zu verlieren; das
+//   ist die teurere Verwechslung.
+
+/// Die Belegkennung aus einer rohen Belegantwort. Wirft nie.
+String? _kennung(Map<String, dynamic> receipt) {
+  final wert = receipt['receiptId'];
+  return wert is String && wert.isNotEmpty ? wert : null;
+}
+
+/// Ein Pflichtfeld des Belegs. Leer ist erlaubt, fehlend oder falsch getippt
+/// nicht — genau diese beiden Faelle gaben bisher den rohen `TypeError`.
+String _pflichttext(Map<String, dynamic> receipt, String feld, String? kennung) {
+  final wert = receipt[feld];
+  if (wert is String) return wert;
+  throw KasseneckReceiptFormatError(feld, receiptId: kennung);
+}
+
+DateTime _zeitpunkt(Map<String, dynamic> receipt, String? kennung) {
+  final roh = _pflichttext(receipt, 'timeStamp', kennung);
+  try {
+    return ViennaTime.parseServerTimeStamp(roh);
+  } on FormatException {
+    throw KasseneckReceiptFormatError('timeStamp', receiptId: kennung);
+  }
+}
+
+/// Ein rein darstellendes Textfeld — siehe die Grenze oben.
+String _text(Object? wert) => wert is String ? wert : '';

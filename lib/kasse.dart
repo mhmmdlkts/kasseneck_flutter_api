@@ -12,6 +12,9 @@ export 'enums/keck_payment_method.dart';
 export 'enums/vat_rate.dart';
 export 'models/kasseneck_item.dart';
 export 'models/kasseneck_receipt.dart';
+// Wer einen Beleg einliest, muss den Lesefehler fangen koennen: er traegt die
+// receiptId eines bereits signierten Belegs.
+export 'src/register/fehler.dart' show KasseneckReceiptFormatError;
 // Wer Trinkgeld zuweist, braucht die Personenliste und den Anteil, der daraus
 // entsteht.
 export 'models/keck_tip.dart';
