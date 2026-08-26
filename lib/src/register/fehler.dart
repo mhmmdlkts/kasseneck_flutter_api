@@ -78,12 +78,49 @@ class KasseneckReceiptFormatError implements Exception {
 /// scheiterte. Trägt bewusst **nichts** aus dem Rumpf: dort könnten Werte
 /// stehen, die wir gerade nicht ins Protokoll lassen wollen.
 class KasseneckHttpError implements Exception {
-  const KasseneckHttpError(this.functionName, this.statusCode, this.reason);
+  const KasseneckHttpError(this.functionName, this.statusCode, this.reason, {this.causeType});
+
+  /// Die Frist ist abgelaufen. Die Anfrage war **draußen**; der Zeitablauf
+  /// beendet nur das Warten, nicht die Arbeit des Servers. Über einem
+  /// verändernden Aufruf heißt das: der Beleg kann längst signiert und in der
+  /// Kette sein.
+  static const String zeitablauf = 'timeout';
+
+  /// Der Transport ist gescheitert — Verbindung nicht zustande gekommen,
+  /// abgebrochen, DNS, TLS.
+  ///
+  /// **Das ist keine Aussage, dass nichts passiert ist.** `package:http`
+  /// trennt „Verbindung wurde nie hergestellt" nicht von „Verbindung riss,
+  /// nachdem die Anfrage draußen war" — beides kommt als `ClientException`
+  /// bzw. `SocketException` an. Wer daraus „der Beleg existiert sicher nicht"
+  /// liest, macht denselben Fehler wie am 24.08. am Terminal: aus Nichtwissen
+  /// eine Behauptung. Für einen verändernden Aufruf gilt deshalb auch hier:
+  /// nachsehen, nicht wiederholen.
+  static const String netz = 'network';
 
   final String functionName;
   final int statusCode;
+
+  /// Warum es scheiterte: [zeitablauf], [netz], `'not-json'`,
+  /// `'missing-status'`, `'data-not-object'`.
+  ///
+  /// Die Unterscheidung [zeitablauf] gegen [netz] wird **erhalten**, nicht
+  /// verworfen: sie ist die einzige Handhabe, die der Aufrufer hat. Welche
+  /// Folge er daraus zieht, entscheidet er — dieses Paket entscheidet sie
+  /// nicht für ihn, weil keiner der beiden Fälle beweist, dass nichts
+  /// passiert ist (siehe [netz]).
   final String reason;
 
+  /// Die **Art** der zugrunde liegenden Ausnahme (`TimeoutException`,
+  /// `SocketException`, `ClientException` …), sofern es eine gab.
+  ///
+  /// Nur der Typname, nie die Meldung — die kann Werte aus dem Rumpf tragen.
+  /// Nach dem 24.08. war fehlendes Protokoll ausdrücklich das Problem; ein
+  /// restlos verworfener Ursprungsfehler lässt sich hinterher nicht mehr
+  /// rekonstruieren.
+  final String? causeType;
+
   @override
-  String toString() => 'KasseneckHttpError($functionName): HTTP $statusCode ($reason)';
+  String toString() => 'KasseneckHttpError($functionName): HTTP $statusCode ($reason)'
+      '${causeType == null ? '' : ' [$causeType]'}';
 }

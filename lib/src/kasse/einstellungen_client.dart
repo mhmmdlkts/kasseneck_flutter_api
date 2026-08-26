@@ -38,7 +38,7 @@ class KasseEinstellungenClient {
     const name = Aufrufe.setMyKasseSettings;
     _nichtLeer(name, aenderung);
     final daten = await transport.rufen(name, params: {'betrieb': aenderung});
-    return KasseSettings.aus({'betrieb': daten['betrieb']}).betrieb;
+    return KasseSettings.aus({'betrieb': _stand(name, daten, 'betrieb')}).betrieb;
   }
 
   /// Einstellungen dieses Geräts schreiben (Recht `layout`).
@@ -49,7 +49,27 @@ class KasseEinstellungenClient {
     }
     _nichtLeer(name, aenderung);
     final daten = await transport.rufen(name, params: {'deviceId': deviceId, 'geraet': aenderung});
-    return KasseSettings.aus({'geraet': daten['geraet']}).geraet;
+    return KasseSettings.aus({'geraet': _stand(name, daten, 'geraet')}).geraet;
+  }
+
+  /// Der neue Stand aus der Antwort eines Schreibaufrufs.
+  ///
+  /// Fehlt er, ist das ein **Antwortfehler** und kein leerer Stand:
+  /// `KasseSettings.aus({})` liefert den vollen Standardsatz, der Client
+  /// meldete damit „gespeichert" und gab gleichzeitig Standardwerte als
+  /// angeblich neuen Stand zurueck. Der Bediener sieht seine eben gespeicherte
+  /// Einstellung nicht und speichert erneut — mit einer Aenderung, die er
+  /// diesmal gegen den Standard und nicht gegen den echten Stand bildet.
+  ///
+  /// Dieselbe Grenze, die `belege.dart` und `kasseneck_api.dart` bei den
+  /// Listen ziehen: „nichts gespeichert" darf nicht aussehen wie
+  /// „Antwort kaputt".
+  Map<String, dynamic> _stand(String name, Map<String, dynamic> daten, String feld) {
+    final wert = daten[feld];
+    if (wert is! Map) {
+      throw KasseneckValidationError(name, 'Antwort enthaelt keinen neuen Stand (data.$feld fehlt)', 'response');
+    }
+    return Map<String, dynamic>.from(wert);
   }
 
   void _nichtLeer(String name, Map<String, dynamic> aenderung) {

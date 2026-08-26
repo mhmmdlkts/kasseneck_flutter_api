@@ -17,6 +17,7 @@
 /// hier drin.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -83,6 +84,12 @@ class RegisterTransport {
       if (wert != null) nutzlast[schluessel] = wert;
     });
 
+    // Ausserhalb des try: ein nicht serialisierbarer Parameter ist ein
+    // Programmierfehler und keine Netzstoerung. Im try darunter haette ihn der
+    // Sammelfang als `network` gemeldet — ein Fehler, der nie am Netz lag,
+    // saehe aus wie einer, nach dem ein Beleg entstanden sein koennte.
+    final String rumpf = jsonEncode({'params': nutzlast});
+
     final http.Response antwort;
     try {
       antwort = await _http
@@ -93,11 +100,19 @@ class RegisterTransport {
               'Authorization': 'Bearer $token',
               'register-session': sitzung,
             },
-            body: jsonEncode({'params': nutzlast}),
+            body: rumpf,
           )
           .timeout(frist ?? _timeout);
-    } on Object {
-      throw KasseneckHttpError(name, 0, 'network');
+    } on TimeoutException catch (e) {
+      // Getrennt vom Netzfehler: die Anfrage war draussen, der Ausgang ist
+      // unbekannt — ueber `createReceipt` kann der Beleg laengst signiert
+      // sein. Beides in denselben Ausgang zu werfen hiess, dem Aufrufer die
+      // einzige Handhabe zu nehmen, die er hat.
+      throw KasseneckHttpError(name, 0, KasseneckHttpError.zeitablauf, causeType: '${e.runtimeType}');
+    } on Object catch (e) {
+      // Nur der Typ, nie die Meldung: die kann eine Adresse tragen. Das Token
+      // faehrt in der Kopfzeile und ist davon nicht betroffen.
+      throw KasseneckHttpError(name, 0, KasseneckHttpError.netz, causeType: '${e.runtimeType}');
     }
 
     Object? roh;
@@ -110,7 +125,17 @@ class RegisterTransport {
     final huelle = Map<String, dynamic>.from(roh);
     if (huelle['status'] == 'success') {
       final daten = huelle['data'];
-      return daten is Map ? Map<String, dynamic>.from(daten) : <String, dynamic>{};
+      // Fehlendes `data` ist erlaubt — nicht jeder Aufruf hat eine Nutzlast.
+      // Ein `data`, das da ist und **kein Objekt** ist (Array, Zahl, Text), ist
+      // dagegen kaputt und darf nicht als leeres Objekt durchgehen: aus dem
+      // wurde weiter oben ein voller Standardsatz Einstellungen, und der
+      // Bildschirm meldete „der Betrieb hat nichts eingestellt". Dieselbe
+      // Grenze wie bei den Listen: leer ist etwas anderes als kaputt.
+      if (daten == null) return <String, dynamic>{};
+      if (daten is! Map) {
+        throw KasseneckHttpError(name, antwort.statusCode, 'data-not-object');
+      }
+      return Map<String, dynamic>.from(daten);
     }
     final meldung = huelle['message'];
     throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.');

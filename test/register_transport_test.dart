@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -124,5 +126,96 @@ void main() {
       () => f.transport.rufen('createReceipt', frist: const Duration(minutes: 2)),
       returnsNormally,
     );
+  });
+
+  group('Zeitablauf und Netzfehler bleiben unterscheidbar', () {
+    // Ueber `createReceipt` sind das zwei verschiedene Lagen: eine abgelaufene
+    // Frist heisst „die Anfrage war draussen, der Ausgang ist unbekannt" — der
+    // Beleg kann laengst signiert sein. Beides in denselben Ausgang zu werfen
+    // nahm dem Aufrufer die einzige Handhabe, die er hat; das ist dieselbe
+    // Vermischung von Nichtwissen und Aussage wie am 24.08. am Terminal.
+    RegisterTransport transportDurch(http.Client client, {Duration? timeout}) => RegisterTransport(
+          idToken: () async => 'id-token-1',
+          sessionId: () async => 'sess-1',
+          cashregisterId: 'KASSE1',
+          httpClient: client,
+          timeout: timeout,
+        );
+
+    test('abgelaufene Frist: reason "timeout", nicht "network"', () async {
+      final transport = transportDurch(
+        MockClient((_) => Completer<http.Response>().future),
+        timeout: const Duration(milliseconds: 20),
+      );
+
+      await expectLater(
+        transport.rufen('createReceipt'),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)
+            .having((e) => e.causeType, 'causeType', 'TimeoutException')),
+      );
+    });
+
+    test('Verbindungsfehler: reason "network", mit Ursachentyp im Protokoll', () async {
+      final transport = transportDurch(
+        MockClient((_) async => throw const SocketException('Connection refused')),
+      );
+
+      await expectLater(
+        transport.rufen('createReceipt'),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', KasseneckHttpError.netz)
+            .having((e) => e.causeType, 'causeType', 'SocketException')),
+      );
+    });
+
+    test('kein Wert aus der Ursache faehrt mit — nur ihr Typ', () async {
+      final transport = transportDurch(
+        MockClient((_) async => throw http.ClientException('geheim-abc123')),
+      );
+
+      await expectLater(
+        transport.rufen('a'),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.toString(), 'toString', isNot(contains('geheim-abc123')))),
+      );
+    });
+
+    test('ein Programmierfehler wird nicht als Netzstoerung gemeldet', () async {
+      // Der `jsonEncode` stand im selben try wie der Request: ein nicht
+      // serialisierbarer Parameter sah damit aus wie ein Netzfehler — also wie
+      // einer, nach dem ein Beleg entstanden sein koennte.
+      final log = <http.Request>[];
+      final transport = transportDurch(MockClient((r) async {
+        log.add(r);
+        return http.Response('{"status":"success","data":{}}', 200);
+      }));
+
+      await expectLater(
+        transport.rufen('createReceipt', params: {'kaputt': Object()}),
+        throwsA(isNot(isA<KasseneckHttpError>())),
+      );
+      expect(log, isEmpty, reason: 'es geht nichts hinaus');
+    });
+  });
+
+  group('data: leer ist etwas anderes als kaputt', () {
+    test('fehlendes data bleibt ein leeres Objekt', () async {
+      final f = transportMit({'status': 'success'});
+      expect(await f.transport.rufen('a'), <String, dynamic>{});
+    });
+
+    test('data, das kein Objekt ist, ist ein Antwortfehler', () async {
+      // Frueher still `{}` — und `KasseSettings.aus({})` machte daraus den
+      // vollen Standardsatz. Der Bildschirm meldete „der Betrieb hat nichts
+      // eingestellt", obwohl die Antwort kaputt war.
+      for (final kaputt in <Object>[<dynamic>[], 42, 'text', true]) {
+        await expectLater(
+          transportMit({'status': 'success', 'data': kaputt}).transport.rufen('getKasseSettings'),
+          throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'data-not-object')),
+          reason: 'data=$kaputt',
+        );
+      }
+    });
   });
 }
