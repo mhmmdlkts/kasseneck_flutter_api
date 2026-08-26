@@ -38,19 +38,28 @@ class HobexCloudResult {
 ///
 /// Aufbau und Semantik folgen `HpsPayments` (im lokalen HPS-Zahlweg, siehe
 /// dort): eine Zahlung, deren Ausgang geklaert statt geraten wird, mit
-/// derselben eisernen Regel -- [CardPaymentOutcome.declined] entsteht
-/// ausschliesslich aus einem vorhandenen Ergebniscode ungleich `'0'`. Ein
-/// Transportfehler, ein Zeitablauf oder eine Antwort ohne Ergebniscode
-/// fuehren NIE zu declined, sondern zu [CardPaymentOutcome.unresolved].
-/// Genau diese Vermischung von Nichtwissen und Aussage hat am 24.08.2026
-/// eine durchgelaufene Zahlung als Fehlschlag gemeldet und den Kunden ein
-/// zweites Mal belastet.
+/// derselben eisernen Regel -- [CardPaymentOutcome.declined] entsteht nur aus
+/// einer positiven Aussage, hier also ausschliesslich aus einem vorhandenen
+/// Ergebniscode ungleich `'0'`. Ein Transportfehler, ein Zeitablauf oder eine
+/// Antwort ohne Ergebniscode fuehren NIE zu declined, sondern zu
+/// [CardPaymentOutcome.unresolved]. Genau diese Vermischung von Nichtwissen
+/// und Aussage hat am 24.08.2026 eine durchgelaufene Zahlung als Fehlschlag
+/// gemeldet und den Kunden ein zweites Mal belastet.
 ///
 /// Anders als `HpsPayments` kennt der Cloud-Weg kein `abort()`: es gibt kein
-/// lokales Terminal, das einen laufenden Vorgang quittieren koennte. Bleibt
-/// die erste Antwort aus, bleibt nur Klaeren -- wiederholtes Abfragen des
-/// Standes ueber [KasseneckApi.hobexGetStatus] -- oder, wenn das Budget
-/// aufgebraucht ist, Offenlassen.
+/// lokales Terminal, das einen laufenden Vorgang abbrechen koennte. Damit
+/// fehlt hier die zweite positive Quelle fuer [CardPaymentOutcome.declined],
+/// die der HPS-Weg seit den Messungen vom 26.08.2026 hat -- den nachweislich
+/// gelungenen Abbruch. Bleibt die erste Antwort aus, bleibt nur Klaeren --
+/// wiederholtes Abfragen des Standes ueber [KasseneckApi.hobexGetStatus] --
+/// oder, wenn das Budget aufgebraucht ist, Offenlassen. `unresolved` ist auf
+/// dem Cloud-Weg deshalb weiterhin der haeufigere Ausgang.
+///
+/// Ebenfalls HPS-eigen und hier ohne Entsprechung:
+/// `TransactionResponse.noStatementCode` (`9027`). Der Cloud-Dienst
+/// signalisiert "kenne ich nicht" nicht ueber einen Ergebniscode, sondern
+/// ueber `null` aus [KasseneckApi.hobexGetStatus] -- siehe unten. Ein
+/// Ergebniscode der Cloud ungleich `'0'` ist also unverkuerzt eine Ablehnung.
 ///
 /// [KasseneckApi.hobexGetStatus] unterscheidet zwei Ausgaenge, die hier
 /// unterschiedlich behandelt werden (siehe deren Doc-Kommentar): `null`

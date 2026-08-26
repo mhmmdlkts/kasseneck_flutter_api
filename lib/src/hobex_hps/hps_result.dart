@@ -28,10 +28,12 @@ class HpsResult {
   /// Nur bei [CardPaymentOutcome.declined] steht fest, dass nichts belastet
   /// wurde.
   ///
-  /// Ausnahme `HpsPayments.cancel()`: dort bezieht sich [CardPaymentOutcome.declined]
-  /// auf die AUFHEBUNG, nicht auf die Originalzahlung -- die Originalbelastung
-  /// steht dann weiterhin, eine Wiederholung waere hier gerade NICHT
-  /// gefahrlos.
+  /// Bei `HpsPayments.cancel()` ist der Bezug ein anderer, das Ergebnis aber
+  /// dasselbe: [CardPaymentOutcome.declined] heisst dort, dass die AUFHEBUNG
+  /// nicht gegriffen hat -- die Originalbelastung steht also weiterhin. Eine
+  /// Wiederholung der Aufhebung ist trotzdem gefahrlos, gerade weil
+  /// nachweislich noch keine gegriffen hat. Was NICHT gefahrlos ist: das als
+  /// "der Kunde wurde nicht belastet" zu lesen.
   bool get mayRetrySafely => outcome == CardPaymentOutcome.declined;
 
   bool get isUnresolved => outcome == CardPaymentOutcome.unresolved;

@@ -10,12 +10,18 @@ enum CardPaymentOutcome {
   /// Geld ist geflossen. Buchen, nicht wiederholen.
   approved,
 
-  /// Definitiv kein Geld geflossen: ein echter Ergebniscode hat abgelehnt.
-  /// Wiederholung gefahrlos.
+  /// Definitiv kein Geld geflossen. Wiederholung gefahrlos.
+  ///
+  /// Entsteht nur aus einer POSITIVEN Aussage: einem echten Ergebniscode, der
+  /// ablehnt, oder -- allein auf dem HPS-Weg -- einem nachweislich gelungenen
+  /// Abbruch (`HpsClient.abort` mit `responseCode '0'`). Niemals aus einem
+  /// Transportfehler, einem Zeitablauf oder einer Wissensluecke; dafuer gibt
+  /// es [unresolved].
   ///
   /// Ausnahme `HpsPayments.cancel()`: dort steht [declined] fuer eine
-  /// abgewiesene AUFHEBUNG -- die Originalzahlung bleibt in diesem Fall
-  /// weiterhin belastet.
+  /// AUFHEBUNG, die nicht gegriffen hat -- die Originalzahlung bleibt in
+  /// diesem Fall weiterhin belastet, und gefahrlos wiederholbar ist die
+  /// Aufhebung, nicht die Zahlung.
   declined,
 
   /// Ausgang unbekannt. Eine Wiederholung kann ein zweites Mal belasten.

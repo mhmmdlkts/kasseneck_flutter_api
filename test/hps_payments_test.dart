@@ -245,59 +245,96 @@ void main() {
       expect(res.mayRetrySafely, isTrue);
     });
 
-    test('quittierter Abbruch plus Ergebniscode -> declined', () async {
+    test('Abbruch gelingt (0) -> declined, ganz ohne Statusabfrage', () async {
+      // Gemessen am 26.08.2026: der Abbruch gelingt nur, solange der Vorgang
+      // noch abbrechbar ist. Das ist die positive Aussage, aus der declined
+      // entstehen darf -- und sie macht jede Statusabfrage ueberfluessig, die
+      // ohnehin nur 9027 antworten wuerde.
       final t = FakeTerminal(
         payment: [boom],
-        status: [
-          (_) => json({'transactionId': 'TX-5'}),
-          // Erst diese Antwort entscheidet: ein echter, negativer Code.
-          (_) => json({'responseCode': '17', 'responseText': 'abgebrochen'}),
-        ],
         abort: [
-          (_) => json({'transactionId': 'TX-5'})
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-5'})
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5');
       expect(res.outcome, CardPaymentOutcome.declined);
       expect(res.mayRetrySafely, isTrue);
-      expect(
-        t.log.any((r) => r.url.path.contains('/api/transaction/abort/')),
-        isTrue,
+      expect(res.transactionId, 'TX-5');
+      expect(res.response, isNotNull);
+      expect(t.callsOn('abort'), 1);
+      expect(t.callsOn('status'), 0,
+          reason: 'ein bewiesener Abbruch braucht keine Nachfrage mehr');
+    });
+
+    test('der Abbruch kommt VOR der ersten Statusabfrage', () async {
+      // Die alte Reihenfolge (erst pollen, abbrechen nur wenn der Status
+      // "laeuft noch" meldet) lief ins Leere: diesen Zustand meldet die
+      // Statusabfrage nie.
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-5r'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
       );
-      // Der quittierte Abbruch allein reicht nicht: es wird nachgefragt.
+      await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5r');
+      final wege = t.log
+          .map((r) => r.url.path)
+          .where((p) => p.contains('/abort/') || p.contains('/api/v2/'))
+          .toList();
+      expect(wege.first, contains('/abort/'));
+    });
+
+    test('Abbruch abgelehnt (100010) -> pollen, dann echtes Ergebnis', () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          // 9027 ist keine Aussage -- weiter klaeren.
+          (_) => json({'responseCode': '9027'}),
+          // Erst dieser Code entscheidet.
+          (_) => json({'responseCode': '100003', 'responseText': 'no card'}),
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5a');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(t.callsOn('abort'), 1);
       expect(t.callsOn('status'), 2);
     });
 
-    test('quittierter Abbruch, aber Terminal meldet genehmigt -> approved',
+    test('Abbruch abgelehnt (100010), Terminal meldet genehmigt -> approved',
         () async {
       final t = FakeTerminal(
         payment: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-5b'}),
-          // Die Nachfrage widerspricht dem quittierten Abbruch.
+          (_) => json({'responseCode': '9027'}),
           (_) => json({'responseCode': '0', 'transactionId': 'TX-5b'}),
         ],
         abort: [
-          (_) => json({'transactionId': 'TX-5b'})
+          (_) => json({'responseCode': '100010'})
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5b');
       expect(res.outcome, CardPaymentOutcome.approved,
-          reason: 'ein 2xx auf dem Abbruchweg darf eine echte Belastung nicht '
-              'zu "nichts belastet" erklaeren');
+          reason: 'ein gescheiterter Abbruch heisst, dass der Vorgang ueber '
+              'den abbrechbaren Punkt hinaus ist -- er darf eine echte '
+              'Belastung nicht zu "nichts belastet" erklaeren');
       expect(t.callsOn('abort'), 1);
     });
 
-    test(
-        'quittierter Abbruch, danach "laeuft noch", dann genehmigt '
-        '-> approved', () async {
+    test('ein mit 200 quittierter Abbruch OHNE Ergebniscode beweist nichts',
+        () async {
+      // Die alte Fassung von HpsClient.abort() las nur die transactionId und
+      // warf nur bei Nicht-2xx. Eine solche Antwort ist keine Aussage.
       final t = FakeTerminal(
         payment: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-5d'}),
-          // Direkt nach dem quittierten Abbruch weiss das Terminal noch
-          // nichts. Das ist KEINE Aussage ueber Nichtbelastung.
-          (_) => json({'transactionId': 'TX-5d'}),
+          (_) => json({'responseCode': '9027'}),
           (_) => json({'responseCode': '0', 'transactionId': 'TX-5d'}),
         ],
         abort: [
@@ -305,45 +342,42 @@ void main() {
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5d');
-      expect(res.outcome, CardPaymentOutcome.approved,
-          reason: '"laeuft noch" darf nach einem quittierten Abbruch nicht zu '
-              'declined werden -- das hiesse "gefahrlos wiederholbar" fuer '
-              'einen laufenden Vorgang');
+      expect(res.outcome, CardPaymentOutcome.approved);
       expect(t.callsOn('abort'), 1);
-      expect(t.callsOn('status'), 3);
+      expect(t.callsOn('status'), 2);
     });
 
-    test('quittierter Abbruch, danach nur noch "laeuft noch" -> unresolved',
-        () async {
+    test('9027 bis zum Budgetende -> unresolved, niemals declined', () async {
       final t = FakeTerminal(
         payment: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-5e'})
+          (_) => json({'responseCode': '9027', 'responseText': 'not found'})
         ],
         abort: [
-          (_) => json({'transactionId': 'TX-5e'})
+          (_) => json({'responseCode': '100010'})
         ],
       );
       final res = await paymentsFor(t, budget: const Duration(seconds: 5))
           .pay(amount: 25, transactionId: 'TX-5e');
       expect(res.outcome, CardPaymentOutcome.unresolved,
-          reason: 'ohne Ergebniscode steht nichts fest, auch nicht nach einem '
-              'quittierten Abbruch');
+          reason: '9027 steht gleichermassen fuer "laeuft gerade", "nie '
+              'gesehen" und "abgebrochen" -- daraus darf nie "gefahrlos '
+              'wiederholbar" werden');
       expect(res.mayRetrySafely, isFalse);
       expect(res.transactionId, 'TX-5e');
       expect(res.response, isNull,
-          reason: 'ein "laeuft noch" darf nicht als Beleg mitgegeben werden');
+          reason: 'eine Nicht-Aussage darf nicht als Beleg mitgegeben werden');
     });
 
-    test('quittierter Abbruch, Nachfrage scheitert -> unresolved', () async {
+    test('Abbruch abgelehnt, Nachfrage scheitert -> unresolved', () async {
       final t = FakeTerminal(
         payment: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-5c'}),
+          (_) => json({'responseCode': '9027'}),
           boom
         ],
         abort: [
-          (_) => json({'transactionId': 'TX-5c'})
+          (_) => json({'responseCode': '100010'})
         ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-5c');
@@ -353,29 +387,67 @@ void main() {
       expect(res.transactionId, 'TX-5c');
     });
 
-    test('laeuft noch, Abbruch scheitert, danach genehmigt -> approved',
+    test('HTTP-Fehler beim Abbruch -> pollen, kein geratenes Ergebnis',
+        () async {
+      // Ein Nicht-2xx ist keine Aussage ueber den Vorgang. Gemessen meldet das
+      // Terminal ein gescheitertes Abbrechen ohnehin mit 200 und 100010.
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'responseCode': '9027'}),
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-6h'}),
+        ],
+        abort: [(_) => fehler(400, 'bad request')],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-6h');
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(
+        res.steps.any((s) => s.contains('Abbruch nicht bestaetigt')),
+        isTrue,
+      );
+    });
+
+    test('Transportfehler beim Abbruch -> pollen, kein geratenes Ergebnis',
         () async {
       final t = FakeTerminal(
         payment: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-6'}),
+          (_) => json({'responseCode': '9027'}),
           (_) => json({'responseCode': '0', 'transactionId': 'TX-6'}),
         ],
-        abort: [(_) => fehler(400, 'already tapped')],
+        abort: [boom],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-6');
       expect(res.outcome, CardPaymentOutcome.approved);
+      expect(
+        res.steps.any((s) => s.contains('Abbruch nicht bestaetigt')),
+        isTrue,
+      );
+    });
+
+    test(
+        'ein am Transport gescheiterter Abbruch kostet keine Klaerrunde',
+        () async {
+      // Der Transportfehler-Zaehler gilt der Statusabfrage. Zaehlte der
+      // Abbruch mit, bliebe nach zwei Abfragen Schluss -- obwohl ueber die
+      // Erreichbarkeit der Statusabfrage noch nichts bekannt war.
+      final t = FakeTerminal(payment: [boom], status: [boom], abort: [boom]);
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-6t');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(t.callsOn('status'), 3);
     });
 
     test('der Abbruch wird nur ein einziges Mal versucht', () async {
       final t = FakeTerminal(
         payment: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-6b'}),
-          (_) => json({'transactionId': 'TX-6b'}),
+          (_) => json({'responseCode': '9027'}),
+          (_) => json({'responseCode': '9027'}),
           (_) => json({'responseCode': '0', 'transactionId': 'TX-6b'}),
         ],
-        abort: [(_) => fehler(400, 'already tapped')],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-6b');
       expect(res.outcome, CardPaymentOutcome.approved);
@@ -387,12 +459,15 @@ void main() {
       final pausen = <Duration>[];
       final t = FakeTerminal(
         payment: [boom],
-        // Das Terminal sagt dauerhaft "laeuft noch" und lehnt den Abbruch ab:
-        // die Klaerung kommt zu keinem Ergebnis und laeuft ins Budget.
+        // Das Terminal gibt dauerhaft keine Auskunft und ist nicht mehr
+        // abbrechbar: die Klaerung kommt zu keinem Ergebnis und laeuft ins
+        // Budget.
         status: [
-          (_) => json({'transactionId': 'TX-7'})
+          (_) => json({'responseCode': '9027'})
         ],
-        abort: [(_) => fehler(400, 'already tapped')],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
       );
       final res = await paymentsFor(t,
               budget: const Duration(seconds: 5), pausen: pausen)
@@ -459,9 +534,31 @@ void main() {
         status: [
           (_) => json({'responseCode': '0', 'transactionId': 'TX-9'})
         ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-9');
       expect(res.outcome, CardPaymentOutcome.approved);
+      expect(t.callsOn('status'), greaterThan(0));
+    });
+
+    test('9027 schon in der Zahlungsantwort wird geklaert, nicht abgelehnt',
+        () async {
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '9027', 'transactionId': 'TX-9c'})
+        ],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': 'TX-9c'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-9c');
+      expect(res.outcome, CardPaymentOutcome.approved,
+          reason: '9027 ist auch als direkte Antwort keine Ablehnung');
       expect(t.callsOn('status'), greaterThan(0));
     });
 
@@ -569,7 +666,7 @@ void main() {
       final t = FakeTerminal(
         payment: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-16'}),
+          (_) => json({'responseCode': '9027'}),
           (_) => json({'responseCode': '0', 'transactionId': 'TX-16'}),
         ],
         // 200, aber die Auswertung wirft.
@@ -577,10 +674,10 @@ void main() {
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-16');
       expect(res.outcome, CardPaymentOutcome.approved);
-      // Der Verlauf darf hier keine Ursache behaupten: dass die Karte anlag,
+      // Der Verlauf darf hier keine Ursache behaupten: ob der Abbruch wirkte,
       // ist gerade NICHT belegt -- es kam nur keine lesbare Antwort.
       expect(
-        res.steps.any((s) => s.contains('Karte lag bereits an')),
+        res.steps.any((s) => s.contains('nicht mehr abbrechbar')),
         isFalse,
       );
       expect(
@@ -589,21 +686,29 @@ void main() {
       );
     });
 
-    test('nur eine echte Ablehnung des Terminals nennt die Karte als Ursache',
+    test('nur ein Ergebniscode des Terminals nennt den Abbruch abgelehnt',
         () async {
       final t = FakeTerminal(
         payment: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-16b'}),
+          (_) => json({'responseCode': '9027'}),
           (_) => json({'responseCode': '0', 'transactionId': 'TX-16b'}),
         ],
-        abort: [(_) => fehler(400, 'already tapped')],
+        abort: [
+          (_) => json({'responseCode': '100010', 'responseText': 'not abortable'})
+        ],
       );
       final res = await paymentsFor(t).pay(amount: 25, transactionId: 'TX-16b');
       expect(res.outcome, CardPaymentOutcome.approved);
       expect(
-        res.steps.any((s) => s.contains('Karte lag bereits an')),
+        res.steps.any((s) => s.contains('Abbruch abgelehnt (100010)')),
         isTrue,
+      );
+      expect(
+        res.steps.any(
+            (s) => s.contains('keine Auskunft (9027)')),
+        isTrue,
+        reason: 'der Verlauf muss zeigen, dass 9027 nichts entschieden hat',
       );
     });
 
@@ -649,16 +754,18 @@ void main() {
   });
 
   group('Backoff zwischen den Statusabfragen', () {
-    /// Ein Terminal, das [runden] mal "laeuft noch" sagt und danach genehmigt;
-    /// der Abbruch wird abgelehnt, damit die Klaerung wirklich weiterlaeuft.
+    /// Ein Terminal, das [runden] mal keine Auskunft gibt (9027) und danach
+    /// genehmigt meldet; der Abbruch wird abgelehnt (100010), damit die
+    /// Klaerung wirklich in die Statusabfrage laeuft.
     FakeTerminal zaeh(int runden) => FakeTerminal(
           payment: [boom],
           status: [
-            for (var i = 0; i < runden; i++)
-              (_) => json({'transactionId': 'TX-B'}),
+            for (var i = 0; i < runden; i++) (_) => json({'responseCode': '9027'}),
             (_) => json({'responseCode': '0', 'transactionId': 'TX-B'}),
           ],
-          abort: [(_) => fehler(400, 'already tapped')],
+          abort: [
+            (_) => json({'responseCode': '100010'})
+          ],
         );
 
     test('die erste Abfrage laeuft sofort, dann wird verdoppelt', () async {
@@ -742,11 +849,52 @@ void main() {
         status: [
           (_) => json({'responseCode': '0'})
         ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
       );
       final res =
           await paymentsFor(t).refund(amount: 25, transactionId: 'RF-2');
       expect(res.outcome, CardPaymentOutcome.approved);
       expect(res.transactionId, 'RF-2');
+    });
+
+    test('refund: derselbe Klaerweg wie bei pay -- Abbruch zuerst', () async {
+      // Die Kennung ist die des NEUEN Vorgangs, und der Abbruch-Endpunkt
+      // kennt keinen Transaktionstyp. Ohne den Abbruch haette die Klaerung
+      // einer Gutschrift gar keinen Diskriminator und endete fast immer bei
+      // unresolved -- die Statusabfrage antwortet auch hier 9027.
+      final t = FakeTerminal(
+        refund: [boom],
+        abort: [
+          (_) => json({'responseCode': '0', 'transactionId': 'RF-4'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).refund(amount: 25, transactionId: 'RF-4');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(t.callsOn('abort'), 1);
+      expect(t.callsOn('status'), 0);
+      expect(t.log.any((r) => r.url.path.contains('/abort/3600335/RF-4')),
+          isTrue,
+          reason: 'der Abbruch adressiert die Kennung der GUTSCHRIFT');
+    });
+
+    test('refund: 9027 bis zum Budgetende -> unresolved', () async {
+      final t = FakeTerminal(
+        refund: [boom],
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 5))
+          .refund(amount: 25, transactionId: 'RF-5');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.mayRetrySafely, isFalse);
     });
 
     test('refund: abgelehnte Antwort -> declined', () async {
@@ -814,12 +962,19 @@ void main() {
       expect(t.log.single.url.path, contains('TX-9'));
     });
 
-    test('cancel: Abbruch wird ueber den VOID-Status der Nachfrage geklaert',
+    test('cancel: Abbruch wird ueber 9011 auf der Originalkennung geklaert',
         () async {
+      // Am 26.08.2026 gemessen: nach einem erfolgreichen Void antwortet die
+      // Statusabfrage auf die Kennung der ORIGINALZAHLUNG mit 9011
+      // "Transaction Canceled" -- und 'state' bleibt dabei null.
       final t = FakeTerminal(
         cancel: [boom],
         status: [
-          (_) => json({'responseCode': '0', 'state': 'VOID'})
+          (_) => json({
+                'responseCode': '9011',
+                'responseText': 'Transaction Canceled',
+                'transactionType': 'S',
+              })
         ],
       );
       final res =
@@ -835,7 +990,8 @@ void main() {
         final t = FakeTerminal(
           cancel: [boom],
           // Genau die Falle: responseCode '0', weil DAS die Originalzahlung
-          // war -- kein 'state', also keine Aussage ueber die Aufhebung.
+          // ist. Sie steht damit unveraendert da -- die Aufhebung hat NICHT
+          // gegriffen.
           status: [
             (_) => json({'responseCode': '0', 'transactionId': 'TX-11'}),
           ],
@@ -843,18 +999,23 @@ void main() {
         final res =
             await paymentsFor(t, budget: const Duration(milliseconds: 50))
                 .cancel(transactionId: 'TX-11', amount: 25);
-        expect(res.outcome, CardPaymentOutcome.unresolved);
+        expect(res.outcome, CardPaymentOutcome.declined,
+            reason: 'declined heisst hier "die Aufhebung hat nicht gegriffen" '
+                '-- keinesfalls "die Aufhebung war erfolgreich"');
+        expect(res.isApproved, isFalse);
         expect(res.transactionId, 'TX-11');
+        expect(
+          res.steps.any((s) => s.contains('steht unveraendert')),
+          isTrue,
+        );
       },
     );
 
-    test(
-        'cancel: state fehlt komplett (ausserhalb Status v2) -> unresolved, '
-        'kein Raten', () async {
+    test('cancel: 9027 entscheidet nichts -> unresolved, kein Raten', () async {
       final t = FakeTerminal(
         cancel: [boom],
         status: [
-          (_) => json({'transactionId': 'TX-12'})
+          (_) => json({'responseCode': '9027'})
         ],
       );
       final res = await paymentsFor(t, budget: const Duration(milliseconds: 50))
@@ -862,17 +1023,34 @@ void main() {
       expect(res.outcome, CardPaymentOutcome.unresolved);
     });
 
-    test('cancel: state FAILED entscheidet nichts -- kein geratenes declined',
+    test('cancel: Antwort ohne Ergebniscode -> unresolved, kein Raten',
         () async {
       final t = FakeTerminal(
         cancel: [boom],
         status: [
-          (_) => json({'responseCode': '0', 'state': 'FAILED'})
+          (_) => json({'transactionId': 'TX-12b'})
         ],
       );
       final res = await paymentsFor(t, budget: const Duration(milliseconds: 50))
           .cancel(transactionId: 'TX-12b', amount: 25);
       expect(res.outcome, CardPaymentOutcome.unresolved);
+    });
+
+    test(
+        'cancel: state VOID gilt zusaetzlich, ist aber nie notwendig',
+        () async {
+      // Auf HPS 1.10.0 / FW 7.3.6 ist 'state' in JEDER Antwort null -- dieser
+      // Weg ist dort tot und steht nur fuer eine Firmware, die das Feld
+      // fuellt. Massgeblich ist 9011, siehe oben.
+      final t = FakeTerminal(
+        cancel: [boom],
+        status: [
+          (_) => json({'state': 'VOID'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).cancel(transactionId: 'TX-12c', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.approved);
     });
 
     test('cancel: Transportfehler durchgehend -> unresolved', () async {
@@ -887,9 +1065,9 @@ void main() {
       final t = FakeTerminal(
         cancel: [boom],
         status: [
-          // Erst die Originalzahlung ohne state, dann VOID.
-          (_) => json({'responseCode': '0'}),
-          (_) => json({'responseCode': '0', 'state': 'VOID'}),
+          // Erst keine Auskunft, dann die bestaetigte Aufhebung.
+          (_) => json({'responseCode': '9027'}),
+          (_) => json({'responseCode': '9011'}),
         ],
       );
       final res =

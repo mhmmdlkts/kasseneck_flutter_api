@@ -14,38 +14,77 @@ import 'transaction_response.dart';
 /// [HpsClient.transactionStatus] geklaert statt als Fehlschlag gemeldet.
 ///
 /// Regel, von der nicht abgewichen wird: [CardPaymentOutcome.declined] entsteht
-/// ausschliesslich aus einem echten Ergebniscode des Terminals -- also einer
-/// Antwort, die `responseCode` traegt und nicht `"0"` lautet. Weder ein
-/// Transportfehler noch ein quittierter [HpsClient.abort] noch ein "laeuft
-/// noch" reichen dafuer: keines davon ist eine Aussage darueber, dass nichts
-/// belastet wurde. Ein Transportfehler trennt "nicht angekommen" nicht von
-/// "angekommen, Antwort verloren" -- genau diese Verwechslung hat am
+/// ausschliesslich aus einer POSITIVEN Aussage -- entweder einem echten
+/// Ergebniscode des Terminals, der weder `'0'` noch
+/// [TransactionResponse.noStatementCode] ist, oder einem nachweislich
+/// gelungenen [HpsClient.abort]. Ein Transportfehler, ein Zeitablauf oder eine
+/// Wissensluecke fuehren NIE dorthin: keines davon ist eine Aussage darueber,
+/// dass nichts belastet wurde. Ein Transportfehler trennt "nicht angekommen"
+/// nicht von "angekommen, Antwort verloren" -- genau diese Verwechslung hat am
 /// 24.08.2026 eine echte Belastung als unbelastet ausgewiesen und den Kunden
 /// ein zweites Mal belastet.
 ///
-/// [HpsClient.abort] wird genau einmal versucht und beendet die Klaerung
-/// nicht: er schiebt den Vorgang nur in einen Zustand, in dem das Terminal
-/// einen Ergebniscode nennen kann.
+/// ## Der Klaerweg, wie er am 26.08.2026 gemessen wurde
+///
+/// Gemessen an einem hobex-HPS (TID 3600335, HPS 1.10.0, Firmware 7.3.6):
+///
+/// | Lage | Zahlung | `transactionStatus` | `abort` |
+/// |---|---|---|---|
+/// | genehmigt | `0` | `0`, bleibt erhalten | `100010`, scheitert |
+/// | Kartenfluss laeuft | offen | `9027` | `0`, gelingt |
+/// | Karte nicht aufgelegt | `100003` | `9027` | -- |
+/// | abgebrochen | `100002` | `9027` | -- |
+/// | nie gesehen | -- | `9027` | -- |
+///
+/// Die Statusabfrage unterscheidet also NICHT zwischen "laeuft gerade", "nie
+/// angekommen" und "abgebrochen": alle drei antworten `9027`. Wer diesen Code
+/// ueber `!= '0'` als Ablehnung liest, meldet fuer einen laufenden Vorgang
+/// "gefahrlos wiederholbar" -- der Kunde legt die Karte auf, und die
+/// Wiederholung belastet ein zweites Mal.
+///
+/// Der Abbruch trennt, was die Statusabfrage nicht trennt. Deshalb steht er
+/// jetzt VORNE, nicht mehr hinter einer Statusabfrage, die den Zustand "laeuft
+/// noch" nie meldet:
+///
+/// 1. [HpsClient.abort] einmalig versuchen.
+/// 2. `responseCode == '0'` -> der Vorgang war noch abbrechbar, also nicht
+///    abgeschlossen -> [CardPaymentOutcome.declined], beweisbar.
+/// 3. jeder andere Code (gemessen `100010`) -> der Vorgang ist ueber den
+///    abbrechbaren Punkt hinaus -> JETZT die Statusabfrage pollen, sie
+///    liefert nun eine echte Aussage.
+/// 4. Abbruch scheitert am Transport -> pollen wie in 3.
+/// 5. Beim Pollen ist `9027` kein Ergebnis, sondern ein Grund
+///    weiterzumachen. Budget erschoepft -> [CardPaymentOutcome.unresolved].
+///
+/// **Bewusst in Kauf genommen:** gelingt der Abbruch in dem Moment, in dem der
+/// Kunde die Karte auflegt, reisst er dessen Zahlung ab. Geldseitig ist das
+/// die sichere Richtung -- es ist dann nachweislich nichts belastet, und der
+/// Vorgang kann gefahrlos wiederholt werden. Die Alternative waere, den
+/// Ausgang offen zu lassen und den Mitarbeiter raten zu lassen; das hat am
+/// 24.08.2026 zur Doppelbelastung gefuehrt. Der Abbruch wird nur ausgeloest,
+/// wenn die Zahlung ohnehin schon ohne Antwort dasteht -- im Normalfall
+/// passiert er nie.
 ///
 /// Die Kennung ist in JEDEM Ergebnis gesetzt, auch bei
 /// [CardPaymentOutcome.unresolved]: ohne sie sind Statusabfrage und Storno
 /// unerreichbar.
 ///
-/// [refund] und [cancel] bekommen dieselbe Klaerung wie [pay] -- bei beiden
-/// geht es genauso um Geld. Fuer [refund] gilt dieselbe Rechnung wie fuer
-/// [pay]: die Kennung ist die des NEUEN Vorgangs, eine Statusabfrage darauf
-/// liefert also genau dessen Ausgang.
+/// [refund] bekommt exakt dieselbe Klaerung wie [pay], Abbruch eingeschlossen.
+/// Die Kennung ist dort die des NEUEN Vorgangs (der Gutschrift selbst), eine
+/// Statusabfrage darauf liefert also genau deren Ausgang, und
+/// `POST /api/transaction/abort/{tid}/{tx}` kennt keinen Transaktionstyp --
+/// er adressiert den laufenden Vorgang unter dieser Kennung. Ohne Abbruch
+/// haette die Klaerung einer Gutschrift gar keinen Diskriminator mehr und
+/// endete fast immer bei `unresolved`, weil die Statusabfrage auch hier `9027`
+/// antwortet. Ein abgerissener Gutschriftlauf kostet den Kunden nichts: er
+/// bekommt sein Geld einen Vorgang spaeter, waehrend eine falsche
+/// "gefahrlos wiederholbar"-Meldung eine doppelte Gutschrift ausloesen wuerde.
 ///
-/// [cancel] ist die Ausnahme: die uebergebene Kennung ist die der
-/// URSPRUENGLICHEN Zahlung, die aufgehoben werden soll. Eine Statusabfrage
-/// darauf liefert den Zustand DIESER Zahlung -- und deren `responseCode`
-/// bleibt fuer immer `'0'`, weil sie seinerzeit genehmigt wurde. Wuerde die
-/// Klaerung das wie bei [pay]/[refund] auswerten, laese sie aus dem laengst
-/// bekannten Erfolg der Originalzahlung faelschlich "die Aufhebung war
-/// erfolgreich" -- derselbe Fehler wie am 24.08.2026, nur mit vertauschten
-/// Vorzeichen. Die Klaerung einer offenen Aufhebung fragt deshalb ueber
-/// [TransactionResponse.state] ab (nur bei Status v2 gefuellt): ausschliesslich
-/// `'VOID'` belegt, dass die Aufhebung griff. Siehe [_resolveCancel].
+/// [cancel] ist die Ausnahme, und zwar in beiden Richtungen -- siehe
+/// [_resolveCancel]: die uebergebene Kennung ist die der URSPRUENGLICHEN
+/// Zahlung. Ein Abbruch darauf waere sinnlos (der Vorgang ist laengst
+/// abgeschlossen, gemessen: `100010`), und der `responseCode` dieser Kennung
+/// bedeutet dort etwas anderes als bei [pay].
 class HpsPayments {
   HpsPayments(
     this._client, {
@@ -226,14 +265,20 @@ class HpsPayments {
 
   /// Ordnet eine Terminal-Antwort ein. `null`, wenn sie nichts entscheidet.
   ///
-  /// Eine Antwort ohne `responseCode` entscheidet nichts: sie heisst "laeuft
-  /// noch", nicht "abgelehnt".
+  /// Zwei Antworten entscheiden nichts und fuehren zu weiterem Klaeren:
+  /// - keine `responseCode` -- das heisst "laeuft noch", nicht "abgelehnt";
+  /// - [TransactionResponse.noStatementCode] (`9027`) -- das heisst
+  ///   "keine Auskunft" und steht am gemessenen Terminal gleichermassen fuer
+  ///   einen laufenden, einen abgebrochenen und einen nie gesehenen Vorgang.
+  ///
+  /// Beides zusammengefasst in [TransactionResponse.isConclusive]. Das ist die
+  /// eine Codestelle, an der ein Ergebniscode zu einem Ausgang wird.
   HpsResult? _fromResponse(
     TransactionResponse res,
     String id,
     List<String> steps,
   ) {
-    if (res.isInProgress) return null;
+    if (!res.isConclusive) return null;
     final approved = res.isApproved;
     steps.add(approved
         ? 'Terminal: genehmigt'
@@ -248,15 +293,38 @@ class HpsPayments {
     );
   }
 
-  /// Klaert einen offenen Ausgang: abfragen, einmal abbrechen, weiter
-  /// abfragen -- bis das Terminal etwas sagt oder das Budget aufgebraucht ist.
+  /// Klaert einen offenen Ausgang: erst einmal abbrechen, dann abfragen --
+  /// bis das Terminal etwas sagt oder das Budget aufgebraucht ist.
+  ///
+  /// Die Reihenfolge ist die gemessene, nicht die naheliegende. Zuerst zu
+  /// pollen und erst abzubrechen, wenn der Status "laeuft noch" meldet, war
+  /// wirkungslos: diesen Zustand meldet die Statusabfrage nie -- sie antwortet
+  /// auf alles, was nicht genehmigt ist, mit
+  /// [TransactionResponse.noStatementCode]. Der Abbruch ist der einzige
+  /// Diskriminator und steht deshalb vorne.
+  ///
+  /// Was das fuer Budget, Backoff und Transportfehler bedeutet:
+  /// - Der Abbruch laeuft ebenfalls unter [resolveBudget] (ueber
+  ///   [_withinBudget]) -- sonst haette er die Zusage um bis zu
+  ///   [HpsClient.timeout] ueberzogen, bevor die erste Abfrage ueberhaupt
+  ///   losgeht.
+  /// - Die erste Statusabfrage kommt ohne Pause, direkt nach dem Abbruch. Der
+  ///   Backoff beginnt erst danach (1 s, 2 s, 4 s, ...), wie bisher.
+  /// - Ein am Transport gescheiterter Abbruch zaehlt NICHT in
+  ///   [maxTransportFailures]. Der Zaehler soll ein Terminal erkennen, das auf
+  ///   die Statusabfrage nicht antwortet; ihn hier vorzubelasten wuerde das
+  ///   Klaerbudget um eine Runde kuerzen, obwohl ueber die Erreichbarkeit der
+  ///   Statusabfrage noch gar nichts bekannt ist.
   Future<HpsResult> _resolve(String id, List<String> steps) async {
     _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
 
     final clock = _clock()..start();
+
+    final aborted = await _tryAbort(id, steps, clock);
+    if (aborted != null) return aborted;
+
     var wait = Duration.zero;
     var transportFailures = 0;
-    var abortTried = false;
 
     while (clock.elapsed < resolveBudget) {
       if (wait > Duration.zero) {
@@ -292,46 +360,68 @@ class HpsPayments {
       final settled = _fromResponse(status, id, steps);
       if (settled != null) return settled;
 
-      steps.add('Status: laeuft noch');
-
-      if (!abortTried) {
-        abortTried = true;
-        try {
-          await _withinBudget(clock, () => _client.abort(transactionId: id));
-          // Quittiert -- aber das allein entscheidet NICHTS. Ob das Terminal
-          // einen Abbruch nach dem Auflegen der Karte wirklich mit einem
-          // Fehler quittiert, ist mangels Testterminal ungeprueft; traefe das
-          // nicht zu, wuerde hier eine echte Belastung zu "nichts belastet"
-          // erklaert. Deshalb geht es zurueck in die Schleife: erst wenn das
-          // Terminal dazu einen echten Ergebniscode nennt, steht der Ausgang
-          // fest. Ohne Pause, damit die Nachfrage sofort kommt.
-          steps.add(
-            'Abbruch quittiert -- der Ausgang wird noch nachgefragt',
-          );
-          wait = Duration.zero;
-          continue;
-        } catch (e) {
-          // Der Text darf keine Ursache behaupten, die nicht feststeht:
-          // [steps] ist der Nachweis, der im Belastungsstreit angezeigt wird.
-          // Nur eine echte Antwort des Terminals belegt, dass die Karte schon
-          // anlag; ein Leitungsabriss, eine Zeitueberschreitung oder eine
-          // unlesbare Antwort belegen gar nichts.
-          steps.add(e is HpsHttpException
-              ? 'Abbruch abgelehnt ($e) -- Karte lag bereits an, weiter '
-                  'abfragen'
-              : 'Abbruch nicht bestaetigt ($e) -- ob er wirkte, ist offen, '
-                  'weiter abfragen');
-          _noteUnexpected(e, id);
-          wait = _nextWait(wait);
-          continue;
-        }
-      }
-
+      steps.add(status.isNoStatement
+          ? 'Status: keine Auskunft (${TransactionResponse.noStatementCode})'
+          : 'Status: noch kein Ergebniscode');
       wait = _nextWait(wait);
     }
 
     steps.add('Ausgang bleibt offen');
     return _open(id, steps);
+  }
+
+  /// Versucht den Abbruch GENAU EINMAL.
+  ///
+  /// Liefert ein Ergebnis nur im einen beweisbaren Fall: das Terminal quittiert
+  /// den Abbruch mit `responseCode == '0'`. Gemessen gelingt der Abbruch
+  /// ausschliesslich, solange der Vorgang noch abbrechbar ist -- ein
+  /// abgeschlossener (genehmigter) Vorgang antwortet mit `100010` und bleibt
+  /// unangetastet. Ein quittierter Abbruch ist damit die positive Aussage
+  /// "dieser Vorgang war nicht abgeschlossen und ist es jetzt auch nicht mehr":
+  /// [CardPaymentOutcome.declined].
+  ///
+  /// In jedem anderen Fall `null` -- der Aufrufer pollt dann weiter. Das gilt
+  /// ausdruecklich auch fuer eine Antwort OHNE Ergebniscode: eine Quittung
+  /// allein hat keinen Beweiswert, sie koennte auch ein Zwischenstand sein.
+  Future<HpsResult?> _tryAbort(
+    String id,
+    List<String> steps,
+    Stopwatch clock,
+  ) async {
+    TransactionResponse res;
+    try {
+      res = await _withinBudget(clock, () => _client.abort(transactionId: id));
+    } catch (e) {
+      // Der Text darf keine Ursache behaupten, die nicht feststeht: [steps]
+      // ist der Nachweis, der im Belastungsstreit angezeigt wird. Ein
+      // Leitungsabriss, eine Zeitueberschreitung oder eine unlesbare Antwort
+      // belegen ueber den Vorgang gar nichts.
+      steps.add('Abbruch nicht bestaetigt ($e) -- ob er wirkte, ist offen, '
+          'Ausgang wird abgefragt');
+      _noteUnexpected(e, id);
+      return null;
+    }
+
+    if (res.responseCode == null) {
+      steps.add('Abbruch ohne Ergebniscode quittiert -- das beweist nichts, '
+          'Ausgang wird abgefragt');
+      return null;
+    }
+    if (!res.isApproved) {
+      steps.add('Abbruch abgelehnt (${res.responseCode}) -- der Vorgang ist '
+          'nicht mehr abbrechbar, Ausgang wird abgefragt');
+      return null;
+    }
+
+    steps.add('Abbruch bestaetigt -- der Vorgang war noch abbrechbar, es ist '
+        'nichts belastet');
+    _emit(HpsEventKind.resolved, steps.last, id);
+    return HpsResult(
+      outcome: CardPaymentOutcome.declined,
+      transactionId: id,
+      response: res,
+      steps: List<String>.unmodifiable(steps),
+    );
   }
 
   /// Klaert eine offene Aufhebung -- eigene Fassung statt [_resolve], weil
@@ -341,14 +431,13 @@ class HpsPayments {
   ///
   /// 1. Die Antwort der Statusabfrage wird ueber [_fromCancelStatus]
   ///    eingeordnet, NICHT ueber [_fromResponse]. Der `responseCode` der
-  ///    Originalzahlung bleibt fuer immer `'0'` -- ihn hier wie bei [pay]
-  ///    auszuwerten, wuerde eine laengst genehmigte Zahlung mit einer
-  ///    erfolgreichen Aufhebung verwechseln. Massgeblich ist stattdessen
-  ///    [TransactionResponse.state]; siehe dort.
-  /// 2. Kein [HpsClient.abort]-Versuch. [HpsClient.abort] gehoert zu einer
-  ///    laufenden Zahlung VOR dem Kartenkontakt -- die Originalzahlung, deren
-  ///    Kennung hier vorliegt, ist laengst abgeschlossen. Ein Abbruchversuch
-  ///    darauf waere sinnlos und koennte hoechstens fehlleiten.
+  ///    Originalkennung bedeutet hier etwas anderes als bei [pay] -- siehe
+  ///    dort.
+  /// 2. Kein [HpsClient.abort]-Versuch. Der Abbruch greift nur, solange ein
+  ///    Vorgang noch abbrechbar ist; die Originalzahlung, deren Kennung hier
+  ///    vorliegt, ist laengst abgeschlossen und antwortet gemessen mit
+  ///    `100010`. Ein Abbruchversuch darauf waere sinnlos und koennte
+  ///    hoechstens fehlleiten.
   ///
   /// Budget, Backoff und Transportfehler-Deckelung sind unveraendert aus
   /// [_resolve] uebernommen.
@@ -388,7 +477,9 @@ class HpsPayments {
       final settled = _fromCancelStatus(status, id, steps);
       if (settled != null) return settled;
 
-      steps.add('Status: Aufhebung noch nicht bestaetigt');
+      steps.add(status.isNoStatement
+          ? 'Status: keine Auskunft (${TransactionResponse.noStatementCode})'
+          : 'Status: Aufhebung noch nicht bestaetigt');
       wait = _nextWait(wait);
     }
 
@@ -399,43 +490,82 @@ class HpsPayments {
   /// Ordnet die Statusabfrage einer OFFENEN AUFHEBUNG ein. `null`, wenn sie
   /// nichts entscheidet.
   ///
-  /// Bewusst NICHT ueber `responseCode`: der bleibt bei der Originalzahlung
-  /// fuer immer `'0'`. Ausschliesslich [TransactionResponse.state] `== 'VOID'`
-  /// belegt, dass die Aufhebung griff -- Gross-/Kleinschreibung und
-  /// umgebende Leerzeichen werden dabei toleriert, ohne die Rateflaeche zu
-  /// vergroessern: eine tolerantere Erkennung von `'VOID'` fuehrt hoechstens
-  /// frueher zu einer laengst zutreffenden Bestaetigung, niemals zu einem
-  /// Ergebnis, das das Terminal nicht ausgesagt hat.
+  /// Die Abfrage laeuft auf die Kennung der ORIGINALZAHLUNG. Ihr
+  /// `responseCode` beschreibt deshalb den Zustand DIESER Zahlung, nicht den
+  /// Ausgang der Aufhebung -- er wird hier uebersetzt, nicht wie bei [pay]
+  /// gelesen. Am 26.08.2026 gemessen (HPS 1.10.0, Firmware 7.3.6), nachdem
+  /// eine genehmigte Zahlung per Void aufgehoben wurde:
   ///
-  /// Jeder andere Wert -- `'OK'`, `'FAILED'`, ein unbekannter Wert, oder
-  /// `null` -- entscheidet NICHTS und fuehrt zu weiterem Klaeren:
-  /// - `null` ist die Norm ausserhalb von Status v2 und darf nicht als "kein
-  ///   Void" gegen die Aufhebung gewertet werden.
-  /// - `'OK'` heisst nur, dass die Originalzahlung (weiterhin) genehmigt ist
-  ///   -- das ist unabhaengig davon wahr, ob die Aufhebung gerade erst
-  ///   unterwegs ist oder ob sie nie ankam.
-  /// - `'FAILED'` beschreibt -- wie jeder Wert dieses Feldes -- einen Zustand
-  ///   der ORIGINALTRANSAKTION, nicht der Aufhebung: es heisst "die
-  ///   Originalzahlung ist in einem Fehlzustand", nicht "die Aufhebung ist
-  ///   gescheitert". `'VOID'` ist die einzige beobachtbare Folge einer
-  ///   geglueckten Aufhebung; jeder andere Wert traegt schlicht keine
-  ///   Aussage ueber sie. Bleibt der Zustand dabei, laeuft die Klaerung bis
-  ///   zum Budget und endet bei [CardPaymentOutcome.unresolved] -- niemals bei einem
-  ///   geratenen [CardPaymentOutcome.declined].
+  /// - [TransactionResponse.transactionCanceledCode] (`9011`, "Transaction
+  ///   Canceled") -> die Aufhebung hat gewirkt -> fuer die Operation [cancel]
+  ///   ein Erfolg, [CardPaymentOutcome.approved].
+  /// - `'0'` -> die Originalzahlung steht unveraendert da, die Aufhebung hat
+  ///   also NICHT gewirkt -> [CardPaymentOutcome.declined]. Das ist hier keine
+  ///   schlechte Nachricht ueber die Zahlung, sondern eine ueber die
+  ///   Aufhebung: es ist weiterhin belastet, und ein erneuter Void ist
+  ///   gefahrlos, weil nachweislich noch keiner gegriffen hat.
+  /// - [TransactionResponse.noStatementCode] (`9027`) und jeder andere oder
+  ///   fehlende Code -> keine Auskunft, weiter klaeren; am Ende
+  ///   [CardPaymentOutcome.unresolved], niemals ein geratenes Ergebnis.
+  ///
+  /// Die Verwechslungsgefahr, die diese eigene Fassung ueberhaupt noetig macht,
+  /// bleibt damit ausgeschlossen: der `responseCode` der Originalzahlung wird
+  /// NIE als Erfolg der Aufhebung gelesen -- `'0'` heisst hier ausdruecklich
+  /// das Gegenteil.
+  ///
+  /// Bewusst hingenommen: faellt eine Abfrage genau in den Moment, in dem der
+  /// Void beim Terminal noch nicht verbucht ist, antwortet sie `'0'` und die
+  /// Klaerung endet zu frueh mit "nicht gegriffen". Der Schaden davon ist
+  /// klein und einseitig -- der Mitarbeiter wiederholt eine Aufhebung, die das
+  /// Terminal dann als bereits aufgehoben abweist. Eine Kundenbelastung
+  /// entsteht dabei nicht; die umgekehrte Richtung (eine nicht gegriffene
+  /// Aufhebung als Erfolg melden) waere die teure.
+  ///
+  /// [TransactionResponse.state] `== 'VOID'` gilt zusaetzlich als Beleg, aber
+  /// niemals als notwendige Bedingung. Bis 26.08.2026 war es die einzige
+  /// Bedingung -- ein Fehler: auf dieser Firmware ist `state` in JEDER
+  /// bisher gesehenen Antwort `null`, bei genehmigten, abgebrochenen,
+  /// unbekannten und aufgehobenen Vorgaengen gleichermassen. Die Bedingung
+  /// wurde damit nie wahr, und jede Storno-Klaerung lief ins Budget und endete
+  /// als [CardPaymentOutcome.unresolved], egal was tatsaechlich geschah. Es
+  /// bleibt nur mitgelesen, weil ein ausdrueckliches `'VOID'` -- wo eine
+  /// Firmware es denn liefert -- eine unmissverstaendliche positive Aussage
+  /// ist, die kein falsches `approved` erzeugen kann.
   HpsResult? _fromCancelStatus(
     TransactionResponse status,
     String id,
     List<String> steps,
   ) {
-    if (status.state?.trim().toUpperCase() != 'VOID') return null;
-    steps.add('Terminal: Aufhebung bestaetigt (VOID)');
-    _emit(HpsEventKind.resolved, steps.last, id);
-    return HpsResult(
-      outcome: CardPaymentOutcome.approved,
-      transactionId: id,
-      response: status,
-      steps: List<String>.unmodifiable(steps),
-    );
+    final voided = status.isCanceled ||
+        // Gross-/Kleinschreibung und Leerzeichen toleriert: eine tolerantere
+        // Erkennung von 'VOID' fuehrt hoechstens frueher zu einer ohnehin
+        // zutreffenden Bestaetigung.
+        status.state?.trim().toUpperCase() == 'VOID';
+    if (voided) {
+      steps.add('Terminal: Aufhebung bestaetigt '
+          '(${status.responseCode ?? status.state})');
+      _emit(HpsEventKind.resolved, steps.last, id);
+      return HpsResult(
+        outcome: CardPaymentOutcome.approved,
+        transactionId: id,
+        response: status,
+        steps: List<String>.unmodifiable(steps),
+      );
+    }
+
+    if (status.isApproved) {
+      steps.add('Terminal: Originalzahlung steht unveraendert (0) -- die '
+          'Aufhebung hat nicht gegriffen');
+      _emit(HpsEventKind.resolved, steps.last, id);
+      return HpsResult(
+        outcome: CardPaymentOutcome.declined,
+        transactionId: id,
+        response: status,
+        steps: List<String>.unmodifiable(steps),
+      );
+    }
+
+    return null;
   }
 
   /// Der Ausgang bleibt offen. Die Kennung ist gesetzt, damit Statusabfrage
