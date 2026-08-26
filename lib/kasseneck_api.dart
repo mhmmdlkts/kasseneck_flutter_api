@@ -36,8 +36,12 @@ export 'src/payments/card_payment_outcome.dart' show CardPaymentOutcome;
 export 'models/hobex_receipt.dart' show HobexReceipt;
 // Der Beleg-Lesefehler traegt die receiptId eines bereits signierten Belegs --
 // ohne diesen Export koennte ein Aufrufer, der nur dieses Barrel importiert,
-// ihn nicht fangen und den Faden zum Beleg nicht aufnehmen.
-export 'src/register/fehler.dart' show KasseneckReceiptFormatError;
+// ihn nicht fangen und den Faden zum Beleg nicht aufnehmen. Dieselbe
+// Ueberlegung fuer die beiden Antwortfehler: eine kaputte Antwort nach der
+// Signatur ist etwas anderes als ein fehlgeschlagener Verkauf, und
+// unterscheiden kann das nur, wer den Typ benennen darf.
+export 'src/register/fehler.dart'
+    show KasseneckHttpError, KasseneckReceiptFormatError, KasseneckValidationError;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
 // nicht benennbar.
@@ -168,6 +172,8 @@ class KasseneckApi {
   /// einer Meldung, die kein Aufrufer anzeigen kann. Und ein `200` mit
   /// Nicht-JSON im Rumpf (HTML einer Captive-Portal- oder CDN-Fehlerseite)
   /// gab eine rohe `FormatException`.
+  ///
+  /// Wirft [KasseneckHttpError] — fangbar und ohne jeden Rumpfinhalt.
   Future<Map<String, dynamic>> _kasseneckJson({
     required String endpoint,
     Map<String, dynamic> params = const {},
@@ -183,6 +189,16 @@ class KasseneckApi {
       _huelle('financeWebService/$method',
           await _financeWebServicePostRequest(method: method, params: params, deadline: deadline));
 
+  /// Geworfen wird [KasseneckHttpError] mit denselben `reason`-Werten, die der
+  /// Kassen-Weg (`RegisterTransport.rufen`) fuer dieselben drei Lagen setzt.
+  /// Ein blankes `Exception` waere hier zu wenig: im Verkauf, **nach** der
+  /// Signatur, ist der Unterschied zwischen „die Antwort ist kaputt, der Beleg
+  /// existiert" und „der Verkauf ist fehlgeschlagen" das, was der Aufrufer
+  /// entscheiden muss — und gezielt fangen kann er nur einen eigenen Typ.
+  ///
+  /// Der Statuscode steht fest auf 200: was hier ankommt, hat
+  /// [_kasseneckPostRequest] bereits als 200 mit nicht leerem Rumpf
+  /// durchgelassen, alles andere wirft dort.
   static Map<String, dynamic> _huelle(String endpoint, dynamic rumpf) {
     final Object? roh;
     try {
@@ -190,10 +206,10 @@ class KasseneckApi {
     } on FormatException {
       // Der Rumpf selbst bleibt draussen: er kann eine fremde Fehlerseite
       // sein und gehoert nicht ins Protokoll.
-      throw Exception('$endpoint: Antwort ist kein JSON');
+      throw KasseneckHttpError(endpoint, 200, 'not-json');
     }
     if (roh is! Map<String, dynamic>) {
-      throw Exception('$endpoint: unerwartetes Antwortformat (kein Objekt)');
+      throw KasseneckHttpError(endpoint, 200, 'missing-status');
     }
     return roh;
   }
@@ -202,7 +218,7 @@ class KasseneckApi {
   static Map<String, dynamic> _daten(String endpoint, Map<String, dynamic> huelle) {
     final daten = huelle['data'];
     if (daten is! Map) {
-      throw Exception('$endpoint: Antwort enthaelt kein data-Objekt');
+      throw KasseneckHttpError(endpoint, 200, 'data-not-object');
     }
     return Map<String, dynamic>.from(daten);
   }
@@ -530,7 +546,8 @@ class KasseneckApi {
     if (roh is! List) {
       // Keine Liste ist etwas anderes als eine leere Liste: „niemand
       // zuweisbar" darf nicht aussehen wie „Antwort kaputt".
-      throw Exception('listMyTipRecipients: Antwort enthaelt keine Liste (data.recipients fehlt)');
+      throw const KasseneckValidationError(
+          Aufrufe.listMyTipRecipients, 'Antwort enthaelt keine Liste (data.recipients fehlt)', 'response');
     }
     return [
       for (final e in roh)
@@ -568,14 +585,17 @@ class KasseneckApi {
       final daten = _daten(Aufrufe.getReportV2, resJson);
       final rohMetadata = daten['metadata'];
       if (rohMetadata is! Map) {
-        throw Exception('getReceipts: Antwort enthaelt keine Metadaten (data.metadata fehlt)');
+        throw const KasseneckValidationError(
+            Aufrufe.getReportV2, 'Antwort enthaelt keine Metadaten (data.metadata fehlt)', 'response');
       }
       final Map<String, dynamic> metadata = Map<String, dynamic>.from(rohMetadata);
       final rohBelege = daten['receipts'];
       if (rohBelege is! List) {
         // Keine Liste ist etwas anderes als eine leere Liste: „im Zeitraum
-        // nichts verkauft" darf nicht aussehen wie „Antwort kaputt".
-        throw Exception('getReceipts: Antwort enthaelt keine Belegliste (data.receipts fehlt)');
+        // nichts verkauft" darf nicht aussehen wie „Antwort kaputt". Wortgleich
+        // mit `belege.dart` auf dem Kassen-Weg -- dieselbe Lage, derselbe Typ.
+        throw const KasseneckValidationError(
+            Aufrufe.getReportV2, 'Antwort enthaelt keine Belegliste (data.receipts fehlt)', 'response');
       }
       // Gezaehlt wird erst HIER. Die Zeile stand vorher ueber den Pruefungen
       // und las `data['receipts']` mit einem String-Index: bei `data: [...]`

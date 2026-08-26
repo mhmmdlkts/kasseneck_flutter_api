@@ -468,11 +468,16 @@ void main() {
         (_) async => http.Response(rumpf, 200, headers: {'content-type': 'application/json'})));
 
     test('200 mit JSON-Array statt Objekt: benannter Fehler, kein TypeError', () async {
+      // Gezielt fangbar: nach der Signatur ist „Antwort kaputt, der Beleg
+      // existiert" etwas anderes als „Verkauf fehlgeschlagen", und ein blankes
+      // Exception laesst diesen Unterschied nicht ausdruecken.
       final api = apiMit('[1,2,3]');
       await expectLater(
         api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung',
-            allOf(contains('createReceipt'), contains('kein Objekt')))),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.functionName, 'functionName', 'createReceipt')
+            .having((e) => e.reason, 'reason', 'missing-status')
+            .having((e) => e.statusCode, 'statusCode', 200)),
       );
     });
 
@@ -481,8 +486,8 @@ void main() {
       final api = apiMit('<html>Gateway</html>');
       await expectLater(
         api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<Exception>()
-            .having((e) => e.toString(), 'Meldung', contains('kein JSON'))
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', 'not-json')
             .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('Gateway')))),
       );
     });
@@ -491,7 +496,9 @@ void main() {
       final api = apiMit(jsonEncode({'status': 'success', 'data': null}));
       await expectLater(
         api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('kein data-Objekt'))),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.functionName, 'functionName', 'createReceipt')
+            .having((e) => e.reason, 'reason', 'data-not-object')),
       );
     });
 
@@ -534,7 +541,9 @@ void main() {
       }));
       await expectLater(
         api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('keine Belegliste'))),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('keine Belegliste'))),
       );
     });
 
@@ -545,7 +554,9 @@ void main() {
       }));
       await expectLater(
         api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('keine Metadaten'))),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('keine Metadaten'))),
       );
     });
 
@@ -556,7 +567,7 @@ void main() {
       final api = apiMit(jsonEncode({'status': 'success', 'data': <dynamic>[]}));
       await expectLater(
         api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
-        throwsA(isA<Exception>()),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'data-not-object')),
       );
     });
 
@@ -564,7 +575,8 @@ void main() {
       final api = apiMit(jsonEncode({'status': 'success', 'data': 'Wartung'}));
       await expectLater(
         api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
-        throwsA(isA<Exception>()
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', 'data-not-object')
             .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('Wartung')))),
       );
     });
@@ -577,7 +589,18 @@ void main() {
       }));
       await expectLater(
         api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('keine Belegliste'))),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.reason, 'reason', contains('keine Belegliste'))),
+      );
+    });
+
+    test('listTipRecipients: fehlende Liste ist ein benannter Antwortfehler', () async {
+      final api = apiMit(jsonEncode({'status': 'success', 'data': <String, dynamic>{}}));
+      await expectLater(
+        api.listTipRecipients(),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('keine Liste'))),
       );
     });
 
@@ -585,7 +608,7 @@ void main() {
       final api = apiMit('[]');
       await expectLater(
         api.getCashboxStatus(),
-        throwsA(isA<Exception>().having((e) => e.toString(), 'Meldung', contains('kein Objekt'))),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'missing-status')),
       );
     });
   });
