@@ -183,8 +183,10 @@ class KeckPrinter {
   ///
   /// Konnte der gesetzlich geforderte QR-Code nicht gesetzt werden, geht der
   /// Bon trotzdem hinaus und das Ergebnis traegt [KeckPrintResult.qrFehler].
-  /// Dieser Weg meidet globalen Zustand, deshalb kommt der Ausfall aus dem
-  /// Papier selbst und nicht aus [KeckPrinterService.letzterQrFehler].
+  /// Dieser Weg meidet globalen Zustand: der Ausfall kommt aus dem Papier
+  /// selbst, und [KeckPrinterService.letzterQrFehler] wird dabei weder
+  /// gelesen noch geschrieben -- ein Druck hier ueberschreibt also nicht das
+  /// Signal eines gleichzeitig laufenden Terminaldrucks.
   Future<KeckPrintResult> printReceipt(
     KasseneckReceipt r, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,

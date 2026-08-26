@@ -64,19 +64,31 @@ class KeckPrinterService {
   /// statisch: Papiergroesse, Drucker-IP und Bluetooth-Geraet stehen global,
   /// zwei Belege gleichzeitig kann er nicht drucken.
   ///
-  /// Gesetzt wird bei **jedem** Bau, auch auf `null` -- der Wert gehoert immer
-  /// zum letzten gebauten Beleg und bleibt nie von einem frueheren stehen.
+  /// Gesetzt wird bei jedem Bau ueber [getBytesFromReceipt] oder
+  /// [getMyPosPaperFromReceipt], auch auf `null` -- der Wert gehoert immer zum
+  /// letzten so gebauten Beleg und bleibt nie von einem frueheren stehen.
+  ///
+  /// [getPaperFromReceipt] schreibt ihn ausdruecklich **nicht**, und damit
+  /// auch [KeckPrinter.printReceipt] nicht: wer das Papier selbst in der Hand
+  /// haelt, liest den Ausfall daran ab. Wuerde dieser Weg mitschreiben,
+  /// ueberschriebe ein Druck auf Drucker A das Signal, das ein gleichzeitig
+  /// laufender Terminaldruck auf Geraet B gerade auslesen will.
+  ///
+  /// Nur lesbar. Ein Aufrufer, der ihn zuruecksetzen koennte, koennte damit
+  /// auch den Ausfall eines fremden Druckvorgangs loeschen.
   ///
   /// Wer den Ausfall ohne globalen Zustand braucht, nimmt
   /// [getPaperFromReceipt] oder den transportbasierten [KeckPrinter], dessen
   /// [KeckPrintResult] ihn mitfuehrt.
-  static String? letzterQrFehler;
+  static String? get letzterQrFehler => _letzterQrFehler;
+  static String? _letzterQrFehler;
 
   /// Setzt [receipt] als Beleg und gibt das fertige Papier zurueck -- die
   /// **eine** Stelle, an der [PrintPaper] fuer einen Beleg entsteht.
   ///
   /// Der Rueckgabewert traegt neben `bytes` und `myPosPaper` auch
-  /// [PrintPaper.qrFehler]; dieser Weg ist damit frei von globalem Zustand.
+  /// [PrintPaper.qrFehler]; dieser Weg ruehrt [letzterQrFehler] nicht an und
+  /// ist damit frei von globalem Zustand.
   static Future<PrintPaper> getPaperFromReceipt(
     KasseneckReceipt receipt,
     KeckPaperSize paperSize, {
@@ -85,16 +97,21 @@ class KeckPrinterService {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     await paper.setKeckReceipt(receipt, qrMode: qrMode);
-    letzterQrFehler = paper.qrFehler;
     return paper;
   }
 
-  static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async =>
-      (await getPaperFromReceipt(receipt, paperSize, qrMode: qrMode)).bytes;
+  static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
+    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: qrMode);
+    _letzterQrFehler = paper.qrFehler;
+    return paper.bytes;
+  }
 
-  static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt) async =>
-      // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
-      (await getPaperFromReceipt(receipt, paperSize, qrMode: QrPrintMode.native)).myPosPaper;
+  static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt) async {
+    // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
+    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: QrPrintMode.native);
+    _letzterQrFehler = paper.qrFehler;
+    return paper.myPosPaper;
+  }
 
   /// Öffnet eine kurzlebige TCP-Verbindung zu [ip]:[port], sendet [bytes] und
   /// schließt wieder. Wirft bei Verbindungs-/Sendefehler. Gemeinsame Basis für
