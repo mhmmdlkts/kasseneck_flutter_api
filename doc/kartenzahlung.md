@@ -1,8 +1,8 @@
 # Kartenzahlung: was das Terminal tatsächlich tut
 
-Stand 26.08.2026. Diese Datei hält fest, was am echten Gerät **gemessen** wurde —
-nicht, was die Dokumentation verspricht. Zwei Annahmen, die plausibel klangen und
-drei Code-Reviews überstanden haben, sind an der Messung gescheitert.
+Stand 27.08.2026. Diese Datei hält fest, was am echten Gerät **gemessen** wurde —
+nicht, was die Dokumentation verspricht. Drei Annahmen, die plausibel klangen und
+mehrere Code-Reviews überstanden haben, sind an der Messung gescheitert.
 
 Wer den Zahlweg ändert, liest das hier zuerst. Die daraus destillierten Regeln
 stehen in [`../AGENTS.md`](../AGENTS.md).
@@ -135,6 +135,76 @@ Voids — nicht eine Verzögerung danach. Wer nach einem abgerissenen
 Void-Request `'0'` sieht, sieht also entweder einen Void, der nie ankam, oder
 einen, der noch läuft.
 
+## 9900: eine nicht rein numerische Kennung
+
+Am 27.08.2026 zunächst falsch gedeutet: eine Serie von Statusabfragen lieferte
+`9900 "Technical Error Database"` auf genehmigte, abgelehnte, abgebrochene und
+nie existierende Vorgänge gleichermaßen — das sah zuerst nach einem defekten
+Gerät aus (die Diagnose blieb dabei `IN_OPERATION`, nichts warnte). Weiter
+gemessen zeigte sich der wahre Zusammenhang:
+
+| Kennung | Antwort |
+|---|---|
+| `999999999999999999` (rein numerisch) | `9027` Original Tx not found |
+| `888888888888` (rein numerisch) | `9027` Original Tx not found |
+| `GIBTESNICHT999` | `9900` Technical Error Database |
+| `A1787860907` | `9900` Technical Error Database |
+| `X999999999` | `9900` Technical Error Database |
+
+**Nicht die Statusabfrage ist krank, sondern die Kennung war es.** Rein
+numerisch → die erwartbare Antwort (`9027` oder `0`). Mit Buchstaben →
+`9900`, unabhängig davon, was unter der Kennung tatsächlich geschah.
+
+Wichtig zur Einordnung: **die HPS-Schnittstelle verlangt laut hobex-Dokumentation
+schon immer eine numerische Kennung.** Das Paket hat bis zu dieser Messung nur
+die Länge geprüft und Buchstaben klaglos durchgelassen — es ließ Aufrufer also
+einen dokumentierten Vertrag verletzen, ohne dass irgendetwas widersprach.
+
+Was das Verletzen kostet, ist schlimmer als ein Gerätedefekt: bei einer
+**echten** Kartenzahlung mit der Kennung `A1787860907` hat das Terminal die
+Anfrage angenommen, die Karte verarbeitet (`panEntryMode: CTLS`, PAN gelesen,
+Kryptogramm vorhanden, `transactionType: SELL`) — und danach `9900` geliefert.
+Der Vorgang ist seither **dauerhaft** nicht mehr auffindbar; jede weitere
+Statusabfrage darauf liefert wieder `9900`. Ob beim Host autorisiert wurde,
+lässt sich nie mehr klären. Erst wird das Geld bewegt, dann der Nachweis
+vernichtet — der Vorfall vom 24.08.2026 in Reinform, nur ausgelöst durch einen
+Eingabewert statt durch eine ausbleibende Antwort.
+
+Das Risiko dafür ist in der Praxis **gering, nicht abstrakt**: jeder Erzeuger
+im Ökosystem liefert bereits rein numerische Kennungen
+(`HpsClient.newTransactionId()`, `Order.createTransactionId()` in sastre, der
+JS-Zwilling). Der Fall greift nur, wenn ein Aufrufer eine EIGENE Kennung
+übergibt — das erlaubt `CreditCardProvider.custom` ausdrücklich. Die Prüfung
+schließt eine Fußangel, sie behebt keinen Dauerbrand.
+
+**Zwei Korrekturen im Code, die zusammengehören, aber unabhängig begründet
+sind:**
+
+1. Der Client prüft die Kennung jetzt auf reine Ziffern, an derselben Stelle
+   und mit derselben Härte wie die Längenprüfung (`HpsClient`, `ArgumentError`,
+   bevor irgendetwas hinausgeht) — für `transactionId` **und**
+   `originalTransactionId`. Das setzt den dokumentierten Vertrag durch und
+   verhindert `9900` für jede Kennung, die dieser Client selbst erzeugt oder
+   entgegennimmt.
+2. Unabhängig davon — der Grund ist nicht `9900` selbst, sondern die Denkweise
+   dahinter — galt bis dahin `TransactionResponse.isConclusive` für
+   **jeden** Code außer `null` und `9027` — eine Positivliste, die sich als
+   Negativliste ausgab und unterstellte, alle nicht-aussagekräftigen Codes zu
+   kennen. `9900` war darüber schlüssig, und der Klärweg machte daraus
+   `declined` für einen Vorgang, unter dem tatsächlich Geld geflossen sein
+   kann. Seit dieser Messung ist `isConclusive` eine echte Positivliste: nur
+   ein **gemessener und benannter** Code (`0`, `9011`, `100002`, `100003`,
+   `100010`) gilt als Aussage; jeder andere — auch ein zukünftiger, heute noch
+   unbekannter Code — ist eine Wissenslücke und führt zu `unresolved`. `9900`
+   selbst ist jetzt benannt (`TransactionResponse.technicalErrorCode`), zählt
+   aber ausdrücklich NICHT als Aussage über den Vorgang.
+
+Ungemessen bleibt, ob `9900` **ausschließlich** bei einer nicht rein
+numerischen Kennung auftritt, oder ob dieselbe Meldung auch andere Ursachen
+haben kann — der Name "Technical Error Database" legt einen allgemeineren
+Fehler nahe. Gemessen ist nur der eine Zusammenhang oben; der Nachweistext im
+Zahlweg behauptet deshalb keine Ursache, wenn `9900` auftritt.
+
 ## Weitere Messwerte
 
 - **Void ohne `amount`** → `HTTP 400 "Missing amount"`. Der Pflichtparameter ist
@@ -151,10 +221,11 @@ einen, der noch läuft.
 ## Was weiterhin ungemessen ist
 
 - Was ein leerer `200`-Rumpf bedeutet.
-- Ob eine nicht rein numerische Kennung angenommen wird (der Client prüft
-  derzeit nur die Länge ≤ 18).
+- Ob `9900` ausschließlich bei einer nicht rein numerischen Kennung auftritt,
+  oder ob dieselbe Meldung noch andere Ursachen hat (siehe oben).
 - Wie lange das Terminal eine genehmigte Transaktion abrufbar hält.
-- Das Verhalten einer echten Ablehnung (Deckung, gesperrte Karte).
+- Das Verhalten einer echten Ablehnung (Deckung, gesperrte Karte) — deshalb
+  hat `TransactionResponse.isConclusive` dafür (noch) keinen benannten Code.
 
 ## Selbst nachmessen
 
