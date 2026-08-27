@@ -121,11 +121,14 @@ abgesetzter Void **gar nicht durch**. Wer die Klärung zu dicht taktet, hungert
 den Vorgang aus, den er klären will. Der Backoff ist deshalb kein Schönheits-,
 sondern ein Funktionsmerkmal.
 
-Offen zur Entscheidung: `409 "Terminal is busy"` heißt streng genommen
-„ich habe diese Anfrage **nicht angenommen**" — eine Aussage, kein Nichtwissen.
-Für die abgewiesene Anfrage ist damit nachweislich nichts belastet. Derzeit
-behandelt der Code sie wie einen Transportfehler; als `declined` wäre sie
-schneller und immer noch korrekt.
+**Entschieden am 27.08.2026** (siehe unten, „HTTP 409: ein eigener, benannter
+Fall"): `409 "Terminal is busy"` heißt streng genommen „ich habe diese Anfrage
+**nicht angenommen**" — eine Aussage, kein Nichtwissen. Für die abgewiesene
+**erzeugende** Anfrage ist damit nachweislich nichts belastet, und der
+Klärweg liest sie jetzt als `declined`. Für jede andere Anfrage (Abbruch,
+Statusabfrage während der Klärung — wie beim Polling-Vorfall oben) bleibt
+`409` unverändert ein gewöhnlicher Transportfehler: er sagt dort nur, dass
+DIESE Anfrage nicht durchkam, nichts über den Vorgang, den sie klären sollte.
 
 ### Nach einem gelandeten Void schlägt der Status sofort um
 
@@ -204,6 +207,71 @@ numerischen Kennung auftritt, oder ob dieselbe Meldung auch andere Ursachen
 haben kann — der Name "Technical Error Database" legt einen allgemeineren
 Fehler nahe. Gemessen ist nur der eine Zusammenhang oben; der Nachweistext im
 Zahlweg behauptet deshalb keine Ursache, wenn `9900` auftritt.
+
+## `9002`: ein ungültiger Vorgang — und der Unterschied zu `9900`
+
+Am 27.08.2026 dieselbe Lage wie oben, aber mit **rein numerischer** Kennung:
+eine Gutschrift auf eine unbekannte, rein numerische Original-Kennung
+antwortet nach 1,2 Sekunden mit `9002 "Invalid Transaction"` — kein
+Kartenfluss, keine Auszahlung, die Karte wurde nie angefordert.
+
+**Das ist die Kontrollprobe zu `9900`.** Dieselbe Anfrage, einmal mit einer
+Kennung voller Buchstaben (→ `9900`, das Terminal kommt über die Kennung
+selbst nicht hinaus) und einmal mit einer rein numerischen, aber unbekannten
+Kennung (→ `9002`, das Terminal prüft die Kennung und weist den Vorgang als
+ungültig ab). Zwei verschiedene Codes für zwei verschiedene Gründe des
+Scheiterns — und ein Beleg dafür, warum die Umkehrung von `isConclusive`
+nötig war: `9002` war vor dieser Messung ebenso unbenannt wie `9900`, und die
+alte Fassung hätte auch ihn blind als Aussage gelesen (richtigerweise, wie
+sich zeigt — aber aus dem falschen Grund: nicht weil er gemessen war, sondern
+weil er zufällig nicht `9027` war).
+
+Anders als `9027` ("ich habe dazu keinen Eintrag") und `9900` ("technischer
+Fehler, keine Aussage") ist `9002` eine **positive** Aussage: das Terminal hat
+den Vorgang selbst als unzulässig verworfen, bevor irgendetwas in Bewegung
+kam. `9002` gehört deshalb in die Positivliste (`isConclusive`) und führt zu
+`declined`.
+
+## HTTP `409`: „Terminal is busy" ist jetzt ein eigener, benannter Fall
+
+Ergänzend zur Messung unter „Das Terminal serialisiert" oben: läuft bereits
+ein Vorgang und wird ein zweiter gestartet, kommt `409` nach **87
+Millisekunden**. Der abgewiesene Vorgang hinterlässt **keine Spur** — die
+Statusabfrage auf seine Kennung liefert `9027`, zweimal geprüft. Es wurde
+nichts angelegt und kein Kartenfluss gestartet.
+
+Die früher offene Entwurfsfrage („als `declined` wäre sie schneller und immer
+noch korrekt") ist damit entschieden: `HpsPayments` liest ein `409` auf die
+**erzeugende** Anfrage (Zahlung, Gutschrift, der direkte Aufhebungs-Request)
+jetzt als `declined`, ohne erst einen Abbruch zu versuchen oder zu pollen —
+die Statusabfrage würde ohnehin nur den ohnehin schon bekannten Befund `9027`
+liefern.
+
+**Wichtig, weil `409` auf einer anderen Ebene liegt als ein `responseCode`:**
+Es ist ein HTTP-Status, kein Feld im Antwortrumpf — er entsteht, bevor
+überhaupt ein Rumpf gelesen wird. Er gehört deshalb **nicht** in
+`TransactionResponse.isConclusive`, sondern in eine eigene, davon getrennte
+Prüfung (`HpsHttpException.isTerminalBusy`, ausgewertet in `HpsPayments`).
+
+Und die positive Aussage gilt **ausdrücklich nur für die erzeugende Anfrage**:
+ein `409` auf einen `abort`-Versuch oder auf eine Statusabfrage während der
+Klärung sagt nur, dass DIESE Anfrage nicht durchkam — nichts über den
+Vorgang, den sie klären sollte (siehe die Messung zum Polling-Backoff oben,
+"ein parallel abgesetzter Void kam gar nicht durch"). Dort bleibt `409` ein
+gewöhnlicher Transportfehler, unverändert.
+
+## Der gemessene Stand, auf einen Blick
+
+Alle bisher gemessenen und im Code benannten Ausgänge (Stand 27.08.2026, TID
+3600335, HPS 1.10.0, Firmware 7.3.6):
+
+`0` genehmigt · `9002` ungültiger Vorgang · `9011` aufgehoben · `9027` keine
+Aussage · `9900` Kennung nicht numerisch · `100002` abgebrochen · `100003`
+Karte nicht aufgelegt · `100010` nicht abbrechbar · HTTP `409` Terminal
+beschäftigt.
+
+Jeder andere Code ist eine Wissenslücke, keine Aussage — siehe
+`TransactionResponse.isConclusive`.
 
 ## Weitere Messwerte
 

@@ -103,6 +103,26 @@ void main() {
         isTrue,
       );
     });
+    test('9002 ist eine Aussage: der Vorgang wurde als ungueltig abgewiesen',
+        () {
+      // Am 27.08.2026 gemessen: eine Gutschrift auf eine unbekannte, REIN
+      // NUMERISCHE Original-Kennung antwortet nach 1,2 s mit 9002 -- ohne
+      // Kartenfluss, ohne Auszahlung. Anders als 9027 ("kein Eintrag") ist
+      // das eine positive Aussage: der Vorgang wurde verworfen, nichts
+      // geschah.
+      final r = TransactionResponse.fromJson({
+        'responseCode': '9002',
+        'responseText': 'Invalid Transaction',
+      });
+      expect(r.responseCode, TransactionResponse.invalidTransactionCode);
+      expect(r.isInvalid, isTrue);
+      expect(r.isApproved, isFalse);
+      expect(r.isConclusive, isTrue,
+          reason: 'ein gemessener Ablehnungscode entscheidet den Ausgang');
+      expect(r.isNoStatement, isFalse);
+      expect(r.isTechnicalError, isFalse);
+      expect(r.toString(), contains('DECLINED(9002)'));
+    });
     test('9900 ist eine gemessene Wissensluecke, NIEMALS schluessig', () {
       // Am 27.08.2026 gemessen: die Statusabfrage antwortet mit 9900
       // "Technical Error Database" auf eine nicht rein numerische Kennung --

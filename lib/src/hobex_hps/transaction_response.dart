@@ -218,6 +218,25 @@ class TransactionResponse {
   /// traegt diesen Code, wenn der Kartenfluss ohne aufgelegte Karte endete.
   static const String cardNotPresentCode = '100003';
 
+  /// Ergebniscode `9002` ("Invalid Transaction"): das Terminal hat den
+  /// Vorgang als UNGUELTIG abgewiesen -- eine positive Aussage, dass nichts
+  /// geschehen ist.
+  ///
+  /// Am 27.08.2026 an einem hobex-HPS gemessen (TID 3600335, HPS 1.10.0,
+  /// Firmware 7.3.6): eine Gutschrift auf eine unbekannte, REIN NUMERISCHE
+  /// Original-Kennung antwortet nach 1,2 Sekunden mit `9002` -- ohne
+  /// Kartenfluss, ohne Auszahlung, die Karte wurde nie angefordert. Anders
+  /// als bei [noStatementCode] (`9027`, "ich habe dazu keinen Eintrag")
+  /// verwirft das Terminal hier den Vorgang selbst als unzulaessig, BEVOR
+  /// irgendetwas in Bewegung kommt.
+  ///
+  /// Bemerkenswert zur Einordnung: dieselbe Lage mit einer NICHT rein
+  /// numerischen Kennung ergab [technicalErrorCode] (`9900`) statt `9002` --
+  /// derselbe abgelehnte Vorgang, aber ein anderer Code, weil die Kennung
+  /// selbst schon den frueheren Fehler ausloeste. `9002` ist deshalb nur fuer
+  /// eine Kennung gemessen, die [HpsClient]s Ziffernpruefung besteht.
+  static const String invalidTransactionCode = '9002';
+
   /// Ergebniscode `9900` ("Technical Error Database").
   ///
   /// Am 27.08.2026 an einem hobex-HPS gemessen (TID 3600335, HPS 1.10.0,
@@ -247,6 +266,7 @@ class TransactionResponse {
     notAbortableCode,
     abortedCode,
     cardNotPresentCode,
+    invalidTransactionCode,
   };
 
   /// `true` when the transaction was approved (`responseCode == "0"`).
@@ -272,6 +292,10 @@ class TransactionResponse {
   /// ([technicalErrorCode]) -- gemessen im Zusammenhang mit einer nicht rein
   /// numerischen Kennung, aber keine Aussage ueber den Vorgang selbst.
   bool get isTechnicalError => responseCode == technicalErrorCode;
+
+  /// `true`, wenn das Terminal den Vorgang als ungueltig abgewiesen hat
+  /// ([invalidTransactionCode]) -- eine positive Aussage: nichts geschehen.
+  bool get isInvalid => responseCode == invalidTransactionCode;
 
   /// `true`, wenn der Vorgang aufgehoben wurde ([transactionCanceledCode]).
   bool get isCanceled => responseCode == transactionCanceledCode;

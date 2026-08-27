@@ -119,6 +119,14 @@ http.Response fehler(int statusCode, String message) => http.Response(
       headers: {'content-type': 'application/json'},
     );
 
+/// Gemessene Form von HTTP 409 "Terminal is busy": `text/plain`, kein JSON --
+/// siehe `doc/kartenzahlung.md`, "Das Terminal serialisiert".
+http.Response busy(http.Request _) => http.Response(
+      'Terminal is busy',
+      409,
+      headers: {'content-type': 'text/plain'},
+    );
+
 /// Ein Transportfehler: die Leitung bricht ab, es kommt keine Antwort an.
 http.Response boom(http.Request _) => throw const _Transport();
 
@@ -433,6 +441,118 @@ void main() {
         reason: 'der Nachweistext muss 9900 von 9027 UND von einem '
             'schlicht unbekannten Code unterscheiden',
       );
+    });
+
+    test(
+        'HTTP 409 auf die Zahlung selbst -> sofort declined, ohne '
+        'Klaerung (Mutationsprobe)', () async {
+      // Am 27.08.2026 gemessen: laeuft bereits ein Vorgang und wird ein
+      // zweiter gestartet, kommt 409 "Terminal is busy" nach 87 ms. Der
+      // abgewiesene Vorgang hinterlaesst KEINE Spur -- die Statusabfrage auf
+      // seine Kennung liefert 9027, zweimal geprueft. Das ist eine positive
+      // Aussage: sofort declined, ohne Abbruchversuch und ohne Polling.
+      final t = FakeTerminal(payment: [busy]);
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81005100');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(res.transactionId, '81005100');
+      expect(
+        res.steps.any((s) => s.contains('Terminal beschaeftigt (HTTP 409)')),
+        isTrue,
+      );
+      expect(t.callsOn('abort'), 0,
+          reason: 'die Anfrage wurde nachweislich nicht angenommen -- eine '
+              'Klaerung waere ueberfluessig');
+      expect(t.log.where((r) => r.url.path.contains('/api/v2/')), isEmpty);
+    });
+
+    test(
+        'HTTP 409 auf den Abbruchversuch bleibt ein Transportfehler -- '
+        'NIEMALS declined (Mutationsprobe)', () async {
+      // 409 gilt AUSDRUECKLICH nur fuer die ERZEUGENDE Anfrage. Hier scheitert
+      // die Zahlung generisch (Leitungsabriss), die Klaerung versucht einen
+      // Abbruch -- UND DER bekommt 409. Das sagt nichts ueber die Zahlung
+      // selbst aus und darf sie nicht zu declined machen.
+      final t = FakeTerminal(
+        payment: [boom],
+        abort: [busy],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': '81005200'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81005200');
+      expect(res.outcome, CardPaymentOutcome.approved,
+          reason: 'ein 409 auf den Abbruch darf die tatsaechlich genehmigte '
+              'Zahlung nicht als declined ausweisen');
+      expect(
+        res.steps.any((s) => s.contains('Terminal beschaeftigt')),
+        isFalse,
+        reason: 'die 409-Sonderbehandlung gilt nicht fuer den Abbruch',
+      );
+      expect(
+        res.steps.any((s) => s.contains('Abbruch nicht bestaetigt')),
+        isTrue,
+      );
+    });
+
+    test(
+        'HTTP 409 beim Pollen der Statusabfrage bleibt ein Transportfehler '
+        '-- NIEMALS declined (Mutationsprobe)', () async {
+      // Dieselbe Vorsicht wie beim Abbruch: 409 auf eine STATUSABFRAGE sagt
+      // nur, dass DIESE Abfrage nicht durchkam -- nichts ueber den Vorgang.
+      final t = FakeTerminal(
+        payment: [boom],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+        status: [busy, busy, busy],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81005300');
+      expect(res.outcome, CardPaymentOutcome.unresolved,
+          reason: 'ein 409 auf die Statusabfrage ist ein Transportfehler wie '
+              'jeder andere, kein Beleg fuer irgendeinen Ausgang');
+      expect(
+        res.steps.any((s) => s.contains('Terminal beschaeftigt')),
+        isFalse,
+      );
+      expect(t.callsOn('status'), 3,
+          reason: 'drei aufeinanderfolgende Fehlschlaege beenden die '
+              'Klaerung vorzeitig -- wie bei jedem anderen Transportfehler');
+    });
+
+    test('refund: HTTP 409 -> sofort declined', () async {
+      final t = FakeTerminal(refund: [busy]);
+      final res =
+          await paymentsFor(t).refund(amount: 25, transactionId: '81005400');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(
+        res.steps.any((s) => s.contains('Terminal beschaeftigt (HTTP 409)')),
+        isTrue,
+      );
+      expect(t.callsOn('abort'), 0);
+    });
+
+    test(
+        'cancel: HTTP 409 auf den direkten Aufhebungs-Request -> sofort '
+        'declined', () async {
+      // Fuer cancel heisst declined "die Aufhebung hat nicht gegriffen" --
+      // exakt das, was 409 hier aussagt: der Void-Request wurde nicht
+      // angenommen, es ist nichts geschehen, ein erneuter Versuch ist
+      // gefahrlos.
+      final t = FakeTerminal(cancel: [busy]);
+      final res =
+          await paymentsFor(t).cancel(transactionId: '81005500', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.transactionId, '81005500');
+      expect(
+        res.steps.any((s) => s.contains('Terminal beschaeftigt (HTTP 409)')),
+        isTrue,
+      );
+      expect(t.log.where((r) => r.url.path.contains('/api/v2/')), isEmpty);
     });
 
     test('ein UNGEMESSENER Abbruch-Fehlercode behauptet keine Ursache',
@@ -1096,6 +1216,29 @@ void main() {
       final res =
           await paymentsFor(t).refund(amount: 25, transactionId: '81000500');
       expect(res.outcome, CardPaymentOutcome.declined);
+    });
+
+    test(
+        'refund: 9002 (ungueltige Original-Kennung) -> declined, so '
+        'gemessen', () async {
+      // Am 27.08.2026 gemessen: eine Gutschrift auf eine unbekannte, rein
+      // numerische Original-Kennung antwortet mit 9002 -- kein Kartenfluss,
+      // keine Auszahlung.
+      final t = FakeTerminal(
+        refund: [
+          (_) => json({
+                'responseCode': TransactionResponse.invalidTransactionCode,
+                'responseText': 'Invalid Transaction',
+              })
+        ],
+      );
+      final res = await paymentsFor(t).refund(
+        amount: 25,
+        transactionId: '81005600',
+        originalTransactionId: '999999999999999999',
+      );
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
     });
 
     test(

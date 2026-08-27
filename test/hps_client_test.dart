@@ -265,6 +265,13 @@ void main() {
       expect(HpsConnectionException('cause').toString(),
           contains('Could not reach'));
     });
+
+    test('HpsHttpException.isTerminalBusy erkennt nur 409', () {
+      expect(HpsHttpException(409, 'Terminal is busy').isTerminalBusy, isTrue);
+      expect(HpsHttpException.terminalBusyStatusCode, 409);
+      expect(HpsHttpException(503, 'down').isTerminalBusy, isFalse);
+      expect(HpsHttpException(400, 'bad').isTerminalBusy, isFalse);
+    });
   });
 
   group('close()', () {

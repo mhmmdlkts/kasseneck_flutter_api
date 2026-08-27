@@ -191,6 +191,8 @@ class HpsPayments {
       // war und beantwortet wurde. Fiele so etwas an pay() vorbei, bekaeme der
       // Aufrufer kein Ergebnis und damit keine Kennung: genau der Mechanismus
       // des Vorfalls vom 24.08.2026, nur mit anderem Ausloeser.
+      final busy = _fromTerminalBusy(e, id, steps);
+      if (busy != null) return busy;
       steps.add('Zahlung abgebrochen: $e');
       _noteUnexpected(e, id);
     }
@@ -233,6 +235,8 @@ class HpsPayments {
       // Kennung schlaegt zu, BEVOR etwas gesendet wurde.
       rethrow;
     } catch (e) {
+      final busy = _fromTerminalBusy(e, id, steps);
+      if (busy != null) return busy;
       steps.add('Gutschrift abgebrochen: $e');
       _noteUnexpected(e, id);
     }
@@ -269,6 +273,8 @@ class HpsPayments {
     } on ArgumentError {
       rethrow;
     } catch (e) {
+      final busy = _fromTerminalBusy(e, transactionId, steps);
+      if (busy != null) return busy;
       steps.add('Aufhebung abgebrochen: $e');
       _noteUnexpected(e, transactionId);
     }
@@ -358,6 +364,35 @@ class HpsPayments {
   /// ([TransactionResponse.noStatementCode], `9027`) und wieder etwas
   /// anderes als "das Terminal meldet einen technischen Fehler"
   /// ([TransactionResponse.technicalErrorCode], `9900`).
+  /// Ordnet einen Fehlschlag der ERZEUGENDEN Anfrage (Zahlung, Gutschrift,
+  /// der DIREKTE Aufhebungs-Request) ein. `null`, wenn [error] nicht der
+  /// gemessene "Terminal beschaeftigt"-Fall ist ([HpsHttpException.isTerminalBusy]).
+  ///
+  /// Bewusst KEIN Fall in [TransactionResponse.isConclusive]: `409` ist ein
+  /// HTTP-Status, kein `responseCode` -- er entsteht, BEVOR ueberhaupt ein
+  /// Antwortrumpf gelesen wird, und gehoert deshalb auf diese Ebene, nicht in
+  /// die Code-Zuordnung. Siehe [HpsHttpException.terminalBusyStatusCode] fuer
+  /// die Messung (87 ms, keine Spur).
+  ///
+  /// Gilt AUSDRUECKLICH nur hier, an den drei Aufrufstellen in [pay],
+  /// [refund] und [cancel] -- niemals in [_tryAbort] oder beim Pollen der
+  /// Statusabfrage ([_resolve], [_resolveCancel]). Dort sagt ein `409` nur,
+  /// dass DIESE Anfrage nicht durchkam, nichts ueber den Vorgang, den sie
+  /// klaeren sollte; ihn dort ebenso zu lesen, waere dieselbe Verwechslung
+  /// von Nichtwissen und Aussage wie am 24.08.2026, nur mit `409` statt einem
+  /// Zeitablauf.
+  HpsResult? _fromTerminalBusy(Object error, String id, List<String> steps) {
+    if (error is! HpsHttpException || !error.isTerminalBusy) return null;
+    steps.add('Terminal beschaeftigt (HTTP ${error.statusCode}) -- die '
+        'Anfrage wurde nicht angenommen, es ist nichts geschehen');
+    _emit(HpsEventKind.resolved, steps.last, id);
+    return HpsResult(
+      outcome: CardPaymentOutcome.declined,
+      transactionId: id,
+      steps: List<String>.unmodifiable(steps),
+    );
+  }
+
   static String? _statusOhneErgebnis(TransactionResponse status) {
     if (status.isNoStatement) {
       return 'Status: keine Auskunft '
@@ -815,9 +850,14 @@ class HpsPayments {
   /// auf. Die verlassene Abbruch-Anfrage laeuft am Terminal weiter. Faellt
   /// die unmittelbar folgende Statusabfrage in dieses Fenster, kann das
   /// Terminal sie mit `409` beantworten ("ein anderer Request laeuft") --
-  /// das ist heute ein Transportfehler wie jeder andere, zaehlt in
-  /// [maxTransportFailures] und wird nie zu einem Ausgang. Sicher, aber
-  /// ungenau; eine eigene Behandlung von `409` ist vorgemerkt.
+  /// das bleibt BEWUSST ein Transportfehler wie jeder andere, zaehlt in
+  /// [maxTransportFailures] und wird nie zu einem Ausgang. Seit dem
+  /// 27.08.2026 hat `409` zwar eine eigene, benannte Behandlung
+  /// ([_fromTerminalBusy]) -- die gilt aber ausdruecklich nur fuer die
+  /// ERZEUGENDE Anfrage (siehe dort). Hier waere die Statusabfrage, nicht der
+  /// urspruengliche Vorgang, abgewiesen worden -- ein `409` an dieser Stelle
+  /// sagt nichts darueber aus, ob DER VORGANG selbst glückte. Sicher, aber
+  /// ungenau.
   Duration get _abortBudget => resolveBudget ~/ _abortBudgetDivisor;
 
   Duration _nextWait(Duration current) {
