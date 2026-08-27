@@ -1,4 +1,4 @@
-## 5.0.1
+## 5.1.0
 
 **Anlass:** Am 27.08.2026 zeigte eine Messung am selben hobex-HPS (TID 3600335,
 HPS 1.10.0, Firmware 7.3.6), dass die mit 5.0.0 aufgestellte eiserne Regel —
