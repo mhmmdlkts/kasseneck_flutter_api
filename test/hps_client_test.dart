@@ -9,24 +9,32 @@ import 'package:kasseneck_api/hobex_hps.dart';
 /// HpsClient gegen einen MockClient: Verben, URLs, Body-Struktur und die
 /// komplette Fehler-Maschinerie — ohne echtes Terminal.
 
-({HpsClient client, List<http.Request> log}) clientWith({String body = '{}', int status = 200, Uri? base, Duration? timeout}) {
+({HpsClient client, List<http.Request> log}) clientWith(
+    {String body = '{}', int status = 200, Uri? base, Duration? timeout}) {
   final log = <http.Request>[];
   final mock = MockClient((request) async {
     log.add(request);
-    return http.Response(body, status, headers: {'content-type': 'application/json'});
+    return http.Response(body, status,
+        headers: {'content-type': 'application/json'});
   });
   return (
-    client: HpsClient(tid: '3600335', baseUrl: base, httpClient: mock, timeout: timeout ?? const Duration(seconds: 5)),
+    client: HpsClient(
+        tid: '3600335',
+        baseUrl: base,
+        httpClient: mock,
+        timeout: timeout ?? const Duration(seconds: 5)),
     log: log,
   );
 }
 
 Map<String, dynamic> txBody(http.Request r) =>
-    (jsonDecode(r.body) as Map<String, dynamic>)['transaction'] as Map<String, dynamic>;
+    (jsonDecode(r.body) as Map<String, dynamic>)['transaction']
+        as Map<String, dynamic>;
 
 void main() {
   group('Transaktions-Requests: Verb, URL, Body', () {
-    test('payment: POST + transactionType=1 + EUR-Default + auto-transactionId', () async {
+    test('payment: POST + transactionType=1 + EUR-Default + auto-transactionId',
+        () async {
       final c = clientWith();
       await c.client.payment(amount: 12.5);
       final r = c.log.single;
@@ -40,49 +48,62 @@ void main() {
       expect(RegExp(r'^\d+$').hasMatch(tx['transactionId'] as String), isTrue);
     });
 
-    test('payment: tip/reference/eigene transactionId/currency werden uebernommen', () async {
+    test(
+        'payment: tip/reference/eigene transactionId/currency werden uebernommen',
+        () async {
       final c = clientWith();
-      await c.client.payment(amount: 10, tip: 1.5, reference: 'Bon 7', transactionId: 'TX-7', currency: 'CHF');
+      await c.client.payment(
+          amount: 10,
+          tip: 1.5,
+          reference: 'Bon 7',
+          transactionId: '81004100',
+          currency: 'CHF');
       final tx = txBody(c.log.single);
       expect(tx['tip'], 1.5);
       expect(tx['reference'], 'Bon 7');
-      expect(tx['transactionId'], 'TX-7');
+      expect(tx['transactionId'], '81004100');
       expect(tx['currency'], 'CHF');
     });
 
     test('refund: POST refund + originalTransactionId', () async {
       final c = clientWith();
-      await c.client.refund(amount: 5, originalTransactionId: 'ORIG-1');
+      await c.client.refund(amount: 5, originalTransactionId: '81000100');
       final r = c.log.single;
       expect(r.url.path, '/api/transaction/refund');
-      expect(txBody(r)['originalTransactionId'], 'ORIG-1');
+      expect(txBody(r)['originalTransactionId'], '81000100');
       expect(txBody(r).containsKey('transactionType'), isFalse);
     });
 
     test('preAuth / Capture / Cancel: Pfade und Verben', () async {
       final c = clientWith();
-      await c.client.preAuth(amount: 50, transactionId: 'PA-1');
-      await c.client.preAuthCapture(preAuthTransactionId: 'PA-1', amount: 50);
-      await c.client.preAuthCancel(preAuthTransactionId: 'PA-1', amount: 50);
+      await c.client.preAuth(amount: 50, transactionId: '81000200');
+      await c.client
+          .preAuthCapture(preAuthTransactionId: '81000200', amount: 50);
+      await c.client
+          .preAuthCancel(preAuthTransactionId: '81000200', amount: 50);
       expect(c.log[0].method, 'POST');
       expect(c.log[0].url.path, '/api/transaction/preauth');
       expect(c.log[1].url.path, '/api/transaction/preauthcapture');
-      expect(txBody(c.log[1])['transactionId'], 'PA-1');
+      expect(txBody(c.log[1])['transactionId'], '81000200');
       expect(c.log[2].method, 'DELETE');
       expect(c.log[2].url.path, '/api/transaction/preauth');
     });
 
-    test('cancel: DELETE auf payment/{tid}/{tx} + amount/currency/technicalCancel-Query', () async {
+    test(
+        'cancel: DELETE auf payment/{tid}/{tx} + amount/currency/technicalCancel-Query',
+        () async {
       final c = clientWith();
-      await c.client.cancel(transactionId: 'TX-9', amount: 1.5);
-      await c.client.cancel(transactionId: 'TX-9', amount: 1.5, technicalCancel: true);
+      await c.client.cancel(transactionId: '81004300', amount: 1.5);
+      await c.client.cancel(
+          transactionId: '81004300', amount: 1.5, technicalCancel: true);
       expect(c.log[0].method, 'DELETE');
-      expect(c.log[0].url.path, '/api/transaction/payment/3600335/TX-9');
+      expect(c.log[0].url.path, '/api/transaction/payment/3600335/81004300');
       // amount ist Pflicht (sonst 400 Missing amount), currency faellt auf den
       // EUR-Default -> beide gehen immer als Query mit.
       expect(c.log[0].url.queryParameters['amount'], '1.5');
       expect(c.log[0].url.queryParameters['currency'], 'EUR');
-      expect(c.log[0].url.queryParameters.containsKey('technicalCancel'), isFalse);
+      expect(
+          c.log[0].url.queryParameters.containsKey('technicalCancel'), isFalse);
       expect(c.log[1].url.queryParameters['technicalCancel'], 'true');
     });
 
@@ -91,34 +112,37 @@ void main() {
       final c = clientWith(
         body: '{"transactionId": "ABORTED-1", "responseCode": "0"}',
       );
-      final res = await c.client.abort(transactionId: 'TX-1');
+      final res = await c.client.abort(transactionId: '81000800');
       expect(res.transactionId, 'ABORTED-1');
       expect(res.responseCode, '0');
-      expect(c.log.single.url.path, '/api/transaction/abort/3600335/TX-1');
+      expect(c.log.single.url.path, '/api/transaction/abort/3600335/81000800');
     });
 
-    test('abort: gescheiterter Abbruch kommt mit HTTP 200 und 100010', () async {
+    test('abort: gescheiterter Abbruch kommt mit HTTP 200 und 100010',
+        () async {
       // Genau die Lage, an der die alte Fassung scheiterte: sie warf nur bei
       // Nicht-2xx und gab sonst die transactionId heraus -- ein gescheiterter
       // Abbruch saehe damit aus wie ein geglueckter.
       final c = clientWith(
         body: '{"responseCode": "100010", "responseText": "Not abortable"}',
       );
-      final res = await c.client.abort(transactionId: 'TX-1');
+      final res = await c.client.abort(transactionId: '81000800');
       expect(res.responseCode, '100010');
       expect(res.isApproved, isFalse);
     });
 
     test('transactionStatus: GET auf v2-Endpoint', () async {
       final c = clientWith(body: '{"responseCode": "0"}');
-      final res = await c.client.transactionStatus(transactionId: 'TX-1');
+      final res = await c.client.transactionStatus(transactionId: '81000800');
       expect(c.log.single.method, 'GET');
-      expect(c.log.single.url.path, '/api/v2/transactions/3600335/TX-1');
+      expect(c.log.single.url.path, '/api/v2/transactions/3600335/81000800');
       expect(res.isApproved, isTrue);
     });
 
     test('diagnosis: GET + Parsing', () async {
-      final c = clientWith(body: '{"deviceStatus": "IN_OPERATION", "host": "https://tecstest.x"}');
+      final c = clientWith(
+          body:
+              '{"deviceStatus": "IN_OPERATION", "host": "https://tecstest.x"}');
       final d = await c.client.diagnosis();
       expect(c.log.single.url.path, '/api/terminals/3600335/diagnosis');
       expect(d.isInOperation, isTrue);
@@ -130,8 +154,10 @@ void main() {
       final since = DateTime(2026, 6, 12, 9, 5, 3, 999);
       await c.client.batchTotals(since);
       await c.client.closeBatch(since);
-      expect(c.log[0].url.path, '/api/terminals/3600335/batchtotal/2026-06-12T09:05:03');
-      expect(c.log[1].url.path, '/api/terminals/3600335/closebatch/2026-06-12T09:05:03');
+      expect(c.log[0].url.path,
+          '/api/terminals/3600335/batchtotal/2026-06-12T09:05:03');
+      expect(c.log[1].url.path,
+          '/api/terminals/3600335/closebatch/2026-06-12T09:05:03');
     });
 
     test('terminalStatus: GET status; 200 -> true, 503 -> false', () async {
@@ -166,7 +192,8 @@ void main() {
     test('Basis mit trailing Slash -> kein Doppelslash', () async {
       final c = clientWith(base: Uri.parse('http://192.168.0.5:8080/'));
       await c.client.diagnosis();
-      expect(c.log.single.url.toString(), 'http://192.168.0.5:8080/api/terminals/3600335/diagnosis');
+      expect(c.log.single.url.toString(),
+          'http://192.168.0.5:8080/api/terminals/3600335/diagnosis');
     });
     test('Basis mit Pfad-Praefix bleibt erhalten', () async {
       final c = clientWith(base: Uri.parse('http://h:1/prefix'));
@@ -176,7 +203,8 @@ void main() {
   });
 
   group('Fehler-Maschinerie', () {
-    test('non-2xx mit JSON-message -> HpsHttpException mit dieser Message', () async {
+    test('non-2xx mit JSON-message -> HpsHttpException mit dieser Message',
+        () async {
       final c = clientWith(body: '{"message": "Terminal busy"}', status: 400);
       expect(
         () => c.client.payment(amount: 1),
@@ -189,28 +217,36 @@ void main() {
       final c = clientWith(body: '', status: 503);
       expect(
         () => c.client.payment(amount: 1),
-        throwsA(isA<HpsHttpException>().having((e) => e.message, 'message', 'HTTP 503')),
+        throwsA(isA<HpsHttpException>()
+            .having((e) => e.message, 'message', 'HTTP 503')),
       );
     });
     test('non-2xx mit Rohtext -> Rohtext als Message', () async {
       final c = clientWith(body: 'Internal Failure', status: 500);
       expect(
         () => c.client.payment(amount: 1),
-        throwsA(isA<HpsHttpException>().having((e) => e.message, 'message', 'Internal Failure')),
+        throwsA(isA<HpsHttpException>()
+            .having((e) => e.message, 'message', 'Internal Failure')),
       );
     });
     test('Netzwerkfehler -> HpsConnectionException', () async {
-      final mock = MockClient((_) async => throw http.ClientException('connection refused'));
+      final mock = MockClient(
+          (_) async => throw http.ClientException('connection refused'));
       final client = HpsClient(tid: '1', httpClient: mock);
-      expect(() => client.payment(amount: 1), throwsA(isA<HpsConnectionException>()));
+      expect(() => client.payment(amount: 1),
+          throwsA(isA<HpsConnectionException>()));
     });
     test('Timeout -> HpsConnectionException', () async {
       final mock = MockClient((_) async {
         await Future.delayed(const Duration(milliseconds: 200));
         return http.Response('{}', 200);
       });
-      final client = HpsClient(tid: '1', httpClient: mock, timeout: const Duration(milliseconds: 20));
-      expect(() => client.payment(amount: 1), throwsA(isA<HpsConnectionException>()));
+      final client = HpsClient(
+          tid: '1',
+          httpClient: mock,
+          timeout: const Duration(milliseconds: 20));
+      expect(() => client.payment(amount: 1),
+          throwsA(isA<HpsConnectionException>()));
     });
     test('leerer 200-Body -> leere Map -> Status "in progress"', () async {
       final c = clientWith(body: '');
@@ -224,8 +260,17 @@ void main() {
     });
     test('Exception-toString-Formate', () {
       expect(const HpsException('x').toString(), 'HpsException: x');
-      expect(HpsHttpException(503, 'down').toString(), 'HpsHttpException(503): down');
-      expect(HpsConnectionException('cause').toString(), contains('Could not reach'));
+      expect(HpsHttpException(503, 'down').toString(),
+          'HpsHttpException(503): down');
+      expect(HpsConnectionException('cause').toString(),
+          contains('Could not reach'));
+    });
+
+    test('HpsHttpException.isTerminalBusy erkennt nur 409', () {
+      expect(HpsHttpException(409, 'Terminal is busy').isTerminalBusy, isTrue);
+      expect(HpsHttpException.terminalBusyStatusCode, 409);
+      expect(HpsHttpException(503, 'down').isTerminalBusy, isFalse);
+      expect(HpsHttpException(400, 'bad').isTerminalBusy, isFalse);
     });
   });
 
@@ -249,7 +294,8 @@ void main() {
   });
 
   group('Kennung wird vor dem Netzweg geprueft', () {
-    test('19 Stellen -> ArgumentError, und es geht kein Request hinaus', () async {
+    test('19 Stellen -> ArgumentError, und es geht kein Request hinaus',
+        () async {
       final c = clientWith();
       expect(
         () => c.client.payment(amount: 5, transactionId: '2608261401590000001'),
@@ -272,6 +318,48 @@ void main() {
       await c.client.payment(amount: 5, transactionId: '260826140159000001');
       expect(txBody(c.log.single)['transactionId'], '260826140159000001');
     });
+
+    // Am 27.08.2026 gemessen: eine nicht rein numerische Kennung wird von
+    // einer echten Kartenzahlung anstandslos angenommen -- doch jede
+    // spaetere Statusabfrage darauf antwortet DAUERHAFT mit 9900 "Technical
+    // Error Database", der Vorgang ist fuer immer unauffindbar. Die
+    // HPS-Schnittstelle verlangt laut hobex-Dokumentation ohnehin eine
+    // numerische Kennung -- das Paket hat das bis hierher nicht durchgesetzt.
+    test('nicht rein numerische Kennung -> ArgumentError, kein Request',
+        () async {
+      final c = clientWith();
+      expect(
+        () => c.client.payment(amount: 5, transactionId: 'A1787860907'),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(c.log, isEmpty);
+    });
+
+    test('nicht rein numerische Kennung bei cancel/abort/transactionStatus',
+        () async {
+      final c = clientWith();
+      expect(() => c.client.cancel(transactionId: 'TX-1', amount: 5),
+          throwsA(isA<ArgumentError>()));
+      expect(() => c.client.abort(transactionId: 'TX-1'),
+          throwsA(isA<ArgumentError>()));
+      expect(() => c.client.transactionStatus(transactionId: 'TX-1'),
+          throwsA(isA<ArgumentError>()));
+      expect(c.log, isEmpty,
+          reason: 'keiner der drei Wege darf vor der Pruefung senden');
+    });
+
+    test('nicht rein numerische originalTransactionId -> ArgumentError',
+        () async {
+      // Bis 27.08.2026 ungeprueft: originalTransactionId geht bei refund
+      // ebenso ans Terminal wie transactionId und war derselben Falle
+      // ausgesetzt.
+      final c = clientWith();
+      expect(
+        () => c.client.refund(amount: 5, originalTransactionId: 'ORIG-1'),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(c.log, isEmpty);
+    });
   });
 
   group('tid-Normalisierung', () {
@@ -279,7 +367,8 @@ void main() {
       final log = <http.Request>[];
       final mock = MockClient((request) async {
         log.add(request);
-        return http.Response('{}', 200, headers: {'content-type': 'application/json'});
+        return http.Response('{}', 200,
+            headers: {'content-type': 'application/json'});
       });
       final client = HpsClient(tid: '03600335', httpClient: mock);
       expect(client.tid, '3600335');
@@ -287,18 +376,22 @@ void main() {
       await client.payment(amount: 1);
       expect(txBody(log.first)['tid'], '3600335');
 
-      await client.transactionStatus(transactionId: 'TX-1');
-      expect(log.last.url.path, '/api/v2/transactions/3600335/TX-1');
+      await client.transactionStatus(transactionId: '81000800');
+      expect(log.last.url.path, '/api/v2/transactions/3600335/81000800');
     });
 
-    test('eine tid aus lauter Nullen bleibt unveraendert statt leer zu werden', () {
-      final client = HpsClient(tid: '000', httpClient: MockClient((_) async => http.Response('{}', 200)));
+    test('eine tid aus lauter Nullen bleibt unveraendert statt leer zu werden',
+        () {
+      final client = HpsClient(
+          tid: '000',
+          httpClient: MockClient((_) async => http.Response('{}', 200)));
       expect(client.tid, '000');
     });
   });
 
   group('Erzeugte Kennung', () {
-    test('2000 Kennungen in Folge sind eindeutig und passen in 18 Stellen', () async {
+    test('2000 Kennungen in Folge sind eindeutig und passen in 18 Stellen',
+        () async {
       final c = clientWith();
       final ids = <String>{};
       for (var i = 0; i < 2000; i++) {
@@ -324,7 +417,8 @@ void main() {
   });
 
   group('Frist deckt den ganzen Abruf', () {
-    test('haengender Rumpf loest die Frist aus, nicht erst der Antwortkopf', () async {
+    test('haengender Rumpf loest die Frist aus, nicht erst der Antwortkopf',
+        () async {
       // Kopf kommt sofort, der Rumpf nie -- genau das Verhalten, das die alte
       // Frist nicht abdeckte: sie lag allein auf send().
       final never = StreamController<List<int>>();
@@ -349,30 +443,37 @@ void main() {
     test('meldet Start und Erfolg eines Requests', () async {
       final events = <HpsEvent>[];
       final mock = MockClient((_) async => http.Response(
-          '{"responseCode":"0","transactionId":"TX-9"}', 200,
+          '{"responseCode":"0","transactionId":"81004300"}', 200,
           headers: {'content-type': 'application/json'}));
-      final client = HpsClient(tid: '3600335', httpClient: mock, observer: events.add);
+      final client =
+          HpsClient(tid: '3600335', httpClient: mock, observer: events.add);
 
-      await client.payment(amount: 1, transactionId: 'TX-9');
+      await client.payment(amount: 1, transactionId: '81004300');
 
-      expect(events.map((e) => e.kind),
-          containsAllInOrder([HpsEventKind.requestStarted, HpsEventKind.requestSucceeded]));
+      expect(
+          events.map((e) => e.kind),
+          containsAllInOrder(
+              [HpsEventKind.requestStarted, HpsEventKind.requestSucceeded]));
     });
 
     test('meldet den Fehlschlag samt Ursache', () async {
       final events = <HpsEvent>[];
       final mock = MockClient((_) async => throw const SocketExceptionStub());
-      final client = HpsClient(tid: '3600335', httpClient: mock, observer: events.add);
+      final client =
+          HpsClient(tid: '3600335', httpClient: mock, observer: events.add);
 
-      await expectLater(client.payment(amount: 1), throwsA(isA<HpsConnectionException>()));
+      await expectLater(
+          client.payment(amount: 1), throwsA(isA<HpsConnectionException>()));
 
-      final failed = events.firstWhere((e) => e.kind == HpsEventKind.requestFailed);
+      final failed =
+          events.firstWhere((e) => e.kind == HpsEventKind.requestFailed);
       expect(failed.error, isNotNull);
     });
 
     test('ein werfender Beobachter reisst den Zahlweg nicht mit', () async {
       final mock = MockClient((_) async => http.Response(
-          '{"responseCode":"0"}', 200, headers: {'content-type': 'application/json'}));
+          '{"responseCode":"0"}', 200,
+          headers: {'content-type': 'application/json'}));
       final client = HpsClient(
         tid: '3600335',
         httpClient: mock,

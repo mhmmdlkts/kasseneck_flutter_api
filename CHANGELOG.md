@@ -1,3 +1,108 @@
+## 5.1.0
+
+**Anlass:** Am 27.08.2026 zeigte eine Messung am selben hobex-HPS (TID 3600335,
+HPS 1.10.0, Firmware 7.3.6), dass die mit 5.0.0 aufgestellte eiserne Regel —
+`declined` entsteht ausschließlich aus einer positiven Aussage — an einer
+Stelle nicht durchgehalten wurde. `TransactionResponse.isConclusive` galt bis
+dahin für **jeden** Code außer `null` und `9027`: eine Positivliste, die sich
+als Negativliste ausgab und unterstellte, alle nicht-aussagekräftigen Codes zu
+kennen. Ein neu aufgetretener, bis dahin unbenannter Code (`9900`, "Technical
+Error Database") war darüber schlüssig — der Klärweg hätte daraus `declined`
+gemacht, für einen Vorgang, unter dem tatsächlich Geld geflossen sein kann.
+Derselbe Fehler wie am 24.08.2026, nur an anderer Stelle entstanden.
+
+- **Ursache von `9900`, gemessen: eine nicht rein numerische Transaktionskennung.**
+  Die HPS-Schnittstelle verlangt laut hobex-Dokumentation schon immer eine
+  numerische Kennung — das Paket hat bis hierher nur die Länge geprüft und
+  Buchstaben klaglos durchgelassen. Am Terminal gemessen: eine **echte**
+  Kartenzahlung mit einer nicht rein numerischen Kennung (z. B.
+  `A1787860907`) wird anstandslos angenommen — Karte gelesen, Kryptogramm
+  vorhanden, Geld kann geflossen sein —, doch jede spätere Statusabfrage auf
+  GENAU diese Kennung antwortet **dauerhaft** mit `9900`, unabhängig davon,
+  was am Terminal tatsächlich geschah; eine rein numerische, nie gesehene
+  Kennung bekommt dagegen die erwartbare Antwort (`9027`). Erst wird das Geld
+  bewegt, dann der Nachweis vernichtet. Das Risiko dafür ist in der Praxis
+  gering, nicht abstrakt: jeder Erzeuger im Ökosystem liefert bereits rein
+  numerische Kennungen (`HpsClient.newTransactionId()`, der JS-Zwilling); der
+  Fall greift nur, wenn ein Aufrufer eine eigene Kennung übergibt, was
+  `CreditCardProvider.custom` ausdrücklich erlaubt.
+- **Behoben: `HpsClient` setzt den dokumentierten Vertrag jetzt durch.**
+  `transactionId` **und** `originalTransactionId` (bei `refund`, bis hierher
+  komplett ungeprüft) werden vor jedem Netzweg auf reine Ziffern geprüft, an
+  derselben Stelle und mit derselben Härte wie die bestehende Längenprüfung —
+  ein Verstoß wirft `ArgumentError`, bevor irgendetwas hinausgeht. **Breaking:**
+  ein Aufrufer, der bisher eine nicht rein numerische Kennung übergeben hat
+  (nur über `CreditCardProvider.custom` erreichbar), bekommt jetzt einen Wurf
+  statt eines stillschweigend angenommenen, aber am Terminal unauffindbaren
+  Vorgangs.
+- **Der eigentliche Fehler liegt tiefer als `9900` und ist jetzt behoben:
+  `TransactionResponse.isConclusive` ist eine echte Positivliste.** Schlüssig
+  ist nur noch ein Code, dessen Bedeutung **gemessen und benannt** ist (`0`,
+  `9002`, `9011`, `100002`, `100003`, `100010`). Jeder andere Code — ob er wie ein
+  Fehlercode aussieht, ob er neu ist oder schlicht nie gemessen wurde — ist
+  eine Wissenslücke und führt zu `unresolved`, nie zu `declined`. **Breaking
+  (stille Bedeutungsänderung ohne Namensänderung):** `isConclusive` und
+  `isNoStatement` bleiben als Symbole bestehen, aber `isConclusive` liefert für
+  einen Code, der zuvor als schlüssig galt (jeder Code ungleich `null`/`9027`,
+  etwa ein erfundener oder unbekannter Ablehnungscode), jetzt `false`. Wer sich
+  auf das alte Verhalten verlassen hat, bekommt für einen nie gemessenen Code
+  `unresolved` statt `declined` — die sichere statt die geratene Richtung, aber
+  ein anderes Ergebnis als vorher.
+- **Ein zweiter, unabhängig gemessener Code bestätigt die Umkehrung: `9002`
+  "Invalid Transaction".** Dieselbe Lage wie bei `9900`, aber mit einer REIN
+  NUMERISCHEN, unbekannten Original-Kennung: eine Gutschrift darauf antwortet
+  nach 1,2 Sekunden mit `9002` — kein Kartenfluss, keine Auszahlung, die Karte
+  wurde nie angefordert. Anders als `9027` und `9900` ist das eine positive
+  Aussage: das Terminal hat den Vorgang selbst als ungültig verworfen, bevor
+  irgendetwas in Bewegung kam. Neu benannt (`TransactionResponse.invalidTransactionCode`,
+  `isInvalid`) und Teil der Positivliste — führt zu `declined`. Die
+  Kontrollprobe zu `9900` zugleich: dieselbe Anfrage lieferte mit einer nicht
+  rein numerischen Kennung `9900`, mit einer numerischen, aber unbekannten
+  Kennung `9002` — zwei verschiedene Codes für zwei verschiedene Gründe.
+- **HTTP `409` "Terminal is busy" bekommt eine eigene, benannte Behandlung —
+  außerhalb der Code-Zuordnung.** Am 27.08.2026 gemessen: läuft bereits ein
+  Vorgang und wird ein zweiter gestartet, kommt `409` nach 87 Millisekunden;
+  der abgewiesene Vorgang hinterlässt KEINE Spur (Statusabfrage darauf: `9027`,
+  zweimal geprüft). Damit ist die in 5.0.0 offen gelassene Entwurfsfrage
+  entschieden: `HpsPayments` liest ein `409` auf die ERZEUGENDE Anfrage
+  (Zahlung, Gutschrift, der direkte Aufhebungs-Request von `cancel`) jetzt als
+  `declined`, ohne Abbruchversuch oder Polling. **`409` ist ein HTTP-Status,
+  kein `responseCode`** — er entsteht, bevor überhaupt ein Antwortrumpf
+  gelesen wird, und ist deshalb bewusst NICHT Teil von
+  `TransactionResponse.isConclusive`, sondern eine eigene Prüfung
+  (`HpsHttpException.terminalBusyStatusCode`, `.isTerminalBusy`, ausgewertet in
+  `HpsPayments._fromTerminalBusy`). Die positive Aussage gilt AUSSCHLIESSLICH
+  für die erzeugende Anfrage: ein `409` auf einen `HpsClient.abort`-Versuch
+  oder auf eine Statusabfrage während der Klärung bleibt unverändert ein
+  gewöhnlicher Transportfehler — er sagt dort nur, dass diese eine Anfrage
+  nicht durchkam, nichts über den Vorgang, den sie klären sollte (eigens durch
+  Tests abgesichert, die genau diese Vermischung verhindern).
+- **Neue öffentliche Symbole auf `TransactionResponse`:** `abortedCode`
+  (`100002`, "Aborted" — bisher nur in Doku/Tabellen erwähnt, jetzt benannt),
+  `cardNotPresentCode` (`100003`, "Card not present" — ebenso),
+  `invalidTransactionCode` (`9002`, "Invalid Transaction"), `isInvalid`
+  (Getter), `technicalErrorCode` (`9900`, "Technical Error Database"),
+  `isTechnicalError` (Getter), `isUnknownCode` (Getter — `true` für einen
+  vorhandenen Code, der weder schlüssig noch eine der beiden benannten
+  Wissenslücken `isNoStatement`/`isTechnicalError` ist).
+- **Neue öffentliche Symbole auf `HpsHttpException`:**
+  `terminalBusyStatusCode` (`409`), `isTerminalBusy` (Getter).
+- **Der Nachweistext (`steps`) unterscheidet jetzt drei Nicht-Ergebnisse statt
+  zwei, plus den eigenen 409-Fall.** Er wird im Belastungsstreit gelesen:
+  "Terminal kennt den Vorgang nicht" (`9027`, `isNoStatement`), "Terminal
+  meldet einen technischen Fehler" (`9900`, `isTechnicalError`), "Terminal
+  nennt einen unbekannten Code" (`isUnknownCode`) und "Terminal beschäftigt
+  (HTTP 409)" sind vier verschiedene Aussagen, keine davon behauptet eine
+  Ursache, die nicht feststeht (`AGENTS.md`, Regel 7). Betroffen: `pay`,
+  `refund` und der direkte Antwortweg von `cancel` (`HpsPayments`).
+- `doc/kartenzahlung.md` um die Befunde zu `9900`, `9002` und `409` ergänzt,
+  samt der Selbst-nachmessen-Tabelle (rein numerisch vs. mit Buchstaben) und
+  einem zusammenfassenden Überblick über den gesamten gemessenen Stand.
+
+**Der JS-Zwilling ist nicht betroffen:** `zwillinge.yaml`/`test/zwillinge_test.dart`
+führen ausschließlich Kasseneck-Backend-Einstellungen; der lokale HPS-Zahlweg
+und seine Ergebniscodes sind kein Teil dieses Vertrags.
+
 ## 5.0.0
 
 **Anlass:** Am 24.08.2026 wurde ein Kunde am Kartenterminal zweimal mit 25 € belastet. Die App meldete beide Male „Kartenzahlung fehlgeschlagen", bei hobex waren beide Vorgänge genehmigt. Ursache: `HpsClient.payment()` erzeugte die Transaktionskennung intern und gab sie erst mit der Antwort heraus — blieb die Antwort aus (Verbindungsabbruch, Frist), war die Kennung nie bekannt, und damit waren Statusabfrage und Storno strukturell unerreichbar. Jede Wiederholung wurde dadurch zwangsläufig ein zweiter, eigenständiger Vorgang. Dieses Release macht die Kennung zum ersten Schritt eines Zahlvorgangs statt zu dessen Nebenprodukt und ersetzt geratene Fehlschläge durch geklärte Ausgänge.

@@ -18,6 +18,21 @@ import 'enums.dart';
 /// ask whether this response settles anything, and only then [isApproved] to
 /// ask which way; [isNoStatement] names the gap. A response that is not
 /// conclusive is a reason to keep clarifying, never an outcome.
+///
+/// **Zweite Lehre, am 27.08.2026: [isConclusive] darf keine Negativliste
+/// sein, die sich als Positivliste ausgibt.** Bis dahin galt "jeder Code
+/// ausser `null` und [noStatementCode] ist schluessig" -- das unterstellt,
+/// wir kennten bereits alle Codes, die KEINE Aussage sind. Gemessen an einem
+/// hobex-HPS (TID 3600335, HPS 1.10.0, Firmware 7.3.6): die Statusabfrage
+/// antwortete auf eine nicht rein numerische Kennung mit einem bis dahin
+/// unbenannten Code, [technicalErrorCode] (`9900`, "Technical Error
+/// Database") -- ueber die alte Regel schluessig, und der Klaerweg machte
+/// daraus `declined` fuer einen Vorgang, unter dem tatsaechlich Geld
+/// geflossen sein kann. Jetzt gilt die Umkehrung: [isConclusive] ist wahr nur
+/// fuer einen Code, dessen Bedeutung GEMESSEN und hier BENANNT ist. Jeder
+/// andere -- ob er wie ein Fehlercode aussieht oder nicht, ob er neu ist oder
+/// schlicht nie gemessen wurde -- ist eine Wissensluecke, siehe
+/// [isUnknownCode].
 class TransactionResponse {
   const TransactionResponse({
     required this.raw,
@@ -187,6 +202,73 @@ class TransactionResponse {
   /// unbekannten Ursprungs und rechtfertigt keine Aussage ueber die Ursache.
   static const String notAbortableCode = '100010';
 
+  /// Ergebniscode `100002` ("Aborted"): der Zahlungs- oder Gutschriftvorgang
+  /// wurde abgebrochen, bevor er zu Ende gefuehrt wurde.
+  ///
+  /// Am 26.08.2026 gemessen: die DIREKTE Antwort einer Zahlung bzw.
+  /// Gutschrift traegt diesen Code, wenn der Vorgang abgebrochen wurde (etwa
+  /// durch [HpsClient.abort]). Fuer den Vorgang selbst heisst das: es steht
+  /// nichts belastet.
+  static const String abortedCode = '100002';
+
+  /// Ergebniscode `100003` ("Card not present"): die Karte wurde nicht
+  /// aufgelegt.
+  ///
+  /// Ebenfalls am 26.08.2026 gemessen: die DIREKTE Antwort einer Zahlung
+  /// traegt diesen Code, wenn der Kartenfluss ohne aufgelegte Karte endete.
+  static const String cardNotPresentCode = '100003';
+
+  /// Ergebniscode `9002` ("Invalid Transaction"): das Terminal hat den
+  /// Vorgang als UNGUELTIG abgewiesen -- eine positive Aussage, dass nichts
+  /// geschehen ist.
+  ///
+  /// Am 27.08.2026 an einem hobex-HPS gemessen (TID 3600335, HPS 1.10.0,
+  /// Firmware 7.3.6): eine Gutschrift auf eine unbekannte, REIN NUMERISCHE
+  /// Original-Kennung antwortet nach 1,2 Sekunden mit `9002` -- ohne
+  /// Kartenfluss, ohne Auszahlung, die Karte wurde nie angefordert. Anders
+  /// als bei [noStatementCode] (`9027`, "ich habe dazu keinen Eintrag")
+  /// verwirft das Terminal hier den Vorgang selbst als unzulaessig, BEVOR
+  /// irgendetwas in Bewegung kommt.
+  ///
+  /// Bemerkenswert zur Einordnung: dieselbe Lage mit einer NICHT rein
+  /// numerischen Kennung ergab [technicalErrorCode] (`9900`) statt `9002` --
+  /// derselbe abgelehnte Vorgang, aber ein anderer Code, weil die Kennung
+  /// selbst schon den frueheren Fehler ausloeste. `9002` ist deshalb nur fuer
+  /// eine Kennung gemessen, die [HpsClient]s Ziffernpruefung besteht.
+  static const String invalidTransactionCode = '9002';
+
+  /// Ergebniscode `9900` ("Technical Error Database").
+  ///
+  /// Am 27.08.2026 an einem hobex-HPS gemessen (TID 3600335, HPS 1.10.0,
+  /// Firmware 7.3.6): eine Statusabfrage auf eine nicht rein numerische
+  /// Kennung antwortet DAUERHAFT mit diesem Code -- auch dann, wenn unter
+  /// dieser Kennung eine echte Zahlung lief (Karte gelesen, Kryptogramm
+  /// vorhanden). Siehe [HpsClient] fuer die Ziffernpruefung, die das fuer
+  /// jede selbst geschickte Kennung ausschliesst.
+  ///
+  /// Was hier NICHT feststeht: ob `9900` AUSSCHLIESSLICH bei einer
+  /// nicht-numerischen Kennung auftritt, oder ob dieselbe "Technical Error
+  /// Database"-Meldung auch andere Ursachen haben kann (der Name legt einen
+  /// allgemeineren Datenbankfehler nahe). Gemessen ist nur der EINE
+  /// Zusammenhang oben -- der Nachweistext darf deshalb keine Ursache
+  /// behaupten, siehe `HpsPayments`.
+  static const String technicalErrorCode = '9900';
+
+  /// Ergebniscodes, deren Bedeutung GEMESSEN und hier benannt ist, und die
+  /// einen Ausgang FESTSCHREIBEN -- siehe [isConclusive]. [noStatementCode]
+  /// (`9027`) gehoert bewusst NICHT dazu: er ist zwar ebenso gemessen und
+  /// benannt, sagt aber ausdruecklich NICHTS aus (siehe [isNoStatement]).
+  /// Ebenso [technicalErrorCode] (`9900`): gemessen, benannt, aber keine
+  /// Aussage ueber den Vorgang (siehe [isTechnicalError]).
+  static const Set<String> _knownOutcomeCodes = <String>{
+    '0',
+    transactionCanceledCode,
+    notAbortableCode,
+    abortedCode,
+    cardNotPresentCode,
+    invalidTransactionCode,
+  };
+
   /// `true` when the transaction was approved (`responseCode == "0"`).
   bool get isApproved => responseCode == '0';
 
@@ -206,16 +288,47 @@ class TransactionResponse {
   /// ([noStatementCode]).
   bool get isNoStatement => responseCode == noStatementCode;
 
+  /// `true`, wenn das Terminal einen technischen Fehler meldet
+  /// ([technicalErrorCode]) -- gemessen im Zusammenhang mit einer nicht rein
+  /// numerischen Kennung, aber keine Aussage ueber den Vorgang selbst.
+  bool get isTechnicalError => responseCode == technicalErrorCode;
+
+  /// `true`, wenn das Terminal den Vorgang als ungueltig abgewiesen hat
+  /// ([invalidTransactionCode]) -- eine positive Aussage: nichts geschehen.
+  bool get isInvalid => responseCode == invalidTransactionCode;
+
   /// `true`, wenn der Vorgang aufgehoben wurde ([transactionCanceledCode]).
   bool get isCanceled => responseCode == transactionCanceledCode;
 
+  /// `true`, wenn ein Ergebniscode VORHANDEN ist, aber weder ein GEMESSENES
+  /// Ergebnis benennt ([isConclusive]) noch eine der beiden gemessenen
+  /// Wissensluecken ist ([isNoStatement], [isTechnicalError]).
+  ///
+  /// Der Unterschied zu [isNoStatement] und [isTechnicalError] ist im
+  /// Nachweistext bedeutsam, der im Belastungsstreit gelesen wird: "das
+  /// Terminal kennt den Vorgang nicht" (9027) und "das Terminal meldet einen
+  /// technischen Fehler" (9900) sind beides GEMESSENE Aussagen ueber eine
+  /// Wissensluecke. "Wir kennen diesen Code nicht" ist etwas anderes -- eine
+  /// Wissensluecke ueber unser eigenes Modell, nicht ueber den Vorgang.
+  bool get isUnknownCode =>
+      responseCode != null &&
+      !isConclusive &&
+      !isNoStatement &&
+      !isTechnicalError;
+
   /// `true`, wenn diese Antwort ueberhaupt eine Aussage ueber den Ausgang
-  /// traegt -- also einen Ergebniscode nennt, der weder fehlt noch
-  /// [noStatementCode] ist.
+  /// traegt -- also einen Ergebniscode nennt, dessen Bedeutung GEMESSEN und
+  /// in [_knownOutcomeCodes] benannt ist.
   ///
   /// Nur eine solche Antwort darf einen Ausgang festschreiben. Alles andere
-  /// ist ein Grund weiterzuklaeren, niemals ein Ergebnis.
-  bool get isConclusive => responseCode != null && !isNoStatement;
+  /// -- ein fehlender Code, eine gemessene Wissensluecke ([isNoStatement],
+  /// [isTechnicalError]) oder ein schlicht nie gemessener Code
+  /// ([isUnknownCode]) -- ist ein Grund weiterzuklaeren, niemals ein
+  /// Ergebnis. Bis 27.08.2026 war das eine Negativliste, die sich als
+  /// Positivliste ausgab ("jeder Code ausser `null` und [noStatementCode]
+  /// ist schluessig"); siehe die Messung zu [technicalErrorCode] oben, die
+  /// diese Annahme widerlegt hat.
+  bool get isConclusive => _knownOutcomeCodes.contains(responseCode);
 
   factory TransactionResponse.fromJson(Map<String, dynamic> json) {
     return TransactionResponse(
@@ -267,10 +380,14 @@ class TransactionResponse {
     final outcome = isInProgress
         ? 'IN_PROGRESS'
         : isNoStatement
-        ? 'NO_STATEMENT($responseCode)'
-        : isApproved
-        ? 'APPROVED'
-        : 'DECLINED($responseCode)';
+            ? 'NO_STATEMENT($responseCode)'
+            : isTechnicalError
+                ? 'TECHNICAL_ERROR($responseCode)'
+                : isApproved
+                    ? 'APPROVED'
+                    : isConclusive
+                        ? 'DECLINED($responseCode)'
+                        : 'UNKNOWN_CODE($responseCode)';
     return 'TransactionResponse($outcome, type=$transactionType, '
         'amount=$amount $currency, brand=$brand, card=$cardNumber, '
         'approval=$approvalCode, tx=$transactionId, text=$responseText)';

@@ -29,11 +29,11 @@ class HpsClient {
     this.timeout = const Duration(minutes: 3),
     http.Client? httpClient,
     HpsObserver? observer,
-  }) : baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'),
-       tid = _normalizeTid(tid),
-       _http = httpClient,
-       _ownsHttpClient = httpClient == null,
-       _observer = observer;
+  })  : baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'),
+        tid = _normalizeTid(tid),
+        _http = httpClient,
+        _ownsHttpClient = httpClient == null,
+        _observer = observer;
 
   /// Base URL of the HPS. Defaults to `http://127.0.0.1:8080`.
   final Uri baseUrl;
@@ -59,10 +59,58 @@ class HpsClient {
   /// Beobachter fuer Ereignisse im Zahlweg (Protokoll der App). Optional.
   final HpsObserver? _observer;
 
-  /// Laengengrenze der Transaktionskennung laut HPS-REST-Spezifikation.
-  /// Bewusst NUR die Laenge: ob das Terminal eine nicht rein numerische
-  /// Kennung annimmt, ist ungeprueft (der Bestandstest schickt 'TX-7').
+  /// Laengengrenze der Transaktionskennung laut HPS-REST-Spezifikation --
+  /// UND die Kennung muss rein numerisch sein, siehe [_checkTransactionId].
   static const int _maxTransactionIdLength = 18;
+
+  static final RegExp _numericTransactionId = RegExp(r'^\d+$');
+
+  /// Prueft eine Kennung, die ans Terminal geht: nicht leer, hoechstens
+  /// [_maxTransactionIdLength] Zeichen, UND rein numerisch. Wirft
+  /// [ArgumentError], BEVOR irgendetwas hinausgeht.
+  ///
+  /// Die HPS-Schnittstelle verlangt laut hobex-Dokumentation eine NUMERISCHE
+  /// Kennung -- das war schon immer so. Bis zu dieser Pruefung wurde nur die
+  /// Laenge kontrolliert; ein Aufrufer konnte diesen dokumentierten Vertrag
+  /// also verletzen, ohne dass irgendetwas widersprach (der Bestandstest
+  /// schickte ungeprueft 'TX-7').
+  ///
+  /// Was das Verletzen kostet, am 27.08.2026 an einem hobex-HPS gemessen (TID
+  /// 3600335, HPS 1.10.0, Firmware 7.3.6): eine nicht rein numerische
+  /// Kennung (z.B. 'A1787860907') wird von einer ECHTEN Kartenzahlung
+  /// anstandslos angenommen -- panEntryMode CTLS, PAN gelesen, Kryptogramm
+  /// vorhanden, transactionType SELL, Geld kann geflossen sein --, doch jede
+  /// spaetere Statusabfrage auf GENAU diese Kennung antwortet DAUERHAFT mit
+  /// [TransactionResponse.technicalErrorCode] (`9900`, "Technical Error
+  /// Database"), egal was am Terminal tatsaechlich geschah. Eine rein
+  /// numerische, nie gesehene Kennung bekommt dagegen die erwartbare Antwort
+  /// (`9027`, siehe [transactionStatus]). Der Vorgang unter einer
+  /// nicht-numerischen Kennung ist damit fuer IMMER unauffindbar -- erst wird
+  /// das Geld bewegt, dann der Nachweis vernichtet. Derselbe Mechanismus wie
+  /// beim Vorfall vom 24.08.2026 (Faden zur Kennung zerstoert), nur
+  /// ausgeloest durch einen Eingabewert statt durch eine ausbleibende
+  /// Antwort. Deshalb steht die Pruefung HIER, vor jedem Netzweg -- nicht
+  /// erst, wenn eine Statusabfrage schon ins Leere laeuft.
+  ///
+  /// Das Risiko in der Praxis ist gering, nicht abstrakt: jeder Erzeuger im
+  /// Oekosystem liefert bereits rein numerische Kennungen
+  /// ([newTransactionId], `Order.createTransactionId()` in sastre, der
+  /// JS-Zwilling). Der Fall greift nur, wenn ein Aufrufer eine EIGENE Kennung
+  /// uebergibt -- das erlaubt `CreditCardProvider.custom` ausdruecklich.
+  /// Diese Pruefung schliesst genau diese Luecke, sie ist keine allgemeine
+  /// Warnung vor einem instabilen Geraet.
+  static void _checkTransactionId(String value, String paramName) {
+    if (value.isEmpty ||
+        value.length > _maxTransactionIdLength ||
+        !_numericTransactionId.hasMatch(value)) {
+      throw ArgumentError.value(
+        value,
+        paramName,
+        'HPS erlaubt 1 bis $_maxTransactionIdLength Ziffern (rein '
+        'numerisch)',
+      );
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Transactions
@@ -198,14 +246,7 @@ class HpsClient {
     String? language,
     bool technicalCancel = false,
   }) {
-    if (transactionId.isEmpty ||
-        transactionId.length > _maxTransactionIdLength) {
-      throw ArgumentError.value(
-        transactionId,
-        'transactionId',
-        'HPS erlaubt 1 bis $_maxTransactionIdLength Zeichen',
-      );
-    }
+    _checkTransactionId(transactionId, 'transactionId');
     final lang = language ?? defaultLanguage;
     final uri = _uri('api/transaction/payment/$tid/$transactionId', {
       'amount': amount.toString(),
@@ -240,14 +281,7 @@ class HpsClient {
   /// liefert: sie antwortet auf jeden nicht genehmigten Vorgang mit
   /// [TransactionResponse.noStatementCode].
   Future<TransactionResponse> abort({required String transactionId}) {
-    if (transactionId.isEmpty ||
-        transactionId.length > _maxTransactionIdLength) {
-      throw ArgumentError.value(
-        transactionId,
-        'transactionId',
-        'HPS erlaubt 1 bis $_maxTransactionIdLength Zeichen',
-      );
-    }
+    _checkTransactionId(transactionId, 'transactionId');
     final uri = _uri('api/transaction/abort/$tid/$transactionId', null);
     return _sendTransactionUri('POST', uri, null);
   }
@@ -289,17 +323,18 @@ class HpsClient {
   ///
   /// [TransactionResponse.isInProgress] (`responseCode == null`) wurde auf
   /// dieser Firmware nie beobachtet, bleibt aber ebenfalls eine Nicht-Aussage.
+  ///
+  /// Eine dritte Nicht-Aussage, am 27.08.2026 gemessen: fragt man eine nicht
+  /// rein numerische Kennung ab, antwortet diese Abfrage DAUERHAFT mit
+  /// [TransactionResponse.technicalErrorCode] (`9900`, "Technical Error
+  /// Database") -- unabhaengig davon, ob unter der Kennung tatsaechlich Geld
+  /// floss. [_checkTransactionId] verhindert das fuer jede Kennung, die
+  /// dieser Client selbst erzeugt oder entgegennimmt; unangetastet bleibt
+  /// eine Kennung, die vor dieser Pruefung entstanden ist.
   Future<TransactionResponse> transactionStatus({
     required String transactionId,
   }) {
-    if (transactionId.isEmpty ||
-        transactionId.length > _maxTransactionIdLength) {
-      throw ArgumentError.value(
-        transactionId,
-        'transactionId',
-        'HPS erlaubt 1 bis $_maxTransactionIdLength Zeichen',
-      );
-    }
+    _checkTransactionId(transactionId, 'transactionId');
     final uri = _uri('api/v2/transactions/$tid/$transactionId', null);
     return _sendTransactionUri('GET', uri, null);
   }
@@ -408,14 +443,15 @@ class HpsClient {
     int? transactionType,
   }) {
     if (transactionId != null) {
-      if (transactionId.isEmpty ||
-          transactionId.length > _maxTransactionIdLength) {
-        throw ArgumentError.value(
-          transactionId,
-          'transactionId',
-          'HPS erlaubt 1 bis $_maxTransactionIdLength Zeichen',
-        );
-      }
+      _checkTransactionId(transactionId, 'transactionId');
+    }
+    // originalTransactionId geht bei [refund] ebenso ans Terminal wie
+    // transactionId -- bis 27.08.2026 ungeprueft. Ohne diese Pruefung waere
+    // eine Gutschrift auf eine nicht-numerische Originalkennung derselben
+    // Falle ausgesetzt: die spaetere Statusabfrage darauf antwortet
+    // ebenfalls dauerhaft mit [TransactionResponse.technicalErrorCode].
+    if (originalTransactionId != null) {
+      _checkTransactionId(originalTransactionId, 'originalTransactionId');
     }
     final tx = <String, dynamic>{
       'tid': tid,
@@ -439,7 +475,8 @@ class HpsClient {
     String method,
     String path,
     Map<String, dynamic>? body,
-  ) => _sendTransactionUri(method, _uri(path, null), body);
+  ) =>
+      _sendTransactionUri(method, _uri(path, null), body);
 
   Future<TransactionResponse> _sendTransactionUri(
     String method,
@@ -470,7 +507,8 @@ class HpsClient {
     request.headers['Accept'] = 'application/json';
     if (body != null) request.body = jsonEncode(body);
 
-    _emit(HpsEvent(HpsEventKind.requestStarted, '${request.method} ${uri.path}'));
+    _emit(
+        HpsEvent(HpsEventKind.requestStarted, '${request.method} ${uri.path}'));
 
     final http.Client client = _http ?? http.Client();
     try {
@@ -482,11 +520,13 @@ class HpsClient {
           '${request.method} ${uri.path} -> ${response.statusCode}'));
       return response;
     } on HpsException catch (error) {
-      _emit(HpsEvent(HpsEventKind.requestFailed, '${request.method} ${uri.path}',
+      _emit(HpsEvent(
+          HpsEventKind.requestFailed, '${request.method} ${uri.path}',
           error: error));
       rethrow;
     } catch (error) {
-      _emit(HpsEvent(HpsEventKind.requestFailed, '${request.method} ${uri.path}',
+      _emit(HpsEvent(
+          HpsEventKind.requestFailed, '${request.method} ${uri.path}',
           error: error));
       throw HpsConnectionException(error);
     } finally {

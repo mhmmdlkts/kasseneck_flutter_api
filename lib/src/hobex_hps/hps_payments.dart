@@ -14,15 +14,27 @@ import 'transaction_response.dart';
 /// [HpsClient.transactionStatus] geklaert statt als Fehlschlag gemeldet.
 ///
 /// Regel, von der nicht abgewichen wird: [CardPaymentOutcome.declined] entsteht
-/// ausschliesslich aus einer POSITIVEN Aussage -- entweder einem echten
-/// Ergebniscode des Terminals, der weder `'0'` noch
-/// [TransactionResponse.noStatementCode] ist, oder einem nachweislich
-/// gelungenen [HpsClient.abort]. Ein Transportfehler, ein Zeitablauf oder eine
+/// ausschliesslich aus einer POSITIVEN Aussage -- entweder einem GEMESSENEN
+/// Ergebniscode des Terminals ungleich `'0'` (siehe
+/// [TransactionResponse.isConclusive]), oder einem nachweislich gelungenen
+/// [HpsClient.abort]. Ein Transportfehler, ein Zeitablauf oder eine
 /// Wissensluecke fuehren NIE dorthin: keines davon ist eine Aussage darueber,
 /// dass nichts belastet wurde. Ein Transportfehler trennt "nicht angekommen"
 /// nicht von "angekommen, Antwort verloren" -- genau diese Verwechslung hat am
 /// 24.08.2026 eine echte Belastung als unbelastet ausgewiesen und den Kunden
 /// ein zweites Mal belastet.
+///
+/// Am 27.08.2026 zeigte eine Messung, dass "gemessen" woertlich zu nehmen
+/// ist: [TransactionResponse.isConclusive] galt bis dahin fuer JEDEN Code
+/// ausser `null` und [TransactionResponse.noStatementCode] -- eine
+/// Negativliste, die sich als Positivliste ausgab. Ein neu aufgetretener
+/// Code ([TransactionResponse.technicalErrorCode], `9900`) war darueber
+/// schluessig und wurde `declined`, obwohl unter dem betroffenen Vorgang
+/// Geld geflossen sein kann -- derselbe Fehler wie am 24.08.2026, nur an
+/// anderer Stelle entstanden. [TransactionResponse.isConclusive] ist seither
+/// eine echte Positivliste: schluessig ist nur ein Code, dessen Bedeutung
+/// GEMESSEN und benannt ist. Jeder andere -- egal wie sehr er wie ein
+/// Fehlercode aussieht -- ist eine Wissensluecke.
 ///
 /// ## Der Klaerweg, wie er am 26.08.2026 gemessen wurde
 ///
@@ -179,6 +191,8 @@ class HpsPayments {
       // war und beantwortet wurde. Fiele so etwas an pay() vorbei, bekaeme der
       // Aufrufer kein Ergebnis und damit keine Kennung: genau der Mechanismus
       // des Vorfalls vom 24.08.2026, nur mit anderem Ausloeser.
+      final busy = _fromTerminalBusy(e, id, steps);
+      if (busy != null) return busy;
       steps.add('Zahlung abgebrochen: $e');
       _noteUnexpected(e, id);
     }
@@ -221,6 +235,8 @@ class HpsPayments {
       // Kennung schlaegt zu, BEVOR etwas gesendet wurde.
       rethrow;
     } catch (e) {
+      final busy = _fromTerminalBusy(e, id, steps);
+      if (busy != null) return busy;
       steps.add('Gutschrift abgebrochen: $e');
       _noteUnexpected(e, id);
     }
@@ -257,6 +273,8 @@ class HpsPayments {
     } on ArgumentError {
       rethrow;
     } catch (e) {
+      final busy = _fromTerminalBusy(e, transactionId, steps);
+      if (busy != null) return busy;
       steps.add('Aufhebung abgebrochen: $e');
       _noteUnexpected(e, transactionId);
     }
@@ -308,27 +326,105 @@ class HpsPayments {
 
   /// Verlaufseintrag fuer eine Antwort, die den Ausgang NICHT festschreibt.
   ///
-  /// Unterscheidet die beiden Gruende, weil [steps] der Nachweis ist, der im
-  /// Belastungsstreit angezeigt wird: "Antwort ohne Ergebniscode" waere
-  /// unwahr, wo sehr wohl einer da war -- er trug nur keine Aussage
-  /// ([TransactionResponse.noStatementCode]). Eine Unwahrheit im Nachweis ist
-  /// schlimmer als eine Luecke darin.
-  static String _offeneAntwort(TransactionResponse res) =>
-      res.responseCode == null
-          ? 'Antwort ohne Ergebniscode -- Ausgang wird geklaert'
-          : 'Antwort ohne Aussage (${res.responseCode}) -- Ausgang wird '
-              'geklaert';
+  /// Unterscheidet die Gruende, weil [steps] der Nachweis ist, der im
+  /// Belastungsstreit angezeigt wird -- eine Unwahrheit im Nachweis ist
+  /// schlimmer als eine Luecke darin:
+  /// - kein Code: "Antwort ohne Ergebniscode" -- es war wirklich keiner da.
+  /// - [TransactionResponse.technicalErrorCode] (`9900`): ein technischer
+  ///   Fehler des Terminals, keine Aussage ueber den Vorgang.
+  /// - ein sonst unbekannter Code: "unbekannter Code" -- ein Code WAR da, wir
+  ///   kennen nur seine Bedeutung nicht. Das ist etwas anderes als "ohne
+  ///   Ergebniscode" und etwas anderes als [TransactionResponse.noStatementCode]
+  ///   (`9027`), die unveraendert als "Antwort ohne Aussage" durchgeht.
+  static String _offeneAntwort(TransactionResponse res) {
+    if (res.responseCode == null) {
+      return 'Antwort ohne Ergebniscode -- Ausgang wird geklaert';
+    }
+    if (res.isTechnicalError) {
+      return 'Antwort mit technischem Fehler '
+          '(${TransactionResponse.technicalErrorCode}) -- keine Aussage '
+          'ueber den Vorgang, Ausgang wird geklaert';
+    }
+    if (res.isUnknownCode) {
+      return 'Terminal nennt einen unbekannten Code (${res.responseCode}) '
+          '-- Ausgang wird geklaert';
+    }
+    return 'Antwort ohne Aussage (${res.responseCode}) -- Ausgang wird '
+        'geklaert';
+  }
+
+  /// Verlaufseintrag fuer eine Statusabfrage, die NICHTS entscheidet -- oder
+  /// `null`, wenn keiner der drei benannten Faelle zutrifft; der Aufrufer
+  /// setzt dann seinen eigenen Fallback-Text (siehe [_resolve],
+  /// [_resolveCancel]).
+  ///
+  /// Dieselbe Unterscheidung wie [_offeneAntwort], nur fuer den Nachweistext
+  /// des Pollens: "wir kennen den Code nicht" (Wissensluecke ueber unser
+  /// Modell) ist etwas anderes als "das Terminal kennt den Vorgang nicht"
+  /// ([TransactionResponse.noStatementCode], `9027`) und wieder etwas
+  /// anderes als "das Terminal meldet einen technischen Fehler"
+  /// ([TransactionResponse.technicalErrorCode], `9900`).
+  /// Ordnet einen Fehlschlag der ERZEUGENDEN Anfrage (Zahlung, Gutschrift,
+  /// der DIREKTE Aufhebungs-Request) ein. `null`, wenn [error] nicht der
+  /// gemessene "Terminal beschaeftigt"-Fall ist ([HpsHttpException.isTerminalBusy]).
+  ///
+  /// Bewusst KEIN Fall in [TransactionResponse.isConclusive]: `409` ist ein
+  /// HTTP-Status, kein `responseCode` -- er entsteht, BEVOR ueberhaupt ein
+  /// Antwortrumpf gelesen wird, und gehoert deshalb auf diese Ebene, nicht in
+  /// die Code-Zuordnung. Siehe [HpsHttpException.terminalBusyStatusCode] fuer
+  /// die Messung (87 ms, keine Spur).
+  ///
+  /// Gilt AUSDRUECKLICH nur hier, an den drei Aufrufstellen in [pay],
+  /// [refund] und [cancel] -- niemals in [_tryAbort] oder beim Pollen der
+  /// Statusabfrage ([_resolve], [_resolveCancel]). Dort sagt ein `409` nur,
+  /// dass DIESE Anfrage nicht durchkam, nichts ueber den Vorgang, den sie
+  /// klaeren sollte; ihn dort ebenso zu lesen, waere dieselbe Verwechslung
+  /// von Nichtwissen und Aussage wie am 24.08.2026, nur mit `409` statt einem
+  /// Zeitablauf.
+  HpsResult? _fromTerminalBusy(Object error, String id, List<String> steps) {
+    if (error is! HpsHttpException || !error.isTerminalBusy) return null;
+    steps.add('Terminal beschaeftigt (HTTP ${error.statusCode}) -- die '
+        'Anfrage wurde nicht angenommen, es ist nichts geschehen');
+    _emit(HpsEventKind.resolved, steps.last, id);
+    return HpsResult(
+      outcome: CardPaymentOutcome.declined,
+      transactionId: id,
+      steps: List<String>.unmodifiable(steps),
+    );
+  }
+
+  static String? _statusOhneErgebnis(TransactionResponse status) {
+    if (status.isNoStatement) {
+      return 'Status: keine Auskunft '
+          '(${TransactionResponse.noStatementCode})';
+    }
+    if (status.isTechnicalError) {
+      return 'Status: technischer Fehler '
+          '(${TransactionResponse.technicalErrorCode}) -- keine Aussage '
+          'ueber den Vorgang';
+    }
+    if (status.isUnknownCode) {
+      return 'Status: unbekannter Code (${status.responseCode}) -- keine '
+          'Aussage';
+    }
+    return null;
+  }
 
   /// Ordnet eine Terminal-Antwort ein. `null`, wenn sie nichts entscheidet.
   ///
-  /// Zwei Antworten entscheiden nichts und fuehren zu weiterem Klaeren:
+  /// Drei Antworten entscheiden nichts und fuehren zu weiterem Klaeren:
   /// - keine `responseCode` -- das heisst "laeuft noch", nicht "abgelehnt";
   /// - [TransactionResponse.noStatementCode] (`9027`) -- das heisst
   ///   "keine Auskunft" und steht am gemessenen Terminal gleichermassen fuer
-  ///   einen laufenden, einen abgebrochenen und einen nie gesehenen Vorgang.
+  ///   einen laufenden, einen abgebrochenen und einen nie gesehenen Vorgang;
+  /// - [TransactionResponse.isUnknownCode] -- ein Code, dessen Bedeutung wir
+  ///   nie gemessen haben. Am 27.08.2026 war das genau die Luecke, die
+  ///   [TransactionResponse.technicalErrorCode] (`9900`) aufgedeckt hat:
+  ///   ohne diesen dritten Fall waere JEDER neue, unbenannte Code schluessig
+  ///   gewesen.
   ///
-  /// Beides zusammengefasst in [TransactionResponse.isConclusive]. Das ist die
-  /// eine Codestelle, an der ein Ergebniscode zu einem Ausgang wird.
+  /// Alle drei zusammengefasst in [TransactionResponse.isConclusive]. Das ist
+  /// die eine Codestelle, an der ein Ergebniscode zu einem Ausgang wird.
   HpsResult? _fromResponse(
     TransactionResponse res,
     String id,
@@ -418,9 +514,8 @@ class HpsPayments {
       final settled = _fromResponse(status, id, steps);
       if (settled != null) return settled;
 
-      steps.add(status.isNoStatement
-          ? 'Status: keine Auskunft (${TransactionResponse.noStatementCode})'
-          : 'Status: noch kein Ergebniscode');
+      steps
+          .add(_statusOhneErgebnis(status) ?? 'Status: noch kein Ergebniscode');
       wait = _nextWait(wait);
     }
 
@@ -558,9 +653,8 @@ class HpsPayments {
       // Der `'0'`-Karenzfall hat seinen eigenen, aussagekraeftigeren Eintrag
       // schon in [_fromCancelStatus] gesetzt.
       if (!status.isApproved) {
-        steps.add(status.isNoStatement
-            ? 'Status: keine Auskunft (${TransactionResponse.noStatementCode})'
-            : 'Status: Aufhebung noch nicht bestaetigt');
+        steps.add(_statusOhneErgebnis(status) ??
+            'Status: Aufhebung noch nicht bestaetigt');
       }
       wait = _nextWait(wait);
     }
@@ -756,9 +850,14 @@ class HpsPayments {
   /// auf. Die verlassene Abbruch-Anfrage laeuft am Terminal weiter. Faellt
   /// die unmittelbar folgende Statusabfrage in dieses Fenster, kann das
   /// Terminal sie mit `409` beantworten ("ein anderer Request laeuft") --
-  /// das ist heute ein Transportfehler wie jeder andere, zaehlt in
-  /// [maxTransportFailures] und wird nie zu einem Ausgang. Sicher, aber
-  /// ungenau; eine eigene Behandlung von `409` ist vorgemerkt.
+  /// das bleibt BEWUSST ein Transportfehler wie jeder andere, zaehlt in
+  /// [maxTransportFailures] und wird nie zu einem Ausgang. Seit dem
+  /// 27.08.2026 hat `409` zwar eine eigene, benannte Behandlung
+  /// ([_fromTerminalBusy]) -- die gilt aber ausdruecklich nur fuer die
+  /// ERZEUGENDE Anfrage (siehe dort). Hier waere die Statusabfrage, nicht der
+  /// urspruengliche Vorgang, abgewiesen worden -- ein `409` an dieser Stelle
+  /// sagt nichts darueber aus, ob DER VORGANG selbst glückte. Sicher, aber
+  /// ungenau.
   Duration get _abortBudget => resolveBudget ~/ _abortBudgetDivisor;
 
   Duration _nextWait(Duration current) {

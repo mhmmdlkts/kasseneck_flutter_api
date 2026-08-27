@@ -38,10 +38,19 @@ void main() {
       expect(r.cardNumber, '************1234'); // maskierte PAN bleibt erhalten
       expect(r.cvm, Cvm.signature);
     });
-    test('declined', () {
+    test('ein nie gemessener Code ist KEINE Aussage -- auch keine Ablehnung',
+        () {
+      // '05' SIEHT aus wie ein Ablehnungscode, ist aber nie gemessen worden.
+      // Seit dem Umbau auf eine echte Positivliste (siehe isConclusive) reicht
+      // "sieht aus wie" nicht mehr -- nur ein benannter, gemessener Code
+      // entscheidet.
       final r = TransactionResponse.fromJson({'responseCode': '05'});
       expect(r.isApproved, isFalse);
       expect(r.isInProgress, isFalse);
+      expect(r.isConclusive, isFalse);
+      expect(r.isUnknownCode, isTrue);
+      expect(r.isNoStatement, isFalse);
+      expect(r.isTechnicalError, isFalse);
     });
     test('in progress (kein responseCode)', () {
       final r = TransactionResponse.fromJson({'transactionId': 'TX2'});
@@ -89,6 +98,66 @@ void main() {
         TransactionResponse.fromJson({'responseCode': '100003'}).isConclusive,
         isTrue,
       );
+      expect(
+        TransactionResponse.fromJson({'responseCode': '100002'}).isConclusive,
+        isTrue,
+      );
+    });
+    test('9002 ist eine Aussage: der Vorgang wurde als ungueltig abgewiesen',
+        () {
+      // Am 27.08.2026 gemessen: eine Gutschrift auf eine unbekannte, REIN
+      // NUMERISCHE Original-Kennung antwortet nach 1,2 s mit 9002 -- ohne
+      // Kartenfluss, ohne Auszahlung. Anders als 9027 ("kein Eintrag") ist
+      // das eine positive Aussage: der Vorgang wurde verworfen, nichts
+      // geschah.
+      final r = TransactionResponse.fromJson({
+        'responseCode': '9002',
+        'responseText': 'Invalid Transaction',
+      });
+      expect(r.responseCode, TransactionResponse.invalidTransactionCode);
+      expect(r.isInvalid, isTrue);
+      expect(r.isApproved, isFalse);
+      expect(r.isConclusive, isTrue,
+          reason: 'ein gemessener Ablehnungscode entscheidet den Ausgang');
+      expect(r.isNoStatement, isFalse);
+      expect(r.isTechnicalError, isFalse);
+      expect(r.toString(), contains('DECLINED(9002)'));
+    });
+    test('9900 ist eine gemessene Wissensluecke, NIEMALS schluessig', () {
+      // Am 27.08.2026 gemessen: die Statusabfrage antwortet mit 9900
+      // "Technical Error Database" auf eine nicht rein numerische Kennung --
+      // gleichermassen auf genehmigte, abgelehnte und nie existierende
+      // Vorgaenge. Ueber die alte Fassung von isConclusive (jeder Code ausser
+      // null/9027 ist schluessig) waere das declined geworden, obwohl unter
+      // dem Vorgang Geld geflossen sein kann. DAS ist die Mutationsprobe:
+      // wuerde isConclusive wieder "jeder Code ausser 9027" lauten, wird
+      // dieser Test rot.
+      final r = TransactionResponse.fromJson({
+        'responseCode': '9900',
+        'responseText': 'Technical Error Database',
+      });
+      expect(r.responseCode, TransactionResponse.technicalErrorCode);
+      expect(r.isTechnicalError, isTrue);
+      expect(r.isConclusive, isFalse,
+          reason: 'ein technischer Fehler ist keine Aussage ueber den '
+              'Vorgang');
+      expect(r.isNoStatement, isFalse,
+          reason: '9900 ist NICHT 9027 -- eigene, unterscheidbare '
+              'Wissensluecke');
+      expect(r.isUnknownCode, isFalse,
+          reason: '9900 ist benannt, kein UNBEKANNTER Code');
+      expect(r.toString(), contains('TECHNICAL_ERROR'));
+    });
+    test(
+        'ein Code, dessen Bedeutung wir nie gemessen haben, bleibt eine '
+        'Wissensluecke -- egal wie er aussieht', () {
+      for (final code in ['9900', '77777', '05', '12345', 'ABC']) {
+        final conclusive =
+            TransactionResponse.fromJson({'responseCode': code}).isConclusive;
+        expect(conclusive, isFalse,
+            reason: '"$code" ist nicht in der Liste gemessener Codes -- '
+                'isConclusive darf dafuer nicht wahr sein');
+      }
     });
     test('amount als String wird geparst', () {
       final r = TransactionResponse.fromJson({'amount': '9.90'});
@@ -121,8 +190,18 @@ void main() {
 
       final data = hr.toCardPaymentData();
       // Keys, die print_paper/_hobexHps + keck_receipt_widget/_hobexHpsPart lesen:
-      for (final k in ['date', 'tid', 'no', 'type', 'cardBrand', 'cardNumber',
-        'responseCode', 'cvm', 'approvalCode', 'cardExpiry']) {
+      for (final k in [
+        'date',
+        'tid',
+        'no',
+        'type',
+        'cardBrand',
+        'cardNumber',
+        'responseCode',
+        'cvm',
+        'approvalCode',
+        'cardExpiry'
+      ]) {
         expect(data.containsKey(k), isTrue, reason: 'Render-Key fehlt: $k');
       }
       expect(data['no'], '42');
