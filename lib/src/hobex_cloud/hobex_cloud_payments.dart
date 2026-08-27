@@ -79,6 +79,12 @@ class HobexCloudResult {
 /// Cloud-Weg genauso: ohne Protokoll gibt es beim naechsten Vorfall wieder
 /// keine Daten. Ein werfender Beobachter darf den Zahlweg NIEMALS mitreissen
 /// -- siehe [_emit].
+@Deprecated(
+  'Der Cloud-Weg wird nicht mehr weiterentwickelt. Neue Einbindungen nutzen '
+  'HpsPayments (lokales hobex-HPS-Terminal). Bestehende Belege mit '
+  'CreditCardProvider.hobexCloudApi bleiben les- und druckbar; nur der '
+  'aktive Zahlweg ist abgekuendigt. Siehe CHANGELOG 5.1.1.',
+)
 class HobexCloudPayments {
   HobexCloudPayments(
     this._api, {

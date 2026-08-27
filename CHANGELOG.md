@@ -1,3 +1,11 @@
+## 5.1.1
+
+- **`HobexCloudPayments` ist abgekuendigt** (`@Deprecated`). Der Cloud-Weg wird nicht mehr weiterentwickelt; neue Einbindungen nutzen `HpsPayments` mit einem lokalen hobex-HPS-Terminal. **Nichts wird entfernt:** Bestandsbelege tragen `CreditCardProvider.hobexCloudApi`, und sie muessen les- und druckbar bleiben — abgekuendigt ist der aktive Zahlweg, nicht die Darstellung.
+
+  **Warum abkuendigen statt korrigieren:** Der HPS-Weg hat mit 5.1.0 eine Positivliste bekommen — nur Codes, deren Bedeutung gemessen ist, gelten als Aussage. Der Cloud-Weg ordnet weiterhin jeden Code ungleich `'0'` als Ablehnung ein. Das ist dort **begruendet** und nicht blind uebernommen: die Cloud signalisiert "kenne ich nicht" ueber `null` aus `hobexGetStatus`, nicht ueber einen Ergebniscode. Die Begruendung ruht aber auf einer **ungepruefen Annahme** — dass die Cloud nie einen Code liefert, der eine Wissensluecke bedeutet. Genau diese Sorte Annahme ist beim HPS-Weg an einer Messung gescheitert.
+
+  Sie hier nachzuziehen waere Arbeit an einem Weg, der nicht mehr genutzt wird, und ohne die Messwerte, die den HPS-Weg gut gemacht haben. Ehrlicher ist die Abkuendigung: wer den Cloud-Weg noch einbindet, sieht jetzt, dass er nicht gepflegt wird.
+
 ## 5.1.0
 
 **Anlass:** Am 27.08.2026 zeigte eine Messung am selben hobex-HPS (TID 3600335,
