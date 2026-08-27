@@ -25,6 +25,27 @@ import 'models/keck_tip.dart';
 import 'models/keck_tip_person.dart';
 import 'models/kasseneck_receipt.dart';
 import 'src/aufrufe.dart';
+import 'src/register/fehler.dart';
+
+export 'src/hobex_cloud/hobex_cloud_payments.dart'
+    show HobexCloudPayments, HobexCloudResult;
+// Der Ausgangs-Enum und der Beleg sind Teil der oeffentlichen Signatur von
+// HobexCloudResult -- ohne diese Exporte koennte ein Aufrufer, der nur dieses
+// Barrel importiert, den Typ von HobexCloudResult.outcome nicht benennen.
+export 'src/payments/card_payment_outcome.dart' show CardPaymentOutcome;
+export 'models/hobex_receipt.dart' show HobexReceipt;
+// Der Beleg-Lesefehler traegt die receiptId eines bereits signierten Belegs --
+// ohne diesen Export koennte ein Aufrufer, der nur dieses Barrel importiert,
+// ihn nicht fangen und den Faden zum Beleg nicht aufnehmen. Dieselbe
+// Ueberlegung fuer die beiden Antwortfehler: eine kaputte Antwort nach der
+// Signatur ist etwas anderes als ein fehlgeschlagener Verkauf, und
+// unterscheiden kann das nur, wer den Typ benennen darf.
+export 'src/register/fehler.dart'
+    show KasseneckHttpError, KasseneckReceiptFormatError, KasseneckValidationError;
+// HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
+// entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
+// nicht benennbar.
+export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
 
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///
@@ -55,10 +76,35 @@ class KasseneckApi {
     required this.cashregisterToken,
     this.printType,
     http.Client? httpClient,
+    this.readTimeout = const Duration(seconds: 30),
+    this.cardTimeout = const Duration(minutes: 3),
+    this.signatureTimeout = const Duration(seconds: 90),
   }) : _http = httpClient ?? http.Client();
 
+  /// Frist fuer lesende Aufrufe und fuer schreibende ohne Signatur.
+  final Duration readTimeout;
+
+  /// Frist fuer Aufrufe, an denen die **Signatureinheit** haengt — also
+  /// `createReceipt` in allen drei Gestalten (Verkauf, Storno, Nullbeleg).
+  ///
+  /// Getrennt von [readTimeout], weil hier etwas anderes auf dem Spiel steht:
+  /// ein Abbruch beendet nur das Warten der Kasse, nicht die Arbeit des
+  /// Servers. Laeuft die Frist ab, ist der Beleg womoeglich laengst signiert
+  /// und in der Kette — der Aufrufer bekommt aber eine `TimeoutException` und
+  /// liest sie als Fehlschlag. Je knapper die Frist, desto oefter passiert
+  /// genau das. Der Kassen-Weg (`RegisterReceiptClient.abschlussFrist`) gibt
+  /// aus demselben Grund seit jeher 90 Sekunden; die pauschalen 30 Sekunden
+  /// hier waren ein uebersehener Rest.
+  final Duration signatureTimeout;
+
+  /// Frist fuer Aufrufe, an denen ein Kartenterminal haengt. Deutlich laenger,
+  /// weil der Karteninhaber am Geraet steht: Karte einstecken, PIN, Autorisierung.
+  /// Die frueher pauschalen 30 s galten einem haengenden Belege-Cache und haben
+  /// im Zahlweg eine durchgelaufene Zahlung als Fehlschlag gemeldet.
+  final Duration cardTimeout;
+
   Future<dynamic> _kasseneckPostRequest(
-      {required String endpoint, Map<String, dynamic> params = const {}}) async {
+      {required String endpoint, Map<String, dynamic> params = const {}, Duration? deadline}) async {
     Uri uri = Uri.parse('$_baseUrl/$endpoint');
 
     final headers = {
@@ -73,9 +119,10 @@ class KasseneckApi {
       body: jsonEncode({
         'params': params,
       }),
-      // Ohne Timeout bleibt ein hängender Request für immer offen — der Aufrufer
-      // bekommt weder Ergebnis noch Fehler (z. B. blieb so der Belege-Cache still leer).
-    ).timeout(const Duration(seconds: 30));
+      // Ohne Frist bleibt ein haengender Request fuer immer offen — der Aufrufer
+      // bekommt weder Ergebnis noch Fehler. Die Frist ist je Aufruf waehlbar:
+      // ein Kartenaufruf braucht deutlich mehr Zeit als eine Belegabfrage.
+    ).timeout(deadline ?? readTimeout);
 
     if (response.statusCode == 200 && response.body.isNotEmpty) {
       return response.body;
@@ -87,7 +134,7 @@ class KasseneckApi {
   }
 
   Future<dynamic> _financeWebServicePostRequest(
-      {required String method, Map<String, dynamic> params = const {}}) async {
+      {required String method, Map<String, dynamic> params = const {}, Duration? deadline}) async {
     Uri uri = Uri.parse('$_baseUrl/${Aufrufe.financeWebService}');
 
     final headers = {
@@ -103,7 +150,9 @@ class KasseneckApi {
         'params': params,
         'method': method,
       }),
-    ).timeout(const Duration(seconds: 30));
+      // Dieselbe Frist wie nebenan: eine fest verdrahtete Spanne liess den
+      // Konstruktorparameter `readTimeout` hier wirkungslos.
+    ).timeout(deadline ?? readTimeout);
 
     if (response.statusCode == 200 && response.body.isNotEmpty) {
       return response.body;
@@ -112,6 +161,77 @@ class KasseneckApi {
         'Server-Fehler beim Aufruf von financeWebService $method: ${response.statusCode} - ${response.body}',
       );
     }
+  }
+
+  /// Ruft [endpoint] und gibt die Huelle `{status, data}` **geprueft** zurueck.
+  ///
+  /// Der Umweg ueber diese Stelle ersetzt die implizite Zuweisung
+  /// `final Map<String, dynamic> resJson = … json.decode(value)`, die an jeder
+  /// Aufrufstelle stand. Sie erzeugte bei einem `200` mit Array, Skalar oder
+  /// `null` einen rohen `TypeError` — im Verkauf **nach** der Signatur, mit
+  /// einer Meldung, die kein Aufrufer anzeigen kann. Und ein `200` mit
+  /// Nicht-JSON im Rumpf (HTML einer Captive-Portal- oder CDN-Fehlerseite)
+  /// gab eine rohe `FormatException`.
+  ///
+  /// Wirft [KasseneckHttpError] — fangbar und ohne jeden Rumpfinhalt.
+  Future<Map<String, dynamic>> _kasseneckJson({
+    required String endpoint,
+    Map<String, dynamic> params = const {},
+    Duration? deadline,
+  }) async =>
+      _huelle(endpoint, await _kasseneckPostRequest(endpoint: endpoint, params: params, deadline: deadline));
+
+  Future<Map<String, dynamic>> _financeJson({
+    required String method,
+    Map<String, dynamic> params = const {},
+    Duration? deadline,
+  }) async =>
+      _huelle('financeWebService/$method',
+          await _financeWebServicePostRequest(method: method, params: params, deadline: deadline));
+
+  /// Geworfen wird [KasseneckHttpError] mit denselben `reason`-Werten, die der
+  /// Kassen-Weg (`RegisterTransport.rufen`) fuer dieselben drei Lagen setzt.
+  /// Ein blankes `Exception` waere hier zu wenig: im Verkauf, **nach** der
+  /// Signatur, ist der Unterschied zwischen „die Antwort ist kaputt, der Beleg
+  /// existiert" und „der Verkauf ist fehlgeschlagen" das, was der Aufrufer
+  /// entscheiden muss — und gezielt fangen kann er nur einen eigenen Typ.
+  ///
+  /// Der Statuscode steht fest auf 200: was hier ankommt, hat
+  /// [_kasseneckPostRequest] bereits als 200 mit nicht leerem Rumpf
+  /// durchgelassen, alles andere wirft dort.
+  static Map<String, dynamic> _huelle(String endpoint, dynamic rumpf) {
+    final Object? roh;
+    try {
+      roh = json.decode(rumpf as String);
+    } on FormatException {
+      // Der Rumpf selbst bleibt draussen: er kann eine fremde Fehlerseite
+      // sein und gehoert nicht ins Protokoll.
+      throw KasseneckHttpError(endpoint, 200, 'not-json');
+    }
+    if (roh is! Map<String, dynamic>) {
+      throw KasseneckHttpError(endpoint, 200, 'missing-status');
+    }
+    return roh;
+  }
+
+  /// Das `data`-Objekt einer erfolgreichen Antwort — geprueft statt gecastet.
+  static Map<String, dynamic> _daten(String endpoint, Map<String, dynamic> huelle) {
+    final daten = huelle['data'];
+    if (daten is! Map) {
+      throw KasseneckHttpError(endpoint, 200, 'data-not-object');
+    }
+    return Map<String, dynamic>.from(daten);
+  }
+
+  /// Die Belegkennung aus einer rohen Antwort — defensiv, wirft nie.
+  ///
+  /// Der Faden zum Beleg: geht das Einlesen schief, ist der Beleg trotzdem
+  /// signiert und in der Kette, und `getReceipt(receiptId)` holt ihn nach.
+  static String? _receiptIdAus(Object? daten) {
+    if (daten is! Map) return null;
+    final beleg = daten['receipt'];
+    final wert = beleg is Map ? beleg['receiptId'] : daten['receiptId'];
+    return wert is String && wert.isNotEmpty ? wert : null;
   }
 
   /// Downloads the daily report PDF for [dateTime] as raw bytes.
@@ -132,10 +252,14 @@ class KasseneckApi {
     }).then((value) => Uint8List.fromList(value.codeUnits));
 
   Future<ReportMonth?> getFirstReceiptDate() async {
-    final resJson = await _kasseneckPostRequest(endpoint: Aufrufe.getFirstReceiptDate).then((value) => json.decode(value));
+    final resJson = await _kasseneckJson(endpoint: Aufrufe.getFirstReceiptDate);
 
     if (resJson['status'] == 'success') {
-      DateTime dateTime = DateTime.parse(resJson['data']);
+      final roh = resJson['data'];
+      if (roh is! String) {
+        throw Exception('getFirstReceiptDate: data ist kein Datum');
+      }
+      DateTime dateTime = DateTime.parse(roh);
       return ReportMonth.fromDateTime(dateTime);
     } else {
       final msg = resJson['message'] ?? 'Unbekannter Fehler';
@@ -362,15 +486,46 @@ class KasseneckApi {
       params['legalMessage'] = legalMessage.join('\n');
     }
 
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: Aufrufe.createReceipt, params: params).then((value) => json.decode(value));
+    final resJson = await _kasseneckJson(
+      endpoint: Aufrufe.createReceipt,
+      params: params,
+      deadline: signatureTimeout,
+    );
 
     if (resJson['status'] == 'success') {
-      KasseneckReceipt receipt = KasseneckReceipt.fromJson(resJson['data'] as Map<String, dynamic>);
+      // Ab hier ist der Beleg signiert und steht in der Kette. Alles, was
+      // beim Einlesen noch schiefgeht, darf ihn nicht mehr verschwinden
+      // lassen — siehe [_belegAus].
+      KasseneckReceipt receipt = _belegAus(Aufrufe.createReceipt, _daten(Aufrufe.createReceipt, resJson));
       await receipt.init();
       return receipt;
     } else {
       final msg = resJson['message'] ?? 'Unbekannter Fehler';
       throw Exception('createReceipt fehlgeschlagen: $msg');
+    }
+  }
+
+  /// Einen Beleg aus dem `data`-Objekt lesen, **ohne die Kennung zu verlieren**.
+  ///
+  /// Der Beleg ist an dieser Stelle bereits ausgestellt. Fliegt beim Einlesen
+  /// noch ein Fehler, ist die `receiptId` das Einzige, womit er sich nachholen
+  /// laesst (`getReceipt`): ohne sie ist ein Beleg, der in der Signaturkette
+  /// steht, fuer die Kasse verloren — und der naheliegende zweite Versuch
+  /// waere ein zweiter Umsatz. Deshalb wird hier **jede** Ausnahme in einen
+  /// [KasseneckReceiptFormatError] mit Kennung uebersetzt, nicht nur die, die
+  /// das Modell selbst wirft.
+  static KasseneckReceipt _belegAus(String endpoint, Map<String, dynamic> daten) {
+    try {
+      return KasseneckReceipt.fromJson(daten);
+    } on KasseneckReceiptFormatError catch (e) {
+      if (e.receiptId != null) rethrow;
+      throw KasseneckReceiptFormatError(e.field, receiptId: _receiptIdAus(daten));
+    } catch (e) {
+      throw KasseneckReceiptFormatError(
+        'receipt',
+        receiptId: _receiptIdAus(daten),
+        causeType: e.runtimeType.toString(),
+      );
     }
   }
 
@@ -381,9 +536,7 @@ class KasseneckApi {
   /// [KeckTipPerson.mit] den Anteil fuer [KeckTip.recipients] — so kann keine
   /// Kennung danebengreifen, die der Server ablehnt.
   Future<List<KeckTipPerson>> listTipRecipients() async {
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
-      endpoint: Aufrufe.listMyTipRecipients,
-    ).then((value) => json.decode(value));
+    final resJson = await _kasseneckJson(endpoint: Aufrufe.listMyTipRecipients);
 
     if (resJson['status'] != 'success') {
       final msg = resJson['message'] ?? 'Unbekannter Fehler';
@@ -393,7 +546,8 @@ class KasseneckApi {
     if (roh is! List) {
       // Keine Liste ist etwas anderes als eine leere Liste: „niemand
       // zuweisbar" darf nicht aussehen wie „Antwort kaputt".
-      throw Exception('listMyTipRecipients: Antwort enthaelt keine Liste (data.recipients fehlt)');
+      throw const KasseneckValidationError(
+          Aufrufe.listMyTipRecipients, 'Antwort enthaelt keine Liste (data.recipients fehlt)', 'response');
     }
     return [
       for (final e in roh)
@@ -403,12 +557,12 @@ class KasseneckApi {
 
   /// Fetches a single receipt by its [receiptId].
   Future<KasseneckReceipt?> getReceipt(String receiptId) async {
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: Aufrufe.getReceipt, params: {
+    final resJson = await _kasseneckJson(endpoint: Aufrufe.getReceipt, params: {
       'receiptId': receiptId
-    }).then((value) => json.decode(value));
+    });
 
     if (resJson['status'] == 'success') {
-      KasseneckReceipt receipt = KasseneckReceipt.fromJson(resJson['data']);
+      KasseneckReceipt receipt = _belegAus(Aufrufe.getReceipt, _daten(Aufrufe.getReceipt, resJson));
       await receipt.init();
       return receipt;
     } else {
@@ -423,19 +577,37 @@ class KasseneckApi {
       throw ArgumentError('start darf nicht nach end sein.');
     }
 
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(endpoint: Aufrufe.getReportV2, params: {
+    final resJson = await _kasseneckJson(endpoint: Aufrufe.getReportV2, params: {
       'start': start.toIso8601String().split('.').first,
       'end': end.toIso8601String().split('.').first
-    }).then((value) => json.decode(value));
-    debugPrint('getReportV2 $start–$end: status=${resJson['status']} '
-        'receipts=${(resJson['data']?['receipts'] as List?)?.length ?? 'null'}');
+    });
     if (resJson['status'] == 'success') {
-      Map<String, dynamic> metadata = resJson['data']['metadata'];
+      final daten = _daten(Aufrufe.getReportV2, resJson);
+      final rohMetadata = daten['metadata'];
+      if (rohMetadata is! Map) {
+        throw const KasseneckValidationError(
+            Aufrufe.getReportV2, 'Antwort enthaelt keine Metadaten (data.metadata fehlt)', 'response');
+      }
+      final Map<String, dynamic> metadata = Map<String, dynamic>.from(rohMetadata);
+      final rohBelege = daten['receipts'];
+      if (rohBelege is! List) {
+        // Keine Liste ist etwas anderes als eine leere Liste: „im Zeitraum
+        // nichts verkauft" darf nicht aussehen wie „Antwort kaputt". Wortgleich
+        // mit `belege.dart` auf dem Kassen-Weg -- dieselbe Lage, derselbe Typ.
+        throw const KasseneckValidationError(
+            Aufrufe.getReportV2, 'Antwort enthaelt keine Belegliste (data.receipts fehlt)', 'response');
+      }
+      // Gezaehlt wird erst HIER. Die Zeile stand vorher ueber den Pruefungen
+      // und las `data['receipts']` mit einem String-Index: bei `data: [...]`
+      // oder `data: "text"` griff das in eine Liste bzw. einen Text, bei
+      // `receipts: {...}` scheiterte der Cast — in allen drei Faellen ein
+      // roher TypeError, genau vor der Stelle, die ihn verhindern soll.
+      debugPrint('getReportV2 $start–$end: ${rohBelege.length} Belege');
       // Pro Beleg parsen: EIN defekter/unerwarteter Beleg (z. B. Nullbeleg ohne
       // items) darf nicht den gesamten Abruf kippen — sonst bleibt der ganze
       // Tages-/Zeitraums-Cache leer und keine Buchung findet ihren Beleg.
       final List<KasseneckReceipt> receipts = [];
-      for (final r in (resJson['data']['receipts'] as List)) {
+      for (final r in rohBelege) {
         try {
           receipts.add(KasseneckReceipt.fromMetadata(r, metadata));
         } catch (e) {
@@ -462,9 +634,7 @@ class KasseneckApi {
   }
 
   Future<CashboxStatus?> getCashboxStatus() async {
-    final Map<String, dynamic> resJson = await _financeWebServicePostRequest(
-      method: 'status_cashbox',
-    ).then((value) => json.decode(value));
+    final resJson = await _financeJson(method: 'status_cashbox');
     try {
       String res = resJson['data']['rkdbMessage']['status'];
       return CashboxStatus.values.where((element) => element.name == res).firstOrNull;
@@ -474,12 +644,12 @@ class KasseneckApi {
   }
 
   Future<SignatureStatus?> getSignatureStatus(String zertifikatNrHex) async {
-    final Map<String, dynamic> resJson = await _financeWebServicePostRequest(
+    final resJson = await _financeJson(
       method: 'status_signature',
       params: {
         'zertifikatnr_hex': zertifikatNrHex
       },
-    ).then((value) => json.decode(value));
+    );
     try {
       String rc = resJson['data']['rkdbMessage']['rc'];
       if (rc == 'B33') {
@@ -503,7 +673,7 @@ class KasseneckApi {
     String? customerPhone,
     String? customerEmail,
   }) async {
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+    final resJson = await _kasseneckJson(
         endpoint: Aufrufe.createPaymentLinkStripe,
         params: {
           'items': items.map((e) => e.toJson()).toList(),
@@ -516,7 +686,7 @@ class KasseneckApi {
           if (customerPhone != null) 'customer_phone': customerPhone,
           if (customerEmail != null) 'customer_email': customerEmail
         },
-    ).then((value) => json.decode(value));
+    );
     try {
       return StripeUrlSession.fromJson(resJson['data']);
     } catch (e) {
@@ -527,12 +697,12 @@ class KasseneckApi {
   Future<StripeUrlSession?> stripeCaptureIntent({
     required String stripeSessionId,
   }) async {
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+    final resJson = await _kasseneckJson(
         endpoint: Aufrufe.stripeCaptureIntent,
         params: {
           'stripe_sessions_id': stripeSessionId
         },
-    ).then((value) => json.decode(value));
+    );
     try {
       return StripeUrlSession.fromJson(resJson['data']);
     } catch (e) {
@@ -547,15 +717,16 @@ class KasseneckApi {
 
   /// Charges a card via the **Hobex Cloud** API and returns the resulting [HobexReceipt].
   Future<HobexReceipt> hobexPay({required String transactionId, required double amount, double tip = 0, String? reference}) async {
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+    final resJson = await _kasseneckJson(
         endpoint: Aufrufe.hobexPayApi,
         params: {
           'transactionId': transactionId,
           'amount': amount,
           'tip': tip,
           'reference': reference
-        }
-    ).then((value) => json.decode(value));
+        },
+        deadline: cardTimeout,
+    );
     try {
       return HobexReceipt.fromJson(resJson['data']);
     } catch (e) {
@@ -565,15 +736,56 @@ class KasseneckApi {
 
   /// Refunds a previous **Hobex Cloud** transaction.
   Future<bool> hobexRefund({required String transactionId, required double amount, double tip = 0}) async {
-    final Map<String, dynamic> resJson = await _kasseneckPostRequest(
+    final resJson = await _kasseneckJson(
         endpoint: Aufrufe.hobexRefundApi,
         params: {
           'transactionId': transactionId,
           'amount': amount,
           'tip': tip,
-        }
-    ).then((value) => json.decode(value));
+        },
+        deadline: cardTimeout,
+    );
     return resJson['status'] == 'success';
+  }
+
+  /// Fragt den Stand einer Hobex-Cloud-Transaktion ab.
+  ///
+  /// Das ist die Klaerstufe des Cloud-Wegs: nach einem Abbruch beantwortet sie
+  /// die Frage, ob die Zahlung trotzdem durchgelaufen ist. Der Vertrag
+  /// unterscheidet bewusst zwei Ausgaenge, die NICHT gleich behandelt werden
+  /// duerfen:
+  ///
+  /// * Rueckgabe `null`: der Dienst hat geantwortet und kennt zu
+  ///   [transactionId] nichts, oder der gelieferte Beleg war nicht lesbar.
+  ///   Das ist eine Aussage -- weiter klaeren/pollen ist sinnvoll.
+  /// * Eine geworfene Ausnahme: wir konnten den Dienst gar nicht erst fragen
+  ///   (Server-Fehler, Netzwerk, unerwartetes Antwortformat). Das ist ein
+  ///   Transportfehler und KEINE Aussage ueber den Vorgang -- er darf niemals
+  ///   als "nicht belastet" gelesen werden. Genau diese Vermischung von
+  ///   Nichtwissen und Aussage fuehrte zu einer durchgelaufenen Zahlung, die
+  ///   als Fehlschlag gemeldet wurde.
+  ///
+  /// Eine Abfrage, kein Kartenfluss -- daher die kurze Lesefrist statt der
+  /// Kartenfrist.
+  Future<HobexReceipt?> hobexGetStatus({required String transactionId}) async {
+    // Ueber dieselbe Huelle wie jeder andere Aufruf: ein unerwarteter Rumpf
+    // (Array, Skalar, HTML einer Fehlerseite) ist ein Transportfehler -- wir
+    // konnten den Dienst nicht sinnvoll befragen -- und wirft benannt. Die
+    // frueher hier gebaute Meldung hing den ganzen Rumpf an; die Ausnahmen der
+    // Klaerschleife landen im Nachweistext, und der wird im Belastungsstreit
+    // gelesen. Auch das ungesicherte json.decode faellt damit weg.
+    final Map<String, dynamic> resJson = await _kasseneckJson(
+      endpoint: Aufrufe.hobexGetStatus,
+      params: {'transactionId': transactionId},
+      deadline: readTimeout,
+    );
+
+    if (resJson['status'] != 'success' || resJson['data'] == null) return null;
+    try {
+      return HobexReceipt.fromJson(resJson['data']);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Zufallsquelle der Hobex-Transaktionskennung. Eine Quelle fuer alle

@@ -17,6 +17,7 @@ import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
 import '../services/vienna_time.dart';
+import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
 
 import 'keck_voucher.dart';
@@ -137,9 +138,54 @@ class PrintPaper {
     await addImage(img, align: align);
   }
 
+  /// Der QR-Code, der auf diesem Beleg nicht entstehen konnte — `null`, solange
+  /// alles gut ging. Der QR ist gesetzlich gefordert; ein Aufrufer, der den
+  /// Bon nachdrucken oder den Beleg elektronisch ausgeben will, muss davon
+  /// erfahren, ohne den Bytestrom zu durchsuchen. Wird von [reset] geleert.
+  String? qrFehler;
+
+  /// Nativer QR-Befehl. Die Nutzlast wird ausdruecklich **nicht** durch
+  /// [_printable] geschickt: der QR traegt Daten, keine Schrift. Ein durch '?'
+  /// ersetztes Zeichen ergaebe einen QR, der sich sauber lesen laesst und
+  /// trotzdem nicht mehr zum signierten Beleg passt — falsche Daten sind
+  /// schlimmer als keine. Kodiert wird UTF-8 (siehe [QRCode]).
   void addQrCode(String data, {QRSize size = QRSize.size6}) {
-    bytes.add(Uint8List.fromList(generator.qrcode(data, size: size)));
-    myPosPaper.addQrCode(data, size: 280);
+    if (data.isEmpty) {
+      _qrAusfall(data, 'leere Nutzlast');
+      return;
+    }
+    try {
+      bytes.add(Uint8List.fromList(generator.qrcode(data, size: size)));
+      myPosPaper.addQrCode(data, size: 280);
+    } catch (e) {
+      _qrAusfall(data, e);
+    }
+  }
+
+  /// Ein QR, der nicht entstehen konnte, wird **sichtbar** — nicht
+  /// verschwiegen und nicht mit einem Abbruch bezahlt.
+  ///
+  /// Abwaegung: Ein Abbruch haelt die Kasse an, waehrend ein Kunde davor
+  /// steht, und hilft dem Beleg nicht — der ist an dieser Stelle laengst
+  /// signiert und im DEP, kein Papier macht ihn nicht rechtmaessiger. Ein
+  /// stiller Ausfall wiederum liefert einen Pflichtbeleg, der vollstaendig
+  /// aussieht und keiner ist; er faellt niemandem auf und laesst sich hinterher
+  /// nicht mehr zuordnen. Also: der Bon laeuft durch, traegt aber einen
+  /// Aufdruck und die Belegdaten in Klarschrift, sodass der Kassier den Ausfall
+  /// sieht und der Inhalt trotzdem auf dem Papier steht. [qrFehler] meldet
+  /// dasselbe an den Aufrufer.
+  void _qrAusfall(String data, Object grund) {
+    qrFehler = grund.toString();
+    if (kDebugMode) print('QR-Code nicht druckbar: $grund');
+    addFeed();
+    addText('!! QR-CODE FEHLT !!', styles: PosStyles(align: PosAlign.center, bold: true));
+    if (data.isEmpty) return;
+    addText('Belegdaten:', styles: PosStyles(align: PosAlign.center));
+    final int breite = paperSize.defaultCharCount;
+    for (int i = 0; i < data.length; i += breite) {
+      final int ende = i + breite;
+      addText(data.substring(i, ende > data.length ? data.length : ende));
+    }
   }
 
   /// QR als Bild. [raster] true → GS v 0 (imageRaster), false → ESC * (image).
@@ -151,6 +197,10 @@ class PrintPaper {
   /// Bild ist deutlich kleiner/schneller ueber Bluetooth als der fruehere
   /// QrPainter→PNG-Roundtrip.
   Future<void> addQrCodeAsImage(String data, {int size = 280, bool raster = true}) async {
+    if (data.isEmpty) {
+      _qrAusfall(data, 'leere Nutzlast');
+      return;
+    }
     try {
       final RasterImage img = renderQrMatrix(data, size: size);
       bytes.add(Uint8List.fromList(
@@ -158,7 +208,9 @@ class PrintPaper {
       ));
       myPosPaper.addImage(await encodePng(img));
     } catch (e) {
-      if (kDebugMode) print('Error in addQrCodeAsImage: $e');
+      // Frueher endete der Fehler hier in einem kDebugMode-print: im Release
+      // entstand ein Pflichtbeleg ohne QR, ohne jedes Signal.
+      _qrAusfall(data, e);
     }
   }
 
@@ -204,6 +256,7 @@ class PrintPaper {
 
   void reset() {
     bytes.clear();
+    qrFehler = null;
     bytes.add(Uint8List.fromList(generator.reset()));
     bytes.add(Uint8List.fromList(generator.setGlobalCodeTable('CP1252')));
     myPosPaper.commands.clear();
@@ -213,10 +266,20 @@ class PrintPaper {
     reset();
 
     if (receipt.logo != null) {
-      final RasterImage image = await decodePng(receipt.logo!);
-      final RasterImage resized = resizeWidth(image, paperSize.imageWidth);
-      await addImage(resized);
-      addFeed();
+      // Ein Logo ist Zierde, der Beleg ist Pflicht. Die Bytes stammen aus
+      // einem HTTP-Abruf, der nur den Status prueft (LogoService) -- eine
+      // Fehlerseite vom CDN, ein abgebrochener Download oder ein falscher
+      // Content-Type kamen bisher ungefangen aus decodePng zurueck und rissen
+      // den gesamten Beleg mit, samt des gesetzlich vorgeschriebenen
+      // QR-Codes, der erst viel weiter unten entsteht.
+      try {
+        final RasterImage image = await decodePng(receipt.logo!);
+        final RasterImage resized = resizeWidth(image, paperSize.imageWidth);
+        await addImage(resized);
+        addFeed();
+      } catch (e) {
+        if (kDebugMode) print('Logo nicht druckbar, Beleg laeuft ohne: $e');
+      }
     }
 
     addText(receipt.companyName, styles: PosStyles(align: PosAlign.center, bold: true));
@@ -331,12 +394,15 @@ class PrintPaper {
     _addTable('MwSt%', 'MwSt', 'Netto', 'Brutto');
 
     vatTableBruttoByVatCents.forEach((key, bruttoCents) {
-      final double brutto = centToEuro(bruttoCents);
-      final num mwstSatz = key.rate;
-      final double netto = brutto / (1 + (mwstSatz / 100));
-      final double mwst = brutto - netto;
+      // Ganzzahlig zerlegen und die MwSt als Differenz nehmen -- getrennt aus
+      // Gleitkommazahlen gerundet ging die gedruckte Zeile nicht auf (39 Cent
+      // zu 20 % druckten 0,07 + 0,33 zu 0,39). Dieselbe Regel und dieselbe
+      // Funktion wie im Beleg-Widget, sonst laufen Papier und Bildschirm
+      // wieder auseinander.
+      final int nettoCents = nettoCentsAusBrutto(bruttoCents, key.rate);
+      final int mwstCents = bruttoCents - nettoCents;
 
-      _addTable('${key.category} ${key.rate.toString().replaceAll('.', ',')}%', formatAmount(mwst), formatAmount(netto), formatAmount(brutto));
+      _addTable('${key.category} ${key.rate.toString().replaceAll('.', ',')}%', formatCents(mwstCents), formatCents(nettoCents), formatCents(bruttoCents));
     });
 
     addFullHorizontalLine();
@@ -495,12 +561,14 @@ class PrintPaper {
     ]);
 
     this.bytes.add(Uint8List.fromList(bytes));
-    int len = 32~/4;
-    val1 = val1.padRight(len).substring(0, len);
-    val2 = val2.padLeft(len).substring(0, len);
-    val3 = val3.padLeft(len).substring(0, len);
-    val4 = val4.padLeft(len).substring(0, len);
-    myPosPaper.addText('$val1$val2$val3$val4');
+    // Spaltenbreite aus der Papierbreite statt fest 32 -- auf 80 mm blieb der
+    // MyPos-Text sonst in einer 58-mm-Aufteilung stehen. Und aufgefuellt wird
+    // nur, nie gekuerzt: das fruehere substring(0, len) schnitt ab 100.000,00
+    // die letzte Stelle des Betrags ab ("100000,00" -> "100000,0"). Eine Zeile,
+    // die zu breit wird, ist unschoen; ein gekuerzter Betrag ist falsch.
+    final int len = paperSize.defaultCharCount ~/ 4;
+    myPosPaper.addText(
+        '${val1.padRight(len)}${val2.padLeft(len)}${val3.padLeft(len)}${val4.padLeft(len)}');
   }
 
   /// Druckt ein Beleg-Zeilenmodell des Backends (`KasseneckReceipt.layout`)
@@ -519,6 +587,10 @@ class PrintPaper {
         BelegBanner() => BelegBanner(text: _printable(z.text), warnung: z.warnung),
         BelegSpalten() => BelegSpalten(z.columns.map((c) => BelegSpalte(text: _printable(c.text), width: c.width, align: c.align)).toList()),
         BelegLinie() => BelegLinie(char: _printable(z.char).isEmpty ? '-' : _printable(z.char)),
+        // BelegQr bleibt bewusst unangetastet: die QR-Nutzlast ist Datum,
+        // nicht Schrift — ein Ersatzzeichen ergaebe einen lesbaren QR mit
+        // falschem Inhalt. Sie ueberlebt den Druck trotzdem, seit der native
+        // Befehl UTF-8 statt Latin-1 kodiert (siehe [addQrCode]).
         _ => z,
       }).toList(),
       paperSize: layout.paperSize,

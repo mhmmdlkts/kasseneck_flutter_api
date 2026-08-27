@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/printing.dart';
 
 import 'helpers/test_receipts.dart';
@@ -44,7 +45,126 @@ bool containsSubsequence(List<int> haystack, List<int> needle) {
   return false;
 }
 
+/// Ein Beleg, dessen QR nicht entstehen kann: leere Nutzlast gilt als Ausfall
+/// (das Backend kann `data: ""` liefern), statt als QR ohne Inhalt.
+KasseneckReceipt belegOhneQr() => cartA()..qr = '';
+
 void main() {
+  group('Der QR-Ausfall erreicht den Aufrufer', () {
+    // Der QR-Code ist gesetzlich gefordert. Bis hierher baute jeder Druckweg
+    // das PrintPaper intern und gab nur Bytes bzw. MyPosPaper zurueck -- das
+    // Objekt mit qrFehler wurde verworfen, der Ausfall war auf KEINEM
+    // dokumentierten Weg erreichbar.
+    //
+    // KeckPrinterService.letzterQrFehler ist nur lesbar; jeder Test hier setzt
+    // ihn ueber einen eigenen Bau, statt sich auf einen Ausgangswert zu
+    // verlassen.
+
+    test('getPaperFromReceipt traegt den Ausfall im Rueckgabewert', () async {
+      final paper = await KeckPrinterService.getPaperFromReceipt(belegOhneQr(), KeckPaperSize.mm58);
+      expect(paper.qrFehler, isNotNull);
+    });
+
+    test('getPaperFromReceipt: ein gelungener QR setzt keinen Fehler', () async {
+      final paper = await KeckPrinterService.getPaperFromReceipt(cartA(), KeckPaperSize.mm58);
+      expect(paper.qrFehler, isNull);
+    });
+
+    test('getBytesFromReceipt meldet den Ausfall am Dienst', () async {
+      await KeckPrinterService.getBytesFromReceipt(belegOhneQr(), KeckPaperSize.mm58);
+      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+    });
+
+    test('KasseneckReceipt.getPrintBytes ebenso — der Bluetooth-Weg baut darueber', () async {
+      await belegOhneQr().getPrintBytes(paperSize: KeckPaperSize.mm58);
+      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+    });
+
+    test('getMyPosPaperFromReceipt ebenso — der MyPos-Terminaldruck baut darueber', () async {
+      await KeckPrinterService.getMyPosPaperFromReceipt(belegOhneQr());
+      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+    });
+
+    test('printReceiptWifi meldet den Ausfall, auch ohne konfigurierten Drucker', () async {
+      final String? vorher = KeckPrinterService.ipAddress;
+      KeckPrinterService.ipAddress = null;
+      addTearDown(() => KeckPrinterService.ipAddress = vorher);
+
+      await KeckPrinterService.printReceiptWifi(belegOhneQr());
+      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+    });
+
+    test('ein gelungener Beleg raeumt die Meldung wieder weg', () async {
+      await KeckPrinterService.getBytesFromReceipt(belegOhneQr(), KeckPaperSize.mm58);
+      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+      await KeckPrinterService.getBytesFromReceipt(cartA(), KeckPaperSize.mm58);
+      expect(KeckPrinterService.letzterQrFehler, isNull,
+          reason: 'sonst haengt der Ausfall eines frueheren Belegs am naechsten');
+    });
+
+    test('KeckPrinter.printReceipt traegt ihn im Ergebnis — ohne globalen Zustand', () async {
+      final fake = FakeTransport();
+      final res = await KeckPrinter(fake, size: KeckPaperSize.mm58).printReceipt(belegOhneQr());
+
+      expect(res.qrFehler, isNotNull);
+      expect(res.success, isTrue, reason: 'der Bon geht trotzdem hinaus');
+      expect(fake.sendCount, 1);
+    });
+
+    test('KeckPrinter.printReceipt: gelungener QR laesst das Ergebnis leer', () async {
+      final res = await KeckPrinter(FakeTransport(), size: KeckPaperSize.mm58).printReceipt(cartA());
+      expect(res.qrFehler, isNull);
+    });
+
+    test('printRawBytesWifi kennt keinen Beleg und meldet keinen QR-Ausfall', () async {
+      final res = await KeckPrinterService.printRawBytesWifi(const [1, 2, 3], ip: '');
+      expect(res.qrFehler, isNull);
+    });
+
+    group('die global-freien Wege schreiben das Signal nicht um', () {
+      // Sonst ueberschriebe ein KeckPrinter-Druck auf Drucker A genau das
+      // Signal, das ein gleichzeitig laufender printReceiptMypos auf Terminal
+      // B gerade auslesen will -- und die Zusage „frei von globalem Zustand"
+      // waere in beiden Richtungen falsch.
+
+      test('getPaperFromReceipt loescht einen fremden Ausfall nicht', () async {
+        await KeckPrinterService.getMyPosPaperFromReceipt(belegOhneQr());
+        final String? fremd = KeckPrinterService.letzterQrFehler;
+        expect(fremd, isNotNull);
+
+        await KeckPrinterService.getPaperFromReceipt(cartA(), KeckPaperSize.mm58);
+        expect(KeckPrinterService.letzterQrFehler, fremd);
+      });
+
+      test('getPaperFromReceipt setzt auch keinen eigenen', () async {
+        await KeckPrinterService.getBytesFromReceipt(cartA(), KeckPaperSize.mm58);
+        expect(KeckPrinterService.letzterQrFehler, isNull);
+
+        final paper =
+            await KeckPrinterService.getPaperFromReceipt(belegOhneQr(), KeckPaperSize.mm58);
+        expect(paper.qrFehler, isNotNull, reason: 'am Papier steht er sehr wohl');
+        expect(KeckPrinterService.letzterQrFehler, isNull, reason: 'am Dienst nicht');
+      });
+
+      test('KeckPrinter.printReceipt ruehrt das Signal in keine Richtung an', () async {
+        await KeckPrinterService.getMyPosPaperFromReceipt(belegOhneQr());
+        final String? fremd = KeckPrinterService.letzterQrFehler;
+        expect(fremd, isNotNull);
+
+        await KeckPrinter(FakeTransport(), size: KeckPaperSize.mm58).printReceipt(cartA());
+        expect(KeckPrinterService.letzterQrFehler, fremd);
+
+        await KeckPrinterService.getBytesFromReceipt(cartA(), KeckPaperSize.mm58);
+        expect(KeckPrinterService.letzterQrFehler, isNull);
+
+        final res = await KeckPrinter(FakeTransport(), size: KeckPaperSize.mm58)
+            .printReceipt(belegOhneQr());
+        expect(res.qrFehler, isNotNull, reason: 'im Ergebnis steht er');
+        expect(KeckPrinterService.letzterQrFehler, isNull, reason: 'am Dienst nicht');
+      });
+    });
+  });
+
   group('KeckPrinter mit FakeTransport', () {
     test('printText schreibt plausible Textbytes; send genau 1x', () async {
       final fake = FakeTransport();

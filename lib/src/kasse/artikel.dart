@@ -146,7 +146,12 @@ class KasseArtikel {
     return KasseArtikel(
       id: json['id'] is String ? json['id'] as String : '',
       name: json['name'] is String ? json['name'] as String : '',
-      preisCents: json['unitPriceCents'] is num ? (json['unitPriceCents'] as num).toInt() : null,
+      // round, nicht toInt: das Backend rechnet den Preis in JavaScript aus
+      // Euro hoch, und 19.99 * 100 ergibt dort 1998.9999999999998 -- ein
+      // abgeschnittener Wert verkaufte den Artikel dauerhaft einen Cent zu
+      // billig, und zwar auf einen signierten Beleg. Alle Schwesterstellen
+      // (kasseneck_item, keck_voucher, keck_invoice_item, belege) runden.
+      preisCents: json['unitPriceCents'] is num ? (json['unitPriceCents'] as num).round() : null,
       steuersatz: json['vatRate'] is num ? json['vatRate'] as num : null,
       einheit: json['unit'] is String ? json['unit'] as String : '',
       gruppeId: json['groupId'] is String ? json['groupId'] as String : null,

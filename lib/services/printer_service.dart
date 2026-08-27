@@ -51,16 +51,65 @@ class KeckPrinterService {
     return List<int>.from(bytes.expand((Uint8List uint8List) => uint8List));
   }
 
-  static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
-    PrintPaper paper = PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
+  /// Der QR-Ausfall des **zuletzt gesetzten** Belegs — `null`, solange alles
+  /// gut ging. Der QR ist gesetzlich gefordert; ein Bon ohne ihn muss beim
+  /// Aufrufer ankommen, damit der nachdrucken oder den Beleg elektronisch
+  /// ausgeben kann.
+  ///
+  /// Warum ein Feld und kein erweiterter Rueckgabetyp: [getBytesFromReceipt]
+  /// gibt Bytes zurueck, [getMyPosPaperFromReceipt] ein fremdes `MyPosPaper`
+  /// und [printReceiptMypos] eine fremde `PrintResponse` -- keiner dieser drei
+  /// Typen kann den Ausfall tragen, ohne dass jede aufrufende App ihre
+  /// Druckstellen umschreibt. Und dieser Dienst ist ohnehin durchgehend
+  /// statisch: Papiergroesse, Drucker-IP und Bluetooth-Geraet stehen global,
+  /// zwei Belege gleichzeitig kann er nicht drucken.
+  ///
+  /// Gesetzt wird bei jedem Bau ueber [getBytesFromReceipt] oder
+  /// [getMyPosPaperFromReceipt], auch auf `null` -- der Wert gehoert immer zum
+  /// letzten so gebauten Beleg und bleibt nie von einem frueheren stehen.
+  ///
+  /// [getPaperFromReceipt] schreibt ihn ausdruecklich **nicht**, und damit
+  /// auch [KeckPrinter.printReceipt] nicht: wer das Papier selbst in der Hand
+  /// haelt, liest den Ausfall daran ab. Wuerde dieser Weg mitschreiben,
+  /// ueberschriebe ein Druck auf Drucker A das Signal, das ein gleichzeitig
+  /// laufender Terminaldruck auf Geraet B gerade auslesen will.
+  ///
+  /// Nur lesbar. Ein Aufrufer, der ihn zuruecksetzen koennte, koennte damit
+  /// auch den Ausfall eines fremden Druckvorgangs loeschen.
+  ///
+  /// Wer den Ausfall ohne globalen Zustand braucht, nimmt
+  /// [getPaperFromReceipt] oder den transportbasierten [KeckPrinter], dessen
+  /// [KeckPrintResult] ihn mitfuehrt.
+  static String? get letzterQrFehler => _letzterQrFehler;
+  static String? _letzterQrFehler;
+
+  /// Setzt [receipt] als Beleg und gibt das fertige Papier zurueck -- die
+  /// **eine** Stelle, an der [PrintPaper] fuer einen Beleg entsteht.
+  ///
+  /// Der Rueckgabewert traegt neben `bytes` und `myPosPaper` auch
+  /// [PrintPaper.qrFehler]; dieser Weg ruehrt [letzterQrFehler] nicht an und
+  /// ist damit frei von globalem Zustand.
+  static Future<PrintPaper> getPaperFromReceipt(
+    KasseneckReceipt receipt,
+    KeckPaperSize paperSize, {
+    QrPrintMode qrMode = QrPrintMode.imageRaster,
+  }) async {
+    final PrintPaper paper =
+        PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     await paper.setKeckReceipt(receipt, qrMode: qrMode);
+    return paper;
+  }
+
+  static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
+    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: qrMode);
+    _letzterQrFehler = paper.qrFehler;
     return paper.bytes;
   }
 
   static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt) async {
-    PrintPaper paper = PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
-    await paper.setKeckReceipt(receipt, qrMode: QrPrintMode.native);
+    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: QrPrintMode.native);
+    _letzterQrFehler = paper.qrFehler;
     return paper.myPosPaper;
   }
 

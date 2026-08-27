@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -71,21 +72,41 @@ void main() {
       expect(c.log[2].url.path, '/api/transaction/preauth');
     });
 
-    test('cancel: DELETE auf payment/{tid}/{tx} + technicalCancel-Query', () async {
+    test('cancel: DELETE auf payment/{tid}/{tx} + amount/currency/technicalCancel-Query', () async {
       final c = clientWith();
-      await c.client.cancel(transactionId: 'TX-9');
-      await c.client.cancel(transactionId: 'TX-9', technicalCancel: true);
+      await c.client.cancel(transactionId: 'TX-9', amount: 1.5);
+      await c.client.cancel(transactionId: 'TX-9', amount: 1.5, technicalCancel: true);
       expect(c.log[0].method, 'DELETE');
       expect(c.log[0].url.path, '/api/transaction/payment/3600335/TX-9');
+      // amount ist Pflicht (sonst 400 Missing amount), currency faellt auf den
+      // EUR-Default -> beide gehen immer als Query mit.
+      expect(c.log[0].url.queryParameters['amount'], '1.5');
+      expect(c.log[0].url.queryParameters['currency'], 'EUR');
       expect(c.log[0].url.queryParameters.containsKey('technicalCancel'), isFalse);
       expect(c.log[1].url.queryParameters['technicalCancel'], 'true');
     });
 
-    test('abort liefert die transactionId aus der Antwort', () async {
-      final c = clientWith(body: '{"transactionId": "ABORTED-1"}');
-      final id = await c.client.abort(transactionId: 'TX-1');
-      expect(id, 'ABORTED-1');
+    test('abort liefert die volle Antwort, nicht nur die transactionId',
+        () async {
+      final c = clientWith(
+        body: '{"transactionId": "ABORTED-1", "responseCode": "0"}',
+      );
+      final res = await c.client.abort(transactionId: 'TX-1');
+      expect(res.transactionId, 'ABORTED-1');
+      expect(res.responseCode, '0');
       expect(c.log.single.url.path, '/api/transaction/abort/3600335/TX-1');
+    });
+
+    test('abort: gescheiterter Abbruch kommt mit HTTP 200 und 100010', () async {
+      // Genau die Lage, an der die alte Fassung scheiterte: sie warf nur bei
+      // Nicht-2xx und gab sonst die transactionId heraus -- ein gescheiterter
+      // Abbruch saehe damit aus wie ein geglueckter.
+      final c = clientWith(
+        body: '{"responseCode": "100010", "responseText": "Not abortable"}',
+      );
+      final res = await c.client.abort(transactionId: 'TX-1');
+      expect(res.responseCode, '100010');
+      expect(res.isApproved, isFalse);
     });
 
     test('transactionStatus: GET auf v2-Endpoint', () async {
@@ -111,6 +132,33 @@ void main() {
       await c.client.closeBatch(since);
       expect(c.log[0].url.path, '/api/terminals/3600335/batchtotal/2026-06-12T09:05:03');
       expect(c.log[1].url.path, '/api/terminals/3600335/closebatch/2026-06-12T09:05:03');
+    });
+
+    test('terminalStatus: GET status; 200 -> true, 503 -> false', () async {
+      final ok = clientWith(status: 200, body: '');
+      expect(await ok.client.terminalStatus(), isTrue);
+      expect(ok.log.single.method, 'GET');
+      expect(ok.log.single.url.path, '/api/terminals/3600335/status');
+
+      final down = clientWith(status: 503, body: '');
+      expect(await down.client.terminalStatus(), isFalse);
+    });
+
+    test('terminals: GET /api/terminals + Array-Parsing', () async {
+      final c = clientWith(
+        body: '[{"tid":"3600335","merchantName":"Shop","terminalType":"POS",'
+            '"active":true,"header":["Zeile 1","Zeile 2"],"fax":null}]',
+      );
+      final list = await c.client.terminals();
+      expect(c.log.single.method, 'GET');
+      expect(c.log.single.url.path, '/api/terminals');
+      expect(list, hasLength(1));
+      expect(list.single.tid, '3600335');
+      expect(list.single.merchantName, 'Shop');
+      expect(list.single.terminalType, 'POS');
+      expect(list.single.active, isTrue);
+      expect(list.single.header, ['Zeile 1', 'Zeile 2']);
+      expect(list.single.fax, isNull);
     });
   });
 
@@ -199,6 +247,147 @@ void main() {
       expect(HpsTransactionType.preAuthCapture.code, 8);
     });
   });
+
+  group('Kennung wird vor dem Netzweg geprueft', () {
+    test('19 Stellen -> ArgumentError, und es geht kein Request hinaus', () async {
+      final c = clientWith();
+      expect(
+        () => c.client.payment(amount: 5, transactionId: '2608261401590000001'),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(c.log, isEmpty);
+    });
+
+    test('leere Kennung -> ArgumentError', () async {
+      final c = clientWith();
+      expect(
+        () => c.client.payment(amount: 5, transactionId: ''),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(c.log, isEmpty);
+    });
+
+    test('18 Stellen sind erlaubt', () async {
+      final c = clientWith();
+      await c.client.payment(amount: 5, transactionId: '260826140159000001');
+      expect(txBody(c.log.single)['transactionId'], '260826140159000001');
+    });
+  });
+
+  group('tid-Normalisierung', () {
+    test('fuehrende Nullen fallen weg -- im Body und im Pfad', () async {
+      final log = <http.Request>[];
+      final mock = MockClient((request) async {
+        log.add(request);
+        return http.Response('{}', 200, headers: {'content-type': 'application/json'});
+      });
+      final client = HpsClient(tid: '03600335', httpClient: mock);
+      expect(client.tid, '3600335');
+
+      await client.payment(amount: 1);
+      expect(txBody(log.first)['tid'], '3600335');
+
+      await client.transactionStatus(transactionId: 'TX-1');
+      expect(log.last.url.path, '/api/v2/transactions/3600335/TX-1');
+    });
+
+    test('eine tid aus lauter Nullen bleibt unveraendert statt leer zu werden', () {
+      final client = HpsClient(tid: '000', httpClient: MockClient((_) async => http.Response('{}', 200)));
+      expect(client.tid, '000');
+    });
+  });
+
+  group('Erzeugte Kennung', () {
+    test('2000 Kennungen in Folge sind eindeutig und passen in 18 Stellen', () async {
+      final c = clientWith();
+      final ids = <String>{};
+      for (var i = 0; i < 2000; i++) {
+        await c.client.payment(amount: 1);
+        final id = txBody(c.log.last)['transactionId'] as String;
+        expect(id.length, lessThanOrEqualTo(18));
+        expect(RegExp(r'^\d+$').hasMatch(id), isTrue);
+        ids.add(id);
+      }
+      expect(ids.length, 2000);
+    });
+
+    // Zwei weitere Tests -- ein erzwungener Zaehlerueberlauf und eine
+    // rueckwaerts springende Uhr, beide mit einem Zeitstempel weit in der
+    // Zukunft -- liegen bewusst NICHT hier, sondern in
+    // test/hps_client_transaction_id_clock_test.dart: sie verschieben den
+    // prozessweiten statischen Zeitanker von HpsClient.newTransactionId
+    // dauerhaft um 100/200 Jahre nach vorn und OHNE oeffentlichen Reset
+    // bliebe das eine Falle fuer jeden spaeteren Test dieser Datei, der die
+    // Kennung ueber die echte Systemuhr erzeugt (z.B. per client.payment(...)
+    // ohne transactionId, wie in den Gruppen weiter unten). Siehe die
+    // Begruendung dort.
+  });
+
+  group('Frist deckt den ganzen Abruf', () {
+    test('haengender Rumpf loest die Frist aus, nicht erst der Antwortkopf', () async {
+      // Kopf kommt sofort, der Rumpf nie -- genau das Verhalten, das die alte
+      // Frist nicht abdeckte: sie lag allein auf send().
+      final never = StreamController<List<int>>();
+      addTearDown(never.close);
+      final mock = MockClient.streaming((request, bodyStream) async {
+        return http.StreamedResponse(never.stream, 200,
+            headers: {'content-type': 'application/json'});
+      });
+      final client = HpsClient(
+        tid: '3600335',
+        httpClient: mock,
+        timeout: const Duration(milliseconds: 200),
+      );
+      await expectLater(
+        client.payment(amount: 1),
+        throwsA(isA<HpsConnectionException>()),
+      );
+    });
+  });
+
+  group('Beobachter', () {
+    test('meldet Start und Erfolg eines Requests', () async {
+      final events = <HpsEvent>[];
+      final mock = MockClient((_) async => http.Response(
+          '{"responseCode":"0","transactionId":"TX-9"}', 200,
+          headers: {'content-type': 'application/json'}));
+      final client = HpsClient(tid: '3600335', httpClient: mock, observer: events.add);
+
+      await client.payment(amount: 1, transactionId: 'TX-9');
+
+      expect(events.map((e) => e.kind),
+          containsAllInOrder([HpsEventKind.requestStarted, HpsEventKind.requestSucceeded]));
+    });
+
+    test('meldet den Fehlschlag samt Ursache', () async {
+      final events = <HpsEvent>[];
+      final mock = MockClient((_) async => throw const SocketExceptionStub());
+      final client = HpsClient(tid: '3600335', httpClient: mock, observer: events.add);
+
+      await expectLater(client.payment(amount: 1), throwsA(isA<HpsConnectionException>()));
+
+      final failed = events.firstWhere((e) => e.kind == HpsEventKind.requestFailed);
+      expect(failed.error, isNotNull);
+    });
+
+    test('ein werfender Beobachter reisst den Zahlweg nicht mit', () async {
+      final mock = MockClient((_) async => http.Response(
+          '{"responseCode":"0"}', 200, headers: {'content-type': 'application/json'}));
+      final client = HpsClient(
+        tid: '3600335',
+        httpClient: mock,
+        observer: (_) => throw StateError('Protokoll kaputt'),
+      );
+      final res = await client.payment(amount: 1);
+      expect(res.isApproved, isTrue);
+    });
+  });
+}
+
+class SocketExceptionStub implements Exception {
+  const SocketExceptionStub();
+  @override
+  String toString() => 'SocketExceptionStub';
 }
 
 class _TrackingClient extends http.BaseClient {

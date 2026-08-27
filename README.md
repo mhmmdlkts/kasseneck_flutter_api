@@ -51,7 +51,7 @@ can focus on your app.
 
 ```yaml
 dependencies:
-  kasseneck_api: ^3.0.0
+  kasseneck_api: ^5.0.0
 ```
 
 ```bash
@@ -95,28 +95,57 @@ Card payments work **out of the box** with several terminals — and you're **ne
 
 | Method | How |
 |---|---|
-| **Hobex Cloud** | `kasseneck.hobexPay(...)` / `hobexRefund(...)` |
-| **Hobex HPS** (local terminal) | `import 'package:kasseneck_api/hobex_hps.dart';` → `HpsClient` |
+| **Hobex Cloud** (recommended) | `HobexCloudPayments` — `pay(...)` with a resolved, three-way outcome |
+| **Hobex HPS** (local terminal, recommended) | `HpsPayments` — `pay`/`refund`/`cancel`, same three-way outcome |
 | **myPOS · GP Tom · SumUp** | supported & rendered on the receipt |
 | **Any other terminal/method** | `CreditCardProvider.custom` — just pass your own card data |
 
 Whatever terminal you use, hand the result to `sellReceipt(...)` as `cardPaymentData` and it is
 stored and printed on the receipt.
 
+**Why `HpsPayments`/`HobexCloudPayments` instead of calling the terminal directly:** a card
+payment has three possible outcomes, not two — approved, definitely declined, or *unknown*
+(the request timed out, the connection dropped, the terminal never answered). Treating "unknown"
+as "declined" and retrying is how a customer gets charged twice for the same purchase. Both
+classes fix the transaction id **before** the first network call and, if the first answer is
+lost, resolve the same id against the terminal/cloud instead of silently starting a new attempt
+— so a lost response ends in `CardPaymentOutcome.unresolved` (keep the id, resolve later) rather
+than being guessed at.
+
 <details>
 <summary><b>Example — local Hobex terminal (HPS) → signed receipt</b></summary>
 
 ```dart
-import 'package:kasseneck_api/hobex_hps.dart'; // HpsClient, TransactionResponse, HobexReceipt
+import 'package:kasseneck_api/hobex_hps.dart'; // HpsClient, HpsPayments, HpsResult, CardPaymentOutcome, HobexReceipt
 
-final hps = HpsClient(tid: '3600335'); // TID without leading zero
+final hps = HpsPayments(HpsClient(tid: '3600335')); // TID without leading zero
 
-// 1) Charge the card on the terminal
-final res = await hps.payment(amount: 12.50);
-if (!res.isApproved) return; // declined -> res.responseCode / res.responseText
+// The id is fixed BEFORE the request goes out — persist it right away so a
+// lost response can still be traced back and resolved instead of retried blind.
+final transactionId = HpsClient.newTransactionId();
 
-// 2) Adapt the terminal result, 3) create the signed receipt
-final card = HobexReceipt.fromHps(res);
+final result = await hps.pay(amount: 12.50, transactionId: transactionId);
+
+switch (result.outcome) {
+  case CardPaymentOutcome.approved:
+    break; // proceed below
+  case CardPaymentOutcome.declined:
+    return; // definitely no money moved — safe to retry
+  case CardPaymentOutcome.unresolved:
+    // Not settled within the resolve budget (90 s by default, configurable).
+    //
+    // Do NOT retry here. Measured on a real terminal (2026-08-26): passing the same
+    // transactionId again starts a SECOND card flow — the terminal does not recognize
+    // it as the same transaction. A retry is a real second charge, not a safe repeat.
+    //
+    // Keep `transactionId`, resolve the outcome first — `HpsClient.transactionStatus(...)`
+    // once the terminal answers again — and act only on a known outcome.
+    // doc/kartenzahlung.md documents what each response code actually means.
+    return;
+}
+
+// Adapt the terminal result, then create the signed receipt.
+final card = HobexReceipt.fromHps(result.response!);
 await kasseneck.sellReceipt(
   paymentMethod: KeckPaymentMethod.creditCard,
   creditCardProvider: card.creditCardProvider, // hobexHps
@@ -126,8 +155,59 @@ await kasseneck.sellReceipt(
 );
 ```
 
-Also available: `hps.refund(...)`, `hps.cancel(...)`, `hps.transactionStatus(...)`,
-`hps.diagnosis()`. A **declined** payment is not an exception — it's `res.isApproved == false`.
+Also available: `hps.refund(...)`, `hps.cancel(...)` — same resolved outcome. Pass an `HpsObserver`
+callback to the `HpsPayments` constructor to log requests, failures and how an outcome was resolved.
+</details>
+
+<details>
+<summary><b>Example — Hobex Cloud → signed receipt</b></summary>
+
+```dart
+import 'package:kasseneck_api/kasseneck_api.dart'; // HobexCloudPayments, HobexCloudResult, CardPaymentOutcome
+
+final cloud = HobexCloudPayments(kasseneck);
+
+// Same rule as HPS: the id is fixed by the caller before the request goes out.
+final transactionId = KasseneckApi.newHobexTransactionId();
+
+final result = await cloud.pay(transactionId: transactionId, amount: 12.50);
+
+switch (result.outcome) {
+  case CardPaymentOutcome.approved:
+    break; // proceed below
+  case CardPaymentOutcome.declined:
+    return; // definitely no money moved — safe to retry
+  case CardPaymentOutcome.unresolved:
+    // Not settled within the resolve budget. Do NOT retry blindly — keep
+    // `transactionId` and resolve later, see the HPS example above.
+    return;
+}
+
+final card = result.receipt!;
+await kasseneck.sellReceipt(
+  paymentMethod: KeckPaymentMethod.creditCard,
+  creditCardProvider: card.creditCardProvider,
+  cardPaymentId: card.transactionId,
+  cardPaymentData: card.toCardPaymentData(),
+  items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
+);
+```
+
+`HobexCloudPayments` has no `cancel()` — a Cloud refund still goes through the raw
+`kasseneck.hobexRefund(...)` (see below), unresolved just like the plain call.
+</details>
+
+<details>
+<summary><b>Low-level access — raw <code>HpsClient</code> / <code>kasseneck.hobexPay(...)</code></b></summary>
+
+Both the local `HpsClient` (`import 'package:kasseneck_api/hobex_hps.dart';`) and the Cloud calls
+`kasseneck.hobexPay(...)` / `hobexRefund(...)` remain available directly, for full control over the
+request. **Neither does the outcome resolution above:** a raw call that never gets an answer stays
+unresolved forever — building a payment flow directly on top of it means re-solving the exact
+problem `HpsPayments`/`HobexCloudPayments` already solve, with a real risk of getting the "was it
+charged?" question wrong under exactly the conditions (timeout, dropped connection) where getting
+it wrong is expensive. Reach for the raw client only when you need something the resolved wrapper
+doesn't expose (e.g. `hps.diagnosis()`, `hps.transactionStatus(...)`).
 </details>
 
 ## 🖨️ Printing
@@ -173,7 +253,7 @@ payload, exactly as required by the Austrian RKSV. Signature-device outages are 
 ## 🗂️ Versioning
 
 This package follows semantic versioning — see the [CHANGELOG](CHANGELOG.md).
-Latest: **3.2.0** — optional Kreiseck branding at the end of receipts (print, widget & PDF).
+Latest: **5.0.0** — resolved card-payment outcomes (`approved` / `declined` / `unresolved`), transaction id fixed before the first request, and hardened receipt parsing. **Breaking** — see the [CHANGELOG](CHANGELOG.md).
 
 ## 💬 Support
 

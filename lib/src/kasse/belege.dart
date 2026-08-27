@@ -4,16 +4,16 @@
 ///
 /// **Der Verkauf ist der einzige Aufruf dieser Anwendung, der nicht folgenlos
 /// wiederholbar ist.** Ein Beleg geht in die Signaturkette und ins DEP; ein
-/// zweiter wäre ein zweiter Umsatz, den nur noch ein Storno aufhebt. Deshalb
-/// geht hier genau **ein** Aufruf hinaus — auch nach einem Netzhänger, bei dem
-/// es aussieht, als wäre nichts angekommen (der Beleg kann längst signiert
-/// sein). Der [RegisterTransport] hält dieselbe Zusage; hier wird sie nicht
+/// zweiter waere ein zweiter Umsatz, den nur noch ein Storno aufhebt. Deshalb
+/// geht hier genau **ein** Aufruf hinaus — auch nach einem Netzhaenger, bei dem
+/// es aussieht, als waere nichts angekommen (der Beleg kann laengst signiert
+/// sein). Der [RegisterTransport] haelt dieselbe Zusage; hier wird sie nicht
 /// aufgeweicht.
 ///
 /// Gerufen wird `createReceipt` und die Antwort **mitsamt Firmendaten**
 /// gelesen: der Belegbildschirm braucht neben dem Beleg den Belegkopf
-/// (Unternehmen, Anschrift, Steuerangabe, Fußzeilen), und das Backend liefert
-/// beides in derselben Antwort. Ein zweiter Aufruf dafür wäre ein zweiter Weg,
+/// (Unternehmen, Anschrift, Steuerangabe, Fusszeilen), und das Backend liefert
+/// beides in derselben Antwort. Ein zweiter Aufruf dafuer waere ein zweiter Weg,
 /// auf dem etwas schiefgehen kann — mitten zwischen Beleg und Gast.
 library;
 
@@ -26,7 +26,7 @@ import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'artikel.dart';
 
-/// Storno-Stand eines Belegs. Ein unbekannter künftiger Wert gilt als
+/// Storno-Stand eines Belegs. Ein unbekannter kuenftiger Wert gilt als
 /// [StornoStand.offen] — beim Lesen ist dieses Paket tolerant, die Grenze
 /// zieht ohnehin das Backend.
 enum StornoStand { offen, teil, voll }
@@ -38,13 +38,13 @@ typedef Stornoposition = ({int index, int menge});
 class Belegbediener {
   const Belegbediener({required this.uid, required this.name});
 
-  /// Kann fehlen (Altbeleg, Gerätebenutzer).
+  /// Kann fehlen (Altbeleg, Geraetebenutzer).
   final String? uid;
   final String name;
 }
 
-/// Ein Beleg in der Liste — eine **Zusammenfassung**, kein vollständiger
-/// Beleg. Für Nachdruck oder Storno gehört der Beleg über
+/// Ein Beleg in der Liste — eine **Zusammenfassung**, kein vollstaendiger
+/// Beleg. Fuer Nachdruck oder Storno gehoert der Beleg ueber
 /// [RegisterReceiptClient.holen] einzeln geholt.
 class Belegzusammenfassung {
   const Belegzusammenfassung({
@@ -86,7 +86,7 @@ class Belegzusammenfassung {
 
   final StornoStand stornoStand;
 
-  /// Fortlaufender Belegzähler der Kasse; fehlt bei Alt-Belegen.
+  /// Fortlaufender Belegzaehler der Kasse; fehlt bei Alt-Belegen.
   final int? zaehler;
 
   final Belegbediener? bediener;
@@ -157,8 +157,8 @@ class Stornoergebnis {
   final String originalReceiptId;
   final String? originalFullReceiptId;
 
-  /// Was von jeder Position des Originals noch offen ist — daraus weiß die
-  /// Kasse, ob ein weiteres Teilstorno noch möglich ist.
+  /// Was von jeder Position des Originals noch offen ist — daraus weiss die
+  /// Kasse, ob ein weiteres Teilstorno noch moeglich ist.
   final List<int> restmengen;
 }
 
@@ -170,7 +170,7 @@ class RegisterReceiptClient {
 
   final RegisterTransport transport;
 
-  /// Der Abschluss darf länger warten als eine Belegliste: die Signatureinheit
+  /// Der Abschluss darf laenger warten als eine Belegliste: die Signatureinheit
   /// braucht ihre Zeit, und ein Abbruch beendet nur das Warten der Kasse, nicht
   /// die Arbeit des Servers.
   final Duration abschlussFrist;
@@ -188,7 +188,7 @@ class RegisterReceiptClient {
     const name = Aufrufe.createReceipt;
     if (positionen.isEmpty) {
       // Ein leerer Verkauf ist kein Verkauf — und der Fehler soll fallen,
-      // bevor irgendetwas in die Signaturkette gerät.
+      // bevor irgendetwas in die Signaturkette geraet.
       throw const KasseneckValidationError(name, 'Positionen fehlen', 'request');
     }
     if (positionen.any((p) => !p.isValid)) {
@@ -253,7 +253,7 @@ class RegisterReceiptClient {
     ];
   }
 
-  /// Einen Beleg vollständig holen — samt Belegkopf, für Nachdruck und Storno.
+  /// Einen Beleg vollstaendig holen — samt Belegkopf, fuer Nachdruck und Storno.
   Future<KasseneckReceipt> holen(String receiptId) async {
     const name = Aufrufe.getReceipt;
     if (receiptId.trim().isEmpty) {
@@ -265,11 +265,11 @@ class RegisterReceiptClient {
   /// Storno-Beleg zu einem bestehenden Beleg — voll oder in Teilen.
   ///
   /// Ohne [positionen] ist es ein Vollstorno. Eine **leere** Positionsliste ist
-  /// dagegen ein Fehler: sonst würde aus einem missglückten Teilstorno still
+  /// dagegen ein Fehler: sonst wuerde aus einem missglueckten Teilstorno still
   /// ein Vollstorno.
   ///
-  /// Die Restmengen und die Reichweite des Rechts hält der Server; die Kasse
-  /// bietet nur an, was sie für möglich hält.
+  /// Die Restmengen und die Reichweite des Rechts haelt der Server; die Kasse
+  /// bietet nur an, was sie fuer moeglich haelt.
   Future<Stornoergebnis> stornieren({
     required String originalReceiptId,
     required String grund,
@@ -308,13 +308,24 @@ class RegisterReceiptClient {
       frist: abschlussFrist,
     );
 
+    // Ab hier ist der Storno-Beleg ausgestellt und signiert. Jeder Fehler
+    // dieses Abschnitts traegt deshalb die Kennung mit, sofern die Antwort sie
+    // mitbrachte: ohne sie ist der gesetzlich vorgeschriebene Storno-Beleg da,
+    // aber fuer die Kasse unerreichbar — sie kann ihn weder drucken noch
+    // nachholen, und ein zweiter Storno waere eine zweite Ruecknahme.
+    final String? kennung = _kennungAus(daten);
+
     final bezug = daten['cancellationOf'];
     if (bezug is! Map || bezug['receiptId'] is! String) {
-      throw const KasseneckValidationError(name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response');
+      throw KasseneckValidationError(
+          name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response',
+          receiptId: kennung);
     }
     final rest = daten['remaining'];
     if (rest is! List || rest.any((n) => n is! int)) {
-      throw const KasseneckValidationError(name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response');
+      throw KasseneckValidationError(
+          name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response',
+          receiptId: kennung);
     }
     return Stornoergebnis(
       beleg: _belegAus(daten, name),
@@ -331,7 +342,7 @@ class RegisterReceiptClient {
   /// Artikel in der Form, die die Kacheln brauchen.
   Future<List<KasseArtikel>> artikel() async => _liste(Aufrufe.listMyArticles, 'articles', KasseArtikel.aus);
 
-  /// Personen, denen sich Trinkgeld zuweisen lässt. Dieselbe Menge, die der
+  /// Personen, denen sich Trinkgeld zuweisen laesst. Dieselbe Menge, die der
   /// Verkauf akzeptiert; ohne das Recht `tipAssign` steht nur der Angemeldete
   /// darin.
   Future<List<KeckTipPerson>> tipEmpfaenger() async =>
@@ -351,15 +362,36 @@ class RegisterReceiptClient {
     ];
   }
 
-  /// Beleg samt Belegkopf aus der Antworthülle. Fehlt der Beleg, ist das ein
+  /// Beleg samt Belegkopf aus der Antworthuelle. Fehlt der Beleg, ist das ein
   /// Antwortfehler — nicht ein leerer Beleg, mit dem der Bildschirm dann
-  /// hantieren müsste.
+  /// hantieren muesste.
   KasseneckReceipt _belegAus(Map<String, dynamic> daten, String name) {
     if (daten['receipt'] is! Map) {
       throw KasseneckValidationError(name, 'Antwort enthaelt keinen Beleg (data.receipt fehlt)', 'response');
     }
-    return KasseneckReceipt.fromJson(daten);
+    try {
+      return KasseneckReceipt.fromJson(daten);
+    } on KasseneckReceiptFormatError {
+      // Traegt die Kennung bereits — durchreichen, nicht neu verpacken.
+      rethrow;
+    } catch (e) {
+      // Der Beleg ist an dieser Stelle ausgestellt und signiert. Ohne die
+      // Kennung bliebe nichts, womit er sich nachholen liesse, und der
+      // naheliegende zweite Versuch waere ein zweiter Umsatz.
+      throw KasseneckReceiptFormatError(
+        'receipt',
+        receiptId: _kennungAus(daten),
+        causeType: e.runtimeType.toString(),
+      );
+    }
   }
+}
+
+/// Die Belegkennung aus einer Antworthuelle — defensiv, wirft nie.
+String? _kennungAus(Map<String, dynamic> daten) {
+  final beleg = daten['receipt'];
+  final wert = beleg is Map ? beleg['receiptId'] : null;
+  return wert is String && wert.isNotEmpty ? wert : null;
 }
 
 /// Euro-Betrag des Backends in ganze Cent. Einmal gerundet, damit sich der

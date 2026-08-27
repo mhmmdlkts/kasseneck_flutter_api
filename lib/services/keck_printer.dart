@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/keck_print_result.dart';
+import 'package:kasseneck_api/models/print_paper.dart';
 
 import '../enums/keck_paper_size.dart';
 import '../enums/qr_print_mode.dart';
@@ -179,14 +180,25 @@ class KeckPrinter {
   /// Druckt einen RKSV-Beleg [r]. Baut die Bytes exakt wie
   /// [KeckPrinterService.getBytesFromReceipt] (gleiches Layout) und sendet sie
   /// in EINEM Byte-Strom.
+  ///
+  /// Konnte der gesetzlich geforderte QR-Code nicht gesetzt werden, geht der
+  /// Bon trotzdem hinaus und das Ergebnis traegt [KeckPrintResult.qrFehler].
+  /// Dieser Weg meidet globalen Zustand: der Ausfall kommt aus dem Papier
+  /// selbst, und [KeckPrinterService.letzterQrFehler] wird dabei weder
+  /// gelesen noch geschrieben -- ein Druck hier ueberschreibt also nicht das
+  /// Signal eines gleichzeitig laufenden Terminaldrucks.
   Future<KeckPrintResult> printReceipt(
     KasseneckReceipt r, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
   }) async {
-    final List<Uint8List> parts =
-        await KeckPrinterService.getBytesFromReceipt(r, size, qrMode: qrMode);
-    final List<int> bytes = <int>[for (final p in parts) ...p];
-    return transport.send(bytes);
+    final PrintPaper paper =
+        await KeckPrinterService.getPaperFromReceipt(r, size, qrMode: qrMode);
+    final List<int> bytes = <int>[for (final p in paper.bytes) ...p];
+    final KeckPrintResult ergebnis = await transport.send(bytes);
+    if (paper.qrFehler == null) return ergebnis;
+    return ergebnis.success
+        ? KeckPrintResult.success(qrFehler: paper.qrFehler)
+        : KeckPrintResult.failure(ergebnis.error ?? 'Druck fehlgeschlagen', qrFehler: paper.qrFehler);
   }
 
   /// Druckt einen Text (mit optionalen [styles]).

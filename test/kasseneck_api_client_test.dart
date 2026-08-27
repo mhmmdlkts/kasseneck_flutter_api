@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -11,6 +12,7 @@ import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
+import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/services/vienna_time.dart';
 
 import 'helpers/test_receipts.dart';
@@ -371,6 +373,278 @@ void main() {
         expect(id.length, 19);
         expect(RegExp(r'^\d+$').hasMatch(id), isTrue);
       }
+    });
+  });
+
+  group('Fristen', () {
+    /// Ein Client, der die Verbindung annimmt und nie antwortet — der Fall,
+    /// gegen den die Fristen ueberhaupt da sind.
+    MockClient haengt() => MockClient((_) => Completer<http.Response>().future);
+
+    /// Die Frist steht in der Meldung der `TimeoutException`. Sie ist damit
+    /// pruefbar, ohne auf die Wanduhr zu warten: welche der drei Fristen ein
+    /// Aufruf zieht, steht schwarz auf weiss im Fehler.
+    Matcher fristAbgelaufen(Duration frist) =>
+        isA<TimeoutException>().having((e) => e.duration, 'duration', frist);
+
+    test('Verkauf zieht signatureTimeout, nicht readTimeout', () async {
+      // Ein Abbruch beendet nur das Warten der Kasse, nicht die Arbeit des
+      // Servers: laeuft die Frist ab, kann der Beleg laengst signiert sein.
+      // Die Fristen sind hier absichtlich verdreht (Lesefrist laenger als die
+      // Signaturfrist) — wer wieder auf readTimeout zurueckfaellt, faellt auf.
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: base64Encode(utf8.encode('CASHBOX-9:secret')),
+        httpClient: haengt(),
+        readTimeout: const Duration(milliseconds: 300),
+        signatureTimeout: const Duration(milliseconds: 40),
+      );
+
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(fristAbgelaufen(const Duration(milliseconds: 40))),
+      );
+    });
+
+    test('Storno und Nullbeleg ziehen dieselbe Signaturfrist', () async {
+      // Der Storno erzeugt genauso einen signierten, unumkehrbaren Beleg.
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: base64Encode(utf8.encode('CASHBOX-9:secret')),
+        httpClient: haengt(),
+        readTimeout: const Duration(milliseconds: 300),
+        signatureTimeout: const Duration(milliseconds: 40),
+      );
+
+      await expectLater(api.cancelReceipt(receipt: cartA()),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+      await expectLater(api.zeroReceipt(),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+    });
+
+    test('Lesende Aufrufe bleiben bei readTimeout', () async {
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: base64Encode(utf8.encode('CASHBOX-9:secret')),
+        httpClient: haengt(),
+        readTimeout: const Duration(milliseconds: 40),
+        signatureTimeout: const Duration(milliseconds: 300),
+      );
+
+      await expectLater(api.getReceipt('R-1'),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+    });
+
+    test('financeWebService zieht readTimeout statt einer verdrahteten Spanne', () async {
+      // Vorher stand hier eine feste halbe Minute; wer readTimeout setzte,
+      // erreichte getCashboxStatus/getSignatureStatus damit nicht.
+      final api = KasseneckApi(
+        apiKey: 'k',
+        cashregisterToken: base64Encode(utf8.encode('CASHBOX-9:secret')),
+        httpClient: haengt(),
+        readTimeout: const Duration(milliseconds: 40),
+      );
+
+      await expectLater(api.getCashboxStatus(),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+      await expectLater(api.getSignatureStatus('ab12'),
+          throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
+    });
+
+    test('Vorgabe der Signaturfrist sind 90 Sekunden — wie auf dem Kassen-Weg', () {
+      final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dA==');
+      expect(api.signatureTimeout, const Duration(seconds: 90));
+      expect(api.readTimeout, const Duration(seconds: 30));
+      expect(api.cardTimeout, const Duration(minutes: 3));
+    });
+  });
+
+  group('Kaputte Antwort auf dem api_key-Weg', () {
+    // Jede Antwort von aussen ist fremd. Bis 5.0.0 stand an zehn Stellen eine
+    // implizite Zuweisung `final Map<String, dynamic> resJson = json.decode(…)`
+    // — ein 200 mit Array, Skalar oder HTML gab daraus einen rohen TypeError
+    // bzw. eine FormatException, im Verkauf NACH der Signatur.
+    KasseneckApi apiMit(String rumpf) => apiWith(MockClient(
+        (_) async => http.Response(rumpf, 200, headers: {'content-type': 'application/json'})));
+
+    test('200 mit JSON-Array statt Objekt: benannter Fehler, kein TypeError', () async {
+      // Gezielt fangbar: nach der Signatur ist „Antwort kaputt, der Beleg
+      // existiert" etwas anderes als „Verkauf fehlgeschlagen", und ein blankes
+      // Exception laesst diesen Unterschied nicht ausdruecken.
+      final api = apiMit('[1,2,3]');
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.functionName, 'functionName', 'createReceipt')
+            .having((e) => e.reason, 'reason', 'missing-status')
+            .having((e) => e.statusCode, 'statusCode', 200)),
+      );
+    });
+
+    test('200 mit HTML im Rumpf: benannter Fehler, keine rohe FormatException', () async {
+      // Captive Portal oder CDN-Fehlerseite — der Rumpf selbst bleibt draussen.
+      final api = apiMit('<html>Gateway</html>');
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', 'not-json')
+            .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('Gateway')))),
+      );
+    });
+
+    test('Erfolg ohne data-Objekt: benannter Fehler', () async {
+      final api = apiMit(jsonEncode({'status': 'success', 'data': null}));
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.functionName, 'functionName', 'createReceipt')
+            .having((e) => e.reason, 'reason', 'data-not-object')),
+      );
+    });
+
+    test('Beleg unlesbar: der Fehler traegt die receiptId — der Faden zum Beleg', () async {
+      // DER Fall: der Beleg ist signiert und in der Kette, nur ein Feld der
+      // Antwort fehlt. Ohne die Kennung waere er fuer die Kasse verloren und
+      // der naheliegende zweite Versuch ein zweiter Umsatz.
+      final daten = buildReceipt().toJson();
+      (daten['receipt'] as Map<String, dynamic>).remove('qr');
+      final api = apiMit(jsonEncode({'status': 'success', 'data': daten}));
+
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<KasseneckReceiptFormatError>()
+            .having((e) => e.field, 'field', 'qr')
+            .having((e) => e.receiptId, 'receiptId', 'TEST-ID-1')),
+      );
+    });
+
+    test('Beleg mit kaputter Position: auch der Sammelfang haelt die Kennung', () async {
+      final daten = buildReceipt().toJson();
+      (daten['receipt'] as Map<String, dynamic>)['items'] = ['keine Position'];
+      final api = apiMit(jsonEncode({'status': 'success', 'data': daten}));
+
+      await expectLater(
+        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        throwsA(isA<KasseneckReceiptFormatError>()
+            .having((e) => e.receiptId, 'receiptId', 'TEST-ID-1')
+            .having((e) => e.causeType, 'causeType', isNotNull)),
+      );
+    });
+
+    test('getReceipts: fehlende Belegliste ist ein Fehler, keine leere Liste', () async {
+      // „Im Zeitraum nichts verkauft" darf nicht aussehen wie „Antwort kaputt"
+      // — in einer Fiskalliste ist das der Unterschied zwischen Nulltag und
+      // verschwiegenem Umsatz.
+      final api = apiMit(jsonEncode({
+        'status': 'success',
+        'data': {'metadata': <String, dynamic>{}},
+      }));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('keine Belegliste'))),
+      );
+    });
+
+    test('getReceipts: fehlende Metadaten ebenso', () async {
+      final api = apiMit(jsonEncode({
+        'status': 'success',
+        'data': {'receipts': <dynamic>[]},
+      }));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('keine Metadaten'))),
+      );
+    });
+
+    test('getReceipts: data als Array laeuft nicht in einen TypeError', () async {
+      // Die Absicherung stand hinter einem debugPrint, das `data['receipts']`
+      // schon vorher las: bei einem Array griff der String-Index in eine
+      // Liste — roher TypeError, also genau der Fall, den _daten verhindert.
+      final api = apiMit(jsonEncode({'status': 'success', 'data': <dynamic>[]}));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'data-not-object')),
+      );
+    });
+
+    test('getReceipts: data als Text laeuft nicht in einen TypeError', () async {
+      final api = apiMit(jsonEncode({'status': 'success', 'data': 'Wartung'}));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', 'data-not-object')
+            .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('Wartung')))),
+      );
+    });
+
+    test('getReceipts: data.receipts als Objekt laeuft nicht in einen TypeError', () async {
+      // `as List?` auf einer Map wirft — vor jeder Pruefung.
+      final api = apiMit(jsonEncode({
+        'status': 'success',
+        'data': {'metadata': <String, dynamic>{}, 'receipts': <String, dynamic>{}},
+      }));
+      await expectLater(
+        api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.reason, 'reason', contains('keine Belegliste'))),
+      );
+    });
+
+    test('listTipRecipients: fehlende Liste ist ein benannter Antwortfehler', () async {
+      final api = apiMit(jsonEncode({'status': 'success', 'data': <String, dynamic>{}}));
+      await expectLater(
+        api.listTipRecipients(),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('keine Liste'))),
+      );
+    });
+
+    test('getCashboxStatus: 200 mit Array laeuft nicht in einen TypeError', () async {
+      final api = apiMit('[]');
+      await expectLater(
+        api.getCashboxStatus(),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'missing-status')),
+      );
+    });
+  });
+
+  group('Logo haelt den Verkauf nicht auf', () {
+    setUp(() {
+      LogoService.frist = LogoService.standardFrist;
+      LogoService.httpClient = http.Client();
+    });
+
+    test('haengender Logo-Host: sellReceipt kehrt trotzdem zurueck', () async {
+      // Der Logo-Abruf laeuft HINTER dem bereits signierten Beleg. Haengt er,
+      // steht die Kasse mit dem Gast am Tresen — und ein Neustart mit erneutem
+      // Kassieren erzeugt einen zweiten Umsatz in der Signaturkette.
+      LogoService.frist = const Duration(milliseconds: 20);
+      LogoService.httpClient = MockClient((_) => Completer<http.Response>().future);
+
+      final api = apiWith(MockClient((_) async => http.Response(
+            jsonEncode({
+              'status': 'success',
+              'data': {
+                ...buildReceipt().toJson(),
+                'logo_url': 'https://example.test/haengendes-logo.png',
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          )));
+
+      final beleg = await api
+          .sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem])
+          .timeout(const Duration(seconds: 5),
+              onTimeout: () => fail('sellReceipt haengt am Logo-Abruf'));
+
+      expect(beleg!.receiptId, 'TEST-ID-1', reason: 'der Beleg kommt heraus, nur ohne Logo');
+      expect(beleg.logo, isNull);
     });
   });
 }

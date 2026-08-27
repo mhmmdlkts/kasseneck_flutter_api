@@ -14,14 +14,25 @@ class KeckPrintResult {
   /// Fehlermeldung bei [success] == `false`, sonst `null`.
   final String? error;
 
-  const KeckPrintResult._(this.success, this.error);
+  /// Der QR-Code des Belegs konnte nicht gesetzt werden — `null`, solange
+  /// alles gut ging. Steht **unabhaengig** von [success]: der Bon geht
+  /// vollstaendig hinaus und traegt den Aufdruck „!! QR-CODE FEHLT !!", nur
+  /// eben ohne den gesetzlich geforderten QR. Der Aufrufer muss davon
+  /// erfahren, um nachzudrucken oder den Beleg elektronisch auszugeben.
+  ///
+  /// Nur bei Belegdruck gesetzt; ein roher Byte-Strom kennt keinen Beleg.
+  final String? qrFehler;
 
-  /// Erfolgreich gesendet.
-  const KeckPrintResult.success() : this._(true, null);
+  const KeckPrintResult._(this.success, this.error, [this.qrFehler]);
+
+  /// Erfolgreich gesendet. [qrFehler] meldet einen Beleg, dem der QR fehlt.
+  const KeckPrintResult.success({String? qrFehler}) : this._(true, null, qrFehler);
 
   /// Fehlgeschlagen mit [message].
-  const KeckPrintResult.failure(String message) : this._(false, message);
+  const KeckPrintResult.failure(String message, {String? qrFehler}) : this._(false, message, qrFehler);
 
   @override
-  String toString() => success ? 'KeckPrintResult.success' : 'KeckPrintResult.failure($error)';
+  String toString() =>
+      '${success ? 'KeckPrintResult.success' : 'KeckPrintResult.failure($error)'}'
+      '${qrFehler == null ? '' : ' [QR fehlt]'}';
 }

@@ -138,11 +138,14 @@ void main() {
 
   test('USt der Belegpositionen zählt den Rabatt mit', () {
     // Sonst stuende auf dem Beleg mehr MwSt, als der Gast gezahlt hat.
+    // ustSumme muss dabei von sich aus dasselbe liefern wie die Rechnung
+    // ueber die Belegpositionen — frueher tat es das nicht.
     final ohne = ustSumme(korbMit([1200]));
     final positionen = belegPositionen(korbMit([1200]), 200);
-    final mit = positionen.fold(0, (s, p) => s + ustCents(p.totalCents, p.vat.rate));
+    final mit = ustSummePositionen(positionen);
 
     expect(ohne, 200);
     expect(mit, 167);
+    expect(ustSumme(korbMit([1200]), rabattCents: 200), 167);
   });
 }

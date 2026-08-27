@@ -97,6 +97,22 @@ void main() {
       }
     });
 
+    test('der beschriebene Deckel existiert jetzt auch', () {
+      // hoechstbetragCent wurde bis hierher an keiner Stelle gelesen: der
+      // Kommentar beschrieb einen Schutz, den es nicht gab.
+      expect(betragAusText('100000'), hoechstbetragCent);
+      expect(betragAusText('100000,00'), hoechstbetragCent);
+      expect(betragAusText('100000,01'), isNull);
+      expect(betragAusText('999999'), isNull);
+    });
+
+    test('sehr viele Ziffern liefern null statt zu werfen', () {
+      // int.parse warf hier eine FormatException — erreichbar ueber eine
+      // haengende Taste oder eine eingefuegte Zeichenkette.
+      expect(betragAusText('99999999999999999999'), isNull);
+      expect(betragAusText('9' * 400), isNull);
+    });
+
     test('für den Schirm: Tausenderpunkt, Komma, Euro dahinter', () {
       expect(alsEuro(250), '2,50 €');
       expect(alsEuro(0), '0,00 €');
@@ -201,13 +217,40 @@ void main() {
       expect(abschlussPruefung(zahlungsart: KeckPaymentMethod.creditCard, zuZahlen: 500, gegeben: null, rueckgeldAn: true, leer: false).bereit, isTrue);
     });
 
-    test('enthaltene MwSt wie im Backend gerundet', () {
-      expect(ustCents(120, 20), 20);
-      expect(ustCents(280, 20), 47);
-      expect(ustCents(79, 10), 7);
-      expect(ustCents(100, 0), 0);
+    test('enthaltene MwSt nach der Belegregel gerundet', () {
+      expect(ustCentsAusBrutto(120, 20), 20);
+      expect(ustCentsAusBrutto(280, 20), 47);
+      expect(ustCentsAusBrutto(79, 10), 7);
+      expect(ustCentsAusBrutto(100, 0), 0);
+      // Der Grenzfall, an dem die fruehere Regel (brutto*satz/(100+satz)) um
+      // einen Cent danebenlag: 0,99 EUR zu 20 % sind 0,16 EUR MwSt, nicht 0,17.
+      expect(ustCentsAusBrutto(99, 20), 16);
+      expect(nettoCentsAusBrutto(99, 20), 83);
       final korb = korbMit([('Kaffee', 1, 280, VatRate.vat20), ('Semmel', 1, 79, VatRate.vat10)]);
       expect(ustSumme(korb), 47 + 7);
+    });
+
+    test('ustSumme rundet je Steuersatz, nicht je Position', () {
+      // Dreimal „Kugel Eis" a 0,33 EUR zu 20 %: je Position gerundet waeren das
+      // 0,18 EUR, als eine Position mit Menge 3 waeren es 0,17 EUR. Auf dem
+      // Beleg stehen 0,99 EUR zu 20 % und damit 0,16 EUR — egal wie getippt.
+      final einzeln = korbMit([
+        ('Kugel Eis', 1, 33, VatRate.vat20),
+        ('Kugel Eis', 1, 33, VatRate.vat20),
+        ('Kugel Eis', 1, 33, VatRate.vat20),
+      ]);
+      final gebuendelt = korbMit([('Kugel Eis', 3, 33, VatRate.vat20)]);
+      expect(ustSumme(einzeln), 16);
+      expect(ustSumme(gebuendelt), 16);
+    });
+
+    test('ustSumme zaehlt den Rabatt mit', () {
+      // 12,00 EUR zu 20 % minus 2,00 EUR Rabatt enthalten 1,67 EUR MwSt.
+      // Ohne den Rabatt waeren es 2,00 EUR — 33 Cent zu viel ausgewiesen.
+      final korb = korbMit([('Ware', 1, 1200, VatRate.vat20)]);
+      expect(ustSumme(korb), 200);
+      expect(ustSumme(korb, rabattCents: 200), 167);
+      expect(ustSumme(korb, rabattCents: 200), ustSummePositionen(belegPositionen(korb, 200)));
     });
 
     test('Belegpositionen: Korb plus Rabattzeilen, ohne Kassen-Kennungen', () {

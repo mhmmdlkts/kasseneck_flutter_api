@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -500,19 +501,30 @@ class RegisterClient {
 
   /// Ein Aufruf ohne jede Anmeldung: nur `{params: …}` im Rumpf.
   Future<Map<String, dynamic>> _rufen(String name, Map<String, dynamic> params) async {
+    // Ausserhalb des try: ein nicht serialisierbarer Parameter waere ein
+    // Programmierfehler und keine Netzstoerung.
+    final String rumpf = jsonEncode({'params': params});
+
     final http.Response antwort;
     try {
       antwort = await _http
           .post(
             Uri.parse('$_baseUrl/$name'),
             headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode({'params': params}),
+            body: rumpf,
           )
           .timeout(_timeout);
-    } on Object {
-      // Die Ursache kann Werte des Rumpfs tragen (manche Clients hängen ihn an)
-      // — hier fährt weder PIN noch Gerätegeheimnis mit.
-      throw KasseneckHttpError(name, 0, 'network');
+    } on TimeoutException catch (e) {
+      // Getrennt vom Netzfehler: die Anfrage war draussen. Bei
+      // `pairRegisterDevice` heisst das, dass die Kopplung serverseitig
+      // vollzogen und der Code verbraucht sein kann — ein neuer Versuch mit
+      // demselben Code laeuft dann ins Leere.
+      throw KasseneckHttpError(name, 0, KasseneckHttpError.zeitablauf, causeType: '${e.runtimeType}');
+    } on Object catch (e) {
+      // Die Meldung kann Werte des Rumpfs tragen (manche Clients haengen ihn
+      // an) — deshalb nur der Typ, nie der Text. Hier faehrt PIN und
+      // Geraetegeheimnis im Rumpf mit.
+      throw KasseneckHttpError(name, 0, KasseneckHttpError.netz, causeType: '${e.runtimeType}');
     }
 
     Object? roh;
@@ -525,7 +537,14 @@ class RegisterClient {
     final huelle = Map<String, dynamic>.from(roh);
     if (huelle['status'] == 'success') {
       final daten = huelle['data'];
-      return daten is Map ? Map<String, dynamic>.from(daten) : <String, dynamic>{};
+      // Fehlendes `data` ist erlaubt; ein `data`, das da ist und kein Objekt
+      // ist, ist kaputt und darf nicht als leeres Objekt durchgehen — siehe
+      // dieselbe Stelle in `transport.dart`.
+      if (daten == null) return <String, dynamic>{};
+      if (daten is! Map) {
+        throw KasseneckHttpError(name, antwort.statusCode, 'data-not-object');
+      }
+      return Map<String, dynamic>.from(daten);
     }
     // Alles, was nicht ausdrücklich Erfolg ist, gilt als fachlicher Fehler —
     // ein unbekannter Statuswert darf nie stillschweigend durchgehen.

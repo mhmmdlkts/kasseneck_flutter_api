@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
+import 'package:kasseneck_api/enums/vat_rate.dart';
+import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/widgets/keck_receipt_widget.dart';
@@ -142,6 +144,40 @@ void main() {
     expect(print.doubles.firstWhere((d) => d.left == 'Beleg-ID:').right, 'TEST-ID-1');
     expect(widgetTexts, contains('TEST-ID-1'));
   });
+
+  // Die Cent-Betraege, an denen die frueher im Druck verwendete Regel (Netto
+  // und MwSt getrennt aus Gleitkommazahlen gerundet) danebenlag. Bei 20 %
+  // trifft das jeden sechsten Betrag; 39 Cent druckten „0,07 / 0,33 / 0,39" —
+  // MwSt + Netto ergaben 0,40 EUR und damit mehr, als der Gast gezahlt hat.
+  for (final (int cents, String mwst, String netto) in [
+    (9, '0,01', '0,08'),
+    (21, '0,03', '0,18'),
+    (39, '0,06', '0,33'),
+    (99, '0,16', '0,83'),
+  ]) {
+    testWidgets('MwSt-Tabelle: $cents Cent zu 20 % gehen im Druck auf', (tester) async {
+      final receipt = buildReceipt(items: [
+        KasseneckItem(name: 'Ware', quantity: 1, vat: VatRate.vat20, priceCents: cents),
+      ]);
+      final print = (await tester.runAsync(() => renderPrint(receipt)))!;
+      final widgetTexts = await renderWidget(tester, receipt);
+
+      expect(print.rows, hasLength(1));
+      final row = print.rows.single;
+      expect(row.brutto, formatCents(cents));
+      expect(row.mwst, mwst, reason: 'gedruckte MwSt fuer $cents Cent');
+      expect(row.netto, netto, reason: 'gedrucktes Netto fuer $cents Cent');
+
+      // Die eigentliche Zusicherung: was auf dem Papier steht, muss aufgehen.
+      int alsCent(String s) => (double.parse(s.replaceAll(',', '.')) * 100).round();
+      expect(alsCent(row.mwst) + alsCent(row.netto), cents,
+          reason: 'MwSt + Netto muss das Brutto ergeben');
+
+      // und dasselbe wie auf dem Bildschirm sein
+      expect(widgetTexts, contains(row.mwst));
+      expect(widgetTexts, contains(row.netto));
+    });
+  }
 
   for (final method in [KeckPaymentMethod.cash, KeckPaymentMethod.creditCard]) {
     testWidgets('Zahlungsart konsistent ($method): Print und Widget zeigen dasselbe Label', (tester) async {

@@ -36,6 +36,10 @@ export 'services/printer_service.dart' show KeckPrinterService, CustomPrintJob;
 export 'services/keck_printer.dart'
     show KeckPrinter, PrinterTransport, WifiTransport, BluetoothTransport;
 export 'models/keck_print_result.dart' show KeckPrintResult;
+// Rueckgabetyp von KeckPrinterService.getPaperFromReceipt -- das fertig
+// gesetzte Papier, das neben den Bytes den QR-Ausfall traegt. Ohne diesen
+// Export waere der Typ aus diesem Barrel nicht benennbar.
+export 'models/print_paper.dart' show PrintPaper;
 // Das Papierformat gehoert zur Schnittstelle: wer Bytes baut, muss die Breite
 // nennen -- 58 mm sind 32 Zeichen, 80 mm sind 48.
 export 'enums/keck_paper_size.dart' show KeckPaperSize;

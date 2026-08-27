@@ -53,9 +53,19 @@ void main() {
     });
 
     test('ohne gespeicherte Werte gelten die Standardwerte', () async {
+      // „Der Betrieb hat nichts eingestellt" — eine Aussage des Servers, kein
+      // Ausweichen. Ein leeres Objekt ist ein Objekt; siehe den Nachbartest.
       final f = clientMit({'status': 'success', 'data': {}});
       final e = await f.client.laden();
       expect(e.betrieb.uhr, const KasseSettings.standard().betrieb.uhr);
+    });
+
+    test('kaputte Antwort ist NICHT „nichts eingestellt"', () async {
+      // Sonst erreicht eine defekte Antwort den Bildschirm als Vorgabefarbe,
+      // Standard-Beleglayout und Standard-Belegausgabe — und sieht dabei aus
+      // wie ein frisch angelegter Betrieb.
+      final f = clientMit({'status': 'success', 'data': <dynamic>[]});
+      await expectLater(f.client.laden(), throwsA(isA<KasseneckHttpError>()));
     });
   });
 
@@ -80,6 +90,29 @@ void main() {
       final f = clientMit({'status': 'success', 'data': {}});
       await expectLater(f.client.betriebSpeichern(const {}), throwsA(isA<KasseneckValidationError>()));
       expect(f.log, isEmpty);
+    });
+
+    test('Antwort ohne neuen Stand: Fehler statt Standardwerten', () async {
+      // Sonst meldete der Client „gespeichert" UND gab gleichzeitig die
+      // Standardwerte als angeblich neuen Stand zurueck: der Bediener sieht
+      // seine eben gespeicherte Einstellung nicht und speichert erneut — mit
+      // einer Aenderung, die er gegen den Standard statt gegen den echten
+      // Stand bildet.
+      final f = clientMit({'status': 'success', 'data': {}});
+      await expectLater(
+        f.client.betriebSpeichern({'uhr': false}),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('data.betrieb'))),
+      );
+    });
+
+    test('Antwort mit unbrauchbarem Stand ebenso', () async {
+      final f = clientMit({'status': 'success', 'data': {'betrieb': 'kaputt'}});
+      await expectLater(
+        f.client.betriebSpeichern({'uhr': false}),
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response')),
+      );
     });
   });
 
@@ -116,6 +149,16 @@ void main() {
 
       await expectLater(client.geraetSpeichern(const {'touch': false}), throwsA(isA<KasseneckValidationError>()));
       expect(log, isEmpty);
+    });
+
+    test('Antwort ohne neuen Stand: Fehler statt Standardwerten', () async {
+      final f = clientMit({'status': 'success', 'data': {}});
+      await expectLater(
+        f.client.geraetSpeichern({'touch': false}),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('data.geraet'))),
+      );
     });
   });
 }

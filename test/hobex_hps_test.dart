@@ -46,6 +46,49 @@ void main() {
     test('in progress (kein responseCode)', () {
       final r = TransactionResponse.fromJson({'transactionId': 'TX2'});
       expect(r.isInProgress, isTrue);
+      expect(r.isConclusive, isFalse);
+    });
+    test('9027 ist KEIN Ergebnis -- weder genehmigt noch abgelehnt', () {
+      // Am 26.08.2026 gemessen: die Statusabfrage antwortet mit 9027
+      // gleichermassen auf einen laufenden, einen abgebrochenen und einen nie
+      // gesehenen Vorgang. Ueber `!= "0"` als Ablehnung gelesen, ergaebe das
+      // fuer einen LAUFENDEN Vorgang "gefahrlos wiederholbar".
+      final r = TransactionResponse.fromJson({
+        'responseCode': '9027',
+        'responseText': 'Original Tx not found',
+      });
+      expect(r.responseCode, TransactionResponse.noStatementCode);
+      expect(r.isNoStatement, isTrue);
+      expect(r.isApproved, isFalse);
+      expect(r.isConclusive, isFalse,
+          reason: 'nur eine schluessige Antwort darf einen Ausgang '
+              'festschreiben');
+      expect(r.toString(), contains('NO_STATEMENT'));
+    });
+    test('9011 ist eine Aussage: der Vorgang wurde aufgehoben', () {
+      final r = TransactionResponse.fromJson({
+        'responseCode': '9011',
+        'responseText': 'Transaction Canceled',
+      });
+      expect(r.isCanceled, isTrue);
+      expect(r.isApproved, isFalse);
+      expect(r.isConclusive, isTrue);
+    });
+    test('100010 ist der gemessene Fehlschlag eines Abbruchs', () {
+      final r = TransactionResponse.fromJson({'responseCode': '100010'});
+      expect(r.isNotAbortable, isTrue);
+      expect(r.isApproved, isFalse);
+      expect(r.isConclusive, isTrue);
+      expect(
+        TransactionResponse.fromJson({'responseCode': '77777'}).isNotAbortable,
+        isFalse,
+      );
+    });
+    test('ein echter Ablehnungscode bleibt schluessig', () {
+      expect(
+        TransactionResponse.fromJson({'responseCode': '100003'}).isConclusive,
+        isTrue,
+      );
     });
     test('amount als String wird geparst', () {
       final r = TransactionResponse.fromJson({'amount': '9.90'});

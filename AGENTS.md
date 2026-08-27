@@ -1,0 +1,128 @@
+# AGENTS.md
+
+Verbindliche Regeln fuer alle, die an diesem Paket arbeiten — Menschen wie Werkzeuge.
+
+## Was das ist
+
+Ein Dart/Flutter-Paket für **Kasseneck/Kreiseck** — eine österreichische
+Registrierkasse nach RKSV. Es spricht drei Welten an: das Kasseneck-Backend
+(`api.kasseneck.at/v1` und `kasse.kasseneck.at/api`), ein lokales
+hobex-**HPS**-Kartenterminal über dessen REST-API im selben Netz, und die
+hobex-**Cloud** über das Backend.
+
+Konsumenten sind mehrere Flutter-Apps (sastre, herzens_kassa, karteck,
+vanillanails und weitere). Was hier bricht, bricht dort — und was hier
+schlampig ist, wird dort abgeschrieben.
+
+Das Paket hat einen **Zwilling in JavaScript**: `@kreiseck/kasseneck-api`
+(Quelle unter `/Users/mali/kreiseck/kasseneck-api`). Beide Seiten pinnen
+dieselben Golden-Werte; `zwillinge.yaml` und `test/zwillinge_test.dart` halten
+den Vertrag. Wer hier etwas an der gemeinsamen Oberfläche ändert, prüft dort.
+
+## Sprache und Form
+
+- **Kommentare in `.dart`-Dateien: deutsch, OHNE Umlaute** (`ue`, `ae`, `oe`,
+  `ss`). Der Bestand ist so; ein durchgerutschtes `ü` fällt sofort auf.
+- **Markdown (CHANGELOG, README, `doc/`): normale Umlaute.**
+- Kommentare sagen **warum**, nicht was. Ein Kommentar, der die Codezeile
+  darunter nacherzählt, ist Ballast; einer, der eine Messung oder eine
+  verworfene Alternative festhält, ist Gold.
+- CHANGELOG-Einträge nennen die Änderung **und ihren Grund**. Sieh dir
+  bestehende Einträge an, bevor du schreibst.
+
+## Der Zahlweg — hier wird nicht abgewichen
+
+Am 24.08.2026 wurde ein Kunde zweimal mit 25 € belastet, weil ein **unbekannter**
+Ausgang wie ein **fehlgeschlagener** behandelt wurde. Die vollständige Aufarbeitung
+samt Messwerten steht in [`doc/kartenzahlung.md`](doc/kartenzahlung.md). **Lies
+das, bevor du irgendetwas am Zahlweg anfasst.** Die folgenden Regeln sind daraus
+destilliert und nicht verhandelbar.
+
+**1. Drei Ausgänge, nicht zwei.** `CardPaymentOutcome` ist `approved` /
+`declined` / `unresolved`. Ein `bool` oder ein `null` als Ergebnis einer Zahlung
+ist ein Fehler, kein Stil.
+
+**2. `declined` heißt „definitiv kein Geld geflossen".** Es entsteht
+ausschließlich aus einer **positiven Aussage** des Terminals oder des Dienstes.
+Niemals aus einem Transportfehler, einem Zeitablauf, einer leeren Antwort oder
+einem Code, der „ich habe keinen Eintrag" bedeutet. Im Zweifel `unresolved` —
+„ich weiß es nicht" ist eine brauchbare Antwort, „nichts passiert" ist eine
+Behauptung.
+
+**3. Die Kennung steht vor dem ersten Netzweg fest** und ist in **jedem**
+zurückgegebenen Ergebnis gesetzt, auch bei `unresolved`. Eine Kennung, die erst
+mit der Antwort entsteht, ist genau dann verloren, wenn man sie braucht.
+
+**4. Eine Wiederholung ist keine Absicherung.** Am Terminal gemessen: für eine
+bereits genehmigte Kennung startet ein zweiter Kartenfluss. Es wird nichts
+entdeckelt. Wer „einfach nochmal" anbietet, bietet eine zweite Belastung an.
+
+**5. Fehler kommen auch mit HTTP 200.** Das HPS meldet ein gescheitertes
+`abort` als `200` mit `responseCode 100010` im Rumpf. **Lies immer den
+`responseCode`**, niemals „hat nicht geworfen" als Erfolg.
+
+**6. Fristen decken den ganzen Abruf.** `client.send(...).timeout(...)` deckt
+den Antwortkopf, nicht das Auslesen des Rumpfes. Eine Gegenstelle, die den Kopf
+schickt und den Rumpf stehen lässt, hält den Aufrufer sonst unbegrenzt fest.
+Und: kein Aufruf ohne Frist, auch kein scheinbar harmloser.
+
+**7. Was der Ausgang nicht entscheidet, entscheidet niemand.** Der Nachweistext
+(`steps`) wird im Belastungsstreit gelesen. Er darf keine Ursache behaupten, die
+nicht feststeht — „ob es wirkte, ist offen" ist besser als eine erfundene
+Erklärung.
+
+**8. Eine Ursachenbehauptung hängt an einer benannten Konstante.** Wer im
+Nachweistext schreibt, *warum* etwas passiert ist, darf das nur für einen Code
+tun, der gemessen und im Modell benannt ist — so wie `notAbortableCode`,
+`noStatementCode`, `transactionCanceledCode`. Ein `else`-Zweig, der für **jeden**
+anderen Code dieselbe Erklärung ausgibt, verallgemeinert eine einzelne Messung
+zu einer Regel, und kein Test schlägt an.
+
+Das ist keine Theorie: derselbe Fehler ist in diesem Paket zweimal aufgetreten
+und beide Male erst in der Review gefunden worden. Formulier neutral, wo du
+nichts weißt, und schreib einen Test, der rot wird, wenn jemand die Erklärung
+später wieder auf alle Codes ausdehnt.
+
+## Geld
+
+Beträge sind **ganze Zahlen in Cent**. Euro als `double` gibt es nur an
+Außengrenzen, die es so verlangen (hobex, SumUp) — und dort an genau **einer**
+Umrechnungsstelle je Modul, nicht verstreut.
+
+USt-Zerlegung läuft über `nettoCentsAusBrutto` (`lib/src/vat_math.dart`):
+**einmal** runden, die MwSt ist die Differenz. Wer Netto und MwSt getrennt aus
+Gleitkommazahlen rundet, verliert bei jedem sechsten Cent-Betrag zu 20 % einen
+Cent. Es darf nicht zwei Rechenwege für dieselbe Zahl geben.
+
+## Tests
+
+- **Eine Zusicherung, die nicht fehlschlagen kann, ist schlimmer als keine** —
+  sie täuscht Deckung vor. Frag dich bei jeder: welche Codeänderung macht sie
+  rot? Fällt dir keine ein, streich sie.
+- **Kein echtes Warten.** `sleep` und Uhr sind injizierbar; nutz sie. Ein Test,
+  der an der Wanduhr hängt, ist auf einer ausgelasteten Maschine rot.
+- **Fehlerlagen gehören getestet**, nicht nur der Normalfall: abgelaufene Frist,
+  werfender Client, Nicht-JSON-Antwort, fehlendes Feld.
+- Golden-Belege unter `test/fixtures/` sind der Vertrag mit dem JS-Zwilling.
+  Ändere sie nicht, um einen Test grün zu bekommen.
+
+## Netzweg
+
+- Jede Antwort von außen ist fremd: keine harten Casts, keine impliziten
+  Zuweisungen an `Map<String, dynamic>`, keine Annahme über Feldtypen. Ein
+  `TypeError` **nach** einem erfolgreichen Aufruf ist der schlimmste Fall — der
+  Vorgang ist passiert, das Ergebnis verworfen.
+- **Keine automatischen Wiederholungen** über verändernden Aufrufen.
+- Verändernde Aufrufe ohne Idempotenzschlüssel sind nicht folgenlos
+  wiederholbar. Wenn du einen hinzufügst, sag im CHANGELOG, welcher Aufruf es
+  betrifft.
+
+## Vor dem Veröffentlichen
+
+- `flutter test` und `flutter analyze` grün, `dart pub publish --dry-run` ohne
+  Beanstandungen.
+- CHANGELOG-Eintrag geschrieben, brechende Änderungen ausdrücklich benannt.
+- Neue oder geänderte **öffentliche** Symbole im Eintrag aufgeführt — auch
+  additive.
+- Der README zeigt den **empfohlenen** Weg, nicht den rohen. Ein Beispiel, das
+  eine Falle vorführt, wird abgeschrieben.
