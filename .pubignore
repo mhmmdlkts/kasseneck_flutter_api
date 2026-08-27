@@ -15,3 +15,8 @@ build/
 .metadata
 .DS_Store
 *.iml
+
+# Nur die im README eingebundene Fassung reist mit; Quell- und Hires-Datei
+# liegen im Repo, nicht in jedem heruntergeladenen Paket.
+doc/kreiseck_logo_hires.png
+doc/kreiseck_logo_src.png

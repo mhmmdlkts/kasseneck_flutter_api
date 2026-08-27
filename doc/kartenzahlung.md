@@ -5,7 +5,7 @@ nicht, was die Dokumentation verspricht. Zwei Annahmen, die plausibel klangen un
 drei Code-Reviews überstanden haben, sind an der Messung gescheitert.
 
 Wer den Zahlweg ändert, liest das hier zuerst. Die daraus destillierten Regeln
-stehen in [`../CLAUDE.md`](../CLAUDE.md).
+stehen in [`../AGENTS.md`](../AGENTS.md).
 
 ## Warum es diese Datei gibt
 

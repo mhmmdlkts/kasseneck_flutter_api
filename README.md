@@ -253,7 +253,7 @@ payload, exactly as required by the Austrian RKSV. Signature-device outages are 
 ## 🗂️ Versioning
 
 This package follows semantic versioning — see the [CHANGELOG](CHANGELOG.md).
-Latest: **3.2.0** — optional Kreiseck branding at the end of receipts (print, widget & PDF).
+Latest: **5.0.0** — resolved card-payment outcomes (`approved` / `declined` / `unresolved`), transaction id fixed before the first request, and hardened receipt parsing. **Breaking** — see the [CHANGELOG](CHANGELOG.md).
 
 ## 💬 Support
 
