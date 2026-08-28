@@ -444,6 +444,179 @@ void main() {
     });
 
     test(
+        'unbekannter Code direkt, dann zweimal 9027 -> declined '
+        '(Mutationsprobe)', () async {
+      // Am 28.08.2026 gemessen: hat das Terminal die Zahlung mit einem
+      // Ergebniscode beantwortet, ist der Vorgang dort BEENDET. Die
+      // Statusabfrage unterscheidet dann sehr wohl: eine genehmigte Zahlung
+      // antwortet "0" (Beleg 408811, dreimal geprueft), eine abgelehnte
+      // antwortet 9027 (bei 100003 zweimal, bei 9003 einmal gemessen).
+      //
+      // Genau das deckt den Alltagsfall ab, dessen Code wir nicht kennen --
+      // "keine Deckung", "Karte abgelaufen". Ohne die Regel endet er bei
+      // unresolved: Warnung, stehender Merker, kein einfaches Nochmal.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '5555', 'responseText': 'Unbekannt'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9027'}),
+          (_) => json({'responseCode': '9027'}),
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 30))
+          .pay(amount: 25, transactionId: '81009100');
+
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(res.transactionId, '81009100');
+      expect(
+        res.steps.any((s) => s.contains('zweimal ohne Auskunft')),
+        isTrue,
+        reason: 'der Nachweis muss benennen, WORAUF die Ablehnung beruht',
+      );
+    });
+
+    test('unbekannter Code direkt, aber nur EINE Statusabfrage -> unresolved',
+        () async {
+      // Die erste Abfrage laeuft unmittelbar nach der Antwort -- das Fenster,
+      // in dem der Datensatz am Terminal noch nicht stehen koennte. Wer sie
+      // allein entscheiden laesst, baut die Doppelbelastung vom 24.08.2026 an
+      // einer neuen Stelle nach.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '5555', 'responseText': 'Unbekannt'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9027'}),
+          boom,
+          boom,
+          boom,
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 30))
+          .pay(amount: 25, transactionId: '81009200');
+
+      expect(res.outcome, CardPaymentOutcome.unresolved,
+          reason: 'eine einzelne 9027 entscheidet nicht');
+      expect(res.mayRetrySafely, isFalse);
+    });
+
+    test(
+        'GAR KEINE Antwort, dann zweimal 9027 -> bleibt unresolved '
+        '(Mutationsprobe)', () async {
+      // Der Vorfall vom 24.08.2026 selbst: die Antwort geht verloren, die
+      // Zahlung laeuft am Terminal weiter. Hier ist NICHT bekannt, dass der
+      // Vorgang beendet ist -- 9027 bleibt eine reine Nicht-Aussage, weil sie
+      // auch "laeuft noch" heissen kann.
+      //
+      // Wird die Regel je so gebaut, dass sie ohne die vorangegangene Antwort
+      // mit Code greift, wird dieser Test rot -- und genau das muss er.
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'responseCode': '9027'}),
+          (_) => json({'responseCode': '9027'}),
+          (_) => json({'responseCode': '9027'}),
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 30))
+          .pay(amount: 25, transactionId: '81009300');
+
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.mayRetrySafely, isFalse);
+    });
+
+    test('eine genehmigte Zahlung bleibt genehmigt, auch nach 9027 davor',
+        () async {
+      // Die Reihenfolge, vor der die Zwei-Abfragen-Regel schuetzt: der
+      // Datensatz steht beim ersten Blick noch nicht, beim zweiten schon.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '5555', 'responseText': 'Unbekannt'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9027'}),
+          (_) => json({'responseCode': '0', 'receipt': '408811'}),
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 30))
+          .pay(amount: 25, transactionId: '81009400');
+
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(res.response?.receipt, '408811');
+    });
+
+    test('9003, 100019 und 100108 sind gemessene Ablehnungen -> declined',
+        () async {
+      // Alle drei weist das Terminal ab, BEVOR es eine Karte verlangt
+      // (27./28.08.2026). Sie sind damit positive Aussagen ueber den Ausgang,
+      // keine Wissensluecken -- eine Klaerungsrunde waere reine Wartezeit.
+      for (final fall in <List<String>>[
+        <String>['9003', 'Invalid Amount', '81009500'],
+        <String>['100019', 'Amount is not in a valid range', '81009600'],
+        <String>['100108', 'Invalid TID', '81009700'],
+      ]) {
+        final t = FakeTerminal(
+          payment: [
+            (_) => json({'responseCode': fall[0], 'responseText': fall[1]})
+          ],
+        );
+        final res = await paymentsFor(t).pay(amount: 25, transactionId: fall[2]);
+
+        expect(res.outcome, CardPaymentOutcome.declined,
+            reason: '${fall[0]} ist gemessen: nichts belastet');
+        expect(res.mayRetrySafely, isTrue);
+        expect(t.log.where((r) => r.url.path.contains('v2/transactions')),
+            isEmpty,
+            reason: 'ein gemessener Code braucht keine Klaerungsrunde');
+      }
+    });
+
+    test(
+        'zwei 9027 mit etwas dazwischen zaehlen nicht als zwei in Folge '
+        '(Mutationsprobe)', () async {
+      // "Zweimal" heisst HINTEREINANDER. Antwortet das Terminal dazwischen
+      // ohne Ergebniscode -- also "laeuft noch" --, faengt das Zaehlen von
+      // vorn an. Wer den Zaehler nicht zuruecksetzt, sammelt 9027 quer ueber
+      // die ganze Klaerung ein und entscheidet auf einer Grundlage, die es so
+      // nie gab.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '5555', 'responseText': 'Unbekannt'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9027'}),
+          (_) => json(<String, dynamic>{}),
+          (_) => json({'responseCode': '9027'}),
+          boom,
+          boom,
+          boom,
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 30))
+          .pay(amount: 25, transactionId: '81009800');
+
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.mayRetrySafely, isFalse);
+    });
+
+    test(
         'HTTP 409 auf die Zahlung selbst -> sofort declined, ohne '
         'Klaerung (Mutationsprobe)', () async {
       // Am 27.08.2026 gemessen: laeuft bereits ein Vorgang und wird ein
