@@ -36,6 +36,18 @@ export 'src/hobex_hps/exceptions.dart'
 export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
 export 'src/hobex_hps/hps_result.dart' show HpsResult;
 export 'src/hobex_hps/hps_payments.dart' show HpsPayments;
+// Die Adresssuche steht bewusst im selben Einstiegspunkt: wer ein Terminal
+// ansprechen will, braucht zuerst dessen Adresse, und ein zweiter Import
+// dafuer waere eine Huerde ohne Nutzen.
+export 'src/hobex_hps/discovery.dart'
+    show
+        DiscoveredHpsTerminal,
+        HpsDiscoveryResult,
+        LocalIpv4,
+        ScannedHpsSubnet,
+        discoverHpsTerminals,
+        hpsDefaultPort,
+        hpsScanBudget;
 // CardPaymentOutcome ist zwischen HPS und der Hobex-Cloud geteilt und liegt
 // deshalb nicht im HPS-Baum -- siehe src/payments/card_payment_outcome.dart.
 export 'src/payments/card_payment_outcome.dart' show CardPaymentOutcome;
