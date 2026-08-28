@@ -1,3 +1,63 @@
+## 5.2.0
+
+**Anlass:** Zwei Luecken, beide am 28.08.2026 am Terminal 3600335 gemessen.
+
+- **Abgelehnte Alltagsfaelle enden nicht mehr bei „Ausgang unklar".**
+  `declined` entstand nur aus den Codes der Positivliste. Jeder andere galt als
+  Wissensluecke und wurde `unresolved` — mit Warnung, stehendem Merker und
+  ohne einfaches Nochmal. Das trifft ausgerechnet den haeufigsten Fall im
+  Alltag: „keine Deckung" oder „Karte abgelaufen", deren Codes nie gemessen
+  wurden.
+
+  Neu in der Positivliste: `9003` („Invalid Amount"), `100019` („Amount is not
+  in a valid range") und `100108` („Invalid TID"). Alle drei weist das Terminal
+  ab, **bevor** es eine Karte verlangt — `9003` gemessen nach 15,7 s bei
+  99 999,99 EUR, ohne jede Kartenaufforderung. Positive Aussagen, keine
+  Luecken.
+
+  Dazu eine allgemeine Regel fuer alles, was unbenannt bleibt: hat das Terminal
+  die erzeugende Anfrage **mit einem Ergebniscode** beantwortet, ist der
+  Vorgang dort beendet. Erst dadurch bekommt `9027` beim Pollen einen
+  Aussagewert. Gemessen antwortet eine genehmigte Zahlung mit `0` (Beleg
+  408811, dreimal wiederholt), eine abgelehnte mit `9027` (bei `100003`
+  zweimal, bei `9003` einmal). **Zwei `9027` in Folge ergeben deshalb
+  `declined`.**
+
+  Drei Absicherungen, damit daraus keine neue Doppelbelastung wird: ohne
+  vorangegangene Antwort mit Code greift die Regel **nicht** — der Vorfall vom
+  24.08.2026 (Antwort verloren, Zahlung laeuft weiter) bleibt unveraendert
+  `unresolved`; erst die **zweite** Abfrage entscheidet, weil die erste in das
+  Fenster faellt, in dem der Datensatz am Terminal noch nicht stehen muss; und
+  „zweimal" heisst **hintereinander**. Alle drei sind mit einer Mutationsprobe
+  abgesichert.
+
+  **Was weiterhin fehlt:** die echten Codes fuer „keine Deckung" und „Karte
+  abgelaufen". Sie liessen sich nicht messen — das Testgeraet wird per Apple
+  Pay bedient, eine ablehnende Karte stand nicht zur Verfuegung. Die Regel
+  oben faengt sie ab, benennen kann sie sie nicht.
+
+- **Neu: `discoverHpsTerminals` findet die Adresse des Terminals im Netz.**
+  Ein Aufruf statt einer Adresse aus der Einrichtung: TCP-Scan der lokalen
+  /24-Netze auf Port 8080, danach eine Nachfrage, die aus einem offenen Port
+  ein hobex-Terminal macht. `stopAtFirst: true` bricht beim ersten Treffer ab —
+  im echten Netz gemessen 8,4 s gegenueber 18,7 s ueber alle Netze.
+
+  Die Nachfrage prueft **zwei** Merkmale, und das ist erzwungen: die
+  naheliegende Pruefung `GET /api/terminals` antwortet auf der gemessenen
+  Firmware mit `404 "Endpoint not implemented"`, ebenso `/api/status`,
+  `/api/version` und `/api/terminals/{tid}/status`. Eine Suche, die nur darauf
+  baut, findet ein voll funktionsfaehiges Terminal **nicht**. Zweites Merkmal
+  ist `GET /api/terminals/0/diagnosis` — dasselbe, das `kasseneck-connect`
+  benutzt.
+
+  **Fuer iOS ab 14 noetig:** `NSLocalNetworkUsageDescription` in der
+  `Info.plist`. Fehlt der Eintrag, laufen die Verbindungen ins Leere und die
+  Suche meldet schlicht „nichts gefunden" — ohne Fehler, der darauf hinweist.
+
+  Die TID liefert die Suche nur mit, wenn die Firmware `GET /api/terminals`
+  kennt. Auf der gemessenen tut sie das nicht; die TID muss dort bei der
+  Einrichtung eingetragen werden.
+
 ## 5.1.1
 
 - **`HobexCloudPayments` ist abgekuendigt** (`@Deprecated`). Der Cloud-Weg wird nicht mehr weiterentwickelt; neue Einbindungen nutzen `HpsPayments` mit einem lokalen hobex-HPS-Terminal. **Nichts wird entfernt:** Bestandsbelege tragen `CreditCardProvider.hobexCloudApi`, und sie muessen les- und druckbar bleiben — abgekuendigt ist der aktive Zahlweg, nicht die Darstellung.
