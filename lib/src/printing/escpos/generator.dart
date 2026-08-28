@@ -364,7 +364,15 @@ class EscPosGenerator {
     bytes += emptyLines(1);
 
     if (isNextRow) {
-      row(nextRow);
+      // Der Rest der zu langen Spalte gehoert IN die Ausgabe. Die Vorlage
+      // esc_pos_utils 1.1.0, aus der dieser Erzeuger uebernommen wurde, ruft
+      // hier nur auf und verwirft das Ergebnis -- esc_pos_utils_plus hatte
+      // genau das behoben, und beim Uebernehmen ging die Korrektur verloren.
+      // Wirkung: jede Spalte, die laenger ist als ihre Breite, verlor still
+      // ihren Rest. Auf dem Bon heisst das ein abgeschnittener Artikelname
+      // oder ein fehlendes "je 4,90" -- ein Beleg, der etwas anderes zeigt
+      // als verkauft wurde.
+      bytes += row(nextRow);
     }
     return bytes;
   }

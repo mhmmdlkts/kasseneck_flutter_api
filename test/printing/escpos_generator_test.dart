@@ -24,6 +24,55 @@ void main() {
     expect(b, isNotEmpty);
   });
 
+  test('eine zu lange Spalte verliert ihren Rest NICHT', () {
+    // Gemessen am 28.08.2026 beim Vergleich der Bon-Bytes von 3.3.0 gegen
+    // 5.2.0: die Fortsetzungszeile fehlte vollstaendig. Ursache war ein
+    // `row(nextRow)` ohne `bytes +=` -- uebernommen aus esc_pos_utils 1.1.0,
+    // wo esc_pos_utils_plus genau das behoben hatte. Auf dem Bon hiess das
+    // ein abgeschnittener Artikelname.
+    const lang = 'Marmelade Himbeere Extra Fein Grossglas';
+    final b = gen().row([
+      PosColumn(
+          text: lang,
+          width: 6,
+          styles: const PosStyles(align: PosAlign.left)),
+      PosColumn(
+          text: '14,70',
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right)),
+    ]);
+
+    // Jedes Zeichen des Namens muss in den Bytes vorkommen, verteilt ueber
+    // so viele Zeilen wie noetig.
+    final ausgabe = String.fromCharCodes(b.where((x) => x >= 32 && x < 127));
+    for (final teil in ['Marmelade', 'Extra', 'Grossglas']) {
+      expect(ausgabe, contains(teil),
+          reason: '"$teil" fehlt auf dem Bon – die Fortsetzung ging verloren');
+    }
+  });
+
+  test('eine Spalte, die passt, erzeugt keine Fortsetzungszeile', () {
+    final kurz = gen().row([
+      PosColumn(text: 'Brot', width: 6, styles: const PosStyles()),
+      PosColumn(
+          text: '3,30',
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right)),
+    ]);
+    final lang = gen().row([
+      PosColumn(
+          text: 'Brot mit einem sehr langen Namen der umbricht',
+          width: 6,
+          styles: const PosStyles()),
+      PosColumn(
+          text: '3,30',
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right)),
+    ]);
+    expect(lang.length, greaterThan(kurz.length),
+        reason: 'die umbrochene Zeile muss mehr Bytes erzeugen');
+  });
+
   test('qrcode delegiert an nativen QRCode-Befehl', () {
     final b = gen().qrcode('XYZ', size: QRSize.size6);
     expect(b.join(','), contains([0x31, 0x43, 0x06].join(','))); // Modulgroesse 6

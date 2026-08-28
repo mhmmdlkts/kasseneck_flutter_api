@@ -1,3 +1,29 @@
+## 5.2.1
+
+- **Behoben: eine zu lange Spalte verlor auf dem Bon still ihren Rest.**
+  `EscPosGenerator.row` splittet zu langen Spalteninhalt korrekt in eine
+  Fortsetzungszeile ab, rief sie dann aber nur auf und **verwarf das
+  Ergebnis** (`row(nextRow);` statt `bytes += row(nextRow);`). Alles, was
+  ueber die Spaltenbreite hinausging, fiel damit ersatzlos weg.
+
+  **Herkunft:** der Erzeuger wurde mit 4.0.0 aus `esc_pos_utils` 1.1.0
+  uebernommen — dort steht der Fehler. `esc_pos_utils_plus` hatte ihn
+  behoben, und genau diese Fassung war bis 3.3.0 im Einsatz. Beim Loesen von
+  `esc_pos_utils_plus` ging die Korrektur mit verloren; seit 4.0.0 ist sie in
+  jeder veroeffentlichten Fassung fort.
+
+  **Wirkung:** ein Artikelname, der laenger ist als seine Spalte, wurde auf
+  dem gedruckten Beleg abgeschnitten. Gemessen am 28.08.2026 im Vergleich der
+  Bon-Bytes von 3.3.0 gegen 5.2.0, 80 mm: aus
+  `3  x Marmelade Himbeere je 4,90` wurde `3  x Marmelade Himbeere je `, der
+  Einzelpreis fehlte; aus einem langen Artikelnamen fiel die zweite Haelfte
+  weg. Der Beleg zeigte damit etwas anderes als verkauft wurde — und zwar
+  auf Papier, das der Kunde mitnimmt.
+
+  Zwei Tests halten es fest: dass jedes Zeichen einer ueberlangen Spalte in
+  den Bytes ankommt, und dass eine umbrochene Zeile mehr Bytes erzeugt als
+  eine passende. Beide fallen ohne die Korrektur.
+
 ## 5.2.0
 
 **Anlass:** Zwei Luecken, beide am 28.08.2026 am Terminal 3600335 gemessen.
