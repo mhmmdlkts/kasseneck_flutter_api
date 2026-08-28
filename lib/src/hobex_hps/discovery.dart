@@ -229,16 +229,18 @@ Future<HpsDiscoveryResult> discoverHpsTerminals({
 ///
 /// 1. `GET /api/terminals` -- liefert eine Liste, wenn die Firmware sie kennt.
 ///    Dann stehen die TIDs gleich mit im Ergebnis.
-/// 2. `GET /api/v2/transactions/0/0` -- eine Statusabfrage mit
-///    Platzhalter-Kennungen. Gemessen antwortet das Terminal mit HTTP 200 und
+/// 2. `GET /api/terminals/0/diagnosis` -- eine Diagnose mit der
+///    Platzhalter-TID `0`. Gemessen antwortet das Terminal mit HTTP 200 und
 ///    `{"responseCode":"100108","responseText":"Invalid TID","tid":"0", ...}`.
 ///    Der Aufruf braucht KEINE bekannte TID, veraendert nichts, und die
 ///    Antwortform ist eindeutig hobex.
 ///
-/// Das zweite Merkmal ist das wichtigere, und zwar nicht nur als Rueckfall:
-/// es prueft genau den Weg, ueber den spaeter das Geld laeuft. Ein Geraet, das
-/// `/api/terminals` beantwortet, aber keine Transaktionen annimmt, waere ein
-/// Treffer ohne Wert.
+/// Das zweite Merkmal traegt die Erkennung. Es ist dasselbe, das
+/// `kasseneck-connect` benutzt (`lib/src/terminal/discovery.dart`) -- zwei
+/// Zwillinge, die dasselbe Geraet unterschiedlich erkennen, waeren eine
+/// Fehlerquelle ohne Gegenwert. `GET /api/v2/transactions/0/0` antwortet
+/// gleichwertig und waere ebenso brauchbar; die Gleichheit mit Connect gibt
+/// den Ausschlag.
 ///
 /// JEDE Ausnahme heisst hier "nein, kein Terminal", nie "Fehler": die
 /// abgeklopften Adressen sind fremde Geraete, und was sie antworten, ist
@@ -295,8 +297,8 @@ Future<List<TerminalInfo>?> _terminalListe({
   }
 }
 
-/// Merkmal 2: eine Statusabfrage mit Platzhaltern, die jedes HPS-Terminal
-/// beantwortet, ohne dass man seine TID kennt.
+/// Merkmal 2: eine Diagnose mit Platzhalter-TID, die jedes HPS-Terminal
+/// beantwortet, ohne dass man seine echte TID kennt.
 ///
 /// Verlangt wird die ANTWORTFORM, nicht ein bestimmter Code: ein JSON-Objekt
 /// mit `responseCode`, das die uebergebene `tid` zurueckspiegelt. Auf einen
@@ -310,7 +312,7 @@ Future<bool> _antwortetWieHps({
 }) async {
   try {
     final response = await client
-        .get(Uri.parse('http://$host:$port/api/v2/transactions/0/0'))
+        .get(Uri.parse('http://$host:$port/api/terminals/0/diagnosis'))
         .timeout(timeout);
     if (response.statusCode != 200) return false;
     final decoded = jsonDecode(response.body);

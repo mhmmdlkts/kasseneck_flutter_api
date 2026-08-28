@@ -11,8 +11,9 @@ import 'package:kasseneck_api/src/hobex_hps/discovery.dart';
 const String _terminalListe = '[{"tid":"3600335","company":"Kreiseck",'
     '"active":true}]';
 
-/// Antwort der gemessenen Firmware auf `GET /api/v2/transactions/0/0` --
-/// das zweite Erkennungsmerkmal, das ohne bekannte TID auskommt.
+/// Antwort der gemessenen Firmware auf `GET /api/terminals/0/diagnosis` --
+/// das zweite Erkennungsmerkmal, das ohne bekannte TID auskommt. Dasselbe
+/// Merkmal benutzt kasseneck-connect.
 const String _platzhalterStatus =
     '{"responseCode":"100108","responseText":"Invalid TID","tid":"0",'
     '"transactionId":"0"}';
@@ -200,7 +201,7 @@ void main() {
         probe: _offen({'192.168.0.187'}),
         httpClient: _netz({
           '192.168.0.187/api/terminals': _nichtImplementiert,
-          '192.168.0.187/api/v2/transactions/0/0':
+          '192.168.0.187/api/terminals/0/diagnosis':
               http.Response(_platzhalterStatus, 200),
         }),
       );
@@ -223,7 +224,7 @@ void main() {
       expect(ergebnis.found, isEmpty);
     });
 
-    test('ein fremdes JSON auf dem Statusweg ist kein Treffer', () async {
+    test('ein fremdes JSON auf dem Diagnoseweg ist kein Treffer', () async {
       // Geprueft wird die Antwortform, nicht bloss "es kam JSON".
       final ergebnis = await discoverHpsTerminals(
         interfaces: () async =>
