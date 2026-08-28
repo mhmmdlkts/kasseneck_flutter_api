@@ -51,7 +51,16 @@ void main() {
     }
   });
 
-  test('eine Spalte, die passt, erzeugt keine Fortsetzungszeile', () {
+  test('eine passende Spalte bleibt einzeilig, eine zu lange bekommt eine '
+      'Fortsetzung', () {
+    // Gezaehlt werden ZEILENVORSCHUEBE, nicht Bytes. Die naheliegende
+    // Pruefung "die umbrochene Zeile ist laenger" faellt nicht auf den
+    // Fehler herein -- sie ist auch OHNE die Korrektur wahr (gemessen:
+    // 35 gegen 24 Bytes), weil die abgeschnittene Spalte auf ihre volle
+    // Breite aufgefuellt wird. Sie waere ein Test, der nie rot wird.
+    int zeilenvorschuebe(List<int> bytes) =>
+        bytes.where((b) => b == 0x0A).length;
+
     final kurz = gen().row([
       PosColumn(text: 'Brot', width: 6, styles: const PosStyles()),
       PosColumn(
@@ -69,8 +78,12 @@ void main() {
           width: 6,
           styles: const PosStyles(align: PosAlign.right)),
     ]);
-    expect(lang.length, greaterThan(kurz.length),
-        reason: 'die umbrochene Zeile muss mehr Bytes erzeugen');
+
+    expect(zeilenvorschuebe(kurz), 1,
+        reason: 'was passt, darf keine Fortsetzungszeile bekommen -- sonst '
+            'zerreisst die Korrektur jeden normalen Bon');
+    expect(zeilenvorschuebe(lang), greaterThan(1),
+        reason: 'der Rest der zu langen Spalte braucht eine eigene Zeile');
   });
 
   test('qrcode delegiert an nativen QRCode-Befehl', () {

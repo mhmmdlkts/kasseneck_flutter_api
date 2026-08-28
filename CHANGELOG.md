@@ -21,8 +21,14 @@
   auf Papier, das der Kunde mitnimmt.
 
   Zwei Tests halten es fest: dass jedes Zeichen einer ueberlangen Spalte in
-  den Bytes ankommt, und dass eine umbrochene Zeile mehr Bytes erzeugt als
-  eine passende. Beide fallen ohne die Korrektur.
+  den Bytes ankommt, und dass eine passende Zeile einzeilig bleibt, waehrend
+  eine zu lange eine Fortsetzung bekommt. Beide fallen ohne die Korrektur.
+
+  Der zweite zaehlt dafuer ZEILENVORSCHUEBE, nicht Bytes. Die naheliegende
+  Pruefung "die umbrochene Zeile ist laenger" faellt auf den Fehler nicht
+  herein -- sie ist auch ohne die Korrektur wahr (gemessen 35 gegen 24
+  Bytes), weil die abgeschnittene Spalte auf ihre volle Breite aufgefuellt
+  wird. Sie waere ein Test gewesen, der nie rot wird.
 
 ## 5.2.0
 
