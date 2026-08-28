@@ -5,6 +5,7 @@ import 'package:kasseneck_api/enums/credit_card_provider.dart';
 /// Tests fuer die hobex-HPS-Schicht: CVM-Parsing, TransactionResponse,
 /// und den Adapter HobexReceipt.fromHps -> toCardPaymentData (Render-Keys).
 void main() {
+  _oberflaeche();
   group('Cvm.fromValue', () {
     test('numerisch (Payment-Response)', () {
       expect(Cvm.fromValue(0), Cvm.unknown);
@@ -228,6 +229,47 @@ void main() {
       expect(d.isInOperation, isTrue);
       expect(d.isAuthorized, isTrue);
       expect(d.isTestEnvironment, isTrue);
+    });
+  });
+}
+
+/// Die Adresssuche muss ueber den OEFFENTLICHEN Einstiegspunkt erreichbar
+/// sein -- `package:kasseneck_api/hobex_hps.dart`, nicht ueber `src/`.
+///
+/// Eigener Test, weil `hps_discovery_test.dart` aus `src/` importiert (es
+/// braucht die internen Helfer) und ein zusaetzlicher Barrel-Import dort vom
+/// Analyzer als ueberfluessig gemeldet wird. Faellt der Export aus
+/// `hobex_hps.dart`, wird DIESE Datei rot -- und zwar beim Uebersetzen.
+void _oberflaeche() {
+  group('oeffentliche Oberflaeche der Adresssuche', () {
+    test('discoverHpsTerminals und seine Typen sind exportiert', () {
+      expect(discoverHpsTerminals, isA<Function>());
+      expect(hpsDefaultPort, 8080);
+      expect(hpsScanBudget, const Duration(seconds: 18));
+
+      const treffer = DiscoveredHpsTerminal(
+        host: '192.168.0.187',
+        port: hpsDefaultPort,
+        terminals: <TerminalInfo>[],
+      );
+      expect(treffer.baseUrl.toString(), 'http://192.168.0.187:8080');
+      expect(treffer.tids, isEmpty);
+
+      const netz = ScannedHpsSubnet(
+        interface: 'en0',
+        subnet: '192.168.0.0/24',
+        hosts: 253,
+      );
+      expect(netz.hosts, 253);
+
+      const eigen = LocalIpv4(name: 'en0', address: '192.168.0.10');
+      expect(eigen.address, '192.168.0.10');
+
+      const ergebnis = HpsDiscoveryResult(
+        found: <DiscoveredHpsTerminal>[treffer],
+        scanned: <ScannedHpsSubnet>[netz],
+      );
+      expect(ergebnis.first, treffer);
     });
   });
 }

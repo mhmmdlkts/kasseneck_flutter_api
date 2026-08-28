@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kasseneck_api/hobex_hps.dart';
 import 'package:kasseneck_api/src/hobex_hps/discovery.dart';
 
 /// Antwort eines echten Terminals auf `GET /api/terminals` -- gekuerzt auf die
