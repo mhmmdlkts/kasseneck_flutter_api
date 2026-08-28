@@ -110,6 +110,28 @@ wiederfinden.
 
 ---
 
+## 6. Das Wartefenster für die Karte lässt sich über die Anfrage nicht steuern
+
+Wird eine Zahlung gestartet und keine Karte aufgelegt, antwortet das Terminal
+nach rund **63 Sekunden** mit `100003 "Card not present"`.
+
+Ein Feld `timeout` im Transaktionsrumpf wird **ohne Fehlermeldung angenommen**
+und hat keine Wirkung:
+
+| Anfrage | Antwort nach |
+|---|---|
+| ohne `timeout` | 64,3 s |
+| `"timeout": 180` | 63,5 s |
+
+Für eine Kasse ist das Fenster relevant: eine Minute reicht am Automaten, an
+der Theke mit Beratung nicht immer. Weil ein unbekanntes Feld stillschweigend
+angenommen wird, lässt sich auch nicht erkennen, ob der Name nur falsch
+geraten war.
+
+**Frage:** Gibt es einen Weg, das Wartefenster zu setzen — über die Anfrage
+oder als Geräteeinstellung? Und werden unbekannte Felder im
+Transaktionsrumpf absichtlich ignoriert statt abgewiesen?
+
 ## Beobachtete Antwortcodes
 
 | Code | Text | Lage |
