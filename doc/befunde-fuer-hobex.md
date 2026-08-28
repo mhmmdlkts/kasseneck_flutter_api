@@ -132,6 +132,34 @@ geraten war.
 oder als Geräteeinstellung? Und werden unbekannte Felder im
 Transaktionsrumpf absichtlich ignoriert statt abgewiesen?
 
+## 7. Ein Teil der Endpunkte antwortet mit „Endpoint not implemented"
+
+Auf dem gemessenen Gerät (TID 3600335, 28.08.2026) beantwortet die HPS-API
+die Transaktions- und Diagnosewege, aber nicht die Auflistung:
+
+| Aufruf | Antwort |
+|---|---|
+| `GET /api/terminals` | **404** `Endpoint not implemented` |
+| `GET /api/terminals/{tid}/status` | **404** |
+| `GET /api`, `/api/status`, `/api/version`, `/api/info` | **404** |
+| `GET /api/terminals/{tid}/diagnosis` | 200, vollständige Gerätedaten |
+| `GET /api/terminals/0/diagnosis` | 200, `100108 "Invalid TID"` |
+| `GET /api/terminals/{tid}/batchtotal/{seit}` | 200 |
+| `GET /api/v2/transactions/{tid}/{txId}` | 200 |
+| `POST /api/transaction/payment` / `abort` | 200 |
+
+Auffällig ist das Paar: `/api/terminals/{tid}/diagnosis` arbeitet,
+`/api/terminals/{tid}/status` daneben nicht.
+
+Praktische Folge: eine Kasse kann die TID nicht am Gerät erfragen — sie muss
+bei der Einrichtung von Hand eingetragen werden. Für die Erkennung im Netz
+genügt `/api/terminals/0/diagnosis`, das ohne bekannte TID mit
+`100108 "Invalid TID"` antwortet.
+
+**Frage:** Sind `/api/terminals` und `/api/terminals/{tid}/status` in dieser
+Firmware nicht enthalten, oder müssen sie freigeschaltet werden? Und gibt es
+einen vorgesehenen Weg, die TID am Gerät abzufragen?
+
 ## Beobachtete Antwortcodes
 
 | Code | Text | Lage |
