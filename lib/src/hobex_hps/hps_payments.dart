@@ -203,7 +203,7 @@ class HpsPayments {
       steps.add(_offeneAntwort(res));
     }
 
-    return _resolve(id, steps);
+    return _resolve(id, steps, antwortMitCode: res?.responseCode != null);
   }
 
   /// Gutschrift mit geklaertem Ausgang.
@@ -247,7 +247,7 @@ class HpsPayments {
       steps.add(_offeneAntwort(res));
     }
 
-    return _resolve(id, steps);
+    return _resolve(id, steps, antwortMitCode: res?.responseCode != null);
   }
 
   /// Aufhebung (Storno/Void) einer bestehenden Zahlung mit geklaertem
@@ -469,7 +469,16 @@ class HpsPayments {
   ///   die Statusabfrage nicht antwortet; ihn hier vorzubelasten wuerde das
   ///   Klaerbudget um eine Runde kuerzen, obwohl ueber die Erreichbarkeit der
   ///   Statusabfrage noch gar nichts bekannt ist.
-  Future<HpsResult> _resolve(String id, List<String> steps) async {
+  /// [antwortMitCode] heisst: das Terminal hat auf die ERZEUGENDE Anfrage
+  /// eine Antwort MIT Ergebniscode geliefert, deren Bedeutung wir nur nicht
+  /// kennen. Dann ist der Vorgang am Geraet abgeschlossen -- und erst dadurch
+  /// bekommt [TransactionResponse.noStatementCode] (`9027`) beim Pollen einen
+  /// Aussagewert, den es sonst nicht hat. Siehe [_ausGeschlossenerAntwort].
+  Future<HpsResult> _resolve(
+    String id,
+    List<String> steps, {
+    bool antwortMitCode = false,
+  }) async {
     _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
 
     final clock = _clock()..start();
@@ -479,6 +488,7 @@ class HpsPayments {
 
     var wait = Duration.zero;
     var transportFailures = 0;
+    var ohneAuskunft = 0;
 
     while (clock.elapsed < resolveBudget) {
       if (wait > Duration.zero) {
@@ -514,6 +524,20 @@ class HpsPayments {
       final settled = _fromResponse(status, id, steps);
       if (settled != null) return settled;
 
+      if (status.isNoStatement) {
+        ohneAuskunft++;
+        final geklaert = _ausGeschlossenerAntwort(
+          id: id,
+          steps: steps,
+          status: status,
+          antwortMitCode: antwortMitCode,
+          ohneAuskunft: ohneAuskunft,
+        );
+        if (geklaert != null) return geklaert;
+      } else {
+        ohneAuskunft = 0;
+      }
+
       steps
           .add(_statusOhneErgebnis(status) ?? 'Status: noch kein Ergebniscode');
       wait = _nextWait(wait);
@@ -521,6 +545,60 @@ class HpsPayments {
 
     steps.add('Ausgang bleibt offen');
     return _open(id, steps);
+  }
+
+  /// Liest `9027` beim Pollen als "nicht genehmigt" -- aber NUR, wenn das
+  /// Terminal die erzeugende Anfrage bereits mit einem Ergebniscode
+  /// beantwortet hat, und erst ab der ZWEITEN Abfrage in Folge.
+  ///
+  /// **Warum das ueberhaupt geht.** [TransactionResponse.noStatementCode] ist
+  /// sonst eine reine Nicht-Aussage: dieselbe `9027` steht fuer einen
+  /// laufenden, einen abgebrochenen und einen nie gesehenen Vorgang. Hat das
+  /// Terminal aber eine Antwort MIT Code geliefert, faellt der Fall "laeuft
+  /// noch" weg -- der Vorgang ist dort beendet -- und "nie gesehen" ebenso, denn
+  /// zu genau dieser Kennung wurde uns gerade geantwortet. Uebrig bleibt
+  /// "beendet und nicht genehmigt".
+  ///
+  /// **Gegenprobe, die das traegt** (28.08.2026, TID 3600335, jeweils nach
+  /// abgeschlossenem Vorgang):
+  ///
+  /// | Zahlung endete | Statusabfrage danach |
+  /// |---|---|
+  /// | genehmigt (Beleg 408811) | `0` "Genehmigt", dreimal wiederholt |
+  /// | abgelehnt (`100003`) | `9027`, zweimal |
+  /// | abgelehnt (`9003`) | `9027` |
+  ///
+  /// Eine genehmigte Zahlung antwortet also `0` und nicht `9027`. Genau darauf
+  /// ruht die Regel.
+  ///
+  /// **Warum erst ab der zweiten Abfrage.** Die erste laeuft unmittelbar nach
+  /// der Antwort -- das Fenster, in dem der Datensatz am Terminal noch nicht
+  /// stehen koennte. Waere er es nicht und wir lesen `9027` als "abgelehnt",
+  /// entstuende genau die Doppelbelastung vom 24.08.2026, nur an einer neuen
+  /// Stelle. Dieselbe Absicherung traegt bereits [_fromCancelStatus]. Reicht
+  /// das Budget nur fuer eine Abfrage, bleibt der Ausgang offen.
+  ///
+  /// `null` heisst: nicht entschieden, weiter pollen.
+  HpsResult? _ausGeschlossenerAntwort({
+    required String id,
+    required List<String> steps,
+    required TransactionResponse status,
+    required bool antwortMitCode,
+    required int ohneAuskunft,
+  }) {
+    if (!antwortMitCode) return null;
+    if (ohneAuskunft < 2) return null;
+
+    steps.add('Statusabfrage zweimal ohne Auskunft (${status.responseCode}), '
+        'obwohl das Terminal den Vorgang bereits beantwortet hatte -- '
+        'er ist beendet und nicht genehmigt, es ist nichts belastet');
+    _emit(HpsEventKind.resolved, steps.last, id);
+    return HpsResult(
+      outcome: CardPaymentOutcome.declined,
+      transactionId: id,
+      response: status,
+      steps: List<String>.unmodifiable(steps),
+    );
   }
 
   /// Versucht den Abbruch GENAU EINMAL.

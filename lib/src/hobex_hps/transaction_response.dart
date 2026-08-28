@@ -254,6 +254,30 @@ class TransactionResponse {
   /// behaupten, siehe `HpsPayments`.
   static const String technicalErrorCode = '9900';
 
+  /// Ergebniscode `9003` ("Invalid Amount"): das Terminal weist den Betrag ab,
+  /// BEVOR es die Karte anfordert.
+  ///
+  /// Am 28.08.2026 gemessen (TID 3600335): eine Zahlung ueber 99999,99 EUR
+  /// antwortet nach 15,7 s mit diesem Code, ohne dass jemals eine Karte
+  /// verlangt wurde. Es ist damit eine positive Aussage: nichts belastet.
+  static const String invalidAmountCode = '9003';
+
+  /// Ergebniscode `100019` ("Amount is not in a valid range"): der Betrag
+  /// liegt ausserhalb des zulaessigen Bereichs.
+  ///
+  /// Am 27.08.2026 mit einem negativen Betrag gemessen. Wie
+  /// [invalidAmountCode] eine Abweisung vor dem Kartenfluss -- nichts
+  /// belastet.
+  static const String amountOutOfRangeCode = '100019';
+
+  /// Ergebniscode `100108` ("Invalid TID"): die uebergebene Terminal-Kennung
+  /// gibt es an diesem Geraet nicht.
+  ///
+  /// Am 27.08.2026 gemessen, und am 28.08.2026 erneut ueber
+  /// `GET /api/terminals/0/diagnosis`. Der Vorgang wird abgewiesen, bevor
+  /// irgendetwas geschieht -- nichts belastet.
+  static const String invalidTidCode = '100108';
+
   /// Ergebniscodes, deren Bedeutung GEMESSEN und hier benannt ist, und die
   /// einen Ausgang FESTSCHREIBEN -- siehe [isConclusive]. [noStatementCode]
   /// (`9027`) gehoert bewusst NICHT dazu: er ist zwar ebenso gemessen und
@@ -267,6 +291,12 @@ class TransactionResponse {
     abortedCode,
     cardNotPresentCode,
     invalidTransactionCode,
+    // Drei Abweisungen VOR dem Kartenfluss, am 27./28.08.2026 gemessen: das
+    // Terminal antwortet, ohne je eine Karte verlangt zu haben. Damit sind
+    // sie positive Aussagen ueber den Ausgang, keine Wissensluecken.
+    invalidAmountCode,
+    amountOutOfRangeCode,
+    invalidTidCode,
   };
 
   /// `true` when the transaction was approved (`responseCode == "0"`).
