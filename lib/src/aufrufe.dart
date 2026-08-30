@@ -12,6 +12,27 @@
 library;
 
 abstract final class Aufrufe {
+  // ---- Partner-API (Bearer ist der Partner-Schluessel pk_<env>_...) -------
+  static const activateCashregister = 'activateCashregister';
+  static const createCustomerCashregister = 'createCustomerCashregister';
+  static const createPartnerCustomer = 'createPartnerCustomer';
+  static const createPartnerWebhook = 'createPartnerWebhook';
+  static const deletePartnerWebhook = 'deletePartnerWebhook';
+  static const getCustomerCredentials = 'getCustomerCredentials';
+  static const getCustomerSignatureStatus = 'getCustomerSignatureStatus';
+  static const getPartnerCustomer = 'getPartnerCustomer';
+  static const getPartnerInfo = 'getPartnerInfo';
+  static const listCustomerCashregisters = 'listCustomerCashregisters';
+  static const listPartnerCustomers = 'listPartnerCustomers';
+  static const listPartnerWebhookDeliveries = 'listPartnerWebhookDeliveries';
+  static const listPartnerWebhooks = 'listPartnerWebhooks';
+  static const reportCustomerVertrag = 'reportCustomerVertrag';
+  static const requestCustomerSignature = 'requestCustomerSignature';
+  static const sendPartnerCustomerFonLink = 'sendPartnerCustomerFonLink';
+  static const sendPartnerWebhookTest = 'sendPartnerWebhookTest';
+  static const updatePartnerWebhook = 'updatePartnerWebhook';
+
+  // ---- Kasse, Belege, Berichte -------------------------------------------
   static const cancelReceipt = 'cancelReceipt';
   static const createPaymentLinkStripe = 'createPaymentLinkStripe';
   static const createReceipt = 'createReceipt';
@@ -42,6 +63,24 @@ abstract final class Aufrufe {
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
+    activateCashregister,
+    createCustomerCashregister,
+    createPartnerCustomer,
+    createPartnerWebhook,
+    deletePartnerWebhook,
+    getCustomerCredentials,
+    getCustomerSignatureStatus,
+    getPartnerCustomer,
+    getPartnerInfo,
+    listCustomerCashregisters,
+    listPartnerCustomers,
+    listPartnerWebhookDeliveries,
+    listPartnerWebhooks,
+    reportCustomerVertrag,
+    requestCustomerSignature,
+    sendPartnerCustomerFonLink,
+    sendPartnerWebhookTest,
+    updatePartnerWebhook,
     cancelReceipt,
     createPaymentLinkStripe,
     createReceipt,

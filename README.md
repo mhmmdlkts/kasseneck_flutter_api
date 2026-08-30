@@ -40,6 +40,95 @@ can focus on your app.
 - 📱 **Drop-in receipt widget** for on-screen display
 - 📊 **Reports & invoices** — daily / monthly PDF
 - 🔗 **Stripe payment links** for remote & online payments
+- 🤝 **Partner API** (`package:kasseneck_api/partner.dart`) — onboard and manage businesses on behalf of a software house, including webhook signature verification. **Server-side only.**
+
+## 🤝 Partner API (`partner.dart`)
+
+For software houses that build Kasseneck into their own product: create
+businesses, walk them through to a running register, then sign receipts in
+their name.
+
+**What the endpoints do is documented in the backend reference** —
+`docs/api/partner.md` (long form) and `docs/api/partner.llms.txt` (compact, for
+tools and language models). This README does not repeat them; what follows is
+how to use the client.
+
+The partner key (`pk_live_…`) belongs on a **server**. It can create businesses
+and — with the extra scope `credentials:read` — fetch their secrets.
+
+```dart
+import 'package:kasseneck_api/partner.dart';
+
+final partner = PartnerApi(
+  partnerKey: Platform.environment['KASSENECK_PARTNER_KEY']!,
+  // Fallback only: listPartnerCustomers/getPartnerCustomer carry the route
+  // per business (kunde.avv.modus).
+  avvModus: AvvModus.vollmacht,
+);
+
+final neu = await partner.createPartnerCustomer(
+  appId: 'app_…',
+  idempotencyKey: kundennummer, // your own — guards against double creation
+  betrieb: {/* master data, see reference */},
+);
+
+await partner.sendPartnerCustomerFonLink(neu.customerId);
+// … wait for the webhook customer.fon_verified …
+await partner.requestCustomerSignature(neu.customerId);
+// … wait for signature.ready …
+await partner.createCustomerCashregister(customerId: neu.customerId);
+```
+
+The order is fixed, and every step complains with its own code when an earlier
+one is missing. It is available as data (`kPartnerAblauf`), and every error code
+carries a next step:
+
+```dart
+try {
+  await partner.activateCashregister(customerId, cashregisterId);
+} on KasseneckApiError catch (fehler) {
+  if (istPartnerFehler(fehler, 'vertrag_offen')) {
+    // Without a confirmed data processing agreement NO new register goes live.
+    final kunde = await partner.getPartnerCustomer(customerId);
+    print(partner.vertragOffenHinweisFuer(kunde.avv));
+  }
+}
+```
+
+### Credentials are a third party's secrets
+
+`getCustomerCredentials` returns the business's `api_key` and its cashregister
+tokens. Whoever holds them can sign receipts in its name — and under RKSV a
+receipt cannot be taken back. They therefore come **not as `String`** but
+wrapped so they cannot be printed by accident:
+
+```dart
+final zugang = await partner.getCustomerCredentials(customerId);
+
+print(zugang);            // BetriebZugangsdaten(cust_1, [apiKey «verborgen»], 1 Kassen)
+'${zugang.apiKey}';       // [apiKey «verborgen»]
+
+speichereVerschluesselt(zugang.apiKey.reveal());  // the only way out
+```
+
+Store encrypted only, never log, never put in a mail or a crash report. Every
+fetch is recorded and visible to the business.
+
+### Verifying incoming webhooks
+
+This is where integrations most often fail, so it ships ready-made. Four things
+must hold: the **raw** body, the time window against replay, a constant-time
+comparison, and every exception treated as a rejection.
+
+```dart
+final ergebnis = leseWebhookEreignis(
+  secrets: [webhookSecret],
+  signaturKopf: request.headers.value('X-Kasseneck-Signature'),
+  rumpf: rohBytes,          // the bytes as received — not re-encoded JSON
+);
+if (!ergebnis.ok) { /* 400, ergebnis.grund */ }
+// Answer 2xx within 10 s, do the work afterwards, deduplicate on ereignis.id.
+```
 
 ## 🧩 Requirements
 

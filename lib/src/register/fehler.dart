@@ -34,15 +34,98 @@ class KasseneckValidationError implements Exception {
       '${receiptId == null ? '' : ' [receiptId: $receiptId]'}';
 }
 
-/// Fachlicher Fehler des Backends (PIN falsch, Kasse belegt, Geraet gesperrt …).
+/// Fachlicher Fehler des Backends (PIN falsch, Kasse belegt, Geraet gesperrt ...).
+///
+/// [code] und [details] tragen die maschinenlesbare Beilage aus `data`. Die
+/// Partner-API legt ihre Entscheidung naemlich nicht in den Text, sondern in
+/// `data.code` (`vertrag_offen`, `signature_not_ready`, `activation_failed`
+/// samt `data.schritt`); ohne diese Felder muesste ein Aufrufer die deutsche
+/// Meldung nach Zeichenketten durchsuchen -- die Art Kopplung, die beim
+/// naechsten Formulierungsschliff still bricht.
+///
+/// Die Beilage wird **gesiebt** und nicht durchgereicht, siehe
+/// [fehlerDetails]. Beide Felder sind zusaetzlich und haben Vorgabewerte:
+/// bestehende Aufrufstellen bleiben unveraendert.
 class KasseneckApiError implements Exception {
-  const KasseneckApiError(this.functionName, this.message);
+  const KasseneckApiError(
+    this.functionName,
+    this.message, {
+    this.code,
+    this.details = const <String, dynamic>{},
+  });
 
   final String functionName;
   final String message;
 
+  /// Maschinenlesbarer Fehlercode aus `data.code`; `null`, wenn die Antwort
+  /// keinen fuehrt (die aelteren Endpunkte tun das nicht).
+  final String? code;
+
+  /// Die uebrige Beilage aus `data`, gesiebt. Nie `null`, notfalls leer.
+  final Map<String, dynamic> details;
+
   @override
-  String toString() => 'KasseneckApiError($functionName): $message';
+  String toString() => 'KasseneckApiError($functionName)'
+      '${code == null ? '' : ' [$code]'}: $message';
+}
+
+/// Grenzen des Siebs. Benannt, weil ein Test sie namentlich prueft -- eine
+/// spaeter heraufgesetzte Grenze soll auffallen und nicht als Zahl im Code
+/// untergehen.
+const int kDetailTiefe = 4;
+const int kDetailEintraege = 50;
+const int kDetailTextMax = 300;
+final RegExp _detailSchluessel = RegExp(r'^[A-Za-z_][A-Za-z0-9_]{0,63}$');
+
+/// Siebt das `data` einer Fehlerantwort zu einer Form, die man gefahrlos an
+/// einem Fehler mitfuehren kann.
+///
+/// Ein Fehler landet in Protokollen, und der Rumpf kommt ueber fremde Proxys.
+/// Deshalb ueberlebt nur, was flach, klein und bezeichner-foermig benannt ist
+/// -- und kein Wert, der mit einem der gesendeten [geheimnisse] ueberlappt.
+/// Der Parameter hat aus demselben Grund **keinen** Vorgabewert: ein Sieb ohne
+/// Abgleichliste waere nur ein Formfilter und damit keine Zusage.
+Map<String, dynamic> fehlerDetails(Object? daten, List<String> geheimnisse) {
+  final gesiebt = _sieben(daten, geheimnisse, 0);
+  return gesiebt is Map<String, dynamic> ? gesiebt : <String, dynamic>{};
+}
+
+/// `_fehlt` statt `null`: `null` ist im Rumpf eine Aussage und muss von
+/// "weggesiebt" unterscheidbar bleiben.
+const Object _fehlt = Object();
+
+Object? _sieben(Object? wert, List<String> geheimnisse, int tiefe) {
+  if (wert == null || wert is bool) return wert;
+  if (wert is num) return wert.isFinite ? wert : _fehlt;
+  if (wert is String) {
+    if (wert.length > kDetailTextMax) return _fehlt;
+    for (final geheim in geheimnisse) {
+      if (geheim.isNotEmpty && (geheim.contains(wert) || wert.contains(geheim))) return _fehlt;
+    }
+    return wert;
+  }
+  if (tiefe >= kDetailTiefe) return _fehlt;
+  if (wert is List) {
+    final liste = <dynamic>[];
+    for (final eintrag in wert.take(kDetailEintraege)) {
+      final s = _sieben(eintrag, geheimnisse, tiefe + 1);
+      if (!identical(s, _fehlt)) liste.add(s);
+    }
+    return liste;
+  }
+  if (wert is Map) {
+    final raus = <String, dynamic>{};
+    for (final eintrag in wert.entries) {
+      if (raus.length >= kDetailEintraege) break;
+      final schluessel = eintrag.key;
+      if (schluessel is! String || !_detailSchluessel.hasMatch(schluessel)) continue;
+      final s = _sieben(eintrag.value, geheimnisse, tiefe + 1);
+      if (identical(s, _fehlt)) continue;
+      raus[schluessel] = s;
+    }
+    return raus;
+  }
+  return _fehlt;
 }
 
 /// Ein Beleg kam an, liess sich aber nicht lesen — ein Pflichtfeld fehlt oder

@@ -7,8 +7,10 @@
 # CI beweist byteweise, dass die Kopie echt ist.
 #
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
+# Solange die Fassung noch nicht auf npm steht (gemeinsame Zwillingsaenderung):
+# `tool/zwillinge.sh ziehen --aus <pfad zum js-repo>`.
 # Der Testlauf sagt dann genau, was fehlt.
-npm_version: 0.6.46
+npm_version: 0.7.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):

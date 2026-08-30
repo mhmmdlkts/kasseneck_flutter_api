@@ -1,8 +1,21 @@
 #!/usr/bin/env bash
 # Holt die Vertragsdateien aus dem veröffentlichten npm-Paket.
 #
-#   ziehen   — Kopie unter test/fixtures/vertrag/ neu schreiben
-#   pruefen  — Kopie byteweise gegen den Tarball vergleichen (CI)
+#   ziehen [--aus <pfad>]  — Kopie unter test/fixtures/vertrag/ neu schreiben
+#   pruefen                — Kopie byteweise gegen den Tarball vergleichen (CI)
+#
+# `--aus <pfad>` zieht aus einem lokalen Arbeitsbaum des JS-Pakets statt aus
+# der Registry. Das ist der Weg fuer die Zeit ZWISCHEN „hier gebaut" und
+# „dort veroeffentlicht": eine Zwillingsaenderung entsteht in beiden Repos
+# gleichzeitig, und ohne diesen Schalter liesse sie sich hier erst nach der
+# Veroeffentlichung ueberhaupt pruefen.
+#
+# `pruefen` kennt den Schalter mit Absicht NICHT. Es ist der Waechter, und ein
+# Waechter, den man auf eine lokale Datei richten kann, bewacht nichts: die CI
+# muss byteweise gegen das VEROEFFENTLICHTE Paket vergleichen. Solange
+# npm_version noch nicht auf npm steht, ist dieser Schritt rot — das ist die
+# Ausrollreihenfolge und kein Fehler: erst npm veroeffentlichen, dann hier
+# mergen.
 #
 # Das Holen macht bewusst dieses Skript und nicht Dart-Code: so braucht das
 # veröffentlichte Paket keine HTTP- und Archiv-Abhängigkeit, nur um sich selbst
@@ -21,13 +34,42 @@ befehl="${1:-}"
 case "$befehl" in
   ziehen|pruefen) ;;
   *)
-    echo "Aufruf: tool/zwillinge.sh {ziehen|pruefen}" >&2
+    echo "Aufruf: tool/zwillinge.sh {ziehen [--aus <pfad>]|pruefen}" >&2
     exit 2
     ;;
 esac
 
+lokal=""
+if [ "${2:-}" = "--aus" ]; then
+  [ "$befehl" = "ziehen" ] || { echo "--aus gibt es nur bei 'ziehen' (siehe Kopf)." >&2; exit 2; }
+  lokal="${3:-}"
+  [ -n "$lokal" ] || { echo "--aus braucht einen Pfad." >&2; exit 2; }
+  [ -d "$lokal/fixtures" ] || { echo "$lokal enthaelt kein fixtures/." >&2; exit 2; }
+elif [ -n "${2:-}" ]; then
+  echo "Unbekannter Schalter: $2" >&2
+  exit 2
+fi
+
 version="$(sed -n 's/^npm_version:[[:space:]]*//p' zwillinge.yaml | tr -d '"' | head -1)"
 [ -n "$version" ] || { echo "npm_version fehlt in zwillinge.yaml" >&2; exit 1; }
+
+if [ -n "$lokal" ]; then
+  # Die Version aus dem lokalen Baum muss zur Anheftung passen — sonst
+  # entstuende eine Kopie, die zwar echt aussieht, aber eine andere Fassung
+  # beschreibt als zwillinge.yaml nennt.
+  lokale_version="$(node -e 'process.stdout.write(String(require(process.argv[1] + "/package.json").version || ""))' "$lokal")"
+  if [ "$lokale_version" != "$version" ]; then
+    echo "zwillinge.yaml heftet ${version} an, $lokal ist ${lokale_version}." >&2
+    exit 1
+  fi
+  rm -rf "$neu"
+  mkdir -p "$neu"
+  cp -R "$lokal/fixtures"/. "$neu"/
+  rm -rf "$ziel"
+  mv "$neu" "$ziel"
+  echo "Vertrag ${version} aus ${lokal} gezogen nach ${ziel} (noch nicht veroeffentlicht)"
+  exit 0
+fi
 
 tmp="$(mktemp -d)"
 # Aufgeräumt wird am EXIT. Strg-C und kill lösen bewusst ein `exit` aus, statt

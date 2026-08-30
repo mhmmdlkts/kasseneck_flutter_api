@@ -1,3 +1,76 @@
+## 5.3.0
+
+- **Neu: Partner-Client (`package:kasseneck_api/partner.dart`).** Alles, was ein
+  Partner-Softwarehaus über die Kasseneck-Schnittstelle tut — Betriebe anlegen,
+  FinanzOnline-Link, Auftragsverarbeitungsvertrag in Vollmacht melden, Signatur
+  beantragen, Kassen in Betrieb nehmen, Zugangsdaten holen, Webhooks verwalten
+  und **eingehende Webhooks prüfen**. Der Zwilling in JavaScript ist
+  `@kreiseck/kasseneck-api/partner` 0.7.0.
+
+  Er steht bewusst **neben** `KasseneckApi`: der Partner-Schlüssel
+  (`pk_live_…`) gehört auf einen Server, `KasseneckApi` braucht dagegen den
+  `api_key` eines einzelnen Betriebs.
+
+  Neue öffentliche Symbole: `PartnerApi`, `PartnerTransport`,
+  `partnerSchluesselEnv`, `kPartnerBaseUrl`; `kPartnerAblauf`, `AblaufSchritt`,
+  `naechsterSchritt`; `AvvModus`, `avvModusAus`, `kAvvModusStandard`,
+  `kPartnerFehlerCodes`, `istPartnerFehlerCode`, `istPartnerFehler`,
+  `partnerFehlerCode`, `partnerFehlerRat`, `partnerFeldFehler`,
+  `PartnerFeldFehler`, `partnerWartezeitSek`, `vertragOffenRat`,
+  `vertragOffenRatFuer`; `KasseneckSecret`, `kSecretMaske`, `alsSecret`;
+  `pruefeWebhookSignatur`, `pruefeWebhookSignaturText`, `leseSignaturKopf`,
+  `SignaturKopf`, `WebhookPruefung`, `WebhookAblehnung`, `hexZuBytes`,
+  `gleichZeitkonstant` samt den Konstanten `kWebhookSignaturKopf`,
+  `kWebhookEreignisKopf`, `kWebhookZustellungKopf`, `kWebhookToleranzSek`,
+  `kWebhookWiederholungSek`, `kWebhookMaxVersuche`, `kWebhookFrist`,
+  `kWebhookLimit`; `leseWebhookEreignis`, `PartnerWebhookEreignis`,
+  `WebhookEreignisErgebnis`, `kPartnerWebhookEreignisse`,
+  `istPartnerWebhookEreignis`, `PartnerWebhook`, `NeuerWebhook`, `WebhookListe`,
+  `WebhookZustellung`, `WebhookTestErgebnis`, `WebhookEreignisKatalog`; dazu die
+  Nutzlast-Typen (`PartnerInfo`, `PartnerApp`, `PartnerSchluesselInfo`,
+  `NeuerBetrieb`, `BetriebZeile`, `BetriebListe`, `Betrieb`, `AvvStand`,
+  `FonLinkErgebnis`, `SignaturAntrag`, `SignaturAntragErgebnis`,
+  `SignaturStand`, `SignaturFehler`, `SignaturHistorieEintrag`, `Kasse`,
+  `KassenSchritt`, `KassenFehler`, `NeueKasse`, `KassenInbetriebnahme`,
+  `KassenListe`, `BetriebZugangsdaten`, `KassenZugang`, `VertragsMeldung`,
+  `PartnerEnv`, `kScopeCredentials`) und die Lesehilfen aus `typen.dart`.
+
+  **Warum die Zugangsdaten nicht als `String` kommen:** `getCustomerCredentials`
+  liefert den `api_key` eines fremden Betriebs und die Token seiner Kassen. Wer
+  sie hat, kann in seinem Namen Belege signieren, und ein Beleg ist nach RKSV
+  nicht zurücknehmbar. Ein `String` landet aber genau dort, wo Werte nun einmal
+  landen: in `print(antwort)`, im `toString()` eines umschliessenden Objekts,
+  in `jsonEncode` unter einem Fehler. Der Klartext liegt deshalb in einer
+  `Expando` **neben** der Instanz, und `toString`/`toJson` zeigen eine Maske;
+  heraus kommt man nur über `.reveal()` — und genau diese Stellen findet eine
+  Suche.
+
+  **Warum die Signaturprüfung im Paket liegt und nicht als Beispiel in der
+  Doku:** sie ist der Teil, den Integratoren am häufigsten falsch bauen, und
+  der einzige, bei dem ein Fehler nie auffällt — eine zu lasche Prüfung lässt
+  jeden durch und meldet nichts. Geprüft werden der **rohe** Rumpf, das
+  Zeitfenster (300 s, in beide Richtungen), ein zeitkonstanter Vergleich, und
+  jede Ausnahme gilt als Ablehnung.
+
+- **Geändert: `KasseneckApiError` trägt `code` und `details`.** Bisher blieb vom
+  `data` einer Fehlerantwort nichts übrig. Die Partner-API legt ihre
+  Entscheidung aber nicht in den Text, sondern in `data.code`; ohne diese
+  Felder müsste ein Aufrufer die deutsche Meldung nach Zeichenketten
+  durchsuchen. Die Beilage wird dabei **gesiebt** (`fehlerDetails`, neu
+  exportiert): höchstens vier Ebenen, 50 Einträge je Ebene, Zeichenketten bis
+  300 Zeichen, nur bezeichner-förmige Schlüssel — und kein Wert, der mit einem
+  gesendeten Geheimnis überlappt. Additiv: beide Felder haben Vorgabewerte,
+  bestehende Aufrufstellen bleiben unverändert.
+
+- **Neue Abhängigkeit `crypto`** (war bisher nur `dev_dependency`): HMAC-SHA256
+  für die Webhook-Signaturprüfung.
+
+- **Zwillingsvertrag auf 0.7.0 nachgezogen** — `Aufrufe` führt die 18
+  Partner-Endpunkte. `tool/zwillinge.sh ziehen` kennt jetzt `--aus <pfad>`, um
+  vor der Veröffentlichung aus einem lokalen Arbeitsbaum des JS-Pakets zu
+  ziehen; `pruefen` kennt den Schalter bewusst nicht und bleibt der Wächter
+  gegen das veröffentlichte Paket.
+
 ## 5.2.1
 
 - **Behoben: eine zu lange Spalte verlor auf dem Bon still ihren Rest.**
