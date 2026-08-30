@@ -18,6 +18,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/partner.dart';
 import 'package:kasseneck_api/src/aufrufe.dart';
 import 'package:kasseneck_api/src/register/pairing.dart';
 
@@ -180,12 +181,68 @@ void main() {
     });
   });
 
+  group('Partner-Listen', () {
+    // Die vierte Prüfung deckte den Partner-Teil nur als Namensliste ab: die
+    // 18 Aufrufe standen im Vertrag, die Fehlercodes, Webhook-Ereignisse,
+    // Vertragswege und der Wiederholungsplan nicht — und genau die pflegt
+    // dieses Paket von Hand nach. Ein Code, den der Zwilling kennt und dieses
+    // Paket nicht, hätte hier keinen Handlungssatz und wäre für einen
+    // Aufrufer nicht unterscheidbar von „gibt es nicht".
+    //
+    // Die Zuordnung Vertragsschlüssel → Liste steht hier ausgeschrieben. Sie
+    // ist selbst eine Zweitliste — deshalb ist ein Schlüssel, den sie nicht
+    // kennt, ein Fehlschlag und kein stilles Überspringen. Nur so fällt eine
+    // neue Liste im JS-Paket hier auf.
+    final zuordnung = <String, List<Object>>{
+      'avvModi': AvvModus.values.map((m) => m.name).toList(),
+      'partnerFehlerCodes': kPartnerFehlerCodes,
+      'partnerWebhookEvents': kPartnerWebhookEreignisse,
+      'webhookRetryPlanSec': kWebhookWiederholungSek,
+    };
+
+    test('jede Liste des Vertrags gibt es hier — mit denselben Werten', () {
+      final partner = (vertrag['partner'] as Map<String, dynamic>?) ?? const {};
+      expect(partner, isNotEmpty,
+          reason: 'der Vertrag führt keinen Partner-Teil mehr — dann prüft dieser Test nichts');
+      final funde = _Funde(ausnahmen);
+      for (final eintrag in partner.entries) {
+        final hier = zuordnung[eintrag.key];
+        if (hier == null) {
+          fail('Der Vertrag führt die Partner-Liste "${eintrag.key}", die Zuordnung in '
+              'zwillinge_test.dart kennt sie nicht. Entweder die Liste hier nachbauen '
+              'und eintragen, oder — wenn sie hier nicht hingehört — begründet in die '
+              'Zuordnung aufnehmen.');
+        }
+        for (final wert in (eintrag.value as List)) {
+          funde.fehltNicht('partner.${eintrag.key}.$wert', hier.contains(wert),
+              'Der Wert "$wert" aus ${eintrag.key}');
+        }
+      }
+      funde.melden();
+    });
+
+    test('keine Liste führt hier mehr, als der Vertrag kennt', () {
+      // Die andere Richtung, und hier ausnahmsweise geprüft: ein Fehlercode,
+      // den nur dieses Paket kennt, wäre ein toter Handlungssatz — das Backend
+      // sendet ihn nie. Anders als bei den Aufrufen gibt es hier keinen Grund,
+      // mehr zu können als der Zwilling.
+      final partner = (vertrag['partner'] as Map<String, dynamic>?) ?? const {};
+      for (final eintrag in zuordnung.entries) {
+        final dort = ((partner[eintrag.key] as List?) ?? const []).toList();
+        expect(eintrag.value.where((w) => !dort.contains(w)), isEmpty,
+            reason: '${eintrag.key}: dieses Paket führt Werte, die der Vertrag nicht kennt');
+      }
+    });
+  });
+
   test('keine Ausnahme ohne Gegenstück im Vertrag', () {
     // Zweite Hälfte des Aufräumens: hier faellt auf, wenn der Vertrag einen
     // Eintrag gar nicht mehr kennt (das JS-Paket hat ihn abgeschafft). Dass
     // eine Lücke geschlossen wurde und die Zeile trotzdem stehen blieb, findet
     // die jeweilige Prüfung selbst — siehe _Funde.fehltNicht.
     final alle = <String>{
+      for (final e in ((vertrag['partner'] as Map<String, dynamic>?) ?? const {}).entries)
+        for (final w in (e.value as List)) 'partner.${e.key}.$w',
       for (final e in (vertrag['enums'] as Map<String, dynamic>).entries)
         for (final w in (e.value as List)) 'enums.${e.key}.$w',
       for (final r in (vertrag['rechte'] as List)) 'rechte.$r',

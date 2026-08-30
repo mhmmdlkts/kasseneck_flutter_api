@@ -231,5 +231,65 @@
     "vollbild",
     "gegebenLeeren",
     "korbLeeren"
-  ]
+  ],
+  "partner": {
+    "avvModi": [
+      "direkt",
+      "vollmacht",
+      "unterauftrag"
+    ],
+    "partnerFehlerCodes": [
+      "validation",
+      "app_not_found",
+      "app_not_accepted",
+      "customer_exists",
+      "customer_conflict",
+      "email_taken",
+      "customer_limit",
+      "rate_limited",
+      "vertrag_offen",
+      "modus_not_allowed",
+      "vollmacht_fehlt",
+      "text_changed",
+      "art_not_allowed",
+      "already_accepted",
+      "not_found",
+      "fon_missing",
+      "no_card_available",
+      "signature_pending",
+      "signature_not_ready",
+      "signature_failed",
+      "module_inactive",
+      "cashregister_limit",
+      "cashregister_not_found",
+      "activation_failed",
+      "webhook_limit",
+      "event_not_subscribed",
+      "webhook_inactive"
+    ],
+    "partnerWebhookEvents": [
+      "customer.created",
+      "customer.updated",
+      "customer.status_changed",
+      "customer.fon_verified",
+      "customer.live_enabled",
+      "customer.avv_accepted",
+      "signature.requested",
+      "signature.ready",
+      "signature.failed",
+      "cashregister.created",
+      "cashregister.live",
+      "cashregister.failed",
+      "app.version.accepted",
+      "app.version.rejected",
+      "webhook.test"
+    ],
+    "webhookRetryPlanSec": [
+      60,
+      300,
+      1800,
+      7200,
+      43200
+    ]
+  }
 }

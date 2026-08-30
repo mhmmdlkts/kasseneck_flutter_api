@@ -66,7 +66,15 @@
   für die Webhook-Signaturprüfung.
 
 - **Zwillingsvertrag auf 0.7.0 nachgezogen** — `Aufrufe` führt die 18
-  Partner-Endpunkte. `tool/zwillinge.sh ziehen` kennt jetzt `--aus <pfad>`, um
+  Partner-Endpunkte. Der Vertrag hat außerdem einen neuen Abschnitt `partner`:
+  Fehlercodes, Webhook-Ereignisse, Vertragswege und Wiederholungsplan gehen
+  jetzt ebenfalls über ihn. Ohne ihn wäre der ganze Partner-Teil als reine
+  Namensliste über den Vertrag gegangen — ein Fehlercode, den nur eine Seite
+  kennt, hätte auf der anderen keinen Handlungssatz und wäre für einen Aufrufer
+  nicht von „gibt es nicht" zu unterscheiden. `zwillinge_test.dart` prüft die
+  neuen Listen in **beiden** Richtungen: was der Vertrag führt, muss es hier
+  geben, und was es hier gibt, muss der Vertrag kennen (ein Code, den das
+  Backend nie sendet, wäre ein toter Handlungssatz). `tool/zwillinge.sh ziehen` kennt jetzt `--aus <pfad>`, um
   vor der Veröffentlichung aus einem lokalen Arbeitsbaum des JS-Pakets zu
   ziehen; `pruefen` kennt den Schalter bewusst nicht und bleibt der Wächter
   gegen das veröffentlichte Paket.
