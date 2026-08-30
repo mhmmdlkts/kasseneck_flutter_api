@@ -69,10 +69,12 @@ class PartnerApi {
   /// der Doku nachschlagen muss.
   String get vertragOffenHinweis => vertragOffenRat(avvModus);
 
-  /// Wie [vertragOffenHinweis], aber mit dem Weg aus dem Betrieb selbst -- der
-  /// verlaesslichen Quelle. Ohne ihn gilt der eingestellte [avvModus].
+  /// Wie [vertragOffenHinweis], aber mit Stand und Weg aus dem Betrieb selbst
+  /// -- der verlaesslichen Quelle. Ohne den Stand gilt der eingestellte
+  /// [avvModus]. Ein Test-Betrieb (`nicht_erforderlich`) bekommt einen eigenen
+  /// Satz: dort ist nichts zu tun.
   String vertragOffenHinweisFuer(AvvStand? avv) =>
-      vertragOffenRatFuer(avv?.modus, avvModus);
+      vertragOffenRatFuer(avv?.modus, status: avv?.status, rueckfall: avvModus);
 
   /// Der Handlungssatz zu einem beliebigen Fehlercode der Partner-API.
   String? fehlerRat(String code) => partnerFehlerRat(code, avvModus);

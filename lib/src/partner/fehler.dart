@@ -37,6 +37,58 @@ enum AvvModus {
 /// Vorgabe, solange Kasseneck fuer das Partner-Konto nichts anderes gesetzt hat.
 const AvvModus kAvvModusStandard = AvvModus.direkt;
 
+/// Die Staende, die `betrieb.avv.status` annehmen kann.
+///
+/// `nicht_erforderlich` ist der Test-Betrieb: dort wird nichts Echtes
+/// verarbeitet, es gibt keinen Vertragsgegenstand, und das Live-Gate greift gar
+/// nicht. **Er darf nicht wie `offen` behandelt werden** -- ein "Vertrag fehlt"
+/// an einem Test-Betrieb schickt einen Integrator auf die Suche nach einem
+/// Problem, das es nicht gibt.
+///
+/// Bewusst eine Liste von Zeichenketten und keine Aufzaehlung: eine spaetere
+/// Backend-Fassung soll einen neuen Stand durchreichen koennen, statt hier zu
+/// scheitern.
+const List<String> kAvvStatus = <String>[
+  'offen',
+  'bestaetigt',
+  'veraltet',
+  'ueber_partner',
+  'nicht_erforderlich',
+];
+
+/// Was ein Stand bedeutet -- als Text, fuer eine Anzeige. `null` fuer einen
+/// Wert, den dieses Paket nicht kennt; ein erfundener Text waere schlimmer als
+/// keiner.
+String? avvStatusText(String status) => const <String, String>{
+      'offen': 'Der Auftragsverarbeitungsvertrag fehlt -- es geht keine neue Kasse live.',
+      'bestaetigt': 'Die geltende Fassung ist bestaetigt.',
+      'veraltet': 'Bestaetigt, aber inzwischen gilt eine neuere Pflichtfassung.',
+      'ueber_partner': 'Im Weg "unterauftrag" durch den eigenen Partnervertrag abgedeckt.',
+      'nicht_erforderlich': 'Testumgebung -- kein Vertragsgegenstand, keine Sperre.',
+    }[status];
+
+/// Steht dem Live-Betrieb aus Sicht des Auftragsverarbeitungsvertrags nichts im
+/// Weg? Drei Staende sagen ja -- `bestaetigt`, `ueber_partner` und
+/// `nicht_erforderlich` (Testumgebung).
+///
+/// [avvErfuellt] und [avvSperrt] sind **nicht** die Umkehrung voneinander: fuer
+/// einen Stand, den dieses Paket nicht kennt, sind beide `false`. Das ist die
+/// ehrliche Antwort -- die Auskunft, ob eine Kasse live geht, gibt der Server
+/// mit `vertrag_offen`, nicht diese Funktion. Wer aus "nicht erfuellt" auf
+/// "gesperrt" schliesst, warnt beim naechsten neuen Stand vor etwas, das nicht
+/// ist.
+bool avvErfuellt(String? status) =>
+    status == 'bestaetigt' || status == 'ueber_partner' || status == 'nicht_erforderlich';
+
+/// Sperrt dieser Stand den Live-Betrieb? Nur `offen` und `veraltet` tun das.
+bool avvSperrt(String? status) => status == 'offen' || status == 'veraltet';
+
+/// Was fuer einen Test-Betrieb zu tun ist: nichts.
+const String kAvvNichtErforderlichRat =
+    'Nichts zu tun: dieser Betrieb liegt in der Testumgebung. Dort wird nichts Echtes verarbeitet -- '
+    'es gibt keinen Vertragsgegenstand und keine Sperre. Der Auftragsverarbeitungsvertrag wird erst '
+    'fuer den Live-Betrieb gebraucht.';
+
 /// Liest den Weg aus seinem Namen; `null` bei einem unbekannten Wert.
 AvvModus? avvModusAus(String? wert) => switch (wert) {
       'direkt' => AvvModus.direkt,
@@ -156,12 +208,27 @@ String vertragOffenRat([AvvModus modus = kAvvModusStandard]) => switch (modus) {
             'customer.avv_accepted meldet die Bestaetigung.',
     };
 
-/// Wie [vertragOffenRat], nur mit dem Weg aus dem Betrieb selbst -- der
+/// Wie [vertragOffenRat], nur mit Stand und Weg aus dem Betrieb selbst -- der
 /// verlaesslichen Quelle: `listPartnerCustomers` und `getPartnerCustomer`
-/// fuehren ihn je Betrieb mit. Fehlt er (aeltere Backend-Fassung), gilt
-/// [rueckfall].
-String vertragOffenRatFuer(AvvModus? modus, [AvvModus rueckfall = kAvvModusStandard]) =>
-    vertragOffenRat(modus ?? rueckfall);
+/// fuehren beides je Betrieb mit. Fehlt der Weg (aeltere Backend-Fassung),
+/// gilt [rueckfall].
+///
+/// **`nicht_erforderlich` bekommt einen eigenen Satz**, keinen abgeschwaechten:
+/// an einem Test-Betrieb kann `vertrag_offen` gar nicht entstehen, und ein
+/// "bitte bestaetigen lassen" schickte den Aufrufer auf eine Suche ohne Ziel.
+///
+/// Fuer jeden anderen Stand -- auch `bestaetigt` -- bleibt es beim Weg-Satz:
+/// das Live-Gate prueft **alle** sperrenden Vertragsarten, nicht nur den
+/// Auftragsverarbeitungsvertrag. Ein `vertrag_offen` bei `avv.status:
+/// "bestaetigt"` ist damit moeglich, und "nichts zu tun" waere dann falsch.
+String vertragOffenRatFuer(
+  AvvModus? modus, {
+  String? status,
+  AvvModus rueckfall = kAvvModusStandard,
+}) {
+  if (status == 'nicht_erforderlich') return kAvvNichtErforderlichRat;
+  return vertragOffenRat(modus ?? rueckfall);
+}
 
 /// Der Handlungssatz zu einem Code. [modus] wird nur fuer `vertrag_offen`
 /// gebraucht und sonst nicht angesehen.

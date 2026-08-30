@@ -199,12 +199,7 @@ class NeuerBetrieb {
 }
 
 /// Stand des Auftragsverarbeitungsvertrags eines Betriebs, aus Partnersicht.
-///
-/// `offen` heisst: es geht **keine neue Kasse** live (`vertrag_offen`).
-/// `veraltet` heisst: bestaetigt ist eine Fassung, die inzwischen nicht mehr
-/// die geltende ist -- auch das zaehlt nicht als bestaetigt. `ueber_partner`
-/// gibt es nur im Weg `unterauftrag`: dort hat der Betrieb gar keinen Vertrag
-/// mit Kasseneck, es zaehlt allein der Partnervertrag.
+/// Die moeglichen Werte stehen in [kAvvStatus], samt dem, was sie bedeuten.
 class AvvStand {
   const AvvStand({
     required this.status,
@@ -235,7 +230,17 @@ class AvvStand {
   /// Der Weg, den Kasseneck fuer DIESES Partner-Konto gesetzt hat.
   final AvvModus modus;
 
-  bool get erfuellt => status == 'bestaetigt' || status == 'ueber_partner';
+  /// Steht dem Live-Betrieb aus Sicht dieses Vertrags nichts im Weg? Zaehlt
+  /// `nicht_erforderlich` (Testumgebung) ausdruecklich mit -- siehe
+  /// [avvErfuellt]. Die Gegenfrage beantwortet [sperrt], und beide sind nicht
+  /// die Umkehrung voneinander.
+  bool get erfuellt => avvErfuellt(status);
+
+  /// Sperrt dieser Stand den Live-Betrieb? Nur `offen` und `veraltet`.
+  bool get sperrt => avvSperrt(status);
+
+  /// Was der Stand bedeutet; `null` fuer einen unbekannten Wert.
+  String? get text => avvStatusText(status);
 }
 
 /// Eine Zeile der Betriebsliste.

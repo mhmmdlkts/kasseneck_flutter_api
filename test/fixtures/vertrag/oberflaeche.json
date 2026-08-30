@@ -238,6 +238,13 @@
       "vollmacht",
       "unterauftrag"
     ],
+    "avvStatus": [
+      "offen",
+      "bestaetigt",
+      "veraltet",
+      "ueber_partner",
+      "nicht_erforderlich"
+    ],
     "partnerFehlerCodes": [
       "validation",
       "app_not_found",

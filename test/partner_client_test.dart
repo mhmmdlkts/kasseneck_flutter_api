@@ -702,6 +702,78 @@ void main() {
     expect(f.api.vertragOffenHinweisFuer(null), contains('vollmacht'));
     // Ein unbekannter Weg wird nicht geraten, sondern fällt auf die Vorgabe.
     expect(AvvStand.aus(<String, dynamic>{'modus': 'erfunden'})!.modus, kAvvModusStandard);
+    // Ein bestätigter Vertrag bekommt KEIN „nichts zu tun": das Live-Gate
+    // prüft alle sperrenden Vertragsarten, nicht nur den AVV — ein
+    // vertrag_offen ist hier möglich.
+    expect(
+      f.api.vertragOffenHinweisFuer(AvvStand.aus(<String, dynamic>{'status': 'bestaetigt', 'modus': 'direkt'})),
+      contains('fehlt'),
+    );
+  });
+
+  test('ein Test-Betrieb braucht keinen Vertrag — nicht_erforderlich ist kein offen', () async {
+    // Der Grund: in der Testumgebung wird nichts Echtes verarbeitet, es gibt
+    // keinen Vertragsgegenstand und das Live-Gate greift gar nicht. Ein
+    // „Vertrag fehlt" schickte einen Integrator auf die Suche nach einem
+    // Problem, das es nicht gibt.
+    final f = stelle(<Map<String, dynamic>>[
+      erfolg(<String, dynamic>{
+        'kunde': <String, dynamic>{
+          'customerId': 'ptest_1',
+          'status': 'angelegt',
+          'env': 'test',
+          'avv': <String, dynamic>{
+            'status': 'nicht_erforderlich',
+            'version': null,
+            'bestaetigtAt': null,
+            'modus': 'direkt',
+          },
+        }
+      })
+    ]);
+    final kunde = await f.api.getPartnerCustomer('ptest_1');
+    expect(kunde.avv!.status, 'nicht_erforderlich');
+
+    // Kein Hinweis „Vertrag abschließen lassen" — ein eigener Satz.
+    final rat = f.api.vertragOffenHinweisFuer(kunde.avv);
+    expect(rat, kAvvNichtErforderlichRat);
+    expect(rat, contains('Nichts zu tun'));
+    expect(rat, isNot(contains('fehlt')));
+    // Und er unterscheidet sich von JEDEM Weg-Satz — sonst wäre die
+    // Fallunterscheidung Zierde.
+    for (final modus in AvvModus.values) {
+      expect(rat, isNot(vertragOffenRat(modus)), reason: 'gleich wie ${modus.name}');
+    }
+
+    // Er zählt als erfüllt und sperrt nicht.
+    expect(kunde.avv!.erfuellt, isTrue);
+    expect(kunde.avv!.sperrt, isFalse);
+    expect(kunde.avv!.text, isNotNull);
+  });
+
+  test('erfüllt und sperrt sind nicht die Umkehrung voneinander', () {
+    expect(
+      <String, List<bool>>{for (final s in kAvvStatus) s: <bool>[avvErfuellt(s), avvSperrt(s)]},
+      <String, List<bool>>{
+        'offen': <bool>[false, true],
+        'bestaetigt': <bool>[true, false],
+        'veraltet': <bool>[false, true],
+        'ueber_partner': <bool>[true, false],
+        'nicht_erforderlich': <bool>[true, false],
+      },
+    );
+    // Ein Stand, den dieses Paket nicht kennt, ist WEDER erfüllt NOCH gesperrt.
+    // Wer aus „nicht erfüllt" auf „gesperrt" schließt, warnt beim nächsten
+    // neuen Stand vor etwas, das nicht ist — die Auskunft gibt der Server.
+    expect(avvErfuellt('etwas_neues'), isFalse);
+    expect(avvSperrt('etwas_neues'), isFalse);
+    expect(avvErfuellt(null), isFalse);
+    expect(avvSperrt(null), isFalse);
+    // Jeder bekannte Stand hat einen Text, ein unbekannter keinen erfundenen.
+    for (final s in kAvvStatus) {
+      expect(avvStatusText(s), isNotNull, reason: 'kein Text für $s');
+    }
+    expect(avvStatusText('etwas_neues'), isNull);
   });
 
   test('der Ablauf steht als Daten da und ist in sich schlüssig', () {

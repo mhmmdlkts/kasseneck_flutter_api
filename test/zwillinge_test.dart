@@ -195,6 +195,7 @@ void main() {
     // neue Liste im JS-Paket hier auf.
     final zuordnung = <String, List<Object>>{
       'avvModi': AvvModus.values.map((m) => m.name).toList(),
+      'avvStatus': kAvvStatus,
       'partnerFehlerCodes': kPartnerFehlerCodes,
       'partnerWebhookEvents': kPartnerWebhookEreignisse,
       'webhookRetryPlanSec': kWebhookWiederholungSek,
