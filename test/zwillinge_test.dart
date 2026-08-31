@@ -183,9 +183,10 @@ void main() {
 
   group('Partner-Listen', () {
     // Die vierte Prüfung deckte den Partner-Teil nur als Namensliste ab: die
-    // 18 Aufrufe standen im Vertrag, die Fehlercodes, Webhook-Ereignisse,
-    // Vertragswege und der Wiederholungsplan nicht — und genau die pflegt
-    // dieses Paket von Hand nach. Ein Code, den der Zwilling kennt und dieses
+    // Aufrufe standen im Vertrag, die Fehlercodes, Webhook-Ereignisse,
+    // Betriebsfelder, Umgebungen, die Felder des Webhook-Umschlags und der
+    // Wiederholungsplan nicht — und genau die pflegt dieses Paket von Hand
+    // nach. Ein Code, den der Zwilling kennt und dieses
     // Paket nicht, hätte hier keinen Handlungssatz und wäre für einen
     // Aufrufer nicht unterscheidbar von „gibt es nicht".
     //
@@ -194,10 +195,12 @@ void main() {
     // kennt, ein Fehlschlag und kein stilles Überspringen. Nur so fällt eine
     // neue Liste im JS-Paket hier auf.
     final zuordnung = <String, List<Object>>{
-      'avvModi': AvvModus.values.map((m) => m.name).toList(),
-      'avvStatus': kAvvStatus,
+      'betriebFelder': kBetriebFelder,
+      'partnerEnvs': kPartnerEnvs,
       'partnerFehlerCodes': kPartnerFehlerCodes,
+      'partnerPortalFehlerCodes': kPartnerPortalFehlerCodes,
       'partnerWebhookEvents': kPartnerWebhookEreignisse,
+      'webhookUmschlagFelder': kWebhookUmschlagFelder,
       'webhookRetryPlanSec': kWebhookWiederholungSek,
     };
 

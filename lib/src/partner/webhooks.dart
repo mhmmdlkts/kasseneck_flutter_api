@@ -10,15 +10,20 @@ import 'dart:convert';
 import 'typen.dart';
 import 'webhook_signatur.dart';
 
-/// Alle Ereignisse, die ein Webhook abonnieren kann. Ein Endpunkt bekommt
-/// ausschliesslich die, die in seiner `events`-Liste stehen.
+/// Alle Ereignisse, die ein Webhook abonnieren **und proben** kann. Ein
+/// Endpunkt bekommt ausschliesslich die, die in seiner `events`-Liste stehen.
+///
+/// Kasseneck fuehrt daneben interne Ereignisse (etwa den Abschluss eines
+/// Auftragsverarbeitungsvertrags). Sie stehen hier bewusst nicht: sie lassen
+/// sich weder abonnieren noch mit `sendPartnerWebhookTest` ausloesen, und ein
+/// Name in dieser Liste, den niemand bestellen kann, waere ein Versprechen
+/// ohne Deckung.
 const List<String> kPartnerWebhookEreignisse = <String>[
   'customer.created',
   'customer.updated',
   'customer.status_changed',
   'customer.fon_verified',
   'customer.live_enabled',
-  'customer.avv_accepted',
   'signature.requested',
   'signature.ready',
   'signature.failed',
@@ -33,6 +38,20 @@ const List<String> kPartnerWebhookEreignisse = <String>[
 bool istPartnerWebhookEreignis(Object? wert) =>
     wert is String && kPartnerWebhookEreignisse.contains(wert);
 
+/// Die Felder des Umschlags, so wie er auf der Leitung liegt.
+///
+/// Als Liste, damit der Zwilling sie nachhaelt: `test` kam spaeter dazu, und
+/// genau ein solches Feld verschwindet sonst auf einer Seite, ohne dass etwas
+/// rot wird.
+const List<String> kWebhookUmschlagFelder = <String>[
+  'id',
+  'type',
+  'createdAt',
+  'partnerId',
+  'test',
+  'data',
+];
+
 /// Die Huelle jeder Zustellung.
 ///
 /// [type] bleibt bewusst ein `String` und keine Aufzaehlung: ein spaeter
@@ -44,6 +63,7 @@ class PartnerWebhookEreignis {
     required this.type,
     required this.createdAt,
     required this.partnerId,
+    required this.test,
     required this.data,
   });
 
@@ -52,10 +72,25 @@ class PartnerWebhookEreignis {
   final String type;
   final int createdAt;
   final String partnerId;
+
+  /// **Probe oder Ernstfall.** Eine mit `sendPartnerWebhookTest` ausgeloeste
+  /// Zustellung traegt `test: true` im Umschlag; ein echtes Ereignis fuehrt
+  /// das Feld gar nicht, hier steht dann `false`.
+  ///
+  /// Diese Zeile gehoert an den Anfang jedes Handlers:
+  ///
+  /// ```dart
+  /// if (ereignis.test) return;
+  /// ```
+  ///
+  /// Ohne sie haelt jemand eine Probe fuer echt und schreibt seinem Kunden,
+  /// die Kasse sei fertig. Eine Probe traegt eine erkennbar erfundene
+  /// Nutzlast -- nur sieht man das erst, wenn man hinsieht.
+  final bool test;
   final Map<String, dynamic> data;
 
   @override
-  String toString() => 'PartnerWebhookEreignis($id, $type)';
+  String toString() => 'PartnerWebhookEreignis($id, $type${test ? ', Probe' : ''})';
 }
 
 /// Das Ergebnis von [leseWebhookEreignis]: entweder das Ereignis, oder genau
@@ -123,6 +158,10 @@ WebhookEreignisErgebnis leseWebhookEreignis({
       type: type,
       createdAt: alsZahlOderNull(e['createdAt']) ?? 0,
       partnerId: alsText(e['partnerId']),
+      // Nur ein ausdrueckliches `true` ist eine Probe. Alles andere -- auch
+      // ein fehlendes Feld -- ist der Ernstfall; im Zweifel lieber einmal zu
+      // viel gearbeitet als eine echte Kasse fuer eine Probe gehalten.
+      test: e['test'] == true,
       data: alsMap(e['data']),
     ),
     geprueft.zeitstempelSek,
@@ -257,8 +296,15 @@ class WebhookZustellung {
 }
 
 class WebhookTestErgebnis {
-  const WebhookTestErgebnis({required this.eventId, required this.zustellungen});
+  const WebhookTestErgebnis({
+    required this.eventId,
+    required this.ereignis,
+    required this.zustellungen,
+  });
 
   final String eventId;
+
+  /// Welches Ereignis geprobt wurde -- ohne Angabe `webhook.test`.
+  final String ereignis;
   final List<dynamic> zustellungen;
 }

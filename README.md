@@ -61,15 +61,14 @@ import 'package:kasseneck_api/partner.dart';
 
 final partner = PartnerApi(
   partnerKey: Platform.environment['KASSENECK_PARTNER_KEY']!,
-  // Fallback only: listPartnerCustomers/getPartnerCustomer carry the route
-  // per business (kunde.avv.modus).
-  avvModus: AvvModus.vollmacht,
 );
 
 final neu = await partner.createPartnerCustomer(
   appId: 'app_…',
   idempotencyKey: kundennummer, // your own — guards against double creation
   betrieb: {/* master data, see reference */},
+  // env: PartnerEnv.test — allowed even with a LIVE key: rehearse the whole
+  // chain without fetching a second key. Never the other way round.
 );
 
 await partner.sendPartnerCustomerFonLink(neu.customerId);
@@ -87,13 +86,28 @@ carries a next step:
 try {
   await partner.activateCashregister(customerId, cashregisterId);
 } on KasseneckApiError catch (fehler) {
-  if (istPartnerFehler(fehler, 'vertrag_offen')) {
-    // Without a confirmed data processing agreement NO new register goes live.
-    final kunde = await partner.getPartnerCustomer(customerId);
-    print(partner.vertragOffenHinweisFuer(kunde.avv));
+  if (istPartnerFehler(fehler, 'signature_not_ready')) {
+    // This register's own signature is not ready yet — wait for signature.ready.
+    print(partner.fehlerRat('signature_not_ready'));
   }
 }
 ```
+
+### A rehearsal is not a register
+
+`sendPartnerWebhookTest(webhookId, event: 'cashregister.live')` fires exactly
+the event your handler is meant to deal with — a connectivity probe proves
+nothing about the real case. So that nobody mistakes a rehearsal for the real
+thing, it carries `test: true` in the envelope:
+
+```dart
+final geprueft = leseWebhookEreignis(secrets: [secret], signaturKopf: kopf, rumpf: rumpf);
+if (!geprueft.ok) return antwort(400);
+
+if (geprueft.ereignis!.test) return antwort(200);   // rehearsal: do nothing else
+```
+
+Without that line somebody tells their customer the register is ready.
 
 ### Credentials are a third party's secrets
 

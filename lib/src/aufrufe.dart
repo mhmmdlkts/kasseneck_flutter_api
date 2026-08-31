@@ -26,7 +26,6 @@ abstract final class Aufrufe {
   static const listPartnerCustomers = 'listPartnerCustomers';
   static const listPartnerWebhookDeliveries = 'listPartnerWebhookDeliveries';
   static const listPartnerWebhooks = 'listPartnerWebhooks';
-  static const reportCustomerVertrag = 'reportCustomerVertrag';
   static const requestCustomerSignature = 'requestCustomerSignature';
   static const sendPartnerCustomerFonLink = 'sendPartnerCustomerFonLink';
   static const sendPartnerWebhookTest = 'sendPartnerWebhookTest';
@@ -76,7 +75,6 @@ abstract final class Aufrufe {
     listPartnerCustomers,
     listPartnerWebhookDeliveries,
     listPartnerWebhooks,
-    reportCustomerVertrag,
     requestCustomerSignature,
     sendPartnerCustomerFonLink,
     sendPartnerWebhookTest,

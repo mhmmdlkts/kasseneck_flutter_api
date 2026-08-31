@@ -3,10 +3,15 @@
 ///
 /// **Warum das im Paket steht und nicht nur in der Doku:** die Kette hat eine
 /// harte Reihenfolge, und jeder Schritt scheitert mit einem eigenen Code, wenn
-/// ein vorheriger fehlt (`fon_missing`, `vertrag_offen`, `signature_not_ready`).
+/// ein vorheriger fehlt (`fon_missing`, `signature_missing`,
+/// `signature_not_ready`).
 /// Wer die Reihenfolge nur aus einer Fehlermeldung lernt, lernt sie einmal je
 /// Fehler. Hier steht sie vorher -- abfragbar, ausgebbar, und in
 /// [naechsterSchritt] auch beantwortbar.
+///
+/// **Ohne Vertragsschritt.** Auftragsverarbeitungsvertraege wirken in diesem
+/// Weg nicht mehr (Stand 2026-08-31): kein Aufruf meldet einen, keine Kasse
+/// bleibt deswegen stehen.
 ///
 /// Zwei Dinge laufen bewusst **parallel**: der Signaturantrag und das Anlegen
 /// der Kasse. Eine mit `automatisch:true` angelegte Kasse wartet, bis die
@@ -62,20 +67,11 @@ const List<AblaufSchritt> kPartnerAblauf = <AblaufSchritt>[
     fehltCode: 'fon_missing',
   ),
   AblaufSchritt(
-    key: 'avv',
-    text: 'Auftragsverarbeitungsvertrag (Art. 28 DSGVO). Je nach Vertragsweg des Partner-Kontos: '
-        'der Betrieb bestaetigt selbst (direkt), der Partner meldet in Vollmacht (vollmacht), '
-        'oder der Vertrag liegt beim Partner (unterauftrag).',
-    aufruf: 'reportCustomerVertrag',
-    wartetAuf: 'customer.avv_accepted',
-    fehltCode: 'vertrag_offen',
-  ),
-  AblaufSchritt(
     key: 'signatur',
     text: 'Signatureinheit beantragen. Kasseneck weist eine Karte zu und meldet sie bei FinanzOnline an.',
     aufruf: 'requestCustomerSignature',
     wartetAuf: 'signature.ready',
-    fehltCode: 'signature_not_ready',
+    fehltCode: 'signature_missing',
   ),
   AblaufSchritt(
     key: 'kasse',
@@ -118,11 +114,6 @@ const Map<String, String> _statusSchritt = <String, String>{
 
 /// Der Schritt, an dem ein Betrieb mit diesem Status steht -- `null` fuer
 /// `gesperrt` und fuer jeden Status, den dieses Paket nicht kennt.
-///
-/// **Bewusst ohne Vertragsschritt:** ob der Auftragsverarbeitungsvertrag
-/// vorliegt, sagt der Betriebsstatus nicht (es gibt keinen eigenen Status
-/// dafuer). Wer es wissen will, hoert auf `customer.avv_accepted` -- oder
-/// erfaehrt es an der Kasse, die mit `vertrag_offen` nicht live geht.
 AblaufSchritt? naechsterSchritt(String status) {
   final key = _statusSchritt[status];
   if (key == null) return null;

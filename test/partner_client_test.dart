@@ -26,10 +26,7 @@ void main() {
   };
 
   /// Ein Client, der die übergebenen Antworten der Reihe nach liefert.
-  ({PartnerApi api, List<http.Request> log}) stelle(
-    List<Map<String, dynamic>> antworten, {
-    AvvModus modus = AvvModus.vollmacht,
-  }) {
+  ({PartnerApi api, List<http.Request> log}) stelle(List<Map<String, dynamic>> antworten) {
     final log = <http.Request>[];
     var i = 0;
     final mock = MockClient((request) async {
@@ -38,10 +35,7 @@ void main() {
       i++;
       return http.Response(jsonEncode(a), 200, headers: <String, String>{'content-type': 'application/json'});
     });
-    return (
-      api: PartnerApi(partnerKey: partnerKey, httpClient: mock, avvModus: modus),
-      log: log,
-    );
+    return (api: PartnerApi(partnerKey: partnerKey, httpClient: mock), log: log);
   }
 
   Map<String, dynamic> erfolg(Map<String, dynamic> data) =>
@@ -137,6 +131,60 @@ void main() {
     ]);
     final r = await f.api.createPartnerCustomer(appId: 'app_1', betrieb: betrieb, idempotencyKey: 'x');
     expect(r.wiederholt, isTrue);
+  });
+
+  /// Rot-Probe: in `api.dart` die Zeile `'env': env == null ? null :
+  /// envName(env)` streichen — dann steht `env` nicht mehr im gesendeten
+  /// Rumpf und dieser Test fällt. Geprüft wird die NUTZLAST auf der Leitung,
+  /// nicht das Argument: ein Test, der nur die Methode beobachtet, bliebe
+  /// grün, während der Server nie ein `env` sähe.
+  test('env geht mit auf die Leitung — ein Live-Schlüssel darf einen Testbetrieb anlegen', () async {
+    final f = stelle(<Map<String, dynamic>>[
+      erfolg(<String, dynamic>{'customerId': 'ptest_1', 'env': 'test', 'zugang': <String, dynamic>{}}),
+      erfolg(<String, dynamic>{'customerId': 'cust_2', 'env': 'live', 'zugang': <String, dynamic>{}}),
+    ]);
+    final r = await f.api.createPartnerCustomer(appId: 'app_1', betrieb: betrieb, env: PartnerEnv.test);
+    expect(params(f.log[0]),
+        <String, dynamic>{'appId': 'app_1', 'betrieb': betrieb, 'env': 'test'});
+    expect(r.env, PartnerEnv.test);
+
+    // Ohne Angabe entscheidet der Schlüssel — dann darf auch nichts gesendet
+    // werden: ein erfundenes `env: "live"` nähme dem Schlüssel die
+    // Entscheidung ab.
+    await f.api.createPartnerCustomer(appId: 'app_1', betrieb: betrieb);
+    expect(params(f.log[1]).containsKey('env'), isFalse);
+  });
+
+  test('die Umgebungen sind genau die beiden des Backends', () {
+    expect(kPartnerEnvs, <String>['live', 'test']);
+    expect(envName(PartnerEnv.live), 'live');
+    expect(envName(PartnerEnv.test), 'test');
+  });
+
+  test('darfZugangEinrichten fehlt = NEIN, nicht „vielleicht"', () async {
+    // Eine Berechtigung, die nicht ausdrücklich dasteht, hat man nicht. Ein
+    // `true` aus Kulanz erzeugte einen Aufruf, der zugang_nicht_erlaubt
+    // bekommt — und dabei entsteht NICHTS, auch kein Betrieb.
+    final ohne = stelle(<Map<String, dynamic>>[
+      erfolg(<String, dynamic>{
+        'partner': <String, dynamic>{'id': 'p1', 'name': 'A', 'status': 'aktiv'},
+        'env': 'live',
+      })
+    ]);
+    expect((await ohne.api.getPartnerInfo()).darfZugangEinrichten, isFalse);
+
+    final mit = stelle(<Map<String, dynamic>>[
+      erfolg(<String, dynamic>{
+        'partner': <String, dynamic>{
+          'id': 'p1',
+          'name': 'A',
+          'status': 'aktiv',
+          'darfZugangEinrichten': true,
+        },
+        'env': 'live',
+      })
+    ]);
+    expect((await mit.api.getPartnerInfo()).darfZugangEinrichten, isTrue);
   });
 
   test('einladen:false wird als zugang-Objekt gesendet, sonst gar nicht', () async {
@@ -255,6 +303,17 @@ void main() {
     expect(r.antrag.requestId, 'req_1');
     expect(r.wiederholt, isTrue);
     expect(r.hinweis, 'Es lief bereits ein Antrag.');
+
+    // Eine WEITERE Signatur entsteht nur ausdrücklich — sonst bliebe der
+    // Aufruf nicht folgenlos wiederholbar.
+    final weiter = stelle(<Map<String, dynamic>>[
+      erfolg(<String, dynamic>{
+        'antrag': <String, dynamic>{'requestId': 'req_2', 'historie': <dynamic>[]},
+        'wiederholt': false,
+      })
+    ]);
+    await weiter.api.requestCustomerSignature('cust_1', weitere: true);
+    expect(params(weiter.log.single), <String, dynamic>{'customerId': 'cust_1', 'weitere': true});
   });
 
   test('getCustomerSignatureStatus trennt "bereit" von "registriert"', () async {
@@ -298,22 +357,15 @@ void main() {
         },
       })
     ]);
-    final r = await f.api.createCustomerCashregister(customerId: 'cust_1', name: 'Theke');
-    expect(params(f.log.single), <String, dynamic>{'customerId': 'cust_1', 'name': 'Theke'});
+    final r = await f.api.createCustomerCashregister(customerId: 'cust_1', signaturId: 'sig_1');
+    // KEIN `name`: Kassennamen vergibt Kasseneck, ein gesendetes name wäre ein
+    // validation-Fehler.
+    expect(params(f.log.single), <String, dynamic>{'customerId': 'cust_1', 'signaturId': 'sig_1'});
     expect(r.kasse.status, 'entwurf');
     expect(r.kasse.istLive, isFalse);
     expect(r.kasse.automatisch, isTrue);
     expect(r.grund, 'signature_not_ready');
     expect(r.ok, isNull, reason: 'ok:null heisst „nicht gelaufen" und darf nicht zu false werden');
-  });
-
-  test('ein zu langer Kassenname geht nicht raus', () async {
-    final f = stelle(<Map<String, dynamic>>[erfolg(<String, dynamic>{})]);
-    await expectLater(
-      f.api.createCustomerCashregister(customerId: 'cust_1', name: 'x' * 61),
-      throwsA(isA<KasseneckValidationError>()),
-    );
-    expect(f.log, isEmpty);
   });
 
   test('activateCashregister meldet eine bereits laufende Kasse als unverändert', () async {
@@ -369,52 +421,6 @@ void main() {
     expect(z.apiKey.reveal(), 'kr_live_GEHEIM');
     expect(z.toString(), isNot(contains('kr_live_GEHEIM')));
     expect(z.kassen.single.cashregisterToken.reveal(), 'cb_live_GEHEIM');
-  });
-
-  // -------------------------------------------------------------------------
-  // Vertrag
-  // -------------------------------------------------------------------------
-
-  test('reportCustomerVertrag übersetzt customerId auf das Feld kundeId', () async {
-    final f = stelle(<Map<String, dynamic>>[
-      erfolg(<String, dynamic>{'vertragId': 'v_1', 'bestaetigtAt': 5, 'art': 'avv', 'version': '2026-08'})
-    ]);
-    final r = await f.api.reportCustomerVertrag(
-      customerId: 'cust_1',
-      version: '2026-08',
-      textHash: 'abc',
-      name: 'Anna Jobst',
-      funktion: 'Inhaberin',
-      akzeptiertAt: 42,
-    );
-    // Der Endpunkt heisst das Feld kundeId; der Client nennt es überall
-    // customerId. Zwei Namen für dieselbe Kennung wären eine Fehlerquelle.
-    expect(params(f.log.single), <String, dynamic>{
-      'kundeId': 'cust_1',
-      'art': 'avv',
-      'version': '2026-08',
-      'textHash': 'abc',
-      'name': 'Anna Jobst',
-      'funktion': 'Inhaberin',
-      'akzeptiertAt': 42,
-    });
-    expect(r.vertragId, 'v_1');
-  });
-
-  test('in Vollmacht lässt sich nur der AVV melden — der Client sendet nichts anderes', () async {
-    final f = stelle(<Map<String, dynamic>>[erfolg(<String, dynamic>{})]);
-    await expectLater(
-      f.api.reportCustomerVertrag(
-        customerId: 'cust_1',
-        version: '1',
-        textHash: 'a',
-        name: 'A',
-        funktion: 'B',
-        art: 'nutzung',
-      ),
-      throwsA(isA<KasseneckValidationError>()),
-    );
-    expect(f.log, isEmpty);
   });
 
   // -------------------------------------------------------------------------
@@ -526,6 +532,7 @@ void main() {
     ]);
     final t = await f.api.sendPartnerWebhookTest('wh_1');
     expect(t.eventId, 'evt_1');
+    expect(t.ereignis, 'webhook.test', reason: 'ohne Angabe ist die Probe die Leitungsprobe');
     final z = await f.api.listPartnerWebhookDeliveries(webhookId: 'wh_1', limit: 10);
     expect(params(f.log[1]), <String, dynamic>{'webhookId': 'wh_1', 'limit': 10});
     expect(z.single.status, 'fehlgeschlagen');
@@ -534,6 +541,31 @@ void main() {
       f.api.listPartnerWebhookDeliveries(limit: 999),
       throwsA(isA<KasseneckValidationError>()),
     );
+  });
+
+  /// Rot-Probe: in `api.dart` den Schlüssel `'event'` aus dem Rumpf von
+  /// `sendPartnerWebhookTest` streichen — dann fällt dieser Test. Er sieht die
+  /// gesendete NUTZLAST an, nicht das Argument: nur so fällt auf, wenn der
+  /// Client das Ereignis zwar entgegennimmt, aber nie weitergibt und der
+  /// Partner statt seines Falls immer nur „webhook.test" bekommt.
+  test('eine Probe kann jedes abonnierte Ereignis auslösen, nicht nur webhook.test', () async {
+    final f = stelle(<Map<String, dynamic>>[
+      erfolg(<String, dynamic>{
+        'eventId': 'evt_2',
+        'ereignis': 'signature.ready',
+        'zustellungen': <dynamic>[]
+      }),
+      erfolg(<String, dynamic>{'eventId': 'evt_3', 'zustellungen': <dynamic>[]}),
+    ]);
+    final t = await f.api.sendPartnerWebhookTest('wh_1', event: 'signature.ready');
+    expect(params(f.log[0]), <String, dynamic>{'webhookId': 'wh_1', 'event': 'signature.ready'});
+    expect(t.ereignis, 'signature.ready');
+    expect(t.eventId, 'evt_2');
+
+    // Ohne Ereignis darf auch keines mitgehen: ein leeres `event` wäre für den
+    // Server ein unbekanntes Ereignis (validation) statt der Leitungsprobe.
+    await f.api.sendPartnerWebhookTest('wh_1', event: '   ');
+    expect(params(f.log[1]), <String, dynamic>{'webhookId': 'wh_1'});
   });
 
   // -------------------------------------------------------------------------
@@ -551,10 +583,96 @@ void main() {
       } on KasseneckApiError catch (e) {
         expect(partnerFehlerCode(e), code);
         expect(istPartnerFehler(e, code), isTrue);
-        final rat = partnerFehlerRat(code, AvvModus.vollmacht);
+        final rat = partnerFehlerRat(code);
         expect(rat, isNotNull, reason: '$code: kein Handlungssatz');
         expect(rat!.length, greaterThan(20), reason: '$code: Handlungssatz zu dünn');
+        expect(f.api.fehlerRat(code), rat);
       }
+    }
+  });
+
+  /// Der Katalog, Code für Code, gegen `docs/api/fehlercodes.json` im Backend.
+  ///
+  /// Rot-Probe: einen Code aus [kPartnerFehlerCodes] streichen — dieser Test
+  /// fällt sofort mit dem fehlenden Namen. Ein Code, den nur eine Seite kennt,
+  /// ist für einen Aufrufer nicht von „gibt es nicht" zu unterscheiden.
+  test('der Fehlerkatalog ist vollständig — 28 Codes der Schnittstelle, 12 des Portals', () {
+    expect(kPartnerFehlerCodes, <String>[
+      'validation',
+      'rate_limited',
+      'app_not_found',
+      'app_not_accepted',
+      'kein_partnerbetrieb',
+      'live_not_allowed',
+      'customer_exists',
+      'customer_conflict',
+      'customer_limit',
+      'zugang_nicht_erlaubt',
+      'email_taken',
+      'no_email',
+      'fon_missing',
+      'signature_pending',
+      'request_not_found',
+      'signature_missing',
+      'signature_unknown',
+      'signature_ambiguous',
+      'signature_not_ready',
+      'signature_limit',
+      'signature_failed',
+      'module_inactive',
+      'cashregister_limit',
+      'cashregister_not_found',
+      'activation_failed',
+      'webhook_limit',
+      'webhook_inactive',
+      'event_not_subscribed',
+    ]);
+    expect(kPartnerFehlerCodes.length, 28);
+
+    expect(kPartnerPortalFehlerCodes, <String>[
+      'app_locked',
+      'version_locked',
+      'invalid_transition',
+      'no_accepted_app',
+      'consent',
+      'key_limit',
+      'last_owner',
+      'auth_user_exists',
+      'card_missing',
+      'card_duplicate',
+      'card_not_verified',
+      'already_assigned',
+    ]);
+    expect(kPartnerPortalFehlerCodes.length, 12);
+
+    // Auch die Portal-Codes tragen einen Satz: der Katalog ist eine Liste, und
+    // eine halbe Liste ist schlimmer als keine.
+    for (final code in kPartnerPortalFehlerCodes) {
+      expect(partnerFehlerRat(code)?.length ?? 0, greaterThan(20), reason: '$code: kein Handlungssatz');
+    }
+
+    // Die beiden Flächen überschneiden sich nicht, und die Erkenner trennen
+    // sie sauber.
+    for (final code in kPartnerFehlerCodes) {
+      expect(istPartnerFehlerCode(code), isTrue, reason: code);
+      expect(istPartnerPortalFehlerCode(code), isFalse, reason: code);
+    }
+    for (final code in kPartnerPortalFehlerCodes) {
+      expect(istPartnerPortalFehlerCode(code), isTrue, reason: code);
+      expect(istPartnerFehlerCode(code), isFalse, reason: code);
+    }
+
+    // Ein abgeschaffter Code darf keinen Handlungssatz behalten — sonst rät
+    // dieses Paket zu einem Weg, den es nicht mehr gibt.
+    for (final weg in <String>[
+      'vertrag_offen',
+      'modus_not_allowed',
+      'vollmacht_fehlt',
+      'text_changed',
+      'no_card_available',
+    ]) {
+      expect(partnerFehlerRat(weg), isNull, reason: '$weg steht nicht mehr im Katalog');
+      expect(istPartnerFehlerCode(weg), isFalse, reason: weg);
     }
   });
 
@@ -645,140 +763,94 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // Vertragsweg und Ablauf
+  // Betriebsfelder und Ablauf
   // -------------------------------------------------------------------------
 
-  test('vertrag_offen nennt den Weg, der für dieses Konto gilt', () async {
-    for (final modus in AvvModus.values) {
-      final rat = vertragOffenRat(modus);
-      expect(rat, contains(modus.name), reason: 'der Rat für "${modus.name}" nennt den Weg nicht');
-      expect(rat, contains('Auftragsverarbeitungsvertrag'));
-    }
-    // Die Wege unterscheiden sich wirklich — sonst wäre die Fallunterscheidung
-    // Zierde.
-    expect(AvvModus.values.map(vertragOffenRat).toSet().length, AvvModus.values.length);
+  /// Rot-Probe: in `betrieb.dart` im `_sammle` das `raus.add(voll)` durch
+  /// `continue` ersetzen — dann findet die Funktion nichts mehr, und dieser
+  /// Test fällt an jeder der vier Zeilen. Genau das war der Zustand VORHER:
+  /// ein `iban` verschwand spurlos, und der Partner glaubte, er habe es
+  /// geschickt.
+  test('ein unbekanntes Betriebsfeld fällt hier auf, mit demselben Pfad wie beim Server', () {
+    expect(unbekannteBetriebsfelder(betrieb), isEmpty, reason: 'ein gültiger Betrieb ist sauber');
 
-    final f = stelle(<Map<String, dynamic>>[
-      fehler('Der Betrieb hat den Vertrag noch nicht bestätigt.', <String, dynamic>{'code': 'vertrag_offen'})
-    ]);
-    try {
-      await f.api.activateCashregister('cust_1', 'kasse_1');
-      fail('hätte werfen müssen');
-    } on KasseneckApiError catch (e) {
-      expect(istPartnerFehler(e, 'vertrag_offen'), isTrue);
-      // Die Fassade wurde mit AvvModus.vollmacht gebaut.
-      expect(f.api.vertragOffenHinweis, contains('vollmacht'));
-      expect(f.api.fehlerRat('vertrag_offen'), f.api.vertragOffenHinweis);
-      expect(f.api.avvModus, AvvModus.vollmacht);
-    }
-  });
-
-  test('der Vertragsstand kommt je Betrieb mit und schlägt die Einstellung', () async {
-    // Die Fassade ist mit AvvModus.vollmacht gebaut; der Betrieb sagt aber
-    // 'unterauftrag'. Massgeblich ist der Betrieb — die Einstellung ist nur der
-    // Rückfall für den Moment, in dem noch keiner geladen ist.
-    final f = stelle(<Map<String, dynamic>>[
-      erfolg(<String, dynamic>{
-        'kunde': <String, dynamic>{
-          'customerId': 'cust_1',
-          'status': 'angelegt',
-          'avv': <String, dynamic>{
-            'status': 'offen',
-            'version': null,
-            'bestaetigtAt': null,
-            'modus': 'unterauftrag',
-          },
-        }
-      })
-    ]);
-    final kunde = await f.api.getPartnerCustomer('cust_1');
-    expect(kunde.avv!.status, 'offen');
-    expect(kunde.avv!.erfuellt, isFalse);
-    expect(kunde.avv!.modus, AvvModus.unterauftrag);
-    expect(f.api.vertragOffenHinweisFuer(kunde.avv), contains('unterauftrag'));
-    expect(f.api.vertragOffenHinweis, contains('vollmacht'));
-
-    // Ohne Stand (ältere Backend-Fassung) fällt es auf die Einstellung zurück.
-    expect(f.api.vertragOffenHinweisFuer(null), contains('vollmacht'));
-    // Ein unbekannter Weg wird nicht geraten, sondern fällt auf die Vorgabe.
-    expect(AvvStand.aus(<String, dynamic>{'modus': 'erfunden'})!.modus, kAvvModusStandard);
-    // Ein bestätigter Vertrag bekommt KEIN „nichts zu tun": das Live-Gate
-    // prüft alle sperrenden Vertragsarten, nicht nur den AVV — ein
-    // vertrag_offen ist hier möglich.
-    expect(
-      f.api.vertragOffenHinweisFuer(AvvStand.aus(<String, dynamic>{'status': 'bestaetigt', 'modus': 'direkt'})),
-      contains('fehlt'),
-    );
-  });
-
-  test('ein Test-Betrieb braucht keinen Vertrag — nicht_erforderlich ist kein offen', () async {
-    // Der Grund: in der Testumgebung wird nichts Echtes verarbeitet, es gibt
-    // keinen Vertragsgegenstand und das Live-Gate greift gar nicht. Ein
-    // „Vertrag fehlt" schickte einen Integrator auf die Suche nach einem
-    // Problem, das es nicht gibt.
-    final f = stelle(<Map<String, dynamic>>[
-      erfolg(<String, dynamic>{
-        'kunde': <String, dynamic>{
-          'customerId': 'ptest_1',
-          'status': 'angelegt',
-          'env': 'test',
-          'avv': <String, dynamic>{
-            'status': 'nicht_erforderlich',
-            'version': null,
-            'bestaetigtAt': null,
-            'modus': 'direkt',
-          },
-        }
-      })
-    ]);
-    final kunde = await f.api.getPartnerCustomer('ptest_1');
-    expect(kunde.avv!.status, 'nicht_erforderlich');
-
-    // Kein Hinweis „Vertrag abschließen lassen" — ein eigener Satz.
-    final rat = f.api.vertragOffenHinweisFuer(kunde.avv);
-    expect(rat, kAvvNichtErforderlichRat);
-    expect(rat, contains('Nichts zu tun'));
-    expect(rat, isNot(contains('fehlt')));
-    // Und er unterscheidet sich von JEDEM Weg-Satz — sonst wäre die
-    // Fallunterscheidung Zierde.
-    for (final modus in AvvModus.values) {
-      expect(rat, isNot(vertragOffenRat(modus)), reason: 'gleich wie ${modus.name}');
-    }
-
-    // Er zählt als erfüllt und sperrt nicht.
-    expect(kunde.avv!.erfuellt, isTrue);
-    expect(kunde.avv!.sperrt, isFalse);
-    expect(kunde.avv!.text, isNotNull);
-  });
-
-  test('erfüllt und sperrt sind nicht die Umkehrung voneinander', () {
-    expect(
-      <String, List<bool>>{for (final s in kAvvStatus) s: <bool>[avvErfuellt(s), avvSperrt(s)]},
-      <String, List<bool>>{
-        'offen': <bool>[false, true],
-        'bestaetigt': <bool>[true, false],
-        'veraltet': <bool>[false, true],
-        'ueber_partner': <bool>[true, false],
-        'nicht_erforderlich': <bool>[true, false],
+    final schmutzig = <String, dynamic>{
+      ...betrieb,
+      'iban': 'AT61 1904 3002 3457 3201',
+      'address': <String, dynamic>{...betrieb['address'] as Map<String, dynamic>, 'land': 'AT'},
+      'tax_details': <String, dynamic>{
+        ...betrieb['tax_details'] as Map<String, dynamic>,
+        'ustid': 'ATU12345675',
       },
+      'contacts': <dynamic>[
+        <String, dynamic>{'name': 'Anna Jobst', 'email': 'anna@jobst.at', 'rolle': 'chef'},
+        <String, dynamic>{'name': 'B', 'email': 'b@c.at'},
+      ],
+    };
+    expect(
+      unbekannteBetriebsfelder(schmutzig)..sort(),
+      <String>['address.land', 'contacts.0.rolle', 'iban', 'tax_details.ustid'],
     );
-    // Ein Stand, den dieses Paket nicht kennt, ist WEDER erfüllt NOCH gesperrt.
-    // Wer aus „nicht erfüllt" auf „gesperrt" schließt, warnt beim nächsten
-    // neuen Stand vor etwas, das nicht ist — die Auskunft gibt der Server.
-    expect(avvErfuellt('etwas_neues'), isFalse);
-    expect(avvSperrt('etwas_neues'), isFalse);
-    expect(avvErfuellt(null), isFalse);
-    expect(avvSperrt(null), isFalse);
-    // Jeder bekannte Stand hat einen Text, ein unbekannter keinen erfundenen.
-    for (final s in kAvvStatus) {
-      expect(avvStatusText(s), isNotNull, reason: 'kein Text für $s');
-    }
-    expect(avvStatusText('etwas_neues'), isNull);
+
+    // Der Pfad trägt den INDEX des Kontakts, nicht nur „contacts" — sonst
+    // suchte jemand in zehn Kontakten nach dem einen falschen Feld.
+    expect(
+      unbekannteBetriebsfelder(<String, dynamic>{
+        'contacts': <dynamic>[
+          <String, dynamic>{'name': 'A'},
+          <String, dynamic>{'name': 'B'},
+          <String, dynamic>{'name': 'C', 'abteilung': 'Kasse'},
+        ]
+      }),
+      <String>['contacts.2.abteilung'],
+    );
+
+    // Ein falscher Typ ist KEIN unbekanntes Feld — den meldet der Server als
+    // eigenen Formfehler auf demselben Pfad. Hier darf er nicht als
+    // „unbekannt" durchgehen und schon gar nicht werfen.
+    expect(unbekannteBetriebsfelder(<String, dynamic>{'contacts': 'Anna', 'address': null}), isEmpty);
+    expect(unbekannteBetriebsfelder(null), isEmpty);
+    expect(unbekannteBetriebsfelder('kein Betrieb'), isEmpty);
+  });
+
+  test('die Feldliste deckt sich mit BETRIEB_FELDER des Backends', () {
+    // partner-core.BETRIEB_FELDER, flach ausgeschrieben. Ein Feld, das hier
+    // fehlt, meldet die Vorschau als unbekannt, obwohl der Server es nimmt;
+    // eines zu viel gaukelt ein Feld vor, das der Server abweist.
+    expect(kBetriebFelder, <String>[
+      'company_name',
+      'rechtsform',
+      'bundesland',
+      'branche',
+      'firmenbuch',
+      'gericht',
+      'web',
+      'phone',
+      'email',
+      'billing_email',
+      'address.street',
+      'address.number',
+      'address.zip',
+      'address.city',
+      'tax_details.taxnr',
+      'tax_details.uid',
+      'tax_details.gln',
+      'tax_details.is_small_business',
+      'contacts[].name',
+      'contacts[].email',
+      'contacts[].phone',
+      'contacts[].roles',
+      'steuerberater.name',
+      'steuerberater.email',
+      'steuerberater.phone',
+      'steuerberater.kontakt_ok',
+    ]);
   });
 
   test('der Ablauf steht als Daten da und ist in sich schlüssig', () {
+    // OHNE Vertragsschritt: Verträge wirken im Partner-Weg nicht mehr.
     expect(kPartnerAblauf.map((s) => s.key).toList(),
-        <String>['betrieb', 'fon', 'avv', 'signatur', 'kasse', 'zugangsdaten', 'belege']);
+        <String>['betrieb', 'fon', 'signatur', 'kasse', 'zugangsdaten', 'belege']);
     // Jeder Aufruf der Kette ist einer, den dieses Paket wirklich kennt — ein
     // Schritt, der auf einen erfundenen Endpunkt zeigt, wäre schlimmer als
     // keiner.
@@ -809,7 +881,6 @@ void main() {
       Aufrufe.activateCashregister,
       Aufrufe.listCustomerCashregisters,
       Aufrufe.getCustomerCredentials,
-      Aufrufe.reportCustomerVertrag,
       Aufrufe.createPartnerWebhook,
       Aufrufe.listPartnerWebhooks,
       Aufrufe.updatePartnerWebhook,
@@ -819,5 +890,9 @@ void main() {
     ]) {
       expect(Aufrufe.alle, contains(name));
     }
+    // Und umgekehrt: ein Aufruf, den es nicht mehr gibt, darf keine Adresse
+    // behalten — sonst zeigt die Doku auf einen Endpunkt, der nichts tut.
+    expect(Aufrufe.alle, isNot(contains('reportCustomerVertrag')),
+        reason: 'Verträge wirken im Partner-Weg nicht mehr');
   });
 }

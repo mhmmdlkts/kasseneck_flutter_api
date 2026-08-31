@@ -2,9 +2,8 @@
 
 - **Neu: Partner-Client (`package:kasseneck_api/partner.dart`).** Alles, was ein
   Partner-Softwarehaus über die Kasseneck-Schnittstelle tut — Betriebe anlegen,
-  FinanzOnline-Link, Auftragsverarbeitungsvertrag in Vollmacht melden, Signatur
-  beantragen, Kassen in Betrieb nehmen, Zugangsdaten holen, Webhooks verwalten
-  und **eingehende Webhooks prüfen**. Der Zwilling in JavaScript ist
+  FinanzOnline-Link, Signatur beantragen, Kassen in Betrieb nehmen,
+  Zugangsdaten holen, Webhooks verwalten und **eingehende Webhooks prüfen**. Der Zwilling in JavaScript ist
   `@kreiseck/kasseneck-api/partner` 0.7.0.
 
   Er steht bewusst **neben** `KasseneckApi`: der Partner-Schlüssel
@@ -13,18 +12,19 @@
 
   Neue öffentliche Symbole: `PartnerApi`, `PartnerTransport`,
   `partnerSchluesselEnv`, `kPartnerBaseUrl`; `kPartnerAblauf`, `AblaufSchritt`,
-  `naechsterSchritt`; `AvvModus`, `avvModusAus`, `kAvvModusStandard`,
-  `kPartnerFehlerCodes`, `istPartnerFehlerCode`, `istPartnerFehler`,
+  `naechsterSchritt`; `kPartnerFehlerCodes`, `kPartnerPortalFehlerCodes`,
+  `istPartnerFehlerCode`, `istPartnerPortalFehlerCode`, `istPartnerFehler`,
   `partnerFehlerCode`, `partnerFehlerRat`, `partnerFeldFehler`,
-  `PartnerFeldFehler`, `partnerWartezeitSek`, `vertragOffenRat`,
-  `vertragOffenRatFuer`; `KasseneckSecret`, `kSecretMaske`, `alsSecret`;
+  `PartnerFeldFehler`, `partnerWartezeitSek`; `kBetriebFelder`,
+  `unbekannteBetriebsfelder`, `kPartnerEnvs`, `envName`;
+  `KasseneckSecret`, `kSecretMaske`, `alsSecret`;
   `pruefeWebhookSignatur`, `pruefeWebhookSignaturText`, `leseSignaturKopf`,
   `SignaturKopf`, `WebhookPruefung`, `WebhookAblehnung`, `hexZuBytes`,
   `gleichZeitkonstant` samt den Konstanten `kWebhookSignaturKopf`,
   `kWebhookEreignisKopf`, `kWebhookZustellungKopf`, `kWebhookToleranzSek`,
   `kWebhookWiederholungSek`, `kWebhookMaxVersuche`, `kWebhookFrist`,
-  `kWebhookLimit`; `leseWebhookEreignis`, `PartnerWebhookEreignis`,
-  `WebhookEreignisErgebnis`, `kPartnerWebhookEreignisse`,
+  `kWebhookLimit`, `kWebhookUmschlagFelder`; `leseWebhookEreignis`,
+  `PartnerWebhookEreignis`, `WebhookEreignisErgebnis`, `kPartnerWebhookEreignisse`,
   `istPartnerWebhookEreignis`, `PartnerWebhook`, `NeuerWebhook`, `WebhookListe`,
   `WebhookZustellung`, `WebhookTestErgebnis`, `WebhookEreignisKatalog`; dazu die
   Nutzlast-Typen (`PartnerInfo`, `PartnerApp`, `PartnerSchluesselInfo`,
@@ -32,8 +32,58 @@
   `FonLinkErgebnis`, `SignaturAntrag`, `SignaturAntragErgebnis`,
   `SignaturStand`, `SignaturFehler`, `SignaturHistorieEintrag`, `Kasse`,
   `KassenSchritt`, `KassenFehler`, `NeueKasse`, `KassenInbetriebnahme`,
-  `KassenListe`, `BetriebZugangsdaten`, `KassenZugang`, `VertragsMeldung`,
-  `PartnerEnv`, `kScopeCredentials`) und die Lesehilfen aus `typen.dart`.
+  `KassenListe`, `BetriebZugangsdaten`, `KassenZugang`, `PartnerEnv`,
+  `kScopeCredentials`) und die Lesehilfen aus `typen.dart`.
+
+  **Der Stand vom 31.08.2026 ist eingearbeitet** (Zwilling: npm 0.7.0):
+
+  - `createPartnerCustomer` nimmt `env`. Ohne Angabe entscheidet der Schlüssel;
+    ein **Live**-Schlüssel darf `PartnerEnv.test` verlangen — so probt man die
+    ganze Kette, ohne sich einen zweiten Schlüssel zu holen. Umgekehrt nie: ein
+    Test-Schlüssel mit `PartnerEnv.live` bekommt `live_not_allowed`, und es
+    entsteht nichts. Der Client prüft das **nicht** selbst vor: der Server ist
+    die eine Wahrheit, und ein zweiter Torwächter im Paket wäre der, der
+    irgendwann veraltet.
+  - **Verträge wirken im Partner-Weg nicht mehr.** Weggefallen sind
+    `reportCustomerVertrag`, `VertragsMeldung`, `vertragOffenRat`,
+    `vertragOffenRatFuer`, `AvvModus`, `avvModusAus`, `kAvvModusStandard`,
+    `kAvvStatus`, `avvErfuellt`, `avvSperrt`, `avvStatusText`,
+    `kAvvNichtErforderlichRat`, `PartnerApi.avvModus` und der Ablaufschritt
+    `avv`. `AvvStand` **bleibt** und wird weiterhin gelesen, wenn eine Antwort
+    ihn doch führt — vorausgesetzt wird er nirgends.
+    `customer.avv_accepted` steht nicht mehr in `kPartnerWebhookEreignisse`: es
+    ist ein internes Ereignis, das ein Partner weder abonnieren noch proben
+    kann, und ein Name in dieser Liste, den niemand bestellen kann, ist ein
+    Versprechen ohne Deckung.
+  - **Der Fehlerkatalog ist vollständig** — 28 Codes der Schnittstelle
+    (`kPartnerFehlerCodes`) und 12 des Partner-Portals
+    (`kPartnerPortalFehlerCodes`), jeder mit Handlungssatz. Ein Code, den nur
+    eine Seite kennt, ist für einen Aufrufer nicht von „gibt es nicht" zu
+    unterscheiden; eine halbe Liste ist deshalb schlimmer als keine.
+  - **`test: true` im Webhook-Umschlag.** `sendPartnerWebhookTest` nimmt jetzt
+    ein `event` und löst damit **jedes abonnierte Ereignis** mit glaubwürdiger
+    Nutzlast aus — eine Leitungsprobe beweist nichts über die Behandlung des
+    Ernstfalls. Damit eine Probe nicht für echt gehalten wird, trägt sie
+    `test: true` im Umschlag; `PartnerWebhookEreignis.test` führt das Feld und
+    ist bei echten Ereignissen `false`. Die Zeile `if (ereignis.test) return;`
+    gehört an den Anfang jedes Handlers — ohne sie schreibt jemand seinem
+    Kunden, die Kasse sei fertig.
+  - **Betriebsdaten werden streng geprüft.** Das Backend weist ein unbekanntes
+    Feld ab, statt es stillschweigend zu verwerfen, und nennt den vollen Pfad
+    (`address.land`, `contacts.0.rolle`). `kBetriebFelder` führt die erlaubten
+    Felder, `unbekannteBetriebsfelder` beantwortet die Frage vor dem Senden mit
+    denselben Pfaden. Abgewiesen wird hier nichts: die Wahrheit bleibt der
+    Server, sonst blockierte ein alter Client ein neues Feld.
+  - `createCustomerCashregister` **ohne** `name` (Kassennamen vergibt
+    Kasseneck, sie sind gleich der `cashregisterId`), dafür mit `signaturId`:
+    jede Kasse bezieht sich auf eine Signatur — ohne eine einzige
+    `signature_missing`, bei mehreren `signature_ambiguous`.
+    `requestCustomerSignature` nimmt `weitere` (höchstens zehn,
+    `signature_limit`).
+  - `PartnerInfo.darfZugangEinrichten` und `einladen` mit Vorgabe **false**:
+    ein Zugang zum Kundenpanel legt einen Login auf eine fremde Adresse an und
+    schickt eine Mail dorthin. Fehlt das Feld, gilt NEIN — eine Berechtigung,
+    die nicht ausdrücklich dasteht, hat man nicht.
 
   **Warum die Zugangsdaten nicht als `String` kommen:** `getCustomerCredentials`
   liefert den `api_key` eines fremden Betriebs und die Token seiner Kassen. Wer

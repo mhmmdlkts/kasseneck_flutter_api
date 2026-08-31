@@ -12,13 +12,15 @@
 /// nicht; hier steht die Benutzung.
 ///
 /// Die Reihenfolge der Kette steht als Daten in [kPartnerAblauf], die
-/// Fehlercodes samt Handlungssatz in [partnerFehlerRat].
+/// Fehlercodes samt Handlungssatz in [partnerFehlerRat], die erlaubten
+/// Betriebsfelder in [kBetriebFelder].
 ///
 /// Der Zwilling in JavaScript ist `@kreiseck/kasseneck-api/partner`.
 library;
 
 export 'src/partner/ablauf.dart';
 export 'src/partner/api.dart';
+export 'src/partner/betrieb.dart';
 export 'src/partner/fehler.dart';
 export 'src/partner/secret.dart';
 export 'src/partner/transport.dart' show PartnerTransport, kPartnerBaseUrl, partnerSchluesselEnv;

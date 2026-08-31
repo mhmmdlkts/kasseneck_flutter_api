@@ -193,6 +193,8 @@ void main() {
     expect(gut.ereignis!.type, 'signature.ready');
     expect(gut.ereignis!.partnerId, 'ptn_1');
     expect(gut.ereignis!.data['customerId'], 'cust_1');
+    // Ein echtes Ereignis führt das Feld `test` nicht — hier steht `false`.
+    expect(gut.ereignis!.test, isFalse);
 
     // Ein Rumpf, der gar kein JSON ist, kommt gar nicht erst zum Lesen: die
     // Signatur passt schon nicht.
@@ -250,14 +252,65 @@ void main() {
     expect(istPartnerWebhookEreignis(r.ereignis!.type), isFalse);
   });
 
-  test('Ereignis-Katalog, Wiederholungsplan und Toleranz stimmen mit dem Backend überein', () {
+  /// Die Marke, an der eine Probe von einem echten Ereignis zu unterscheiden
+  /// ist.
+  ///
+  /// Rot-Probe: `test: e['test'] == true` in `webhooks.dart` durch
+  /// `test: false` ersetzen — dann fällt genau dieser Test, und der Handler
+  /// eines Partners hätte `if (ereignis.test) return;` geschrieben, ohne dass
+  /// es je greift.
+  test('eine Probe trägt test:true, ein echtes Ereignis das Feld gar nicht', () {
+    final probe = jsonEncode(<String, dynamic>{
+      'id': 'evt_probe',
+      'type': 'cashregister.live',
+      'createdAt': 1,
+      'partnerId': 'ptn_1',
+      'test': true,
+      'data': <String, dynamic>{'customerId': 'ptest_beispiel00000000'},
+    });
+    final p = leseWebhookEreignis(
+      secrets: <String>[secret],
+      signaturKopf: kopf(jetzt, body: probe),
+      rumpf: utf8.encode(probe),
+      jetztSek: jetzt,
+    );
+    expect(p.ok, isTrue);
+    expect(p.ereignis!.test, isTrue, reason: 'ohne diese Marke hält jemand eine Probe für echt');
+    expect(p.ereignis.toString(), contains('Probe'));
+
+    // Nur ein ausdrückliches `true` zählt. Alles andere ist der Ernstfall —
+    // sonst verschluckte ein `test: "false"` aus einer fremden Quelle eine
+    // echte Kasse.
+    for (final wert in <Object?>['true', 1, <String, dynamic>{}, null]) {
+      final rumpf2 = jsonEncode(<String, dynamic>{
+        'id': 'e',
+        'type': 'cashregister.live',
+        'createdAt': 1,
+        'partnerId': 'p',
+        'test': wert,
+        'data': <String, dynamic>{},
+      });
+      final r = leseWebhookEreignis(
+        secrets: <String>[secret],
+        signaturKopf: kopf(jetzt, body: rumpf2),
+        rumpf: utf8.encode(rumpf2),
+        jetztSek: jetzt,
+      );
+      expect(r.ok, isTrue);
+      expect(r.ereignis!.test, isFalse, reason: 'test:$wert ist keine Probe');
+    }
+  });
+
+  test('Ereignis-Katalog, Umschlag, Wiederholungsplan und Toleranz stimmen mit dem Backend überein', () {
+    // WEBHOOK_EVENTS_OFFEN im Backend — OHNE die internen Ereignisse: was ein
+    // Partner nicht abonnieren kann, darf hier nicht als abonnierbar
+    // erscheinen.
     expect(kPartnerWebhookEreignisse, <String>[
       'customer.created',
       'customer.updated',
       'customer.status_changed',
       'customer.fon_verified',
       'customer.live_enabled',
-      'customer.avv_accepted',
       'signature.requested',
       'signature.ready',
       'signature.failed',
@@ -268,6 +321,11 @@ void main() {
       'app.version.rejected',
       'webhook.test',
     ]);
+    expect(kPartnerWebhookEreignisse, isNot(contains('customer.avv_accepted')),
+        reason: 'customer.avv_accepted ist intern — weder abonnierbar noch probbar');
+    // webhook-core.payload() baut den Umschlag in dieser Reihenfolge; `test`
+    // steht nur auf Proben darin.
+    expect(kWebhookUmschlagFelder, <String>['id', 'type', 'createdAt', 'partnerId', 'test', 'data']);
     expect(kWebhookWiederholungSek, <int>[60, 300, 1800, 7200, 43200]);
     expect(kWebhookMaxVersuche, 6);
     expect(kWebhookToleranzSek, 300);

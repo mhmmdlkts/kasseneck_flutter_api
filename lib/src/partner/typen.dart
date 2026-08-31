@@ -11,7 +11,6 @@
 /// Status einfuehrt, soll diesen Client nicht anhalten.
 library;
 
-import 'fehler.dart';
 import 'secret.dart';
 
 // ---------------------------------------------------------------------------
@@ -41,11 +40,20 @@ int? alsZahlOderNull(Object? wert) =>
 bool alsJaNein(Object? wert, [bool rueckfall = false]) =>
     wert is bool ? wert : rueckfall;
 
-/// Umgebung, in der ein Partner-Schluessel arbeitet.
+/// Umgebung, in der ein Partner-Schluessel bzw. ein Betrieb lebt.
 enum PartnerEnv { test, live }
+
+/// Die beiden Umgebungen als Namen, in der Reihenfolge des Backends
+/// (`partner-core.ENVS`). Bewusst eine eigene Liste und nicht
+/// `PartnerEnv.values`: die Reihenfolge einer Aufzaehlung ist eine
+/// Schreibweise, die des Vertrags eine Zusage.
+const List<String> kPartnerEnvs = <String>['live', 'test'];
 
 PartnerEnv envAus(Object? wert) =>
     wert == 'test' ? PartnerEnv.test : PartnerEnv.live;
+
+/// Der Name, unter dem die Umgebung ans Backend geht (`env`-Parameter).
+String envName(PartnerEnv env) => env == PartnerEnv.test ? 'test' : 'live';
 
 /// `credentials:read` gehoert **nicht** zum Standardsatz und wird keinem
 /// bestehenden Schluessel nachtraeglich hinzugefuegt: wer ihn hat, kann im
@@ -118,6 +126,7 @@ class PartnerInfo {
     required this.partnerId,
     required this.name,
     required this.status,
+    required this.darfZugangEinrichten,
     required this.env,
     required this.scopes,
     required this.key,
@@ -130,6 +139,11 @@ class PartnerInfo {
       partnerId: alsText(p['id']),
       name: alsText(p['name']),
       status: alsText(p['status'], 'aktiv'),
+      // Fehlt das Feld, gilt NEIN. Eine Berechtigung, die man nicht
+      // ausdruecklich hat, hat man nicht -- ein `true` aus Kulanz erzeugte
+      // einen Aufruf, der `zugang_nicht_erlaubt` bekommt, und dabei entsteht
+      // nichts, auch kein Betrieb.
+      darfZugangEinrichten: alsJaNein(p['darfZugangEinrichten']),
       env: envAus(d['env']),
       scopes: alsTexte(d['scopes']),
       key: PartnerSchluesselInfo.aus(alsMap(d['key'])),
@@ -142,6 +156,13 @@ class PartnerInfo {
   final String partnerId;
   final String name;
   final String status;
+
+  /// Darf dieser Partner fuer seine Betriebe einen Zugang zum Kundenpanel
+  /// einrichten lassen? **Vorgabe `false`** -- die Freischaltung setzt
+  /// Kasseneck je Partner. Ohne sie antworten `einladen: true` und
+  /// `resendPartnerCustomerInvite` mit `zugang_nicht_erlaubt`, und es entsteht
+  /// nichts.
+  final bool darfZugangEinrichten;
   final PartnerEnv env;
   final List<String> scopes;
   final PartnerSchluesselInfo key;
@@ -198,8 +219,15 @@ class NeuerBetrieb {
   final bool wiederholt;
 }
 
-/// Stand des Auftragsverarbeitungsvertrags eines Betriebs, aus Partnersicht.
-/// Die moeglichen Werte stehen in [kAvvStatus], samt dem, was sie bedeuten.
+/// Stand des Auftragsverarbeitungsvertrags eines Betriebs.
+///
+/// **Vertraege wirken im Partner-Weg nicht mehr** (Stand 2026-08-31): keine
+/// Antwort fuehrt dieses Feld, kein Schritt in `naechsteSchritte` verlangt
+/// einen Vertrag, und eine Kasse geht deswegen nicht weniger live. Die Klasse
+/// bleibt, damit eine Antwort, die den Stand doch noch traegt, lesbar
+/// durchkommt -- **vorausgesetzt wird er nirgends**. Fuer selbst registrierte
+/// Kunden gibt es die Maschinerie weiterhin, aber nicht ueber diese
+/// Schnittstelle.
 class AvvStand {
   const AvvStand({
     required this.status,
@@ -208,39 +236,24 @@ class AvvStand {
     required this.modus,
   });
 
-  /// `null`, wenn die Antwort den Stand gar nicht fuehrt (aeltere
-  /// Backend-Fassung). Bewusst nicht "offen": "nicht mitgeliefert" und "nicht
-  /// bestaetigt" duerfen fuer den Aufrufer nicht dasselbe sein -- das eine ist
-  /// eine alte Fassung, das andere eine Kasse, die nicht live geht.
+  /// `null`, wenn die Antwort den Stand gar nicht fuehrt -- heute also immer.
+  /// Bewusst kein erfundenes "offen": "nicht mitgeliefert" und "nicht
+  /// bestaetigt" duerfen fuer den Aufrufer nicht dasselbe sein.
   static AvvStand? aus(Object? wert) {
     if (wert is! Map) return null;
     final a = Map<String, dynamic>.from(wert);
     return AvvStand(
-      status: alsText(a['status'], 'offen'),
+      status: alsText(a['status']),
       version: alsTextOderNull(a['version']),
       bestaetigtAt: alsZahlOderNull(a['bestaetigtAt']),
-      modus: avvModusAus(alsTextOderNull(a['modus'])) ?? kAvvModusStandard,
+      modus: alsTextOderNull(a['modus']),
     );
   }
 
   final String status;
   final String? version;
   final int? bestaetigtAt;
-
-  /// Der Weg, den Kasseneck fuer DIESES Partner-Konto gesetzt hat.
-  final AvvModus modus;
-
-  /// Steht dem Live-Betrieb aus Sicht dieses Vertrags nichts im Weg? Zaehlt
-  /// `nicht_erforderlich` (Testumgebung) ausdruecklich mit -- siehe
-  /// [avvErfuellt]. Die Gegenfrage beantwortet [sperrt], und beide sind nicht
-  /// die Umkehrung voneinander.
-  bool get erfuellt => avvErfuellt(status);
-
-  /// Sperrt dieser Stand den Live-Betrieb? Nur `offen` und `veraltet`.
-  bool get sperrt => avvSperrt(status);
-
-  /// Was der Stand bedeutet; `null` fuer einen unbekannten Wert.
-  String? get text => avvStatusText(status);
+  final String? modus;
 }
 
 /// Eine Zeile der Betriebsliste.
@@ -275,9 +288,9 @@ class BetriebZeile {
   final PartnerEnv env;
   final int? createdAt;
 
-  /// Vertragsstand -- `null`, wenn die Antwort ihn nicht fuehrt. Das ist die
-  /// verlaessliche Quelle fuer den Vertragsweg; `getPartnerInfo` gibt ihn
-  /// nicht aus.
+  /// Vertragsstand, falls die Antwort ihn ueberhaupt fuehrt -- heute tut sie
+  /// das nicht, der Wert ist dann `null`. Siehe [AvvStand]: nichts in diesem
+  /// Client setzt ihn voraus.
   final AvvStand? avv;
 }
 
@@ -717,22 +730,4 @@ class BetriebZugangsdaten {
   /// dem ein Geheimnis in ein Protokoll rutscht.
   @override
   String toString() => 'BetriebZugangsdaten($customerId, $apiKey, ${kassen.length} Kassen)';
-}
-
-// ---------------------------------------------------------------------------
-// Vertrag
-// ---------------------------------------------------------------------------
-
-class VertragsMeldung {
-  const VertragsMeldung({
-    required this.vertragId,
-    required this.bestaetigtAt,
-    required this.art,
-    required this.version,
-  });
-
-  final String vertragId;
-  final int bestaetigtAt;
-  final String art;
-  final String version;
 }
