@@ -41,7 +41,7 @@ void main() {
     'type': 'signature.ready',
     'createdAt': 1756000000000,
     'partnerId': 'ptn_1',
-    'data': <String, dynamic>{'customerId': 'cust_1', 'firma': 'Bäckerei Jobst'},
+    'data': <String, dynamic>{'customerId': 'cust_1', 'companyName': 'Bäckerei Jobst'},
   });
   const jetzt = 1756000000;
 

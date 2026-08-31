@@ -53,7 +53,7 @@ class AblaufSchritt {
 /// gueltigen RKSV-Belege).
 const List<AblaufSchritt> kPartnerAblauf = <AblaufSchritt>[
   AblaufSchritt(
-    key: 'betrieb',
+    key: 'business',
     text: 'Betrieb anlegen (idempotencyKey = eigene Kundennummer).',
     aufruf: 'createPartnerCustomer',
     wartetAuf: 'customer.created',
@@ -67,14 +67,14 @@ const List<AblaufSchritt> kPartnerAblauf = <AblaufSchritt>[
     fehltCode: 'fon_missing',
   ),
   AblaufSchritt(
-    key: 'signatur',
+    key: 'signature',
     text: 'Signatureinheit beantragen. Kasseneck weist eine Karte zu und meldet sie bei FinanzOnline an.',
     aufruf: 'requestCustomerSignature',
     wartetAuf: 'signature.ready',
     fehltCode: 'signature_missing',
   ),
   AblaufSchritt(
-    key: 'kasse',
+    key: 'cashregister',
     text: 'Kasse anlegen. Mit automatisch:true (Vorgabe) geht sie von selbst live, sobald die '
         'Signatur bereit ist -- sie darf deshalb schon vorher angelegt werden.',
     aufruf: 'createCustomerCashregister',
@@ -104,11 +104,11 @@ const List<AblaufSchritt> kPartnerAblauf = <AblaufSchritt>[
 /// fuer den genauen Verlauf sind die Ereignisse `signature.*` und
 /// `cashregister.*` da.
 const Map<String, String> _statusSchritt = <String, String>{
-  'angelegt': 'fon',
-  'fon_eingerichtet': 'signatur',
-  'signatur_beantragt': 'signatur',
-  'signatur_bereit': 'kasse',
-  'kasse_angelegt': 'kasse',
+  'created': 'fon',
+  'fon_configured': 'signature',
+  'signature_requested': 'signature',
+  'signature_ready': 'cashregister',
+  'cashregister_created': 'cashregister',
   'live': 'zugangsdaten',
 };
 

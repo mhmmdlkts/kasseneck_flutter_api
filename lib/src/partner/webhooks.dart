@@ -188,11 +188,11 @@ class PartnerWebhook {
         webhookId: alsText(w['webhookId']),
         url: alsText(w['url']),
         events: alsTexte(w['events']),
-        aktiv: w['aktiv'] != false,
-        beschreibung: alsTextOderNull(w['beschreibung']),
+        aktiv: w['active'] != false,
+        beschreibung: alsTextOderNull(w['description']),
         createdAt: alsZahlOderNull(w['createdAt']),
-        letzteZustellung: alsZahlOderNull(w['letzteZustellung']),
-        fehlerInFolge: alsZahlOderNull(w['fehlerInFolge']) ?? 0,
+        letzteZustellung: alsZahlOderNull(w['lastDelivery']),
+        fehlerInFolge: alsZahlOderNull(w['consecutiveFailures']) ?? 0,
       );
 
   final String webhookId;
@@ -237,7 +237,7 @@ class WebhookListe {
         webhooks: alsListe(d['webhooks'])
             .map((e) => PartnerWebhook.aus(alsMap(e)))
             .toList(growable: false),
-        ereignisse: alsListe(d['ereignisse']).map((e) {
+        ereignisse: alsListe(d['events']).map((e) {
           final k = alsMap(e);
           return WebhookEreignisKatalog(alsText(k['key']), alsText(k['text']));
         }).toList(growable: false),
@@ -270,11 +270,11 @@ class WebhookZustellung {
         event: alsText(z['event']),
         eventId: alsText(z['eventId']),
         status: alsText(z['status']),
-        versuche: alsZahlOderNull(z['versuche']) ?? 0,
+        versuche: alsZahlOderNull(z['attempts']) ?? 0,
         letzterVersuchAt: alsZahlOderNull(z['letzterVersuchAt']),
         naechsterVersuchAt: alsZahlOderNull(z['naechsterVersuchAt']),
         statusCode: alsZahlOderNull(z['statusCode']),
-        antwort: alsTextOderNull(z['antwort']),
+        antwort: alsTextOderNull(z['response']),
         createdAt: alsZahlOderNull(z['createdAt']),
       );
 

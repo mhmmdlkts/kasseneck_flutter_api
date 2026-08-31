@@ -55,7 +55,7 @@ void main() {
       geheim.toJson(),
       '$geheim',
       <dynamic>[geheim].toString(),
-      <String, dynamic>{'zugang': geheim}.toString(),
+      <String, dynamic>{'access': geheim}.toString(),
       <String, dynamic>{
         'tief': <dynamic>[
           <String, dynamic>{'z': geheim}
@@ -83,10 +83,10 @@ void main() {
   test('die Werte aus getCustomerCredentials sind gehüllt, nicht roh', () {
     final zugang = BetriebZugangsdaten.aus(<String, dynamic>{
       'customerId': 'cust_1',
-      'firma': 'Bäckerei Jobst',
+      'companyName': 'Bäckerei Jobst',
       'env': 'live',
       'apiKey': klartext,
-      'kassen': <dynamic>[
+      'cashregisters': <dynamic>[
         <String, dynamic>{
           'cashregisterId': 'kasse_1',
           'name': 'Theke',
@@ -94,7 +94,7 @@ void main() {
           'cashregisterToken': token,
         }
       ],
-      'hinweis': 'Nur verschlüsselt speichern.',
+      'note': 'Nur verschlüsselt speichern.',
     }, 'cust_1');
 
     expect(zugang.apiKey, isA<KasseneckSecret>());
@@ -118,7 +118,7 @@ void main() {
     // und hielte dann wieder eine rohe Zeichenkette in der Hand.
     final zugang = BetriebZugangsdaten.aus(<String, dynamic>{
       'customerId': 'cust_1',
-      'kassen': <dynamic>[<String, dynamic>{}],
+      'cashregisters': <dynamic>[<String, dynamic>{}],
     }, 'cust_1');
     expect(zugang.apiKey, isA<KasseneckSecret>());
     expect(zugang.apiKey.vorhanden, isFalse);

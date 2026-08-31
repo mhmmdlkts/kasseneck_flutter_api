@@ -14,12 +14,12 @@ void main() {
   const partnerKey = 'pk_live_GEHEIMERPARTNERSCHLUESSEL42';
 
   const betrieb = <String, dynamic>{
-    'company_name': 'Bäckerei Jobst e.U.',
-    'rechtsform': 'eu',
+    'companyName': 'Bäckerei Jobst e.U.',
+    'legalForm': 'eu',
     'email': 'chef@jobst.at',
     'address': <String, dynamic>{'street': 'Hauptstrasse', 'number': '12a', 'zip': '5020', 'city': 'Salzburg'},
-    'bundesland': 'salzburg',
-    'tax_details': <String, dynamic>{'taxnr': '12-345/6789', 'is_small_business': false},
+    'state': 'salzburg',
+    'taxDetails': <String, dynamic>{'taxNumber': '12-345/6789', 'smallBusiness': false},
     'contacts': <dynamic>[
       <String, dynamic>{'name': 'Anna Jobst', 'email': 'anna@jobst.at'}
     ],
@@ -53,7 +53,7 @@ void main() {
   test('der Schlüssel geht als Bearer raus, ohne Kassen-Token', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'partner': <String, dynamic>{'id': 'ptn_1', 'name': 'Muster GmbH', 'status': 'aktiv'},
+        'partner': <String, dynamic>{'id': 'ptn_1', 'name': 'Muster GmbH', 'status': 'active'},
         'env': 'live',
       })
     ]);
@@ -101,12 +101,12 @@ void main() {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
         'customerId': 'cust_1',
-        'status': 'angelegt',
+        'status': 'created',
         'env': 'live',
-        'firma': 'Bäckerei Jobst e.U.',
+        'companyName': 'Bäckerei Jobst e.U.',
         'appId': 'app_1',
-        'zugang': <String, dynamic>{'eingeladen': true, 'sentTo': 'c***@jobst.at'},
-        'naechsteSchritte': <dynamic>['FinanzOnline-Link senden'],
+        'access': <String, dynamic>{'invited': true, 'sentTo': 'c***@jobst.at'},
+        'nextSteps': <dynamic>['FinanzOnline-Link senden'],
       })
     ]);
     final r = await f.api.createPartnerCustomer(
@@ -116,7 +116,7 @@ void main() {
     );
     expect(params(f.log.single), <String, dynamic>{
       'appId': 'app_1',
-      'betrieb': betrieb,
+      'business': betrieb,
       'idempotencyKey': 'eigene-kundennummer-4711',
     });
     expect(r.customerId, 'cust_1');
@@ -127,7 +127,7 @@ void main() {
 
   test('eine wiederholte Anlage meldet sich als solche', () async {
     final f = stelle(<Map<String, dynamic>>[
-      erfolg(<String, dynamic>{'customerId': 'cust_1', 'wiederholt': true, 'zugang': <String, dynamic>{}})
+      erfolg(<String, dynamic>{'customerId': 'cust_1', 'replayed': true, 'access': <String, dynamic>{}})
     ]);
     final r = await f.api.createPartnerCustomer(appId: 'app_1', betrieb: betrieb, idempotencyKey: 'x');
     expect(r.wiederholt, isTrue);
@@ -140,12 +140,12 @@ void main() {
   /// grün, während der Server nie ein `env` sähe.
   test('env geht mit auf die Leitung — ein Live-Schlüssel darf einen Testbetrieb anlegen', () async {
     final f = stelle(<Map<String, dynamic>>[
-      erfolg(<String, dynamic>{'customerId': 'ptest_1', 'env': 'test', 'zugang': <String, dynamic>{}}),
-      erfolg(<String, dynamic>{'customerId': 'cust_2', 'env': 'live', 'zugang': <String, dynamic>{}}),
+      erfolg(<String, dynamic>{'customerId': 'ptest_1', 'env': 'test', 'access': <String, dynamic>{}}),
+      erfolg(<String, dynamic>{'customerId': 'cust_2', 'env': 'live', 'access': <String, dynamic>{}}),
     ]);
     final r = await f.api.createPartnerCustomer(appId: 'app_1', betrieb: betrieb, env: PartnerEnv.test);
     expect(params(f.log[0]),
-        <String, dynamic>{'appId': 'app_1', 'betrieb': betrieb, 'env': 'test'});
+        <String, dynamic>{'appId': 'app_1', 'business': betrieb, 'env': 'test'});
     expect(r.env, PartnerEnv.test);
 
     // Ohne Angabe entscheidet der Schlüssel — dann darf auch nichts gesendet
@@ -167,7 +167,7 @@ void main() {
     // bekommt — und dabei entsteht NICHTS, auch kein Betrieb.
     final ohne = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'partner': <String, dynamic>{'id': 'p1', 'name': 'A', 'status': 'aktiv'},
+        'partner': <String, dynamic>{'id': 'p1', 'name': 'A', 'status': 'active'},
         'env': 'live',
       })
     ]);
@@ -178,8 +178,8 @@ void main() {
         'partner': <String, dynamic>{
           'id': 'p1',
           'name': 'A',
-          'status': 'aktiv',
-          'darfZugangEinrichten': true,
+          'status': 'active',
+          'canCreateAccess': true,
         },
         'env': 'live',
       })
@@ -193,11 +193,11 @@ void main() {
       erfolg(<String, dynamic>{'customerId': 'cust_2'}),
     ]);
     await f.api.createPartnerCustomer(appId: 'app_1', betrieb: betrieb, einladen: false);
-    expect(params(f.log[0])['zugang'], <String, dynamic>{'einladen': false});
+    expect(params(f.log[0])['access'], <String, dynamic>{'invite': false});
     await f.api.createPartnerCustomer(appId: 'app_1', betrieb: betrieb);
     // Nicht gesetzt heisst nicht gesendet — sonst hielte das Backend die
     // Vorgabe für eine ausdrückliche Angabe.
-    expect(params(f.log[1]).containsKey('zugang'), isFalse);
+    expect(params(f.log[1]).containsKey('access'), isFalse);
   });
 
   test('fehlende Pflichtangaben gehen gar nicht erst raus', () async {
@@ -214,10 +214,10 @@ void main() {
   test('listPartnerCustomers seitenweise, mit Grenzen für limit', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'kunden': <dynamic>[
+        'customers': <dynamic>[
           <String, dynamic>{
             'customerId': 'cust_1',
-            'firma': 'A',
+            'companyName': 'A',
             'status': 'live',
             'appId': 'app_1',
             'env': 'live',
@@ -225,7 +225,7 @@ void main() {
           }
         ],
         'cursor': 'weiter',
-        'gesamt': 12,
+        'total': 12,
       })
     ]);
     final r = await f.api.listPartnerCustomers(status: 'live', limit: 50, cursor: 'a');
@@ -241,22 +241,22 @@ void main() {
   test('getPartnerCustomer liest die Hülle "kunde" und fällt nicht über null-Felder', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'kunde': <String, dynamic>{
+        'customer': <String, dynamic>{
           'customerId': 'cust_1',
-          'firma': 'A',
-          'status': 'signatur_bereit',
+          'companyName': 'A',
+          'status': 'signature_ready',
           'env': 'test',
           'liveEnabled': false,
           'appId': null,
-          'angelegtVia': 'api',
-          'betrieb': <String, dynamic>{'company_name': 'A'},
-          'fon': <String, dynamic>{'eingerichtet': true, 'verifiedAt': 99},
-          'zugang': null,
+          'createdVia': 'api',
+          'business': <String, dynamic>{'companyName': 'A'},
+          'fon': <String, dynamic>{'configured': true, 'verifiedAt': 99},
+          'access': null,
         }
       })
     ]);
     final k = await f.api.getPartnerCustomer('cust_1');
-    expect(k.status, 'signatur_bereit');
+    expect(k.status, 'signature_ready');
     expect(k.zeile.env, PartnerEnv.test);
     expect(k.fonEingerichtet, isTrue);
     expect(k.zugangEmail, isNull);
@@ -287,15 +287,15 @@ void main() {
   test('requestCustomerSignature liefert den Antrag; ein zweiter Ruf den laufenden', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'antrag': <String, dynamic>{
+        'request': <String, dynamic>{
           'requestId': 'req_1',
-          'status': 'beantragt',
+          'status': 'requested',
           'statusText': 'Beantragt',
-          'art': 'signaturkarte',
-          'historie': <dynamic>[],
+          'art': 'signature_card',
+          'history': <dynamic>[],
         },
-        'wiederholt': true,
-        'hinweis': 'Es lief bereits ein Antrag.',
+        'replayed': true,
+        'note': 'Es lief bereits ein Antrag.',
       })
     ]);
     final r = await f.api.requestCustomerSignature('cust_1');
@@ -308,60 +308,60 @@ void main() {
     // Aufruf nicht folgenlos wiederholbar.
     final weiter = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'antrag': <String, dynamic>{'requestId': 'req_2', 'historie': <dynamic>[]},
-        'wiederholt': false,
+        'request': <String, dynamic>{'requestId': 'req_2', 'history': <dynamic>[]},
+        'replayed': false,
       })
     ]);
     await weiter.api.requestCustomerSignature('cust_1', weitere: true);
-    expect(params(weiter.log.single), <String, dynamic>{'customerId': 'cust_1', 'weitere': true});
+    expect(params(weiter.log.single), <String, dynamic>{'customerId': 'cust_1', 'additional': true});
   });
 
   test('getCustomerSignatureStatus trennt "bereit" von "registriert"', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'signatur': <String, dynamic>{'bereit': false, 'signatureId': null, 'vdaId': null},
-        'antraege': <dynamic>[
-          <String, dynamic>{'requestId': 'req_1', 'status': 'registriert', 'statusText': 'Bei FinanzOnline registriert'}
+        'signature': <String, dynamic>{'ready': false, 'signatureId': null, 'vdaId': null},
+        'requests': <dynamic>[
+          <String, dynamic>{'requestId': 'req_1', 'status': 'registered', 'statusText': 'Bei FinanzOnline registriert'}
         ],
-        'fon': <String, dynamic>{'vorhanden': true, 'geprueftAt': 7},
+        'fon': <String, dynamic>{'present': true, 'verifiedAt': 7},
       })
     ]);
     final s = await f.api.getCustomerSignatureStatus('cust_1');
     expect(s.bereit, isFalse);
-    expect(s.antraege.single.status, 'registriert');
+    expect(s.antraege.single.status, 'registered');
     expect(s.fonVorhanden, isTrue);
   });
 
   test('createCustomerCashregister darf vor der Signatur laufen und sagt, warum nichts geschah', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'kasse': <String, dynamic>{
+        'cashregister': <String, dynamic>{
           'cashregisterId': 'kasse_1',
           'name': 'Theke',
-          'status': 'entwurf',
+          'status': 'draft',
           'statusText': 'Entwurf',
-          'automatisch': true,
-          'schritt': 'signatur',
-          'schrittText': 'Signaturkarte zuweisen',
-          'erledigt': <dynamic>[],
-          'schritte': <dynamic>[
-            <String, dynamic>{'key': 'signatur', 'text': 'Signaturkarte zuweisen'}
+          'automatic': true,
+          'step': 'signature',
+          'stepText': 'Signaturkarte zuweisen',
+          'completedSteps': <dynamic>[],
+          'steps': <dynamic>[
+            <String, dynamic>{'key': 'signature', 'text': 'Signaturkarte zuweisen'}
           ],
-          'versuche': 0,
+          'attempts': 0,
         },
-        'inbetriebnahme': <String, dynamic>{
-          'gestartet': false,
+        'activation': <String, dynamic>{
+          'started': false,
           'ok': null,
-          'schritt': null,
-          'grund': 'signature_not_ready',
+          'step': null,
+          'reason': 'signature_not_ready',
         },
       })
     ]);
     final r = await f.api.createCustomerCashregister(customerId: 'cust_1', signaturId: 'sig_1');
     // KEIN `name`: Kassennamen vergibt Kasseneck, ein gesendetes name wäre ein
     // validation-Fehler.
-    expect(params(f.log.single), <String, dynamic>{'customerId': 'cust_1', 'signaturId': 'sig_1'});
-    expect(r.kasse.status, 'entwurf');
+    expect(params(f.log.single), <String, dynamic>{'customerId': 'cust_1', 'signatureRequestId': 'sig_1'});
+    expect(r.kasse.status, 'draft');
     expect(r.kasse.istLive, isFalse);
     expect(r.kasse.automatisch, isTrue);
     expect(r.grund, 'signature_not_ready');
@@ -371,13 +371,13 @@ void main() {
   test('activateCashregister meldet eine bereits laufende Kasse als unverändert', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'kasse': <String, dynamic>{
+        'cashregister': <String, dynamic>{
           'cashregisterId': 'kasse_1',
           'status': 'live',
           'statusText': 'In Betrieb',
-          'schritt': null,
+          'step': null,
         },
-        'unveraendert': true,
+        'unchanged': true,
       })
     ]);
     final r = await f.api.activateCashregister('cust_1', 'kasse_1');
@@ -391,10 +391,10 @@ void main() {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
         'customerId': 'cust_1',
-        'kassen': <dynamic>[
+        'cashregisters': <dynamic>[
           <String, dynamic>{'cashregisterId': 'kasse_1', 'status': 'live'}
         ],
-        'signaturBereit': true,
+        'signatureReady': true,
       })
     ]);
     final r = await f.api.listCustomerCashregisters('cust_1');
@@ -408,13 +408,13 @@ void main() {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
         'customerId': 'cust_1',
-        'firma': 'A',
+        'companyName': 'A',
         'env': 'live',
         'apiKey': 'kr_live_GEHEIM',
-        'kassen': <dynamic>[
+        'cashregisters': <dynamic>[
           <String, dynamic>{'cashregisterId': 'kasse_1', 'live': true, 'cashregisterToken': 'cb_live_GEHEIM'}
         ],
-        'hinweis': 'Nur verschlüsselt speichern.',
+        'note': 'Nur verschlüsselt speichern.',
       })
     ]);
     final z = await f.api.getCustomerCredentials('cust_1');
@@ -434,7 +434,7 @@ void main() {
           'webhookId': 'wh_1',
           'url': 'https://api.firma.at/hook',
           'events': <dynamic>['signature.ready'],
-          'aktiv': true,
+          'active': true,
         },
         'secret': 'whsec_1',
       })
@@ -474,9 +474,9 @@ void main() {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
         'webhooks': <dynamic>[
-          <String, dynamic>{'webhookId': 'wh_1', 'aktiv': false}
+          <String, dynamic>{'webhookId': 'wh_1', 'active': false}
         ],
-        'ereignisse': <dynamic>[
+        'events': <dynamic>[
           <String, dynamic>{'key': 'webhook.test', 'text': 'Testereignis'}
         ],
       })
@@ -489,14 +489,14 @@ void main() {
   test('updatePartnerWebhook verlangt eine Änderung, deletePartnerWebhook eine Kennung', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
-        'webhook': <String, dynamic>{'webhookId': 'wh_1', 'aktiv': false}
+        'webhook': <String, dynamic>{'webhookId': 'wh_1', 'active': false}
       }),
       erfolg(<String, dynamic>{'webhookId': 'wh_1', 'geloescht': true}),
     ]);
-    final w = await f.api.updatePartnerWebhook('wh_1', <String, dynamic>{'aktiv': false});
+    final w = await f.api.updatePartnerWebhook('wh_1', <String, dynamic>{'active': false});
     expect(params(f.log.first), <String, dynamic>{
       'webhookId': 'wh_1',
-      'patch': <String, dynamic>{'aktiv': false}
+      'patch': <String, dynamic>{'active': false}
     });
     expect(w.aktiv, isFalse);
     expect(await f.api.deletePartnerWebhook('wh_1'), 'wh_1');
@@ -511,21 +511,21 @@ void main() {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{
         'eventId': 'evt_1',
-        'zustellungen': <dynamic>[
+        'deliveries': <dynamic>[
           <String, dynamic>{'deliveryId': 'dlv_1'}
         ]
       }),
       erfolg(<String, dynamic>{
-        'zustellungen': <dynamic>[
+        'deliveries': <dynamic>[
           <String, dynamic>{
             'deliveryId': 'dlv_1',
             'webhookId': 'wh_1',
             'event': 'webhook.test',
             'eventId': 'evt_1',
-            'status': 'fehlgeschlagen',
-            'versuche': 6,
+            'status': 'failed',
+            'attempts': 6,
             'statusCode': 500,
-            'antwort': 'boom',
+            'response': 'boom',
           }
         ]
       }),
@@ -535,7 +535,7 @@ void main() {
     expect(t.ereignis, 'webhook.test', reason: 'ohne Angabe ist die Probe die Leitungsprobe');
     final z = await f.api.listPartnerWebhookDeliveries(webhookId: 'wh_1', limit: 10);
     expect(params(f.log[1]), <String, dynamic>{'webhookId': 'wh_1', 'limit': 10});
-    expect(z.single.status, 'fehlgeschlagen');
+    expect(z.single.status, 'failed');
     expect(z.single.statusCode, 500);
     await expectLater(
       f.api.listPartnerWebhookDeliveries(limit: 999),
@@ -553,9 +553,9 @@ void main() {
       erfolg(<String, dynamic>{
         'eventId': 'evt_2',
         'ereignis': 'signature.ready',
-        'zustellungen': <dynamic>[]
+        'deliveries': <dynamic>[]
       }),
-      erfolg(<String, dynamic>{'eventId': 'evt_3', 'zustellungen': <dynamic>[]}),
+      erfolg(<String, dynamic>{'eventId': 'evt_3', 'deliveries': <dynamic>[]}),
     ]);
     final t = await f.api.sendPartnerWebhookTest('wh_1', event: 'signature.ready');
     expect(params(f.log[0]), <String, dynamic>{'webhookId': 'wh_1', 'event': 'signature.ready'});
@@ -680,9 +680,9 @@ void main() {
     final f = stelle(<Map<String, dynamic>>[
       fehler('Die Inbetriebnahme ist hängen geblieben.', <String, dynamic>{
         'code': 'activation_failed',
-        'schritt': 'uebermitteln',
+        'step': 'transmit_start_receipt',
         'rc': 'B13',
-        'kasse': <String, dynamic>{'cashregisterId': 'kasse_1', 'status': 'fehlgeschlagen'},
+        'cashregister': <String, dynamic>{'cashregisterId': 'kasse_1', 'status': 'failed'},
       })
     ]);
     try {
@@ -690,11 +690,11 @@ void main() {
       fail('hätte werfen müssen');
     } on KasseneckApiError catch (e) {
       expect(e.code, 'activation_failed');
-      expect(e.details['schritt'], 'uebermitteln');
+      expect(e.details['step'], 'transmit_start_receipt');
       expect(e.details['rc'], 'B13');
       // Auch die verschachtelte Beilage überlebt das Sieb — sie sagt dem
       // Aufrufer, wo genau die Kette steht.
-      expect((e.details['kasse'] as Map)['status'], 'fehlgeschlagen');
+      expect((e.details['cashregister'] as Map)['status'], 'failed');
       expect(e.message, 'Die Inbetriebnahme ist hängen geblieben.');
     }
   });
@@ -704,7 +704,7 @@ void main() {
       fehler('Bitte Eingaben prüfen.', <String, dynamic>{
         'code': 'validation',
         'errors': <dynamic>[
-          <String, dynamic>{'field': 'tax_details.taxnr', 'message': 'Prüfziffer stimmt nicht.'}
+          <String, dynamic>{'field': 'taxDetails.taxNumber', 'message': 'Prüfziffer stimmt nicht.'}
         ],
       })
     ]);
@@ -713,7 +713,7 @@ void main() {
       fail('hätte werfen müssen');
     } on KasseneckApiError catch (e) {
       final felder = partnerFeldFehler(e);
-      expect(felder.single.field, 'tax_details.taxnr');
+      expect(felder.single.field, 'taxDetails.taxNumber');
       expect(felder.single.message, 'Prüfziffer stimmt nicht.');
     }
 
@@ -778,8 +778,8 @@ void main() {
       ...betrieb,
       'iban': 'AT61 1904 3002 3457 3201',
       'address': <String, dynamic>{...betrieb['address'] as Map<String, dynamic>, 'land': 'AT'},
-      'tax_details': <String, dynamic>{
-        ...betrieb['tax_details'] as Map<String, dynamic>,
+      'taxDetails': <String, dynamic>{
+        ...betrieb['taxDetails'] as Map<String, dynamic>,
         'ustid': 'ATU12345675',
       },
       'contacts': <dynamic>[
@@ -789,7 +789,7 @@ void main() {
     };
     expect(
       unbekannteBetriebsfelder(schmutzig)..sort(),
-      <String>['address.land', 'contacts.0.rolle', 'iban', 'tax_details.ustid'],
+      <String>['address.land', 'contacts.0.rolle', 'iban', 'taxDetails.ustid'],
     );
 
     // Der Pfad trägt den INDEX des Kontakts, nicht nur „contacts" — sonst
@@ -818,39 +818,39 @@ void main() {
     // fehlt, meldet die Vorschau als unbekannt, obwohl der Server es nimmt;
     // eines zu viel gaukelt ein Feld vor, das der Server abweist.
     expect(kBetriebFelder, <String>[
-      'company_name',
-      'rechtsform',
-      'bundesland',
-      'branche',
-      'firmenbuch',
-      'gericht',
+      'companyName',
+      'legalForm',
+      'state',
+      'industry',
+      'companyRegister',
+      'court',
       'web',
       'phone',
       'email',
-      'billing_email',
+      'billingEmail',
       'address.street',
       'address.number',
       'address.zip',
       'address.city',
-      'tax_details.taxnr',
-      'tax_details.uid',
-      'tax_details.gln',
-      'tax_details.is_small_business',
+      'taxDetails.taxNumber',
+      'taxDetails.vatId',
+      'taxDetails.gln',
+      'taxDetails.smallBusiness',
       'contacts[].name',
       'contacts[].email',
       'contacts[].phone',
       'contacts[].roles',
-      'steuerberater.name',
-      'steuerberater.email',
-      'steuerberater.phone',
-      'steuerberater.kontakt_ok',
+      'taxAdvisor.name',
+      'taxAdvisor.email',
+      'taxAdvisor.phone',
+      'taxAdvisor.mayContact',
     ]);
   });
 
   test('der Ablauf steht als Daten da und ist in sich schlüssig', () {
     // OHNE Vertragsschritt: Verträge wirken im Partner-Weg nicht mehr.
     expect(kPartnerAblauf.map((s) => s.key).toList(),
-        <String>['betrieb', 'fon', 'signatur', 'kasse', 'zugangsdaten', 'belege']);
+        <String>['business', 'fon', 'signature', 'cashregister', 'zugangsdaten', 'belege']);
     // Jeder Aufruf der Kette ist einer, den dieses Paket wirklich kennt — ein
     // Schritt, der auf einen erfundenen Endpunkt zeigt, wäre schlimmer als
     // keiner.
@@ -858,10 +858,10 @@ void main() {
       if (schritt.aufruf == null) continue;
       expect(Aufrufe.alle, contains(schritt.aufruf), reason: 'unbekannter Aufruf: ${schritt.aufruf}');
     }
-    expect(naechsterSchritt('angelegt')?.key, 'fon');
-    expect(naechsterSchritt('signatur_bereit')?.key, 'kasse');
+    expect(naechsterSchritt('created')?.key, 'fon');
+    expect(naechsterSchritt('signature_ready')?.key, 'cashregister');
     expect(naechsterSchritt('live')?.key, 'zugangsdaten');
-    expect(naechsterSchritt('gesperrt'), isNull);
+    expect(naechsterSchritt('blocked'), isNull);
     expect(naechsterSchritt('etwas_neues'), isNull);
   });
 

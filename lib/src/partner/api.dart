@@ -140,9 +140,9 @@ class PartnerApi {
     }
     final d = await _t.rufen(Aufrufe.createPartnerCustomer, params: <String, dynamic>{
       'appId': app,
-      'betrieb': betrieb,
+      'business': betrieb,
       'idempotencyKey': idempotencyKey,
-      'zugang': einladen == null ? null : <String, dynamic>{'einladen': einladen},
+      'access': einladen == null ? null : <String, dynamic>{'invite': einladen},
       'env': env == null ? null : envName(env),
     });
     final ergebnis = NeuerBetrieb.aus(d, app);
@@ -170,7 +170,7 @@ class PartnerApi {
   Future<Betrieb> getPartnerCustomer(String customerId) async {
     final id = _pflicht(customerId, 'getPartnerCustomer', 'customerId');
     final d = await _t.rufen(Aufrufe.getPartnerCustomer, params: <String, dynamic>{'customerId': id});
-    return Betrieb.aus(_verlangt(d['kunde'], 'getPartnerCustomer', 'kunde'));
+    return Betrieb.aus(_verlangt(d['customer'], 'getPartnerCustomer', 'customer'));
   }
 
   /// Schickt dem Betrieb den Einrichtungs-Link fuer seinen
@@ -210,11 +210,11 @@ class PartnerApi {
   }) async {
     final id = _pflicht(customerId, 'requestCustomerSignature', 'customerId');
     final d = await _t.rufen(Aufrufe.requestCustomerSignature,
-        params: <String, dynamic>{'customerId': id, 'art': art, 'weitere': weitere});
+        params: <String, dynamic>{'customerId': id, 'art': art, 'additional': weitere});
     return SignaturAntragErgebnis(
-      antrag: SignaturAntrag.aus(_verlangt(d['antrag'], 'requestCustomerSignature', 'antrag')),
-      wiederholt: alsJaNein(d['wiederholt']),
-      hinweis: alsTextOderNull(d['hinweis']),
+      antrag: SignaturAntrag.aus(_verlangt(d['request'], 'requestCustomerSignature', 'request')),
+      wiederholt: alsJaNein(d['replayed']),
+      hinweis: alsTextOderNull(d['note']),
     );
   }
 
@@ -254,18 +254,18 @@ class PartnerApi {
     final id = _pflicht(customerId, 'createCustomerCashregister', 'customerId');
     final d = await _t.rufen(Aufrufe.createCustomerCashregister, params: <String, dynamic>{
       'customerId': id,
-      'automatisch': automatisch,
-      'signaturId': signaturId,
+      'automatic': automatisch,
+      'signatureRequestId': signaturId,
     });
-    final ib = alsMap(d['inbetriebnahme']);
+    final ib = alsMap(d['activation']);
     final ok = ib['ok'];
     return NeueKasse(
-      kasse: Kasse.aus(_verlangt(d['kasse'], 'createCustomerCashregister', 'kasse')),
-      gestartet: alsJaNein(ib['gestartet']),
+      kasse: Kasse.aus(_verlangt(d['cashregister'], 'createCustomerCashregister', 'cashregister')),
+      gestartet: alsJaNein(ib['started']),
       // `null` heisst "nicht gelaufen" und ist etwas anderes als `false`.
       ok: ok is bool ? ok : null,
-      schritt: alsTextOderNull(ib['schritt']),
-      grund: alsTextOderNull(ib['grund']),
+      schritt: alsTextOderNull(ib['step']),
+      grund: alsTextOderNull(ib['reason']),
     );
   }
 
@@ -285,8 +285,8 @@ class PartnerApi {
     final d = await _t.rufen(Aufrufe.activateCashregister,
         params: <String, dynamic>{'customerId': kunde, 'cashregisterId': kasse});
     return KassenInbetriebnahme(
-      kasse: Kasse.aus(_verlangt(d['kasse'], 'activateCashregister', 'kasse')),
-      unveraendert: alsJaNein(d['unveraendert']),
+      kasse: Kasse.aus(_verlangt(d['cashregister'], 'activateCashregister', 'cashregister')),
+      unveraendert: alsJaNein(d['unchanged']),
     );
   }
 
@@ -343,8 +343,8 @@ class PartnerApi {
     final d = await _t.rufen(Aufrufe.createPartnerWebhook, params: <String, dynamic>{
       'url': adresse,
       'events': events,
-      'beschreibung': beschreibung,
-      'aktiv': aktiv,
+      'description': beschreibung,
+      'active': aktiv,
     });
     final secret = alsTextOderNull(d['secret']);
     if (secret == null || secret.isEmpty) {
@@ -411,7 +411,7 @@ class PartnerApi {
     return WebhookTestErgebnis(
       eventId: alsText(d['eventId']),
       ereignis: alsText(d['ereignis'], ereignis.isEmpty ? 'webhook.test' : ereignis),
-      zustellungen: alsListe(d['zustellungen']),
+      zustellungen: alsListe(d['deliveries']),
     );
   }
 
@@ -425,7 +425,7 @@ class PartnerApi {
     }
     final d = await _t.rufen(Aufrufe.listPartnerWebhookDeliveries,
         params: <String, dynamic>{'webhookId': webhookId, 'limit': limit});
-    return alsListe(d['zustellungen'])
+    return alsListe(d['deliveries'])
         .map((e) => WebhookZustellung.aus(alsMap(e)))
         .toList(growable: false);
   }

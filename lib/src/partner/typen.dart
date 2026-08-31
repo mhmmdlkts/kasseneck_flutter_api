@@ -84,8 +84,8 @@ class PartnerApp {
         platform: alsTextOderNull(a['platform']),
         platforms: alsTexte(a['platforms']),
         symbolUrl: alsTextOderNull(alsMap(a['symbol'])['url']),
-        veroeffentlichung: alsJaNein(a['veroeffentlichung']),
-        listungErlaubt: alsJaNein(a['listungErlaubt']),
+        veroeffentlichung: alsJaNein(a['published']),
+        listungErlaubt: alsJaNein(a['listingAllowed']),
       );
 
   /// Die `appId` fuer `createPartnerCustomer`.
@@ -138,12 +138,12 @@ class PartnerInfo {
     return PartnerInfo(
       partnerId: alsText(p['id']),
       name: alsText(p['name']),
-      status: alsText(p['status'], 'aktiv'),
+      status: alsText(p['status'], 'active'),
       // Fehlt das Feld, gilt NEIN. Eine Berechtigung, die man nicht
       // ausdruecklich hat, hat man nicht -- ein `true` aus Kulanz erzeugte
       // einen Aufruf, der `zugang_nicht_erlaubt` bekommt, und dabei entsteht
       // nichts, auch kein Betrieb.
-      darfZugangEinrichten: alsJaNein(p['darfZugangEinrichten']),
+      darfZugangEinrichten: alsJaNein(p['canCreateAccess']),
       env: envAus(d['env']),
       scopes: alsTexte(d['scopes']),
       key: PartnerSchluesselInfo.aus(alsMap(d['key'])),
@@ -188,17 +188,17 @@ class NeuerBetrieb {
   });
 
   factory NeuerBetrieb.aus(Map<String, dynamic> d, String appIdRueckfall) {
-    final zugang = alsMap(d['zugang']);
+    final zugang = alsMap(d['access']);
     return NeuerBetrieb(
       customerId: alsText(d['customerId']),
-      status: alsText(d['status'], 'angelegt'),
+      status: alsText(d['status'], 'created'),
       env: envAus(d['env']),
-      firma: alsText(d['firma']),
+      firma: alsText(d['companyName']),
       appId: alsText(d['appId'], appIdRueckfall),
-      eingeladen: alsJaNein(zugang['eingeladen']),
+      eingeladen: alsJaNein(zugang['invited']),
       sentTo: alsTextOderNull(zugang['sentTo']),
-      naechsteSchritte: alsTexte(d['naechsteSchritte']),
-      wiederholt: alsJaNein(d['wiederholt']),
+      naechsteSchritte: alsTexte(d['nextSteps']),
+      wiederholt: alsJaNein(d['replayed']),
     );
   }
 
@@ -245,8 +245,8 @@ class AvvStand {
     return AvvStand(
       status: alsText(a['status']),
       version: alsTextOderNull(a['version']),
-      bestaetigtAt: alsZahlOderNull(a['bestaetigtAt']),
-      modus: alsTextOderNull(a['modus']),
+      bestaetigtAt: alsZahlOderNull(a['confirmedAt']),
+      modus: alsTextOderNull(a['mode']),
     );
   }
 
@@ -270,7 +270,7 @@ class BetriebZeile {
 
   factory BetriebZeile.aus(Map<String, dynamic> k) => BetriebZeile(
         customerId: alsText(k['customerId']),
-        firma: alsText(k['firma']),
+        firma: alsText(k['companyName']),
         status: alsText(k['status']),
         appId: alsTextOderNull(k['appId']),
         env: envAus(k['env']),
@@ -298,11 +298,11 @@ class BetriebListe {
   const BetriebListe({required this.kunden, required this.cursor, required this.gesamt});
 
   factory BetriebListe.aus(Map<String, dynamic> d) => BetriebListe(
-        kunden: alsListe(d['kunden'])
+        kunden: alsListe(d['customers'])
             .map((e) => BetriebZeile.aus(alsMap(e)))
             .toList(growable: false),
         cursor: alsTextOderNull(d['cursor']),
-        gesamt: alsZahlOderNull(d['gesamt']) ?? 0,
+        gesamt: alsZahlOderNull(d['total']) ?? 0,
       );
 
   final List<BetriebZeile> kunden;
@@ -329,19 +329,19 @@ class Betrieb {
 
   factory Betrieb.aus(Map<String, dynamic> k) {
     final fon = alsMap(k['fon']);
-    final zugang = alsMapOderNull(k['zugang']);
+    final zugang = alsMapOderNull(k['access']);
     return Betrieb(
       zeile: BetriebZeile.aus(k),
       statusAt: alsZahlOderNull(k['statusAt']),
       liveEnabled: alsJaNein(k['liveEnabled']),
-      angelegtAt: alsZahlOderNull(k['angelegtAt']),
-      angelegtVia: alsTextOderNull(k['angelegtVia']),
-      stammdaten: alsMap(k['betrieb']),
-      fonEingerichtet: alsJaNein(fon['eingerichtet']),
+      angelegtAt: alsZahlOderNull(k['createdAt']),
+      angelegtVia: alsTextOderNull(k['createdVia']),
+      stammdaten: alsMap(k['business']),
+      fonEingerichtet: alsJaNein(fon['configured']),
       fonVerifiedAt: alsZahlOderNull(fon['verifiedAt']),
       zugangEmail: zugang == null ? null : alsTextOderNull(zugang['email']),
-      zugangEingeladenAt: zugang == null ? null : alsZahlOderNull(zugang['eingeladenAt']),
-      zugangAngenommenAt: zugang == null ? null : alsZahlOderNull(zugang['angenommenAt']),
+      zugangEingeladenAt: zugang == null ? null : alsZahlOderNull(zugang['invitedAt']),
+      zugangAngenommenAt: zugang == null ? null : alsZahlOderNull(zugang['acceptedAt']),
     );
   }
 
@@ -426,31 +426,31 @@ class SignaturAntrag {
   });
 
   factory SignaturAntrag.aus(Map<String, dynamic> a) {
-    final f = alsMapOderNull(a['fehler']);
+    final f = alsMapOderNull(a['error']);
     return SignaturAntrag(
       requestId: alsText(a['requestId']),
       status: alsText(a['status']),
       statusText: alsText(a['statusText']),
-      art: alsText(a['art'], 'signaturkarte'),
+      art: alsText(a['art'], 'signature_card'),
       vdaId: alsTextOderNull(a['vdaId']),
       signatureId: alsTextOderNull(a['signatureId']),
       fehler: f == null
           ? null
           : SignaturFehler(
               code: alsTextOderNull(f['code']),
-              meldung: alsTextOderNull(f['meldung']),
+              meldung: alsTextOderNull(f['message']),
               rc: alsTextOderNull(f['rc']),
             ),
-      angefordertVia: alsTextOderNull(a['angefordertVia']),
+      angefordertVia: alsTextOderNull(a['requestedVia']),
       createdAt: alsZahlOderNull(a['createdAt']),
       updatedAt: alsZahlOderNull(a['updatedAt']),
-      historie: alsListe(a['historie']).map((h) {
+      historie: alsListe(a['history']).map((h) {
         final e = alsMap(h);
         return SignaturHistorieEintrag(
           von: alsTextOderNull(e['von']),
           nach: alsText(e['nach']),
           at: alsZahlOderNull(e['at']) ?? 0,
-          grund: alsTextOderNull(e['grund']),
+          grund: alsTextOderNull(e['reason']),
         );
       }).toList(growable: false),
     );
@@ -490,17 +490,17 @@ class SignaturStand {
   });
 
   factory SignaturStand.aus(Map<String, dynamic> d) {
-    final s = alsMap(d['signatur']);
+    final s = alsMap(d['signature']);
     final fon = alsMap(d['fon']);
     return SignaturStand(
-      bereit: alsJaNein(s['bereit']),
+      bereit: alsJaNein(s['ready']),
       signatureId: alsTextOderNull(s['signatureId']),
       vdaId: alsTextOderNull(s['vdaId']),
-      antraege: alsListe(d['antraege'])
+      antraege: alsListe(d['requests'])
           .map((e) => SignaturAntrag.aus(alsMap(e)))
           .toList(growable: false),
-      fonVorhanden: alsJaNein(fon['vorhanden']),
-      fonGeprueftAt: alsZahlOderNull(fon['geprueftAt']),
+      fonVorhanden: alsJaNein(fon['present']),
+      fonGeprueftAt: alsZahlOderNull(fon['verifiedAt']),
     );
   }
 
@@ -557,29 +557,29 @@ class Kasse {
   });
 
   factory Kasse.aus(Map<String, dynamic> k) {
-    final f = alsMapOderNull(k['letzterFehler']);
+    final f = alsMapOderNull(k['lastError']);
     return Kasse(
       cashregisterId: alsText(k['cashregisterId']),
       name: alsTextOderNull(k['name']),
       status: alsText(k['status']),
       statusText: alsText(k['statusText']),
-      automatisch: alsJaNein(k['automatisch'], true),
-      schritt: alsTextOderNull(k['schritt']),
-      schrittText: alsTextOderNull(k['schrittText']),
-      erledigt: alsTexte(k['erledigt']),
-      schritte: alsListe(k['schritte']).map((s) {
+      automatisch: alsJaNein(k['automatic'], true),
+      schritt: alsTextOderNull(k['step']),
+      schrittText: alsTextOderNull(k['stepText']),
+      erledigt: alsTexte(k['completedSteps']),
+      schritte: alsListe(k['steps']).map((s) {
         final e = alsMap(s);
         return KassenSchritt(alsText(e['key']), alsText(e['text']));
       }).toList(growable: false),
       signatureId: alsTextOderNull(k['signatureId']),
-      versuche: alsZahlOderNull(k['versuche']) ?? 0,
+      versuche: alsZahlOderNull(k['attempts']) ?? 0,
       letzterFehler: f == null
           ? null
           : KassenFehler(
               code: alsTextOderNull(f['code']),
-              meldung: alsTextOderNull(f['meldung']),
+              meldung: alsTextOderNull(f['message']),
               rc: alsTextOderNull(f['rc']),
-              schritt: alsTextOderNull(f['schritt']),
+              schritt: alsTextOderNull(f['step']),
               at: alsZahlOderNull(f['at']),
             ),
       createdAt: alsZahlOderNull(k['createdAt']),
@@ -645,8 +645,8 @@ class KassenListe {
 
   factory KassenListe.aus(Map<String, dynamic> d, String rueckfall) => KassenListe(
         customerId: alsText(d['customerId'], rueckfall),
-        kassen: alsListe(d['kassen']).map((e) => Kasse.aus(alsMap(e))).toList(growable: false),
-        signaturBereit: alsJaNein(d['signaturBereit']),
+        kassen: alsListe(d['cashregisters']).map((e) => Kasse.aus(alsMap(e))).toList(growable: false),
+        signaturBereit: alsJaNein(d['signatureReady']),
       );
 
   final String customerId;
@@ -702,10 +702,10 @@ class BetriebZugangsdaten {
 
   factory BetriebZugangsdaten.aus(Map<String, dynamic> d, String rueckfall) => BetriebZugangsdaten(
         customerId: alsText(d['customerId'], rueckfall),
-        firma: alsText(d['firma']),
+        firma: alsText(d['companyName']),
         env: envAus(d['env']),
         apiKey: alsSecret('apiKey', d['apiKey']),
-        kassen: alsListe(d['kassen']).map((e) {
+        kassen: alsListe(d['cashregisters']).map((e) {
           final k = alsMap(e);
           return KassenZugang(
             cashregisterId: alsText(k['cashregisterId']),
@@ -714,7 +714,7 @@ class BetriebZugangsdaten {
             cashregisterToken: alsSecret('cashregisterToken', k['cashregisterToken']),
           );
         }).toList(growable: false),
-        hinweis: alsText(d['hinweis']),
+        hinweis: alsText(d['note']),
       );
 
   final String customerId;
