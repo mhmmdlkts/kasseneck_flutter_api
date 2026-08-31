@@ -16,8 +16,10 @@ abstract final class Aufrufe {
   static const activateCashregister = 'activateCashregister';
   static const createCustomerCashregister = 'createCustomerCashregister';
   static const createPartnerCustomer = 'createPartnerCustomer';
+  static const checkPartnerCustomerEmail = 'checkPartnerCustomerEmail';
   static const createPartnerWebhook = 'createPartnerWebhook';
   static const deletePartnerWebhook = 'deletePartnerWebhook';
+  static const rotatePartnerWebhookSecret = 'rotatePartnerWebhookSecret';
   static const getCustomerCredentials = 'getCustomerCredentials';
   static const getCustomerSignatureStatus = 'getCustomerSignatureStatus';
   static const getPartnerCustomer = 'getPartnerCustomer';
@@ -65,8 +67,10 @@ abstract final class Aufrufe {
     activateCashregister,
     createCustomerCashregister,
     createPartnerCustomer,
+    checkPartnerCustomerEmail,
     createPartnerWebhook,
     deletePartnerWebhook,
+    rotatePartnerWebhookSecret,
     getCustomerCredentials,
     getCustomerSignatureStatus,
     getPartnerCustomer,

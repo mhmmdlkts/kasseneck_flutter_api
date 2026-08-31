@@ -271,6 +271,42 @@ void main() {
     );
   });
 
+  test('checkPartnerCustomerEmail sagt nur ja oder nein', () async {
+    // Der Sinn ist der Zeitpunkt: ohne diese Frage fällt email_taken erst nach
+    // einem ganzen ausgefüllten Formular auf.
+    final f = stelle(<Map<String, dynamic>>[erfolg(<String, dynamic>{'available': true})]);
+    expect(await f.api.checkPartnerCustomerEmail('  Neu@Jobst.at '), isTrue);
+    expect(params(f.log.single), <String, dynamic>{'email': 'Neu@Jobst.at'});
+
+    // Alles außer einem ausdrücklichen `true` heißt NICHT frei — im Zweifel
+    // keine Zusage, sonst fährt der Aufrufer in ein email_taken.
+    final g = stelle(<Map<String, dynamic>>[erfolg(<String, dynamic>{})]);
+    expect(await g.api.checkPartnerCustomerEmail('x@y.at'), isFalse);
+
+    final h = stelle(<Map<String, dynamic>>[erfolg(<String, dynamic>{'available': true})]);
+    expect(() => h.api.checkPartnerCustomerEmail('   '), throwsA(isA<KasseneckValidationError>()));
+  });
+
+  test('rotatePartnerWebhookSecret behält den Endpunkt und bringt ein neues Secret', () async {
+    final f = stelle(<Map<String, dynamic>>[
+      erfolg(<String, dynamic>{
+        'webhook': <String, dynamic>{'webhookId': 'wh1', 'url': 'https://p.test/hook', 'events': <String>['webhook.test'], 'active': true},
+        'secret': 'whsec_neu',
+      })
+    ]);
+    final r = await f.api.rotatePartnerWebhookSecret('wh1');
+    expect(r.secret, 'whsec_neu');
+    expect(r.webhook.webhookId, 'wh1');
+    expect(params(f.log.single), <String, dynamic>{'webhookId': 'wh1'});
+
+    // Ohne Secret wäre der Wechsel nicht nachvollziehbar: dann lieber ein
+    // Fehler als ein Aufrufer, der weiter mit dem alten signiert.
+    final g = stelle(<Map<String, dynamic>>[
+      erfolg(<String, dynamic>{'webhook': <String, dynamic>{'webhookId': 'wh1'}})
+    ]);
+    expect(() => g.api.rotatePartnerWebhookSecret('wh1'), throwsA(isA<KasseneckValidationError>()));
+  });
+
   test('sendPartnerCustomerFonLink gibt den Empfänger maskiert zurück', () async {
     final f = stelle(<Map<String, dynamic>>[
       erfolg(<String, dynamic>{'customerId': 'cust_1', 'sentTo': 'c***@jobst.at', 'expiresAt': 123})
@@ -887,6 +923,8 @@ void main() {
       Aufrufe.deletePartnerWebhook,
       Aufrufe.sendPartnerWebhookTest,
       Aufrufe.listPartnerWebhookDeliveries,
+      Aufrufe.checkPartnerCustomerEmail,
+      Aufrufe.rotatePartnerWebhookSecret,
     ]) {
       expect(Aufrufe.alle, contains(name));
     }

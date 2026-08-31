@@ -5,6 +5,7 @@
     "cancelReceipt",
     "createCustomerCashregister",
     "createPartnerCustomer",
+    "checkPartnerCustomerEmail",
     "createPartnerWebhook",
     "createPaymentLinkStripe",
     "createPrintJob",
@@ -47,6 +48,7 @@
     "setMyRegisterDeviceSettings",
     "stripeCaptureIntent",
     "unpairRegisterDevice",
+    "rotatePartnerWebhookSecret",
     "updatePartnerWebhook"
   ],
   "enums": {

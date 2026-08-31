@@ -185,6 +185,23 @@ class PartnerApi {
     return FonLinkErgebnis.aus(d, id);
   }
 
+  /// Ist diese E-Mail-Adresse als Kasseneck-Zugang noch frei?
+  ///
+  /// Nur noetig, wenn der Betrieb einen eigenen Zugang zum Kundenpanel bekommen
+  /// soll (`access.invite: true`) -- dann wird die Adresse sein Login und darf
+  /// noch keines sein. Ohne Einladung ist eine belegte Adresse kein Hindernis.
+  ///
+  /// Der Sinn ist der Zeitpunkt: ohne diese Frage faellt `email_taken` erst
+  /// nach einem ganzen ausgefuellten Formular auf. Die Antwort sagt NUR ja oder
+  /// nein -- nie, wem die Adresse gehoert.
+  Future<bool> checkPartnerCustomerEmail(String email) async {
+    final adresse = _pflicht(email, 'checkPartnerCustomerEmail', 'email');
+    final d = await _t.rufen(Aufrufe.checkPartnerCustomerEmail, params: <String, dynamic>{'email': adresse});
+    // Alles ausser einem ausdruecklichen `true` heisst NICHT frei: im Zweifel
+    // keine Zusage, sonst faehrt der Aufrufer in ein email_taken.
+    return d['available'] == true;
+  }
+
   // -------------------------------------------------------------------------
   // Signatur
   // -------------------------------------------------------------------------
@@ -351,6 +368,28 @@ class PartnerApi {
       throw const KasseneckValidationError(
         'createPartnerWebhook',
         'Antwort enthaelt kein secret -- ohne es laesst sich keine Zustellung pruefen',
+        'response',
+      );
+    }
+    return NeuerWebhook(webhook: PartnerWebhook.aus(alsMap(d['webhook'])), secret: secret);
+  }
+
+  /// Ein neues Secret fuer denselben Endpunkt.
+  ///
+  /// Der Webhook behaelt seine `webhookId` und seine Ereignisse -- nur das
+  /// Geheimnis wechselt. Wer stattdessen loescht und neu anlegt, verliert die
+  /// Zustellungshistorie und muss die Ereignisse neu ankreuzen.
+  ///
+  /// Das alte Secret gilt ab der Antwort NICHT mehr: die naechste Zustellung
+  /// ist schon mit dem neuen signiert. Erst speichern, dann weiterarbeiten.
+  Future<NeuerWebhook> rotatePartnerWebhookSecret(String webhookId) async {
+    final id = _pflicht(webhookId, 'rotatePartnerWebhookSecret', 'webhookId');
+    final d = await _t.rufen(Aufrufe.rotatePartnerWebhookSecret, params: <String, dynamic>{'webhookId': id});
+    final secret = alsTextOderNull(d['secret']);
+    if (secret == null || secret.isEmpty) {
+      throw const KasseneckValidationError(
+        'rotatePartnerWebhookSecret',
+        'Antwort enthaelt kein secret -- dann waere der Wechsel nicht nachvollziehbar',
         'response',
       );
     }
