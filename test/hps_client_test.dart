@@ -272,6 +272,13 @@ void main() {
       expect(HpsHttpException(503, 'down').isTerminalBusy, isFalse);
       expect(HpsHttpException(400, 'bad').isTerminalBusy, isFalse);
     });
+
+    test('HpsHttpException.isNotFound erkennt nur 404', () {
+      expect(HpsHttpException(404, 'Not Found').isNotFound, isTrue);
+      expect(HpsHttpException.notFoundStatusCode, 404);
+      expect(HpsHttpException(409, 'Terminal is busy').isNotFound, isFalse);
+      expect(HpsHttpException(400, 'bad').isNotFound, isFalse);
+    });
   });
 
   group('close()', () {
