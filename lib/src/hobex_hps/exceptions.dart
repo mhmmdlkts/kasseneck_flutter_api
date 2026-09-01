@@ -55,6 +55,15 @@ class HpsHttpException extends HpsException {
   /// ([terminalBusyStatusCode]).
   bool get isTerminalBusy => statusCode == terminalBusyStatusCode;
 
+  /// HTTP `404` beim Abbruch. Am Testgeraet 3600335 (Firmware 7.3.6) kam dort
+  /// immer HTTP 200 mit `0` bzw. `100010`; am Produktivterminal 3556988 kam
+  /// am 28.08.2026 in allen Faellen ein 404.
+  ///
+  /// Was das heisst, ist UNGEMESSEN: es kann "diesen Vorgang kenne ich nicht"
+  /// heissen oder "diesen Endpunkt gibt es hier nicht". Deshalb benennt der
+  /// Nachweistext beide Lesarten und behauptet keine.
+  bool get isNotFound => statusCode == 404;
+
   @override
   String toString() => 'HpsHttpException($statusCode): $message';
 }
