@@ -62,7 +62,10 @@ class HpsHttpException extends HpsException {
   /// Was das heisst, ist UNGEMESSEN: es kann "diesen Vorgang kenne ich nicht"
   /// heissen oder "diesen Endpunkt gibt es hier nicht". Deshalb benennt der
   /// Nachweistext beide Lesarten und behauptet keine.
-  bool get isNotFound => statusCode == 404;
+  static const int notFoundStatusCode = 404;
+
+  /// `true`, wenn dies der HTTP-Status aus [notFoundStatusCode] ist.
+  bool get isNotFound => statusCode == notFoundStatusCode;
 
   @override
   String toString() => 'HpsHttpException($statusCode): $message';
