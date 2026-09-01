@@ -630,9 +630,14 @@ class HpsPayments {
       // Der Text darf keine Ursache behaupten, die nicht feststeht: [steps]
       // ist der Nachweis, der im Belastungsstreit angezeigt wird. Ein
       // Leitungsabriss, eine Zeitueberschreitung oder eine unlesbare Antwort
-      // belegen ueber den Vorgang gar nichts.
-      steps.add('Abbruch nicht bestaetigt ($e) -- ob er wirkte, ist offen, '
-          'Ausgang wird abgefragt');
+      // belegen ueber den Vorgang gar nichts. Ein 404 ist enger als das --
+      // aber auch er hat zwei Lesarten, und wir kennen die richtige nicht.
+      steps.add(e is HpsHttpException && e.isNotFound
+          ? 'Abbruch nicht bestaetigt (HTTP 404) -- das Terminal kennt '
+              'entweder diesen Vorgang nicht oder den Abbruch-Endpunkt nicht; '
+              'beides sagt nichts ueber die Zahlung, Ausgang wird abgefragt'
+          : 'Abbruch nicht bestaetigt ($e) -- ob er wirkte, ist offen, '
+              'Ausgang wird abgefragt');
       _noteUnexpected(e, id);
       return null;
     }
