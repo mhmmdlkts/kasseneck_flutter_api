@@ -63,10 +63,26 @@ class KeckTip {
   /// Aufteilung auf Kassen-Benutzer. Ohne Angabe: angemeldeter Benutzer.
   final List<KeckTipRecipient>? recipients;
 
+  /// Hat der Empfänger das Geld schon? `true` = ja (Bargeld mitgenommen,
+  /// Kartentrinkgeld sofort aus der Lade ausgezahlt), `false` = der Betrieb
+  /// behält es und schuldet es.
+  ///
+  /// Entscheidend ist **nicht die Zahlart**, sondern der Besitz — § 2j Abs 2
+  /// AVRAG kennt beide Fälle. Ohne Angabe gilt die Voreinstellung des Betriebs
+  /// (bar: schon erhalten, bargeldlos: einbehalten); das ist der Normalfall,
+  /// und diese Angabe braucht es nur für die Ausnahme.
+  ///
+  /// **Nur mit dem Recht `tipAssign`** bei persönlicher Anmeldung: das Merkmal
+  /// entscheidet, ob der Betrieb Geld schuldet, und gewöhnliches Personal soll
+  /// das nicht am Gerät umstellen können. Über einen Geräte-API-Schlüssel
+  /// (ohne angemeldeten Kassen-Benutzer) gilt die Einschränkung nicht.
+  final bool? sofortErhalten;
+
   const KeckTip({
     required this.cents,
     this.paymentMethod,
     this.recipients,
+    this.sofortErhalten,
   });
 
   /// Komfort-Konstruktor mit Betrag in **Euro** (einmalige Rundung auf Cent).
@@ -74,11 +90,13 @@ class KeckTip {
     required double amount,
     KeckPaymentMethod? paymentMethod,
     List<KeckTipRecipient>? recipients,
+    bool? sofortErhalten,
   }) {
     return KeckTip(
       cents: (amount * 100).round(),
       paymentMethod: paymentMethod,
       recipients: recipients,
+      sofortErhalten: sofortErhalten,
     );
   }
 
@@ -87,10 +105,12 @@ class KeckTip {
     String registerUserId, {
     required int cents,
     KeckPaymentMethod? paymentMethod,
+    bool? sofortErhalten,
   }) {
     return KeckTip(
       cents: cents,
       paymentMethod: paymentMethod,
+      sofortErhalten: sofortErhalten,
       recipients: [
         KeckTipRecipient(registerUserId: registerUserId, cents: cents),
       ],
@@ -148,5 +168,9 @@ class KeckTip {
         if (paymentMethod != null) 'paymentMethod': paymentMethod!.name,
         if (recipients != null)
           'recipients': recipients!.map((r) => r.toJson()).toList(),
+        // Nur mitschicken, wenn gesetzt: fehlt das Feld, entscheidet die
+        // Voreinstellung des Betriebs. Ein `false` wäre dort eine Aussage,
+        // kein Weglassen.
+        if (sofortErhalten != null) 'sofortErhalten': sofortErhalten,
       };
 }
