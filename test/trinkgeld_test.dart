@@ -215,4 +215,45 @@ void main() {
       expect(ReceiptType.start.allowsTip, isFalse);
     });
   });
+
+  _trinkgeldMerkmalTests();
+}
+
+/// Das Merkmal „hat sie das Geld schon?" (Kasseneck-Spec § 4.1).
+///
+/// Entscheidend ist nicht die Zahlart, sondern der Besitz: Bargeld kann in der
+/// Lade bleiben, Kartentrinkgeld kann sofort bar ausgezahlt werden — § 2j Abs 2
+/// AVRAG kennt beide Fälle. Ohne Angabe entscheidet die Voreinstellung des
+/// Betriebs; deshalb darf das Feld nicht mitgeschickt werden, wenn es niemand
+/// gesetzt hat.
+void _trinkgeldMerkmalTests() {
+  group('KeckTip — sofortErhalten', () {
+    test('ohne Angabe steht das Feld NICHT in der Nutzlast', () {
+      // Sonst wäre „nichts gesagt" plötzlich eine Aussage, und die
+      // Voreinstellung des Betriebs käme nie zum Zug.
+      expect(const KeckTip(cents: 200).toJson().containsKey('sofortErhalten'),
+          isFalse);
+    });
+
+    test('true und false werden beide mitgeschickt', () {
+      expect(const KeckTip(cents: 200, sofortErhalten: true).toJson(),
+          containsPair('sofortErhalten', true));
+      expect(const KeckTip(cents: 200, sofortErhalten: false).toJson(),
+          containsPair('sofortErhalten', false));
+    });
+
+    test('die Komfort-Konstruktoren reichen es durch', () {
+      expect(KeckTip.euro(amount: 2.0, sofortErhalten: true).sofortErhalten,
+          isTrue);
+      expect(
+          KeckTip.fuer('ru_7', cents: 200, sofortErhalten: false).toJson(),
+          containsPair('sofortErhalten', false));
+    });
+
+    test('es berührt die Prüfungen nicht', () {
+      // Das Merkmal sagt nichts über die Richtigkeit des Betrags aus.
+      expect(const KeckTip(cents: 200, sofortErhalten: true).isValid, isTrue);
+      expect(const KeckTip(cents: 0, sofortErhalten: true).isValid, isFalse);
+    });
+  });
 }
