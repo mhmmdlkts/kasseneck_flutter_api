@@ -1,5 +1,5 @@
 {
-  "hinweis": "Erzeugt aus lib/src/kasse/thema.dart, aus den Rollen von kreiseck_design (Modus je Stil), Betriebsfarbe bewusst nicht. Die Browser-Kasse liest dieselben Werte, damit App und Browser nicht auseinanderlaufen.",
+  "hinweis": "Erzeugt aus lib/src/kasse/thema.dart, aus den Rollen von kreiseck_design (Modus je Stil), Betriebsfarbe bewusst nicht. Die Browser-Kasse liest dieselben Werte, damit App und Browser nicht auseinanderlaufen. Erzeugt gegen kreiseck_design dfe4a27 (bis zur Veröffentlichung; danach die Version).",
   "schriftfaktoren": {
     "S": 0.9,
     "M": 1.0,

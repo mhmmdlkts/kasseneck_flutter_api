@@ -42,7 +42,8 @@ Map<String, dynamic> stilWerte(Kassenthema t) => {
 Map<String, dynamic> jetzigesThema() => {
       'hinweis': 'Erzeugt aus lib/src/kasse/thema.dart, aus den Rollen von kreiseck_design '
           '(Modus je Stil), Betriebsfarbe bewusst nicht. Die Browser-Kasse liest dieselben '
-          'Werte, damit App und Browser nicht auseinanderlaufen.',
+          'Werte, damit App und Browser nicht auseinanderlaufen. Erzeugt gegen kreiseck_design '
+          'dfe4a27 (bis zur Veröffentlichung; danach die Version).',
       'schriftfaktoren': {for (final e in schriftfaktoren.entries) e.key.wert: e.value},
       'kachelhoehen': {for (final e in kachelhoehen.entries) e.key.wert: e.value},
       'kachelhoeheRegel': 'kachelhoehen[hoehe] * schriftfaktoren[schrift] — eine Kachel ist '
