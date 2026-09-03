@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/kasse.dart';
+import 'package:kreiseck_design/kreiseck_design.dart';
 
 /// Das Kassenthema: vier Stile, eine Betriebsfarbe, vier Schriftgrößen.
 ///
@@ -11,7 +12,48 @@ KasseSettingsBetrieb betriebMit(Map<String, dynamic> g) => KasseSettings.aus({'b
 
 Kassenthema themaMit(Map<String, dynamic> g) => Kassenthema.aus(betriebMit(g));
 
+/// Ein Betrieb mit Standardwerten, nur der Stil gesetzt.
+KasseSettingsBetrieb betrieb(KasseStil stil) => betriebMit({'stil': stil.name});
+
+/// `Farbe.ausHex` mit einem Ersatzwert, der in diesen Tests nie greifen soll
+/// — jeder hier verwendete Hex-Code ist gültig. `ersatz` ist seit 6.0.0
+/// Pflicht (kein stillschweigendes Panel-Blau mehr).
+Farbe hex(String h) => Farbe.ausHex(h, ersatz: const Farbe(0xFF, 0x00, 0xFF));
+
 void main() {
+  group('Design-System', () {
+    test('jeder Stil bildet auf einen Modus des Design-Systems ab', () {
+      expect(Kassenthema.aus(betrieb(KasseStil.klar)).modus, KdMode.light);
+      expect(Kassenthema.aus(betrieb(KasseStil.warm)).modus, KdMode.warm);
+      expect(Kassenthema.aus(betrieb(KasseStil.nacht)).modus, KdMode.dark);
+      expect(Kassenthema.aus(betrieb(KasseStil.kontrast)).modus, KdMode.contrast);
+    });
+
+    test('die Farben sind die Rollen des Design-Systems, keine eigenen Tabellen', () {
+      final t = Kassenthema.aus(betrieb(KasseStil.nacht));
+      expect(t.grund.hex.toUpperCase(), '#131B1B'); // #131B1B – die Ziffern der Paragraphennummer
+      expect(t.marke.hex.toUpperCase(), '#139E9B'); // brand-500 im Dunkeln
+      expect(t.aufMarke.hex.toUpperCase(), '#131B1B'); // on-brand dunkel
+      final k = Kassenthema.aus(betrieb(KasseStil.klar));
+      expect(k.text.hex.toUpperCase(), '#132A2A');
+    });
+
+    test('der Kontrast-Stil schärft Ränder, nicht Radien', () {
+      final t = Kassenthema.aus(betrieb(KasseStil.kontrast));
+      expect(t.linie, 2);
+      expect(t.radiusKlein, 10);
+      expect(t.radius, 14);
+      expect(t.schattenTiefe, 0);
+    });
+
+    test('hell folgt den Farben, nicht der Aufzählung', () {
+      for (final stil in KasseStil.values) {
+        final t = themaMit({'stil': stil.name});
+        expect(t.hell, t.text.helligkeit < t.grund.helligkeit, reason: stil.name);
+      }
+    });
+  });
+
   group('Stile', () {
     test('klar ist die Vorgabe: heller Grund, dunkler Text', () {
       final t = themaMit({});
@@ -27,7 +69,7 @@ void main() {
       final t = themaMit({'stil': 'nacht'});
       expect(t.hell, isFalse);
       expect(t.grund.helligkeit, lessThan(0.15));
-      expect(t.grund, isNot(Farbe.ausHex('#000000')));
+      expect(t.grund, isNot(hex('#000000')));
       expect(t.text.helligkeit, greaterThan(0.8));
     });
 
@@ -39,18 +81,19 @@ void main() {
       expect(warm.grund.r - warm.grund.b, greaterThan(klar.grund.r - klar.grund.b));
     });
 
-    test('kontrast ändert mehr als Farben', () {
+    test('kontrast schärft Linien und nimmt Schatten, lässt Radien in Ruhe', () {
       // Er ist ein Stil für schwache Augen, kein Farbschema: dickere Linien,
-      // kleinere Radien, keine Schatten. Wer nur die Farben tauscht, hat ihn
-      // nicht verstanden.
+      // keine Schatten. Radien bleiben unverändert — das unterscheidet ihn
+      // von einem reinen Farbtausch, ohne die Kasse in der Form zu verstellen.
       final klar = themaMit({});
       final k = themaMit({'stil': 'kontrast'});
 
-      expect(k.text, Farbe.ausHex('#000000'));
-      expect(k.flaeche, Farbe.ausHex('#FFFFFF'));
+      expect(k.text, hex('#000000'));
+      expect(k.grund, hex('#FFFFFF'));
+      expect(k.flaeche, hex('#FFFFFF'));
       expect(k.linie, greaterThan(klar.linie));
-      expect(k.radius, lessThan(klar.radius));
-      expect(k.radiusKlein, lessThan(klar.radiusKlein));
+      expect(k.radius, klar.radius);
+      expect(k.radiusKlein, klar.radiusKlein);
       expect(k.schattenTiefe, 0.0);
     });
 
@@ -63,6 +106,33 @@ void main() {
         expect(kontrast(t.text, t.flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: Text auf Flaeche');
         // Nebentext darf leiser sein, aber nicht unlesbar.
         expect(kontrast(t.leise, t.flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: Nebentext');
+      }
+    });
+  });
+
+  group('Kontrastzusage', () {
+    // Die eingeschränkte Zusage aus der Klassendoku, wörtlich als Test: die
+    // Bedeutungsfarben und die Marke stehen laut Design-System nicht auf
+    // flaecheHoch (Kopfzeile, aktives Feld) — dort steht text/leise.
+    test('text und leise halten 4,5:1 auf grund, flaeche und flaecheHoch', () {
+      for (final stil in KasseStil.values) {
+        final t = themaMit({'stil': stil.name});
+        for (final MapEntry(key: name, value: flaeche) in {'grund': t.grund, 'flaeche': t.flaeche, 'flaecheHoch': t.flaecheHoch}.entries) {
+          expect(kontrast(t.text, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: text auf $name');
+          expect(kontrast(t.leise, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: leise auf $name');
+        }
+      }
+    });
+
+    test('Bedeutungsfarben und Marke halten 4,5:1 auf grund und flaeche', () {
+      for (final stil in KasseStil.values) {
+        final t = themaMit({'stil': stil.name});
+        for (final MapEntry(key: name, value: flaeche) in {'grund': t.grund, 'flaeche': t.flaeche}.entries) {
+          expect(kontrast(t.gut, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: gut auf $name');
+          expect(kontrast(t.warnung, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: warnung auf $name');
+          expect(kontrast(t.fehler, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: fehler auf $name');
+          expect(kontrast(t.marke, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: marke auf $name');
+        }
       }
     });
   });
@@ -86,8 +156,9 @@ void main() {
       // Sie bleibt im Datenmodell (Panel und Rechnungs-PDF lesen sie), aber
       // die Knöpfe der Kasse gehören zum Produkt. Damit kann auch ein
       // Tippfehler aus dem Panel hier nichts mehr anrichten.
+      final vorgabe = themaMit({}).marke;
       for (final wert in ['#1B46F5', '#FFE066', '', 'blau', '#12345']) {
-        expect(themaMit({'farbe': wert}).marke, markenfarbe, reason: wert);
+        expect(themaMit({'farbe': wert}).marke, vorgabe, reason: wert);
       }
     });
 
@@ -135,35 +206,35 @@ void main() {
 
   group('Farbe', () {
     test('liest #RRGGBB', () {
-      final f = Farbe.ausHex('#1B46F5');
+      final f = hex('#1B46F5');
       expect(f.r, 0x1B);
       expect(f.g, 0x46);
       expect(f.b, 0xF5);
     });
 
     test('mischt zwei Farben', () {
-      expect(Farbe.ausHex('#000000').gemischt(Farbe.ausHex('#FFFFFF'), 0.5).r, 128);
-      expect(Farbe.ausHex('#000000').gemischt(Farbe.ausHex('#FFFFFF'), 0), Farbe.ausHex('#000000'));
-      expect(Farbe.ausHex('#000000').gemischt(Farbe.ausHex('#FFFFFF'), 1), Farbe.ausHex('#FFFFFF'));
+      expect(hex('#000000').gemischt(hex('#FFFFFF'), 0.5).r, 128);
+      expect(hex('#000000').gemischt(hex('#FFFFFF'), 0), hex('#000000'));
+      expect(hex('#000000').gemischt(hex('#FFFFFF'), 1), hex('#FFFFFF'));
     });
 
     test('Kontrast: Schwarz auf Weiß ist der Höchstwert 21', () {
-      expect(kontrast(Farbe.ausHex('#000000'), Farbe.ausHex('#FFFFFF')), closeTo(21, 0.1));
-      expect(kontrast(Farbe.ausHex('#FFFFFF'), Farbe.ausHex('#FFFFFF')), closeTo(1, 0.01));
+      expect(kontrast(hex('#000000'), hex('#FFFFFF')), closeTo(21, 0.1));
+      expect(kontrast(hex('#FFFFFF'), hex('#FFFFFF')), closeTo(1, 0.01));
     });
 
     test('als Hex zurück', () {
-      expect(Farbe.ausHex('#1b46f5').hex, '#1B46F5');
+      expect(hex('#1b46f5').hex, '#1B46F5');
     });
   });
 
   group('freie Farbwahl', () {
     test('HSV ergibt die erwarteten Ecken', () {
-      expect(farbeAusHsv(0, 1, 1), Farbe.ausHex('#FF0000'));
-      expect(farbeAusHsv(120, 1, 1), Farbe.ausHex('#00FF00'));
-      expect(farbeAusHsv(240, 1, 1), Farbe.ausHex('#0000FF'));
-      expect(farbeAusHsv(0, 0, 1), Farbe.ausHex('#FFFFFF'));
-      expect(farbeAusHsv(0, 0, 0), Farbe.ausHex('#000000'));
+      expect(farbeAusHsv(0, 1, 1), hex('#FF0000'));
+      expect(farbeAusHsv(120, 1, 1), hex('#00FF00'));
+      expect(farbeAusHsv(240, 1, 1), hex('#0000FF'));
+      expect(farbeAusHsv(0, 0, 1), hex('#FFFFFF'));
+      expect(farbeAusHsv(0, 0, 0), hex('#000000'));
     });
 
     test('der Farbton läuft rundherum weiter', () {
@@ -174,13 +245,13 @@ void main() {
     test('eine zu blasse Farbe taugt nicht als Marke', () {
       // Sie ergäbe einen Knopf, der auf weißem Grund verschwindet — und das
       // merkt der Chef erst am Tresen.
-      expect(markeTaugt(Farbe.ausHex('#FFF9C4')), isFalse);
-      expect(markeTaugt(Farbe.ausHex('#FFFFFF')), isFalse);
+      expect(markeTaugt(hex('#FFF9C4')), isFalse);
+      expect(markeTaugt(hex('#FFFFFF')), isFalse);
     });
 
     test('kräftige Farben taugen — auch helle wie Orange', () {
-      for (final hex in ['#1B46F5', '#0F7B4F', '#B3261E', '#C2410C', '#000000']) {
-        expect(markeTaugt(Farbe.ausHex(hex)), isTrue, reason: hex);
+      for (final code in ['#1B46F5', '#0F7B4F', '#B3261E', '#C2410C', '#000000']) {
+        expect(markeTaugt(hex(code)), isTrue, reason: code);
       }
     });
   });
@@ -191,20 +262,23 @@ void main() {
       // je Betrieb umfärben kann, bekommt Kassen, die einander nicht mehr
       // ähneln — und eine Hausfarbe, die auf einem Knopf nicht mehr lesbar
       // ist, merkt niemand vor dem Tresen.
+      final vorgabe = themaMit({}).marke;
       final eigen = themaMit({'farbe': '#B3261E'});
-      expect(eigen.marke.hex.toUpperCase(), '#116B6B');
-      expect(themaMit({}).marke.hex.toUpperCase(), '#116B6B');
+      expect(eigen.marke, vorgabe);
+      expect(vorgabe.hex.toUpperCase(), '#136B6B');
     });
 
     test('im Nachtstil wird sie aufgehellt, bleibt aber die Marke', () {
-      // Ein sattes Petrol auf fast schwarzem Grund ist kaum zu sehen.
+      // Ein sattes Petrol auf fast schwarzem Grund ist kaum zu sehen — die
+      // Rolle des Design-Systems hellt sie im Dunkeln von sich aus auf.
+      final klar = themaMit({});
       final nacht = themaMit({'stil': 'nacht'});
-      expect(nacht.marke.hex, isNot('#116B6B'));
+      expect(nacht.marke.helligkeit, greaterThan(klar.marke.helligkeit));
       expect(nacht.marke.g, greaterThan(nacht.marke.r));
     });
 
     test('und sie traegt lesbare Schrift', () {
-      expect(markeTaugt(const Farbe(0x11, 0x6B, 0x6B)), isTrue);
+      expect(markeTaugt(themaMit({}).marke), isTrue);
     });
   });
 }

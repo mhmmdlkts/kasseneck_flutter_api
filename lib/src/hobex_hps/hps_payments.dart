@@ -112,10 +112,9 @@ class HpsPayments {
     this.maxTransportFailures = 3,
     Future<void> Function(Duration)? sleep,
     Stopwatch Function()? clock,
-    HpsObserver? observer,
+    this._observer,
   })  : _sleep = sleep ?? _realSleep,
-        _clock = clock ?? Stopwatch.new,
-        _observer = observer;
+        _clock = clock ?? Stopwatch.new;
 
   final HpsClient _client;
 

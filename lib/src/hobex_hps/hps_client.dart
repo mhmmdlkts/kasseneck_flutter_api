@@ -28,12 +28,11 @@ class HpsClient {
     this.defaultLanguage,
     this.timeout = const Duration(minutes: 3),
     http.Client? httpClient,
-    HpsObserver? observer,
+    this._observer,
   })  : baseUrl = baseUrl ?? Uri.parse('http://127.0.0.1:8080'),
         tid = _normalizeTid(tid),
         _http = httpClient,
-        _ownsHttpClient = httpClient == null,
-        _observer = observer;
+        _ownsHttpClient = httpClient == null;
 
   /// Base URL of the HPS. Defaults to `http://127.0.0.1:8080`.
   final Uri baseUrl;
@@ -251,7 +250,7 @@ class HpsClient {
     final uri = _uri('api/transaction/payment/$tid/$transactionId', {
       'amount': amount.toString(),
       'currency': currency ?? defaultCurrency,
-      if (lang != null) 'language': lang,
+      'language': ?lang,
       if (technicalCancel) 'technicalCancel': 'true',
     });
     return _sendTransactionUri('DELETE', uri, null);

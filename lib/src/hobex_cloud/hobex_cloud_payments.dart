@@ -93,10 +93,9 @@ class HobexCloudPayments {
     this.maxTransportFailures = 3,
     Future<void> Function(Duration)? sleep,
     Stopwatch Function()? clock,
-    HpsObserver? observer,
+    this._observer,
   })  : _sleep = sleep ?? ((d) => Future<void>.delayed(d)),
-        _clock = clock ?? Stopwatch.new,
-        _observer = observer;
+        _clock = clock ?? Stopwatch.new;
 
   final KasseneckApi _api;
 

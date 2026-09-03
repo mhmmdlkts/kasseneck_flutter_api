@@ -337,7 +337,7 @@ class RegisterClient {
     final daten = await _rufen(name, {
       'code': code,
       if (takeover) 'takeover': true,
-      if (label != null) 'label': label,
+      'label': ?label,
       if (client != null) 'client': client.toJson(),
       if (geo != null) 'geo': geo.toJson(),
     });

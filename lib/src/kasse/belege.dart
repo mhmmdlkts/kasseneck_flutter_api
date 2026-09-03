@@ -207,8 +207,8 @@ class RegisterReceiptClient {
         if (trinkgeldCents != null && trinkgeldCents > 0) 'tip': trinkgeldCents,
         if (kundendaten != null && kundendaten.isNotEmpty) 'customerDetails': kundendaten.join('\n'),
         if (rechtshinweise != null && rechtshinweise.isNotEmpty) 'legalMessage': rechtshinweise.join('\n'),
-        if (kartenzahlungId != null) 'cardPaymentId': kartenzahlungId,
-        if (kartenzahlungsdaten != null) 'cardPaymentData': kartenzahlungsdaten,
+        'cardPaymentId': ?kartenzahlungId,
+        'cardPaymentData': ?kartenzahlungsdaten,
       },
       frist: abschlussFrist,
     );

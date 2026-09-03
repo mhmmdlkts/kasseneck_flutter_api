@@ -9,8 +9,9 @@
 /// * `nacht` — Taxi und Bar. Tief, aber **nicht schwarz**: reines Schwarz
 ///   flimmert auf OLED beim Blättern und macht jeden Rand hart.
 /// * `kontrast` — grelles Licht oder schwache Augen. Er ändert deshalb mehr
-///   als Farben: dickere Linien, kleinere Radien, keine Schatten. Wer nur die
-///   Farben tauscht, hat ihn nicht verstanden.
+///   als Farben: schärfere Linien (2 px), keine Schatten. Die Radien bleiben
+///   — sie kommen aus dem Design-System und sind in jedem Modus gleich. Wer
+///   nur die Farben tauscht, hat ihn nicht verstanden.
 ///
 /// **Die Betriebsfarbe ist für Handlungen da, nicht für Schmuck.** Sie sitzt
 /// auf dem Knopf, den der Kassier sucht, und auf der Auswahl, die gerade gilt
@@ -18,132 +19,33 @@
 /// unabhängig: ein Betrieb mit roter Hausfarbe darf keine Kasse bekommen, in
 /// der jeder Knopf nach Fehler aussieht.
 ///
-/// Jede Farbpaarung dieser Datei hält 4,5:1 nach WCAG — die Schwelle für
-/// Fließtext. Auch für den großen Betrag, denn der wird oft schräg und in
-/// schlechtem Licht gelesen.
+/// **Die Textfarben halten 4,5:1 nach WCAG — die Schwelle für Fließtext —
+/// überall, wo sie stehen; Bedeutungsfarben und Marke nur dort, wo sie
+/// stehen.** Konkret: `text` und `leise` halten 4,5:1 auf `grund`, `flaeche`
+/// und `flaecheHoch`. Bedeutungsfarben (`gut`, `warnung`, `fehler`) und
+/// `marke` halten 4,5:1 auf `grund` und `flaeche` — sie stehen laut
+/// Design-System nicht auf `flaecheHoch` (Kopfzeile, aktives Feld); dort
+/// steht `text`/`leise`. Auch für den großen Betrag, denn der wird oft
+/// schräg und in schlechtem Licht gelesen.
+///
+/// Farbe, Form und Modi kommen aus `kreiseck_design`; dieses Thema bleibt eine
+/// dünne Sicht darauf plus das Kassen-Fach (Kachelhöhe, Spalten, Kachelstil,
+/// Emoji, Kategoriefarben, Schriftfaktor).
 library;
+
+import 'package:kreiseck_design/kreiseck_design.dart';
 
 import 'einstellungen.dart';
 import 'farbe.dart';
 
-/// Die Grundfarben eines Stils. Sie beschreiben Rollen, keine Farbnamen: was
-/// „Fläche" ist, entscheidet der Stil.
-class Stilfarben {
-  const Stilfarben({
-    required this.grund,
-    required this.flaeche,
-    required this.flaecheHoch,
-    required this.text,
-    required this.leise,
-    required this.rand,
-    required this.strich,
-    required this.gut,
-    required this.gutHell,
-    required this.warnung,
-    required this.warnungHell,
-    required this.fehler,
-    required this.fehlerHell,
-  });
-
-  /// Der Hintergrund der Seite.
-  final Farbe grund;
-
-  /// Karten, Panels, alles, was auf dem Grund liegt.
-  final Farbe flaeche;
-
-  /// Hervorgehobene Fläche: Kopfzeile, aktives Eingabefeld.
-  final Farbe flaecheHoch;
-
-  final Farbe text;
-
-  /// Nebentext — leiser, aber nie unlesbar.
-  final Farbe leise;
-
-  /// Umrandung.
-  final Farbe rand;
-
-  /// Trennlinie; leichter als [rand].
-  final Farbe strich;
-
-  final Farbe gut;
-  final Farbe gutHell;
-  final Farbe warnung;
-  final Farbe warnungHell;
-  final Farbe fehler;
-  final Farbe fehlerHell;
-}
-
-const _klar = Stilfarben(
-  grund: Farbe(0xF1, 0xF4, 0xF9),
-  flaeche: Farbe(0xFF, 0xFF, 0xFF),
-  flaecheHoch: Farbe(0xF8, 0xFA, 0xFD),
-  text: Farbe(0x10, 0x18, 0x28),
-  leise: Farbe(0x53, 0x5E, 0x74),
-  rand: Farbe(0xD3, 0xDA, 0xE6),
-  strich: Farbe(0xE6, 0xEA, 0xF1),
-  gut: Farbe(0x0B, 0x6B, 0x43),
-  gutHell: Farbe(0xE3, 0xF3, 0xEA),
-  warnung: Farbe(0x8A, 0x42, 0x04),
-  warnungHell: Farbe(0xFD, 0xEF, 0xDC),
-  fehler: Farbe(0xA8, 0x1C, 0x16),
-  fehlerHell: Farbe(0xFB, 0xE9, 0xE7),
-);
-
-const _warm = Stilfarben(
-  grund: Farbe(0xF5, 0xF0, 0xE8),
-  flaeche: Farbe(0xFF, 0xFD, 0xF9),
-  flaecheHoch: Farbe(0xFA, 0xF6, 0xEE),
-  text: Farbe(0x2A, 0x21, 0x17),
-  leise: Farbe(0x64, 0x58, 0x4A),
-  rand: Farbe(0xDE, 0xD4, 0xC5),
-  strich: Farbe(0xED, 0xE6, 0xDA),
-  gut: Farbe(0x0B, 0x63, 0x3E),
-  gutHell: Farbe(0xE6, 0xF1, 0xE4),
-  warnung: Farbe(0x83, 0x3D, 0x03),
-  warnungHell: Farbe(0xFA, 0xEE, 0xDA),
-  fehler: Farbe(0xA0, 0x1B, 0x14),
-  fehlerHell: Farbe(0xF9, 0xE7, 0xE1),
-);
-
-const _nacht = Stilfarben(
-  // Nicht #000000: reines Schwarz flimmert auf OLED beim Blaettern.
-  grund: Farbe(0x0D, 0x11, 0x17),
-  flaeche: Farbe(0x17, 0x1C, 0x25),
-  flaecheHoch: Farbe(0x1E, 0x24, 0x2F),
-  text: Farbe(0xE8, 0xEC, 0xF3),
-  leise: Farbe(0xA3, 0xAE, 0xC2),
-  rand: Farbe(0x2B, 0x33, 0x41),
-  strich: Farbe(0x22, 0x28, 0x36),
-  gut: Farbe(0x5E, 0xD6, 0x9B),
-  gutHell: Farbe(0x11, 0x2B, 0x1E),
-  warnung: Farbe(0xF2, 0xBB, 0x6B),
-  warnungHell: Farbe(0x33, 0x24, 0x0F),
-  fehler: Farbe(0xF5, 0x94, 0x8C),
-  fehlerHell: Farbe(0x36, 0x18, 0x16),
-);
-
-const _kontrast = Stilfarben(
-  grund: Farbe(0xFF, 0xFF, 0xFF),
-  flaeche: Farbe(0xFF, 0xFF, 0xFF),
-  flaecheHoch: Farbe(0xFF, 0xFF, 0xFF),
-  text: Farbe(0x00, 0x00, 0x00),
-  leise: Farbe(0x1F, 0x1F, 0x1F),
-  rand: Farbe(0x00, 0x00, 0x00),
-  strich: Farbe(0x5A, 0x5A, 0x5A),
-  gut: Farbe(0x00, 0x4D, 0x26),
-  gutHell: Farbe(0xE0, 0xF5, 0xE8),
-  warnung: Farbe(0x6B, 0x33, 0x00),
-  warnungHell: Farbe(0xFF, 0xF0, 0xDC),
-  fehler: Farbe(0x8C, 0x00, 0x00),
-  fehlerHell: Farbe(0xFF, 0xE5, 0xE5),
-);
-
-const Map<KasseStil, Stilfarben> stilfarben = {
-  KasseStil.klar: _klar,
-  KasseStil.warm: _warm,
-  KasseStil.nacht: _nacht,
-  KasseStil.kontrast: _kontrast,
-};
+/// Welcher Modus des Design-Systems hinter einem Stil steht. Die Enum
+/// [KasseStil] bleibt deutsch — sie steht in Kundendaten.
+KdMode modusFuer(KasseStil stil) => switch (stil) {
+      KasseStil.klar => KdMode.light,
+      KasseStil.warm => KdMode.warm,
+      KasseStil.nacht => KdMode.dark,
+      KasseStil.kontrast => KdMode.contrast,
+    };
 
 /// Schriftfaktoren. Auch XL bleibt bedienbar — ein Faktor, der die Kasse
 /// sprengt, hilft niemandem, der schlecht sieht.
@@ -162,19 +64,10 @@ const Map<KasseHoehe, double> kachelhoehen = {
   KasseHoehe.l: 108,
 };
 
-/// Petrol — die Farbe der Marke Kasseneck und damit jede Handlung in der
-/// Kasse. Zwilling von `markeFarbe` im Flutter-Paket `kasseneck_marke` und der
-/// Farbe im App-Zeichen.
-const Farbe markenfarbe = Farbe(0x11, 0x6B, 0x6B);
-
 class Kassenthema {
   const Kassenthema({
     required this.stil,
-    required this.farben,
-    required this.marke,
-    required this.markeTief,
-    required this.markeHell,
-    required this.aufMarke,
+    required this.modus,
     required this.schriftfaktor,
     required this.kachelhoehe,
     required this.spaltenExtra,
@@ -191,10 +84,8 @@ class Kassenthema {
   /// Das Thema aus den Einstellungen. [geraet] steuert, was nur dieses Gerät
   /// betrifft (Kachelhöhe); ohne es gelten die Vorgaben.
   factory Kassenthema.aus(KasseSettingsBetrieb betrieb, {KasseSettingsGeraet? geraet}) {
-    final stil = betrieb.stil;
-    final farben = stilfarben[stil]!;
-    final dunkel = stil == KasseStil.nacht;
-    final scharf = stil == KasseStil.kontrast;
+    final modus = modusFuer(betrieb.stil);
+    final scharf = modus == KdMode.contrast;
 
     // **Die Marke steht fest.** Die Knöpfe, mit denen kassiert wird, sind
     // Teil des Produkts: Kassen, die einander nicht mehr ähneln, kosten jeden
@@ -202,25 +93,9 @@ class Kassenthema {
     // passend" nicht mehr lesbar ist, merkt niemand vor dem Tresen.
     // `betrieb.farbe` bleibt im Datenmodell (Panel und Rechnungs-PDF lesen
     // es), färbt hier aber nichts mehr.
-    const gewaehlt = markenfarbe;
-    // Im Nachtstil wird die Marke aufgehellt: ein sattes Blau auf fast
-    // schwarzem Grund ist kaum zu sehen, und die Marke muss der Knopf sein,
-    // den man findet.
-    final marke = dunkel ? gewaehlt.gemischt(const Farbe(0xFF, 0xFF, 0xFF), 0.28) : gewaehlt;
-
     return Kassenthema(
-      stil: stil,
-      farben: farben,
-      marke: marke,
-      // Liegt unter dem Knopf und gibt ihm Tiefe.
-      markeTief: dunkel
-          ? marke.gemischt(const Farbe(0x00, 0x00, 0x00), 0.28)
-          : marke.gemischt(const Farbe(0x00, 0x00, 0x00), 0.24),
-      // Hintergrund der geltenden Auswahl — nur ein Hauch Farbe.
-      markeHell: dunkel ? marke.gemischt(farben.grund, 0.76) : marke.gemischt(farben.flaeche, 0.88),
-      // Nach Helligkeit gewählt: eine gelbe Hausfarbe braucht dunklen Text,
-      // sonst sind die Knöpfe unlesbar.
-      aufMarke: lesbarAuf(marke, dunkel: farben.text.helligkeit < 0.2 ? farben.text : const Farbe(0x0F, 0x17, 0x2A)),
+      stil: betrieb.stil,
+      modus: modus,
       schriftfaktor: schriftfaktoren[betrieb.schrift]!,
       // **Mal Schriftfaktor.** Die Höhe einer Kachel ist keine feste Zahl,
       // sondern das, was Name und Preis brauchen. Bei Schrift XL in eine
@@ -228,14 +103,13 @@ class Kassenthema {
       // abgeschnitten — und „Leistung" ohne das g liest sich falsch.
       kachelhoehe: kachelhoehen[geraet?.hoehe ?? KasseHoehe.m]! * schriftfaktoren[betrieb.schrift]!,
       spaltenExtra: geraet?.spaltenExtra ?? 0,
-      radius: scharf ? 6 : 14,
-      radiusKachel: scharf ? 6 : 12,
-      // Bewusst KEIN Vollrund: eine Pille sieht nach Etikett aus, und die
-      // Auswahl an einer Kasse ist ein Schalter, kein Etikett.
-      radiusKlein: scharf ? 4 : 8,
-      linie: scharf ? 2 : 1,
-      // Schatten sind Tiefe; im Kontraststil sind sie Unschärfe.
-      schattenTiefe: scharf ? 0 : (dunkel ? 0.5 : 1),
+      // Radien kommen aus dem Design-System und sind in jedem Modus gleich;
+      // der Kontrast-Modus schärft Ränder und nimmt Schatten, sonst nichts.
+      radius: KdForm.radiusLg,
+      radiusKachel: KdForm.radius,
+      radiusKlein: KdForm.radius,
+      linie: scharf ? 2 : KdForm.borderWidth,
+      schattenTiefe: scharf ? 0 : (modus == KdMode.dark ? 0.5 : 1),
       kachelstil: betrieb.kachelstil,
       emoji: betrieb.emoji,
       katFarben: betrieb.katFarben,
@@ -243,19 +117,7 @@ class Kassenthema {
   }
 
   final KasseStil stil;
-  final Stilfarben farben;
-
-  /// Die Betriebsfarbe, für Handlungen.
-  final Farbe marke;
-
-  /// Dunklere Marke — Tiefe unter dem Knopf.
-  final Farbe markeTief;
-
-  /// Sehr heller Markenton — Hintergrund der geltenden Auswahl.
-  final Farbe markeHell;
-
-  /// Lesbare Textfarbe auf [marke].
-  final Farbe aufMarke;
+  final KdMode modus;
 
   final double schriftfaktor;
   final double kachelhoehe;
@@ -264,7 +126,11 @@ class Kassenthema {
   /// nebeneinander stehen sollen. Gehört zum Gerät, nicht zum Betrieb: ein
   /// Tablet an der Theke und ein Handy im Gastgarten wollen Verschiedenes.
   final int spaltenExtra;
+
+  /// Karten, Blätter, Dialoge.
   final double radius;
+
+  /// Knöpfe, Felder, Kästchen, Kacheln.
   final double radiusKachel;
 
   /// Kleine Bedienelemente: Auswahl, Steuersatz, Schnellbetrag.
@@ -280,19 +146,47 @@ class Kassenthema {
   final bool katFarben;
 
   /// Heller Stil? Entscheidet über Statusleiste und Bilder.
-  bool get hell => farben.text.helligkeit < farben.grund.helligkeit;
+  bool get hell => modus != KdMode.dark;
 
-  Farbe get grund => farben.grund;
-  Farbe get flaeche => farben.flaeche;
-  Farbe get flaecheHoch => farben.flaecheHoch;
-  Farbe get text => farben.text;
-  Farbe get leise => farben.leise;
-  Farbe get rand => farben.rand;
-  Farbe get strich => farben.strich;
-  Farbe get gut => farben.gut;
-  Farbe get warnung => farben.warnung;
-  Farbe get fehler => farben.fehler;
-  Farbe get fehlerHell => farben.fehlerHell;
+  /// Der Hintergrund der Seite.
+  Farbe get grund => Farbe.ausColor(kdColor(modus, 'ground'));
+
+  /// Karten, Panels, alles, was auf dem Grund liegt.
+  Farbe get flaeche => Farbe.ausColor(kdColor(modus, 'surface'));
+
+  /// Hervorgehobene Fläche: Kopfzeile, aktives Eingabefeld.
+  Farbe get flaecheHoch => Farbe.ausColor(kdColor(modus, 'surface-raised'));
+
+  Farbe get text => Farbe.ausColor(kdColor(modus, 'ink'));
+
+  /// Nebentext — leiser, aber nie unlesbar.
+  Farbe get leise => Farbe.ausColor(kdColor(modus, 'ink-muted'));
+
+  /// Umrandung.
+  Farbe get rand => Farbe.ausColor(kdColor(modus, 'border'));
+
+  /// Trennlinie; leichter als [rand] — außer im Kontrast-Modus, dort sind
+  /// beide Schwarz.
+  Farbe get strich => Farbe.ausColor(kdColor(modus, 'divider'));
+
+  Farbe get gut => Farbe.ausColor(kdColor(modus, 'success'));
+  Farbe get gutHell => Farbe.ausColor(kdColor(modus, 'success-surface'));
+  Farbe get warnung => Farbe.ausColor(kdColor(modus, 'warning'));
+  Farbe get warnungHell => Farbe.ausColor(kdColor(modus, 'warning-surface'));
+  Farbe get fehler => Farbe.ausColor(kdColor(modus, 'danger'));
+  Farbe get fehlerHell => Farbe.ausColor(kdColor(modus, 'danger-surface'));
+
+  /// Die Betriebsfarbe, für Handlungen.
+  Farbe get marke => Farbe.ausColor(kdColor(modus, 'brand'));
+
+  /// Dunklere Marke — Tiefe unter dem Knopf.
+  Farbe get markeTief => Farbe.ausColor(kdColor(modus, 'brand-pressed'));
+
+  /// Sehr heller Markenton — Hintergrund der geltenden Auswahl.
+  Farbe get markeHell => Farbe.ausColor(kdColor(modus, 'brand-surface'));
+
+  /// Lesbare Textfarbe auf [marke].
+  Farbe get aufMarke => Farbe.ausColor(kdColor(modus, 'on-brand'));
 
   /// Schriftgrößen in dp, bereits mit dem Faktor des Betriebs.
   ///

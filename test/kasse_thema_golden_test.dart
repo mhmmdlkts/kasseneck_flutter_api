@@ -22,12 +22,12 @@ Map<String, dynamic> stilWerte(Kassenthema t) => {
       'leise': t.leise.hex,
       'rand': t.rand.hex,
       'strich': t.strich.hex,
-      'gut': t.farben.gut.hex,
-      'gutHell': t.farben.gutHell.hex,
-      'warnung': t.farben.warnung.hex,
-      'warnungHell': t.farben.warnungHell.hex,
-      'fehler': t.farben.fehler.hex,
-      'fehlerHell': t.farben.fehlerHell.hex,
+      'gut': t.gut.hex,
+      'gutHell': t.gutHell.hex,
+      'warnung': t.warnung.hex,
+      'warnungHell': t.warnungHell.hex,
+      'fehler': t.fehler.hex,
+      'fehlerHell': t.fehlerHell.hex,
       'marke': t.marke.hex,
       'markeTief': t.markeTief.hex,
       'markeHell': t.markeHell.hex,
@@ -40,8 +40,10 @@ Map<String, dynamic> stilWerte(Kassenthema t) => {
     };
 
 Map<String, dynamic> jetzigesThema() => {
-      'hinweis': 'Erzeugt aus lib/src/kasse/thema.dart mit der Vorgabe-Betriebsfarbe. '
-          'Die Browser-Kasse liest dieselben Werte, damit App und Browser nicht auseinanderlaufen.',
+      'hinweis': 'Erzeugt aus lib/src/kasse/thema.dart, aus den Rollen von kreiseck_design '
+          '(Modus je Stil), Betriebsfarbe bewusst nicht. Die Browser-Kasse liest dieselben '
+          'Werte, damit App und Browser nicht auseinanderlaufen. Erzeugt gegen kreiseck_design '
+          'dfe4a27 (bis zur Veröffentlichung; danach die Version).',
       'schriftfaktoren': {for (final e in schriftfaktoren.entries) e.key.wert: e.value},
       'kachelhoehen': {for (final e in kachelhoehen.entries) e.key.wert: e.value},
       'kachelhoeheRegel': 'kachelhoehen[hoehe] * schriftfaktoren[schrift] — eine Kachel ist '

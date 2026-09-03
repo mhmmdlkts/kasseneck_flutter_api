@@ -7,13 +7,26 @@
 library;
 
 import 'dart:math' as math;
+import 'dart:ui' show Color;
+
+import 'package:kreiseck_design/kreiseck_design.dart';
 
 class Farbe {
   const Farbe(this.r, this.g, this.b);
 
+  /// Aus einer Flutter-Farbe: das Design-System liefert `Color`, die Kasse
+  /// rechnet und druckt mit [Farbe]. Alpha wird verworfen — Belege kennen
+  /// keine Transparenz.
+  factory Farbe.ausColor(Color c) {
+    final v = c.toARGB32();
+    return Farbe((v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF);
+  }
+
   /// `#RRGGBB`; alles andere ergibt [ersatz] — eine Farbangabe aus dem Panel
-  /// darf keine unsichtbare Kasse erzeugen.
-  factory Farbe.ausHex(String hex, {Farbe ersatz = const Farbe(0x1B, 0x46, 0xF5)}) {
+  /// darf keine unsichtbare Kasse erzeugen. [ersatz] ist Pflicht: ein
+  /// stillschweigendes Panel-Blau als Vorgabe wäre eine Entscheidung des
+  /// Aufrufers, die er nie getroffen hat.
+  factory Farbe.ausHex(String hex, {required Farbe ersatz}) {
     final h = hex.trim().replaceFirst('#', '');
     if (h.length != 6) return ersatz;
     final wert = int.tryParse(h, radix: 16);
@@ -97,7 +110,7 @@ Farbe farbeAusHsv(double ton, double saettigung, double helligkeit) {
 /// erst am Tresen. Geprüft wird gegen **beide** hellen Gründe, weil ein Betrieb
 /// den Stil wechseln kann.
 bool markeTaugt(Farbe farbe) {
-  const helleGruende = [Farbe(0xFF, 0xFF, 0xFF), Farbe(0xF1, 0xF4, 0xF9)];
+  final helleGruende = [const Farbe(0xFF, 0xFF, 0xFF), Farbe.ausColor(kdColor(KdMode.light, 'ground'))];
   for (final grund in helleGruende) {
     if (kontrast(farbe, grund) < 2.0) return false;
   }

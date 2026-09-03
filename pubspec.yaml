@@ -1,6 +1,6 @@
 name: kasseneck_api
 description: "RKSV-Registrierkasse für Flutter: signierte Belege, hobex- und Stripe-Kartenzahlung, Bondruck. Austrian cash register by Kreiseck."
-version: 5.2.1
+version: 6.0.0
 homepage: https://github.com/mhmmdlkts/kasseneck_flutter_api
 repository: https://github.com/mhmmdlkts/kasseneck_flutter_api
 issue_tracker: https://github.com/mhmmdlkts/kasseneck_flutter_api/issues
@@ -8,8 +8,8 @@ issue_tracker: https://github.com/mhmmdlkts/kasseneck_flutter_api/issues
 topics: [rksv, point-of-sale, payments, receipts, austria]
 
 environment:
-  sdk: ^3.6.0
-  flutter: ">=1.17.0"
+  sdk: ^3.12.1
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
@@ -19,6 +19,7 @@ dependencies:
   qr: ^3.0.2
   qr_flutter: ^4.1.0
   flutter_blue_plus: ^2.3.4
+  kreiseck_design: ^0.1.0
   sumup: ^0.13.1 # 0.14.x zieht den gated Tap-to-Pay-SDK (privates Maven-Repo, Credentials nötig) – wird nicht genutzt
     #path: ../sumup_flutter_plugin
   my_pos: ^0.3.0
