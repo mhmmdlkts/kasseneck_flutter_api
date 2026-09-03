@@ -241,12 +241,12 @@ void main() {
       // Rolle des Design-Systems hellt sie im Dunkeln von sich aus auf.
       final klar = themaMit({});
       final nacht = themaMit({'stil': 'nacht'});
-      expect(nacht.marke, isNot(klar.marke));
+      expect(nacht.marke.helligkeit, greaterThan(klar.marke.helligkeit));
       expect(nacht.marke.g, greaterThan(nacht.marke.r));
     });
 
     test('und sie traegt lesbare Schrift', () {
-      expect(markeTaugt(const Farbe(0x11, 0x6B, 0x6B)), isTrue);
+      expect(markeTaugt(themaMit({}).marke), isTrue);
     });
   });
 }
