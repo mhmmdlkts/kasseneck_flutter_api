@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/kasse.dart';
+import 'package:kreiseck_design/kreiseck_design.dart';
 
 /// Das Kassenthema: vier Stile, eine Betriebsfarbe, vier Schriftgrößen.
 ///
@@ -11,7 +12,36 @@ KasseSettingsBetrieb betriebMit(Map<String, dynamic> g) => KasseSettings.aus({'b
 
 Kassenthema themaMit(Map<String, dynamic> g) => Kassenthema.aus(betriebMit(g));
 
+/// Ein Betrieb mit Standardwerten, nur der Stil gesetzt.
+KasseSettingsBetrieb betrieb(KasseStil stil) => betriebMit({'stil': stil.name});
+
 void main() {
+  group('Design-System', () {
+    test('jeder Stil bildet auf einen Modus des Design-Systems ab', () {
+      expect(Kassenthema.aus(betrieb(KasseStil.klar)).modus, KdMode.light);
+      expect(Kassenthema.aus(betrieb(KasseStil.warm)).modus, KdMode.warm);
+      expect(Kassenthema.aus(betrieb(KasseStil.nacht)).modus, KdMode.dark);
+      expect(Kassenthema.aus(betrieb(KasseStil.kontrast)).modus, KdMode.contrast);
+    });
+
+    test('die Farben sind die Rollen des Design-Systems, keine eigenen Tabellen', () {
+      final t = Kassenthema.aus(betrieb(KasseStil.nacht));
+      expect(t.grund.hex.toUpperCase(), '#131B1B'); // neutral-950, § 131b
+      expect(t.marke.hex.toUpperCase(), '#139E9B'); // brand-500 im Dunkeln
+      expect(t.aufMarke.hex.toUpperCase(), '#131B1B'); // on-brand dunkel
+      final k = Kassenthema.aus(betrieb(KasseStil.klar));
+      expect(k.text.hex.toUpperCase(), '#132A2A'); // neutral-900, § 132a
+    });
+
+    test('der Kontrast-Stil schärft Ränder, nicht Radien', () {
+      final t = Kassenthema.aus(betrieb(KasseStil.kontrast));
+      expect(t.linie, 2);
+      expect(t.radiusKlein, 10);
+      expect(t.radius, 14);
+      expect(t.schattenTiefe, 0);
+    });
+  });
+
   group('Stile', () {
     test('klar ist die Vorgabe: heller Grund, dunkler Text', () {
       final t = themaMit({});
@@ -39,18 +69,17 @@ void main() {
       expect(warm.grund.r - warm.grund.b, greaterThan(klar.grund.r - klar.grund.b));
     });
 
-    test('kontrast ändert mehr als Farben', () {
+    test('kontrast schärft Linien und nimmt Schatten, lässt Radien in Ruhe', () {
       // Er ist ein Stil für schwache Augen, kein Farbschema: dickere Linien,
-      // kleinere Radien, keine Schatten. Wer nur die Farben tauscht, hat ihn
-      // nicht verstanden.
+      // keine Schatten. Radien bleiben unverändert — das unterscheidet ihn
+      // von einem reinen Farbtausch, ohne die Kasse in der Form zu verstellen.
       final klar = themaMit({});
       final k = themaMit({'stil': 'kontrast'});
 
-      expect(k.text, Farbe.ausHex('#000000'));
       expect(k.flaeche, Farbe.ausHex('#FFFFFF'));
       expect(k.linie, greaterThan(klar.linie));
-      expect(k.radius, lessThan(klar.radius));
-      expect(k.radiusKlein, lessThan(klar.radiusKlein));
+      expect(k.radius, klar.radius);
+      expect(k.radiusKlein, klar.radiusKlein);
       expect(k.schattenTiefe, 0.0);
     });
 
@@ -86,8 +115,9 @@ void main() {
       // Sie bleibt im Datenmodell (Panel und Rechnungs-PDF lesen sie), aber
       // die Knöpfe der Kasse gehören zum Produkt. Damit kann auch ein
       // Tippfehler aus dem Panel hier nichts mehr anrichten.
+      final vorgabe = themaMit({}).marke;
       for (final wert in ['#1B46F5', '#FFE066', '', 'blau', '#12345']) {
-        expect(themaMit({'farbe': wert}).marke, markenfarbe, reason: wert);
+        expect(themaMit({'farbe': wert}).marke, vorgabe, reason: wert);
       }
     });
 
@@ -191,15 +221,18 @@ void main() {
       // je Betrieb umfärben kann, bekommt Kassen, die einander nicht mehr
       // ähneln — und eine Hausfarbe, die auf einem Knopf nicht mehr lesbar
       // ist, merkt niemand vor dem Tresen.
+      final vorgabe = themaMit({}).marke;
       final eigen = themaMit({'farbe': '#B3261E'});
-      expect(eigen.marke.hex.toUpperCase(), '#116B6B');
-      expect(themaMit({}).marke.hex.toUpperCase(), '#116B6B');
+      expect(eigen.marke, vorgabe);
+      expect(vorgabe.hex.toUpperCase(), '#136B6B');
     });
 
     test('im Nachtstil wird sie aufgehellt, bleibt aber die Marke', () {
-      // Ein sattes Petrol auf fast schwarzem Grund ist kaum zu sehen.
+      // Ein sattes Petrol auf fast schwarzem Grund ist kaum zu sehen — die
+      // Rolle des Design-Systems hellt sie im Dunkeln von sich aus auf.
+      final klar = themaMit({});
       final nacht = themaMit({'stil': 'nacht'});
-      expect(nacht.marke.hex, isNot('#116B6B'));
+      expect(nacht.marke, isNot(klar.marke));
       expect(nacht.marke.g, greaterThan(nacht.marke.r));
     });
 

@@ -7,9 +7,18 @@
 library;
 
 import 'dart:math' as math;
+import 'dart:ui' show Color;
 
 class Farbe {
   const Farbe(this.r, this.g, this.b);
+
+  /// Aus einer Flutter-Farbe: das Design-System liefert `Color`, die Kasse
+  /// rechnet und druckt mit [Farbe]. Alpha wird verworfen — Belege kennen
+  /// keine Transparenz.
+  factory Farbe.ausColor(Color c) {
+    final v = c.toARGB32();
+    return Farbe((v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF);
+  }
 
   /// `#RRGGBB`; alles andere ergibt [ersatz] — eine Farbangabe aus dem Panel
   /// darf keine unsichtbare Kasse erzeugen.
