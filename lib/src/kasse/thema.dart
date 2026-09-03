@@ -19,9 +19,14 @@
 /// unabhängig: ein Betrieb mit roter Hausfarbe darf keine Kasse bekommen, in
 /// der jeder Knopf nach Fehler aussieht.
 ///
-/// Jede Farbpaarung dieser Datei hält 4,5:1 nach WCAG — die Schwelle für
-/// Fließtext. Auch für den großen Betrag, denn der wird oft schräg und in
-/// schlechtem Licht gelesen.
+/// **Die Textfarben halten 4,5:1 nach WCAG — die Schwelle für Fließtext —
+/// überall, wo sie stehen; Bedeutungsfarben und Marke nur dort, wo sie
+/// stehen.** Konkret: `text` und `leise` halten 4,5:1 auf `grund`, `flaeche`
+/// und `flaecheHoch`. Bedeutungsfarben (`gut`, `warnung`, `fehler`) und
+/// `marke` halten 4,5:1 auf `grund` und `flaeche` — sie stehen laut
+/// Design-System nicht auf `flaecheHoch` (Kopfzeile, aktives Feld); dort
+/// steht `text`/`leise`. Auch für den großen Betrag, denn der wird oft
+/// schräg und in schlechtem Licht gelesen.
 ///
 /// Farbe, Form und Modi kommen aus `kreiseck_design`; dieses Thema bleibt eine
 /// dünne Sicht darauf plus das Kassen-Fach (Kachelhöhe, Spalten, Kachelstil,

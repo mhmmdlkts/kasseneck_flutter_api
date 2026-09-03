@@ -110,6 +110,33 @@ void main() {
     });
   });
 
+  group('Kontrastzusage', () {
+    // Die eingeschränkte Zusage aus der Klassendoku, wörtlich als Test: die
+    // Bedeutungsfarben und die Marke stehen laut Design-System nicht auf
+    // flaecheHoch (Kopfzeile, aktives Feld) — dort steht text/leise.
+    test('text und leise halten 4,5:1 auf grund, flaeche und flaecheHoch', () {
+      for (final stil in KasseStil.values) {
+        final t = themaMit({'stil': stil.name});
+        for (final MapEntry(key: name, value: flaeche) in {'grund': t.grund, 'flaeche': t.flaeche, 'flaecheHoch': t.flaecheHoch}.entries) {
+          expect(kontrast(t.text, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: text auf $name');
+          expect(kontrast(t.leise, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: leise auf $name');
+        }
+      }
+    });
+
+    test('Bedeutungsfarben und Marke halten 4,5:1 auf grund und flaeche', () {
+      for (final stil in KasseStil.values) {
+        final t = themaMit({'stil': stil.name});
+        for (final MapEntry(key: name, value: flaeche) in {'grund': t.grund, 'flaeche': t.flaeche}.entries) {
+          expect(kontrast(t.gut, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: gut auf $name');
+          expect(kontrast(t.warnung, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: warnung auf $name');
+          expect(kontrast(t.fehler, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: fehler auf $name');
+          expect(kontrast(t.marke, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: marke auf $name');
+        }
+      }
+    });
+  });
+
   group('Radien', () {
     test('kleine Bedienelemente sind leicht gerundet, nie vollrund', () {
       // Eine Pille sieht nach Etikett aus; die Auswahl an einer Kasse ist ein
