@@ -9,8 +9,9 @@
 /// * `nacht` — Taxi und Bar. Tief, aber **nicht schwarz**: reines Schwarz
 ///   flimmert auf OLED beim Blättern und macht jeden Rand hart.
 /// * `kontrast` — grelles Licht oder schwache Augen. Er ändert deshalb mehr
-///   als Farben: dickere Linien, kleinere Radien, keine Schatten. Wer nur die
-///   Farben tauscht, hat ihn nicht verstanden.
+///   als Farben: schärfere Linien (2 px), keine Schatten. Die Radien bleiben
+///   — sie kommen aus dem Design-System und sind in jedem Modus gleich. Wer
+///   nur die Farben tauscht, hat ihn nicht verstanden.
 ///
 /// **Die Betriebsfarbe ist für Handlungen da, nicht für Schmuck.** Sie sitzt
 /// auf dem Knopf, den der Kassier sucht, und auf der Auswahl, die gerade gilt

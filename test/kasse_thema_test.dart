@@ -76,6 +76,8 @@ void main() {
       final klar = themaMit({});
       final k = themaMit({'stil': 'kontrast'});
 
+      expect(k.text, Farbe.ausHex('#000000'));
+      expect(k.grund, Farbe.ausHex('#FFFFFF'));
       expect(k.flaeche, Farbe.ausHex('#FFFFFF'));
       expect(k.linie, greaterThan(klar.linie));
       expect(k.radius, klar.radius);
