@@ -40,6 +40,13 @@ void main() {
       expect(t.radius, 14);
       expect(t.schattenTiefe, 0);
     });
+
+    test('hell folgt den Farben, nicht der Aufzählung', () {
+      for (final stil in KasseStil.values) {
+        final t = themaMit({'stil': stil.name});
+        expect(t.hell, t.text.helligkeit < t.grund.helligkeit, reason: stil.name);
+      }
+    });
   });
 
   group('Stile', () {
