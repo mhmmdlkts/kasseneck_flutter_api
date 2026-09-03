@@ -160,7 +160,8 @@ class Kassenthema {
   /// Umrandung.
   Farbe get rand => Farbe.ausColor(kdColor(modus, 'border'));
 
-  /// Trennlinie; leichter als [rand].
+  /// Trennlinie; leichter als [rand] — außer im Kontrast-Modus, dort sind
+  /// beide Schwarz.
   Farbe get strich => Farbe.ausColor(kdColor(modus, 'divider'));
 
   Farbe get gut => Farbe.ausColor(kdColor(modus, 'success'));

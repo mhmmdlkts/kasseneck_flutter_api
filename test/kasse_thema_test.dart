@@ -15,6 +15,11 @@ Kassenthema themaMit(Map<String, dynamic> g) => Kassenthema.aus(betriebMit(g));
 /// Ein Betrieb mit Standardwerten, nur der Stil gesetzt.
 KasseSettingsBetrieb betrieb(KasseStil stil) => betriebMit({'stil': stil.name});
 
+/// `Farbe.ausHex` mit einem Ersatzwert, der in diesen Tests nie greifen soll
+/// — jeder hier verwendete Hex-Code ist gültig. `ersatz` ist seit 6.0.0
+/// Pflicht (kein stillschweigendes Panel-Blau mehr).
+Farbe hex(String h) => Farbe.ausHex(h, ersatz: const Farbe(0xFF, 0x00, 0xFF));
+
 void main() {
   group('Design-System', () {
     test('jeder Stil bildet auf einen Modus des Design-Systems ab', () {
@@ -26,11 +31,11 @@ void main() {
 
     test('die Farben sind die Rollen des Design-Systems, keine eigenen Tabellen', () {
       final t = Kassenthema.aus(betrieb(KasseStil.nacht));
-      expect(t.grund.hex.toUpperCase(), '#131B1B'); // neutral-950, § 131b
+      expect(t.grund.hex.toUpperCase(), '#131B1B'); // #131B1B – die Ziffern der Paragraphennummer
       expect(t.marke.hex.toUpperCase(), '#139E9B'); // brand-500 im Dunkeln
       expect(t.aufMarke.hex.toUpperCase(), '#131B1B'); // on-brand dunkel
       final k = Kassenthema.aus(betrieb(KasseStil.klar));
-      expect(k.text.hex.toUpperCase(), '#132A2A'); // neutral-900, § 132a
+      expect(k.text.hex.toUpperCase(), '#132A2A');
     });
 
     test('der Kontrast-Stil schärft Ränder, nicht Radien', () {
@@ -64,7 +69,7 @@ void main() {
       final t = themaMit({'stil': 'nacht'});
       expect(t.hell, isFalse);
       expect(t.grund.helligkeit, lessThan(0.15));
-      expect(t.grund, isNot(Farbe.ausHex('#000000')));
+      expect(t.grund, isNot(hex('#000000')));
       expect(t.text.helligkeit, greaterThan(0.8));
     });
 
@@ -83,9 +88,9 @@ void main() {
       final klar = themaMit({});
       final k = themaMit({'stil': 'kontrast'});
 
-      expect(k.text, Farbe.ausHex('#000000'));
-      expect(k.grund, Farbe.ausHex('#FFFFFF'));
-      expect(k.flaeche, Farbe.ausHex('#FFFFFF'));
+      expect(k.text, hex('#000000'));
+      expect(k.grund, hex('#FFFFFF'));
+      expect(k.flaeche, hex('#FFFFFF'));
       expect(k.linie, greaterThan(klar.linie));
       expect(k.radius, klar.radius);
       expect(k.radiusKlein, klar.radiusKlein);
@@ -174,35 +179,35 @@ void main() {
 
   group('Farbe', () {
     test('liest #RRGGBB', () {
-      final f = Farbe.ausHex('#1B46F5');
+      final f = hex('#1B46F5');
       expect(f.r, 0x1B);
       expect(f.g, 0x46);
       expect(f.b, 0xF5);
     });
 
     test('mischt zwei Farben', () {
-      expect(Farbe.ausHex('#000000').gemischt(Farbe.ausHex('#FFFFFF'), 0.5).r, 128);
-      expect(Farbe.ausHex('#000000').gemischt(Farbe.ausHex('#FFFFFF'), 0), Farbe.ausHex('#000000'));
-      expect(Farbe.ausHex('#000000').gemischt(Farbe.ausHex('#FFFFFF'), 1), Farbe.ausHex('#FFFFFF'));
+      expect(hex('#000000').gemischt(hex('#FFFFFF'), 0.5).r, 128);
+      expect(hex('#000000').gemischt(hex('#FFFFFF'), 0), hex('#000000'));
+      expect(hex('#000000').gemischt(hex('#FFFFFF'), 1), hex('#FFFFFF'));
     });
 
     test('Kontrast: Schwarz auf Weiß ist der Höchstwert 21', () {
-      expect(kontrast(Farbe.ausHex('#000000'), Farbe.ausHex('#FFFFFF')), closeTo(21, 0.1));
-      expect(kontrast(Farbe.ausHex('#FFFFFF'), Farbe.ausHex('#FFFFFF')), closeTo(1, 0.01));
+      expect(kontrast(hex('#000000'), hex('#FFFFFF')), closeTo(21, 0.1));
+      expect(kontrast(hex('#FFFFFF'), hex('#FFFFFF')), closeTo(1, 0.01));
     });
 
     test('als Hex zurück', () {
-      expect(Farbe.ausHex('#1b46f5').hex, '#1B46F5');
+      expect(hex('#1b46f5').hex, '#1B46F5');
     });
   });
 
   group('freie Farbwahl', () {
     test('HSV ergibt die erwarteten Ecken', () {
-      expect(farbeAusHsv(0, 1, 1), Farbe.ausHex('#FF0000'));
-      expect(farbeAusHsv(120, 1, 1), Farbe.ausHex('#00FF00'));
-      expect(farbeAusHsv(240, 1, 1), Farbe.ausHex('#0000FF'));
-      expect(farbeAusHsv(0, 0, 1), Farbe.ausHex('#FFFFFF'));
-      expect(farbeAusHsv(0, 0, 0), Farbe.ausHex('#000000'));
+      expect(farbeAusHsv(0, 1, 1), hex('#FF0000'));
+      expect(farbeAusHsv(120, 1, 1), hex('#00FF00'));
+      expect(farbeAusHsv(240, 1, 1), hex('#0000FF'));
+      expect(farbeAusHsv(0, 0, 1), hex('#FFFFFF'));
+      expect(farbeAusHsv(0, 0, 0), hex('#000000'));
     });
 
     test('der Farbton läuft rundherum weiter', () {
@@ -213,13 +218,13 @@ void main() {
     test('eine zu blasse Farbe taugt nicht als Marke', () {
       // Sie ergäbe einen Knopf, der auf weißem Grund verschwindet — und das
       // merkt der Chef erst am Tresen.
-      expect(markeTaugt(Farbe.ausHex('#FFF9C4')), isFalse);
-      expect(markeTaugt(Farbe.ausHex('#FFFFFF')), isFalse);
+      expect(markeTaugt(hex('#FFF9C4')), isFalse);
+      expect(markeTaugt(hex('#FFFFFF')), isFalse);
     });
 
     test('kräftige Farben taugen — auch helle wie Orange', () {
-      for (final hex in ['#1B46F5', '#0F7B4F', '#B3261E', '#C2410C', '#000000']) {
-        expect(markeTaugt(Farbe.ausHex(hex)), isTrue, reason: hex);
+      for (final code in ['#1B46F5', '#0F7B4F', '#B3261E', '#C2410C', '#000000']) {
+        expect(markeTaugt(hex(code)), isTrue, reason: code);
       }
     });
   });
