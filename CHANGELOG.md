@@ -1,3 +1,41 @@
+## 6.0.0
+
+**Anlass:** Das Design-System `kreiseck_design` liefert jetzt Farbe, Form und Modi für alle vier
+Kassenstile; `Kassenthema` hielt sie bisher als einzige Quelle in vier handgetippten Tabellen.
+Dieses Release löst die Tabellen auf — `Kassenthema` wird eine dünne Sicht auf die Rollen des
+Design-Systems, das Kassen-Fach (Kachelhöhe, Spalten, Kachelstil, Emoji, Kategoriefarben,
+Schriftfaktor) bleibt unverändert bestehen.
+
+- **Breaking: `Stilfarben`, `stilfarben` und `markenfarbe` entfallen.** Die vier Farbtabellen der
+  Stile (`klar`/`warm`/`nacht`/`kontrast`) und die feste Markenkonstante waren handgetippte
+  Zwillinge dessen, was `kreiseck_design` jetzt als Rollen liefert.
+- **Breaking: `Kassenthema.farben` entfällt**, ebenso die fünf Konstruktor-Parameter `farben`,
+  `marke`, `markeTief`, `markeHell`, `aufMarke` — an ihrer Stelle steht der neue Parameter `modus`
+  (`KdMode`). Wer `Kassenthema` bisher selbst konstruiert hat statt über `Kassenthema.aus(...)`,
+  muss umstellen.
+- **Alle Farb-Getter bleiben** (`grund`, `flaeche`, `flaecheHoch`, `text`, `leise`, `rand`,
+  `strich`, `gut`, `gutHell`, `warnung`, `warnungHell`, `fehler`, `fehlerHell`, `marke`,
+  `markeTief`, `markeHell`, `aufMarke`) — ihre Werte kommen jetzt aus den Rollen von
+  `kreiseck_design` für den Modus des jeweiligen Stils (`klar`→`light`, `warm`→`warm`,
+  `nacht`→`dark`, `kontrast`→`contrast`), nicht mehr aus eigenen Tabellen. **Die Betriebsfarbe
+  färbt die Kasse weiterhin nicht** — unverändert seit 5.x, jetzt nur anders begründet.
+- **Radien und Linie kommen jetzt aus dem Design-System:** `radius` 14, `radiusKachel`/
+  `radiusKlein` 10, `linie` 1,5 (Kontraststil 2) — in jedem Modus gleich. **Der Kontrast-Stil
+  verkleinert die Radien nicht mehr** (bisher 6/6/4) — er bleibt an schärferen Linien und
+  fehlenden Schatten erkennbar, nicht mehr an kleineren Radien.
+- **Golden-Datei (`test/fixtures/kasse/kasse-thema.json`) neu geschrieben:** in allen vier Stilen
+  ändern sich sämtliche Farbwerte (neue Rampen), dazu `radiusKachel`/`radiusKlein` von 12/8 auf 10
+  und `linie` von 1 auf 1,5 in jedem Stil, im Kontraststil zusätzlich `radius` von 6 auf 14.
+  Unverändert: `schriftfaktoren`, `kachelhoehen`, `kachelhoeheRegel`, `schattenTiefe` — reine
+  Kassen-Fachwerte, die das Design-System nicht berührt.
+- **Neue Abhängigkeit:** `kreiseck_design` (vorerst als Pfadabhängigkeit, bis zur Veröffentlichung
+  auf pub.dev).
+- **Breaking: `Farbe.ausHex` verlangt jetzt `ersatz`.** Der bisherige Vorgabewert war das
+  Panel-Blau (`#1B46F5`) — ein stilles Detail dieses Pakets, das an jeder Aufrufstelle unbemerkt
+  mitlief. Wer bisher ohne `ersatz` aufgerufen hat, muss ihn jetzt benennen.
+- **SDK-Untergrenzen angehoben:** `sdk: ^3.12.1`, `flutter: ">=3.44.0"` — `Color.toARGB32()` gibt
+  es erst ab Flutter 3.27, und `kreiseck_design` selbst verlangt 3.44.
+
 ## 5.2.1
 
 - **Behoben: eine zu lange Spalte verlor auf dem Bon still ihren Rest.**
