@@ -23,7 +23,7 @@ KasseneckReceipt belegMit({List<Map<String, dynamic>>? stornos, int menge = 3}) 
         {'name': 'Kaffee', 'quantity': menge, 'unitPriceCents': 280, 'vatRate': 20},
         {'name': 'Semmel', 'quantity': 2, 'unitPriceCents': 150, 'vatRate': 10},
       ],
-      if (stornos != null) 'cancellations': stornos,
+      'cancellations': ?stornos,
       'qr': 'q',
       'sig': 'kopf.rumpf.sig',
       'certificateSerialNumber': 'cert',

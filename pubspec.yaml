@@ -19,8 +19,7 @@ dependencies:
   qr: ^3.0.2
   qr_flutter: ^4.1.0
   flutter_blue_plus: ^2.3.4
-  kreiseck_design:
-    path: ../kreiseck/design/packages/dart
+  kreiseck_design: ^0.1.0
   sumup: ^0.13.1 # 0.14.x zieht den gated Tap-to-Pay-SDK (privates Maven-Repo, Credentials nötig) – wird nicht genutzt
     #path: ../sumup_flutter_plugin
   my_pos: ^0.3.0
