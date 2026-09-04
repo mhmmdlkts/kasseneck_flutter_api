@@ -86,8 +86,9 @@ print('Receipt ${receipt?.receiptId} — signed: ${receipt?.signatureSuccess}');
 ```
 
 > 💡 Models & enums live in their own files — import the ones you use
-> (`models/…`, `enums/…`). Payment, refund, cancellation, zero & training receipts all run
-> through the same `KasseneckApi` instance.
+> (`models/…`, `enums/…`). Payment, refund, zero & training receipts all run through the
+> same `KasseneckApi` instance. **Cancellations go through `RegisterReceiptClient.stornieren`**
+> (see below); `cancelReceipt`/`createCancelReceipt` on `KasseneckApi` are the deprecated old path.
 
 ## ↩️ Cancellations (Storno)
 

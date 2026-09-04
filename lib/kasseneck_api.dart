@@ -268,6 +268,14 @@ class KasseneckApi {
   }
 
   /// Issues a **cancellation** receipt that reverses [receipt] (its items, negated).
+  ///
+  /// **Deprecated — old cancellation path.** Runs through `createReceipt` without
+  /// a reference to the original: no remaining quantities, no protection against
+  /// cancelling twice, vouchers are not taken back. The backend still accepts it
+  /// and answers with `deprecation`. Use `RegisterReceiptClient.stornieren`
+  /// (`package:kasseneck_api/kasse.dart`) instead: reference, reason, partial
+  /// cancellation, stable error codes.
+  @Deprecated('Alter Storno-Weg ohne Bezug — RegisterReceiptClient.stornieren (kasse.dart) verwenden')
   Future<KasseneckReceipt?> cancelReceipt({
     required KasseneckReceipt receipt,
     KeckPaymentMethod? paymentMethod,
@@ -291,6 +299,8 @@ class KasseneckApi {
     );
   }
 
+  /// **Deprecated — old cancellation path**, see [cancelReceipt].
+  @Deprecated('Alter Storno-Weg ohne Bezug — RegisterReceiptClient.stornieren (kasse.dart) verwenden')
   Future<KasseneckReceipt?> createCancelReceipt({
     required KeckPaymentMethod paymentMethod,
     required List<KasseneckItem> items,

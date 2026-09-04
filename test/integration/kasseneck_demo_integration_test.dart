@@ -89,6 +89,7 @@ void main() {
       expect(receipt.qr, isNotEmpty);
 
       // Aufräumen gehört zum Test: Demo-Beleg sofort stornieren.
+      // ignore: deprecated_member_use_from_same_package
       final cancel = await api.cancelReceipt(receipt: receipt);
       expect(cancel, isNotNull);
       expect(cancel!.receiptType, ReceiptType.cancellation);
@@ -125,6 +126,8 @@ void main() {
       expect(receipt.sig, isNotEmpty);
       expect(receipt.qr, isNotEmpty);
 
+      // ignore: deprecated_member_use_from_same_package
+
       final cancel = await api.cancelReceipt(receipt: receipt);
       expect(cancel, isNotNull);
       expect(cancel!.receiptType, ReceiptType.cancellation);
@@ -156,6 +159,8 @@ void main() {
       expect(pos.tipRecipientName, isNotNull);
       // Zahlart des Trinkgelds: ohne Angabe die des Belegs.
       expect(pos.paymentMethod, 'creditCard');
+
+      // ignore: deprecated_member_use_from_same_package
 
       final cancel = await api.cancelReceipt(receipt: receipt);
       expect(cancel, isNotNull);
@@ -271,6 +276,7 @@ void main() {
 
       // Aufräumen wie in den übrigen Fällen: Demo-Beleg sofort stornieren,
       // sonst bliebe der Topf der Person voll.
+      // ignore: deprecated_member_use_from_same_package
       final cancel = await api.cancelReceipt(receipt: receipt);
       expect(cancel, isNotNull);
       expect(cancel!.receiptType, ReceiptType.cancellation);
