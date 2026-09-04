@@ -6,6 +6,7 @@
                                                 
                   STORNOBELEG                   
       Stornobuchung zu Beleg AT0-KASSE1-42      
+           vom 11.08.2026, 09:02 Uhr            
            Grund: Kunde hat storniert           
                                                 
 Datum:                       13.08.2026 10:15:30
