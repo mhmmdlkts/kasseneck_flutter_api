@@ -163,6 +163,7 @@ void main() {
       late http.Request captured;
       final api = apiWith(successClient((r) => captured = r));
       final original = cartA();
+      // ignore: deprecated_member_use_from_same_package
       await api.cancelReceipt(receipt: original);
 
       final params = (jsonDecode(captured.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
@@ -415,6 +416,8 @@ void main() {
         readTimeout: const Duration(milliseconds: 300),
         signatureTimeout: const Duration(milliseconds: 40),
       );
+
+      // ignore: deprecated_member_use_from_same_package
 
       await expectLater(api.cancelReceipt(receipt: cartA()),
           throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));

@@ -1,3 +1,11 @@
+## 6.2.0
+
+- **Veraltet:** `KasseneckApi.cancelReceipt` und `KasseneckApi.createCancelReceipt` (`@Deprecated`).
+  Das ist der alte Storno-Weg über `createReceipt` ohne Bezug zum Original — keine Restmengen, kein
+  Schutz vor doppeltem Storno, Gutscheine werden nicht zurückgenommen. Das Backend nimmt ihn weiter an
+  und legt `deprecation` in die Antwort. Stattdessen `RegisterReceiptClient.stornieren` (`kasse.dart`):
+  Bezug, Grund, Teilstorno, stabile Fehlercodes. Nichts entfällt, nur der Analyzer weist hin.
+
 ## 6.1.0
 
 **Anlass:** Das Backend legt bei jedem fachlichen Storno-Fehler einen stabilen `code` neben die
