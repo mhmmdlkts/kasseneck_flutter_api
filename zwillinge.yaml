@@ -8,7 +8,7 @@
 #
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
-npm_version: 0.6.46
+npm_version: 0.6.49
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -30,6 +30,10 @@ npm_version: 0.6.46
 # ohne die Lücke zu schließen, wird rot — und wer die Lücke schließt, ohne die
 # Zeile zu streichen, ebenfalls: sonst sänke die Zahl in der CI nie.
 ausnahmen:
+  # ---- Issue #44: Sitzungen einer Kasse lesen und gezielt verdrängen ----
+  - eintrag: aufrufe.listRegisterSessionsForDevice
+    art: offen
+    issue: 44
   # ---- Issue #22: Server Direct Print ----
   # Druckjobs über das Backend anlegen und abfragen; dieses Paket druckt nur
   # direkt (ePOS/IP, Bluetooth, USB).
