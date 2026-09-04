@@ -199,3 +199,25 @@ void main() {
     });
   });
 }
+
+// Fehlercodes von cancelReceipt -- dieselbe Liste wie functions/storno-core.js
+// STORNO_FEHLERCODES und @kreiseck/kasseneck-api CANCELLATION_ERROR_CODES.
+void main2() {
+  group('Fehlercodes', () {
+    test('Katalog: dieselben vierzehn Codes wie Backend und npm-Paket, in derselben Reihenfolge', () {
+      expect(stornoFehlercodes, [
+        'beleg_nicht_gefunden', 'belegart_nicht_stornierbar', 'trainingsbeleg', 'bereits_storniert',
+        'position_ungueltig', 'menge_ueber_rest', 'grund_unbekannt', 'anmerkung_zu_lang', 'items_ungueltig',
+        'kasse_nicht_zugewiesen', 'keine_berechtigung', 'nur_eigene_belege', 'kasse_unvollstaendig',
+        'storno_fehlgeschlagen',
+      ]);
+    });
+
+    test('istStornoFehlercode nimmt Katalog-Codes an, keinen Anzeigetext, kein null', () {
+      expect(istStornoFehlercode('menge_ueber_rest'), isTrue);
+      expect(istStornoFehlercode('Storno-Menge übersteigt die verbleibende Menge (Position 1).'), isFalse);
+      expect(istStornoFehlercode(null), isFalse);
+    });
+  });
+}
+

@@ -89,6 +89,55 @@ print('Receipt ${receipt?.receiptId} — signed: ${receipt?.signatureSuccess}');
 > (`models/…`, `enums/…`). Payment, refund, cancellation, zero & training receipts all run
 > through the same `KasseneckApi` instance.
 
+## ↩️ Cancellations (Storno)
+
+A cancellation is a **new signed receipt** that reverses an existing one — fully or in parts.
+The register client (`package:kasseneck_api/kasse.dart`, `RegisterReceiptClient`) talks to the
+backend's `cancelReceipt` endpoint; the server negates the lines, checks remaining quantities and
+permissions, links both receipts and prints the reference line on the cancellation receipt.
+
+```dart
+import 'package:kasseneck_api/kasse.dart';
+
+final ergebnis = await client.stornieren(
+  originalReceiptId: 'KASSE1-ID-42',
+  grund: 'fehleingabe',                       // catalogue: stornogruende
+  positionen: [(index: 0, menge: 1)],         // omit = cancel everything that is left
+  anmerkung: 'Kunde wollte nur eine',         // internal note, never printed
+);
+ergebnis.beleg;        // the signed cancellation receipt
+ergebnis.restmengen;   // what is still open per line of the original
+```
+
+**Decide on the error code, never on the message.** Every business error of `cancelReceipt`
+carries `KasseneckApiError.code` from `stornoFehlercodes` — e.g. `bereits_storniert`,
+`menge_ueber_rest`, `nur_eigene_belege`. The German `message` is for display and may change.
+
+```dart
+try {
+  await client.stornieren(originalReceiptId: id, grund: 'fehleingabe');
+} on KasseneckApiError catch (e) {
+  switch (e.code) {
+    case 'bereits_storniert': // show the receipt as cancelled, disable the button
+    case 'menge_ueber_rest':  // reload remaining quantities (someone was faster)
+    case 'nur_eigene_belege': // ask the owner
+      break;
+    default:
+      rethrow;
+  }
+}
+```
+
+**Vouchers.** A value voucher is mirrored only on a full cancellation (no `positionen`) — it is
+indivisible. A promo (discount) voucher is already part of the original's turnover; **every**
+cancellation takes it back in proportion to the cancelled quantity: 3 × € 10 with a € 6 discount
+is € 8 per piece, so the cancellation receipt shows "−10,00" plus a line "Gutschein-Ausgleich
++2,00". What each cancellation granted is stored on its entry in `receipt.cancellations` as
+`promoAdjustmentCents` (cents per VAT bucket) — the register can show it, it never has to compute it.
+
+Before offering a cancellation, `restmengen(beleg)` gives the remaining quantities from the
+original's `cancellations` list; the server remains the source of truth.
+
 ## 💳 Card payments
 
 Card payments work **out of the box** with several terminals — and you're **never locked in**:

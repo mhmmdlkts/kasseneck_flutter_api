@@ -36,13 +36,26 @@ class KasseneckValidationError implements Exception {
 
 /// Fachlicher Fehler des Backends (PIN falsch, Kasse belegt, Geraet gesperrt …).
 class KasseneckApiError implements Exception {
-  const KasseneckApiError(this.functionName, this.message);
+  const KasseneckApiError(this.functionName, this.message, {this.code});
 
   final String functionName;
   final String message;
 
+  /// Stabiler Fehlercode des Backends (`code` aus der Antworthuelle), wenn der
+  /// Endpunkt einen legt — heute `cancelReceipt` (siehe `stornoFehlercodes`).
+  /// **Daran entscheiden, nie an [message]:** der Text darf sich aendern, der
+  /// Code nicht. Null bei Endpunkten ohne Codes und bei Auth-/Parameterfehlern.
+  final String? code;
+
   @override
-  String toString() => 'KasseneckApiError($functionName): $message';
+  String toString() => 'KasseneckApiError($functionName): $message${code == null ? '' : ' [$code]'}';
+}
+
+/// Der `code` einer Antworthuelle — nur ein nicht leerer Text zaehlt, alles
+/// andere waere ein geratener Vertrag.
+String? fehlercodeAus(Map<dynamic, dynamic> huelle) {
+  final code = huelle['code'];
+  return code is String && code.isNotEmpty ? code : null;
 }
 
 /// Ein Beleg kam an, liess sich aber nicht lesen — ein Pflichtfeld fehlt oder

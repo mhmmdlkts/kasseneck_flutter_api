@@ -1,3 +1,19 @@
+## 6.1.0
+
+**Anlass:** Das Backend legt bei jedem fachlichen Storno-Fehler einen stabilen `code` neben die
+Meldung und nimmt einen Rabattgutschein jetzt bei jedem Storno anteilig der Menge zurück
+(keck#314). Das Paket reicht beides durch — nichts entfällt.
+
+- `KasseneckApiError.code` (neu, optional): der `code` der Antworthülle, wenn der Endpunkt einen
+  legt — heute `cancelReceipt`. Nur ein nicht leerer Text zählt; sonst `null`. **Entscheide am
+  Code, nie am Text.**
+- `stornoFehlercodes` und `istStornoFehlercode` in `kasse.dart`: der Katalog der vierzehn
+  Codes, dieselbe Liste wie `functions/storno-core.js` und `@kreiseck/kasseneck-api`.
+- Storno-Einträge (`KasseneckReceipt.cancellations`) können `promoAdjustmentCents` tragen (Cent je
+  Steuertopf, was dieser Storno an Rabatt zurückgenommen hat); die Lesung war schon tolerant, das
+  README beschreibt es jetzt.
+- README: neuer Abschnitt „Cancellations (Storno)" mit Aufruf, Fehlercodes und Gutschein-Regeln.
+
 ## 6.0.0
 
 **Anlass:** Das Design-System `kreiseck_design` liefert jetzt Farbe, Form und Modi für alle vier
