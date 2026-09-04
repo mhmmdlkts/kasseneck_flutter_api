@@ -138,6 +138,7 @@ class RegisterTransport {
       return Map<String, dynamic>.from(daten);
     }
     final meldung = huelle['message'];
-    throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.');
+    throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.',
+        code: fehlercodeAus(huelle));
   }
 }

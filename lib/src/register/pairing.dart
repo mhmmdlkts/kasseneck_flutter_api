@@ -549,7 +549,8 @@ class RegisterClient {
     // Alles, was nicht ausdrücklich Erfolg ist, gilt als fachlicher Fehler —
     // ein unbekannter Statuswert darf nie stillschweigend durchgehen.
     final meldung = huelle['message'];
-    throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.');
+    throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.',
+        code: fehlercodeAus(huelle));
   }
 
   /// Die Sitzungsantwort beider Anmeldewege — ein Vertrag, eine Lesart.

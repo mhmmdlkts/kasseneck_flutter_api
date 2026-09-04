@@ -102,6 +102,20 @@ void main() {
     expect(f.log, isEmpty, reason: 'ohne Ausweis geht nichts hinaus');
   });
 
+  // Stabile Fehlercodes: das Backend legt bei fachlichen Fehlern (heute: Storno)
+  // ein Feld `code` neben den Text. Die Kasse entscheidet daran, nie am Text.
+  test('fachlicher Fehler traegt den Code des Backends; ohne Code bleibt er null; kein Text zaehlt nicht', () async {
+    final mit = transportMit({'status': 'error', 'message': 'Beleg ist bereits vollständig storniert.', 'code': 'bereits_storniert'});
+    await expectLater(
+      mit.transport.rufen('cancelReceipt'),
+      throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'bereits_storniert')),
+    );
+    final ohne = transportMit({'status': 'error', 'message': 'Kasse ist gesperrt'});
+    await expectLater(ohne.transport.rufen('a'), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', isNull)));
+    final zahl = transportMit({'status': 'error', 'message': 'x', 'code': 42});
+    await expectLater(zahl.transport.rufen('a'), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', isNull)));
+  });
+
   test('fachlicher Fehler traegt die Meldung des Backends', () async {
     final f = transportMit({'status': 'error', 'message': 'Sitzung beendet — bitte neu anmelden.'});
     await expectLater(

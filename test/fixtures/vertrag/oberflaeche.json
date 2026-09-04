@@ -1,5 +1,5 @@
 {
-  "version": "0.6.46",
+  "version": "0.6.49",
   "aufrufe": [
     "cancelReceipt",
     "createPaymentLinkStripe",
@@ -23,6 +23,7 @@
     "listMyReceipts",
     "listMyTipRecipients",
     "listRegisterUsersForDevice",
+    "listRegisterSessionsForDevice",
     "pairRegisterDevice",
     "registerPinLogin",
     "registerUserLogin",

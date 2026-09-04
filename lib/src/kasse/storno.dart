@@ -25,6 +25,31 @@ const Map<String, String> stornogruende = {
   'sonstiges': 'Sonstiges',
 };
 
+/// Stabile Fehlercodes von `cancelReceipt` — Zwilling von
+/// `functions/storno-core.js` STORNO_FEHLERCODES und
+/// `@kreiseck/kasseneck-api` CANCELLATION_ERROR_CODES, in derselben Reihenfolge.
+/// Das Backend legt sie als `code` neben die Meldung; sie kommen als
+/// `KasseneckApiError.code` an. **Entscheide am Code, nie am Text.**
+const List<String> stornoFehlercodes = [
+  'beleg_nicht_gefunden', // Original fehlt oder gehört nicht zu dieser Kasse
+  'belegart_nicht_stornierbar', // Original ist selbst Storno-, Null- oder Startbeleg
+  'trainingsbeleg', // Trainingsbelege werden nicht storniert
+  'bereits_storniert', // keine Restmenge mehr (auch beim positionslosen Beleg)
+  'position_ungueltig', // Index unbekannt oder doppelt
+  'menge_ueber_rest', // Menge nicht ganzzahlig >= 1 oder größer als der Rest
+  'grund_unbekannt', // reason fehlt oder nicht im Katalog
+  'anmerkung_zu_lang', // note länger als 200 Zeichen
+  'items_ungueltig', // items ist keine Liste
+  'kasse_nicht_zugewiesen', // Register-Benutzer darf diese Kasse nicht
+  'keine_berechtigung', // Register-Benutzer ohne Storno-Recht
+  'nur_eigene_belege', // Recht „eigene", fremder Beleg
+  'kasse_unvollstaendig', // api_key/token fehlen am Konto bzw. an der Kasse
+  'storno_fehlgeschlagen', // der Storno-Beleg selbst wurde abgelehnt (z. B. Signatur)
+];
+
+/// Ist [wert] ein Code aus [stornoFehlercodes]? Ein Anzeigetext ist keiner.
+bool istStornoFehlercode(Object? wert) => wert is String && stornoFehlercodes.contains(wert);
+
 /// Ab wann eine liegengebliebene Reservierung nicht mehr zählt (wie im
 /// Backend). Ohne diese Grenze bliebe eine Position für immer gesperrt, weil
 /// ein Abbruch irgendwann einmal eine Reservierung stehen ließ.
