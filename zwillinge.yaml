@@ -8,7 +8,7 @@
 #
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
-npm_version: 0.6.50
+npm_version: 0.7.1
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -30,6 +30,64 @@ npm_version: 0.6.50
 # ohne die Lücke zu schließen, wird rot — und wer die Lücke schließt, ohne die
 # Zeile zu streichen, ebenfalls: sonst sänke die Zahl in der CI nie.
 ausnahmen:
+  # ---- Partner-API: kein Kassen-Thema, dauerhaft nicht zutreffend ----
+  - eintrag: aufrufe.activateCashregister
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.checkPartnerCustomerEmail
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.createCustomerCashregister
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.createPartnerCustomer
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.createPartnerWebhook
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.deletePartnerWebhook
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.getCustomerCredentials
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.getCustomerSignatureStatus
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.getPartnerCustomer
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.getPartnerInfo
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.listCustomerCashregisters
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.listPartnerCustomers
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.listPartnerWebhookDeliveries
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.listPartnerWebhooks
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.requestCustomerSignature
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.rotatePartnerWebhookSecret
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.sendPartnerCustomerFonLink
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.sendPartnerWebhookTest
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: aufrufe.updatePartnerWebhook
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
   # ---- Issue #44: Sitzungen einer Kasse lesen und gezielt verdrängen ----
   - eintrag: aufrufe.listRegisterSessionsForDevice
     art: offen
