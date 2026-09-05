@@ -88,10 +88,6 @@ ausnahmen:
   - eintrag: aufrufe.updatePartnerWebhook
     art: nicht_zutreffend
     grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  # ---- Issue #44: Sitzungen einer Kasse lesen und gezielt verdrängen ----
-  - eintrag: aufrufe.listRegisterSessionsForDevice
-    art: offen
-    issue: 44
   # ---- Issue #22: Server Direct Print ----
   # Druckjobs über das Backend anlegen und abfragen; dieses Paket druckt nur
   # direkt (ePOS/IP, Bluetooth, USB).

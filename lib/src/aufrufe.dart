@@ -30,6 +30,7 @@ abstract final class Aufrufe {
   static const listMyArticles = 'listMyArticles';
   static const listMyReceipts = 'listMyReceipts';
   static const listMyTipRecipients = 'listMyTipRecipients';
+  static const listRegisterSessionsForDevice = 'listRegisterSessionsForDevice';
   static const listRegisterUsersForDevice = 'listRegisterUsersForDevice';
   static const pairRegisterDevice = 'pairRegisterDevice';
   static const registerPinLogin = 'registerPinLogin';
@@ -60,6 +61,7 @@ abstract final class Aufrufe {
     listMyArticles,
     listMyReceipts,
     listMyTipRecipients,
+    listRegisterSessionsForDevice,
     listRegisterUsersForDevice,
     pairRegisterDevice,
     registerPinLogin,

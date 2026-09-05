@@ -1,3 +1,13 @@
+## 6.3.0
+
+- **Neu:** `RegisterClient.listRegisterSessionsForDevice` — welche Sitzungen hält diese Kasse gerade
+  (Lizenzplätze, Sitzungen mit Gerät, Zeiten, `selbst`, Benutzername im Auswahlmodus). Zwilling von
+  npm 0.6.48; Ausweis über das Gerätegeheimnis wie bei `listRegisterUsersForDevice`.
+- **Neu:** `registerUserLogin(takeoverSessionId: …)` — welche Sitzung bei einer Übernahme weichen soll.
+  Ohne Angabe verdrängt das Backend wie bisher die älteste; eine nicht mehr laufende Kennung wird
+  abgewiesen, nie still ersetzt.
+- Vertrag: der Aufruf ist damit kein offener Posten mehr (Issue #44).
+
 ## 6.2.0
 
 - **Veraltet:** `KasseneckApi.cancelReceipt` und `KasseneckApi.createCancelReceipt` (`@Deprecated`).
