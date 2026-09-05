@@ -408,4 +408,84 @@ void basisadresse() {
       );
     });
   });
+
+  // Zwilling von listRegisterSessionsForDevice (npm 0.6.48): Welche Sitzungen
+  // haelt diese Kasse? Fuer den Anmeldebildschirm, wenn alle Lizenzplaetze
+  // belegt sind -- der Kassier sieht, WELCHE weichen soll, statt dass das
+  // Backend still die aelteste nimmt. Die Wahl geht als takeoverSessionId mit.
+  group('listRegisterSessionsForDevice', () {
+    test('liest Lizenzen und Sitzungen; fehlende Felder fallen auf null, userName nur wenn wirklich da', () async {
+      final f = clientWith(erfolg({
+        'licenses': 2,
+        'sessions': [
+          {'id': 's1', 'deviceId': 'd1', 'deviceLabel': 'Theke', 'startedAt': 1000, 'expiresAt': 2000, 'selbst': true, 'userName': 'Anna'},
+          {'id': 's2', 'deviceLabel': '', 'userName': ''},
+        ],
+      }));
+      final stand = await f.client.listRegisterSessionsForDevice(ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret);
+      expect(stand.licenses, 2);
+      expect(stand.sessions.map((s) => s.id), ['s1', 's2']);
+      expect(stand.sessions[0].deviceLabel, 'Theke');
+      expect(stand.sessions[0].selbst, isTrue);
+      expect(stand.sessions[0].userName, 'Anna');
+      expect(stand.sessions[1].deviceId, isNull);
+      expect(stand.sessions[1].deviceLabel, 'Kasse', reason: 'leeres Etikett faellt auf den Standard');
+      expect(stand.sessions[1].startedAt, isNull);
+      expect(stand.sessions[1].selbst, isFalse);
+      expect(stand.sessions[1].userName, isNull, reason: 'leerer Name ist kein Name');
+      final Map<String, dynamic> body = jsonDecode(f.log.single.body);
+      expect(body['params'], {'ownerUid': ownerUid, 'deviceId': deviceId, 'deviceSecret': deviceSecret});
+    });
+
+    test('Lizenzen ohne oder mit unbrauchbarem Wert gelten als 1', () async {
+      final f = clientWith(erfolg({'sessions': []}));
+      final stand = await f.client.listRegisterSessionsForDevice(ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret);
+      expect(stand.licenses, 1);
+      expect(stand.sessions, isEmpty);
+    });
+
+    test('ohne Sitzungsliste: Antwortfehler, kein leeres Ergebnis', () async {
+      final f = clientWith(erfolg({'licenses': 1}));
+      await expectLater(
+        f.client.listRegisterSessionsForDevice(ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret),
+        throwsA(isA<KasseneckValidationError>()),
+      );
+    });
+
+    test('Sitzung ohne Kennung ist nicht waehlbar: Antwortfehler', () async {
+      final f = clientWith(erfolg({'sessions': [{'deviceLabel': 'x'}]}));
+      await expectLater(
+        f.client.listRegisterSessionsForDevice(ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret),
+        throwsA(isA<KasseneckValidationError>()),
+      );
+    });
+  });
+
+  group('registerUserLogin: takeoverSessionId', () {
+    test('die gewaehlte Sitzung geht mit; ohne Wahl fehlt das Feld', () async {
+      final f = clientWith(erfolg({
+        'customToken': 'ct', 'sessionId': 's9', 'expiresAt': 5000,
+        'user': {'id': 'u1', 'name': 'Anna', 'perms': {}},
+      }));
+      await f.client.registerUserLogin(
+        ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
+        userId: 'u1', pin: '1234', cashregisterId: 'K1', takeover: true, takeoverSessionId: 's1',
+      );
+      final Map<String, dynamic> body = jsonDecode(f.log.single.body);
+      expect(body["params"]['takeoverSessionId'], 's1');
+      expect(body["params"]['takeover'], isTrue);
+
+      final g = clientWith(erfolg({
+        'customToken': 'ct', 'sessionId': 's9', 'expiresAt': 5000,
+        'user': {'id': 'u1', 'name': 'Anna', 'perms': {}},
+      }));
+      await g.client.registerUserLogin(
+        ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
+        userId: 'u1', pin: '1234', cashregisterId: 'K1',
+      );
+      final Map<String, dynamic> body2 = jsonDecode(g.log.single.body);
+      expect(body2["params"].containsKey('takeoverSessionId'), isFalse);
+    });
+  });
 }
+

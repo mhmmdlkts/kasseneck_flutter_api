@@ -281,6 +281,44 @@ class RegisterUser {
 }
 
 /// Ergebnis der Anmeldung.
+/// Eine laufende Sitzung an einer Kasse — Zwilling von `RegisterSession`
+/// (npm). Für den Anmeldebildschirm, wenn alle Lizenzplätze belegt sind: der
+/// Kassier sieht, WELCHE Sitzung weichen soll, und gibt ihre [id] als
+/// `takeoverSessionId` mit.
+class RegisterSession {
+  const RegisterSession({
+    required this.id,
+    required this.deviceId,
+    required this.deviceLabel,
+    required this.startedAt,
+    required this.expiresAt,
+    required this.selbst,
+    this.userName,
+  });
+
+  final String id;
+  final String? deviceId;
+  /// Etikett des Geräts; „Kasse", wenn das Backend keines kennt.
+  final String deviceLabel;
+  /// Millisekunden seit 1970 (`Date.now()` des Backends), null bei Altbestand.
+  final int? startedAt;
+  final int? expiresAt;
+  /// Läuft diese Sitzung auf dem fragenden Gerät selbst?
+  final bool selbst;
+  /// Nur im Gerätemodus „auswahl" und nur, wenn das Backend einen Namen kennt.
+  final String? userName;
+}
+
+/// Antwort von [RegisterClient.listRegisterSessionsForDevice].
+class RegisterSessionsStand {
+  const RegisterSessionsStand({required this.licenses, required this.sessions});
+
+  /// Lizenzplätze der Kasse — mindestens 1.
+  final int licenses;
+  /// Laufende Sitzungen, älteste zuerst.
+  final List<RegisterSession> sessions;
+}
+
 class RegisterUserSession {
   const RegisterUserSession({
     required this.customToken,
@@ -426,6 +464,10 @@ class RegisterClient {
     required String pin,
     required String cashregisterId,
     bool takeover = false,
+    /// Welche Sitzung weichen soll — Kennung aus [listRegisterSessionsForDevice].
+    /// Ohne Angabe verdrängt das Backend die älteste. Eine Kennung, die nicht
+    /// mehr läuft, wird abgewiesen, nie still durch eine andere ersetzt.
+    String? takeoverSessionId,
     RegisterClientInfo? client,
     RegisterGeo? geo,
   }) async {
@@ -444,10 +486,62 @@ class RegisterClient {
       // Nur die ausdrückliche Übernahme geht mit: das Backend prüft auf `true`,
       // ein mitgesendetes `false` wäre nur Rauschen.
       if (takeover) 'takeover': true,
+      if (takeoverSessionId != null && takeoverSessionId.isNotEmpty) 'takeoverSessionId': takeoverSessionId,
       if (client != null) 'client': client.toJson(),
       if (geo != null) 'geo': geo.toJson(),
     });
     return _sitzung(name, daten);
+  }
+
+  /// Welche Sitzungen hält diese Kasse gerade? Für den Anmeldebildschirm,
+  /// wenn alle Lizenzplätze belegt sind: statt dass das Backend still die
+  /// älteste verdrängt, sieht der Kassier, welche — und gibt ihre Kennung als
+  /// `takeoverSessionId` bei [registerUserLogin] mit. Ausgewiesen wird sich
+  /// über das Gerätegeheimnis wie bei [listRegisterUsersForDevice]; die Kasse
+  /// bestimmt das Backend aus dem Gerät.
+  Future<RegisterSessionsStand> listRegisterSessionsForDevice({
+    required String ownerUid,
+    required String deviceId,
+    required String deviceSecret,
+  }) async {
+    const name = Aufrufe.listRegisterSessionsForDevice;
+    _ausweisPflicht(name, ownerUid, deviceId, deviceSecret);
+    final daten = await _rufen(name, {
+      'ownerUid': ownerUid,
+      'deviceId': deviceId,
+      'deviceSecret': deviceSecret,
+    });
+
+    final liste = daten['sessions'];
+    if (liste is! List) {
+      throw const KasseneckValidationError(name, 'Antwort enthaelt keine Sitzungsliste (data.sessions fehlt)', 'response');
+    }
+    final sessions = liste.map((eintrag) {
+      final roh = eintrag is Map ? Map<String, dynamic>.from(eintrag) : <String, dynamic>{};
+      final id = roh['id'];
+      // Ohne Kennung wäre die Zeile nicht wählbar — eine Schaltfläche, die
+      // nichts tun kann, ist schlimmer als keine.
+      if (id is! String || id.isEmpty) {
+        throw const KasseneckValidationError(name, 'Sitzung ohne Kennung in der Antwort (id fehlt)', 'response');
+      }
+      final label = roh['deviceLabel'];
+      final userName = roh['userName'];
+      final geraet = roh['deviceId'];
+      return RegisterSession(
+        id: id,
+        deviceId: geraet is String && geraet.isNotEmpty ? geraet : null,
+        deviceLabel: label is String && label.isNotEmpty ? label : 'Kasse',
+        startedAt: roh['startedAt'] is num ? (roh['startedAt'] as num).toInt() : null,
+        expiresAt: roh['expiresAt'] is num ? (roh['expiresAt'] as num).toInt() : null,
+        selbst: roh['selbst'] == true,
+        // Nur übernehmen, wenn wirklich einer kam: ein leerer String stünde in
+        // der Oberfläche als namenlose Zeile, statt die Spalte wegzulassen.
+        userName: userName is String && userName.isNotEmpty ? userName : null,
+      );
+    }).toList(growable: false);
+    final lizenzen = daten['licenses'];
+    final licenses = lizenzen is num && lizenzen > 0 ? lizenzen.toInt() : 1;
+    return RegisterSessionsStand(licenses: licenses, sessions: sessions);
   }
 
   /// Anmeldung allein mit der PIN (Geräte-Modus `pin`): das Backend ermittelt
