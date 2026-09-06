@@ -1,11 +1,22 @@
 {
-  "version": "0.7.1",
+  "version": "0.7.2",
   "gemessenAn": {
     "tid": "3600335",
     "hpsVersion": "1.10.0",
     "firmware": "7.3.6",
     "zeitraum": "26.-28.08.2026"
   },
+  "ergaenztAn": [
+    {
+      "tid": "3556988",
+      "hpsVersion": "1.11.4",
+      "firmware": "2.3.9",
+      "zeitraum": "02.09.2026",
+      "codes": [
+        "55"
+      ]
+    }
+  ],
   "codes": [
     {
       "code": "0",
@@ -60,6 +71,11 @@
     {
       "code": "100108",
       "meaning": "\"Invalid TID\" -- die Terminal-Kennung gibt es an diesem Geraet nicht; der Vorgang wird abgewiesen, bevor etwas geschieht",
+      "conclusive": true
+    },
+    {
+      "code": "55",
+      "meaning": "\"PIN falsch\" -- Host-Ablehnung wegen falscher PIN, die erste gemessene Host-Ablehnung ueberhaupt (02.09.2026 im Betrieb, TID 3556988, HPS 1.11.4, Firmware 2.3.9): die Zahlung antwortete direkt damit, die Statusabfrage danach elfmal in Folge ebenso -- eine Host-Ablehnung bleibt am Terminal abrufbar; nichts belastet",
       "conclusive": true
     }
   ],
