@@ -1,3 +1,23 @@
+## 6.4.0
+
+**Anlass:** Vorfall vom 02.09.2026 am Produktivterminal 3556988 (HPS 1.11.4,
+Firmware 2.3.9) — die erste echte Host-Ablehnung, die je beobachtet wurde.
+
+- **`55` („PIN falsch") ist jetzt eine gemessene Ablehnung → `declined`.**
+  Die Zahlung antwortete direkt mit `55`, die Statusabfrage danach elfmal in
+  Folge ebenfalls. Der Code war eine Wissensluecke: 90 s Klaerung ins Budget,
+  `unresolved`, stehender Merker, Rueckfrage an den Bediener — fuer eine
+  falsch getippte PIN. Neu: `TransactionResponse.wrongPinCode`, in der
+  Positivliste.
+
+  Zwei Befunde, die ueber den einen Code hinausgehen (`doc/kartenzahlung.md`):
+  eine vom Host abgelehnte Zahlung wird am Terminal **aufbewahrt** und ist mit
+  ihrem Code abrufbar — anders als ein abgebrochener Vorgang, der danach
+  `9027` antwortet. Und Host-Codes sind zweistellig (ISO 8583); die
+  Zwei-`9027`-Regel aus 5.2.0 greift bei ihnen deshalb nicht, sie enden bis
+  zur Messung weiterhin bei `unresolved`. Bewusst **keine** Familienregel fuer
+  zweistellige Codes: dort stehen auch Genehmigungen (`08`, `10`, `11`, `85`).
+
 ## 6.3.0
 
 - **Neu:** `RegisterClient.listRegisterSessionsForDevice` — welche Sitzungen hält diese Kasse gerade

@@ -160,6 +160,30 @@ genügt `/api/terminals/0/diagnosis`, das ohne bekannte TID mit
 Firmware nicht enthalten, oder müssen sie freigeschaltet werden? Und gibt es
 einen vorgesehenen Weg, die TID am Gerät abzufragen?
 
+## 8. Eine Host-Ablehnung bleibt abrufbar, ein abgebrochener Vorgang nicht
+
+Am Produktivterminal (TID 3556988, HPS 1.11.4, Firmware 2.3.9, 02.09.2026)
+endete eine Zahlung mit `55 "PIN falsch"`. Die Statusabfrage auf die Kennung
+antwortete danach elfmal über 90 Sekunden mit demselben Code. Auf demselben
+Gerät antwortet sie nach `100002`/`100003` und nach `100004`, `100005`,
+`100015` (Bedeutung unbekannt) dauerhaft `9027 "Original Tx not found"`.
+
+| Zahlung endete mit | Statusabfrage danach |
+|---|---|
+| `0` genehmigt | `0`, bleibt erhalten |
+| `55` PIN falsch | `55`, bleibt erhalten |
+| `100002`, `100003`, `100004`, `100005`, `100015` | `9027` |
+
+Dazu antwortet `abort` auf einen bereits beendeten Vorgang an diesem Gerät
+mit **HTTP 404** — fünf Vorfälle vom 28.08. bis 02.09.2026 — statt mit
+`100010 "Unable to abort transaction"` wie am Gerät 3600335. Auf eine nie
+gesehene Kennung antwortet derselbe Endpunkt dort nicht mit 404.
+
+**Frage:** Welche Vorgänge bewahrt das Terminal für die Statusabfrage auf —
+nur genehmigte und vom Host abgelehnte, nicht aber lokal beendete? Und was
+bedeuten `100004`, `100005`, `100015` sowie der 404 beim Abbruch: „Vorgang
+nicht (mehr) abbrechbar"?
+
 ## Beobachtete Antwortcodes
 
 | Code | Text | Lage |
@@ -174,6 +198,7 @@ einen vorgesehenen Weg, die TID am Gerät abzufragen?
 | `100010` | Unable to abort transaction | Vorgang nicht mehr abbrechbar |
 | `100019` | Amount is not in a valid range | negativer Betrag |
 | `100108` | Invalid TID | falsche TID |
+| `55` | PIN falsch | Host-Ablehnung; die Statusabfrage liefert dauerhaft denselben Code — Produktivterminal `3556988`, HPS 1.11.4, Firmware 2.3.9, 02.09.2026 |
 | HTTP 409 | Terminal is busy | zweiter Vorgang während eines laufenden; Abweisung nach 87 ms, keine Spur |
 | HTTP 400 | Bad Request / Missing amount | fehlender Betrag, kein JSON |
 

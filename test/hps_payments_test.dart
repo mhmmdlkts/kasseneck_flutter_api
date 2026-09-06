@@ -585,6 +585,55 @@ void main() {
       }
     });
 
+    test('55 ("PIN falsch") ist eine gemessene Host-Ablehnung -> declined',
+        () async {
+      // Am 02.09.2026 im Betrieb gemessen (TID 3556988, HPS 1.11.4, Firmware
+      // 2.3.9): die DIREKTE Antwort der Zahlung trug `55` "PIN falsch". Bis
+      // dahin war keine echte Host-Ablehnung gemessen -- der Code war eine
+      // Wissensluecke, die Klaerung lief 90 s ins Budget (elfmal `55` beim
+      // Pollen) und endete bei unresolved: Warnung, stehender Merker,
+      // Rueckfrage an den Bediener. Fuer eine falsche PIN.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '55', 'responseText': 'PIN falsch'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81009800');
+
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(res.response?.responseText, 'PIN falsch');
+      expect(t.log.where((r) => r.url.path.contains('v2/transactions')),
+          isEmpty,
+          reason: 'ein gemessener Code braucht keine Klaerungsrunde');
+    });
+
+    test('55 in der Statusabfrage nach verlorener Antwort -> declined',
+        () async {
+      // Dieselbe Messung, andere Seite: die Statusabfrage antwortete auf die
+      // Kennung elfmal in Folge mit `55` -- anders als ein abgebrochener
+      // Vorgang (9027) wird eine vom Host abgelehnte Zahlung am Terminal
+      // AUFBEWAHRT. Geht die direkte Antwort verloren, findet die Klaerung
+      // die Ablehnung deshalb ueber den Status.
+      final t = FakeTerminal(
+        payment: [boom],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+        status: [
+          (_) => json({'responseCode': '55', 'responseText': 'PIN falsch'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 30))
+          .pay(amount: 25, transactionId: '81009900');
+
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(res.steps.any((s) => s.contains('abgelehnt (55)')), isTrue,
+          reason: 'der Nachweis muss den gemessenen Code benennen');
+    });
+
     test(
         'zwei 9027 mit etwas dazwischen zaehlen nicht als zwei in Folge '
         '(Mutationsprobe)', () async {

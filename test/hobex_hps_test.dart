@@ -124,6 +124,24 @@ void main() {
       expect(r.isTechnicalError, isFalse);
       expect(r.toString(), contains('DECLINED(9002)'));
     });
+    test('55 ("PIN falsch") ist eine gemessene Host-Ablehnung -> schluessig',
+        () {
+      // Am 02.09.2026 im Betrieb gemessen (TID 3556988, HPS 1.11.4, Firmware
+      // 2.3.9). Zweistellig, weil ein Antwortcode des HOSTS (ISO 8583), kein
+      // Terminalcode -- der erste dieser Klasse, der je gemessen wurde. Nur
+      // er wird schluessig; '05' (Test oben) bleibt eine Wissensluecke: die
+      // zweistelligen Codes sind KEINE Familie von Ablehnungen, 08, 10, 11
+      // und 85 sind dort Genehmigungen.
+      final r = TransactionResponse.fromJson({
+        'responseCode': '55',
+        'responseText': 'PIN falsch',
+      });
+      expect(r.responseCode, TransactionResponse.wrongPinCode);
+      expect(r.isConclusive, isTrue);
+      expect(r.isApproved, isFalse);
+      expect(r.isUnknownCode, isFalse);
+      expect(r.toString(), contains('DECLINED(55)'));
+    });
     test('9900 ist eine gemessene Wissensluecke, NIEMALS schluessig', () {
       // Am 27.08.2026 gemessen: die Statusabfrage antwortet mit 9900
       // "Technical Error Database" auf eine nicht rein numerische Kennung --
