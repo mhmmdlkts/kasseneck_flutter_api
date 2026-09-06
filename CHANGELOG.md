@@ -18,6 +18,18 @@ Firmware 2.3.9) — die erste echte Host-Ablehnung, die je beobachtet wurde.
   zur Messung weiterhin bei `unresolved`. Bewusst **keine** Familienregel fuer
   zweistellige Codes: dort stehen auch Genehmigungen (`08`, `10`, `11`, `85`).
 
+- **Neu: `HpsResult.lastResponse` — was das Terminal zuletzt sagte, auch
+  wenn der Ausgang offen bleibt.** Am 02.09.2026 sah der Bediener nur
+  „Ausgang unklar", musste raten und buchte die abgelehnte Zahlung als
+  bezahlt; 75 EUR Umsatz waren weg. Der Klartext „PIN falsch" haette die
+  Entscheidung getragen. `response` bleibt bei `unresolved` weiterhin `null`
+  (kein Beleg aus einer Nicht-Aussage); `lastResponse` ist Material fuer
+  Anzeige und Katalog, nie ein Beleg. Bei schluessigem Ausgang ist es `null`.
+
+- **Der Nachweis nennt bei einem unbekannten Code den Klartext des
+  Terminals:** `Terminal nennt einen unbekannten Code (55) "PIN falsch"`.
+  Nur dort — bei gemessenen Codes ist die Bedeutung benannt.
+
 ## 6.3.0
 
 - **Neu:** `RegisterClient.listRegisterSessionsForDevice` — welche Sitzungen hält diese Kasse gerade

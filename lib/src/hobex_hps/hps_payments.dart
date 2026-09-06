@@ -202,7 +202,12 @@ class HpsPayments {
       steps.add(_offeneAntwort(res));
     }
 
-    return _resolve(id, steps, antwortMitCode: res?.responseCode != null);
+    return _resolve(
+      id,
+      steps,
+      antwortMitCode: res?.responseCode != null,
+      letzteAntwort: res,
+    );
   }
 
   /// Gutschrift mit geklaertem Ausgang.
@@ -246,7 +251,12 @@ class HpsPayments {
       steps.add(_offeneAntwort(res));
     }
 
-    return _resolve(id, steps, antwortMitCode: res?.responseCode != null);
+    return _resolve(
+      id,
+      steps,
+      antwortMitCode: res?.responseCode != null,
+      letzteAntwort: res,
+    );
   }
 
   /// Aufhebung (Storno/Void) einer bestehenden Zahlung mit geklaertem
@@ -286,7 +296,7 @@ class HpsPayments {
       if (!res.isCanceled) steps.add(_offeneAntwort(res));
     }
 
-    return _resolveCancel(transactionId, steps);
+    return _resolveCancel(transactionId, steps, letzteAntwort: res);
   }
 
   /// Ordnet die DIREKTE Antwort auf einen Aufhebungs-Request ein.
@@ -345,8 +355,8 @@ class HpsPayments {
           'ueber den Vorgang, Ausgang wird geklaert';
     }
     if (res.isUnknownCode) {
-      return 'Terminal nennt einen unbekannten Code (${res.responseCode}) '
-          '-- Ausgang wird geklaert';
+      return 'Terminal nennt einen unbekannten Code (${res.responseCode})'
+          '${_klartext(res)} -- Ausgang wird geklaert';
     }
     return 'Antwort ohne Aussage (${res.responseCode}) -- Ausgang wird '
         'geklaert';
@@ -403,10 +413,22 @@ class HpsPayments {
           'ueber den Vorgang';
     }
     if (status.isUnknownCode) {
-      return 'Status: unbekannter Code (${status.responseCode}) -- keine '
-          'Aussage';
+      return 'Status: unbekannter Code (${status.responseCode})'
+          '${_klartext(status)} -- keine Aussage';
     }
     return null;
+  }
+
+  /// Der Klartext des Terminals zu einem UNBEKANNTEN Code, als Zusatz fuer
+  /// den Nachweis -- oder leer, wenn keiner mitkam. Nur hier, nicht bei den
+  /// gemessenen Codes: deren Bedeutung ist benannt, der Klartext waere
+  /// Wiederholung. Bei einem unbekannten Code ist er dagegen das Einzige,
+  /// was ein Mensch lesen kann -- "PIN falsch" neben `55` haette am
+  /// 02.09.2026 gereicht, um nicht "bezahlt" zu buchen.
+  static String _klartext(TransactionResponse res) {
+    final text = res.responseText?.trim();
+    if (text == null || text.isEmpty) return '';
+    return ' "$text"';
   }
 
   /// Ordnet eine Terminal-Antwort ein. `null`, wenn sie nichts entscheidet.
@@ -477,6 +499,7 @@ class HpsPayments {
     String id,
     List<String> steps, {
     bool antwortMitCode = false,
+    TransactionResponse? letzteAntwort,
   }) async {
     _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
 
@@ -505,6 +528,7 @@ class HpsPayments {
           () => _client.transactionStatus(transactionId: id),
         );
         transportFailures = 0;
+        letzteAntwort = status;
       } catch (e) {
         // Bewusst jede Ausnahme, nicht nur [HpsException]: auch ein unlesbarer
         // Rumpf oder ein unerwarteter Feldtyp darf die Klaerung nur verzoegern,
@@ -543,7 +567,7 @@ class HpsPayments {
     }
 
     steps.add('Ausgang bleibt offen');
-    return _open(id, steps);
+    return _open(id, steps, letzteAntwort);
   }
 
   /// Liest `9027` beim Pollen als "nicht genehmigt" -- aber NUR, wenn das
@@ -681,7 +705,11 @@ class HpsPayments {
   ///
   /// Budget, Backoff und Transportfehler-Deckelung sind unveraendert aus
   /// [_resolve] uebernommen.
-  Future<HpsResult> _resolveCancel(String id, List<String> steps) async {
+  Future<HpsResult> _resolveCancel(
+    String id,
+    List<String> steps, {
+    TransactionResponse? letzteAntwort,
+  }) async {
     _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
 
     final clock = _clock()..start();
@@ -707,6 +735,7 @@ class HpsPayments {
         );
         transportFailures = 0;
         beantworteteAbfragen++;
+        letzteAntwort = status;
       } catch (e) {
         transportFailures++;
         steps.add('Statusabfrage gescheitert ($transportFailures): $e');
@@ -737,7 +766,7 @@ class HpsPayments {
     }
 
     steps.add('Ausgang bleibt offen');
-    return _open(id, steps);
+    return _open(id, steps, letzteAntwort);
   }
 
   /// Ordnet die Statusabfrage einer OFFENEN AUFHEBUNG ein. `null`, wenn sie
@@ -867,11 +896,17 @@ class HpsPayments {
 
   /// Der Ausgang bleibt offen. Die Kennung ist gesetzt, damit Statusabfrage
   /// und Storno erreichbar bleiben.
-  HpsResult _open(String id, List<String> steps) {
+  ///
+  /// [letzteAntwort] ist die letzte Antwort, die das Terminal in dieser
+  /// Klaerung gab -- als [HpsResult.lastResponse] fuer Anzeige und Katalog,
+  /// ausdruecklich NICHT als [HpsResult.response].
+  HpsResult _open(String id, List<String> steps,
+      [TransactionResponse? letzteAntwort]) {
     _emit(HpsEventKind.resolved, steps.last, id);
     return HpsResult(
       outcome: CardPaymentOutcome.unresolved,
       transactionId: id,
+      lastResponse: letzteAntwort,
       steps: List<String>.unmodifiable(steps),
     );
   }
