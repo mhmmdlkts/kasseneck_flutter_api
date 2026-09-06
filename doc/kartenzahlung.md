@@ -1,6 +1,6 @@
 # Kartenzahlung: was das Terminal tatsächlich tut
 
-Stand 27.08.2026. Diese Datei hält fest, was am echten Gerät **gemessen** wurde —
+Stand 02.09.2026. Diese Datei hält fest, was am echten Gerät **gemessen** wurde —
 nicht, was die Dokumentation verspricht. Drei Annahmen, die plausibel klangen und
 mehrere Code-Reviews überstanden haben, sind an der Messung gescheitert.
 
@@ -260,6 +260,49 @@ Vorgang, den sie klären sollte (siehe die Messung zum Polling-Backoff oben,
 "ein parallel abgesetzter Void kam gar nicht durch"). Dort bleibt `409` ein
 gewöhnlicher Transportfehler, unverändert.
 
+## `55`: die erste echte Host-Ablehnung (02.09.2026, Betrieb)
+
+Bis dahin war „echte Ablehnung" (Deckung, gesperrte Karte, falsche PIN)
+ausdrücklich ungemessen — das Testgerät wird per Apple Pay bedient, eine
+ablehnende Karte stand nie zur Verfügung. Am 02.09.2026 lieferte der Betrieb
+die Messung von selbst: Produktivterminal TID `3556988`, HPS `1.11.4`,
+Firmware `2.3.9`.
+
+| Schritt | Antwort |
+|---|---|
+| Zahlung, direkte Antwort | `55` „PIN falsch" |
+| `abort` | HTTP `404` |
+| Statusabfrage, elfmal über 90 s | `55` „PIN falsch", jedes Mal |
+
+Drei Befunde:
+
+1. **Ein Host-Code ist zweistellig.** `55` ist der ISO-8583-Antwortcode des
+   Autorisierungshosts („Incorrect PIN"), kein `9xxx`-Terminalcode und kein
+   `100xxx`-Code der HPS-Anwendung. In dieser Klasse sind die
+   Alltagsablehnungen (Deckung, gesperrt, abgelaufen) zu erwarten.
+2. **Eine Host-Ablehnung wird aufbewahrt.** Anders als nach `100002`/`100003`
+   (Status danach `9027`, siehe oben) antwortet die Statusabfrage mit
+   demselben Code wie die Zahlung — dauerhaft. Der Vorgang steht mit seinem
+   Ablehnungsgrund im Terminal.
+3. **Kein Familienschluss.** Aus einem gemessenen zweistelligen Code folgt
+   keine Regel für die anderen: ISO 8583 führt in derselben Familie
+   Genehmigungen (`08`, `10`, `11`, `85`). Jeder weitere Host-Code bleibt eine
+   Wissenslücke, bis er gemessen ist. Die Zwei-`9027`-Regel aus 5.2.0 fängt
+   ihn nicht: der Status antwortet nicht `9027`, sondern mit dem Code selbst
+   — er endet also weiterhin bei `unresolved`.
+
+Was der Fall ohne den Eintrag gekostet hat: 90 s Klärung ins Budget, ein
+Vorfall mit ungeklärtem Ausgang, ein stehender Merker und eine Rückfrage an
+den Bediener — für eine falsch getippte PIN.
+
+**Nebenbefund zum Abbruch auf dieser Firmware:** `abort` auf einen bereits
+beendeten Vorgang antwortet am Produktivterminal mit HTTP `404`, nicht mit
+`100010` wie am Testgerät — fünf Vorfälle vom 28.08. bis 02.09.2026, alle
+nach einer Antwort mit Ergebniscode. Die Fähigkeitsprobe der App auf eine nie
+gesehene Kennung bekommt dort keinen 404, der Endpunkt existiert also. Was 404
+auf einen LAUFENDEN Vorgang heißt, ist ungemessen; der Nachweistext behauptet
+deshalb weiterhin keine Ursache.
+
 ## Der gemessene Stand, auf einen Blick
 
 Alle bisher gemessenen und im Code benannten Ausgänge (Stand 27.08.2026, TID
@@ -268,7 +311,8 @@ Alle bisher gemessenen und im Code benannten Ausgänge (Stand 27.08.2026, TID
 `0` genehmigt · `9002` ungültiger Vorgang · `9011` aufgehoben · `9027` keine
 Aussage · `9900` Kennung nicht numerisch · `100002` abgebrochen · `100003`
 Karte nicht aufgelegt · `100010` nicht abbrechbar · HTTP `409` Terminal
-beschäftigt.
+beschäftigt · `55` PIN falsch (Host-Ablehnung; Produktivterminal `3556988`,
+Firmware 2.3.9, 02.09.2026).
 
 Jeder andere Code ist eine Wissenslücke, keine Aussage — siehe
 `TransactionResponse.isConclusive`.
@@ -292,8 +336,10 @@ Jeder andere Code ist eine Wissenslücke, keine Aussage — siehe
 - Ob `9900` ausschließlich bei einer nicht rein numerischen Kennung auftritt,
   oder ob dieselbe Meldung noch andere Ursachen hat (siehe oben).
 - Wie lange das Terminal eine genehmigte Transaktion abrufbar hält.
-- Das Verhalten einer echten Ablehnung (Deckung, gesperrte Karte) — deshalb
-  hat `TransactionResponse.isConclusive` dafür (noch) keinen benannten Code.
+- Andere Host-Ablehnungen als `55` (Deckung, gesperrte Karte, abgelaufen) —
+  gemessen ist nur die falsche PIN; alle anderen bleiben Wissenslücken.
+- Was HTTP `404` beim `abort` auf einen LAUFENDEN Vorgang heißt (Firmware
+  2.3.9, siehe oben).
 
 ## Selbst nachmessen
 

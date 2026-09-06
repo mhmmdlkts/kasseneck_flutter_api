@@ -278,6 +278,32 @@ class TransactionResponse {
   /// irgendetwas geschieht -- nichts belastet.
   static const String invalidTidCode = '100108';
 
+  /// Ergebniscode `55` ("PIN falsch"): der Host hat die Autorisierung
+  /// abgelehnt, weil die eingegebene PIN falsch war -- nichts belastet.
+  ///
+  /// Am 02.09.2026 im BETRIEB gemessen, nicht am Testgeraet: TID 3556988,
+  /// HPS 1.11.4, Firmware 2.3.9. Die erste echte Host-Ablehnung, die je
+  /// beobachtet wurde -- bis dahin war kein Code fuer "der Host sagt nein"
+  /// bekannt (siehe `doc/kartenzahlung.md`, "Was weiterhin ungemessen ist").
+  ///
+  /// Zwei Befunde aus dieser Messung:
+  /// - Die DIREKTE Antwort der Zahlung trug den Code, und die Statusabfrage
+  ///   antwortete danach elfmal in Folge ebenfalls `55`. Anders als ein
+  ///   abgebrochener oder ohne Karte beendeter Vorgang (danach
+  ///   [noStatementCode]) wird eine vom Host abgelehnte Zahlung am Terminal
+  ///   also AUFBEWAHRT und ist mit ihrem Ablehnungscode abrufbar.
+  /// - Der Code ist zweistellig: ein Antwortcode des HOSTS (ISO 8583, 55 =
+  ///   "Incorrect PIN"), kein `9xxx`-Terminalcode und kein `100xxx`-Code der
+  ///   HPS-Anwendung. Daraus folgt KEINE Regel fuer andere zweistellige
+  ///   Codes: in derselben Familie stehen Genehmigungen (`08`, `10`, `11`,
+  ///   `85`). Jeder andere Host-Code bleibt eine Wissensluecke, bis er
+  ///   gemessen ist.
+  ///
+  /// Was der Fall ohne diesen Eintrag gekostet hat: 90 Sekunden Klaerung ins
+  /// Budget, ein Vorfall mit ungeklaertem Ausgang, ein stehender Merker und
+  /// eine Rueckfrage an den Bediener -- fuer eine falsch getippte PIN.
+  static const String wrongPinCode = '55';
+
   /// Ergebniscodes, deren Bedeutung GEMESSEN und hier benannt ist, und die
   /// einen Ausgang FESTSCHREIBEN -- siehe [isConclusive]. [noStatementCode]
   /// (`9027`) gehoert bewusst NICHT dazu: er ist zwar ebenso gemessen und
@@ -297,6 +323,9 @@ class TransactionResponse {
     invalidAmountCode,
     amountOutOfRangeCode,
     invalidTidCode,
+    // Die erste gemessene Host-Ablehnung (02.09.2026, Betrieb): der Host hat
+    // die Autorisierung verweigert, nichts belastet. Siehe [wrongPinCode].
+    wrongPinCode,
   };
 
   /// `true` when the transaction was approved (`responseCode == "0"`).

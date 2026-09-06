@@ -585,6 +585,125 @@ void main() {
       }
     });
 
+    test('55 ("PIN falsch") ist eine gemessene Host-Ablehnung -> declined',
+        () async {
+      // Am 02.09.2026 im Betrieb gemessen (TID 3556988, HPS 1.11.4, Firmware
+      // 2.3.9): die DIREKTE Antwort der Zahlung trug `55` "PIN falsch". Bis
+      // dahin war keine echte Host-Ablehnung gemessen -- der Code war eine
+      // Wissensluecke, die Klaerung lief 90 s ins Budget (elfmal `55` beim
+      // Pollen) und endete bei unresolved: Warnung, stehender Merker,
+      // Rueckfrage an den Bediener. Fuer eine falsche PIN.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '55', 'responseText': 'PIN falsch'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81009800');
+
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(res.response?.responseText, 'PIN falsch');
+      expect(t.log.where((r) => r.url.path.contains('v2/transactions')),
+          isEmpty,
+          reason: 'ein gemessener Code braucht keine Klaerungsrunde');
+    });
+
+    test('55 in der Statusabfrage nach verlorener Antwort -> declined',
+        () async {
+      // Dieselbe Messung, andere Seite: die Statusabfrage antwortete auf die
+      // Kennung elfmal in Folge mit `55` -- anders als ein abgebrochener
+      // Vorgang (9027) wird eine vom Host abgelehnte Zahlung am Terminal
+      // AUFBEWAHRT. Geht die direkte Antwort verloren, findet die Klaerung
+      // die Ablehnung deshalb ueber den Status.
+      final t = FakeTerminal(
+        payment: [boom],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+        status: [
+          (_) => json({'responseCode': '55', 'responseText': 'PIN falsch'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 30))
+          .pay(amount: 25, transactionId: '81009900');
+
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.mayRetrySafely, isTrue);
+      expect(res.steps.any((s) => s.contains('abgelehnt (55)')), isTrue,
+          reason: 'der Nachweis muss den gemessenen Code benennen');
+    });
+
+    test(
+        'unbekannter Code bis zum Budgetende -> unresolved, lastResponse '
+        'traegt Code und Klartext, response bleibt null', () async {
+      // Der Vorfall vom 02.09.2026 vor dem Eintrag von 55: das Terminal
+      // antwortet durchgehend mit einem Code, den wir nicht kennen. Der
+      // Ausgang bleibt offen -- aber WAS das Terminal sagte, muss beim
+      // Aufrufer ankommen, sonst steht der Bediener vor "Ausgang unklar"
+      // und raet. response bleibt trotzdem null: kein Beleg aus einer
+      // Nicht-Aussage.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '5555', 'responseText': 'Unbekannt'})
+        ],
+        status: [
+          (_) => json({'responseCode': '5555', 'responseText': 'Unbekannt'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 5))
+          .pay(amount: 25, transactionId: '81010000');
+
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.response, isNull,
+          reason: 'eine Nicht-Aussage darf nicht als Beleg mitgegeben werden');
+      expect(res.lastResponse?.responseCode, '5555');
+      expect(res.lastResponse?.responseText, 'Unbekannt');
+      expect(res.lastResponse?.isUnknownCode, isTrue);
+      expect(res.steps.first, contains('unbekannten Code (5555) "Unbekannt"'),
+          reason: 'der Klartext des Terminals gehoert in den Nachweis');
+      expect(
+          res.steps.any((s) => s.contains('unbekannter Code (5555) "Unbekannt"')),
+          isTrue);
+    });
+
+    test('verlorene Antwort, dann 9027 bis zum Budgetende -> lastResponse 9027',
+        () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        status: [
+          (_) => json({'responseCode': '9027', 'responseText': 'not found'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+      );
+      final res = await paymentsFor(t, budget: const Duration(seconds: 5))
+          .pay(amount: 25, transactionId: '81010100');
+
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.response, isNull);
+      expect(res.lastResponse?.isNoStatement, isTrue);
+    });
+
+    test('schluessiger Ausgang: lastResponse bleibt null, response gesetzt',
+        () async {
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '0', 'receipt': '408811'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81010200');
+
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(res.response?.receipt, '408811');
+      expect(res.lastResponse, isNull);
+    });
+
     test(
         'zwei 9027 mit etwas dazwischen zaehlen nicht als zwei in Folge '
         '(Mutationsprobe)', () async {
