@@ -151,6 +151,92 @@ void main() {
     });
   });
 
+  group('Kartenanbieter am Verkauf', () {
+    test('der Anbieter geht als creditCardProvider hinaus', () async {
+      // Ohne dieses Feld steht am Beleg `creditCardProvider: null`, und weder
+      // Backend noch Bon-Bauer finden einen Zweig für den Kartenblock: der
+      // Gast bekommt keinen Kartenbeleg.
+      final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
+      await f.client.verkaufen(
+        positionen: [kaffee],
+        zahlungsart: KeckPaymentMethod.creditCard,
+        kartenanbieter: CreditCardProvider.gpTomAndroid,
+        kartenzahlungId: 'tx-1',
+        kartenzahlungsdaten: const {'trasanctionID': 'tx-1'},
+      );
+
+      final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
+      expect(params['creditCardProvider'], 'gpTomAndroid');
+      expect(params['cardPaymentId'], 'tx-1');
+      expect(params['cardPaymentData'], {'trasanctionID': 'tx-1'});
+    });
+
+    test('jeder Anbieter geht unter seinem Enum-Namen hinaus', () async {
+      // Der Name ist das Drahtformat — das JS-Paket sendet denselben Schlüssel,
+      // und der Bon schaltet daran. Ein `toString()` ergäbe
+      // „CreditCardProvider.stripe" und liefe still ins Leere.
+      for (final anbieter in CreditCardProvider.values) {
+        final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
+        await f.client.verkaufen(
+          positionen: [kaffee],
+          zahlungsart: KeckPaymentMethod.creditCard,
+          kartenanbieter: anbieter,
+          kartenzahlungId: 'tx-1',
+        );
+        final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
+        expect(params['creditCardProvider'], anbieter.name, reason: '$anbieter');
+      }
+    });
+
+    test('ohne Anbieter steht das Feld nicht im Rumpf', () async {
+      // Nicht als `null`: ein Aufrufer, der den Anbieter nicht kennt, soll das
+      // Feld nicht belegen — das Backend entscheidet dann wie bisher.
+      final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
+      await f.client.verkaufen(
+        positionen: [kaffee],
+        zahlungsart: KeckPaymentMethod.creditCard,
+        kartenzahlungId: 'tx-1',
+      );
+      expect(jsonDecode(f.log.single.body)['params'], isNot(contains('creditCardProvider')));
+    });
+
+    test('der Anbieter geht auch ohne Kennung mit', () async {
+      // Ein eigenes Terminal meldet keine Transaktionskennung. Der Verkauf
+      // scheitert daran NICHT: das Geld ist an dieser Stelle geflossen, und ein
+      // Beleg, den die Kasse wegen einer fehlenden Kennung nicht ausstellt,
+      // wäre der teurere Fehler.
+      final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
+      await f.client.verkaufen(
+        positionen: [kaffee],
+        zahlungsart: KeckPaymentMethod.creditCard,
+        kartenanbieter: CreditCardProvider.custom,
+      );
+
+      final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
+      expect(params['creditCardProvider'], 'custom');
+      expect(params, isNot(contains('cardPaymentId')));
+    });
+
+    test('ein Anbieter ohne Kartenzahlung geht gar nicht erst hinaus', () async {
+      // Bar mit Kartenanbieter ist ein Widerspruch: entweder ist die Zahlungsart
+      // falsch oder der Anbieter — beides gehört an den Tresen zurück, nicht in
+      // die Signaturkette.
+      for (final zahlungsart in KeckPaymentMethod.values.where((z) => z != KeckPaymentMethod.creditCard)) {
+        final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
+        await expectLater(
+          f.client.verkaufen(
+            positionen: [kaffee],
+            zahlungsart: zahlungsart,
+            kartenanbieter: CreditCardProvider.hobexHps,
+          ),
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
+          reason: '$zahlungsart',
+        );
+        expect(f.log, isEmpty, reason: '$zahlungsart');
+      }
+    });
+  });
+
   group('auflisten', () {
     test('die Kasse geht als cashregisterid hinaus — klein geschrieben', () async {
       // So heisst der Pflichtparameter dieses Endpunkts im Backend; ein
