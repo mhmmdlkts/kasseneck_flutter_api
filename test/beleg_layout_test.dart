@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/enums/qr_print_mode.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:kasseneck_api/widgets/keck_receipt_lines_widget.dart';
@@ -84,11 +85,13 @@ void main() {
     expect(alt.kopfId, isNull);
   });
 
-  test('PrintPaper.setBelegLayout druckt jede Fixture: Texte, Aufdruck (doppelt hoch), QR, Schnitt', () {
+  test('PrintPaper.setBelegLayout druckt jede Fixture: Texte, Aufdruck (doppelt hoch), QR, Schnitt', () async {
     for (final n in namen) {
       final layout = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/$n.lines.json'))!;
       final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
-      paper.setBelegLayout(layout);
+      // Nativ, weil dieser Test die QR-BEFEHLSBYTES prueft. Welcher Modus der
+      // Standard ist, sagt der Test darunter.
+      await paper.setBelegLayout(layout, qrMode: QrPrintMode.native);
       final bytes = paper.bytes.expand((b) => b).toList();
       final text = latin1.decode(bytes, allowInvalid: true);
       for (final b in layout.bannerTexte) {
@@ -109,6 +112,37 @@ void main() {
       expect(bytes, containsAllInOrder([0x1D, 0x28, 0x6B]), reason: '$n: kein QR');
       expect(bytes.sublist(bytes.length - 6), contains(0x56), reason: '$n: kein Schnitt');
     }
+  });
+
+  /// Der QR aus dem Zeilenmodell folgt dem eingestellten Modus.
+  ///
+  /// Das Layout liefert beim QR nur die NUTZLAST; wie daraus ein QR wird,
+  /// entscheidet der Renderer. `setBelegLayout` rief anfangs fest den nativen
+  /// Befehl -- damit haetten Drucker ohne `GS ( k` GAR KEINEN QR gedruckt,
+  /// sobald der Bon aus dem Zeilenmodell kommt. Auf einer oesterreichischen
+  /// Kassa ist der QR die maschinenlesbare Signatur; er darf nie
+  /// stillschweigend wegfallen.
+  test('setBelegLayout: der QR folgt dem Modus, wie beim alten Bauer', () async {
+    final layout = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/verkauf-bar.lines.json'))!;
+    Future<List<int>> mitModus(QrPrintMode modus) async {
+      final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
+      await paper.setBelegLayout(layout, qrMode: modus);
+      return paper.bytes.expand((b) => b).toList();
+    }
+
+    // GS ( k -- nur im nativen Modus.
+    expect(await mitModus(QrPrintMode.native), containsAllInOrder([0x1D, 0x28, 0x6B]));
+    expect(await mitModus(QrPrintMode.imageRaster), isNot(containsAllInOrder([0x1D, 0x28, 0x6B])));
+    expect(await mitModus(QrPrintMode.imageBitImage), isNot(containsAllInOrder([0x1D, 0x28, 0x6B])));
+
+    // GS v 0 (Raster) und ESC * (Bit-Image) -- jeder in seinem Modus.
+    expect(await mitModus(QrPrintMode.imageRaster), containsAllInOrder([0x1D, 0x76, 0x30]));
+    expect(await mitModus(QrPrintMode.imageBitImage), containsAllInOrder([0x1B, 0x2A]));
+
+    // Und der Standard ist derselbe wie beim alten Bauer: Raster.
+    final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
+    await paper.setBelegLayout(layout);
+    expect(paper.bytes.expand((b) => b).toList(), containsAllInOrder([0x1D, 0x76, 0x30]));
   });
 
   /// Aufdrucke tragen ihre Zeilennummer im Schluessel (sonst kollidieren zwei

@@ -4,6 +4,7 @@ import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/models/keck_print_result.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
@@ -96,9 +97,15 @@ class KeckPrinterService {
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
-    await paper.setKeckReceipt(receipt, qrMode: qrMode);
+    final BelegLayout? layout = receipt.layout;
+    if (layout != null && receipt.layoutIstVollstaendig) {
+      await paper.setBelegLayout(layout, qrMode: qrMode);
+    } else {
+      await paper.setKeckReceipt(receipt, qrMode: qrMode);
+    }
     return paper;
   }
+
 
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
     final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: qrMode);

@@ -79,6 +79,35 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Zeilenmodell des Backends (Kopf/Fuß wie beim Ausstellen, Belegart-
   /// Aufdruck, Regelwerk des Belegs); null bei altem Backend.
   BelegLayout? layout;
+
+  /// Zeigt das gelieferte Zeilenmodell alles, was dieser Beleg hergibt?
+  ///
+  /// Der Beleg wird an EINER Stelle gebaut -- im Backend, über
+  /// `@kreiseck/kasseneck-api`; Druck, Bildschirm und PDF rendern nur noch.
+  /// Solange aber Geräte gegen ein älteres Backend sprechen können, kann ein
+  /// Layout ankommen, das weniger zeigt, als der Beleg weiß.
+  ///
+  /// Bekannter Fall: Kartenzahlungsblöcke. Bis Paket 0.8.0 trug das
+  /// Zeilenmodell nur den Hobex-Block; GP Tom, SumUp, myPOS und Stripe
+  /// fehlten. Ein Bon aus so einem Layout sähe die Zahlung nicht mehr, obwohl
+  /// der Beleg die Daten mitbringt. Wer `false` bekommt, nimmt den alten
+  /// Bauer.
+  ///
+  /// Bewusst KEIN Versionsvergleich: eine Zahl im Layout wäre eine zweite
+  /// Zusage, die selbst wieder driften kann. Gefragt wird die Sache selbst.
+  ///
+  /// **Weg damit**, sobald kein Backend unter Paket 0.9.0 mehr im Feld ist:
+  /// dann können dieser Getter, `PrintPaper.setKeckReceipt` und
+  /// `KeckReceiptWidget` verschwinden, und es gibt wirklich nur einen Bauer.
+  bool get layoutIstVollstaendig {
+    final BelegLayout? l = layout;
+    if (l == null) return false;
+    final CreditCardProvider? anbieter = creditCardProvider;
+    if (cardPaymentData == null || anbieter == null) return true;
+    final String? ueberschrift = kartenblockUeberschrift[anbieter];
+    if (ueberschrift == null) return true;
+    return l.lines.any((z) => z is BelegText && z.text.contains(ueberschrift));
+  }
   /// Beleg einer Testumgebung (Aufdruck TESTKASSE).
   bool testKasse;
   /// Produktionskonto mit Test-Signatureinheit (Aufdruck TESTSIGNATUR).
