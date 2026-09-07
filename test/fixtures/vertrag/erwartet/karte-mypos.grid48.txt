@@ -1,0 +1,36 @@
+                Bäckerei Muster                 
+                  Hauptplatz 1                  
+                 4830 Hallstatt                 
+                  ATU12345678                   
+                 +43 6134 12345                 
+                                                
+Datum:                       13.08.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-63
+                                                
+1  x Behandlung                         120,00 A
+                                                
+MwSt%       MwSt            Netto         Brutto
+A 20%       20,00           100,00        120,00
+------------------------------------------------
+Gesamt:                                 120,00 €
+Zahlungsart:                       Kartenzahlung
+                                                
+                   [QR-Code]                    
+                                                
+                  MyPos Beleg                   
+TERMINAL ID:                            10203040
+DATUM:                       13.08.2026 10:15:30
+                   MASTERCARD                   
+KARTE:                       **** **** **** 4720
+                                                
+                                                
+               ------------------               
+                  Unterschrift                  
+STAN:                                     000815
+AUTH. CODE:                               123456
+RRN:                                622512345678
+AID:                              A0000000041010
+                                                
+         Vielen Dank für Ihren Einkauf          
+            www.baeckerei-muster.at             

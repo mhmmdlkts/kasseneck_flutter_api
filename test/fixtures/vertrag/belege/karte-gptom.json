@@ -1,0 +1,59 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "uid": "ATU12345678",
+    "taxnr": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-61",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-08-13T10:15:30",
+    "items": [
+      {
+        "name": "Behandlung",
+        "quantity": 1,
+        "unitPriceCents": 12000,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "creditCard",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "6F0404F0",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-61_2026-08-13T10:15:30_120,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "creditCardProvider": "gpTomAndroid",
+    "cardPaymentData": {
+      "batchNumber": 12,
+      "externalTransactionID": "TX-9911",
+      "terminalID": "T-55",
+      "emvAid": "A0000000031010",
+      "emvAppLable": "VISA CREDIT",
+      "cardDataEntry": "CONTACTLESS",
+      "cardNumber": "**** **** **** 4720",
+      "currencyCode": "EUR",
+      "amount": 12000,
+      "pinOk": true,
+      "approvedCode": "123456",
+      "sequenceNumber": 42,
+      "transactionType": 1
+    }
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

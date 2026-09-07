@@ -1,3 +1,21 @@
+## 6.5.1
+
+- **Vertrag auf npm 0.9.0 gezogen.** Damit liegen die neun Golden-Belege für
+  Kartenzahlungen auch hier — je einer pro Anbieter (Hobex HPS und Cloud,
+  GP Tom Android und iOS, SumUp, myPOS, Stripe mit Karte und mit EPS, dazu ein
+  eigener Anbieter ohne Terminaldaten). `beleg_raster_test.dart` rendert sie
+  durch das Dart-Raster und vergleicht zeichengenau gegen `grid32.txt` und
+  `grid48.txt` des Pakets: der Renderer hier ist damit an den Bauer dort
+  gebunden, Zeichen für Zeichen.
+
+  Das ist der Teil, der Drift künftig unmöglich macht — nicht die Blöcke
+  selbst. Wer im Paket einen Anbieter aufnimmt, bekommt dort einen roten Test,
+  bis ein Golden dazuliegt; und dieser Golden landet beim nächsten Ziehen hier
+  und muss zeichengenau stimmen.
+
+- Der Testname nannte „22 Belege" und war nach dem ersten neuen Beleg falsch.
+  Geprüft wird die Deckung mit dem Manifest, nicht eine Anzahl.
+
 ## 6.5.0
 
 **Anlass:** Bei einer Stripe-Zahlung standen auf dem Bon aus der App Marke,

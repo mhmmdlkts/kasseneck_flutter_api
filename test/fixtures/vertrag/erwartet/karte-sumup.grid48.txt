@@ -1,0 +1,30 @@
+                Bäckerei Muster                 
+                  Hauptplatz 1                  
+                 4830 Hallstatt                 
+                  ATU12345678                   
+                 +43 6134 12345                 
+                                                
+Datum:                       13.08.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-62
+                                                
+1  x Behandlung                         120,00 A
+                                                
+MwSt%       MwSt            Netto         Brutto
+A 20%       20,00           100,00        120,00
+------------------------------------------------
+Gesamt:                                 120,00 €
+Zahlungsart:                       Kartenzahlung
+                                                
+                   [QR-Code]                    
+                                                
+                  Sumup Beleg                   
+Kartentyp:                            MASTERCARD
+Kartennummer:                **** **** **** 4720
+Zahlungstyp:                         CONTACTLESS
+Gesamtbetrag:                         120,00 EUR
+Transaktionscode:                     TEZBA9K7QK
+Modus:                               CONTACTLESS
+                                                
+         Vielen Dank für Ihren Einkauf          
+            www.baeckerei-muster.at             

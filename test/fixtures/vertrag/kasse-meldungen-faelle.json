@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "faelle": [
+    { "name": "api: der Satz des Backends, woertlich",
+      "fehler": { "art": "api", "serverMessage": "Kopplungs-Code ist abgelaufen." },
+      "ersatz": "Ersatz.", "erwartet": "Kopplungs-Code ist abgelaufen." },
+    { "name": "api: auch ein Satz, der wie ein Ersatz aussieht, bleibt der des Backends",
+      "fehler": { "art": "api", "serverMessage": "PIN falsch, noch 2 Versuche." },
+      "ersatz": "Die Anmeldung ist fehlgeschlagen. Bitte erneut versuchen.", "erwartet": "PIN falsch, noch 2 Versuche." },
+    { "name": "klartext: sein eigener Text",
+      "fehler": { "art": "klartext", "text": "Eigener Satz fuer den Schirm." },
+      "ersatz": "Ersatz.", "erwartet": "Eigener Satz fuer den Schirm." },
+    { "name": "zeitablauf: der Server antwortet nicht",
+      "fehler": { "art": "zeitablauf" },
+      "ersatz": "Ersatz.", "erwartet": { "schluessel": "netz.zeitablauf" } },
+    { "name": "netz: keine Verbindung",
+      "fehler": { "art": "netz" },
+      "ersatz": "Ersatz.", "erwartet": { "schluessel": "netz.keine_verbindung" } },
+    { "name": "unerwartet: HTML statt JSON (fehlender Rewrite)",
+      "fehler": { "art": "unerwartet", "status": 404 },
+      "ersatz": "Ersatz.", "erwartet": { "schluessel": "server.unerwartet", "werte": { "status": 404 } } },
+    { "name": "unerwartet: 500er",
+      "fehler": { "art": "unerwartet", "status": 500 },
+      "ersatz": "Ersatz.", "erwartet": { "schluessel": "server.unerwartet", "werte": { "status": 500 } } },
+    { "name": "unerwartet: HTTP 200 ohne Huelle",
+      "fehler": { "art": "unerwartet", "status": 200 },
+      "ersatz": "Ersatz.", "erwartet": { "schluessel": "server.unerwartet", "werte": { "status": 200 } } },
+    { "name": "sonst: Technisches bleibt beim Ersatz",
+      "fehler": { "art": "sonst" },
+      "ersatz": "Die Kopplung ist fehlgeschlagen. Bitte erneut versuchen.", "erwartet": "Die Kopplung ist fehlgeschlagen. Bitte erneut versuchen." }
+  ]
+}
