@@ -22,6 +22,7 @@ import 'kasseneck_item.dart';
 
 import 'keck_voucher.dart';
 
+
 class PrintPaper {
   final KeckPaperSize paperSize;
   final List<Map<String, dynamic>> commands = [];
@@ -149,6 +150,21 @@ class PrintPaper {
   /// ersetztes Zeichen ergaebe einen QR, der sich sauber lesen laesst und
   /// trotzdem nicht mehr zum signierten Beleg passt — falsche Daten sind
   /// schlimmer als keine. Kodiert wird UTF-8 (siehe [QRCode]).
+  /// Den QR im eingestellten Modus setzen -- die **eine** Stelle, an der aus
+  /// einer Nutzlast Druckbefehle werden. Beide Wege (Zeilenmodell und der alte
+  /// Bauer) gehen hier durch, damit ein neuer Modus nicht an einem von beiden
+  /// vorbeigeht.
+  Future<void> _qrNachModus(String nutzlast, QrPrintMode modus) async {
+    switch (modus) {
+      case QrPrintMode.imageRaster:
+        await addQrCodeAsImage(nutzlast, raster: true);
+      case QrPrintMode.imageBitImage:
+        await addQrCodeAsImage(nutzlast, raster: false);
+      case QrPrintMode.native:
+        addQrCode(nutzlast);
+    }
+  }
+
   void addQrCode(String data, {QRSize size = QRSize.size6}) {
     if (data.isEmpty) {
       _qrAusfall(data, 'leere Nutzlast');
@@ -435,17 +451,7 @@ class PrintPaper {
     }
 
 
-    switch (qrMode) {
-      case QrPrintMode.imageRaster:
-        await addQrCodeAsImage(receipt.qr, raster: true);
-        break;
-      case QrPrintMode.imageBitImage:
-        await addQrCodeAsImage(receipt.qr, raster: false);
-        break;
-      case QrPrintMode.native:
-        addQrCode(receipt.qr);
-        break;
-    }
+    await _qrNachModus(receipt.qr, qrMode);
 
     addFeed();
 
@@ -577,7 +583,7 @@ class PrintPaper {
   /// Textzeile raus (58 mm = 32, 80 mm = 48) — keine eigene Spaltenrechnung,
   /// dieselben Zeilen wie Browser-Kasse, Labor und Beleg-PDF. Bevorzugt
   /// gegenüber [setKeckReceipt], sobald ein Layout vorliegt.
-  void setBelegLayout(BelegLayout layout, {bool cut = true}) {
+  Future<void> setBelegLayout(BelegLayout layout, {bool cut = true, QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
     reset();
     // Erst druckbar machen (Codepage, EUR statt Euro-Zeichen), DANN rastern —
     // damit das Raster mit den Zeichen rechnet, die aufs Papier gehen.
@@ -602,7 +608,14 @@ class PrintPaper {
         case RasterArt.space:
           addFeed(lines: 1);
         case RasterArt.qr:
-          addQrCode(z.qr ?? '');
+          // Das Layout liefert beim QR NUR die Nutzlast; wie daraus ein QR
+          // wird, entscheidet der Renderer -- am Drucker also der Modus, den
+          // der Chef fuer sein Geraet eingestellt hat. Fest `addQrCode` zu
+          // rufen hiesse `native` fuer alle, und Drucker ohne `GS ( k` drucken
+          // dann GAR KEINEN QR. Auf einer oesterreichischen Kassa ist der QR
+          // die maschinenlesbare Signatur -- er darf nie stillschweigend
+          // wegfallen, nur weil das Blatt aus dem Zeilenmodell kommt.
+          await _qrNachModus(z.qr ?? '', qrMode);
         case RasterArt.banner:
           // Belegart/Warnung: fett, doppelte Höhe; Warnungen invers. Text ist bereits zentriert aufgefüllt.
           addText(z.text.trimRight(), styles: PosStyles(align: PosAlign.left, bold: true, height: PosTextSize.size2, reverse: z.warnung));
@@ -636,7 +649,7 @@ class PrintPaper {
 
 
   void _hobexHps(Map<String, dynamic> data) {
-    addText('Hobex Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(kartenblockUeberschrift[CreditCardProvider.hobexHps]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('Datum:', data['date']);
     addDoubleText('TID:', data['tid']);
     addDoubleText('Nr.:', data['no']);
@@ -659,7 +672,7 @@ class PrintPaper {
   }
 
   void _hobexApi(Map<String, dynamic> data) {
-    addText('Hobex Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(kartenblockUeberschrift[CreditCardProvider.hobexHps]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('Datum:', data['date']);
     addDoubleText('TID:', data['tid']);
     addDoubleText('Nr.:', data['no']);
@@ -676,7 +689,7 @@ class PrintPaper {
   }
 
   void _sumup(Map<String, dynamic> data) {
-    addText('Sumup Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(kartenblockUeberschrift[CreditCardProvider.sumup]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('Kartentyp:', data['cardType'] ?? 'n/a');
     addDoubleText('Kartennummer:', '**** **** **** ${data['cardLastDigits'] ?? ''}');
     addDoubleText('Zahlungstyp:', data['paymentType'] ?? 'n/a');
@@ -687,7 +700,7 @@ class PrintPaper {
   }
 
   void _mypos(Map<String, dynamic> data) {
-    addText('MyPos Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(kartenblockUeberschrift[CreditCardProvider.myposPro]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('TERMINAL ID:', data['TID'] ?? '-');
     String dateTime = data['date_time'];
     String day = dateTime.substring(4, 6);
@@ -713,7 +726,7 @@ class PrintPaper {
 
   void _gpTom(Map<String, dynamic> data) {
     final String transactionType = gpTomTransactionType(data);
-    addText('GP Tom Beleg', styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(kartenblockUeberschrift[CreditCardProvider.gpTomAndroid]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addText('Batch: ${data['batchNumber']}', styles: PosStyles(align: PosAlign.center));
     addText('Receipt: ${data['externalTransactionID']}', styles: PosStyles(align: PosAlign.center));
     addText('TID: ${data['terminalID']}', styles: PosStyles(align: PosAlign.center));
@@ -731,7 +744,7 @@ class PrintPaper {
   }
 
   void _stripe(Map<String, dynamic> data, String? cardPaymentId) {
-    addText('Online-Zahlung (Stripe)', styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(kartenblockUeberschrift[CreditCardProvider.stripe]!, styles: PosStyles(align: PosAlign.center, bold: true));
     for (final String line in stripeReceiptLines(data, cardPaymentId)) {
       addText(line, styles: PosStyles(align: PosAlign.center));
     }

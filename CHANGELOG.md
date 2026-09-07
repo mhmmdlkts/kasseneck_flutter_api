@@ -1,3 +1,46 @@
+## 6.5.0
+
+**Anlass:** Bei einer Stripe-Zahlung standen auf dem Bon aus der App Marke,
+letzte vier Ziffern, 3-D Secure, Betrag, Zahlzeitpunkt und Referenz. Dasselbe
+Blatt als PDF geöffnet sagte nur „Zahlungsart: Kartenzahlung".
+
+- **Der Bon kommt jetzt aus dem gelieferten Zeilenmodell.** Der Beleg wird an
+  EINER Stelle gebaut — im Backend, über `@kreiseck/kasseneck-api`; alles hier
+  rendert nur noch. Es gab zwei Bauer: das Zeilenmodell und `setKeckReceipt`.
+  Wo sie sich unterschieden, zeigte derselbe Beleg je nach Oberfläche etwas
+  anderes. `KeckPrinterService.getPaperFromReceipt` nimmt `setBelegLayout`,
+  sobald ein Layout vorliegt.
+
+- **`setBelegLayout` folgt jetzt dem QR-Modus.** Es rief fest den nativen
+  Befehl `GS ( k`. Damit hätten Drucker ohne diesen Befehl **gar keinen QR**
+  gedruckt, sobald der Bon aus dem Zeilenmodell kommt — und auf einer
+  österreichischen Kassa ist der QR die maschinenlesbare Signatur. Beide Wege
+  gehen jetzt durch dieselbe Stelle (`_qrNachModus`), damit ein neuer Modus
+  nicht an einem von beiden vorbeigeht. `setBelegLayout` ist dadurch `async`.
+
+- **Neu: `KasseneckReceipt.layoutIstVollstaendig`.** Zeigt das gelieferte
+  Zeilenmodell alles, was der Beleg hergibt? Trägt der Beleg Kartendaten, das
+  Layout aber keinen Block dazu, dann stammt es von einem Backend vor Paket
+  0.9.0 — dann druckt der alte Bauer weiter. Bewusst **kein**
+  Versionsvergleich: eine Zahl im Layout wäre eine zweite Zusage, die selbst
+  wieder driften kann. Gefragt wird die Sache selbst.
+
+  Damit ist die Ausrollreihenfolge entschärft: ein Gerät, das gegen ein
+  älteres oder zurückgerolltes Backend spricht, verliert die
+  Kartenzahlungsblöcke nicht.
+
+- Die Überschriften der Kartenblöcke stehen jetzt einmal, bei
+  `CreditCardProvider` (`kartenblockUeberschrift`). Bauer und Prüfung lesen
+  dieselbe Tabelle — sonst griffe die Prüfung ins Leere, sobald jemand eine
+  Überschrift ändert.
+
+**Wegwerfen, sobald kein Backend unter Paket 0.9.0 mehr im Feld ist:**
+`layoutIstVollstaendig`, `PrintPaper.setKeckReceipt` und `KeckReceiptWidget`.
+Dann gibt es wirklich nur noch einen Bauer — und
+`print_widget_consistency_test.dart`, der heute die beiden Dart-Bauer
+gegeneinander hält, wird überflüssig. Das ist der Maßstab dafür, dass wir
+fertig sind.
+
 ## 6.4.0
 
 **Anlass:** Vorfall vom 02.09.2026 am Produktivterminal 3556988 (HPS 1.11.4,
