@@ -738,7 +738,12 @@ class PrintPaper {
       addText('${data['cardNumber']}', styles: PosStyles(align: PosAlign.center));
     }
     addText('${transactionType!=''?'$transactionType ':''}Amount ${data['currencyCode']} ${formatGpTomAmount(data['amount'])}', styles: PosStyles(align: PosAlign.center));
-    addText(data['pinOk'] ? 'PIN OK' : 'PIN NOT OK', styles: PosStyles(align: PosAlign.center));
+    // `== true` statt einer Ternary auf dem Rohwert: `InquireResult.pinOk` ist
+    // `bool?` und fehlt bei jeder kontaktlosen Zahlung ohne PIN. Der Rohwert
+    // warf dann, und der `catch (_)` um den Kartenblock verschluckte es —
+    // gedruckt wurde bis hierher, die drei Zeilen danach fehlten. Das Widget
+    // entscheidet seit jeher so.
+    addText(data['pinOk'] == true ? 'PIN OK' : 'PIN NOT OK', styles: PosStyles(align: PosAlign.center));
     addText('Authorization Code ${data['approvedCode']}', styles: PosStyles(align: PosAlign.center));
     addText('Sequence Number: ${data['sequenceNumber']}', styles: PosStyles(align: PosAlign.center));
   }
@@ -807,11 +812,17 @@ String formatCents(int cents) {
 }
 
 /// Betrag aus GP-Tom-`cardPaymentData`: das Plugin liefert ab 0.1.0 Cent
-/// (int), auf älteren gespeicherten Belegen steht Euro (double). null → '-'.
+/// (int), auf älteren gespeicherten Belegen steht Euro (double).
+/// null/Nicht-Zahl → '-'.
+///
+/// Der Cast war ein zweiter Weg, den Kartenblock abzuschneiden: eine Zahl als
+/// Text (fremde Antwort, Umweg über JSON) warf, und der `catch (_)` um den
+/// Block verschluckte es. Das Backend-PDF antwortet auf denselben Wert seit
+/// jeher mit '-' (`functions/helper.js`, „null/Nicht-Zahl -> '-'") — die
+/// zugesagte Parität galt für diesen Fall also nicht.
 String formatGpTomAmount(dynamic value) {
-  if (value == null) return '-';
-  final num n = value as num;
-  return n is int ? formatCents(n) : formatAmount(n);
+  if (value is! num || !value.isFinite) return '-';
+  return value is int ? formatCents(value) : formatAmount(value);
 }
 
 /// GP-Tom-`transactionType` aus `cardPaymentData`: das Plugin-`toMap`

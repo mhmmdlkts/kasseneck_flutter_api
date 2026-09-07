@@ -1,3 +1,31 @@
+## 6.6.1
+
+**Anlass:** Der GP-Tom-Kartenblock brach auf dem Thermobon mitten ab — PIN,
+Autorisierungscode und Sequenznummer fehlten, der Rest des Belegs stimmte.
+
+- **`pinOk` wird jetzt mit `== true` gelesen** (`PrintPaper._gpTom`). Vorher
+  stand dort eine Ternary auf dem Rohwert. `InquireResult.pinOk` ist `bool?`
+  und fehlt bei jeder kontaktlosen Zahlung ohne PIN — dem Normalfall unter
+  50 €. Der Zugriff warf, und der `catch (_)` um den Kartenblock verschluckte
+  es: gedruckt wurde bis zur Betragszeile, die drei Zeilen danach fielen weg.
+  Das Beleg-Widget entschied schon immer so; die beiden Pfade sind wieder
+  deckungsgleich.
+
+- **`formatGpTomAmount` antwortet auf jede Nicht-Zahl mit `'-'`** statt zu
+  werfen. Derselbe Riss eine Zeile höher: ein Betrag als Text (fremde Antwort,
+  Umweg über JSON) beendete den Block schon nach der Kartennummer. Das
+  Backend-PDF antwortet auf denselben Wert seit jeher mit `'-'`
+  (`functions/helper.js`) — die zugesagte Parität galt für diesen Fall nicht.
+  `null`, `NaN` und `Infinity` ebenso.
+
+**Nicht angefasst, aber gefunden** (dieselbe Ursache, andere Anbieter):
+`PrintPaper._mypos` liest `data['date_time']` ungeschützt in ein `String` und
+schneidet daraus mit `substring`; `_hobexHps`/`_hobexApi` reichen rohe Werte an
+`addDoubleText(String, String)`; `_sumup` castet `data['amount'] as num`. Alle
+enden im selben `catch (_)` und damit in einem abgeschnittenen Block. Heute
+speisen die Konverter dieses Pakets diese Blöcke mit lauter Texten — die
+GP-Tom-Daten dagegen kommen roh aus dem Plugin, deshalb riss es dort zuerst.
+
 ## 6.6.0
 
 **Anlass:** Eine GP-Tom-Zahlung aus der Kassen-App hinterließ auf dem Beleg
