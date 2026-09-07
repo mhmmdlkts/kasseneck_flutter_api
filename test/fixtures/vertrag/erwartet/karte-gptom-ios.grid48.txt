@@ -1,0 +1,34 @@
+                Bäckerei Muster                 
+                  Hauptplatz 1                  
+                 4830 Hallstatt                 
+                  ATU12345678                   
+                 +43 6134 12345                 
+                                                
+Datum:                       13.08.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-67
+                                                
+1  x Behandlung                         120,00 A
+                                                
+MwSt%       MwSt            Netto         Brutto
+A 20%       20,00           100,00        120,00
+------------------------------------------------
+Gesamt:                                 120,00 €
+Zahlungsart:                       Kartenzahlung
+                                                
+                   [QR-Code]                    
+                                                
+                  GP Tom Beleg                  
+                   Batch: 12                    
+                Receipt: TX-9911                
+                   TID: T-55                    
+                 A0000000031010                 
+            VISA CREDIT CONTACTLESS             
+              **** **** **** 4720               
+            Refund Amount EUR 120,00            
+                   PIN NOT OK                   
+           Authorization Code 123456            
+              Sequence Number: 42               
+                                                
+         Vielen Dank für Ihren Einkauf          
+            www.baeckerei-muster.at             

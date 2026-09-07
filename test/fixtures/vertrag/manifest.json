@@ -1,6 +1,60 @@
 {
   "regelwerk": 2,
   "belege": {
+    "karte-eigener": {
+      "eingabe": "0741f3a45aae71f268ebdc62a2f61373a9e4d2c46206f561ef89a3a6237c7c10",
+      "erwartet": "69117d5c4d70891bef27955b339cfdd63969c2100369dfeb355792b954e67534",
+      "grid32": "12a7448b4698be696f10564cc1d38f75c675de1a87fc959f1edfca97e4c62ea0",
+      "grid48": "f217c70c4204d134cc3b7de77504be21cb4e4797c2a2af9b997f45d817abbf4f"
+    },
+    "karte-gptom": {
+      "eingabe": "e282e413f59f4d53cb10d0e5240b9fa429984739a0109bc272fd1a2015933f51",
+      "erwartet": "3dee0d64dbf6f34a04737130d729a77c4e5437008bfa8df84bf3617b11dd11d6",
+      "grid32": "12db9f41bbeb30ba212442b18b6b493f13de4a18919017612390c17b890c03d7",
+      "grid48": "b6501f07789d34d458b36d36478d34e84ab857a5de5b3403d22a629dcd45a94f"
+    },
+    "karte-gptom-ios": {
+      "eingabe": "2db06836e2c103252adcc2753df929dd6e810e437289e72b7ddebe5bebd8545f",
+      "erwartet": "479137c5b98db4e70dce20c79cf0e27a2d9b60049a0a4795202bdec6c76bd0f2",
+      "grid32": "4d990a3bf241ea1fe8f05e58abce89e296a872e32295858a4f3e77f4b0018427",
+      "grid48": "ea95ba747fb94d98d592e23ec2481910adb5b7ef5fd33df98088776590c8a5be"
+    },
+    "karte-hobex-cloud": {
+      "eingabe": "bc8034b2542fbd90113040b5357ec0217fb254736494c37d2be90416813db776",
+      "erwartet": "2b729018415305f80b01bb456a58cb26dee8460b4a37def44cf6a9f1afc705fa",
+      "grid32": "a478ae42b2e0ccf48013c3b7df5c9991b79ec2931ca8cfaa7763d4fe72195454",
+      "grid48": "054c91bd542b2a80cecd39cfbe1140b27aa527d0e8d067e34464492948aa114c"
+    },
+    "karte-hobex-hps": {
+      "eingabe": "2564a49745c26b92eb1a52532d18407db5be330404ef5e8ea17a2ee601b01ddf",
+      "erwartet": "61c093340136946b8dea538493b5100f1d507614cb5992fbe3e5d5ca2ea4bba9",
+      "grid32": "62e3b47d8a31990ccdf8d97b99d7b37491c6776b8f535778d5e2b23a08487fe7",
+      "grid48": "4236be127c8e7fa3cd2ebf52799516cf44f1d0ed06c66f52a822a7460e0f5a35"
+    },
+    "karte-mypos": {
+      "eingabe": "0a259816b86094d3e460e5b5ad95ebfe6d408da70a2f284f005e79197835c422",
+      "erwartet": "6154554e3c8458284ece27bb98e99aee64eb935f913c57e679631ac8d6c92419",
+      "grid32": "5928fa03a75cd7ccff06ce0fe5670d80bf61ccde14d96a2d140e1f26ac16fa9b",
+      "grid48": "8a7002db14b4ec1b90f349976c9999b4fa5fc96645b233c349d02214d8f167c7"
+    },
+    "karte-stripe": {
+      "eingabe": "225452a726938edf13bc2ecb18f3e4a2f959ac85c67405da8ca1a06204290371",
+      "erwartet": "1a9803bd34a8303f5b2027294c6797e34beeb95e8d173ea091235d2985b79bf0",
+      "grid32": "f2dbd3abe8129dcfe6a82db165d4f909c0077de1e788a4fe8977a9aa0bbae505",
+      "grid48": "ce064febd9e540b9346d1730e2581ee79902f0c115068d44f814d25177a2c974"
+    },
+    "karte-stripe-eps": {
+      "eingabe": "f94fb8183c35e571f576bf5180a39622a02d496fa140434662fa6a6b7576b5a1",
+      "erwartet": "b6d963cf777739eb845f4a346e02911bc9435a04260553aedbf48efb48d5ffae",
+      "grid32": "c8d8189c51159c639a2a861557fe32bbfdc6e65c0e91656e94caa99e5ff2c9ed",
+      "grid48": "3d35cf200c94588d2fd28333e8f78a2d0d12860603ebbfd12cd86295df159d0e"
+    },
+    "karte-sumup": {
+      "eingabe": "8e0d0883d1faa0a1af96f7a57cde400d6154e90b13856b65bd04a138b868e1ed",
+      "erwartet": "6569440a4aef13bca4f4f09d40919e7459ae38a1d29ae929d81e3743ea396287",
+      "grid32": "66ea91d4363bea96a28ca88020780d25f7bd2e42a42289f325d59116f6b960f7",
+      "grid48": "043e2aa367473ae8ecbaf7b92d886380d1e0d0dc461140c69771cfd18b7a1a39"
+    },
     "langer-artikelname": {
       "eingabe": "a9a8832989937db8c2abb0e548f31549040c89ae46d707102aff545e3a1a8c21",
       "erwartet": "97405d2030efc2e8eb092d0051fd4567b4c0d5ba88050c3e063d9996d10c4313",

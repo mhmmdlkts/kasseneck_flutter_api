@@ -1,0 +1,31 @@
+                Bäckerei Muster                 
+                  Hauptplatz 1                  
+                 4830 Hallstatt                 
+                  ATU12345678                   
+                 +43 6134 12345                 
+                                                
+Datum:                       13.08.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-64
+                                                
+1  x Behandlung                         120,00 A
+                                                
+MwSt%       MwSt            Netto         Brutto
+A 20%       20,00           100,00        120,00
+------------------------------------------------
+Gesamt:                                 120,00 €
+Zahlungsart:                       Kartenzahlung
+                                                
+                   [QR-Code]                    
+                                                
+            Online-Zahlung (Stripe)             
+          Visa Kreditkarte (Apple Pay)          
+              **** **** **** 4242               
+                 3-D Secure: ja                 
+            Gesamtbetrag 120,00 EUR             
+           Bezahlt: 15.08.2026 08:15            
+           Abrechnung: MUSTER STUDIO            
+           Referenz: pi_3QabcXYZ0001            
+                                                
+         Vielen Dank für Ihren Einkauf          
+            www.baeckerei-muster.at             
