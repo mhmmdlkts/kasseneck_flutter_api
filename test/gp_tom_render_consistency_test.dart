@@ -41,12 +41,20 @@ Map<String, dynamic> gpTomData(dynamic amount) => {
       'transacitonType': 1,
     };
 
-KasseneckReceipt gpTomReceipt({required dynamic cardAmount, required int itemPriceCents}) =>
+KasseneckReceipt gpTomReceipt({
+  required dynamic cardAmount,
+  required int itemPriceCents,
+  Map<String, dynamic>? statt,
+  Set<String> ohne = const {},
+}) =>
     buildReceipt(
       items: [KasseneckItem(name: 'Testartikel', quantity: 1, vat: VatRate.vat20, priceCents: itemPriceCents)],
       paymentMethod: KeckPaymentMethod.creditCard,
       cardProvider: CreditCardProvider.gpTomAndroid,
-      cardPaymentData: gpTomData(cardAmount),
+      cardPaymentData: {
+        ...gpTomData(cardAmount),
+        ...?statt,
+      }..removeWhere((k, _) => ohne.contains(k)),
     );
 
 Future<List<String>> renderPrintTexts(KasseneckReceipt receipt) async {
@@ -80,6 +88,15 @@ void main() {
     });
     test('null -> "-"', () {
       expect(formatGpTomAmount(null), '-');
+    });
+    test('Nicht-Zahl -> "-"', () {
+      // Das Backend antwortet auf denselben Wert mit '-' („null/Nicht-Zahl",
+      // functions/helper.js). Hier warf der Cast, und der `catch (_)` um den
+      // Kartenblock schnitt alles ab, was nach der Betragszeile kommt.
+      expect(formatGpTomAmount('12,34'), '-');
+      expect(formatGpTomAmount(true), '-');
+      expect(formatGpTomAmount(double.nan), '-');
+      expect(formatGpTomAmount(double.infinity), '-');
     });
   });
 
@@ -116,5 +133,57 @@ void main() {
     const expectedLine = 'Sale Amount EUR 12,34';
     expect(printTexts, contains(expectedLine));
     expect(widgetTexts, contains(expectedLine));
+  });
+
+  /// Ein `pinOk`, das nicht `true` oder `false` ist, darf den Block nicht
+  /// abschneiden.
+  ///
+  /// `InquireResult.pinOk` ist `bool?` und fehlt bei jeder kontaktlosen Zahlung
+  /// ohne PIN — der Normalfall unter 50 €. Der Druck stolperte darueber, und der
+  /// `catch (_)` um den Kartenblock verschluckte den Fehler: gedruckt wurde bis
+  /// zur Betragszeile, PIN, Autorisierungscode und Sequenznummer fehlten. Das
+  /// Widget entschied schon immer mit `== true` und blieb vollstaendig — genau
+  /// diese Abweichung faengt der Vergleich hier.
+  ///
+  /// Die drei letzten Zeilen sind das, was der Test wirklich prueft: sie stehen
+  /// HINTER der Stelle, an der es riss.
+  for (final (name, receipt) in [
+    ('pinOk fehlt ganz', gpTomReceipt(cardAmount: 1000, itemPriceCents: 1000, ohne: {'pinOk'})),
+    ('pinOk ist null', gpTomReceipt(cardAmount: 1000, itemPriceCents: 1000, statt: {'pinOk': null})),
+    ('pinOk ist Text', gpTomReceipt(cardAmount: 1000, itemPriceCents: 1000, statt: {'pinOk': 'true'})),
+    ('pinOk ist Zahl', gpTomReceipt(cardAmount: 1000, itemPriceCents: 1000, statt: {'pinOk': 1})),
+  ]) {
+    testWidgets('GP-Tom, $name: der Block bleibt vollstaendig, Print == Widget', (tester) async {
+      final printTexts = (await tester.runAsync(() => renderPrintTexts(receipt)))!;
+      final widgetTexts = await renderWidgetTexts(tester, receipt);
+
+      for (final zeile in ['PIN NOT OK', 'Authorization Code 00', 'Sequence Number: 42']) {
+        expect(printTexts, contains(zeile), reason: 'Druck, $name');
+        expect(widgetTexts, contains(zeile), reason: 'Widget, $name');
+      }
+    });
+  }
+
+  testWidgets('GP-Tom, amount als Text: der Block bleibt vollstaendig', (tester) async {
+    // Derselbe Riss eine Zeile hoeher: der Betrag kam als Text herein, der Cast
+    // warf, und der Kartenblock endete nach der Kartennummer.
+    final receipt = gpTomReceipt(cardAmount: '10,00', itemPriceCents: 1000);
+    final printTexts = (await tester.runAsync(() => renderPrintTexts(receipt)))!;
+    final widgetTexts = await renderWidgetTexts(tester, receipt);
+
+    for (final zeile in ['Sale Amount EUR -', 'PIN OK', 'Authorization Code 00', 'Sequence Number: 42']) {
+      expect(printTexts, contains(zeile), reason: 'Druck');
+      expect(widgetTexts, contains(zeile), reason: 'Widget');
+    }
+  });
+
+  testWidgets('GP-Tom, pinOk true: es bleibt bei PIN OK', (tester) async {
+    // Gegenprobe zur Null-Haertung: `== true` darf die Aussage nicht verlieren.
+    final receipt = gpTomReceipt(cardAmount: 1000, itemPriceCents: 1000);
+    final printTexts = (await tester.runAsync(() => renderPrintTexts(receipt)))!;
+    final widgetTexts = await renderWidgetTexts(tester, receipt);
+
+    expect(printTexts, contains('PIN OK'));
+    expect(widgetTexts, contains('PIN OK'));
   });
 }
