@@ -17,6 +17,7 @@
 /// auf dem etwas schiefgehen kann — mitten zwischen Beleg und Gast.
 library;
 
+import '../../enums/credit_card_provider.dart';
 import '../../enums/keck_payment_method.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
@@ -176,12 +177,18 @@ class RegisterReceiptClient {
   final Duration abschlussFrist;
 
   /// Normalbeleg (Verkauf) — der signierte Beleg samt Belegkopf.
+  ///
+  /// [kartenanbieter] gehoert zu jeder Kartenzahlung: Backend und Bon-Bauer
+  /// schalten den Kartenblock ueber dieses Feld. Fehlt es, steht am Beleg
+  /// `creditCardProvider: null`, kein Zweig trifft, und der Gast bekommt keinen
+  /// Kartenbeleg — auch dann nicht, wenn Kennung und Terminaldaten mitgehen.
   Future<KasseneckReceipt> verkaufen({
     required List<KasseneckItem> positionen,
     required KeckPaymentMethod zahlungsart,
     int? trinkgeldCents,
     List<String>? kundendaten,
     List<String>? rechtshinweise,
+    CreditCardProvider? kartenanbieter,
     String? kartenzahlungId,
     Map<String, dynamic>? kartenzahlungsdaten,
   }) async {
@@ -197,6 +204,13 @@ class RegisterReceiptClient {
     if (trinkgeldCents != null && trinkgeldCents < 0) {
       throw const KasseneckValidationError(name, 'Trinkgeld muss >= 0 sein', 'request');
     }
+    if (kartenanbieter != null && zahlungsart != KeckPaymentMethod.creditCard) {
+      // Ein Anbieter an einer Barzahlung ist ein Widerspruch: entweder ist die
+      // Zahlungsart falsch oder der Anbieter. Beides gehoert an den Tresen
+      // zurueck, bevor der Beleg in der Signaturkette haengt.
+      throw const KasseneckValidationError(
+          name, 'Kartenanbieter gibt es nur bei zahlungsart creditCard', 'request');
+    }
 
     final daten = await transport.rufen(
       name,
@@ -207,6 +221,15 @@ class RegisterReceiptClient {
         if (trinkgeldCents != null && trinkgeldCents > 0) 'tip': trinkgeldCents,
         if (kundendaten != null && kundendaten.isNotEmpty) 'customerDetails': kundendaten.join('\n'),
         if (rechtshinweise != null && rechtshinweise.isNotEmpty) 'legalMessage': rechtshinweise.join('\n'),
+        // Der Enum-Name ist das Drahtformat — dasselbe Wort sendet der
+        // JS-Zwilling, und der Bon schaltet daran.
+        //
+        // Bewusst OHNE die Regel des alten Wegs („Kennung ist Pflicht bei einem
+        // Anbieter ausser custom", `KasseneckApi._createReceipt`): ein eigenes
+        // Terminal meldet keine Kennung, und ein Verkauf, der deshalb scheitert,
+        // laesst das Geld geflossen und den Beleg aus. Der Anbieter geht mit,
+        // was immer sonst fehlt.
+        'creditCardProvider': ?kartenanbieter?.name,
         'cardPaymentId': ?kartenzahlungId,
         'cardPaymentData': ?kartenzahlungsdaten,
       },
@@ -270,6 +293,11 @@ class RegisterReceiptClient {
   ///
   /// Die Restmengen und die Reichweite des Rechts haelt der Server; die Kasse
   /// bietet nur an, was sie fuer moeglich haelt.
+  ///
+  /// **Kein Kartenanbieter, keine Terminaldaten:** anders als beim Verkauf baut
+  /// der Server den Storno-Beleg selbst und nimmt dafuer nur `items`, `note` und
+  /// `paymentMethod` entgegen. Ein hier mitgegebener Anbieter fiele stumm weg —
+  /// deshalb gibt es das Argument gar nicht erst.
   Future<Stornoergebnis> stornieren({
     required String originalReceiptId,
     required String grund,

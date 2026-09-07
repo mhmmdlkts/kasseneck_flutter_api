@@ -1,3 +1,35 @@
+## 6.6.0
+
+**Anlass:** Eine GP-Tom-Zahlung aus der Kassen-App hinterließ auf dem Beleg
+keinen einzigen Kartenblock. `RegisterReceiptClient.verkaufen` kannte den
+Kartenanbieter gar nicht und schickte nur Kennung und Terminaldaten; im Beleg
+stand `creditCardProvider: null`, und weil Backend und Bon-Bauer daran schalten,
+traf kein Zweig — der Gast bekam keinen Kartenbeleg, obwohl alle Daten da waren.
+
+- **Neu: `verkaufen(kartenanbieter: …)`** (`CreditCardProvider`, optional) —
+  geht als `creditCardProvider` unter dem Enum-Namen hinaus, genau wie im
+  JS-Zwilling. Ohne Angabe steht das Feld nicht im Rumpf; das Backend entscheidet
+  dann wie bisher.
+
+- **Neuer Export in `kasse.dart`: `CreditCardProvider`** samt
+  `kartenblockUeberschrift`. Wer mit Karte kassiert, benennt den Anbieter am
+  Verkauf und brauchte dafür bisher einen zweiten Import.
+
+- **Ein Anbieter ohne `zahlungsart: creditCard` wirft** einen
+  `KasseneckValidationError` (`kind: 'request'`), bevor etwas hinausgeht:
+  entweder ist die Zahlungsart falsch oder der Anbieter, und beides gehört an den
+  Tresen zurück statt in die Signaturkette.
+
+- Bewusst **nicht** übernommen: die Regel des alten Wegs
+  (`KasseneckApi._createReceipt`), nach der eine `cardPaymentId` bei jedem
+  Anbieter außer `custom` Pflicht ist. Ein eigenes Terminal meldet keine
+  Transaktionskennung; ein Verkauf, der daran scheitert, lässt das Geld geflossen
+  und den Beleg aus. Der Anbieter geht mit, was immer sonst fehlt.
+
+- `stornieren` bekommt bewusst **kein** solches Argument: den Storno-Beleg baut
+  der Server, und `cancelReceipt` nimmt nur `items`, `note` und `paymentMethod`
+  entgegen — ein mitgegebener Anbieter fiele stumm weg. Steht jetzt am Aufruf.
+
 ## 6.5.1
 
 - **Vertrag auf npm 0.9.0 gezogen.** Damit liegen die neun Golden-Belege für
