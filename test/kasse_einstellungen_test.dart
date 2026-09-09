@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/printing.dart';
 
 import 'zwillinge_liste.dart';
 
@@ -127,6 +128,23 @@ void main() {
     expect(zweimal.betrieb.tgChips, [7.5, 12.0]);
     expect(zweimal.geraet.tasten['bar'], ['Mod+B', 'F2']);
     expect(zweimal.betrieb.fertigSekunden, 15);
+  });
+
+  test('QR-Modus: Raster als Vorgabe, ESC/POS lesbar, Unsinn faellt zurueck', () {
+    // Welchen QR-Befehl ein Thermodrucker versteht, entscheidet das Modell an
+    // dieser einen Kasse. Der Drucker-Wizard laesst beide probedrucken und
+    // merkt sich den, der lesbar herauskam.
+    expect(const KasseSettings.standard().geraet.qrModus, KasseQrModus.raster,
+        reason: 'der bisherige Weg bleibt fuer jedes bestehende Geraet unveraendert');
+    expect(KasseSettings.aus({'geraet': {'qrModus': 'escpos'}}).geraet.qrModus, KasseQrModus.escpos);
+    expect(KasseSettings.aus({'geraet': {'qrModus': 'telepathie'}}).geraet.qrModus, KasseQrModus.raster);
+  });
+
+  test('der eingestellte QR-Modus wird zum Druckbefehl — der Bon entsteht nicht im Raten', () {
+    // Ohne diese Uebersetzung koennte die Kasse den gewaehlten Modus zwar
+    // speichern, aber nie drucken: der Beleg-Weg nimmt QrPrintMode.
+    expect(KasseQrModus.raster.druckmodus, QrPrintMode.imageRaster);
+    expect(KasseQrModus.escpos.druckmodus, QrPrintMode.native);
   });
 
   test('Karte gibt es nur mit eingerichtetem Anbieter', () {

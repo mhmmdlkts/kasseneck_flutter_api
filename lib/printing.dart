@@ -43,3 +43,8 @@ export 'models/print_paper.dart' show PrintPaper;
 // Das Papierformat gehoert zur Schnittstelle: wer Bytes baut, muss die Breite
 // nennen -- 58 mm sind 32 Zeichen, 80 mm sind 48.
 export 'enums/keck_paper_size.dart' show KeckPaperSize;
+// Der QR-Modus gehoert zur Schnittstelle: wer Belegbytes baut, entscheidet
+// damit, ob der Signatur-QR als Rasterbild oder ueber den nativen ESC/POS-
+// Befehl entsteht -- und welchen davon ein Drucker versteht, weiss nur das
+// Geraet. `KasseQrModusDruck` uebersetzt die Geraete-Einstellung dorthin.
+export 'enums/qr_print_mode.dart' show QrPrintMode, KasseQrModusDruck;

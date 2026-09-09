@@ -1,5 +1,5 @@
 {
-  "version": "0.9.0",
+  "version": "0.9.3",
   "meldungen": {
     "netz.keine_verbindung": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -112,6 +112,23 @@
         "kennung"
       ]
     },
+    "kartenzahlung.wartet_auf_terminal": {
+      "text": "Bitte am Terminal fortfahren …"
+    },
+    "kartenzahlung.karte_gebucht_beleg_offen": {
+      "text": "Die Karte ist bereits mit {betrag} belastet (Kennung {kennung}) — der Beleg dazu fehlt noch. Bitte jetzt den Beleg erstellen und nicht erneut kassieren.",
+      "platzhalter": [
+        "betrag",
+        "kennung"
+      ]
+    },
+    "kartenzahlung.karte_gebucht_korb_geaendert": {
+      "text": "Es gibt eine gebuchte Kartenzahlung über {betrag} (Kennung {kennung}), aber der Korb hat sich seither geändert. Bitte zuerst entscheiden: den Beleg zur gebuchten Zahlung erstellen oder die Zahlung am Terminal stornieren und hier verwerfen.",
+      "platzhalter": [
+        "betrag",
+        "kennung"
+      ]
+    },
     "kartenzahlung.connect_nicht_verbunden": {
       "text": "Kartenzahlung nicht möglich: Kasseneck Connect ist nicht verbunden — Einstellungen → Kasseneck Connect.",
       "nur": [
@@ -175,6 +192,48 @@
         "app"
       ]
     },
+    "gptom.abgelehnt": {
+      "text": "Das Terminal hat die Zahlung abgelehnt.",
+      "nur": [
+        "app"
+      ]
+    },
+    "gptom.abgelehnt_mit_code": {
+      "text": "Das Terminal hat die Zahlung abgelehnt ({code}).",
+      "platzhalter": [
+        "code"
+      ],
+      "nur": [
+        "app"
+      ]
+    },
+    "gptom.nicht_geoeffnet": {
+      "text": "GP Tom ließ sich nicht öffnen — bitte die GP-Tom-App prüfen und erneut versuchen.",
+      "nur": [
+        "app"
+      ]
+    },
+    "gptom.zeit_abgelaufen": {
+      "text": "Das Terminal hat in der Frist nicht geantwortet — die Karte kann belastet sein. Bitte am Terminal-Beleg nachsehen, BEVOR neu kassiert wird.",
+      "nur": [
+        "app"
+      ]
+    },
+    "gptom.zeit_abgelaufen_mit_kennung": {
+      "text": "Das Terminal hat in der Frist nicht geantwortet — die Karte kann belastet sein. Bitte am Terminal-Beleg nachsehen, BEVOR neu kassiert wird. Kennung der Zahlung: {kennung}.",
+      "platzhalter": [
+        "kennung"
+      ],
+      "nur": [
+        "app"
+      ]
+    },
+    "protokoll.leer": {
+      "text": "Noch keine Einträge — das Protokoll füllt sich mit der ersten Kartenzahlung."
+    },
+    "protokoll.kopiert": {
+      "text": "Das Protokoll liegt in der Zwischenablage."
+    },
     "belege.laden_fehlgeschlagen": {
       "text": "Die Belege konnten nicht geladen werden."
     },
@@ -195,6 +254,42 @@
     },
     "storno.position_fehlt": {
       "text": "Bitte mindestens eine Position wählen."
+    },
+    "beleg.link_kopiert": {
+      "text": "Der Link zum Beleg liegt in der Zwischenablage."
+    },
+    "beleg.teilen_text": {
+      "text": "Beleg {nummer} von {betrieb} über {betrag}: {link}",
+      "platzhalter": [
+        "betrieb",
+        "nummer",
+        "betrag",
+        "link"
+      ]
+    },
+    "beleg.nicht_teilbar": {
+      "text": "Für diesen Beleg gibt es keinen Link — er stammt aus einer älteren Kasse."
+    },
+    "beleg.test_hinweis_teilen": {
+      "text": "Test-Umgebung — der Beleg ist steuerlich nicht gültig."
+    },
+    "beleg.mail_gesendet": {
+      "text": "Der Beleg wurde an {an} gesendet.",
+      "platzhalter": [
+        "an"
+      ]
+    },
+    "beleg.mail_adresse_ungueltig": {
+      "text": "Diese E-Mail-Adresse ist nicht gültig."
+    },
+    "beleg.mail_zu_oft": {
+      "text": "Dieser Beleg wurde schon oft gesendet — bitte später noch einmal."
+    },
+    "beleg.mail_fehlgeschlagen": {
+      "text": "Der Beleg konnte nicht gesendet werden. Bitte noch einmal versuchen."
+    },
+    "beleg.mail_nicht_gefunden": {
+      "text": "Dieser Beleg wurde nicht gefunden — er konnte nicht gesendet werden."
     },
     "druck.fehlgeschlagen": {
       "text": "Der Ausdruck ist fehlgeschlagen."
@@ -249,6 +344,33 @@
       "nur": [
         "web"
       ]
+    },
+    "druck.wizard_verbinden": {
+      "text": "Verbinde mit {name} …",
+      "platzhalter": [
+        "name"
+      ]
+    },
+    "druck.wizard_testdruck_frage": {
+      "text": "Ist der Testdruck gekommen?"
+    },
+    "druck.wizard_qr_frage": {
+      "text": "Welcher QR-Code ist sauber gedruckt?"
+    },
+    "druck.wizard_qr_keiner_hinweis": {
+      "text": "Kein QR-Code kam sauber — der Beleg zeigt den QR-Code dann am Bildschirm."
+    },
+    "druck.wizard_nichts_gekommen": {
+      "text": "Nichts gekommen? Drucker an, Papier drin, richtiges Gerät gewählt?"
+    },
+    "druck.wizard_gespeichert": {
+      "text": "{name} ist eingerichtet.",
+      "platzhalter": [
+        "name"
+      ]
+    },
+    "druck.wizard_abgebrochen": {
+      "text": "Nichts gespeichert."
     },
     "bluetooth.aus": {
       "text": "Bluetooth ist ausgeschaltet. Bitte einschalten und erneut suchen.",
@@ -381,5 +503,11 @@
       "art": "sonst",
       "verhalten": "ersatz"
     }
-  ]
+  ],
+  "belegMailFehler": {
+    "adresse_ungueltig": "beleg.mail_adresse_ungueltig",
+    "zu_oft": "beleg.mail_zu_oft",
+    "versand_fehlgeschlagen": "beleg.mail_fehlgeschlagen",
+    "beleg_nicht_gefunden": "beleg.mail_nicht_gefunden"
+  }
 }
