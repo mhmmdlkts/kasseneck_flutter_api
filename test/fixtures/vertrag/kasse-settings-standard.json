@@ -134,7 +134,7 @@
     "papier": "mm80",
     "zeichensatz": "CP1252",
     "schnitt": "partial",
-    "qrModus": "raster",
+    "qrModus": "auto",
     "ladeAn": false,
     "ladeAuto": "bar",
     "terminalIp": "",

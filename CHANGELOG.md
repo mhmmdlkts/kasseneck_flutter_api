@@ -1,3 +1,27 @@
+## 6.8.0
+
+**Anlass:** 6.7.0 gab `qrModus` die harte Vorgabe `raster`. Die Browser-Kasse
+druckt den Signatur-QR aber seit jeher ueber den nativen ESC/POS-Befehl; jedes
+Geraet, das nie durch den Drucker-Wizard laeuft, haette damit ploetzlich ein
+Rasterbild gedruckt — ueber BLE mehrere Sekunden je Bon, und niemand haette
+etwas umgestellt.
+
+- **`KasseQrModus.auto` ist die neue Vorgabe** und heisst *unbestimmt*: an
+  diesem Geraet hat noch niemand am Papier entschieden. Jede Kasse bleibt dann
+  bei ihrer bisherigen Praxis; nur ein ausdruecklich gesetzter Wert aendert
+  etwas.
+
+- **`druckmodus` ist `druckmodusOder(QrPrintMode vorgabe)` gewichen.** Die
+  Vorgabe ist Pflicht und hat keinen Standardwert: was `auto` bedeutet, weiss
+  nur der Aufrufer (App: Rasterbild, Browser-Kasse: nativer Befehl). Ein
+  Standardwert an dieser Stelle haette eine der beiden Kassen still
+  umgestellt.
+
+- Wer `KasseQrModus` erschoepfend auswertet, bekommt einen dritten Fall; der
+  Typ ist eine Version alt und hat ausser der Kassen-App keine Verbraucher.
+
+- Vertrag auf npm 0.9.4 nachgezogen.
+
 ## 6.7.0
 
 **Anlass:** Der Drucker-Wizard der Kassen-App und der Browser-Kasse laesst zwei

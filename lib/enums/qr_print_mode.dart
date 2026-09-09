@@ -19,13 +19,21 @@ enum QrPrintMode {
 
 /// Der eingestellte QR-Modus des Geräts als Druckbefehl.
 ///
-/// **Die Einstellung kennt zwei Werte, der Drucker drei.** [KasseQrModus] ist
-/// das, wonach der Wizard fragt: „welcher der beiden Probedrucke war lesbar?"
-/// — zwei Antworten sind am Tresen zu prüfen, drei nicht mehr.
-/// [QrPrintMode.imageBitImage] bleibt daneben für Aufrufer bestehen, die den
-/// Modus selbst wählen; über die Einstellungen ist er nicht erreichbar.
+/// **Die Einstellung kennt zwei entschiedene Werte, der Drucker drei Befehle.**
+/// [KasseQrModus] ist das, wonach der Wizard fragt: „welcher der beiden
+/// Probedrucke war lesbar?" — zwei Antworten sind am Tresen zu prüfen, drei
+/// nicht mehr. [QrPrintMode.imageBitImage] bleibt daneben für Aufrufer
+/// bestehen, die den Modus selbst wählen; über die Einstellungen ist er nicht
+/// erreichbar.
+///
+/// **[vorgabe] ist Pflicht und hat keinen Standardwert.** [KasseQrModus.auto]
+/// heißt „hier hat niemand entschieden", und was dann gilt, weiß nur der
+/// Aufrufer: die App druckt seit jeher das Rasterbild, die Browser-Kasse den
+/// nativen Befehl. Ein Standardwert an dieser Stelle hätte eine der beiden
+/// Kassen still umgestellt.
 extension KasseQrModusDruck on KasseQrModus {
-  QrPrintMode get druckmodus => switch (this) {
+  QrPrintMode druckmodusOder(QrPrintMode vorgabe) => switch (this) {
+        KasseQrModus.auto => vorgabe,
         KasseQrModus.raster => QrPrintMode.imageRaster,
         KasseQrModus.escpos => QrPrintMode.native,
       };
