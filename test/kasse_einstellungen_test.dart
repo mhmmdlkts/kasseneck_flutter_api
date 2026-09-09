@@ -130,21 +130,34 @@ void main() {
     expect(zweimal.betrieb.fertigSekunden, 15);
   });
 
-  test('QR-Modus: Raster als Vorgabe, ESC/POS lesbar, Unsinn faellt zurueck', () {
+  test('QR-Modus: unbestimmt als Vorgabe, beide Modi lesbar, Unsinn faellt zurueck', () {
     // Welchen QR-Befehl ein Thermodrucker versteht, entscheidet das Modell an
     // dieser einen Kasse. Der Drucker-Wizard laesst beide probedrucken und
     // merkt sich den, der lesbar herauskam.
-    expect(const KasseSettings.standard().geraet.qrModus, KasseQrModus.raster,
-        reason: 'der bisherige Weg bleibt fuer jedes bestehende Geraet unveraendert');
+    //
+    // **Die Vorgabe ist auto und nicht einer der beiden Modi.** Sonst haette
+    // jedes Geraet, das nie durch den Wizard laeuft, ploetzlich anders
+    // gedruckt als bisher — eine stille Umstellung des ganzen Altbestands.
+    expect(const KasseSettings.standard().geraet.qrModus, KasseQrModus.auto,
+        reason: 'ohne Entscheidung bleibt jede Kasse bei ihrer bisherigen Praxis');
     expect(KasseSettings.aus({'geraet': {'qrModus': 'escpos'}}).geraet.qrModus, KasseQrModus.escpos);
-    expect(KasseSettings.aus({'geraet': {'qrModus': 'telepathie'}}).geraet.qrModus, KasseQrModus.raster);
+    expect(KasseSettings.aus({'geraet': {'qrModus': 'raster'}}).geraet.qrModus, KasseQrModus.raster);
+    expect(KasseSettings.aus({'geraet': {'qrModus': 'telepathie'}}).geraet.qrModus, KasseQrModus.auto);
   });
 
   test('der eingestellte QR-Modus wird zum Druckbefehl — der Bon entsteht nicht im Raten', () {
     // Ohne diese Uebersetzung koennte die Kasse den gewaehlten Modus zwar
     // speichern, aber nie drucken: der Beleg-Weg nimmt QrPrintMode.
-    expect(KasseQrModus.raster.druckmodus, QrPrintMode.imageRaster);
-    expect(KasseQrModus.escpos.druckmodus, QrPrintMode.native);
+    expect(KasseQrModus.raster.druckmodusOder(QrPrintMode.native), QrPrintMode.imageRaster);
+    expect(KasseQrModus.escpos.druckmodusOder(QrPrintMode.imageRaster), QrPrintMode.native);
+  });
+
+  test('unbestimmt heisst: die Vorgabe des Aufrufers gilt — jede Kasse bleibt bei ihrer Praxis', () {
+    // Die App druckt seit jeher das Rasterbild, die Browser-Kasse den nativen
+    // Befehl. Dieselbe Einstellung darf darum an beiden Stellen etwas anderes
+    // bedeuten, solange niemand entschieden hat.
+    expect(KasseQrModus.auto.druckmodusOder(QrPrintMode.imageRaster), QrPrintMode.imageRaster);
+    expect(KasseQrModus.auto.druckmodusOder(QrPrintMode.native), QrPrintMode.native);
   });
 
   test('Karte gibt es nur mit eingerichtetem Anbieter', () {

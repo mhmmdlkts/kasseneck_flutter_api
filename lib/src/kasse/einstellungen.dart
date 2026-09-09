@@ -99,8 +99,14 @@ enum KasseSchnitt { partial, full, none }
 
 /// Mit welchem Befehl der Signatur-QR auf den Bon kommt.
 ///
+/// - [auto]: **unbestimmt** — an diesem Gerät hat noch niemand am Papier
+///   entschieden. Die Vorgabe; jede Kasse bleibt dann bei ihrer bisherigen
+///   Praxis (die App beim Rasterbild, die Browser-Kasse beim ESC/POS-Befehl).
+///   Eine harte Vorgabe hätte den ganzen Altbestand still umgestellt: jedes
+///   Gerät, das nie durch den Drucker-Wizard läuft, druckte plötzlich anders,
+///   und über BLE kostet ein Rasterbild mehrere Sekunden je Bon.
 /// - [raster]: der QR wird als Bild gerastert (`GS v 0`) — geht durch jeden
-///   Drucker, der Bilder kann, und war bisher der einzige Weg.
+///   Drucker, der Bilder kann.
 /// - [escpos]: der native QR-Befehl (`GS ( k`) — schärfer und schneller, aber
 ///   ältere Geräte drucken dann gar keinen QR oder Zeichensalat.
 ///
@@ -109,7 +115,7 @@ enum KasseSchnitt { partial, full, none }
 /// nicht kosmetisch — nach § 132a BAO ist der QR Teil des Belegs; im falschen
 /// Modus kommt ein Bon ohne lesbare Signatur heraus, und das fällt am Tresen
 /// niemandem auf.
-enum KasseQrModus { raster, escpos }
+enum KasseQrModus { auto, raster, escpos }
 
 enum KasseLadeAuto { bar, immer, nie }
 
@@ -363,7 +369,7 @@ class KasseSettingsGeraet {
     this.papier = KassePapier.mm80,
     this.zeichensatz = KasseZeichensatz.cp1252,
     this.schnitt = KasseSchnitt.partial,
-    this.qrModus = KasseQrModus.raster,
+    this.qrModus = KasseQrModus.auto,
     this.ladeAn = false,
     this.ladeAuto = KasseLadeAuto.bar,
     this.terminalIp = '',
@@ -400,8 +406,9 @@ class KasseSettingsGeraet {
   final KasseZeichensatz zeichensatz;
   final KasseSchnitt schnitt;
 
-  /// Welcher Druckbefehl den Signatur-QR erzeugt; der Drucker-Wizard probiert
-  /// beide aus und merkt sich den, der lesbar herauskam.
+  /// Welcher Druckbefehl den Signatur-QR erzeugt; [KasseQrModus.auto] heißt
+  /// unbestimmt. Der Drucker-Wizard probiert beide aus und merkt sich den, der
+  /// lesbar herauskam.
   final KasseQrModus qrModus;
   final bool ladeAn;
   final KasseLadeAuto ladeAuto;
