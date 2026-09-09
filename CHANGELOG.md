@@ -1,3 +1,26 @@
+## 6.7.0
+
+**Anlass:** Der Drucker-Wizard der Kassen-App und der Browser-Kasse laesst zwei
+Probedrucke machen — den Signatur-QR einmal als Rasterbild (`GS v 0`), einmal
+ueber den nativen ESC/POS-Befehl (`GS ( k`) — und fragt, welcher lesbar
+herauskam. Diese Antwort hatte bisher nirgends Platz: beide Kassen druckten
+fest im Rastermodus. An Geraeten, die `GS v 0` nicht koennen, kam damit ein Bon
+ohne lesbaren QR heraus, und das ist nach § 132a BAO keine Belegerteilung —
+der Ausfall faellt am Tresen niemandem auf.
+
+- **`KasseQrModus` (`raster` | `escpos`) und `KasseSettingsGeraet.qrModus`**,
+  Vorgabe `raster`. Am **Geraet** und nicht am Betrieb: welchen Befehl ein
+  Thermodrucker versteht, entscheidet das Modell an dieser einen Kasse.
+  Bestehende Geraete drucken unveraendert weiter.
+
+- **`KasseQrModusDruck.druckmodus`** uebersetzt die Einstellung in den
+  `QrPrintMode`, den `KeckPrinterService.getPaperFromReceipt` nimmt; beide sind
+  jetzt aus `package:kasseneck_api/printing.dart` benennbar. Ohne diesen Weg
+  liesse sich der gewaehlte Modus zwar speichern, aber nie drucken.
+
+- Vertrag auf npm 0.9.3 nachgezogen (`zwillinge.yaml`), Kopie unter
+  `test/fixtures/vertrag/` neu gezogen.
+
 ## 6.6.1
 
 **Anlass:** Der GP-Tom-Kartenblock brach auf dem Thermobon mitten ab — PIN,

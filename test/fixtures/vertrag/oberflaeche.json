@@ -1,5 +1,5 @@
 {
-  "version": "0.9.0",
+  "version": "0.9.3",
   "aufrufe": [
     "activateCashregister",
     "cancelReceipt",
@@ -137,6 +137,10 @@
     "papier": [
       "mm58",
       "mm80"
+    ],
+    "qrModus": [
+      "raster",
+      "escpos"
     ],
     "rabatt": [
       "aus",

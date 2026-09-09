@@ -97,6 +97,20 @@ enum KasseZeichensatz {
 
 enum KasseSchnitt { partial, full, none }
 
+/// Mit welchem Befehl der Signatur-QR auf den Bon kommt.
+///
+/// - [raster]: der QR wird als Bild gerastert (`GS v 0`) — geht durch jeden
+///   Drucker, der Bilder kann, und war bisher der einzige Weg.
+/// - [escpos]: der native QR-Befehl (`GS ( k`) — schärfer und schneller, aber
+///   ältere Geräte drucken dann gar keinen QR oder Zeichensalat.
+///
+/// **Am Gerät und nicht am Betrieb:** welchen Befehl ein Thermodrucker
+/// versteht, entscheidet das Modell an dieser einen Kasse. Und die Wahl ist
+/// nicht kosmetisch — nach § 132a BAO ist der QR Teil des Belegs; im falschen
+/// Modus kommt ein Bon ohne lesbare Signatur heraus, und das fällt am Tresen
+/// niemandem auf.
+enum KasseQrModus { raster, escpos }
+
 enum KasseLadeAuto { bar, immer, nie }
 
 /// Aktionen der Kasse, die eine Taste bekommen können.
@@ -349,6 +363,7 @@ class KasseSettingsGeraet {
     this.papier = KassePapier.mm80,
     this.zeichensatz = KasseZeichensatz.cp1252,
     this.schnitt = KasseSchnitt.partial,
+    this.qrModus = KasseQrModus.raster,
     this.ladeAn = false,
     this.ladeAuto = KasseLadeAuto.bar,
     this.terminalIp = '',
@@ -384,6 +399,10 @@ class KasseSettingsGeraet {
   final KassePapier papier;
   final KasseZeichensatz zeichensatz;
   final KasseSchnitt schnitt;
+
+  /// Welcher Druckbefehl den Signatur-QR erzeugt; der Drucker-Wizard probiert
+  /// beide aus und merkt sich den, der lesbar herauskam.
+  final KasseQrModus qrModus;
   final bool ladeAn;
   final KasseLadeAuto ladeAuto;
   final String terminalIp;
@@ -411,6 +430,7 @@ class KasseSettingsGeraet {
       papier: _enumName(g['papier'], KassePapier.values, papier),
       zeichensatz: _enumWert(g['zeichensatz'], KasseZeichensatz.values, (e) => e.wert, zeichensatz),
       schnitt: _enumName(g['schnitt'], KasseSchnitt.values, schnitt),
+      qrModus: _enumName(g['qrModus'], KasseQrModus.values, qrModus),
       ladeAn: _bool(g['ladeAn'], ladeAn),
       ladeAuto: _enumName(g['ladeAuto'], KasseLadeAuto.values, ladeAuto),
       terminalIp: _text(g['terminalIp'], terminalIp),
@@ -436,6 +456,7 @@ class KasseSettingsGeraet {
         'papier': papier.name,
         'zeichensatz': zeichensatz.wert,
         'schnitt': schnitt.name,
+        'qrModus': qrModus.name,
         'ladeAn': ladeAn,
         'ladeAuto': ladeAuto.name,
         'terminalIp': terminalIp,
