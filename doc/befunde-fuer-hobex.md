@@ -184,6 +184,13 @@ nur genehmigte und vom Host abgelehnte, nicht aber lokal beendete? Und was
 bedeuten `100004`, `100005`, `100015` sowie der 404 beim Abbruch: „Vorgang
 nicht (mehr) abbrechbar"?
 
+**Teilweise beantwortet (11.09.2026):** hobex hat die Antwortcodeliste
+geschickt. `100004` heißt „Card read failed“, `100005` „App select failed“,
+`100015` „Card declined“ (vom EMV-Kernel) — alle drei vor dem Host, es ist
+nichts belastet. Offen bleiben die Aufbewahrung und der 404 beim Abbruch.
+Die Liste nennt `100011 "Not Found"`; ob der 404 im Rumpf diesen Code trägt,
+ist ungemessen.
+
 ## Beobachtete Antwortcodes
 
 | Code | Text | Lage |

@@ -303,6 +303,75 @@ gesehene Kennung bekommt dort keinen 404, der Endpunkt existiert also. Was 404
 auf einen LAUFENDEN Vorgang heißt, ist ungemessen; der Nachweistext behauptet
 deshalb weiterhin keine Ursache.
 
+## Die Antwortcodeliste von hobex (11.09.2026)
+
+Am 11.09.2026 kam von hobex die Liste der `100xxx`-Codes der HPS-Anwendung,
+jeweils mit Titel und einem Satz Beschreibung. Sie beantwortet die offene Frage
+aus `befunde-fuer-hobex.md` (Abschnitt 8) nach `100004`, `100005` und
+`100015`, bestätigt fünf gemessene Codes und benennt 23, die an keinem Gerät
+aufgetreten sind.
+
+Die Liste ist eine Beschreibung des Herstellers, keine Messung. Sie ändert
+deshalb nichts an der Regel, dass nur ein Code mit feststehender Bedeutung
+einen Ausgang festschreibt — sie erweitert nur, was feststeht. Ein Code, der
+weder gemessen noch von hobex beschrieben ist, bleibt eine Wissenslücke.
+
+Eingeordnet wird danach, **wo im Ablauf** der Code entsteht:
+
+| Wo | Codes | Ausgang |
+|---|---|---|
+| vor dem Host: Anfrage, Karte, EMV-Kernel, Eingaben, Gerätezustand | `100001`–`100005`, `100008`, `100009`, `100012`–`100015`, `100017`–`100022`, `100025`, `100028`, `100998` | abgelehnt, nichts belastet |
+| Zeitüberschreitung zum Host, **mit** auto-reversal | `100029` | abgelehnt, das Terminal storniert selbst |
+| beim oder nach dem Host, **ohne** auto-reversal | `100006`, `100007`, `100023`, `100024`, `100026`, `100027` | ungewiss |
+| Sammelcode, an jeder Stelle möglich | `100999` | ungewiss |
+| „Not Found“ | `100011` | keine Aussage |
+| Abbruch nicht möglich | `100010` | wie gemessen |
+
+**„Ungewiss“ ist eine eigene Wirkung, nicht dasselbe wie „keine Aussage“.**
+Bei diesen Codes war der Host beteiligt, und hobex vermerkt bei `100006` und
+`100007` ausdrücklich, dass das Terminal **nicht** selbst storniert. Die
+Statusabfrage spiegelt aber nur den Speicher des Terminals. Antwortet sie
+danach `9027`, heißt das: das Terminal hat nichts gespeichert. Ob der Host
+belastet hat, sagt es nicht. Die Zwei-`9027`-Regel, die sonst aus einer
+Antwort mit Code plus zweimal `9027` „nichts belastet“ schließt, greift für
+diese Codes deshalb nicht. Die Klärung endet nach zwei Abfragen ohne Neues als
+`unresolved`, statt 90 Sekunden zu warten. Meldet der Status doch `0`, gilt die
+Genehmigung; jede andere Aussage des Terminals entscheidet danach nichts mehr.
+Ein Abbruchversuch entfällt: der Vorgang ist am Terminal schon beendet, ein
+quittierter Abbruch bewiese nichts über den Host.
+
+**Eine abgewiesene Anfrage ist keine Aussage über einen anderen Vorgang.**
+Zehn Codes weisen die Anfrage selbst ab (`9002`, `100001`, `100008`, `100108`,
+`100009`, `100010`, `100013`, `100018`, `100022`, `100998`). Auf eine Zahlung
+sind sie deren Ablehnung. Auf eine Statusabfrage heißen sie nur, dass diese
+Abfrage nicht bedient wurde — gemessen für `100108`, das die Statusabfrage mit
+falscher TID liefert. Die Klärung liest den Status deshalb über
+`TransactionResponse.isConclusiveAsStatus`. Sonst hätte ein gesperrtes
+Terminal (`100022`) eine verlorene Zahlung als „nicht belastet“ ausgewiesen.
+
+Dasselbe gilt für eine Aufhebung, die mit einem solchen Code endet: ein
+unverändertes `0` auf die Originalzahlung beweist dann nicht, dass die
+Aufhebung beim Host nicht ankam. „Hat nicht gegriffen“ würde nach dem
+Tagesabschluss zu einer Rückerstattung führen, die der Kunde doppelt bekäme.
+
+**Zwei Abweichungen zur Messung, beide bewusst stehen gelassen:**
+
+- Für eine falsche TID nennt hobex `100008`, gemessen wurde am Gerät 3600335
+  `100108`. Beide stehen in der Tabelle.
+- `409 Terminal is busy` kam gemessen als HTTP-Status mit Textrumpf. hobex
+  führt denselben Titel als `100998`. Beide werden als „beschäftigt, nichts
+  belastet“ gelesen.
+
+Zu jedem Code gehört ein **Grund** (`HpsCodeReason`) mit einem Satz für den
+Bediener. Mehrere Codes teilen sich einen Grund, wenn am Tresen dasselbe zu tun
+ist. `HpsResult.reason` trägt ihn für jeden Ausgang, an der Stelle gesetzt, die
+entschieden hat: ein bestätigter Abbruch antwortet `0` und ist trotzdem
+„abgebrochen“.
+
+Die vollständige Tabelle steht in `lib/src/hobex_hps/response_codes.dart`
+(`HpsCodes.all`) und im npm-Zwilling als `HPS_CODES`, festgenagelt über
+`fixtures/hobex-hps-codes.json`.
+
 ## Der gemessene Stand, auf einen Blick
 
 Alle bisher gemessenen und im Code benannten Ausgänge (Stand 27.08.2026, TID
@@ -314,7 +383,8 @@ Karte nicht aufgelegt · `100010` nicht abbrechbar · HTTP `409` Terminal
 beschäftigt · `55` PIN falsch (Host-Ablehnung; Produktivterminal `3556988`,
 Firmware 2.3.9, 02.09.2026).
 
-Jeder andere Code ist eine Wissenslücke, keine Aussage — siehe
+Dazu kommen seit 11.09.2026 die Codes aus der Antwortcodeliste von hobex
+(siehe oben). Jeder andere Code ist eine Wissenslücke, keine Aussage — siehe
 `TransactionResponse.isConclusive`.
 
 ## Weitere Messwerte
@@ -337,7 +407,12 @@ Jeder andere Code ist eine Wissenslücke, keine Aussage — siehe
   oder ob dieselbe Meldung noch andere Ursachen hat (siehe oben).
 - Wie lange das Terminal eine genehmigte Transaktion abrufbar hält.
 - Andere Host-Ablehnungen als `55` (Deckung, gesperrte Karte, abgelaufen) —
-  gemessen ist nur die falsche PIN; alle anderen bleiben Wissenslücken.
+  gemessen ist nur die falsche PIN; alle anderen bleiben Wissenslücken. Die
+  Liste von hobex enthält nur die `100xxx`-Codes der HPS-Anwendung, keine
+  Host-Codes.
+- Welche der „ungewissen“ Codes (`100006` usw.) die Statusabfrage danach
+  aufbewahrt, und ob `100029` die Stornierung wirklich immer durchbringt.
+  Keiner davon ist bisher an einem Gerät aufgetreten.
 - Was HTTP `404` beim `abort` auf einen LAUFENDEN Vorgang heißt (Firmware
   2.3.9, siehe oben).
 

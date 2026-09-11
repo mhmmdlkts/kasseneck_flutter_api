@@ -630,7 +630,9 @@ void main() {
 
       expect(res.outcome, CardPaymentOutcome.declined);
       expect(res.mayRetrySafely, isTrue);
-      expect(res.steps.any((s) => s.contains('abgelehnt (55)')), isTrue,
+      expect(
+          res.steps.any((s) => s.contains('abgelehnt (55 "PIN falsch")')),
+          isTrue,
           reason: 'der Nachweis muss den gemessenen Code benennen');
     });
 
@@ -1808,6 +1810,345 @@ void main() {
       // Transportfehler geschluckt. Der Log ist der einzige verlaessliche
       // Beleg: er wird schon vor diesem Wurf gefuellt.
       expect(t.log.where((r) => r.url.path.contains('/abort/')), isEmpty);
+    });
+  });
+
+  group('Antwortcodeliste von hobex (11.09.2026)', () {
+    Future<HpsResult> zahlungMit(
+      String code, {
+      List<Responder> status = const <Responder>[],
+      String id = '81020000',
+    }) {
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': code, 'transactionId': id})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+        status: status,
+      );
+      return paymentsFor(t, budget: const Duration(seconds: 90))
+          .pay(amount: 25, transactionId: id);
+    }
+
+    test('Betriebs-Codes 100004/100005/100015 -> sofort declined mit Grund',
+        () async {
+      // Bis heute ungedeutet: jede dieser Zahlungen lief in die Klaerung und
+      // endete erst ueber die Zwei-9027-Regel. Jetzt entscheidet die direkte
+      // Antwort, ohne Abbruch und ohne Statusabfrage.
+      final erwartet = <String, HpsCodeReason>{
+        '100004': HpsCodeReason.cardReadFailed,
+        '100005': HpsCodeReason.cardReadFailed,
+        '100015': HpsCodeReason.cardDeclined,
+      };
+      for (final MapEntry(key: code, value: grund) in erwartet.entries) {
+        final t = FakeTerminal(
+          payment: [
+            (_) => json({'responseCode': code})
+          ],
+        );
+        final res =
+            await paymentsFor(t).pay(amount: 25, transactionId: '81020100');
+        expect(res.outcome, CardPaymentOutcome.declined, reason: code);
+        expect(res.reason, grund, reason: code);
+        expect(t.log, hasLength(1), reason: '$code braucht keine Klaerung');
+      }
+    });
+
+    test('100029 (auto-reversal) -> declined, das Terminal storniert selbst',
+        () async {
+      final res = await zahlungMit(TransactionResponse.hostTimeoutReversedCode);
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.hostTimeoutReversed);
+    });
+
+    test('100998 im Rumpf -> declined, Terminal beschaeftigt', () async {
+      final res = await zahlungMit(TransactionResponse.terminalBusyCode);
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.terminalBusy);
+    });
+
+    test('HTTP 409 -> Grund terminalBusy', () async {
+      final t = FakeTerminal(payment: [busy]);
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81020200');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.terminalBusy);
+    });
+
+    test(
+        '100007 und danach zweimal 9027 -> unresolved, NICHT declined -- '
+        'die Zwei-9027-Regel greift bei einer Host-Stoerung nicht', () async {
+      // Genau der Fall, gegen den die Einordnung gebaut ist: das Terminal
+      // antwortet mit einem Code, speichert nichts (9027) -- und trotzdem
+      // kann der Host belastet haben, denn das Terminal storniert hier nicht
+      // selbst. Unter der alten Regel waere das "nichts belastet" gewesen.
+      final res = await zahlungMit(
+        TransactionResponse.hostStepFailedCode,
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.mayRetrySafely, isFalse);
+      expect(res.reason, HpsCodeReason.hostFault);
+      expect(res.isHostUncertain, isTrue);
+      expect(res.response, isNull);
+      expect(res.steps.first, contains('100007'));
+      expect(res.steps.first, contains('storniert nicht selbst'));
+      expect(res.steps.last, contains('Ausgang bleibt offen'));
+    });
+
+    test('Host-Stoerung wartet nicht das Budget ab -- zwei Abfragen genuegen',
+        () async {
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '100006'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      final pausen = <Duration>[];
+      final res = await paymentsFor(t, pausen: pausen)
+          .pay(amount: 25, transactionId: '81020300');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(t.callsOn('status'), 2);
+      expect(pausen, [const Duration(seconds: 1)]);
+    });
+
+    test('nach einer Host-Stoerung kein Abbruchversuch', () async {
+      // Der Vorgang ist am Terminal beendet; ein quittierter Abbruch bewiese
+      // nur das, nicht dass der Host nichts belastet hat.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '100007'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '0'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81021000');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(t.log.where((r) => r.url.path.contains('/abort/')), isEmpty);
+    });
+
+    test('nach einer Host-Stoerung entscheidet nur 0 -- ein 100003 im Status '
+        'nicht', () async {
+      final res = await zahlungMit(
+        TransactionResponse.hostStepFailedCode,
+        status: [
+          (_) => json({'responseCode': '100003'})
+        ],
+      );
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.reason, HpsCodeReason.hostFault);
+      expect(res.steps.any((s) => s.contains('entscheidet nur eine Genehmigung')),
+          isTrue);
+    });
+
+    test(
+        'Statusabfrage abgewiesen (100022, 100108, 100998) ist KEINE Ablehnung '
+        'der Zahlung', () async {
+      // Ein Code, der die Abfrage selbst abweist, sagt nichts ueber den
+      // gesuchten Vorgang. Gemessen: falsche TID -> 100108 auf die
+      // Statusabfrage. Als declined gelesen hiesse ein gesperrtes Terminal
+      // "die verlorene Zahlung ist nicht belastet".
+      for (final code in ['100022', '100108', '100998', '100001']) {
+        final t = FakeTerminal(
+          payment: [boom],
+          abort: [
+            (_) => json({'responseCode': '100010'})
+          ],
+          status: [
+            (_) => json({'responseCode': code})
+          ],
+        );
+        final res = await paymentsFor(t, budget: const Duration(seconds: 20))
+            .pay(amount: 25, transactionId: '81021100');
+        expect(res.outcome, CardPaymentOutcome.unresolved, reason: code);
+        expect(res.steps.any((s) => s.contains('Abfrage abgewiesen ($code')),
+            isTrue,
+            reason: code);
+      }
+    });
+
+    test('dieselben Codes auf die ZAHLUNG sind eine Ablehnung', () async {
+      final res = await zahlungMit(TransactionResponse.terminalBlockedCode);
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.terminalBlocked);
+    });
+
+    test('100007, dann meldet der Status 0 -> approved', () async {
+      // Hat das Terminal die Genehmigung doch gespeichert, gilt sie -- die
+      // Stoerung macht nur das NICHTWISSEN verbindlich, nicht die Ablehnung.
+      final res = await zahlungMit(
+        TransactionResponse.hostStepFailedCode,
+        status: [
+          (_) => json({'responseCode': '9027'}),
+          (_) => json({'responseCode': '0', 'approvalCode': '000193'}),
+        ],
+      );
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(res.reason, HpsCodeReason.approved);
+    });
+
+    test('100999 -> unresolved mit Grund internalError', () async {
+      final res = await zahlungMit(
+        TransactionResponse.internalErrorCode,
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.reason, HpsCodeReason.internalError);
+      expect(res.isHostUncertain, isTrue);
+      expect(res.steps.first, contains('interner Fehler'));
+    });
+
+    test('Leitung reisst ab, Status meldet zweimal 100006 -> unresolved',
+        () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        abort: [
+          (_) => json({'responseCode': '100010'})
+        ],
+        status: [
+          (_) => json({'responseCode': '100006'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81020400');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.reason, HpsCodeReason.hostFault);
+      expect(res.isHostUncertain, isTrue);
+      expect(t.callsOn('status'), 2);
+    });
+
+    test(
+        'unbekannter Code, Status meldet einmal 100007, dann 9027 -> die '
+        'Stoerung bleibt stehen, kein declined', () async {
+      final res = await zahlungMit(
+        '51',
+        status: [
+          (_) => json({'responseCode': '100007'}),
+          (_) => json({'responseCode': '9027'}),
+        ],
+      );
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.reason, HpsCodeReason.hostFault);
+    });
+
+    test('ohne Host-Stoerung gilt die Zwei-9027-Regel weiter', () async {
+      // Gegenprobe zur Ausnahme: ein unbekannter Code, danach zweimal 9027,
+      // bleibt die gemessene Ablehnung vom 28.08.2026.
+      final res = await zahlungMit(
+        '51',
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.unknown,
+          reason: 'der Grund kommt vom Code der Zahlung, nicht vom 9027');
+    });
+
+    test('100011 in der Statusabfrage schreibt nicht "keine Auskunft"',
+        () async {
+      // Das Wort steht fuer das gemessene 9027; Aufrufer lesen es so.
+      final res = await zahlungMit(
+        '51',
+        status: [
+          (_) => json({'responseCode': TransactionResponse.notFoundCode})
+        ],
+      );
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.steps.where((s) => s.contains('100011')), isNotEmpty);
+      expect(res.steps.any((s) => s.contains('keine Auskunft')), isFalse);
+    });
+
+    test('bestaetigter Abbruch -> Grund aborted, nicht approved', () async {
+      final t = FakeTerminal(
+        payment: [boom],
+        abort: [
+          (_) => json({'responseCode': '0'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81020500');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.aborted);
+    });
+
+    test('Gutschrift mit 100020 -> declined, Passwort', () async {
+      final t = FakeTerminal(
+        refund: [
+          (_) => json({'responseCode': '100020'})
+        ],
+      );
+      final res = await paymentsFor(t).refund(
+        amount: 25,
+        transactionId: '81020600',
+        originalTransactionId: '81000800',
+      );
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.refundPassword);
+    });
+
+    test('Aufhebung direkt 0 -> approved mit Grund canceled', () async {
+      final t = FakeTerminal(
+        cancel: [
+          (_) => json({'responseCode': '0'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).cancel(transactionId: '81020700', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(res.reason, HpsCodeReason.canceled);
+    });
+
+    test(
+        'Aufhebung mit 100007, Original steht zweimal auf 0 -> unresolved, '
+        'NICHT "hat nicht gegriffen"', () async {
+      // "Hat nicht gegriffen" fuehrt nach dem Tagesabschluss zu einer
+      // Rueckerstattung. Hat der Host die Aufhebung aber doch verbucht,
+      // bekaeme der Kunde sein Geld zweimal.
+      final t = FakeTerminal(
+        cancel: [
+          (_) => json({'responseCode': '100007'})
+        ],
+        status: [
+          (_) => json({'responseCode': '0'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).cancel(transactionId: '81020800', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.reason, HpsCodeReason.hostFault);
+      expect(t.callsOn('status'), 2);
+    });
+
+    test('Aufhebung mit 100007, Original meldet 9011 -> approved', () async {
+      final t = FakeTerminal(
+        cancel: [
+          (_) => json({'responseCode': '100007'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9011'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).cancel(transactionId: '81020900', amount: 25);
+      expect(res.outcome, CardPaymentOutcome.approved);
+      expect(res.reason, HpsCodeReason.canceled);
     });
   });
 
