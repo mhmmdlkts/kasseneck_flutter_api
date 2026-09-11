@@ -5,6 +5,7 @@ import 'exceptions.dart';
 import 'hps_client.dart';
 import 'hps_result.dart';
 import 'observer.dart';
+import 'response_codes.dart';
 import 'transaction_response.dart';
 
 /// Kartenzahlung, deren Ausgang immer bekannt ist.
@@ -104,6 +105,25 @@ import 'transaction_response.dart';
 /// Zahlung. Ein Abbruch darauf waere sinnlos (der Vorgang ist laengst
 /// abgeschlossen, gemessen: `100010`), und der `responseCode` dieser Kennung
 /// bedeutet dort etwas anderes als bei [pay].
+///
+/// ## Stoerung beim Host: die Klaerung darf nichts schliessen (11.09.2026)
+///
+/// Die Antwortcodeliste von hobex benennt Codes, bei denen der Host beteiligt
+/// war und das Terminal NICHT selbst storniert ([HpsCodeEffect.hostUncertain],
+/// etwa `100007`). Fuer sie gilt zweierlei:
+///
+/// 1. Die Zwei-`9027`-Regel ([_ausGeschlossenerAntwort]) greift nicht. Sie
+///    schliesst aus "das Terminal hat geantwortet und nichts gespeichert" auf
+///    "nichts belastet" -- das stimmt fuer einen Vorgang, der am Terminal
+///    endete, aber nicht fuer einen, dessen Ausgang beim Host liegt. Dasselbe
+///    gilt sinngemaess fuer [cancel]: ein unveraendertes `'0'` auf die
+///    Originalzahlung beweist dann nicht, dass die Aufhebung beim Host nicht
+///    ankam.
+/// 2. Die Klaerung wartet trotzdem nicht das ganze Budget ab. Sagt die
+///    Statusabfrage zweimal in Folge nichts Neues (`9027` oder erneut ein
+///    solcher Code), endet sie sofort als [CardPaymentOutcome.unresolved] --
+///    das Terminal wird es auch in 90 Sekunden nicht wissen. Meldet sie
+///    dagegen `'0'`, ist die Zahlung genehmigt, ganz normal.
 class HpsPayments {
   HpsPayments(
     this._client, {
@@ -202,12 +222,7 @@ class HpsPayments {
       steps.add(_offeneAntwort(res));
     }
 
-    return _resolve(
-      id,
-      steps,
-      antwortMitCode: res?.responseCode != null,
-      letzteAntwort: res,
-    );
+    return _resolve(id, steps, antwort: res);
   }
 
   /// Gutschrift mit geklaertem Ausgang.
@@ -251,12 +266,7 @@ class HpsPayments {
       steps.add(_offeneAntwort(res));
     }
 
-    return _resolve(
-      id,
-      steps,
-      antwortMitCode: res?.responseCode != null,
-      letzteAntwort: res,
-    );
+    return _resolve(id, steps, antwort: res);
   }
 
   /// Aufhebung (Storno/Void) einer bestehenden Zahlung mit geklaertem
@@ -296,7 +306,7 @@ class HpsPayments {
       if (!res.isCanceled) steps.add(_offeneAntwort(res));
     }
 
-    return _resolveCancel(transactionId, steps, letzteAntwort: res);
+    return _resolveCancel(transactionId, steps, antwort: res);
   }
 
   /// Ordnet die DIREKTE Antwort auf einen Aufhebungs-Request ein.
@@ -330,7 +340,7 @@ class HpsPayments {
           'mehrdeutig, der Zustand der Originalzahlung wird abgefragt');
       return null;
     }
-    return _fromResponse(res, id, steps);
+    return _fromResponse(res, id, steps, aufhebung: true);
   }
 
   /// Verlaufseintrag fuer eine Antwort, die den Ausgang NICHT festschreibt.
@@ -354,12 +364,50 @@ class HpsPayments {
           '(${TransactionResponse.technicalErrorCode}) -- keine Aussage '
           'ueber den Vorgang, Ausgang wird geklaert';
     }
+    if (res.isHostUncertain) {
+      return '${_stoerung(res)} -- ob belastet wurde, weiss das Terminal '
+          'nicht, Ausgang wird geklaert';
+    }
+    if (res.responseCode == TransactionResponse.notFoundCode) {
+      return 'Terminal kennt den Vorgang nicht (${res.responseCode} "Not '
+          'Found") -- keine Aussage, Ausgang wird geklaert';
+    }
     if (res.isUnknownCode) {
       return 'Terminal nennt einen unbekannten Code (${res.responseCode})'
           '${_klartext(res)} -- Ausgang wird geklaert';
     }
     return 'Antwort ohne Aussage (${res.responseCode}) -- Ausgang wird '
         'geklaert';
+  }
+
+  /// Benennt einen Code mit [HpsCodeEffect.hostUncertain] fuer den Nachweis:
+  /// was das Terminal meldet, mit Code und hobex-Titel. Die Folgerung ("ob
+  /// belastet wurde, ist offen") setzt der Aufrufer dazu.
+  static String _stoerung(TransactionResponse res) {
+    final info = res.codeInfo!;
+    final was = info.reason == HpsCodeReason.internalError
+        ? 'interner Fehler des Terminals'
+        : 'Stoerung zwischen Terminal und hobex-Host, das Terminal storniert '
+            'nicht selbst';
+    return 'Terminal meldet $was (${info.code} "${info.title}")';
+  }
+
+  /// Der Grund eines offenen Ausgangs. [antwort] ist die Antwort auf die
+  /// ERZEUGENDE Anfrage, [letzte] die zuletzt gelesene Statusabfrage.
+  ///
+  /// Eine gemeldete Stoerung beim Host geht vor -- aus welcher der beiden sie
+  /// stammt: sie ist der Grund, warum der Ausgang offen bleibt, und fuer jede
+  /// spaetere Nachfrage entscheidend ([HpsResult.isHostUncertain]). Sonst
+  /// erklaert der Code der erzeugenden Anfrage mehr als ein `9027` danach;
+  /// ohne ihn (die Leitung riss ab) bleibt nur die Statusabfrage.
+  static HpsCodeReason? _offenerGrund(
+    TransactionResponse? antwort,
+    TransactionResponse? letzte,
+  ) {
+    if (antwort != null && antwort.isHostUncertain) return antwort.reason;
+    if (letzte != null && letzte.isHostUncertain) return letzte.reason;
+    if (antwort?.responseCode != null) return antwort!.reason;
+    return letzte?.reason;
   }
 
   /// Verlaufseintrag fuer eine Statusabfrage, die NICHTS entscheidet -- oder
@@ -398,6 +446,7 @@ class HpsPayments {
     return HpsResult(
       outcome: CardPaymentOutcome.declined,
       transactionId: id,
+      reason: HpsCodeReason.terminalBusy,
       steps: List<String>.unmodifiable(steps),
     );
   }
@@ -411,6 +460,15 @@ class HpsPayments {
       return 'Status: technischer Fehler '
           '(${TransactionResponse.technicalErrorCode}) -- keine Aussage '
           'ueber den Vorgang';
+    }
+    if (status.isHostUncertain) {
+      return 'Status: ${_stoerung(status)} -- keine Aussage';
+    }
+    // Bewusst NICHT "keine Auskunft": das Wort steht fuer das gemessene 9027,
+    // und Aufrufer lesen es als solches (sastre, OpenCardPaymentService).
+    if (status.responseCode == TransactionResponse.notFoundCode) {
+      return 'Status: Vorgang nicht gefunden (${status.responseCode}) -- '
+          'keine Aussage';
     }
     if (status.isUnknownCode) {
       return 'Status: unbekannter Code (${status.responseCode})'
@@ -446,22 +504,29 @@ class HpsPayments {
   ///
   /// Alle drei zusammengefasst in [TransactionResponse.isConclusive]. Das ist
   /// die eine Codestelle, an der ein Ergebniscode zu einem Ausgang wird.
+  ///
+  /// [aufhebung]: die Antwort gehoert zu [cancel]. Ein `'0'` heisst dort
+  /// "aufgehoben", und der Grund ist [HpsCodeReason.canceled] statt
+  /// [HpsCodeReason.approved].
   HpsResult? _fromResponse(
     TransactionResponse res,
     String id,
-    List<String> steps,
-  ) {
+    List<String> steps, {
+    bool aufhebung = false,
+  }) {
     if (!res.isConclusive) return null;
     final approved = res.isApproved;
     steps.add(approved
         ? 'Terminal: genehmigt'
-        : 'Terminal: abgelehnt (${res.responseCode})');
+        : 'Terminal: abgelehnt (${res.responseCode} '
+            '"${res.codeInfo!.title}")');
     _emit(HpsEventKind.resolved, steps.last, id);
     return HpsResult(
       outcome:
           approved ? CardPaymentOutcome.approved : CardPaymentOutcome.declined,
       transactionId: id,
       response: res,
+      reason: approved && aufhebung ? HpsCodeReason.canceled : res.reason,
       steps: List<String>.unmodifiable(steps),
     );
   }
@@ -490,20 +555,27 @@ class HpsPayments {
   ///   die Statusabfrage nicht antwortet; ihn hier vorzubelasten wuerde das
   ///   Klaerbudget um eine Runde kuerzen, obwohl ueber die Erreichbarkeit der
   ///   Statusabfrage noch gar nichts bekannt ist.
-  /// [antwortMitCode] heisst: das Terminal hat auf die ERZEUGENDE Anfrage
-  /// eine Antwort MIT Ergebniscode geliefert, deren Bedeutung wir nur nicht
-  /// kennen. Dann ist der Vorgang am Geraet abgeschlossen -- und erst dadurch
-  /// bekommt [TransactionResponse.noStatementCode] (`9027`) beim Pollen einen
+  /// [antwort] ist die Antwort auf die ERZEUGENDE Anfrage, sofern eine kam.
+  /// Traegt sie einen Ergebniscode, dessen Bedeutung wir nur nicht kennen, ist
+  /// der Vorgang am Geraet abgeschlossen -- und erst dadurch bekommt
+  /// [TransactionResponse.noStatementCode] (`9027`) beim Pollen einen
   /// Aussagewert, den es sonst nicht hat. Siehe [_ausGeschlossenerAntwort].
+  /// Meldet sie eine Stoerung beim Host ([TransactionResponse.isHostUncertain]),
+  /// bekommt `9027` diesen Aussagewert gerade NICHT -- siehe Klassendoku,
+  /// "Stoerung beim Host".
   Future<HpsResult> _resolve(
     String id,
     List<String> steps, {
-    bool antwortMitCode = false,
-    TransactionResponse? letzteAntwort,
+    TransactionResponse? antwort,
   }) async {
     _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
 
     final clock = _clock()..start();
+    final antwortMitCode = antwort?.responseCode != null;
+    // Einmal gemeldet, bleibt die Stoerung stehen -- auch wenn erst die
+    // Statusabfrage sie nennt und danach 9027 kommt.
+    var stoerung = (antwort?.isHostUncertain ?? false) ? antwort : null;
+    var letzteAntwort = antwort;
 
     final aborted = await _tryAbort(id, steps, clock);
     if (aborted != null) return aborted;
@@ -511,6 +583,11 @@ class HpsPayments {
     var wait = Duration.zero;
     var transportFailures = 0;
     var ohneAuskunft = 0;
+
+    /// Beantwortete Statusabfragen in Folge, die zu einem Vorgang mit
+    /// Host-Stoerung nichts Neues sagen -- `9027` nach einer gemeldeten
+    /// Stoerung, oder die Stoerung selbst.
+    var stoerungOhneNeues = 0;
 
     while (clock.elapsed < resolveBudget) {
       if (wait > Duration.zero) {
@@ -547,27 +624,47 @@ class HpsPayments {
       final settled = _fromResponse(status, id, steps);
       if (settled != null) return settled;
 
+      if (status.isHostUncertain) stoerung ??= status;
+      final hostUngewiss = stoerung != null;
+
       if (status.isNoStatement) {
         ohneAuskunft++;
-        final geklaert = _ausGeschlossenerAntwort(
-          id: id,
-          steps: steps,
-          status: status,
-          antwortMitCode: antwortMitCode,
-          ohneAuskunft: ohneAuskunft,
-        );
-        if (geklaert != null) return geklaert;
+        if (!hostUngewiss) {
+          final geklaert = _ausGeschlossenerAntwort(
+            id: id,
+            steps: steps,
+            status: status,
+            antwort: antwortMitCode ? antwort : null,
+            ohneAuskunft: ohneAuskunft,
+          );
+          if (geklaert != null) return geklaert;
+        }
       } else {
         ohneAuskunft = 0;
       }
 
+      final ohneNeues =
+          (hostUngewiss && status.isNoStatement) || status.isHostUncertain;
+      stoerungOhneNeues = ohneNeues ? stoerungOhneNeues + 1 : 0;
+
       steps
           .add(_statusOhneErgebnis(status) ?? 'Status: noch kein Ergebniscode');
+
+      if (stoerungOhneNeues >= 2) {
+        // Siehe Klassendoku, "Stoerung beim Host": das Terminal weiss es
+        // nicht, und es wird es auch nicht wissen, wenn wir weiterfragen.
+        steps.add('Statusabfrage zweimal ohne Neues nach einer Stoerung beim '
+            'hobex-Host -- das Terminal kann nicht sagen, ob belastet wurde, '
+            'Ausgang bleibt offen');
+        return _open(id, steps, letzteAntwort,
+            _offenerGrund(stoerung ?? antwort, letzteAntwort));
+      }
       wait = _nextWait(wait);
     }
 
     steps.add('Ausgang bleibt offen');
-    return _open(id, steps, letzteAntwort);
+    return _open(id, steps, letzteAntwort,
+        _offenerGrund(stoerung ?? antwort, letzteAntwort));
   }
 
   /// Liest `9027` beim Pollen als "nicht genehmigt" -- aber NUR, wenn das
@@ -601,15 +698,22 @@ class HpsPayments {
   /// Stelle. Dieselbe Absicherung traegt bereits [_fromCancelStatus]. Reicht
   /// das Budget nur fuer eine Abfrage, bleibt der Ausgang offen.
   ///
+  /// [antwort] ist die Antwort MIT Code auf die erzeugende Anfrage -- oder
+  /// `null`, wenn keine kam; dann greift die Regel nicht. Ihr Code ergibt den
+  /// [HpsResult.reason]: er erklaert den Ausgang, das `9027` danach nicht.
+  ///
+  /// Der Aufrufer ruft diese Regel NICHT fuer eine Antwort mit
+  /// [TransactionResponse.isHostUncertain] -- siehe Klassendoku.
+  ///
   /// `null` heisst: nicht entschieden, weiter pollen.
   HpsResult? _ausGeschlossenerAntwort({
     required String id,
     required List<String> steps,
     required TransactionResponse status,
-    required bool antwortMitCode,
+    required TransactionResponse? antwort,
     required int ohneAuskunft,
   }) {
-    if (!antwortMitCode) return null;
+    if (antwort == null) return null;
     if (ohneAuskunft < 2) return null;
 
     steps.add('Statusabfrage zweimal ohne Auskunft (${status.responseCode}), '
@@ -620,6 +724,7 @@ class HpsPayments {
       outcome: CardPaymentOutcome.declined,
       transactionId: id,
       response: status,
+      reason: antwort.reason,
       steps: List<String>.unmodifiable(steps),
     );
   }
@@ -684,6 +789,7 @@ class HpsPayments {
       outcome: CardPaymentOutcome.declined,
       transactionId: id,
       response: res,
+      reason: HpsCodeReason.aborted,
       steps: List<String>.unmodifiable(steps),
     );
   }
@@ -705,14 +811,20 @@ class HpsPayments {
   ///
   /// Budget, Backoff und Transportfehler-Deckelung sind unveraendert aus
   /// [_resolve] uebernommen.
+  ///
+  /// [antwort] ist die direkte Antwort auf den Aufhebungs-Request, sofern eine
+  /// kam. Meldete sie eine Stoerung beim Host, entscheidet ein unveraendertes
+  /// `'0'` nichts -- siehe Klassendoku, "Stoerung beim Host".
   Future<HpsResult> _resolveCancel(
     String id,
     List<String> steps, {
-    TransactionResponse? letzteAntwort,
+    TransactionResponse? antwort,
   }) async {
     _emit(HpsEventKind.resolving, 'Ausgang offen, Klaerung laeuft', id);
 
     final clock = _clock()..start();
+    final hostUngewiss = antwort?.isHostUncertain ?? false;
+    var letzteAntwort = antwort;
     var wait = Duration.zero;
     var transportFailures = 0;
 
@@ -748,6 +860,20 @@ class HpsPayments {
         continue;
       }
 
+      if (hostUngewiss && status.isApproved && beantworteteAbfragen >= 2) {
+        // Siehe Klassendoku, "Stoerung beim Host": das unveraenderte '0'
+        // spiegelt nur den Speicher des Terminals. Ob die Aufhebung beim
+        // Host ankam, sagt es nicht -- und "hat nicht gegriffen" fuehrte nach
+        // dem Tagesabschluss zu einer Rueckerstattung, die der Kunde doppelt
+        // bekaeme.
+        steps.add('Terminal: Originalzahlung steht unveraendert (0), aber die '
+            'Aufhebung endete mit einer Stoerung beim hobex-Host -- ob sie '
+            'dort gewirkt hat, kann das Terminal nicht sagen, Ausgang bleibt '
+            'offen');
+        return _open(
+            id, steps, letzteAntwort, _offenerGrund(antwort, letzteAntwort));
+      }
+
       final settled = _fromCancelStatus(
         status,
         id,
@@ -766,7 +892,8 @@ class HpsPayments {
     }
 
     steps.add('Ausgang bleibt offen');
-    return _open(id, steps, letzteAntwort);
+    return _open(
+        id, steps, letzteAntwort, _offenerGrund(antwort, letzteAntwort));
   }
 
   /// Ordnet die Statusabfrage einer OFFENEN AUFHEBUNG ein. `null`, wenn sie
@@ -868,6 +995,7 @@ class HpsPayments {
         outcome: CardPaymentOutcome.approved,
         transactionId: id,
         response: status,
+        reason: HpsCodeReason.canceled,
         steps: List<String>.unmodifiable(steps),
       );
     }
@@ -900,13 +1028,16 @@ class HpsPayments {
   /// [letzteAntwort] ist die letzte Antwort, die das Terminal in dieser
   /// Klaerung gab -- als [HpsResult.lastResponse] fuer Anzeige und Katalog,
   /// ausdruecklich NICHT als [HpsResult.response].
+  ///
+  /// [grund] siehe [_offenerGrund].
   HpsResult _open(String id, List<String> steps,
-      [TransactionResponse? letzteAntwort]) {
+      [TransactionResponse? letzteAntwort, HpsCodeReason? grund]) {
     _emit(HpsEventKind.resolved, steps.last, id);
     return HpsResult(
       outcome: CardPaymentOutcome.unresolved,
       transactionId: id,
       lastResponse: letzteAntwort,
+      reason: grund,
       steps: List<String>.unmodifiable(steps),
     );
   }

@@ -1,4 +1,5 @@
 import '../payments/card_payment_outcome.dart';
+import 'response_codes.dart';
 import 'transaction_response.dart';
 
 /// Ergebnis eines Zahlvorgangs samt Kennung und Klaerungsverlauf.
@@ -12,6 +13,7 @@ class HpsResult {
     required this.transactionId,
     this.response,
     this.lastResponse,
+    this.reason,
     this.steps = const <String>[],
   });
 
@@ -35,6 +37,27 @@ class HpsResult {
   /// steht dann in [response].
   final TransactionResponse? lastResponse;
 
+  /// Worauf die Kasse reagiert -- der Grund hinter dem Ausgang, mit dem Satz
+  /// fuer den Bediener in [HpsCodeReason.hint].
+  ///
+  /// Gesetzt an der Stelle, die den Ausgang entschieden hat, nicht aus
+  /// [response] abgeleitet: ein bestaetigter Abbruch antwortet `'0'` und ist
+  /// trotzdem [HpsCodeReason.aborted], und wenn die Zwei-`9027`-Regel eine
+  /// Zahlung als abgelehnt klaert, zaehlt der Code der ZAHLUNG (etwa
+  /// `100004`, Karte nicht gelesen), nicht das `9027` der Statusabfrage.
+  ///
+  /// `null`, wenn kein Code etwas erklaert (die Leitung riss ab, bevor das
+  /// Terminal etwas sagte) -- und bei einer Aufhebung, die nicht gegriffen hat.
+  final HpsCodeReason? reason;
+
+  /// `true`, wenn der Ausgang offen ist, weil das Terminal eine Stoerung beim
+  /// oder nach dem hobex-Host meldete (siehe [HpsCodeEffect.hostUncertain]).
+  ///
+  /// Wichtig fuer jede SPAETERE Nachfrage: antwortet die Statusabfrage dann
+  /// `9027`, heisst das hier NICHT "nichts belastet" -- das Terminal hat nichts
+  /// gespeichert, aber ueber den Host weiss es nichts.
+  bool get isHostUncertain => isUnresolved && (reason?.hostUncertain ?? false);
+
   /// Verlauf der Klaerung, in Reihenfolge -- fuer Anzeige und Protokoll.
   final List<String> steps;
 
@@ -55,5 +78,6 @@ class HpsResult {
 
   @override
   String toString() =>
-      'HpsResult(${outcome.name}, tx=$transactionId, steps=${steps.length})';
+      'HpsResult(${outcome.name}, tx=$transactionId, reason=${reason?.name}, '
+      'steps=${steps.length})';
 }

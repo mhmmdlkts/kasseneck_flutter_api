@@ -28,6 +28,8 @@ library;
 
 export 'src/hobex_hps/hps_client.dart' show HpsClient;
 export 'src/hobex_hps/transaction_response.dart' show TransactionResponse;
+export 'src/hobex_hps/response_codes.dart'
+    show HpsCode, HpsCodes, HpsCodeEffect, HpsCodeReason, HpsCodeSource;
 export 'src/hobex_hps/diagnosis.dart' show Diagnosis;
 export 'src/hobex_hps/terminal_info.dart' show TerminalInfo;
 export 'src/hobex_hps/enums.dart' show HpsTransactionType, Cvm;

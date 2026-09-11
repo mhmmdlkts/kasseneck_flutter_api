@@ -1,3 +1,48 @@
+## 6.10.0
+
+**Anlass:** hobex hat am 11.09.2026 die Antwortcodeliste der HPS-Anwendung
+geschickt. Drei der Codes kamen seit dem 28.08.2026 im Betrieb vor (`100004`,
+`100005`, `100015`) und waren bis jetzt ungedeutet. Jede Zahlung damit lief in
+die Klaerung und endete erst ueber die Zwei-`9027`-Regel.
+
+- **Alle 31 Codes der Liste stehen in `HpsCodes.all`**, zusammen mit den
+  gemessenen: Code, hobex-Titel, Bedeutung, Wirkung (`HpsCodeEffect`), Grund
+  (`HpsCodeReason`) und Quelle (gemessen / dokumentiert).
+  `TransactionResponse.isConclusive` liest seine Positivliste jetzt aus dieser
+  Tabelle.
+
+- **Was vor dem Host scheitert, ist eine Ablehnung.** Kartenlesen, EMV-Kernel,
+  Eingaben am Geraet, Geraetezustand, fehlerhafte Anfrage: `declined`, ohne
+  Abbruch und ohne Statusabfrage. Dazu `100029`: das Terminal storniert laut
+  hobex selbst.
+
+- **Neu: "ungewiss"** (`HpsCodeEffect.hostUncertain`, `TransactionResponse.isHostUncertain`)
+  fuer `100006`, `100007`, `100023`, `100024`, `100026`, `100027` und `100999`.
+  Der Host war beteiligt, das Terminal storniert nicht selbst. Die
+  Zwei-`9027`-Regel greift hier **nicht**. Ein `9027` danach heisst nur, dass
+  das Terminal nichts gespeichert hat, nicht, dass nichts belastet ist. Die
+  Klaerung endet nach zwei Abfragen ohne Neues als `unresolved`; sagt der
+  Status `0`, gilt die Genehmigung. Bei einer Aufhebung entscheidet ein
+  unveraendertes `0` auf die Originalzahlung dann ebenfalls nichts.
+
+- **`HpsResult.reason`** traegt fuer jeden Ausgang den Grund, mit einem Satz fuer
+  den Bediener (`HpsCodeReason.hint`). Er wird dort gesetzt, wo entschieden
+  wurde: ein bestaetigter Abbruch ist `aborted`, eine ueber die
+  Zwei-`9027`-Regel geklaerte Zahlung traegt den Grund ihres eigenen Codes,
+  HTTP `409` ist `terminalBusy`. **`HpsResult.isHostUncertain`** sagt einer
+  spaeteren Nachfrage, dass ein `9027` dort nicht "nicht belastet" heisst.
+
+- `100011 "Not Found"` ist keine Aussage, traegt aber nicht die
+  Zwei-`9027`-Regel: sie ist nur fuer `9027` gemessen. Der Nachweistext dazu
+  enthaelt bewusst nicht "keine Auskunft".
+
+- Der Nachweis nennt bei einer Ablehnung den hobex-Titel mit
+  (`Terminal: abgelehnt (100015 "Card declined")`). Wer den Text
+  `abgelehnt (<code>)` woertlich prueft, muss nachziehen.
+
+- `TransactionResponse.isUnknownCode` heisst jetzt: der Code fehlt in der
+  Tabelle. Fuer alle bisher bekannten Codes aendert sich nichts.
+
 ## 6.9.1
 
 **Anlass:** 6.9.0 enthielt versehentlich `test/integration/credentials.local.json`

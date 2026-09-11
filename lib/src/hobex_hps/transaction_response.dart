@@ -1,4 +1,5 @@
 import 'enums.dart';
+import 'response_codes.dart';
 
 /// Result of a transaction request (payment, refund, pre-auth, capture, void,
 /// AVT) or of a transaction-status (v2) query.
@@ -304,29 +305,106 @@ class TransactionResponse {
   /// eine Rueckfrage an den Bediener -- fuer eine falsch getippte PIN.
   static const String wrongPinCode = '55';
 
-  /// Ergebniscodes, deren Bedeutung GEMESSEN und hier benannt ist, und die
-  /// einen Ausgang FESTSCHREIBEN -- siehe [isConclusive]. [noStatementCode]
-  /// (`9027`) gehoert bewusst NICHT dazu: er ist zwar ebenso gemessen und
-  /// benannt, sagt aber ausdruecklich NICHTS aus (siehe [isNoStatement]).
-  /// Ebenso [technicalErrorCode] (`9900`): gemessen, benannt, aber keine
-  /// Aussage ueber den Vorgang (siehe [isTechnicalError]).
-  static const Set<String> _knownOutcomeCodes = <String>{
-    '0',
-    transactionCanceledCode,
-    notAbortableCode,
-    abortedCode,
-    cardNotPresentCode,
-    invalidTransactionCode,
-    // Drei Abweisungen VOR dem Kartenfluss, am 27./28.08.2026 gemessen: das
-    // Terminal antwortet, ohne je eine Karte verlangt zu haben. Damit sind
-    // sie positive Aussagen ueber den Ausgang, keine Wissensluecken.
-    invalidAmountCode,
-    amountOutOfRangeCode,
-    invalidTidCode,
-    // Die erste gemessene Host-Ablehnung (02.09.2026, Betrieb): der Host hat
-    // die Autorisierung verweigert, nichts belastet. Siehe [wrongPinCode].
-    wrongPinCode,
-  };
+  // ---- Antwortcodeliste von hobex, erhalten 11.09.2026 ----
+  //
+  // Bedeutung, Wirkung und Grund jedes Codes stehen in [HpsCodes.all]; hier
+  // nur die Namen, damit Aufrufer und Tests nicht mit nackten Zahlen
+  // arbeiten. Siehe `response_codes.dart` fuer die Einordnung vor/nach dem
+  // Host.
+
+  /// `100001` "Bad Request": fehlerhafte Anfrage der Kasse -- nichts belastet.
+  static const String badRequestCode = '100001';
+
+  /// `100004` "Card read failed": Karte nicht lesbar -- nichts belastet. Im
+  /// Betrieb am 28.08.2026 gesehen (TID 3556988), damals ungedeutet.
+  static const String cardReadFailedCode = '100004';
+
+  /// `100005` "App select failed": Anwendungsauswahl gescheitert -- nichts
+  /// belastet. Im Betrieb am 28.08.2026 gesehen, damals ungedeutet.
+  static const String appSelectFailedCode = '100005';
+
+  /// `100006` "Communication with TecsXml failed" (No auto-reversal) --
+  /// Ausgang ungewiss, siehe [isHostUncertain].
+  static const String hostCommunicationFailedCode = '100006';
+
+  /// `100007` "Processing of TecsXml step failed" (No auto-reversal) --
+  /// Ausgang ungewiss, siehe [isHostUncertain].
+  static const String hostStepFailedCode = '100007';
+
+  /// `100008` "Invalid TID" laut hobex. Am Geraet gemessen wurde fuer
+  /// dieselbe Lage [invalidTidCode] (`100108`); beide gelten.
+  static const String invalidTidDocumentedCode = '100008';
+
+  /// `100009` "Invalid Tx Type": Vorgangstyp unbekannt -- nichts belastet.
+  static const String invalidTxTypeCode = '100009';
+
+  /// `100011` "Not Found": keine Aussage ueber den Vorgang, siehe
+  /// [isNoStatement] fuer den Unterschied zu `9027`.
+  static const String notFoundCode = '100011';
+
+  /// `100012` "Max retries exceeded": zu viele Kartenversuche -- nichts
+  /// belastet.
+  static const String maxRetriesExceededCode = '100012';
+
+  /// `100013` "Diagnosis failed" -- nichts belastet.
+  static const String diagnosisFailedCode = '100013';
+
+  /// `100014` "Card information wasn't entered" (MOTO) -- nichts belastet.
+  static const String cardInfoNotEnteredCode = '100014';
+
+  /// `100015` "Card declined": vom EMV-Kernel abgelehnt, vor dem Host --
+  /// nichts belastet. Im Betrieb am 28. und 31.08.2026 gesehen, damals
+  /// ungedeutet.
+  static const String cardDeclinedCode = '100015';
+
+  /// `100017` "Card Not Supported" -- nichts belastet.
+  static const String cardNotSupportedCode = '100017';
+
+  /// `100018` "Scep enrollment failed" -- nichts belastet.
+  static const String scepEnrollmentFailedCode = '100018';
+
+  /// `100020` "Refund password is invalid" -- nichts ausgezahlt.
+  static const String refundPasswordInvalidCode = '100020';
+
+  /// `100021` "Failed to enter the password" -- nichts ausgezahlt.
+  static const String passwordNotEnteredCode = '100021';
+
+  /// `100022` "Terminal is blocked": nicht IN_OPERATION -- nichts belastet.
+  static const String terminalBlockedCode = '100022';
+
+  /// `100023` "Invalid message type": ungueltige Host-Antwort -- Ausgang
+  /// ungewiss, siehe [isHostUncertain].
+  static const String invalidMessageTypeCode = '100023';
+
+  /// `100024` "Transaction completion has failed" -- Ausgang ungewiss, siehe
+  /// [isHostUncertain].
+  static const String completionFailedCode = '100024';
+
+  /// `100025` "Refund transactions are disabled" -- nichts ausgezahlt.
+  static const String refundDisabledCode = '100025';
+
+  /// `100026` "Transaction was declined." (Chip-Daten fuer eine Karte ohne
+  /// Chip) -- Ausgang ungewiss, siehe [isHostUncertain].
+  static const String chipDataMismatchCode = '100026';
+
+  /// `100027` "Unsupported UserData in TecsXml Response" -- Ausgang ungewiss,
+  /// siehe [isHostUncertain].
+  static const String unsupportedUserDataCode = '100027';
+
+  /// `100028` "Tip selection process has failed." -- nichts belastet.
+  static const String tipSelectionFailedCode = '100028';
+
+  /// `100029` "Communication with TecsXml timeout" (auto-reversal): das
+  /// Terminal storniert selbst -- nichts belastet.
+  static const String hostTimeoutReversedCode = '100029';
+
+  /// `100998` "Terminal is busy" -- die Anfrage wurde nicht angenommen. Als
+  /// HTTP-Status gemessen: `409`, siehe `HpsHttpException.isTerminalBusy`.
+  static const String terminalBusyCode = '100998';
+
+  /// `100999` "Internal Error": Sammelcode -- Ausgang ungewiss, siehe
+  /// [isHostUncertain].
+  static const String internalErrorCode = '100999';
 
   /// `true` when the transaction was approved (`responseCode == "0"`).
   bool get isApproved => responseCode == '0';
@@ -345,7 +423,31 @@ class TransactionResponse {
 
   /// `true`, wenn das Terminal zu dieser Kennung keine Auskunft gibt
   /// ([noStatementCode]).
+  ///
+  /// Bewusst NUR `9027`, nicht auch [notFoundCode] (`100011`, "Not Found"):
+  /// auf `9027` ruht die Zwei-`9027`-Regel in `HpsPayments`, und die ist fuer
+  /// genau diesen Code gemessen. `100011` ist dokumentiert, aber an keinem
+  /// Geraet gesehen -- er ist ebenso keine Aussage (siehe [isConclusive]),
+  /// traegt aber keine Schlussregel.
   bool get isNoStatement => responseCode == noStatementCode;
+
+  /// `true`, wenn der Code einen Ausgang meldet, den das Terminal selbst nicht
+  /// kennt: der hobex-Host war beteiligt, und das Terminal storniert nicht von
+  /// sich aus (siehe [HpsCodeEffect.hostUncertain]).
+  ///
+  /// Keine Aussage -- aber eine andere als [isNoStatement]: ein spaeteres
+  /// `9027` auf die Statusabfrage heisst hier NICHT "nichts belastet", denn es
+  /// spiegelt nur den Speicher des Terminals, nicht den des Hosts.
+  bool get isHostUncertain =>
+      HpsCodes.lookup(responseCode)?.hostUncertain ?? false;
+
+  /// Der Eintrag dieses Codes in [HpsCodes.all], oder `null`, wenn seine
+  /// Bedeutung nicht feststeht bzw. kein Code vorliegt.
+  HpsCode? get codeInfo => HpsCodes.lookup(responseCode);
+
+  /// Worauf eine Kasse bei dieser Antwort reagiert -- `null` ohne Code,
+  /// [HpsCodeReason.unknown] fuer einen Code ausserhalb der Tabelle.
+  HpsCodeReason? get reason => HpsCodes.reasonOf(responseCode);
 
   /// `true`, wenn das Terminal einen technischen Fehler meldet
   /// ([technicalErrorCode]) -- gemessen im Zusammenhang mit einer nicht rein
@@ -359,35 +461,35 @@ class TransactionResponse {
   /// `true`, wenn der Vorgang aufgehoben wurde ([transactionCanceledCode]).
   bool get isCanceled => responseCode == transactionCanceledCode;
 
-  /// `true`, wenn ein Ergebniscode VORHANDEN ist, aber weder ein GEMESSENES
-  /// Ergebnis benennt ([isConclusive]) noch eine der beiden gemessenen
-  /// Wissensluecken ist ([isNoStatement], [isTechnicalError]).
+  /// `true`, wenn ein Ergebniscode VORHANDEN ist, dessen Bedeutung aber nicht
+  /// feststeht -- er fehlt in [HpsCodes.all].
   ///
-  /// Der Unterschied zu [isNoStatement] und [isTechnicalError] ist im
-  /// Nachweistext bedeutsam, der im Belastungsstreit gelesen wird: "das
-  /// Terminal kennt den Vorgang nicht" (9027) und "das Terminal meldet einen
-  /// technischen Fehler" (9900) sind beides GEMESSENE Aussagen ueber eine
-  /// Wissensluecke. "Wir kennen diesen Code nicht" ist etwas anderes -- eine
-  /// Wissensluecke ueber unser eigenes Modell, nicht ueber den Vorgang.
+  /// Der Unterschied zu [isNoStatement], [isTechnicalError] und
+  /// [isHostUncertain] ist im Nachweistext bedeutsam, der im Belastungsstreit
+  /// gelesen wird: "das Terminal kennt den Vorgang nicht" (9027), "das
+  /// Terminal meldet einen technischen Fehler" (9900) und "der Host war
+  /// beteiligt, das Terminal weiss es nicht" (etwa 100007) sind Aussagen ueber
+  /// eine Wissensluecke. "Wir kennen diesen Code nicht" ist etwas anderes --
+  /// eine Wissensluecke ueber unser eigenes Modell, nicht ueber den Vorgang.
   bool get isUnknownCode =>
-      responseCode != null &&
-      !isConclusive &&
-      !isNoStatement &&
-      !isTechnicalError;
+      responseCode != null && HpsCodes.lookup(responseCode) == null;
 
   /// `true`, wenn diese Antwort ueberhaupt eine Aussage ueber den Ausgang
-  /// traegt -- also einen Ergebniscode nennt, dessen Bedeutung GEMESSEN und
-  /// in [_knownOutcomeCodes] benannt ist.
+  /// traegt -- also einen Ergebniscode nennt, dessen Bedeutung feststeht und
+  /// der in [HpsCodes.all] als [HpsCodeEffect.conclusive] gefuehrt wird.
   ///
   /// Nur eine solche Antwort darf einen Ausgang festschreiben. Alles andere
-  /// -- ein fehlender Code, eine gemessene Wissensluecke ([isNoStatement],
-  /// [isTechnicalError]) oder ein schlicht nie gemessener Code
+  /// -- ein fehlender Code, eine Wissensluecke ([isNoStatement],
+  /// [isTechnicalError], [notFoundCode]), ein ungewisser Host-Ausgang
+  /// ([isHostUncertain]) oder ein Code ausserhalb der Tabelle
   /// ([isUnknownCode]) -- ist ein Grund weiterzuklaeren, niemals ein
   /// Ergebnis. Bis 27.08.2026 war das eine Negativliste, die sich als
   /// Positivliste ausgab ("jeder Code ausser `null` und [noStatementCode]
   /// ist schluessig"); siehe die Messung zu [technicalErrorCode] oben, die
-  /// diese Annahme widerlegt hat.
-  bool get isConclusive => _knownOutcomeCodes.contains(responseCode);
+  /// diese Annahme widerlegt hat. Seit 11.09.2026 speist sich die Positivliste
+  /// aus Messung UND der Antwortcodeliste von hobex -- siehe
+  /// `response_codes.dart`.
+  bool get isConclusive => HpsCodes.lookup(responseCode)?.conclusive ?? false;
 
   factory TransactionResponse.fromJson(Map<String, dynamic> json) {
     return TransactionResponse(
@@ -442,11 +544,13 @@ class TransactionResponse {
             ? 'NO_STATEMENT($responseCode)'
             : isTechnicalError
                 ? 'TECHNICAL_ERROR($responseCode)'
-                : isApproved
-                    ? 'APPROVED'
-                    : isConclusive
-                        ? 'DECLINED($responseCode)'
-                        : 'UNKNOWN_CODE($responseCode)';
+                : isHostUncertain
+                    ? 'HOST_UNCERTAIN($responseCode)'
+                    : isApproved
+                        ? 'APPROVED'
+                        : isConclusive
+                            ? 'DECLINED($responseCode)'
+                            : 'UNKNOWN_CODE($responseCode)';
     return 'TransactionResponse($outcome, type=$transactionType, '
         'amount=$amount $currency, brand=$brand, card=$cardNumber, '
         'approval=$approvalCode, tx=$transactionId, text=$responseText)';
