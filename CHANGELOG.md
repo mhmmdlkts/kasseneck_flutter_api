@@ -1,3 +1,26 @@
+## 6.11.0
+
+**Anlass:** sastre storniert noch ueber den alten Weg (`cancelReceipt` ->
+`createReceipt` ohne Bezug): keine Restmengen, kein Schutz vor doppeltem
+Storno, keine Verkettung mit dem Original. Den neuen Endpunkt gab es in diesem
+Paket nur fuer die Kassen-Anmeldung (`RegisterReceiptClient.stornieren`), nicht
+fuer den API-Schluessel-Zugang, ueber den sastre spricht. Der npm-Zwilling
+hatte ihn dort schon (`cancelReceipt` im Client).
+
+- **Neu `KasseneckApi.stornieren`**: Storno ueber den Endpunkt `cancelReceipt`
+  mit Bezug, Grund (`stornogruende`), optionalem Teilstorno (`Stornoposition`)
+  und Anmerkung. Liefert `Stornoergebnis` (Storno-Beleg, Bezug, Restmengen).
+  Fachliche Ablehnungen kommen als `KasseneckApiError` mit `code` aus
+  `stornoFehlercodes`.
+- **Kartendaten der Erstattung** (`kartenanbieter`, `kartenzahlungId`,
+  `kartenzahlungsdaten`) gehen an den Storno-Beleg -- nur bei Rueckzahlweg
+  Karte, nie die Daten der Originalzahlung. Backend: keck#371, npm 0.12.0.
+- `KasseneckApiError`, `Stornoergebnis`, `Stornoposition`, `stornogruende`,
+  `stornoFehlercodes` und `istStornoFehlercode` sind jetzt auch aus
+  `kasseneck_api.dart` erreichbar.
+- Die Abkuendigung von `cancelReceipt`/`createCancelReceipt` nennt
+  `stornieren` als Ersatz.
+
 ## 6.10.0
 
 **Anlass:** hobex hat am 11.09.2026 die Antwortcodeliste der HPS-Anwendung

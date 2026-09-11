@@ -25,6 +25,8 @@ import 'models/keck_tip.dart';
 import 'models/keck_tip_person.dart';
 import 'models/kasseneck_receipt.dart';
 import 'src/aufrufe.dart';
+import 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
+import 'src/kasse/storno.dart' show stornogruende;
 import 'src/register/fehler.dart';
 
 export 'src/hobex_cloud/hobex_cloud_payments.dart'
@@ -41,7 +43,11 @@ export 'models/hobex_receipt.dart' show HobexReceipt;
 // Signatur ist etwas anderes als ein fehlgeschlagener Verkauf, und
 // unterscheiden kann das nur, wer den Typ benennen darf.
 export 'src/register/fehler.dart'
-    show KasseneckHttpError, KasseneckReceiptFormatError, KasseneckValidationError;
+    show KasseneckApiError, KasseneckHttpError, KasseneckReceiptFormatError, KasseneckValidationError;
+// Der Storno mit Bezug (KasseneckApi.stornieren) liefert und nimmt diese Typen
+// -- ohne sie waere er aus diesem Barrel nicht benutzbar.
+export 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
+export 'src/kasse/storno.dart' show stornogruende, stornoFehlercodes, istStornoFehlercode;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
 // nicht benennbar.
@@ -272,10 +278,10 @@ class KasseneckApi {
   /// **Deprecated — old cancellation path.** Runs through `createReceipt` without
   /// a reference to the original: no remaining quantities, no protection against
   /// cancelling twice, vouchers are not taken back. The backend still accepts it
-  /// and answers with `deprecation`. Use `RegisterReceiptClient.stornieren`
-  /// (`package:kasseneck_api/kasse.dart`) instead: reference, reason, partial
-  /// cancellation, stable error codes.
-  @Deprecated('Alter Storno-Weg ohne Bezug — RegisterReceiptClient.stornieren (kasse.dart) verwenden')
+  /// and answers with `deprecation`. Use [stornieren] instead (or
+  /// `RegisterReceiptClient.stornieren` with a register login): reference,
+  /// reason, partial cancellation, stable error codes.
+  @Deprecated('Alter Storno-Weg ohne Bezug — KasseneckApi.stornieren (bzw. RegisterReceiptClient.stornieren) verwenden')
   Future<KasseneckReceipt?> cancelReceipt({
     required KasseneckReceipt receipt,
     KeckPaymentMethod? paymentMethod,
@@ -300,7 +306,7 @@ class KasseneckApi {
   }
 
   /// **Deprecated — old cancellation path**, see [cancelReceipt].
-  @Deprecated('Alter Storno-Weg ohne Bezug — RegisterReceiptClient.stornieren (kasse.dart) verwenden')
+  @Deprecated('Alter Storno-Weg ohne Bezug — KasseneckApi.stornieren (bzw. RegisterReceiptClient.stornieren) verwenden')
   Future<KasseneckReceipt?> createCancelReceipt({
     required KeckPaymentMethod paymentMethod,
     required List<KasseneckItem> items,
@@ -321,6 +327,114 @@ class KasseneckApi {
         creditCardProvider: creditCardProvider,
         customProjectId: customProjectId,
         legalMessage: legalMessage
+    );
+  }
+
+  /// Storno-Beleg zu einem bestehenden Beleg ueber den Endpunkt
+  /// `cancelReceipt` — **der Storno-Weg mit Bezug** fuer den API-Schluessel-
+  /// Zugang (Zwilling von `cancelReceipt` im Client des npm-Pakets, Gegenstueck
+  /// zu `RegisterReceiptClient.stornieren` der Kassen-Anmeldung).
+  ///
+  /// Anders als [cancelReceipt] negiert hier der **Server**: er prueft Restmengen
+  /// und Rechte, verkettet Original und Storno (`cancellationOf` am Storno,
+  /// `cancellations[]` am Original), nimmt Gutscheine und Rabatte zurueck und
+  /// weist einen zweiten Storno desselben Restes mit `bereits_storniert` ab.
+  ///
+  /// Ohne [positionen] ist es ein Vollstorno der Restmengen; eine **leere**
+  /// Liste ist ein Fehler, sonst wuerde aus einem missglueckten Teilstorno still
+  /// ein Vollstorno. [grund] ist ein Schluessel aus [stornogruende] — sein
+  /// Anzeigetext steht am Bon.
+  ///
+  /// [kartenanbieter], [kartenzahlungId] und [kartenzahlungsdaten] beschreiben
+  /// die **Erstattung** am Terminal (Gutschrift oder Aufhebung) fuer den
+  /// Kartenblock am Storno-Bon — nie die Originalzahlung, und nur bei
+  /// Rueckzahlweg Karte. Ohne [zahlungsart] entscheidet das Backend an der
+  /// Zahlungsart des Originals.
+  ///
+  /// Fachliche Ablehnungen kommen als [KasseneckApiError] mit `code` aus
+  /// `stornoFehlercodes` — daran entscheiden, nie am Text.
+  Future<Stornoergebnis> stornieren({
+    required String cashregisterId,
+    required String originalReceiptId,
+    required String grund,
+    List<Stornoposition>? positionen,
+    String? anmerkung,
+    KeckPaymentMethod? zahlungsart,
+    CreditCardProvider? kartenanbieter,
+    String? kartenzahlungId,
+    Map<String, dynamic>? kartenzahlungsdaten,
+  }) async {
+    const name = Aufrufe.cancelReceipt;
+    if (cashregisterId.trim().isEmpty) {
+      throw const KasseneckValidationError(name, 'cashregisterId fehlt', 'request');
+    }
+    if (originalReceiptId.trim().isEmpty) {
+      throw const KasseneckValidationError(name, 'originalReceiptId fehlt', 'request');
+    }
+    if (!stornogruende.containsKey(grund)) {
+      throw const KasseneckValidationError(name, 'Storno-Grund fehlt oder ist unbekannt', 'request');
+    }
+    if (positionen != null) {
+      if (positionen.isEmpty) {
+        throw const KasseneckValidationError(name, 'positionen muss eine nicht leere Liste sein', 'request');
+      }
+      if (positionen.any((p) => p.index < 0 || p.menge < 1)) {
+        throw const KasseneckValidationError(name, 'Storno-Menge muss eine ganze Zahl >= 1 sein', 'request');
+      }
+    }
+    if (anmerkung != null && anmerkung.length > 200) {
+      throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
+    }
+    final karte = kartenanbieter != null || kartenzahlungId != null || kartenzahlungsdaten != null;
+    if (karte && zahlungsart != null && zahlungsart != KeckPaymentMethod.creditCard) {
+      // Ohne zahlungsart entscheidet das Backend an der Zahlungsart des
+      // Originals; ein ausdruecklich anderer Rueckzahlweg ist hier schon falsch.
+      throw const KasseneckValidationError(name, 'Kartendaten gibt es nur bei zahlungsart creditCard', 'request');
+    }
+
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {
+        'cashregisterId': cashregisterId,
+        'originalReceiptId': originalReceiptId,
+        'reason': grund,
+        if (positionen != null) 'items': [for (final p in positionen) {'index': p.index, 'quantity': p.menge}],
+        if (anmerkung != null && anmerkung.isNotEmpty) 'note': anmerkung,
+        'paymentMethod': ?zahlungsart?.name,
+        'creditCardProvider': ?kartenanbieter?.name,
+        if (kartenzahlungId != null && kartenzahlungId.isNotEmpty) 'cardPaymentId': kartenzahlungId,
+        'cardPaymentData': ?kartenzahlungsdaten,
+      },
+      deadline: signatureTimeout,
+    );
+
+    if (resJson['status'] != 'success') {
+      final msg = resJson['message'];
+      throw KasseneckApiError(name, msg is String && msg.isNotEmpty ? msg : 'Storno fehlgeschlagen',
+          code: fehlercodeAus(resJson));
+    }
+
+    // Ab hier ist der Storno-Beleg ausgestellt und signiert — jeder Fehler
+    // traegt deshalb die Kennung mit, sofern die Antwort sie mitbrachte (siehe
+    // [_belegAus]); ein zweiter Storno waere eine zweite Ruecknahme.
+    final daten = _daten(name, resJson);
+    final receipt = _belegAus(name, daten);
+    final bezug = daten['cancellationOf'];
+    if (bezug is! Map || bezug['receiptId'] is! String) {
+      throw KasseneckValidationError(name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response',
+          receiptId: receipt.receiptId);
+    }
+    final rest = daten['remaining'];
+    if (rest is! List || rest.any((n) => n is! int)) {
+      throw KasseneckValidationError(name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response',
+          receiptId: receipt.receiptId);
+    }
+    await receipt.init();
+    return Stornoergebnis(
+      beleg: receipt,
+      originalReceiptId: bezug['receiptId'] as String,
+      originalFullReceiptId: bezug['fullReceiptId'] is String ? bezug['fullReceiptId'] as String : null,
+      restmengen: rest.cast<int>(),
     );
   }
 
