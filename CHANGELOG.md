@@ -1,3 +1,42 @@
+## 6.12.0
+
+**Anlass:** das Backend hat seit keck#361 den Endpunkt `sendReceiptEmail` --
+die Kasse schickt einen ausgestellten Beleg als Link auf die oeffentliche
+Belegseite an eine Adresse, die der Gast am Tresen nennt. In beiden Kassen ist
+der Weg fertig gebaut, aber hinter einer Schnittstelle, hinter der nichts steht
+(`belegversand.dart`, Schalter `belegMailVerfuegbar = false`): es fehlte der
+Aufruf im Paket. Kein PDF im Anhang -- die Belegseite setzt dasselbe
+Zeilenmodell wie Bildschirm und Bondrucker und gibt dort auf Wunsch eines aus.
+
+- **Neu `RegisterReceiptClient.belegSenden`** (Kassen-Anmeldung) und **neu
+  `KasseneckApi.belegSenden`** (API-Schluessel-Zugang): `fullReceiptId`, `an`
+  und optional `sprache`. Welche Kasse gemeint ist, entscheidet die Sitzung
+  bzw. der `cashregister-token` -- es gibt bewusst kein `cashregisterId` am
+  Aufruf. Zwilling: `sendReceiptEmail` in @kreiseck/kasseneck-api 0.13.0.
+- **Neu `Belegmailergebnis`** mit `to` (normalisierte Adresse), `at` (ISO in
+  Wiener Zeit) und `via` (`eigen` / `plattform` / `plattform-fallback`).
+  Gelesen wird **nachsichtig**: an dieser Stelle ist die Mail draussen, und ein
+  Wurf ueber einem fehlenden Feld saehe fuer die Kasse aus wie "nicht
+  gesendet" -- der Kassier schickte sie dann ein zweites Mal an den Gast.
+- **Neu `belegMailFehlercodes` und `istBelegMailFehlercode`**: die vier stabilen
+  Codes des Backends (`adresse_ungueltig`, `beleg_nicht_gefunden`, `zu_oft`,
+  `versand_fehlgeschlagen`). Sie kommen unveraendert als `KasseneckApiError.code`
+  heraus -- die Kasse entscheidet am Code, nie am deutschen Text.
+- **Die Adresse wird hier nicht auf Form geprueft.** Es gibt genau eine
+  Adresspruefung, und die steht im Backend (`kreiseck_validator`); eine zweite,
+  anders strenge wiese Adressen ab, die dort durchgehen -- und mit einem
+  Fehlertyp, an dem die Kasse nicht entscheiden kann. Abgewiesen wird hier nur
+  die leere Angabe.
+- Neue oeffentliche Symbole: `RegisterReceiptClient.belegSenden`,
+  `KasseneckApi.belegSenden`, `Belegmailergebnis` (mit `Belegmailergebnis.aus`),
+  `belegMailFehlercodes`, `istBelegMailFehlercode`, `Aufrufe.sendReceiptEmail`
+  -- erreichbar aus `kasse.dart` und `kasseneck_api.dart`.
+- Die Anheftung `npm_version` in `zwillinge.yaml` steht wieder auf dem
+  veroeffentlichten Stand (0.10.0 -> 0.12.0); die Vertragsdateien unter
+  `test/fixtures/vertrag/` sind neu gezogen. Inhaltlich aendert sich daran
+  nichts ausser der Versionszeile -- 0.11 und 0.12 haben die gemeinsame
+  Oberflaeche nicht angefasst.
+
 ## 6.11.0
 
 **Anlass:** sastre storniert noch ueber den alten Weg (`cancelReceipt` ->

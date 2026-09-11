@@ -29,6 +29,7 @@ export 'src/kasse/artikel.dart';
 export 'src/kasse/testkennzeichen.dart';
 export 'src/kasse/belege.dart';
 export 'src/kasse/belegliste.dart';
+export 'src/kasse/belegmail.dart';
 export 'src/kasse/einstellungen.dart';
 export 'src/kasse/farbe.dart';
 export 'src/kasse/thema.dart';

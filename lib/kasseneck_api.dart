@@ -26,6 +26,7 @@ import 'models/keck_tip_person.dart';
 import 'models/kasseneck_receipt.dart';
 import 'src/aufrufe.dart';
 import 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
+import 'src/kasse/belegmail.dart' show Belegmailergebnis, belegMailFehlercodes;
 import 'src/kasse/storno.dart' show stornogruende;
 import 'src/register/fehler.dart';
 
@@ -47,6 +48,12 @@ export 'src/register/fehler.dart'
 // Der Storno mit Bezug (KasseneckApi.stornieren) liefert und nimmt diese Typen
 // -- ohne sie waere er aus diesem Barrel nicht benutzbar.
 export 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
+// Der Belegversand per Mail (KasseneckApi.belegSenden) liefert sein Ergebnis
+// und nennt seine Fehlercodes aus diesem Teil -- ohne die Exporte koennte ein
+// Aufrufer, der nur dieses Barrel importiert, weder das Ergebnis benennen noch
+// pruefen, ob ein Code zum Katalog gehoert.
+export 'src/kasse/belegmail.dart'
+    show Belegmailergebnis, belegMailFehlercodes, istBelegMailFehlercode;
 export 'src/kasse/storno.dart' show stornogruende, stornoFehlercodes, istStornoFehlercode;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
@@ -436,6 +443,71 @@ class KasseneckApi {
       originalFullReceiptId: bezug['fullReceiptId'] is String ? bezug['fullReceiptId'] as String : null,
       restmengen: rest.cast<int>(),
     );
+  }
+
+  /// Einen bereits ausgestellten Beleg als **Link auf die oeffentliche
+  /// Belegseite** an [an] schicken — Endpunkt `sendReceiptEmail`, Zwilling von
+  /// `sendReceiptEmail` im Client des npm-Pakets und Gegenstueck zu
+  /// `RegisterReceiptClient.belegSenden` der Kassen-Anmeldung.
+  ///
+  /// Verschickt wird ein Link, kein PDF im Anhang: die Belegseite setzt dasselbe
+  /// Zeilenmodell wie Bildschirm und Bondrucker und gibt dort auf Wunsch ein PDF
+  /// aus. Der Beleg selbst bleibt byteidentisch (DEP, BAO §131) — das Backend
+  /// protokolliert den Versand daneben, nie am Beleg.
+  ///
+  /// **Welche Kasse gemeint ist, sagt der `cashregister-token` dieses Clients**
+  /// — es gibt hier kein `cashregisterId`. Ein Beleg einer anderen Kasse
+  /// beantwortet das Backend mit `beleg_nicht_gefunden`, genau wie einen, den es
+  /// nicht gibt: sonst waere der Endpunkt ein Auskunftsdienst ueber fremde
+  /// Belege.
+  ///
+  /// [sprache] nimmt das Backend heute entgegen, ohne es auszuwerten (es gibt
+  /// eine Fassung, Deutsch); der Parameter steht im Vertrag, damit eine zweite
+  /// Sprache spaeter kein neuer Aufruf wird.
+  ///
+  /// Die Adresse wird hier **nicht** auf Form geprueft — siehe
+  /// `RegisterReceiptClient.belegSenden`: es gibt genau eine Adresspruefung,
+  /// und die steht im Backend. Fachliche Ablehnungen kommen als
+  /// [KasseneckApiError] mit einem Code aus [belegMailFehlercodes]; daran
+  /// entscheiden, nie am Text. Die Schleuse des Backends (fuenf Mails je Beleg
+  /// in 24 Stunden, 30 je Kasse und Stunde) meldet sich als `zu_oft`.
+  Future<Belegmailergebnis> belegSenden({
+    required String fullReceiptId,
+    required String an,
+    String? sprache,
+  }) async {
+    const name = Aufrufe.sendReceiptEmail;
+    final beleg = fullReceiptId.trim();
+    final adresse = an.trim();
+    if (beleg.isEmpty) {
+      throw const KasseneckValidationError(name, 'fullReceiptId fehlt', 'request');
+    }
+    if (adresse.isEmpty) {
+      throw const KasseneckValidationError(name, 'to fehlt', 'request');
+    }
+    final gewuenschteSprache = sprache?.trim() ?? '';
+
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {
+        'fullReceiptId': beleg,
+        'to': adresse,
+        if (gewuenschteSprache.isNotEmpty) 'sprache': gewuenschteSprache,
+      },
+    );
+
+    if (resJson['status'] != 'success') {
+      final msg = resJson['message'];
+      throw KasseneckApiError(name, msg is String && msg.isNotEmpty ? msg : 'Belegversand fehlgeschlagen',
+          code: fehlercodeAus(resJson));
+    }
+
+    // Ab hier ist die Mail draussen. Die einzelnen Felder werden deshalb
+    // nachsichtig gelesen (siehe Belegmailergebnis.aus): ein Wurf ueber einem
+    // fehlenden `at` saehe fuer die Kasse aus wie „nicht gesendet", und der
+    // Kassier schickte sie ein zweites Mal an den Gast. Die Huelle selbst muss
+    // trotzdem eine sein -- dieselbe Grenze zieht der Kassen-Weg im Transport.
+    return Belegmailergebnis.aus(_daten(name, resJson), gesendetAn: adresse);
   }
 
   /// Issues a **zero** receipt (_Nullbeleg_), e.g. for the periodic RKSV check.
