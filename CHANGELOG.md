@@ -1,3 +1,16 @@
+## 6.9.1
+
+**Anlass:** 6.9.0 enthielt versehentlich `test/integration/credentials.local.json`
+— eine ungetrackte Datei mit echten Zugangsdaten der Demo-Kasse. Ursache:
+`.pubignore` **ersetzt** `.gitignore` beim Veroeffentlichen; die Datei ist zwar
+gitignoriert, stand in `.pubignore` aber nicht. Frueher fiel das nicht auf,
+weil aus Worktrees veroeffentlicht wurde, in denen die Datei gar nicht liegt.
+Aeltere Fassungen sind nicht betroffen (6.8.0, 6.7.0 und 6.0.0 geprueft).
+
+- `.pubignore` schliesst jetzt `test/integration/credentials.local.json`,
+  `*.local.json`, `*.env` und `.env*` aus. Sonst keine Aenderung gegenueber
+  6.9.0; wer 6.9.0 einbindet, soll auf 6.9.1 wechseln.
+
 ## 6.9.0
 
 **Anlass:** Am echten Beleg fehlte der QR-Code, während die Probe im

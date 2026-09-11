@@ -20,3 +20,13 @@ build/
 # liegen im Repo, nicht in jedem heruntergeladenen Paket.
 doc/kreiseck_logo_hires.png
 doc/kreiseck_logo_src.png
+
+# **Ortliche Geheimnisse reisen nie mit.** .pubignore ersetzt .gitignore fuer
+# das Veroeffentlichen — was dort steht, gilt hier NICHT. Eine ungetrackte
+# Datei mit echten Zugangsdaten im Haupt-Checkout landete so in 6.9.0 auf
+# pub.dev (frueher fiel es nicht auf, weil aus Worktrees veroeffentlicht wurde,
+# in denen die Datei gar nicht liegt).
+test/integration/credentials.local.json
+*.local.json
+*.env
+.env*
