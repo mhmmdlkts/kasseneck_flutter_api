@@ -26,6 +26,7 @@ import '../aufrufe.dart';
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'artikel.dart';
+import 'belegmail.dart';
 
 /// Storno-Stand eines Belegs. Ein unbekannter kuenftiger Wert gilt als
 /// [StornoStand.offen] — beim Lesen ist dieses Paket tolerant, die Grenze
@@ -361,6 +362,59 @@ class RegisterReceiptClient {
       originalFullReceiptId: bezug['fullReceiptId'] is String ? bezug['fullReceiptId'] as String : null,
       restmengen: rest.cast<int>(),
     );
+  }
+
+  /// Einen bereits ausgestellten Beleg als **Link auf die oeffentliche
+  /// Belegseite** an [an] schicken (`sendReceiptEmail`).
+  ///
+  /// Der Beleg bleibt dabei byteidentisch: das Backend schreibt den Versand in
+  /// die Unter-Sammlung `receipts/{id}/mails`, nie an den Beleg selbst (DEP,
+  /// BAO §131). Welcher Beleg gemeint ist, sagt [fullReceiptId]; welche Kasse,
+  /// entscheidet die **angemeldete** Sitzung — ein Beleg einer anderen Kasse
+  /// kommt als `beleg_nicht_gefunden` zurueck, genau wie ein Beleg, den es
+  /// nicht gibt.
+  ///
+  /// [sprache] nimmt das Backend heute entgegen, ohne es auszuwerten (es gibt
+  /// eine Fassung, Deutsch). Es steht im Vertrag, damit eine zweite Sprache
+  /// spaeter kein neuer Aufruf wird.
+  ///
+  /// **Die Adresse wird hier nicht auf Form geprueft.** Es gibt genau eine
+  /// Adresspruefung, und die steht im Backend; eine zweite, anders strenge
+  /// wiese Adressen ab, die dort durchgehen — und mit einem Fehlertyp, an dem
+  /// die Kasse nicht entscheiden kann. Abgewiesen wird hier nur die **leere**
+  /// Angabe, die gar keine Adresse ist.
+  ///
+  /// Fachliche Ablehnungen kommen als [KasseneckApiError] mit einem Code aus
+  /// [belegMailFehlercodes] — daran entscheiden, nie am Text.
+  Future<Belegmailergebnis> belegSenden({
+    required String fullReceiptId,
+    required String an,
+    String? sprache,
+  }) async {
+    const name = Aufrufe.sendReceiptEmail;
+    final beleg = fullReceiptId.trim();
+    final adresse = an.trim();
+    if (beleg.isEmpty) {
+      throw const KasseneckValidationError(name, 'fullReceiptId fehlt', 'request');
+    }
+    if (adresse.isEmpty) {
+      throw const KasseneckValidationError(name, 'to fehlt', 'request');
+    }
+    final gewuenschteSprache = sprache?.trim() ?? '';
+
+    // Die Kasse steht im Transport (er legt `cashregisterId` zu jeder Nutzlast)
+    // — hier nicht ein zweites Mal, sonst gaebe es zwei Angaben, die sich
+    // widersprechen koennten.
+    final daten = await transport.rufen(
+      name,
+      params: {
+        'fullReceiptId': beleg,
+        'to': adresse,
+        if (gewuenschteSprache.isNotEmpty) 'sprache': gewuenschteSprache,
+      },
+    );
+
+    return Belegmailergebnis.aus(daten, gesendetAn: adresse);
   }
 
   /// Artikelgruppen (Kategorien der Kachel-Kasse).

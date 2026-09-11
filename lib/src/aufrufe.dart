@@ -36,6 +36,7 @@ abstract final class Aufrufe {
   static const registerPinLogin = 'registerPinLogin';
   static const registerUserLogin = 'registerUserLogin';
   static const renewRegisterSession = 'renewRegisterSession';
+  static const sendReceiptEmail = 'sendReceiptEmail';
   static const setMyKasseSettings = 'setMyKasseSettings';
   static const setMyRegisterDeviceSettings = 'setMyRegisterDeviceSettings';
   static const stripeCaptureIntent = 'stripeCaptureIntent';
@@ -67,6 +68,7 @@ abstract final class Aufrufe {
     registerPinLogin,
     registerUserLogin,
     renewRegisterSession,
+    sendReceiptEmail,
     setMyKasseSettings,
     setMyRegisterDeviceSettings,
     stripeCaptureIntent,

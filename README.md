@@ -139,6 +139,32 @@ is € 8 per piece, so the cancellation receipt shows "−10,00" plus a line "Gu
 Before offering a cancellation, `restmengen(beleg)` gives the remaining quantities from the
 original's `cancellations` list; the server remains the source of truth.
 
+## ✉️ Sending a receipt by e-mail
+
+The guest names an address at the counter and gets a **link to the public receipt page** —
+no PDF attached: that page uses the same line model as screen and thermal printer and offers a
+PDF there. The receipt document itself stays byte-identical (it is the DEP, BAO §131); the
+backend logs the send next to it.
+
+```dart
+// register login (package:kasseneck_api/kasse.dart)
+final erg = await client.belegSenden(fullReceiptId: beleg.fullReceiptId, an: 'gast@example.com');
+// api key (package:kasseneck_api/kasseneck_api.dart)
+final erg2 = await kasseneck.belegSenden(fullReceiptId: id, an: 'gast@example.com');
+
+erg.to;   // normalised address, as the backend logged it
+erg.at;   // ISO timestamp in Vienna time
+erg.via;  // 'eigen' | 'plattform' | 'plattform-fallback'
+```
+
+**Decide on the error code, never on the message** — `KasseneckApiError.code` from
+`belegMailFehlercodes`: `adresse_ungueltig` (let them correct it), `zu_oft` (the backend allows
+five mails per receipt per 24 h and 30 per register per hour — later, not now),
+`versand_fehlgeschlagen` (nothing went out, retrying is fine), `beleg_nicht_gefunden` (unknown
+receipt **or** one belonging to another register — the backend deliberately answers the same
+either way). The address itself is only checked by the backend: a second, differently strict
+check here would reject addresses that the server accepts.
+
 ## 💳 Card payments
 
 Card payments work **out of the box** with several terminals — and you're **never locked in**:
