@@ -21,6 +21,7 @@ KasseneckReceipt buildReceipt({
   cardProvider,
   String? cardPaymentId,
   bool showKreiseckLogo = false,
+  String qr = 'TESTQRDATA',
 }) {
   return KasseneckReceipt(
     receiptId: 'TEST-ID-1',
@@ -34,7 +35,7 @@ KasseneckReceipt buildReceipt({
     certificateSerialNumber: '5ca2bef9',
     receiptType: receiptType,
     sig: sig,
-    qr: 'TESTQRDATA',
+    qr: qr,
     companyName: 'Kasseneck Test GmbH',
     phone: '+43 1 2345678',
     isSmallBusiness: false,

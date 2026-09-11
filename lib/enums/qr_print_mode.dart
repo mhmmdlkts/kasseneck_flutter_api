@@ -14,7 +14,19 @@ enum QrPrintMode {
 
   /// Nativer QR-Befehl GS ( k — schärfer/schneller, aber nicht von jedem
   /// Drucker unterstützt (sonst wird gar kein QR gedruckt).
+  ///
+  /// Der Symboltyp bleibt dem Drucker ueberlassen (in aller Regel Modell 2):
+  /// es wird bewusst **kein** Modellbefehl gesendet, damit Bestandsgeraete
+  /// byteidentisch weiterdrucken.
   native,
+
+  /// Wie [native], aber mit ausdruecklicher Wahl von **Modell 1**
+  /// (`GS ( k 04 00 31 41 49 00`).
+  ///
+  /// Fuer guenstige Drucker, die nur diesen aelteren Symboltyp beherrschen.
+  /// Ein belegtes Geraet druckt bei Modell 2 unter dem Code eine "0" -- das
+  /// Parameterbyte 0x30 des Druckbefehls, das es nicht als Befehl erkennt.
+  nativeModel1,
 }
 
 /// Der eingestellte QR-Modus des Geräts als Druckbefehl.

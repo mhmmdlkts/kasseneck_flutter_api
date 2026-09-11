@@ -1,3 +1,66 @@
+## 6.9.0
+
+**Anlass:** Am echten Beleg fehlte der QR-Code, während die Probe im
+Drucker-Wizard ihn druckte. Nachgerechnet: der native Weg druckte jedes Modul
+fest mit sechs Punkten, unabhängig von der Papierbreite. Ein Beleg-QR mit
+realer RKSV-Nutzlast hat 57 Module, mit Ruhezone also (57 + 8) · 6 = **390
+Druckpunkte** — ein 58-mm-Drucker hat **384**. Die Wizard-Probe ist kürzer (41
+Module, 294 Punkte) und passte. Zu breit heißt bei den meisten Geräten nicht
+„abgeschnitten", sondern **gar kein QR** — auf einem Pflichtbeleg der
+schlechteste aller Ausgänge.
+
+- **`QrMass` rechnet die Modulgröße, statt sie zu raten** (neu, aus
+  `package:kasseneck_api/printing.dart`). Aus Papierbreite, Modulanzahl und
+  einem Deckel ergibt sich die größte Größe, bei der Symbol **plus Ruhezone**
+  aufs Papier passt: `floor(papierbreitePunkte / (module + 8))`. Untergrenze 4
+  Punkte (≈ 0,5 mm bei 203 dpi — darunter tun sich billige Thermodrucker und
+  Handykameras schwer); passt es damit nicht, sind 3 erlaubt, aber gemeldet;
+  passt auch das nicht, sagt das Ergebnis „passt nicht". Die Modulanzahl kommt
+  aus der QR-Rechnung für die konkrete Nutzlast bei Fehlerkorrektur **M** —
+  nicht aus einer Tabelle: M braucht nie weniger Module als das L, mit dem der
+  native Befehl druckt, die Rechnung ist damit konservativ statt knapp.
+  Neu öffentlich: `QrMass`, `QrGroesse`, `QrModulGroesse`.
+
+- **`KeckPaperSize.druckPunkte`** (neu): 384 bzw. 576 Punkte Kopfbreite. Nicht
+  zu verwechseln mit `imageWidth` (296/504) — die lässt absichtlich Rand, und
+  wer rechnet, ob ein Symbol passt, braucht die echte Kopfbreite.
+
+- **Ohne Wahl ändert sich nichts.** `QrModulGroesse.auto` deckelt bei 6 — dem
+  Wert, den der native Weg seit jeher gedruckt hat. Auf 80 mm wären gerechnet
+  8 Punkte möglich; ohne Deckel bekäme dort jedes Bestandsgerät ungefragt einen
+  größeren QR. Zwei Golden-Tests halten den kompletten Bytestrom eines nativ
+  gedruckten Belegs auf 58 und 80 mm gegen den Stand von 6.8.0. Geändert wird
+  nur dort, wo heute **gar nichts** herauskommt.
+
+- **Wählbar als Deckel:** `qrGroesse:` an `setKeckReceipt`, `setBelegLayout`,
+  `KeckPrinterService.getPaperFromReceipt`/`getBytesFromReceipt`/
+  `printReceiptBluetooth`, `KeckPrinter.printReceipt`,
+  `KasseneckReceipt.getPrintBytes`/`printReceiptBluetooth` — `auto` (Vorgabe),
+  `klein` (4), `mittel` (6), `gross` (8). Ein Deckel hebt nie an, was nicht
+  passt.
+
+- **Der Notausgang:** Passt das Symbol nativ auch mit 3 Punkten nicht, wird der
+  QR **als Bild** gedruckt statt gar nicht. Das neue Feld
+  **`PrintPaper.qrAusweich`** sagt, dass ausgewichen wurde und warum; es reicht
+  bis `KeckPrintResult.qrAusweich` und `KeckPrinterService.letzterQrAusweich`.
+  Getrennt von `qrFehler`, weil die Handlung eine andere ist: `qrFehler` heißt
+  „Beleg ohne QR", `qrAusweich` heißt „gedruckt, aber der eingestellte Weg
+  taugt für dieses Gerät nicht" — das gehört dem Chef gesagt, nicht dem Kunden.
+  Dasselbe Feld meldet auch den Druck unter der Mindestgröße.
+
+- **`QrPrintMode.nativeModel1`** (neu): der native Befehl mit ausdrücklicher
+  Wahl von **Modell 1** (`GS ( k 04 00 31 41 49 00`). Manche günstigen Drucker
+  beherrschen nur diesen älteren Symboltyp — belegt ist ein Gerät, das bei
+  Modell 2 unter dem Code eine „0" ausgibt, das Parameterbyte `0x30` des
+  Druckbefehls, das es nicht als Befehl erkennt. `QrPrintMode.native` schickt
+  weiterhin **gar keinen** Modellbefehl und bleibt damit byteidentisch. Wer
+  `QrPrintMode` erschöpfend auswertet, bekommt einen vierten Fall.
+
+- `PrintPaper.addQrCode` nimmt `size` jetzt optional: ohne Angabe wird
+  gerechnet, mit Angabe gilt sie unverändert — der Weg für Aufrufer, die genau
+  wissen, was ihr Gerät kann. `QRCode`/`EscPosGenerator.qrcode` kennen dafür
+  den neuen Schalter `modell1`.
+
 ## 6.8.0
 
 **Anlass:** 6.7.0 gab `qrModus` die harte Vorgabe `raster`. Die Browser-Kasse

@@ -7,6 +7,7 @@ import 'package:kasseneck_api/models/print_paper.dart';
 
 import '../enums/keck_paper_size.dart';
 import '../enums/qr_print_mode.dart';
+import '../src/printing/qr_groesse.dart';
 import 'printer_service.dart';
 
 /// Transport-Abstraktion fuer den ESC/POS-Druck.
@@ -190,15 +191,17 @@ class KeckPrinter {
   Future<KeckPrintResult> printReceipt(
     KasseneckReceipt r, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
+    QrModulGroesse qrGroesse = QrModulGroesse.auto,
   }) async {
-    final PrintPaper paper =
-        await KeckPrinterService.getPaperFromReceipt(r, size, qrMode: qrMode);
+    final PrintPaper paper = await KeckPrinterService.getPaperFromReceipt(r, size,
+        qrMode: qrMode, qrGroesse: qrGroesse);
     final List<int> bytes = <int>[for (final p in paper.bytes) ...p];
     final KeckPrintResult ergebnis = await transport.send(bytes);
-    if (paper.qrFehler == null) return ergebnis;
+    if (paper.qrFehler == null && paper.qrAusweich == null) return ergebnis;
     return ergebnis.success
-        ? KeckPrintResult.success(qrFehler: paper.qrFehler)
-        : KeckPrintResult.failure(ergebnis.error ?? 'Druck fehlgeschlagen', qrFehler: paper.qrFehler);
+        ? KeckPrintResult.success(qrFehler: paper.qrFehler, qrAusweich: paper.qrAusweich)
+        : KeckPrintResult.failure(ergebnis.error ?? 'Druck fehlgeschlagen',
+            qrFehler: paper.qrFehler, qrAusweich: paper.qrAusweich);
   }
 
   /// Druckt einen Text (mit optionalen [styles]).

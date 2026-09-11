@@ -269,6 +269,13 @@ await receipt!.printReceiptBluetooth();
 
 // QR garbled or missing? Printers differ in which command they support:
 await receipt.printReceiptBluetooth(qrMode: QrPrintMode.imageBitImage); // or .native
+// Some cheap printers only understand the older QR model 1:
+await receipt.printReceiptBluetooth(qrMode: QrPrintMode.nativeModel1);
+
+// The native command sizes its modules to the paper automatically (quiet zone
+// included), so the QR never grows wider than the head can print. Cap it if you
+// want it smaller or larger — the cap never enlarges beyond what fits:
+await receipt.printReceiptBluetooth(qrGroesse: QrModulGroesse.gross);
 
 // Wi-Fi
 await kasseneck.initWifiPrinter('192.168.0.50', KeckPaperSize.mm80);

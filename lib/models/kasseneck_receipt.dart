@@ -13,6 +13,7 @@ import 'package:kasseneck_api/services/vienna_time.dart';
 import '../enums/credit_card_provider.dart';
 import '../enums/keck_payment_method.dart';
 import '../enums/qr_print_mode.dart';
+import '../src/printing/qr_groesse.dart';
 import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
@@ -452,9 +453,17 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
 
   Future<PrintResponse> printReceiptMyPos() => KeckPrinterService.printReceiptMypos(this);
   Future printReceiptWifi() => KeckPrinterService.printReceiptWifi(this);
-  Future printReceiptBluetooth({QrPrintMode qrMode = QrPrintMode.imageRaster}) => KeckPrinterService.printReceiptBluetooth(this, qrMode: qrMode);
+  Future printReceiptBluetooth(
+          {QrPrintMode qrMode = QrPrintMode.imageRaster,
+          QrModulGroesse qrGroesse = QrModulGroesse.auto}) =>
+      KeckPrinterService.printReceiptBluetooth(this, qrMode: qrMode, qrGroesse: qrGroesse);
 
-  Future<List<Uint8List>> getPrintBytes({required KeckPaperSize paperSize, QrPrintMode qrMode = QrPrintMode.imageRaster}) => KeckPrinterService.getBytesFromReceipt(this, paperSize, qrMode: qrMode);
+  Future<List<Uint8List>> getPrintBytes(
+          {required KeckPaperSize paperSize,
+          QrPrintMode qrMode = QrPrintMode.imageRaster,
+          QrModulGroesse qrGroesse = QrModulGroesse.auto}) =>
+      KeckPrinterService.getBytesFromReceipt(this, paperSize,
+          qrMode: qrMode, qrGroesse: qrGroesse);
 
   bool get isSigFailed => !RKSVService.isSigSuccess(sig);
 

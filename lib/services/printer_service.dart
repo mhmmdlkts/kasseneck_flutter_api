@@ -13,6 +13,7 @@ import 'package:my_pos/my_pos.dart';
 
 import '../enums/keck_paper_size.dart';
 import '../enums/qr_print_mode.dart';
+import '../src/printing/qr_groesse.dart';
 
 class KeckPrinterService {
 
@@ -84,6 +85,18 @@ class KeckPrinterService {
   static String? get letzterQrFehler => _letzterQrFehler;
   static String? _letzterQrFehler;
 
+  /// Der QR des zuletzt gebauten Belegs musste auf anderem Weg entstehen --
+  /// `null`, solange nichts abgewichen ist. Gilt dieselbe Buchfuehrung wie
+  /// fuer [letzterQrFehler]: gesetzt bei jedem Bau ueber
+  /// [getBytesFromReceipt] oder [getMyPosPaperFromReceipt], auch auf `null`,
+  /// und von [getPaperFromReceipt] ausdruecklich nicht angeruehrt.
+  ///
+  /// Anders als [letzterQrFehler] heisst ein Wert hier nicht "Beleg
+  /// unvollstaendig", sondern "der eingestellte Druckweg taugt fuer dieses
+  /// Geraet nicht" -- er gehoert dem Chef gesagt, nicht dem Kunden.
+  static String? get letzterQrAusweich => _letzterQrAusweich;
+  static String? _letzterQrAusweich;
+
   /// Setzt [receipt] als Beleg und gibt das fertige Papier zurueck -- die
   /// **eine** Stelle, an der [PrintPaper] fuer einen Beleg entsteht.
   ///
@@ -94,22 +107,27 @@ class KeckPrinterService {
     KasseneckReceipt receipt,
     KeckPaperSize paperSize, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
+    QrModulGroesse qrGroesse = QrModulGroesse.auto,
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     final BelegLayout? layout = receipt.layout;
     if (layout != null && receipt.layoutIstVollstaendig) {
-      await paper.setBelegLayout(layout, qrMode: qrMode);
+      await paper.setBelegLayout(layout, qrMode: qrMode, qrGroesse: qrGroesse);
     } else {
-      await paper.setKeckReceipt(receipt, qrMode: qrMode);
+      await paper.setKeckReceipt(receipt, qrMode: qrMode, qrGroesse: qrGroesse);
     }
     return paper;
   }
 
 
-  static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
-    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: qrMode);
+  static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize,
+      {QrPrintMode qrMode = QrPrintMode.imageRaster,
+      QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
+    final PrintPaper paper =
+        await getPaperFromReceipt(receipt, paperSize, qrMode: qrMode, qrGroesse: qrGroesse);
     _letzterQrFehler = paper.qrFehler;
+    _letzterQrAusweich = paper.qrAusweich;
     return paper.bytes;
   }
 
@@ -117,6 +135,7 @@ class KeckPrinterService {
     // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
     final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: QrPrintMode.native);
     _letzterQrFehler = paper.qrFehler;
+    _letzterQrAusweich = paper.qrAusweich;
     return paper.myPosPaper;
   }
 
@@ -181,8 +200,11 @@ class KeckPrinterService {
 
   static BluetoothDevice get devicePrinter => _devicePrinter!;
 
-  static Future printReceiptBluetooth(KasseneckReceipt receipt, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
-    final List<Uint8List> parts = await receipt.getPrintBytes(paperSize: paperSize, qrMode: qrMode);
+  static Future printReceiptBluetooth(KasseneckReceipt receipt,
+      {QrPrintMode qrMode = QrPrintMode.imageRaster,
+      QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
+    final List<Uint8List> parts =
+        await receipt.getPrintBytes(paperSize: paperSize, qrMode: qrMode, qrGroesse: qrGroesse);
     // Ein durchgehender Byte-Strom -> einheitliches Chunking ueber den ganzen Beleg.
     final List<int> data = <int>[for (final p in parts) ...p];
     return _sendToBluetoothPrinter(data);

@@ -23,16 +23,31 @@ class KeckPrintResult {
   /// Nur bei Belegdruck gesetzt; ein roher Byte-Strom kennt keinen Beleg.
   final String? qrFehler;
 
-  const KeckPrintResult._(this.success, this.error, [this.qrFehler]);
+  /// Der QR steht auf dem Papier, aber nicht auf dem eingestellten Weg --
+  /// `null`, solange nichts abgewichen ist. Entweder war das Symbol fuer den
+  /// nativen Befehl zu breit und ging als Bild hinaus, oder es passte nur
+  /// unter der Mindest-Modulgroesse.
+  ///
+  /// Getrennt von [qrFehler], weil die Handlung eine andere ist: hier ist der
+  /// Beleg vollstaendig, aber der eingestellte Druckweg taugt fuer dieses
+  /// Geraet nicht -- die Kasse kann es dem Chef sagen und ihn dauerhaft
+  /// umstellen.
+  final String? qrAusweich;
 
-  /// Erfolgreich gesendet. [qrFehler] meldet einen Beleg, dem der QR fehlt.
-  const KeckPrintResult.success({String? qrFehler}) : this._(true, null, qrFehler);
+  const KeckPrintResult._(this.success, this.error, [this.qrFehler, this.qrAusweich]);
+
+  /// Erfolgreich gesendet. [qrFehler] meldet einen Beleg, dem der QR fehlt,
+  /// [qrAusweich] einen, dessen QR auf anderem Weg entstehen musste.
+  const KeckPrintResult.success({String? qrFehler, String? qrAusweich})
+      : this._(true, null, qrFehler, qrAusweich);
 
   /// Fehlgeschlagen mit [message].
-  const KeckPrintResult.failure(String message, {String? qrFehler}) : this._(false, message, qrFehler);
+  const KeckPrintResult.failure(String message, {String? qrFehler, String? qrAusweich})
+      : this._(false, message, qrFehler, qrAusweich);
 
   @override
   String toString() =>
       '${success ? 'KeckPrintResult.success' : 'KeckPrintResult.failure($error)'}'
-      '${qrFehler == null ? '' : ' [QR fehlt]'}';
+      '${qrFehler == null ? '' : ' [QR fehlt]'}'
+      '${qrAusweich == null ? '' : ' [QR ausgewichen]'}';
 }

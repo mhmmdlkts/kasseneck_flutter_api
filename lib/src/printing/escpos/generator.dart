@@ -383,11 +383,12 @@ class EscPosGenerator {
     PosAlign align = PosAlign.center,
     QRSize size = QRSize.size4,
     QRCorrection cor = QRCorrection.L,
+    bool modell1 = false,
   }) {
     List<int> bytes = [];
     // Set alignment
     bytes += setStyles(const PosStyles().copyWith(align: align));
-    QRCode qr = QRCode(text, size, cor);
+    QRCode qr = QRCode(text, size, cor, modell1: modell1);
     bytes += qr.bytes;
     return bytes;
   }

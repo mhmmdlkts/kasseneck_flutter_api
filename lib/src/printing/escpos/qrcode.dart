@@ -43,7 +43,18 @@ class QRCode {
   /// Unbekanntes): ein veraendertes Zeichen ergaebe einen QR, der sich sauber
   /// lesen laesst und trotzdem nicht mehr zum signierten Beleg passt. Falsche
   /// Daten sind schlimmer als keine.
-  QRCode(String text, QRSize size, QRCorrection level) {
+  /// [modell1] stellt den Modellwahl-Befehl `GS ( k 04 00 31 41 49 00` voran.
+  /// Ohne ihn — dem Bestandsweg — waehlt der Drucker sein eigenes Modell, in
+  /// aller Regel Modell 2. Genau das koennen manche guenstigen Geraete nicht:
+  /// belegt ist eines, das unter dem Code eine "0" ausgibt — das Parameterbyte
+  /// 0x30 des Druckbefehls, das es nicht als Befehl erkannt hat. Der Befehl
+  /// wird deshalb weiterhin nur gesendet, wenn er ausdruecklich verlangt ist;
+  /// ein aufgedraengtes "Modell 2 fuer alle" waere eine stille Umstellung an
+  /// jedem Bestandsgeraet.
+  QRCode(String text, QRSize size, QRCorrection level, {bool modell1 = false}) {
+    if (modell1) {
+      bytes += cQrHeader.codeUnits + [0x04, 0x00, 0x31, 0x41, 0x31, 0x00];
+    }
     bytes += cQrHeader.codeUnits + [0x03, 0x00, 0x31, 0x43] + [size.value];
     bytes += cQrHeader.codeUnits + [0x03, 0x00, 0x31, 0x45] + [level.value];
     final List<int> textBytes = utf8.encode(text);

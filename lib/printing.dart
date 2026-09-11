@@ -48,3 +48,7 @@ export 'enums/keck_paper_size.dart' show KeckPaperSize;
 // Befehl entsteht -- und welchen davon ein Drucker versteht, weiss nur das
 // Geraet. `KasseQrModusDruck` uebersetzt die Geraete-Einstellung dorthin.
 export 'enums/qr_print_mode.dart' show QrPrintMode, KasseQrModusDruck;
+// Die Modulgroesse des Beleg-QR gehoert zur Schnittstelle: wer Belegbytes
+// baut, waehlt hier den Deckel, und `QrMass` ist die eine Stelle, an der
+// gerechnet wird, ob ein Symbol samt Ruhezone aufs Papier passt.
+export 'src/printing/qr_groesse.dart' show QrModulGroesse, QrGroesse, QrMass;

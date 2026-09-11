@@ -17,6 +17,7 @@ import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
 import '../services/vienna_time.dart';
+import '../src/printing/qr_groesse.dart';
 import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
 
@@ -145,6 +146,18 @@ class PrintPaper {
   /// erfahren, ohne den Bytestrom zu durchsuchen. Wird von [reset] geleert.
   String? qrFehler;
 
+  /// Der QR steht auf dem Papier, aber nicht so, wie eingestellt -- `null`,
+  /// solange nichts abgewichen ist. Zwei Faelle, beide mit Grund im Text:
+  /// das Symbol war fuer den nativen Befehl zu breit und wurde als **Bild**
+  /// gedruckt, oder es passte nur unter der Mindest-Modulgroesse.
+  ///
+  /// Getrennt von [qrFehler], weil die beiden verschiedene Handlungen
+  /// ausloesen: [qrFehler] heisst "Beleg ohne QR, nachdrucken oder
+  /// elektronisch ausgeben", [qrAusweich] heisst "gedruckt, aber der
+  /// eingestellte Weg taugt fuer dieses Geraet nicht" -- die Kasse kann es dem
+  /// Chef sagen und den Weg dauerhaft umstellen. Wird von [reset] geleert.
+  String? qrAusweich;
+
   /// Nativer QR-Befehl. Die Nutzlast wird ausdruecklich **nicht** durch
   /// [_printable] geschickt: der QR traegt Daten, keine Schrift. Ein durch '?'
   /// ersetztes Zeichen ergaebe einen QR, der sich sauber lesen laesst und
@@ -154,24 +167,78 @@ class PrintPaper {
   /// einer Nutzlast Druckbefehle werden. Beide Wege (Zeilenmodell und der alte
   /// Bauer) gehen hier durch, damit ein neuer Modus nicht an einem von beiden
   /// vorbeigeht.
-  Future<void> _qrNachModus(String nutzlast, QrPrintMode modus) async {
+  Future<void> _qrNachModus(String nutzlast, QrPrintMode modus,
+      {QrModulGroesse groesse = QrModulGroesse.auto}) async {
     switch (modus) {
       case QrPrintMode.imageRaster:
         await addQrCodeAsImage(nutzlast, raster: true);
       case QrPrintMode.imageBitImage:
         await addQrCodeAsImage(nutzlast, raster: false);
       case QrPrintMode.native:
-        addQrCode(nutzlast);
+      case QrPrintMode.nativeModel1:
+        // Der Notausgang: passt das Symbol nativ auch mit der Ausnahmegroesse
+        // nicht aufs Papier, druckt der Drucker es GAR NICHT -- er schneidet
+        // nicht ab, er laesst weg. Ein Pflichtbeleg ohne QR ist der
+        // schlechteste aller Ausgaenge, also geht der QR hier als Bild hinaus
+        // und der Aufrufer erfaehrt es ueber [qrAusweich].
+        final QrGroesse mass = QrMass.fuer(
+          nutzlast: nutzlast,
+          papierbreitePunkte: paperSize.druckPunkte,
+          groesse: groesse,
+        );
+        if (nutzlast.isNotEmpty && !mass.passt) {
+          qrAusweich = 'QR mit ${mass.module} Modulen passt nativ nicht auf '
+              '${paperSize.mm} mm (${paperSize.druckPunkte} Punkte) -- als Bild gedruckt';
+          await addQrCodeAsImage(nutzlast, raster: true);
+          return;
+        }
+        addQrCode(nutzlast, groesse: groesse, modell1: modus == QrPrintMode.nativeModel1);
     }
   }
 
-  void addQrCode(String data, {QRSize size = QRSize.size6}) {
+  /// Nativer QR-Befehl mit **gerechneter** Modulgroesse.
+  ///
+  /// [size] setzt die Groesse fest und schaltet die Rechnung ab -- fuer
+  /// Aufrufer, die genau wissen, was ihr Geraet kann. Ohne [size] entscheidet
+  /// [QrMass]: so gross wie moeglich, gedeckelt durch [groesse]. Vorher stand
+  /// hier fest `QRSize.size6`, unabhaengig von der Papierbreite; ein Beleg-QR
+  /// mit realer Nutzlast (57 Module) wurde damit 390 Punkte breit und
+  /// verschwand auf jedem 58-mm-Drucker (384 Punkte) spurlos.
+  ///
+  /// [modell1] waehlt den aelteren Symboltyp, siehe [QRCode].
+  void addQrCode(String data,
+      {QRSize? size, QrModulGroesse groesse = QrModulGroesse.auto, bool modell1 = false}) {
     if (data.isEmpty) {
       _qrAusfall(data, 'leere Nutzlast');
       return;
     }
+    QRSize gewaehlt;
+    if (size != null) {
+      gewaehlt = size;
+    } else {
+      final QrGroesse mass = QrMass.fuer(
+        nutzlast: data,
+        papierbreitePunkte: paperSize.druckPunkte,
+        groesse: groesse,
+      );
+      if (!mass.passt) {
+        // Synchron gerufen bleibt hier kein Bildweg -- der Aufrufer bekommt
+        // den Ausfall gemeldet und die Belegdaten in Klarschrift. Ueber
+        // [_qrNachModus] kommt es dazu nicht, der weicht vorher aufs Bild aus.
+        _qrAusfall(data,
+            'QR mit ${mass.module} Modulen ist fuer ${paperSize.mm} mm zu breit');
+        return;
+      }
+      if (mass.unterMindestmass) {
+        qrAusweich = 'QR mit ${mass.module} Modulen passt nur mit '
+            '${mass.punkte} Punkten je Modul -- unter dem Mindestmass von '
+            '${QrMass.mindestPunkte}';
+      }
+      gewaehlt = QRSize(mass.punkte!);
+    }
     try {
-      bytes.add(Uint8List.fromList(generator.qrcode(data, size: size)));
+      bytes.add(Uint8List.fromList(
+          generator.qrcode(data, size: gewaehlt, modell1: modell1)));
       myPosPaper.addQrCode(data, size: 280);
     } catch (e) {
       _qrAusfall(data, e);
@@ -273,12 +340,15 @@ class PrintPaper {
   void reset() {
     bytes.clear();
     qrFehler = null;
+    qrAusweich = null;
     bytes.add(Uint8List.fromList(generator.reset()));
     bytes.add(Uint8List.fromList(generator.setGlobalCodeTable('CP1252')));
     myPosPaper.commands.clear();
   }
 
-  Future setKeckReceipt(KasseneckReceipt receipt, {QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
+  Future setKeckReceipt(KasseneckReceipt receipt,
+      {QrPrintMode qrMode = QrPrintMode.imageRaster,
+      QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
     reset();
 
     if (receipt.logo != null) {
@@ -451,7 +521,7 @@ class PrintPaper {
     }
 
 
-    await _qrNachModus(receipt.qr, qrMode);
+    await _qrNachModus(receipt.qr, qrMode, groesse: qrGroesse);
 
     addFeed();
 
@@ -583,7 +653,10 @@ class PrintPaper {
   /// Textzeile raus (58 mm = 32, 80 mm = 48) — keine eigene Spaltenrechnung,
   /// dieselben Zeilen wie Browser-Kasse, Labor und Beleg-PDF. Bevorzugt
   /// gegenüber [setKeckReceipt], sobald ein Layout vorliegt.
-  Future<void> setBelegLayout(BelegLayout layout, {bool cut = true, QrPrintMode qrMode = QrPrintMode.imageRaster}) async {
+  Future<void> setBelegLayout(BelegLayout layout,
+      {bool cut = true,
+      QrPrintMode qrMode = QrPrintMode.imageRaster,
+      QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
     reset();
     // Erst druckbar machen (Codepage, EUR statt Euro-Zeichen), DANN rastern —
     // damit das Raster mit den Zeichen rechnet, die aufs Papier gehen.
@@ -615,7 +688,7 @@ class PrintPaper {
           // dann GAR KEINEN QR. Auf einer oesterreichischen Kassa ist der QR
           // die maschinenlesbare Signatur -- er darf nie stillschweigend
           // wegfallen, nur weil das Blatt aus dem Zeilenmodell kommt.
-          await _qrNachModus(z.qr ?? '', qrMode);
+          await _qrNachModus(z.qr ?? '', qrMode, groesse: qrGroesse);
         case RasterArt.banner:
           // Belegart/Warnung: fett, doppelte Höhe; Warnungen invers. Text ist bereits zentriert aufgefüllt.
           addText(z.text.trimRight(), styles: PosStyles(align: PosAlign.left, bold: true, height: PosTextSize.size2, reverse: z.warnung));
