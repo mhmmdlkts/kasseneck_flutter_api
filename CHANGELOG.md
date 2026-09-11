@@ -55,6 +55,10 @@ die Klaerung und endete erst ueber die Zwei-`9027`-Regel.
 - `TransactionResponse.isUnknownCode` heisst jetzt: der Code fehlt in der
   Tabelle. Fuer alle bisher bekannten Codes aendert sich nichts.
 
+- Vertrag auf npm 0.10.0 nachgezogen. Neu `test/hobex_hps_codes_vertrag_test.dart`:
+  die Codetabelle und die Saetze je Grund muessen der des npm-Zwillings
+  gleichen, Feld fuer Feld.
+
 ## 6.9.1
 
 **Anlass:** 6.9.0 enthielt versehentlich `test/integration/credentials.local.json`

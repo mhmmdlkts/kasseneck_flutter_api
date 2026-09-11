@@ -4,7 +4,8 @@
 ///
 /// **Zwilling:** `src/payments/hobex-hps/transaction-response.ts` im
 /// npm-Paket, dort `HPS_CODES`. Das npm-Paket gibt die Tabelle als
-/// `fixtures/hobex-hps-codes.json` aus; Aenderungen gehoeren in beide.
+/// `fixtures/hobex-hps-codes.json` aus; `test/hobex_hps_codes_vertrag_test.dart`
+/// vergleicht sie mit dieser hier. Aenderungen gehoeren in beide.
 ///
 /// ## Zwei Quellen, eine Regel
 ///

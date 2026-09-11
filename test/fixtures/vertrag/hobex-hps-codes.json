@@ -1,5 +1,5 @@
 {
-  "version": "0.9.4",
+  "version": "0.10.0",
   "gemessenAn": {
     "tid": "3600335",
     "hpsVersion": "1.10.0",
@@ -17,67 +17,417 @@
       ]
     }
   ],
+  "dokumentiert": {
+    "quelle": "Antwortcodeliste von hobex",
+    "erhalten": "11.09.2026"
+  },
   "codes": [
     {
       "code": "0",
+      "title": "Authorized",
       "meaning": "genehmigt",
-      "conclusive": true
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "approved",
+      "source": "measuredAndDocumented",
+      "rejectsRequest": false
     },
     {
       "code": "9002",
+      "title": "Invalid Transaction",
       "meaning": "ungueltiger Vorgang -- das Terminal hat den Vorgang selbst als unzulaessig verworfen, bevor irgendetwas in Bewegung kam",
-      "conclusive": true
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "invalidTransaction",
+      "source": "measured",
+      "rejectsRequest": true
     },
     {
       "code": "9011",
+      "title": "Transaction Canceled",
       "meaning": "aufgehoben (\"Transaction Canceled\") -- der Vorgang unter dieser Kennung wurde storniert",
-      "conclusive": true
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "canceled",
+      "source": "measured",
+      "rejectsRequest": false
     },
     {
       "code": "9027",
+      "title": "Original Tx not found",
       "meaning": "keine Aussage -- steht gleichermassen fuer \"nie gesehen\", \"laeuft gerade\", \"Karte nicht aufgelegt\" und \"abgebrochen\"",
-      "conclusive": false
+      "conclusive": false,
+      "effect": "noStatement",
+      "reason": "noStatement",
+      "source": "measured",
+      "rejectsRequest": false
     },
     {
       "code": "9900",
+      "title": "Technical Error Database",
       "meaning": "\"Technical Error Database\" -- gemessen im Zusammenhang mit einer nicht rein numerischen Kennung; keine Aussage ueber den Vorgang selbst",
-      "conclusive": false
+      "conclusive": false,
+      "effect": "noStatement",
+      "reason": "technicalError",
+      "source": "measured",
+      "rejectsRequest": false
     },
     {
       "code": "9003",
+      "title": "Invalid Amount",
       "meaning": "\"Invalid Amount\" -- der Betrag wird abgewiesen, BEVOR eine Karte verlangt wird (28.08.2026: 99999,99 EUR, Antwort nach 15,7 s ohne Kartenaufforderung); nichts belastet",
-      "conclusive": true
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "amountInvalid",
+      "source": "measured",
+      "rejectsRequest": false
     },
     {
       "code": "100002",
-      "meaning": "abgebrochen (\"Aborted\")",
-      "conclusive": true
+      "title": "Aborted",
+      "meaning": "abgebrochen (\"Aborted\") -- ueber die Kasse oder am Terminal; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "aborted",
+      "source": "measuredAndDocumented",
+      "rejectsRequest": false
     },
     {
       "code": "100003",
-      "meaning": "Karte nicht aufgelegt (\"Card not present\")",
-      "conclusive": true
+      "title": "Card not present",
+      "meaning": "Karte nicht aufgelegt (\"Card not present\") -- innerhalb der Frist (gemessen rund 60 s) keine Karte; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "noCard",
+      "source": "measuredAndDocumented",
+      "rejectsRequest": false
     },
     {
       "code": "100010",
+      "title": "Unable to abort transaction",
       "meaning": "nicht mehr abbrechbar -- der Vorgang ist bereits abgeschlossen",
-      "conclusive": true
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "notAbortable",
+      "source": "measuredAndDocumented",
+      "rejectsRequest": true
     },
     {
       "code": "100019",
+      "title": "Amount is not in a valid range",
       "meaning": "\"Amount is not in a valid range\" -- Betrag ausserhalb des zulaessigen Bereichs, gemessen mit negativem Betrag; Abweisung vor dem Kartenfluss, nichts belastet",
-      "conclusive": true
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "amountInvalid",
+      "source": "measuredAndDocumented",
+      "rejectsRequest": false
     },
     {
       "code": "100108",
+      "title": "Invalid TID",
       "meaning": "\"Invalid TID\" -- die Terminal-Kennung gibt es an diesem Geraet nicht; der Vorgang wird abgewiesen, bevor etwas geschieht",
-      "conclusive": true
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "terminalSetup",
+      "source": "measured",
+      "rejectsRequest": true
     },
     {
       "code": "55",
+      "title": "PIN falsch",
       "meaning": "\"PIN falsch\" -- Host-Ablehnung wegen falscher PIN, die erste gemessene Host-Ablehnung ueberhaupt (02.09.2026 im Betrieb, TID 3556988, HPS 1.11.4, Firmware 2.3.9): die Zahlung antwortete direkt damit, die Statusabfrage danach elfmal in Folge ebenso -- eine Host-Ablehnung bleibt am Terminal abrufbar; nichts belastet",
-      "conclusive": true
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "wrongPin",
+      "source": "measured",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100001",
+      "title": "Bad Request",
+      "meaning": "fehlerhafte Anfrage der Kasse (\"Bad Request\") -- Abweisung vor dem Kartenfluss; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "requestRejected",
+      "source": "documented",
+      "rejectsRequest": true
+    },
+    {
+      "code": "100004",
+      "title": "Card read failed",
+      "meaning": "Karte nicht lesbar (\"Card read failed\") -- Fehler beim Umgang mit der Karte, vor jeder Autorisierung; im Betrieb (TID 3556988, 28.08.2026) danach dauerhaft 9027; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "cardReadFailed",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100005",
+      "title": "App select failed",
+      "meaning": "Anwendungsauswahl gescheitert (\"App select failed\") -- die Karte bietet keine passende Anwendung, vor jeder Autorisierung; im Betrieb danach dauerhaft 9027; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "cardReadFailed",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100006",
+      "title": "Communication with TecsXml failed",
+      "meaning": "keine Verbindung zum hobex-Host (\"Communication with TecsXml failed\") -- das Terminal storniert NICHT selbst; ob beim Host etwas angekommen ist, weiss das Terminal nicht",
+      "conclusive": false,
+      "effect": "hostUncertain",
+      "reason": "hostFault",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100007",
+      "title": "Processing of TecsXml step failed",
+      "meaning": "Schritt beim hobex-Host gescheitert (\"Processing of TecsXml step failed\") -- das Terminal storniert NICHT selbst; ob beim Host belastet wurde, weiss das Terminal nicht",
+      "conclusive": false,
+      "effect": "hostUncertain",
+      "reason": "hostFault",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100008",
+      "title": "Invalid TID",
+      "meaning": "Terminal-Kennung passt nicht (\"Invalid TID\") -- die TID der Anfrage ist nicht die eingerichtete; Abweisung vor dem Kartenfluss, nichts belastet (am Geraet gemessen wurde dafuer 100108)",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "terminalSetup",
+      "source": "documented",
+      "rejectsRequest": true
+    },
+    {
+      "code": "100009",
+      "title": "Invalid Tx Type",
+      "meaning": "Vorgangstyp unbekannt oder nicht moeglich (\"Invalid Tx Type\") -- Abweisung vor dem Kartenfluss; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "requestRejected",
+      "source": "documented",
+      "rejectsRequest": true
+    },
+    {
+      "code": "100011",
+      "title": "Not Found",
+      "meaning": "nicht gefunden (\"Not Found\") -- das Terminal kennt den Vorgang nicht; keine Aussage ueber den Vorgang, anders als 9027 aber nie gemessen und deshalb ohne dessen Schlussregel",
+      "conclusive": false,
+      "effect": "noStatement",
+      "reason": "noStatement",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100012",
+      "title": "Max retries exceeded",
+      "meaning": "zu viele Kartenversuche (\"Max retries exceeded\") -- die Karte wurde mehrfach (Vorgabe 3) erfolglos vorgehalten; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "cardReadFailed",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100013",
+      "title": "Diagnosis failed",
+      "meaning": "Diagnose gescheitert (\"Diagnosis failed\") -- das Terminal konnte die Daten des EMV-Kernels nicht lesen; kein Kartenfluss, nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "terminalFault",
+      "source": "documented",
+      "rejectsRequest": true
+    },
+    {
+      "code": "100014",
+      "title": "Card information wasn't entered",
+      "meaning": "Kartendaten nicht eingegeben (\"Card information wasn't entered\") -- die MOTO-Eingabe kam nicht innerhalb der Frist; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "noCard",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100015",
+      "title": "Card declined",
+      "meaning": "Karte vom EMV-Kernel abgelehnt (\"Card declined\") -- Ablehnung im Terminal, vor jeder Autorisierung beim Host; im Betrieb danach dauerhaft 9027; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "cardDeclined",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100017",
+      "title": "Card Not Supported",
+      "meaning": "Karte nicht unterstuetzt (\"Card Not Supported\") -- der EMV-Kernel kennt die Karte nicht; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "cardDeclined",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100018",
+      "title": "Scep enrollment failed",
+      "meaning": "Zertifikatsanmeldung gescheitert (\"Scep enrollment failed\") -- falscher Code oder keine Verbindung; das Terminal kann den Host nicht ansprechen, nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "terminalSetup",
+      "source": "documented",
+      "rejectsRequest": true
+    },
+    {
+      "code": "100020",
+      "title": "Refund password is invalid",
+      "meaning": "Passwort fuer die Gutschrift falsch (\"Refund password is invalid\") -- die Gutschrift wird nicht ausgefuehrt, nichts ausgezahlt",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "refundPassword",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100021",
+      "title": "Failed to enter the password",
+      "meaning": "Passwort nicht eingegeben (\"Failed to enter the password\") -- nicht innerhalb der Frist; nichts ausgefuehrt",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "refundPassword",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100022",
+      "title": "Terminal is blocked",
+      "meaning": "Terminal gesperrt (\"Terminal is blocked\") -- das Geraet ist nicht IN_OPERATION; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "terminalBlocked",
+      "source": "documented",
+      "rejectsRequest": true
+    },
+    {
+      "code": "100023",
+      "title": "Invalid message type",
+      "meaning": "ungueltige Antwort des hobex-Hosts (\"Invalid message type\") -- Nachricht und Antwortcode in den UserData ungueltig; ob beim Host belastet wurde, weiss das Terminal nicht",
+      "conclusive": false,
+      "effect": "hostUncertain",
+      "reason": "hostFault",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100024",
+      "title": "Transaction completion has failed",
+      "meaning": "Abschluss des Online-Vorgangs gescheitert (\"Transaction completion has failed\") -- NACH der Anfrage beim Host; ob belastet bleibt, weiss das Terminal nicht",
+      "conclusive": false,
+      "effect": "hostUncertain",
+      "reason": "hostFault",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100025",
+      "title": "Refund transactions are disabled",
+      "meaning": "Gutschriften abgeschaltet (\"Refund transactions are disabled\") -- in der Geraeteeinstellung; nichts ausgezahlt",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "refundDisabled",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100026",
+      "title": "Transaction was declined.",
+      "meaning": "Host-Antwort passt nicht zur Karte (\"Transaction was declined.\") -- Chip-Daten fuer eine Karte ohne Chip; das Terminal lehnt ab, ob der Host zuvor belastet hat, ist offen",
+      "conclusive": false,
+      "effect": "hostUncertain",
+      "reason": "hostFault",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100027",
+      "title": "Unsupported UserData in TecsXml Response",
+      "meaning": "unbekannte Daten in der Antwort des hobex-Hosts (\"Unsupported UserData in TecsXml Response\") -- ob beim Host belastet wurde, weiss das Terminal nicht",
+      "conclusive": false,
+      "effect": "hostUncertain",
+      "reason": "hostFault",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100028",
+      "title": "Tip selection process has failed.",
+      "meaning": "Trinkgeld nicht gewaehlt (\"Tip selection process has failed.\") -- nicht innerhalb der Frist; nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "tipNotSelected",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100029",
+      "title": "Communication with TecsXml timeout",
+      "meaning": "Zeitueberschreitung zum hobex-Host (\"Communication with TecsXml timeout\") -- das Terminal storniert den Vorgang SELBST (auto-reversal); nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "hostTimeoutReversed",
+      "source": "documented",
+      "rejectsRequest": false
+    },
+    {
+      "code": "100998",
+      "title": "Terminal is busy",
+      "meaning": "Terminal beschaeftigt (\"Terminal is busy\") -- ein anderer Vorgang laeuft oder das Geraet ist nicht bereit; die Anfrage wurde nicht angenommen, nichts belastet",
+      "conclusive": true,
+      "effect": "conclusive",
+      "reason": "terminalBusy",
+      "source": "documented",
+      "rejectsRequest": true
+    },
+    {
+      "code": "100999",
+      "title": "Internal Error",
+      "meaning": "interner Fehler des Terminals (\"Internal Error\") -- Sammelcode fuer jeden sonst nicht benannten Fehler, an jeder Stelle des Ablaufs moeglich; ob belastet wurde, ist offen",
+      "conclusive": false,
+      "effect": "hostUncertain",
+      "reason": "internalError",
+      "source": "documented",
+      "rejectsRequest": false
     }
   ],
+  "gruende": {
+    "approved": "Vom Terminal genehmigt.",
+    "aborted": "Der Vorgang wurde abgebrochen. Es wurde kein Geld bewegt.",
+    "noCard": "Es wurde keine Karte vorgehalten. Es wurde kein Geld bewegt — bitte erneut versuchen.",
+    "cardReadFailed": "Die Karte konnte nicht gelesen werden. Es wurde kein Geld bewegt — bitte erneut versuchen, notfalls die Karte stecken statt auflegen.",
+    "cardDeclined": "Die Karte wurde vom Terminal abgelehnt. Es wurde kein Geld bewegt — bitte eine andere Karte oder Zahlungsart verwenden.",
+    "wrongPin": "Die PIN war falsch. Es wurde kein Geld bewegt — bitte erneut versuchen.",
+    "amountInvalid": "Das Terminal nimmt diesen Betrag nicht an. Es wurde kein Geld bewegt.",
+    "tipNotSelected": "Das Trinkgeld wurde nicht rechtzeitig gewählt. Es wurde kein Geld bewegt — bitte erneut versuchen.",
+    "terminalBusy": "Das Terminal ist noch mit einem anderen Vorgang beschäftigt. Es wurde kein Geld bewegt — kurz warten und erneut versuchen.",
+    "terminalBlocked": "Das Terminal ist gesperrt. Es wurde kein Geld bewegt — bitte hobex kontaktieren.",
+    "terminalSetup": "Das Terminal ist nicht richtig eingerichtet. Es wurde kein Geld bewegt — bitte die Terminal-ID in den Einstellungen prüfen, sonst hobex kontaktieren.",
+    "terminalFault": "Das Terminal meldet eine Störung. Es wurde kein Geld bewegt — bitte das Terminal neu starten und erneut versuchen.",
+    "requestRejected": "Das Terminal hat die Anfrage abgewiesen. Es wurde kein Geld bewegt — tritt das wieder auf, bitte den Support kontaktieren.",
+    "invalidTransaction": "Das Terminal kennt die ursprüngliche Zahlung nicht. Es wurde kein Geld bewegt.",
+    "refundPassword": "Das Passwort für die Gutschrift war falsch oder wurde nicht eingegeben. Es wurde nichts ausgezahlt.",
+    "refundDisabled": "Gutschriften sind an diesem Terminal abgeschaltet. Es wurde nichts ausgezahlt — bitte hobex kontaktieren.",
+    "hostTimeoutReversed": "hobex hat nicht rechtzeitig geantwortet, das Terminal hat den Vorgang selbst storniert. Es wird kein Geld bewegt — bitte erneut versuchen.",
+    "hostFault": "Die Verbindung zwischen Terminal und hobex ist gestört. Ob die Karte belastet wurde, weiß das Terminal nicht — bitte nicht erneut kassieren, bevor es geklärt ist.",
+    "internalError": "Das Terminal meldet einen internen Fehler. Ob die Karte belastet wurde, ist unklar — bitte nicht erneut kassieren, bevor es geklärt ist.",
+    "canceled": "Die Zahlung ist aufgehoben.",
+    "notAbortable": "Der Vorgang ist bereits abgeschlossen und lässt sich nicht mehr abbrechen.",
+    "noStatement": "Das Terminal hat zu diesem Vorgang keine Auskunft.",
+    "technicalError": "Das Terminal meldet einen technischen Fehler; über den Vorgang sagt das nichts.",
+    "unknown": "Das Terminal nennt einen Code, dessen Bedeutung nicht bekannt ist."
+  },
   "terminalBusyHttpStatus": 409
 }
