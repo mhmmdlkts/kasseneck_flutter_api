@@ -1921,6 +1921,72 @@ void main() {
       expect(pausen, [const Duration(seconds: 1)]);
     });
 
+    test('nach einer Host-Stoerung kein Abbruchversuch', () async {
+      // Der Vorgang ist am Terminal beendet; ein quittierter Abbruch bewiese
+      // nur das, nicht dass der Host nichts belastet hat.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '100007'})
+        ],
+        abort: [
+          (_) => json({'responseCode': '0'})
+        ],
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81021000');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(t.log.where((r) => r.url.path.contains('/abort/')), isEmpty);
+    });
+
+    test('nach einer Host-Stoerung entscheidet nur 0 -- ein 100003 im Status '
+        'nicht', () async {
+      final res = await zahlungMit(
+        TransactionResponse.hostStepFailedCode,
+        status: [
+          (_) => json({'responseCode': '100003'})
+        ],
+      );
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.reason, HpsCodeReason.hostFault);
+      expect(res.steps.any((s) => s.contains('entscheidet nur eine Genehmigung')),
+          isTrue);
+    });
+
+    test(
+        'Statusabfrage abgewiesen (100022, 100108, 100998) ist KEINE Ablehnung '
+        'der Zahlung', () async {
+      // Ein Code, der die Abfrage selbst abweist, sagt nichts ueber den
+      // gesuchten Vorgang. Gemessen: falsche TID -> 100108 auf die
+      // Statusabfrage. Als declined gelesen hiesse ein gesperrtes Terminal
+      // "die verlorene Zahlung ist nicht belastet".
+      for (final code in ['100022', '100108', '100998', '100001']) {
+        final t = FakeTerminal(
+          payment: [boom],
+          abort: [
+            (_) => json({'responseCode': '100010'})
+          ],
+          status: [
+            (_) => json({'responseCode': code})
+          ],
+        );
+        final res = await paymentsFor(t, budget: const Duration(seconds: 20))
+            .pay(amount: 25, transactionId: '81021100');
+        expect(res.outcome, CardPaymentOutcome.unresolved, reason: code);
+        expect(res.steps.any((s) => s.contains('Abfrage abgewiesen ($code')),
+            isTrue,
+            reason: code);
+      }
+    });
+
+    test('dieselben Codes auf die ZAHLUNG sind eine Ablehnung', () async {
+      final res = await zahlungMit(TransactionResponse.terminalBlockedCode);
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.terminalBlocked);
+    });
+
     test('100007, dann meldet der Status 0 -> approved', () async {
       // Hat das Terminal die Genehmigung doch gespeichert, gilt sie -- die
       // Stoerung macht nur das NICHTWISSEN verbindlich, nicht die Ablehnung.

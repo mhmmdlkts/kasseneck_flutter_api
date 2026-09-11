@@ -184,6 +184,7 @@ class HpsCode {
     required this.effect,
     required this.reason,
     required this.source,
+    this.rejectsRequest = false,
   });
 
   /// Der Ergebniscode, wie ihn das Terminal im Feld `responseCode` sendet.
@@ -199,6 +200,16 @@ class HpsCode {
   final HpsCodeEffect effect;
   final HpsCodeReason reason;
   final HpsCodeSource source;
+
+  /// Der Code weist die ANFRAGE selbst ab (TID, Form, Geraetezustand) und
+  /// sagt damit nur etwas ueber die Anfrage, die er beantwortet.
+  ///
+  /// Auf eine Zahlung ist das eine Ablehnung dieser Zahlung. Auf eine
+  /// STATUSABFRAGE heisst es dagegen nur, dass diese Abfrage nicht bedient
+  /// wurde -- ueber den gesuchten Vorgang sagt es nichts. Gemessen ist das fuer
+  /// `100108`: die Statusabfrage mit falscher TID antwortet damit. Siehe
+  /// [TransactionResponse.isConclusiveAsStatus].
+  final bool rejectsRequest;
 
   /// Schreibt den Ausgang fest -- Teil der Positivliste von
   /// [TransactionResponse.isConclusive].
@@ -231,6 +242,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.invalidTransaction,
       source: HpsCodeSource.measured,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '9011',
@@ -303,6 +315,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.notAbortable,
       source: HpsCodeSource.measuredAndDocumented,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '100019',
@@ -324,6 +337,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.terminalSetup,
       source: HpsCodeSource.measured,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '55',
@@ -348,6 +362,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.requestRejected,
       source: HpsCodeSource.documented,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '100004',
@@ -404,6 +419,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.terminalSetup,
       source: HpsCodeSource.documented,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '100009',
@@ -414,6 +430,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.requestRejected,
       source: HpsCodeSource.documented,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '100011',
@@ -446,6 +463,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.terminalFault,
       source: HpsCodeSource.documented,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '100014',
@@ -489,6 +507,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.terminalSetup,
       source: HpsCodeSource.documented,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '100020',
@@ -520,6 +539,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.terminalBlocked,
       source: HpsCodeSource.documented,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '100023',
@@ -606,6 +626,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.terminalBusy,
       source: HpsCodeSource.documented,
+      rejectsRequest: true,
     ),
     HpsCode(
       code: '100999',

@@ -470,6 +470,16 @@ class HpsPayments {
       return 'Status: Vorgang nicht gefunden (${status.responseCode}) -- '
           'keine Aussage';
     }
+    final info = status.codeInfo;
+    if (info != null && info.rejectsRequest) {
+      return 'Status: Abfrage abgewiesen (${info.code} "${info.title}") -- '
+          'keine Aussage ueber den Vorgang';
+    }
+    if (info != null && info.conclusive && !status.isApproved) {
+      // Nur erreichbar nach einer Stoerung beim Host, siehe [_resolve].
+      return 'Status: abgelehnt (${info.code} "${info.title}") -- nach der '
+          'Stoerung beim hobex-Host entscheidet nur eine Genehmigung';
+    }
     if (status.isUnknownCode) {
       return 'Status: unbekannter Code (${status.responseCode})'
           '${_klartext(status)} -- keine Aussage';
@@ -577,8 +587,16 @@ class HpsPayments {
     var stoerung = (antwort?.isHostUncertain ?? false) ? antwort : null;
     var letzteAntwort = antwort;
 
-    final aborted = await _tryAbort(id, steps, clock);
-    if (aborted != null) return aborted;
+    if (stoerung == null) {
+      final aborted = await _tryAbort(id, steps, clock);
+      if (aborted != null) return aborted;
+    } else {
+      // Der Vorgang ist am Terminal schon beendet -- mit einer Stoerung beim
+      // Host. Ein quittierter Abbruch bewiese hier nur, dass am Terminal
+      // nichts mehr laeuft, nicht, dass der Host nichts belastet hat.
+      steps.add('Kein Abbruchversuch -- das Terminal hat den Vorgang mit einer '
+          'Stoerung beim hobex-Host beendet');
+    }
 
     var wait = Duration.zero;
     var transportFailures = 0;
@@ -621,11 +639,18 @@ class HpsPayments {
         continue;
       }
 
-      final settled = _fromResponse(status, id, steps);
-      if (settled != null) return settled;
-
       if (status.isHostUncertain) stoerung ??= status;
       final hostUngewiss = stoerung != null;
+
+      // Auf die Statusabfrage entscheidet nur ein Code, der den gesuchten
+      // Vorgang beschreibt -- nicht einer, der diese Abfrage abweist (siehe
+      // TransactionResponse.isConclusiveAsStatus). Nach einer Stoerung beim
+      // Host entscheidet nur noch eine Genehmigung: jede andere Aussage des
+      // Terminals betrifft seinen Speicher, nicht den des Hosts.
+      if (hostUngewiss ? status.isApproved : status.isConclusiveAsStatus) {
+        final settled = _fromResponse(status, id, steps);
+        if (settled != null) return settled;
+      }
 
       if (status.isNoStatement) {
         ohneAuskunft++;
@@ -643,9 +668,9 @@ class HpsPayments {
         ohneAuskunft = 0;
       }
 
-      final ohneNeues =
-          (hostUngewiss && status.isNoStatement) || status.isHostUncertain;
-      stoerungOhneNeues = ohneNeues ? stoerungOhneNeues + 1 : 0;
+      // Nach einer Stoerung ist jede Antwort ausser '0' (die oben schon
+      // entschieden hat) "nichts Neues".
+      stoerungOhneNeues = hostUngewiss ? stoerungOhneNeues + 1 : 0;
 
       steps
           .add(_statusOhneErgebnis(status) ?? 'Status: noch kein Ergebniscode');

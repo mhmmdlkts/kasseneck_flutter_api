@@ -22,8 +22,20 @@ die Klaerung und endete erst ueber die Zwei-`9027`-Regel.
   Zwei-`9027`-Regel greift hier **nicht**. Ein `9027` danach heisst nur, dass
   das Terminal nichts gespeichert hat, nicht, dass nichts belastet ist. Die
   Klaerung endet nach zwei Abfragen ohne Neues als `unresolved`; sagt der
-  Status `0`, gilt die Genehmigung. Bei einer Aufhebung entscheidet ein
-  unveraendertes `0` auf die Originalzahlung dann ebenfalls nichts.
+  Status `0`, gilt die Genehmigung, jede andere Aussage des Terminals
+  entscheidet nichts mehr. Ein Abbruchversuch entfaellt: der Vorgang ist am
+  Terminal schon beendet. Bei einer Aufhebung entscheidet ein unveraendertes
+  `0` auf die Originalzahlung dann ebenfalls nichts.
+
+- **`HpsCode.rejectsRequest` / `TransactionResponse.isConclusiveAsStatus`:**
+  zehn Codes weisen die Anfrage selbst ab (`9002`, `100001`, `100008`,
+  `100108`, `100009`, `100010`, `100013`, `100018`, `100022`, `100998`). Auf
+  eine Zahlung sind sie eine Ablehnung, auf eine STATUSABFRAGE sagen sie nichts
+  ueber den gesuchten Vorgang (gemessen fuer `100108`). Die Klaerung liest den
+  Status deshalb ueber `isConclusiveAsStatus`; wer selbst Statusabfragen
+  auswertet, sollte das auch tun. Ohne diese Unterscheidung haette ein
+  gesperrtes Terminal (`100022`) eine verlorene Zahlung als "nicht belastet"
+  ausgewiesen.
 
 - **`HpsResult.reason`** traegt fuer jeden Ausgang den Grund, mit einem Satz fuer
   den Bediener (`HpsCodeReason.hint`). Er wird dort gesetzt, wo entschieden

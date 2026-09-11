@@ -336,7 +336,18 @@ belastet hat, sagt es nicht. Die Zwei-`9027`-Regel, die sonst aus einer
 Antwort mit Code plus zweimal `9027` „nichts belastet“ schließt, greift für
 diese Codes deshalb nicht. Die Klärung endet nach zwei Abfragen ohne Neues als
 `unresolved`, statt 90 Sekunden zu warten. Meldet der Status doch `0`, gilt die
-Genehmigung.
+Genehmigung; jede andere Aussage des Terminals entscheidet danach nichts mehr.
+Ein Abbruchversuch entfällt: der Vorgang ist am Terminal schon beendet, ein
+quittierter Abbruch bewiese nichts über den Host.
+
+**Eine abgewiesene Anfrage ist keine Aussage über einen anderen Vorgang.**
+Zehn Codes weisen die Anfrage selbst ab (`9002`, `100001`, `100008`, `100108`,
+`100009`, `100010`, `100013`, `100018`, `100022`, `100998`). Auf eine Zahlung
+sind sie deren Ablehnung. Auf eine Statusabfrage heißen sie nur, dass diese
+Abfrage nicht bedient wurde — gemessen für `100108`, das die Statusabfrage mit
+falscher TID liefert. Die Klärung liest den Status deshalb über
+`TransactionResponse.isConclusiveAsStatus`. Sonst hätte ein gesperrtes
+Terminal (`100022`) eine verlorene Zahlung als „nicht belastet“ ausgewiesen.
 
 Dasselbe gilt für eine Aufhebung, die mit einem solchen Code endet: ein
 unverändertes `0` auf die Originalzahlung beweist dann nicht, dass die

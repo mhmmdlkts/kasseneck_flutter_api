@@ -491,6 +491,15 @@ class TransactionResponse {
   /// `response_codes.dart`.
   bool get isConclusive => HpsCodes.lookup(responseCode)?.conclusive ?? false;
 
+  /// Wie [isConclusive], aber fuer die Antwort auf eine STATUSABFRAGE: ein
+  /// Code, der die Anfrage selbst abweist ([HpsCode.rejectsRequest], etwa
+  /// `100022` "Terminal is blocked" oder `100108` "Invalid TID"), sagt dort
+  /// nichts ueber den gesuchten Vorgang -- nur, dass diese Abfrage nicht
+  /// bedient wurde. Als `declined` gelesen, hiesse ein gesperrtes Terminal
+  /// "die Zahlung ist nicht belastet".
+  bool get isConclusiveAsStatus =>
+      isConclusive && !(codeInfo?.rejectsRequest ?? false);
+
   factory TransactionResponse.fromJson(Map<String, dynamic> json) {
     return TransactionResponse(
       raw: json,

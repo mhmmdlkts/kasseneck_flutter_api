@@ -103,6 +103,26 @@ void main() {
       }
     });
 
+    test('genau diese Codes weisen die Anfrage selbst ab', () {
+      final abweisend =
+          HpsCodes.all.where((c) => c.rejectsRequest).map((c) => c.code);
+      expect(abweisend.toSet(), {
+        '9002',
+        '100001',
+        '100008',
+        '100108',
+        '100009',
+        '100010',
+        '100013',
+        '100018',
+        '100022',
+        '100998',
+      });
+      for (final c in HpsCodes.all.where((c) => c.rejectsRequest)) {
+        expect(c.conclusive, isTrue, reason: c.code);
+      }
+    });
+
     test('jede Stoerung beim Host fuehrt auf einen ungewissen Grund', () {
       for (final c in HpsCodes.all) {
         expect(c.hostUncertain, c.reason.hostUncertain, reason: c.code);
@@ -167,6 +187,18 @@ void main() {
         expect(r.isUnknownCode, isTrue, reason: code);
         expect(r.reason, HpsCodeReason.unknown, reason: code);
       }
+    });
+
+    test('isConclusiveAsStatus: eine abgewiesene Abfrage entscheidet nichts',
+        () {
+      expect(mit('100022').isConclusive, isTrue);
+      expect(mit('100022').isConclusiveAsStatus, isFalse);
+      expect(mit('100108').isConclusiveAsStatus, isFalse);
+      expect(mit('0').isConclusiveAsStatus, isTrue);
+      expect(mit('55').isConclusiveAsStatus, isTrue);
+      expect(mit('100003').isConclusiveAsStatus, isTrue);
+      expect(mit('9011').isConclusiveAsStatus, isTrue);
+      expect(mit('9027').isConclusiveAsStatus, isFalse);
     });
 
     test('ohne Code kein Grund', () {
