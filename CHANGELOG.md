@@ -14,8 +14,14 @@ ihr folgte, installierte eine Hauptversion von vor anderthalb Jahren. Und der
 Abschnitt "Versioning" beschrieb 5.0.0 als "Latest"; er verweist jetzt auf
 dieses Changelog, statt eine Zahl zu wiederholen, die veraltet.
 
-Die Seite ist nun deutsch wie ihr JavaScript-Zwilling. Am Code aendert sich
-nichts.
+Die Seite ist nun deutsch wie ihr JavaScript-Zwilling.
+
+**Personendaten aus einem Beispielkommentar entfernt.** In
+`lib/models/keck_invoice.dart` stand seit 2.0.0 (17.03.2026) ein
+Rechnungsbeispiel mit Namen, Telefonnummer und Anschrift einer echten Person.
+Es ist durch Musterwerte ersetzt. Der Kommentar wurde mit jedem Paket
+ausgeliefert; die bereits veroeffentlichten Fassungen lassen sich nicht mehr
+aendern.
 
 ## 6.12.1
 
