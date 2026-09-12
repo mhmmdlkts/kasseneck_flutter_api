@@ -383,6 +383,32 @@ void main() {
       expect(t.callsOn('status'), 2);
     });
 
+    test('Abbruch mit HTTP 404 wird als solcher benannt, nicht als Abriss', () async {
+      // Ein Code, dessen Bedeutung NICHT feststeht -- nur dann laeuft die
+      // Klaerung ueberhaupt an und der Abbruch wird versucht. (Bis zur
+      // Antwortcodeliste vom 11.09.2026 stand hier `100015`; seither ist der
+      // gemessen und entscheidet die Zahlung sofort.)
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '5555', 'responseText': 'unbekannt'}),
+        ],
+        abort: [(_) => http.Response('Not Found', 404)],
+        status: [
+          (_) => json({'responseCode': TransactionResponse.noStatementCode}),
+          (_) => json({'responseCode': TransactionResponse.noStatementCode}),
+        ],
+      );
+      final res = await paymentsFor(t).pay(amount: 25, transactionId: '81000800');
+
+      expect(res.steps.any((s) => s.contains('HTTP 404')), isTrue);
+      expect(
+        res.steps.any((s) => s.contains('Abbruch-Endpunkt')),
+        isTrue,
+        reason: 'beide Lesarten des 404 muessen im Nachweis stehen',
+      );
+      expect(res.outcome, isNot(CardPaymentOutcome.approved));
+    });
+
     test('9027 bis zum Budgetende -> unresolved, niemals declined', () async {
       final t = FakeTerminal(
         payment: [boom],
