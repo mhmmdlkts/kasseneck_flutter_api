@@ -384,9 +384,13 @@ void main() {
     });
 
     test('Abbruch mit HTTP 404 wird als solcher benannt, nicht als Abriss', () async {
+      // Ein Code, dessen Bedeutung NICHT feststeht -- nur dann laeuft die
+      // Klaerung ueberhaupt an und der Abbruch wird versucht. (Bis zur
+      // Antwortcodeliste vom 11.09.2026 stand hier `100015`; seither ist der
+      // gemessen und entscheidet die Zahlung sofort.)
       final t = FakeTerminal(
         payment: [
-          (_) => json({'responseCode': '100015', 'responseText': 'unbekannt'}),
+          (_) => json({'responseCode': '5555', 'responseText': 'unbekannt'}),
         ],
         abort: [(_) => http.Response('Not Found', 404)],
         status: [

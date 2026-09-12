@@ -1,3 +1,17 @@
+## 6.12.1
+
+**Anlass:** Am Produktivterminal (TID 3556988, Firmware 2.3.9) antwortet
+`POST /api/transaction/abort/{tid}/{tx}` mit HTTP 404, am Testgeraet dagegen
+normal. Dieser 404 landete im allgemeinen Fehlerzweig und war im Nachweis
+nicht von einem Leitungsabriss zu unterscheiden -- `steps` ist aber der Text,
+der im Belastungsstreit gelesen wird.
+
+- **Nur der Nachweistext.** `HpsHttpException.isNotFound` benennt den 404, und
+  der Abbruch schreibt beide Lesarten hin, ohne sich auf eine festzulegen:
+  das Terminal kennt entweder den Vorgang nicht oder den Endpunkt nicht.
+  Welche zutrifft, ist ungemessen (bei hobex angefragt).
+- **Verhalten unveraendert:** weiterhin weiterklaeren, nie ein Ausgang.
+
 ## 6.12.0
 
 **Anlass:** das Backend hat seit keck#361 den Endpunkt `sendReceiptEmail` --
