@@ -1,3 +1,22 @@
+## 6.12.2
+
+**Anlass:** Die Paketseite war die erste Seite, die ein Interessent sieht -- und
+sie sagte nicht, wofuer das Paket da ist. Sie traegt jetzt das Kasseneck-Logo,
+einen englischen Einzeiler fuer Besucher von aussen, und eine Tabelle, welche
+Pflichten einer oesterreichischen Registrierkasse wo erledigt werden, mit
+Verweisen auf die Wissensseiten. Rechtliches steht bewusst nicht dort: die
+Tabelle beschreibt, was die Software tut, nennt Anmeldung und Aufbewahrung
+ausdruecklich als Sache des Unternehmers, und der Hinweis darunter sagt, dass
+sie keine Beratung ersetzt.
+
+**Zwei Fehler nebenbei behoben:** Die Einbindeanleitung nannte `^5.0.0` -- wer
+ihr folgte, installierte eine Hauptversion von vor anderthalb Jahren. Und der
+Abschnitt "Versioning" beschrieb 5.0.0 als "Latest"; er verweist jetzt auf
+dieses Changelog, statt eine Zahl zu wiederholen, die veraltet.
+
+Die Seite ist nun deutsch wie ihr JavaScript-Zwilling. Am Code aendert sich
+nichts.
+
 ## 6.12.1
 
 **Anlass:** Am Produktivterminal (TID 3556988, Firmware 2.3.9) antwortet
