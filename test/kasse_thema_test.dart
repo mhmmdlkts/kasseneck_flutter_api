@@ -30,12 +30,18 @@ void main() {
     });
 
     test('die Farben sind die Rollen des Design-Systems, keine eigenen Tabellen', () {
+      // Gegen die Rollen geprueft, nicht gegen abgeschriebene Hex-Werte: eine
+      // Tabelle hier waere genau das, was dieser Test ausschliessen soll, und
+      // sie veraltet beim naechsten Zug am Design-System.
+      String rolle(KdMode modus, String name) =>
+          '#${kdColor(modus, name).toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+
       final t = Kassenthema.aus(betrieb(KasseStil.nacht));
-      expect(t.grund.hex.toUpperCase(), '#131B1B'); // #131B1B – die Ziffern der Paragraphennummer
-      expect(t.marke.hex.toUpperCase(), '#139E9B'); // brand-500 im Dunkeln
-      expect(t.aufMarke.hex.toUpperCase(), '#131B1B'); // on-brand dunkel
+      expect(t.grund.hex.toUpperCase(), rolle(KdMode.dark, 'ground'));
+      expect(t.marke.hex.toUpperCase(), rolle(KdMode.dark, 'brand'));
+      expect(t.aufMarke.hex.toUpperCase(), rolle(KdMode.dark, 'on-brand'));
       final k = Kassenthema.aus(betrieb(KasseStil.klar));
-      expect(k.text.hex.toUpperCase(), '#132A2A');
+      expect(k.text.hex.toUpperCase(), rolle(KdMode.light, 'ink'));
     });
 
     test('der Kontrast-Stil schärft Ränder, nicht Radien', () {
