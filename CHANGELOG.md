@@ -1,3 +1,23 @@
+## 6.13.0
+
+**Anlass:** Das Paket hing noch an `kreiseck_design` 0.1.0, die Browser-Kasse
+laengst an einer Fassung mit den neuen, neutralen Grautoenen. App und Browser
+zeigten dieselbe Kasse also in zwei verschiedenen Graustufen -- die Themendatei
+ist ein Vertrag zwischen beiden, und er war gebrochen. Mit `^0.7.0` decken sie
+sich wieder.
+
+**Was man sieht:** 27 Farbwerte des Kassenthemas aendern sich. Die Grautoene
+verlieren ihren Petrolstich (heller Text #132A2A auf #222626, Nachtgrund
+#131B1B auf #181A1A), die hellen Signalflaechen werden saettiger. Die
+Markenfarben bleiben, wie sie waren. Grund ist der Zug am Design-System vom
+5. September ("neutral ramp without the petrol cast"); die Zahlenspiele auf die
+Paragraphennummern sind dabei entfallen.
+
+**Ein Test wurde umgebaut, nicht nachgezogen:** `kasse_thema_test.dart` hiess
+"die Farben sind die Rollen des Design-Systems, keine eigenen Tabellen" und
+fuehrte genau so eine Tabelle aus vier abgeschriebenen Hex-Werten. Er prueft
+jetzt gegen `kdColor(modus, rolle)` und kann nicht mehr veralten.
+
 ## 6.12.2
 
 **Anlass:** Die Paketseite war die erste Seite, die ein Interessent sieht -- und
