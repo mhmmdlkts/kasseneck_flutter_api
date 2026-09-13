@@ -92,7 +92,9 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
     final cw = messer.width;
     messer.dispose();
 
-    final geladen = _logo != null && _logo!.url == widget.logoUrl;
+    // Ohne Bytes kein Logo-Block -- auch wenn das Mass schon bekannt ist.
+    final logoBytes = LogoService.getLogoBytes(widget.logoUrl);
+    final geladen = _logo != null && _logo!.url == widget.logoUrl && logoBytes != null;
     final blatt = belegBlatt(
       widget.layout,
       zeichen: widget.zeichen,
@@ -101,45 +103,52 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
       qrGroesse: widget.qrGroesse,
     );
     final breite = blatt.zeichen * cw;
-    return Container(
-      color: widget.paperColor,
-      padding: EdgeInsets.all(cw * 2),
-      child: SizedBox(
-        key: const Key('keck-blatt'),
-        width: breite,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final (i, b) in blatt.bloecke.indexed)
-              switch (b) {
-                BlattZeile() => SizedBox(
-                    key: Key('keck-blatt-zeile-$i'),
-                    height: 2 * cw,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(b.text,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.clip,
-                          style: stil.copyWith(fontWeight: b.fett ? FontWeight.w500 : FontWeight.w400)),
+    // Align loest eine straffe Breite von aussen (die App setzt den Beleg in
+    // `SizedBox(width: 280/380)`): das Papier bleibt `zeichen x cw` breit und
+    // steht oben mittig, statt auf die Huelle gezogen zu werden.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        color: widget.paperColor,
+        padding: EdgeInsets.all(cw * 2),
+        child: SizedBox(
+          key: const Key('keck-blatt'),
+          width: breite,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (i, b) in blatt.bloecke.indexed)
+                switch (b) {
+                  BlattZeile() => SizedBox(
+                      key: Key('keck-blatt-zeile-$i'),
+                      height: 2 * cw,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(b.text,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.clip,
+                            style: stil.copyWith(fontWeight: b.fett ? FontWeight.w500 : FontWeight.w400)),
+                      ),
                     ),
-                  ),
-                // Die Zeilen darueber stehen in einer Column mit
-                // CrossAxisAlignment.stretch -- ein direktes Kind bekaeme
-                // eine straffe Breitenzwang auf die volle Blattbreite. Erst
-                // Center loest den Zwang; nur so wird das Logo tatsaechlich
-                // schmaler als das Blatt (wie beim QR unten).
-                BlattLogoBlock() => Center(
-                    child: SizedBox(
-                      key: const Key('keck-blatt-logo'),
-                      width: b.breiteAnteil * breite,
-                      height: b.hoeheZeilen * 2 * cw,
-                      child: Image.memory(LogoService.getLogoBytes(widget.logoUrl)!, fit: BoxFit.contain),
+                  // Die Zeilen darueber stehen in einer Column mit
+                  // CrossAxisAlignment.stretch -- ein direktes Kind bekaeme
+                  // eine straffe Breitenzwang auf die volle Blattbreite. Erst
+                  // Center loest den Zwang; nur so wird das Logo tatsaechlich
+                  // schmaler als das Blatt (wie beim QR unten).
+                  BlattLogoBlock() => Center(
+                      child: SizedBox(
+                        key: const Key('keck-blatt-logo'),
+                        width: b.breiteAnteil * breite,
+                        height: b.hoeheZeilen * 2 * cw,
+                        // `geladen` setzt Bytes voraus; ohne sie entsteht kein Logo-Block.
+                        child: logoBytes == null ? null : Image.memory(logoBytes, fit: BoxFit.contain),
+                      ),
                     ),
-                  ),
-                BlattQr() => Center(child: _qr(b, breite)),
-              },
-          ],
+                  BlattQr() => Center(child: _qr(b, breite)),
+                },
+            ],
+          ),
         ),
       ),
     );
@@ -158,6 +167,9 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
         padding: EdgeInsets.all(rand),
         child: QrImageView(
           data: b.nutzlast,
+          // Korrektur M wie Bon, ePOS und Blatt; qr_flutter setzt sonst L und
+          // zeichnete bei mancher Nutzlast weniger Module, als das Blatt rechnet.
+          errorCorrectionLevel: QrErrorCorrectLevel.M,
           padding: EdgeInsets.zero,
           eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: widget.textColor),
           dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: widget.textColor),
