@@ -80,4 +80,32 @@ void main() {
     expect(papierFuerZeichen(32, 'mm80'), KeckPaperSize.mm58);
     expect(papierFuerZeichen(40, 'mm80'), KeckPaperSize.mm80);
   });
+
+  test('zwei Modulzaehler, eine Zahl: qrModulAnzahlWieNpm == QrMass.modulAnzahl an jeder Versionsgrenze', () {
+    // Die Grenzen werden aus der Tabelle des Blatts abgelesen, nicht
+    // abgeschrieben: wo die Modulzahl springt, liegt die Kapazitaet. An
+    // Kapazitaet und Kapazitaet + 1 (v1..v39) muss die QR-Bibliothek dasselbe
+    // sagen -- sonst rechnete das Blatt mit einem anderen Symbol, als Bon und
+    // Schirm zeichnen. ASCII-Nutzlast, also Byte-Modus wie beim Beleg-QR.
+    String nutzlast(int n) => 'a' * n;
+    final kapazitaeten = <int>[
+      for (var n = 1; n < 2331; n++)
+        if (qrModulAnzahlWieNpm(nutzlast(n + 1)) != qrModulAnzahlWieNpm(nutzlast(n))) n,
+      2331,
+    ];
+    expect(kapazitaeten, hasLength(40));
+    expect(kapazitaeten.first, 14);
+    for (final (i, kap) in kapazitaeten.indexed) {
+      final version = i + 1;
+      expect(qrModulAnzahlWieNpm(nutzlast(kap)), 17 + 4 * version, reason: 'v$version, Kapazitaet $kap');
+      expect(QrMass.modulAnzahl(nutzlast(kap)), qrModulAnzahlWieNpm(nutzlast(kap)), reason: 'v$version: $kap Byte');
+      if (version < 40) {
+        expect(QrMass.modulAnzahl(nutzlast(kap + 1)), qrModulAnzahlWieNpm(nutzlast(kap + 1)), reason: 'v$version: ${kap + 1} Byte');
+      }
+    }
+    // Hinter v40 gibt es kein Symbol: das Blatt lehnt ab. `QrMass.modulAnzahl`
+    // meldet dort (qr 3.0.2) noch 177 Module statt abzulehnen -- ausserhalb
+    // jeder druckbaren Groesse, aber keine gemeinsame Zahl mehr.
+    expect(() => qrModulAnzahlWieNpm(nutzlast(2332)), throwsArgumentError);
+  });
 }
