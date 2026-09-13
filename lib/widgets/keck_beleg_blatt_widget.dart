@@ -1,0 +1,186 @@
+import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:kasseneck_api/models/beleg_blatt.dart';
+import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/services/logo_service.dart';
+import 'package:kasseneck_api/src/printing/qr_groesse.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+
+/// Das Blatt am Bildschirm -- Zeile fuer Zeile dieselben Zeichen wie am Bon
+/// und im PDF (Zwilling von `BelegBlattView` im npm-Paket). Eine Zeile ist
+/// zwei Zeichenbreiten hoch, Logo und QR stehen in ihrem Blattanteil. Die
+/// Zeichenbreite wird an der Schrift gemessen, nicht angenommen.
+class KeckBelegBlattWidget extends StatefulWidget {
+  final BelegLayout layout;
+  final int? zeichen;
+  final String? logoUrl;
+  final LogoStufe logoStufe;
+  final bool marke;
+  final QrModulGroesse qrGroesse;
+  final Color paperColor;
+  final Color textColor;
+  final bool qrCovered;
+  final String qrCoveredText;
+  final double fontSize;
+
+  const KeckBelegBlattWidget({
+    required this.layout,
+    this.zeichen,
+    this.logoUrl,
+    this.logoStufe = LogoStufe.m,
+    this.marke = false,
+    this.qrGroesse = QrModulGroesse.auto,
+    this.paperColor = Colors.white,
+    this.textColor = Colors.black,
+    this.qrCovered = false,
+    this.qrCoveredText = 'Antippen zum Anzeigen',
+    this.fontSize = 12,
+    super.key,
+  });
+
+  @override
+  State<KeckBelegBlattWidget> createState() => _KeckBelegBlattWidgetState();
+}
+
+class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
+  bool _qrOffen = false;
+  ({String url, int breite, int hoehe})? _logo;
+
+  @override
+  void initState() {
+    super.initState();
+    _ladeLogo();
+  }
+
+  @override
+  void didUpdateWidget(KeckBelegBlattWidget alt) {
+    super.didUpdateWidget(alt);
+    if (alt.logoUrl != widget.logoUrl) _ladeLogo();
+  }
+
+  Future<void> _ladeLogo() async {
+    final url = widget.logoUrl;
+    if (url == null) return;
+    await LogoService.loadLogo(url);
+    final bytes = LogoService.getLogoBytes(url);
+    if (bytes == null || !mounted) return;
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      final mass = (url: url, breite: frame.image.width, hoehe: frame.image.height);
+      frame.image.dispose();
+      codec.dispose();
+      if (mounted && widget.logoUrl == url) setState(() => _logo = mass);
+    } catch (_) {
+      // Ein Logo, das sich nicht lesen laesst, kostet den Beleg nicht: das Blatt steht ohne Logo.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stil = TextStyle(
+      // fontFamily/package wie kdMonoStyle (kreiseck_design)
+      fontFamily: 'DM Mono',
+      package: 'kreiseck_design',
+      fontSize: widget.fontSize,
+      height: 1.0,
+      color: widget.textColor,
+      fontFeatures: const [ui.FontFeature.disable('liga'), ui.FontFeature.disable('calt')],
+    );
+    final messer = TextPainter(text: TextSpan(text: '0', style: stil), textDirection: TextDirection.ltr)..layout();
+    final cw = messer.width;
+    messer.dispose();
+
+    final geladen = _logo != null && _logo!.url == widget.logoUrl;
+    final blatt = belegBlatt(
+      widget.layout,
+      zeichen: widget.zeichen,
+      logo: geladen ? BlattLogo(stufe: widget.logoStufe, pxBreite: _logo!.breite, pxHoehe: _logo!.hoehe) : null,
+      marke: widget.marke,
+      qrGroesse: widget.qrGroesse,
+    );
+    final breite = blatt.zeichen * cw;
+    return Container(
+      color: widget.paperColor,
+      padding: EdgeInsets.all(cw * 2),
+      child: SizedBox(
+        key: const Key('keck-blatt'),
+        width: breite,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final (i, b) in blatt.bloecke.indexed)
+              switch (b) {
+                BlattZeile() => SizedBox(
+                    key: Key('keck-blatt-zeile-$i'),
+                    height: 2 * cw,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(b.text,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.clip,
+                          style: stil.copyWith(fontWeight: b.fett ? FontWeight.w500 : FontWeight.w400)),
+                    ),
+                  ),
+                // Die Zeilen darueber stehen in einer Column mit
+                // CrossAxisAlignment.stretch -- ein direktes Kind bekaeme
+                // eine straffe Breitenzwang auf die volle Blattbreite. Erst
+                // Center loest den Zwang; nur so wird das Logo tatsaechlich
+                // schmaler als das Blatt (wie beim QR unten).
+                BlattLogoBlock() => Center(
+                    child: SizedBox(
+                      key: const Key('keck-blatt-logo'),
+                      width: b.breiteAnteil * breite,
+                      height: b.hoeheZeilen * 2 * cw,
+                      child: Image.memory(LogoService.getLogoBytes(widget.logoUrl)!, fit: BoxFit.contain),
+                    ),
+                  ),
+                BlattQr() => Center(child: _qr(b, breite)),
+              },
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _qr(BlattQr b, double breite) {
+    final seite = b.breiteAnteil * breite;
+    // Die Breite enthaelt die Ruhezone (4 Module je Seite) -- wie am Drucker.
+    final module = b.nutzlast.isEmpty ? 1 : qrModulAnzahlWieNpm(b.nutzlast);
+    final rand = seite * QrMass.ruhezoneModule / (module + 2 * QrMass.ruhezoneModule);
+    final qr = SizedBox(
+      key: const Key('keck-blatt-qr'),
+      width: seite,
+      height: seite,
+      child: Padding(
+        padding: EdgeInsets.all(rand),
+        child: QrImageView(
+          data: b.nutzlast,
+          padding: EdgeInsets.zero,
+          eyeStyle: QrEyeStyle(eyeShape: QrEyeShape.square, color: widget.textColor),
+          dataModuleStyle: QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: widget.textColor),
+          backgroundColor: Colors.transparent,
+        ),
+      ),
+    );
+    if (!widget.qrCovered) return qr;
+    return Semantics(
+      button: true,
+      label: _qrOffen ? 'QR-Code verdecken' : 'QR-Code anzeigen',
+      child: GestureDetector(
+        key: const Key('keck-blatt-qr-toggle'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _qrOffen = !_qrOffen),
+        child: Stack(alignment: Alignment.center, children: [
+          if (_qrOffen) qr else ImageFiltered(imageFilter: ui.ImageFilter.blur(sigmaX: 6, sigmaY: 6), child: qr),
+          if (!_qrOffen)
+            Text(widget.qrCoveredText,
+                style: TextStyle(color: widget.textColor, fontWeight: FontWeight.bold, fontSize: 12),
+                textAlign: TextAlign.center),
+        ]),
+      ),
+    );
+  }
+}
