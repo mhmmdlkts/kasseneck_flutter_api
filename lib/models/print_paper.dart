@@ -3,9 +3,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
+import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
-import 'package:kasseneck_api/models/beleg_raster.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/models/logo_raster.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:qr/qr.dart';
@@ -23,6 +24,16 @@ import 'kasseneck_item.dart';
 
 import 'keck_voucher.dart';
 
+
+/// Firmenlogo fuer den Druck: Stufe, Pixelmass des Originals und das fertige
+/// Rasterbild aus [logoRaster] (Zwilling von `DruckLogo` im npm-Paket).
+class DruckLogo {
+  final LogoStufe stufe;
+  final int pxBreite;
+  final int pxHoehe;
+  final LogoRaster raster;
+  const DruckLogo({required this.stufe, required this.pxBreite, required this.pxHoehe, required this.raster});
+}
 
 class PrintPaper {
   final KeckPaperSize paperSize;
@@ -167,13 +178,24 @@ class PrintPaper {
   /// einer Nutzlast Druckbefehle werden. Beide Wege (Zeilenmodell und der alte
   /// Bauer) gehen hier durch, damit ein neuer Modus nicht an einem von beiden
   /// vorbeigeht.
+  ///
+  /// [blattAnteil] ist die Breite, die das Blatt dem QR gibt ([BlattQr]).
+  /// Gesetzt misst der Bildweg daran statt an festen 280 Pixeln:
+  /// [renderQrMatrix] rastert samt Ruhezone (4 Module je Seite) mit
+  /// `floor(size / (module + 8))` Punkten je Modul, und das Blatt rechnet
+  /// `(module + 8) * punkte` -- mit `size = round(anteil * druckPunkte)` ist
+  /// die GS-v-0-Breite also genau die des Blatts, wie npm `escPosQrRaster`.
+  /// Die Untergrenze von 2 Punkten in [renderQrMatrix] greift dabei nie: ein
+  /// Punkt je Modul hiesse mehr als 192 Module samt Ruhezone, das groesste
+  /// QR-Symbol hat 177.
   Future<void> _qrNachModus(String nutzlast, QrPrintMode modus,
-      {QrModulGroesse groesse = QrModulGroesse.auto}) async {
+      {QrModulGroesse groesse = QrModulGroesse.auto, double? blattAnteil}) async {
+    final int bildGroesse = blattAnteil == null ? 280 : (blattAnteil * paperSize.druckPunkte).round();
     switch (modus) {
       case QrPrintMode.imageRaster:
-        await addQrCodeAsImage(nutzlast, raster: true);
+        await addQrCodeAsImage(nutzlast, raster: true, size: bildGroesse);
       case QrPrintMode.imageBitImage:
-        await addQrCodeAsImage(nutzlast, raster: false);
+        await addQrCodeAsImage(nutzlast, raster: false, size: bildGroesse);
       case QrPrintMode.native:
       case QrPrintMode.nativeModel1:
         // Der Notausgang: passt das Symbol nativ auch mit der Ausnahmegroesse
@@ -189,10 +211,13 @@ class PrintPaper {
         if (nutzlast.isNotEmpty && !mass.passt) {
           qrAusweich = 'QR mit ${mass.module} Modulen passt nativ nicht auf '
               '${paperSize.mm} mm (${paperSize.druckPunkte} Punkte) -- als Bild gedruckt';
-          await addQrCodeAsImage(nutzlast, raster: true);
+          // Mit Blatt-Anteil so gross, wie das Blatt den Ausweich setzt
+          // (npm: `escPosQrRaster` mit demselben Deckel).
+          await addQrCodeAsImage(nutzlast, raster: true, size: bildGroesse);
           return;
         }
-        addQrCode(nutzlast, groesse: groesse, modell1: modus == QrPrintMode.nativeModel1);
+        addQrCode(nutzlast,
+            groesse: groesse, modell1: modus == QrPrintMode.nativeModel1, myPosGroesse: bildGroesse);
     }
   }
 
@@ -206,8 +231,18 @@ class PrintPaper {
   /// verschwand auf jedem 58-mm-Drucker (384 Punkte) spurlos.
   ///
   /// [modell1] waehlt den aelteren Symboltyp, siehe [QRCode].
+  ///
+  /// Fehlerkorrektur ist **M** -- dieselbe Stufe wie Blatt, ePOS und Bildweg.
+  /// Mit der Generator-Vorgabe L haette der Drucker bei mancher Nutzlast ein
+  /// kleineres Symbol gesetzt, als das Blatt ihm Platz gibt.
+  ///
+  /// [myPosGroesse] ist die Bildbreite fuer den myPOS-Terminaldruck, der den
+  /// QR selbst rendert; Vorgabe 280 wie bisher.
   void addQrCode(String data,
-      {QRSize? size, QrModulGroesse groesse = QrModulGroesse.auto, bool modell1 = false}) {
+      {QRSize? size,
+      QrModulGroesse groesse = QrModulGroesse.auto,
+      bool modell1 = false,
+      int myPosGroesse = 280}) {
     if (data.isEmpty) {
       _qrAusfall(data, 'leere Nutzlast');
       return;
@@ -238,8 +273,8 @@ class PrintPaper {
     }
     try {
       bytes.add(Uint8List.fromList(
-          generator.qrcode(data, size: gewaehlt, modell1: modell1)));
-      myPosPaper.addQrCode(data, size: 280);
+          generator.qrcode(data, size: gewaehlt, cor: QRCorrection.M, modell1: modell1)));
+      myPosPaper.addQrCode(data, size: myPosGroesse);
     } catch (e) {
       _qrAusfall(data, e);
     }
@@ -346,6 +381,7 @@ class PrintPaper {
     myPosPaper.commands.clear();
   }
 
+  /// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [setBelegBlatt] bzw. `KeckBelegBlattWidget`.
   Future setKeckReceipt(KasseneckReceipt receipt,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
@@ -653,14 +689,72 @@ class PrintPaper {
   /// Textzeile raus (58 mm = 32, 80 mm = 48) — keine eigene Spaltenrechnung,
   /// dieselben Zeilen wie Browser-Kasse, Labor und Beleg-PDF. Bevorzugt
   /// gegenüber [setKeckReceipt], sobald ein Layout vorliegt.
+  ///
+  /// Druckt ohne Logo und Marke -- siehe [setBelegBlatt].
   Future<void> setBelegLayout(BelegLayout layout,
-      {bool cut = true,
+          {bool cut = true,
+          QrPrintMode qrMode = QrPrintMode.imageRaster,
+          QrModulGroesse qrGroesse = QrModulGroesse.auto}) =>
+      setBelegBlatt(layout, cut: cut, qrMode: qrMode, qrGroesse: qrGroesse);
+
+  /// Druckt das **Blatt** (Zwilling von `escPosLayoutBytes` ab npm 0.14.0):
+  /// Rasterzeilen, Firmenlogo nach dem fuehrenden Rahmen, QR im eingestellten
+  /// Modus, Marke am Ende -- dieselbe Folge wie Bildschirm und PDF.
+  ///
+  /// Wirft [ArgumentError], wenn das Rasterbild von [logo] nicht so gross ist,
+  /// wie das Blatt das Logo setzt -- vor dem ersten Byte, das Papier bleibt
+  /// dann unangetastet.
+  Future<void> setBelegBlatt(BelegLayout layout,
+      {DruckLogo? logo,
+      bool marke = false,
+      bool cut = true,
       QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
+    final blatt = belegBlatt(
+      _druckbaresLayout(layout),
+      zeichen: paperSize.defaultCharCount,
+      logo: logo == null ? null : BlattLogo(stufe: logo.stufe, pxBreite: logo.pxBreite, pxHoehe: logo.pxHoehe),
+      marke: marke,
+      qrGroesse: qrGroesse,
+    );
+    if (logo != null) {
+      // Das Rasterbild muss so gross sein, wie das Blatt das Logo setzt --
+      // sonst stuende am Bon ein anderes Logo als am Schirm. Vor dem ersten Byte.
+      final block = blatt.bloecke.whereType<BlattLogoBlock>().single;
+      final soll = logoRasterMass(LogoMass(breiteAnteil: block.breiteAnteil, hoeheZeilen: block.hoeheZeilen), blatt.zeichen);
+      if (logo.raster.breite != soll.breite || logo.raster.hoehe != soll.hoehe) {
+        throw ArgumentError('Logo-Raster ${logo.raster.breite}x${logo.raster.hoehe} passt nicht zum Blatt (${soll.breite}x${soll.hoehe})');
+      }
+    }
     reset();
-    // Erst druckbar machen (Codepage, EUR statt Euro-Zeichen), DANN rastern —
-    // damit das Raster mit den Zeichen rechnet, die aufs Papier gehen.
-    final druckbar = BelegLayout(
+    for (final b in blatt.bloecke) {
+      switch (b) {
+        case BlattZeile():
+          if (b.leer) {
+            addFeed(lines: 1);
+          } else {
+            addText(b.text.trimRight(), styles: PosStyles(align: PosAlign.left, bold: b.fett));
+          }
+        case BlattLogoBlock():
+          await addImage(logo!.raster.alsRasterImage(), align: PosAlign.center);
+        case BlattQr():
+          // Das Layout liefert beim QR NUR die Nutzlast; wie daraus ein QR
+          // wird, entscheidet der Renderer -- am Drucker also der Modus, den
+          // der Chef fuer sein Geraet eingestellt hat. Fest `addQrCode` zu
+          // rufen hiesse `native` fuer alle, und Drucker ohne `GS ( k` drucken
+          // dann GAR KEINEN QR. Auf einer oesterreichischen Kassa ist der QR
+          // die maschinenlesbare Signatur -- er darf nie stillschweigend
+          // wegfallen, nur weil das Blatt aus dem Zeilenmodell kommt.
+          await _qrNachModus(b.nutzlast, qrMode, groesse: qrGroesse, blattAnteil: b.breiteAnteil);
+      }
+    }
+    if (cut) addCut();
+  }
+
+  /// Erst druckbar machen (Codepage, EUR statt Euro-Zeichen), DANN rastern —
+  /// damit das Raster mit den Zeichen rechnet, die aufs Papier gehen.
+  BelegLayout _druckbaresLayout(BelegLayout layout) {
+    return BelegLayout(
       lines: layout.lines.map((z) => switch (z) {
         BelegText() => BelegText(text: _printable(z.text), align: z.align, bold: z.bold),
         BelegBanner() => BelegBanner(text: _printable(z.text), warnung: z.warnung),
@@ -675,28 +769,6 @@ class PrintPaper {
       paperSize: layout.paperSize,
       regelwerk: layout.regelwerk,
     );
-    final raster = BelegRaster.render(druckbar, zeichen: paperSize.defaultCharCount);
-    for (final z in raster.lines) {
-      switch (z.art) {
-        case RasterArt.space:
-          addFeed(lines: 1);
-        case RasterArt.qr:
-          // Das Layout liefert beim QR NUR die Nutzlast; wie daraus ein QR
-          // wird, entscheidet der Renderer -- am Drucker also der Modus, den
-          // der Chef fuer sein Geraet eingestellt hat. Fest `addQrCode` zu
-          // rufen hiesse `native` fuer alle, und Drucker ohne `GS ( k` drucken
-          // dann GAR KEINEN QR. Auf einer oesterreichischen Kassa ist der QR
-          // die maschinenlesbare Signatur -- er darf nie stillschweigend
-          // wegfallen, nur weil das Blatt aus dem Zeilenmodell kommt.
-          await _qrNachModus(z.qr ?? '', qrMode, groesse: qrGroesse);
-        case RasterArt.banner:
-        case RasterArt.text:
-        case RasterArt.columns:
-        case RasterArt.rule:
-          addText(z.text.trimRight(), styles: PosStyles(align: PosAlign.left, bold: z.bold));
-      }
-    }
-    if (cut) addCut();
   }
 
   void addDoubleText(String leftValue, String rightValue, {int leftWidth = 6, int rightWidth = 6}) {

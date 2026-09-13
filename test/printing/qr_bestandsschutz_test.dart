@@ -49,10 +49,25 @@ void main() {
       );
 
   /// SHA-256 ueber den gesamten Bytestrom eines nativ gedruckten Belegs.
+  ///
+  /// Einzige gewollte Abweichung von 6.8.0: der native QR druckt seit dem
+  /// Blatt mit Fehlerkorrektur **M** (Byte 49) statt L (48) -- dieselbe Stufe
+  /// wie Blatt, ePOS und Bildweg. Damit die Digests ihr Zeugnis aus der Zeit
+  /// vor dem Umbau behalten, wird genau dieser eine Befehl vor dem Hashen auf
+  /// L zurueckgestellt; dass er genau einmal mit M im Strom steht, prueft der
+  /// Test mit. Jede andere Verschiebung macht den Digest weiterhin rot.
   Future<String> belegDigest(KeckPaperSize size) async {
     final PrintPaper paper = PrintPaper(paperSize: size, profile: CapabilityProfile());
     await paper.setKeckReceipt(belegAbsolut(), qrMode: QrPrintMode.native);
-    return sha256.convert(paper.bytes.expand((e) => e).toList()).toString();
+    final List<int> bytes = paper.bytes.expand((e) => e).toList();
+    final List<int> korrekturM = [...'\x1D(k'.codeUnits, 0x03, 0x00, 0x31, 0x45, 49];
+    final List<int> treffer = [
+      for (int i = 0; i + korrekturM.length <= bytes.length; i++)
+        if (List.generate(korrekturM.length, (k) => bytes[i + k] == korrekturM[k]).every((g) => g)) i,
+    ];
+    expect(treffer, hasLength(1), reason: 'nativer QR-Befehl nicht genau einmal mit Korrektur M');
+    bytes[treffer.single + korrekturM.length - 1] = 48;
+    return sha256.convert(bytes).toString();
   }
 
   test('58 mm: Beleg ohne Wahl byteidentisch mit 6.8.0', () async {

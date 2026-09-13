@@ -20,6 +20,23 @@ final _wurzel = Directory('test/fixtures/vertrag');
 
 Map<String, dynamic> _json(String pfad) => jsonDecode(File(pfad).readAsStringSync()) as Map<String, dynamic>;
 
+/// Steht [folge] **zusammenhaengend** in [bytes]? `containsAllInOrder` sucht
+/// eine Teilfolge mit beliebigen Bytes dazwischen -- in den Rasterdaten eines
+/// QR-Bilds findet sich 29 ... 40 ... 107 dann rein zufaellig.
+bool _enthaeltFolge(List<int> bytes, List<int> folge) {
+  for (var i = 0; i + folge.length <= bytes.length; i++) {
+    var gleich = true;
+    for (var k = 0; k < folge.length; k++) {
+      if (bytes[i + k] != folge[k]) {
+        gleich = false;
+        break;
+      }
+    }
+    if (gleich) return true;
+  }
+  return false;
+}
+
 void main() {
   final manifest = _json('${_wurzel.path}/manifest.json');
   final namen = (manifest['belege'] as Map<String, dynamic>).keys.toList()..sort();
@@ -136,19 +153,22 @@ void main() {
       return paper.bytes.expand((b) => b).toList();
     }
 
-    // GS ( k -- nur im nativen Modus.
-    expect(await mitModus(QrPrintMode.native), containsAllInOrder([0x1D, 0x28, 0x6B]));
-    expect(await mitModus(QrPrintMode.imageRaster), isNot(containsAllInOrder([0x1D, 0x28, 0x6B])));
-    expect(await mitModus(QrPrintMode.imageBitImage), isNot(containsAllInOrder([0x1D, 0x28, 0x6B])));
+    // GS ( k -- nur im nativen Modus. Zusammenhaengend gesucht: seit das Bild
+    // so breit ist wie das Blatt, enthalten seine Rasterdaten 29 ... 40 ... 107
+    // als lose Teilfolge, und `containsAllInOrder` meldete einen QR-Befehl,
+    // der nicht da ist.
+    expect(_enthaeltFolge(await mitModus(QrPrintMode.native), [0x1D, 0x28, 0x6B]), isTrue);
+    expect(_enthaeltFolge(await mitModus(QrPrintMode.imageRaster), [0x1D, 0x28, 0x6B]), isFalse);
+    expect(_enthaeltFolge(await mitModus(QrPrintMode.imageBitImage), [0x1D, 0x28, 0x6B]), isFalse);
 
     // GS v 0 (Raster) und ESC * (Bit-Image) -- jeder in seinem Modus.
-    expect(await mitModus(QrPrintMode.imageRaster), containsAllInOrder([0x1D, 0x76, 0x30]));
-    expect(await mitModus(QrPrintMode.imageBitImage), containsAllInOrder([0x1B, 0x2A]));
+    expect(_enthaeltFolge(await mitModus(QrPrintMode.imageRaster), [0x1D, 0x76, 0x30]), isTrue);
+    expect(_enthaeltFolge(await mitModus(QrPrintMode.imageBitImage), [0x1B, 0x2A]), isTrue);
 
     // Und der Standard ist derselbe wie beim alten Bauer: Raster.
     final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
     await paper.setBelegLayout(layout);
-    expect(paper.bytes.expand((b) => b).toList(), containsAllInOrder([0x1D, 0x76, 0x30]));
+    expect(_enthaeltFolge(paper.bytes.expand((b) => b).toList(), [0x1D, 0x76, 0x30]), isTrue);
   });
 
   /// Aufdrucke tragen ihre Zeilennummer im Schluessel (sonst kollidieren zwei

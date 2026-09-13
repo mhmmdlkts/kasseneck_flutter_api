@@ -16,6 +16,7 @@ import '../models/keck_voucher.dart';
 import '../models/print_paper.dart';
 
 
+/// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [PrintPaper.setBelegBlatt] bzw. `KeckBelegBlattWidget`.
 class KeckReceiptWidget extends StatefulWidget {
   final Color paperColor;
   final Color qrColor;

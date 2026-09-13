@@ -108,12 +108,16 @@ class KeckPrinterService {
     KeckPaperSize paperSize, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModulGroesse qrGroesse = QrModulGroesse.auto,
+    DruckLogo? logo,
+    bool marke = false,
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     final BelegLayout? layout = receipt.layout;
     if (layout != null && receipt.layoutIstVollstaendig) {
-      await paper.setBelegLayout(layout, qrMode: qrMode, qrGroesse: qrGroesse);
+      // [logo] und [marke] gelten nur fuer das Blatt; der Altweg kennt sein
+      // eigenes Logo (`receipt.logo`) und Branding (`showKreiseckLogo`).
+      await paper.setBelegBlatt(layout, logo: logo, marke: marke, qrMode: qrMode, qrGroesse: qrGroesse);
     } else {
       await paper.setKeckReceipt(receipt, qrMode: qrMode, qrGroesse: qrGroesse);
     }
@@ -123,17 +127,21 @@ class KeckPrinterService {
 
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
-      QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
-    final PrintPaper paper =
-        await getPaperFromReceipt(receipt, paperSize, qrMode: qrMode, qrGroesse: qrGroesse);
+      QrModulGroesse qrGroesse = QrModulGroesse.auto,
+      DruckLogo? logo,
+      bool marke = false}) async {
+    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
+        qrMode: qrMode, qrGroesse: qrGroesse, logo: logo, marke: marke);
     _letzterQrFehler = paper.qrFehler;
     _letzterQrAusweich = paper.qrAusweich;
     return paper.bytes;
   }
 
-  static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt) async {
+  static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt,
+      {DruckLogo? logo, bool marke = false}) async {
     // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
-    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: QrPrintMode.native);
+    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
+        qrMode: QrPrintMode.native, logo: logo, marke: marke);
     _letzterQrFehler = paper.qrFehler;
     _letzterQrAusweich = paper.qrAusweich;
     return paper.myPosPaper;
