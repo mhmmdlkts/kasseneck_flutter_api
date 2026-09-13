@@ -55,6 +55,7 @@ export 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
 export 'src/kasse/belegmail.dart'
     show Belegmailergebnis, belegMailFehlercodes, istBelegMailFehlercode;
 export 'src/kasse/storno.dart' show stornogruende, stornoFehlercodes, istStornoFehlercode;
+export 'services/druck_logo.dart';
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
 // nicht benennbar.
