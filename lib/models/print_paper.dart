@@ -691,11 +691,12 @@ class PrintPaper {
   /// gegenüber [setKeckReceipt], sobald ein Layout vorliegt.
   ///
   /// Druckt ohne Logo und Marke -- siehe [setBelegBlatt].
-  Future<void> setBelegLayout(BelegLayout layout,
-          {bool cut = true,
-          QrPrintMode qrMode = QrPrintMode.imageRaster,
-          QrModulGroesse qrGroesse = QrModulGroesse.auto}) =>
-      setBelegBlatt(layout, cut: cut, qrMode: qrMode, qrGroesse: qrGroesse);
+  Future<void> setBelegLayout(
+    BelegLayout layout, {
+    bool cut = true,
+    QrPrintMode qrMode = QrPrintMode.imageRaster,
+    QrModulGroesse qrGroesse = QrModulGroesse.auto,
+  }) => setBelegBlatt(layout, cut: cut, qrMode: qrMode, qrGroesse: qrGroesse);
 
   /// Druckt das **Blatt** (Zwilling von `escPosLayoutBytes` ab npm 0.14.0):
   /// Rasterzeilen, Firmenlogo nach dem fuehrenden Rahmen, QR im eingestellten

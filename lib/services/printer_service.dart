@@ -103,6 +103,10 @@ class KeckPrinterService {
   /// Der Rueckgabewert traegt neben `bytes` und `myPosPaper` auch
   /// [PrintPaper.qrFehler]; dieser Weg ruehrt [letzterQrFehler] nicht an und
   /// ist damit frei von globalem Zustand.
+  ///
+  /// [logo] muss fuer [paperSize] gerastert sein (`ladeDruckLogo(url, stufe,
+  /// paperSize)`): ein `DruckLogo` fuer eine andere Papierbreite laesst den
+  /// Druck mit [ArgumentError] abbrechen, bevor ein Byte entsteht.
   static Future<PrintPaper> getPaperFromReceipt(
     KasseneckReceipt receipt,
     KeckPaperSize paperSize, {
@@ -124,7 +128,9 @@ class KeckPrinterService {
     return paper;
   }
 
-
+  /// Die Bytes aus [getPaperFromReceipt]; setzt dazu [letzterQrFehler] und
+  /// [letzterQrAusweich]. Ein fuer eine andere Papierbreite gerastertes [logo]
+  /// wirft [ArgumentError], bevor ein Byte entsteht.
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModulGroesse qrGroesse = QrModulGroesse.auto,
@@ -137,6 +143,10 @@ class KeckPrinterService {
     return paper.bytes;
   }
 
+  /// Das Papier fuer den myPOS-Terminaldruck. Gesetzt wird auf dem statischen
+  /// [paperSize] (aus `initWifiPrinter`/`initBluetoothPrinter`, sonst 58 mm) --
+  /// [logo] muss fuer genau diese Breite gerastert sein, sonst wirft der Bau
+  /// [ArgumentError], bevor ein Byte entsteht.
   static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt,
       {DruckLogo? logo, bool marke = false}) async {
     // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).

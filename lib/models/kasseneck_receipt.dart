@@ -1,9 +1,10 @@
 import 'dart:typed_data';
 
+import 'package:kasseneck_api/models/beleg_blatt.dart' show LogoStufe;
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
-import 'package:kasseneck_api/kasseneck_api.dart';
+import 'package:kasseneck_api/kasseneck_api.dart' show KasseneckApi, KasseneckReceiptFormatError;
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/services/printer_service.dart';

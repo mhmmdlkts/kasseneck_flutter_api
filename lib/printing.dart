@@ -39,7 +39,13 @@ export 'models/keck_print_result.dart' show KeckPrintResult;
 // Rueckgabetyp von KeckPrinterService.getPaperFromReceipt -- das fertig
 // gesetzte Papier, das neben den Bytes den QR-Ausfall traegt. Ohne diesen
 // Export waere der Typ aus diesem Barrel nicht benennbar.
-export 'models/print_paper.dart' show PrintPaper;
+// DruckLogo mit seinem Ladeweg und den Massen: wer druckt, laedt das Logo
+// passend zur Papierbreite und reicht es an getPaperFromReceipt weiter.
+export 'models/print_paper.dart' show PrintPaper, DruckLogo;
+export 'services/druck_logo.dart' show ladeDruckLogo;
+export 'models/beleg_blatt.dart'
+    show LogoStufe, BlattLogo, logoMass, logoRasterMass;
+export 'models/logo_raster.dart' show LogoRaster;
 // Das Papierformat gehoert zur Schnittstelle: wer Bytes baut, muss die Breite
 // nennen -- 58 mm sind 32 Zeichen, 80 mm sind 48.
 export 'enums/keck_paper_size.dart' show KeckPaperSize;

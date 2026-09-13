@@ -377,10 +377,11 @@ await KasseneckApi.openCashDrawer();
 KeckBelegBlattWidget(
   layout: beleg.layout!,
   logoUrl: beleg.logoUrl,
-  logoStufe: LogoStufe.ausKuerzel(einstellungen.logoSkala),
+  logoStufe: beleg.logoStufe,
   marke: beleg.showKreiseckLogo,
 );
 
+final druckLogo = await ladeDruckLogo(beleg.logoUrl, beleg.logoStufe, KeckPaperSize.mm80);
 final paper = await KeckPrinterService.getPaperFromReceipt(beleg, KeckPaperSize.mm80, logo: druckLogo, marke: beleg.showKreiseckLogo);
 ```
 
