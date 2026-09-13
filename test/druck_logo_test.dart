@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -41,5 +42,43 @@ void main() {
     expect(geladen, 1);
     await ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm58, pixel: lader);
     expect(geladen, 2);
+  });
+
+  test('ein Fehlschlag wird nicht gemerkt: der naechste Aufruf laedt neu', () async {
+    var geladen = 0;
+    final erst = await ladeDruckLogo('https://x/wackel.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+      geladen += 1;
+      throw Exception('Netz weg');
+    });
+    expect(erst, isNull);
+    final dann = await ladeDruckLogo('https://x/wackel.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+      geladen += 1;
+      return _schwarz(20, 20);
+    });
+    expect(dann, isNotNull);
+    expect(geladen, 2);
+  });
+
+  test('Leeren waehrend eines Fehlschlags: der neuere Abruf im Speicher bleibt stehen', () async {
+    final sperre = Completer<void>();
+    var geladen = 0;
+    final alt = ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+      await sperre.future;
+      throw Exception('zu spaet');
+    });
+    druckLogoSpeicherLeeren();
+    final neu = await ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+      geladen += 1;
+      return _schwarz(20, 20);
+    });
+    sperre.complete();
+    expect(await alt, isNull);
+    // Der alte Fehlschlag darf den Eintrag des neuen Abrufs nicht entfernen.
+    final wieder = await ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+      geladen += 1;
+      return _schwarz(20, 20);
+    });
+    expect(identical(neu, wieder), isTrue);
+    expect(geladen, 1);
   });
 }

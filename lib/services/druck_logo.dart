@@ -32,23 +32,41 @@ Future<({int breite, int hoehe, Uint8List rgba})> _ausLogoService(String url) as
 /// Standardweg ueber [LogoService]/[decodePng] (Tests, andere Quellen).
 ///
 /// Ergebnisse werden je Adresse, Stufe und Papier zwischengespeichert
-/// ([druckLogoSpeicherLeeren] leert den Speicher).
+/// ([druckLogoSpeicherLeeren] leert den Speicher). Ein Fehlschlag (`null`)
+/// wird **nicht** gemerkt: ein kurzer Netzausfall soll das Logo nicht bis zum
+/// Neustart verstecken. Der Preis: solange das Logo unerreichbar bleibt,
+/// versucht es jeder Druck erneut -- mit Standardweg hoechstens die Frist von
+/// [LogoService] (3 Sekunden) je Aufruf; deren eigener Speicher greift nur bei
+/// Erfolg.
 Future<DruckLogo?> ladeDruckLogo(String? url, LogoStufe stufe, KeckPaperSize papier, {PixelLader? pixel}) {
   if (url == null || url.isEmpty) return Future.value(null);
   final schluessel = '$url|${stufe.kuerzel}|${papier.name}';
-  return _speicher.putIfAbsent(schluessel, () async {
-    try {
-      final p = await (pixel ?? _ausLogoService)(url);
-      final zeichen = papier.defaultCharCount;
-      final mass = logoMass(BlattLogo(stufe: stufe, pxBreite: p.breite, pxHoehe: p.hoehe), zeichen);
-      return DruckLogo(
-        stufe: stufe,
-        pxBreite: p.breite,
-        pxHoehe: p.hoehe,
-        raster: logoRaster(p.rgba, p.breite, p.hoehe, mass, zeichen),
-      );
-    } catch (_) {
-      return null;
+  final vorhanden = _speicher[schluessel];
+  if (vorhanden != null) return vorhanden;
+  final abruf = _laden(url, stufe, papier, pixel);
+  _speicher[schluessel] = abruf;
+  abruf.then((logo) {
+    // Nur den eigenen Eintrag entfernen: wurde der Speicher inzwischen
+    // geleert oder laeuft schon ein neuerer Abruf, bleibt der stehen.
+    if (logo == null && identical(_speicher[schluessel], abruf)) {
+      _speicher.remove(schluessel);
     }
   });
+  return abruf;
+}
+
+Future<DruckLogo?> _laden(String url, LogoStufe stufe, KeckPaperSize papier, PixelLader? pixel) async {
+  try {
+    final p = await (pixel ?? _ausLogoService)(url);
+    final zeichen = papier.defaultCharCount;
+    final mass = logoMass(BlattLogo(stufe: stufe, pxBreite: p.breite, pxHoehe: p.hoehe), zeichen);
+    return DruckLogo(
+      stufe: stufe,
+      pxBreite: p.breite,
+      pxHoehe: p.hoehe,
+      raster: logoRaster(p.rgba, p.breite, p.hoehe, mass, zeichen),
+    );
+  } catch (_) {
+    return null;
+  }
 }
