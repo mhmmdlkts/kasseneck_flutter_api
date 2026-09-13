@@ -371,13 +371,17 @@ await receipt.printReceiptWifi();
 await KasseneckApi.openCashDrawer();
 ```
 
-## Beleg am Schirm
-
-Ein fertiges Widget zeichnet den ganzen Beleg (Logo, Posten, Steuertabelle, QR,
-Kartendaten):
+### Beleg anzeigen und drucken — überall derselbe Beleg
 
 ```dart
-KeckReceiptWidget(receipt: receipt);
+KeckBelegBlattWidget(
+  layout: beleg.layout!,
+  logoUrl: beleg.logoUrl,
+  logoStufe: LogoStufe.ausKuerzel(einstellungen.logoSkala),
+  marke: beleg.showKreiseckLogo,
+);
+
+final paper = await KeckPrinterService.getPaperFromReceipt(beleg, KeckPaperSize.mm80, logo: druckLogo, marke: beleg.showKreiseckLogo);
 ```
 
 ## Berichte und Rechnungen

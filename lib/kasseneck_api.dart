@@ -61,6 +61,12 @@ export 'services/druck_logo.dart';
 // nicht benennbar.
 export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
 
+// Beleg-Blatt (npm 0.14.0): ein Beleg, der auf Bildschirm, Bon und PDF gleich aussieht.
+export 'models/beleg_blatt.dart';
+export 'models/logo_raster.dart';
+export 'models/print_paper.dart' show DruckLogo;
+export 'widgets/keck_beleg_blatt_widget.dart';
+
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///
 /// Create one instance with your [apiKey] and [cashregisterToken] (request both

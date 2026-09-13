@@ -1,3 +1,21 @@
+## 6.14.0
+
+### Das Beleg-Blatt: derselbe Beleg auf Bildschirm, Bon und PDF
+
+Anlass: Der Beleg sah in der App anders aus als am Bon und im PDF — das Widget
+rechnete Spalten mit Flex und füllte Warnungen schwarz, der Bon druckte
+Aufdrucke doppelt hoch und invers, das Firmenlogo fehlte am Layout-Druck ganz,
+und der QR als Bild hatte fest 280 Punkte.
+
+- `BelegRaster` setzt Aufdrucke als Rahmen aus `=`-Zeilen (Vertrag npm 0.14.0).
+- Neu `belegBlatt`, `logoMass`, `qrBlattAnteil`, `logoRaster` — Zwillinge des npm-Pakets, belegt durch dessen Goldens.
+- Neu `PrintPaper.setBelegBlatt` mit `DruckLogo` und `marke`; `getPaperFromReceipt`/`getBytesFromReceipt` reichen beides durch. Der QR als Bild misst wie am npm-Druckweg.
+- Neu `KeckBelegBlattWidget`; `KeckReceiptLinesWidget` gilt als veraltet.
+- Neu `KasseneckReceipt.logoStufe` (aus `logo_skala`, Vorgabe M): die App kannte die Logo-Stufe des Betriebs bisher nicht.
+- Neu `ladeDruckLogo` (Logo-Adresse → `DruckLogo`, zwischengespeichert, `null` bei Ladefehler) — Zwilling des Druck-Kits der Browser-Kasse.
+- **Achtung, sichtbare Druckänderungen:** der native QR-Befehl druckt mit Fehlerkorrektur M (vorher L) — wie ePOS und der Bildweg, damit der QR so groß ist wie am Blatt; der QR als Bild hat im Blatt-Weg die Größe des Blatts statt fest 280 Punkte.
+- Vertrag npm 0.14.0 gezogen (Goldens für Raster, Blatt und Logo-Raster samt Teiltransparenz- und Hochformat-Probe); Standard-Betriebsfarbe `#136B6B` wie im Vertrag.
+
 ## 6.13.0
 
 **Anlass:** Das Paket hing noch an `kreiseck_design` 0.1.0, die Browser-Kasse
