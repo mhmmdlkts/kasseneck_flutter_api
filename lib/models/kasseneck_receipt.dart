@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
@@ -76,6 +77,11 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// ueber das Firestore-Flag users/{uid}.branding.kreiseck_logo, das das
   /// Backend als Metadatum `kreiseck_logo` mitliefert.
   bool showKreiseckLogo;
+
+  /// Groesse des Firmenlogos am Beleg (Kasse-Einstellung `logoSkala` des
+  /// Betriebs, vom Backend als Metadatum `logo_skala` mitgeliefert). Bon und
+  /// Bildschirm setzen das Logo in dieser Stufe; fehlt sie, gilt M.
+  LogoStufe logoStufe;
 
   /// Zeilenmodell des Backends (Kopf/Fuß wie beim Ausstellen, Belegart-
   /// Aufdruck, Regelwerk des Belegs); null bei altem Backend.
@@ -157,6 +163,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.signatureSuccess,
     this.customProjectId,
     this.showKreiseckLogo = false,
+    this.logoStufe = LogoStufe.m,
     this.layout,
     this.testKasse = false,
     this.testSignatur = false,
@@ -181,6 +188,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     String? footer4,
     required List<String> thanksMessage,
     bool showKreiseckLogo = false,
+    LogoStufe logoStufe = LogoStufe.m,
     BelegLayout? layout,
     bool testKasse = false,
     bool testSignatur = false,
@@ -240,6 +248,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
           if (e is Map) Map<String, dynamic>.from(e),
       ],
       showKreiseckLogo: showKreiseckLogo,
+      logoStufe: logoStufe,
       layout: layout,
       testKasse: testKasse,
       testSignatur: testSignatur,
@@ -272,6 +281,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       logoUrl: json['logo_url'] is String ? json['logo_url'] as String : null,
       thanksMessage: List<String>.from(json['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: json['kreiseck_logo'] == true,
+      logoStufe: LogoStufe.ausKuerzel(json['logo_skala'] is String ? json['logo_skala'] as String : null),
       layout: BelegLayout.fromJson(json['layout']),
       testKasse: json['testKasse'] == true,
       testSignatur: json['testSignatur'] == true,
@@ -323,6 +333,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'logo_url': logoUrl,
       'thanks_message': thanksMessage.join(r'\n'),
       'kreiseck_logo': showKreiseckLogo,
+      'logo_skala': logoStufe.kuerzel,
     };
   }
 
@@ -355,6 +366,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       logoUrl: metadata['logo_url'] is String ? metadata['logo_url'] as String : null,
       thanksMessage: List<String>.from(metadata['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: metadata['kreiseck_logo'] == true,
+      logoStufe: LogoStufe.ausKuerzel(metadata['logo_skala'] is String ? metadata['logo_skala'] as String : null),
     );
   }
 
