@@ -1,0 +1,189 @@
+{
+  "zeichen": 48,
+  "bloecke": [
+    {
+      "art": "logo",
+      "breiteAnteil": 0.5208333333333334,
+      "hoeheZeilen": 5
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "                Bäckerei Muster                 ",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                  Hauptplatz 1                  ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                 4830 Hallstatt                 ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                  ATU12345678                   ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                 +43 6134 12345                 ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "================================================",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                   STARTBELEG                   ",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "================================================",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "          Nullbeleg zur Inbetriebnahme          ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "Datum:                       02.01.2026 08:00:00",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Kassen-ID:                                KASSE1",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Beleg-ID:                           AT0-KASSE1-1",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "------------------------------------------------",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                  Prüfangaben                   ",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Barumsatz:                                0,00 €",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Signatur:                               signiert",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Signaturkarte:                        0x6F0404F0",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Zertifizierungsdienst:             A-Trust (AT1)",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Karte registriert:                    12.03.2024",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Kasse registriert:                    12.03.2024",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "------------------------------------------------",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "qr",
+      "nutzlast": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "breiteAnteil": 0.5520833333333334
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "             erstellt mit Kasseneck             ",
+      "fett": false,
+      "leer": false
+    }
+  ]
+}

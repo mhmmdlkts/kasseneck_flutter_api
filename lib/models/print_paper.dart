@@ -690,8 +690,6 @@ class PrintPaper {
           // wegfallen, nur weil das Blatt aus dem Zeilenmodell kommt.
           await _qrNachModus(z.qr ?? '', qrMode, groesse: qrGroesse);
         case RasterArt.banner:
-          // Belegart/Warnung: fett, doppelte Höhe; Warnungen invers. Text ist bereits zentriert aufgefüllt.
-          addText(z.text.trimRight(), styles: PosStyles(align: PosAlign.left, bold: true, height: PosTextSize.size2, reverse: z.warnung));
         case RasterArt.text:
         case RasterArt.columns:
         case RasterArt.rule:

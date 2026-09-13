@@ -89,7 +89,7 @@ void main() {
     expect(alt.kopfId, isNull);
   });
 
-  test('PrintPaper.setBelegLayout druckt jede Fixture: Texte, Aufdruck (doppelt hoch), QR, Schnitt', () async {
+  test('PrintPaper.setBelegLayout druckt jede Fixture: Texte, Aufdruck im Rahmen, QR, Schnitt', () async {
     for (final n in namen) {
       final layout = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/$n.lines.json'))!;
       final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
@@ -101,6 +101,8 @@ void main() {
       for (final b in layout.bannerTexte) {
         expect(text, contains(b.split(' — ').first), reason: '$n: Aufdruck $b fehlt im Bytestrom');
       }
+      // Jeder Aufdruck steht zwischen zwei Rahmenzeilen ('=' ueber 48 Zeichen).
+      expect(RegExp('=' * 48).allMatches(text).length, greaterThanOrEqualTo(2 * layout.bannerTexte.length), reason: '$n: Rahmen fehlt');
       // Kopf steht drin, QR-Befehl (GS ( k) und Schnitt (GS V) sind da
       expect(text, contains('B'), reason: n);
       // Rasterzeilen (80 mm = 48 Zeichen): die Gesamt-Zeile steht als eine

@@ -1,5 +1,5 @@
 {
-  "version": "0.12.0",
+  "version": "0.14.0",
   "aufrufe": [
     "activateCashregister",
     "cancelReceipt",
@@ -45,6 +45,7 @@
     "requestCustomerSignature",
     "sendPartnerCustomerFonLink",
     "sendPartnerWebhookTest",
+    "sendReceiptEmail",
     "setMyKasseSettings",
     "setMyRegisterDeviceSettings",
     "stripeCaptureIntent",

@@ -1,4 +1,6 @@
+================================================
        TESTSIGNATUR — kein gültiger Beleg       
+================================================
                 Bäckerei Muster                 
                   Hauptplatz 1                  
                  4830 Hallstatt                 
@@ -24,4 +26,6 @@ Zahlungsart:                          Barzahlung
          Vielen Dank für Ihren Einkauf          
             www.baeckerei-muster.at             
                                                 
+================================================
        TESTSIGNATUR — kein gültiger Beleg       
+================================================

@@ -26,7 +26,7 @@ class RasterZeile {
   final String text;
   final RasterArt art;
   final bool bold;
-  /// Bei `banner`: invers/auffällig.
+  /// Bei `banner` (Rahmen- und Textzeilen): Testkasse/Testsignatur/Ausfall.
   final bool warnung;
   /// Bei `qr`: die Nutzlast.
   final String? qr;
@@ -124,9 +124,16 @@ class BelegRaster {
             out.add(RasterZeile(text: _ausrichten(t, n, z.align), art: RasterArt.text, bold: z.bold));
           }
         case BelegBanner():
+          // Der Rahmen ist Teil des Rasters (Zwilling von renderReceiptGrid ab
+          // npm 0.14.0): '=' ueber die volle Breite davor und danach. So setzt
+          // ihn jeder Weg zeichengleich -- vorher druckte der Bon doppelt hoch
+          // und invers, der Bildschirm fuellte schwarz, das PDF zog ein Rechteck.
+          final rahmen = '=' * n;
+          out.add(RasterZeile(text: rahmen, art: RasterArt.banner, bold: true, warnung: z.warnung));
           for (final t in wortzeilen(z.text, n)) {
             out.add(RasterZeile(text: _ausrichten(t, n, BelegAlign.center), art: RasterArt.banner, bold: true, warnung: z.warnung));
           }
+          out.add(RasterZeile(text: rahmen, art: RasterArt.banner, bold: true, warnung: z.warnung));
         case BelegLinie():
           out.add(RasterZeile(text: (z.char.isEmpty ? '-' : z.char[0]) * n, art: RasterArt.rule));
         case BelegLeerraum():
