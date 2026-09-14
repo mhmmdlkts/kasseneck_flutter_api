@@ -79,11 +79,22 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
       // Decode hier waere fuer ein zu grosses Logo verschwendete Arbeit und
       // fuer ein zulaessiges doppelte.
       final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-      final descriptor = await ui.ImageDescriptor.encoded(buffer);
-      final breite = descriptor.width;
-      final hoehe = descriptor.height;
-      descriptor.dispose();
-      buffer.dispose();
+      final int breite;
+      final int hoehe;
+      // Freigeben auf JEDEM Weg: `ImageDescriptor.encoded` wirft bei einer
+      // kaputten Datei, die der Puffer noch angenommen hat -- ohne `finally`
+      // bliebe dann je Aufruf (jeder Beleg) ein nativer Puffer liegen.
+      try {
+        final descriptor = await ui.ImageDescriptor.encoded(buffer);
+        try {
+          breite = descriptor.width;
+          hoehe = descriptor.height;
+        } finally {
+          descriptor.dispose();
+        }
+      } finally {
+        buffer.dispose();
+      }
       // Ein zu grosses Logo ist wie ein Logo, das nicht geladen hat: kein
       // Logo-Block, dieselben Zeilen wie ohne Logo -- kein Merken des Fehlers.
       if (!logoPixelZulaessig(breite, hoehe)) return;

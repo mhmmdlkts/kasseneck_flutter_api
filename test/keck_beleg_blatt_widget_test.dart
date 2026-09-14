@@ -191,6 +191,19 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('kaputte Logo-Datei (PNG-Kopf, Rest unlesbar): kein Absturz, kein Logo-Block', (tester) async {
+    // Der Puffer nimmt die Bytes an, erst ImageDescriptor.encoded wirft -- das Blatt
+    // steht ohne Logo, und der Puffer wird trotzdem freigegeben (finally).
+    LogoService.httpClient = MockClient((_) async => http.Response.bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3, 4], 200));
+    await tester.runAsync(() async {
+      await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: _fixture('verkauf-bar'), logoUrl: 'https://example.test/kaputt.png')));
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+    await tester.pump();
+    expect(find.byKey(const Key('keck-blatt-logo')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('QR-Inhalt ohne passende Version: Hinweistext statt QR, keine Ausnahme, Zeilen stehen', (tester) async {
     final json = jsonDecode(File('test/fixtures/vertrag/erwartet/testkasse-verkauf.lines.json').readAsStringSync()) as Map<String, dynamic>;
     json['lines'] = [
