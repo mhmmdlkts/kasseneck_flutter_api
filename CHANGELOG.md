@@ -1,3 +1,17 @@
+## 6.15.0
+
+### Betriebslogo dauerhaft ablegen
+
+Anlass: `LogoService` hielt ein Logo nur im Speicher. Nach jedem App-Start
+musste es wieder binnen drei Sekunden über das Netz kommen — bei schwachem
+Netz stand der erste Bon ohne Logo da.
+
+- Neu `LogoService.speicherOrdner` und `LogoService.dauerhaftAblegen()`: geladene Logos liegen als Datei im App-Support-Ordner (`kasseneck_logos`) und kommen nach einem Neustart sofort von der Platte, ohne Request. Die App ruft `dauerhaftAblegen()` einmal beim Start; ohne Aufruf bleibt alles wie bisher. Das Paket ruft beim Laden selbst kein Plugin auf.
+- Abgelegt werden nur PNG, JPEG oder WebP bis 5 MB (`istBilddatei` am Dateikopf) — eine Captive-Portal-Seite mit Status 200 landet nicht auf der Platte. Geschrieben wird über eine Zwischendatei und Umbenennen; eine kaputte Datei wird beim Lesen verworfen und neu geholt.
+- Höchstens 20 Logos (`maxDateien`), die ältesten gehen zuerst. Der Dateiname ist ein Hash der Adresse — das Download-Token steht nicht im Klartext auf der Platte.
+- Nach sieben Tagen (`auffrischenNach`) wird ein abgelegtes Logo neu geholt (ältere Uploads mit festem Namen könnten überschrieben worden sein); scheitert das, bleibt das abgelegte Logo statt keines.
+- Unverändert: die Frist von drei Sekunden, geteilte Abrufe je Adresse, kein Merken von Fehlschlägen. `ladeDruckLogo` und `KeckBelegBlattWidget` profitieren ohne Änderung.
+
 ## 6.14.0
 
 ### Das Beleg-Blatt: derselbe Beleg auf Bildschirm, Bon und PDF
