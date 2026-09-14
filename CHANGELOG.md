@@ -9,6 +9,7 @@ und der QR als Bild hatte fest 280 Punkte.
 
 - `BelegRaster` setzt Aufdrucke als Rahmen aus `=`-Zeilen (Vertrag npm 0.14.0).
 - Neu `belegBlatt`, `logoMass`, `qrBlattAnteil`, `logoRaster` — Zwillinge des npm-Pakets, belegt durch dessen Goldens.
+- Ein QR-Inhalt, der in keine QR-Version passt (Korrektur M, mehr als 2331 Byte), bekommt im Blatt den Anteil 0, statt dass `belegBlatt` wirft (neu `qrPasstInVersionWieNpm`, Zwilling von npm `qrPasstInVersion`). `KeckBelegBlattWidget` zeigt dann keinen QR, `setBelegBlatt` meldet es über `qrFehler` und druckt den bekannten Ausfall-Hinweis. Grund: der Wurf riss Widget und Bon mit — der Beleg stand gar nicht statt ohne QR.
 - Neu `PrintPaper.setBelegBlatt` mit `DruckLogo` und `marke`; `getPaperFromReceipt`/`getBytesFromReceipt` reichen beides durch. Der QR als Bild misst wie am npm-Druckweg.
 - Neu `KeckBelegBlattWidget`; `KeckReceiptLinesWidget` gilt als veraltet.
 - Neu `KasseneckReceipt.logoStufe` (aus `logo_skala`, Vorgabe M): die App kannte die Logo-Stufe des Betriebs bisher nicht.

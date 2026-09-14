@@ -108,4 +108,24 @@ void main() {
     // jeder druckbaren Groesse, aber keine gemeinsame Zahl mehr.
     expect(() => qrModulAnzahlWieNpm(nutzlast(2332)), throwsArgumentError);
   });
+
+  test('qrBlattAnteil: Inhalt ohne passende QR-Version ergibt 0 statt zu werfen, Grenze in Byte wie npm', () {
+    expect(qrPasstInVersionWieNpm('x' * 2331), isTrue);
+    expect(qrPasstInVersionWieNpm('x' * 2332), isFalse);
+    // Mehrbyte: 777 Euro-Zeichen sind 2331 Byte, eines mehr passt nicht mehr.
+    expect(qrPasstInVersionWieNpm('€' * 777), isTrue);
+    expect(qrPasstInVersionWieNpm('€' * 777 + 'x'), isFalse);
+    expect(qrBlattAnteil('x' * 2332, KeckPaperSize.mm80), 0);
+    expect(qrBlattAnteil('x' * 2331, KeckPaperSize.mm80), greaterThan(0));
+  });
+
+  test('belegBlatt: QR-Inhalt ohne passende Version wirft nicht, der QR-Block bleibt mit Anteil 0', () {
+    final layout = BelegLayout(paperSize: 'mm80', regelwerk: 2, lines: [
+      BelegText(text: 'Firma', align: BelegAlign.center, bold: true),
+      BelegQr(data: 'x' * 2332),
+    ]);
+    final blatt = belegBlatt(layout, zeichen: 48);
+    final qr = blatt.bloecke.whereType<BlattQr>().single;
+    expect(qr.breiteAnteil, 0);
+  });
 }

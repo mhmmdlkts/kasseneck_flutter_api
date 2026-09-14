@@ -123,9 +123,17 @@ int qrModulAnzahlWieNpm(String nutzlast) {
   throw ArgumentError('QR-Inhalt ist zu lang');
 }
 
+/// Ob [nutzlast] in irgendeine QR-Version bei Korrektur M passt -- dieselbe
+/// Tabelle wie [qrModulAnzahlWieNpm], aber ohne zu werfen (npm `qrPasstInVersion`).
+bool qrPasstInVersionWieNpm(String nutzlast) => utf8.encode(nutzlast).length <= _byteKapazitaetM.last;
+
 /// Anteil der Blattbreite, den der QR am Drucker einnimmt (nativ, sonst Bildweg).
 double qrBlattAnteil(String nutzlast, KeckPaperSize papier, {QrModulGroesse groesse = QrModulGroesse.auto}) {
   if (nutzlast.isEmpty) return 0;
+  // Ein Inhalt, der in keine QR-Version passt, liesse [qrModulAnzahlWieNpm]
+  // werfen und risse jeden Zeichner mit (Widget, Bon). 0 wie bei leerer
+  // Nutzlast: der Beleg steht ohne QR, statt gar nicht zu stehen.
+  if (!qrPasstInVersionWieNpm(nutzlast)) return 0;
   final module = qrModulAnzahlWieNpm(nutzlast);
   final mass = QrMass.berechne(papierbreitePunkte: papier.druckPunkte, moduleAnzahl: module, groesse: groesse);
   if (mass.passt) return mass.breitePunkte / papier.druckPunkte;

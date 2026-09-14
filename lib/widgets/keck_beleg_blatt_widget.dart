@@ -155,6 +155,9 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
   }
 
   Widget _qr(BlattQr b, double breite) {
+    // Anteil 0: der QR hat auf dem Blatt keinen Platz (leer oder in keine
+    // Version passend) -- wie Bon und PDF zeigt das Widget dann keinen.
+    if (b.breiteAnteil <= 0) return const SizedBox.shrink();
     final seite = b.breiteAnteil * breite;
     // Die Breite enthaelt die Ruhezone (4 Module je Seite) -- wie am Drucker.
     final module = b.nutzlast.isEmpty ? 1 : qrModulAnzahlWieNpm(b.nutzlast);

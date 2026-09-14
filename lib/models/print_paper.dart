@@ -746,6 +746,13 @@ class PrintPaper {
           // dann GAR KEINEN QR. Auf einer oesterreichischen Kassa ist der QR
           // die maschinenlesbare Signatur -- er darf nie stillschweigend
           // wegfallen, nur weil das Blatt aus dem Zeilenmodell kommt.
+          // Anteil 0 bei nicht leerer Nutzlast: der Inhalt passt in keine
+          // QR-Version -- weder Befehl noch Bild koennen ihn setzen. Der Beleg
+          // geht ohne QR hinaus und meldet es ueber [qrFehler] (npm: `qrFehler`).
+          if (b.nutzlast.isNotEmpty && b.breiteAnteil <= 0) {
+            _qrAusfall(b.nutzlast, 'QR-Inhalt passt in keine QR-Version -- Beleg ohne QR');
+            break;
+          }
           await _qrNachModus(b.nutzlast, qrMode, groesse: qrGroesse, blattAnteil: b.breiteAnteil);
       }
     }

@@ -115,4 +115,18 @@ void main() {
     direkt.addQrCode('TESTTOKEN');
     expect(_indexVon(direkt.bytes.expand((b) => b).toList(), korrekturM), isNonNegative);
   });
+
+  for (final modus in QrPrintMode.values) {
+    test('setBelegBlatt $modus: QR-Inhalt ohne passende Version -- kein Absturz, qrFehler gesetzt', () async {
+      final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
+      final layout = BelegLayout(paperSize: 'mm80', regelwerk: 2, lines: [
+        BelegText(text: 'Firma', align: BelegAlign.center, bold: true),
+        BelegQr(data: 'x' * 2332),
+      ]);
+      await paper.setBelegBlatt(layout, cut: false, qrMode: modus);
+      expect(paper.qrFehler, contains('keine QR-Version'));
+      final alles = latin1.decode(paper.bytes.expand((b) => b).toList(), allowInvalid: true);
+      expect(alles, contains('Firma'));
+    });
+  }
 }

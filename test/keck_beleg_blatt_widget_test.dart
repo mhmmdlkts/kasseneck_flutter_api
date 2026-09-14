@@ -145,4 +145,16 @@ void main() {
     expect(find.byKey(const Key('keck-blatt-logo')), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('QR-Inhalt ohne passende Version: kein QR im Widget, keine Ausnahme, Zeilen stehen', (tester) async {
+    final json = jsonDecode(File('test/fixtures/vertrag/erwartet/testkasse-verkauf.lines.json').readAsStringSync()) as Map<String, dynamic>;
+    json['lines'] = [
+      for (final z in (json['lines'] as List).cast<Map<String, dynamic>>())
+        if (z['kind'] == 'qr') {...z, 'data': 'x' * 2332} else z,
+    ];
+    final layout = BelegLayout.fromJson(json)!;
+    await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: layout)));
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('keck-blatt-qr')), findsNothing);
+  });
 }
