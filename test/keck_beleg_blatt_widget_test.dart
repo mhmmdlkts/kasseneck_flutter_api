@@ -146,7 +146,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('QR-Inhalt ohne passende Version: kein QR im Widget, keine Ausnahme, Zeilen stehen', (tester) async {
+  testWidgets('QR-Inhalt ohne passende Version: Hinweistext statt QR, keine Ausnahme, Zeilen stehen', (tester) async {
     final json = jsonDecode(File('test/fixtures/vertrag/erwartet/testkasse-verkauf.lines.json').readAsStringSync()) as Map<String, dynamic>;
     json['lines'] = [
       for (final z in (json['lines'] as List).cast<Map<String, dynamic>>())
@@ -156,5 +156,41 @@ void main() {
     await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: layout)));
     expect(tester.takeException(), isNull);
     expect(find.byKey(const Key('keck-blatt-qr')), findsNothing);
+    expect(find.byKey(const Key('keck-blatt-qr-fehlt')), findsOneWidget);
+    expect(find.text('Der QR-Code konnte nicht erzeugt werden. Bitte einen Papierbeleg ausgeben.'), findsOneWidget);
+  });
+
+  testWidgets('qrFehltBuilder bekommt die Nutzlast und ersetzt den Standard-Hinweis', (tester) async {
+    final json = jsonDecode(File('test/fixtures/vertrag/erwartet/testkasse-verkauf.lines.json').readAsStringSync()) as Map<String, dynamic>;
+    json['lines'] = [
+      for (final z in (json['lines'] as List).cast<Map<String, dynamic>>())
+        if (z['kind'] == 'qr') {...z, 'data': 'x' * 2332} else z,
+    ];
+    final layout = BelegLayout.fromJson(json)!;
+    String? empfangeneNutzlast;
+    await tester.pumpWidget(_huelle(KeckBelegBlattWidget(
+      layout: layout,
+      qrFehltBuilder: (nutzlast) {
+        empfangeneNutzlast = nutzlast;
+        return const Text('eigener Hinweis', key: Key('eigener-qr-fehlt-hinweis'));
+      },
+    )));
+    expect(empfangeneNutzlast, hasLength(2332));
+    expect(find.byKey(const Key('eigener-qr-fehlt-hinweis')), findsOneWidget);
+    expect(find.byKey(const Key('keck-blatt-qr-fehlt')), findsNothing);
+    expect(find.byKey(const Key('keck-blatt-qr')), findsNothing);
+  });
+
+  testWidgets('leere QR-Nutzlast: weder Hinweis noch QR (kein Ausfall, sondern nichts zu zeigen)', (tester) async {
+    final json = jsonDecode(File('test/fixtures/vertrag/erwartet/testkasse-verkauf.lines.json').readAsStringSync()) as Map<String, dynamic>;
+    json['lines'] = [
+      for (final z in (json['lines'] as List).cast<Map<String, dynamic>>())
+        if (z['kind'] == 'qr') {...z, 'data': ''} else z,
+    ];
+    final layout = BelegLayout.fromJson(json)!;
+    await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: layout)));
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('keck-blatt-qr')), findsNothing);
+    expect(find.byKey(const Key('keck-blatt-qr-fehlt')), findsNothing);
   });
 }

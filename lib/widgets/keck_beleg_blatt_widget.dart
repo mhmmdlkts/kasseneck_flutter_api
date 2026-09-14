@@ -23,6 +23,7 @@ class KeckBelegBlattWidget extends StatefulWidget {
   final bool qrCovered;
   final String qrCoveredText;
   final double fontSize;
+  final Widget Function(String nutzlast)? qrFehltBuilder;
 
   const KeckBelegBlattWidget({
     required this.layout,
@@ -36,6 +37,7 @@ class KeckBelegBlattWidget extends StatefulWidget {
     this.qrCovered = false,
     this.qrCoveredText = 'Antippen zum Anzeigen',
     this.fontSize = 12,
+    this.qrFehltBuilder,
     super.key,
   });
 
@@ -145,7 +147,7 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
                         child: logoBytes == null ? null : Image.memory(logoBytes, fit: BoxFit.contain),
                       ),
                     ),
-                  BlattQr() => Center(child: _qr(b, breite)),
+                  BlattQr() => Center(child: _qr(b, breite, stil)),
                 },
             ],
           ),
@@ -154,10 +156,17 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
     );
   }
 
-  Widget _qr(BlattQr b, double breite) {
-    // Anteil 0: der QR hat auf dem Blatt keinen Platz (leer oder in keine
-    // Version passend) -- wie Bon und PDF zeigt das Widget dann keinen.
-    if (b.breiteAnteil <= 0) return const SizedBox.shrink();
+  Widget _qr(BlattQr b, double breite, TextStyle stil) {
+    // Anteil 0: der QR hat auf dem Blatt keinen Platz. Eine leere Nutzlast
+    // ist kein Ausfall dieses Blatts -- wie Bon und PDF zeigt das Widget dann
+    // einfach keinen QR. Eine nicht-leere Nutzlast, die in keine QR-Version
+    // passt, ist dagegen der eigentliche Ausfall (Registrierkasse: der QR ist
+    // die maschinenlesbare Signatur) -- das muss sichtbar sein, sonst ginge
+    // ein Beleg ohne Hinweis und ohne Signatur raus.
+    if (b.breiteAnteil <= 0) {
+      if (b.nutzlast.isEmpty) return const SizedBox.shrink();
+      return widget.qrFehltBuilder?.call(b.nutzlast) ?? _qrFehltHinweis(stil);
+    }
     final seite = b.breiteAnteil * breite;
     // Die Breite enthaelt die Ruhezone (4 Module je Seite) -- wie am Drucker.
     final module = b.nutzlast.isEmpty ? 1 : qrModulAnzahlWieNpm(b.nutzlast);
@@ -195,6 +204,25 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
                 style: TextStyle(color: widget.textColor, fontWeight: FontWeight.bold, fontSize: 12),
                 textAlign: TextAlign.center),
         ]),
+      ),
+    );
+  }
+
+  // Wortlaut wie im npm-Paket (Browser-Kasse): dieselben Worte in Web und App
+  // sind Hausregel, nicht Zufall.
+  static const _qrFehltText = 'Der QR-Code konnte nicht erzeugt werden. Bitte einen Papierbeleg ausgeben.';
+
+  Widget _qrFehltHinweis(TextStyle stil) {
+    // Natuerliche Hoehe statt der QR-Kastengroesse (die waere hier 0) -- der
+    // Hinweis darf die Zeilenhoehen der Textzeilen nicht verbiegen. Farbe
+    // traegt hier nichts allein: die Worte selbst sind der Hinweis.
+    return Semantics(
+      liveRegion: true,
+      child: Text(
+        _qrFehltText,
+        key: const Key('keck-blatt-qr-fehlt'),
+        textAlign: TextAlign.center,
+        style: stil,
       ),
     );
   }
