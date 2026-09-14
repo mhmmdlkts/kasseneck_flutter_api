@@ -374,6 +374,10 @@ await KasseneckApi.openCashDrawer();
 ### Beleg anzeigen und drucken — überall derselbe Beleg
 
 ```dart
+// Einmal beim App-Start: Logos dauerhaft ablegen, damit der erste Bon nach
+// einem Neustart nicht auf das Netz wartet.
+await LogoService.dauerhaftAblegen();
+
 KeckBelegBlattWidget(
   layout: beleg.layout!,
   logoUrl: beleg.logoUrl,
