@@ -58,6 +58,14 @@ void main() {
     expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/erwartet/logo-probe.raster32.txt').readAsStringSync());
   });
 
+  test('logoPixelZulaessig: 4096 noch erlaubt, 4097 nicht mehr, 0 nie', () {
+    expect(logoPixelZulaessig(logoPixelMax, logoPixelMax), isTrue);
+    expect(logoPixelZulaessig(logoPixelMax + 1, 100), isFalse);
+    expect(logoPixelZulaessig(100, logoPixelMax + 1), isFalse);
+    expect(logoPixelZulaessig(0, 100), isFalse);
+    expect(logoPixelZulaessig(100, 0), isFalse);
+  });
+
   test('falsche RGBA-Laenge wirft; alsRasterImage ist schwarz/weiss und deckend', () {
     expect(() => logoRaster(Uint8List(3), 1, 1, const LogoMass(breiteAnteil: 1 / 576, hoeheZeilen: 1 / 24), 48), throwsArgumentError);
     final r = LogoRaster(breite: 2, hoehe: 1, punkte: Uint8List.fromList([1, 0]));

@@ -45,7 +45,7 @@ export 'models/print_paper.dart' show PrintPaper, DruckLogo;
 export 'services/druck_logo.dart' show ladeDruckLogo;
 export 'models/beleg_blatt.dart'
     show LogoStufe, BlattLogo, logoMass, logoRasterMass;
-export 'models/logo_raster.dart' show LogoRaster;
+export 'models/logo_raster.dart' show LogoRaster, logoPixelMax, logoPixelZulaessig;
 // Das Papierformat gehoert zur Schnittstelle: wer Bytes baut, muss die Breite
 // nennen -- 58 mm sind 32 Zeichen, 80 mm sind 48.
 export 'enums/keck_paper_size.dart' show KeckPaperSize;

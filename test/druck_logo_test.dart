@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/services/druck_logo.dart';
+import 'package:kasseneck_api/services/logo_service.dart';
 
 ({int breite, int hoehe, Uint8List rgba}) _schwarz(int b, int h) {
   final rgba = Uint8List(b * h * 4);
@@ -141,6 +144,56 @@ void main() {
     );
     expect(logo, isNotNull);
     expect(logo!.pxBreite, 15);
+  });
+
+  test('ein Bild ueber der Pixel-Obergrenze: null statt Rasterlauf, naechster Aufruf laedt neu', () async {
+    var geladen = 0;
+    final zuGross = await ladeDruckLogo(
+      'https://x/riesig.png',
+      LogoStufe.m,
+      KeckPaperSize.mm80,
+      pixel: (_) async {
+        geladen += 1;
+        return _schwarz(4097, 10); // ueber logoPixelMax (4096)
+      },
+    );
+    expect(zuGross, isNull);
+    final dann = await ladeDruckLogo(
+      'https://x/riesig.png',
+      LogoStufe.m,
+      KeckPaperSize.mm80,
+      pixel: (_) async {
+        geladen += 1;
+        return _schwarz(20, 20);
+      },
+    );
+    expect(dann, isNotNull);
+    expect(geladen, 2); // der Ausschluss wurde nicht gemerkt -- wie jeder andere Fehlschlag
+  });
+
+  test('Standardweg: ein haengender Fetch liefert null innerhalb der aeusseren Frist', () async {
+    // LogoService.httpClient ist ein bestehender, oeffentlicher Test-Seam
+    // (schon von logo_service_test.dart genutzt) -- kein neuer Parameter
+    // noetig, um den Standardweg (_ausLogoService -> LogoService -> decodePng)
+    // statt des Test-Laders pixel zu pruefen.
+    final alterClient = LogoService.httpClient;
+    final alteFrist = LogoService.frist;
+    addTearDown(() {
+      LogoService.httpClient = alterClient;
+      LogoService.frist = alteFrist;
+    });
+    LogoService.httpClient = MockClient((_) => Completer<http.Response>().future);
+
+    final sw = Stopwatch()..start();
+    final logo = await ladeDruckLogo(
+      'https://x/standardweg-haengt.png',
+      LogoStufe.m,
+      KeckPaperSize.mm80,
+      frist: const Duration(milliseconds: 30),
+    );
+    sw.stop();
+    expect(logo, isNull);
+    expect(sw.elapsedMilliseconds, lessThan(1000));
   });
 
   test('Leeren waehrend eines Fehlschlags: der neuere Abruf im Speicher bleibt stehen', () async {

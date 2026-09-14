@@ -18,6 +18,13 @@ final Map<String, Future<DruckLogo?>> _speicher = {};
 
 void druckLogoSpeicherLeeren() => _speicher.clear();
 
+/// Der Pixel-Deckel ([logoPixelZulaessig]) prueft erst NACH diesem Decode,
+/// nicht vorher am Bildkopf: `decodePng` nutzt Flutters `ui.instantiateImageCodec`
+/// und liefert Breite/Hoehe erst mit dem fertigen Frame; ein billigeres
+/// Vorab-Lesen der PNG-Kopfdaten (`ui.ImageDescriptor.encoded`) waere ein
+/// zweiter, eigener Deckel-Weg nur fuer PNG und haette diesen mit Goldens
+/// geprueften, gemeinsamen Decode-Pfad anfassen muessen -- fuer eine Grenze,
+/// die den seltenen Fall (zu grosses Logo) abfaengt, nicht den Regelfall.
 Future<({int breite, int hoehe, Uint8List rgba})> _ausLogoService(String url) async {
   await LogoService.loadLogo(url);
   final bytes = LogoService.getLogoBytes(url);
@@ -81,6 +88,14 @@ Future<DruckLogo?> ladeDruckLogo(
 Future<DruckLogo?> _laden(String url, LogoStufe stufe, KeckPaperSize papier, PixelLader? pixel) async {
   try {
     final p = await (pixel ?? _ausLogoService)(url);
+    if (!logoPixelZulaessig(p.breite, p.hoehe)) {
+      // Deckel VOR logoRaster, zusaetzlich zur Frist um den ganzen Aufruf:
+      // logoRaster laeuft synchron ueber jedes Pixel, ein Future.timeout kann
+      // laufenden synchronen Code nicht unterbrechen (siehe Kommentar bei
+      // ladeDruckLogo). Wie jeder andere Ladefehler: `null` statt Wurf --
+      // kein Logo statt haengendem Bondruck.
+      return null;
+    }
     final zeichen = papier.defaultCharCount;
     final mass = logoMass(BlattLogo(stufe: stufe, pxBreite: p.breite, pxHoehe: p.hoehe), zeichen);
     return DruckLogo(

@@ -34,6 +34,19 @@ class LogoRaster {
   }
 }
 
+/// Obergrenze der Rohpixel, die [logoRaster] noch anfasst (Zwilling von
+/// `LOGO_PIXEL_MAX` im Druck-Kit der Browser-Kasse). Die Flaechenmittel-
+/// Schleife in [logoRaster] laeuft synchron ueber `pxBreite x pxHoehe` --
+/// bei einem stark komprimierten Logo unter der Upload-Grenze (1 MB), das
+/// trotzdem auf z. B. 6000x6000 Rohpixel entpackt, blockiert das den
+/// UI-Isolate weit laenger als die Drei-Sekunden-Hausregel; `Future.timeout`
+/// in `ladeDruckLogo` kann laufenden synchronen Code nicht unterbrechen.
+/// Eigene, pure Funktion, damit die Grenze ohne echtes Bild testbar ist.
+const logoPixelMax = 4096;
+
+/// `true`, wenn [logoRaster] das Bild noch anfassen darf.
+bool logoPixelZulaessig(int breite, int hoehe) => breite > 0 && hoehe > 0 && breite <= logoPixelMax && hoehe <= logoPixelMax;
+
 LogoRaster logoRaster(Uint8List rgba, int pxBreite, int pxHoehe, LogoMass mass, int zeichen) {
   if (pxBreite < 1 || pxHoehe < 1 || rgba.length != pxBreite * pxHoehe * 4) {
     throw ArgumentError('RGBA-Laenge passt nicht zum Pixelmass');
