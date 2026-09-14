@@ -74,7 +74,52 @@ void main() {
     expect(logoGroesse.width, closeTo(mass.breiteAnteil * breite, 0.5));
     final zeilenHoehe = tester.getSize(find.byKey(const Key('keck-blatt-zeile-0'))).height;
     expect(logoGroesse.height, closeTo(mass.hoeheZeilen * zeilenHoehe, 0.5));
+
+    // Flutter soll nur in der angezeigten Groesse dekodieren, nicht in der
+    // vollen Bildaufloesung -- sonst kostet jeder Beleg einen vollen
+    // Mehr-Megapixel-Decode, obwohl das Logo nur wenige Dutzend Punkte breit steht.
+    final image = tester.widget<Image>(find.descendant(of: logoFinder, matching: find.byType(Image)));
+    final erwarteteCacheBreite = (logoGroesse.width * tester.view.devicePixelRatio).round();
+    expect(image.image, isA<ResizeImage>());
+    expect((image.image as ResizeImage).width, erwarteteCacheBreite);
   });
+
+  // Der Bondruck verwirft Logos ueber 4096 px je Seite (logoPixelZulaessig,
+  // lib/models/logo_raster.dart) -- dieselbe Grenze gilt jetzt auch am
+  // Bildschirm: ein zu grosses Logo steht sonst auf der Fertig-Seite, fehlt
+  // aber auf jedem gedruckten Bon.
+  for (final (px, py, erwartetLogo) in [(5000, 1200, false), (400, 100, true), (4096, 10, true), (4097, 10, false)]) {
+    testWidgets('Logo $px x $py: Logo-Block ${erwartetLogo ? "steht" : "fehlt (Pixelgrenze)"}', (tester) async {
+      final url = 'https://example.test/blatt-logo-$px-$py.png';
+      late Uint8List png;
+      await tester.runAsync(() async {
+        png = await encodePng(RasterImage.filled(px, py, 0, 0, 0, 255));
+      });
+      LogoService.httpClient = MockClient((_) async => http.Response.bytes(png, 200));
+
+      final layout = _fixture('testkasse-verkauf');
+      await tester.runAsync(() async {
+        await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: layout, logoUrl: url)));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+
+      expect(find.byKey(const Key('keck-blatt-logo')), erwartetLogo ? findsOneWidget : findsNothing);
+      if (!erwartetLogo) {
+        // Wie ohne logoUrl: dieselben Zeilen, kein Logo-Block dazwischen.
+        final ohneLogo = belegBlatt(layout);
+        final sollZeilen = [for (final b in ohneLogo.bloecke) if (b is BlattZeile) b.text];
+        final istZeilen = <String>[];
+        for (var i = 0; i < ohneLogo.bloecke.length; i++) {
+          final f = find.byKey(Key('keck-blatt-zeile-$i'));
+          if (f.evaluate().isEmpty) continue;
+          istZeilen.add(tester.widget<Text>(find.descendant(of: f, matching: find.byType(Text))).data!);
+        }
+        expect(istZeilen, sollZeilen);
+        expect(tester.takeException(), isNull);
+      }
+    });
+  }
 
   testWidgets('QR am Schirm mit Korrektur M; Ruhezone: Innenflaeche = Kasten x Module / (Module + 8)', (tester) async {
     final layout = _fixture('testkasse-verkauf');

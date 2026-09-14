@@ -1,8 +1,10 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/logo_raster.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/src/printing/qr_groesse.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -68,11 +70,24 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
     final bytes = LogoService.getLogoBytes(url);
     if (bytes == null || !mounted) return;
     try {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      final mass = (url: url, breite: frame.image.width, hoehe: frame.image.height);
-      frame.image.dispose();
-      codec.dispose();
+      // Nur den Bildkopf lesen (Breite/Hoehe), nicht das ganze Bild
+      // dekodieren: Bildschirm und Bon teilen denselben Pixel-Deckel
+      // (logoPixelZulaessig, lib/models/logo_raster.dart) -- ohne den waere
+      // ein Logo auf der Fertig-Seite und im PDF zu sehen, das am Drucker
+      // verworfen wird. `Image.memory` unten dekodiert das zulaessige Logo
+      // ohnehin nur in der angezeigten Groesse (cacheWidth); ein voller
+      // Decode hier waere fuer ein zu grosses Logo verschwendete Arbeit und
+      // fuer ein zulaessiges doppelte.
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      final breite = descriptor.width;
+      final hoehe = descriptor.height;
+      descriptor.dispose();
+      buffer.dispose();
+      // Ein zu grosses Logo ist wie ein Logo, das nicht geladen hat: kein
+      // Logo-Block, dieselben Zeilen wie ohne Logo -- kein Merken des Fehlers.
+      if (!logoPixelZulaessig(breite, hoehe)) return;
+      final mass = (url: url, breite: breite, hoehe: hoehe);
       if (mounted && widget.logoUrl == url) setState(() => _logo = mass);
     } catch (_) {
       // Ein Logo, das sich nicht lesen laesst, kostet den Beleg nicht: das Blatt steht ohne Logo.
@@ -144,7 +159,17 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
                         width: b.breiteAnteil * breite,
                         height: b.hoeheZeilen * 2 * cw,
                         // `geladen` setzt Bytes voraus; ohne sie entsteht kein Logo-Block.
-                        child: logoBytes == null ? null : Image.memory(logoBytes, fit: BoxFit.contain),
+                        // `cacheWidth` laesst Flutter nur in der angezeigten
+                        // Groesse dekodieren statt in der vollen Bildaufloesung
+                        // -- sonst kostet jeder Beleg einen Mehr-Megapixel-Decode
+                        // fuer ein Logo, das nur wenige Dutzend Punkte breit steht.
+                        child: logoBytes == null
+                            ? null
+                            : Image.memory(
+                                logoBytes,
+                                fit: BoxFit.contain,
+                                cacheWidth: math.max(1, (b.breiteAnteil * breite * MediaQuery.devicePixelRatioOf(context)).round()),
+                              ),
                       ),
                     ),
                   BlattQr() => Center(child: _qr(b, breite, stil)),
