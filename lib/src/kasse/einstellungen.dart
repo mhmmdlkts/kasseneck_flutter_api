@@ -156,8 +156,9 @@ class KasseSettingsBetrieb {
     // Die Farbe der Marke Kasseneck. Ein Betrieb, der nichts einstellt,
     // bekommt die Farbe des Produkts — dieselbe, die auf dem App-Zeichen und
     // dem Startbildschirm steht. Ein fremdes Blau daneben sähe aus wie zwei
-    // Programme.
-    this.farbe = '#116B6B',
+    // Programme. Das Petrol des Design-Systems (Rolle `brand`), wie im Vertrag
+    // ab npm 0.14.0 -- der alte Wert #116B6B stammte aus dem Markenhandbuch.
+    this.farbe = '#136B6B',
     this.stil = KasseStil.klar,
     this.schrift = KasseSchrift.m,
     this.schriftEinst = KasseEinstellSchrift.s,

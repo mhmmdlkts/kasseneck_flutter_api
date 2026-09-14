@@ -103,37 +103,55 @@ class KeckPrinterService {
   /// Der Rueckgabewert traegt neben `bytes` und `myPosPaper` auch
   /// [PrintPaper.qrFehler]; dieser Weg ruehrt [letzterQrFehler] nicht an und
   /// ist damit frei von globalem Zustand.
+  ///
+  /// [logo] muss fuer [paperSize] gerastert sein (`ladeDruckLogo(url, stufe,
+  /// paperSize)`): ein `DruckLogo` fuer eine andere Papierbreite laesst den
+  /// Druck mit [ArgumentError] abbrechen, bevor ein Byte entsteht.
   static Future<PrintPaper> getPaperFromReceipt(
     KasseneckReceipt receipt,
     KeckPaperSize paperSize, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModulGroesse qrGroesse = QrModulGroesse.auto,
+    DruckLogo? logo,
+    bool marke = false,
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     final BelegLayout? layout = receipt.layout;
     if (layout != null && receipt.layoutIstVollstaendig) {
-      await paper.setBelegLayout(layout, qrMode: qrMode, qrGroesse: qrGroesse);
+      // [logo] und [marke] gelten nur fuer das Blatt; der Altweg kennt sein
+      // eigenes Logo (`receipt.logo`) und Branding (`showKreiseckLogo`).
+      await paper.setBelegBlatt(layout, logo: logo, marke: marke, qrMode: qrMode, qrGroesse: qrGroesse);
     } else {
       await paper.setKeckReceipt(receipt, qrMode: qrMode, qrGroesse: qrGroesse);
     }
     return paper;
   }
 
-
+  /// Die Bytes aus [getPaperFromReceipt]; setzt dazu [letzterQrFehler] und
+  /// [letzterQrAusweich]. Ein fuer eine andere Papierbreite gerastertes [logo]
+  /// wirft [ArgumentError], bevor ein Byte entsteht.
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
-      QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
-    final PrintPaper paper =
-        await getPaperFromReceipt(receipt, paperSize, qrMode: qrMode, qrGroesse: qrGroesse);
+      QrModulGroesse qrGroesse = QrModulGroesse.auto,
+      DruckLogo? logo,
+      bool marke = false}) async {
+    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
+        qrMode: qrMode, qrGroesse: qrGroesse, logo: logo, marke: marke);
     _letzterQrFehler = paper.qrFehler;
     _letzterQrAusweich = paper.qrAusweich;
     return paper.bytes;
   }
 
-  static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt) async {
+  /// Das Papier fuer den myPOS-Terminaldruck. Gesetzt wird auf dem statischen
+  /// [paperSize] (aus `initWifiPrinter`/`initBluetoothPrinter`, sonst 58 mm) --
+  /// [logo] muss fuer genau diese Breite gerastert sein, sonst wirft der Bau
+  /// [ArgumentError], bevor ein Byte entsteht.
+  static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt,
+      {DruckLogo? logo, bool marke = false}) async {
     // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
-    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize, qrMode: QrPrintMode.native);
+    final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
+        qrMode: QrPrintMode.native, logo: logo, marke: marke);
     _letzterQrFehler = paper.qrFehler;
     _letzterQrAusweich = paper.qrAusweich;
     return paper.myPosPaper;

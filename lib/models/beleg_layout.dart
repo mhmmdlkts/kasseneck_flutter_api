@@ -89,7 +89,7 @@ class BelegQr extends BelegZeile {
 }
 
 /// Hervorgehobene Zeile: Belegart (STORNOBELEG …) oder Warnung
-/// (TESTKASSE/TESTSIGNATUR — invers).
+/// (TESTKASSE/TESTSIGNATUR). Im Raster steht sie zwischen zwei `=`-Rahmenzeilen.
 class BelegBanner extends BelegZeile {
   final String text;
   final bool warnung;

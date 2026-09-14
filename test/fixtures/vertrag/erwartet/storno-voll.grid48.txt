@@ -4,7 +4,9 @@
                   ATU12345678                   
                  +43 6134 12345                 
                                                 
+================================================
                   STORNOBELEG                   
+================================================
       Stornobuchung zu Beleg AT0-KASSE1-42      
            vom 11.08.2026, 09:02 Uhr            
            Grund: Kunde hat storniert           

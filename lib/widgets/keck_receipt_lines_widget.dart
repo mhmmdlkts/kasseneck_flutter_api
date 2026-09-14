@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+/// Veraltet: rechnet Spalten mit Flex und bricht anders um als das Papier;
+/// neue Oberflaechen nutzen [KeckBelegBlattWidget].
+///
 /// Zeichnet ein Beleg-Zeilenmodell des Backends ([BelegLayout]) — genau die
 /// Zeilen, die Browser-Kasse, Bondrucker und PDF zeigen. Kein eigenes
 /// Beleg-Wissen: Reihenfolge, Texte und Aufdrucke kommen aus dem Modell.

@@ -55,10 +55,32 @@ export 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
 export 'src/kasse/belegmail.dart'
     show Belegmailergebnis, belegMailFehlercodes, istBelegMailFehlercode;
 export 'src/kasse/storno.dart' show stornogruende, stornoFehlercodes, istStornoFehlercode;
+export 'services/druck_logo.dart' show ladeDruckLogo;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
 // nicht benennbar.
 export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
+
+// Beleg-Blatt (npm 0.14.0): ein Beleg, der auf Bildschirm, Bon und PDF gleich aussieht.
+// Mit `show`: Rechenhelfer wie `qrModulAnzahlWieNpm`, `punkteJeZeichen` oder
+// `druckLogoSpeicherLeeren` bleiben ausserhalb der Paket-Schnittstelle.
+export 'models/beleg_blatt.dart'
+    show
+        BelegBlatt,
+        BlattBlock,
+        BlattZeile,
+        BlattLogoBlock,
+        BlattQr,
+        BlattLogo,
+        LogoMass,
+        LogoStufe,
+        belegBlatt,
+        logoMass,
+        logoRasterMass,
+        qrBlattAnteil;
+export 'models/logo_raster.dart' show LogoRaster, logoRaster;
+export 'models/print_paper.dart' show DruckLogo;
+export 'widgets/keck_beleg_blatt_widget.dart' show KeckBelegBlattWidget;
 
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///

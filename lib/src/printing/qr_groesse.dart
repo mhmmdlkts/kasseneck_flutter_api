@@ -84,12 +84,11 @@ abstract final class QrMass {
 
   /// Modulanzahl, die [nutzlast] bei Fehlerkorrektur **M** braucht.
   ///
-  /// Warum M, obwohl der native Befehl mit L druckt: M braucht bei gleicher
-  /// Nutzlast gleich viele oder mehr Module als L. Wer mit M rechnet und mit L
-  /// druckt, druckt nie breiter als gerechnet — die Rechnung ist konservativ,
-  /// nie knapp. Umgekehrt waere sie eine Rechnung, die aufgeht, und ein Symbol,
-  /// das ueber den Papierrand laeuft. Der Bildweg (`renderQrMatrix`) rastert
-  /// ohnehin mit M; zwei Rechenwege fuer denselben Code darf es nicht geben.
+  /// M, weil alle Wege mit M drucken: der native Befehl (`PrintPaper.addQrCode`),
+  /// der Bildweg (`renderQrMatrix`), ePOS und das Blatt. Frueher druckte der
+  /// native Befehl mit L -- dann stand der QR bei mancher Nutzlast kleiner am
+  /// Bon, als das Blatt ihm Platz gab. Zwei Rechenwege fuer denselben Code
+  /// darf es nicht geben.
   static int modulAnzahl(String nutzlast) => QrCode.fromData(
         data: nutzlast,
         errorCorrectLevel: QrErrorCorrectLevel.M,

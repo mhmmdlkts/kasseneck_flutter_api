@@ -1,0 +1,237 @@
+{
+  "zeichen": 48,
+  "bloecke": [
+    {
+      "art": "logo",
+      "breiteAnteil": 0.5208333333333334,
+      "hoeheZeilen": 5
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "                Bäckerei Muster                 ",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                  Hauptplatz 1                  ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                 4830 Hallstatt                 ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                  ATU12345678                   ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                 +43 6134 12345                 ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "================================================",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                  STORNOBELEG                   ",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "================================================",
+      "fett": true,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "      Stornobuchung zu Beleg AT0-KASSE1-55      ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "           vom 11.08.2026, 09:02 Uhr            ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "               Grund: Fehleingabe               ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "Datum:                       13.08.2026 10:15:30",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Kassen-ID:                                KASSE1",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Beleg-ID:                          AT0-KASSE1-58",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "4  x Semmel je -0,79                     -3,16 B",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "1  x Kaffee klein                        -2,80 A",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "------------------------------------------------",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Zwischensumme                            -5,96  ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Rabatt 10 %                               0,60 *",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "* davon 0,28 A, 0,32 B                          ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "MwSt%       MwSt            Netto         Brutto",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "B 10%       -0,26           -2,58          -2,84",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "A 20%       -0,42           -2,10          -2,52",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "------------------------------------------------",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Gesamt:                                  -5,36 €",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "Zahlungsart:                          Barzahlung",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "qr",
+      "nutzlast": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "breiteAnteil": 0.5520833333333334
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "         Vielen Dank für Ihren Einkauf          ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "            www.baeckerei-muster.at             ",
+      "fett": false,
+      "leer": false
+    },
+    {
+      "art": "zeile",
+      "text": "                                                ",
+      "fett": false,
+      "leer": true
+    },
+    {
+      "art": "zeile",
+      "text": "             erstellt mit Kasseneck             ",
+      "fett": false,
+      "leer": false
+    }
+  ]
+}

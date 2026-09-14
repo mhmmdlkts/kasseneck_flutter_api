@@ -1,3 +1,31 @@
+## 6.14.0
+
+### Das Beleg-Blatt: derselbe Beleg auf Bildschirm, Bon und PDF
+
+Anlass: Der Beleg sah in der App anders aus als am Bon und im PDF — das Widget
+rechnete Spalten mit Flex und füllte Warnungen schwarz, der Bon druckte
+Aufdrucke doppelt hoch und invers, das Firmenlogo fehlte am Layout-Druck ganz,
+und der QR als Bild hatte fest 280 Punkte.
+
+- `BelegRaster` setzt Aufdrucke als Rahmen aus `=`-Zeilen (Vertrag npm 0.14.0).
+- Neu `belegBlatt`, `logoMass`, `qrBlattAnteil`, `logoRaster` — Zwillinge des npm-Pakets, belegt durch dessen Goldens.
+- Ein QR-Inhalt, der in keine QR-Version passt (Korrektur M, mehr als 2331 Byte), bekommt im Blatt den Anteil 0, statt dass `belegBlatt` wirft (neu `qrPasstInVersionWieNpm`, Zwilling von npm `qrPasstInVersion`). `setBelegBlatt` meldet es über `qrFehler` und druckt den bekannten Ausfall-Hinweis. Grund: der Wurf riss Widget und Bon mit — der Beleg stand gar nicht statt ohne QR. `KeckBelegBlattWidget` zeigt bei nicht-leerer Nutzlast an dieser Stelle jetzt einen sichtbaren Hinweistext (`Der QR-Code konnte nicht erzeugt werden. Bitte einen Papierbeleg ausgeben.`, Wortlaut wie im npm-Paket) statt einfach nichts — der QR ist an der Registrierkasse die maschinenlesbare Signatur, sein Fehlen darf am Bildschirm nicht stumm bleiben. Neuer optionaler Parameter `qrFehltBuilder` ersetzt den Standardtext bei Bedarf; eine leere Nutzlast bleibt wie bisher ohne Hinweis (kein Ausfall des Blatts, nur nichts zu zeigen).
+- Neu `PrintPaper.setBelegBlatt` mit `DruckLogo` und `marke`; `getPaperFromReceipt`/`getBytesFromReceipt` reichen beides durch. Der QR als Bild misst wie am npm-Druckweg.
+- Neu `KeckBelegBlattWidget`; `KeckReceiptLinesWidget` gilt als veraltet. Ein Logo über 4096 px Breite oder Höhe gilt dabei wie ein Logo, das nicht geladen hat — kein Logo-Block, dieselben Zeilen wie ohne Logo (`logoPixelZulaessig`, dieselbe Grenze wie am Drucker); die Maße werden dafür nur aus dem Bildkopf gelesen, nicht mehr durch vollen Decode. `Image.memory` bekommt außerdem `cacheWidth` (angezeigte Breite × Gerätefaktor): Flutter dekodiert das Logo nur noch in der Bildschirmgröße statt in voller Bildauflösung, das entlastet Speicher und Zeit bei jedem Beleg.
+- Neu `KasseneckReceipt.logoStufe` (aus `logo_skala`, Vorgabe M): die App kannte die Logo-Stufe des Betriebs bisher nicht.
+- Neu `ladeDruckLogo` (Logo-Adresse → `DruckLogo`, `null` bei Ladefehler) — Zwilling des Druck-Kits der Browser-Kasse. Erfolge werden je Adresse, Stufe und Papier zwischengespeichert, Fehlschläge nicht: ein kurzer Netzausfall versteckt das Logo nicht bis zum Neustart. Neuer optionaler Parameter `frist` (Vorgabe 3 Sekunden) deckt den ganzen Aufruf — Abruf, Decode und Raster zusammen, nicht nur den HTTP-Teil wie bisher `LogoService.frist` allein. Grund: ohne diese Grenze konnte ein hängender oder sehr langsamer Decode-Schritt den Bondruck trotz gesetzter Netz-Frist unbegrenzt aufhalten — das Logo ist Zierde, kein Druck darf länger als drei Sekunden darauf warten. Ein Timeout wird wie jeder Fehlschlag nicht gemerkt. Zusätzlich neuer Pixel-Deckel `logoPixelZulaessig`/`logoPixelMax` (4096 px, Parität zum Druck-Kit der Browser-Kasse): ein zu groß dekodiertes Bild (kleine Datei, aber viele Rohpixel) bekommt kein Rastern mehr, `null` statt Fehlschlag erst nach der Frist — `logoRaster` läuft synchron und ist von `frist` allein nicht unterbrechbar.
+- Der QR am Bildschirm (`KeckBelegBlattWidget`) zeichnet mit Fehlerkorrektur M wie Bon und Blatt; das Blatt behält unter einer von außen erzwungenen Breite seine `zeichen × Zeichenbreite`.
+- Die neuen Teile sind mit `show` exportiert; `printing.dart` bringt zusätzlich `DruckLogo`, `ladeDruckLogo`, `LogoStufe`, `BlattLogo`, `logoMass`, `logoRasterMass` und `LogoRaster` mit.
+- Vertrag npm 0.14.0 gezogen (Goldens für Raster, Blatt und Logo-Raster samt Teiltransparenz- und Hochformat-Probe); Bon und Widget sind gegen jedes Blatt-Golden geprüft.
+
+### Achtung: Brüche und sichtbare Druckänderungen
+
+- `BelegRaster.render` gibt je Aufdruck zwei Zeilen mehr aus: der Aufdruck steht zwischen zwei `=`-Rahmenzeilen. Wer Rasterzeilen zählt oder über ihren Index anspricht, muss nachziehen.
+- `PrintPaper.setBelegLayout` druckt über das Blatt (`setBelegBlatt`): Aufdrucke erscheinen als `====`-Rahmen statt doppelt hoch und invers.
+- Der QR als Bild misst im Blatt-Weg am Blatt statt fest 280 Punkte — bei typischer Beleg-Nutzlast 318 statt 280; der myPOS-Terminaldruck bekommt im Blatt-Weg dieselbe Größe.
+- Der native QR-Befehl druckt mit Fehlerkorrektur M statt L — auch im alten Weg `setKeckReceipt`. Bei mancher Nutzlast wird das Symbol dadurch größer.
+- Standard-Betriebsfarbe (`farbe`) `#116B6B` → `#136B6B`, wie im Vertrag.
+
 ## 6.13.0
 
 **Anlass:** Das Paket hing noch an `kreiseck_design` 0.1.0, die Browser-Kasse
