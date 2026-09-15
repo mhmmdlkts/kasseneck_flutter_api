@@ -1,8 +1,11 @@
 {
-  "version": "0.14.0",
+  "version": "0.16.0",
   "aufrufe": [
     "activateCashregister",
+    "cancelInvoice",
     "cancelReceipt",
+    "createCreditNote",
+    "createCustomer",
     "createCustomerCashregister",
     "createPartnerCustomer",
     "checkPartnerCustomerEmail",
@@ -16,9 +19,14 @@
     "endRegisterSession",
     "financeWebService",
     "generateFullReceiptId",
+    "getCustomer",
     "getCustomerCredentials",
     "getCustomerSignatureStatus",
     "getFirstReceiptDate",
+    "getInvoice",
+    "getInvoicePdf",
+    "getInvoiceSetupStatus",
+    "getInvoiceXml",
     "getKasseSettings",
     "getPartnerCustomer",
     "getPartnerInfo",
@@ -26,7 +34,9 @@
     "getReceipt",
     "hobexPayApi",
     "hobexRefundApi",
+    "issueInvoice",
     "listCustomerCashregisters",
+    "listInvoices",
     "listMyArticleGroups",
     "listMyArticles",
     "listMyCashregisters",
@@ -43,6 +53,7 @@
     "registerUserLogin",
     "renewRegisterSession",
     "requestCustomerSignature",
+    "searchCustomers",
     "sendPartnerCustomerFonLink",
     "sendPartnerWebhookTest",
     "sendReceiptEmail",
@@ -51,6 +62,7 @@
     "stripeCaptureIntent",
     "unpairRegisterDevice",
     "rotatePartnerWebhookSecret",
+    "updateCustomer",
     "updatePartnerWebhook"
   ],
   "enums": {
@@ -347,6 +359,94 @@
       "partnerId",
       "test",
       "data"
+    ]
+  },
+  "rechnung": {
+    "creditNoteReasons": [
+      "cancellation",
+      "price_reduction",
+      "return",
+      "incorrect_invoice",
+      "other"
+    ],
+    "customerTypes": [
+      "private",
+      "company"
+    ],
+    "docTypes": [
+      "RE",
+      "GU"
+    ],
+    "einvoiceFormats": [
+      "ubl",
+      "cii"
+    ],
+    "invoiceErrorCodes": [
+      "validation",
+      "idempotency_conflict",
+      "module_inactive",
+      "customer_not_found",
+      "customer_exists",
+      "short_code_taken",
+      "short_code_immutable",
+      "recipient_required",
+      "invoice_requirements_missing",
+      "invoice_not_found",
+      "invoice_ambiguous",
+      "not_cancellable",
+      "partial_credit_exists",
+      "credit_exceeds_invoice",
+      "einvoice_incomplete",
+      "invoice_api_not_enabled",
+      "invoice_setup_incomplete"
+    ],
+    "invoiceListStatus": [
+      "final",
+      "paid",
+      "cancelled",
+      "open",
+      "overdue"
+    ],
+    "invoiceSetupRequirements": [
+      "module_active",
+      "api_enabled",
+      "live_enabled",
+      "business_name",
+      "address",
+      "vat_id",
+      "bank_account",
+      "number_format"
+    ],
+    "priceModes": [
+      "net",
+      "gross"
+    ],
+    "rechnungAufrufe": [
+      "createCustomer",
+      "getCustomer",
+      "updateCustomer",
+      "searchCustomers",
+      "issueInvoice",
+      "cancelInvoice",
+      "createCreditNote",
+      "getInvoice",
+      "listInvoices",
+      "getInvoicePdf",
+      "getInvoiceXml",
+      "getInvoiceSetupStatus"
+    ],
+    "taxSchemes": [
+      "normal",
+      "smallBusiness",
+      "reverseCharge",
+      "igLieferung",
+      "exportThirdCountry"
+    ],
+    "vatRates": [
+      0,
+      10,
+      13,
+      20
     ]
   }
 }

@@ -1,0 +1,15 @@
+{
+  "aufruf": "getCustomer",
+  "beschreibung": "Genau eine Kennung angeben",
+  "anfrage": {
+    "customerId": "kunde_beispiel",
+    "externalId": "shop-4711"
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "customerId"
+    ]
+  }
+}

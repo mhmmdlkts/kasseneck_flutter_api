@@ -1,0 +1,26 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Menge null",
+  "anfrage": {
+    "idempotencyKey": "bsp-10",
+    "customerId": "kunde_beispiel",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 0,
+        "unitPriceCents": 5000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].quantity"
+    ]
+  }
+}

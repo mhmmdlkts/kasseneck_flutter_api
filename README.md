@@ -80,6 +80,7 @@ muss nichts davon programmieren:
 - **Druck** — Bluetooth und WLAN (ESC/POS) sowie der eingebaute myPOS-Drucker
 - **Fertiges Beleg-Widget** für die Anzeige am Schirm
 - **Berichte und Rechnungen** — Tages- und Monats-PDF
+- **Rechnungs-API** — Rechnungen nach § 11 UStG (keine Belege), Kunden, Storno und Teilgutschrift, PDF und E-Rechnung (UBL/CII)
 - **Stripe-Zahllinks** für Fern- und Onlinezahlungen
 
 ## Voraussetzungen
@@ -396,6 +397,60 @@ final monthly = await kasseneck.downloadMonthlyReport(ReportMonth.now()); // Uin
 final daily   = await kasseneck.downloadDailyReport(DateTime.now());
 final history = await kasseneck.getReceipts(start, end);
 ```
+
+## Rechnungen ausstellen (Rechnungs-API)
+
+Rechnungen sind **keine Belege**: kein Kassen-Token, keine Signatur, sondern
+eine fortlaufende Rechnungsnummer nach § 11 UStG. Der Schlüssel ist der
+`api_key` des Kontos. Live braucht das Konto die Freigabe durch Kasseneck —
+deshalb zuerst den Stand abfragen.
+
+```dart
+import 'package:kasseneck_api/rechnung.dart';
+
+final rechnungen = RechnungApi(apiKey: 'kr_live_…');
+
+final stand = await rechnungen.getInvoiceSetupStatus();
+if (!stand.ready) {
+  for (final luecke in stand.missing) {
+    print('${luecke.requirement}: ${luecke.message}');
+  }
+  return;
+}
+
+final kunde = await rechnungen.createCustomer(
+  const CustomerInput(type: 'company', name: 'Café Muster GmbH', country: 'AT', externalId: 'shop-4711'),
+);
+
+try {
+  final ergebnis = await rechnungen.issueInvoice(IssueInvoiceRequest(
+    idempotencyKey: 'bestellung-4711', // derselbe Schlüssel ergibt nie eine zweite Rechnung
+    customerId: kunde.id,
+    taxScheme: 'normal',
+    priceMode: 'net',
+    serviceStart: '2026-09-15',
+    items: const [InvoiceItemInput(description: 'Beratung', quantity: 2, unitPriceCents: 5000, vatRate: 20)],
+  ));
+  final pdf = await rechnungen.getInvoicePdf(ergebnis.invoice.id); // Uint8List
+} on KasseneckApiError catch (e) {
+  switch (rechnungFehlerCode(e)) {
+    case 'validation':
+      for (final f in rechnungFeldFehler(e)) {
+        print('${f.field}: ${f.message}');
+      }
+    case 'invoice_setup_incomplete':
+      print(e.details['missing']);
+    default:
+      rethrow;
+  }
+}
+```
+
+Nach einem Zeitablauf (`KasseneckHttpError.zeitablauf`) **mit demselben
+`idempotencyKey`** erneut ausstellen — die Antwort trägt dann
+`replayed: true` und dieselbe Rechnung. Storno über `cancelInvoice`,
+Teilgutschrift über `createCreditNote`; die Fehlercodes stehen in
+`invoiceErrorCodes`.
 
 ## RKSV im Detail
 

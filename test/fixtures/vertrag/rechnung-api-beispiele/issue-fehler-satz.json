@@ -1,0 +1,26 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Steuerfreies Schema mit USt-Satz",
+  "anfrage": {
+    "idempotencyKey": "bsp-6",
+    "customerId": "kunde_beispiel",
+    "taxScheme": "smallBusiness",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Reparatur",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].vatRate"
+    ]
+  }
+}

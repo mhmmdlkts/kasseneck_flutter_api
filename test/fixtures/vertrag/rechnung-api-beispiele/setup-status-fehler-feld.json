@@ -1,0 +1,14 @@
+{
+  "aufruf": "getInvoiceSetupStatus",
+  "beschreibung": "Der Status kennt keine Parameter",
+  "anfrage": {
+    "environment": "live"
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "environment"
+    ]
+  }
+}

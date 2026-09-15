@@ -1,0 +1,24 @@
+{
+  "aufruf": "createCreditNote",
+  "beschreibung": "Unbekannter Grund",
+  "anfrage": {
+    "idempotencyKey": "bsp-12",
+    "invoiceId": "rechnung_beispiel",
+    "reason": "storno",
+    "items": [
+      {
+        "description": "Nachlass",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "reason"
+    ]
+  }
+}
