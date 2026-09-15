@@ -1,5 +1,5 @@
 {
-  "version": "0.16.0",
+  "version": "0.17.0",
   "aufrufe": [
     "activateCashregister",
     "cancelInvoice",
@@ -37,6 +37,7 @@
     "issueInvoice",
     "listCustomerCashregisters",
     "listInvoices",
+    "listBrands",
     "listMyArticleGroups",
     "listMyArticles",
     "listMyCashregisters",
@@ -398,7 +399,13 @@
       "credit_exceeds_invoice",
       "einvoice_incomplete",
       "invoice_api_not_enabled",
-      "invoice_setup_incomplete"
+      "invoice_setup_incomplete",
+      "language_not_allowed",
+      "brand_not_found"
+    ],
+    "invoiceLanguages": [
+      "de",
+      "en"
     ],
     "invoiceListStatus": [
       "final",
@@ -417,6 +424,57 @@
       "bank_account",
       "number_format"
     ],
+    "invoiceUnits": [
+      "piece",
+      "pair",
+      "set",
+      "dozen",
+      "second",
+      "minute",
+      "hour",
+      "day",
+      "night",
+      "week",
+      "month",
+      "quarter",
+      "half_year",
+      "year",
+      "milligram",
+      "gram",
+      "kilogram",
+      "tonne",
+      "millimetre",
+      "centimetre",
+      "metre",
+      "running_metre",
+      "kilometre",
+      "square_metre",
+      "hectare",
+      "millilitre",
+      "litre",
+      "cubic_metre",
+      "kilowatt_hour",
+      "megawatt_hour",
+      "gigabyte",
+      "terabyte",
+      "flat_rate",
+      "person",
+      "licence",
+      "user",
+      "device",
+      "session",
+      "trip",
+      "page",
+      "sheet",
+      "package",
+      "box",
+      "carton",
+      "bottle",
+      "can",
+      "roll",
+      "bag",
+      "pallet"
+    ],
     "priceModes": [
       "net",
       "gross"
@@ -433,7 +491,8 @@
       "listInvoices",
       "getInvoicePdf",
       "getInvoiceXml",
-      "getInvoiceSetupStatus"
+      "getInvoiceSetupStatus",
+      "listBrands"
     ],
     "taxSchemes": [
       "normal",

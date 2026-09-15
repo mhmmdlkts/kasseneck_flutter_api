@@ -1,15 +1,17 @@
 {
   "aufruf": "issueInvoice",
-  "beschreibung": "Zwei Positionen netto zu 20 %",
+  "beschreibung": "Englische Rechnung mit gewählter Marke",
   "anfrage": {
-    "idempotencyKey": "bsp-1",
+    "idempotencyKey": "bsp-en-1",
     "customerId": "kunde_beispiel",
     "taxScheme": "normal",
     "priceMode": "net",
-    "serviceStart": "2026-09-14",
+    "serviceStart": "2026-09-15",
+    "language": "en",
+    "brandId": "marke_beispiel",
     "items": [
       {
-        "description": "Beratung",
+        "description": "Consulting",
         "quantity": 2,
         "unitPriceCents": 5000,
         "vatRate": 20,

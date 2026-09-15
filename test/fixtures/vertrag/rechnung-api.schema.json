@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 1,
-  "paket": "0.16.0",
+  "paket": "0.17.0",
   "aufrufe": {
     "createCustomer": {
       "anfrage": {
@@ -79,6 +79,12 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 120
+              },
+              "language": {
+                "enum": [
+                  "de",
+                  "en"
+                ]
               }
             },
             "required": [
@@ -204,6 +210,12 @@
                 "type": "string",
                 "minLength": 1,
                 "maxLength": 120
+              },
+              "language": {
+                "enum": [
+                  "de",
+                  "en"
+                ]
               }
             },
             "additionalProperties": false
@@ -350,8 +362,57 @@
                   "x-decimals": 3
                 },
                 "unit": {
-                  "type": "string",
-                  "maxLength": 20
+                  "enum": [
+                    "piece",
+                    "pair",
+                    "set",
+                    "dozen",
+                    "second",
+                    "minute",
+                    "hour",
+                    "day",
+                    "night",
+                    "week",
+                    "month",
+                    "quarter",
+                    "half_year",
+                    "year",
+                    "milligram",
+                    "gram",
+                    "kilogram",
+                    "tonne",
+                    "millimetre",
+                    "centimetre",
+                    "metre",
+                    "running_metre",
+                    "kilometre",
+                    "square_metre",
+                    "hectare",
+                    "millilitre",
+                    "litre",
+                    "cubic_metre",
+                    "kilowatt_hour",
+                    "megawatt_hour",
+                    "gigabyte",
+                    "terabyte",
+                    "flat_rate",
+                    "person",
+                    "licence",
+                    "user",
+                    "device",
+                    "session",
+                    "trip",
+                    "page",
+                    "sheet",
+                    "package",
+                    "box",
+                    "carton",
+                    "bottle",
+                    "can",
+                    "roll",
+                    "bag",
+                    "pallet"
+                  ]
                 },
                 "unitPriceCents": {
                   "type": "integer",
@@ -392,6 +453,17 @@
               "type": "string",
               "maxLength": 500
             }
+          },
+          "language": {
+            "enum": [
+              "de",
+              "en"
+            ]
+          },
+          "brandId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
           }
         },
         "required": [
@@ -490,8 +562,57 @@
                   "x-decimals": 3
                 },
                 "unit": {
-                  "type": "string",
-                  "maxLength": 20
+                  "enum": [
+                    "piece",
+                    "pair",
+                    "set",
+                    "dozen",
+                    "second",
+                    "minute",
+                    "hour",
+                    "day",
+                    "night",
+                    "week",
+                    "month",
+                    "quarter",
+                    "half_year",
+                    "year",
+                    "milligram",
+                    "gram",
+                    "kilogram",
+                    "tonne",
+                    "millimetre",
+                    "centimetre",
+                    "metre",
+                    "running_metre",
+                    "kilometre",
+                    "square_metre",
+                    "hectare",
+                    "millilitre",
+                    "litre",
+                    "cubic_metre",
+                    "kilowatt_hour",
+                    "megawatt_hour",
+                    "gigabyte",
+                    "terabyte",
+                    "flat_rate",
+                    "person",
+                    "licence",
+                    "user",
+                    "device",
+                    "session",
+                    "trip",
+                    "page",
+                    "sheet",
+                    "package",
+                    "box",
+                    "carton",
+                    "bottle",
+                    "can",
+                    "roll",
+                    "bag",
+                    "pallet"
+                  ]
                 },
                 "unitPriceCents": {
                   "type": "integer",
@@ -614,6 +735,12 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 128
+          },
+          "language": {
+            "enum": [
+              "de",
+              "en"
+            ]
           }
         },
         "required": [
@@ -650,6 +777,13 @@
         "properties": {},
         "additionalProperties": false
       }
+    },
+    "listBrands": {
+      "anfrage": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
     }
   },
   "codes": [
@@ -669,7 +803,9 @@
     "credit_exceeds_invoice",
     "einvoice_incomplete",
     "invoice_api_not_enabled",
-    "invoice_setup_incomplete"
+    "invoice_setup_incomplete",
+    "language_not_allowed",
+    "brand_not_found"
   ],
   "gruende": [
     "cancellation",

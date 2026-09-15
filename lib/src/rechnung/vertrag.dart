@@ -23,6 +23,7 @@ const List<String> rechnungAufrufe = [
   'getInvoicePdf',
   'getInvoiceXml',
   'getInvoiceSetupStatus',
+  'listBrands',
 ];
 
 /// Stabile Fehlercodes — am Code entscheiden, nie am Text.
@@ -44,6 +45,8 @@ const List<String> invoiceErrorCodes = [
   'einvoice_incomplete',
   'invoice_api_not_enabled',
   'invoice_setup_incomplete',
+  'language_not_allowed',
+  'brand_not_found',
 ];
 
 /// Gründe einer Gutschrift; der Server druckt den deutschen Text.
@@ -62,6 +65,21 @@ const List<String> invoiceListStatus = ['final', 'paid', 'cancelled', 'open', 'o
 const List<String> docTypes = ['RE', 'GU'];
 
 const List<String> einvoiceFormats = ['ubl', 'cii'];
+
+/// Sprachen einer Rechnung. Eine Rechnung hat eine Nummer und eine Sprache,
+/// beim Ausstellen eingefroren; Behörden bekommen immer `de`.
+const List<String> invoiceLanguages = ['de', 'en'];
+
+/// Einheiten einer Position. Der Aufdruck folgt der Sprache der Rechnung
+/// (Stk / pcs), in der E-Rechnung steht der Code aus UN/ECE Rec 20/21.
+const List<String> invoiceUnits = [
+  'piece', 'pair', 'set', 'dozen', 'second', 'minute', 'hour', 'day', 'night', 'week', 'month',
+  'quarter', 'half_year', 'year', 'milligram', 'gram', 'kilogram', 'tonne', 'millimetre',
+  'centimetre', 'metre', 'running_metre', 'kilometre', 'square_metre', 'hectare', 'millilitre',
+  'litre', 'cubic_metre', 'kilowatt_hour', 'megawatt_hour', 'gigabyte', 'terabyte',
+  'flat_rate', 'person', 'licence', 'user', 'device', 'session', 'trip', 'page', 'sheet',
+  'package', 'box', 'carton', 'bottle', 'can', 'roll', 'bag', 'pallet',
+];
 
 /// Was vor dem Ausstellen erfüllt sein muss — in dieser Reihenfolge meldet
 /// `getInvoiceSetupStatus` die Lücken.

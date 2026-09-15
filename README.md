@@ -452,6 +452,12 @@ Nach einem Zeitablauf (`KasseneckHttpError.zeitablauf`) **mit demselben
 Teilgutschrift über `createCreditNote`; die Fehlercodes stehen in
 `invoiceErrorCodes`.
 
+**Sprache und Marke.** Eine Rechnung hat eine Nummer und eine Sprache (`de` oder
+`en`): die der Anfrage, sonst die des Kunden, sonst Deutsch; Behörden bekommen
+immer Deutsch. Die Marke wählt `brandId` aus `listBrands()`. Dieselbe Rechnung in
+der anderen Sprache gibt es nur als gekennzeichnete Übersetzungskopie —
+`getInvoicePdf(id, language: 'de')` — nie als zweite Rechnung.
+
 ## RKSV im Detail
 
 Jeder Beleg ist verkettet und signiert (ES256 / JWS) und liegt als

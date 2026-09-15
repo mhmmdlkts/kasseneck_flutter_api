@@ -78,6 +78,8 @@ void main() {
       'docTypes': docTypes,
       'einvoiceFormats': einvoiceFormats,
       'invoiceSetupRequirements': invoiceSetupRequirements,
+      'invoiceLanguages': invoiceLanguages,
+      'invoiceUnits': invoiceUnits,
     };
 
     test('jede Liste des Vertrags gibt es hier, und keine mehr', () {
@@ -131,6 +133,7 @@ void main() {
           'ready': true,
           'environment': 'live',
           'missing': [],
+          'brands': [],
         });
         final (:api, :log) = _apiMit([antwort]);
         switch (aufruf) {
@@ -142,6 +145,8 @@ void main() {
             await api.createCustomer(CustomerInput.fromJson(anfrage['customer'] as Map<String, dynamic>));
           case 'getInvoiceSetupStatus':
             await api.getInvoiceSetupStatus();
+          case 'listBrands':
+            await api.listBrands();
           default:
             fail('Beispiel für $aufruf ohne Testweg');
         }
@@ -340,6 +345,65 @@ void main() {
         api.getInvoiceSetupStatus(),
         throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)),
       );
+    });
+  });
+
+  group('Sprache und Marke (Vertrag 0.17.0)', () {
+    test('listBrands: ohne Parameter, liest die Marken', () async {
+      final (:api, :log) = _apiMit([
+        _erfolg({
+          'brands': [
+            {'id': 'm1', 'name': 'Haus', 'isDefault': true},
+            {'id': 'm2', 'name': 'Zweit', 'isDefault': false},
+          ],
+        }),
+      ]);
+      final marken = await api.listBrands();
+      expect(_params(log.single), <String, dynamic>{});
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/listBrands');
+      expect(marken.map((m) => (m.id, m.name, m.isDefault)).toList(), [('m1', 'Haus', true), ('m2', 'Zweit', false)]);
+    });
+
+    test('listBrands: eine Antwort ohne brands ist ein Antwortfehler', () async {
+      final (:api, log: _) = _apiMit([_erfolg(<String, dynamic>{})]);
+      await expectLater(api.listBrands(), throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response')));
+    });
+
+    test('getInvoicePdf: language geht nur mit, wenn gesetzt', () async {
+      final pdf = utf8.encode('%PDF-1.7\n');
+      final (:api, :log) = _apiMit([
+        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'}),
+        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'}),
+      ]);
+      await api.getInvoicePdf('inv1');
+      await api.getInvoicePdf('inv1', language: 'de');
+      expect(_params(log[0]), {'invoiceId': 'inv1'});
+      expect(_params(log[1]), {'invoiceId': 'inv1', 'language': 'de'});
+    });
+
+    test('Anfrage und Rechnung tragen Sprache und Marke; Altbestand ist Deutsch', () async {
+      final (:api, :log) = _apiMit([
+        _erfolg({'invoice': {..._rechnung, 'language': 'en', 'brand': {'id': 'm1', 'name': 'Haus'}}, 'replayed': false}),
+        _erfolg({'invoice': _rechnung, 'replayed': false}),
+      ]);
+      final r = await api.issueInvoice(const IssueInvoiceRequest(
+        idempotencyKey: 'k-en', taxScheme: 'normal', priceMode: 'net', serviceStart: '2026-09-15', language: 'en', brandId: 'm1',
+        items: [InvoiceItemInput(description: 'Consulting', quantity: 1, unitPriceCents: 5000, vatRate: 20)],
+      ));
+      expect(_params(log[0])['language'], 'en');
+      expect(_params(log[0])['brandId'], 'm1');
+      expect((r.invoice.language, r.invoice.brandId, r.invoice.brandName), ('en', 'm1', 'Haus'));
+      final alt = await api.issueInvoice(const IssueInvoiceRequest(
+        idempotencyKey: 'k-alt', taxScheme: 'normal', priceMode: 'net', serviceStart: '2026-09-15', items: []));
+      expect((alt.invoice.language, alt.invoice.brandId), ('de', null));
+      expect(_params(log[1]).containsKey('language'), isFalse);
+    });
+
+    test('Kunde: language in beide Richtungen, fehlt = de', () {
+      expect(const CustomerInput(type: 'company', name: 'X', country: 'AT', language: 'en').toJson()['language'], 'en');
+      expect(const CustomerInput(type: 'company', name: 'X', country: 'AT').toJson().containsKey('language'), isFalse);
+      expect(Customer.fromJson({'id': 'k1', 'type': 'company', 'name': 'X', 'country': 'AT'}).language, 'de');
+      expect(Customer.fromJson({'id': 'k1', 'type': 'company', 'name': 'X', 'country': 'AT', 'language': 'en'}).language, 'en');
     });
   });
 }
