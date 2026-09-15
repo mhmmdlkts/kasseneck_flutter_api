@@ -1,0 +1,28 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Zeilenrabatt, gerundet wie auf dem PDF",
+  "anfrage": {
+    "idempotencyKey": "bsp-3",
+    "customerId": "kunde_beispiel",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Kaffee",
+        "quantity": 3,
+        "unitPriceCents": 999,
+        "vatRate": 20,
+        "discountPct": 10
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": true,
+    "totals": {
+      "netCents": 2697,
+      "vatCents": 539,
+      "grossCents": 3236
+    }
+  }
+}

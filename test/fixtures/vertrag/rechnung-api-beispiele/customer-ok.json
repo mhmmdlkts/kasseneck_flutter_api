@@ -1,0 +1,20 @@
+{
+  "aufruf": "createCustomer",
+  "beschreibung": "Firmenkunde mit Kennung aus dem Shop",
+  "anfrage": {
+    "customer": {
+      "type": "company",
+      "name": "Café Muster GmbH",
+      "street": "Hauptplatz",
+      "houseNumber": "3",
+      "zip": "1010",
+      "city": "Wien",
+      "country": "AT",
+      "email": "rechnung@cafe-muster.example",
+      "externalId": "shop-4711"
+    }
+  },
+  "erwartet": {
+    "ok": true
+  }
+}

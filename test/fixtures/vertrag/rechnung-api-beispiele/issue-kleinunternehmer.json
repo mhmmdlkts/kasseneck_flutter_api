@@ -1,0 +1,27 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Kleinunternehmer: USt-Satz 0",
+  "anfrage": {
+    "idempotencyKey": "bsp-5",
+    "customerId": "kunde_beispiel",
+    "taxScheme": "smallBusiness",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Reparatur",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 0
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": true,
+    "totals": {
+      "netCents": 5000,
+      "vatCents": 0,
+      "grossCents": 5000
+    }
+  }
+}

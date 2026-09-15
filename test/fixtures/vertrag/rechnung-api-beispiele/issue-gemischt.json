@@ -1,0 +1,33 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Zwei Steuersätze auf einer Rechnung",
+  "anfrage": {
+    "idempotencyKey": "bsp-4",
+    "customerId": "kunde_beispiel",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 1,
+        "unitPriceCents": 10000,
+        "vatRate": 20
+      },
+      {
+        "description": "Buch",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 10
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": true,
+    "totals": {
+      "netCents": 15000,
+      "vatCents": 2500,
+      "grossCents": 17500
+    }
+  }
+}

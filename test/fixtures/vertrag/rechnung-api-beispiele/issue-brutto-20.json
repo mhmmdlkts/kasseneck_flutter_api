@@ -1,0 +1,27 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Bruttopreis: der Server rechnet die USt heraus",
+  "anfrage": {
+    "idempotencyKey": "bsp-2",
+    "customerId": "kunde_beispiel",
+    "taxScheme": "normal",
+    "priceMode": "gross",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Frühstück",
+        "quantity": 1,
+        "unitPriceCents": 1200,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": true,
+    "totals": {
+      "netCents": 1000,
+      "vatCents": 200,
+      "grossCents": 1200
+    }
+  }
+}

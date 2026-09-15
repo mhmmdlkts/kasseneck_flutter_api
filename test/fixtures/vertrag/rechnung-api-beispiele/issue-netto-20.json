@@ -1,0 +1,28 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Zwei Positionen netto zu 20 %",
+  "anfrage": {
+    "idempotencyKey": "bsp-1",
+    "customerId": "kunde_beispiel",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 2,
+        "unitPriceCents": 5000,
+        "vatRate": 20,
+        "unit": "Std"
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": true,
+    "totals": {
+      "netCents": 10000,
+      "vatCents": 2000,
+      "grossCents": 12000
+    }
+  }
+}

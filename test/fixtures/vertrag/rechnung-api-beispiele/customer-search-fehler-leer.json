@@ -1,0 +1,14 @@
+{
+  "aufruf": "searchCustomers",
+  "beschreibung": "Suche ohne Suchbegriff",
+  "anfrage": {
+    "limit": 10
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "externalId"
+    ]
+  }
+}

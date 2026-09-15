@@ -36,7 +36,7 @@ class KasseneckValidationError implements Exception {
 
 /// Fachlicher Fehler des Backends (PIN falsch, Kasse belegt, Geraet gesperrt …).
 class KasseneckApiError implements Exception {
-  const KasseneckApiError(this.functionName, this.message, {this.code});
+  const KasseneckApiError(this.functionName, this.message, {this.code, this.details = const {}});
 
   final String functionName;
   final String message;
@@ -46,6 +46,12 @@ class KasseneckApiError implements Exception {
   /// **Daran entscheiden, nie an [message]:** der Text darf sich aendern, der
   /// Code nicht. Null bei Endpunkten ohne Codes und bei Auth-/Parameterfehlern.
   final String? code;
+
+  /// Die uebrige Nutzlast der Fehlerantwort (`data`), immer ein Objekt: etwa
+  /// `errors` bei `validation`, `missing` bei `invoice_setup_incomplete` oder
+  /// `remainingCents` bei `credit_exceeds_invoice` (Rechnungs-API). Zwilling
+  /// von `KasseneckApiError.details` im JS-Paket.
+  final Map<String, dynamic> details;
 
   @override
   String toString() => 'KasseneckApiError($functionName): $message${code == null ? '' : ' [$code]'}';

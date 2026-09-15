@@ -1,0 +1,20 @@
+{
+  "aufruf": "createCreditNote",
+  "beschreibung": "Teilgutschrift als Preisnachlass",
+  "anfrage": {
+    "idempotencyKey": "bsp-11",
+    "invoiceId": "rechnung_beispiel",
+    "reason": "price_reduction",
+    "items": [
+      {
+        "description": "Nachlass Beratung",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": true
+  }
+}

@@ -1,3 +1,32 @@
+## 6.16.0
+
+### Rechnungs-API: Rechnungen statt Belege, als Zwilling von npm 0.16.0
+
+Anlass: Das JS-Paket `@kreiseck/kasseneck-api` bekam mit 0.15.0/0.16.0 einen
+Client für die Rechnungs-API (Rechnungen nach § 11 UStG, keine Belege). Ohne
+Zwilling konnte eine Flutter-App keine Rechnung ausstellen — etwa an der Kasse
+für einen Firmenkunden über 400 € —, und der Vertragstest meldete zwölf
+Aufrufe, die dieses Paket nicht kennt.
+
+- Neue Bibliothek `package:kasseneck_api/rechnung.dart` mit `RechnungApi`:
+  Kunden (`createCustomer`, `getCustomer`, `updateCustomer`, `searchCustomers`),
+  Rechnungen (`issueInvoice`, `cancelInvoice`, `createCreditNote`, `getInvoice`,
+  `listInvoices`), Dateien (`getInvoicePdf`, `getInvoiceXml`) und
+  `getInvoiceSetupStatus` (Freigabe und Einrichtung).
+- Eigener Transport `RechnungTransport`: der `api_key` des Kontos als Bearer an
+  `api.kasseneck.at/v1`, **ohne** Kassen-Token. Partner-Schlüssel und
+  Kassen-Token werden ohne Netzaufruf abgewiesen; Zeitablauf und Netzfehler
+  bleiben unterscheidbar. Nichts wird wiederholt — nach einem Zeitlimit mit
+  demselben `idempotencyKey` erneut ausstellen.
+- Die Listen des Vertrags (`invoiceErrorCodes`, `creditNoteReasons`,
+  `invoiceSetupRequirements` …) als Konstanten; `test/rechnung_api_test.dart`
+  vergleicht sie in beide Richtungen mit `fixtures/oberflaeche.json`, und die
+  Beispielanfragen des Vertrags gehen unverändert an den Server.
+- `KasseneckApiError.details`: die übrige Nutzlast einer Fehlerantwort
+  (`errors`, `missing`, `remainingCents`), wie im JS-Paket. Abwärtskompatibel,
+  Standard leer.
+- Vertrag auf npm 0.16.0 (`zwillinge.yaml`).
+
 ## 6.15.0
 
 ### Betriebslogo dauerhaft ablegen
