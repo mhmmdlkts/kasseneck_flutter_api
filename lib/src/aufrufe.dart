@@ -35,6 +35,7 @@ abstract final class Aufrufe {
   static const hobexPayApi = 'hobexPayApi';
   static const hobexRefundApi = 'hobexRefundApi';
   static const issueInvoice = 'issueInvoice';
+  static const listBrands = 'listBrands';
   static const listInvoices = 'listInvoices';
   static const listMyArticleGroups = 'listMyArticleGroups';
   static const listMyArticles = 'listMyArticles';
@@ -79,6 +80,7 @@ abstract final class Aufrufe {
     hobexPayApi,
     hobexRefundApi,
     issueInvoice,
+    listBrands,
     listInvoices,
     listMyArticleGroups,
     listMyArticles,

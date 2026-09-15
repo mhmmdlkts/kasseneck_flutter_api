@@ -23,6 +23,7 @@ const List<String> rechnungAufrufe = [
   'getInvoicePdf',
   'getInvoiceXml',
   'getInvoiceSetupStatus',
+  'listBrands',
 ];
 
 /// Stabile Fehlercodes — am Code entscheiden, nie am Text.
@@ -44,6 +45,8 @@ const List<String> invoiceErrorCodes = [
   'einvoice_incomplete',
   'invoice_api_not_enabled',
   'invoice_setup_incomplete',
+  'language_not_allowed',
+  'brand_not_found',
 ];
 
 /// Gründe einer Gutschrift; der Server druckt den deutschen Text.
@@ -62,6 +65,10 @@ const List<String> invoiceListStatus = ['final', 'paid', 'cancelled', 'open', 'o
 const List<String> docTypes = ['RE', 'GU'];
 
 const List<String> einvoiceFormats = ['ubl', 'cii'];
+
+/// Sprachen einer Rechnung. Eine Rechnung hat eine Nummer und eine Sprache,
+/// beim Ausstellen eingefroren; Behörden bekommen immer `de`.
+const List<String> invoiceLanguages = ['de', 'en'];
 
 /// Was vor dem Ausstellen erfüllt sein muss — in dieser Reihenfolge meldet
 /// `getInvoiceSetupStatus` die Lücken.

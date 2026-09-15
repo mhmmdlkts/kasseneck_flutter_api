@@ -163,8 +163,12 @@ class RechnungApi {
   // ---- Dateien ------------------------------------------------------------------
 
   /// Das PDF, bei ausreichenden Angaben mit eingebetteter Factur-X-Datei.
-  Future<Uint8List> getInvoicePdf(String invoiceId) =>
-      _transport.rufenBinaer(Aufrufe.getInvoicePdf, {'invoiceId': invoiceId});
+  ///
+  /// Mit [language] in der anderen Sprache als der Rechnung kommt eine
+  /// **Übersetzungskopie**: dieselbe Nummer, auf jeder Seite gekennzeichnet,
+  /// ohne eingebettete E-Rechnung — keine eigene Rechnung.
+  Future<Uint8List> getInvoicePdf(String invoiceId, {String? language}) =>
+      _transport.rufenBinaer(Aufrufe.getInvoicePdf, {'invoiceId': invoiceId, 'language': ?language});
 
   /// Die E-Rechnung als XML-Text; [format] `ubl` (Peppol) oder `cii`.
   Future<String> getInvoiceXml(String invoiceId, {String format = 'ubl'}) async {
@@ -185,6 +189,15 @@ class RechnungApi {
     const name = Aufrufe.getInvoiceSetupStatus;
     final daten = await _transport.rufen(name, const {});
     return _lesen(name, () => InvoiceSetupStatus.fromJson(daten));
+  }
+
+  // ---- Marken --------------------------------------------------------------------
+
+  /// Die Marken des Kontos; `id` geht als `brandId` in [issueInvoice].
+  Future<List<Brand>> listBrands() async {
+    const name = Aufrufe.listBrands;
+    final daten = await _transport.rufen(name, const {});
+    return _lesen(name, () => [for (final b in _liste(daten, 'brands')) Brand.fromJson(b)]);
   }
 
   // ---- Hilfen -------------------------------------------------------------------

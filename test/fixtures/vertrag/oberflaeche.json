@@ -1,5 +1,5 @@
 {
-  "version": "0.16.0",
+  "version": "0.17.0",
   "aufrufe": [
     "activateCashregister",
     "cancelInvoice",
@@ -37,6 +37,7 @@
     "issueInvoice",
     "listCustomerCashregisters",
     "listInvoices",
+    "listBrands",
     "listMyArticleGroups",
     "listMyArticles",
     "listMyCashregisters",
@@ -398,7 +399,13 @@
       "credit_exceeds_invoice",
       "einvoice_incomplete",
       "invoice_api_not_enabled",
-      "invoice_setup_incomplete"
+      "invoice_setup_incomplete",
+      "language_not_allowed",
+      "brand_not_found"
+    ],
+    "invoiceLanguages": [
+      "de",
+      "en"
     ],
     "invoiceListStatus": [
       "final",
@@ -433,7 +440,8 @@
       "listInvoices",
       "getInvoicePdf",
       "getInvoiceXml",
-      "getInvoiceSetupStatus"
+      "getInvoiceSetupStatus",
+      "listBrands"
     ],
     "taxSchemes": [
       "normal",

@@ -1,3 +1,22 @@
+## 6.17.0
+
+### Rechnungs-API: Sprache (de/en) und Marke je Rechnung — Zwilling von npm 0.17.0
+
+Anlass: Rechnungen waren fest Deutsch und trugen immer die Standardmarke. Eine
+übersetzte Zweitrechnung mit eigener Nummer wäre umsatzsteuerlich falsch
+(UStR Rz 1527) — deshalb eine Sprache je Rechnung und die andere Sprache nur als
+gekennzeichnete Kopie (Rz 1528).
+
+- `invoiceLanguages` (`de`, `en`); `language` an `CustomerInput`/`Customer`
+  und `IssueInvoiceRequest`, `brandId` an `IssueInvoiceRequest`.
+- `Invoice.language` (ältere Rechnungen `de`), `Invoice.brandId`/`brandName`.
+- Neuer Aufruf `listBrands()` → `List<Brand>` (`id`, `name`, `isDefault`).
+- `getInvoicePdf(id, language: 'de')`: Übersetzungskopie in der anderen Sprache
+  (gleiche Nummer, auf jeder Seite gekennzeichnet, ohne eingebettete E-Rechnung).
+- Neue Fehlercodes `language_not_allowed` (Behörden nur Deutsch) und
+  `brand_not_found`.
+- Vertrag auf npm 0.17.0 (`zwillinge.yaml`).
+
 ## 6.16.0
 
 ### Rechnungs-API: Rechnungen statt Belege, als Zwilling von npm 0.16.0

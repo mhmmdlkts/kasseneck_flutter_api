@@ -1,0 +1,26 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Unbekannte Sprache",
+  "anfrage": {
+    "idempotencyKey": "bsp-en-2",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-15",
+    "language": "fr",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 1,
+        "unitPriceCents": 1000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "language"
+    ]
+  }
+}

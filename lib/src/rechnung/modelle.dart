@@ -57,6 +57,7 @@ class CustomerInput {
     this.isAuthority,
     this.note,
     this.externalId,
+    this.language,
   });
 
   factory CustomerInput.fromJson(Map<String, dynamic> j) => CustomerInput(
@@ -75,6 +76,7 @@ class CustomerInput {
         isAuthority: j['isAuthority'] is bool ? j['isAuthority'] as bool : null,
         note: _text(j, 'note'),
         externalId: _text(j, 'externalId'),
+        language: _text(j, 'language'),
       );
 
   /// `private` oder `company`.
@@ -102,6 +104,9 @@ class CustomerInput {
   /// Kennung im eigenen System; je Konto eindeutig.
   final String? externalId;
 
+  /// Sprache der Rechnungen an diesen Kunden (`de`/`en`); fehlt = `de`.
+  final String? language;
+
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'type': type, 'name': name, 'country': country};
     _setzen(j, 'legalForm', legalForm);
@@ -116,6 +121,7 @@ class CustomerInput {
     _setzen(j, 'isAuthority', isAuthority);
     _setzen(j, 'note', note);
     _setzen(j, 'externalId', externalId);
+    _setzen(j, 'language', language);
     return j;
   }
 }
@@ -138,6 +144,7 @@ class Customer {
     this.isAuthority = false,
     this.note,
     this.externalId,
+    this.language = 'de',
     this.createdAt,
     this.updatedAt,
   });
@@ -159,6 +166,7 @@ class Customer {
         isAuthority: j['isAuthority'] == true,
         note: _text(j, 'note'),
         externalId: _text(j, 'externalId'),
+        language: _text(j, 'language') == 'en' ? 'en' : 'de',
         createdAt: _text(j, 'createdAt'),
         updatedAt: _text(j, 'updatedAt'),
       );
@@ -179,6 +187,9 @@ class Customer {
   final bool isAuthority;
   final String? note;
   final String? externalId;
+
+  /// Sprache der Rechnungen an diesen Kunden; fehlt = `de`.
+  final String language;
   final String? createdAt;
   final String? updatedAt;
 }
@@ -263,6 +274,8 @@ class IssueInvoiceRequest {
     this.girocode,
     this.tracking,
     this.metadata,
+    this.language,
+    this.brandId,
   });
 
   factory IssueInvoiceRequest.fromJson(Map<String, dynamic> j) => IssueInvoiceRequest(
@@ -281,6 +294,8 @@ class IssueInvoiceRequest {
         girocode: j['girocode'] is bool ? j['girocode'] as bool : null,
         tracking: j['tracking'] is bool ? j['tracking'] as bool : null,
         metadata: j['metadata'] is Map ? Map<String, String>.from(j['metadata'] as Map) : null,
+        language: _text(j, 'language'),
+        brandId: _text(j, 'brandId'),
       );
 
   /// Pflicht: dieselbe Anfrage mit demselben Schlüssel erzeugt nie eine zweite Rechnung.
@@ -304,6 +319,12 @@ class IssueInvoiceRequest {
   /// Eigene Merkmale (höchstens 20), nie gedruckt.
   final Map<String, String>? metadata;
 
+  /// Sprache dieser Rechnung; sonst die des Kunden, sonst `de`.
+  final String? language;
+
+  /// Marke (Kennung aus `listBrands`); sonst die Standardmarke.
+  final String? brandId;
+
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'idempotencyKey': idempotencyKey};
     _setzen(j, 'customerId', customerId);
@@ -320,6 +341,8 @@ class IssueInvoiceRequest {
     _setzen(j, 'tracking', tracking);
     j['items'] = [for (final p in items) p.toJson()];
     _setzen(j, 'metadata', metadata);
+    _setzen(j, 'language', language);
+    _setzen(j, 'brandId', brandId);
     return j;
   }
 }
@@ -455,12 +478,16 @@ class Invoice {
     this.writtenOff,
     this.creditNotes,
     this.relatedInvoiceId,
+    this.language = 'de',
+    this.brandId,
+    this.brandName,
   });
 
   factory Invoice.fromJson(Map<String, dynamic> j) {
     final einvoice = j['einvoice'];
     final metadaten = j['metadata'];
     final related = j['related'];
+    final brand = j['brand'];
     return Invoice(
       id: _pflicht<String>(j, 'id'),
       number: _pflicht<String>(j, 'number'),
@@ -483,6 +510,9 @@ class Invoice {
       writtenOff: j['writtenOff'] is bool ? j['writtenOff'] as bool : null,
       creditNotes: j['creditNotes'] is List ? [for (final c in _liste(j, 'creditNotes')) CreditNoteSummary.fromJson(c)] : null,
       relatedInvoiceId: related is Map && related['invoiceId'] is String ? related['invoiceId'] as String : null,
+      language: _text(j, 'language') == 'en' ? 'en' : 'de',
+      brandId: brand is Map && brand['id'] is String ? brand['id'] as String : null,
+      brandName: brand is Map && brand['name'] is String ? brand['name'] as String : null,
     );
   }
 
@@ -509,6 +539,28 @@ class Invoice {
   final bool? writtenOff;
   final List<CreditNoteSummary>? creditNotes;
   final String? relatedInvoiceId;
+
+  /// Beim Ausstellen eingefroren; ältere Rechnungen `de`.
+  final String language;
+
+  /// Die eingefrorene Marke; `null` bei der Ersatzmarke ohne eigene Einrichtung.
+  final String? brandId;
+  final String? brandName;
+}
+
+/// Eine Marke des Kontos (Logo, Farbe, Absender); `id` geht als `brandId` in `issueInvoice`.
+class Brand {
+  const Brand({required this.id, required this.name, required this.isDefault});
+
+  factory Brand.fromJson(Map<String, dynamic> j) => Brand(
+        id: _pflicht<String>(j, 'id'),
+        name: _text(j, 'name') ?? '',
+        isDefault: j['isDefault'] == true,
+      );
+
+  final String id;
+  final String name;
+  final bool isDefault;
 }
 
 class InvoicePage {
