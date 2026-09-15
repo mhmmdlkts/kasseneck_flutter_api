@@ -70,6 +70,17 @@ const List<String> einvoiceFormats = ['ubl', 'cii'];
 /// beim Ausstellen eingefroren; Behörden bekommen immer `de`.
 const List<String> invoiceLanguages = ['de', 'en'];
 
+/// Einheiten einer Position. Der Aufdruck folgt der Sprache der Rechnung
+/// (Stk / pcs), in der E-Rechnung steht der Code aus UN/ECE Rec 20/21.
+const List<String> invoiceUnits = [
+  'piece', 'pair', 'set', 'dozen', 'second', 'minute', 'hour', 'day', 'night', 'week', 'month',
+  'quarter', 'half_year', 'year', 'milligram', 'gram', 'kilogram', 'tonne', 'millimetre',
+  'centimetre', 'metre', 'running_metre', 'kilometre', 'square_metre', 'hectare', 'millilitre',
+  'litre', 'cubic_metre', 'kilowatt_hour', 'megawatt_hour', 'gigabyte', 'terabyte',
+  'flat_rate', 'person', 'licence', 'user', 'device', 'session', 'trip', 'page', 'sheet',
+  'package', 'box', 'carton', 'bottle', 'can', 'roll', 'bag', 'pallet',
+];
+
 /// Was vor dem Ausstellen erfüllt sein muss — in dieser Reihenfolge meldet
 /// `getInvoiceSetupStatus` die Lücken.
 const List<String> invoiceSetupRequirements = [

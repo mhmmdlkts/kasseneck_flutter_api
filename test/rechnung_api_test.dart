@@ -79,6 +79,7 @@ void main() {
       'einvoiceFormats': einvoiceFormats,
       'invoiceSetupRequirements': invoiceSetupRequirements,
       'invoiceLanguages': invoiceLanguages,
+      'invoiceUnits': invoiceUnits,
     };
 
     test('jede Liste des Vertrags gibt es hier, und keine mehr', () {

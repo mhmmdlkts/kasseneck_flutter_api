@@ -239,6 +239,10 @@ class InvoiceItemInput {
   /// `0`, `10`, `13` oder `20`.
   final int vatRate;
   final String? subtitle;
+
+  /// Schlüssel aus [invoiceUnits] (`piece`, `hour`, …); ohne Angabe `piece`.
+  /// Als `String`, damit ein unbekannter Wert als `validation` mit Feldpfad
+  /// vom Server zurückkommt statt hier still zu verschwinden.
   final String? unit;
 
   /// Zeilenrabatt in Prozent, höchstens zwei Nachkommastellen.

@@ -15,7 +15,7 @@
         "quantity": 2,
         "unitPriceCents": 5000,
         "vatRate": 20,
-        "unit": "h"
+        "unit": "hour"
       }
     ]
   },

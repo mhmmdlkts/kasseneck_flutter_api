@@ -15,6 +15,10 @@ gekennzeichnete Kopie (Rz 1528).
   (gleiche Nummer, auf jeder Seite gekennzeichnet, ohne eingebettete E-Rechnung).
 - Neue Fehlercodes `language_not_allowed` (Behörden nur Deutsch) und
   `brand_not_found`.
+- `invoiceUnits`: `InvoiceItemInput.unit` ist jetzt ein Schlüssel aus dem
+  Katalog (`piece`, `hour`, …; Vorgabe `piece`) statt freier Text. Der
+  Aufdruck folgt der Sprache der Rechnung (Stk / pcs), in der E-Rechnung
+  steht der Code aus UN/ECE Rec 20/21.
 - Vertrag auf npm 0.17.0 (`zwillinge.yaml`).
 
 ## 6.16.0
