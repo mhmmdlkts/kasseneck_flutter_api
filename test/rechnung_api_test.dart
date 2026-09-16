@@ -80,6 +80,8 @@ void main() {
       'invoiceSetupRequirements': invoiceSetupRequirements,
       'invoiceLanguages': invoiceLanguages,
       'invoiceUnits': invoiceUnits,
+      'invoicePaymentMethods': invoicePaymentMethods,
+      'invoiceNoticeCodes': invoiceNoticeCodes,
     };
 
     test('jede Liste des Vertrags gibt es hier, und keine mehr', () {
@@ -134,6 +136,7 @@ void main() {
           'environment': 'live',
           'missing': [],
           'brands': [],
+          'payment': {'id': 'z1', 'amountCents': 12000, 'paidAt': '2026-09-20', 'method': 'transfer', 'reference': null},
         });
         final (:api, :log) = _apiMit([antwort]);
         switch (aufruf) {
@@ -147,6 +150,15 @@ void main() {
             await api.getInvoiceSetupStatus();
           case 'listBrands':
             await api.listBrands();
+          case 'recordInvoicePayment':
+            await api.recordInvoicePayment(RecordPaymentRequest(
+              idempotencyKey: anfrage['idempotencyKey'] as String,
+              invoiceId: anfrage['invoiceId'] as String,
+              method: anfrage['method'] as String,
+              amountCents: anfrage['amountCents'] as int?,
+              paidAt: anfrage['paidAt'] as String?,
+              reference: anfrage['reference'] as String?,
+            ));
           default:
             fail('Beispiel für $aufruf ohne Testweg');
         }
@@ -405,5 +417,55 @@ void main() {
       expect(Customer.fromJson({'id': 'k1', 'type': 'company', 'name': 'X', 'country': 'AT'}).language, 'de');
       expect(Customer.fromJson({'id': 'k1', 'type': 'company', 'name': 'X', 'country': 'AT', 'language': 'en'}).language, 'en');
     });
+  });
+
+  group('Zahlungen (Vertrag 0.18.0)', () {
+    test('Zahlung beim Ausstellen geht unverändert mit', () async {
+      final (:api, :log) = _apiMit([_erfolg({'invoice': _rechnung, 'replayed': false})]);
+      await api.issueInvoice(const IssueInvoiceRequest(
+        idempotencyKey: 'k-bezahlt', taxScheme: 'normal', priceMode: 'net', serviceStart: '2026-09-16',
+        items: [InvoiceItemInput(description: 'A', quantity: 1, unitPriceCents: 5000, vatRate: 20)],
+        payment: PaymentInput(method: 'card', reference: 'pi_3Q'),
+      ));
+      expect(_params(log.single)['payment'], {'method': 'card', 'reference': 'pi_3Q'});
+    });
+
+    test('recordInvoicePayment: Parameter unverändert, Rechnung und Zahlung gelesen', () async {
+      final (:api, :log) = _apiMit([_erfolg({
+        'invoice': _rechnung,
+        'payment': {'id': 'z1', 'amountCents': 12000, 'paidAt': '2026-09-20', 'method': 'transfer', 'reference': null},
+        'replayed': false,
+      })]);
+      final r = await api.recordInvoicePayment(const RecordPaymentRequest(
+        idempotencyKey: 'zahlung-1', invoiceId: 'inv1', method: 'transfer', amountCents: 12000, paidAt: '2026-09-20'));
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/recordInvoicePayment');
+      expect(_params(log.single), {
+        'idempotencyKey': 'zahlung-1', 'invoiceId': 'inv1', 'method': 'transfer', 'amountCents': 12000, 'paidAt': '2026-09-20',
+      });
+      expect((r.payment.id, r.payment.amountCents, r.replayed), ('z1', 12000, false));
+      expect(r.notice, isNull, reason: 'ohne Hinweis bleibt das Feld leer');
+    });
+
+    test('Bargeld: die Antwort trägt den Hinweis auf die Belegpflicht', () async {
+      final (:api, log: _) = _apiMit([_erfolg({
+        'invoice': _rechnung,
+        'payment': {'id': 'z2', 'amountCents': 12000, 'method': 'cash'},
+        'replayed': false,
+        'notice': {'code': 'cash_receipt_required', 'message': 'Barzahlung braucht einen Beleg.'},
+      })]);
+      final r = await api.recordInvoicePayment(
+        const RecordPaymentRequest(idempotencyKey: 'bar-1', invoiceId: 'inv1', method: 'cash'));
+      expect(r.notice?.code, 'cash_receipt_required');
+      expect(invoiceNoticeCodes, contains(r.notice!.code));
+    });
+
+    test('eine Antwort ohne payment ist ein Antwortfehler', () async {
+      final (:api, log: _) = _apiMit([_erfolg({'invoice': _rechnung, 'replayed': false})]);
+      await expectLater(
+        api.recordInvoicePayment(const RecordPaymentRequest(idempotencyKey: 'k', invoiceId: 'inv1', method: 'card')),
+        throwsA(isA<KasseneckValidationError>()),
+      );
+    });
+
   });
 }

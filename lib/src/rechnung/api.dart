@@ -191,6 +191,27 @@ class RechnungApi {
     return _lesen(name, () => InvoiceSetupStatus.fromJson(daten));
   }
 
+  // ---- Zahlungen -----------------------------------------------------------------
+
+  /// Eine Zahlung nachtragen, die nach dem Ausstellen eingetroffen ist.
+  ///
+  /// Der `idempotencyKey` ist Pflicht: ohne ihn bucht ein Wiederholungslauf
+  /// nach einem Zeitlimit ein zweites Mal. Bei `method: 'cash'` wird die
+  /// Zahlung gebucht und die Antwort trägt zusätzlich einen [InvoiceNotice] —
+  /// eine Barzahlung ist ein Barumsatz und braucht einen Beleg (§ 132a BAO).
+  Future<RecordPaymentResult> recordInvoicePayment(RecordPaymentRequest anfrage) async {
+    const name = Aufrufe.recordInvoicePayment;
+    final daten = await _transport.rufen(name, anfrage.toJson());
+    return _lesen(name, () => RecordPaymentResult(
+          invoice: Invoice.fromJson(_objekt(daten, 'invoice')),
+          payment: InvoicePayment.fromJson(_objekt(daten, 'payment')),
+          replayed: daten['replayed'] == true,
+          notice: daten['notice'] is Map
+              ? InvoiceNotice.fromJson(Map<String, dynamic>.from(daten['notice'] as Map))
+              : null,
+        ));
+  }
+
   // ---- Marken --------------------------------------------------------------------
 
   /// Die Marken des Kontos; `id` geht als `brandId` in [issueInvoice].

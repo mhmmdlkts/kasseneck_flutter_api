@@ -1,0 +1,14 @@
+{
+  "aufruf": "recordInvoicePayment",
+  "beschreibung": "Ohne Idempotenz-Schluessel — eine Wiederholung wuerde zweimal buchen",
+  "anfrage": {
+    "invoiceId": "rechnung_beispiel",
+    "method": "transfer",
+    "amountCents": 12000
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": ["idempotencyKey"]
+  }
+}

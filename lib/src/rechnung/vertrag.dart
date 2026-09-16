@@ -24,6 +24,7 @@ const List<String> rechnungAufrufe = [
   'getInvoiceXml',
   'getInvoiceSetupStatus',
   'listBrands',
+  'recordInvoicePayment',
 ];
 
 /// Stabile Fehlercodes — am Code entscheiden, nie am Text.
@@ -47,6 +48,8 @@ const List<String> invoiceErrorCodes = [
   'invoice_setup_incomplete',
   'language_not_allowed',
   'brand_not_found',
+  'not_payable',
+  'payment_exceeds_invoice',
 ];
 
 /// Gründe einer Gutschrift; der Server druckt den deutschen Text.
@@ -72,6 +75,14 @@ const List<String> invoiceLanguages = ['de', 'en'];
 
 /// Einheiten einer Position. Der Aufdruck folgt der Sprache der Rechnung
 /// (Stk / pcs), in der E-Rechnung steht der Code aus UN/ECE Rec 20/21.
+/// Wie eine Rechnung bezahlt wurde. `cash` wird gebucht, die Antwort trägt dann
+/// zusätzlich den Hinweis `cash_receipt_required`: eine Barzahlung ist ein
+/// Barumsatz und braucht einen Beleg (§ 132a BAO).
+const List<String> invoicePaymentMethods = ['transfer', 'card', 'online', 'cash'];
+
+/// Hinweise an einer erfolgreichen Antwort — keine Fehler.
+const List<String> invoiceNoticeCodes = ['cash_receipt_required'];
+
 const List<String> invoiceUnits = [
   'piece', 'pair', 'set', 'dozen', 'second', 'minute', 'hour', 'day', 'night', 'week', 'month',
   'quarter', 'half_year', 'year', 'milligram', 'gram', 'kilogram', 'tonne', 'millimetre',

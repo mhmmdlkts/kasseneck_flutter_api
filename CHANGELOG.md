@@ -1,3 +1,26 @@
+## 6.18.0
+
+### Rechnungs-API: bezahlte Rechnung und Zahlungen nachtragen — Zwilling von npm 0.18.0
+
+Anlass: Die API wird vor allem von Online-Shops benutzt, die **vor** der Rechnung
+kassieren. Bisher entstand immer eine offene Rechnung — mit Giro-QR und
+Fälligkeit auf dem Blatt, obwohl das Geld längst da war.
+
+- `IssueInvoiceRequest.payment` (`PaymentInput`: `method`, optional `amountCents`,
+  `paidAt`, `reference`). Die Zahlung entsteht serverseitig in derselben
+  Transaktion wie das Festschreiben.
+- Neuer Aufruf `recordInvoicePayment(RecordPaymentRequest)` →
+  `RecordPaymentResult` (`invoice`, `payment`, `replayed`, optional `notice`).
+  Der `idempotencyKey` ist Pflicht: ohne ihn bucht eine Wiederholung zweimal.
+- `invoicePaymentMethods` (`transfer`, `card`, `online`, `cash`) und
+  `invoiceNoticeCodes` (`cash_receipt_required`).
+- Neue Fehlercodes `not_payable` und `payment_exceeds_invoice`.
+- Vertrag auf npm 0.18.0 (`zwillinge.yaml`).
+
+Bei `method: 'cash'` wird die Zahlung gebucht und die Antwort trägt zusätzlich
+einen `InvoiceNotice`: eine Barzahlung ist ein Barumsatz und braucht einen Beleg
+(§ 132a BAO) — der Vermerk an der Rechnung ersetzt ihn nicht.
+
 ## 6.17.0
 
 ### Rechnungs-API: Sprache (de/en) und Marke je Rechnung — Zwilling von npm 0.17.0

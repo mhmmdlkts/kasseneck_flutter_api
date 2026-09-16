@@ -280,6 +280,7 @@ class IssueInvoiceRequest {
     this.metadata,
     this.language,
     this.brandId,
+    this.payment,
   });
 
   factory IssueInvoiceRequest.fromJson(Map<String, dynamic> j) => IssueInvoiceRequest(
@@ -300,6 +301,7 @@ class IssueInvoiceRequest {
         metadata: j['metadata'] is Map ? Map<String, String>.from(j['metadata'] as Map) : null,
         language: _text(j, 'language'),
         brandId: _text(j, 'brandId'),
+        payment: j['payment'] is Map ? PaymentInput.fromJson(Map<String, dynamic>.from(j['payment'] as Map)) : null,
       );
 
   /// Pflicht: dieselbe Anfrage mit demselben Schlüssel erzeugt nie eine zweite Rechnung.
@@ -329,6 +331,10 @@ class IssueInvoiceRequest {
   /// Marke (Kennung aus `listBrands`); sonst die Standardmarke.
   final String? brandId;
 
+  /// Schon bezahlt: die Zahlung entsteht in derselben Transaktion wie das
+  /// Festschreiben, das PDF trägt dann keine Zahlungsinformationen.
+  final PaymentInput? payment;
+
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'idempotencyKey': idempotencyKey};
     _setzen(j, 'customerId', customerId);
@@ -347,8 +353,112 @@ class IssueInvoiceRequest {
     _setzen(j, 'metadata', metadata);
     _setzen(j, 'language', language);
     _setzen(j, 'brandId', brandId);
+    _setzen(j, 'payment', payment?.toJson());
     return j;
   }
+}
+
+/// Eine Zahlung, wie das Fremdsystem sie meldet.
+class PaymentInput {
+  const PaymentInput({required this.method, this.amountCents, this.paidAt, this.reference});
+
+  factory PaymentInput.fromJson(Map<String, dynamic> j) => PaymentInput(
+        method: _pflicht<String>(j, 'method'),
+        amountCents: _ganz(j, 'amountCents'),
+        paidAt: _text(j, 'paidAt'),
+        reference: _text(j, 'reference'),
+      );
+
+  /// Ein Schlüssel aus [invoicePaymentMethods].
+  final String method;
+
+  /// Ohne Angabe der volle Bruttobetrag.
+  final int? amountCents;
+
+  /// Ohne Angabe der heutige Wiener Tag; nie in der Zukunft.
+  final String? paidAt;
+
+  /// Zahlungskennung des Fremdsystems — gespeichert, aber nie gedruckt.
+  final String? reference;
+
+  Map<String, dynamic> toJson() {
+    final j = <String, dynamic>{'method': method};
+    _setzen(j, 'amountCents', amountCents);
+    _setzen(j, 'paidAt', paidAt);
+    _setzen(j, 'reference', reference);
+    return j;
+  }
+}
+
+/// Eine Zahlung nachtragen. Der Schlüssel ist Pflicht: ohne ihn bucht eine
+/// Wiederholung nach einem Zeitlimit ein zweites Mal.
+class RecordPaymentRequest {
+  const RecordPaymentRequest({
+    required this.idempotencyKey,
+    required this.invoiceId,
+    required this.method,
+    this.amountCents,
+    this.paidAt,
+    this.reference,
+  });
+
+  final String idempotencyKey;
+  final String invoiceId;
+  final String method;
+  final int? amountCents;
+  final String? paidAt;
+  final String? reference;
+
+  Map<String, dynamic> toJson() {
+    final j = <String, dynamic>{'idempotencyKey': idempotencyKey, 'invoiceId': invoiceId, 'method': method};
+    _setzen(j, 'amountCents', amountCents);
+    _setzen(j, 'paidAt', paidAt);
+    _setzen(j, 'reference', reference);
+    return j;
+  }
+}
+
+/// Eine gebuchte Zahlung, wie die API sie zurückgibt.
+class InvoicePayment {
+  const InvoicePayment({required this.id, required this.amountCents, this.paidAt, this.method, this.reference});
+
+  factory InvoicePayment.fromJson(Map<String, dynamic> j) => InvoicePayment(
+        id: _pflicht<String>(j, 'id'),
+        amountCents: _pflicht<num>(j, 'amountCents').toInt(),
+        paidAt: _text(j, 'paidAt'),
+        method: _text(j, 'method'),
+        reference: _text(j, 'reference'),
+      );
+
+  final String id;
+  final int amountCents;
+  final String? paidAt;
+  final String? method;
+  final String? reference;
+}
+
+/// Ein Hinweis an einer erfolgreichen Antwort — kein Fehler, nur etwas, das der
+/// Aufrufer wissen sollte (heute nur `cash_receipt_required`).
+class InvoiceNotice {
+  const InvoiceNotice({required this.code, required this.message});
+
+  factory InvoiceNotice.fromJson(Map<String, dynamic> j) => InvoiceNotice(
+        code: _pflicht<String>(j, 'code'),
+        message: _text(j, 'message') ?? '',
+      );
+
+  final String code;
+  final String message;
+}
+
+/// Ergebnis von `recordInvoicePayment`.
+class RecordPaymentResult {
+  const RecordPaymentResult({required this.invoice, required this.payment, required this.replayed, this.notice});
+
+  final Invoice invoice;
+  final InvoicePayment payment;
+  final bool replayed;
+  final InvoiceNotice? notice;
 }
 
 class CreditNoteRequest {
