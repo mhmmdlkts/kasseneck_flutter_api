@@ -372,6 +372,75 @@ Die vollständige Tabelle steht in `lib/src/hobex_hps/response_codes.dart`
 (`HpsCodes.all`) und im npm-Zwilling als `HPS_CODES`, festgenagelt über
 `fixtures/hobex-hps-codes.json`.
 
+## Die TECS-Liste (16.09.2026)
+
+Nachgereicht von hobex auf die Frage nach `9908` und den Host-Codes: das HPS
+reicht die Antwortcodes der TECS-Plattform durch, auf der hobex autorisiert
+(„Fehlercodes ist aktuell gleich Tecs NaTALI. Hier hat sich bei HPS noch
+nichts geändert“). Die Liste führt rund 330 Codes. Sechs davon waren schon
+gemessen, ohne dass wir ihre Herkunft kannten: `0`, `9002`, `9003`, `9011`,
+`9027`, `9900` — und `55` als `0055`.
+
+**Schreibweise.** TECS führt die ISO-8583-Antworten des Hosts vierstellig
+(`0055`), das Terminal sendet sie ohne führende Nullen (`55`, gemessen). Die
+Tabelle führt die Form des Terminals, `HpsCodes.normalize` bzw.
+`normalizeHpsCode` gleicht beim Einlesen an. Ohne das wäre ein `0000` keine
+Genehmigung, sondern über die Positivliste eine Ablehnung.
+
+Eingeordnet nach derselben Regel wie die HPS-Liste — **wo der Code entsteht**:
+
+| Lage | Beispiele | Ausgang |
+|---|---|---|
+| Antwort des Hosts ohne Genehmigung | `5`, `14`, `33`, `43`, `51`, `54`, `55`, `57`, `61`, `75`, `77`, `91`, `96` | abgelehnt, nichts belastet |
+| Abweisung vor der Weiterleitung (Anfrage, Terminal, Risikoprüfung) | `3018`, `3019`, `81xx`, `9001`, `9004`, `9009`, `6000`–`6003` | abgelehnt |
+| vom System selbst storniert | `3053`, `9032`, `8009` | abgelehnt |
+| **Genehmigung, die nicht `0` ist** | `8`, `10` (Teilbetrag), `11`, `16`, `32` | ungewiss, **nie** abgelehnt |
+| **keine oder keine brauchbare Host-Antwort** | `9`, `20`, `22`, `68`, `81`, `94`, `5274`–`5278`, `8006`, `8008`, `8010`, `8016`, `9006`, `9007`, `9022`, `9905`–`9909` | ungewiss, **Storno wird nachgeschickt** |
+| interner Fehler im Backend | `3036`, `5127`, `5256`, `8999`, `9900`–`9902` | ungewiss |
+| andere TECS-Produkte (Webservices, mPOS, TecsWeb, SEPA) | `35xx`, `36xx`, `40xx`, `70xx`, `85xx`, `9024`, `30091`–`30099` | keine Aussage |
+
+**Storno nach ausbleibender Host-Antwort.** Zu `9908` schreibt hobex: „ein
+Timeout wie jeder andere. Richtigerweise sollte in dem Fall ein Storno
+nachgeschickt werden.“ Dasselbe gilt für die HPS-Codes, bei denen hobex „No
+auto-reversal“ vermerkt (`100006`, `100007`) und die übrigen ungewissen
+Host-Codes der HPS-Liste (`100023`, `100024`, `100026`, `100027`).
+`HpsCode.sendReversal` markiert sie; `HpsPayments.pay` schickt dann **genau
+einmal** einen Void mit Kennung und Betrag der Zahlung, bevor die
+Statusabfrage läuft:
+
+- Void mit `0` quittiert → `declined`, Grund `voidedAfterHostFault`.
+- Void scheitert oder nennt einen anderen Code → Klärung wie bei jeder
+  Störung beim Host. Meldet die Statusabfrage danach `9011`, hat das Storno
+  gegriffen → ebenfalls `declined`. Meldet sie `0`, gilt die Genehmigung.
+
+Das ist die sichere Richtung: schlimmstenfalls wird eine Zahlung aufgehoben,
+die der Host genehmigt hätte, und der Kunde zahlt noch einmal. **Am Gerät
+ungemessen** ist, wie das Terminal einen Void nach einem Host-Timeout
+beantwortet; gemessen ist nur `0` auf eine bestehende und `9002` auf eine
+unbekannte Kennung. Eine Gutschrift bekommt kein Storno — TECS lässt ihre
+Aufhebung nicht zu (`9031`).
+
+**Zwei Einordnungen, die vom ersten Blick abweichen:**
+
+- `9900` war als „keine Aussage“ geführt. Gemessen kam er aber, **nachdem**
+  die Karte verarbeitet war, und der Vorgang blieb unauffindbar; TECS nennt
+  ihn einen Datenbankfehler im Backend. Als „keine Aussage“ hätte die
+  Zwei-`9027`-Regel daraus „nichts belastet“ gemacht. Jetzt: ungewiss.
+- `9033` („Original TX declined – cannot cancel“) antwortet auf eine
+  Aufhebung. Als Ablehnung gelesen hieße das „Aufhebung hat nicht gegriffen,
+  weiter belastet“ — für eine Zahlung, die nie belastet war. Jetzt: keine
+  Aussage, Grund `originalDeclined`.
+
+Neue Gründe: `approvedWithCondition`, `issuerDeclined`, `cardBlocked`,
+`cardExpired`, `insufficientFunds`, `pinTriesExceeded`, `pinRequired`,
+`acquirerSetup`, `hostRejected`, `hostUnavailable`, `refundRejected`,
+`reversedByHost`, `voidedAfterHostFault`, `hostTimeout`, `cancelDenied`,
+`originalDeclined`. Eine Kasse mit eigener Übersetzung braucht für jeden
+einen Text.
+
+Die Tabelle steht in `lib/src/hobex_hps/tecs_codes.dart` (eine Zeile je
+Code) und im npm-Zwilling in `src/payments/hobex-hps/tecs-codes.ts`.
+
 ## Der gemessene Stand, auf einen Blick
 
 Alle bisher gemessenen und im Code benannten Ausgänge (Stand 27.08.2026, TID
@@ -407,9 +476,10 @@ Dazu kommen seit 11.09.2026 die Codes aus der Antwortcodeliste von hobex
   oder ob dieselbe Meldung noch andere Ursachen hat (siehe oben).
 - Wie lange das Terminal eine genehmigte Transaktion abrufbar hält.
 - Andere Host-Ablehnungen als `55` (Deckung, gesperrte Karte, abgelaufen) —
-  gemessen ist nur die falsche PIN; alle anderen bleiben Wissenslücken. Die
-  Liste von hobex enthält nur die `100xxx`-Codes der HPS-Anwendung, keine
-  Host-Codes.
+  gemessen ist nur die falsche PIN. Seit 16.09.2026 sind sie über die
+  TECS-Liste benannt, aber an keinem Gerät gesehen.
+- Wie das Terminal ein nachgeschicktes Storno nach `9908` beantwortet, und ob
+  es einen Vorgang mit Host-Timeout überhaupt aufbewahrt.
 - Welche der „ungewissen“ Codes (`100006` usw.) die Statusabfrage danach
   aufbewahrt, und ob `100029` die Stornierung wirklich immer durchbringt.
   Keiner davon ist bisher an einem Gerät aufgetreten.

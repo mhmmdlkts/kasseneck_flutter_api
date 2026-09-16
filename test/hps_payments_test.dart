@@ -2050,20 +2050,24 @@ void main() {
         status: [
           (_) => json({'responseCode': '100006'})
         ],
+        cancel: [boom],
       );
       final res =
           await paymentsFor(t).pay(amount: 25, transactionId: '81020400');
       expect(res.outcome, CardPaymentOutcome.unresolved);
       expect(res.reason, HpsCodeReason.hostFault);
       expect(res.isHostUncertain, isTrue);
-      expect(t.callsOn('status'), 2);
+      // Die erste Abfrage nennt die Stoerung und loest das Storno aus, die
+      // beiden folgenden sagen nichts Neues.
+      expect(t.callsOn('cancel'), 1);
+      expect(t.callsOn('status'), 3);
     });
 
     test(
         'unbekannter Code, Status meldet einmal 100007, dann 9027 -> die '
         'Stoerung bleibt stehen, kein declined', () async {
       final res = await zahlungMit(
-        '51',
+        '5555',
         status: [
           (_) => json({'responseCode': '100007'}),
           (_) => json({'responseCode': '9027'}),
@@ -2077,7 +2081,7 @@ void main() {
       // Gegenprobe zur Ausnahme: ein unbekannter Code, danach zweimal 9027,
       // bleibt die gemessene Ablehnung vom 28.08.2026.
       final res = await zahlungMit(
-        '51',
+        '5555',
         status: [
           (_) => json({'responseCode': '9027'})
         ],
@@ -2091,7 +2095,7 @@ void main() {
         () async {
       // Das Wort steht fuer das gemessene 9027; Aufrufer lesen es so.
       final res = await zahlungMit(
-        '51',
+        '5555',
         status: [
           (_) => json({'responseCode': TransactionResponse.notFoundCode})
         ],
@@ -2175,6 +2179,187 @@ void main() {
           await paymentsFor(t).cancel(transactionId: '81020900', amount: 25);
       expect(res.outcome, CardPaymentOutcome.approved);
       expect(res.reason, HpsCodeReason.canceled);
+    });
+  });
+
+  group('TECS-Liste (16.09.2026): Storno nach ausbleibender Host-Antwort', () {
+    FakeTerminal terminalMit({
+      required List<Responder> payment,
+      List<Responder> cancel = const <Responder>[],
+      List<Responder> status = const <Responder>[],
+    }) =>
+        FakeTerminal(
+          payment: payment,
+          cancel: cancel,
+          status: status,
+          abort: [
+            (_) => json({'responseCode': '100010'})
+          ],
+        );
+
+    Responder antwort(String code) =>
+        (_) => json({'responseCode': code, 'transactionId': '81030000'});
+
+    test('9908, Storno quittiert -> declined, ohne Abbruch und ohne Abfrage',
+        () async {
+      // Der Fall vom 11.09.2026 (TID 3556988): damals unbekannt und offen.
+      // hobex: "ein Timeout wie jeder andere. Richtigerweise sollte in dem
+      // Fall ein Storno nachgeschickt werden."
+      final t = terminalMit(
+        payment: [antwort('9908')],
+        cancel: [antwort('0')],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.voidedAfterHostFault);
+      expect(res.mayRetrySafely, isTrue);
+      expect(t.callsOn('abort'), 0);
+      expect(t.callsOn('status'), 0);
+      expect(t.callsOn('cancel'), 1);
+
+      final storno = t.log.singleWhere((r) => r.method == 'DELETE');
+      expect(storno.url.path, endsWith('/3600335/81030000'));
+      expect(storno.url.queryParameters['amount'], '25');
+      expect(res.steps, contains(contains('9908')));
+      expect(res.steps.last, contains('Storno nachgeschickt und bestaetigt'));
+    });
+
+    test('Storno ohne Quittung, Status meldet 9011 -> declined', () async {
+      final t = terminalMit(
+        payment: [antwort('9908')],
+        cancel: [antwort('9908')],
+        status: [
+          (_) => json({'responseCode': '9011'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.voidedAfterHostFault);
+      expect(res.steps, contains(contains('nicht bestaetigt (9908')));
+    });
+
+    test('Storno scheitert, Status zweimal 9027 -> unresolved, nie declined',
+        () async {
+      final t = terminalMit(
+        payment: [antwort('9908')],
+        cancel: [boom],
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.reason, HpsCodeReason.hostTimeout);
+      expect(res.isHostUncertain, isTrue);
+      expect(t.callsOn('cancel'), 1);
+    });
+
+    test('Storno abgewiesen (9002), Status meldet 0 -> approved', () async {
+      // Das Terminal kennt den Vorgang nicht, der Host hat aber genehmigt:
+      // die Genehmigung zaehlt.
+      final t = terminalMit(
+        payment: [antwort('9908')],
+        cancel: [antwort('9002')],
+        status: [
+          (_) => json({'responseCode': '0', 'transactionId': '81030000'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.approved);
+    });
+
+    test('Leitung reisst ab, erst der Status nennt 9905 -> Storno, declined',
+        () async {
+      final t = terminalMit(
+        payment: [boom],
+        cancel: [antwort('0')],
+        status: [
+          (_) => json({'responseCode': '9905'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.voidedAfterHostFault);
+      expect(t.callsOn('abort'), 1);
+      expect(t.callsOn('cancel'), 1);
+    });
+
+    test('das Storno geht hoechstens einmal hinaus', () async {
+      final t = terminalMit(
+        payment: [antwort('9908')],
+        cancel: [antwort('9908')],
+        status: [
+          (_) => json({'responseCode': '9908'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(t.callsOn('cancel'), 1);
+    });
+
+    test('Gutschrift mit 9908 -> kein Storno, Ausgang offen', () async {
+      // TECS laesst die Aufhebung einer Gutschrift nicht zu (9031).
+      final t = FakeTerminal(
+        refund: [antwort('9908')],
+        status: [
+          (_) => json({'responseCode': '9027'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).refund(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(t.callsOn('cancel'), 0);
+      expect(res.steps, contains(contains('Kein Storno nachgeschickt')));
+      expect(
+        res.steps.where((s) => s.contains('Kein Storno')).length,
+        1,
+      );
+    });
+
+    test('Teilgenehmigung (10) -> offen, kein Storno, kein Abbruch', () async {
+      final t = terminalMit(
+        payment: [antwort('10')],
+        status: [
+          (_) => json({'responseCode': '10'})
+        ],
+      );
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.unresolved);
+      expect(res.reason, HpsCodeReason.approvedWithCondition);
+      expect(res.isHostUncertain, isTrue);
+      expect(t.callsOn('cancel'), 0);
+      expect(t.callsOn('abort'), 0);
+      expect(res.steps.first, contains('Genehmigung mit Vorbehalt'));
+    });
+
+    test('vierstellige Schreibweise: 0000 genehmigt, 0051 lehnt ab', () async {
+      final genehmigt = await paymentsFor(terminalMit(payment: [antwort('0000')]))
+          .pay(amount: 25, transactionId: '81030000');
+      expect(genehmigt.outcome, CardPaymentOutcome.approved);
+
+      final abgelehnt = await paymentsFor(terminalMit(payment: [antwort('0051')]))
+          .pay(amount: 25, transactionId: '81030000');
+      expect(abgelehnt.outcome, CardPaymentOutcome.declined);
+      expect(abgelehnt.reason, HpsCodeReason.insufficientFunds);
+      expect(abgelehnt.response!.raw['responseCode'], '0051',
+          reason: 'der Rumpf bleibt, wie das Terminal ihn schickte');
+    });
+
+    test('Host-Ablehnung (05) entscheidet sofort', () async {
+      final t = terminalMit(payment: [antwort('05')]);
+      final res =
+          await paymentsFor(t).pay(amount: 25, transactionId: '81030000');
+      expect(res.outcome, CardPaymentOutcome.declined);
+      expect(res.reason, HpsCodeReason.issuerDeclined);
+      expect(t.callsOn('status'), 0);
+      expect(res.steps.single, 'Terminal: abgelehnt (5 "declined")');
     });
   });
 

@@ -41,11 +41,11 @@ void main() {
     });
     test('ein nie gemessener Code ist KEINE Aussage -- auch keine Ablehnung',
         () {
-      // '05' SIEHT aus wie ein Ablehnungscode, ist aber nie gemessen worden.
-      // Seit dem Umbau auf eine echte Positivliste (siehe isConclusive) reicht
-      // "sieht aus wie" nicht mehr -- nur ein benannter, gemessener Code
-      // entscheidet.
-      final r = TransactionResponse.fromJson({'responseCode': '05'});
+      // '4711' SIEHT aus wie ein TECS-Code, steht aber in keiner Liste. Seit
+      // dem Umbau auf eine echte Positivliste (siehe isConclusive) reicht
+      // "sieht aus wie" nicht -- nur ein benannter Code entscheidet. ('05'
+      // stand hier bis zur TECS-Liste vom 16.09.2026; seither ist er benannt.)
+      final r = TransactionResponse.fromJson({'responseCode': '4711'});
       expect(r.isApproved, isFalse);
       expect(r.isInProgress, isFalse);
       expect(r.isConclusive, isFalse);
@@ -128,10 +128,10 @@ void main() {
         () {
       // Am 02.09.2026 im Betrieb gemessen (TID 3556988, HPS 1.11.4, Firmware
       // 2.3.9). Zweistellig, weil ein Antwortcode des HOSTS (ISO 8583), kein
-      // Terminalcode -- der erste dieser Klasse, der je gemessen wurde. Nur
-      // er wird schluessig; '05' (Test oben) bleibt eine Wissensluecke: die
-      // zweistelligen Codes sind KEINE Familie von Ablehnungen, 08, 10, 11
-      // und 85 sind dort Genehmigungen.
+      // Terminalcode -- der erste dieser Klasse, der je gemessen wurde. Die
+      // zweistelligen Codes sind KEINE Familie von Ablehnungen (08, 10, 11
+      // und 16 sind dort Genehmigungen); seit der TECS-Liste steht jeder
+      // einzeln in der Tabelle, siehe hobex_hps_codes_test.dart.
       final r = TransactionResponse.fromJson({
         'responseCode': '55',
         'responseText': 'PIN falsch',
@@ -170,7 +170,7 @@ void main() {
     test(
         'ein Code, dessen Bedeutung wir nie gemessen haben, bleibt eine '
         'Wissensluecke -- egal wie er aussieht', () {
-      for (final code in ['9900', '77777', '05', '12345', 'ABC']) {
+      for (final code in ['9900', '77777', '4711', '12345', 'ABC']) {
         final conclusive =
             TransactionResponse.fromJson({'responseCode': code}).isConclusive;
         expect(conclusive, isFalse,

@@ -32,6 +32,8 @@ void main() {
           'reason': c.reason.name,
           'source': c.source.name,
           'rejectsRequest': c.rejectsRequest,
+          'sendReversal': c.sendReversal,
+          'tecsTitle': c.tecsTitle,
         },
     ];
     expect(hier, dort);
