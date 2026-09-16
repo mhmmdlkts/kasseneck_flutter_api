@@ -92,20 +92,33 @@ void main() {
     });
 
     test('gemessene Codes behalten ihre Wirkung', () {
-      // Die Messungen vom 26.08.-02.09.2026 werden durch die Liste nicht
+      // Die Messungen vom 26.08.-02.09.2026 werden durch die Listen nicht
       // ueberstimmt: sie stehen weiter so da, wie sie gemessen wurden.
       expect(HpsCodes.lookup('9027')!.effect, HpsCodeEffect.noStatement);
-      expect(HpsCodes.lookup('9900')!.effect, HpsCodeEffect.noStatement);
       for (final code in ['9002', '9003', '9011', '55', '100108']) {
         expect(HpsCodes.lookup(code)!.conclusive, isTrue, reason: code);
-        expect(HpsCodes.lookup(code)!.source, HpsCodeSource.measured,
-            reason: code);
       }
+      expect(HpsCodes.lookup('100108')!.source, HpsCodeSource.measured);
+    });
+
+    test('9900 ist seit der TECS-Liste ein ungewisser Ausgang', () {
+      // Gemessen am 27.08.2026: die Karte war verarbeitet, DANN kam 9900, und
+      // der Vorgang blieb unauffindbar. TECS nennt den Code einen
+      // Datenbankfehler im Backend -- ob belastet wurde, ist offen. Als
+      // noStatement haette die Zwei-9027-Regel daraus "nichts belastet"
+      // gemacht.
+      final info = HpsCodes.lookup('9900')!;
+      expect(info.effect, HpsCodeEffect.hostUncertain);
+      expect(info.reason, HpsCodeReason.internalError);
+      expect(info.sendReversal, isFalse);
     });
 
     test('genau diese Codes weisen die Anfrage selbst ab', () {
-      final abweisend =
-          HpsCodes.all.where((c) => c.rejectsRequest).map((c) => c.code);
+      final abweisend = HpsCodes.all
+          .where((c) => c.rejectsRequest)
+          // die TECS-Liste hat ihren eigenen Test
+          .where((c) => c.tecsTitle == null || c.source != HpsCodeSource.documented)
+          .map((c) => c.code);
       expect(abweisend.toSet(), {
         '9002',
         '100001',
@@ -181,7 +194,7 @@ void main() {
     });
 
     test('ein Code ausserhalb der Tabelle bleibt unbekannt', () {
-      for (final code in ['05', '51', '100016', '100030', '100100']) {
+      for (final code in ['4711', '5555', '100016', '100030', '100100']) {
         final r = mit(code);
         expect(r.isConclusive, isFalse, reason: code);
         expect(r.isUnknownCode, isTrue, reason: code);

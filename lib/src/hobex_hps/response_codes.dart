@@ -38,7 +38,37 @@
 ///   beweist hier nichts: sie spiegelt nur, was das Terminal gespeichert hat,
 ///   nicht, was beim Host passiert ist. Genau deshalb greift die
 ///   Zwei-`9027`-Regel fuer diese Codes NICHT (siehe `HpsPayments`).
+///
+/// ## Dritte Quelle: die TECS-Liste (16.09.2026)
+///
+/// hobex hat nachgereicht, dass das HPS die Codes der TECS-Plattform
+/// durchreicht, und deren Liste geschickt -- rund 330 Codes, darunter die
+/// ISO-8583-Antworten des Hosts. Eingeordnet sind sie in `tecs_codes.dart`,
+/// nach derselben Regel. Neu kommt dazu:
+///
+/// - [HpsCode.sendReversal]: bei einem Code, der fuer "keine oder keine
+///   brauchbare Antwort des Hosts" steht, schickt `HpsPayments.pay` ein Storno
+///   nach. Das ist die Vorgabe von hobex zu `9908` ("ein Timeout wie jeder
+///   andere. Richtigerweise sollte in dem Fall ein Storno nachgeschickt
+///   werden") und gilt ebenso fuer die HPS-Codes, bei denen hobex "No
+///   auto-reversal" vermerkt.
+/// - Die Schreibweise: TECS fuehrt `0055`, das Terminal sendet `55`.
+///   [HpsCodes.normalize] macht beides zu einem Code.
+///
+/// ## Einen neuen Code aufnehmen
+///
+/// 1. Eintrag hier (gemessen oder HPS-Liste) oder in `tecs_codes.dart`
+///    (TECS-Liste) -- Wirkung nach der Regel oben, Grund aus
+///    [HpsCodeReason]; nur wenn am Tresen etwas anderes zu tun ist, einen
+///    neuen Grund anlegen.
+/// 2. Denselben Eintrag im npm-Zwilling (`HPS_CODES`), dort
+///    `npm run fixtures:hobex-hps-codes`, veroeffentlichen, hier
+///    `tool/zwillinge.sh ziehen` -- der Vertragstest vergleicht beide.
+/// 3. Ein neuer Grund braucht in jeder Kasse eine Uebersetzung
+///    (sastre: `DIALOGS.CARD_PAYMENT_REASON.*`).
 library;
+
+import 'tecs_codes.dart';
 
 /// Wie ein Ergebniscode den Ausgang eines Vorgangs bestimmt.
 enum HpsCodeEffect {
@@ -47,7 +77,8 @@ enum HpsCodeEffect {
   conclusive,
 
   /// Gemessen oder dokumentiert, aber ausdruecklich KEINE Aussage ueber den
-  /// Vorgang (`9027`, `9900`, `100011`) -- ein Grund weiterzuklaeren.
+  /// Vorgang (`9027`, `100011`, die Codes anderer TECS-Produkte) -- ein Grund
+  /// weiterzuklaeren.
   noStatement,
 
   /// Der Host war beteiligt, das Terminal storniert nicht selbst -- ob belastet
@@ -61,10 +92,12 @@ enum HpsCodeSource {
   /// Am Geraet gemessen (siehe `doc/kartenzahlung.md`).
   measured,
 
-  /// Aus der Antwortcodeliste von hobex (erhalten 11.09.2026).
+  /// Von hobex dokumentiert: die HPS-Antwortcodeliste (erhalten 11.09.2026)
+  /// oder die TECS-Liste (erhalten 16.09.2026, dann ist [HpsCode.tecsTitle]
+  /// gesetzt).
   documented,
 
-  /// Beides: gemessen und von hobex bestaetigt.
+  /// Beides: gemessen und von hobex bestaetigt (HPS- oder TECS-Liste).
   measuredAndDocumented,
 }
 
@@ -76,6 +109,11 @@ enum HpsCodeSource {
 /// Uebersetzung schluesselt stattdessen ueber [name].
 enum HpsCodeReason {
   approved('Vom Terminal genehmigt.'),
+  approvedWithCondition(
+    'Das Terminal meldet eine Genehmigung mit Vorbehalt (etwa nur über '
+    'einen Teilbetrag). Ob und in welcher Höhe belastet wurde, bitte am '
+    'Terminalbeleg prüfen — nicht erneut kassieren, bevor es geklärt ist.',
+  ),
   aborted('Der Vorgang wurde abgebrochen. Es wurde kein Geld bewegt.'),
   noCard(
     'Es wurde keine Karte vorgehalten. Es wurde kein Geld bewegt — '
@@ -90,9 +128,33 @@ enum HpsCodeReason {
     'Die Karte wurde vom Terminal abgelehnt. Es wurde kein Geld '
     'bewegt — bitte eine andere Karte oder Zahlungsart verwenden.',
   ),
+  issuerDeclined(
+    'Die Zahlung wurde von der Bank abgelehnt. Es wurde kein Geld bewegt — '
+    'bitte eine andere Karte oder Zahlungsart verwenden.',
+  ),
+  cardBlocked(
+    'Die Karte ist gesperrt. Es wurde kein Geld bewegt — bitte eine andere '
+    'Karte oder Zahlungsart verwenden.',
+  ),
+  cardExpired(
+    'Die Karte ist abgelaufen. Es wurde kein Geld bewegt — bitte eine andere '
+    'Karte oder Zahlungsart verwenden.',
+  ),
+  insufficientFunds(
+    'Das Konto ist nicht gedeckt oder das Kartenlimit ist erreicht. Es wurde '
+    'kein Geld bewegt — bitte eine andere Karte oder Zahlungsart verwenden.',
+  ),
   wrongPin(
     'Die PIN war falsch. Es wurde kein Geld bewegt — bitte erneut '
     'versuchen.',
+  ),
+  pinTriesExceeded(
+    'Die PIN wurde zu oft falsch eingegeben. Es wurde kein Geld bewegt — '
+    'bitte eine andere Karte oder Zahlungsart verwenden.',
+  ),
+  pinRequired(
+    'Die Bank verlangt die PIN. Es wurde kein Geld bewegt — bitte erneut '
+    'versuchen, die Karte stecken und die PIN eingeben.',
   ),
   amountInvalid(
     'Das Terminal nimmt diesen Betrag nicht an. Es wurde kein '
@@ -115,6 +177,10 @@ enum HpsCodeReason {
     'Geld bewegt — bitte die Terminal-ID in den Einstellungen prüfen, sonst '
     'hobex kontaktieren.',
   ),
+  acquirerSetup(
+    'hobex nimmt dieses Terminal oder diesen Händler so nicht an. Es wurde '
+    'kein Geld bewegt — bitte hobex kontaktieren.',
+  ),
   terminalFault(
     'Das Terminal meldet eine Störung. Es wurde kein Geld bewegt '
     '— bitte das Terminal neu starten und erneut versuchen.',
@@ -122,6 +188,15 @@ enum HpsCodeReason {
   requestRejected(
     'Das Terminal hat die Anfrage abgewiesen. Es wurde kein '
     'Geld bewegt — tritt das wieder auf, bitte den Support kontaktieren.',
+  ),
+  hostRejected(
+    'hobex hat die Zahlung abgewiesen. Es wurde kein Geld bewegt — bitte '
+    'erneut versuchen; tritt das wieder auf, hobex kontaktieren.',
+  ),
+  hostUnavailable(
+    'Die Bank oder hobex ist gerade nicht erreichbar. Es wurde kein Geld '
+    'bewegt — bitte später erneut versuchen oder eine andere Zahlungsart '
+    'verwenden.',
   ),
   invalidTransaction(
     'Das Terminal kennt die ursprüngliche Zahlung nicht. Es '
@@ -135,15 +210,33 @@ enum HpsCodeReason {
     'Gutschriften sind an diesem Terminal abgeschaltet. Es wurde '
     'nichts ausgezahlt — bitte hobex kontaktieren.',
   ),
+  refundRejected(
+    'Die Gutschrift wurde abgewiesen (Betrag zu hoch, bereits erstattet oder '
+    'zu viele Versuche). Es wurde nichts ausgezahlt.',
+  ),
   hostTimeoutReversed(
     'hobex hat nicht rechtzeitig geantwortet, das Terminal '
     'hat den Vorgang selbst storniert. Es wird kein Geld bewegt — bitte '
     'erneut versuchen.',
   ),
+  reversedByHost(
+    'Die Zahlung wurde wegen einer Störung automatisch storniert. Es wurde '
+    'kein Geld bewegt — bitte erneut versuchen.',
+  ),
+  voidedAfterHostFault(
+    'hobex hat nicht sauber geantwortet, die Zahlung wurde deshalb '
+    'sicherheitshalber storniert. Es wurde kein Geld bewegt — bitte erneut '
+    'versuchen.',
+  ),
   hostFault(
     'Die Verbindung zwischen Terminal und hobex ist gestört. Ob die '
     'Karte belastet wurde, weiß das Terminal nicht — bitte nicht erneut '
     'kassieren, bevor es geklärt ist.',
+  ),
+  hostTimeout(
+    'hobex hat nicht rechtzeitig geantwortet. Ob die Karte belastet wurde, '
+    'weiß das Terminal nicht — bitte nicht erneut kassieren, bevor es '
+    'geklärt ist.',
   ),
   internalError(
     'Das Terminal meldet einen internen Fehler. Ob die Karte '
@@ -151,6 +244,13 @@ enum HpsCodeReason {
     'geklärt ist.',
   ),
   canceled('Die Zahlung ist aufgehoben.'),
+  cancelDenied(
+    'Die Zahlung lässt sich nicht mehr aufheben und bleibt belastet — bitte '
+    'stattdessen eine Gutschrift ausführen.',
+  ),
+  originalDeclined(
+    'Die ursprüngliche Zahlung war abgelehnt; es gibt nichts aufzuheben.',
+  ),
   notAbortable(
     'Der Vorgang ist bereits abgeschlossen und lässt sich nicht '
     'mehr abbrechen.',
@@ -170,10 +270,13 @@ enum HpsCodeReason {
   /// Der Satz fuer den Bediener, deutsch.
   final String hint;
 
-  /// Die beiden Gruende, hinter denen ein Code mit
-  /// [HpsCodeEffect.hostUncertain] steht: ob Geld geflossen ist, weiss das
-  /// Terminal nicht.
-  bool get hostUncertain => this == hostFault || this == internalError;
+  /// Die Gruende, hinter denen ein Code mit [HpsCodeEffect.hostUncertain]
+  /// steht: ob (und wie viel) Geld geflossen ist, weiss das Terminal nicht.
+  bool get hostUncertain =>
+      this == approvedWithCondition ||
+      this == hostFault ||
+      this == hostTimeout ||
+      this == internalError;
 }
 
 /// Ein Ergebniscode, dessen Bedeutung feststeht.
@@ -186,7 +289,22 @@ class HpsCode {
     required this.reason,
     required this.source,
     this.rejectsRequest = false,
+    this.sendReversal = false,
+    this.tecsTitle,
   });
+
+  /// Ein Code, der nur aus der TECS-Liste stammt -- [title] ist der Titel
+  /// dort. Positional, damit `tecs_codes.dart` eine Zeile je Code bleibt.
+  const HpsCode.tecs(
+    this.code,
+    String this.tecsTitle,
+    this.meaning,
+    this.effect,
+    this.reason, {
+    this.rejectsRequest = false,
+    this.sendReversal = false,
+  })  : title = tecsTitle,
+        source = HpsCodeSource.documented;
 
   /// Der Ergebniscode, wie ihn das Terminal im Feld `responseCode` sendet.
   final String code;
@@ -212,6 +330,20 @@ class HpsCode {
   /// [TransactionResponse.isConclusiveAsStatus].
   final bool rejectsRequest;
 
+  /// Bei diesem Code wird ein Storno nachgeschickt: der Host hat nicht oder
+  /// nicht brauchbar geantwortet, und das Terminal nimmt den Vorgang nicht
+  /// selbst zurueck. Nur bei [HpsCodeEffect.hostUncertain].
+  ///
+  /// Vorgabe von hobex (16.09.2026) zu `9908`: "ein Timeout wie jeder andere.
+  /// Richtigerweise sollte in dem Fall ein Storno nachgeschickt werden."
+  /// Siehe `HpsPayments.pay`.
+  final bool sendReversal;
+
+  /// Der Titel in der TECS-Liste (16.09.2026), wenn der Code dort steht --
+  /// sonst `null`. Bei gemessenen Codes weicht er vom [title] ab, den das
+  /// Terminal sendet (`55`: "PIN falsch" gegen "Incorrect PIN").
+  final String? tecsTitle;
+
   /// Schreibt den Ausgang fest -- Teil der Positivliste von
   /// [TransactionResponse.isConclusive].
   bool get conclusive => effect == HpsCodeEffect.conclusive;
@@ -224,7 +356,8 @@ class HpsCode {
 abstract final class HpsCodes {
   /// Alle Codes, deren Bedeutung feststeht. Reihenfolge wie im Zwilling:
   /// zuerst die gemessenen in der Reihenfolge des Messprotokolls, dann die
-  /// von hobex dokumentierten aufsteigend.
+  /// HPS-Liste von hobex aufsteigend, zuletzt die TECS-Liste
+  /// ([tecsCodes]) in ihrer eigenen Reihenfolge.
   static const List<HpsCode> all = <HpsCode>[
     HpsCode(
       code: '0',
@@ -233,6 +366,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.approved,
       source: HpsCodeSource.measuredAndDocumented,
+      tecsTitle: 'Approved Transaction / OK',
     ),
     HpsCode(
       code: '9002',
@@ -242,8 +376,9 @@ abstract final class HpsCodes {
           'als unzulaessig verworfen, bevor irgendetwas in Bewegung kam',
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.invalidTransaction,
-      source: HpsCodeSource.measured,
+      source: HpsCodeSource.measuredAndDocumented,
       rejectsRequest: true,
+      tecsTitle: 'Invalid Transaction',
     ),
     HpsCode(
       code: '9011',
@@ -253,7 +388,8 @@ abstract final class HpsCodes {
           'dieser Kennung wurde storniert',
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.canceled,
-      source: HpsCodeSource.measured,
+      source: HpsCodeSource.measuredAndDocumented,
+      tecsTitle: 'Transaction cancelled',
     ),
     HpsCode(
       code: '9027',
@@ -263,18 +399,21 @@ abstract final class HpsCodes {
           '"laeuft gerade", "Karte nicht aufgelegt" und "abgebrochen"',
       effect: HpsCodeEffect.noStatement,
       reason: HpsCodeReason.noStatement,
-      source: HpsCodeSource.measured,
+      source: HpsCodeSource.measuredAndDocumented,
+      tecsTitle: 'Original Transaction not found',
     ),
     HpsCode(
       code: '9900',
       title: 'Technical Error Database',
       meaning:
           '"Technical Error Database" -- gemessen im Zusammenhang mit '
-          'einer nicht rein numerischen Kennung; keine Aussage ueber den '
-          'Vorgang selbst',
-      effect: HpsCodeEffect.noStatement,
-      reason: HpsCodeReason.technicalError,
-      source: HpsCodeSource.measured,
+          'einer nicht rein numerischen Kennung, NACHDEM die Karte verarbeitet '
+          'war; laut TECS ein Datenbankfehler im Backend -- ob belastet wurde, '
+          'ist offen',
+      effect: HpsCodeEffect.hostUncertain,
+      reason: HpsCodeReason.internalError,
+      source: HpsCodeSource.measuredAndDocumented,
+      tecsTitle: 'Technical Error: Database (General)',
     ),
     HpsCode(
       code: '9003',
@@ -285,7 +424,8 @@ abstract final class HpsCodes {
           'ohne Kartenaufforderung); nichts belastet',
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.amountInvalid,
-      source: HpsCodeSource.measured,
+      source: HpsCodeSource.measuredAndDocumented,
+      tecsTitle: 'Invalid Amount',
     ),
     HpsCode(
       code: '100002',
@@ -351,7 +491,8 @@ abstract final class HpsCodes {
           'Host-Ablehnung bleibt am Terminal abrufbar; nichts belastet',
       effect: HpsCodeEffect.conclusive,
       reason: HpsCodeReason.wrongPin,
-      source: HpsCodeSource.measured,
+      source: HpsCodeSource.measuredAndDocumented,
+      tecsTitle: 'Incorrect PIN',
     ),
     // ---- ab hier: Antwortcodeliste von hobex, erhalten 11.09.2026 ----
     HpsCode(
@@ -397,6 +538,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.hostUncertain,
       reason: HpsCodeReason.hostFault,
       source: HpsCodeSource.documented,
+      sendReversal: true,
     ),
     HpsCode(
       code: '100007',
@@ -408,6 +550,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.hostUncertain,
       reason: HpsCodeReason.hostFault,
       source: HpsCodeSource.documented,
+      sendReversal: true,
     ),
     HpsCode(
       code: '100008',
@@ -552,6 +695,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.hostUncertain,
       reason: HpsCodeReason.hostFault,
       source: HpsCodeSource.documented,
+      sendReversal: true,
     ),
     HpsCode(
       code: '100024',
@@ -563,6 +707,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.hostUncertain,
       reason: HpsCodeReason.hostFault,
       source: HpsCodeSource.documented,
+      sendReversal: true,
     ),
     HpsCode(
       code: '100025',
@@ -584,6 +729,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.hostUncertain,
       reason: HpsCodeReason.hostFault,
       source: HpsCodeSource.documented,
+      sendReversal: true,
     ),
     HpsCode(
       code: '100027',
@@ -595,6 +741,7 @@ abstract final class HpsCodes {
       effect: HpsCodeEffect.hostUncertain,
       reason: HpsCodeReason.hostFault,
       source: HpsCodeSource.documented,
+      sendReversal: true,
     ),
     HpsCode(
       code: '100028',
@@ -640,15 +787,53 @@ abstract final class HpsCodes {
       reason: HpsCodeReason.internalError,
       source: HpsCodeSource.documented,
     ),
+    ...tecsCodes,
   ];
 
   static final Map<String, HpsCode> _byCode = <String, HpsCode>{
     for (final c in all) c.code: c,
   };
 
+  /// Eintraege, die eine ganze Familie abdecken (`81xx`: Feld xx der Anfrage
+  /// nicht lesbar), nach ihrem Praefix.
+  static final Map<String, HpsCode> _byPrefix = <String, HpsCode>{
+    for (final c in all)
+      if (c.code.endsWith(_platzhalter))
+        c.code.substring(0, c.code.length - _platzhalter.length): c,
+  };
+
+  static const String _platzhalter = 'xx';
+  static final RegExp _ziffern = RegExp(r'^\d+$');
+
+  /// Die Schreibweise, unter der [code] in der Tabelle steht: ein rein
+  /// numerischer Code ohne fuehrende Nullen (`0055` -> `55`, `0000` -> `0`),
+  /// jeder andere unveraendert.
+  ///
+  /// TECS fuehrt die Host-Antworten vierstellig, das Terminal sendet sie
+  /// gemessen ohne Nullen (`55`, `0`). Ohne diese Angleichung waere ein
+  /// `0000` kein `0` -- und damit ueber [HpsCode.conclusive] eine ABLEHNUNG
+  /// einer genehmigten Zahlung. `TransactionResponse.fromJson` gleicht
+  /// deshalb schon beim Einlesen an.
+  static String normalize(String code) {
+    final c = code.trim();
+    if (!_ziffern.hasMatch(c)) return c;
+    final ohneNullen = c.replaceFirst(RegExp('^0+'), '');
+    return ohneNullen.isEmpty ? '0' : ohneNullen;
+  }
+
   /// Der Eintrag zu [code], oder `null`, wenn seine Bedeutung nicht
-  /// feststeht.
-  static HpsCode? lookup(String? code) => code == null ? null : _byCode[code];
+  /// feststeht. Findet beide Schreibweisen ([normalize]) und die Familien
+  /// mit Platzhalter (`8105` -> `81xx`).
+  static HpsCode? lookup(String? code) {
+    if (code == null) return null;
+    final c = normalize(code);
+    final genau = _byCode[c];
+    if (genau != null) return genau;
+    if (c.length == 4 && _ziffern.hasMatch(c)) {
+      return _byPrefix[c.substring(0, 2)];
+    }
+    return null;
+  }
 
   /// Der Grund zu [code]; [HpsCodeReason.unknown] fuer einen Code, der in der
   /// Tabelle fehlt, `null` ohne Code.

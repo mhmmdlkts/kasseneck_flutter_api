@@ -441,6 +441,11 @@ class TransactionResponse {
   bool get isHostUncertain =>
       HpsCodes.lookup(responseCode)?.hostUncertain ?? false;
 
+  /// `true`, wenn zu diesem Code ein Storno nachzuschicken ist
+  /// ([HpsCode.sendReversal]) -- der Host hat nicht oder nicht brauchbar
+  /// geantwortet, etwa `9908`.
+  bool get needsReversal => codeInfo?.sendReversal ?? false;
+
   /// Der Eintrag dieses Codes in [HpsCodes.all], oder `null`, wenn seine
   /// Bedeutung nicht feststeht bzw. kein Code vorliegt.
   HpsCode? get codeInfo => HpsCodes.lookup(responseCode);
@@ -451,7 +456,9 @@ class TransactionResponse {
 
   /// `true`, wenn das Terminal einen technischen Fehler meldet
   /// ([technicalErrorCode]) -- gemessen im Zusammenhang mit einer nicht rein
-  /// numerischen Kennung, aber keine Aussage ueber den Vorgang selbst.
+  /// numerischen Kennung, nachdem die Karte bereits verarbeitet war. Seit der
+  /// TECS-Liste (16.09.2026) als Backend-Fehler eingeordnet, also
+  /// [isHostUncertain]: ob belastet wurde, ist offen.
   bool get isTechnicalError => responseCode == technicalErrorCode;
 
   /// `true`, wenn das Terminal den Vorgang als ungueltig abgewiesen hat
@@ -518,7 +525,7 @@ class TransactionResponse {
       currency: json['currency'] as String?,
       amount: _num(json['amount']),
       tip: _num(json['tip']),
-      responseCode: _nonEmpty(json['responseCode']?.toString()),
+      responseCode: _code(json['responseCode']?.toString()),
       responseText: json['responseText'] as String?,
       cvm: Cvm.fromValue(json['cvm']),
       bin: json['bin'] as String?,
@@ -544,6 +551,15 @@ class TransactionResponse {
   /// wird deshalb wie ein fehlendes Feld behandelt (`isInProgress == true`),
   /// statt ueber `!= '0'` faelschlich als Ablehnung durchzugehen.
   static String? _nonEmpty(String? v) => (v == null || v.isEmpty) ? null : v;
+
+  /// Der Ergebniscode in der Schreibweise der Tabelle ([HpsCodes.normalize]):
+  /// `0000` wird `0`, `0055` wird `55`. Alles, was hier auf `'0'` vergleicht
+  /// ([isApproved], `HpsPayments`), sieht damit dieselbe Genehmigung, egal
+  /// wie das Terminal sie schreibt. Der Rumpf in [raw] bleibt unveraendert.
+  static String? _code(String? v) {
+    final c = _nonEmpty(v?.trim());
+    return c == null ? null : HpsCodes.normalize(c);
+  }
 
   @override
   String toString() {
