@@ -83,6 +83,7 @@ void main() {
       'invoicePaymentMethods': invoicePaymentMethods,
       'itemKinds': itemKinds,
       'invoiceNoticeCodes': invoiceNoticeCodes,
+      'steuerfreieFaelle': steuerfreieFaelle,
     };
 
     test('jede Liste des Vertrags gibt es hier, und keine mehr', () {
@@ -508,20 +509,36 @@ void main() {
         'idempotencyKey': 'zahlung-1', 'invoiceId': 'inv1', 'method': 'transfer', 'amountCents': 12000, 'paidAt': '2026-09-20',
       });
       expect((r.payment.id, r.payment.amountCents, r.replayed), ('z1', 12000, false));
-      expect(r.notice, isNull, reason: 'ohne Hinweis bleibt das Feld leer');
+      expect(r.notice, isEmpty, reason: 'ohne Hinweis bleibt die Liste leer');
     });
 
-    test('Bargeld: die Antwort trägt den Hinweis auf die Belegpflicht', () async {
+    test('Bargeld: die Antwort trägt den Hinweis auf die Belegpflicht, als Liste', () async {
       final (:api, log: _) = _apiMit([_erfolg({
         'invoice': _rechnung,
         'payment': {'id': 'z2', 'amountCents': 12000, 'method': 'cash'},
         'replayed': false,
-        'notice': {'code': 'cash_receipt_required', 'message': 'Barzahlung braucht einen Beleg.'},
+        'notice': [
+          {'code': 'cash_receipt_required', 'message': 'Barzahlung braucht einen Beleg.'},
+        ],
       })]);
       final r = await api.recordInvoicePayment(
         const RecordPaymentRequest(idempotencyKey: 'bar-1', invoiceId: 'inv1', method: 'cash'));
-      expect(r.notice?.code, 'cash_receipt_required');
-      expect(invoiceNoticeCodes, contains(r.notice!.code));
+      expect(r.notice.map((h) => (h.code, h.message)).toList(),
+          [('cash_receipt_required', 'Barzahlung braucht einen Beleg.')]);
+      expect(invoiceNoticeCodes, contains(r.notice.single.code));
+    });
+
+    test('ein Server vor npm 0.22.0 schickt ein einzelnes Objekt — daraus wird eine Liste', () async {
+      final (:api, log: _) = _apiMit([_erfolg({
+        'invoice': _rechnung,
+        'payment': {'id': 'z3', 'amountCents': 12000, 'method': 'cash'},
+        'replayed': false,
+        'notice': {'code': 'cash_receipt_required', 'message': 'Barzahlung braucht einen Beleg.'},
+      })]);
+      final r = await api.recordInvoicePayment(
+        const RecordPaymentRequest(idempotencyKey: 'bar-2', invoiceId: 'inv1', method: 'cash'));
+      expect(r.notice.map((h) => (h.code, h.message)).toList(),
+          [('cash_receipt_required', 'Barzahlung braucht einen Beleg.')]);
     });
 
     test('eine Antwort ohne payment ist ein Antwortfehler', () async {
@@ -532,5 +549,213 @@ void main() {
       );
     });
 
+  });
+
+  group('Probelauf, Hinweise und Brutto-Summen (Vertrag 0.22.0)', () {
+    const anfrage = IssueInvoiceRequest(
+      idempotencyKey: 'bestellung-9',
+      customerId: 'k1',
+      priceMode: 'gross',
+      serviceStart: '2026-09-16',
+      items: [
+        InvoiceItemInput(description: 'Maniküre', quantity: 1, unitPriceCents: 1479, vatRate: 20),
+        InvoiceItemInput(description: 'Lack', quantity: 1, unitPriceCents: 1500, vatRate: 20),
+      ],
+    );
+    final vorschau = {
+      'docType': 'RE',
+      'invoiceDate': '2026-09-16',
+      'dueDate': '2026-09-30',
+      'customerId': 'k1',
+      'taxScheme': 'igLieferung',
+      'taxSchemeReason': 'customer_country_eu_with_vat_id',
+      'reverseChargeReason': null,
+      'taxCountry': 'AT',
+      'priceMode': 'gross',
+      'language': 'en',
+      'brand': {'id': 'm1', 'name': 'Haus'},
+      'einvoice': {'level': 'full', 'formats': ['UBL', 'Factur-X'], 'missing': []},
+      'totals': {
+        'netCents': 2979,
+        'vatCents': 0,
+        'grossCents': 2979,
+        'byRate': [
+          {'rate': 0, 'netCents': 2979, 'vatCents': 0, 'grossCents': 2979},
+        ],
+      },
+    };
+
+    test('previewInvoice: dieselbe Anfrage mit dryRun an issueInvoice, Antwort mit preview und Hinweisen', () async {
+      final (:api, :log) = _apiMit([
+        _erfolg({
+          'preview': vorschau,
+          'notice': [
+            {'code': 'recapitulative_statement_due', 'message': 'Zusammenfassende Meldung abgeben.'},
+          ],
+        }),
+      ]);
+      final ergebnis = await api.previewInvoice(anfrage);
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/issueInvoice');
+      expect(_params(log.single), {...anfrage.toJson(), 'dryRun': true});
+      expect(anfrage.toJson().containsKey('dryRun'), isFalse, reason: 'die Anfrage selbst kennt kein dryRun');
+
+      final p = ergebnis.preview;
+      expect((p.docType, p.invoiceDate, p.dueDate, p.customerId), ('RE', '2026-09-16', '2026-09-30', 'k1'));
+      expect((p.taxScheme, p.taxSchemeReason, p.reverseChargeReason, p.taxCountry),
+          ('igLieferung', 'customer_country_eu_with_vat_id', null, 'AT'));
+      expect((p.priceMode, p.language, p.brandId, p.brandName), ('gross', 'en', 'm1', 'Haus'));
+      expect(p.einvoice?.level, 'full');
+      expect(p.einvoice?.formats, ['UBL', 'Factur-X']);
+      expect(p.einvoice?.missing, isEmpty);
+      expect(p.totals.toJson(), vorschau['totals']);
+      expect(ergebnis.notice.map((h) => h.code).toList(), ['recapitulative_statement_due']);
+    });
+
+    test('previewInvoice: ohne Grund, E-Rechnung, Marke und Hinweis bleibt die Vorschau lesbar', () async {
+      // Der Server schickt taxSchemeReason und einvoice als null, wenn er
+      // nichts dazu weiss — das ist keine unbrauchbare Antwort.
+      final (:api, log: _) = _apiMit([
+        _erfolg({
+          'preview': {...vorschau, 'taxSchemeReason': null, 'einvoice': null, 'brand': null, 'language': 'de'},
+        }),
+      ]);
+      final ergebnis = await api.previewInvoice(anfrage);
+      final p = ergebnis.preview;
+      expect((p.taxSchemeReason, p.einvoice, p.brandId, p.brandName, p.language), (null, null, null, null, 'de'));
+      expect(ergebnis.notice, isEmpty);
+    });
+
+    test('previewInvoice: eine Antwort ohne preview ist ein Antwortfehler', () async {
+      // Etwa ein Server, der dryRun nicht kennt und eine Rechnung zurueckgibt.
+      final (:api, log: _) = _apiMit([
+        _erfolg({'invoice': _rechnung, 'replayed': false}),
+        _erfolg({'preview': {...vorschau}..remove('totals')}),
+      ]);
+      for (var i = 0; i < 2; i++) {
+        await expectLater(
+          api.previewInvoice(anfrage),
+          throwsA(isA<KasseneckValidationError>()
+              .having((e) => e.kind, 'kind', 'response')
+              .having((e) => e.functionName, 'functionName', 'issueInvoice')),
+        );
+      }
+    });
+
+    test('previewInvoice: ein Fachfehler kommt wie beim Ausstellen', () async {
+      final (:api, log: _) = _apiMit([
+        _fehler('Der Steuerfall passt nicht.', 'tax_scheme_mismatch', {'expected': 'igLieferung'}),
+      ]);
+      final e = await api.previewInvoice(anfrage).then<Object?>((_) => null, onError: (Object e) => e);
+      expect(rechnungFehlerCode(e), 'tax_scheme_mismatch');
+      expect((e as KasseneckApiError).details['expected'], 'igLieferung');
+    });
+
+    test('dryRun steht im Vertrag von issueInvoice', () {
+      final schema = _json('test/fixtures/vertrag/rechnung-api.schema.json');
+      final anfrageSchema = ((schema['aufrufe'] as Map)['issueInvoice'] as Map)['anfrage'] as Map;
+      expect((anfrageSchema['properties'] as Map)['dryRun'], {'type': 'boolean'});
+      expect(anfrageSchema['required'] as List, isNot(contains('dryRun')));
+    });
+
+    // Der Aufruf hat schon gewirkt, wenn die Antwort ankommt: ein kaputter
+    // Hinweis darf die Rechnung (oder Zahlung) nicht verschlucken — er wird
+    // uebergangen, die brauchbaren Hinweise kommen an.
+    const gut = {'code': 'cash_receipt_required', 'message': 'Barumsatz: Beleg erteilen.'};
+    final kaputt = <Object>[
+      {'code': 'cash_receipt_required'},
+      {'message': 'ohne Code'},
+      {'code': 42, 'message': 'Code keine Zeichenkette'},
+      {'code': 'cash_receipt_required', 'message': null},
+      'cash_receipt_required',
+      42,
+    ];
+
+    test('issueInvoice: ein kaputter Hinweis wird übergangen, der gute und die Rechnung kommen an', () async {
+      final (:api, log: _) = _apiMit([
+        _erfolg({'invoice': _rechnung, 'replayed': false, 'notice': [...kaputt.take(3), gut, ...kaputt.skip(3)]}),
+        _erfolg({'invoice': _rechnung, 'replayed': false, 'notice': kaputt}),
+        for (final k in kaputt) _erfolg({'invoice': _rechnung, 'replayed': false, 'notice': k}),
+      ]);
+      final gemischt = await api.issueInvoice(anfrage);
+      expect(gemischt.invoice.number, '2026-0042');
+      expect(gemischt.notice.map((h) => (h.code, h.message)).toList(), [('cash_receipt_required', 'Barumsatz: Beleg erteilen.')]);
+
+      final nurKaputt = await api.issueInvoice(anfrage);
+      expect(nurKaputt.invoice.number, '2026-0042');
+      expect(nurKaputt.notice, isEmpty);
+
+      // Auch als einzelnes Objekt (oder gar kein Objekt) wird nichts geworfen.
+      for (final k in kaputt) {
+        final r = await api.issueInvoice(anfrage);
+        expect(r.invoice.number, '2026-0042', reason: '$k');
+        expect(r.notice, isEmpty, reason: '$k');
+      }
+    });
+
+    test('previewInvoice: ein kaputter Hinweis wird übergangen, die Vorschau kommt an', () async {
+      final (:api, log: _) = _apiMit([
+        _erfolg({'preview': vorschau, 'notice': [gut, ...kaputt]}),
+        _erfolg({'preview': vorschau, 'notice': kaputt}),
+      ]);
+      final gemischt = await api.previewInvoice(anfrage);
+      expect(gemischt.preview.totals.grossCents, 2979);
+      expect(gemischt.notice.map((h) => h.code).toList(), ['cash_receipt_required']);
+      final nurKaputt = await api.previewInvoice(anfrage);
+      expect(nurKaputt.preview.totals.grossCents, 2979);
+      expect(nurKaputt.notice, isEmpty);
+    });
+
+    test('recordInvoicePayment: ein kaputter Hinweis wird übergangen, die Zahlung kommt an', () async {
+      Map<String, dynamic> antwort(Object notice) => _erfolg({
+            'invoice': _rechnung,
+            'payment': {'id': 'z1', 'amountCents': 12000, 'method': 'cash'},
+            'replayed': false,
+            'notice': notice,
+          });
+      final (:api, log: _) = _apiMit([
+        antwort([...kaputt, gut]),
+        antwort(kaputt),
+        antwort({'code': 'cash_receipt_required'}),
+      ]);
+      const zahlung = RecordPaymentRequest(idempotencyKey: 'k', invoiceId: 'inv1', method: 'cash');
+      final gemischt = await api.recordInvoicePayment(zahlung);
+      expect(gemischt.payment.id, 'z1');
+      expect(gemischt.notice.map((h) => h.code).toList(), ['cash_receipt_required']);
+      for (var i = 0; i < 2; i++) {
+        final r = await api.recordInvoicePayment(zahlung);
+        expect((r.payment.id, r.invoice.id), ('z1', 'inv1'));
+        expect(r.notice, isEmpty);
+      }
+    });
+
+    test('InvoiceNotice.fromJson verlangt code und message', () {
+      expect(InvoiceNotice.fromJson(Map<String, dynamic>.from(gut)).message, 'Barumsatz: Beleg erteilen.');
+      expect(() => InvoiceNotice.fromJson({'code': 'cash_receipt_required'}), throwsFormatException);
+      expect(() => InvoiceNotice.fromJson({'message': 'ohne Code'}), throwsFormatException);
+    });
+
+    test('byRate trägt grossCents; ein älterer Server ohne das Feld ergibt Netto + USt', () {
+      final neu = InvoiceTotals.fromJson({
+        'netCents': 2483,
+        'vatCents': 496,
+        'grossCents': 2979,
+        'byRate': [
+          {'rate': 20, 'netCents': 2483, 'vatCents': 496, 'grossCents': 2979},
+        ],
+      });
+      expect(neu.byRate.single.grossCents, 2979);
+      // Gesendet ist, was gilt — auch wenn es nicht Netto + USt waere.
+      expect(VatRateTotal.fromJson({'rate': 20, 'netCents': 1, 'vatCents': 1, 'grossCents': 5}).grossCents, 5);
+      final alt = InvoiceTotals.fromJson(_rechnung['totals'] as Map<String, dynamic>);
+      expect(alt.byRate.single.grossCents, 12000);
+      expect(alt.toJson(), {
+        'netCents': 10000,
+        'vatCents': 2000,
+        'grossCents': 12000,
+        'byRate': [
+          {'rate': 20, 'netCents': 10000, 'vatCents': 2000, 'grossCents': 12000},
+        ],
+      });
+    });
   });
 }

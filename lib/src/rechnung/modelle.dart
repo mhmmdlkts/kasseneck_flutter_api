@@ -205,7 +205,36 @@ class CustomerPage {
 
 // ---- Rechnungen -----------------------------------------------------------------
 
-class InvoiceItemInput {
+/// Was für die Summe einer Rechnung zählt (`rechnungSummen`) —
+/// [InvoiceItemInput] erfüllt es unverändert.
+abstract interface class SummenPosition {
+  const factory SummenPosition({
+    required num quantity,
+    required num unitPriceCents,
+    required int vatRate,
+    num? discountPct,
+  }) = _SummenPosition;
+
+  num get quantity;
+  num get unitPriceCents;
+  int get vatRate;
+  num? get discountPct;
+}
+
+class _SummenPosition implements SummenPosition {
+  const _SummenPosition({required this.quantity, required this.unitPriceCents, required this.vatRate, this.discountPct});
+
+  @override
+  final num quantity;
+  @override
+  final num unitPriceCents;
+  @override
+  final int vatRate;
+  @override
+  final num? discountPct;
+}
+
+class InvoiceItemInput implements SummenPosition {
   const InvoiceItemInput({
     required this.description,
     required this.quantity,
@@ -231,14 +260,17 @@ class InvoiceItemInput {
   final String description;
 
   /// Höchstens drei Nachkommastellen.
+  @override
   final num quantity;
 
   /// Einzelpreis in ganzen Cent im `priceMode` der Rechnung. Als `num`, damit
   /// ein fehlerhafter Wert unverändert beim Server ankommt und dort als
   /// `validation` mit Feldpfad zurückkommt — nicht still gerundet.
+  @override
   final num unitPriceCents;
 
   /// `0`, `10`, `13` oder `20`.
+  @override
   final int vatRate;
   final String? subtitle;
 
@@ -252,6 +284,7 @@ class InvoiceItemInput {
   final String? kind;
 
   /// Zeilenrabatt in Prozent, höchstens zwei Nachkommastellen.
+  @override
   final num? discountPct;
 
   Map<String, dynamic> toJson() {
@@ -467,13 +500,17 @@ class InvoicePayment {
 }
 
 /// Ein Hinweis an einer erfolgreichen Antwort — kein Fehler, nur etwas, das der
-/// Aufrufer wissen sollte (heute nur `cash_receipt_required`).
+/// Aufrufer wissen sollte. Die Codes stehen in `invoiceNoticeCodes`.
+///
+/// `code` und `message` sind beide Pflicht — fehlt eines, ist es kein Hinweis:
+/// [InvoiceNotice.fromJson] wirft dann, und die Aufrufe von `RechnungApi`
+/// übergehen den Eintrag (die Rechnung ist da schon ausgestellt).
 class InvoiceNotice {
   const InvoiceNotice({required this.code, required this.message});
 
   factory InvoiceNotice.fromJson(Map<String, dynamic> j) => InvoiceNotice(
         code: _pflicht<String>(j, 'code'),
-        message: _text(j, 'message') ?? '',
+        message: _pflicht<String>(j, 'message'),
       );
 
   final String code;
@@ -482,12 +519,15 @@ class InvoiceNotice {
 
 /// Ergebnis von `recordInvoicePayment`.
 class RecordPaymentResult {
-  const RecordPaymentResult({required this.invoice, required this.payment, required this.replayed, this.notice});
+  const RecordPaymentResult({required this.invoice, required this.payment, required this.replayed, this.notice = const []});
 
   final Invoice invoice;
   final InvoicePayment payment;
   final bool replayed;
-  final InvoiceNotice? notice;
+
+  /// Hinweise zu dieser Zahlung — eine **Liste** wie bei `issueInvoice`, leer
+  /// ohne Hinweis. Bis 6.20.0 ein einzelner, nullbarer [InvoiceNotice].
+  final List<InvoiceNotice> notice;
 }
 
 class CreditNoteRequest {
@@ -523,20 +563,34 @@ class CreditNoteRequest {
   }
 }
 
+/// Summen eines USt-Satzes.
 class VatRateTotal {
-  const VatRateTotal({required this.rate, required this.netCents, required this.vatCents});
+  const VatRateTotal({required this.rate, required this.netCents, required this.vatCents, int? grossCents})
+      : grossCents = grossCents ?? netCents + vatCents;
 
+  /// Ein Server vor npm 0.22.0 schickt `grossCents` nicht mit; es ist per
+  /// Definition Netto + USt und wird dann daraus gebildet.
   factory VatRateTotal.fromJson(Map<String, dynamic> j) => VatRateTotal(
         rate: _pflicht<int>(j, 'rate'),
         netCents: _pflicht<int>(j, 'netCents'),
         vatCents: _pflicht<int>(j, 'vatCents'),
+        grossCents: _ganz(j, 'grossCents'),
       );
 
   final int rate;
   final int netCents;
   final int vatCents;
+
+  /// `netCents + vatCents` — im Brutto-Modus der vereinbarte Preis dieses Satzes.
+  final int grossCents;
+
+  Map<String, dynamic> toJson() =>
+      {'rate': rate, 'netCents': netCents, 'vatCents': vatCents, 'grossCents': grossCents};
 }
 
+/// Summen einer Rechnung in Cent, **immer positiv** — auch bei einer
+/// Gutschrift (`docType: 'GU'`); das Vorzeichen steht im Belegtyp, nicht im
+/// Betrag. Gerechnet wird je Satz wie in `rechnungSummen`.
 class InvoiceTotals {
   const InvoiceTotals({required this.netCents, required this.vatCents, required this.grossCents, this.byRate = const []});
 
@@ -550,7 +604,17 @@ class InvoiceTotals {
   final int netCents;
   final int vatCents;
   final int grossCents;
+
+  /// Je USt-Satz, absteigend.
   final List<VatRateTotal> byRate;
+
+  /// Dieselbe Form wie `totals` in den Antworten.
+  Map<String, dynamic> toJson() => {
+        'netCents': netCents,
+        'vatCents': vatCents,
+        'grossCents': grossCents,
+        'byRate': [for (final r in byRate) r.toJson()],
+      };
 }
 
 /// Eine gespeicherte Position — wie gesendet, fehlende Angaben mit ihrem Standardwert.
@@ -727,6 +791,116 @@ class IssueResult {
   /// Hinweise zu dieser Rechnung — kein Fehler, sondern etwas, das der Aufrufer
   /// wissen sollte ([invoiceNoticeCodes]). Eine **Liste**, weil mehrere zugleich
   /// anfallen können: eine bar bezahlte ig. Lieferung trägt zwei.
+  final List<InvoiceNotice> notice;
+}
+
+/// Wie weit eine Rechnung als E-Rechnung (EN 16931) taugt.
+class EInvoiceStatus {
+  const EInvoiceStatus({required this.level, this.formats = const [], this.missing = const []});
+
+  factory EInvoiceStatus.fromJson(Map<String, dynamic> j) => EInvoiceStatus(
+        level: _pflicht<String>(j, 'level'),
+        formats: _texte(j, 'formats'),
+        missing: _texte(j, 'missing'),
+      );
+
+  /// `full`, `partial` oder `insufficient`.
+  final String level;
+
+  /// Die Formate, die entstehen (`UBL`, `Factur-X`); leer bei `insufficient`.
+  final List<String> formats;
+
+  /// Was für eine vollständige E-Rechnung fehlt.
+  final List<String> missing;
+}
+
+List<String> _texte(Map<String, dynamic> j, String feld) {
+  final wert = j[feld];
+  if (wert == null) return const [];
+  if (wert is! List) throw FormatException(feld);
+  return [for (final e in wert) if (e is String) e else throw FormatException(feld)];
+}
+
+/// Was `issueInvoice` mit dieser Anfrage ausstellen würde — ohne Nummer, ohne
+/// Dokument, ohne Zahlung (`previewInvoice`).
+class InvoicePreview {
+  const InvoicePreview({
+    required this.docType,
+    required this.invoiceDate,
+    required this.taxScheme,
+    required this.taxCountry,
+    required this.priceMode,
+    required this.totals,
+    this.dueDate,
+    this.customerId,
+    this.taxSchemeReason,
+    this.reverseChargeReason,
+    this.language = 'de',
+    this.brandId,
+    this.brandName,
+    this.einvoice,
+  });
+
+  factory InvoicePreview.fromJson(Map<String, dynamic> j) {
+    final brand = j['brand'];
+    final einvoice = j['einvoice'];
+    return InvoicePreview(
+      docType: _pflicht<String>(j, 'docType'),
+      invoiceDate: _pflicht<String>(j, 'invoiceDate'),
+      taxScheme: _pflicht<String>(j, 'taxScheme'),
+      taxCountry: _pflicht<String>(j, 'taxCountry'),
+      priceMode: _pflicht<String>(j, 'priceMode'),
+      totals: InvoiceTotals.fromJson(_objekt(j, 'totals')),
+      dueDate: _text(j, 'dueDate'),
+      customerId: _text(j, 'customerId'),
+      taxSchemeReason: _text(j, 'taxSchemeReason'),
+      reverseChargeReason: _text(j, 'reverseChargeReason'),
+      language: _text(j, 'language') == 'en' ? 'en' : 'de',
+      brandId: brand is Map && brand['id'] is String ? brand['id'] as String : null,
+      brandName: brand is Map && brand['name'] is String ? brand['name'] as String : null,
+      einvoice: einvoice is Map ? EInvoiceStatus.fromJson(Map<String, dynamic>.from(einvoice)) : null,
+    );
+  }
+
+  /// Immer `RE` — einen Probelauf gibt es nur für das Ausstellen.
+  final String docType;
+
+  /// Heutiger Wiener Tag — der Tag, den eine sofort ausgestellte Rechnung trüge.
+  final String invoiceDate;
+  final String? dueDate;
+  final String? customerId;
+
+  /// Der abgeleitete Steuerfall ([taxSchemes]).
+  final String taxScheme;
+
+  /// Warum dieser Fall gilt (z. B. `customer_country_eu_with_vat_id`).
+  final String? taxSchemeReason;
+
+  /// Bei `domesticReverseCharge` einer aus `reverseChargeReasons`.
+  final String? reverseChargeReason;
+
+  /// ISO-3166-Alpha-2 des Landes, dessen Steuer gilt.
+  final String taxCountry;
+  final String priceMode;
+
+  /// Die Summen, die die Rechnung ausweisen würde — wie `rechnungSummen` sie
+  /// vorab rechnet, hier aber vom Server.
+  final InvoiceTotals totals;
+  final String language;
+
+  /// Die Marke, die die Rechnung trüge; `null` bei der Ersatzmarke.
+  final String? brandId;
+  final String? brandName;
+  final EInvoiceStatus? einvoice;
+}
+
+/// Ergebnis von `previewInvoice`.
+class PreviewResult {
+  const PreviewResult({required this.preview, this.notice = const []});
+
+  final InvoicePreview preview;
+
+  /// Dieselben Hinweise, die das Ausstellen liefern würde; leer ohne Hinweis.
   final List<InvoiceNotice> notice;
 }
 

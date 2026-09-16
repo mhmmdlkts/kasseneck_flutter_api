@@ -75,6 +75,19 @@ const List<String> taxSchemes = [
   'outsideScope',
 ];
 
+/// Steuerfälle, in denen die Rechnung keine Steuer ausweist: jede Position
+/// zählt zu 0 %, gleich welcher `vatRate` an ihr steht (`rechnungSummen`).
+/// `oss` gehört nicht dazu — dort wird Steuer ausgewiesen, nur nicht
+/// österreichische.
+const List<String> steuerfreieFaelle = [
+  'smallBusiness',
+  'reverseCharge',
+  'igLieferung',
+  'exportThirdCountry',
+  'domesticReverseCharge',
+  'outsideScope',
+];
+
 /// Ware oder Leistung — ohne das lässt sich ig. Lieferung nicht von Reverse
 /// Charge trennen. Ohne Angabe gilt `goods`.
 const List<String> itemKinds = ['goods', 'service'];

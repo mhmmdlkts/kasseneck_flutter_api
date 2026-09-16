@@ -1,5 +1,5 @@
 {
-  "version": "0.21.0",
+  "version": "0.22.0",
   "aufrufe": [
     "activateCashregister",
     "cancelInvoice",
@@ -518,6 +518,14 @@
       "getInvoiceSetupStatus",
       "listBrands",
       "recordInvoicePayment"
+    ],
+    "steuerfreieFaelle": [
+      "smallBusiness",
+      "reverseCharge",
+      "igLieferung",
+      "exportThirdCountry",
+      "domesticReverseCharge",
+      "outsideScope"
     ],
     "taxSchemes": [
       "normal",

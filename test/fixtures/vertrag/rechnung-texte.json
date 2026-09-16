@@ -1,5 +1,5 @@
 {
-  "version": "0.21.0",
+  "version": "0.22.0",
   "sprachen": [
     "de",
     "en"
@@ -27,8 +27,12 @@
       "pdf.tabelle.ust": "UST",
       "pdf.tabelle.einzelNetto": "EINZEL NETTO",
       "pdf.tabelle.betragNetto": "BETRAG NETTO",
+      "pdf.tabelle.einzelBrutto": "EINZEL BRUTTO",
+      "pdf.tabelle.betragBrutto": "BETRAG BRUTTO",
+      "pdf.position.rabatt": "abzüglich {prozent} % Rabatt",
       "pdf.summe.zwischensumme": "Zwischensumme netto",
       "pdf.summe.umsatzsteuer": "Umsatzsteuer {satz}%",
+      "pdf.summe.darinUst": "darin {satz}% USt von {netto} netto",
       "pdf.summe.gesamt.rechnung": "Gesamtbetrag",
       "pdf.summe.gesamt.gutschrift": "Gutschriftsbetrag",
       "steuer.kleinunternehmer": "Gemäß § 6 Abs. 1 Z 27 UStG wird keine Umsatzsteuer verrechnet (Kleinunternehmer).",
@@ -225,8 +229,12 @@
       "pdf.tabelle.ust": "VAT",
       "pdf.tabelle.einzelNetto": "UNIT NET",
       "pdf.tabelle.betragNetto": "AMOUNT NET",
+      "pdf.tabelle.einzelBrutto": "UNIT GROSS",
+      "pdf.tabelle.betragBrutto": "AMOUNT GROSS",
+      "pdf.position.rabatt": "less {prozent}% discount",
       "pdf.summe.zwischensumme": "Subtotal net",
       "pdf.summe.umsatzsteuer": "VAT {satz}%",
+      "pdf.summe.darinUst": "incl. {satz}% VAT on {netto} net",
       "pdf.summe.gesamt.rechnung": "Total",
       "pdf.summe.gesamt.gutschrift": "Credit total",
       "steuer.kleinunternehmer": "No VAT charged pursuant to § 6 (1) no. 27 UStG (small business exemption).",

@@ -93,7 +93,7 @@ muss nichts davon programmieren:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^6.12.1
+  kasseneck_api: ^7.0.0
 ```
 
 ```bash
@@ -473,9 +473,58 @@ entsteht in derselben Transaktion wie das Festschreiben, und das PDF trägt dann
 keinen Zahlungskasten und keinen Giro-QR. Trifft das Geld erst später ein, geht
 `recordInvoicePayment(RecordPaymentRequest(...))` — mit eigenem
 `idempotencyKey`, sonst bucht eine Wiederholung zweimal. Bei `method: 'cash'`
-wird gebucht und die Antwort trägt einen `InvoiceNotice`: eine Barzahlung ist
-ein Barumsatz und braucht einen Beleg (§ 132a BAO), den der Vermerk an der
-Rechnung nicht ersetzt.
+(und bei `onSite: true`) wird gebucht und die Liste `notice` trägt
+`cash_receipt_required`: ein Barumsatz braucht einen Beleg (§ 132a BAO), den
+der Vermerk an der Rechnung nicht ersetzt.
+
+**Vorab rechnen.** Wer kassiert, bevor die Rechnung entsteht, braucht den
+Betrag, den die Rechnung später ausweist. `rechnungSummen` rechnet ihn genau
+wie der Server, ohne Netz; `previewInvoice` fragt den Server selbst — ein
+Probelauf, der prüft wie das Ausstellen (Kunde, Steuerfall, Pflichtangaben),
+aber nichts festschreibt und den `idempotencyKey` nicht verbraucht:
+
+```dart
+const posten = [
+  InvoiceItemInput(description: 'Maniküre', quantity: 1, unitPriceCents: 1479, vatRate: 20),
+  InvoiceItemInput(description: 'Lack', quantity: 1, unitPriceCents: 1500, vatRate: 20),
+];
+final summen = rechnungSummen(posten, 'gross');
+// summen.grossCents == 2979, netCents == 2483, vatCents == 496
+
+final anfrage = IssueInvoiceRequest(
+  idempotencyKey: 'bestellung-$bestellnummer',
+  customerId: kunde.id,
+  priceMode: 'gross',
+  serviceStart: '2026-09-16',
+  items: posten,
+);
+final probe = await rechnungen.previewInvoice(anfrage);
+// probe.preview.totals, probe.preview.taxScheme, probe.preview.taxSchemeReason
+final ergebnis = await rechnungen.issueInvoice(anfrage); // derselbe Schlüssel, eine Rechnung
+```
+
+Im **Brutto-Modus** ist das Brutto je Satz der vereinbarte Preis: Netto =
+round(B × 100 / (100 + Satz)), USt = B − Netto. Im **Netto-Modus** wird die USt
+je Satz aus der Nettosumme gerundet. Gerundet wird kaufmännisch (halber Cent
+vom Nullpunkt weg), je Satz, dann summiert. Leitet der Server einen
+steuerfreien Fall ab (`steuerfreieFaelle`, etwa `igLieferung`), gehört er als
+dritter Wert in `rechnungSummen` — sonst rechnet die Funktion Steuer, die die
+Rechnung nicht ausweist; `previewInvoice` nennt den Fall. Verbindlich ist das
+Ausstellen: zwischen Probelauf und Rechnung können sich Kunde oder Konto
+ändern. Die Summen sind auch bei Gutschriften positiv — das Vorzeichen steht
+im Belegtyp (`docType: 'GU'`).
+
+**Hinweise sind immer eine Liste.** `notice` ist bei `issueInvoice`,
+`previewInvoice` und `recordInvoicePayment` eine `List<InvoiceNotice>`, leer
+ohne Hinweis. Eine ig. Lieferung trägt `recapitulative_statement_due`
+(Zusammenfassende Meldung), eine bar bezahlte Rechnung zusätzlich
+`cash_receipt_required` — am Code entscheiden, nicht am Text:
+
+```dart
+if (ergebnis.notice.any((h) => h.code == 'cash_receipt_required')) {
+  // Barumsatz: Beleg über die Registrierkasse erteilen
+}
+```
 
 ## RKSV im Detail
 
