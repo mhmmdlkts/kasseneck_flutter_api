@@ -458,6 +458,15 @@ immer Deutsch. Die Marke wählt `brandId` aus `listBrands()`. Dieselbe Rechnung 
 der anderen Sprache gibt es nur als gekennzeichnete Übersetzungskopie —
 `getInvoicePdf(id, language: 'de')` — nie als zweite Rechnung.
 
+**Der Steuerfall wird abgeleitet.** `taxScheme` ist optional: Der Server
+bestimmt den Fall aus Kundenland, Kundenart, UID und `kind` (`goods` oder
+`service`) der Positionen. Eine Angabe wird geprüft — passt sie nicht, kommt
+`tax_scheme_mismatch` samt erwartetem Fall zurück, statt einer falschen
+Rechnung. Für den Übergang der Steuerschuld im Inland (Bauleistungen, Schrott,
+Geräte ab 5.000 € je Rechnung …) gibt es `reverseChargeReason` aus
+[reverseChargeReasons]; neu sind auch `oss` und `outsideScope` (Leistung an eine
+Drittlandsfirma — in Österreich nicht steuerbar).
+
 **Schon bezahlt.** Wer online kassiert und danach abrechnet, gibt die Zahlung
 gleich mit: `IssueInvoiceRequest(payment: PaymentInput(method: 'card'))`. Sie
 entsteht in derselben Transaktion wie das Festschreiben, und das PDF trägt dann

@@ -88,6 +88,9 @@ class RechnungApi {
     return _lesen(name, () => IssueResult(
           invoice: Invoice.fromJson(_objekt(daten, 'invoice')),
           replayed: daten['replayed'] == true,
+          // Der Server schickt eine Liste; aeltere Faelle trugen ein einzelnes
+          // Objekt — beides wird gelesen, damit ein Versionssprung nichts bricht.
+          notice: _hinweise(daten['notice']),
         ));
   }
 
@@ -239,6 +242,18 @@ class RechnungApi {
     } on TypeError {
       throw KasseneckValidationError(name, 'Antwort hat einen unerwarteten Typ', 'response');
     }
+  }
+
+  /// Hinweise aus der Antwort: Liste, Einzelobjekt oder nichts.
+  static List<InvoiceNotice> _hinweise(Object? roh) {
+    if (roh is List) {
+      return [
+        for (final h in roh)
+          if (h is Map) InvoiceNotice.fromJson(Map<String, dynamic>.from(h)),
+      ];
+    }
+    if (roh is Map) return [InvoiceNotice.fromJson(Map<String, dynamic>.from(roh))];
+    return const [];
   }
 
   static Map<String, dynamic> _objekt(Map<String, dynamic> daten, String feld) {

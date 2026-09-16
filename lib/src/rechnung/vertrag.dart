@@ -50,12 +50,50 @@ const List<String> invoiceErrorCodes = [
   'brand_not_found',
   'not_payable',
   'payment_exceeds_invoice',
+  'tax_scheme_mismatch',
+  'vat_rate_not_in_country',
+  'reverse_charge_reason_required',
+  'reverse_charge_threshold',
+  'mixed_supply_not_allowed',
+  'oss_not_enabled',
 ];
 
 /// Gründe einer Gutschrift; der Server druckt den deutschen Text.
 const List<String> creditNoteReasons = ['cancellation', 'price_reduction', 'return', 'incorrect_invoice', 'other'];
 
-const List<String> taxSchemes = ['normal', 'smallBusiness', 'reverseCharge', 'igLieferung', 'exportThirdCountry'];
+/// Der Steuerfall einer Rechnung. Er wird vom Server **abgeleitet** (Kundenland,
+/// Kundenart, UID, Ware oder Leistung); eine mitgeschickte Angabe muss dazu
+/// passen, sonst `tax_scheme_mismatch`. Neue Fälle stehen hinten.
+const List<String> taxSchemes = [
+  'normal',
+  'smallBusiness',
+  'reverseCharge',
+  'igLieferung',
+  'exportThirdCountry',
+  'domesticReverseCharge',
+  'oss',
+  'outsideScope',
+];
+
+/// Ware oder Leistung — ohne das lässt sich ig. Lieferung nicht von Reverse
+/// Charge trennen. Ohne Angabe gilt `goods`.
+const List<String> itemKinds = ['goods', 'service'];
+
+/// Gründe für den Übergang der Steuerschuld **im Inland** (§ 19 UStG samt
+/// Verordnungen). Ohne Grund gibt es kein `domesticReverseCharge`.
+const List<String> reverseChargeReasons = [
+  'construction',
+  'scrap',
+  'mobile_devices',
+  'it_devices',
+  'metals',
+  'emission_certificates',
+  'gas_electricity',
+  'energy_certificates',
+  'investment_gold',
+  'security_transfer',
+  'foreign_supplier',
+];
 
 const List<String> priceModes = ['net', 'gross'];
 
@@ -81,7 +119,11 @@ const List<String> invoiceLanguages = ['de', 'en'];
 const List<String> invoicePaymentMethods = ['transfer', 'card', 'online', 'cash'];
 
 /// Hinweise an einer erfolgreichen Antwort — keine Fehler.
-const List<String> invoiceNoticeCodes = ['cash_receipt_required'];
+const List<String> invoiceNoticeCodes = [
+  'cash_receipt_required',
+  'recapitulative_statement_due',
+  'place_of_supply_check',
+];
 
 const List<String> invoiceUnits = [
   'piece', 'pair', 'set', 'dozen', 'second', 'minute', 'hour', 'day', 'night', 'week', 'month',

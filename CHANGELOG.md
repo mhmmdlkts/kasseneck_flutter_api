@@ -1,3 +1,31 @@
+## 6.20.0
+
+### Rechnungs-API: der Steuerfall wird abgeleitet — Zwilling von npm 0.20.0 und 0.21.0
+
+Anlass: `taxScheme` war Pflicht und wurde geglaubt. Wer `normal` an eine deutsche
+Firma mit UID schickte, bekam eine Rechnung mit 20 % österreichischer
+Umsatzsteuer — falsch, und niemand merkte es. Künftig leitet der Server den Fall
+aus Kundenland, Kundenart, UID und Ware/Leistung ab.
+
+- `IssueInvoiceRequest.taxScheme` ist **optional**; passt eine Angabe nicht zum
+  abgeleiteten Fall, antwortet der Server mit `tax_scheme_mismatch` und nennt
+  den erwarteten Fall.
+- `reverseChargeReason` an der Anfrage, Katalog `reverseChargeReasons` (elf
+  Gründe für den Übergang der Steuerschuld im Inland).
+- `InvoiceItemInput.kind` (`itemKinds`: `goods`/`service`) — ohne das lässt sich
+  ig. Lieferung nicht von Reverse Charge trennen.
+- Drei neue Steuerfälle: `domesticReverseCharge`, `oss`, `outsideScope`.
+  `outsideScope` ist die Leistung an eine Drittlandsfirma — in Österreich nicht
+  steuerbar und etwas anderes als `exportThirdCountry` (Waren).
+- Sechs neue Fehlercodes, zwei neue Hinweis-Codes.
+- **`IssueResult.notice` ist eine Liste**: eine bar bezahlte ig. Lieferung trägt
+  zwei Hinweise. Ein einzelnes Objekt wird weiterhin gelesen, damit ein
+  Versionssprung nichts bricht.
+- `PaymentInput.onSite` (aus 0.20.0): Als Barzahlung gilt auch die Karte **vor
+  Ort** (§ 131b Abs. 1 Z 3 UStG), im Internet dagegen nicht — nur das
+  Fremdsystem weiß, was von beidem es war.
+- Vertrag auf npm 0.21.0 (`zwillinge.yaml`).
+
 ## 6.19.0
 
 ### hobex HPS: TECS-Antwortcodes eingeordnet, Storno nach ausbleibender Host-Antwort — Zwilling von npm 0.19.0
