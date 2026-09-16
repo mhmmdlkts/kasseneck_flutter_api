@@ -1,3 +1,85 @@
+## 7.0.0
+
+### Rechnungs-API: Brutto bleibt Brutto, Hinweise immer als Liste, Probelauf — Zwilling von npm 0.22.0
+
+Anlass: Ein Shop meldete am 16.09.2026, dass im Brutto-Modus 14,79 € + 15,00 €
+zu 20 % als 29,80 € ausgestellt wurden. Der Server rechnete Netto und USt
+getrennt und setzte das Brutto daraus neu zusammen — die Rechnung wich um einen
+Cent vom vereinbarten Preis ab. Er rechnet jetzt je Satz vom Brutto aus, und wer
+vor der Rechnung kassiert, kann denselben Betrag vorab rechnen oder erfragen.
+
+- **Breaking: `RecordPaymentResult.notice` ist eine Liste** (`List<InvoiceNotice>`,
+  leer ohne Hinweis) wie schon `IssueResult.notice` — bisher ein einzelner,
+  nullbarer `InvoiceNotice`. Ein Server, der noch ein einzelnes Objekt schickt,
+  wird zur Liste gemacht. Umstieg:
+
+  ```dart
+  // bis 6.20.0
+  if (r.notice?.code == 'cash_receipt_required') { … }
+  // ab 7.0.0
+  if (r.notice.any((h) => h.code == 'cash_receipt_required')) { … }
+  ```
+
+- **Ein unbrauchbarer Hinweis wird übergangen, nicht geworfen** — bei
+  `issueInvoice`, `previewInvoice` und `recordInvoicePayment`, wie im
+  JS-Paket. Ein Eintrag in `notice`, der kein Objekt ist oder dessen `code`
+  oder `message` kein Text ist, fällt weg; die übrigen kommen an, bleibt keiner,
+  ist die Liste leer. Grund: Wenn die Antwort ankommt, hat der Aufruf schon
+  gewirkt — die Rechnung ist ausgestellt, die Zahlung gebucht. Ein Fehler an
+  dieser Stelle ließe den Aufrufer glauben, es sei nichts entstanden, und eine
+  Wiederholung mit demselben Schlüssel liefert die Hinweise nicht noch einmal.
+  Bis 6.20.0 warf ein Hinweis ohne `code` einen Antwortfehler, und einer ohne
+  `message` kam mit leerem Text an; beides fällt jetzt weg.
+  `InvoiceNotice.fromJson` verlangt entsprechend `code` und `message` und wirft
+  sonst `FormatException`.
+- **Neu: `rechnungSummen(items, priceMode, [taxScheme])`** rechnet die Summen so,
+  wie der Server sie ausstellt, und liefert ein `InvoiceTotals`. Im Brutto-Modus
+  ist das Brutto je Satz der vereinbarte Preis: B = round(Σ Zeilen), Netto =
+  round(B × 100 / (100 + Satz)), USt = B − Netto. Im Netto-Modus wird die USt je
+  Satz aus der ungerundeten Nettosumme gerundet. Zeile = Einzelpreis × Menge ×
+  (1 − Rabatt/100), kaufmännisch gerundet je Satz, dann summiert. Die
+  Rechenschritte folgen dem JS-Paket Schritt für Schritt, damit das Gleitkomma
+  dieselbe Zahl trifft. Ein unbekannter Modus oder Steuerfall wirft
+  `ArgumentError`, statt still im falschen Modus zu rechnen.
+- **Neu: `SummenPosition`** — was für die Summe zählt; `InvoiceItemInput`
+  erfüllt es unverändert, `SummenPosition(...)` baut eine Position ohne
+  Beschreibung.
+- **Neu: `steuerfreieFaelle`** (`smallBusiness`, `reverseCharge`, `igLieferung`,
+  `exportThirdCountry`, `domesticReverseCharge`, `outsideScope`): dort zählt
+  jede Position zu 0 %. Die Liste steht im Vertrag (`rechnung.steuerfreieFaelle`)
+  und wird wie die übrigen Listen in beide Richtungen verglichen.
+- **Neu: `previewInvoice(IssueInvoiceRequest)` → `PreviewResult`** (`preview`,
+  `notice`): Probelauf von `issueInvoice` (`dryRun: true` im Vertrag). Er prüft
+  und rechnet wie das Ausstellen, schreibt nichts fest und verbraucht den
+  `idempotencyKey` nicht. `InvoicePreview` trägt `docType`, `invoiceDate`,
+  `dueDate`, `customerId`, `taxScheme`, `taxSchemeReason`,
+  `reverseChargeReason`, `taxCountry`, `priceMode`, `totals`, `language`,
+  `brandId`/`brandName` und `einvoice` (neu: `EInvoiceStatus` mit `level`,
+  `formats`, `missing`). Fehlt `preview` in der Antwort, ist das ein
+  Antwortfehler.
+- **`VatRateTotal.grossCents`** — der Server liefert es ab npm 0.22.0 mit; fehlt
+  es (älterer Server), gilt Netto + USt. Der Konstruktor nimmt es optional.
+  `InvoiceTotals` und `VatRateTotal` haben `toJson()` in der Form der Antworten.
+  Die Summen sind auch bei Gutschriften positiv, das Vorzeichen steht im
+  Belegtyp.
+- Prüffälle: `test/rechnung_summen_test.dart` rechnet jeden Fall aus
+  `rechnung-summen.json` des JS-Pakets nach — derselben Datei, gegen die Server
+  und JS-Paket prüfen — und zusätzlich jeden Brutto-Betrag von 1 bis 10.000 Cent
+  zu 10, 13 und 20 %.
+- Vertrag auf npm 0.22.0 (`zwillinge.yaml`): `dryRun` im Schema von
+  `issueInvoice`, `rechnung.steuerfreieFaelle`, `rechnung-summen.json` und vier
+  neue Rechnungstexte (`pdf.tabelle.einzelBrutto`, `pdf.tabelle.betragBrutto`,
+  `pdf.summe.darinUst`, `pdf.position.rabatt`) — die Texte führt dieses Paket
+  nicht selbst, sie kommen nur mit der Vertragskopie.
+- `tool/zwillinge.sh` nimmt über `ZWILLINGE_TARBALL` einen lokal gepackten
+  Tarball, solange die Version noch nicht auf npm steht, und prüft in jedem
+  Fall, dass das Paket die angeheftete Version trägt. In der CI gilt die
+  Variable nicht — dort zählt nur die Registry.
+- Aus npm 0.22.0 nicht übernommen: die Prüfung „Kennung als Text" bei
+  `getInvoice`/`getCustomer` — hier schließen die benannten Parameter das aus —
+  und die Feldfehler im Meldungstext von `KasseneckApiError`; die Felder liefert
+  hier weiterhin `rechnungFeldFehler(e)`.
+
 ## 6.20.0
 
 ### Rechnungs-API: der Steuerfall wird abgeleitet — Zwilling von npm 0.20.0 und 0.21.0

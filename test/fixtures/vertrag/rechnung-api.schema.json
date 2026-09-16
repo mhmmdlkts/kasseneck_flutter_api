@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 1,
-  "paket": "0.21.0",
+  "paket": "0.22.0",
   "aufrufe": {
     "createCustomer": {
       "anfrage": {
@@ -523,6 +523,9 @@
               "method"
             ],
             "additionalProperties": false
+          },
+          "dryRun": {
+            "type": "boolean"
           }
         },
         "required": [

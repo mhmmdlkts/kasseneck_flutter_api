@@ -88,8 +88,28 @@ class RechnungApi {
     return _lesen(name, () => IssueResult(
           invoice: Invoice.fromJson(_objekt(daten, 'invoice')),
           replayed: daten['replayed'] == true,
-          // Der Server schickt eine Liste; aeltere Faelle trugen ein einzelnes
-          // Objekt — beides wird gelesen, damit ein Versionssprung nichts bricht.
+          notice: _hinweise(daten['notice']),
+        ));
+  }
+
+  /// Probelauf von [issueInvoice]: dieselbe Anfrage wird geprüft und gerechnet
+  /// wie beim Ausstellen, aber nichts festgeschrieben — keine Nummer, kein
+  /// Dokument, keine Zahlung. Die Antwort nennt Summen, Steuerfall samt Grund,
+  /// Sprache, Marke, E-Rechnung und die Hinweise — oder scheitert mit demselben
+  /// Fehlercode, mit dem das Ausstellen scheitern würde.
+  ///
+  /// Der `idempotencyKey` wird nicht verbraucht: dieselbe Anfrage lässt sich
+  /// danach unverändert ausstellen. Verbindlich ist das Ausstellen — zwischen
+  /// Probelauf und Ausstellen können sich Kunde oder Konto ändern.
+  ///
+  /// Geht als `issueInvoice` mit `dryRun: true` hinaus; Fehler tragen deshalb
+  /// den Aufrufnamen `issueInvoice`. Ein Server ohne Probelauf lehnt das
+  /// unbekannte Feld als `validation` ab.
+  Future<PreviewResult> previewInvoice(IssueInvoiceRequest anfrage) async {
+    const name = Aufrufe.issueInvoice;
+    final daten = await _transport.rufen(name, {...anfrage.toJson(), 'dryRun': true});
+    return _lesen(name, () => PreviewResult(
+          preview: InvoicePreview.fromJson(_objekt(daten, 'preview')),
           notice: _hinweise(daten['notice']),
         ));
   }
@@ -199,9 +219,9 @@ class RechnungApi {
   /// Eine Zahlung nachtragen, die nach dem Ausstellen eingetroffen ist.
   ///
   /// Der `idempotencyKey` ist Pflicht: ohne ihn bucht ein Wiederholungslauf
-  /// nach einem Zeitlimit ein zweites Mal. Bei `method: 'cash'` wird die
-  /// Zahlung gebucht und die Antwort trägt zusätzlich einen [InvoiceNotice] —
-  /// eine Barzahlung ist ein Barumsatz und braucht einen Beleg (§ 132a BAO).
+  /// nach einem Zeitlimit ein zweites Mal. Bei `method: 'cash'` (und bei
+  /// `onSite: true`) wird die Zahlung gebucht und die Liste `notice` trägt
+  /// `cash_receipt_required` — ein Barumsatz braucht einen Beleg (§ 132a BAO).
   Future<RecordPaymentResult> recordInvoicePayment(RecordPaymentRequest anfrage) async {
     const name = Aufrufe.recordInvoicePayment;
     final daten = await _transport.rufen(name, anfrage.toJson());
@@ -209,9 +229,7 @@ class RechnungApi {
           invoice: Invoice.fromJson(_objekt(daten, 'invoice')),
           payment: InvoicePayment.fromJson(_objekt(daten, 'payment')),
           replayed: daten['replayed'] == true,
-          notice: daten['notice'] is Map
-              ? InvoiceNotice.fromJson(Map<String, dynamic>.from(daten['notice'] as Map))
-              : null,
+          notice: _hinweise(daten['notice']),
         ));
   }
 
@@ -244,16 +262,25 @@ class RechnungApi {
     }
   }
 
-  /// Hinweise aus der Antwort: Liste, Einzelobjekt oder nichts.
+  /// Hinweise aus der Antwort — immer eine Liste, leer ohne Hinweis.
+  ///
+  /// Ein einzelnes Objekt (Server vor npm 0.22.0 bei `recordInvoicePayment`)
+  /// wird zur Liste, damit ein Versionssprung nichts bricht.
+  ///
+  /// Ein unbrauchbarer Eintrag (kein Objekt, `code` oder `message` kein Text)
+  /// wird uebergangen, nicht geworfen — wie im JS-Zwilling. Der Aufruf hat an
+  /// dieser Stelle schon gewirkt: die Rechnung ist ausgestellt, die Zahlung
+  /// gebucht. Ein Fehler liesse den Aufrufer glauben, es sei nichts entstanden,
+  /// und eine Wiederholung mit demselben Schluessel liefert die Hinweise nicht
+  /// noch einmal.
   static List<InvoiceNotice> _hinweise(Object? roh) {
-    if (roh is List) {
-      return [
-        for (final h in roh)
-          if (h is Map) InvoiceNotice.fromJson(Map<String, dynamic>.from(h)),
-      ];
-    }
-    if (roh is Map) return [InvoiceNotice.fromJson(Map<String, dynamic>.from(roh))];
-    return const [];
+    if (roh == null) return const [];
+    final liste = roh is List ? roh : [roh];
+    return [
+      for (final h in liste)
+        if (h is Map && h['code'] is String && h['message'] is String)
+          InvoiceNotice(code: h['code'] as String, message: h['message'] as String),
+    ];
   }
 
   static Map<String, dynamic> _objekt(Map<String, dynamic> daten, String feld) {

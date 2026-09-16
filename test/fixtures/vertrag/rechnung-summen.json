@@ -1,0 +1,154 @@
+{
+  "beschreibung": "Prueffaelle fuer die Summen einer Rechnung. Von Hand gerechnet, nicht erzeugt: rechnungSummen (npm), der Dart-Zwilling und der Server (summenJeSatz) muessen jeden Fall genau so treffen. Betraege in Cent, Positionen in der Form der Rechnungs-API.",
+  "regel": {
+    "zeile": "Einzelpreis × Menge × (1 − Rabatt/100), ungerundet",
+    "net": "Netto = round(Σ Zeilen); USt = round(Σ Zeilen × Satz/100); Brutto = Netto + USt",
+    "gross": "Brutto B = round(Σ Zeilen); Netto = round(B × 100 / (100 + Satz)); USt = B − Netto",
+    "steuerfrei": "smallBusiness, reverseCharge, igLieferung, exportThirdCountry, domesticReverseCharge, outsideScope: jede Zeile zu 0 %",
+    "rundung": "kaufmaennisch, halber Cent vom Nullpunkt weg; je Satz, dann summiert"
+  },
+  "faelle": [
+    {
+      "name": "Shop: 0,03 € brutto zu 20 %",
+      "priceMode": "gross",
+      "items": [{ "quantity": 1, "unitPriceCents": 3, "vatRate": 20 }],
+      "erwartet": { "netCents": 3, "vatCents": 0, "grossCents": 3, "byRate": [{ "rate": 20, "netCents": 3, "vatCents": 0, "grossCents": 3 }] }
+    },
+    {
+      "name": "Shop: 14,79 € + 15,00 € brutto zu 20 % ergeben 29,79 €",
+      "priceMode": "gross",
+      "items": [
+        { "quantity": 1, "unitPriceCents": 1479, "vatRate": 20 },
+        { "quantity": 1, "unitPriceCents": 1500, "vatRate": 20 }
+      ],
+      "erwartet": { "netCents": 2483, "vatCents": 496, "grossCents": 2979, "byRate": [{ "rate": 20, "netCents": 2483, "vatCents": 496, "grossCents": 2979 }] }
+    },
+    {
+      "name": "Shop: 46,46 € brutto",
+      "priceMode": "gross",
+      "items": [{ "quantity": 1, "unitPriceCents": 4646, "vatRate": 20 }],
+      "erwartet": { "netCents": 3872, "vatCents": 774, "grossCents": 4646, "byRate": [{ "rate": 20, "netCents": 3872, "vatCents": 774, "grossCents": 4646 }] }
+    },
+    {
+      "name": "Shop: 12,90 € brutto",
+      "priceMode": "gross",
+      "items": [{ "quantity": 1, "unitPriceCents": 1290, "vatRate": 20 }],
+      "erwartet": { "netCents": 1075, "vatCents": 215, "grossCents": 1290, "byRate": [{ "rate": 20, "netCents": 1075, "vatCents": 215, "grossCents": 1290 }] }
+    },
+    {
+      "name": "Brutto, zwei Saetze: je Satz eigenes Brutto, absteigend",
+      "priceMode": "gross",
+      "items": [
+        { "quantity": 1, "unitPriceCents": 1479, "vatRate": 20 },
+        { "quantity": 1, "unitPriceCents": 555, "vatRate": 10 },
+        { "quantity": 1, "unitPriceCents": 1500, "vatRate": 20 }
+      ],
+      "erwartet": {
+        "netCents": 2988, "vatCents": 546, "grossCents": 3534,
+        "byRate": [
+          { "rate": 20, "netCents": 2483, "vatCents": 496, "grossCents": 2979 },
+          { "rate": 10, "netCents": 505, "vatCents": 50, "grossCents": 555 }
+        ]
+      }
+    },
+    {
+      "name": "Brutto mit Menge und Rabatt: 3 × 9,99 € − 10 % = 26,97 €",
+      "priceMode": "gross",
+      "items": [{ "quantity": 3, "unitPriceCents": 999, "vatRate": 20, "discountPct": 10 }],
+      "erwartet": { "netCents": 2248, "vatCents": 449, "grossCents": 2697, "byRate": [{ "rate": 20, "netCents": 2248, "vatCents": 449, "grossCents": 2697 }] }
+    },
+    {
+      "name": "Brutto zu 13 %: glatt",
+      "priceMode": "gross",
+      "items": [{ "quantity": 1, "unitPriceCents": 1695, "vatRate": 13 }],
+      "erwartet": { "netCents": 1500, "vatCents": 195, "grossCents": 1695, "byRate": [{ "rate": 13, "netCents": 1500, "vatCents": 195, "grossCents": 1695 }] }
+    },
+    {
+      "name": "Brutto zu 10 %: 0,11 €",
+      "priceMode": "gross",
+      "items": [{ "quantity": 1, "unitPriceCents": 11, "vatRate": 10 }],
+      "erwartet": { "netCents": 10, "vatCents": 1, "grossCents": 11, "byRate": [{ "rate": 10, "netCents": 10, "vatCents": 1, "grossCents": 11 }] }
+    },
+    {
+      "name": "Brutto: drei Zeilen zu 0,05 € sind 0,15 €, nicht dreimal gerundet",
+      "priceMode": "gross",
+      "items": [
+        { "quantity": 1, "unitPriceCents": 5, "vatRate": 20 },
+        { "quantity": 1, "unitPriceCents": 5, "vatRate": 20 },
+        { "quantity": 1, "unitPriceCents": 5, "vatRate": 20 }
+      ],
+      "erwartet": { "netCents": 13, "vatCents": 2, "grossCents": 15, "byRate": [{ "rate": 20, "netCents": 13, "vatCents": 2, "grossCents": 15 }] }
+    },
+    {
+      "name": "Brutto: Rabatt-Bruchteile erst in der Satzsumme runden (2 × 0,045 € = 0,09 €)",
+      "priceMode": "gross",
+      "items": [
+        { "quantity": 1, "unitPriceCents": 5, "vatRate": 20, "discountPct": 10 },
+        { "quantity": 1, "unitPriceCents": 5, "vatRate": 20, "discountPct": 10 }
+      ],
+      "erwartet": { "netCents": 8, "vatCents": 1, "grossCents": 9, "byRate": [{ "rate": 20, "netCents": 8, "vatCents": 1, "grossCents": 9 }] }
+    },
+    {
+      "name": "Brutto: ein Cent",
+      "priceMode": "gross",
+      "items": [{ "quantity": 1, "unitPriceCents": 1, "vatRate": 20 }],
+      "erwartet": { "netCents": 1, "vatCents": 0, "grossCents": 1, "byRate": [{ "rate": 20, "netCents": 1, "vatCents": 0, "grossCents": 1 }] }
+    },
+    {
+      "name": "Brutto, aber steuerfrei (ig. Lieferung): alles zu 0 %",
+      "priceMode": "gross",
+      "taxScheme": "igLieferung",
+      "items": [
+        { "quantity": 1, "unitPriceCents": 1479, "vatRate": 20 },
+        { "quantity": 1, "unitPriceCents": 1500, "vatRate": 0 }
+      ],
+      "erwartet": { "netCents": 2979, "vatCents": 0, "grossCents": 2979, "byRate": [{ "rate": 0, "netCents": 2979, "vatCents": 0, "grossCents": 2979 }] }
+    },
+    {
+      "name": "Netto: 2 × 50,00 € zu 20 %",
+      "priceMode": "net",
+      "items": [{ "quantity": 2, "unitPriceCents": 5000, "vatRate": 20 }],
+      "erwartet": { "netCents": 10000, "vatCents": 2000, "grossCents": 12000, "byRate": [{ "rate": 20, "netCents": 10000, "vatCents": 2000, "grossCents": 12000 }] }
+    },
+    {
+      "name": "Netto, zwei Saetze getrennt gerundet",
+      "priceMode": "net",
+      "items": [
+        { "quantity": 1, "unitPriceCents": 1000, "vatRate": 20 },
+        { "quantity": 1, "unitPriceCents": 1000, "vatRate": 10 }
+      ],
+      "erwartet": {
+        "netCents": 2000, "vatCents": 300, "grossCents": 2300,
+        "byRate": [
+          { "rate": 20, "netCents": 1000, "vatCents": 200, "grossCents": 1200 },
+          { "rate": 10, "netCents": 1000, "vatCents": 100, "grossCents": 1100 }
+        ]
+      }
+    },
+    {
+      "name": "Netto: USt aus der ungerundeten Nettosumme (1,5 × 33,33 € = 49,995 €)",
+      "priceMode": "net",
+      "items": [{ "quantity": 1.5, "unitPriceCents": 3333, "vatRate": 20 }],
+      "erwartet": { "netCents": 5000, "vatCents": 1000, "grossCents": 6000, "byRate": [{ "rate": 20, "netCents": 5000, "vatCents": 1000, "grossCents": 6000 }] }
+    },
+    {
+      "name": "Netto mit Rabatt: 3 × 9,99 € − 12,5 % = 26,22375 €",
+      "priceMode": "net",
+      "items": [{ "quantity": 3, "unitPriceCents": 999, "vatRate": 20, "discountPct": 12.5 }],
+      "erwartet": { "netCents": 2622, "vatCents": 524, "grossCents": 3146, "byRate": [{ "rate": 20, "netCents": 2622, "vatCents": 524, "grossCents": 3146 }] }
+    },
+    {
+      "name": "Kleinunternehmer: keine Steuer",
+      "priceMode": "net",
+      "taxScheme": "smallBusiness",
+      "items": [{ "quantity": 1, "unitPriceCents": 10000, "vatRate": 20 }],
+      "erwartet": { "netCents": 10000, "vatCents": 0, "grossCents": 10000, "byRate": [{ "rate": 0, "netCents": 10000, "vatCents": 0, "grossCents": 10000 }] }
+    },
+    {
+      "name": "Keine Positionen",
+      "priceMode": "gross",
+      "items": [],
+      "erwartet": { "netCents": 0, "vatCents": 0, "grossCents": 0, "byRate": [] }
+    }
+  ]
+}

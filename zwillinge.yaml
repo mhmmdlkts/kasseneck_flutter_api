@@ -8,7 +8,14 @@
 #
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
-npm_version: 0.21.0
+#
+# OFFEN: 0.22.0 war beim Ziehen noch nicht veröffentlicht; die Kopie stammt aus
+# dem gepackten Tarball (ZWILLINGE_TARBALL, siehe tool/zwillinge.sh). Die
+# Anheftung muss auf die Registry zeigen: nach der Veröffentlichung
+# `tool/zwillinge.sh pruefen` ohne die Variable — erst wenn das grün ist, ist
+# die Kopie bewiesen, und dieser Absatz gehört gestrichen. Bis dahin ist der
+# CI-Schritt „Vertrag — ist die Kopie echt?" rot, und das ist richtig so.
+npm_version: 0.22.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):

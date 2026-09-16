@@ -7,6 +7,17 @@
 # Das Holen macht bewusst dieses Skript und nicht Dart-Code: so braucht das
 # veröffentlichte Paket keine HTTP- und Archiv-Abhängigkeit, nur um sich selbst
 # zu prüfen.
+#
+# Quelle ist die Registry. Für den Übergang, solange eine Version im JS-Repo
+# gepackt, aber noch nicht veröffentlicht ist, darf ZWILLINGE_TARBALL auf den
+# Tarball zeigen (`npm pack` dort):
+#
+#   ZWILLINGE_TARBALL=/pfad/kreiseck-kasseneck-api-0.22.0.tgz tool/zwillinge.sh ziehen
+#
+# Das ist ein Zwischenstand, kein Beweis: echt ist die Kopie erst, wenn
+# `tool/zwillinge.sh pruefen` OHNE die Variable grün ist, also gegen die
+# veröffentlichte Version. Die CI nimmt die Variable deshalb nicht an — sie
+# bleibt rot, bis die angeheftete Version auf npm steht.
 set -euo pipefail
 
 wurzel="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -37,8 +48,30 @@ trap 'rm -rf "$tmp" "$neu"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-npm pack "@kreiseck/kasseneck-api@${version}" --pack-destination "$tmp" >/dev/null
-tar -xzf "$tmp"/kreiseck-kasseneck-api-*.tgz -C "$tmp"
+tarball="${ZWILLINGE_TARBALL:-}"
+if [ -n "$tarball" ]; then
+  if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+    echo "ZWILLINGE_TARBALL gilt nicht in der CI — dort zählt nur die Registry." >&2
+    exit 1
+  fi
+  [ -f "$tarball" ] || { echo "ZWILLINGE_TARBALL zeigt auf keine Datei: ${tarball}" >&2; exit 1; }
+  tar -xzf "$tarball" -C "$tmp"
+  echo "Achtung: Vertrag aus dem lokalen Tarball ${tarball}, nicht aus der Registry." >&2
+  echo "Nach der Veröffentlichung 'tool/zwillinge.sh pruefen' ohne ZWILLINGE_TARBALL laufen lassen." >&2
+else
+  npm pack "@kreiseck/kasseneck-api@${version}" --pack-destination "$tmp" >/dev/null
+  tar -xzf "$tmp"/kreiseck-kasseneck-api-*.tgz -C "$tmp"
+fi
+
+# Die Version im Paket muss die angeheftete sein. Aus der Registry ist das
+# selbstverständlich; ein lokaler Tarball kann aber ein anderer Stand sein, und
+# dann stünde unter npm_version still ein fremder Vertrag.
+paketversion="$(node -p 'require(process.argv[1]).version' "$tmp/package/package.json" 2>/dev/null || true)"
+if [ "$paketversion" != "$version" ]; then
+  echo "Das Paket trägt die Version '${paketversion}', angeheftet ist ${version}." >&2
+  echo "Die Kopie unter ${ziel} bleibt unangetastet." >&2
+  exit 1
+fi
 
 quelle="$tmp/package/fixtures"
 if [ ! -d "$quelle" ]; then

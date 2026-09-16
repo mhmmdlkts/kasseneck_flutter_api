@@ -8,6 +8,7 @@ library;
 
 export 'src/rechnung/api.dart';
 export 'src/rechnung/modelle.dart';
+export 'src/rechnung/summen.dart';
 export 'src/rechnung/transport.dart' show RechnungTransport, kRechnungBaseUrl;
 export 'src/rechnung/vertrag.dart';
 // Die Fehler, die die Aufrufe werfen — ohne sie wären sie aus diesem Barrel
