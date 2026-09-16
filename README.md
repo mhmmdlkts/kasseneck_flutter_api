@@ -458,6 +458,16 @@ immer Deutsch. Die Marke wählt `brandId` aus `listBrands()`. Dieselbe Rechnung 
 der anderen Sprache gibt es nur als gekennzeichnete Übersetzungskopie —
 `getInvoicePdf(id, language: 'de')` — nie als zweite Rechnung.
 
+**Schon bezahlt.** Wer online kassiert und danach abrechnet, gibt die Zahlung
+gleich mit: `IssueInvoiceRequest(payment: PaymentInput(method: 'card'))`. Sie
+entsteht in derselben Transaktion wie das Festschreiben, und das PDF trägt dann
+keinen Zahlungskasten und keinen Giro-QR. Trifft das Geld erst später ein, geht
+`recordInvoicePayment(RecordPaymentRequest(...))` — mit eigenem
+`idempotencyKey`, sonst bucht eine Wiederholung zweimal. Bei `method: 'cash'`
+wird gebucht und die Antwort trägt einen `InvoiceNotice`: eine Barzahlung ist
+ein Barumsatz und braucht einen Beleg (§ 132a BAO), den der Vermerk an der
+Rechnung nicht ersetzt.
+
 ## RKSV im Detail
 
 Jeder Beleg ist verkettet und signiert (ES256 / JWS) und liegt als

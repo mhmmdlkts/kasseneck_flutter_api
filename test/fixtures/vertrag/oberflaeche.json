@@ -1,5 +1,5 @@
 {
-  "version": "0.17.0",
+  "version": "0.18.0",
   "aufrufe": [
     "activateCashregister",
     "cancelInvoice",
@@ -50,6 +50,7 @@
     "listRegisterUsersForDevice",
     "listRegisterSessionsForDevice",
     "pairRegisterDevice",
+    "recordInvoicePayment",
     "registerPinLogin",
     "registerUserLogin",
     "renewRegisterSession",
@@ -401,7 +402,9 @@
       "invoice_api_not_enabled",
       "invoice_setup_incomplete",
       "language_not_allowed",
-      "brand_not_found"
+      "brand_not_found",
+      "not_payable",
+      "payment_exceeds_invoice"
     ],
     "invoiceLanguages": [
       "de",
@@ -413,6 +416,15 @@
       "cancelled",
       "open",
       "overdue"
+    ],
+    "invoiceNoticeCodes": [
+      "cash_receipt_required"
+    ],
+    "invoicePaymentMethods": [
+      "transfer",
+      "card",
+      "online",
+      "cash"
     ],
     "invoiceSetupRequirements": [
       "module_active",
@@ -492,7 +504,8 @@
       "getInvoicePdf",
       "getInvoiceXml",
       "getInvoiceSetupStatus",
-      "listBrands"
+      "listBrands",
+      "recordInvoicePayment"
     ],
     "taxSchemes": [
       "normal",
