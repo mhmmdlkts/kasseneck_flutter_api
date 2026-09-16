@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 1,
-  "paket": "0.19.0",
+  "paket": "0.21.0",
   "aufrufe": {
     "createCustomer": {
       "anfrage": {
@@ -291,7 +291,25 @@
               "smallBusiness",
               "reverseCharge",
               "igLieferung",
-              "exportThirdCountry"
+              "exportThirdCountry",
+              "domesticReverseCharge",
+              "oss",
+              "outsideScope"
+            ]
+          },
+          "reverseChargeReason": {
+            "enum": [
+              "construction",
+              "scrap",
+              "mobile_devices",
+              "it_devices",
+              "metals",
+              "emission_certificates",
+              "gas_electricity",
+              "energy_certificates",
+              "investment_gold",
+              "security_transfer",
+              "foreign_supplier"
             ]
           },
           "priceMode": {
@@ -414,6 +432,12 @@
                     "pallet"
                   ]
                 },
+                "kind": {
+                  "enum": [
+                    "goods",
+                    "service"
+                  ]
+                },
                 "unitPriceCents": {
                   "type": "integer",
                   "minimum": 0,
@@ -490,6 +514,9 @@
               "reference": {
                 "type": "string",
                 "maxLength": 100
+              },
+              "onSite": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -500,7 +527,6 @@
         },
         "required": [
           "idempotencyKey",
-          "taxScheme",
           "priceMode",
           "serviceStart",
           "items"
@@ -644,6 +670,12 @@
                     "roll",
                     "bag",
                     "pallet"
+                  ]
+                },
+                "kind": {
+                  "enum": [
+                    "goods",
+                    "service"
                   ]
                 },
                 "unitPriceCents": {
@@ -853,6 +885,9 @@
           "reference": {
             "type": "string",
             "maxLength": 100
+          },
+          "onSite": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -885,7 +920,13 @@
     "language_not_allowed",
     "brand_not_found",
     "not_payable",
-    "payment_exceeds_invoice"
+    "payment_exceeds_invoice",
+    "tax_scheme_mismatch",
+    "vat_rate_not_in_country",
+    "reverse_charge_reason_required",
+    "reverse_charge_threshold",
+    "mixed_supply_not_allowed",
+    "oss_not_enabled"
   ],
   "gruende": [
     "cancellation",

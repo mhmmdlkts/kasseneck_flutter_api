@@ -81,6 +81,7 @@ void main() {
       'invoiceLanguages': invoiceLanguages,
       'invoiceUnits': invoiceUnits,
       'invoicePaymentMethods': invoicePaymentMethods,
+      'itemKinds': itemKinds,
       'invoiceNoticeCodes': invoiceNoticeCodes,
     };
 
@@ -416,6 +417,70 @@ void main() {
       expect(const CustomerInput(type: 'company', name: 'X', country: 'AT').toJson().containsKey('language'), isFalse);
       expect(Customer.fromJson({'id': 'k1', 'type': 'company', 'name': 'X', 'country': 'AT'}).language, 'de');
       expect(Customer.fromJson({'id': 'k1', 'type': 'company', 'name': 'X', 'country': 'AT', 'language': 'en'}).language, 'en');
+    });
+  });
+
+  group('Steuerfall (Vertrag 0.21.0)', () {
+    test('taxScheme ist optional und geht nur mit, wenn gesetzt', () async {
+      final (:api, :log) = _apiMit([
+        _erfolg({'invoice': _rechnung, 'replayed': false}),
+        _erfolg({'invoice': _rechnung, 'replayed': false}),
+      ]);
+      await api.issueInvoice(const IssueInvoiceRequest(
+        idempotencyKey: 'k-ohne', priceMode: 'net', serviceStart: '2026-09-16',
+        items: [InvoiceItemInput(description: 'A', quantity: 1, unitPriceCents: 5000, vatRate: 0, kind: 'service')],
+      ));
+      expect(_params(log[0]).containsKey('taxScheme'), isFalse, reason: 'der Server leitet ab');
+      expect((_params(log[0])['items'] as List).first, containsPair('kind', 'service'));
+
+      await api.issueInvoice(const IssueInvoiceRequest(
+        idempotencyKey: 'k-mit', taxScheme: 'domesticReverseCharge', reverseChargeReason: 'construction',
+        priceMode: 'net', serviceStart: '2026-09-16',
+        items: [InvoiceItemInput(description: 'A', quantity: 1, unitPriceCents: 5000, vatRate: 0)],
+      ));
+      expect(_params(log[1])['taxScheme'], 'domesticReverseCharge');
+      expect(_params(log[1])['reverseChargeReason'], 'construction');
+    });
+
+    test('Hinweise kommen als Liste — und ein Einzelobjekt wird trotzdem gelesen', () async {
+      final zwei = [
+        {'code': 'cash_receipt_required', 'message': 'Beleg nötig.'},
+        {'code': 'recapitulative_statement_due', 'message': 'ZM nicht vergessen.'},
+      ];
+      final (:api, log: _) = _apiMit([
+        _erfolg({'invoice': _rechnung, 'replayed': false, 'notice': zwei}),
+        _erfolg({'invoice': _rechnung, 'replayed': false, 'notice': zwei.first}),
+        _erfolg({'invoice': _rechnung, 'replayed': false}),
+      ]);
+      const anfrage = IssueInvoiceRequest(
+        idempotencyKey: 'k', priceMode: 'net', serviceStart: '2026-09-16',
+        items: [InvoiceItemInput(description: 'A', quantity: 1, unitPriceCents: 5000, vatRate: 0)],
+      );
+      final liste = await api.issueInvoice(anfrage);
+      expect(liste.notice.map((h) => h.code).toList(), ['cash_receipt_required', 'recapitulative_statement_due']);
+      for (final h in liste.notice) {
+        expect(invoiceNoticeCodes, contains(h.code));
+      }
+      expect((await api.issueInvoice(anfrage)).notice.single.code, 'cash_receipt_required');
+      expect((await api.issueInvoice(anfrage)).notice, isEmpty);
+    });
+
+    test('onSite geht an der Zahlung mit', () async {
+      final (:api, :log) = _apiMit([_erfolg({
+        'invoice': _rechnung,
+        'payment': {'id': 'z1', 'amountCents': 12000, 'method': 'card'},
+        'replayed': false,
+      })]);
+      await api.recordInvoicePayment(const RecordPaymentRequest(
+        idempotencyKey: 'z', invoiceId: 'inv1', method: 'card', onSite: true));
+      expect(_params(log.single)['onSite'], true);
+    });
+
+    test('die Kataloge des Vertrags sind vollständig', () {
+      expect(taxSchemes, containsAll(['domesticReverseCharge', 'oss', 'outsideScope']));
+      expect(reverseChargeReasons.length, 11);
+      expect(reverseChargeReasons, contains('construction'));
+      expect(invoiceErrorCodes, containsAll(['tax_scheme_mismatch', 'reverse_charge_reason_required']));
     });
   });
 

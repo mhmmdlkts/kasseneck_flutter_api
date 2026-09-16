@@ -213,6 +213,7 @@ class InvoiceItemInput {
     required this.vatRate,
     this.subtitle,
     this.unit,
+    this.kind,
     this.discountPct,
   });
 
@@ -223,6 +224,7 @@ class InvoiceItemInput {
         vatRate: _pflicht<int>(j, 'vatRate'),
         subtitle: _text(j, 'subtitle'),
         unit: _text(j, 'unit'),
+        kind: _text(j, 'kind'),
         discountPct: j['discountPct'] is num ? j['discountPct'] as num : null,
       );
 
@@ -245,6 +247,10 @@ class InvoiceItemInput {
   /// vom Server zurückkommt statt hier still zu verschwinden.
   final String? unit;
 
+  /// Ware oder Leistung ([itemKinds]); ohne Angabe `goods`. Entscheidet
+  /// grenzüberschreitend über ig. Lieferung oder Reverse Charge.
+  final String? kind;
+
   /// Zeilenrabatt in Prozent, höchstens zwei Nachkommastellen.
   final num? discountPct;
 
@@ -254,6 +260,7 @@ class InvoiceItemInput {
     _setzen(j, 'subtitle', subtitle);
     j['quantity'] = quantity;
     _setzen(j, 'unit', unit);
+    _setzen(j, 'kind', kind);
     j['unitPriceCents'] = unitPriceCents;
     j['vatRate'] = vatRate;
     _setzen(j, 'discountPct', discountPct);
@@ -264,7 +271,8 @@ class InvoiceItemInput {
 class IssueInvoiceRequest {
   const IssueInvoiceRequest({
     required this.idempotencyKey,
-    required this.taxScheme,
+    this.taxScheme,
+    this.reverseChargeReason,
     required this.priceMode,
     required this.serviceStart,
     required this.items,
@@ -285,7 +293,8 @@ class IssueInvoiceRequest {
 
   factory IssueInvoiceRequest.fromJson(Map<String, dynamic> j) => IssueInvoiceRequest(
         idempotencyKey: _pflicht<String>(j, 'idempotencyKey'),
-        taxScheme: _pflicht<String>(j, 'taxScheme'),
+        taxScheme: _text(j, 'taxScheme'),
+        reverseChargeReason: _text(j, 'reverseChargeReason'),
         priceMode: _pflicht<String>(j, 'priceMode'),
         serviceStart: _pflicht<String>(j, 'serviceStart'),
         items: [for (final p in _liste(j, 'items')) InvoiceItemInput.fromJson(p)],
@@ -309,7 +318,14 @@ class IssueInvoiceRequest {
 
   /// Pflicht über 400 € brutto sowie bei Reverse Charge und ig. Lieferung.
   final String? customerId;
-  final String taxScheme;
+  /// Optional: der Server leitet den Fall aus Kundenland, Kundenart, UID und
+  /// Ware/Leistung ab. Eine Angabe wird geprüft — passt sie nicht, kommt
+  /// `tax_scheme_mismatch` mit dem erwarteten Fall zurück.
+  final String? taxScheme;
+
+  /// Pflicht bei `domesticReverseCharge`, ein Schlüssel aus
+  /// [reverseChargeReasons]. Zu einem anderen Fall ist er ein Feldfehler.
+  final String? reverseChargeReason;
   final String priceMode;
   final String serviceStart;
   final String? serviceEnd;
@@ -338,7 +354,8 @@ class IssueInvoiceRequest {
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'idempotencyKey': idempotencyKey};
     _setzen(j, 'customerId', customerId);
-    j['taxScheme'] = taxScheme;
+    _setzen(j, 'taxScheme', taxScheme);
+    _setzen(j, 'reverseChargeReason', reverseChargeReason);
     j['priceMode'] = priceMode;
     j['serviceStart'] = serviceStart;
     _setzen(j, 'serviceEnd', serviceEnd);
@@ -360,13 +377,14 @@ class IssueInvoiceRequest {
 
 /// Eine Zahlung, wie das Fremdsystem sie meldet.
 class PaymentInput {
-  const PaymentInput({required this.method, this.amountCents, this.paidAt, this.reference});
+  const PaymentInput({required this.method, this.amountCents, this.paidAt, this.reference, this.onSite});
 
   factory PaymentInput.fromJson(Map<String, dynamic> j) => PaymentInput(
         method: _pflicht<String>(j, 'method'),
         amountCents: _ganz(j, 'amountCents'),
         paidAt: _text(j, 'paidAt'),
         reference: _text(j, 'reference'),
+        onSite: j['onSite'] is bool ? j['onSite'] as bool : null,
       );
 
   /// Ein Schlüssel aus [invoicePaymentMethods].
@@ -381,11 +399,17 @@ class PaymentInput {
   /// Zahlungskennung des Fremdsystems — gespeichert, aber nie gedruckt.
   final String? reference;
 
+  /// Die Zahlung erfolgte **vor Ort** (Terminal an der Kasse). Dann ist sie ein
+  /// Barumsatz — auch mit Karte (§ 131b Abs. 1 Z 3 UStG) — und die Antwort
+  /// trägt den Hinweis `cash_receipt_required`. Zu `transfer` passt das nicht.
+  final bool? onSite;
+
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'method': method};
     _setzen(j, 'amountCents', amountCents);
     _setzen(j, 'paidAt', paidAt);
     _setzen(j, 'reference', reference);
+    _setzen(j, 'onSite', onSite);
     return j;
   }
 }
@@ -400,6 +424,7 @@ class RecordPaymentRequest {
     this.amountCents,
     this.paidAt,
     this.reference,
+    this.onSite,
   });
 
   final String idempotencyKey;
@@ -409,11 +434,15 @@ class RecordPaymentRequest {
   final String? paidAt;
   final String? reference;
 
+  /// Zahlung vor Ort — siehe [PaymentInput.onSite].
+  final bool? onSite;
+
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'idempotencyKey': idempotencyKey, 'invoiceId': invoiceId, 'method': method};
     _setzen(j, 'amountCents', amountCents);
     _setzen(j, 'paidAt', paidAt);
     _setzen(j, 'reference', reference);
+    _setzen(j, 'onSite', onSite);
     return j;
   }
 }
@@ -688,12 +717,17 @@ class InvoicePage {
 }
 
 class IssueResult {
-  const IssueResult({required this.invoice, required this.replayed});
+  const IssueResult({required this.invoice, required this.replayed, this.notice = const []});
 
   final Invoice invoice;
 
   /// `true`, wenn die Anfrage schon einmal ausgeführt wurde.
   final bool replayed;
+
+  /// Hinweise zu dieser Rechnung — kein Fehler, sondern etwas, das der Aufrufer
+  /// wissen sollte ([invoiceNoticeCodes]). Eine **Liste**, weil mehrere zugleich
+  /// anfallen können: eine bar bezahlte ig. Lieferung trägt zwei.
+  final List<InvoiceNotice> notice;
 }
 
 class CancelResult {
