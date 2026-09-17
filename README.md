@@ -93,7 +93,7 @@ muss nichts davon programmieren:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^7.0.0
+  kasseneck_api: ^7.0.1
 ```
 
 ```bash

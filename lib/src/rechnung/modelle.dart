@@ -211,13 +211,16 @@ abstract interface class SummenPosition {
   const factory SummenPosition({
     required num quantity,
     required num unitPriceCents,
-    required int vatRate,
+    required num vatRate,
     num? discountPct,
   }) = _SummenPosition;
 
   num get quantity;
   num get unitPriceCents;
-  int get vatRate;
+
+  /// Der USt-Satz in Prozent. Als `num`, weil es Saetze mit Nachkommastelle
+  /// gibt (4,9 % Grundnahrungsmittel ab 01.07.2026).
+  num get vatRate;
   num? get discountPct;
 }
 
@@ -229,7 +232,7 @@ class _SummenPosition implements SummenPosition {
   @override
   final num unitPriceCents;
   @override
-  final int vatRate;
+  final num vatRate;
   @override
   final num? discountPct;
 }
@@ -250,7 +253,7 @@ class InvoiceItemInput implements SummenPosition {
         description: _pflicht<String>(j, 'description'),
         quantity: _pflicht<num>(j, 'quantity'),
         unitPriceCents: _pflicht<num>(j, 'unitPriceCents'),
-        vatRate: _pflicht<int>(j, 'vatRate'),
+        vatRate: _pflicht<num>(j, 'vatRate'),
         subtitle: _text(j, 'subtitle'),
         unit: _text(j, 'unit'),
         kind: _text(j, 'kind'),
@@ -269,9 +272,13 @@ class InvoiceItemInput implements SummenPosition {
   @override
   final num unitPriceCents;
 
-  /// `0`, `10`, `13` oder `20`.
+  /// Der USt-Satz in Prozent. Gesendet wird ein Satz aus [vatRates] (`0`,
+  /// `10`, `13`, `20`); gelesen wird jeder Satz, den der Server schickt —
+  /// darum `num` und nicht `int`. Eine Rechnung aus dem Panel kann eine Zeile
+  /// zu 4,9 % (Grundnahrungsmittel) tragen, und ein `int` liesse das Lesen der
+  /// eigenen Gutschrift daran scheitern.
   @override
-  final int vatRate;
+  final num vatRate;
   final String? subtitle;
 
   /// Schlüssel aus [invoiceUnits] (`piece`, `hour`, …); ohne Angabe `piece`.
@@ -571,13 +578,16 @@ class VatRateTotal {
   /// Ein Server vor npm 0.22.0 schickt `grossCents` nicht mit; es ist per
   /// Definition Netto + USt und wird dann daraus gebildet.
   factory VatRateTotal.fromJson(Map<String, dynamic> j) => VatRateTotal(
-        rate: _pflicht<int>(j, 'rate'),
+        rate: _pflicht<num>(j, 'rate'),
         netCents: _pflicht<int>(j, 'netCents'),
         vatCents: _pflicht<int>(j, 'vatCents'),
         grossCents: _ganz(j, 'grossCents'),
       );
 
-  final int rate;
+  /// Der USt-Satz in Prozent — `num`, weil es Saetze mit Nachkommastelle gibt
+  /// (4,9 % Grundnahrungsmittel ab 01.07.2026). Ein `int` liess `getInvoice`
+  /// bei so einer Rechnung mit `FormatException` scheitern.
+  final num rate;
   final int netCents;
   final int vatCents;
 
