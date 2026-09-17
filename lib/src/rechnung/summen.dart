@@ -48,7 +48,10 @@ InvoiceTotals rechnungSummen(Iterable<SummenPosition> items, String priceMode, [
   // Ungerundete Zeilen je Satz, in Euro wie am Server. Die Reihenfolge der
   // Rechenschritte ist die des JS-Zwillings — nur dann trifft das Gleitkomma
   // Bit fuer Bit dieselbe Zahl, und nur dann rundet ein Grenzfall gleich.
-  final jeSatz = <int, double>{};
+  // num statt int als Schluessel: es gibt Saetze mit Nachkommastelle (4,9 %
+  // Grundnahrungsmittel). Zwei Zeilen zu 4,9 % landen im selben Eintrag, weil
+  // gleiche Zahlen in Dart gleich hashen -- auch 20 und 20.0.
+  final jeSatz = <num, double>{};
   for (final p in items) {
     final satz = steuerfrei ? 0 : p.vatRate;
     final zeile = (p.unitPriceCents / 100) * p.quantity * (1 - (p.discountPct ?? 0) / 100);

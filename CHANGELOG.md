@@ -1,3 +1,30 @@
+## 7.0.1
+
+### USt-Sätze mit Nachkommastelle werden gelesen statt abgewiesen
+
+Anlass: Eine im Panel erfasste Rechnung mit 4,9 % (Grundnahrungsmittel ab
+01.07.2026) ließ `getInvoice` mit `FormatException: rate` scheitern — der Satz
+wurde als `int` gelesen, obwohl der Server ihn als Zahl führt (`rate: number`
+im JS-Zwilling, Satzbestand der Plattform `0, 4.9, 10, 13, 19, 20`). Der Fehler
+traf erst die Antwort: Die Rechnung war da, nur nicht lesbar. Dasselbe galt für
+19 % auf dem Web, wo `20 is int` zutrifft und `4.9 is int` nicht.
+
+- **`VatRateTotal.rate` ist `num`** statt `int` (`totals.byRate[].rate`).
+  Gelesen wird damit jeder Satz, den der Server schickt; ein fehlender oder
+  nicht-numerischer Satz bleibt ein Antwortfehler und rutscht nicht als 0 %
+  durch.
+- **`InvoiceItemInput.vatRate` ist `num`** — sonst scheiterte schon das
+  Übernehmen der Zeilen einer 4,9-%-Rechnung in eine Gutschrift.
+- **`SummenPosition.vatRate` ist `num`**, `rechnungSummen` rechnet und sortiert
+  entsprechend. Für die bisherigen Sätze ändert sich keine Zahl: die
+  Rechenschritte sind unverändert, nur der Satz darf jetzt krumm sein.
+- **Gesendet** wird weiterhin ein Satz aus `vatRates` (`0`, `10`, `13`, `20`) —
+  das ist der Eingabevertrag der Rechnungs-API und bleibt, wie er ist. Tolerant
+  ist nur das Lesen.
+- Umstieg: Wer den Satz in ein `int` schreibt, braucht eine Zeile —
+  `final int satz = t.rate.round();`. Ein `int`-Literal als Satz zu übergeben
+  bleibt gültig.
+
 ## 7.0.0
 
 ### Rechnungs-API: Brutto bleibt Brutto, Hinweise immer als Liste, Probelauf — Zwilling von npm 0.22.0
