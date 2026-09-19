@@ -1,3 +1,25 @@
+## 7.1.0
+
+- Druck: `ESC a` steht jetzt vor `ESC $`, und eine volle Zeile bekommt keinen Positionsbefehl mehr.
+  Der Drucker nimmt die Ausrichtung nur am Zeilenanfang an; bisher blieb nach dem QR-Code die
+  Zentrierung stehen, und jede Zeile darunter wurde ein zweites Mal zentriert.
+- Druck: Dieselbe Korrektur wirkt auch auf dem alten Weg (`setKeckReceipt`, ohne vollständiges
+  Layout). Ein Betrieb ohne hinterlegtes Logo druckte Firmenname, Anschrift, Rechtstext,
+  Kartenblöcke und Fußzeilen dort bisher linksbündig — jetzt, wie vorgesehen, mittig. Gewollt,
+  aber eine sichtbare Änderung auf jedem Bon dieses Wegs.
+- Druck: `getPaperFromReceipt` (und damit `getBytesFromReceipt`/`getMyPosPaperFromReceipt`) holt
+  Firmenlogo und Marke jetzt selbst aus dem Beleg (`logoUrl`, `logoStufe`, `kreiseck_logo`). Die
+  Parameter `logo:`/`marke:` sind veraltet und greifen nur noch, wenn der Beleg keine Logo-Adresse
+  trägt. Der Druckweg wartet dafür bis zu 3 Sekunden auf das Netz, bevor das erste Byte entsteht;
+  ein Fehlschlag wird bewusst nicht gemerkt (siehe `druck_logo.dart`) — eine gelöschte oder mit
+  403 antwortende `logo_url` kostet damit auf jedem Bon aufs Neue bis zu 3 Sekunden am Tresen,
+  dauerhaft, bis die Adresse richtiggestellt wird; der Beleg geht trotzdem hinaus, nur später.
+  Apps sollten beim Start `LogoService.dauerhaftAblegen()` rufen, sonst zahlt jedes Gerät den
+  Erstabruf bei jedem Neustart erneut.
+- Druck: Passt das aus dem Beleg geholte Logo nicht zum Blatt (z. B. falsches Rastermaß), druckt
+  der Bon jetzt ohne Logo statt auszufallen. Ein ausdrücklich übergebenes `logo:` (die veraltete
+  Rückfallebene) wirft dabei weiterhin, wie zuvor.
+
 ## 7.0.1
 
 ### USt-Sätze mit Nachkommastelle werden gelesen statt abgewiesen

@@ -137,4 +137,59 @@ void main() {
     final b = g.setGlobalCodeTable('CP1252');
     expect(b.last, 16);
   });
+
+  /// Index der ersten Fundstelle von [muster] in [bytes], sonst -1.
+  int stelle(List<int> bytes, List<int> muster) {
+    for (var i = 0; i + muster.length <= bytes.length; i++) {
+      var passt = true;
+      for (var j = 0; j < muster.length; j++) {
+        if (bytes[i + j] != muster[j]) {
+          passt = false;
+          break;
+        }
+      }
+      if (passt) return i;
+    }
+    return -1;
+  }
+
+  test('volle Zeile nach dem QR: Ausrichtung vor dem Inhalt, ohne Positionsbefehl', () {
+    // `ESC a` gilt am Drucker NUR am Zeilenanfang. Stand davor ein `ESC $`,
+    // verwarf der Epson die Ausrichtung -- die Zentrierung des QR-Codes blieb
+    // fuer alle Zeilen darunter stehen, und das bereits auf volle Breite
+    // zentrierte Raster wurde ein zweites Mal zentriert. Gemessen am Bon vom
+    // 18.09.2026: Versatz genau (48 - Zeichenzahl) / 4.
+    //
+    // Der QR-Code davor ist die Vorbedingung, nicht Beiwerk: `setStyles`
+    // schreibt `ESC a` nur bei einem Wechsel, und ein frischer Erzeuger steht
+    // ohnehin auf links. Erst der zentriert gesetzte QR stellt den Zustand
+    // her, in dem der Fehler entsteht.
+    final g = gen();
+    g.qrcode('TESTQRDATA');
+    final b = g.text('Danke', styles: const PosStyles(align: PosAlign.left));
+
+    expect(stelle(b, [0x1B, 0x24]), -1,
+        reason: 'eine volle Zeile braucht keinen Positionsbefehl');
+    final ausrichtung = stelle(b, [0x1B, 0x61, 0x30]);
+    final inhalt = stelle(b, 'Danke'.codeUnits);
+    expect(ausrichtung, greaterThanOrEqualTo(0),
+        reason: 'ESC a 0 muss gesetzt werden, sonst bleibt der Drucker zentriert');
+    expect(ausrichtung, lessThan(inhalt),
+        reason: 'die Ausrichtung muss vor dem Text stehen');
+  });
+
+  test('Spaltenzeile: erst Ausrichtung, dann Position', () {
+    // Die erste Spalte ist zentriert, damit `setStyles` ueberhaupt einen
+    // Wechsel sieht (frischer Erzeuger steht auf links).
+    final b = gen().row([
+      PosColumn(text: 'A', width: 6, styles: const PosStyles(align: PosAlign.center)),
+      PosColumn(text: 'B', width: 6, styles: const PosStyles(align: PosAlign.right)),
+    ]);
+    final ausrichtung = stelle(b, [0x1B, 0x61]);
+    final position = stelle(b, [0x1B, 0x24]);
+    expect(position, greaterThanOrEqualTo(0),
+        reason: 'Spalten werden weiterhin positioniert');
+    expect(ausrichtung, greaterThanOrEqualTo(0));
+    expect(ausrichtung, lessThan(position));
+  });
 }

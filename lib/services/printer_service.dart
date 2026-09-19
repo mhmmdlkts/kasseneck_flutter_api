@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/models/keck_print_result.dart';
+import 'package:kasseneck_api/services/druck_logo.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:my_pos/enums/my_pos_print_response.dart';
 import 'package:my_pos/my_pos.dart';
@@ -47,6 +49,14 @@ class KeckPrinterService {
   }
 
   static CapabilityProfile? get profile => _profile;
+
+  /// Holt das Firmenlogo fuer den Druck -- austauschbar fuer Tests.
+  ///
+  /// Das gedruckte Logo kommt IMMER aus dem, was am Konto liegt
+  /// (`receipt.logoUrl`): Bon, PDF und Online-Ansicht sollen dasselbe zeigen.
+  /// Darum nimmt dieser Weg kein Logo mehr von aussen entgegen.
+  static Future<DruckLogo?> Function(String? url, LogoStufe stufe, KeckPaperSize papier)
+      logoLader = ladeDruckLogo;
 
   static Future<List<int>> _getListIntBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize) async {
     List<Uint8List> bytes = await getBytesFromReceipt(receipt, paperSize);
@@ -104,24 +114,63 @@ class KeckPrinterService {
   /// [PrintPaper.qrFehler]; dieser Weg ruehrt [letzterQrFehler] nicht an und
   /// ist damit frei von globalem Zustand.
   ///
-  /// [logo] muss fuer [paperSize] gerastert sein (`ladeDruckLogo(url, stufe,
-  /// paperSize)`): ein `DruckLogo` fuer eine andere Papierbreite laesst den
-  /// Druck mit [ArgumentError] abbrechen, bevor ein Byte entsteht.
+  /// Das Logo kommt aus [receipt.logoUrl] -- [logo] greift nur noch als
+  /// Rueckfallebene fuer Belege ohne Logo-Adresse. Fuer [paperSize] muss es
+  /// gerastert sein (`ladeDruckLogo(url, stufe, paperSize)`); passt ein
+  /// `DruckLogo` nicht (z. B. fuer eine andere Papierbreite gerastert), gilt:
+  /// kommt es selbst aus [receipt.logoUrl], druckt der Beleg ohne Logo weiter --
+  /// ein Datenfehler am Konto darf den Bon nicht verhindern. Nur ein
+  /// ausdruecklich uebergebenes [logo] laesst den Druck mit [ArgumentError]
+  /// abbrechen, bevor ein Byte entsteht.
   static Future<PrintPaper> getPaperFromReceipt(
     KasseneckReceipt receipt,
     KeckPaperSize paperSize, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModulGroesse qrGroesse = QrModulGroesse.auto,
+    @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
     DruckLogo? logo,
+    @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
     bool marke = false,
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     final BelegLayout? layout = receipt.layout;
     if (layout != null && receipt.layoutIstVollstaendig) {
-      // [logo] und [marke] gelten nur fuer das Blatt; der Altweg kennt sein
-      // eigenes Logo (`receipt.logo`) und Branding (`showKreiseckLogo`).
-      await paper.setBelegBlatt(layout, logo: logo, marke: marke, qrMode: qrMode, qrGroesse: qrGroesse);
+      final bool belegTraegtLogo = receipt.logoUrl != null && receipt.logoUrl!.isNotEmpty;
+      DruckLogo? logoAusBeleg;
+      if (belegTraegtLogo) {
+        try {
+          logoAusBeleg = await logoLader(receipt.logoUrl, receipt.logoStufe, paperSize);
+        } catch (_) {
+          // Ein Logo, das nicht kommt, ist kein Druckfehler: der Beleg steht
+          // laengst in der Signaturkette, der Bon muss hinaus.
+          logoAusBeleg = null;
+        }
+      }
+      // Traegt der Beleg eine Adresse, entscheidet AUSSCHLIESSLICH sie -- auch
+      // wenn der Abruf scheiterte. Sonst stuende auf dem Bon ein anderes Logo
+      // als im PDF und in der Online-Ansicht, und genau das soll nie wieder
+      // auseinanderlaufen.
+      final DruckLogo? wirksamesLogo = belegTraegtLogo ? logoAusBeleg : logo;
+      final bool wirksameMarke = receipt.showKreiseckLogo || marke;
+      // [wirksamesLogo] und [wirksameMarke] gelten nur fuer das Blatt; der
+      // Altweg kennt sein eigenes Logo (`receipt.logo`) und Branding
+      // (`showKreiseckLogo`).
+      try {
+        await paper.setBelegBlatt(layout,
+            logo: wirksamesLogo, marke: wirksameMarke, qrMode: qrMode, qrGroesse: qrGroesse);
+      } on ArgumentError {
+        // [setBelegBlatt] wirft nur ueber ein gesetztes Logo -- diese Pruefung
+        // war fuer den AUFRUFER gedacht, der ein eigenes Raster mitbringt. Kommt
+        // das Logo hier stattdessen selbst aus dem Beleg (Kontodaten), darf ein
+        // Datenfehler dort nicht den ganzen Bon verhindern, den gesetzlich
+        // vorgeschriebenen QR eingeschlossen: der Bon druckt dann ohne Logo.
+        // Ein ausdruecklich uebergebenes [logo] (die veraltete Rueckfallebene)
+        // bleibt hart -- wer ein Raster mitbringt, soll erfahren, dass es nicht passt.
+        if (!belegTraegtLogo) rethrow;
+        await paper.setBelegBlatt(layout,
+            marke: wirksameMarke, qrMode: qrMode, qrGroesse: qrGroesse);
+      }
     } else {
       await paper.setKeckReceipt(receipt, qrMode: qrMode, qrGroesse: qrGroesse);
     }
@@ -129,12 +178,17 @@ class KeckPrinterService {
   }
 
   /// Die Bytes aus [getPaperFromReceipt]; setzt dazu [letzterQrFehler] und
-  /// [letzterQrAusweich]. Ein fuer eine andere Papierbreite gerastertes [logo]
-  /// wirft [ArgumentError], bevor ein Byte entsteht.
+  /// [letzterQrAusweich]. Das Logo kommt aus `receipt.logoUrl` -- [logo]
+  /// greift nur noch als Rueckfallebene fuer Belege ohne Logo-Adresse. Passt
+  /// das Logo aus `receipt.logoUrl` nicht zum Blatt, druckt der Bon ohne Logo
+  /// weiter; ein fuer eine andere Papierbreite gerastertes, ausdruecklich
+  /// uebergebenes [logo] wirft weiterhin [ArgumentError], bevor ein Byte entsteht.
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModulGroesse qrGroesse = QrModulGroesse.auto,
+      @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       DruckLogo? logo,
+      @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       bool marke = false}) async {
     final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
         qrMode: qrMode, qrGroesse: qrGroesse, logo: logo, marke: marke);
@@ -145,10 +199,16 @@ class KeckPrinterService {
 
   /// Das Papier fuer den myPOS-Terminaldruck. Gesetzt wird auf dem statischen
   /// [paperSize] (aus `initWifiPrinter`/`initBluetoothPrinter`, sonst 58 mm) --
-  /// [logo] muss fuer genau diese Breite gerastert sein, sonst wirft der Bau
-  /// [ArgumentError], bevor ein Byte entsteht.
+  /// das Logo kommt aus `receipt.logoUrl`, [logo] greift nur noch als
+  /// Rueckfallebene fuer Belege ohne Logo-Adresse. Passt das Logo aus
+  /// `receipt.logoUrl` nicht zu dieser Breite, druckt der Bon ohne Logo weiter;
+  /// ein ausdruecklich uebergebenes [logo] wirft weiterhin [ArgumentError],
+  /// bevor ein Byte entsteht.
   static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt,
-      {DruckLogo? logo, bool marke = false}) async {
+      {@Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
+      DruckLogo? logo,
+      @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
+      bool marke = false}) async {
     // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
     final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
         qrMode: QrPrintMode.native, logo: logo, marke: marke);

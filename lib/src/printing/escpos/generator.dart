@@ -541,9 +541,22 @@ class EscPosGenerator {
     int? maxCharsPerLine,
   }) {
     List<int> bytes = [];
-    if (colInd != null) {
-      double charWidth =
-          _getCharWidth(styles, maxCharsPerLine: maxCharsPerLine);
+
+    // Die Ausrichtung MUSS vor dem Positionsbefehl stehen: `ESC a` gilt am
+    // Drucker nur am Zeilenanfang; nach `ESC $` verwirft er ihn. Bis 7.0.1
+    // stand die Position vorn -- damit blieb nach dem QR-Code (der zentriert
+    // gesetzt wird) die Zentrierung fuer jede weitere Zeile stehen. Die
+    // Rasterzeile ist aber schon auf volle Breite zentriert; sie wurde also
+    // ein zweites Mal zentriert und rutschte um (Zeichenzahl - Laenge) / 4
+    // nach rechts.
+    bytes += setStyles(styles);
+
+    // Eine volle Zeile beginnt am linken Rand -- da gibt es nichts zu setzen.
+    // Der Befehl entfiele nicht nur unnoetig: er ist genau das, was die
+    // Ausrichtung entwertet.
+    final bool volleZeile = colInd == 0 && colWidth == 12;
+    if (colInd != null && !volleZeile) {
+      double charWidth = _getCharWidth(styles, maxCharsPerLine: maxCharsPerLine);
       double fromPos = _colIndToPosition(colInd);
 
       // Align
@@ -568,8 +581,6 @@ class EscPosGenerator {
         List.from(cPos.codeUnits)..addAll([pos & 0xFF, (pos >> 8) & 0xFF]),
       );
     }
-
-    bytes += setStyles(styles);
 
     bytes += textBytes;
     return bytes;
