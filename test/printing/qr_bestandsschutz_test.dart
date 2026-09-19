@@ -71,15 +71,23 @@ void main() {
   }
 
   test('58 mm: Beleg ohne Wahl byteidentisch mit 6.8.0', () async {
+    // Digest seit dem Ausrichtung-vor-Position-Umbau neu gezogen: `_text`
+    // schreibt die Ausrichtung jetzt vor dem Positionsbefehl und laesst ihn
+    // fuer volle Zeilen ganz weg (siehe Kommentar an `_text`). Der native QR
+    // wird zentriert gesetzt; jede Zeile danach mit anderer Ausrichtung
+    // verschiebt sich dadurch im Bytestrom -- gewollt, das ist genau die
+    // Behebung des Versatzes vom Bon des 18.09.2026.
     expect(await belegDigest(KeckPaperSize.mm58),
-        '14b1fbba1e9efcef0151328aad3dfa931a3300d8a1fd76b565f2e87b4cdbfc3d');
+        'c8bf21c625875f40715f979a568e39546f6c1f3d4b42333a53316cd86f0b3ff6');
   });
 
   test('80 mm: Beleg ohne Wahl byteidentisch mit 6.8.0', () async {
     // Der wichtigere der beiden: auf 80 mm passte das Symbol schon immer, und
     // die gerechnete Groesse waere hier 8 statt 6. Nur der Deckel bei `auto`
     // haelt den Bestand -- faellt er, faellt dieser Test.
+    //
+    // Digest ebenfalls neu gezogen, aus demselben Grund wie beim 58-mm-Fall.
     expect(await belegDigest(KeckPaperSize.mm80),
-        'ec97c75e93d05d58865ccdea5e1773fb1e6bf36c4c59de6c1825f96f7a9e1377');
+        'be54b3ea8a798c30fcd9ad82cc50e5fc65635f7c1e0747b88806faffd0a6c4c6');
   });
 }
