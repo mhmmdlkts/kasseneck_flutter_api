@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/models/keck_print_result.dart';
+import 'package:kasseneck_api/services/druck_logo.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:my_pos/enums/my_pos_print_response.dart';
 import 'package:my_pos/my_pos.dart';
@@ -47,6 +49,14 @@ class KeckPrinterService {
   }
 
   static CapabilityProfile? get profile => _profile;
+
+  /// Holt das Firmenlogo fuer den Druck -- austauschbar fuer Tests.
+  ///
+  /// Das gedruckte Logo kommt IMMER aus dem, was am Konto liegt
+  /// (`receipt.logoUrl`): Bon, PDF und Online-Ansicht sollen dasselbe zeigen.
+  /// Darum nimmt dieser Weg kein Logo mehr von aussen entgegen.
+  static Future<DruckLogo?> Function(String? url, LogoStufe stufe, KeckPaperSize papier)
+      logoLader = ladeDruckLogo;
 
   static Future<List<int>> _getListIntBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize) async {
     List<Uint8List> bytes = await getBytesFromReceipt(receipt, paperSize);
@@ -104,24 +114,42 @@ class KeckPrinterService {
   /// [PrintPaper.qrFehler]; dieser Weg ruehrt [letzterQrFehler] nicht an und
   /// ist damit frei von globalem Zustand.
   ///
-  /// [logo] muss fuer [paperSize] gerastert sein (`ladeDruckLogo(url, stufe,
-  /// paperSize)`): ein `DruckLogo` fuer eine andere Papierbreite laesst den
-  /// Druck mit [ArgumentError] abbrechen, bevor ein Byte entsteht.
+  /// Das Logo kommt aus [receipt.logoUrl] -- [logo] greift nur noch als
+  /// Rueckfallebene fuer Belege ohne Logo-Adresse. Fuer [paperSize] muss es
+  /// gerastert sein (`ladeDruckLogo(url, stufe, paperSize)`): ein `DruckLogo`
+  /// fuer eine andere Papierbreite laesst den Druck mit [ArgumentError]
+  /// abbrechen, bevor ein Byte entsteht.
   static Future<PrintPaper> getPaperFromReceipt(
     KasseneckReceipt receipt,
     KeckPaperSize paperSize, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModulGroesse qrGroesse = QrModulGroesse.auto,
+    @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
     DruckLogo? logo,
+    @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
     bool marke = false,
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     final BelegLayout? layout = receipt.layout;
     if (layout != null && receipt.layoutIstVollstaendig) {
-      // [logo] und [marke] gelten nur fuer das Blatt; der Altweg kennt sein
-      // eigenes Logo (`receipt.logo`) und Branding (`showKreiseckLogo`).
-      await paper.setBelegBlatt(layout, logo: logo, marke: marke, qrMode: qrMode, qrGroesse: qrGroesse);
+      DruckLogo? logoAusBeleg;
+      if (receipt.logoUrl != null && receipt.logoUrl!.isNotEmpty) {
+        try {
+          logoAusBeleg = await logoLader(receipt.logoUrl, receipt.logoStufe, paperSize);
+        } catch (_) {
+          // Ein Logo, das nicht kommt, ist kein Druckfehler: der Beleg steht
+          // laengst in der Signaturkette, der Bon muss hinaus.
+          logoAusBeleg = null;
+        }
+      }
+      final DruckLogo? wirksamesLogo = logoAusBeleg ?? logo;
+      final bool wirksameMarke = receipt.showKreiseckLogo || marke;
+      // [wirksamesLogo] und [wirksameMarke] gelten nur fuer das Blatt; der
+      // Altweg kennt sein eigenes Logo (`receipt.logo`) und Branding
+      // (`showKreiseckLogo`).
+      await paper.setBelegBlatt(layout,
+          logo: wirksamesLogo, marke: wirksameMarke, qrMode: qrMode, qrGroesse: qrGroesse);
     } else {
       await paper.setKeckReceipt(receipt, qrMode: qrMode, qrGroesse: qrGroesse);
     }
