@@ -94,6 +94,14 @@ void main() {
     // Fehlerbehebung: die folgende Zeile bekommt jetzt tatsaechlich ihr
     // `ESC a 0`, statt zentriert zu bleiben -- das ist die Behebung des
     // Versatzes vom Bon des 18.09.2026.
+    //
+    // Belegt (nicht aus dem eigenen Lauf uebernommen): Bytestrom vor Commit
+    // 35dbe21 und danach unabhaengig gezogen, tokenisiert und per diff
+    // verglichen -- einzige Abweichung sind 8 entfallene `ESC$ 0,0` (volle
+    // Zeile) und die unveraendert nur verschobenen uebrigen Positionsbefehle;
+    // Text- und QR-Nutzlast-Token byteidentisch. Nachweis mit Skripten und
+    // Rohprotokoll: .superpowers/sdd/2026-09-19-beleg-druck-logo-ausrichtung/
+    // task-6-dart-digest-nachweis/ (separate Ablage, nicht in diesem Repo).
     expect(await belegDigest(KeckPaperSize.mm58),
         'c8bf21c625875f40715f979a568e39546f6c1f3d4b42333a53316cd86f0b3ff6');
   });
@@ -106,6 +114,12 @@ void main() {
     // Digest aus demselben Grund wie beim 58-mm-Fall neu gezogen: ueberwiegend
     // der flaechendeckende Wegfall von `ESC $ 0 0` bei vollen Zeilen, dazu die
     // eigentliche Fehlerbehebung an der Stelle nach dem QR-Code.
+    //
+    // Belegt (nicht aus dem eigenen Lauf uebernommen): wie beim 58-mm-Fall
+    // unabhaengig gezogen und tokenisiert verglichen -- 8 entfallene
+    // `ESC$ 0,0`, uebrige Positionsbefehle nur verschoben, Text/QR-Nutzlast
+    // byteidentisch. Nachweis unter .superpowers/sdd/
+    // 2026-09-19-beleg-druck-logo-ausrichtung/task-6-dart-digest-nachweis/.
     expect(await belegDigest(KeckPaperSize.mm80),
         'be54b3ea8a798c30fcd9ad82cc50e5fc65635f7c1e0747b88806faffd0a6c4c6');
   });
