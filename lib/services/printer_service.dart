@@ -116,8 +116,11 @@ class KeckPrinterService {
   ///
   /// Das Logo kommt aus [receipt.logoUrl] -- [logo] greift nur noch als
   /// Rueckfallebene fuer Belege ohne Logo-Adresse. Fuer [paperSize] muss es
-  /// gerastert sein (`ladeDruckLogo(url, stufe, paperSize)`): ein `DruckLogo`
-  /// fuer eine andere Papierbreite laesst den Druck mit [ArgumentError]
+  /// gerastert sein (`ladeDruckLogo(url, stufe, paperSize)`); passt ein
+  /// `DruckLogo` nicht (z. B. fuer eine andere Papierbreite gerastert), gilt:
+  /// kommt es selbst aus [receipt.logoUrl], druckt der Beleg ohne Logo weiter --
+  /// ein Datenfehler am Konto darf den Bon nicht verhindern. Nur ein
+  /// ausdruecklich uebergebenes [logo] laesst den Druck mit [ArgumentError]
   /// abbrechen, bevor ein Byte entsteht.
   static Future<PrintPaper> getPaperFromReceipt(
     KasseneckReceipt receipt,
@@ -153,8 +156,21 @@ class KeckPrinterService {
       // [wirksamesLogo] und [wirksameMarke] gelten nur fuer das Blatt; der
       // Altweg kennt sein eigenes Logo (`receipt.logo`) und Branding
       // (`showKreiseckLogo`).
-      await paper.setBelegBlatt(layout,
-          logo: wirksamesLogo, marke: wirksameMarke, qrMode: qrMode, qrGroesse: qrGroesse);
+      try {
+        await paper.setBelegBlatt(layout,
+            logo: wirksamesLogo, marke: wirksameMarke, qrMode: qrMode, qrGroesse: qrGroesse);
+      } on ArgumentError {
+        // [setBelegBlatt] wirft nur ueber ein gesetztes Logo -- diese Pruefung
+        // war fuer den AUFRUFER gedacht, der ein eigenes Raster mitbringt. Kommt
+        // das Logo hier stattdessen selbst aus dem Beleg (Kontodaten), darf ein
+        // Datenfehler dort nicht den ganzen Bon verhindern, den gesetzlich
+        // vorgeschriebenen QR eingeschlossen: der Bon druckt dann ohne Logo.
+        // Ein ausdruecklich uebergebenes [logo] (die veraltete Rueckfallebene)
+        // bleibt hart -- wer ein Raster mitbringt, soll erfahren, dass es nicht passt.
+        if (!belegTraegtLogo) rethrow;
+        await paper.setBelegBlatt(layout,
+            marke: wirksameMarke, qrMode: qrMode, qrGroesse: qrGroesse);
+      }
     } else {
       await paper.setKeckReceipt(receipt, qrMode: qrMode, qrGroesse: qrGroesse);
     }
@@ -163,9 +179,10 @@ class KeckPrinterService {
 
   /// Die Bytes aus [getPaperFromReceipt]; setzt dazu [letzterQrFehler] und
   /// [letzterQrAusweich]. Das Logo kommt aus `receipt.logoUrl` -- [logo]
-  /// greift nur noch als Rueckfallebene fuer Belege ohne Logo-Adresse. Ein
-  /// fuer eine andere Papierbreite gerastertes [logo] wirft [ArgumentError],
-  /// bevor ein Byte entsteht.
+  /// greift nur noch als Rueckfallebene fuer Belege ohne Logo-Adresse. Passt
+  /// das Logo aus `receipt.logoUrl` nicht zum Blatt, druckt der Bon ohne Logo
+  /// weiter; ein fuer eine andere Papierbreite gerastertes, ausdruecklich
+  /// uebergebenes [logo] wirft weiterhin [ArgumentError], bevor ein Byte entsteht.
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModulGroesse qrGroesse = QrModulGroesse.auto,
@@ -183,9 +200,10 @@ class KeckPrinterService {
   /// Das Papier fuer den myPOS-Terminaldruck. Gesetzt wird auf dem statischen
   /// [paperSize] (aus `initWifiPrinter`/`initBluetoothPrinter`, sonst 58 mm) --
   /// das Logo kommt aus `receipt.logoUrl`, [logo] greift nur noch als
-  /// Rueckfallebene fuer Belege ohne Logo-Adresse. Muss fuer genau diese
-  /// Breite gerastert sein, sonst wirft der Bau [ArgumentError], bevor ein
-  /// Byte entsteht.
+  /// Rueckfallebene fuer Belege ohne Logo-Adresse. Passt das Logo aus
+  /// `receipt.logoUrl` nicht zu dieser Breite, druckt der Bon ohne Logo weiter;
+  /// ein ausdruecklich uebergebenes [logo] wirft weiterhin [ArgumentError],
+  /// bevor ein Byte entsteht.
   static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt,
       {@Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       DruckLogo? logo,

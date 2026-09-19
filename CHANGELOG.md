@@ -16,6 +16,9 @@
   dauerhaft, bis die Adresse richtiggestellt wird; der Beleg geht trotzdem hinaus, nur später.
   Apps sollten beim Start `LogoService.dauerhaftAblegen()` rufen, sonst zahlt jedes Gerät den
   Erstabruf bei jedem Neustart erneut.
+- Druck: Passt das aus dem Beleg geholte Logo nicht zum Blatt (z. B. falsches Rastermaß), druckt
+  der Bon jetzt ohne Logo statt auszufallen. Ein ausdrücklich übergebenes `logo:` (die veraltete
+  Rückfallebene) wirft dabei weiterhin, wie zuvor.
 
 ## 7.0.1
 

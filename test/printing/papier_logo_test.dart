@@ -5,6 +5,8 @@ import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/models/logo_raster.dart';
+import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/services/druck_logo.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
 
@@ -30,6 +32,15 @@ KasseneckReceipt belegMitLogo() => buildReceipt()
   ..logoStufe = LogoStufe.m;
 
 KasseneckReceipt belegOhneLogo() => belegMitLogo()..logoUrl = null;
+
+/// Ein Rasterbild, das absichtlich nicht zum Blatt passt -- 1x1 trifft
+/// [logoRasterMass] fuer keine Papierbreite/Stufe dieses Pakets.
+DruckLogo unpassendesLogo() => DruckLogo(
+      stufe: LogoStufe.m,
+      pxBreite: 400,
+      pxHoehe: 100,
+      raster: LogoRaster(breite: 1, hoehe: 1, punkte: Uint8List(1)),
+    );
 
 void main() {
   setUp(druckLogoSpeicherLeeren);
@@ -91,5 +102,28 @@ void main() {
     expect(bytes, isNot(containsAllInOrder([0x1D, 0x76, 0x30])),
         reason: 'der Beleg traegt eine Adresse -- das uebergebene Logo darf nicht einspringen, '
             'auch wenn ihr eigener Abruf scheitert');
+  });
+
+  test('ein selbst geholtes Logo, das nicht zum Blatt passt, darf den Bon nicht verhindern', () async {
+    KeckPrinterService.logoLader = (url, stufe, papier) async => unpassendesLogo();
+
+    final papier = await KeckPrinterService.getPaperFromReceipt(
+        belegMitLogo(), KeckPaperSize.mm80);
+
+    expect(papier.bytes, isNotEmpty, reason: 'der Bon muss trotz Logo-Fehler hinausgehen');
+    final bytes = <int>[for (final t in papier.bytes) ...t];
+    expect(bytes, isNot(containsAllInOrder([0x1D, 0x76, 0x30])),
+        reason: 'das Raster passt nicht zum Blatt -- gedruckt wird ohne Logo, nicht mit einem falschen');
+  });
+
+  test('ein uebergebenes Logo, das nicht zum Blatt passt, wirft weiterhin', () async {
+    // Der Beleg traegt keine Adresse -- die veraltete Rueckfallebene [logo]
+    // entscheidet, wie bei einem Aufrufer, der ein Raster mitbringt.
+    expect(
+      () => KeckPrinterService.getPaperFromReceipt(
+          belegOhneLogo(), KeckPaperSize.mm80,
+          logo: unpassendesLogo()),
+      throwsArgumentError,
+    );
   });
 }
