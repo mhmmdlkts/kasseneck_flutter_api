@@ -72,4 +72,24 @@ void main() {
 
     expect(papier.bytes, isNotEmpty, reason: 'das Logo ist Zierde, der Beleg ist Pflicht');
   });
+
+  test('traegt der Beleg eine Adresse, springt ein uebergebenes Logo nicht ein', () async {
+    // Ein gueltiges Logo unter einer ANDEREN Adresse -- so, wie es ein
+    // Aufrufer heute noch ueber den veralteten Parameter mitgeben koennte.
+    final uebergebenesLogo = await ladeDruckLogo(
+        'https://beispiel.test/anderes-logo.png', LogoStufe.m, KeckPaperSize.mm80,
+        pixel: (_) async => schwarz(400, 100));
+    expect(uebergebenesLogo, isNotNull, reason: 'Vorbedingung: das uebergebene Logo ist gueltig');
+
+    KeckPrinterService.logoLader = (url, stufe, papier) async => throw Exception('Netz weg');
+
+    final papier = await KeckPrinterService.getPaperFromReceipt(
+        belegMitLogo(), KeckPaperSize.mm80,
+        logo: uebergebenesLogo);
+
+    final bytes = <int>[for (final t in papier.bytes) ...t];
+    expect(bytes, isNot(containsAllInOrder([0x1D, 0x76, 0x30])),
+        reason: 'der Beleg traegt eine Adresse -- das uebergebene Logo darf nicht einspringen, '
+            'auch wenn ihr eigener Abruf scheitert');
+  });
 }

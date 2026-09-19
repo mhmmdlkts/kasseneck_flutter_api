@@ -133,8 +133,9 @@ class KeckPrinterService {
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
     final BelegLayout? layout = receipt.layout;
     if (layout != null && receipt.layoutIstVollstaendig) {
+      final bool belegTraegtLogo = receipt.logoUrl != null && receipt.logoUrl!.isNotEmpty;
       DruckLogo? logoAusBeleg;
-      if (receipt.logoUrl != null && receipt.logoUrl!.isNotEmpty) {
+      if (belegTraegtLogo) {
         try {
           logoAusBeleg = await logoLader(receipt.logoUrl, receipt.logoStufe, paperSize);
         } catch (_) {
@@ -143,7 +144,11 @@ class KeckPrinterService {
           logoAusBeleg = null;
         }
       }
-      final DruckLogo? wirksamesLogo = logoAusBeleg ?? logo;
+      // Traegt der Beleg eine Adresse, entscheidet AUSSCHLIESSLICH sie -- auch
+      // wenn der Abruf scheiterte. Sonst stuende auf dem Bon ein anderes Logo
+      // als im PDF und in der Online-Ansicht, und genau das soll nie wieder
+      // auseinanderlaufen.
+      final DruckLogo? wirksamesLogo = belegTraegtLogo ? logoAusBeleg : logo;
       final bool wirksameMarke = receipt.showKreiseckLogo || marke;
       // [wirksamesLogo] und [wirksameMarke] gelten nur fuer das Blatt; der
       // Altweg kennt sein eigenes Logo (`receipt.logo`) und Branding
@@ -157,12 +162,16 @@ class KeckPrinterService {
   }
 
   /// Die Bytes aus [getPaperFromReceipt]; setzt dazu [letzterQrFehler] und
-  /// [letzterQrAusweich]. Ein fuer eine andere Papierbreite gerastertes [logo]
-  /// wirft [ArgumentError], bevor ein Byte entsteht.
+  /// [letzterQrAusweich]. Das Logo kommt aus `receipt.logoUrl` -- [logo]
+  /// greift nur noch als Rueckfallebene fuer Belege ohne Logo-Adresse. Ein
+  /// fuer eine andere Papierbreite gerastertes [logo] wirft [ArgumentError],
+  /// bevor ein Byte entsteht.
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModulGroesse qrGroesse = QrModulGroesse.auto,
+      @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       DruckLogo? logo,
+      @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       bool marke = false}) async {
     final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
         qrMode: qrMode, qrGroesse: qrGroesse, logo: logo, marke: marke);
@@ -173,10 +182,15 @@ class KeckPrinterService {
 
   /// Das Papier fuer den myPOS-Terminaldruck. Gesetzt wird auf dem statischen
   /// [paperSize] (aus `initWifiPrinter`/`initBluetoothPrinter`, sonst 58 mm) --
-  /// [logo] muss fuer genau diese Breite gerastert sein, sonst wirft der Bau
-  /// [ArgumentError], bevor ein Byte entsteht.
+  /// das Logo kommt aus `receipt.logoUrl`, [logo] greift nur noch als
+  /// Rueckfallebene fuer Belege ohne Logo-Adresse. Muss fuer genau diese
+  /// Breite gerastert sein, sonst wirft der Bau [ArgumentError], bevor ein
+  /// Byte entsteht.
   static Future<MyPosPaper> getMyPosPaperFromReceipt(KasseneckReceipt receipt,
-      {DruckLogo? logo, bool marke = false}) async {
+      {@Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
+      DruckLogo? logo,
+      @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
+      bool marke = false}) async {
     // MyPos hat seinen eigenen QR-Renderer → nativer Pfad (myPosPaper.addQrCode).
     final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
         qrMode: QrPrintMode.native, logo: logo, marke: marke);
