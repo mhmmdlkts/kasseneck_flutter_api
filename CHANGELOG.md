@@ -1,3 +1,12 @@
+## 7.1.0
+
+- Druck: `ESC a` steht jetzt vor `ESC $`, und eine volle Zeile bekommt keinen Positionsbefehl mehr.
+  Der Drucker nimmt die Ausrichtung nur am Zeilenanfang an; bisher blieb nach dem QR-Code die
+  Zentrierung stehen, und jede Zeile darunter wurde ein zweites Mal zentriert.
+- Druck: `getPaperFromReceipt` holt Firmenlogo und Marke selbst aus dem Beleg (`logoUrl`,
+  `logoStufe`, `kreiseck_logo`). Die Parameter `logo:`/`marke:` sind veraltet und greifen nur noch,
+  wenn der Beleg keine Logo-Adresse trägt.
+
 ## 7.0.1
 
 ### USt-Sätze mit Nachkommastelle werden gelesen statt abgewiesen
