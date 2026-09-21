@@ -7,6 +7,7 @@ import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/src/printing/qr_groesse.dart';
+import 'package:kreiseck_design/kreiseck_design.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// Das Blatt am Bildschirm -- Zeile fuer Zeile dieselben Zeichen wie am Bon
@@ -184,6 +185,20 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
                       ),
                     ),
                   BlattQr() => Center(child: _qr(b, breite, stil)),
+                  // Nicht das Druckraster: die Logo-Komponente aus
+                  // kreiseck_design zeichnet die Marke am Bildschirm als
+                  // Vektor, scharf in jeder Aufloesung (siehe
+                  // docs/specs/2026-09-21-marke-einheitlich-design.md, § 3.2).
+                  // Die Hoehe folgt derselben Rechnung wie beim Firmenlogo:
+                  // Druckpunkte -> Zeilen -> Bildschirm-Pixel.
+                  BlattMarke() => Center(
+                      child: KdLogo(
+                        key: const Key('keck-blatt-marke'),
+                        height: (b.hoehe / punkteJeZeile) * 2 * cw,
+                        ink: widget.textColor,
+                        accent: widget.textColor,
+                      ),
+                    ),
                 },
             ],
           ),

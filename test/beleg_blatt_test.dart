@@ -16,6 +16,7 @@ Map<String, Object?> _alsJson(BlattBlock b) => switch (b) {
       BlattZeile() => {'art': 'zeile', 'text': b.text, 'fett': b.fett, 'leer': b.leer},
       BlattLogoBlock() => {'art': 'logo', 'breiteAnteil': b.breiteAnteil, 'hoeheZeilen': b.hoeheZeilen},
       BlattQr() => {'art': 'qr', 'nutzlast': b.nutzlast, 'breiteAnteil': b.breiteAnteil},
+      BlattMarke() => {'art': 'marke', 'breite': b.breite, 'hoehe': b.hoehe},
     };
 
 void _gleich(Object? ist, Object? soll, String wo) {

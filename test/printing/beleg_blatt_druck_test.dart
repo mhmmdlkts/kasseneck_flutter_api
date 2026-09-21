@@ -38,17 +38,22 @@ int _indexVon(List<int> heu, List<int> nadel) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('Testkasse: Rahmen, dann GS v 0, dann Firmenname; Marke am Ende', () async {
+  test('Testkasse: Rahmen, dann GS v 0, dann Firmenname; Marke als Rasterbild am Ende', () async {
     final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
     await paper.setBelegBlatt(_fixture('testkasse-verkauf'), logo: _probeLogo(48), marke: true, cut: false, qrMode: QrPrintMode.native);
     final alles = latin1.decode(paper.bytes.expand((b) => b).toList(), allowInvalid: true);
     final rahmenEnde = alles.indexOf('=' * 48, alles.indexOf('TESTKASSE'));
     final bild = alles.indexOf('\x1dv0');
     final firma = alles.indexOf('Muster');
+    // Die Marke ist ihr eigenes Rasterbild ganz am Ende -- das letzte GS v 0
+    // im Strom, nach dem Firmennamen und keine Textzeile mehr.
+    final marke = alles.lastIndexOf('\x1dv0');
     expect(rahmenEnde, greaterThan(0));
     expect(bild, greaterThan(rahmenEnde));
     expect(firma, greaterThan(bild));
-    expect(alles.lastIndexOf('erstellt mit Kasseneck'), greaterThan(firma));
+    expect(marke, greaterThan(firma));
+    expect(marke, isNot(bild), reason: 'Logo und Marke sind zwei verschiedene Rasterbilder');
+    expect(alles.contains('erstellt mit Kasseneck'), isFalse);
   });
 
   test('ohne Logo und Marke: kein Rasterbild, keine Markenzeile, jede Textzeile des Blatts im Bytestrom', () async {

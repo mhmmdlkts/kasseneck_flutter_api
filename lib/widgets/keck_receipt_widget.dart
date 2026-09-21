@@ -1,6 +1,7 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:kreiseck_design/kreiseck_design.dart';
 import 'package:kasseneck_api/src/vat_math.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
@@ -363,13 +364,10 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             if (widget.receipt.showKreiseckLogo)
               ...[
                 const SizedBox(height: 24),
-                Text('powered by', style: textStyle.copyWith(fontSize: 11)),
-                const SizedBox(height: 4),
-                Image.asset(
-                  'assets/kreiseck_logo_print.png',
-                  package: 'kasseneck_api',
-                  width: 140,
-                ),
+                // Dasselbe Kasseneck-Logo wie das Blatt (KeckBelegBlattWidget)
+                // und der Bon -- das alte Kreiseck-Logo mit "powered by"
+                // darunter entfaellt hier ebenso wie am Drucker.
+                const KdLogo(height: 20, ink: Colors.black, accent: Colors.black),
               ],
           ],
         ),

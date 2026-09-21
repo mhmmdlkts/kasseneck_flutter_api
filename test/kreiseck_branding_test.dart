@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/widgets/keck_receipt_widget.dart';
+import 'package:kreiseck_design/kreiseck_design.dart';
 
 import 'helpers/test_receipts.dart';
 import 'print_rendering_test.dart' show render, texts;
 
-/// Kreiseck-Branding am Belegende: gesteuert ueber das Backend-Metadatum
-/// `kreiseck_logo` (Firestore: users/{uid}.branding.kreiseck_logo).
+/// Marken-Branding am Belegende (alter Weg, `setKeckReceipt`/`KeckReceiptWidget`):
+/// gesteuert ueber das Backend-Metadatum `kreiseck_logo` (Firestore:
+/// users/{uid}.branding.kreiseck_logo). Der Name des Flags bleibt -- siehe
+/// docs/specs/2026-09-21-marke-einheitlich-design.md, § 5 (Namensschiefstand) --,
+/// gezeigt wird seit 0.26.0/7.2.0 aber dasselbe Kasseneck-Logo wie am Blatt,
+/// nicht mehr das alte Kreiseck-Logo mit "powered by" darunter.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -30,35 +35,27 @@ void main() {
   });
 
   group('Druck', () {
-    test('Flag an: "powered by" UEBER dem Logo als letzter Block vor dem Cut', () async {
+    test('Flag an: das Marken-Logo als Bild, keine "powered by"-Zeile mehr', () async {
       final p = await render(buildReceipt(items: cartA().items, showKreiseckLogo: true));
-      final t = texts(p);
-      // letzter Text-Befehl ist die powered-by-Zeile (nach den Footern) ...
-      expect(t.last, 'powered by');
-      // ... und das Logo-Bild kommt DANACH (Text ueber Logo)
-      final cmds = p.myPosPaper.commands;
-      final poweredIdx = cmds.lastIndexWhere((c) => c['value'] == 'powered by');
-      expect(cmds.sublist(poweredIdx + 1).any((c) => c['type'] == 'image'), isTrue);
+      expect(texts(p), isNot(contains('powered by')));
+      expect(p.myPosPaper.commands.any((c) => c['type'] == 'image'), isTrue);
     });
     test('Flag aus: kein Branding', () async {
       final p = await render(buildReceipt(items: cartA().items));
       expect(texts(p), isNot(contains('powered by')));
+      expect(p.myPosPaper.commands.any((c) => c['type'] == 'image'), isFalse);
     });
   });
 
   group('Widget', () {
-    testWidgets('Flag an: Logo + powered-by-Zeile am Ende', (tester) async {
+    testWidgets('Flag an: Marken-Logo am Ende, keine "powered by"-Zeile mehr', (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(body: SingleChildScrollView(
           child: KeckReceiptWidget(receipt: buildReceipt(items: cartA().items, showKreiseckLogo: true)),
         )),
       ));
-      expect(find.text('powered by'), findsOneWidget);
-      expect(
-        find.byWidgetPredicate((w) =>
-            w is Image && w.image is AssetImage && (w.image as AssetImage).assetName.contains('kreiseck_logo_print')),
-        findsOneWidget,
-      );
+      expect(find.text('powered by'), findsNothing);
+      expect(find.byType(KdLogo), findsOneWidget);
     });
     testWidgets('Flag aus: kein Branding', (tester) async {
       await tester.pumpWidget(MaterialApp(
@@ -67,6 +64,7 @@ void main() {
         )),
       ));
       expect(find.text('powered by'), findsNothing);
+      expect(find.byType(KdLogo), findsNothing);
     });
   });
 }

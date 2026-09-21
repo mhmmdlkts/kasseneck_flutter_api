@@ -80,6 +80,26 @@ if [ ! -d "$quelle" ]; then
   exit 1
 fi
 
+# Die Markendaten (Raster + Pfade fuer den Kasseneck-Schriftzug am
+# Belegende) reisen NICHT unter fixtures/ -- sie sind erzeugte TS-Quelle und
+# landen wie jeder Code kompiliert in dist/. Trotzdem sind sie Vertrag (siehe
+# docs/specs/2026-09-21-marke-einheitlich-design.md, § 3.4): hier aus dem
+# ESM-Modul gezogen und als gewoehnliche Fixture ins Staging gelegt, damit
+# ziehen/pruefen sie ohne Sonderweg mitnehmen. Damit deckt der bestehende
+# Zwillings-Nachweis erstmals auch Bilddaten ab, nicht nur Beschreibungsdateien.
+markeModul="$tmp/package/dist/esm/receipt/marke-daten.js"
+if [ ! -f "$markeModul" ]; then
+  echo "Das Paket ${version} enthält kein dist/esm/receipt/marke-daten.js — die Markendaten fehlen." >&2
+  echo "Die Kopie unter ${ziel} bleibt unangetastet." >&2
+  exit 1
+fi
+node --input-type=module -e '
+  import { writeFileSync } from "node:fs";
+  const [modulPfad, zielPfad] = process.argv.slice(1);
+  const mod = await import(modulPfad);
+  writeFileSync(zielPfad, JSON.stringify({ raster: mod.MARKE_RASTER, pfade: mod.MARKE_PFADE }, null, 2) + "\n");
+' "$markeModul" "$quelle/marke.json"
+
 case "$befehl" in
   ziehen)
     # Erst vollständig danebenbauen, dann austauschen: schlägt das Kopieren

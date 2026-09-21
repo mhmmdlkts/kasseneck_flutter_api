@@ -103,7 +103,9 @@ void main() {
         final befehle = paper.bytes.skip(2).map((b) => latin1.decode(b, allowInvalid: true)).toList();
         expect(befehle, hasLength(soll.length), reason: '$wo: Anzahl der gesetzten Bloecke');
         final alles = befehle.join();
-        expect(_anzahl(alles, _rasterbild), 1, reason: '$wo: genau ein Rasterbild (das Logo)');
+        // Zwei Rasterbilder: das Firmenlogo und die Marke am Ende (ab 0.26.0
+        // ein eigenes Bild statt der frueheren Textzeile).
+        expect(_anzahl(alles, _rasterbild), 2, reason: '$wo: genau zwei Rasterbilder (Logo und Marke)');
 
         // Fett ist Druckerzustand: der Generator schickt ESC E n nur, wenn
         // sich der Zustand aendert. Mitgefuehrt ueber alle Befehle.
@@ -138,6 +140,14 @@ void main() {
             case 'logo':
               expect(ist, startsWith('\x1ba'), reason: '$wo2: Logo mittig');
               expect(ist, contains(_rasterbild), reason: '$wo2: Logo als GS v 0');
+            case 'marke':
+              // Keine feste Ausrichtungsvorgabe wie beim Logo: die Ausrichtung
+              // ist Druckerzustand (wie `fett`) und wird nur bei einer
+              // Aenderung erneut gesetzt. Vor der Marke steht zuletzt oft der
+              // QR -- der ist bereits zentriert, also bleibt ESC a hier
+              // manchmal aus. Zentriert ist die Marke trotzdem, weil der
+              // Zustand es schon ist.
+              expect(ist, contains(_rasterbild), reason: '$wo2: Marke als GS v 0');
             case 'qr':
               expect(ist, contains(_qrNativ), reason: '$wo2: nativer QR');
               expect(ist, contains(b['nutzlast'] as String), reason: '$wo2: Nutzlast');
@@ -145,7 +155,7 @@ void main() {
               fail('$wo2: unbekannte Art ${b['art']}');
           }
         }
-        expect(soll.last, containsPair('text', isA<String>().having((t) => t.trim(), 'trim', markeText)), reason: '$wo: Marke zuletzt');
+        expect(soll.last, containsPair('art', 'marke'), reason: '$wo: Marke zuletzt');
       }
     });
   }
@@ -168,6 +178,8 @@ void main() {
       expect(find.byKey(Key('keck-blatt-zeile-${soll.length}')), findsNothing, reason: '$wo: Zeilen nach dem Ende');
       expect(find.byKey(const Key('keck-blatt-logo')), soll.any((b) => b['art'] == 'logo') ? findsOneWidget : findsNothing,
           reason: '$wo: Logo-Block');
+      expect(find.byKey(const Key('keck-blatt-marke')), soll.any((b) => b['art'] == 'marke') ? findsOneWidget : findsNothing,
+          reason: '$wo: Marken-Block');
       for (var i = 0; i < soll.length; i++) {
         final b = soll[i];
         final zeile = find.byKey(Key('keck-blatt-zeile-$i'));
@@ -181,6 +193,13 @@ void main() {
             expect(zeile, findsNothing, reason: '$wo Block $i');
             expect(tester.getSize(find.byKey(const Key('keck-blatt-logo'))).width, closeTo((b['breiteAnteil'] as num) * breite, 0.01),
                 reason: '$wo Block $i: Logo-Breite');
+          case 'marke':
+            // Kein Druckraster am Bildschirm (die Logo-Komponente aus
+            // kreiseck_design zeichnet Vektorpfade) -- die Groesse pruefen
+            // die dedizierten Marke-Tests in keck_beleg_blatt_widget_test.dart;
+            // hier zaehlt nur die Reihenfolge/Position im Golden-Blatt.
+            expect(zeile, findsNothing, reason: '$wo Block $i');
+            expect(find.byKey(const Key('keck-blatt-marke')), findsOneWidget, reason: '$wo Block $i: Marke-Block');
           case 'qr':
             expect(zeile, findsNothing, reason: '$wo Block $i');
             expect(tester.getSize(find.byKey(const Key('keck-blatt-qr'))).width, closeTo((b['breiteAnteil'] as num) * breite, 0.01),

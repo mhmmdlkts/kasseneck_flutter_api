@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 1,
-  "paket": "0.22.0",
+  "paket": "0.26.0",
   "aufrufe": {
     "createCustomer": {
       "anfrage": {
@@ -929,7 +929,9 @@
     "reverse_charge_reason_required",
     "reverse_charge_threshold",
     "mixed_supply_not_allowed",
-    "oss_not_enabled"
+    "oss_not_enabled",
+    "einvoice_unavailable",
+    "amount_too_large"
   ],
   "gruende": [
     "cancellation",
