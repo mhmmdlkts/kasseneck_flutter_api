@@ -222,4 +222,31 @@ void main() {
     expect(stelle(b, [0x1B, 0x61, 0x31]), -1,
         reason: 'zentriert darf nicht an den Drucker gehen -- sonst faerbt es die ganze Zeile');
   });
+
+  test(
+      'Spaltenzeile: eine verworfene Ausrichtung in Spalte 2 bleibt fuer die '
+      'naechste echte Zeile spuerbar', () {
+    // Spalte 2 (colInd != 0) verlangt rechts -- der Drucker verwirft `ESC a`
+    // dort wortlos, weil es nicht am Zeilenanfang steht. Der Zustand darf
+    // sich den Wechsel trotzdem NICHT merken: sonst haelt die naechste echte
+    // Zeile (volle Breite, wirklich am Zeilenanfang) den Drucker faelschlich
+    // schon fuer rechtsbuendig und unterlaesst den Befehl -- die verworfene
+    // Ausrichtung bliebe dann fuer immer links stehen, obwohl "rechts"
+    // verlangt ist.
+    //
+    // Mit gesetzter globaler Codepage (wie im echten Druckweg, `reset()` +
+    // `setGlobalCodeTable`) -- das schreibt in `setStyles` einen eigenen
+    // Zweig, der die Ausrichtung ein zweites Mal spiegelt und damit den
+    // obigen Schutz aushebeln koennte, bliebe er dort unbeachtet.
+    final g = gen();
+    g.reset();
+    g.setGlobalCodeTable('CP1252');
+    g.row([
+      PosColumn(text: 'A', width: 6),
+      PosColumn(text: 'B', width: 6, styles: const PosStyles(align: PosAlign.right)),
+    ]);
+    final c = g.text('C', styles: const PosStyles(align: PosAlign.right));
+    expect(stelle(c, [0x1B, 0x61, 0x32]), greaterThanOrEqualTo(0),
+        reason: 'ESC a 2 (rechts) muss erneut vor "C" stehen -- der Drucker steht real noch auf links');
+  });
 }

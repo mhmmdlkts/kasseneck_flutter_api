@@ -176,13 +176,22 @@ class EscPosGenerator {
     return bytes;
   }
 
-  List<int> setStyles(PosStyles styles) {
+  /// `zeilenanfang` (Vorgabe `true`) sagt, ob dieser Aufruf am Anfang einer
+  /// Druckzeile steht. Nur dort nimmt der Drucker `ESC a` (Ausrichtung)
+  /// ueberhaupt an; mitten in der Zeile verwirft er den Befehl wortlos. Der
+  /// Bytestrom bekommt ihn trotzdem -- die Bytefolge soll sich dadurch nicht
+  /// aendern --, aber der intern gemerkte Zustand darf sich NICHT auf den
+  /// neuen Wert stellen: sonst haelt eine spaetere, echte Zeile die
+  /// Ausrichtung faelschlich schon fuer gesetzt und unterlaesst den Befehl.
+  List<int> setStyles(PosStyles styles, {bool zeilenanfang = true}) {
     List<int> bytes = [];
     if (styles.align != _styles.align) {
       bytes += latin1.encode(styles.align == PosAlign.left
           ? cAlignLeft
           : (styles.align == PosAlign.center ? cAlignCenter : cAlignRight));
-      _styles = _styles.copyWith(align: styles.align);
+      if (zeilenanfang) {
+        _styles = _styles.copyWith(align: styles.align);
+      }
     }
 
     if (styles.bold != _styles.bold) {
@@ -227,19 +236,24 @@ class EscPosGenerator {
     bytes += cKanjiOff.codeUnits;
 
     // Set local code table
+    //
+    // Die Ausrichtung wird hier bewusst NICHT nochmal mitgeschrieben (frueher
+    // `copyWith(align: styles.align, ...)`): das hebelte den Schutz oben aus,
+    // der eine verworfene Ausrichtung (mitten in der Zeile) gerade NICHT
+    // gemerkt haben will -- dieser Zweig lief unabhaengig vom `zeilenanfang`
+    // immer mit.
     if (styles.codeTable != null) {
       bytes += Uint8List.fromList(
         List.from(cCodeTable.codeUnits)
           ..add(_profile.getCodePageId(styles.codeTable)),
       );
-      _styles =
-          _styles.copyWith(align: styles.align, codeTable: styles.codeTable);
+      _styles = _styles.copyWith(codeTable: styles.codeTable);
     } else if (_codeTable != null) {
       bytes += Uint8List.fromList(
         List.from(cCodeTable.codeUnits)
           ..add(_profile.getCodePageId(_codeTable)),
       );
-      _styles = _styles.copyWith(align: styles.align, codeTable: _codeTable);
+      _styles = _styles.copyWith(codeTable: _codeTable);
     }
 
     return bytes;
@@ -568,7 +582,7 @@ class EscPosGenerator {
     // Rasterzeile ist aber schon auf volle Breite zentriert; sie wurde also
     // ein zweites Mal zentriert und rutschte um (Zeichenzahl - Laenge) / 4
     // nach rechts.
-    bytes += setStyles(stylesFuerDrucker);
+    bytes += setStyles(stylesFuerDrucker, zeilenanfang: colInd == 0);
 
     if (colInd != null && !volleZeile) {
       double charWidth = _getCharWidth(styles, maxCharsPerLine: maxCharsPerLine);
