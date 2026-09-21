@@ -542,6 +542,25 @@ class EscPosGenerator {
   }) {
     List<int> bytes = [];
 
+    // Eine volle Zeile beginnt am linken Rand -- da gibt es nichts zu setzen.
+    // Der Befehl entfiele nicht nur unnoetig: er ist genau das, was die
+    // Ausrichtung entwertet.
+    final bool volleZeile = colInd == 0 && colWidth == 12;
+
+    // Bekommt die Spalte ohnehin eine von Hand berechnete Position (siehe
+    // unten), darf an den Drucker nur "links" gehen -- nie ihre eigentliche
+    // Ausrichtung. `ESC a` wirkt nicht auf die Spalte, sondern auf die ganze
+    // Zeile bis zum naechsten Zeilenumbruch: eine zentrierte oder rechts-
+    // buendige erste Spalte wuerde sonst den Drucker seine eigene
+    // Zentrierung auf jede weitere Spalte derselben Zeile anwenden lassen --
+    // dieselbe Fehlerklasse wie der behobene Ausrichtungsfehler, eine Ebene
+    // tiefer. Die tatsaechliche Ausrichtung fliesst nur noch in die
+    // Positionsrechnung unten ein (ueber `styles`, nicht ueber diesen
+    // Befehl).
+    final PosStyles stylesFuerDrucker = colInd == 0 && !volleZeile
+        ? styles.copyWith(align: PosAlign.left)
+        : styles;
+
     // Die Ausrichtung MUSS vor dem Positionsbefehl stehen: `ESC a` gilt am
     // Drucker nur am Zeilenanfang; nach `ESC $` verwirft er ihn. Bis 7.0.1
     // stand die Position vorn -- damit blieb nach dem QR-Code (der zentriert
@@ -549,12 +568,8 @@ class EscPosGenerator {
     // Rasterzeile ist aber schon auf volle Breite zentriert; sie wurde also
     // ein zweites Mal zentriert und rutschte um (Zeichenzahl - Laenge) / 4
     // nach rechts.
-    bytes += setStyles(styles);
+    bytes += setStyles(stylesFuerDrucker);
 
-    // Eine volle Zeile beginnt am linken Rand -- da gibt es nichts zu setzen.
-    // Der Befehl entfiele nicht nur unnoetig: er ist genau das, was die
-    // Ausrichtung entwertet.
-    final bool volleZeile = colInd == 0 && colWidth == 12;
     if (colInd != null && !volleZeile) {
       double charWidth = _getCharWidth(styles, maxCharsPerLine: maxCharsPerLine);
       double fromPos = _colIndToPosition(colInd);
