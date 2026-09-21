@@ -11,7 +11,7 @@ import 'print_rendering_test.dart' show render, texts;
 /// gesteuert ueber das Backend-Metadatum `kreiseck_logo` (Firestore:
 /// users/{uid}.branding.kreiseck_logo). Der Name des Flags bleibt -- siehe
 /// docs/specs/2026-09-21-marke-einheitlich-design.md, § 5 (Namensschiefstand) --,
-/// gezeigt wird seit 0.26.0/7.2.0 aber dasselbe Kasseneck-Logo wie am Blatt,
+/// gezeigt wird seit 0.26.0/8.0.0 aber dasselbe Kasseneck-Logo wie am Blatt,
 /// nicht mehr das alte Kreiseck-Logo mit "powered by" darunter.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
