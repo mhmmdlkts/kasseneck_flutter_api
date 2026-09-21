@@ -135,6 +135,23 @@ void main() {
     });
   }
 
+  test('der Druckbereich folgt dem Blatt, nicht dem Geraet', () async {
+    // Der Fund am Papier (21.09.): ein 58-mm-Blatt auf einem 80-mm-Drucker
+    // setzte den Text in die linken 384 Punkte, QR und Logo aber mittig in die
+    // 576 des Geraets -- alles Bildhafte stand gegenueber dem Text nach rechts
+    // gerueckt. Der Drucker kann es nicht besser wissen, solange ihm niemand
+    // sagt, welche Flaeche gemeint ist. Genau das sagt `GS W` jetzt, in der
+    // Breite des Blatts: Zeichen je Zeile mal 12 Punkte.
+    for (final (size, zeichen) in [(KeckPaperSize.mm58, 32), (KeckPaperSize.mm80, 48)]) {
+      final paper = PrintPaper(paperSize: size, profile: CapabilityProfile());
+      await paper.setBelegBlatt(_fixture('storno-voll'), cut: false, qrMode: QrPrintMode.native);
+      final alle = paper.bytes.expand((b) => b).toList();
+      final punkte = zeichen * 12;
+      expect(alle.take(10).toList(), [0x1B, 0x40, 0x1D, 0x4C, 0, 0, 0x1D, 0x57, punkte & 0xff, punkte >> 8],
+          reason: '${size.name}: Druckbereich muss $punkte Punkte breit sein');
+    }
+  });
+
   test('setBelegBlatt setzt die Codepage im Vorspann nur einmal, nicht doppelt', () async {
     // reset() laeuft zweimal auf demselben Erzeuger: einmal im
     // PrintPaper-Konstruktor, einmal hier in setBelegBlatt. `generator.reset()`
@@ -152,8 +169,12 @@ void main() {
     await paper.setBelegBlatt(_fixture('storno-voll'), cut: false, qrMode: QrPrintMode.native);
     final alle = paper.bytes.expand((b) => b).toList();
     const codepage = [0x1B, 0x74, 16]; // ESC t 16 = CP1252
-    final vorspann = [0x1B, 0x40, ...codepage]; // ESC @ + genau EIN ESC t 16
-    final verdoppelt = [0x1B, 0x40, ...codepage, ...codepage]; // ESC @ + ZWEIMAL ESC t 16
+    // Zwischen ESC @ und der Codepage steht der Druckbereich des Blatts
+    // (GS L 0 / GS W 384 bei 32 Zeichen) -- er beschreibt die Flaeche, in der
+    // der Drucker mitteln soll, und gehoert wie ESC @ in den Vorspann.
+    const bereich = [0x1D, 0x4C, 0, 0, 0x1D, 0x57, 0x80, 0x01];
+    final vorspann = [0x1B, 0x40, ...bereich, ...codepage]; // genau EIN ESC t 16
+    final verdoppelt = [0x1B, 0x40, ...bereich, ...codepage, ...codepage]; // ZWEIMAL
     expect(_indexVon(alle, verdoppelt), -1,
         reason: 'die Codepage steht im Vorspann doppelt');
     expect(_indexVon(alle, vorspann), 0,

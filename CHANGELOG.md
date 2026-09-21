@@ -14,6 +14,14 @@
   `test/fixtures/vertrag/marke.json`, `tool/zwillinge.sh`) in den beiden
   Druckmaßen (352 × 51 für 80 mm, 234 × 34 für 58 mm); zur Laufzeit wird nichts
   gerastert, damit beide Pakete denselben Bytestrom erzeugen.
+- **ESC/POS: der Vorspann setzt den Druckbereich auf die Breite des Blatts** (`GS L 0` +
+  `GS W`, acht Bytes hinter `ESC @`). `ESC a 1` mittelt nicht im Blatt, sondern in der
+  Fläche des *Geräts*: Ein 58-mm-Blatt auf einem 80-mm-Drucker setzte den Text in die
+  linken 384 Punkte, QR, Logo und Marke aber mittig in die 576 — alles Bildhafte stand
+  gegenüber dem Text nach rechts gerückt. Am Gerät nachgestellt und behoben. Passen Gerät
+  und Blatt zusammen (der Regelfall), ist der gesetzte Wert der Vorgabewert des Druckers
+  und das Druckbild bleibt unverändert; die Bestandsschutz-Digests sind allein wegen
+  dieser acht Bytes neu gezogen (byteweise belegt: `neu[:2] + neu[10:] == alt`).
 - Der alte Druckweg (`setKeckReceipt`/`_addKreiseckBranding`) zeigt jetzt dasselbe
   Kasseneck-Logo statt des früheren Kreiseck-Logos mit „powered by" darunter —
   der letzte Ort, an dem auf einem Kasseneck-Beleg noch ein Kreiseck-Logo stand.

@@ -129,8 +129,19 @@ void main() {
     // eine einzelne entfallene `ESC t 16` direkt hinter der ersten, sonst
     // nichts. Nachweis: .superpowers/sdd/2026-09-21-marke-einheitlich/
     // task-7-punkt4-digest-nachweis/.
+    //
+    // Nachtrag Druckbereich (Fund am Papier, 21.09.): noch einmal neu gezogen,
+    // weil der Vorspann jetzt `GS L 0` + `GS W <Blattbreite>` traegt. Ohne ihn
+    // mittelte der Drucker Bilder in SEINER Flaeche statt in der des Blatts --
+    // ein 58-mm-Blatt auf einem 80-mm-Geraet setzte den Text links, QR und
+    // Logo aber mittig im 80-mm-Bereich. Am Geraet nachgestellt und behoben.
+    // Belegt: Strom vor und nach dem Einbau unabhaengig abgezogen und
+    // byteweise verglichen -- `neu[:2] + neu[10:] == alt` fuer BEIDE Breiten,
+    // also genau acht eingeschobene Bytes hinter `ESC @` und sonst keine
+    // einzige Verschiebung. Nachweis samt Rohdaten: .superpowers/sdd/
+    // 2026-09-21-marke-einheitlich/druckbereich-nachweis/.
     expect(await belegDigest(KeckPaperSize.mm58),
-        '6da56761f760af367ce5a0d176c3623654144d9754e0e466b677007b60538ddf');
+        '47e7e4a90bb69a768a7bbbd07e62f15e402ed79229be06be705128d1a2b4f74f');
   });
 
   test('80 mm: Beleg ohne Wahl byteidentisch mit 6.8.0', () async {
@@ -157,7 +168,18 @@ void main() {
     // wegen derselben einzelnen entfallenen `ESC t 16` im Vorspann. Nachweis:
     // .superpowers/sdd/2026-09-21-marke-einheitlich/
     // task-7-punkt4-digest-nachweis/.
+    //
+    // Nachtrag Druckbereich (Fund am Papier, 21.09.): noch einmal neu gezogen,
+    // weil der Vorspann jetzt `GS L 0` + `GS W <Blattbreite>` traegt. Ohne ihn
+    // mittelte der Drucker Bilder in SEINER Flaeche statt in der des Blatts --
+    // ein 58-mm-Blatt auf einem 80-mm-Geraet setzte den Text links, QR und
+    // Logo aber mittig im 80-mm-Bereich. Am Geraet nachgestellt und behoben.
+    // Belegt: Strom vor und nach dem Einbau unabhaengig abgezogen und
+    // byteweise verglichen -- `neu[:2] + neu[10:] == alt` fuer BEIDE Breiten,
+    // also genau acht eingeschobene Bytes hinter `ESC @` und sonst keine
+    // einzige Verschiebung. Nachweis samt Rohdaten: .superpowers/sdd/
+    // 2026-09-21-marke-einheitlich/druckbereich-nachweis/.
     expect(await belegDigest(KeckPaperSize.mm80),
-        '62c3e6d1b4c0c3eacc835857e045ede41bc5936338dcc2158eb111ae513f9315');
+        '1940e02471c04cc9ca9e932c6eda23aa7e673d60d152678a2d2cc991b2f0f81e');
   });
 }

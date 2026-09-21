@@ -143,10 +143,35 @@ class EscPosGenerator {
   List<int> reset() {
     List<int> bytes = [];
     bytes += cInit.codeUnits;
+    bytes += setDruckbereich();
     _styles = PosStyles();
     bytes += setGlobalCodeTable(_codeTable);
     bytes += setGlobalFont(_font);
     return bytes;
+  }
+
+  /// `GS L` + `GS W`: linker Rand auf 0, Druckbereich auf die Breite des
+  /// **Blatts** -- Zeichen je Zeile in Font A mal 12 Punkte (32 -> 384,
+  /// 48 -> 576).
+  ///
+  /// **Warum das noetig ist.** `ESC a 1` mittelt nicht im Blatt, sondern im
+  /// Druckbereich des *Geraets*. Steht das Blatt auf 58 mm (32 Zeichen) und
+  /// haengt ein 80-mm-Drucker daran, setzt er den Text in die linken 384
+  /// Punkte, mittelt QR, Logo und Marke aber in seinen 576 -- am Papier sitzt
+  /// dann alles Bildhafte gegenueber dem Text nach rechts gerueckt. Am Geraet
+  /// nachgestellt und bestaetigt: mit diesen acht Bytes im Vorspann steht
+  /// beides buendig.
+  ///
+  /// Bewusst nicht `_paperSize.width` (372/558, das Erbe fuer die
+  /// Spaltenrechnung), sondern das Raster, in dem der Text wirklich steht.
+  ///
+  /// Zwilling von `escPosSetDruckbereich` im npm-Paket (0.26.0).
+  List<int> setDruckbereich() {
+    final int punkte = _getMaxCharsPerLine(PosFontType.fontA) * 12;
+    return [
+      ...cLeftMargin.codeUnits, 0, 0,
+      ...cPrintArea.codeUnits, punkte & 0xff, punkte >> 8,
+    ];
   }
 
   /// Set global code table which will be used instead of the default printer's code table

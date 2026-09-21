@@ -23,6 +23,10 @@ import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 /// Pakete am Druckweg dreht, macht dort oder hier rot -- und die CI beider
 /// Repos faehrt diese Datei.
 ///
+/// Die vier Digests sind mit dieser Fassung einmal neu gezogen worden: seither
+/// traegt der Vorspann den Druckbereich des Blatts (`GS L` / `GS W`, acht
+/// Bytes) -- ohne ihn mittelte der Drucker Bilder in SEINER Flaeche.
+///
 /// Grundlage ist die gezogene Vertragsdatei `verkauf-bar.lines.json`, also
 /// buchstaeblich dasselbe Layout auf beiden Seiten. Der QR laeuft im nativen
 /// Modus, weil nur der ohne gerastertes Bild auskommt und damit in beiden
@@ -53,21 +57,21 @@ void main() {
 
   test('58 mm ohne Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm58, marke: false),
-        '7589f2fa8b9de73efddf4095add15b6d54b7e8638f02532c0498701e5df28a1d');
+        '42a673115d099035009a72aa171d0785f1ec697bd9042a669720e3b416d6d749');
   });
 
   test('80 mm ohne Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm80, marke: false),
-        'fb1520fb7705c9ef486c3aa2ff302bbedb79832ed9665de9afc668939beef2a8');
+        '76d9c93b23f062ffa53ff1a0cba53a2b2f0db3dd9bd36ad6cced638c20e547d8');
   });
 
   test('58 mm mit Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm58, marke: true),
-        'b85ee5c1e9f69ce0e566596d06b4415115b2b13ac756fb87fae3b072be81e858');
+        '98e98cfdbd54741634a6b2189970c72ea01594c97f193ca8f69c6df4b5013a34');
   });
 
   test('80 mm mit Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm80, marke: true),
-        '77f594a7205004164233ced3cd3da8263d3325634d25610253b23c9c9d12aed7');
+        '31fee883750041872ce63d07e5f4ba819be78892f6569611b4bdc98f66913fe6');
   });
 }
