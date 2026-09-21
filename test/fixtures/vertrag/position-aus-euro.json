@@ -1,0 +1,107 @@
+{
+  "beschreibung": "Prüffälle des Umwandlers positionAusEuro (Euro-Position → Ganzzahl-Form). Preis in Millionstel Euro, Menge in Tausendstel, Rabatt und Satz in Hundertstel-Prozent. Umgewandelt wird über den kürzesten Dezimaltext der Zahl, nie per Gleitkomma-Multiplikation — Gleitkomma-Rauschen wie 0,30000000000000004 muss abgelehnt werden.",
+  "regel": "Fehlende Menge und fehlender Satz gelten als 0 (so rechnet der Server ab). Ein fehlender Preis ist nie 0, sondern ein Grund (kein_zahlwert). Ein Minus am Preis wandert an die Menge.",
+  "faelle": [
+    {
+      "name": "Ueblicher Fall: Preis, Menge, Satz und Rabatt zusammen",
+      "item": { "unitPrice": 9.9, "quantity": 3, "vatRate": 10, "discountPct": 5, "description": "Reinigung" },
+      "erwartet": {
+        "ok": true,
+        "position": { "unitPriceMicros": 9900000, "quantityMilli": 3000, "discountBp": 500, "vatRateBp": 1000, "description": "Reinigung" }
+      }
+    },
+    {
+      "name": "Schon Ganzzahl-Form kommt unveraendert zurueck",
+      "item": { "unitPriceMicros": 12345678, "quantityMilli": -500, "vatRateBp": 2000 },
+      "erwartet": {
+        "ok": true,
+        "position": { "unitPriceMicros": 12345678, "quantityMilli": -500, "vatRateBp": 2000 }
+      }
+    },
+    {
+      "name": "Fehlende Menge gilt als 0",
+      "item": { "unitPrice": 5.5, "vatRate": 10 },
+      "erwartet": {
+        "ok": true,
+        "position": { "unitPriceMicros": 5500000, "quantityMilli": 0, "discountBp": 0, "vatRateBp": 1000 }
+      }
+    },
+    {
+      "name": "Fehlender Satz gilt als 0",
+      "item": { "unitPrice": 3.33, "quantity": 4 },
+      "erwartet": {
+        "ok": true,
+        "position": { "unitPriceMicros": 3330000, "quantityMilli": 4000, "discountBp": 0, "vatRateBp": 0 }
+      }
+    },
+    {
+      "name": "Fehlender Preis ist nie 0",
+      "item": { "quantity": 2, "vatRate": 20 },
+      "erwartet": { "ok": false, "feld": "unitPrice", "grund": "kein_zahlwert" }
+    },
+    {
+      "name": "Negativer Preis wandert an die Menge",
+      "item": { "unitPrice": -7.5, "quantity": 3, "vatRate": 10 },
+      "erwartet": {
+        "ok": true,
+        "position": { "unitPriceMicros": 7500000, "quantityMilli": -3000, "discountBp": 0, "vatRateBp": 1000 }
+      }
+    },
+    {
+      "name": "Negative Menge bleibt negativ",
+      "item": { "unitPrice": 4, "quantity": -6 },
+      "erwartet": {
+        "ok": true,
+        "position": { "unitPriceMicros": 4000000, "quantityMilli": -6000, "discountBp": 0, "vatRateBp": 0 }
+      }
+    },
+    {
+      "name": "Gleitkomma-Rauschen am Preis (8,333333333333334) wird abgelehnt",
+      "item": { "unitPrice": 8.333333333333334 },
+      "erwartet": { "ok": false, "feld": "unitPrice", "grund": "nachkommastellen" }
+    },
+    {
+      "name": "Gleitkomma-Rauschen am Rabatt (0,30000000000000004) wird abgelehnt",
+      "item": { "unitPrice": 1, "quantity": 1, "discountPct": 0.30000000000000004 },
+      "erwartet": { "ok": false, "feld": "discountPct", "grund": "nachkommastellen" }
+    },
+    {
+      "name": "Menge mit 4 Nachkommastellen wird abgelehnt",
+      "item": { "unitPrice": 2, "quantity": 1.2345 },
+      "erwartet": { "ok": false, "feld": "quantity", "grund": "nachkommastellen" }
+    },
+    {
+      "name": "Rabatt 12,345 % wird abgelehnt",
+      "item": { "unitPrice": 1, "quantity": 1, "discountPct": 12.345 },
+      "erwartet": { "ok": false, "feld": "discountPct", "grund": "nachkommastellen" }
+    },
+    {
+      "name": "Text statt Zahl beim Preis",
+      "item": { "unitPrice": "9,99" },
+      "erwartet": { "ok": false, "feld": "unitPrice", "grund": "kein_zahlwert" }
+    },
+    {
+      "name": "Satz 120 % liegt ausserhalb",
+      "item": { "unitPrice": 1, "quantity": 1, "vatRate": 120 },
+      "erwartet": { "ok": false, "feld": "vatRate", "grund": "ausserhalb" }
+    },
+    {
+      "name": "Preis ueber 10^12 Mikro-Euro liegt ausserhalb",
+      "item": { "unitPrice": 1000001, "quantity": 1 },
+      "erwartet": { "ok": false, "feld": "unitPrice", "grund": "ausserhalb" }
+    },
+    {
+      "name": "Satz mit zwei Nachkommastellen (4,95 %) ist verlustfrei",
+      "item": { "unitPrice": 1, "quantity": 1, "vatRate": 4.95 },
+      "erwartet": {
+        "ok": true,
+        "position": { "unitPriceMicros": 1000000, "quantityMilli": 1000, "discountBp": 0, "vatRateBp": 495 }
+      }
+    },
+    {
+      "name": "Satz mit drei Nachkommastellen (4,955 %) wird abgelehnt",
+      "item": { "unitPrice": 1, "quantity": 1, "vatRate": 4.955 },
+      "erwartet": { "ok": false, "feld": "vatRate", "grund": "nachkommastellen" }
+    }
+  ]
+}

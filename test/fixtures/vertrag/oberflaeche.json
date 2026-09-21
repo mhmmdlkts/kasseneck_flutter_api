@@ -1,5 +1,5 @@
 {
-  "version": "0.22.0",
+  "version": "0.26.0",
   "aufrufe": [
     "activateCashregister",
     "cancelInvoice",
@@ -410,7 +410,9 @@
       "reverse_charge_reason_required",
       "reverse_charge_threshold",
       "mixed_supply_not_allowed",
-      "oss_not_enabled"
+      "oss_not_enabled",
+      "einvoice_unavailable",
+      "amount_too_large"
     ],
     "invoiceLanguages": [
       "de",

@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
+import 'package:kasseneck_api/models/marke.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:qr/qr.dart';
@@ -44,6 +44,11 @@ class PrintPaper {
 
   PrintPaper({required this.paperSize, required CapabilityProfile profile})
       : generator = EscPosGenerator(paperSize.paperSize, profile) {
+    // Nur einmal im Erzeuger hinterlegen (dessen `_codeTable`-Feld) --
+    // `generator.reset()` liest sie von dort und schickt sie bei jedem
+    // Reset von selbst wieder mit. Die Rueckgabe hier wird bewusst
+    // verworfen: `reset()` gleich danach leert `bytes` ohnehin.
+    generator.setGlobalCodeTable('CP1252');
     reset();
   }
 
@@ -376,8 +381,12 @@ class PrintPaper {
     bytes.clear();
     qrFehler = null;
     qrAusweich = null;
+    // `generator.reset()` schickt die Codepage schon von selbst mit (sie
+    // steht seit dem Konstruktor im `_codeTable`-Feld des Erzeugers) -- ein
+    // zweiter, expliziter `setGlobalCodeTable`-Aufruf hier verdoppelte sie im
+    // Vorspann bei jedem Reset nach dem allerersten (letzter Byte-
+    // Unterschied zum JS-Zwilling).
     bytes.add(Uint8List.fromList(generator.reset()));
-    bytes.add(Uint8List.fromList(generator.setGlobalCodeTable('CP1252')));
     myPosPaper.commands.clear();
   }
 
@@ -615,36 +624,18 @@ class PrintPaper {
     addCut();
   }
 
-  /// Dezentes Kreiseck-Branding als allerletzter Block vor dem Cut.
-  /// Das s/w-Logo liegt als Package-Asset bei (Druck funktioniert offline,
-  /// das Backend liefert nur das Flag `kreiseck_logo`).
-  static RasterImage? _kreiseckLogo;
-
+  /// Das Kasseneck-Logo als allerletzter Block vor dem Cut -- der alte Weg
+  /// (vor [setBelegBlatt]) zeigt jetzt dasselbe Raster wie das Blatt, statt
+  /// des frueheren Kreiseck-Logos mit "powered by" darunter. Das war der
+  /// letzte Ort, an dem auf einem Kasseneck-Beleg noch ein Kreiseck-Logo
+  /// stand (docs/specs/2026-09-21-marke-einheitlich-design.md, § 4.2).
   Future<void> _addKreiseckBranding() async {
-    if (_kreiseckLogo == null) {
-      // Asset-Key unterscheidet sich je nach Kontext (eigenes Paket vs. App).
-      for (final key in [
-        'packages/kasseneck_api/assets/kreiseck_logo_print.png',
-        'assets/kreiseck_logo_print.png',
-      ]) {
-        try {
-          final data = await rootBundle.load(key);
-          _kreiseckLogo = await decodePng(data.buffer.asUint8List());
-          break;
-        } catch (_) {
-          // naechsten Key probieren
-        }
-      }
+    try {
+      addFeed();
+      await addImage(markeBild(paperSize).alsRasterImage(), align: PosAlign.center);
+    } catch (_) {
+      // Branding darf den Druck nie verhindern.
     }
-    final logo = _kreiseckLogo;
-    if (logo == null) return; // Branding darf den Druck nie verhindern
-
-    addFeed();
-    addText('powered by', styles: PosStyles(align: PosAlign.center));
-    // Breite muss ein Vielfaches von 8 sein — sonst crasht die Rasterisierung
-    // des ESC/POS-Generators beim Byte-Padding (fixed-length list).
-    final int width = ((paperSize.imageWidth * 0.85) ~/ 8) * 8;
-    await addImage(resizeWidth(logo, width));
   }
 
   void _addTable(String val1, String val2, String val3, String val4) {
@@ -738,6 +729,8 @@ class PrintPaper {
           }
         case BlattLogoBlock():
           await addImage(logo!.raster.alsRasterImage(), align: PosAlign.center);
+        case BlattMarke():
+          await addImage(markeBild(paperSize).alsRasterImage(), align: PosAlign.center);
         case BlattQr():
           // Das Layout liefert beim QR NUR die Nutzlast; wie daraus ein QR
           // wird, entscheidet der Renderer -- am Drucker also der Modus, den

@@ -71,6 +71,7 @@ export 'models/beleg_blatt.dart'
         BlattZeile,
         BlattLogoBlock,
         BlattQr,
+        BlattMarke,
         BlattLogo,
         LogoMass,
         LogoStufe,
@@ -79,6 +80,7 @@ export 'models/beleg_blatt.dart'
         logoRasterMass,
         qrBlattAnteil;
 export 'models/logo_raster.dart' show LogoRaster, logoRaster;
+export 'models/marke.dart' show markeBild;
 export 'models/print_paper.dart' show DruckLogo;
 export 'widgets/keck_beleg_blatt_widget.dart' show KeckBelegBlattWidget;
 

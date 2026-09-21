@@ -26,13 +26,27 @@ import '../helpers/test_receipts.dart';
 /// sie rot. Sie haengen am gesamten Beleglayout, nicht nur am QR -- das ist
 /// Absicht, denn die Zusage lautet "derselbe Bon", nicht "derselbe QR-Befehl".
 ///
-/// Seit dem Ausrichtung-vor-Position-Umbau gibt es zwei bekannte, gewollte
+/// Seit dem Ausrichtung-vor-Position-Umbau gibt es drei bekannte, gewollte
 /// Abweichungen von 6.8.0 (Digests entsprechend neu gezogen):
-/// 1. die QR-Fehlerkorrektur M statt L (siehe `belegDigest` unten) und
+/// 1. die QR-Fehlerkorrektur M statt L (siehe `belegDigest` unten),
 /// 2. der Wegfall des ueberfluessigen `ESC $ 0 0` vor jeder von `text()`
 ///    gedruckten Zeile (`colInd=0, colWidth=12`, siehe `generator.dart:248`)
 ///    -- das ist der dominante Treiber, weil er quer durch den ganzen Beleg
-///    wirkt, nicht nur an der einen Stelle nach dem QR-Code.
+///    wirkt, nicht nur an der einen Stelle nach dem QR-Code, und
+/// 3. (Nachtrag aus der Schlusspruefung, § 7 Punkt 1+2 im Umsetzungsplan der
+///    Marke) der Wegfall ueberfluessiger `ESC a 0`-Befehle vor der ersten
+///    Spalte jeder von `addDoubleText`/`_addTable` gedruckten Zeile: eine
+///    rechtsbuendige (oder sonst nicht-linke) Spalte ab Spalte 2 verwirft der
+///    Drucker zwar wortlos, der Ausrichtungs-Zustand merkte sich den Wechsel
+///    aber trotzdem -- die naechste Zeile hielt sich danach faelschlich fuer
+///    schon umgestellt und sandte zur Korrektur ein ueberfluessiges
+///    `ESC a 0`. Belegt (nicht aus dem eigenen Lauf uebernommen): Bytestrom
+///    vor und nach den beiden Fixes unabhaengig gezogen, tokenisiert und per
+///    diff verglichen -- einzige Abweichung sind 16 (58 mm) bzw. 14 (80 mm)
+///    entfallene `ESC a 0`, keine einzige Zeile hinzugefuegt, Text- und
+///    QR-Nutzlast-Token byteidentisch. Nachweis: .superpowers/sdd/
+///    2026-09-21-marke-einheitlich/task-7-punkt1-2-digest-nachweis/
+///    (separate Ablage, nicht in diesem Repo).
 ///
 /// **Der Zeitstempel ist absolut (UTC), nicht oertlich.** Der Bon druckt die
 /// Wiener Wanduhrzeit (`ViennaTime.toWallClock`); ein oertlich gebautes
@@ -102,8 +116,32 @@ void main() {
     // Text- und QR-Nutzlast-Token byteidentisch. Nachweis mit Skripten und
     // Rohprotokoll: .superpowers/sdd/2026-09-19-beleg-druck-logo-ausrichtung/
     // task-6-dart-digest-nachweis/ (separate Ablage, nicht in diesem Repo).
+    //
+    // Nachtrag Task 7, Punkt 1+2 (Schlusspruefung, siehe Kopfkommentar):
+    // erneut neu gezogen, diesmal ausschliesslich wegen 16 entfallener
+    // ueberfluessiger `ESC a 0` vor der ersten Spalte diverser
+    // `addDoubleText`/`_addTable`-Zeilen. Nachweis: .superpowers/sdd/
+    // 2026-09-21-marke-einheitlich/task-7-punkt1-2-digest-nachweis/.
+    //
+    // Nachtrag Task 7, Punkt 4: noch einmal neu gezogen, diesmal wegen der
+    // im Vorspann doppelten Codepage (`PrintPaper`-Konstruktor UND
+    // `setBelegBlatt`/`setKeckReceipt`-Aufrufer riefen beide `reset()`) --
+    // eine einzelne entfallene `ESC t 16` direkt hinter der ersten, sonst
+    // nichts. Nachweis: .superpowers/sdd/2026-09-21-marke-einheitlich/
+    // task-7-punkt4-digest-nachweis/.
+    //
+    // Nachtrag Druckbereich (Fund am Papier, 21.09.): noch einmal neu gezogen,
+    // weil der Vorspann jetzt `GS L 0` + `GS W <Blattbreite>` traegt. Ohne ihn
+    // mittelte der Drucker Bilder in SEINER Flaeche statt in der des Blatts --
+    // ein 58-mm-Blatt auf einem 80-mm-Geraet setzte den Text links, QR und
+    // Logo aber mittig im 80-mm-Bereich. Am Geraet nachgestellt und behoben.
+    // Belegt: Strom vor und nach dem Einbau unabhaengig abgezogen und
+    // byteweise verglichen -- `neu[:2] + neu[10:] == alt` fuer BEIDE Breiten,
+    // also genau acht eingeschobene Bytes hinter `ESC @` und sonst keine
+    // einzige Verschiebung. Nachweis samt Rohdaten: .superpowers/sdd/
+    // 2026-09-21-marke-einheitlich/druckbereich-nachweis/.
     expect(await belegDigest(KeckPaperSize.mm58),
-        'c8bf21c625875f40715f979a568e39546f6c1f3d4b42333a53316cd86f0b3ff6');
+        '47e7e4a90bb69a768a7bbbd07e62f15e402ed79229be06be705128d1a2b4f74f');
   });
 
   test('80 mm: Beleg ohne Wahl byteidentisch mit 6.8.0', () async {
@@ -120,7 +158,28 @@ void main() {
     // `ESC$ 0,0`, uebrige Positionsbefehle nur verschoben, Text/QR-Nutzlast
     // byteidentisch. Nachweis unter .superpowers/sdd/
     // 2026-09-19-beleg-druck-logo-ausrichtung/task-6-dart-digest-nachweis/.
+    //
+    // Nachtrag Task 7, Punkt 1+2: wie beim 58-mm-Fall erneut neu gezogen,
+    // diesmal wegen 14 entfallener ueberfluessiger `ESC a 0`. Nachweis:
+    // .superpowers/sdd/2026-09-21-marke-einheitlich/
+    // task-7-punkt1-2-digest-nachweis/.
+    //
+    // Nachtrag Task 7, Punkt 4: wie beim 58-mm-Fall noch einmal neu gezogen,
+    // wegen derselben einzelnen entfallenen `ESC t 16` im Vorspann. Nachweis:
+    // .superpowers/sdd/2026-09-21-marke-einheitlich/
+    // task-7-punkt4-digest-nachweis/.
+    //
+    // Nachtrag Druckbereich (Fund am Papier, 21.09.): noch einmal neu gezogen,
+    // weil der Vorspann jetzt `GS L 0` + `GS W <Blattbreite>` traegt. Ohne ihn
+    // mittelte der Drucker Bilder in SEINER Flaeche statt in der des Blatts --
+    // ein 58-mm-Blatt auf einem 80-mm-Geraet setzte den Text links, QR und
+    // Logo aber mittig im 80-mm-Bereich. Am Geraet nachgestellt und behoben.
+    // Belegt: Strom vor und nach dem Einbau unabhaengig abgezogen und
+    // byteweise verglichen -- `neu[:2] + neu[10:] == alt` fuer BEIDE Breiten,
+    // also genau acht eingeschobene Bytes hinter `ESC @` und sonst keine
+    // einzige Verschiebung. Nachweis samt Rohdaten: .superpowers/sdd/
+    // 2026-09-21-marke-einheitlich/druckbereich-nachweis/.
     expect(await belegDigest(KeckPaperSize.mm80),
-        'be54b3ea8a798c30fcd9ad82cc50e5fc65635f7c1e0747b88806faffd0a6c4c6');
+        '1940e02471c04cc9ca9e932c6eda23aa7e673d60d152678a2d2cc991b2f0f81e');
   });
 }

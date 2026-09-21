@@ -1,3 +1,70 @@
+## 8.0.0
+
+### Marke am Belegende: das Kasseneck-Logo als Bild statt der Textzeile
+
+- **Breaking: `BlattBlock` bekommt die neue Art `BlattMarke(breite, hoehe)`.**
+  `BlattBlock` ist `sealed` — ein eigener erschöpfender `switch` darüber (statt
+  `if`/`is`-Verzweigung) lässt sich mit dieser Version nicht mehr ohne einen
+  zusätzlichen `BlattMarke`-Fall übersetzen. Wer `belegBlatt()` selbst zeichnet
+  (Bon, Bildschirm, PDF-Export außerhalb dieses Pakets), muss diesen Fall
+  ergänzen. `markeText` entfällt ersatzlos: die Marke ist ab sofort immer ein
+  Rasterbild bzw. eine Vektorpfad-Zeichnung, nie mehr Text.
+- Beleg: Am Ende steht das Kasseneck-Logo als Bild statt der Zeile „erstellt mit
+  Kasseneck". Das Raster kommt als Vertrag aus `@kreiseck/kasseneck-api` (0.26.0,
+  `test/fixtures/vertrag/marke.json`, `tool/zwillinge.sh`) in den beiden
+  Druckmaßen (352 × 51 für 80 mm, 234 × 34 für 58 mm); zur Laufzeit wird nichts
+  gerastert, damit beide Pakete denselben Bytestrom erzeugen.
+- **ESC/POS: der Vorspann setzt den Druckbereich auf die Breite des Blatts** (`GS L 0` +
+  `GS W`, acht Bytes hinter `ESC @`). `ESC a 1` mittelt nicht im Blatt, sondern in der
+  Fläche des *Geräts*: Ein 58-mm-Blatt auf einem 80-mm-Drucker setzte den Text in die
+  linken 384 Punkte, QR, Logo und Marke aber mittig in die 576 — alles Bildhafte stand
+  gegenüber dem Text nach rechts gerückt. Am Gerät nachgestellt und behoben. Passen Gerät
+  und Blatt zusammen (der Regelfall), ist der gesetzte Wert der Vorgabewert des Druckers
+  und das Druckbild bleibt unverändert; die Bestandsschutz-Digests sind allein wegen
+  dieser acht Bytes neu gezogen (byteweise belegt: `neu[:2] + neu[10:] == alt`).
+- Der alte Druckweg (`setKeckReceipt`/`_addKreiseckBranding`) zeigt jetzt dasselbe
+  Kasseneck-Logo statt des früheren Kreiseck-Logos mit „powered by" darunter —
+  der letzte Ort, an dem auf einem Kasseneck-Beleg noch ein Kreiseck-Logo stand.
+  `assets/kreiseck_logo_print.png` entfällt ersatzlos (kein Asset-Eintrag mehr in
+  `pubspec.yaml`); wer diesen Pfad direkt referenziert hat, muss darauf verzichten.
+- `KeckBelegBlattWidget` und das ältere `KeckReceiptWidget` zeichnen die Marke am
+  Bildschirm über die Logo-Komponente aus `kreiseck_design` (`KdLogo`), nicht über
+  das Druckraster.
+- `zwillinge.sh` zieht und prüft jetzt auch die Markendaten (aus
+  `dist/esm/receipt/marke-daten.js` des npm-Pakets) — der Zwillingsnachweis deckt
+  damit erstmals auch Bilddaten ab.
+- `invoiceErrorCodes` um `einvoice_unavailable` und `amount_too_large` ergänzt —
+  nachgezogen aus dem Sprung der Vertragsversion (0.22.0 → 0.26.0 für die Marke),
+  inhaltlich unabhängig davon.
+
+### Fünf Nachträge aus der Schlussprüfung des Ausrichtungs-Vorhabens (7.1.0)
+
+- Druck: `row()` gibt der ersten Spalte am Drucker nur noch links, nie ihre eigentliche
+  Ausrichtung — eine zentrierte oder rechtsbündige erste Spalte ließ den Drucker seine
+  eigene Ausrichtung sonst auf jede weitere Spalte derselben Zeile anwenden (dieselbe
+  Fehlerklasse wie der in 7.1.0 behobene Ausrichtungsfehler, eine Ebene tiefer). Die
+  tatsächliche Ausrichtung fließt weiterhin in die von Hand berechnete Position ein.
+- Druck: ein `ESC a`, das der Drucker mitten in der Zeile (Spalte ab der zweiten)
+  wortlos verwirft, gilt intern nicht mehr als gesetzt — eine spätere, echte Zeile hielt
+  sich sonst fälschlich schon für umgestellt und unterließ den Befehl. Dabei auch einen
+  zweiten, unabhängigen Fund behoben: der Codepage-Zweig in `setStyles` schrieb die
+  Ausrichtung ein zweites Mal unbedingt fort und hebelte damit denselben Schutz aus,
+  sobald eine globale Codepage gesetzt war (im echten Druckweg immer der Fall).
+- Druck: `PrintPaper`-Konstruktor und `setBelegBlatt`/`setKeckReceipt`/... riefen beide
+  `reset()` — die Codepage stand darum im Vorspann jedes Belegs doppelt. Letzter
+  verbliebener Byte-Unterschied zum JS-Zwilling; der Zwillingsabgleich ist jetzt ohne
+  Ausnahme byteidentisch.
+- `ladeDruckLogo` merkt sich einen fehlgeschlagenen Logo-Abruf jetzt für `negativFrist`
+  (Vorgabe eine Minute, neuer Parameter) und versucht es in dieser Zeit nicht erneut.
+  Bisher kostete eine kaputte `logo_url` **jeden** Bon erneut bis zu drei Sekunden am
+  Tresen (siehe 7.1.0-Eintrag unten), ohne je zum Ziel zu kommen.
+- Prüfung: Der Zwillingsabgleich am **Bytestrom** ist jetzt Teil der Test-Suite
+  (`test/printing/zwilling_bytestrom_test.dart`) statt eines Skripts von Hand. Vier
+  SHA-256 über den fertigen Bon (58/80 mm, mit und ohne Marke) stehen wortgleich im
+  npm-Paket; wer in einem der beiden Pakete am Druckweg dreht, macht dort oder hier
+  rot. Die bisherigen gemeinsamen Prüffälle deckten Raster, Zeilen und Blatt ab —
+  alles Stufen vor den Bytes.
+
 ## 7.1.0
 
 - Druck: `ESC a` steht jetzt vor `ESC $`, und eine volle Zeile bekommt keinen Positionsbefehl mehr.

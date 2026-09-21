@@ -47,17 +47,71 @@ void main() {
     expect(geladen, 2);
   });
 
-  test('ein Fehlschlag wird nicht gemerkt: der naechste Aufruf laedt neu', () async {
+  test('ein Fehlschlag wird ausserhalb der Negativ-Frist nicht gemerkt: der naechste Aufruf laedt neu', () async {
+    // negativFrist: Duration.zero schaltet das Negativ-Gedaechtnis (unten
+    // eigens getestet) fuer diesen Test aus -- er prueft etwas anderes: dass
+    // ein Fehlschlag ohne (bzw. mit abgelaufener) Sperre keinen Dauerzustand
+    // hinterlaesst.
     var geladen = 0;
-    final erst = await ladeDruckLogo('https://x/wackel.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+    final erst = await ladeDruckLogo(
+      'https://x/wackel.png', LogoStufe.m, KeckPaperSize.mm80,
+      pixel: (_) async {
+        geladen += 1;
+        throw Exception('Netz weg');
+      },
+      negativFrist: Duration.zero,
+    );
+    expect(erst, isNull);
+    final dann = await ladeDruckLogo(
+      'https://x/wackel.png', LogoStufe.m, KeckPaperSize.mm80,
+      pixel: (_) async {
+        geladen += 1;
+        return _schwarz(20, 20);
+      },
+      negativFrist: Duration.zero,
+    );
+    expect(dann, isNotNull);
+    expect(geladen, 2);
+  });
+
+  test('ein Fehlschlag wird kurz gemerkt: innerhalb der Negativ-Frist versucht der naechste Aufruf es nicht erneut', () async {
+    // Genau der Fall aus dem Auftrag: eine kaputte Adresse kostete bisher auf
+    // JEDEM Bon erneut bis zu drei Sekunden (bzw. hier: einen Aufruf des
+    // Laders). Ein Fehlschlag wird jetzt kurz gemerkt.
+    var geladen = 0;
+    final erst = await ladeDruckLogo('https://x/kaputt.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
       geladen += 1;
-      throw Exception('Netz weg');
+      throw Exception('404');
     });
     expect(erst, isNull);
-    final dann = await ladeDruckLogo('https://x/wackel.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+    final dann = await ladeDruckLogo('https://x/kaputt.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
       geladen += 1;
       return _schwarz(20, 20);
     });
+    expect(dann, isNull, reason: 'innerhalb der Negativ-Frist kein neuer Versuch');
+    expect(geladen, 1, reason: 'der zweite Lader wurde gar nicht erst aufgerufen');
+  });
+
+  test('nach Ablauf der Negativ-Frist versucht der naechste Aufruf es wieder', () async {
+    var geladen = 0;
+    final erst = await ladeDruckLogo(
+      'https://x/kaputt-kurz.png', LogoStufe.m, KeckPaperSize.mm80,
+      pixel: (_) async {
+        geladen += 1;
+        throw Exception('404');
+      },
+      negativFrist: const Duration(milliseconds: 20),
+    );
+    expect(erst, isNull);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    final dann = await ladeDruckLogo(
+      'https://x/kaputt-kurz.png', LogoStufe.m, KeckPaperSize.mm80,
+      pixel: (_) async {
+        geladen += 1;
+        return _schwarz(20, 20);
+      },
+      negativFrist: const Duration(milliseconds: 20),
+    );
     expect(dann, isNotNull);
     expect(geladen, 2);
   });
@@ -77,6 +131,8 @@ void main() {
   });
 
   test('nach einer Frist-Ueberschreitung laedt der naechste Aufruf neu (kein Cache)', () async {
+    // negativFrist: Duration.zero, weil dieser Test die Positiv-Cache-Frage
+    // prueft ("kein Cache" im Titel), nicht das Negativ-Gedaechtnis.
     var geladen = 0;
     final erst = await ladeDruckLogo(
       'https://x/haengt2.png',
@@ -87,6 +143,7 @@ void main() {
         return Completer<({int breite, int hoehe, Uint8List rgba})>().future;
       },
       frist: const Duration(milliseconds: 30),
+      negativFrist: Duration.zero,
     );
     expect(erst, isNull);
     final dann = await ladeDruckLogo(
@@ -98,6 +155,7 @@ void main() {
         return _schwarz(20, 20);
       },
       frist: const Duration(milliseconds: 30),
+      negativFrist: Duration.zero,
     );
     expect(dann, isNotNull);
     expect(geladen, 2);
@@ -115,6 +173,7 @@ void main() {
         return spaet.future;
       },
       frist: const Duration(milliseconds: 30),
+      negativFrist: Duration.zero,
     );
     expect(erst, isNull);
     spaet.complete(_schwarz(20, 20)); // kommt zu spaet, darf den Speicher nicht mehr fuellen
@@ -128,6 +187,7 @@ void main() {
         return _schwarz(30, 30);
       },
       frist: const Duration(milliseconds: 30),
+      negativFrist: Duration.zero,
     );
     expect(dann, isNotNull);
     expect(dann!.pxBreite, 30); // waere 20, haette der spaete Treffer den Speicher gefuellt
@@ -156,6 +216,7 @@ void main() {
         geladen += 1;
         return _schwarz(4097, 10); // ueber logoPixelMax (4096)
       },
+      negativFrist: Duration.zero,
     );
     expect(zuGross, isNull);
     final dann = await ladeDruckLogo(
@@ -166,6 +227,7 @@ void main() {
         geladen += 1;
         return _schwarz(20, 20);
       },
+      negativFrist: Duration.zero,
     );
     expect(dann, isNotNull);
     expect(geladen, 2); // der Ausschluss wurde nicht gemerkt -- wie jeder andere Fehlschlag

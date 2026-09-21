@@ -162,10 +162,9 @@
       "leer": true
     },
     {
-      "art": "zeile",
-      "text": "             erstellt mit Kasseneck             ",
-      "fett": false,
-      "leer": false
+      "art": "marke",
+      "breite": 352,
+      "hoehe": 51
     }
   ]
 }

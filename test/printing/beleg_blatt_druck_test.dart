@@ -38,17 +38,22 @@ int _indexVon(List<int> heu, List<int> nadel) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('Testkasse: Rahmen, dann GS v 0, dann Firmenname; Marke am Ende', () async {
+  test('Testkasse: Rahmen, dann GS v 0, dann Firmenname; Marke als Rasterbild am Ende', () async {
     final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
     await paper.setBelegBlatt(_fixture('testkasse-verkauf'), logo: _probeLogo(48), marke: true, cut: false, qrMode: QrPrintMode.native);
     final alles = latin1.decode(paper.bytes.expand((b) => b).toList(), allowInvalid: true);
     final rahmenEnde = alles.indexOf('=' * 48, alles.indexOf('TESTKASSE'));
     final bild = alles.indexOf('\x1dv0');
     final firma = alles.indexOf('Muster');
+    // Die Marke ist ihr eigenes Rasterbild ganz am Ende -- das letzte GS v 0
+    // im Strom, nach dem Firmennamen und keine Textzeile mehr.
+    final marke = alles.lastIndexOf('\x1dv0');
     expect(rahmenEnde, greaterThan(0));
     expect(bild, greaterThan(rahmenEnde));
     expect(firma, greaterThan(bild));
-    expect(alles.lastIndexOf('erstellt mit Kasseneck'), greaterThan(firma));
+    expect(marke, greaterThan(firma));
+    expect(marke, isNot(bild), reason: 'Logo und Marke sind zwei verschiedene Rasterbilder');
+    expect(alles.contains('erstellt mit Kasseneck'), isFalse);
   });
 
   test('ohne Logo und Marke: kein Rasterbild, keine Markenzeile, jede Textzeile des Blatts im Bytestrom', () async {
@@ -129,4 +134,50 @@ void main() {
       expect(alles, contains('Firma'));
     });
   }
+
+  test('der Druckbereich folgt dem Blatt, nicht dem Geraet', () async {
+    // Der Fund am Papier (21.09.): ein 58-mm-Blatt auf einem 80-mm-Drucker
+    // setzte den Text in die linken 384 Punkte, QR und Logo aber mittig in die
+    // 576 des Geraets -- alles Bildhafte stand gegenueber dem Text nach rechts
+    // gerueckt. Der Drucker kann es nicht besser wissen, solange ihm niemand
+    // sagt, welche Flaeche gemeint ist. Genau das sagt `GS W` jetzt, in der
+    // Breite des Blatts: Zeichen je Zeile mal 12 Punkte.
+    for (final (size, zeichen) in [(KeckPaperSize.mm58, 32), (KeckPaperSize.mm80, 48)]) {
+      final paper = PrintPaper(paperSize: size, profile: CapabilityProfile());
+      await paper.setBelegBlatt(_fixture('storno-voll'), cut: false, qrMode: QrPrintMode.native);
+      final alle = paper.bytes.expand((b) => b).toList();
+      final punkte = zeichen * 12;
+      expect(alle.take(10).toList(), [0x1B, 0x40, 0x1D, 0x4C, 0, 0, 0x1D, 0x57, punkte & 0xff, punkte >> 8],
+          reason: '${size.name}: Druckbereich muss $punkte Punkte breit sein');
+    }
+  });
+
+  test('setBelegBlatt setzt die Codepage im Vorspann nur einmal, nicht doppelt', () async {
+    // reset() laeuft zweimal auf demselben Erzeuger: einmal im
+    // PrintPaper-Konstruktor, einmal hier in setBelegBlatt. `generator.reset()`
+    // schickt die zuletzt hinterlegte Codepage jedes Mal von selbst erneut mit
+    // (ueber das generatorinterne `_codeTable`-Feld) -- ein zusaetzlicher,
+    // expliziter `setGlobalCodeTable`-Aufruf in `PrintPaper.reset()` verdoppelte
+    // sie darum bei jedem Reset nach dem allerersten: `ESC @` gefolgt von
+    // ZWEI unmittelbar aufeinanderfolgenden `ESC t 16` statt einem einzigen.
+    // (Jede spaetere Zeile schickt die Codepage ohnehin bewusst jedes Mal neu
+    // mit, siehe `setStyles` -- das ist kein Fehler und bleibt unangetastet;
+    // hier geht es allein um den doppelten Vorspann.) Letzter Byte-
+    // Unterschied zum JS-Zwilling, der die Codepage im Vorspann nur einmal
+    // setzt.
+    final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
+    await paper.setBelegBlatt(_fixture('storno-voll'), cut: false, qrMode: QrPrintMode.native);
+    final alle = paper.bytes.expand((b) => b).toList();
+    const codepage = [0x1B, 0x74, 16]; // ESC t 16 = CP1252
+    // Zwischen ESC @ und der Codepage steht der Druckbereich des Blatts
+    // (GS L 0 / GS W 384 bei 32 Zeichen) -- er beschreibt die Flaeche, in der
+    // der Drucker mitteln soll, und gehoert wie ESC @ in den Vorspann.
+    const bereich = [0x1D, 0x4C, 0, 0, 0x1D, 0x57, 0x80, 0x01];
+    final vorspann = [0x1B, 0x40, ...bereich, ...codepage]; // genau EIN ESC t 16
+    final verdoppelt = [0x1B, 0x40, ...bereich, ...codepage, ...codepage]; // ZWEIMAL
+    expect(_indexVon(alle, verdoppelt), -1,
+        reason: 'die Codepage steht im Vorspann doppelt');
+    expect(_indexVon(alle, vorspann), 0,
+        reason: 'der Vorspann muss mit ESC @ + genau einem ESC t 16 beginnen');
+  });
 }

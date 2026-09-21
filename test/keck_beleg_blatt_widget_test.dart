@@ -168,10 +168,10 @@ void main() {
       final mitte = tester.getCenter(blatt).dx;
       expect(tester.getCenter(find.byKey(const Key('keck-blatt-qr'))).dx, closeTo(mitte, 0.01));
       final bloecke = belegBlatt(layout, zeichen: zeichen, marke: true).bloecke;
-      final markeIndex = bloecke.length - 1;
-      final markeZeile = find.byKey(Key('keck-blatt-zeile-$markeIndex'));
-      expect(tester.widget<Text>(find.descendant(of: markeZeile, matching: find.byType(Text))).data!.trim(), markeText);
-      expect(tester.getCenter(markeZeile).dx, closeTo(mitte, 0.01));
+      expect(bloecke.last, isA<BlattMarke>(), reason: 'Marke ist der letzte Block, kein Text mehr');
+      final markeFinder = find.byKey(const Key('keck-blatt-marke'));
+      expect(markeFinder, findsOneWidget);
+      expect(tester.getCenter(markeFinder).dx, closeTo(mitte, 0.01));
       // Die Huelle selbst ist so breit wie verlangt -- das Blatt steht darin oben mittig.
       final huelle = find.byType(KeckBelegBlattWidget);
       expect(tester.getSize(huelle).width, aussen);

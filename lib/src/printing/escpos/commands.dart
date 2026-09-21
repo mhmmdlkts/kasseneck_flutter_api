@@ -7,6 +7,9 @@ const cInit = '$esc@'; // Initialize printer
 const cBeep = '${esc}B'; // Beeper [count] [duration]
 
 // Mech. Control
+const cLeftMargin = '${gs}L'; // Set left margin [nL] [nH]
+const cPrintArea = '${gs}W'; // Set print area width [nL] [nH]
+
 const cCutFull = '${gs}V0'; // Full cut
 const cCutPart = '${gs}V1'; // Partial cut
 

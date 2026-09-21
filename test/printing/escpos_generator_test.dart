@@ -139,8 +139,8 @@ void main() {
   });
 
   /// Index der ersten Fundstelle von [muster] in [bytes], sonst -1.
-  int stelle(List<int> bytes, List<int> muster) {
-    for (var i = 0; i + muster.length <= bytes.length; i++) {
+  int stelle(List<int> bytes, List<int> muster, {int ab = 0}) {
+    for (var i = ab; i + muster.length <= bytes.length; i++) {
       var passt = true;
       for (var j = 0; j < muster.length; j++) {
         if (bytes[i + j] != muster[j]) {
@@ -179,17 +179,112 @@ void main() {
   });
 
   test('Spaltenzeile: erst Ausrichtung, dann Position', () {
-    // Die erste Spalte ist zentriert, damit `setStyles` ueberhaupt einen
-    // Wechsel sieht (frischer Erzeuger steht auf links).
+    // Die erste Spalte bekommt seit dem Fix in jedem Fall links (siehe Test
+    // unten) -- hier wechselt darum nur die zweite Spalte tatsaechlich die
+    // Ausrichtung. Deren `ESC a` muss trotzdem vor der eigenen Position
+    // stehen, nicht vor der der ersten Spalte.
     final b = gen().row([
+      PosColumn(text: 'A', width: 6),
+      PosColumn(text: 'B', width: 6, styles: const PosStyles(align: PosAlign.right)),
+    ]);
+    final positionA = stelle(b, [0x1B, 0x24]);
+    final ausrichtung = stelle(b, [0x1B, 0x61]);
+    final positionB = stelle(b, [0x1B, 0x24], ab: positionA + 1);
+    expect(positionA, greaterThanOrEqualTo(0),
+        reason: 'Spalten werden weiterhin positioniert');
+    expect(positionB, greaterThanOrEqualTo(0));
+    expect(ausrichtung, greaterThan(positionA),
+        reason: 'die Ausrichtung gehoert zur zweiten Spalte');
+    expect(ausrichtung, lessThan(positionB));
+  });
+
+  test(
+      'Spaltenzeile: die erste Spalte bekommt am Drucker links, nie ihre '
+      'eigene Ausrichtung', () {
+    // `ESC a` wirkt nicht auf die Spalte, sondern auf die ganze Zeile bis
+    // zum naechsten Zeilenumbruch. Ginge fuer eine zentrierte oder
+    // rechtsbuendige erste Spalte auch "zentriert"/"rechts" an den Drucker,
+    // wendete er seine eigene Ausrichtung auf jede weitere Spalte derselben
+    // Zeile an -- dieselbe Fehlerklasse wie der behobene Ausrichtungsfehler,
+    // eine Ebene tiefer. Die tatsaechliche Ausrichtung fliesst nur noch in
+    // die von Hand berechnete Position ein (siehe Test oben).
+    //
+    // Um den Wechsel ueberhaupt sichtbar zu machen (ein frischer Erzeuger
+    // steht schon auf links), wird zuerst auf rechts gestellt.
+    final g = gen();
+    g.text('Vorher', styles: const PosStyles(align: PosAlign.right));
+    final b = g.row([
       PosColumn(text: 'A', width: 6, styles: const PosStyles(align: PosAlign.center)),
       PosColumn(text: 'B', width: 6, styles: const PosStyles(align: PosAlign.right)),
     ]);
-    final ausrichtung = stelle(b, [0x1B, 0x61]);
-    final position = stelle(b, [0x1B, 0x24]);
-    expect(position, greaterThanOrEqualTo(0),
-        reason: 'Spalten werden weiterhin positioniert');
-    expect(ausrichtung, greaterThanOrEqualTo(0));
-    expect(ausrichtung, lessThan(position));
+    expect(stelle(b, [0x1B, 0x61, 0x30]), greaterThanOrEqualTo(0),
+        reason: 'die erste Spalte bekommt links, nicht zentriert');
+    expect(stelle(b, [0x1B, 0x61, 0x31]), -1,
+        reason: 'zentriert darf nicht an den Drucker gehen -- sonst faerbt es die ganze Zeile');
+  });
+
+  test(
+      'Spaltenzeile: eine verworfene Ausrichtung in Spalte 2 bleibt fuer die '
+      'naechste echte Zeile spuerbar', () {
+    // Spalte 2 (colInd != 0) verlangt rechts -- der Drucker verwirft `ESC a`
+    // dort wortlos, weil es nicht am Zeilenanfang steht. Der Zustand darf
+    // sich den Wechsel trotzdem NICHT merken: sonst haelt die naechste echte
+    // Zeile (volle Breite, wirklich am Zeilenanfang) den Drucker faelschlich
+    // schon fuer rechtsbuendig und unterlaesst den Befehl -- die verworfene
+    // Ausrichtung bliebe dann fuer immer links stehen, obwohl "rechts"
+    // verlangt ist.
+    //
+    // Mit gesetzter globaler Codepage (wie im echten Druckweg, `reset()` +
+    // `setGlobalCodeTable`) -- das schreibt in `setStyles` einen eigenen
+    // Zweig, der die Ausrichtung ein zweites Mal spiegelt und damit den
+    // obigen Schutz aushebeln koennte, bliebe er dort unbeachtet.
+    final g = gen();
+    g.reset();
+    g.setGlobalCodeTable('CP1252');
+    g.row([
+      PosColumn(text: 'A', width: 6),
+      PosColumn(text: 'B', width: 6, styles: const PosStyles(align: PosAlign.right)),
+    ]);
+    final c = g.text('C', styles: const PosStyles(align: PosAlign.right));
+    expect(stelle(c, [0x1B, 0x61, 0x32]), greaterThanOrEqualTo(0),
+        reason: 'ESC a 2 (rechts) muss erneut vor "C" stehen -- der Drucker steht real noch auf links');
+  });
+
+  test(
+      'Spaltenzeile: rechtsbuendige Spalte mit doppelter Schriftbreite -- '
+      'die Positionsrechnung zaehlt weiterhin richtig', () {
+    // Zwilling des JS-Tests in escpos.test.ts ("row: 80 mm, rechtsbuendige
+    // Spalte mit doppelter Schriftbreite"). Sichert die Spaltenarithmetik,
+    // die seit der Ausrichtung-vor-Position-Umstellung HINTER der
+    // Stilausgabe steht: `setStyles` (mit `GS !` fuer die doppelte Breite)
+    // laeuft jetzt vor der Positionsrechnung, nicht mehr danach.
+    //
+    // Handrechnung (mm80 = 558 Punkte, 48 Zeichen/Zeile bei Fontgroesse A):
+    //   Spalte 2 (colInd 5, colWidth 7): bis = 558*12/12 - 1 - 5 = 552
+    //   Zeichenbreite doppelt = (558/48)*2 = 23,25; "XY" = 2 Zeichen = 46,5 Punkte
+    //   rechtsbuendig: von = 552 - 46,5 = 505,5 -> gerundet 506 = 0x01FA (250, 1)
+    final b = EscPosGenerator(EscPaperSize.mm80, CapabilityProfile()).row([
+      PosColumn(text: 'AB', width: 5),
+      PosColumn(
+        text: 'XY',
+        width: 7,
+        styles: const PosStyles(align: PosAlign.right, width: PosTextSize.size2),
+      ),
+    ]);
+    // Ohne gesetzte globale Codepage (kein `reset()`/`setGlobalCodeTable`
+    // vorab) bleibt `ESC t` hier aus -- nur `FS.` (Kanji aus) steht jedes Mal;
+    // die Positionsbytes sind trotzdem identisch zum JS-Zwilling.
+    expect(
+      b,
+      equals([
+        28, 46, 27, 36, 0, 0, 65, 66, // "AB" ab Position 0
+        27, 97, 50, // ESC a 2 (rechts)
+        29, 33, 16, // GS ! 16 -- doppelte Breite, einfache Hoehe
+        28, 46,
+        27, 36, 250, 1, // ESC $ 506
+        88, 89, // "XY"
+        10,
+      ]),
+    );
   });
 }

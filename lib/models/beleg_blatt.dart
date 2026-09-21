@@ -14,6 +14,7 @@ import 'dart:math' as math;
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/beleg_raster.dart';
+import 'package:kasseneck_api/models/marke_daten.dart';
 import 'package:kasseneck_api/src/printing/qr_groesse.dart';
 
 enum LogoStufe {
@@ -34,7 +35,6 @@ enum LogoStufe {
 
 const int punkteJeZeichen = 12;
 const int punkteJeZeile = 24;
-const String markeText = 'erstellt mit Kasseneck';
 
 class BlattLogo {
   final LogoStufe stufe;
@@ -70,6 +70,16 @@ class BlattQr extends BlattBlock {
   final String nutzlast;
   final double breiteAnteil;
   const BlattQr({required this.nutzlast, required this.breiteAnteil});
+}
+
+/// Das Kasseneck-Logo am Belegende, als Rasterbild fest in [breite] x [hoehe]
+/// Druckpunkten -- diese Masse kommen aus [markeRaster], nicht aus einem
+/// Anteil der Blattbreite: das Raster liegt fertig vor (Vertrag), nur welches
+/// der beiden Masse gilt, entscheidet die Papierbreite.
+class BlattMarke extends BlattBlock {
+  final int breite;
+  final int hoehe;
+  const BlattMarke({required this.breite, required this.hoehe});
 }
 
 class BelegBlatt {
@@ -142,12 +152,6 @@ double qrBlattAnteil(String nutzlast, KeckPaperSize papier, {QrModulGroesse groe
   return (gesamt * punkte) / papier.druckPunkte;
 }
 
-String _zentriert(String text, int zeichen) {
-  final t = text.length > zeichen ? text.substring(0, zeichen) : text;
-  final links = (zeichen - t.length) ~/ 2;
-  return ' ' * links + t + ' ' * (zeichen - t.length - links);
-}
-
 BelegBlatt belegBlatt(BelegLayout layout,
     {int? zeichen, BlattLogo? logo, bool marke = false, QrModulGroesse qrGroesse = QrModulGroesse.auto}) {
   final raster = BelegRaster.render(layout, zeichen: zeichen);
@@ -175,8 +179,15 @@ BelegBlatt belegBlatt(BelegLayout layout,
     bloecke.add(block(raster.lines[i]));
   }
   if (marke) {
-    bloecke.add(leerzeile);
-    bloecke.add(BlattZeile(text: _zentriert(markeText, n), fett: false, leer: false));
+    // Das Raster deckt nur die beiden bekannten Papierbreiten ab
+    // (markeRaster). Faende sich hier eine dritte, faellt die Marke weg statt
+    // ein Raster in falscher Groesse zu drucken -- derselbe Grundsatz wie
+    // beim Firmenlogo: eine Marke ist Zierde, der Beleg ist Pflicht.
+    final raster = markeRaster[papier];
+    if (raster != null) {
+      bloecke.add(leerzeile);
+      bloecke.add(BlattMarke(breite: raster.breite, hoehe: raster.hoehe));
+    }
   }
   return BelegBlatt(zeichen: n, bloecke: bloecke);
 }

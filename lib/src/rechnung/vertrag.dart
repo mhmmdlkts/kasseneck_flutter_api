@@ -56,6 +56,8 @@ const List<String> invoiceErrorCodes = [
   'reverse_charge_threshold',
   'mixed_supply_not_allowed',
   'oss_not_enabled',
+  'einvoice_unavailable',
+  'amount_too_large',
 ];
 
 /// Gründe einer Gutschrift; der Server druckt den deutschen Text.

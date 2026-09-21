@@ -143,10 +143,35 @@ class EscPosGenerator {
   List<int> reset() {
     List<int> bytes = [];
     bytes += cInit.codeUnits;
+    bytes += setDruckbereich();
     _styles = PosStyles();
     bytes += setGlobalCodeTable(_codeTable);
     bytes += setGlobalFont(_font);
     return bytes;
+  }
+
+  /// `GS L` + `GS W`: linker Rand auf 0, Druckbereich auf die Breite des
+  /// **Blatts** -- Zeichen je Zeile in Font A mal 12 Punkte (32 -> 384,
+  /// 48 -> 576).
+  ///
+  /// **Warum das noetig ist.** `ESC a 1` mittelt nicht im Blatt, sondern im
+  /// Druckbereich des *Geraets*. Steht das Blatt auf 58 mm (32 Zeichen) und
+  /// haengt ein 80-mm-Drucker daran, setzt er den Text in die linken 384
+  /// Punkte, mittelt QR, Logo und Marke aber in seinen 576 -- am Papier sitzt
+  /// dann alles Bildhafte gegenueber dem Text nach rechts gerueckt. Am Geraet
+  /// nachgestellt und bestaetigt: mit diesen acht Bytes im Vorspann steht
+  /// beides buendig.
+  ///
+  /// Bewusst nicht `_paperSize.width` (372/558, das Erbe fuer die
+  /// Spaltenrechnung), sondern das Raster, in dem der Text wirklich steht.
+  ///
+  /// Zwilling von `escPosSetDruckbereich` im npm-Paket (0.26.0).
+  List<int> setDruckbereich() {
+    final int punkte = _getMaxCharsPerLine(PosFontType.fontA) * 12;
+    return [
+      ...cLeftMargin.codeUnits, 0, 0,
+      ...cPrintArea.codeUnits, punkte & 0xff, punkte >> 8,
+    ];
   }
 
   /// Set global code table which will be used instead of the default printer's code table
@@ -176,13 +201,22 @@ class EscPosGenerator {
     return bytes;
   }
 
-  List<int> setStyles(PosStyles styles) {
+  /// `zeilenanfang` (Vorgabe `true`) sagt, ob dieser Aufruf am Anfang einer
+  /// Druckzeile steht. Nur dort nimmt der Drucker `ESC a` (Ausrichtung)
+  /// ueberhaupt an; mitten in der Zeile verwirft er den Befehl wortlos. Der
+  /// Bytestrom bekommt ihn trotzdem -- die Bytefolge soll sich dadurch nicht
+  /// aendern --, aber der intern gemerkte Zustand darf sich NICHT auf den
+  /// neuen Wert stellen: sonst haelt eine spaetere, echte Zeile die
+  /// Ausrichtung faelschlich schon fuer gesetzt und unterlaesst den Befehl.
+  List<int> setStyles(PosStyles styles, {bool zeilenanfang = true}) {
     List<int> bytes = [];
     if (styles.align != _styles.align) {
       bytes += latin1.encode(styles.align == PosAlign.left
           ? cAlignLeft
           : (styles.align == PosAlign.center ? cAlignCenter : cAlignRight));
-      _styles = _styles.copyWith(align: styles.align);
+      if (zeilenanfang) {
+        _styles = _styles.copyWith(align: styles.align);
+      }
     }
 
     if (styles.bold != _styles.bold) {
@@ -227,19 +261,24 @@ class EscPosGenerator {
     bytes += cKanjiOff.codeUnits;
 
     // Set local code table
+    //
+    // Die Ausrichtung wird hier bewusst NICHT nochmal mitgeschrieben (frueher
+    // `copyWith(align: styles.align, ...)`): das hebelte den Schutz oben aus,
+    // der eine verworfene Ausrichtung (mitten in der Zeile) gerade NICHT
+    // gemerkt haben will -- dieser Zweig lief unabhaengig vom `zeilenanfang`
+    // immer mit.
     if (styles.codeTable != null) {
       bytes += Uint8List.fromList(
         List.from(cCodeTable.codeUnits)
           ..add(_profile.getCodePageId(styles.codeTable)),
       );
-      _styles =
-          _styles.copyWith(align: styles.align, codeTable: styles.codeTable);
+      _styles = _styles.copyWith(codeTable: styles.codeTable);
     } else if (_codeTable != null) {
       bytes += Uint8List.fromList(
         List.from(cCodeTable.codeUnits)
           ..add(_profile.getCodePageId(_codeTable)),
       );
-      _styles = _styles.copyWith(align: styles.align, codeTable: _codeTable);
+      _styles = _styles.copyWith(codeTable: _codeTable);
     }
 
     return bytes;
@@ -542,6 +581,25 @@ class EscPosGenerator {
   }) {
     List<int> bytes = [];
 
+    // Eine volle Zeile beginnt am linken Rand -- da gibt es nichts zu setzen.
+    // Der Befehl entfiele nicht nur unnoetig: er ist genau das, was die
+    // Ausrichtung entwertet.
+    final bool volleZeile = colInd == 0 && colWidth == 12;
+
+    // Bekommt die Spalte ohnehin eine von Hand berechnete Position (siehe
+    // unten), darf an den Drucker nur "links" gehen -- nie ihre eigentliche
+    // Ausrichtung. `ESC a` wirkt nicht auf die Spalte, sondern auf die ganze
+    // Zeile bis zum naechsten Zeilenumbruch: eine zentrierte oder rechts-
+    // buendige erste Spalte wuerde sonst den Drucker seine eigene
+    // Zentrierung auf jede weitere Spalte derselben Zeile anwenden lassen --
+    // dieselbe Fehlerklasse wie der behobene Ausrichtungsfehler, eine Ebene
+    // tiefer. Die tatsaechliche Ausrichtung fliesst nur noch in die
+    // Positionsrechnung unten ein (ueber `styles`, nicht ueber diesen
+    // Befehl).
+    final PosStyles stylesFuerDrucker = colInd == 0 && !volleZeile
+        ? styles.copyWith(align: PosAlign.left)
+        : styles;
+
     // Die Ausrichtung MUSS vor dem Positionsbefehl stehen: `ESC a` gilt am
     // Drucker nur am Zeilenanfang; nach `ESC $` verwirft er ihn. Bis 7.0.1
     // stand die Position vorn -- damit blieb nach dem QR-Code (der zentriert
@@ -549,12 +607,8 @@ class EscPosGenerator {
     // Rasterzeile ist aber schon auf volle Breite zentriert; sie wurde also
     // ein zweites Mal zentriert und rutschte um (Zeichenzahl - Laenge) / 4
     // nach rechts.
-    bytes += setStyles(styles);
+    bytes += setStyles(stylesFuerDrucker, zeilenanfang: colInd == 0);
 
-    // Eine volle Zeile beginnt am linken Rand -- da gibt es nichts zu setzen.
-    // Der Befehl entfiele nicht nur unnoetig: er ist genau das, was die
-    // Ausrichtung entwertet.
-    final bool volleZeile = colInd == 0 && colWidth == 12;
     if (colInd != null && !volleZeile) {
       double charWidth = _getCharWidth(styles, maxCharsPerLine: maxCharsPerLine);
       double fromPos = _colIndToPosition(colInd);
