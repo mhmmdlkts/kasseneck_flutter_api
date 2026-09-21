@@ -29,6 +29,28 @@
   nachgezogen aus dem Sprung der Vertragsversion (0.22.0 → 0.26.0 für die Marke),
   inhaltlich unabhängig davon.
 
+### Fünf Nachträge aus der Schlussprüfung des Ausrichtungs-Vorhabens (7.1.0)
+
+- Druck: `row()` gibt der ersten Spalte am Drucker nur noch links, nie ihre eigentliche
+  Ausrichtung — eine zentrierte oder rechtsbündige erste Spalte ließ den Drucker seine
+  eigene Ausrichtung sonst auf jede weitere Spalte derselben Zeile anwenden (dieselbe
+  Fehlerklasse wie der in 7.1.0 behobene Ausrichtungsfehler, eine Ebene tiefer). Die
+  tatsächliche Ausrichtung fließt weiterhin in die von Hand berechnete Position ein.
+- Druck: ein `ESC a`, das der Drucker mitten in der Zeile (Spalte ab der zweiten)
+  wortlos verwirft, gilt intern nicht mehr als gesetzt — eine spätere, echte Zeile hielt
+  sich sonst fälschlich schon für umgestellt und unterließ den Befehl. Dabei auch einen
+  zweiten, unabhängigen Fund behoben: der Codepage-Zweig in `setStyles` schrieb die
+  Ausrichtung ein zweites Mal unbedingt fort und hebelte damit denselben Schutz aus,
+  sobald eine globale Codepage gesetzt war (im echten Druckweg immer der Fall).
+- Druck: `PrintPaper`-Konstruktor und `setBelegBlatt`/`setKeckReceipt`/... riefen beide
+  `reset()` — die Codepage stand darum im Vorspann jedes Belegs doppelt. Letzter
+  verbliebener Byte-Unterschied zum JS-Zwilling; der Zwillingsabgleich ist jetzt ohne
+  Ausnahme byteidentisch.
+- `ladeDruckLogo` merkt sich einen fehlgeschlagenen Logo-Abruf jetzt für `negativFrist`
+  (Vorgabe eine Minute, neuer Parameter) und versucht es in dieser Zeit nicht erneut.
+  Bisher kostete eine kaputte `logo_url` **jeden** Bon erneut bis zu drei Sekunden am
+  Tresen (siehe 7.1.0-Eintrag unten), ohne je zum Ziel zu kommen.
+
 ## 7.1.0
 
 - Druck: `ESC a` steht jetzt vor `ESC $`, und eine volle Zeile bekommt keinen Positionsbefehl mehr.
