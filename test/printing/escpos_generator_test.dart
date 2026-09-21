@@ -249,4 +249,42 @@ void main() {
     expect(stelle(c, [0x1B, 0x61, 0x32]), greaterThanOrEqualTo(0),
         reason: 'ESC a 2 (rechts) muss erneut vor "C" stehen -- der Drucker steht real noch auf links');
   });
+
+  test(
+      'Spaltenzeile: rechtsbuendige Spalte mit doppelter Schriftbreite -- '
+      'die Positionsrechnung zaehlt weiterhin richtig', () {
+    // Zwilling des JS-Tests in escpos.test.ts ("row: 80 mm, rechtsbuendige
+    // Spalte mit doppelter Schriftbreite"). Sichert die Spaltenarithmetik,
+    // die seit der Ausrichtung-vor-Position-Umstellung HINTER der
+    // Stilausgabe steht: `setStyles` (mit `GS !` fuer die doppelte Breite)
+    // laeuft jetzt vor der Positionsrechnung, nicht mehr danach.
+    //
+    // Handrechnung (mm80 = 558 Punkte, 48 Zeichen/Zeile bei Fontgroesse A):
+    //   Spalte 2 (colInd 5, colWidth 7): bis = 558*12/12 - 1 - 5 = 552
+    //   Zeichenbreite doppelt = (558/48)*2 = 23,25; "XY" = 2 Zeichen = 46,5 Punkte
+    //   rechtsbuendig: von = 552 - 46,5 = 505,5 -> gerundet 506 = 0x01FA (250, 1)
+    final b = EscPosGenerator(EscPaperSize.mm80, CapabilityProfile()).row([
+      PosColumn(text: 'AB', width: 5),
+      PosColumn(
+        text: 'XY',
+        width: 7,
+        styles: const PosStyles(align: PosAlign.right, width: PosTextSize.size2),
+      ),
+    ]);
+    // Ohne gesetzte globale Codepage (kein `reset()`/`setGlobalCodeTable`
+    // vorab) bleibt `ESC t` hier aus -- nur `FS.` (Kanji aus) steht jedes Mal;
+    // die Positionsbytes sind trotzdem identisch zum JS-Zwilling.
+    expect(
+      b,
+      equals([
+        28, 46, 27, 36, 0, 0, 65, 66, // "AB" ab Position 0
+        27, 97, 50, // ESC a 2 (rechts)
+        29, 33, 16, // GS ! 16 -- doppelte Breite, einfache Hoehe
+        28, 46,
+        27, 36, 250, 1, // ESC $ 506
+        88, 89, // "XY"
+        10,
+      ]),
+    );
+  });
 }
