@@ -50,6 +50,12 @@
   (Vorgabe eine Minute, neuer Parameter) und versucht es in dieser Zeit nicht erneut.
   Bisher kostete eine kaputte `logo_url` **jeden** Bon erneut bis zu drei Sekunden am
   Tresen (siehe 7.1.0-Eintrag unten), ohne je zum Ziel zu kommen.
+- Prüfung: Der Zwillingsabgleich am **Bytestrom** ist jetzt Teil der Test-Suite
+  (`test/printing/zwilling_bytestrom_test.dart`) statt eines Skripts von Hand. Vier
+  SHA-256 über den fertigen Bon (58/80 mm, mit und ohne Marke) stehen wortgleich im
+  npm-Paket; wer in einem der beiden Pakete am Druckweg dreht, macht dort oder hier
+  rot. Die bisherigen gemeinsamen Prüffälle deckten Raster, Zeilen und Blatt ab —
+  alles Stufen vor den Bytes.
 
 ## 7.1.0
 
