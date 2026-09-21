@@ -134,4 +134,29 @@ void main() {
       expect(alles, contains('Firma'));
     });
   }
+
+  test('setBelegBlatt setzt die Codepage im Vorspann nur einmal, nicht doppelt', () async {
+    // reset() laeuft zweimal auf demselben Erzeuger: einmal im
+    // PrintPaper-Konstruktor, einmal hier in setBelegBlatt. `generator.reset()`
+    // schickt die zuletzt hinterlegte Codepage jedes Mal von selbst erneut mit
+    // (ueber das generatorinterne `_codeTable`-Feld) -- ein zusaetzlicher,
+    // expliziter `setGlobalCodeTable`-Aufruf in `PrintPaper.reset()` verdoppelte
+    // sie darum bei jedem Reset nach dem allerersten: `ESC @` gefolgt von
+    // ZWEI unmittelbar aufeinanderfolgenden `ESC t 16` statt einem einzigen.
+    // (Jede spaetere Zeile schickt die Codepage ohnehin bewusst jedes Mal neu
+    // mit, siehe `setStyles` -- das ist kein Fehler und bleibt unangetastet;
+    // hier geht es allein um den doppelten Vorspann.) Letzter Byte-
+    // Unterschied zum JS-Zwilling, der die Codepage im Vorspann nur einmal
+    // setzt.
+    final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
+    await paper.setBelegBlatt(_fixture('storno-voll'), cut: false, qrMode: QrPrintMode.native);
+    final alle = paper.bytes.expand((b) => b).toList();
+    const codepage = [0x1B, 0x74, 16]; // ESC t 16 = CP1252
+    final vorspann = [0x1B, 0x40, ...codepage]; // ESC @ + genau EIN ESC t 16
+    final verdoppelt = [0x1B, 0x40, ...codepage, ...codepage]; // ESC @ + ZWEIMAL ESC t 16
+    expect(_indexVon(alle, verdoppelt), -1,
+        reason: 'die Codepage steht im Vorspann doppelt');
+    expect(_indexVon(alle, vorspann), 0,
+        reason: 'der Vorspann muss mit ESC @ + genau einem ESC t 16 beginnen');
+  });
 }

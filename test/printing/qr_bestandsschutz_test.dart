@@ -122,8 +122,15 @@ void main() {
     // ueberfluessiger `ESC a 0` vor der ersten Spalte diverser
     // `addDoubleText`/`_addTable`-Zeilen. Nachweis: .superpowers/sdd/
     // 2026-09-21-marke-einheitlich/task-7-punkt1-2-digest-nachweis/.
+    //
+    // Nachtrag Task 7, Punkt 4: noch einmal neu gezogen, diesmal wegen der
+    // im Vorspann doppelten Codepage (`PrintPaper`-Konstruktor UND
+    // `setBelegBlatt`/`setKeckReceipt`-Aufrufer riefen beide `reset()`) --
+    // eine einzelne entfallene `ESC t 16` direkt hinter der ersten, sonst
+    // nichts. Nachweis: .superpowers/sdd/2026-09-21-marke-einheitlich/
+    // task-7-punkt4-digest-nachweis/.
     expect(await belegDigest(KeckPaperSize.mm58),
-        '9faa4cd8c80bf710960e535e2b2dabf7a7990ab95a8377ffe1f9e8d5c3e8b800');
+        '6da56761f760af367ce5a0d176c3623654144d9754e0e466b677007b60538ddf');
   });
 
   test('80 mm: Beleg ohne Wahl byteidentisch mit 6.8.0', () async {
@@ -145,7 +152,12 @@ void main() {
     // diesmal wegen 14 entfallener ueberfluessiger `ESC a 0`. Nachweis:
     // .superpowers/sdd/2026-09-21-marke-einheitlich/
     // task-7-punkt1-2-digest-nachweis/.
+    //
+    // Nachtrag Task 7, Punkt 4: wie beim 58-mm-Fall noch einmal neu gezogen,
+    // wegen derselben einzelnen entfallenen `ESC t 16` im Vorspann. Nachweis:
+    // .superpowers/sdd/2026-09-21-marke-einheitlich/
+    // task-7-punkt4-digest-nachweis/.
     expect(await belegDigest(KeckPaperSize.mm80),
-        '105cbaa39f13d2fa2f42366808d4b14e7a212d17462c4bacbf181818eb34590b');
+        '62c3e6d1b4c0c3eacc835857e045ede41bc5936338dcc2158eb111ae513f9315');
   });
 }

@@ -98,9 +98,10 @@ void main() {
         await paper.setBelegBlatt(layout, logo: _druckLogo(zeichen), marke: true, cut: false, qrMode: QrPrintMode.native);
         expect(paper.qrFehler, isNull, reason: '$wo: QR fiel aus');
 
-        // Nach den zwei Kopfbefehlen von reset() (Initialisieren, Codepage)
-        // setzt jeder Block genau einen Befehl: Text, Vorschub, Rasterbild, QR.
-        final befehle = paper.bytes.skip(2).map((b) => latin1.decode(b, allowInvalid: true)).toList();
+        // Nach dem einen Kopfbefehl von reset() (Initialisieren + Codepage in
+        // einem Block, seit Task 7 Punkt 4 nicht mehr doppelt) setzt jeder
+        // Block genau einen Befehl: Text, Vorschub, Rasterbild, QR.
+        final befehle = paper.bytes.skip(1).map((b) => latin1.decode(b, allowInvalid: true)).toList();
         expect(befehle, hasLength(soll.length), reason: '$wo: Anzahl der gesetzten Bloecke');
         final alles = befehle.join();
         // Zwei Rasterbilder: das Firmenlogo und die Marke am Ende (ab 0.26.0
@@ -123,7 +124,7 @@ void main() {
               expect(text.length, zeichen, reason: '$wo2: Zeilenbreite');
               if (b['leer'] == true) {
                 expect(text, ' ' * zeichen, reason: '$wo2: Leerzeile mit Inhalt');
-                expect(paper.bytes[i + 2], [0x1b, 0x64, 1], reason: '$wo2: Leerzeile ist ein Vorschub');
+                expect(paper.bytes[i + 1], [0x1b, 0x64, 1], reason: '$wo2: Leerzeile ist ein Vorschub');
               } else {
                 final druck = _druckbar(text);
                 expect(ist.contains(_rasterbild) || ist.contains(_qrNativ), isFalse, reason: wo2);

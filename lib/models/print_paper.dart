@@ -44,6 +44,11 @@ class PrintPaper {
 
   PrintPaper({required this.paperSize, required CapabilityProfile profile})
       : generator = EscPosGenerator(paperSize.paperSize, profile) {
+    // Nur einmal im Erzeuger hinterlegen (dessen `_codeTable`-Feld) --
+    // `generator.reset()` liest sie von dort und schickt sie bei jedem
+    // Reset von selbst wieder mit. Die Rueckgabe hier wird bewusst
+    // verworfen: `reset()` gleich danach leert `bytes` ohnehin.
+    generator.setGlobalCodeTable('CP1252');
     reset();
   }
 
@@ -376,8 +381,12 @@ class PrintPaper {
     bytes.clear();
     qrFehler = null;
     qrAusweich = null;
+    // `generator.reset()` schickt die Codepage schon von selbst mit (sie
+    // steht seit dem Konstruktor im `_codeTable`-Feld des Erzeugers) -- ein
+    // zweiter, expliziter `setGlobalCodeTable`-Aufruf hier verdoppelte sie im
+    // Vorspann bei jedem Reset nach dem allerersten (letzter Byte-
+    // Unterschied zum JS-Zwilling).
     bytes.add(Uint8List.fromList(generator.reset()));
-    bytes.add(Uint8List.fromList(generator.setGlobalCodeTable('CP1252')));
     myPosPaper.commands.clear();
   }
 
