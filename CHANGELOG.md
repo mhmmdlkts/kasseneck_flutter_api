@@ -1,3 +1,18 @@
+## 7.2.0
+
+- Beleg: Am Ende steht das Kasseneck-Logo als Bild statt der Zeile „erstellt mit Kasseneck".
+  Das Raster kommt als Vertrag aus `@kreiseck/kasseneck-api` (0.26.0, `test/fixtures/vertrag/marke.json`,
+  `tool/zwillinge.sh`) in den beiden Druckmaßen (352 × 51 für 80 mm, 234 × 34 für 58 mm); zur
+  Laufzeit wird nichts gerastert, damit beide Pakete denselben Bytestrom erzeugen. `markeText`
+  entfällt, `BlattBlock` bekommt die neue Art `BlattMarke`.
+- Der alte Druckweg (`setKeckReceipt`/`_addKreiseckBranding`) zeigt jetzt dasselbe Kasseneck-Logo
+  statt des früheren Kreiseck-Logos mit „powered by" darunter — der letzte Ort, an dem auf einem
+  Kasseneck-Beleg noch ein Kreiseck-Logo stand. `assets/kreiseck_logo_print.png` entfällt.
+- `KeckBelegBlattWidget` und das ältere `KeckReceiptWidget` zeichnen die Marke am Bildschirm über
+  die Logo-Komponente aus `kreiseck_design` (`KdLogo`), nicht über das Druckraster.
+- `zwillinge.sh` zieht und prüft jetzt auch die Markendaten (aus `dist/esm/receipt/marke-daten.js`
+  des npm-Pakets) — der Zwillingsnachweis deckt damit erstmals auch Bilddaten ab.
+
 ## 7.1.0
 
 - Druck: `ESC a` steht jetzt vor `ESC $`, und eine volle Zeile bekommt keinen Positionsbefehl mehr.
