@@ -1,14 +1,33 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' show sha256;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
+import 'package:kasseneck_api/models/logo_raster.dart';
 import 'package:kasseneck_api/models/marke.dart';
 import 'package:kasseneck_api/models/marke_daten.dart';
 
 /// Zwilling von `test/marke-daten.test.ts` im JS-Paket: dieselben Masse,
-/// dasselbe Raster, derselbe Entpacker-Randfall.
+/// dasselbe Raster, derselbe Rundlauf, dasselbe Golden.
 final _vertrag = jsonDecode(File('test/fixtures/vertrag/marke.json').readAsStringSync()) as Map<String, dynamic>;
+
+/// Gegenstueck zu `rasterZeilenBytes` im JS-Paket -- packt ein Punkt-je-Byte-Bild
+/// (wie [entpackeRasterBits] es liefert) MSB zuerst, jede Zeile eigenstaendig auf
+/// volle Bytes aufgefuellt. Nur zum Bauen der Testmatrix: dieses Paket packt
+/// nichts selbst, es entpackt nur den fertigen Vertrag.
+Uint8List _rasterZeilenBytes(int breite, int hoehe, Uint8List punkte) {
+  final byteJeZeile = (breite / 8).ceil();
+  final bytes = Uint8List(byteJeZeile * hoehe);
+  for (var y = 0; y < hoehe; y++) {
+    for (var x = 0; x < breite; x++) {
+      if (punkte[y * breite + x] == 0) continue;
+      bytes[y * byteJeZeile + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+  }
+  return bytes;
+}
 
 void main() {
   test('marke_daten.dart stimmt mit dem Vertrag ueberein -- nicht abgetippt, nicht neu erzeugt', () {
@@ -41,18 +60,48 @@ void main() {
     }
   });
 
-  test('Randfall: Breite nicht durch 8 teilbar -- jede Zeile wird EIGENSTAENDIG aufgefuellt', () {
-    // 3 Zeilen a 10 Bit, also 2 Byte je Zeile (10 Bit + 6 Fuellbits). Wuerde
-    // der Entpacker die Bytes durchlaufend statt zeilenweise indizieren,
-    // liefe die dritte Zeile auf falsche Bytes -- genau der Fehler, den
-    // `byteJeZeile` pro Zeile (statt fuer den ganzen Puffer) verhindert.
-    // Zeile 0: alle 10 Punkte gesetzt      -> 0xFF, 0xC0
-    // Zeile 1: nur die ersten 8 gesetzt    -> 0xFF, 0x00
-    // Zeile 2: nur das neunte Bit gesetzt  -> 0x00, 0x80
-    final bits = base64.encode([0xFF, 0xC0, 0xFF, 0x00, 0x00, 0x80]);
-    final bild = entpackeRasterBits(bits, 10, 3);
-    expect(bild.punkte.sublist(0, 10), List.filled(10, 1), reason: 'Zeile 0');
-    expect(bild.punkte.sublist(10, 20), [1, 1, 1, 1, 1, 1, 1, 1, 0, 0], reason: 'Zeile 1');
-    expect(bild.punkte.sublist(20, 30), [0, 0, 0, 0, 0, 0, 0, 0, 1, 0], reason: 'Zeile 2');
+  // Der Schwarzanteil-Test oben ist eine Verhaeltnispruefung: ein vertauschter
+  // Bit-Index (LSB statt MSB) oder ein Versatz bei byteJeZeile ergaebe
+  // dieselbe Anzahl gesetzter Punkte, nur an falscher Stelle -- der Test
+  // bliebe gruen, das Logo kaeme schief aus dem Drucker. Dieser Test sichert
+  // darum die ANORDNUNG: ein bekanntes Bitmuster mit _rasterZeilenBytes
+  // packen (Gegenstueck zum JS-Packer) und mit entpackeRasterBits (demselben
+  // Entpacker, den markeBild benutzt) wieder auspacken -- heraus muss
+  // bitgenau dasselbe Bild kommen. Real Breiten (234, 352), nicht synthetisch
+  // -- 234 ist kein Vielfaches von 8, die letzte Spalte einer 234er-Zeile
+  // liegt in einem Byte mit ungenutzten Fuellbits danach: genau der Fall, an
+  // dem ein Versatz zuerst sichtbar wuerde. 352 ist ein Vielfaches von 8 und
+  // laeuft zum Vergleich mit.
+  test('Rundlauf _rasterZeilenBytes -> entpackeRasterBits: ein bekanntes Bitmuster bleibt bitgenau erhalten', () {
+    for (final breite in [234, 352]) {
+      const hoehe = 3;
+      final punkte = Uint8List(breite * hoehe);
+      // Zeile 0: Bytegrenzen (0, 7, 8, 9, 15, 16) und die letzten beiden Spalten.
+      for (final x in [0, 7, 8, 9, 15, 16, breite - 2, breite - 1]) {
+        punkte[x] = 1;
+      }
+      // Zeile 1: jedes achte Bit -- deckt jede Byte-Position innerhalb der Zeile ab.
+      for (var x = 0; x < breite; x += 8) {
+        punkte[breite + x] = 1;
+      }
+      // Zeile 2: nur die letzte Spalte -- der von der Pruefung benannte Sonderfall.
+      punkte[2 * breite + (breite - 1)] = 1;
+
+      final gepackt = _rasterZeilenBytes(breite, hoehe, punkte);
+      final entpackt = entpackeRasterBits(base64.encode(gepackt), breite, hoehe);
+      expect(entpackt.punkte, punkte, reason: 'Breite $breite: Rundlauf muss bitgenau sein');
+    }
+  });
+
+  // Golden auf das tatsaechlich erzeugte Raster der echten Marke: schlaegt an,
+  // sobald sich am Ergebnis von scripts/marke-raster.mjs (JS-Paket) oder am
+  // Entpacker irgendetwas aendert -- beabsichtigt (dann den Hash bewusst
+  // nachziehen) oder nicht (dann ist es ein Befund). Dieselben Hashes wie
+  // test/marke-daten.test.ts im JS-Paket: stimmen sie ueberein, entpacken
+  // beide Seiten denselben Vertrag bitgenau gleich.
+  test('Golden: das erzeugte Raster der echten Marke stimmt mit dem JS-Zwilling ueberein', () {
+    String hash(LogoRaster bild) => sha256.convert(bild.punkte).toString();
+    expect(hash(markeBild(KeckPaperSize.mm80)), 'ce3a6fb81f86cae93a56870d893c437e07d97bafec16114cf63dfa5368d25e7f');
+    expect(hash(markeBild(KeckPaperSize.mm58)), '7fb8dcf856622eb204e68abab4a66456500ca4cbdaea17bb1592caa499d70210');
   });
 }
