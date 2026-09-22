@@ -1,5 +1,5 @@
 {
-  "version": "0.26.0",
+  "version": "0.27.1",
   "meldungen": {
     "netz.keine_verbindung": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."

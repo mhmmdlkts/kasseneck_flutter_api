@@ -1,0 +1,27 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Preis unter einem Cent: 3.500.000 x 0,000004 EUR = 14,00 EUR netto. In ganzen Cent waere der Einzelpreis 0 und die Rechnung leer.",
+  "anfrage": {
+    "idempotencyKey": "bsp-mikro-1",
+    "customerId": "kunde_beispiel",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Strom",
+        "quantity": 3500000,
+        "unitPriceMicros": 4,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": true,
+    "totals": {
+      "netCents": 1400,
+      "vatCents": 280,
+      "grossCents": 1680
+    }
+  }
+}

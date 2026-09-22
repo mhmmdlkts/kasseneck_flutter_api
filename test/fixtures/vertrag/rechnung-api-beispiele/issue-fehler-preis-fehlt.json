@@ -1,0 +1,24 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Kein Preis: der Feldpfad zeigt auf unitPriceCents, den gewohnten Pflichtfehler.",
+  "anfrage": {
+    "idempotencyKey": "bsp-mikro-3",
+    "customerId": "kunde_beispiel",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Strom",
+        "quantity": 1,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].unitPriceCents"
+    ]
+  }
+}
