@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 1,
-  "paket": "0.26.0",
+  "paket": "0.27.1",
   "aufrufe": {
     "createCustomer": {
       "anfrage": {
@@ -376,7 +376,7 @@
                 "quantity": {
                   "type": "number",
                   "exclusiveMinimum": 0,
-                  "maximum": 1000000,
+                  "maximum": 1000000000,
                   "x-decimals": 3
                 },
                 "unit": {
@@ -443,6 +443,11 @@
                   "minimum": 0,
                   "maximum": 100000000
                 },
+                "unitPriceMicros": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000000000
+                },
                 "vatRate": {
                   "enum": [
                     0,
@@ -461,8 +466,19 @@
               "required": [
                 "description",
                 "quantity",
-                "unitPriceCents",
                 "vatRate"
+              ],
+              "oneOf": [
+                {
+                  "required": [
+                    "unitPriceCents"
+                  ]
+                },
+                {
+                  "required": [
+                    "unitPriceMicros"
+                  ]
+                }
               ],
               "additionalProperties": false
             }
@@ -619,7 +635,7 @@
                 "quantity": {
                   "type": "number",
                   "exclusiveMinimum": 0,
-                  "maximum": 1000000,
+                  "maximum": 1000000000,
                   "x-decimals": 3
                 },
                 "unit": {
@@ -686,6 +702,11 @@
                   "minimum": 0,
                   "maximum": 100000000
                 },
+                "unitPriceMicros": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000000000
+                },
                 "vatRate": {
                   "enum": [
                     0,
@@ -704,8 +725,19 @@
               "required": [
                 "description",
                 "quantity",
-                "unitPriceCents",
                 "vatRate"
+              ],
+              "oneOf": [
+                {
+                  "required": [
+                    "unitPriceCents"
+                  ]
+                },
+                {
+                  "required": [
+                    "unitPriceMicros"
+                  ]
+                }
               ],
               "additionalProperties": false
             }

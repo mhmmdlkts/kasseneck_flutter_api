@@ -1,0 +1,26 @@
+{
+  "aufruf": "issueInvoice",
+  "beschreibung": "Beide Preisfelder gesetzt: genau eines ist erlaubt. Der Feldpfad zeigt auf das zuletzt hinzugekommene.",
+  "anfrage": {
+    "idempotencyKey": "bsp-mikro-2",
+    "customerId": "kunde_beispiel",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Strom",
+        "quantity": 1,
+        "unitPriceCents": 100,
+        "unitPriceMicros": 1000000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "erwartet": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].unitPriceMicros"
+    ]
+  }
+}
