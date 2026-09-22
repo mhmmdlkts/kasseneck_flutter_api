@@ -1,3 +1,27 @@
+## 9.0.0
+
+### Einzelpreis in Mikro-Euro
+
+- **Breaking: `InvoiceItemInput.unitPriceCents` und `SummenPosition.unitPriceCents` sind
+  jetzt `num?`.** Eine Position trägt ihren Einzelpreis in ganzen Cent **oder** in
+  Mikro-Euro (`unitPriceMicros`, 10⁻⁶ €) — genau eines von beiden, im Debug-Lauf von
+  einem `assert` gefangen, am Server als `validation` mit Feldpfad. Wer den Preis
+  liest und damit rechnet, nimmt `preisInCent`: das nimmt ihn aus dem Feld, das ihn
+  trägt, und die Fallunterscheidung steht nicht an jeder Rechenstelle.
+  Aufrufe, die `unitPriceCents` setzen, bleiben unverändert gültig.
+- Grund: Preise unterhalb eines Cents (Verbrauchsabrechnung, Stückpreise im
+  Zehntelcent) mussten bisher schon beim Anlegen gerundet werden; der Rundungsfehler
+  steckte danach in jeder Zeile. 0,000004 € × 3.500.000 ergibt jetzt 14,00 € netto
+  statt 0,00 €.
+- `InvoiceItem` (Antwort) trägt `unitPriceMicros` als verbindlichen Preis;
+  `unitPriceCents` bleibt als Anzeigehilfe und ist unter einem halben Cent 0. Ein
+  älterer Server ohne das Feld wird weiter gelesen.
+- **Der Mikropreis gilt erst ab dem Schalter des Kontos.** Ohne ihn weist der Server
+  ihn ab und sagt, was zu tun ist — still gerundet wird nichts.
+- Noch nicht nachgezogen: die Vertragskopie unter `test/fixtures/vertrag/` steht auf
+  npm 0.26.0. Sie wird gezogen, sobald 0.27.0 veröffentlicht ist (`zwillinge.yaml`,
+  `tool/zwillinge.sh ziehen`) — die CI nimmt dafür bewusst keinen lokalen Tarball an.
+
 ## 8.0.0
 
 ### Marke am Belegende: das Kasseneck-Logo als Bild statt der Textzeile

@@ -210,13 +210,26 @@ class CustomerPage {
 abstract interface class SummenPosition {
   const factory SummenPosition({
     required num quantity,
-    required num unitPriceCents,
+    num? unitPriceCents,
+    num? unitPriceMicros,
     required num vatRate,
     num? discountPct,
   }) = _SummenPosition;
 
   num get quantity;
-  num get unitPriceCents;
+
+  /// Einzelpreis in ganzen Cent — `null`, wenn die Position ihren Preis in
+  /// Mikro-Euro trägt (genau eines von beiden, § 9.1 der Ganzzahl-Spec).
+  num? get unitPriceCents;
+
+  /// Einzelpreis in Mikro-Euro (10⁻⁶ €), für Preise unterhalb eines Cents.
+  num? get unitPriceMicros;
+
+  /// Der Preis in Cent, gleich welches Feld ihn trägt — `unitPriceMicros`
+  /// zählt dabei als Zehntausendstel Cent. Wer rechnet, nimmt das hier und
+  /// nicht eines der beiden Felder: sonst stünde die Fallunterscheidung an
+  /// jeder Rechenstelle, und eine davon vergäße man.
+  num get preisInCent => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
 
   /// Der USt-Satz in Prozent. Als `num`, weil es Saetze mit Nachkommastelle
   /// gibt (4,9 % Grundnahrungsmittel ab 01.07.2026).
@@ -225,34 +238,56 @@ abstract interface class SummenPosition {
 }
 
 class _SummenPosition implements SummenPosition {
-  const _SummenPosition({required this.quantity, required this.unitPriceCents, required this.vatRate, this.discountPct});
+  const _SummenPosition({
+    required this.quantity,
+    this.unitPriceCents,
+    this.unitPriceMicros,
+    required this.vatRate,
+    this.discountPct,
+  }) : assert(
+          (unitPriceCents == null) != (unitPriceMicros == null),
+          'Genau eines von unitPriceCents und unitPriceMicros angeben (§ 9.1).',
+        );
 
   @override
   final num quantity;
   @override
-  final num unitPriceCents;
+  final num? unitPriceCents;
+  @override
+  final num? unitPriceMicros;
   @override
   final num vatRate;
   @override
   final num? discountPct;
+
+  @override
+  num get preisInCent => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
 }
 
 class InvoiceItemInput implements SummenPosition {
+  /// Genau eines von [unitPriceCents] und [unitPriceMicros] (§ 9.1). Der
+  /// `assert` fängt den Irrtum schon im Debug-Lauf; der Server weist ihn sonst
+  /// als `validation` mit Feldpfad ab.
   const InvoiceItemInput({
     required this.description,
     required this.quantity,
-    required this.unitPriceCents,
+    this.unitPriceCents,
+    this.unitPriceMicros,
     required this.vatRate,
     this.subtitle,
     this.unit,
     this.kind,
     this.discountPct,
-  });
+  }) : assert(
+          (unitPriceCents == null) != (unitPriceMicros == null),
+          'Genau eines von unitPriceCents und unitPriceMicros angeben (§ 9.1).',
+        );
 
   factory InvoiceItemInput.fromJson(Map<String, dynamic> j) => InvoiceItemInput(
         description: _pflicht<String>(j, 'description'),
         quantity: _pflicht<num>(j, 'quantity'),
-        unitPriceCents: _pflicht<num>(j, 'unitPriceCents'),
+        unitPriceCents: j['unitPriceCents'] is num ? j['unitPriceCents'] as num : null,
+        unitPriceMicros: j['unitPriceMicros'] is num ? j['unitPriceMicros'] as num : null,
         vatRate: _pflicht<num>(j, 'vatRate'),
         subtitle: _text(j, 'subtitle'),
         unit: _text(j, 'unit'),
@@ -269,8 +304,15 @@ class InvoiceItemInput implements SummenPosition {
   /// Einzelpreis in ganzen Cent im `priceMode` der Rechnung. Als `num`, damit
   /// ein fehlerhafter Wert unverändert beim Server ankommt und dort als
   /// `validation` mit Feldpfad zurückkommt — nicht still gerundet.
+  /// `null`, wenn die Position ihren Preis in [unitPriceMicros] trägt.
   @override
-  final num unitPriceCents;
+  final num? unitPriceCents;
+
+  /// Einzelpreis in Mikro-Euro (10⁻⁶ €) — für Preise unterhalb eines Cents,
+  /// etwa in der Verbrauchsabrechnung. Gilt erst ab dem Schalter des Kontos;
+  /// ohne ihn weist der Server ihn mit `validation` ab und sagt es.
+  @override
+  final num? unitPriceMicros;
 
   /// Der USt-Satz in Prozent. Gesendet wird ein Satz aus [vatRates] (`0`,
   /// `10`, `13`, `20`); gelesen wird jeder Satz, den der Server schickt —
@@ -294,6 +336,9 @@ class InvoiceItemInput implements SummenPosition {
   @override
   final num? discountPct;
 
+  @override
+  num get preisInCent => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
+
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{};
     j['description'] = description;
@@ -301,7 +346,10 @@ class InvoiceItemInput implements SummenPosition {
     j['quantity'] = quantity;
     _setzen(j, 'unit', unit);
     _setzen(j, 'kind', kind);
-    j['unitPriceCents'] = unitPriceCents;
+    // Gesendet wird genau das Feld, das gesetzt ist -- beide zu senden waere
+    // ebenso ungueltig wie keines.
+    _setzen(j, 'unitPriceCents', unitPriceCents);
+    _setzen(j, 'unitPriceMicros', unitPriceMicros);
     j['vatRate'] = vatRate;
     _setzen(j, 'discountPct', discountPct);
     return j;
@@ -635,6 +683,7 @@ class InvoiceItem {
     required this.unit,
     required this.unitPriceCents,
     required this.vatRate,
+    this.unitPriceMicros,
     this.subtitle = '',
     this.discountPct = 0,
   });
@@ -645,6 +694,7 @@ class InvoiceItem {
         quantity: _pflicht<num>(j, 'quantity'),
         unit: _text(j, 'unit') ?? 'Stk',
         unitPriceCents: _pflicht<int>(j, 'unitPriceCents'),
+        unitPriceMicros: j['unitPriceMicros'] is num ? j['unitPriceMicros'] as num : null,
         vatRate: _pflicht<num>(j, 'vatRate'),
         discountPct: j['discountPct'] is num ? j['discountPct'] as num : 0,
       );
@@ -653,9 +703,22 @@ class InvoiceItem {
   final String subtitle;
   final num quantity;
   final String unit;
+
+  /// Einzelpreis in ganzen Cent — eine ANZEIGEHILFE: kaufmännisch aus
+  /// [unitPriceMicros] gerundet und damit 0, sobald der Preis unter einem
+  /// halben Cent liegt. Verbindlich sind [unitPriceMicros] und die Beträge je
+  /// Position (§ 9.3).
   final int unitPriceCents;
+
+  /// Einzelpreis in Mikro-Euro (10⁻⁶ €) — der verbindliche Preis. `null` nur,
+  /// wenn der Server ihn nicht darstellen konnte (Altbestand mit mehr als
+  /// sechs Nachkommastellen); ein geratener Wert wäre schlimmer als keiner.
+  final num? unitPriceMicros;
   final num vatRate;
   final num discountPct;
+
+  /// Der Preis in Cent, gleich welches Feld ihn trägt.
+  num get preisInCent => unitPriceMicros != null ? unitPriceMicros! / 10000 : unitPriceCents;
 }
 
 class CreditNoteSummary {
