@@ -54,7 +54,11 @@ InvoiceTotals rechnungSummen(Iterable<SummenPosition> items, String priceMode, [
   final jeSatz = <num, double>{};
   for (final p in items) {
     final satz = steuerfrei ? 0 : p.vatRate;
-    final zeile = (p.unitPriceCents / 100) * p.quantity * (1 - (p.discountPct ?? 0) / 100);
+    // `preisInCent` nimmt den Preis aus dem Feld, das ihn traegt (Cent oder
+    // Mikro-Euro). Die Rechenschritte bleiben dieselben wie im JS-Zwilling:
+    // nur so trifft das Gleitkomma Bit fuer Bit dieselbe Zahl. Exakt gerundet
+    // wird erst mit dem Stichtag (Schalter), im Zwilling ebenso.
+    final zeile = (p.preisInCent / 100) * p.quantity * (1 - (p.discountPct ?? 0) / 100);
     if (!zeile.isFinite) {
       throw ArgumentError('Position ergibt keine endliche Zahl (Menge, Preis oder Rabatt)');
     }

@@ -30,6 +30,8 @@ InvoiceTotals _brutto(int cent, int satz) =>
     rechnungSummen([SummenPosition(quantity: 1, unitPriceCents: cent, vatRate: satz)], 'gross');
 
 void main() {
+  mikropreisTests();
+
   group('Prüffälle aus dem Vertrag', () {
     test('jeder Fall trifft genau', () {
       // Die Mindestzahl haelt die Pruefung ehrlich: eine leere oder gekuerzte
@@ -184,6 +186,85 @@ void main() {
 
     test('keine Positionen ergeben null', () {
       expect(rechnungSummen(const [], 'net').toJson(), {'netCents': 0, 'vatCents': 0, 'grossCents': 0, 'byRate': []});
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Mikropreis (§ 9.1/§ 9.3, Paket 0.27.0)
+// ---------------------------------------------------------------------------
+
+void mikropreisTests() {
+  group('Einzelpreis in Mikro-Euro', () {
+    test('genau eines der beiden Preisfelder', () {
+      expect(
+        () => SummenPosition(quantity: 1, unitPriceCents: 100, unitPriceMicros: 1000000, vatRate: 20),
+        throwsA(isA<AssertionError>()),
+      );
+      expect(() => SummenPosition(quantity: 1, vatRate: 20), throwsA(isA<AssertionError>()));
+      expect(
+        () => InvoiceItemInput(description: 'A', quantity: 1, unitPriceCents: 100, unitPriceMicros: 4, vatRate: 20),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
+    test('preisInCent nimmt den Preis aus dem Feld, das ihn traegt', () {
+      expect(SummenPosition(quantity: 1, unitPriceCents: 3883, vatRate: 20).preisInCent, 3883);
+      // 38.830.000 Mikro-Euro sind 3883 Cent -- derselbe Preis.
+      expect(SummenPosition(quantity: 1, unitPriceMicros: 38830000, vatRate: 20).preisInCent, 3883);
+      // Unter einem Cent: 4 Mikro-Euro sind 0,0004 Cent.
+      expect(SummenPosition(quantity: 1, unitPriceMicros: 4, vatRate: 20).preisInCent, 0.0004);
+    });
+
+    test('dieselbe Leistung ergibt dieselbe Summe, gleich in welchem Feld', () {
+      final inCent = rechnungSummen(
+        [SummenPosition(quantity: 15, unitPriceCents: 3883, vatRate: 10, discountPct: 12.5)],
+        'net',
+      );
+      final inMikro = rechnungSummen(
+        [SummenPosition(quantity: 15, unitPriceMicros: 38830000, vatRate: 10, discountPct: 12.5)],
+        'net',
+      );
+      expect(inMikro.toJson(), inCent.toJson());
+    });
+
+    // Der Fall, fuer den es das Feld gibt: mit `unitPriceCents` waere der
+    // Preis 0 und die Rechnung leer.
+    test('ein Preis unter einem Cent ueberlebt bis in die Summe', () {
+      final summen = rechnungSummen(
+        [SummenPosition(quantity: 3500000, unitPriceMicros: 4, vatRate: 20)],
+        'net',
+      );
+      expect(summen.netCents, 1400);
+      expect(summen.grossCents, 1680);
+    });
+
+    test('die Anfrage sendet genau das gesetzte Feld', () {
+      final mitCent = InvoiceItemInput(description: 'A', quantity: 1, unitPriceCents: 100, vatRate: 20).toJson();
+      expect(mitCent['unitPriceCents'], 100);
+      expect(mitCent.containsKey('unitPriceMicros'), isFalse);
+
+      final mitMikro = InvoiceItemInput(description: 'A', quantity: 1, unitPriceMicros: 4, vatRate: 20).toJson();
+      expect(mitMikro['unitPriceMicros'], 4);
+      expect(mitMikro.containsKey('unitPriceCents'), isFalse);
+    });
+
+    test('gelesen wird, was der Server schickt', () {
+      final pos = InvoiceItem.fromJson({
+        'description': 'Strom', 'quantity': 3500000, 'unit': 'piece',
+        'unitPriceCents': 0, 'unitPriceMicros': 4, 'vatRate': 20,
+      });
+      expect(pos.unitPriceMicros, 4);
+      // Die Anzeigehilfe bleibt 0 -- verbindlich ist der Mikropreis.
+      expect(pos.unitPriceCents, 0);
+      expect(pos.preisInCent, 0.0004);
+
+      // Ein aelterer Server ohne das Feld: kein Absturz, der Cent-Preis gilt.
+      final alt = InvoiceItem.fromJson({
+        'description': 'Beratung', 'quantity': 1, 'unit': 'piece', 'unitPriceCents': 5000, 'vatRate': 20,
+      });
+      expect(alt.unitPriceMicros, isNull);
+      expect(alt.preisInCent, 5000);
     });
   });
 }
