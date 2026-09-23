@@ -1,3 +1,17 @@
+## 9.0.1
+
+- **README auf Englisch** und jede Angabe gegen den Code geprüft. Anfragen kommen inzwischen
+  auch aus dem Ausland, und auf pub.dev ist Englisch die Erwartung. RKSV-Begriffe bleiben
+  deutsch und werden beim ersten Vorkommen erklärt; das Glossar nennt dieselben Begriffe wie
+  der JS-Zwilling. Eine kurze deutsche Einstiegsseite liegt als `README.de.md` im Repo.
+- Dabei berichtigt: Versionsangabe und SDK-Grenzen, Plattformen (Web geht nicht, myPOS nur
+  Android, Bluetooth nur BLE), Umfang je Kartenanbieter, Storno über `KasseneckApi.stornieren`,
+  Beispiele mit fehlenden Importen, Kassenlade nur über den WLAN-Drucker.
+- `example/example.dart` zeigt den Storno mit Bezug statt des veralteten `cancelReceipt`; das
+  Dartdoc von `KasseneckApi` nennt `priceCents` statt des nicht vorhandenen `singlePrice`.
+- pubspec: englische Beschreibung, Themen `pos`, `payments`, `receipt`, `thermal-printer`,
+  `austria`.
+
 ## 9.0.0
 
 ### Einzelpreis in Mikro-Euro
