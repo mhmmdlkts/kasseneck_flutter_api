@@ -1,106 +1,68 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mhmmdlkts/kasseneck_flutter_api/main/doc/kasseneck.gif" alt="Kasseneck — RKSV-Registrierkasse aus Österreich" width="420">
+  <img src="https://raw.githubusercontent.com/mhmmdlkts/kasseneck_flutter_api/main/doc/kasseneck.gif" alt="Kasseneck, an RKSV fiscal cash register from Austria" width="420">
 </p>
 
 <h1 align="center">kasseneck_api</h1>
 
 <p align="center">
-  <b>Austrian fiscal cash register (RKSV) for Flutter — signed receipts, card payments, receipt printing.</b>
+  <b>Austrian fiscal cash register (RKSV) for Flutter: signed receipts, card payments, receipt printing.</b>
 </p>
 
 <p align="center">
   <a href="https://pub.dev/packages/kasseneck_api"><img src="https://img.shields.io/pub/v/kasseneck_api?color=136B6B&label=pub" alt="pub"></a>
   <a href="https://pub.dev/packages/kasseneck_api/score"><img src="https://img.shields.io/pub/points/kasseneck_api?color=136B6B" alt="pub points"></a>
   <img src="https://img.shields.io/badge/RKSV-%C2%A7%20131b%20BAO-136B6B" alt="RKSV">
-  <img src="https://img.shields.io/badge/Lizenz-MIT-136B6B" alt="MIT">
+  <img src="https://img.shields.io/badge/License-MIT-136B6B" alt="MIT">
   <a href="https://kasseneck.at"><img src="https://img.shields.io/badge/Kasseneck-kasseneck.at-132A2A" alt="kasseneck.at"></a>
-  <a href="https://kreiseck.com"><img src="https://img.shields.io/badge/von-Kreiseck-132A2A" alt="Kreiseck Software Solutions"></a>
+  <a href="https://kreiseck.com"><img src="https://img.shields.io/badge/by-Kreiseck-132A2A" alt="Kreiseck Software Solutions"></a>
 </p>
 
-**Kasseneck** ist eine österreichische Registrierkasse nach RKSV. Dieses Paket ist
-der Flutter-Client dafür: Ihre App stellt Belege aus, storniert sie, nimmt
-Kartenzahlungen entgegen und druckt Bons. Es ist der Zwilling des
-JavaScript-Pakets
+<p align="center">
+  <a href="https://github.com/mhmmdlkts/kasseneck_flutter_api/blob/main/README.de.md">Deutsche Kurzfassung</a>
+</p>
+
+**kasseneck_api** is the Flutter client for **Kasseneck**, a fiscal cash register
+(*Registrierkasse*) for Austria that follows the RKSV, the Austrian cash register
+security regulation. Your Flutter app sells, cancels and prints receipts; the
+Kasseneck backend does the receipt signing, chains every receipt into the data
+capture log (DEP) and reports to FinanzOnline. The package also covers card
+payments (hobex terminal and cloud, Stripe payment links), ESC/POS receipt
+printers and invoices.
+
+It is the twin of the JavaScript package
 [`@kreiseck/kasseneck-api`](https://www.npmjs.com/package/@kreiseck/kasseneck-api):
-dieselben Endpunkte, dieselben Modelle, dieselben Enum-Werte, im Test
-gegeneinander geprüft.
+both share endpoint names, enum values, error codes and golden receipts, and the
+test suite checks them against each other. The partner API of the JavaScript
+package is server-to-server only and deliberately not part of this package.
 
-## Was eine Registrierkasse in Österreich können muss
+## Contents
 
-Die Registrierkassen- und Belegerteilungspflicht steht in § 131b der
-Bundesabgabenordnung, die technischen Anforderungen an die Sicherheitseinrichtung
-in der Registrierkassensicherheitsverordnung (RKSV). Daraus ergibt sich eine
-ganze Kette von Aufgaben — die Tabelle zeigt, welche davon **diese Software**
-übernimmt und welche beim Betrieb selbst bleiben:
+- [Quick start](#quick-start)
+- [What a fiscal cash register in Austria has to do](#what-a-fiscal-cash-register-in-austria-has-to-do)
+- [Features](#features)
+- [Requirements and platforms](#requirements-and-platforms)
+- [Three ways to authenticate](#three-ways-to-authenticate)
+- [Selling: items, amounts, vouchers, tips](#selling-items-amounts-vouchers-tips)
+- [Cancellations (Storno)](#cancellations-storno)
+- [Sending a receipt by email](#sending-a-receipt-by-email)
+- [Error handling](#error-handling)
+- [Card payments](#card-payments)
+- [Printing and displaying receipts](#printing-and-displaying-receipts)
+- [Reports, receipt history, FinanzOnline status](#reports-receipt-history-finanzonline-status)
+- [Invoices (invoice API)](#invoices-invoice-api)
+- [RKSV details](#rksv-details)
+- [Glossary](#glossary)
 
-| Aufgabe | Wo sie erledigt wird |
-| --- | --- |
-| [Signaturerstellungseinheit](https://kasseneck.at/wissen/signaturerstellungseinheit) — jede Barzahlung wird signiert | Kasseneck, nichts zu installieren |
-| [Verkettung und DEP](https://kasseneck.at/wissen/dep) — jeder Beleg trägt den vorigen, das Protokoll ist exportierbar | Kasseneck-Backend |
-| [Startbeleg, Monatsbeleg, Jahresbeleg](https://kasseneck.at/wissen/startbeleg-monatsbeleg-jahresbeleg) | Kasseneck, automatisch |
-| [Meldungen an FinanzOnline](https://kasseneck.at/wissen/finanzonline) — Anmeldung, Ausfall, Außerbetriebnahme | Kasseneck-Backend |
-| [Belegerteilungspflicht](https://kasseneck.at/wissen/belegerteilungspflicht) — jeder Kunde bekommt einen Beleg | **dieses Paket** — Bon, Bildschirm, PDF oder Link |
-| [Ausfall der Signatureinheit](https://kasseneck.at/wissen/ausfall) — Sammelbeleg, Meldung, Nachsignatur | Kasseneck, automatisch |
-| [Kassennachschau](https://kasseneck.at/wissen/kassennachschau) — der Prüfer verlangt das DEP | Kasseneck, Export auf Knopfdruck |
-| Anmeldung der Kasse, Aufbewahrung, steuerliche Würdigung | **beim Unternehmer** |
-
-Kurz: Sie bauen die Kassenoberfläche, nicht die Sicherheitseinrichtung. Ein
-`sellReceipt(...)` erzeugt einen signierten, verketteten und im DEP abgelegten
-Beleg. Die Signaturkette wird gegen das offizielle Prüfwerkzeug des BMF getestet.
-
-> **Kein Rechts- oder Steuerrat.** Dieser Abschnitt beschreibt, was die Software
-> tut. Er ersetzt keine Beratung und begründet keine Zusicherung, dass ein
-> bestimmter Betrieb damit alle Pflichten erfüllt. Verbindlich sind die
-> Bundesabgabenordnung, die RKSV und die Erlässe des BMF; die Verantwortung für
-> Anmeldung, Betrieb und Aufbewahrung bleibt beim Unternehmer. Ausführlicher und
-> mit Quellen: [kasseneck.at/wissen](https://kasseneck.at/wissen).
-> Stand: September 2026.
-
-## Lieber eine fertige Kasse?
-
-Dieses Paket ist für alle, die eine eigene App bauen. Wer einfach kassieren will,
-muss nichts davon programmieren:
-
-- **[Kasseneck — die fertige Registrierkasse](https://kasseneck.at)** für Telefon,
-  Tablet und Browser, inklusive Signaturerstellungseinheit und
-  FinanzOnline-Anmeldung.
-- **[Lösungen nach Branche](https://kasseneck.at/branchen)** — vom Lokal bis zum Taxi.
-- **[Preise](https://kasseneck.at/preise)** · **[API-Doku](https://kasseneck.at/api-doku)**
-- **[Kontakt](https://kasseneck.at/kontakt)** — auch für Kassenwechsel,
-  Partnerschaften und eigene Integrationen.
-
-## Was drin ist
-
-- **RKSV-Belege** — Standard, Storno, Null und Training; signierte JWS-Kette samt QR-Code
-- **Alle österreichischen Steuersätze** — inklusive der **4,9 % für Grundnahrungsmittel** (seit 1. Juli 2026)
-- **Beträge in ganzen Cent** — intern nie Fließkomma, also keine Rundungsdrift
-- **Kartenzahlung ab Werk** — hobex (Cloud und Terminal-**HPS**), myPOS, GP Tom, SumUp — und **jedes andere Verfahren** über `CreditCardProvider.custom`
-- **Gutscheine** — Wert- und Rabattgutscheine, verkaufen und einlösen, mit anteiliger Steueraufteilung
-- **Trinkgeld** — je Kassen-Benutzer, bar oder mit Karte; Mitarbeiter-Trinkgeld läuft als 0-%-Durchlauf, Chef-Trinkgeld als Erlös, auf die Steuersätze des Belegs verteilt
-- **Druck** — Bluetooth und WLAN (ESC/POS) sowie der eingebaute myPOS-Drucker
-- **Fertiges Beleg-Widget** für die Anzeige am Schirm
-- **Berichte und Rechnungen** — Tages- und Monats-PDF
-- **Rechnungs-API** — Rechnungen nach § 11 UStG (keine Belege), Kunden, Storno und Teilgutschrift, PDF und E-Rechnung (UBL/CII)
-- **Stripe-Zahllinks** für Fern- und Onlinezahlungen
-
-## Voraussetzungen
-
-- Flutter, Dart ab 3.6
-- Ein Kasseneck-**API-Schlüssel** und ein **Kassen-Token** — [Kontakt](https://kasseneck.at/kontakt)
-- Für Kartenzahlung und Bluetooth-Druck ein **Android**-Gerät oder -Terminal: die Terminal-Pakete (myPOS, SumUp) sind Android-only. Der Rest des Pakets läuft überall, wo Flutter läuft.
-
-## Einbinden
+## Quick start
 
 ```yaml
 dependencies:
-  kasseneck_api: ^7.0.1
+  kasseneck_api: ^9.0.0
 ```
 
 ```bash
 flutter pub get
 ```
-
-## Schnellstart
 
 ```dart
 import 'package:kasseneck_api/kasseneck_api.dart';
@@ -109,66 +71,265 @@ import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
 
 final kasseneck = KasseneckApi(
-  apiKey: 'IHR_API_SCHLUESSEL',
-  cashregisterToken: 'IHR_KASSEN_TOKEN',
+  apiKey: 'YOUR_API_KEY',                  // kr_live_… or kr_test_…
+  cashregisterToken: 'YOUR_CASHBOX_TOKEN', // cb_live_… or cb_test_…
 );
 
-// Ein Barverkauf mit zwei Posten — Preise sind ganze Cent (320 = 3,20 €)
+// A cash sale with two items. Prices are integer cents (320 = EUR 3.20).
 final receipt = await kasseneck.sellReceipt(
   paymentMethod: KeckPaymentMethod.cash,
   customerDetails: ['Max Mustermann'],
   items: [
-    KasseneckItem(name: 'Kaffee', quantity: 2, vat: VatRate.vat20,      priceCents: 320),
-    KasseneckItem(name: 'Brot',   quantity: 1, vat: VatRate.vat4komma9, priceCents: 240),
-    // oder, wenn Sie Euro-Doubles haben: KasseneckItem.euro(..., singlePrice: 3.20)
+    KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20,      priceCents: 320),
+    KasseneckItem(name: 'Bread',  quantity: 1, vat: VatRate.vat4komma9, priceCents: 240),
+    // If you only have euro doubles: KasseneckItem.euro(..., singlePrice: 3.20)
   ],
 );
 
-print('Beleg ${receipt?.receiptId} — signiert: ${receipt?.signatureSuccess}');
+print('Receipt ${receipt?.receiptId}, signed: ${receipt?.signatureSuccess}');
 ```
 
-> Modelle und Enums liegen in eigenen Dateien — importieren Sie die, die Sie
-> brauchen (`models/…`, `enums/…`). Zahlung, Gutschrift, Null- und
-> Trainingsbelege laufen alle über dieselbe `KasseneckApi`-Instanz.
-> **Stornos gehen über `RegisterReceiptClient.stornieren`** (siehe unten);
-> `cancelReceipt` und `createCancelReceipt` auf `KasseneckApi` sind der
-> veraltete alte Weg.
+`sellReceipt` returns a signed receipt (*Beleg*) that is already chained into the
+DEP. Models and enums live in their own files; import the ones you need
+(`models/…`, `enums/…`). A runnable example is in
+[`example/example.dart`](example/example.dart).
 
-## Storno, ganz oder in Teilen
+You need a Kasseneck **API key** and a **cashbox token**. Ask for them via
+[kasseneck.at/kontakt](https://kasseneck.at/kontakt).
 
-Ein Storno ist ein **neuer signierter Beleg**, der einen bestehenden umkehrt —
-vollständig oder teilweise. Der Kassen-Client
-(`package:kasseneck_api/kasse.dart`, `RegisterReceiptClient`) spricht den
-Endpunkt `cancelReceipt` des Backends an; der Server negiert die Zeilen, prüft
-Restmengen und Rechte, verknüpft beide Belege und druckt die Bezugszeile auf den
-Stornobeleg.
+## What a fiscal cash register in Austria has to do
+
+The obligation to use a fiscal cash register and the obligation to issue receipts
+(*Belegerteilungspflicht*) are laid down in § 131b of the Austrian Federal Fiscal
+Code (BAO). The technical requirements for the security device are in the cash
+register security regulation (*Registrierkassensicherheitsverordnung*, RKSV).
+The table shows which of the resulting tasks **this software** handles and which
+stay with the business. The linked pages are in German.
+
+| Task | Where it is handled |
+| --- | --- |
+| [Signature creation unit (*Signaturerstellungseinheit*)](https://kasseneck.at/wissen/signaturerstellungseinheit): every receipt is signed | Kasseneck, nothing to install |
+| [Chaining and data capture log (DEP)](https://kasseneck.at/wissen/dep): every receipt carries its predecessor, the log can be exported | Kasseneck backend |
+| [Start receipt, monthly receipt, annual receipt (*Startbeleg, Monatsbeleg, Jahresbeleg*)](https://kasseneck.at/wissen/startbeleg-monatsbeleg-jahresbeleg) | Kasseneck, automatically |
+| [Reports to FinanzOnline](https://kasseneck.at/wissen/finanzonline): registration, failure, decommissioning (*Außerbetriebnahme*) | Kasseneck backend |
+| [Obligation to issue receipts (*Belegerteilungspflicht*)](https://kasseneck.at/wissen/belegerteilungspflicht): every customer gets a receipt | **this package**: printed receipt, screen, or a link by email |
+| [Signature unit failure (*Ausfall der Signatureinheit*)](https://kasseneck.at/wissen/ausfall): collective receipt, report, re-signing | Kasseneck, automatically |
+| [Cash register audit (*Kassennachschau*)](https://kasseneck.at/wissen/kassennachschau): the auditor asks for the DEP | Kasseneck, DEP export |
+| Registering the register, retention, tax assessment | **the business owner** |
+
+In short: you build the register's user interface, not the security device. One
+`sellReceipt(...)` call produces a signed, chained receipt stored in the DEP. The
+backend tests its signature chain against the official verification tool of the
+Austrian Federal Ministry of Finance (BMF).
+
+> **Not legal or tax advice.** This section describes what the software does. It
+> does not replace professional advice and does not promise that a particular
+> business meets all of its obligations by using it. The binding sources are the
+> BAO, the RKSV and the rulings of the BMF. Registering the cash register,
+> operating it and retaining records remain the duty of the business owner. More
+> detail with sources (in German): [kasseneck.at/wissen](https://kasseneck.at/wissen).
+> As of September 2026.
+
+### Prefer a ready-made register?
+
+This package is for people building their own app. If you just want to take
+payments, you do not need to write any code:
+
+- **[Kasseneck, the ready-made fiscal cash register](https://kasseneck.at)** for
+  phone, tablet and browser, including the signature creation unit and the
+  FinanzOnline registration.
+- **[Solutions by industry](https://kasseneck.at/branchen)**, from restaurants to taxis.
+- **[Pricing](https://kasseneck.at/preise)** · **[API docs](https://kasseneck.at/api-doku)**
+- **[Contact](https://kasseneck.at/kontakt)**, also for switching registers,
+  partnerships and custom integrations.
+
+## Features
+
+- **RKSV receipts:** sale (standard), cancellation and zero receipt (*Nullbeleg*),
+  each signed (ES256, JWS) and delivered with its QR code payload.
+- **All Austrian VAT (USt) rates** as `VatRate`: 0, 4.9 (basic food, since
+  1 July 2026), 10, 13, 19 and 20 %.
+- **Integer cents** for receipt amounts, so there is no rounding drift.
+- **Cancellations** in full or in part, with reason, remaining quantities and
+  stable error codes.
+- **Receipt by email** as a link to the public receipt page.
+- **Card payments:** hobex terminal (HPS, local REST API) and hobex Cloud with a
+  three-valued outcome, Stripe payment links, and card data from any other
+  terminal stored and printed on the receipt.
+- **Vouchers:** value and promo vouchers, sold and redeemed.
+- **Tips:** per register user, cash or card. Staff tips are booked as a 0 %
+  pass-through item, owner tips as revenue spread over the receipt's VAT rates.
+- **Printing:** ESC/POS over Wi-Fi (raw TCP) and Bluetooth Low Energy, plus the
+  built-in printer of myPOS devices. Raw ESC/POS builder for your own layouts.
+- **Receipt widgets** that render the same receipt as the printer.
+- **Reports:** daily and monthly report PDFs, receipt history.
+- **Register login flow:** device pairing, PIN login and sessions for register
+  users (`register.dart`, `kasse.dart`).
+- **Invoice API:** invoices under § 11 UStG (not receipts), customers,
+  cancellation and credit notes, PDF and e-invoice XML (UBL or CII).
+
+## Requirements and platforms
+
+- Dart SDK `^3.12.1`, Flutter `>=3.44.0` (see `pubspec.yaml`).
+- A Kasseneck API key and cashbox token for the receipt API. A test environment
+  with its own `kr_test_…` key exists; ask via
+  [kasseneck.at/kontakt](https://kasseneck.at/kontakt).
+- Platforms: pub.dev lists **Android** only, because the bundled myPOS plugin is
+  Android-only. The package is also used in iOS apps; there the myPOS calls do
+  not work. **Web is not supported** (printing and terminal discovery use
+  `dart:io` sockets).
+- Bluetooth printing uses `flutter_blue_plus`, i.e. **Bluetooth Low Energy**.
+  Printers that only speak classic Bluetooth (SPP) are not reachable.
+- The hobex HPS client talks HTTP to the terminal in the local network (or to
+  `127.0.0.1:8080` when the app runs on the terminal itself).
+
+## Three ways to authenticate
+
+| Client | Import | Credentials | Use it for |
+| --- | --- | --- | --- |
+| `KasseneckApi` | `kasseneck_api.dart` | API key as bearer + `cashregister-token` header, base URL `https://api.kasseneck.at/v1` | POS devices and apps: selling, cancelling, reports, card payments |
+| `RegisterClient`, `RegisterReceiptClient` | `register.dart`, `kasse.dart` | pairing code, then device secret + PIN, then a Firebase ID token and a register session, base URL `https://kasse.kasseneck.at/api` | Register apps where staff log in personally (permissions per user) |
+| `RechnungApi` | `rechnung.dart` | API key only, no cashbox token | Invoices and customers, typically from a server |
+
+The register login in short: `RegisterClient().pairRegisterDevice(code: …)`
+exchanges a pairing code from the Kasseneck panel for a permanent device
+identity; `registerUserLogin(…)` or `registerPinLogin(…)` returns a
+`customToken` and a `sessionId`. Your app signs in to Firebase Auth with the
+`customToken` (this package does not depend on `firebase_auth`) and builds the
+session transport:
 
 ```dart
 import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/register.dart';
 
-final ergebnis = await client.stornieren(
-  originalReceiptId: 'KASSE1-ID-42',
-  grund: 'fehleingabe',                       // Katalog: stornogruende
-  positionen: [(index: 0, menge: 1)],         // weglassen = alles Verbliebene stornieren
-  anmerkung: 'Kunde wollte nur eine',         // interne Notiz, wird nie gedruckt
+final transport = RegisterTransport(
+  idToken: () async => firebaseUser.getIdToken(),  // asked on every call
+  sessionId: () async => currentSessionId,         // renew every 30 s, lives 90 s
+  cashregisterId: device.cashregisterId,
 );
-ergebnis.beleg;        // der signierte Stornobeleg
-ergebnis.restmengen;   // was je Zeile des Originals noch offen ist
+final client = RegisterReceiptClient(transport);
+final receipt = await client.verkaufen(
+  positionen: [KasseneckItem(name: 'Coffee', quantity: 1, vat: VatRate.vat20, priceCents: 320)],
+  zahlungsart: KeckPaymentMethod.cash,
+);
 ```
 
-**Entscheiden Sie am Fehlercode, nie an der Meldung.** Jeder fachliche Fehler von
-`cancelReceipt` trägt `KasseneckApiError.code` aus `stornoFehlercodes` — etwa
-`bereits_storniert`, `menge_ueber_rest`, `nur_eigene_belege`. Die deutsche
-`message` ist für die Anzeige und kann sich ändern.
+`RegisterSessionClient.aus(transport).renewRegisterSession()` keeps the session
+alive. Nothing on this path is retried automatically: a receipt is not safely
+repeatable.
+
+## Selling: items, amounts, vouchers, tips
+
+**Amounts are integer cents.** `KasseneckItem.priceCents` is the gross unit
+price in cents, `quantity` a whole number. `KasseneckItem.euro(singlePrice: …)`
+converts a euro double once. Euro doubles appear only where an external API
+requires them (hobex, SumUp).
+
+`sellReceipt` takes, besides `items` and `paymentMethod`:
+
+- `vouchers`: `KeckVoucher(action: VoucherAction.sell or .redeem, type: VoucherType.value or .promo, valueCents: …)`.
+  Promo vouchers can only be redeemed, only one per receipt and not together
+  with other vouchers (`checkVoucherCombinationError` returns the reason).
+- `tip`: `KeckTip.fuer(registerUserId, cents: 200)` or `KeckTip(cents: …, recipients: …)`.
+  The backend books it as its own line; `listTipRecipients()` returns the people
+  a tip can be assigned to. A receipt needs at least one item for a tip.
+- `customerDetails`, `legalMessage`: extra lines on the receipt.
+- `creditCardProvider`, `cardPaymentId`, `cardPaymentData`: see
+  [Card payments](#card-payments).
+
+`zeroReceipt()` issues a zero receipt (*Nullbeleg*). Start, monthly and annual
+receipts are created by the backend.
+
+## Cancellations (Storno)
+
+A cancellation (*Storno*) is a **new signed receipt** that reverses an existing
+one, in full or in part. The backend negates the lines, checks remaining
+quantities and permissions, links both receipts (`cancellationOf` on the
+cancellation, `cancellations[]` on the original) and prints the reference line on
+the cancellation receipt. The original stays byte-identical.
+
+Two entry points, same endpoint (`cancelReceipt`):
+
+```dart
+// API key (package:kasseneck_api/kasseneck_api.dart)
+final result = await kasseneck.stornieren(
+  cashregisterId: original.cashregisterId,
+  originalReceiptId: original.receiptId,
+  grund: 'fehleingabe',                 // key from stornogruende
+  positionen: [(index: 0, menge: 1)],   // omit = cancel everything that is left
+  anmerkung: 'Customer wanted one',     // internal note, max 200 chars, never printed
+);
+result.beleg;       // the signed cancellation receipt
+result.restmengen;  // remaining quantity per line of the original
+
+// Register session (package:kasseneck_api/kasse.dart)
+final result2 = await client.stornieren(originalReceiptId: id, grund: 'fehleingabe');
+```
+
+- Reasons (`stornogruende`): `fehleingabe` (wrong entry), `kunde_storniert`
+  (customer cancelled), `falsche_zahlart` (wrong payment method),
+  `doppelt_erfasst` (entered twice), `sonstiges` (other). The German label is
+  printed on the receipt.
+- An **empty** `positionen` list is an error, so that a broken partial
+  cancellation never silently becomes a full one.
+- `KasseneckApi.stornieren` also accepts `kartenanbieter`, `kartenzahlungId` and
+  `kartenzahlungsdaten` for the **refund** at the terminal (only with card as the
+  refund method). `RegisterReceiptClient.stornieren` has no card arguments.
+- `restmengen(receipt)` (from `kasse.dart`) computes remaining quantities
+  locally from the original's `cancellations`; the server has the final word.
+
+**Vouchers.** A value voucher is only mirrored on a full cancellation (without
+`positionen`); it cannot be split. A promo voucher is already part of the
+original's turnover, so **every** cancellation takes it back in proportion to the
+cancelled quantity: 3 × EUR 10 with a EUR 6 discount is EUR 8 per piece, so the
+cancellation shows "−10,00" plus a line "Gutschein-Ausgleich +2,00" (voucher
+adjustment). What a cancellation granted is stored on its entry in
+`receipt.cancellations` as `promoAdjustmentCents` (cents per VAT bucket).
+
+**Deprecated:** `KasseneckApi.cancelReceipt` and `createCancelReceipt` use the
+old path via `createReceipt` without a reference to the original: no remaining
+quantities, no protection against cancelling twice, vouchers are not taken back.
+The backend still accepts them but answers with a deprecation notice.
+
+## Sending a receipt by email
+
+The guest gives an address at the counter and receives a **link to the public
+receipt page**, no PDF attachment. That page offers a PDF. The receipt document
+itself stays byte-identical (it is part of the DEP); the backend logs the
+delivery separately.
+
+```dart
+// Register session (package:kasseneck_api/kasse.dart)
+final sent = await client.belegSenden(fullReceiptId: receipt.fullReceiptId, an: 'guest@example.com');
+// API key (package:kasseneck_api/kasseneck_api.dart)
+final sent2 = await kasseneck.belegSenden(fullReceiptId: receipt.fullReceiptId, an: 'guest@example.com');
+
+sent.to;   // normalised address as logged by the backend
+sent.at;   // ISO timestamp in Vienna time
+sent.via;  // 'eigen' (business mailbox), 'plattform' or 'plattform-fallback'
+```
+
+With the API key, the cashbox token decides which register is meant. Error codes
+(`belegMailFehlercodes`): `adresse_ungueltig` (let the user correct it),
+`zu_oft` (the backend allows five mails per receipt in 24 hours and 30 per
+register per hour; try later), `versand_fehlgeschlagen` (nothing was sent, a new
+attempt is fine), `beleg_nicht_gefunden` (unknown receipt **or** one of another
+register; the backend answers both the same way). Only the backend validates the
+address.
+
+## Error handling
+
+Decide on the **error code**, never on the message text. The messages are German
+and may change.
 
 ```dart
 try {
-  await client.stornieren(originalReceiptId: id, grund: 'fehleingabe');
+  await kasseneck.stornieren(cashregisterId: crId, originalReceiptId: id, grund: 'fehleingabe');
 } on KasseneckApiError catch (e) {
   switch (e.code) {
-    case 'bereits_storniert': // Beleg als storniert zeigen, Knopf sperren
-    case 'menge_ueber_rest':  // Restmengen neu laden (jemand war schneller)
-    case 'nur_eigene_belege': // den Chef fragen
+    case 'bereits_storniert': // show as cancelled, disable the button
+    case 'menge_ueber_rest':  // reload remaining quantities (someone was faster)
+    case 'nur_eigene_belege': // ask the manager
       break;
     default:
       rethrow;
@@ -176,143 +337,126 @@ try {
 }
 ```
 
-**Gutscheine.** Ein Wertgutschein wird nur bei einem Vollstorno gespiegelt (ohne
-`positionen`) — er ist unteilbar. Ein Rabattgutschein steckt bereits im Umsatz des
-Originals; **jedes** Storno nimmt ihn anteilig zur stornierten Menge zurück:
-3 × 10 € mit 6 € Rabatt sind 8 € je Stück, der Stornobeleg zeigt also „−10,00"
-und dazu eine Zeile „Gutschein-Ausgleich +2,00". Was ein Storno gewährt hat,
-steht an seinem Eintrag in `receipt.cancellations` als `promoAdjustmentCents`
-(Cent je Steuerkorb) — die Kasse kann es anzeigen und muss es nie selbst rechnen.
+The error types are exported from `kasseneck_api.dart` and `rechnung.dart`.
+`kasse.dart` exports only `KasseneckReceiptFormatError`; to catch the others on
+the register path, import `kasseneck_api.dart` as well.
 
-Vor einem Storno liefert `restmengen(beleg)` die Restmengen aus der
-`cancellations`-Liste des Originals; maßgeblich bleibt der Server.
+| Type | Meaning |
+| --- | --- |
+| `KasseneckApiError` | The backend refused (`code`, `message`, `details`). Code catalogues: `stornoFehlercodes`, `belegMailFehlercodes`, `invoiceErrorCodes`. |
+| `KasseneckValidationError` | A request was rejected before sending (`'request'`), or a response lacks a required field (`'response'`, may carry `receiptId`). |
+| `KasseneckHttpError` | Transport problem: `reason` is e.g. `KasseneckHttpError.zeitablauf` (timeout), `KasseneckHttpError.netz` (network) or `'not-json'`. |
+| `KasseneckReceiptFormatError` | The receipt was issued and signed, but the response could not be read. It carries the `receiptId`; fetch the receipt with `getReceipt`. **Do not sell again.** |
 
-## Beleg per E-Mail senden
+`KasseneckApi.sellReceipt` and `zeroReceipt` behave differently from the newer
+calls: invalid input throws `ArgumentError`, a refusal by the backend or a
+non-200 HTTP status throws a plain `Exception`, and a request that exceeds
+`signatureTimeout` (default 90 s) throws a `TimeoutException`. A timeout does not
+mean the receipt failed, because the backend may have signed it already. Check
+the receipt history before selling again.
 
-Der Gast nennt an der Kasse eine Adresse und bekommt einen **Link auf die
-öffentliche Belegseite** — ohne PDF im Anhang: diese Seite nutzt dasselbe
-Zeilenmodell wie Schirm und Bondrucker und bietet dort ein PDF an. Das
-Belegdokument selbst bleibt byteidentisch (es ist das DEP, § 131 BAO); das
-Backend protokolliert den Versand daneben.
+## Card payments
 
-```dart
-// Kassen-Anmeldung (package:kasseneck_api/kasse.dart)
-final erg = await client.belegSenden(fullReceiptId: beleg.fullReceiptId, an: 'gast@example.com');
-// API-Schlüssel (package:kasseneck_api/kasseneck_api.dart)
-final erg2 = await kasseneck.belegSenden(fullReceiptId: id, an: 'gast@example.com');
+A card payment has three possible outcomes, not two: approved, definitely
+declined, or **unknown** (timeout, lost connection, the terminal never
+answered). Treating "unknown" as "declined" and retrying is how a customer gets
+charged twice. `HpsPayments` and `HobexCloudPayments` fix the transaction ID
+**before** the first network call and, if the answer is lost, resolve that same
+ID instead of starting a new charge. A lost answer ends in
+`CardPaymentOutcome.unresolved` (keep the ID, resolve later) rather than a guess.
 
-erg.to;   // normalisierte Adresse, wie das Backend sie protokolliert hat
-erg.at;   // ISO-Zeitstempel in Wiener Zeit
-erg.via;  // 'eigen' | 'plattform' | 'plattform-fallback'
-```
+| Provider | What the package does |
+| --- | --- |
+| **hobex HPS** (terminal in the local network) | `HpsPayments`: `pay`, `refund`, `cancel` with a resolved three-valued outcome; `discoverHpsTerminals` finds terminals in the LAN |
+| **hobex Cloud** (via the Kasseneck backend) | `HobexCloudPayments.pay` with the same outcome; refunds via `kasseneck.hobexRefund(...)` |
+| **Stripe** | payment links for remote and online payments: `createStripeLink`, `stripeCaptureIntent` |
+| **SumUp** | thin wrapper around the `sumup` plugin: `SumupService` in `services/sumup_service.dart` |
+| **any other terminal** (for example GP Tom or myPOS) | pass your terminal's result as `creditCardProvider`, `cardPaymentId`, `cardPaymentData`; it is stored and printed on the receipt |
 
-**Entscheiden Sie auch hier am Fehlercode** — `KasseneckApiError.code` aus
-`belegMailFehlercodes`: `adresse_ungueltig` (korrigieren lassen), `zu_oft` (das
-Backend erlaubt fünf Mails je Beleg in 24 Stunden und 30 je Kasse pro Stunde —
-später, nicht jetzt), `versand_fehlgeschlagen` (nichts ist hinausgegangen, ein
-neuer Versuch ist in Ordnung), `beleg_nicht_gefunden` (unbekannter Beleg **oder**
-einer, der zu einer anderen Kasse gehört — das Backend antwortet bewusst in
-beiden Fällen gleich). Die Adresse prüft allein das Backend: eine zweite,
-strengere Prüfung hier würde Adressen abweisen, die der Server annimmt.
-
-## Kartenzahlung
-
-Kartenzahlung läuft **ab Werk** mit mehreren Terminals — und Sie sind an keines
-gebunden:
-
-| Verfahren | Wie |
-|---|---|
-| **hobex Cloud** (empfohlen) | `HobexCloudPayments` — `pay(...)` mit aufgelöstem, dreiwertigem Ausgang |
-| **hobex HPS** (Terminal vor Ort, empfohlen) | `HpsPayments` — `pay`/`refund`/`cancel`, derselbe dreiwertige Ausgang |
-| **myPOS · GP Tom · SumUp** | unterstützt und am Beleg ausgewiesen |
-| **Jedes andere Terminal** | `CreditCardProvider.custom` — eigene Kartendaten übergeben |
-
-Welches Terminal auch immer: das Ergebnis geht als `cardPaymentData` an
-`sellReceipt(...)` und wird am Beleg gespeichert und gedruckt.
-
-**Warum `HpsPayments`/`HobexCloudPayments` statt des Terminals direkt:** Eine
-Kartenzahlung hat drei mögliche Ausgänge, nicht zwei — genehmigt, sicher
-abgelehnt, oder *unbekannt* (Zeitablauf, abgerissene Verbindung, das Terminal hat
-nie geantwortet). „Unbekannt" als „abgelehnt" zu behandeln und es erneut zu
-versuchen, ist genau der Weg, auf dem ein Kunde zweimal belastet wird. Beide
-Klassen legen die Transaktionskennung **vor** dem ersten Netzaufruf fest und
-lösen dieselbe Kennung beim Terminal bzw. in der Cloud auf, wenn die erste
-Antwort verlorengeht, statt still einen neuen Versuch zu starten — eine verlorene
-Antwort endet also in `CardPaymentOutcome.unresolved` (Kennung behalten, später
-auflösen) statt geraten zu werden.
+hobex amounts are euros (`amount: 12.50`), as the hobex API expects.
 
 <details>
-<summary><b>Beispiel — hobex-Terminal vor Ort (HPS) zum signierten Beleg</b></summary>
+<summary><b>Example: hobex terminal (HPS) to signed receipt</b></summary>
 
 ```dart
-import 'package:kasseneck_api/hobex_hps.dart'; // HpsClient, HpsPayments, HpsResult, CardPaymentOutcome, HobexReceipt
+import 'package:kasseneck_api/hobex_hps.dart'; // HpsClient, HpsPayments, CardPaymentOutcome, HobexReceipt
 
-final hps = HpsPayments(HpsClient(tid: '3600335')); // TID ohne führende Null
+// Default base URL is http://127.0.0.1:8080 (app runs on the terminal).
+// Terminal in the LAN: HpsClient(baseUrl: Uri.parse('http://192.168.1.50:8080'), tid: …)
+final hps = HpsPayments(HpsClient(tid: '3600335')); // TID without leading zero
 
-// Die Kennung steht fest, BEVOR die Anfrage hinausgeht — sofort speichern, damit
-// eine verlorene Antwort später aufgelöst und nicht blind wiederholt wird.
+// The ID is fixed BEFORE the request goes out. Persist it right away, so that a
+// lost answer can be resolved later instead of being retried blindly.
 final transactionId = HpsClient.newTransactionId();
 
 final result = await hps.pay(amount: 12.50, transactionId: transactionId);
 
 switch (result.outcome) {
   case CardPaymentOutcome.approved:
-    break; // weiter unten
+    break; // continue below
   case CardPaymentOutcome.declined:
-    return; // sicher kein Geld geflossen — ein neuer Versuch ist unbedenklich
+    return; // definitely no money moved; a new attempt is safe
   case CardPaymentOutcome.unresolved:
-    // Nicht innerhalb des Auflösungsbudgets geklärt (90 s, einstellbar).
+    // Not resolved within the resolve budget (90 s, configurable).
     //
-    // Hier NICHT wiederholen. Am echten Terminal gemessen (26.08.2026): dieselbe
-    // transactionId erneut zu senden startet einen ZWEITEN Kartenvorgang — das
-    // Terminal erkennt sie nicht als dieselbe Transaktion. Eine Wiederholung ist
-    // eine echte zweite Belastung, keine gefahrlose Wiedervorlage.
+    // Do NOT retry here. Measured on a real terminal (2026-08-26): sending the
+    // same transactionId again starts a SECOND card transaction; the terminal
+    // does not recognise it as the same one. A retry is a real second charge.
     //
-    // `transactionId` behalten, den Ausgang zuerst auflösen —
-    // `HpsClient.transactionStatus(...)`, sobald das Terminal wieder antwortet —
-    // und erst auf einen bekannten Ausgang hin handeln.
-    // doc/kartenzahlung.md beschreibt, was die einzelnen Antwortcodes bedeuten.
+    // Keep transactionId and resolve the outcome first
+    // (HpsClient.transactionStatus(...) once the terminal answers again), then
+    // act on a known outcome. doc/kartenzahlung.md (German) explains the
+    // individual response codes.
     return;
 }
 
-// Terminal-Ergebnis übernehmen, dann den signierten Beleg erzeugen.
+// Take over the terminal result, then create the signed receipt.
 final card = HobexReceipt.fromHps(result.response!);
 await kasseneck.sellReceipt(
   paymentMethod: KeckPaymentMethod.creditCard,
   creditCardProvider: card.creditCardProvider, // hobexHps
   cardPaymentId: card.transactionId,
   cardPaymentData: card.toCardPaymentData(),
-  items: [KasseneckItem(name: 'Mittagessen', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
+  items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
 );
 ```
 
-Ebenfalls vorhanden: `hps.refund(...)`, `hps.cancel(...)` — mit demselben
-aufgelösten Ausgang. Ein `HpsObserver` am Konstruktor von `HpsPayments`
-protokolliert Anfragen, Fehlschläge und den Weg, auf dem ein Ausgang aufgelöst
-wurde.
+`hps.refund(...)` and `hps.cancel(...)` return the same resolved outcome. An
+`HpsObserver` passed to `HpsPayments` (`observer:`) logs requests, failures and
+how an outcome was resolved.
+
+To find a terminal in the local network:
+
+```dart
+final scan = await discoverHpsTerminals(stopAtFirst: true);
+final found = scan.first;
+if (found != null) {
+  final client = HpsClient(baseUrl: Uri.parse('http://${found.host}:${found.port}'), tid: found.tids.first);
+}
+```
 </details>
 
 <details>
-<summary><b>Beispiel — hobex Cloud zum signierten Beleg</b></summary>
+<summary><b>Example: hobex Cloud to signed receipt</b></summary>
 
 ```dart
-import 'package:kasseneck_api/kasseneck_api.dart'; // HobexCloudPayments, HobexCloudResult, CardPaymentOutcome
+import 'package:kasseneck_api/kasseneck_api.dart'; // HobexCloudPayments, CardPaymentOutcome
 
 final cloud = HobexCloudPayments(kasseneck);
 
-// Dieselbe Regel wie bei HPS: die Kennung legt der Aufrufer fest, bevor die Anfrage hinausgeht.
+// Same rule as with HPS: the caller fixes the ID before the request goes out.
 final transactionId = KasseneckApi.newHobexTransactionId();
 
 final result = await cloud.pay(transactionId: transactionId, amount: 12.50);
 
 switch (result.outcome) {
   case CardPaymentOutcome.approved:
-    break; // weiter unten
+    break; // continue below
   case CardPaymentOutcome.declined:
-    return; // sicher kein Geld geflossen — ein neuer Versuch ist unbedenklich
+    return; // definitely no money moved; a new attempt is safe
   case CardPaymentOutcome.unresolved:
-    // Nicht im Auflösungsbudget geklärt. NICHT blind wiederholen — `transactionId`
-    // behalten und später auflösen, siehe das HPS-Beispiel oben.
+    // Not resolved within the budget. Do NOT retry blindly: keep transactionId
+    // and resolve later, see the HPS example above.
     return;
 }
 
@@ -322,116 +466,155 @@ await kasseneck.sellReceipt(
   creditCardProvider: card.creditCardProvider,
   cardPaymentId: card.transactionId,
   cardPaymentData: card.toCardPaymentData(),
-  items: [KasseneckItem(name: 'Mittagessen', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
+  items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
 );
 ```
 
-`HobexCloudPayments` hat kein `cancel()` — eine Cloud-Gutschrift läuft weiterhin
-über den rohen Aufruf `kasseneck.hobexRefund(...)` (siehe unten), unaufgelöst wie
-der einfache Aufruf.
+`HobexCloudPayments` has no `refund()` or `cancel()`. A cloud refund still goes
+through the raw call `kasseneck.hobexRefund(...)`, which returns a `bool` and does
+not resolve its outcome.
 </details>
 
 <details>
-<summary><b>Roher Zugriff — <code>HpsClient</code> / <code>kasseneck.hobexPay(...)</code></b></summary>
+<summary><b>Raw access: <code>HpsClient</code> and <code>kasseneck.hobexPay(...)</code></b></summary>
 
-Sowohl der lokale `HpsClient` (`import 'package:kasseneck_api/hobex_hps.dart';`)
-als auch die Cloud-Aufrufe `kasseneck.hobexPay(...)` / `hobexRefund(...)` bleiben
-direkt verfügbar, für volle Kontrolle über die Anfrage. **Keiner von beiden löst
-den Ausgang auf:** ein roher Aufruf, der nie eine Antwort bekommt, bleibt für
-immer ungeklärt — einen Zahlungsablauf darauf zu bauen heißt, genau das Problem
-noch einmal zu lösen, das `HpsPayments` und `HobexCloudPayments` bereits lösen,
-mit dem echten Risiko, die Frage „wurde belastet?" ausgerechnet unter den
-Bedingungen falsch zu beantworten (Zeitablauf, Verbindungsabriss), unter denen
-eine falsche Antwort teuer ist. Zum rohen Client greifen Sie nur, wenn Sie etwas
-brauchen, das die aufgelöste Hülle nicht zeigt (etwa `hps.diagnosis()`,
-`hps.transactionStatus(...)`).
+The local `HpsClient` and the cloud calls `kasseneck.hobexPay(...)`,
+`hobexRefund(...)` and `hobexGetStatus(...)` remain available for full control.
+**Neither resolves the outcome:** a raw call that never gets an answer stays
+unresolved forever. Building a payment flow on it means solving again the
+problem that `HpsPayments` and `HobexCloudPayments` already solve, with the real
+risk of answering "was the card charged?" wrongly under exactly the conditions
+(timeout, dropped connection) where a wrong answer is expensive. Use the raw
+client only for what the wrapper does not expose, for example
+`hps.diagnosis()` or `hps.transactionStatus(...)`.
 </details>
 
-## Drucken
+<details>
+<summary><b>Example: Stripe payment link</b></summary>
 
 ```dart
-// Bluetooth (ESC/POS)
-await kasseneck.initBluetoothPrinter(printerAddress: 'AA:BB:CC:DD:EE:FF');
-await receipt!.printReceiptBluetooth();
+import 'package:kasseneck_api/enums/stripe_link_mode.dart';
 
-// QR verstümmelt oder fehlt? Drucker verstehen unterschiedliche Befehle:
-await receipt.printReceiptBluetooth(qrMode: QrPrintMode.imageBitImage); // oder .native
-// Manche günstigen Drucker kennen nur das ältere QR-Modell 1:
-await receipt.printReceiptBluetooth(qrMode: QrPrintMode.nativeModel1);
+final session = await kasseneck.createStripeLink(
+  items: [KasseneckItem(name: 'Gift card', quantity: 1, vat: VatRate.vat20, priceCents: 5000)],
+  createReceiptAfterPayment: true,
+  mode: StripeLinkMode.payment, // or .authorization, captured later with stripeCaptureIntent
+  customerEmail: 'guest@example.com',
+);
+print(session?.url);
+```
+</details>
 
-// Der native Befehl bemisst seine Module selbst am Papier (Ruhezone inbegriffen),
-// der QR wird also nie breiter als der Kopf drucken kann. Begrenzen Sie ihn, wenn
-// er kleiner oder größer sein soll — die Grenze vergrößert nie über das Passende hinaus:
-await receipt.printReceiptBluetooth(qrGroesse: QrModulGroesse.gross);
+## Printing and displaying receipts
 
-// WLAN
-await kasseneck.initWifiPrinter('192.168.0.50', KeckPaperSize.mm80);
-await receipt.printReceiptWifi();
+```dart
+import 'package:kasseneck_api/printing.dart'; // KeckPrinter, KeckPaperSize, QrPrintMode, QrModulGroesse, …
 
-// Kassenlade öffnen
-await KasseneckApi.openCashDrawer();
+// Recommended: one printer object per device. Returns a KeckPrintResult instead
+// of throwing, and reports a missing QR code (qrFehler).
+final printer = KeckPrinter.wifi(ip: '192.168.0.50', size: KeckPaperSize.mm80);
+// or: KeckPrinter.bluetooth(address: 'AA:BB:CC:DD:EE:FF', size: KeckPaperSize.mm58)
+final printed = await printer.printReceipt(receipt);
+if (printed.qrFehler != null) {
+  // The receipt went out without its QR code: tell the customer.
+}
+await printer.openDrawer();
+await printer.dispose();
 ```
 
-### Beleg anzeigen und drucken — überall derselbe Beleg
+QR code garbled or missing? Printers understand different commands:
 
 ```dart
-// Einmal beim App-Start: Logos dauerhaft ablegen, damit der erste Bon nach
-// einem Neustart nicht auf das Netz wartet.
+await printer.printReceipt(receipt, qrMode: QrPrintMode.imageBitImage); // or .native
+// Some cheap printers only know the older QR model 1:
+await printer.printReceipt(receipt, qrMode: QrPrintMode.nativeModel1);
+// The native command sizes its modules to fit the paper (quiet zone included).
+// qrGroesse is a cap, never an enlargement beyond what fits:
+await printer.printReceipt(receipt, qrGroesse: QrModulGroesse.gross);
+```
+
+The older static path still works: `kasseneck.initWifiPrinter(ip, size)` or
+`kasseneck.initBluetoothPrinter(printerAddress: …)`, then
+`receipt.printReceiptWifi()` or `receipt.printReceiptBluetooth(qrMode: …, qrGroesse: …)`.
+Note that `KasseneckApi.openCashDrawer()` and `printReceiptWifi()` only send to
+the configured **Wi-Fi** printer and silently do nothing if none is set. On myPOS
+devices, `receipt.printReceiptMyPos()` uses the built-in printer. For your own
+layouts, `printing.dart` exports the ESC/POS builder (`EscPosGenerator`,
+`PosStyles`, `CustomPrintJob`).
+
+### The same receipt on screen and paper
+
+```dart
+import 'package:kasseneck_api/services/logo_service.dart';
+
+// Once at app start: store logos on disk, so the first receipt after a restart
+// does not wait for the network.
 await LogoService.dauerhaftAblegen();
 
+// Screen (widget from kasseneck_api.dart)
 KeckBelegBlattWidget(
-  layout: beleg.layout!,
-  logoUrl: beleg.logoUrl,
-  logoStufe: beleg.logoStufe,
-  marke: beleg.showKreiseckLogo,
+  layout: receipt.layout!,
+  logoUrl: receipt.logoUrl,
+  logoStufe: receipt.logoStufe,
+  marke: receipt.showKreiseckLogo,
 );
 
-final druckLogo = await ladeDruckLogo(beleg.logoUrl, beleg.logoStufe, KeckPaperSize.mm80);
-final paper = await KeckPrinterService.getPaperFromReceipt(beleg, KeckPaperSize.mm80, logo: druckLogo, marke: beleg.showKreiseckLogo);
+// Paper, with the same logo (printing.dart)
+final logo = await ladeDruckLogo(receipt.logoUrl, receipt.logoStufe, KeckPaperSize.mm80);
+final paper = await KeckPrinterService.getPaperFromReceipt(receipt, KeckPaperSize.mm80,
+    logo: logo, marke: receipt.showKreiseckLogo);
 ```
 
-## Berichte und Rechnungen
+## Reports, receipt history, FinanzOnline status
 
 ```dart
-final monthly = await kasseneck.downloadMonthlyReport(ReportMonth.now()); // Uint8List (PDF)
-final daily   = await kasseneck.downloadDailyReport(DateTime.now());
-final history = await kasseneck.getReceipts(start, end);
+import 'package:kasseneck_api/models/report_month.dart';
+
+final monthly = await kasseneck.downloadMonthlyReport(ReportMonth.now()); // PDF bytes, Vienna month
+final daily   = await kasseneck.downloadDailyReport(DateTime.now());       // PDF bytes
+final history = await kasseneck.getReceipts(start, end);                   // List<KasseneckReceipt>
+final one     = await kasseneck.getReceipt(receiptId);
+final status  = await kasseneck.getCashboxStatus();                        // register status at FinanzOnline
 ```
 
-## Rechnungen ausstellen (Rechnungs-API)
+`getReceipts` skips single receipts it cannot read instead of failing the whole
+range. `getSignatureStatus(certificateHex)` asks FinanzOnline for the status of a
+signature certificate.
 
-Rechnungen sind **keine Belege**: kein Kassen-Token, keine Signatur, sondern
-eine fortlaufende Rechnungsnummer nach § 11 UStG. Der Schlüssel ist der
-`api_key` des Kontos. Live braucht das Konto die Freigabe durch Kasseneck —
-deshalb zuerst den Stand abfragen.
+## Invoices (invoice API)
+
+Invoices (*Rechnungen*) are **not receipts**: no cashbox token, no signature, but
+a sequential invoice number under § 11 UStG. The key is the account's
+`api_key`, and it belongs on a **server**. For live use, Kasseneck has to enable
+the invoice API for the account, so check the setup first.
 
 ```dart
 import 'package:kasseneck_api/rechnung.dart';
 
-final rechnungen = RechnungApi(apiKey: 'kr_live_…');
+final invoices = RechnungApi(apiKey: 'kr_live_…');
 
-final stand = await rechnungen.getInvoiceSetupStatus();
-if (!stand.ready) {
-  for (final luecke in stand.missing) {
-    print('${luecke.requirement}: ${luecke.message}');
+final setup = await invoices.getInvoiceSetupStatus();
+if (!setup.ready) {
+  for (final gap in setup.missing) {
+    print('${gap.requirement}: ${gap.message}');
   }
   return;
 }
 
-final kunde = await rechnungen.createCustomer(
+final customer = await invoices.createCustomer(
   const CustomerInput(type: 'company', name: 'Café Muster GmbH', country: 'AT', externalId: 'shop-4711'),
 );
 
 try {
-  final ergebnis = await rechnungen.issueInvoice(IssueInvoiceRequest(
-    idempotencyKey: 'bestellung-4711', // derselbe Schlüssel ergibt nie eine zweite Rechnung
-    customerId: kunde.id,
-    taxScheme: 'normal',
+  final issued = await invoices.issueInvoice(IssueInvoiceRequest(
+    idempotencyKey: 'order-4711', // the same key never creates a second invoice
+    customerId: customer.id,
     priceMode: 'net',
     serviceStart: '2026-09-15',
-    items: const [InvoiceItemInput(description: 'Beratung', quantity: 2, unitPriceCents: 5000, vatRate: 20)],
+    items: const [InvoiceItemInput(description: 'Consulting', quantity: 2, unitPriceCents: 5000, vatRate: 20)],
   ));
-  final pdf = await rechnungen.getInvoicePdf(ergebnis.invoice.id); // Uint8List
+  final pdf = await invoices.getInvoicePdf(issued.invoice.id); // Uint8List
+  final xml = await invoices.getInvoiceXml(issued.invoice.id); // UBL; format: 'cii' for CII
 } on KasseneckApiError catch (e) {
   switch (rechnungFehlerCode(e)) {
     case 'validation':
@@ -446,106 +629,136 @@ try {
 }
 ```
 
-Nach einem Zeitablauf (`KasseneckHttpError.zeitablauf`) **mit demselben
-`idempotencyKey`** erneut ausstellen — die Antwort trägt dann
-`replayed: true` und dieselbe Rechnung. Storno über `cancelInvoice`,
-Teilgutschrift über `createCreditNote`; die Fehlercodes stehen in
-`invoiceErrorCodes`.
+After a timeout (`KasseneckHttpError.zeitablauf`), issue again **with the same
+`idempotencyKey`**: the answer then carries `replayed: true` and the same
+invoice. The same key with different data gives `idempotency_conflict`.
+Cancel with `cancelInvoice`, partial credit with `createCreditNote`; all error
+codes are listed in `invoiceErrorCodes`.
 
-**Sprache und Marke.** Eine Rechnung hat eine Nummer und eine Sprache (`de` oder
-`en`): die der Anfrage, sonst die des Kunden, sonst Deutsch; Behörden bekommen
-immer Deutsch. Die Marke wählt `brandId` aus `listBrands()`. Dieselbe Rechnung in
-der anderen Sprache gibt es nur als gekennzeichnete Übersetzungskopie —
-`getInvoicePdf(id, language: 'de')` — nie als zweite Rechnung.
+**Prices.** Each item has either `unitPriceCents` (integer cents) or
+`unitPriceMicros` (millionths of a euro, for prices below one cent), never both.
+Micro prices are accepted only once they are enabled for the account; otherwise
+the server answers with `validation`. On a request, `vatRate` is one of
+`vatRates` (0, 10, 13, 20). `unit` takes a key from `invoiceUnits` (`piece`,
+`hour`, …; default `piece`), not free text.
 
-**Der Steuerfall wird abgeleitet.** `taxScheme` ist optional: Der Server
-bestimmt den Fall aus Kundenland, Kundenart, UID und `kind` (`goods` oder
-`service`) der Positionen. Eine Angabe wird geprüft — passt sie nicht, kommt
-`tax_scheme_mismatch` samt erwartetem Fall zurück, statt einer falschen
-Rechnung. Für den Übergang der Steuerschuld im Inland (Bauleistungen, Schrott,
-Geräte ab 5.000 € je Rechnung …) gibt es `reverseChargeReason` aus
-[reverseChargeReasons]; neu sind auch `oss` und `outsideScope` (Leistung an eine
-Drittlandsfirma — in Österreich nicht steuerbar).
+**Language and brand.** An invoice has one number and one language (`de` or
+`en`): the one in the request, otherwise the customer's, otherwise German.
+Public authorities always get German. `brandId` picks a brand from
+`listBrands()`. The same invoice in the other language exists only as a marked
+translation copy, `getInvoicePdf(id, language: 'de')`, never as a second invoice.
 
-**Schon bezahlt.** Wer online kassiert und danach abrechnet, gibt die Zahlung
-gleich mit: `IssueInvoiceRequest(payment: PaymentInput(method: 'card'))`. Sie
-entsteht in derselben Transaktion wie das Festschreiben, und das PDF trägt dann
-keinen Zahlungskasten und keinen Giro-QR. Trifft das Geld erst später ein, geht
-`recordInvoicePayment(RecordPaymentRequest(...))` — mit eigenem
-`idempotencyKey`, sonst bucht eine Wiederholung zweimal. Bei `method: 'cash'`
-(und bei `onSite: true`) wird gebucht und die Liste `notice` trägt
-`cash_receipt_required`: ein Barumsatz braucht einen Beleg (§ 132a BAO), den
-der Vermerk an der Rechnung nicht ersetzt.
+**The tax case is derived.** `taxScheme` is optional: the server derives it from
+customer country, customer type, VAT ID and the `kind` (`goods` or `service`) of
+the items. A value you send is checked; if it does not match, you get
+`tax_scheme_mismatch` with the expected case instead of a wrong invoice. For
+domestic reverse charge there is `reverseChargeReason` from
+`reverseChargeReasons` (construction services, scrap, certain devices and more).
+Other cases include `oss` and `outsideScope` (service to a business outside the
+EU, not taxable in Austria).
 
-**Vorab rechnen.** Wer kassiert, bevor die Rechnung entsteht, braucht den
-Betrag, den die Rechnung später ausweist. `rechnungSummen` rechnet ihn genau
-wie der Server, ohne Netz; `previewInvoice` fragt den Server selbst — ein
-Probelauf, der prüft wie das Ausstellen (Kunde, Steuerfall, Pflichtangaben),
-aber nichts festschreibt und den `idempotencyKey` nicht verbraucht:
+**Already paid.** If you collect online and invoice afterwards, pass the payment
+along: `IssueInvoiceRequest(payment: PaymentInput(method: 'card'))`. It is
+recorded in the same transaction that finalises the invoice, and the PDF then
+has no payment box and no Girocode QR. If the money arrives later, use
+`recordInvoicePayment(RecordPaymentRequest(...))` with its own
+`idempotencyKey`, otherwise a retry books twice. With `method: 'cash'` (and with
+`onSite: true`) the payment is booked and the `notice` list carries
+`cash_receipt_required`: a cash sale needs a receipt from the fiscal cash
+register (§ 132a BAO); the note on the invoice does not replace it.
+
+**Computing totals in advance.** `rechnungSummen` computes the totals exactly as
+the server does, offline. `previewInvoice` asks the server: a dry run that checks
+like issuing (customer, tax case, required fields) but finalises nothing and does
+not consume the `idempotencyKey`.
 
 ```dart
-const posten = [
-  InvoiceItemInput(description: 'Maniküre', quantity: 1, unitPriceCents: 1479, vatRate: 20),
-  InvoiceItemInput(description: 'Lack', quantity: 1, unitPriceCents: 1500, vatRate: 20),
+const items = [
+  InvoiceItemInput(description: 'Manicure', quantity: 1, unitPriceCents: 1479, vatRate: 20),
+  InvoiceItemInput(description: 'Polish', quantity: 1, unitPriceCents: 1500, vatRate: 20),
 ];
-final summen = rechnungSummen(posten, 'gross');
-// summen.grossCents == 2979, netCents == 2483, vatCents == 496
+final totals = rechnungSummen(items, 'gross');
+// totals.grossCents == 2979, netCents == 2483, vatCents == 496
 
-final anfrage = IssueInvoiceRequest(
-  idempotencyKey: 'bestellung-$bestellnummer',
-  customerId: kunde.id,
+final request = IssueInvoiceRequest(
+  idempotencyKey: 'order-$orderNumber',
+  customerId: customer.id,
   priceMode: 'gross',
   serviceStart: '2026-09-16',
-  items: posten,
+  items: items,
 );
-final probe = await rechnungen.previewInvoice(anfrage);
-// probe.preview.totals, probe.preview.taxScheme, probe.preview.taxSchemeReason
-final ergebnis = await rechnungen.issueInvoice(anfrage); // derselbe Schlüssel, eine Rechnung
+final preview = await invoices.previewInvoice(request);
+// preview.preview.totals, preview.preview.taxScheme, preview.preview.taxSchemeReason
+final issued = await invoices.issueInvoice(request); // same key, one invoice
 ```
 
-Im **Brutto-Modus** ist das Brutto je Satz der vereinbarte Preis: Netto =
-round(B × 100 / (100 + Satz)), USt = B − Netto. Im **Netto-Modus** wird die USt
-je Satz aus der Nettosumme gerundet. Gerundet wird kaufmännisch (halber Cent
-vom Nullpunkt weg), je Satz, dann summiert. Leitet der Server einen
-steuerfreien Fall ab (`steuerfreieFaelle`, etwa `igLieferung`), gehört er als
-dritter Wert in `rechnungSummen` — sonst rechnet die Funktion Steuer, die die
-Rechnung nicht ausweist; `previewInvoice` nennt den Fall. Verbindlich ist das
-Ausstellen: zwischen Probelauf und Rechnung können sich Kunde oder Konto
-ändern. Die Summen sind auch bei Gutschriften positiv — das Vorzeichen steht
-im Belegtyp (`docType: 'GU'`).
+In **gross mode** the gross amount per rate is the agreed price:
+net = round(G × 100 / (100 + rate)), VAT = G − net. In **net mode** the VAT per
+rate is rounded from the net sum. Rounding is commercial (half a cent away from
+zero), per rate, then summed. If the server derives a tax-exempt case
+(`steuerfreieFaelle`, e.g. `igLieferung`), pass it as the third argument of
+`rechnungSummen`, otherwise the function computes tax the invoice does not show;
+`previewInvoice` names the case. Issuing is binding: customer or account may
+change between preview and invoice. Totals are positive for credit notes too;
+the sign is in the document type (`docType: 'GU'`).
 
-**Hinweise sind immer eine Liste.** `notice` ist bei `issueInvoice`,
-`previewInvoice` und `recordInvoicePayment` eine `List<InvoiceNotice>`, leer
-ohne Hinweis. Eine ig. Lieferung trägt `recapitulative_statement_due`
-(Zusammenfassende Meldung), eine bar bezahlte Rechnung zusätzlich
-`cash_receipt_required` — am Code entscheiden, nicht am Text:
+**Notices are always a list.** `notice` on `issueInvoice`, `previewInvoice` and
+`recordInvoicePayment` is a `List<InvoiceNotice>`, empty if there is nothing to
+say. An intra-EU supply carries `recapitulative_statement_due`, a cash-paid
+invoice `cash_receipt_required`. Decide on the code, not the text:
 
 ```dart
-if (ergebnis.notice.any((h) => h.code == 'cash_receipt_required')) {
-  // Barumsatz: Beleg über die Registrierkasse erteilen
+if (issued.notice.any((n) => n.code == 'cash_receipt_required')) {
+  // Cash sale: issue a receipt through the fiscal cash register
 }
 ```
 
-## RKSV im Detail
+## RKSV details
 
-Jeder Beleg ist verkettet und signiert (ES256 / JWS) und liegt als
-maschinenlesbare QR-Nutzlast vor, genau wie die RKSV es verlangt. Ausfälle der
-Signatureinheit werden erkannt (`receipt.signatureSuccess` /
-`receipt.isSigFailed`) und am Beleg ausgewiesen.
+Every receipt is chained and signed (ES256, JWS) and comes with its
+machine-readable QR payload, as the RKSV requires. A failed signature unit is
+detected (`receipt.signatureSuccess`, `receipt.isSigFailed`) and marked on the
+receipt; the backend handles the follow-up (see the obligations table above).
 
-## Versionen
+## Glossary
 
-Das Paket folgt der semantischen Versionierung — was sich wann geändert hat,
-steht im [CHANGELOG](CHANGELOG.md).
+German RKSV terms used in the API and on the receipts:
 
-## Lizenz
+| German | English |
+| --- | --- |
+| Beleg | receipt |
+| Startbeleg | start receipt |
+| Nullbeleg | zero receipt |
+| Monatsbeleg | monthly receipt |
+| Jahresbeleg | annual receipt |
+| Schlussbeleg | final receipt |
+| Storno | cancellation |
+| Signaturerstellungseinheit | signature creation unit |
+| DEP (Datenerfassungsprotokoll) | data capture log (DEP) |
+| Kassennachschau | cash register audit |
+| Belegerteilungspflicht | obligation to issue receipts |
+| Registrierkasse | fiscal cash register |
+| Umsatzzähler | turnover counter |
+| Außerbetriebnahme | decommissioning |
+| Ausfall der Signatureinheit | signature unit failure |
+| Rechnung | invoice |
+| USt | VAT |
 
-MIT — siehe [LICENSE](LICENSE).
+FinanzOnline (the tax authority's online portal) and BMF (Federal Ministry of
+Finance) are names and stay as they are.
+
+## Versioning
+
+The package follows semantic versioning. What changed and when is in the
+[CHANGELOG](CHANGELOG.md) (in German).
+
+## License
+
+MIT, see [LICENSE](LICENSE).
 
 ---
 
-**Kasseneck** ist ein Produkt von
-[Kreiseck Software Solutions](https://kreiseck.com) aus Salzburg — Apps,
-Kassensysteme und Automatisierungen. Fragen zur Schnittstelle, zu eigenen
-Integrationen oder zu einer Partnerschaft:
-[kasseneck.at/kontakt](https://kasseneck.at/kontakt).
+**Kasseneck** is a product of
+[Kreiseck Software Solutions](https://kreiseck.com) from Salzburg, Austria: apps,
+POS systems and automation. Questions about the API, custom integrations or a
+partnership: [kasseneck.at/kontakt](https://kasseneck.at/kontakt).
