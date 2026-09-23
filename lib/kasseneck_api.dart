@@ -94,7 +94,7 @@ export 'widgets/keck_beleg_blatt_widget.dart' show KeckBelegBlattWidget;
 /// final kasseneck = KasseneckApi(apiKey: '…', cashregisterToken: '…');
 /// final receipt = await kasseneck.sellReceipt(
 ///   paymentMethod: KeckPaymentMethod.cash,
-///   items: [KasseneckItem(name: 'Coffee', quantity: 1, vat: VatRate.vat20, singlePrice: 3.20)],
+///   items: [KasseneckItem(name: 'Coffee', quantity: 1, vat: VatRate.vat20, priceCents: 320)],
 /// );
 /// ```
 class KasseneckApi {

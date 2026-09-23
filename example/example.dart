@@ -3,14 +3,14 @@
 // Example usage of the kasseneck_api package.
 //
 // You need an API key and a cashregister token from Kreiseck to operate a
-// register — request yours at office@kreiseck.com (https://kreiseck.com).
+// register. Request yours at office@kreiseck.com (https://kreiseck.com).
 
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 
-// Local Hobex terminal (HPS) — see cardSale() below.
+// Local Hobex terminal (HPS), see cardSale() below.
 import 'package:kasseneck_api/hobex_hps.dart';
 
 Future<void> main() async {
@@ -24,35 +24,41 @@ Future<void> main() async {
     paymentMethod: KeckPaymentMethod.cash,
     customerDetails: ['Max Mustermann'],
     items: [
-      // Preise in Cent (320 = 3,20 EUR) — alternativ KasseneckItem.euro(singlePrice: 3.20)
+      // Prices in cents (320 = EUR 3.20); alternatively KasseneckItem.euro(singlePrice: 3.20)
       KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20, priceCents: 320),
       KasseneckItem(name: 'Bread', quantity: 1, vat: VatRate.vat4komma9, priceCents: 240),
     ],
   );
-  print('Receipt ${receipt?.receiptId} — signed: ${receipt?.signatureSuccess}');
+  print('Receipt ${receipt?.receiptId}, signed: ${receipt?.signatureSuccess}');
 
   // 2) Print it via a Bluetooth ESC/POS printer.
   await kasseneck.initBluetoothPrinter(printerAddress: 'AA:BB:CC:DD:EE:FF');
   await receipt?.printReceiptBluetooth();
 
-  // 3) Cancel it again (RKSV cancellation receipt).
+  // 3) Cancel it again: a new signed cancellation receipt that references the
+  //    original. Leave out `positionen` to cancel everything that is left.
   if (receipt != null) {
-    await kasseneck.cancelReceipt(receipt: receipt);
+    final cancellation = await kasseneck.stornieren(
+      cashregisterId: receipt.cashregisterId,
+      originalReceiptId: receipt.receiptId,
+      grund: 'fehleingabe', // key from stornogruende
+    );
+    print('Cancellation ${cancellation.beleg.receiptId}, remaining: ${cancellation.restmengen}');
   }
 }
 
 /// Charges a card on a local Hobex terminal (HPS) and turns the result into a
-/// signed Kasseneck receipt. Any other terminal works the same way — or use
+/// signed Kasseneck receipt. Any other terminal works the same way, or use
 /// `CreditCardProvider.custom` to pass your own card data.
 ///
 /// Use [HpsPayments], not [HpsClient.payment] directly. Two reasons, both paid
 /// for in real money on 2026-08-24:
 ///
 ///  * It fixes the transaction id **before** the first request goes out. Let
-///    the client generate it and you only learn it from the response — so if
+///    the client generate it and you only learn it from the response, so if
 ///    the response never arrives, you cannot query or void the transaction,
 ///    and every retry is a second, independent charge.
-///  * It answers the only question a caller has — may I retry? — with three
+///  * It answers the only question a caller has (may I retry?) with three
 ///    values instead of a boolean. `!isApproved` lumps "declined" together
 ///    with "still running" and with "no idea".
 Future<void> cardSale(KasseneckApi kasseneck) async {
@@ -70,15 +76,15 @@ Future<void> cardSale(KasseneckApi kasseneck) async {
       //
       // Print the last clarification step, not res.response?.responseCode:
       // when the proof came from a successful abort, that response is the
-      // ABORT's, and its code is '0' — which means "approved" everywhere
+      // ABORT's, and its code is '0', which means "approved" everywhere
       // else.
-      print('Declined: ${res.steps.last} — safe to retry');
+      print('Declined: ${res.steps.last}; safe to retry');
       return;
     case CardPaymentOutcome.unresolved:
       // NOT the same as declined. The card may well have been charged.
-      // Never retry silently: warn, and keep res.transactionId — it is the
+      // Never retry silently: warn, and keep res.transactionId. It is the
       // only handle left for transactionStatus() or cancel().
-      print('Outcome unknown for ${res.transactionId} — do NOT charge again');
+      print('Outcome unknown for ${res.transactionId}; do NOT charge again');
       print(res.steps.join('\n'));
       return;
     case CardPaymentOutcome.approved:
