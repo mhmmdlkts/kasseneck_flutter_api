@@ -15,7 +15,7 @@ vanillanails und weitere). Was hier bricht, bricht dort — und was hier
 schlampig ist, wird dort abgeschrieben.
 
 Das Paket hat einen **Zwilling in JavaScript**: `@kreiseck/kasseneck-api`
-(Quelle unter `/Users/mali/kreiseck/kasseneck-api`). Beide Seiten pinnen
+(Quelle unter <https://github.com/kreiseck-at/kasseneck-api>). Beide Seiten pinnen
 dieselben Golden-Werte; `zwillinge.yaml` und `test/zwillinge_test.dart` halten
 den Vertrag. Wer hier etwas an der gemeinsamen Oberfläche ändert, prüft dort.
 

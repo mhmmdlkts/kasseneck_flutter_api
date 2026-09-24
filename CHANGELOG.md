@@ -1,3 +1,16 @@
+## 9.0.2
+
+- **`KasseneckApi.cashregisterId` liest das aktuelle Token-Format.** Der Getter
+  dekodierte das Token als reines base64 und warf bei `cb_<env>_<base64url>` (das Format,
+  das der Server seit der Umstellung der Schlüssel ausgibt) eine `FormatException`. Er
+  liest jetzt dieselben Formate wie `cashboxIdFromToken` am Server: das aktuelle
+  `cb_<env>_<base64url>` ohne Padding, das alte `cb_<env>_<base64>` mit Padding und reines
+  base64 ohne Präfix. Alte Token liefern dieselbe ID wie bisher; ein Token in keinem dieser
+  Formate wirft weiterhin eine `FormatException`.
+- `AGENTS.md` nennt für den JS-Zwilling das öffentliche Repo statt eines Pfads auf einem
+  Entwicklerrechner. Die Datei reist weiter mit ins Paket (`doc/kartenzahlung.md` verweist
+  darauf); der Pfad stand damit auf pub.dev.
+
 ## 9.0.1
 
 - **README auf Englisch** und jede Angabe gegen den Code geprüft. Anfragen kommen inzwischen

@@ -930,8 +930,23 @@ class KasseneckApi {
     }
   }
 
+  /// Die Kassen-ID, gelesen aus [cashregisterToken].
+  ///
+  /// Liest dieselben Formate wie `cashboxIdFromToken` im Backend
+  /// (`functions/gemeinsam/keys.js`):
+  ///
+  /// * aktuell `cb_<env>_<base64url(id:zufall)>` ohne `=`-Padding,
+  /// * alt `cb_<env>_<base64(id:zufall)>` mit Padding,
+  /// * alt reines `base64(id:zufall)` ohne Praefix.
+  ///
+  /// Ein Token, das in keines dieser Formate passt, wirft wie bisher eine
+  /// [FormatException].
   String get cashregisterId {
-    final decoded = utf8.decode(base64.decode(cashregisterToken));
+    // Praefix cb_live_/cb_test_ abtrennen; base64.normalize gleicht das
+    // base64url-Alphabet an und ergaenzt fehlendes Padding.
+    final praefix = RegExp(r'^cb_(live|test)_', caseSensitive: false);
+    final rumpf = cashregisterToken.replaceFirst(praefix, '');
+    final decoded = utf8.decode(base64.decode(base64.normalize(rumpf)));
     return decoded.split(':').first;
   }
 
