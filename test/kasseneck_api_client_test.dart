@@ -187,6 +187,33 @@ void main() {
       final api = apiWith(neverCalled());
       expect(api.cashregisterId, 'CASHBOX-9');
     });
+    group('cashregisterId je Token-Format (wie cashboxIdFromToken im Backend)', () {
+      // Die Token sind mit generateCashboxToken bzw. den Alt-Formaten aus
+      // functions/gemeinsam/keys.js erzeugt; erwartet ist, was
+      // cashboxIdFromToken dort liefert.
+      String idAus(String token) =>
+          KasseneckApi(apiKey: 'k', cashregisterToken: token, httpClient: neverCalled()).cashregisterId;
+
+      test('neu: cb_<env>_<base64url> ohne Padding, mit - und _ im Rumpf', () {
+        expect(idAus('cb_live_S2Fzc2U_PjE6ZmJmZjNlMGExYjJjM2Q0ZTVmNjA3MTgyOTNhNGI1YzY'), 'Kasse?>1');
+        expect(idAus('cb_live_S2Fzc2UtNz8-OmZiZmYzZTBhMWIyYzNkNGU1ZjYwNzE4MjkzYTRiNWM2'), 'Kasse-7?>');
+      });
+      test('neu: Testumgebung cb_test_', () {
+        expect(
+          idAus('cb_test_YUIzZEU1Z0g3aks5bU4xcFEyclM6MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY'),
+          'aB3dE5gH7jK9mN1pQ2rS',
+        );
+      });
+      test('alt: cb_<env>_ mit Standard-base64 und =', () {
+        expect(idAus('cb_live_Q0FTSEJPWC05OmFiYw=='), 'CASHBOX-9');
+      });
+      test('alt: reines base64 ohne Praefix bleibt wie bisher', () {
+        expect(idAus('Q0FTSEJPWC05OmFiYw=='), 'CASHBOX-9');
+      });
+      test('kein Token-Format: wirft weiterhin FormatException', () {
+        expect(() => idAus('kein token!'), throwsFormatException);
+      });
+    });
     group('listTipRecipients', () {
       MockClient empfaengerClient(void Function(http.Request) capture, Object daten) =>
           MockClient((request) async {
