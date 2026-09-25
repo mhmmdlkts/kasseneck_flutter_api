@@ -343,11 +343,14 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 const SizedBox(height: 16),
               ],
             _qr(),
-            if (widget.receipt.creditCardProvider != null && widget.receipt.creditCardProvider != CreditCardProvider.custom && widget.receipt.cardPaymentData != null && widget.receipt.cardPaymentData!.isNotEmpty)
-              ...[
-                const SizedBox(height: 32),
-                _creditCardPart(),
-              ],
+            // Ein Block je Kartenzahlung, in Zahlungsreihenfolge -- siehe
+            // KasseneckReceipt.kartenzahlungen.
+            for (final karte in widget.receipt.kartenzahlungen)
+              if (karte.anbieter != CreditCardProvider.custom && karte.daten.isNotEmpty)
+                ...[
+                  const SizedBox(height: 32),
+                  _creditCardPart(karte.anbieter, karte.daten, karte.kennung),
+                ],
             if (widget.receipt.thanksMessage.isNotEmpty)
               ...[
                 const SizedBox(height: 16),
@@ -375,25 +378,22 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
     );
   }
 
-  Widget _creditCardPart() {
-    if (widget.receipt.creditCardProvider == null) {
-      return Container();
-    }
+  Widget _creditCardPart(CreditCardProvider anbieter, Map<String, dynamic> daten, String? kennung) {
     try {
-      switch (widget.receipt.creditCardProvider!) {
+      switch (anbieter) {
         case CreditCardProvider.gpTomAndroid:
         case CreditCardProvider.gpTomIos:
-          return _gpTomPart(widget.receipt.cardPaymentData!);
+          return _gpTomPart(daten);
         case CreditCardProvider.sumup:
-          return _sumupPart(SumupCheckoutResponse.fromMap(widget.receipt.cardPaymentData!));
+          return _sumupPart(SumupCheckoutResponse.fromMap(daten));
         case CreditCardProvider.myposPro:
-          return _myPosProPart(widget.receipt.cardPaymentData!);
+          return _myPosProPart(daten);
         case CreditCardProvider.hobexCloudApi:
-          return _hobexApiPart(widget.receipt.cardPaymentData!);
+          return _hobexApiPart(daten);
         case CreditCardProvider.hobexHps:
-          return _hobexHpsPart(widget.receipt.cardPaymentData!);
+          return _hobexHpsPart(daten);
         case CreditCardProvider.stripe:
-          return _stripePart(widget.receipt.cardPaymentData!, widget.receipt.cardPaymentId);
+          return _stripePart(daten, kennung);
         case CreditCardProvider.custom:
           return Container();
       }

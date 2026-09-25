@@ -45,6 +45,14 @@ const List<String> stornoFehlercodes = [
   'nur_eigene_belege', // Recht „eigene", fremder Beleg
   'kasse_unvollstaendig', // api_key/token fehlen am Konto bzw. an der Kasse
   'storno_fehlgeschlagen', // der Storno-Beleg selbst wurde abgelehnt (z. B. Signatur)
+  // Rueckzahlung je Zahlung (mehrere Zahlungen je Beleg); Formfehler an
+  // `payments` selbst melden die Codes aus zahlungFehlercodes. Unter /v3
+  // heissen diese Codes anders (umbenannt, nicht klein geschrieben) -- darum
+  // prueft istStornoFehlercode exakt.
+  'STORNO_PAYMENTS_REQUIRED', // Teilstorno eines Belegs mit mehreren Zahlungen ohne payments
+  'STORNO_REFUND_EXCEEDS_PAYMENT', // Rueckzahlungen auf eine Zahlung uebersteigen deren Rest
+  'STORNO_REFUND_REFERENCE_REQUIRED', // Karten-Rueckzahlung ohne refundOf einer Kartenzahlung
+  'STORNO_REFUND_REFERENCE_UNKNOWN', // refundOf nennt keine Zahlung des Originals
 ];
 
 /// Ist [wert] ein Code aus [stornoFehlercodes]? Ein Anzeigetext ist keiner.

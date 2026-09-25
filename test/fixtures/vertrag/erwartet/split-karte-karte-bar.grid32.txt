@@ -1,0 +1,55 @@
+        Bäckerei Muster         
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345678           
+         +43 6134 12345         
+                                
+Datum:       25.09.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-70
+                                
+1  x Schnitzel           18,90 B
+1  x Salat                6,55 B
+4  x Wein 1/4            20,00 A
+je 5,00                         
+                                
+MwSt%   MwSt    Netto     Brutto
+B 10%   2,31    23,14      25,45
+A 20%   3,33    16,67      20,00
+--------------------------------
+Gesamt:                  45,45 €
+Zahlungsarten:                  
+1. Kartenzahlung         20,00 €
+2. Kartenzahlung         15,00 €
+3. Barzahlung            10,45 €
+  Gegeben:               20,00 €
+  Rückgeld:               9,55 €
+                                
+           [QR-Code]            
+                                
+        1. Kartenzahlung        
+          Sumup Beleg           
+Kartentyp:            MASTERCARD
+Kartennummer:     **** **** ****
+                            4720
+Zahlungstyp:         CONTACTLESS
+Gesamtbetrag:          20,00 EUR
+Transaktionscod       TEZBA9K7QK
+e:                              
+Modus:               CONTACTLESS
+                                
+        2. Kartenzahlung        
+          GP Tom Beleg          
+           Batch: 12            
+        Receipt: TX-9901        
+           TID: T-55            
+         A0000000031010         
+    VISA CREDIT CONTACTLESS     
+      **** **** **** 4720       
+     Sale Amount EUR 15,00      
+             PIN OK             
+   Authorization Code 123401    
+       Sequence Number: 1       
+                                
+ Vielen Dank für Ihren Einkauf  
+    www.baeckerei-muster.at     

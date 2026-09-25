@@ -1,0 +1,36 @@
+        Bäckerei Muster         
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345678           
+         +43 6134 12345         
+                                
+Datum:       25.09.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-78
+                                
+2  x Tagesteller         37,80 B
+je 18,90                        
+Trinkgeld Personal        4,20 D
+                                
+MwSt%   MwSt    Netto     Brutto
+B 10%   3,44    34,36      37,80
+D 0%    0,00    4,20        4,20
+--------------------------------
+Gesamt:                  42,00 €
+Zahlungsart:       Kartenzahlung
+  davon Trinkgeld         4,20 €
+                                
+           [QR-Code]            
+                                
+          Sumup Beleg           
+Kartentyp:            MASTERCARD
+Kartennummer:     **** **** ****
+                            4720
+Zahlungstyp:         CONTACTLESS
+Gesamtbetrag:          42,00 EUR
+Transaktionscod       TEZBA9K7QK
+e:                              
+Modus:               CONTACTLESS
+                                
+ Vielen Dank für Ihren Einkauf  
+    www.baeckerei-muster.at     

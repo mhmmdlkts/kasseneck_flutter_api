@@ -22,6 +22,8 @@ export 'src/register/fehler.dart' show KasseneckReceiptFormatError;
 // entsteht.
 export 'models/keck_tip.dart';
 export 'models/keck_tip_person.dart';
+// Mehrere Zahlungen je Beleg: Eingabe am Verkauf/Storno, Zahlung am Beleg.
+export 'models/keck_payment.dart' show KeckPayment, KeckPaymentInput, zahlungenFehler, zahlungenHoechstzahl;
 // Die Storno-Regeln fragen nach der Reichweite eines Rechts; wer sie benutzt,
 // braucht den Typ.
 export 'src/register/pairing.dart' show RegisterScope;
@@ -38,3 +40,4 @@ export 'src/kasse/kacheln.dart';
 export 'src/kasse/kassieren.dart';
 export 'src/kasse/storno.dart';
 export 'src/kasse/warenkorb.dart';
+export 'src/kasse/zahlungen.dart';

@@ -1,3 +1,46 @@
+## 9.1.0
+
+### Mehrere Zahlungen je Beleg
+
+- **`KeckPaymentMethod.mixed`** („Mehrere Zahlungsarten"). Beleg und Belegliste lesen
+  `mixed` jetzt als `mixed`; bisher fiel der unbekannte Wert still auf `cash` zurück, und
+  ein Beleg mit zwei Karten und Bar stand in der Liste als Barbeleg. Unbekannte Werte
+  fallen weiter auf `cash`. Gesendet wird `mixed` nie — der Server leitet es aus den
+  Zahlungen ab.
+- **`KeckPayment` am Beleg:** `KasseneckReceipt.payments` trägt jede Zahlung mit Betrag,
+  Zahlart, Anbieter, `tipCents`, `tenderedCents` und `changeCents` (Rückgeld je
+  Barzahlung). Zahlart und Anbieter werden roh gehalten, damit ein neuer Wert vom Server
+  den Beleg nicht unlesbar macht.
+- **Zahlungen senden:** `sellReceipt(payments:)` sowie `verkaufen(zahlungen:)` und
+  `stornieren(zahlungen:)` nehmen eine Liste `KeckPaymentInput`. Damit sind
+  `paymentMethod` bzw. `zahlungsart` optional — genau eines von beiden ist Pflicht; die
+  Liste schließt die Einzel-Zahlungsart und die Kartenfelder aus (die gehören an die
+  jeweilige Zahlung, am Server `PAYMENTS_CONFLICT`). Die Formprüfung `zahlungenFehler`
+  entspricht der des npm-Zwillings.
+- Unterschied bei Formfehlern: `verkaufen`/`stornieren` werfen wie bisher
+  `KasseneckValidationError`; `sellReceipt` wirft `ArgumentError`, wie jede andere
+  Eingabeprüfung dieser Methode auch. Ein Storno mit mehreren Zahlungen läuft nur über
+  `stornieren`.
+- **`barzahlung(...)`** macht aus der `Kassierrechnung` den Bar-Eintrag für die Liste,
+  samt `tenderedCents` — bei mehreren Zahlungen ist das der Rest nach den Karten.
+- **Fehlercodes:** `zahlungFehlercodes` (18, wie `PAYMENT_ERROR_CODES`) mit
+  `istZahlungFehlercode`, das die großgeschriebenen Codes aus `/v1` wie die
+  kleingeschriebenen aus `/v3` annimmt. `stornoFehlercodes` kennt vier neue Codes
+  (`STORNO_PAYMENTS_REQUIRED`, `STORNO_REFUND_EXCEEDS_PAYMENT`,
+  `STORNO_REFUND_REFERENCE_REQUIRED`, `STORNO_REFUND_REFERENCE_UNKNOWN`). Die Kasse
+  entscheidet am Code, nicht am Text.
+- **Druck:** der Rückfall-Bauer (Bon und Widget) druckt je Kartenzahlung einen eigenen
+  Kartenblock in Zahlungsreihenfolge; bisher kannte er nur die eine Karte des Belegs.
+  `layoutIstVollstaendig` verlangt jeden Anbieter-Kopf so oft, wie der Anbieter unter den
+  Zahlungen vorkommt. Ein Layout von einem Backend vor der Aufschlüsselung zeigt nur einen
+  Kartenblock; es gilt jetzt als unvollständig, und der Rückfall-Bauer druckt alle —
+  sonst fiele der zweite Kartenbeleg stumm weg.
+- **Vertrag auf npm 0.30.0 angehoben** (von 0.27.1). Die neun neuen Golden-Belege mit
+  mehreren Zahlungen (Karte + Karte + Bar, Trinkgeld, Rückgeld, Teil- und Vollstorno)
+  zeichnen sich hier byte-gleich; der Blatt-Zeichner-Test zählt jetzt 40 statt 31. Die
+  übrigen Änderungen seit 0.27.1 betreffen die Partner-API (Fehlercodes, `/v3`), die
+  dieses Paket bewusst nicht abbildet.
+
 ## 9.0.2
 
 - **`KasseneckApi.cashregisterId` liest das aktuelle Token-Format.** Der Getter

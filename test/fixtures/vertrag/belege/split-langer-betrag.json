@@ -1,0 +1,74 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "uid": "ATU12345678",
+    "taxnr": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-74",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-09-25T10:15:30",
+    "items": [
+      {
+        "name": "Festtafel",
+        "quantity": 2,
+        "unitPriceCents": 123456,
+        "vatRate": 10
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "mixed",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "6F0404F0",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-74_2026-09-25T10:15:30_0,00_2469,12_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "creditCard",
+        "amountCents": 123456,
+        "provider": "gpTomAndroid",
+        "providerPaymentId": "TX-9902",
+        "providerData": {
+          "batchNumber": 12,
+          "externalTransactionID": "TX-9902",
+          "terminalID": "T-55",
+          "emvAid": "A0000000031010",
+          "emvAppLable": "VISA CREDIT",
+          "cardDataEntry": "CONTACTLESS",
+          "cardNumber": "**** **** **** 4720",
+          "currencyCode": "EUR",
+          "amount": 123456,
+          "pinOk": true,
+          "approvedCode": "123402",
+          "sequenceNumber": 2,
+          "transactionType": 1
+        }
+      },
+      {
+        "id": "p2",
+        "method": "cash",
+        "amountCents": 123456,
+        "tenderedCents": 130000,
+        "changeCents": 6544
+      }
+    ]
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}

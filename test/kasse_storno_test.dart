@@ -65,6 +65,7 @@ Belegzusammenfassung zusammenfassung({
     );
 
 void main() {
+  main2();
   group('Restmengen', () {
     test('ohne Storno ist alles offen', () {
       expect(restmengen(belegMit(), jetzt: jetzt), [3, 2]);
@@ -204,12 +205,15 @@ void main() {
 // STORNO_FEHLERCODES und @kreiseck/kasseneck-api CANCELLATION_ERROR_CODES.
 void main2() {
   group('Fehlercodes', () {
-    test('Katalog: dieselben vierzehn Codes wie Backend und npm-Paket, in derselben Reihenfolge', () {
+    test('Katalog: dieselben achtzehn Codes wie Backend und npm-Paket, in derselben Reihenfolge', () {
       expect(stornoFehlercodes, [
         'beleg_nicht_gefunden', 'belegart_nicht_stornierbar', 'trainingsbeleg', 'bereits_storniert',
         'position_ungueltig', 'menge_ueber_rest', 'grund_unbekannt', 'anmerkung_zu_lang', 'items_ungueltig',
         'kasse_nicht_zugewiesen', 'keine_berechtigung', 'nur_eigene_belege', 'kasse_unvollstaendig',
         'storno_fehlgeschlagen',
+        // Rueckzahlung je Zahlung (mehrere Zahlungen je Beleg)
+        'STORNO_PAYMENTS_REQUIRED', 'STORNO_REFUND_EXCEEDS_PAYMENT', 'STORNO_REFUND_REFERENCE_REQUIRED',
+        'STORNO_REFUND_REFERENCE_UNKNOWN',
       ]);
     });
 
@@ -217,6 +221,10 @@ void main2() {
       expect(istStornoFehlercode('menge_ueber_rest'), isTrue);
       expect(istStornoFehlercode('Storno-Menge übersteigt die verbleibende Menge (Position 1).'), isFalse);
       expect(istStornoFehlercode(null), isFalse);
+      // Die Storno-Codes werden unter /v3 umbenannt, nicht klein geschrieben --
+      // darum exakt, anders als istZahlungFehlercode.
+      expect(istStornoFehlercode('STORNO_PAYMENTS_REQUIRED'), isTrue);
+      expect(istStornoFehlercode('storno_payments_required'), isFalse);
     });
   });
 }

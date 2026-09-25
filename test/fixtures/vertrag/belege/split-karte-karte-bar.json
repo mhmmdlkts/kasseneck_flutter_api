@@ -1,0 +1,102 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "uid": "ATU12345678",
+    "taxnr": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-70",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-09-25T10:15:30",
+    "items": [
+      {
+        "name": "Schnitzel",
+        "quantity": 1,
+        "unitPriceCents": 1890,
+        "vatRate": 10
+      },
+      {
+        "name": "Salat",
+        "quantity": 1,
+        "unitPriceCents": 655,
+        "vatRate": 10
+      },
+      {
+        "name": "Wein 1/4",
+        "quantity": 4,
+        "unitPriceCents": 500,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "mixed",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "6F0404F0",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-70_2026-09-25T10:15:30_20,00_25,45_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "creditCard",
+        "amountCents": 2000,
+        "provider": "sumup",
+        "providerPaymentId": "TEZBA9K7QK",
+        "providerData": {
+          "cardType": "MASTERCARD",
+          "cardLastDigits": "4720",
+          "paymentType": "CONTACTLESS",
+          "amount": 2000,
+          "currency": "EUR",
+          "transactionCode": "TEZBA9K7QK",
+          "entryMode": "contactless"
+        }
+      },
+      {
+        "id": "p2",
+        "method": "creditCard",
+        "amountCents": 1500,
+        "provider": "gpTomAndroid",
+        "providerPaymentId": "TX-9901",
+        "providerData": {
+          "batchNumber": 12,
+          "externalTransactionID": "TX-9901",
+          "terminalID": "T-55",
+          "emvAid": "A0000000031010",
+          "emvAppLable": "VISA CREDIT",
+          "cardDataEntry": "CONTACTLESS",
+          "cardNumber": "**** **** **** 4720",
+          "currencyCode": "EUR",
+          "amount": 1500,
+          "pinOk": true,
+          "approvedCode": "123401",
+          "sequenceNumber": 1,
+          "transactionType": 1
+        }
+      },
+      {
+        "id": "p3",
+        "method": "cash",
+        "amountCents": 1045,
+        "tenderedCents": 2000,
+        "changeCents": 955
+      }
+    ]
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}

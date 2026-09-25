@@ -1,0 +1,74 @@
+        Bäckerei Muster         
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345678           
+         +43 6134 12345         
+                                
+Datum:       25.09.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-77
+                                
+2  x Schnitzel           37,80 B
+je 18,90                        
+1  x Salat                6,55 B
+1  x Apfelstrudel         4,65 B
+4  x Wein 1/4            20,00 A
+je 5,00                         
+Trinkgeld Personal        6,00 D
+                                
+MwSt%   MwSt    Netto     Brutto
+B 10%   4,45    44,55      49,00
+A 20%   3,33    16,67      20,00
+D 0%    0,00    6,00        6,00
+--------------------------------
+Gesamt:                  75,00 €
+Zahlungsarten:                  
+1. Kartenzahlung         22,00 €
+  davon Trinkgeld         2,00 €
+2. Kartenzahlung         18,00 €
+  davon Trinkgeld         3,00 €
+3. Kartenzahlung         24,00 €
+4. Barzahlung            11,00 €
+  davon Trinkgeld         1,00 €
+  Gegeben:               20,00 €
+  Rückgeld:               9,00 €
+                                
+           [QR-Code]            
+                                
+        1. Kartenzahlung        
+          Sumup Beleg           
+Kartentyp:            MASTERCARD
+Kartennummer:     **** **** ****
+                            4720
+Zahlungstyp:         CONTACTLESS
+Gesamtbetrag:          22,00 EUR
+Transaktionscod       TEZBA9K7QK
+e:                              
+Modus:               CONTACTLESS
+                                
+        2. Kartenzahlung        
+          GP Tom Beleg          
+           Batch: 12            
+        Receipt: TX-9904        
+           TID: T-55            
+         A0000000031010         
+    VISA CREDIT CONTACTLESS     
+      **** **** **** 4720       
+     Sale Amount EUR 18,00      
+             PIN OK             
+   Authorization Code 123404    
+       Sequence Number: 4       
+                                
+        3. Kartenzahlung        
+          Sumup Beleg           
+Kartentyp:                  VISA
+Kartennummer:     **** **** ****
+                            1881
+Zahlungstyp:         CONTACTLESS
+Gesamtbetrag:          24,00 EUR
+Transaktionscod       TFQ2M8C4XP
+e:                              
+Modus:               CONTACTLESS
+                                
+ Vielen Dank für Ihren Einkauf  
+    www.baeckerei-muster.at     

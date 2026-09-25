@@ -57,7 +57,7 @@ package is server-to-server only and deliberately not part of this package.
 
 ```yaml
 dependencies:
-  kasseneck_api: ^9.0.0
+  kasseneck_api: ^9.1.0
 ```
 
 ```bash

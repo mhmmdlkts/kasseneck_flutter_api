@@ -21,6 +21,7 @@ import '../../enums/credit_card_provider.dart';
 import '../../enums/keck_payment_method.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
+import '../../models/keck_payment.dart';
 import '../../models/keck_tip_person.dart';
 import '../aufrufe.dart';
 import '../register/fehler.dart';
@@ -63,6 +64,7 @@ class Belegzusammenfassung {
     this.storniertBeleg,
     this.stornogrund,
     this.nullbelegAnlass,
+    this.zahlungen,
   });
 
   final String receiptId;
@@ -78,7 +80,14 @@ class Belegzusammenfassung {
   /// Tagessumme fortpflanzt.
   final int summeCents;
 
+  /// Einzel-Zahlungsart des Belegs; `mixed` bei mehreren Zahlarten. Ein
+  /// unbekannter kuenftiger Wert gilt als Barzahlung.
   final KeckPaymentMethod zahlungsart;
+
+  /// Zahlungsliste, nur bei Belegen, die eine tragen. Die Liste liefert nur die
+  /// oeffentlichen Felder (id, method, amountCents, provider, tenderedCents,
+  /// changeCents, refundOf, tipCents) -- Anbieter-Interna bleiben im Backend.
+  final List<KeckPayment>? zahlungen;
 
   /// Wurde der Beleg mit funktionierender Signatureinheit ausgestellt?
   final bool signaturOk;
@@ -141,6 +150,7 @@ class Belegzusammenfassung {
       storniertBeleg: bezug is Map && bezug['receiptId'] is String ? bezug['receiptId'] as String : null,
       stornogrund: json['cancellationReason'] is String ? json['cancellationReason'] as String : null,
       nullbelegAnlass: json['zeroKind'] is String ? json['zeroKind'] as String : null,
+      zahlungen: KeckPayment.listeAus(json['payments']),
     );
   }
 }
@@ -183,9 +193,16 @@ class RegisterReceiptClient {
   /// schalten den Kartenblock ueber dieses Feld. Fehlt es, steht am Beleg
   /// `creditCardProvider: null`, kein Zweig trifft, und der Gast bekommt keinen
   /// Kartenbeleg — auch dann nicht, wenn Kennung und Terminaldaten mitgehen.
+  ///
+  /// **Mehrere Zahlungen** gehen als [zahlungen] hinaus (siehe
+  /// [KeckPaymentInput], Rest bar etwa ueber `barzahlung`). Sie schliessen
+  /// [zahlungsart] und die Kartenfelder aus -- die Kartenangaben stehen dann in
+  /// der einzelnen Zahlung (Backend: `PAYMENTS_CONFLICT`). Eines von beiden
+  /// ist Pflicht; `mixed` wird nie gesendet.
   Future<KasseneckReceipt> verkaufen({
     required List<KasseneckItem> positionen,
-    required KeckPaymentMethod zahlungsart,
+    KeckPaymentMethod? zahlungsart,
+    List<KeckPaymentInput>? zahlungen,
     int? trinkgeldCents,
     List<String>? kundendaten,
     List<String>? rechtshinweise,
@@ -205,6 +222,20 @@ class RegisterReceiptClient {
     if (trinkgeldCents != null && trinkgeldCents < 0) {
       throw const KasseneckValidationError(name, 'Trinkgeld muss >= 0 sein', 'request');
     }
+    if (zahlungen != null) {
+      final fehler = zahlungsKonflikt({
+            'paymentMethod': zahlungsart,
+            'creditCardProvider': kartenanbieter,
+            'cardPaymentId': kartenzahlungId,
+            'cardPaymentData': kartenzahlungsdaten,
+          }) ??
+          zahlungenFehler(zahlungen, storno: false);
+      if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
+    } else if (zahlungsart == null) {
+      throw const KasseneckValidationError(name, 'zahlungsart oder zahlungen ist Pflicht', 'request');
+    } else if (zahlungsart == KeckPaymentMethod.mixed) {
+      throw const KasseneckValidationError(name, mixedNichtSenden, 'request');
+    }
     if (kartenanbieter != null && zahlungsart != KeckPaymentMethod.creditCard) {
       // Ein Anbieter an einer Barzahlung ist ein Widerspruch: entweder ist die
       // Zahlungsart falsch oder der Anbieter. Beides gehoert an den Tresen
@@ -218,7 +249,8 @@ class RegisterReceiptClient {
       params: {
         'receiptType': 'standard',
         'items': positionen.map((p) => p.toJson()).toList(),
-        'paymentMethod': zahlungsart.name,
+        'paymentMethod': ?zahlungsart?.name,
+        if (zahlungen != null) 'payments': [for (final z in zahlungen) z.toJson()],
         if (trinkgeldCents != null && trinkgeldCents > 0) 'tip': trinkgeldCents,
         if (kundendaten != null && kundendaten.isNotEmpty) 'customerDetails': kundendaten.join('\n'),
         if (rechtshinweise != null && rechtshinweise.isNotEmpty) 'legalMessage': rechtshinweise.join('\n'),
@@ -299,12 +331,19 @@ class RegisterReceiptClient {
   /// der Server den Storno-Beleg selbst und nimmt dafuer nur `items`, `note` und
   /// `paymentMethod` entgegen. Ein hier mitgegebener Anbieter fiele stumm weg —
   /// deshalb gibt es das Argument gar nicht erst.
+  ///
+  /// [zahlungen] sind die Rueckzahlungen je Zahlung (Betraege negativ,
+  /// `refundOf` = `id` der Originalzahlung) und schliessen [zahlungsart] aus.
+  /// Ohne Angabe spiegelt der Server die Restbetraege jeder Originalzahlung;
+  /// ein Teilstorno eines Belegs mit mehreren Zahlungen braucht sie
+  /// (`STORNO_PAYMENTS_REQUIRED`).
   Future<Stornoergebnis> stornieren({
     required String originalReceiptId,
     required String grund,
     List<Stornoposition>? positionen,
     String? anmerkung,
     KeckPaymentMethod? zahlungsart,
+    List<KeckPaymentInput>? zahlungen,
   }) async {
     const name = Aufrufe.cancelReceipt;
     if (originalReceiptId.trim().isEmpty) {
@@ -324,6 +363,12 @@ class RegisterReceiptClient {
     if (anmerkung != null && anmerkung.length > _anmerkungHoechstlaenge) {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
+    if (zahlungen != null) {
+      final fehler = zahlungsKonflikt({'paymentMethod': zahlungsart}) ?? zahlungenFehler(zahlungen, storno: true);
+      if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
+    } else if (zahlungsart == KeckPaymentMethod.mixed) {
+      throw const KasseneckValidationError(name, mixedNichtSenden, 'request');
+    }
 
     final daten = await transport.rufen(
       name,
@@ -333,6 +378,7 @@ class RegisterReceiptClient {
         if (positionen != null) 'items': [for (final p in positionen) {'index': p.index, 'quantity': p.menge}],
         if (anmerkung != null && anmerkung.isNotEmpty) 'note': anmerkung,
         if (zahlungsart != null) 'paymentMethod': zahlungsart.name,
+        if (zahlungen != null) 'payments': [for (final z in zahlungen) z.toJson()],
       },
       frist: abschlussFrist,
     );
