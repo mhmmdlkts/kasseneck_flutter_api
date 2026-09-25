@@ -1,0 +1,428 @@
+{
+  "lines": [
+    {
+      "kind": "text",
+      "text": "Bäckerei Muster",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Hauptplatz 1",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "4830 Hallstatt",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "ATU12345678",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "+43 6134 12345",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Datum:",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "25.09.2026 10:15:30",
+          "width": 8,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kassen-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "KASSE1",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Beleg-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "AT0-KASSE1-73",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "2  x Tagesteller je 18,90",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "37,80 B",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Trinkgeld Personal",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "3,00 D",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "MwSt%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "MwSt",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Netto",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Brutto",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "B 10%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "3,44",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "34,36",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "37,80",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "D 0%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "0,00",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "3,00",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "3,00",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamt:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "40,80 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "text",
+      "text": "Zahlungsarten:",
+      "align": "left",
+      "bold": false
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "1. Kartenzahlung",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "20,80 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  davon Trinkgeld",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "3,00 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "2. Barzahlung",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "20,00 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  Gegeben:",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "50,00 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  Rückgeld:",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "30,00 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "qr",
+      "data": "_R1-AT1_KASSE1_AT0-KASSE1-73_2026-09-25T10:15:30_0,00_37,80_0,00_3,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR"
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "1. Kartenzahlung",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Sumup Beleg",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kartentyp:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "MASTERCARD",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kartennummer:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "**** **** **** 4720",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Zahlungstyp:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "CONTACTLESS",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamtbetrag:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "20,80 EUR",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Transaktionscode:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "TEZBA9K7QK",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Modus:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "CONTACTLESS",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Vielen Dank für Ihren Einkauf",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "www.baeckerei-muster.at",
+      "align": "center",
+      "bold": false
+    }
+  ],
+  "paperSize": "mm58",
+  "regelwerk": 2
+}

@@ -1,0 +1,100 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "uid": "ATU12345678",
+    "taxnr": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-76",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-09-25T10:15:30",
+    "items": [
+      {
+        "name": "Schnitzel",
+        "quantity": -1,
+        "unitPriceCents": 1890,
+        "vatRate": 10
+      },
+      {
+        "name": "Salat",
+        "quantity": -1,
+        "unitPriceCents": 655,
+        "vatRate": 10
+      },
+      {
+        "name": "Wein 1/4",
+        "quantity": -4,
+        "unitPriceCents": 500,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "mixed",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "6F0404F0",
+    "receiptType": "cancellation",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-76_2026-09-25T10:15:30_-20,00_-25,45_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "creditCard",
+        "amountCents": -2000,
+        "provider": "sumup",
+        "providerPaymentId": "TR7W2N5KDA",
+        "refundOf": "p1"
+      },
+      {
+        "id": "p2",
+        "method": "creditCard",
+        "amountCents": -1500,
+        "provider": "gpTomAndroid",
+        "providerPaymentId": "TX-9903",
+        "providerData": {
+          "batchNumber": 12,
+          "externalTransactionID": "TX-9903",
+          "terminalID": "T-55",
+          "emvAid": "A0000000031010",
+          "emvAppLable": "VISA CREDIT",
+          "cardDataEntry": "CONTACTLESS",
+          "cardNumber": "**** **** **** 4720",
+          "currencyCode": "EUR",
+          "amount": 1500,
+          "pinOk": true,
+          "approvedCode": "123403",
+          "sequenceNumber": 3,
+          "transactionType": 3
+        },
+        "refundOf": "p2"
+      },
+      {
+        "id": "p3",
+        "method": "cash",
+        "amountCents": -1045,
+        "refundOf": "p3"
+      }
+    ],
+    "cancellationOf": {
+      "receiptId": "AT0-KASSE1-70",
+      "fullReceiptId": null,
+      "timeStamp": "2026-09-25T10:15:30"
+    },
+    "cancellationReason": "kunde_storniert"
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}

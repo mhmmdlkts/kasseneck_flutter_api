@@ -1,0 +1,49 @@
+        Bäckerei Muster         
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345678           
+         +43 6134 12345         
+                                
+================================
+          STORNOBELEG           
+================================
+     Stornobuchung zu Beleg     
+         AT0-KASSE1-70          
+   vom 25.09.2026, 10:15 Uhr    
+   Grund: Kunde hat storniert   
+                                
+Datum:       25.09.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-76
+                                
+-1 x Schnitzel          -18,90 B
+-1 x Salat               -6,55 B
+-4 x Wein 1/4           -20,00 A
+                                
+MwSt%   MwSt    Netto     Brutto
+B 10%   -2,31   -23,14    -25,45
+A 20%   -3,33   -16,67    -20,00
+--------------------------------
+Gesamt:                 -45,45 €
+Zahlungsarten:                  
+1. Kartenzahlung        -20,00 €
+2. Kartenzahlung        -15,00 €
+3. Barzahlung           -10,45 €
+                                
+           [QR-Code]            
+                                
+        2. Kartenzahlung        
+          GP Tom Beleg          
+           Batch: 12            
+        Receipt: TX-9903        
+           TID: T-55            
+         A0000000031010         
+    VISA CREDIT CONTACTLESS     
+      **** **** **** 4720       
+    Refund Amount EUR 15,00     
+             PIN OK             
+   Authorization Code 123403    
+       Sequence Number: 3       
+                                
+ Vielen Dank für Ihren Einkauf  
+    www.baeckerei-muster.at     

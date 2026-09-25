@@ -1,0 +1,152 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "uid": "ATU12345678",
+    "taxnr": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-77",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-09-25T10:15:30",
+    "items": [
+      {
+        "name": "Schnitzel",
+        "quantity": 2,
+        "unitPriceCents": 1890,
+        "vatRate": 10
+      },
+      {
+        "name": "Salat",
+        "quantity": 1,
+        "unitPriceCents": 655,
+        "vatRate": 10
+      },
+      {
+        "name": "Apfelstrudel",
+        "quantity": 1,
+        "unitPriceCents": 465,
+        "vatRate": 10
+      },
+      {
+        "name": "Wein 1/4",
+        "quantity": 4,
+        "unitPriceCents": 500,
+        "vatRate": 20
+      },
+      {
+        "name": "Trinkgeld Personal",
+        "quantity": 1,
+        "unitPriceCents": 500,
+        "vatRate": 0,
+        "kind": "tip",
+        "recipient": {
+          "registerUserId": "ru1",
+          "name": "Anna"
+        },
+        "paymentMethod": "creditCard"
+      },
+      {
+        "name": "Trinkgeld Personal",
+        "quantity": 1,
+        "unitPriceCents": 100,
+        "vatRate": 0,
+        "kind": "tip",
+        "recipient": {
+          "registerUserId": "ru1",
+          "name": "Anna"
+        },
+        "paymentMethod": "cash"
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "mixed",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "6F0404F0",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-77_2026-09-25T10:15:30_20,00_49,00_0,00_6,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "creditCard",
+        "amountCents": 2200,
+        "tipCents": 200,
+        "provider": "sumup",
+        "providerPaymentId": "TEZBA9K7QK",
+        "providerData": {
+          "cardType": "MASTERCARD",
+          "cardLastDigits": "4720",
+          "paymentType": "CONTACTLESS",
+          "amount": 2200,
+          "currency": "EUR",
+          "transactionCode": "TEZBA9K7QK",
+          "entryMode": "contactless"
+        }
+      },
+      {
+        "id": "p2",
+        "method": "creditCard",
+        "amountCents": 1800,
+        "tipCents": 300,
+        "provider": "gpTomAndroid",
+        "providerPaymentId": "TX-9904",
+        "providerData": {
+          "batchNumber": 12,
+          "externalTransactionID": "TX-9904",
+          "terminalID": "T-55",
+          "emvAid": "A0000000031010",
+          "emvAppLable": "VISA CREDIT",
+          "cardDataEntry": "CONTACTLESS",
+          "cardNumber": "**** **** **** 4720",
+          "currencyCode": "EUR",
+          "amount": 1800,
+          "pinOk": true,
+          "approvedCode": "123404",
+          "sequenceNumber": 4,
+          "transactionType": 1
+        }
+      },
+      {
+        "id": "p3",
+        "method": "creditCard",
+        "amountCents": 2400,
+        "provider": "sumup",
+        "providerPaymentId": "TFQ2M8C4XP",
+        "providerData": {
+          "cardType": "VISA",
+          "cardLastDigits": "1881",
+          "paymentType": "CONTACTLESS",
+          "amount": 2400,
+          "currency": "EUR",
+          "transactionCode": "TFQ2M8C4XP",
+          "entryMode": "contactless"
+        }
+      },
+      {
+        "id": "p4",
+        "method": "cash",
+        "amountCents": 1100,
+        "tipCents": 100,
+        "tenderedCents": 2000,
+        "changeCents": 900
+      }
+    ],
+    "tipCents": 600
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}

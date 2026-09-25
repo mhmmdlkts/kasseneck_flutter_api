@@ -1,0 +1,71 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "uid": "ATU12345678",
+    "taxnr": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-75",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-09-25T10:15:30",
+    "items": [
+      {
+        "name": "Salat",
+        "quantity": -1,
+        "unitPriceCents": 655,
+        "vatRate": 10
+      },
+      {
+        "name": "Wein 1/4",
+        "quantity": -1,
+        "unitPriceCents": 500,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "mixed",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "6F0404F0",
+    "receiptType": "cancellation",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-75_2026-09-25T10:15:30_-5,00_-6,55_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "cash",
+        "amountCents": -1045,
+        "refundOf": "p3"
+      },
+      {
+        "id": "p2",
+        "method": "creditCard",
+        "amountCents": -110,
+        "provider": "sumup",
+        "providerPaymentId": "TR7W2N5KDA",
+        "refundOf": "p1"
+      }
+    ],
+    "cancellationOf": {
+      "receiptId": "AT0-KASSE1-70",
+      "fullReceiptId": null,
+      "timeStamp": "2026-09-25T10:15:30"
+    },
+    "cancellationReason": "fehleingabe"
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}

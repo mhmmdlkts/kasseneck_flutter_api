@@ -177,6 +177,62 @@
       "blatt32": "06b97959a3e91c3413853fb71fedda97dc4cd72a499ffd269f4cce22e5fc3775",
       "blatt48": "26e5954966639eb2f7dd1e2e7ff61c8845e17a34e84a15cc0dadc0717852bd07"
     },
+    "split-bar-rueckgeld": {
+      "eingabe": "b12d3e1adee77d743250f3719550f92af268e81170dfe9595a689513798a0e6c",
+      "erwartet": "1cc70b5206948f2931813b4df778fe4b77d083f7211f4f070cc6bc1d9c23af65",
+      "grid32": "6b8c53058b779712885bad15c1c68135d834f4f741ce62b8361ddd90efa84b95",
+      "grid48": "9a06f420fc81ba463e6d29b3601de1db28a45fb646db41a6dde1c632bde02bef",
+      "blatt32": "e69b5b4e3abaa6f126eeb385a201a14f4b888aa7606e7a95584b9b0b7ec275c6",
+      "blatt48": "053440f4b3fd4589e0c019522db688a5cd3a274c8ddb7cbdcdcc559c1f5f2e0a"
+    },
+    "split-eine-karte-trinkgeld": {
+      "eingabe": "c6df0651c38cc9be34aeab745bf79cf64504d0eb5bdb4788d736109930cfd966",
+      "erwartet": "697ebb0d994a38a4b7718198df91e99473da6a00e6abf73d37e340546604b702",
+      "grid32": "8717df55a7a829ae89f52623d015d3b44a15a20e76633ddb5e419468c888b6ac",
+      "grid48": "661d67c760b39090888cc2b9ab3811081e763b98860f98cc07a8ca09afc36ae8",
+      "blatt32": "6b4c77b65d2e20c5313551939ade180635a961d416af82af4203cc18ecf7d503",
+      "blatt48": "50f9e9a1fcf9ba9127d52651fe98c26e4da0bdfd6868814af47ca54b2c6288be"
+    },
+    "split-karte-karte-bar": {
+      "eingabe": "546c64d96ab81cd5615d6d9ea7bd79c516ce47937382fd1a3a33741bdd11098c",
+      "erwartet": "f699ba931d9ba1e9971a81020bda8d67df33de9fb21a385d9d2340b7106a9217",
+      "grid32": "a51255ebc313dbeb834e720d1752cf2908579115a1c7b16d7f70fe7cecb196e0",
+      "grid48": "49180dc43f4c2f69164e4a3c8841fad2dad64328fb5a97a5f5d0726be34799d5",
+      "blatt32": "781e0427e26e159ca985bef5aa9cf0ad7497182472d9ed4d79687825fae0d494",
+      "blatt48": "cc887b0d6d667e013d5741552e699138e3c38d5f08f91c4d66ad389810262476"
+    },
+    "split-langer-betrag": {
+      "eingabe": "cd0bc2dfc4003b605f46b3133f6d66bbf0f6a2fc56a4ab7724e1c5bc4e3d2862",
+      "erwartet": "9e6d972fa52a36b37bbacdd4b65c68a6d624360fcfec53140c8549cd65efd5ae",
+      "grid32": "f4cfeb80e9258ba66b899e0ae489cbbb58381b108eb69012a653482239ae08ad",
+      "grid48": "1924a3c7fa04de1afb8307fa4d1fc49a9664cf7f97abd6d4bcb9a02a267a6cd0",
+      "blatt32": "348c9ce13aaf649ddd092696563a3987842c44e50357942e628bd72ea7b7976f",
+      "blatt48": "5a21d436a03af1843eabc4afac0c032cf73e5e0e9200c8172d3f30148c342000"
+    },
+    "split-tischrunde-trinkgeld": {
+      "eingabe": "b71083c468c353d8c2f88d80c138244b35fe205cedfdf55b59c66024487c0b71",
+      "erwartet": "a0c26ec17130941ac89d2069bd20a00d5b8e2732d90a5c5d6957f46b6ea48596",
+      "grid32": "1be9b5f616b72e01f02f5099724c5383885ba3bc6d4d462810a6c657f226c331",
+      "grid48": "64ca8d9424c51ebf9a46e64610d5a5a01928eb3946b0d625f3dfbb38f9d295a4",
+      "blatt32": "e2fcefebb42ba7d30fa3aee97b2de30d85e7eba083feedd80abfb8f02cab8c92",
+      "blatt48": "6faa8a2da7e6887129d8ba9658fef19bda89cc42f5227373c893dae306ca37e3"
+    },
+    "split-trinkgeld-karte": {
+      "eingabe": "c51af4387d90820afb10c53943519fbecac43c3b4d9e3e06292689ad72d2fb13",
+      "erwartet": "8905104ad3f93faa12e50fb421678185ac4124a8ccda5d7ca629b1a5d508ff3e",
+      "grid32": "841d6a935531b43646f8e549cae4f2cb9047144cfa6fdae04a4ed2485da8ff63",
+      "grid48": "12278d2c9b2c59b2e9898daad119498d3ceec04dd761870f0c118d872946dbcc",
+      "blatt32": "17fe2ed1a4cbe533019d282e0969b683b2f16086c1c148cb71ce943e98bc1d7e",
+      "blatt48": "0dd923bf870a716e46702072a2a236ac0027524b21895f1551c9d3fb18f8be65"
+    },
+    "split-zwei-karten-gleicher-anbieter": {
+      "eingabe": "fece48d5aaf2293b42ca4e33184cfa47c382b4df3d75d0a9aa9181c7158f4a9f",
+      "erwartet": "89536c00c511185e153bed051784911e4140cfed92ccf174b4b3df877129d832",
+      "grid32": "cfb1e8e1e621b09a53026113161551978febc9a667f5ea6a044cd958ad9c499c",
+      "grid48": "62cf28cbd34afb9d4cb9f5424cea9ac83154afab4b60eba87170ee89eb0f940a",
+      "blatt32": "6c17ff2940f45df0a41fbfe0f603dce15137605f941a576aa402f9d67aa967f4",
+      "blatt48": "a9884d7859bad10443f04f2973e6eaeabf48ece1d309e2dbafaef5cce05c35bb"
+    },
     "storno-rabatt": {
       "eingabe": "d6bd978f4cc3e9c8c4315c573c7a3f5c8dfea4bf65fce6789f268056a521ec15",
       "erwartet": "a10fc0dbbfd46366feab7431ab1608ad5a76418e80b50d2903c574ee2cb70040",
@@ -184,6 +240,22 @@
       "grid48": "ee69cc5d38a73b1ee99f6dd66a72a9b90e8fc54066b0d2c0e437f6eac187900c",
       "blatt32": "4b4c46f72efb23a654a50308a95bd852f42a5bcd50903fa5190799a7d4423ed0",
       "blatt48": "2ba66d7744cc4b453570e164795a50be7ce7ebf726f77ca4847d833e6544542b"
+    },
+    "storno-split-teil": {
+      "eingabe": "f2249f3fe529f8fcb9930b52e65c15b45af3f9a44a36ec6286814886bbb0a02e",
+      "erwartet": "4cac951b716c60043e77877bd4f7194fc43a493c61f62ef9b07eea4048b6059a",
+      "grid32": "73b152cf7de2ee75c8d3f27d43cfb8f5fdd166b1e6956e407b68c31458884185",
+      "grid48": "9bc0f04402205cbe212afe9302775986ff625f03eb1fe1dcda0b89a180074773",
+      "blatt32": "2430db5aad6409c2bd5fabd79643c5d1a9077ae6163da58e325ad1cab6d8ff3e",
+      "blatt48": "14ce2d48d60b198aea355a0dae1b5a8ab2b3404034bc603beeadd3ca23a59b38"
+    },
+    "storno-split-voll": {
+      "eingabe": "84c58b31420af43fe46fb77a10cd2268b29224be7a26112a659079958e72895d",
+      "erwartet": "380f241d8ef791d257a9eb17787b93021ac00472d1a19994bc5d02e20c337105",
+      "grid32": "e7f3129bef7e683e2cf8b4b212b9eab66a2a068077792716313fec87c71e464c",
+      "grid48": "4de3a192f6bb1fe9bc0ebf28476e6f631b2de2ac85cdc2032b550207fc93a321",
+      "blatt32": "910f89e3a814ce5c62dd735e51c9656fc9c7e08be3104d3e44869b72f7e832f5",
+      "blatt48": "e8fa7e9f7a9cd136a6c12342bdece2bc8caa4d214b284343027d7e058b974283"
     },
     "storno-teil": {
       "eingabe": "2f4cab11c1c9e8bb4722dd6c4a279825a9e31e3b6a9335c017bc587d97af0fd4",

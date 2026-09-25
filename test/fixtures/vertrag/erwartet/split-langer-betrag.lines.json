@@ -1,0 +1,343 @@
+{
+  "lines": [
+    {
+      "kind": "text",
+      "text": "Bäckerei Muster",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Hauptplatz 1",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "4830 Hallstatt",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "ATU12345678",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "+43 6134 12345",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Datum:",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "25.09.2026 10:15:30",
+          "width": 8,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kassen-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "KASSE1",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Beleg-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "AT0-KASSE1-74",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "2  x Festtafel je 1234,56",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "2469,12 B",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "MwSt%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "MwSt",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Netto",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Brutto",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "B 10%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "224,47",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "2244,65",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "2469,12",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamt:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "2469,12 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "text",
+      "text": "Zahlungsarten:",
+      "align": "left",
+      "bold": false
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "1. Kartenzahlung",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "1234,56 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "2. Barzahlung",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "1234,56 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  Gegeben:",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "1300,00 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  Rückgeld:",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "65,44 €",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "qr",
+      "data": "_R1-AT1_KASSE1_AT0-KASSE1-74_2026-09-25T10:15:30_0,00_2469,12_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR"
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "1. Kartenzahlung",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "GP Tom Beleg",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Batch: 12",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Receipt: TX-9902",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "TID: T-55",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "A0000000031010",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "VISA CREDIT CONTACTLESS",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "**** **** **** 4720",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Sale Amount EUR 1234,56",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "PIN OK",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Authorization Code 123402",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Sequence Number: 2",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Vielen Dank für Ihren Einkauf",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "www.baeckerei-muster.at",
+      "align": "center",
+      "bold": false
+    }
+  ],
+  "paperSize": "mm58",
+  "regelwerk": 2
+}

@@ -1,0 +1,89 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "uid": "ATU12345678",
+    "taxnr": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-71",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-09-25T10:15:30",
+    "items": [
+      {
+        "name": "Schnitzel",
+        "quantity": 1,
+        "unitPriceCents": 1890,
+        "vatRate": 10
+      },
+      {
+        "name": "Salat",
+        "quantity": 1,
+        "unitPriceCents": 655,
+        "vatRate": 10
+      },
+      {
+        "name": "Wein 1/4",
+        "quantity": 4,
+        "unitPriceCents": 500,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "creditCard",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "6F0404F0",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-71_2026-09-25T10:15:30_20,00_25,45_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "creditCard",
+        "amountCents": 2500,
+        "provider": "sumup",
+        "providerPaymentId": "TEZBA9K7QK",
+        "providerData": {
+          "cardType": "MASTERCARD",
+          "cardLastDigits": "4720",
+          "paymentType": "CONTACTLESS",
+          "amount": 2500,
+          "currency": "EUR",
+          "transactionCode": "TEZBA9K7QK",
+          "entryMode": "contactless"
+        }
+      },
+      {
+        "id": "p2",
+        "method": "creditCard",
+        "amountCents": 2045,
+        "provider": "sumup",
+        "providerPaymentId": "TFQ2M8C4XP",
+        "providerData": {
+          "cardType": "VISA",
+          "cardLastDigits": "1881",
+          "paymentType": "CONTACTLESS",
+          "amount": 2045,
+          "currency": "EUR",
+          "transactionCode": "TFQ2M8C4XP",
+          "entryMode": "contactless"
+        }
+      }
+    ]
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}
