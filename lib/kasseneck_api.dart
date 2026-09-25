@@ -24,6 +24,7 @@ import 'models/kasseneck_item.dart';
 import 'models/keck_tip.dart';
 import 'models/keck_tip_person.dart';
 import 'models/kasseneck_receipt.dart';
+import 'models/keck_payment.dart';
 import 'src/aufrufe.dart';
 import 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
 import 'src/kasse/belegmail.dart' show Belegmailergebnis, belegMailFehlercodes;
@@ -55,6 +56,11 @@ export 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
 export 'src/kasse/belegmail.dart'
     show Belegmailergebnis, belegMailFehlercodes, istBelegMailFehlercode;
 export 'src/kasse/storno.dart' show stornogruende, stornoFehlercodes, istStornoFehlercode;
+// Mehrere Zahlungen je Beleg: `sellReceipt(payments:)` und
+// `stornieren(zahlungen:)` nehmen KeckPaymentInput, der Beleg traegt
+// KeckPayment, Ablehnungen kommen mit einem Code aus zahlungFehlercodes.
+export 'models/keck_payment.dart' show KeckPayment, KeckPaymentInput, zahlungenFehler, zahlungenHoechstzahl;
+export 'src/kasse/zahlungen.dart' show zahlungFehlercodes, istZahlungFehlercode;
 export 'services/druck_logo.dart' show ladeDruckLogo;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
@@ -394,6 +400,7 @@ class KasseneckApi {
     CreditCardProvider? kartenanbieter,
     String? kartenzahlungId,
     Map<String, dynamic>? kartenzahlungsdaten,
+    List<KeckPaymentInput>? zahlungen,
   }) async {
     const name = Aufrufe.cancelReceipt;
     if (cashregisterId.trim().isEmpty) {
@@ -416,6 +423,18 @@ class KasseneckApi {
     if (anmerkung != null && anmerkung.length > 200) {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
+    if (zahlungen != null) {
+      final fehler = zahlungsKonflikt({
+            'paymentMethod': zahlungsart,
+            'creditCardProvider': kartenanbieter,
+            'cardPaymentId': kartenzahlungId,
+            'cardPaymentData': kartenzahlungsdaten,
+          }) ??
+          zahlungenFehler(zahlungen, storno: true);
+      if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
+    } else if (zahlungsart == KeckPaymentMethod.mixed) {
+      throw const KasseneckValidationError(name, mixedNichtSenden, 'request');
+    }
     final karte = kartenanbieter != null || kartenzahlungId != null || kartenzahlungsdaten != null;
     if (karte && zahlungsart != null && zahlungsart != KeckPaymentMethod.creditCard) {
       // Ohne zahlungsart entscheidet das Backend an der Zahlungsart des
@@ -431,6 +450,7 @@ class KasseneckApi {
         'reason': grund,
         if (positionen != null) 'items': [for (final p in positionen) {'index': p.index, 'quantity': p.menge}],
         if (anmerkung != null && anmerkung.isNotEmpty) 'note': anmerkung,
+        if (zahlungen != null) 'payments': [for (final z in zahlungen) z.toJson()],
         'paymentMethod': ?zahlungsart?.name,
         'creditCardProvider': ?kartenanbieter?.name,
         if (kartenzahlungId != null && kartenzahlungId.isNotEmpty) 'cardPaymentId': kartenzahlungId,
@@ -540,8 +560,14 @@ class KasseneckApi {
   }
 
   /// Issues a **standard** RKSV receipt (a sale) for the given [items] and [paymentMethod].
+  ///
+  /// Several payments on one receipt (two cards, the rest in cash) go out as
+  /// [payments] instead. They exclude [paymentMethod] and the card fields --
+  /// the card details belong to each payment (backend: `PAYMENTS_CONFLICT`).
+  /// One of the two is required; `mixed` is never sent, the server derives it.
   Future<KasseneckReceipt?> sellReceipt({
-    required KeckPaymentMethod paymentMethod,
+    KeckPaymentMethod? paymentMethod,
+    List<KeckPaymentInput>? payments,
     List<KasseneckItem>? items,
     List<KeckVoucher>? vouchers,
     List<String>? customerDetails,
@@ -552,6 +578,9 @@ class KasseneckApi {
     Map<String, dynamic>? cardPaymentData,
     KeckTip? tip,
   }) async {
+    if (paymentMethod == null && payments == null) {
+      throw ArgumentError('paymentMethod oder payments ist Pflicht.');
+    }
     return _createReceipt(
       receiptType: ReceiptType.standard,
       tip: tip,
@@ -559,6 +588,7 @@ class KasseneckApi {
       items: items,
       vouchers: vouchers,
       paymentMethod: paymentMethod,
+      payments: payments,
       cardPaymentData: cardPaymentData,
       cardPaymentId: cardPaymentId,
       creditCardProvider: creditCardProvider,
@@ -616,6 +646,7 @@ class KasseneckApi {
   Future<KasseneckReceipt?> _createReceipt({
     required ReceiptType receiptType,
     KeckPaymentMethod? paymentMethod,
+    List<KeckPaymentInput>? payments,
     CreditCardProvider? creditCardProvider,
     String? customProjectId,
     String? cardPaymentId,
@@ -681,6 +712,29 @@ class KasseneckApi {
         throw ArgumentError(tipFehler);
       }
       params['tip'] = tip.toJson();
+    }
+    if (payments != null) {
+      // Der alte Storno-Weg und der Null-/Startbeleg nehmen keine
+      // Zahlungsliste (Backend: PAYMENTS_NOT_ALLOWED); ein Storno mit mehreren
+      // Zahlungen laeuft ueber [stornieren].
+      if (receiptType == ReceiptType.cancellation) {
+        throw ArgumentError('payments am Storno gehen nur ueber stornieren.');
+      }
+      if (receiptType != ReceiptType.standard && receiptType != ReceiptType.training) {
+        throw ArgumentError('payments sind bei receiptType "${receiptType.name}" nicht erlaubt.');
+      }
+      final fehler = zahlungsKonflikt({
+            'paymentMethod': paymentMethod,
+            'creditCardProvider': creditCardProvider,
+            'cardPaymentId': cardPaymentId,
+            'cardPaymentData': cardPaymentData,
+          }) ??
+          zahlungenFehler(payments, storno: false);
+      if (fehler != null) throw ArgumentError(fehler);
+      params['payments'] = [for (final p in payments) p.toJson()];
+    }
+    if (paymentMethod == KeckPaymentMethod.mixed) {
+      throw ArgumentError(mixedNichtSenden);
     }
     if (paymentMethod != null) {
       params['paymentMethod'] = paymentMethod.name;

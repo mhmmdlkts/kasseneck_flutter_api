@@ -19,6 +19,7 @@ import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import 'kasseneck_item.dart';
+import 'keck_payment.dart';
 import 'package:my_pos/enums/my_pos_print_response.dart';
 
 class KasseneckReceipt implements Comparable<KasseneckReceipt> {
@@ -69,6 +70,11 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   CreditCardProvider? creditCardProvider;
   String? cardPaymentId;
   Map<String, dynamic>? cardPaymentData; // you can store the card payment data here
+
+  /// Zahlungsliste (mehrere Zahlungen je Beleg), nur vorhanden, wenn der
+  /// Beleg sie traegt. Altbelege haben keine; dort gelten [paymentMethod] und
+  /// die Kartenfelder. Siehe [KeckPayment].
+  List<KeckPayment>? payments;
   String? logoUrl;
   bool? signatureSuccess;
   String? customProjectId;
@@ -106,14 +112,53 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// **Weg damit**, sobald kein Backend unter Paket 0.9.0 mehr im Feld ist:
   /// dann können dieser Getter, `PrintPaper.setKeckReceipt` und
   /// `KeckReceiptWidget` verschwinden, und es gibt wirklich nur einen Bauer.
+  ///
+  /// Mit Zahlungsliste zaehlt jeder Kartenblock aus [kartenzahlungen]: steht
+  /// derselbe Anbieter zweimal auf dem Beleg, muss sein Kopf auch zweimal im
+  /// Layout stehen -- ein Paket vor der Aufschluesselung zeigte nur den Block
+  /// der alten Einzelfelder, und der zweite Kartenbeleg fiele stumm weg.
   bool get layoutIstVollstaendig {
     final BelegLayout? l = layout;
     if (l == null) return false;
+    final Map<String, int> noetig = {};
+    for (final k in kartenzahlungen) {
+      final String? ueberschrift = kartenblockUeberschrift[k.anbieter];
+      if (ueberschrift != null) noetig[ueberschrift] = (noetig[ueberschrift] ?? 0) + 1;
+    }
+    for (final MapEntry(key: ueberschrift, value: anzahl) in noetig.entries) {
+      final int vorhanden = l.lines.where((z) => z is BelegText && z.text.contains(ueberschrift)).length;
+      if (vorhanden < anzahl) return false;
+    }
+    return true;
+  }
+
+  /// Die Kartenzahlungsbloecke dieses Belegs, in Druckreihenfolge -- Zwilling
+  /// von `kartenblock` in `receipt/layout.ts` des npm-Pakets.
+  ///
+  /// Mit Zahlungsliste je Zahlung mit bekanntem Anbieter und Terminaldaten
+  /// ein Block; zwei Karten desselben Anbieters ergeben zwei. Die alten
+  /// Einzelfelder zaehlen dann nicht -- ausser bei hoechstens einer Zahlung
+  /// ohne Terminaldaten neben gesetzten Altfeldern: dort traegt der alte
+  /// Block, wie ohne Liste. `custom` bleibt drin (der Bauer entscheidet, dass
+  /// er nichts zeigt), ein unbekannter Anbieter nicht.
+  List<({CreditCardProvider anbieter, Map<String, dynamic> daten, String? kennung})> get kartenzahlungen {
+    final List<KeckPayment>? zahlungen = payments;
+    final bool altfelderTragen = zahlungen != null &&
+        zahlungen.length <= 1 &&
+        zahlungen.every((z) => z.providerData == null) &&
+        creditCardProvider != null &&
+        cardPaymentData != null;
+    if (zahlungen != null && zahlungen.isNotEmpty && !altfelderTragen) {
+      return [
+        for (final z in zahlungen)
+          if (z.provider != null && z.providerData != null)
+            (anbieter: z.provider!, daten: z.providerData!, kennung: z.providerPaymentId),
+      ];
+    }
     final CreditCardProvider? anbieter = creditCardProvider;
-    if (cardPaymentData == null || anbieter == null) return true;
-    final String? ueberschrift = kartenblockUeberschrift[anbieter];
-    if (ueberschrift == null) return true;
-    return l.lines.any((z) => z is BelegText && z.text.contains(ueberschrift));
+    final Map<String, dynamic>? daten = cardPaymentData;
+    if (anbieter == null || daten == null) return const [];
+    return [(anbieter: anbieter, daten: daten, kennung: cardPaymentId)];
   }
   /// Beleg einer Testumgebung (Aufdruck TESTKASSE).
   bool testKasse;
@@ -160,6 +205,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.creditCardProvider,
     this.cardPaymentId,
     this.cardPaymentData,
+    this.payments,
     this.signatureSuccess,
     this.customProjectId,
     this.showKreiseckLogo = false,
@@ -225,6 +271,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       cardPaymentData: receipt['cardPaymentData'] is Map
           ? Map<String, dynamic>.from(receipt['cardPaymentData'] as Map)
           : null,
+      payments: KeckPayment.listeAus(receipt['payments']),
       customerDetails: List<String>.from(receipt['customerDetails']?.toString().split('\n')??[]),
       legalMessage: List<String>.from(receipt['legalMessage']?.toString().split('\n')??[]),
       signatureSuccess: receipt['signatureSuccess'] is bool ? receipt['signatureSuccess'] as bool : null,
@@ -308,6 +355,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'creditCardProvider': creditCardProvider?.name,
       'cardPaymentId': cardPaymentId,
       'cardPaymentData': cardPaymentData,
+      if (payments != null) 'payments': [for (final p in payments!) p.toJson()],
       'customerDetails': customerDetails.join('\n'),
       'legalMessage': legalMessage.join('\n'),
       'signatureSuccess': signatureSuccess,

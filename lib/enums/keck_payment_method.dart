@@ -7,7 +7,13 @@ enum KeckPaymentMethod {
   uberCard(true, 'Uber Card'),
   boltApp(false, 'Bolt App'),
   boltCash(false, 'Bolt Cash'),
-  boltCard(true, 'Bolt Card');
+  boltCard(true, 'Bolt Card'),
+
+  /// Vergibt nur der Server: ein Beleg mit mehreren Zahlungen verschiedener
+  /// Zahlart (`payments`) traegt ihn als Einzelfeld `paymentMethod` (zwei
+  /// Karten ergeben `creditCard`). Lesen ja, senden nie -- wer mehrere
+  /// Zahlarten kassiert, schickt die Zahlungsliste.
+  mixed(false, 'Mehrere Zahlungsarten');
 
   final bool needsCreditCard;
 

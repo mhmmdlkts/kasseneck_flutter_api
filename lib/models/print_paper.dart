@@ -570,34 +570,37 @@ class PrintPaper {
 
     addFeed();
 
-    if (receipt.cardPaymentData != null && receipt.creditCardProvider != null) {
+    // Ein Block je Kartenzahlung, in Zahlungsreihenfolge (bei mehreren
+    // Zahlungen je Beleg auch zwei desselben Anbieters); ohne Zahlungsliste
+    // genau der bisherige Block aus den Einzelfeldern.
+    for (final karte in receipt.kartenzahlungen) {
       try {
-        switch (receipt.creditCardProvider!) {
+        switch (karte.anbieter) {
           case CreditCardProvider.gpTomAndroid:
           case CreditCardProvider.gpTomIos:
-            _gpTom(receipt.cardPaymentData!);
+            _gpTom(karte.daten);
             break;
           case CreditCardProvider.hobexCloudApi:
-            _hobexApi(receipt.cardPaymentData!);
+            _hobexApi(karte.daten);
             break;
           case CreditCardProvider.hobexHps:
-            _hobexHps(receipt.cardPaymentData!);
+            _hobexHps(karte.daten);
             break;
           case CreditCardProvider.sumup:
-            _sumup(receipt.cardPaymentData!);
+            _sumup(karte.daten);
             break;
           case CreditCardProvider.custom:
             break;
           case CreditCardProvider.myposPro:
-            _mypos(receipt.cardPaymentData!);
+            _mypos(karte.daten);
             break;
           case CreditCardProvider.stripe:
-            _stripe(receipt.cardPaymentData!, receipt.cardPaymentId);
+            _stripe(karte.daten, karte.kennung);
             break;
         }
         addFeed();
       } catch (_) {
-        // Fehlerhafte cardPaymentData darf den Beleg-Druck nicht abbrechen
+        // Fehlerhafte Terminaldaten duerfen den Beleg-Druck nicht abbrechen
       }
     }
 

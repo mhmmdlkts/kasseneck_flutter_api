@@ -12,6 +12,7 @@ library;
 import '../../enums/keck_payment_method.dart';
 import '../../enums/vat_rate.dart';
 import '../../models/kasseneck_item.dart';
+import '../../models/keck_payment.dart';
 import '../vat_math.dart';
 import 'einstellungen.dart';
 import 'warenkorb.dart';
@@ -214,6 +215,29 @@ Kassierrechnung kassierrechnung(Warenkorb warenkorb, KasseSettingsBetrieb betrie
     rueckgeldCents: bar && gegeben != null ? rueckgeld(gesamt, gegeben) : 0,
     bereit: pruefung.bereit,
     grund: pruefung.grund,
+  );
+}
+
+/// Die Barzahlung aus der Kassierrechnung als Eintrag fuer `payments` --
+/// mit `tenderedCents`, damit das Backend Gegeben und Rueckgeld am Beleg
+/// fuehrt und der Bon sie zeigt.
+///
+/// [betragCents] ist der Teil, der bar bezahlt wird; ohne Angabe alles, was
+/// der Gast gibt ([Kassierrechnung.gesamtCents], also samt Trinkgeld -- der
+/// Zahlbetrag des Backends zaehlt das Mitarbeiter-Trinkgeld mit). Bei
+/// mehreren Zahlungen ist es der Rest nach den Karten.
+///
+/// `tenderedCents` geht nur mit, wenn das Rueckgeld gerechnet wird
+/// ([Kassierrechnung.bar]) und das Gegebene den Betrag deckt: zu wenig
+/// Gegebenes lehnte der Server ab (`PAYMENT_TENDERED_INVALID`), und ein Beleg
+/// darf an einer Anzeige-Angabe nicht scheitern.
+KeckPaymentInput barzahlung(Kassierrechnung rechnung, {int? betragCents}) {
+  final betrag = betragCents ?? rechnung.gesamtCents;
+  final gegeben = rechnung.gegebenCents;
+  return KeckPaymentInput(
+    method: KeckPaymentMethod.cash,
+    amountCents: betrag,
+    tenderedCents: rechnung.bar && gegeben != null && gegeben >= betrag ? gegeben : null,
   );
 }
 
