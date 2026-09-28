@@ -1,0 +1,338 @@
+{
+  "charsPerLine": 48,
+  "blocks": [
+    {
+      "kind": "logo",
+      "widthFraction": 0.5208333333333334,
+      "heightLines": 5
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                Bäckerei Muster                 ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  Hauptplatz 1                  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 4830 Hallstatt                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  ATU12345678                   ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 +43 6134 12345                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:                       25.09.2026 10:15:30",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:                          AT0-KASSE1-70",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "1  x Schnitzel                           18,90 B",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "1  x Salat                                6,55 B",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "4  x Wein 1/4 je 5,00                    20,00 A",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "MwSt%       MwSt        Netto             Brutto",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "B 10%       2,31        23,14              25,45",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "A 20%       3,33        16,67              20,00",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "------------------------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamt:                                  45,45 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungsarten:                                  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "1. Kartenzahlung                         20,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "2. Kartenzahlung                         15,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "3. Barzahlung                            10,45 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  Gegeben:                               20,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  Rückgeld:                               9,55 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT1_KASSE1_AT0-KASSE1-70_2026-09-25T10:15:30_20,00_25,45_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "widthFraction": 0.5520833333333334
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                1. Kartenzahlung                ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  Sumup Beleg                   ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kartentyp:                            MASTERCARD",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kartennummer:                **** **** **** 4720",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungstyp:                         CONTACTLESS",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamtbetrag:                          20,00 EUR",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Transaktionscode:                     TEZBA9K7QK",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Modus:                               CONTACTLESS",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                2. Kartenzahlung                ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  GP Tom Beleg                  ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                   Batch: 12                    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                Receipt: TX-9901                ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                   TID: T-55                    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 A0000000031010                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "            VISA CREDIT CONTACTLESS             ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "              **** **** **** 4720               ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "             Sale Amount EUR 15,00              ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                     PIN OK                     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "           Authorization Code 123401            ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "               Sequence Number: 1               ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "         Vielen Dank für Ihren Einkauf          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "            www.baeckerei-muster.at             ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 352,
+      "height": 51
+    }
+  ]
+}

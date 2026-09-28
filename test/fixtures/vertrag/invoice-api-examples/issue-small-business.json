@@ -1,0 +1,27 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Kleinunternehmer: USt-Satz 0",
+  "request": {
+    "idempotencyKey": "ex-5",
+    "customerId": "customer_example",
+    "taxScheme": "smallBusiness",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Reparatur",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 0
+      }
+    ]
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 5000,
+      "vatCents": 0,
+      "grossCents": 5000
+    }
+  }
+}

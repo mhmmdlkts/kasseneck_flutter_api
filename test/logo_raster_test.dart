@@ -46,7 +46,7 @@ void main() {
     final zeilen = <String>[
       for (var y = 0; y < bild.hoehe; y++) bild.punkte.sublist(y * bild.breite, (y + 1) * bild.breite).join(),
     ];
-    expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/erwartet/logo-probe-hoch.raster32.txt').readAsStringSync());
+    expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/expected/logo-sample-tall.raster32.txt').readAsStringSync());
   });
 
   test('Golden: Logo-Probe 300x100, Stufe S, 32 Zeichen -- Punkt fuer Punkt wie npm', () {
@@ -55,7 +55,7 @@ void main() {
     final zeilen = <String>[
       for (var y = 0; y < bild.hoehe; y++) bild.punkte.sublist(y * bild.breite, (y + 1) * bild.breite).join(),
     ];
-    expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/erwartet/logo-probe.raster32.txt').readAsStringSync());
+    expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/expected/logo-sample.raster32.txt').readAsStringSync());
   });
 
   test('logoPixelZulaessig: 4096 noch erlaubt, 4097 nicht mehr, 0 nie', () {

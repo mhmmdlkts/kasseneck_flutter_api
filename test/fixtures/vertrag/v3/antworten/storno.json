@@ -1,0 +1,737 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "86c7d842017f818e348b80ebebdce8492cfcbd76e388cba9de41a5c888114e6a",
+    "inputsSha256": "cee31126cc755fd21441abae289997aeb0884a15eb230ce231defd8bb0bdc0fd",
+    "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+    "inputs": [
+      "docs/api/fehlercodes.json",
+      "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/beleg-mail-core.js",
+      "functions/gemeinsam/api-rand.js",
+      "functions/gemeinsam/api-vokabular-v3.js",
+      "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/storno-core.js",
+      "functions/gemeinsam/tip-core.js",
+      "functions/gemeinsam/vat-buckets.js",
+      "functions/gemeinsam/zahlungen-core.js",
+      "functions/invoice-api-core.js",
+      "functions/invoice-api-endpoints.js",
+      "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
+      "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
+      "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
+      "functions/test/unit/helpers/kassen-fehlerstellen.js",
+      "functions/test/unit/v3-vertrag-export.test.js"
+    ]
+  },
+  "cases": [
+    {
+      "channel": "api",
+      "name": "cancel_full_card_refund",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-2",
+        "reason": "input_error",
+        "payments": [
+          {
+            "method": "creditCard",
+            "amountCents": -700,
+            "refundOf": "p1",
+            "provider": "sumup",
+            "providerPaymentId": "rf-1",
+            "providerData": {
+              "refund": "ok"
+            }
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "cancellationOf": {
+            "receiptId": "KECK-1-ID-2",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+            "timeStamp": "2026-09-26T10:00:00"
+          },
+          "remaining": [
+            0,
+            0
+          ],
+          "receipt": {
+            "counter": 7,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-7",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "creditCard",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-2 – Fehleingabe",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": -6,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": -1,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "e42Zjx66gXyXfp6ZK6VUzA==",
+            "signaturePreviousReceipt": "dESbUhmSTnM=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000d5ed0baa",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "creditCard",
+                "amountCents": -700,
+                "provider": "sumup",
+                "refundOf": "p1"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtN18yMDI2LTA5LTI2VDEwOjAwOjAwXy02LDAwXzAsMDBfMCwwMF8tMSwwMF8wLDAwX1UxUlBfQUJDMTIzX2RFU2JVaG1TVG5NPQ.qA-w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb_PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-7_2026-09-26T10:00:00_-6,00_0,00_0,00_-1,00_0,00_U1RP_ABC123_dESbUhmSTnM=_qA+w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb/PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-2",
+              "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "input_error",
+            "tipCents": -100,
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Kaffee",
+                "quantity": 2,
+                "unitPriceCents": -300,
+                "vatRate": 20,
+                "amount": 2,
+                "vat": 20,
+                "priceOneCents": -300,
+                "priceOne": -3
+              },
+              {
+                "name": "Trinkgeld Personal",
+                "quantity": 1,
+                "unitPriceCents": -100,
+                "vatRate": 0,
+                "kind": "tip",
+                "recipient": null,
+                "paymentMethod": "creditCard",
+                "amount": 1,
+                "vat": 0,
+                "priceOneCents": -100,
+                "priceOne": -1,
+                "receivedImmediately": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "cancel_partial_items",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-3",
+        "reason": "customer_cancelled",
+        "items": [
+          {
+            "index": 0,
+            "quantity": 1
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": -79,
+            "refundOf": "p1"
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "cancellationOf": {
+            "receiptId": "KECK-1-ID-3",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+            "timeStamp": "2026-09-26T10:00:00"
+          },
+          "remaining": [
+            3
+          ],
+          "receipt": {
+            "counter": 8,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-8",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-3 – Kunde hat storniert",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": -0.79,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "FKv36maM5cSDIv7d/PNpSg==",
+            "signaturePreviousReceipt": "HOeSCtN5SAs=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000ee9d92da",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": -79,
+                "refundOf": "p1"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtOF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfLTAsNzlfMCwwMF8wLDAwXzAsMDBfVTFSUF9BQkMxMjNfSE9lU0N0TjVTQXM9.Ydu4h8T-tNbFQvEprS0UStjcp7yPkjk8zHrGpKgt5GH8RdMCKMEnjNk0tYWaO_Bhap1mggRTXBhLQhAyi8nGxg",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-8_2026-09-26T10:00:00_0,00_-0,79_0,00_0,00_0,00_U1RP_ABC123_HOeSCtN5SAs=_Ydu4h8T+tNbFQvEprS0UStjcp7yPkjk8zHrGpKgt5GH8RdMCKMEnjNk0tYWaO/Bhap1mggRTXBhLQhAyi8nGxg==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-3",
+              "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "customer_cancelled",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Semmel",
+                "quantity": 1,
+                "unitPriceCents": -79,
+                "vatRate": 10,
+                "amount": 1,
+                "vat": 10,
+                "priceOneCents": -79,
+                "priceOne": -0.79
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_quantity_exceeds_remaining",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-3",
+        "reason": "customer_cancelled",
+        "items": [
+          {
+            "index": 0,
+            "quantity": 4
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": -316,
+            "refundOf": "p1"
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Storno-Menge übersteigt die verbleibende Menge (Position 1).",
+        "data": {
+          "code": "quantity_exceeds_remaining"
+        },
+        "code": "quantity_exceeds_remaining"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_already_cancelled",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-2",
+        "reason": "input_error"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Beleg ist bereits vollständig storniert.",
+        "data": {
+          "code": "already_cancelled"
+        },
+        "code": "already_cancelled"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_unknown_reason",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-2",
+        "reason": "xyz"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Storno-Grund fehlt oder ist unbekannt.",
+        "data": {
+          "code": "unknown_reason"
+        },
+        "code": "unknown_reason"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_german_reason",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-2",
+        "reason": "fehleingabe"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "code": "validation",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "reason",
+              "message": "Unbekannter Wert."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_receipt_not_found",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-99",
+        "reason": "input_error"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Beleg nicht gefunden.",
+        "data": {
+          "code": "receipt_not_found"
+        },
+        "code": "receipt_not_found"
+      }
+    },
+    {
+      "channel": "app",
+      "name": "cancel_full_card_refund",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-2",
+        "reason": "input_error",
+        "payments": [
+          {
+            "method": "creditCard",
+            "amountCents": -700,
+            "refundOf": "p1",
+            "provider": "sumup",
+            "providerPaymentId": "rf-1",
+            "providerData": {
+              "refund": "ok"
+            }
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "cancellationOf": {
+            "receiptId": "KECK-1-ID-2",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+            "timeStamp": "2026-09-26T10:00:00"
+          },
+          "remaining": [
+            0,
+            0
+          ],
+          "receipt": {
+            "counter": 7,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-7",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "creditCard",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-2 – Fehleingabe",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": -6,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": -1,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "e42Zjx66gXyXfp6ZK6VUzA==",
+            "signaturePreviousReceipt": "dESbUhmSTnM=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000d5ed0baa",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "creditCard",
+                "amountCents": -700,
+                "provider": "sumup",
+                "providerPaymentId": "rf-1",
+                "providerData": {
+                  "refund": "ok"
+                },
+                "refundOf": "p1"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtN18yMDI2LTA5LTI2VDEwOjAwOjAwXy02LDAwXzAsMDBfMCwwMF8tMSwwMF8wLDAwX1UxUlBfQUJDMTIzX2RFU2JVaG1TVG5NPQ.qA-w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb_PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-7_2026-09-26T10:00:00_-6,00_0,00_0,00_-1,00_0,00_U1RP_ABC123_dESbUhmSTnM=_qA+w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb/PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-2",
+              "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "input_error",
+            "tipCents": -100,
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Kaffee",
+                "quantity": 2,
+                "unitPriceCents": -300,
+                "vatRate": 20,
+                "amount": 2,
+                "vat": 20,
+                "priceOneCents": -300,
+                "priceOne": -3
+              },
+              {
+                "name": "Trinkgeld Personal",
+                "quantity": 1,
+                "unitPriceCents": -100,
+                "vatRate": 0,
+                "kind": "tip",
+                "recipient": null,
+                "paymentMethod": "creditCard",
+                "amount": 1,
+                "vat": 0,
+                "priceOneCents": -100,
+                "priceOne": -1,
+                "receivedImmediately": false
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "channel": "app",
+      "name": "cancel_partial_items",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-3",
+        "reason": "customer_cancelled",
+        "items": [
+          {
+            "index": 0,
+            "quantity": 1
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": -79,
+            "refundOf": "p1"
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "cancellationOf": {
+            "receiptId": "KECK-1-ID-3",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+            "timeStamp": "2026-09-26T10:00:00"
+          },
+          "remaining": [
+            3
+          ],
+          "receipt": {
+            "counter": 8,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-8",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-3 – Kunde hat storniert",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": -0.79,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "FKv36maM5cSDIv7d/PNpSg==",
+            "signaturePreviousReceipt": "HOeSCtN5SAs=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000ee9d92da",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": -79,
+                "refundOf": "p1"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtOF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfLTAsNzlfMCwwMF8wLDAwXzAsMDBfVTFSUF9BQkMxMjNfSE9lU0N0TjVTQXM9.Ydu4h8T-tNbFQvEprS0UStjcp7yPkjk8zHrGpKgt5GH8RdMCKMEnjNk0tYWaO_Bhap1mggRTXBhLQhAyi8nGxg",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-8_2026-09-26T10:00:00_0,00_-0,79_0,00_0,00_0,00_U1RP_ABC123_HOeSCtN5SAs=_Ydu4h8T+tNbFQvEprS0UStjcp7yPkjk8zHrGpKgt5GH8RdMCKMEnjNk0tYWaO/Bhap1mggRTXBhLQhAyi8nGxg==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-3",
+              "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "customer_cancelled",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Semmel",
+                "quantity": 1,
+                "unitPriceCents": -79,
+                "vatRate": 10,
+                "amount": 1,
+                "vat": 10,
+                "priceOneCents": -79,
+                "priceOne": -0.79
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "channel": "app",
+      "name": "error_quantity_exceeds_remaining",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-3",
+        "reason": "customer_cancelled",
+        "items": [
+          {
+            "index": 0,
+            "quantity": 4
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": -316,
+            "refundOf": "p1"
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Storno-Menge übersteigt die verbleibende Menge (Position 1).",
+        "data": {
+          "code": "quantity_exceeds_remaining"
+        },
+        "code": "quantity_exceeds_remaining"
+      }
+    },
+    {
+      "channel": "app",
+      "name": "error_already_cancelled",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-2",
+        "reason": "input_error"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Beleg ist bereits vollständig storniert.",
+        "data": {
+          "code": "already_cancelled"
+        },
+        "code": "already_cancelled"
+      }
+    },
+    {
+      "channel": "app",
+      "name": "error_unknown_reason",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-2",
+        "reason": "xyz"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Storno-Grund fehlt oder ist unbekannt.",
+        "data": {
+          "code": "unknown_reason"
+        },
+        "code": "unknown_reason"
+      }
+    },
+    {
+      "channel": "app",
+      "name": "error_german_reason",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-2",
+        "reason": "fehleingabe"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "code": "validation",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "reason",
+              "message": "Unbekannter Wert."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "app",
+      "name": "error_receipt_not_found",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-99",
+        "reason": "input_error"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Beleg nicht gefunden.",
+        "data": {
+          "code": "receipt_not_found"
+        },
+        "code": "receipt_not_found"
+      }
+    }
+  ]
+}

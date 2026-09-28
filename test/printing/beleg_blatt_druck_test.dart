@@ -12,7 +12,7 @@ import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 
 BelegLayout _fixture(String name) => BelegLayout.fromJson(
-    jsonDecode(File('test/fixtures/vertrag/erwartet/$name.lines.json').readAsStringSync()))!;
+    jsonDecode(File('test/fixtures/vertrag/expected/$name.lines.json').readAsStringSync()))!;
 
 DruckLogo _probeLogo(int zeichen) {
   const logo = BlattLogo(stufe: LogoStufe.s, pxBreite: 40, pxHoehe: 20);
@@ -40,7 +40,7 @@ void main() {
 
   test('Testkasse: Rahmen, dann GS v 0, dann Firmenname; Marke als Rasterbild am Ende', () async {
     final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
-    await paper.setBelegBlatt(_fixture('testkasse-verkauf'), logo: _probeLogo(48), marke: true, cut: false, qrMode: QrPrintMode.native);
+    await paper.setBelegBlatt(_fixture('test-cashregister-sale'), logo: _probeLogo(48), marke: true, cut: false, qrMode: QrPrintMode.native);
     final alles = latin1.decode(paper.bytes.expand((b) => b).toList(), allowInvalid: true);
     final rahmenEnde = alles.indexOf('=' * 48, alles.indexOf('TESTKASSE'));
     final bild = alles.indexOf('\x1dv0');
@@ -57,7 +57,7 @@ void main() {
   });
 
   test('ohne Logo und Marke: kein Rasterbild, keine Markenzeile, jede Textzeile des Blatts im Bytestrom', () async {
-    final layout = _fixture('storno-voll');
+    final layout = _fixture('cancellation-full');
     final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
     await paper.setBelegLayout(layout, qrMode: QrPrintMode.native, cut: false);
     final alles = latin1.decode(paper.bytes.expand((b) => b).toList(), allowInvalid: true);
@@ -80,22 +80,22 @@ void main() {
   test('Logo-Raster in falscher Groesse wird abgewiesen', () async {
     final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
     final falsch = DruckLogo(stufe: LogoStufe.s, pxBreite: 40, pxHoehe: 20, raster: LogoRaster(breite: 3, hoehe: 3, punkte: Uint8List(9)));
-    expect(() => paper.setBelegBlatt(_fixture('verkauf-bar'), logo: falsch), throwsArgumentError);
+    expect(() => paper.setBelegBlatt(_fixture('sale-cash'), logo: falsch), throwsArgumentError);
   });
 
   test('Logo-Raster in falscher Groesse: kein Byte des vorigen Belegs wird angetastet', () async {
     // Die Pruefung laeuft vor reset() -- ein abgewiesenes Logo laesst das
     // Papier so stehen, wie es war, statt einen halben Beleg zu hinterlassen.
     final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
-    await paper.setBelegBlatt(_fixture('verkauf-bar'), cut: false, qrMode: QrPrintMode.native);
+    await paper.setBelegBlatt(_fixture('sale-cash'), cut: false, qrMode: QrPrintMode.native);
     final vorher = paper.bytes.expand((b) => b).toList();
     final falsch = DruckLogo(stufe: LogoStufe.s, pxBreite: 40, pxHoehe: 20, raster: LogoRaster(breite: 3, hoehe: 3, punkte: Uint8List(9)));
-    await expectLater(paper.setBelegBlatt(_fixture('verkauf-bar'), logo: falsch), throwsArgumentError);
+    await expectLater(paper.setBelegBlatt(_fixture('sale-cash'), logo: falsch), throwsArgumentError);
     expect(paper.bytes.expand((b) => b).toList(), vorher);
   });
 
   test('QR als Bild: Breite in Druckpunkten wie das Blatt (npm-Mass), nicht fest 280', () async {
-    final layout = _fixture('verkauf-bar');
+    final layout = _fixture('sale-cash');
     final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
     await paper.setBelegBlatt(layout, cut: false, qrMode: QrPrintMode.imageRaster);
     final alles = paper.bytes.expand((b) => b).toList();
@@ -111,7 +111,7 @@ void main() {
     final korrekturL = [...h, 0x03, 0x00, 0x31, 0x45, 48];
 
     final blatt = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
-    await blatt.setBelegBlatt(_fixture('verkauf-bar'), cut: false, qrMode: QrPrintMode.native);
+    await blatt.setBelegBlatt(_fixture('sale-cash'), cut: false, qrMode: QrPrintMode.native);
     final blattBytes = blatt.bytes.expand((b) => b).toList();
     expect(_indexVon(blattBytes, korrekturM), isNonNegative);
     expect(_indexVon(blattBytes, korrekturL), -1);
@@ -144,7 +144,7 @@ void main() {
     // Breite des Blatts: Zeichen je Zeile mal 12 Punkte.
     for (final (size, zeichen) in [(KeckPaperSize.mm58, 32), (KeckPaperSize.mm80, 48)]) {
       final paper = PrintPaper(paperSize: size, profile: CapabilityProfile());
-      await paper.setBelegBlatt(_fixture('storno-voll'), cut: false, qrMode: QrPrintMode.native);
+      await paper.setBelegBlatt(_fixture('cancellation-full'), cut: false, qrMode: QrPrintMode.native);
       final alle = paper.bytes.expand((b) => b).toList();
       final punkte = zeichen * 12;
       expect(alle.take(10).toList(), [0x1B, 0x40, 0x1D, 0x4C, 0, 0, 0x1D, 0x57, punkte & 0xff, punkte >> 8],
@@ -166,7 +166,7 @@ void main() {
     // Unterschied zum JS-Zwilling, der die Codepage im Vorspann nur einmal
     // setzt.
     final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
-    await paper.setBelegBlatt(_fixture('storno-voll'), cut: false, qrMode: QrPrintMode.native);
+    await paper.setBelegBlatt(_fixture('cancellation-full'), cut: false, qrMode: QrPrintMode.native);
     final alle = paper.bytes.expand((b) => b).toList();
     const codepage = [0x1B, 0x74, 16]; // ESC t 16 = CP1252
     // Zwischen ESC @ und der Codepage steht der Druckbereich des Blatts

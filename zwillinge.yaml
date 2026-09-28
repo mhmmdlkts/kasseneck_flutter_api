@@ -1,226 +1,258 @@
 # Woran dieses Paket geprüft wird.
 #
 # Das npm-Paket @kreiseck/kasseneck-api ist die Quelle: es gibt in fixtures/
-# zwei Beschreibungsdateien aus (Standardwerte, Oberfläche), die im
-# veröffentlichten Tarball mitreisen. Dieses Repo hält eine Kopie unter
-# test/fixtures/vertrag/, damit `flutter test` ohne Netz vollständig ist — die
-# CI beweist byteweise, dass die Kopie echt ist.
+# die Vertragsdateien aus (Oberfläche, Standardwerte, Goldens, seit 1.0 auch
+# den Backend-Vertrag unter v3/, die gespeicherte Form unter stored/ und die
+# Umbenennungstabelle renames-1.0.json), die im veröffentlichten Tarball
+# mitreisen. Dieses Repo hält eine Kopie unter test/fixtures/vertrag/, damit
+# `flutter test` ohne Netz vollständig ist; die CI beweist byteweise, dass die
+# Kopie echt ist.
 #
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 0.30.0
+npm_version: 1.0.0-rc.1
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
 #
-#   ausnahmen       — was der Vertrag führt und dieses Paket nicht
-#   wert_ausnahmen  — Felder, die es hier gibt, deren Standardwert aber abweicht
+#   ausnahmen       : was der Vertrag führt und dieses Paket nicht
+#   wert_ausnahmen  : Felder, die es hier gibt, deren Standardwert aber abweicht
 #
 # Zwei Arten, in beiden Abschnitten:
-#   nicht_zutreffend — dauerhaft, braucht einen Grund
-#   offen            — Schuld, braucht eine Issue-Nummer
+#   nicht_zutreffend : dauerhaft, braucht einen Grund
+#   offen            : Schuld, braucht eine Issue-Nummer
 #
-# Alle 33 Einträge sind derzeit "offen". Keiner ist "nicht zutreffend": ein
-# Gerät kann in den Einstellungen auf einen Wert gesetzt sein, den dieses Paket
-# nicht kennt — dann fällt es still auf den Standard zurück, und am Tresen
-# steht ein Schalter anders als im Panel. Kennen muss das Paket den Wert also
-# auch dort, wo es ihn (noch) nicht auswerten kann.
+# Die Einträge tragen seit 1.0 die Namen aus surface.json und
+# pos-settings-defaults.json: `calls.<name>` (calls.public und calls.pos
+# zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
+# `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
+# enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.0.0-rc.1: 20 Einträge "nicht zutreffend" (Partner-API), 35 "offen"
+# (33 in ausnahmen, 2 in wert_ausnahmen). Keine der 33 Lücken aus 0.30.0 ist
+# durch 1.0 entfallen: der Vertrag führt jede weiter, nur unter englischem
+# Namen, und dieses Paket hat keine davon geschlossen. Neu sind drei:
+# reportCustomerContract (Partner-API), setMyKasseLogo (#24) und die
+# Tasten-Aktion splitPayment (#25, aus npm 0.31.0).
+#
+# Keiner der offenen Einträge ist "nicht zutreffend": ein Gerät kann in den
+# Einstellungen auf einen Wert gesetzt sein, den dieses Paket nicht kennt.
+# Dann fällt es still auf den Standard zurück, und am Tresen steht ein
+# Schalter anders als im Panel. Kennen muss das Paket den Wert also auch dort,
+# wo es ihn (noch) nicht auswerten kann.
 #
 # Wer eine Lücke schließt, streicht die Zeile hier. Wer die Zeile streicht,
-# ohne die Lücke zu schließen, wird rot — und wer die Lücke schließt, ohne die
+# ohne die Lücke zu schließen, wird rot, und wer die Lücke schließt, ohne die
 # Zeile zu streichen, ebenfalls: sonst sänke die Zahl in der CI nie.
 ausnahmen:
   # ---- Partner-API: kein Kassen-Thema, dauerhaft nicht zutreffend ----
-  - eintrag: aufrufe.activateCashregister
+  - eintrag: calls.activateCashregister
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.checkPartnerCustomerEmail
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.checkPartnerCustomerEmail
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.createCustomerCashregister
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.createCustomerCashregister
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.createPartnerCustomer
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.createPartnerCustomer
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.createPartnerWebhook
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.createPartnerWebhook
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.deletePartnerWebhook
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.deletePartnerWebhook
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.getCustomerCredentials
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.getCustomerCredentials
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.getCustomerSignatureStatus
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.getCustomerSignatureStatus
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.getPartnerCustomer
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.getPartnerCustomer
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.getPartnerInfo
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.getPartnerInfo
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.listCustomerCashregisters
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.listCustomerCashregisters
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.listPartnerCustomers
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.listPartnerCustomers
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.listPartnerWebhookDeliveries
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.listPartnerWebhookDeliveries
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.listPartnerWebhooks
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.listPartnerWebhooks
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.requestCustomerSignature
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.reportCustomerContract
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.rotatePartnerWebhookSecret
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.requestCustomerSignature
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.sendPartnerCustomerFonLink
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.rotatePartnerWebhookSecret
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.sendPartnerWebhookTest
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.sendPartnerCustomerFonLink
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-  - eintrag: aufrufe.updatePartnerWebhook
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.sendPartnerWebhookTest
     art: nicht_zutreffend
-    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört — dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
+  - eintrag: calls.updatePartnerWebhook
+    art: nicht_zutreffend
+    grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
   # ---- Issue #22: Server Direct Print ----
   # Druckjobs über das Backend anlegen und abfragen; dieses Paket druckt nur
-  # direkt (ePOS/IP, Bluetooth, USB).
-  - eintrag: aufrufe.listMyPrinters
+  # direkt (ePOS/IP, Bluetooth, USB). In 1.0 stehen alle drei in calls.pos.
+  - eintrag: calls.listMyPrinters
     art: offen
     issue: 22
-  - eintrag: aufrufe.createPrintJob
+  - eintrag: calls.createPrintJob
     art: offen
     issue: 22
-  - eintrag: aufrufe.getPrintJob
+  - eintrag: calls.getPrintJob
     art: offen
     issue: 22
 
   # ---- Issue #23: Druckweg connect und Terminal-Anbindung ----
   # Kasseneck Connect als vierter Druckweg, dazu die vier Felder
-  # connectDruckerId, terminalVia, terminalArt und terminalTid. Ein auf
-  # "connect" gestelltes Gerät druckt hier heute anders als eingestellt — und
-  # ohne connectDruckerId wüsste es selbst dann nicht, welcher Drucker am
+  # connectPrinterId, terminalVia, terminalType und terminalTid (0.x:
+  # connectDruckerId, terminalVia, terminalArt, terminalTid). Ein auf
+  # "connect" gestelltes Gerät druckt hier heute anders als eingestellt, und
+  # ohne connectPrinterId wüsste es selbst dann nicht, welcher Drucker am
   # Helfer gemeint ist.
   #
   # Die Felder selbst tragen unten keine eigene Zeile: aufgezählt sind hier
   # die WERTE, die der Vertrag führt und dieses Paket nicht, und ein Feld ohne
-  # Aufzählung hat keine. Aufgeschrieben sein müssen sie trotzdem —
+  # Aufzählung hat keine. Aufgeschrieben sein müssen sie trotzdem:
   # connectDruckerId war eine Zeitlang weder hier noch in einer Wertezeile
   # genannt und damit die einzige Lücke, die nur im Issue stand.
-  - eintrag: enums.druckerArt.connect
+  - eintrag: enums.printerType.connect
     art: offen
     issue: 23
-  - eintrag: enums.terminalVia.direkt
+  - eintrag: enums.terminalVia.direct
     art: offen
     issue: 23
   - eintrag: enums.terminalVia.connect
     art: offen
     issue: 23
-  - eintrag: enums.terminalArt.keins
+  - eintrag: enums.terminalType.none
     art: offen
     issue: 23
-  - eintrag: enums.terminalArt.hps
+  - eintrag: enums.terminalType.hps
     art: offen
     issue: 23
 
   # ---- Issue #24: fehlende Einstellungsfelder ----
-  # logoBild, wzSeite, wzPos, wzPosV, wzStaerke, logoSkala, wzSkala, glas,
-  # hinweise, rabattChips, tastenMarken. Weil die Felder fehlen, übersteht auch
-  # keiner ihrer Werte das Einlesen.
-  - eintrag: enums.wzSeite.links
+  # logoImage, watermarkSide, watermarkX, watermarkY, watermarkStrength,
+  # logoScale, watermarkScale, glass, hints, discountChips, shortcutHints
+  # (0.x: logoBild, wzSeite, wzPos, wzPosV, wzStaerke, logoSkala, wzSkala,
+  # glas, hinweise, rabattChips, tastenMarken). Weil die Felder fehlen,
+  # übersteht auch keiner ihrer Werte das Einlesen. Dazu gehört der Aufruf
+  # setMyKasseLogo, mit dem der Zwilling das Logo-Bild hochlädt (in 1.0 neu in
+  # der Vertragsliste, calls.pos).
+  - eintrag: enums.watermarkSide.left
     art: offen
     issue: 24
-  - eintrag: enums.wzSeite.mitte
+  - eintrag: enums.watermarkSide.center
     art: offen
     issue: 24
-  - eintrag: enums.wzSeite.rechts
+  - eintrag: enums.watermarkSide.right
     art: offen
     issue: 24
-  - eintrag: enums.wzStaerke.3
+  - eintrag: enums.watermarkStrength.3
     art: offen
     issue: 24
-  - eintrag: enums.wzStaerke.6
+  - eintrag: enums.watermarkStrength.6
     art: offen
     issue: 24
-  - eintrag: enums.wzStaerke.10
+  - eintrag: enums.watermarkStrength.10
     art: offen
     issue: 24
-  - eintrag: enums.wzStaerke.16
+  - eintrag: enums.watermarkStrength.16
     art: offen
     issue: 24
-  - eintrag: enums.logoSkala.S
+  - eintrag: enums.logoScale.S
     art: offen
     issue: 24
-  - eintrag: enums.logoSkala.M
+  - eintrag: enums.logoScale.M
     art: offen
     issue: 24
-  - eintrag: enums.logoSkala.L
+  - eintrag: enums.logoScale.L
     art: offen
     issue: 24
-  - eintrag: enums.logoSkala.XL
+  - eintrag: enums.logoScale.XL
     art: offen
     issue: 24
-  - eintrag: enums.wzSkala.S
+  - eintrag: enums.watermarkScale.S
     art: offen
     issue: 24
-  - eintrag: enums.wzSkala.M
+  - eintrag: enums.watermarkScale.M
     art: offen
     issue: 24
-  - eintrag: enums.wzSkala.L
+  - eintrag: enums.watermarkScale.L
     art: offen
     issue: 24
-  - eintrag: enums.wzSkala.XL
+  - eintrag: enums.watermarkScale.XL
+    art: offen
+    issue: 24
+  - eintrag: calls.setMyKasseLogo
     art: offen
     issue: 24
 
-  # ---- Issue #25: sechs Tasten-Aktionen ----
-  # Der Vertrag ordnet 15 Aktionen einer Taste zu, kasseTastenAktionen kennt 9.
-  - eintrag: tastenAktionen.einstellungen
+  # ---- Issue #25: sieben Tasten-Aktionen ----
+  # Der Vertrag ordnet 16 Aktionen einer Taste zu, kasseTastenAktionen kennt 9.
+  # splitPayment (0.x: getrennt) kam mit npm 0.31.0 dazu und gehört in
+  # dasselbe Issue.
+  - eintrag: posShortcutActions.settings
     art: offen
     issue: 25
-  - eintrag: tastenAktionen.abmelden
+  - eintrag: posShortcutActions.logout
     art: offen
     issue: 25
-  - eintrag: tastenAktionen.trinkgeld
+  - eintrag: posShortcutActions.tip
     art: offen
     issue: 25
-  - eintrag: tastenAktionen.vollbild
+  - eintrag: posShortcutActions.fullscreen
     art: offen
     issue: 25
-  - eintrag: tastenAktionen.gegebenLeeren
+  - eintrag: posShortcutActions.clearTendered
     art: offen
     issue: 25
-  - eintrag: tastenAktionen.korbLeeren
+  - eintrag: posShortcutActions.clearCart
+    art: offen
+    issue: 25
+  - eintrag: posShortcutActions.splitPayment
     art: offen
     issue: 25
 
   # ---- Issue #26: zwei Aufrufe ----
-  - eintrag: aufrufe.generateFullReceiptId
+  # Beide stehen in 1.0 in calls.pos.
+  - eintrag: calls.generateFullReceiptId
     art: offen
     issue: 26
-  - eintrag: aufrufe.listMyCashregisters
+  - eintrag: calls.listMyCashregisters
     art: offen
     issue: 26
 
 # Felder, die es hier gibt, deren Standardwert aber vom Vertrag abweicht.
-# Geprüft von test/kasse_einstellungen_test.dart — für jedes andere Feld gilt
+# Geprüft von test/kasse_einstellungen_test.dart; für jedes andere Feld gilt
 # dort weiterhin: gleicher Name, gleicher Standardwert wie im Vertrag.
 wert_ausnahmen:
-  # Der Vertrag belegt 15 Aktionen, dieses Paket kennt 9. Für die sechs neuen
-  # sind dort auch `frei` (Mod+D) und `belege` (Mod+J) verschoben worden —
+  # Der Vertrag belegt 16 Aktionen, dieses Paket kennt 9. Für die neuen sind
+  # dort auch `customAmount` (Mod+D) und `receipts` (Mod+J) verschoben worden:
   # Mod+F gehört jetzt dem Vollbild.
-  - eintrag: geraet.tasten
+  - eintrag: device.shortcuts
     art: offen
     issue: 25
   # Vertrag 8080, hier 20008. Welcher Port gilt, entscheidet sich mit
-  # terminalVia/terminalArt — deshalb am Terminal-Umbau.
-  - eintrag: geraet.terminalPort
+  # terminalVia/terminalType, deshalb am Terminal-Umbau.
+  - eintrag: device.terminalPort
     art: offen
     issue: 23

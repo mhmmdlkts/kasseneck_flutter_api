@@ -3,7 +3,7 @@
 ///
 /// Zwilling von `kasse/settings.ts` bzw. `client/receipts.ts` im JS-Paket und
 /// von `functions/kasse-settings-core.js` im Backend. Die Golden-Datei
-/// `fixtures/kasse-settings-standard.json` hält die Standardwerte deckungsgleich.
+/// `fixtures/pos-settings-defaults.json` hält die Standardwerte deckungsgleich.
 library;
 
 // Die Typen, die in dieser Schnittstelle vorkommen, gehoeren mit dazu: wer den

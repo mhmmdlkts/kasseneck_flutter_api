@@ -1,0 +1,28 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Zeilenrabatt, gerundet wie auf dem PDF",
+  "request": {
+    "idempotencyKey": "ex-3",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Kaffee",
+        "quantity": 3,
+        "unitPriceCents": 999,
+        "vatRate": 20,
+        "discountPct": 10
+      }
+    ]
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 2697,
+      "vatCents": 539,
+      "grossCents": 3236
+    }
+  }
+}

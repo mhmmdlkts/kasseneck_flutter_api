@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "cases": [
+    { "name": "api: der Satz des Backends, woertlich",
+      "error": { "kind": "api", "serverMessage": "Kopplungs-Code ist abgelaufen." },
+      "fallback": "Ersatz.", "expected": "Kopplungs-Code ist abgelaufen." },
+    { "name": "api: auch ein Satz, der wie ein Ersatz aussieht, bleibt der des Backends",
+      "error": { "kind": "api", "serverMessage": "PIN falsch, noch 2 Versuche." },
+      "fallback": "Die Anmeldung ist fehlgeschlagen. Bitte erneut versuchen.", "expected": "PIN falsch, noch 2 Versuche." },
+    { "name": "plain_text: sein eigener Text",
+      "error": { "kind": "plain_text", "text": "Eigener Satz fuer den Schirm." },
+      "fallback": "Ersatz.", "expected": "Eigener Satz fuer den Schirm." },
+    { "name": "timeout: der Server antwortet nicht",
+      "error": { "kind": "timeout" },
+      "fallback": "Ersatz.", "expected": { "key": "network.timeout" } },
+    { "name": "network: keine Verbindung",
+      "error": { "kind": "network" },
+      "fallback": "Ersatz.", "expected": { "key": "network.no_connection" } },
+    { "name": "unexpected: HTML statt JSON (fehlender Rewrite)",
+      "error": { "kind": "unexpected", "status": 404 },
+      "fallback": "Ersatz.", "expected": { "key": "server.unexpected", "values": { "status": 404 } } },
+    { "name": "unexpected: 500er",
+      "error": { "kind": "unexpected", "status": 500 },
+      "fallback": "Ersatz.", "expected": { "key": "server.unexpected", "values": { "status": 500 } } },
+    { "name": "unexpected: HTTP 200 ohne Huelle",
+      "error": { "kind": "unexpected", "status": 200 },
+      "fallback": "Ersatz.", "expected": { "key": "server.unexpected", "values": { "status": 200 } } },
+    { "name": "other: Technisches bleibt beim Ersatz",
+      "error": { "kind": "other" },
+      "fallback": "Die Kopplung ist fehlgeschlagen. Bitte erneut versuchen.", "expected": "Die Kopplung ist fehlgeschlagen. Bitte erneut versuchen." }
+  ]
+}

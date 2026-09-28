@@ -2,7 +2,7 @@
 /// statt als Zeichenketten über die Aufrufstellen verstreut.
 ///
 /// Der Zwilling `@kreiseck/kasseneck-api` führt dieselbe Liste und gibt sie im
-/// Vertrag (`fixtures/oberflaeche.json`) aus; `test/zwillinge_test.dart`
+/// Vertrag (`fixtures/surface.json`, `calls`) aus; `test/zwillinge_test.dart`
 /// vergleicht beide. So fällt auf, wenn das JS-Paket einen Aufruf kennt, den
 /// dieses hier nicht hat — ein reiner Wertevergleich würde das nie finden.
 ///

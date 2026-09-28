@@ -3,7 +3,7 @@
 ///
 /// Betriebsweit (`register_settings.kasse` am Konto) und je Gerät
 /// (`register_devices/{id}.kasse`). Die Standardwerte stehen an allen drei
-/// Stellen; die Golden-Datei `fixtures/kasse-settings-standard.json` des
+/// Stellen; die Golden-Datei `fixtures/pos-settings-defaults.json` des
 /// JS-Pakets hält sie deckungsgleich. Weichen sie ab, steht am Tresen ein
 /// Schalter anders als im Panel.
 ///

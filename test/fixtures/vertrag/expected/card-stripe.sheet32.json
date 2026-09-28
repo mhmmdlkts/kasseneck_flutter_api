@@ -1,0 +1,212 @@
+{
+  "charsPerLine": 32,
+  "blocks": [
+    {
+      "kind": "logo",
+      "widthFraction": 0.62,
+      "heightLines": 3.968
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "        Bäckerei Muster         ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          Hauptplatz 1          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         4830 Hallstatt         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          ATU12345678           ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         +43 6134 12345         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:       13.08.2026 10:15:30",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:          AT0-KASSE1-64",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "1  x Behandlung         120,00 A",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "MwSt%   MwSt      Netto   Brutto",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "A 20%   20,00     100,00  120,00",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "--------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamt:                 120,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungsart:       Kartenzahlung",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT1_KASSE1_AT0-KASSE1-64_2026-08-13T10:15:30_120,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "widthFraction": 0.828125
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "    Online-Zahlung (Stripe)     ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  Visa Kreditkarte (Apple Pay)  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "      **** **** **** 4242       ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         3-D Secure: ja         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "    Gesamtbetrag 120,00 EUR     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "   Bezahlt: 15.08.2026 08:15    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "   Abrechnung: MUSTER STUDIO    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "   Referenz: pi_3QabcXYZ0001    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": " Vielen Dank für Ihren Einkauf  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "    www.baeckerei-muster.at     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 234,
+      "height": 34
+    }
+  ]
+}

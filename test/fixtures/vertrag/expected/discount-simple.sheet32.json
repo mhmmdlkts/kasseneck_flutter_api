@@ -1,0 +1,182 @@
+{
+  "charsPerLine": 32,
+  "blocks": [
+    {
+      "kind": "logo",
+      "widthFraction": 0.62,
+      "heightLines": 3.968
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "        Bäckerei Muster         ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          Hauptplatz 1          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         4830 Hallstatt         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          ATU12345678           ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         +43 6134 12345         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:       13.08.2026 10:15:30",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:          AT0-KASSE1-83",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "1  x Maniküre            29,00 A",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "klassisch                       ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "--------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zwischensumme            29,00  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Rabatt 15 %              -4,35 A",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "MwSt%   MwSt      Netto   Brutto",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "A 20%   4,11      20,54    24,65",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "--------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamt:                  24,65 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungsart:          Barzahlung",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "widthFraction": 0.828125
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": " Vielen Dank für Ihren Einkauf  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "    www.baeckerei-muster.at     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 234,
+      "height": 34
+    }
+  ]
+}

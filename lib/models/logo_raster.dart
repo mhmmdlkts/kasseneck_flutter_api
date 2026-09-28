@@ -1,7 +1,7 @@
 /// RGBA-Pixel -> einfarbiges Rasterbild in der Groesse, die das Blatt dem Logo
 /// gibt (Zwilling von `logoRaster` in `@kreiseck/kasseneck-api` ab 0.14.0).
 /// Flaechenmittel je Druckpunkt, Durchsichtiges auf Papierweiss, BT.601,
-/// Floyd-Steinberg mit Schwelle 128. Golden: `erwartet/logo-probe.raster32.txt`.
+/// Floyd-Steinberg mit Schwelle 128. Golden: `expected/logo-sample.raster32.txt`.
 /// Die Reihenfolge der Rechenschritte nicht aendern -- nur so kommen JS und
 /// Dart auf dieselben Punkte.
 library;

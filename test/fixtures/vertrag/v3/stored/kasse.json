@@ -1,0 +1,3461 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "default": {
+      "sha256": "993dc13a802ce4c2f795a20e7de2d6d0aad6e471e47b60762c32127046a46e95",
+      "head": [],
+      "inputsSha256": "c2bd7a2b137ff4a84a7b6e68dada87a7141168456147e3f53fb061309cc8ccc4",
+      "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+      "inputs": [
+        "functions-kasse/test/unit/fixtures/kassen-welt.js",
+        "functions/gemeinsam/api-rand.js",
+        "functions/gemeinsam/api-vokabular-v3.js",
+        "functions/test/unit/fixtures/kassenweg/faelle-v3.js",
+        "functions/test/unit/fixtures/kassenweg/faelle.js",
+        "functions/test/unit/fixtures/kassenweg/welt.js",
+        "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+        "functions/test/unit/fixtures/vertrag-v3/kassenweg.js",
+        "functions/test/unit/v3-vertrag-export-kassenweg.test.js"
+      ]
+    },
+    "kasse": {
+      "sha256": "f73264871e0b41e2c1e32c020a97651a701b268815f3c58e19e015923a4fb239",
+      "head": [
+        "note",
+        "baseline"
+      ],
+      "inputsSha256": "69aca2a0a94edbbdf175470da3f45974bbd16de3a25aa84a36fb94414c683ee1",
+      "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
+      "inputs": [
+        "functions-kasse/gemeinsam/api-rand.js",
+        "functions-kasse/gemeinsam/api-vokabular-v3.js",
+        "functions-kasse/test/unit/fixtures/kassen-faelle-v3.js",
+        "functions-kasse/test/unit/fixtures/kassen-faelle.js",
+        "functions-kasse/test/unit/fixtures/kassen-welt.js",
+        "functions-kasse/test/unit/v3-vertrag-export.test.js",
+        "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+        "functions/test/unit/fixtures/vertrag-v3/kassenweg.js"
+      ]
+    }
+  },
+  "baseline": {
+    "users/kw_betrieb1": {
+      "api_key": "<geheim>",
+      "company_name": "Café Welt",
+      "phone": "+43 1 234 56",
+      "address": {
+        "street": "Hauptplatz 1",
+        "zip": "1010",
+        "city": "Wien"
+      },
+      "tax_details": {
+        "uid": "ATU12345678",
+        "taxnr": "12-345/6789",
+        "is_small_business": false
+      },
+      "footer": {
+        "footer1": "Danke für Ihren Besuch"
+      },
+      "thanks_message": "Bis bald",
+      "logo_url": "https://example.invalid/logo.png",
+      "register_settings": {
+        "kasse": {
+          "stil": "nacht",
+          "farbe": "#222222"
+        }
+      }
+    },
+    "users/kw_betrieb1/modules/registrierkasse": {
+      "status": "active"
+    },
+    "users/kw_betrieb1/cashregisters/KASSE1": {
+      "label": "Theke 1",
+      "token": "<geheim>",
+      "aes_key": "<geheim>",
+      "signature_id": "sig1",
+      "licenses": 5,
+      "create_time": "2026-01-02T08:00:00.000Z",
+      "onboarding": {
+        "cashbox_registered": true,
+        "startbeleg_created": true,
+        "startbeleg_transmitted": true
+      },
+      "monthlyReportJournal": true
+    },
+    "users/kw_betrieb1/cashregisters/KASSE2": {
+      "label": "Theke 2",
+      "token": "<geheim>",
+      "aes_key": "<geheim>",
+      "signature_id": "sig1",
+      "licenses": 5,
+      "create_time": "2026-01-02T08:00:00.000Z",
+      "onboarding": {
+        "cashbox_registered": true,
+        "startbeleg_created": true,
+        "startbeleg_transmitted": true
+      },
+      "decommissioned": true
+    },
+    "users/kw_betrieb1/cashregisters/KASSE3": {
+      "label": "Theke 3",
+      "token": "<geheim>",
+      "aes_key": "<geheim>",
+      "signature_id": null,
+      "licenses": 5,
+      "create_time": "2026-01-02T08:00:00.000Z",
+      "onboarding": {
+        "cashbox_registered": true,
+        "startbeleg_created": true,
+        "startbeleg_transmitted": true
+      }
+    },
+    "users/kw_betrieb1/cashregisters/KASSE4": {
+      "label": "Theke 4",
+      "token": "<geheim>",
+      "aes_key": "<geheim>",
+      "signature_id": "sig1",
+      "licenses": 5,
+      "create_time": "2026-01-02T08:00:00.000Z",
+      "onboarding": {
+        "cashbox_registered": true
+      }
+    },
+    "users/kw_betrieb1/register_users/ru_chef": {
+      "name": "Anna Chef",
+      "kind": "person",
+      "perms": {
+        "sell": true,
+        "cancel": true,
+        "cancelScope": "all",
+        "articles": true,
+        "layout": true,
+        "reports": true,
+        "takeover": true,
+        "drawer": true,
+        "discount": true,
+        "tipAssign": true,
+        "receiptsScope": "all"
+      },
+      "registers": [
+        "KASSE1",
+        "KASSE3",
+        "KASSE4",
+        "KASSEX"
+      ],
+      "inhaber": true,
+      "pinHash": "<geheim>",
+      "pinSalt": "<geheim>",
+      "pinPolicy": {
+        "stellen": 4,
+        "zeichen": "ziffern",
+        "uniqueGeprueft": true
+      },
+      "failedAttempts": 0,
+      "lockedUntil": 0,
+      "currentSession": {
+        "id": "sess_chef",
+        "cashregisterId": "KASSE1",
+        "deviceId": "dev_pin",
+        "expiresAt": 1790409660000
+      }
+    },
+    "users/kw_betrieb1/register_users/ru_kellner": {
+      "name": "Ben Kellner",
+      "kind": "person",
+      "perms": {
+        "sell": true,
+        "cancel": true,
+        "cancelScope": "own",
+        "articles": false,
+        "layout": false,
+        "reports": false,
+        "takeover": false,
+        "drawer": false,
+        "discount": true,
+        "tipAssign": false,
+        "receiptsScope": "own"
+      },
+      "registers": [
+        "KASSE1"
+      ],
+      "pinHash": "<geheim>",
+      "pinSalt": "<geheim>",
+      "failedAttempts": 2,
+      "lockedUntil": 0,
+      "currentSession": {
+        "id": "sess_kellner",
+        "cashregisterId": "KASSE1",
+        "deviceId": "dev_auswahl",
+        "expiresAt": 1790409660000
+      }
+    },
+    "users/kw_betrieb1/register_users/ru_gesperrt": {
+      "name": "Carla Gesperrt",
+      "perms": {
+        "sell": true,
+        "cancel": true,
+        "cancelScope": "own",
+        "articles": false,
+        "layout": false,
+        "reports": false,
+        "takeover": false,
+        "drawer": false,
+        "discount": true,
+        "tipAssign": false,
+        "receiptsScope": "own"
+      },
+      "registers": [
+        "KASSE1"
+      ],
+      "disabled": true,
+      "pinHash": "<geheim>",
+      "pinSalt": "<geheim>",
+      "currentSession": {
+        "id": "sess_gesperrt",
+        "cashregisterId": "KASSE1",
+        "deviceId": "dev_pin",
+        "expiresAt": 1790409660000
+      }
+    },
+    "users/kw_betrieb1/register_users/ru_alt": {
+      "name": "Dora Alt",
+      "perms": {
+        "sell": true,
+        "cancel": true,
+        "cancelScope": "own",
+        "articles": false,
+        "layout": false,
+        "reports": false,
+        "takeover": false,
+        "drawer": false,
+        "discount": true,
+        "tipAssign": false,
+        "receiptsScope": "own"
+      },
+      "registers": [
+        "KASSE1"
+      ],
+      "pinHash": "<geheim>",
+      "pinSalt": "<geheim>",
+      "currentSession": {
+        "id": "sess_alt",
+        "cashregisterId": "KASSE1",
+        "deviceId": "dev_pin",
+        "expiresAt": 1790409599000
+      }
+    },
+    "users/kw_betrieb1/register_users/ru_gesperrt_pin": {
+      "name": "Emil Sperre",
+      "perms": {
+        "sell": true,
+        "cancel": true,
+        "cancelScope": "own",
+        "articles": false,
+        "layout": false,
+        "reports": false,
+        "takeover": false,
+        "drawer": false,
+        "discount": true,
+        "tipAssign": false,
+        "receiptsScope": "own"
+      },
+      "registers": [
+        "KASSE1"
+      ],
+      "pinHash": "<geheim>",
+      "pinSalt": "<geheim>",
+      "failedAttempts": 5,
+      "lockedUntil": 1790409625000
+    },
+    "users/kw_betrieb1/register_users/ru_fremd": {
+      "name": "Fritz Fremd",
+      "perms": {
+        "sell": true,
+        "cancel": true,
+        "cancelScope": "own",
+        "articles": false,
+        "layout": false,
+        "reports": false,
+        "takeover": false,
+        "drawer": false,
+        "discount": true,
+        "tipAssign": false,
+        "receiptsScope": "own"
+      },
+      "registers": [
+        "KASSE3"
+      ],
+      "pinHash": "<geheim>",
+      "pinSalt": "<geheim>",
+      "currentSession": {
+        "id": "sess_fremd",
+        "cashregisterId": "KASSE3",
+        "deviceId": "dev_kasse3",
+        "expiresAt": 1790409660000
+      }
+    },
+    "users/kw_betrieb1/register_users/ru_ohnestorno": {
+      "name": "Gerda Ohne",
+      "perms": {
+        "sell": true,
+        "cancel": true,
+        "cancelScope": "none",
+        "articles": false,
+        "layout": false,
+        "reports": false,
+        "takeover": false,
+        "drawer": false,
+        "discount": true,
+        "tipAssign": false,
+        "receiptsScope": "own"
+      },
+      "registers": [
+        "KASSE1"
+      ],
+      "pinHash": "<geheim>",
+      "pinSalt": "<geheim>",
+      "currentSession": {
+        "id": "sess_ohnestorno",
+        "cashregisterId": "KASSE1",
+        "deviceId": "dev_pin",
+        "expiresAt": 1790409660000
+      }
+    },
+    "users/kw_betrieb1/register_users/geraet_bar": {
+      "name": "Bar-Tablet",
+      "kind": "geraet",
+      "perms": {
+        "sell": true,
+        "cancel": true,
+        "cancelScope": "own",
+        "articles": false,
+        "layout": false,
+        "reports": false,
+        "takeover": false,
+        "drawer": false,
+        "discount": true,
+        "tipAssign": false,
+        "receiptsScope": "own"
+      },
+      "registers": [
+        "KASSE1"
+      ],
+      "pinHash": "<geheim>",
+      "pinSalt": "<geheim>"
+    },
+    "users/kw_betrieb1/register_devices/dev_pin": {
+      "secretHash": "<geheim>",
+      "label": "Tablet vorne",
+      "cashregisterId": "KASSE1",
+      "disabled": false,
+      "loginMode": "pin",
+      "createdAt": 1790323200000,
+      "lastSeenAt": 1790406000000,
+      "lastUserId": null,
+      "failedAttempts": 0,
+      "lockedUntil": 0,
+      "kasse": {
+        "layout": "links",
+        "papier": "mm58"
+      }
+    },
+    "users/kw_betrieb1/register_devices/dev_auswahl": {
+      "secretHash": "<geheim>",
+      "label": "Tablet hinten",
+      "cashregisterId": "KASSE1",
+      "disabled": false,
+      "loginMode": "auswahl",
+      "createdAt": 1790323200000,
+      "lastSeenAt": 1790406000000,
+      "lastUserId": null
+    },
+    "users/kw_betrieb1/register_devices/dev_frei": {
+      "secretHash": "<geheim>",
+      "label": "Kasse Tresen",
+      "cashregisterId": "KASSE1",
+      "disabled": false,
+      "loginMode": "auswahl",
+      "createdAt": 1790323200000,
+      "lastSeenAt": 1790406000000,
+      "lastUserId": null
+    },
+    "users/kw_betrieb1/register_devices/dev_gesperrt": {
+      "secretHash": "<geheim>",
+      "label": "Altes Tablet",
+      "cashregisterId": "KASSE1",
+      "disabled": true,
+      "loginMode": "pin"
+    },
+    "users/kw_betrieb1/register_devices/dev_sperre": {
+      "secretHash": "<geheim>",
+      "label": "Tablet Sperre",
+      "cashregisterId": "KASSE1",
+      "disabled": false,
+      "loginMode": "pin",
+      "failedAttempts": 6,
+      "lockedUntil": 1790409642000
+    },
+    "users/kw_betrieb1/register_devices/dev_kasse3": {
+      "secretHash": "<geheim>",
+      "label": "Tablet Terrasse",
+      "cashregisterId": "KASSE3",
+      "disabled": false,
+      "loginMode": "pin"
+    },
+    "users/kw_betrieb1/register_devices/dev_kasse2": {
+      "secretHash": "<geheim>",
+      "label": "Tablet Keller",
+      "cashregisterId": "KASSE2",
+      "disabled": false,
+      "loginMode": "auswahl"
+    },
+    "users/kw_betrieb1/register_devices/dev_kasse4": {
+      "secretHash": "<geheim>",
+      "label": "Tablet Neu",
+      "cashregisterId": "KASSE4",
+      "disabled": false,
+      "loginMode": "pin"
+    },
+    "users/kw_betrieb1/register_devices/dev_kassex": {
+      "secretHash": "<geheim>",
+      "label": "Tablet Weg",
+      "cashregisterId": "KASSEX",
+      "disabled": false,
+      "loginMode": "pin"
+    },
+    "users/kw_betrieb1/register_devices/dev_alt": {
+      "secretHash": "<geheim>",
+      "label": "Altbestand",
+      "disabled": false,
+      "standortsperre": {
+        "an": true,
+        "lat": 48.2082,
+        "lng": 16.3738,
+        "radiusM": 200,
+        "name": "Laden"
+      }
+    },
+    "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": {
+      "userId": "ru_chef",
+      "deviceId": "dev_pin",
+      "startedAt": 1790409000000,
+      "expiresAt": 1790409660000,
+      "takenOverBy": null
+    },
+    "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": {
+      "userId": "ru_kellner",
+      "deviceId": "dev_auswahl",
+      "startedAt": 1790409300000,
+      "expiresAt": 1790409660000,
+      "takenOverBy": null
+    },
+    "users/kw_betrieb1/cashregisters/KASSE3/sessions/sess_fremd": {
+      "userId": "ru_fremd",
+      "deviceId": "dev_kasse3",
+      "startedAt": 1790409500000,
+      "expiresAt": 1790409660000,
+      "takenOverBy": null
+    },
+    "register_pairings/EXMPXV29": {
+      "ownerUid": "kw_betrieb1",
+      "cashregisterId": "KASSE1",
+      "expiresAt": 1790410200000
+    },
+    "register_pairings/EXMPE3QL": {
+      "ownerUid": "kw_betrieb1",
+      "cashregisterId": "KASSE1",
+      "expiresAt": 1790410200000,
+      "usedAt": 1790409599000
+    },
+    "register_pairings/EXMPTMWM": {
+      "ownerUid": "kw_betrieb1",
+      "cashregisterId": "KASSE1",
+      "expiresAt": 1790409599999
+    },
+    "register_pairings/EXMPJYCX": {
+      "ownerUid": "kw_betrieb1",
+      "cashregisterId": "KASSE1",
+      "expiresAt": 1790410200000,
+      "aktiv": false
+    },
+    "register_pairings/EXMP66A2": {
+      "ownerUid": "kw_betrieb1",
+      "expiresAt": 1790410200000
+    },
+    "register_pairings/EXMPZ89M": {
+      "ownerUid": "kw_betrieb1",
+      "cashregisterId": "KASSE2",
+      "expiresAt": 1790410200000
+    },
+    "register_pairings/EXMPCN9S": {
+      "ownerUid": "kw_betrieb1",
+      "cashregisterId": "KASSE1",
+      "dauerhaft": true,
+      "aktivesGeraet": "dev_pin",
+      "nutzungen": 3
+    },
+    "users/kw_betrieb1/articles/art_kaffee": {
+      "name": "Kaffee",
+      "priceCents": 320,
+      "vatRate": 20,
+      "unit": "Stk",
+      "active": true,
+      "groupId": "grp_warm",
+      "create_time": 111,
+      "update_time": 222,
+      "kasse": {
+        "farbe": "#aa5500",
+        "symbol": "kaffee"
+      }
+    },
+    "users/kw_betrieb1/articles/art_kuchen": {
+      "name": "Kuchen",
+      "priceCents": 450,
+      "vatRate": 10,
+      "unit": "Stk",
+      "active": true
+    },
+    "users/kw_betrieb1/article_groups/grp_warm": {
+      "name": "Warm",
+      "color": "#aa0000",
+      "sort": 2,
+      "createdAt": 1,
+      "updatedAt": 2
+    },
+    "users/kw_betrieb1/article_groups/grp_kalt": {
+      "name": "Kalt",
+      "color": "#0000aa",
+      "sort": 1
+    },
+    "users/kw_betrieb1/drucker/dr_theke": {
+      "name": "Theke",
+      "art": "epson-sdp",
+      "papier": "mm80",
+      "token": "<geheim>",
+      "aktiv": true,
+      "erstellt": 1790323200000,
+      "zuletztGesehen": 1790409595000,
+      "zuletztErgebnis": {
+        "erfolg": true,
+        "code": "",
+        "zeit": 1790409595000
+      },
+      "druckerKennung": "TM-T20"
+    },
+    "users/kw_betrieb1/drucker/dr_alt": {
+      "name": "Alt",
+      "papier": "mm58",
+      "token": null,
+      "aktiv": false
+    },
+    "users/kw_betrieb1/drucker/dr_theke/jobs/job1": {
+      "status": "gedruckt",
+      "xml": "<x/>",
+      "erstellt": 1790409540000,
+      "gesendetAt": 1790409545000,
+      "ergebnis": {
+        "erfolg": true,
+        "code": "",
+        "status": "",
+        "zeit": 1790409550000
+      }
+    },
+    "users/kw_betrieb1/drucker/dr_theke/jobs/job2": {
+      "status": "offen",
+      "xml": "<y/>",
+      "erstellt": 1790409599000
+    }
+  },
+  "note": "Firestore-Dokumente der Kassen-Welt (innen, deutsch, Geheimnisse ausgeblendet oder ersetzt): baseline = Ausgangsbestand der Codebase kasse, endpoints.<name>.cases.<Fall> = was der Fall am Bestand aenderte (null = geloescht).",
+  "endpoints": {
+    "pairRegisterDevice": {
+      "codebase": "kasse",
+      "cases": {
+        "permanent_takeover": {
+          "register_pairings/EXMPCN9S": {
+            "ownerUid": "kw_betrieb1",
+            "cashregisterId": "KASSE1",
+            "dauerhaft": true,
+            "aktivesGeraet": "auto1",
+            "nutzungen": 4,
+            "zuletztGenutztAm": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/register_devices/auto1": {
+            "secretHash": "<geheim>",
+            "label": "Neues Tablet",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "createdAt": 1790409600000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "client": null,
+            "pairedIp": "203.0.113.7",
+            "pairedGeo": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": null
+          },
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": true,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "revokedAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": null
+          }
+        },
+        "success": {
+          "register_pairings/EXMPXV29": {
+            "ownerUid": "kw_betrieb1",
+            "cashregisterId": "KASSE1",
+            "expiresAt": 1790410200000,
+            "usedAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_devices/auto1": {
+            "secretHash": "<geheim>",
+            "label": "Tablet Bar",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "createdAt": 1790409600000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "client": {
+              "userAgent": "Mozilla/5.0 Kasse",
+              "platform": "iPad",
+              "language": "de-AT",
+              "tz": "Europe/Vienna",
+              "app": "kasse-app/1.0.3+34",
+              "screen": {
+                "w": 1024,
+                "h": 768
+              }
+            },
+            "pairedIp": "203.0.113.7",
+            "pairedGeo": {
+              "lat": 48.2083,
+              "lng": 16.3739,
+              "acc": 10
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": {
+              "lat": 48.2083,
+              "lng": 16.3739,
+              "acc": 10
+            },
+            "lastLoginAt": null
+          }
+        },
+        "success_lowercase": {
+          "register_pairings/EXMPXV29": {
+            "ownerUid": "kw_betrieb1",
+            "cashregisterId": "KASSE1",
+            "expiresAt": 1790410200000,
+            "usedAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_devices/auto1": {
+            "secretHash": "<geheim>",
+            "label": "Kasse",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "createdAt": 1790409600000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "client": null,
+            "pairedIp": "203.0.113.7",
+            "pairedGeo": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": null
+          }
+        },
+        "success_without_cashregister_label": {
+          "register_pairings/EXMPXV29": {
+            "ownerUid": "kw_betrieb1",
+            "cashregisterId": "KASSE1",
+            "expiresAt": 1790410200000,
+            "usedAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_devices/auto1": {
+            "secretHash": "<geheim>",
+            "label": "Kasse",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "createdAt": 1790409600000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "client": null,
+            "pairedIp": "203.0.113.7",
+            "pairedGeo": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": null
+          }
+        },
+        "success_test_environment": {
+          "register_pairings/EXMPXV29": {
+            "ownerUid": "test_kw_betrieb1",
+            "cashregisterId": "KASSE1",
+            "expiresAt": 1790410200000,
+            "usedAt": 1790409600000
+          },
+          "users/test_kw_betrieb1/register_devices/auto1": {
+            "secretHash": "<geheim>",
+            "label": "Kasse",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "createdAt": 1790409600000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "client": null,
+            "pairedIp": "203.0.113.7",
+            "pairedGeo": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": null
+          }
+        },
+        "body_as_text": {
+          "register_pairings/EXMPXV29": {
+            "ownerUid": "kw_betrieb1",
+            "cashregisterId": "KASSE1",
+            "expiresAt": 1790410200000,
+            "usedAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_devices/auto1": {
+            "secretHash": "<geheim>",
+            "label": "Kasse",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "createdAt": 1790409600000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "client": null,
+            "pairedIp": "203.0.113.7",
+            "pairedGeo": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": null
+          }
+        },
+        "params_as_text": {
+          "register_pairings/EXMPXV29": {
+            "ownerUid": "kw_betrieb1",
+            "cashregisterId": "KASSE1",
+            "expiresAt": 1790410200000,
+            "usedAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_devices/auto1": {
+            "secretHash": "<geheim>",
+            "label": "Kasse",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "createdAt": 1790409600000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "client": null,
+            "pairedIp": "203.0.113.7",
+            "pairedGeo": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": null
+          }
+        }
+      }
+    },
+    "listRegisterUsersForDevice": {
+      "codebase": "kasse",
+      "cases": {
+        "success_only_pin": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            }
+          }
+        },
+        "success_select": {
+          "users/kw_betrieb1/register_devices/dev_auswahl": {
+            "secretHash": "<geheim>",
+            "label": "Tablet hinten",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null
+          }
+        },
+        "cashregister_decommissioned": {
+          "users/kw_betrieb1/register_devices/dev_kasse2": {
+            "secretHash": "<geheim>",
+            "label": "Tablet Keller",
+            "cashregisterId": "KASSE2",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "lastSeenAt": 1790409600000
+          }
+        },
+        "cashregister_without_signature": {
+          "users/kw_betrieb1/register_devices/dev_kasse3": {
+            "secretHash": "<geheim>",
+            "label": "Tablet Terrasse",
+            "cashregisterId": "KASSE3",
+            "disabled": false,
+            "loginMode": "pin",
+            "lastSeenAt": 1790409600000
+          }
+        },
+        "cashregister_without_start_receipt": {
+          "users/kw_betrieb1/register_devices/dev_kasse4": {
+            "secretHash": "<geheim>",
+            "label": "Tablet Neu",
+            "cashregisterId": "KASSE4",
+            "disabled": false,
+            "loginMode": "pin",
+            "lastSeenAt": 1790409600000
+          }
+        },
+        "cashregister_with_receipt_without_marker": {
+          "users/kw_betrieb1/register_devices/dev_kasse4": {
+            "secretHash": "<geheim>",
+            "label": "Tablet Neu",
+            "cashregisterId": "KASSE4",
+            "disabled": false,
+            "loginMode": "pin",
+            "lastSeenAt": 1790409600000
+          }
+        },
+        "cashregister_missing": {
+          "users/kw_betrieb1/register_devices/dev_kassex": {
+            "secretHash": "<geheim>",
+            "label": "Tablet Weg",
+            "cashregisterId": "KASSEX",
+            "disabled": false,
+            "loginMode": "pin",
+            "lastSeenAt": 1790409600000
+          }
+        },
+        "legacy_without_cashregister_with_lock": {
+          "users/kw_betrieb1/register_devices/dev_alt": {
+            "secretHash": "<geheim>",
+            "label": "Altbestand",
+            "disabled": false,
+            "standortsperre": {
+              "an": true,
+              "lat": 48.2082,
+              "lng": 16.3738,
+              "radiusM": 200,
+              "name": "Laden"
+            },
+            "lastSeenAt": 1790409600000
+          }
+        },
+        "account_without_settings": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            }
+          }
+        }
+      }
+    },
+    "registerUserLogin": {
+      "codebase": "kasse",
+      "cases": {
+        "pin_wrong": {
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 3,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "sess_kellner",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_auswahl",
+              "expiresAt": 1790409660000
+            }
+          }
+        },
+        "pin_wrong_locks": {
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 5,
+            "lockedUntil": 1790409630000,
+            "currentSession": {
+              "id": "sess_kellner",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_auswahl",
+              "expiresAt": 1790409660000
+            }
+          }
+        },
+        "location_without_location": {
+          "users/kw_betrieb1/register_devices/dev_alt": {
+            "secretHash": "<geheim>",
+            "label": "Altbestand",
+            "disabled": false,
+            "standortsperre": {
+              "an": true,
+              "lat": 48.2082,
+              "lng": 16.3738,
+              "radiusM": 200,
+              "name": "Laden"
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000,
+            "lastStandortAbgelehntAt": 1790409600000
+          }
+        },
+        "location_far": {
+          "users/kw_betrieb1/register_devices/dev_alt": {
+            "secretHash": "<geheim>",
+            "label": "Altbestand",
+            "disabled": false,
+            "standortsperre": {
+              "an": true,
+              "lat": 48.2082,
+              "lng": 16.3738,
+              "radiusM": 200,
+              "name": "Laden"
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": {
+              "lat": 47.0707,
+              "lng": 15.4395,
+              "acc": 10
+            },
+            "lastLoginAt": 1790409600000,
+            "lastStandortAbgelehntAt": 1790409600000
+          }
+        },
+        "cashregister_exists_not": {
+          "users/kw_betrieb1/register_devices/dev_alt": {
+            "secretHash": "<geheim>",
+            "label": "Altbestand",
+            "disabled": false,
+            "standortsperre": {
+              "an": true,
+              "lat": 48.2082,
+              "lng": 16.3738,
+              "radiusM": 200,
+              "name": "Laden"
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": {
+              "lat": 48.2083,
+              "lng": 16.3739,
+              "acc": 10
+            },
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "credential_failed": {
+          "users/kw_betrieb1/register_devices/dev_auswahl": {
+            "secretHash": "<geheim>",
+            "label": "Tablet hinten",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "in_use": {
+          "users/kw_betrieb1/register_devices/dev_frei": {
+            "secretHash": "<geheim>",
+            "label": "Kasse Tresen",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "in_use_takeover_without_permission": {
+          "users/kw_betrieb1/register_devices/dev_frei": {
+            "secretHash": "<geheim>",
+            "label": "Kasse Tresen",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "in_use_device_without_label": {
+          "users/kw_betrieb1/register_devices/dev_frei": {
+            "secretHash": "<geheim>",
+            "label": "Kasse Tresen",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "takeover": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_chef",
+            "deviceId": "dev_frei",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": {
+            "userId": "ru_kellner",
+            "deviceId": "dev_auswahl",
+            "startedAt": 1790409300000,
+            "expiresAt": 1790409600000,
+            "takenOverBy": "ru_chef"
+          },
+          "users/kw_betrieb1/register_devices/dev_frei": {
+            "secretHash": "<geheim>",
+            "label": "Kasse Tresen",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_chef",
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_frei",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 2,
+            "lockedUntil": 0,
+            "currentSession": null
+          }
+        },
+        "takeover_chosen": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_chef",
+            "deviceId": "dev_frei",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": {
+            "userId": "ru_kellner",
+            "deviceId": "dev_auswahl",
+            "startedAt": 1790409300000,
+            "expiresAt": 1790409600000,
+            "takenOverBy": "ru_chef"
+          },
+          "users/kw_betrieb1/register_devices/dev_frei": {
+            "secretHash": "<geheim>",
+            "label": "Kasse Tresen",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_chef",
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_frei",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 2,
+            "lockedUntil": 0,
+            "currentSession": null
+          }
+        },
+        "takeover_session_gone": {
+          "users/kw_betrieb1/register_devices/dev_frei": {
+            "secretHash": "<geheim>",
+            "label": "Kasse Tresen",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "success": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_kellner",
+            "deviceId": "dev_auswahl",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": null,
+          "users/kw_betrieb1/register_devices/dev_auswahl": {
+            "secretHash": "<geheim>",
+            "label": "Tablet hinten",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_kellner",
+            "lastIp": "203.0.113.7",
+            "lastGeo": {
+              "lat": 48.2083,
+              "lng": 16.3739,
+              "acc": 10
+            },
+            "lastLoginAt": 1790409600000,
+            "client": {
+              "userAgent": "Mozilla/5.0 Kasse",
+              "platform": "iPad",
+              "language": "de-AT",
+              "tz": "Europe/Vienna",
+              "app": "kasse-app/1.0.3+34",
+              "screen": {
+                "w": 1024,
+                "h": 768
+              }
+            }
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_auswahl",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "success_location_near": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_chef",
+            "deviceId": "dev_alt",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/register_devices/dev_alt": {
+            "secretHash": "<geheim>",
+            "label": "Altbestand",
+            "disabled": false,
+            "standortsperre": {
+              "an": true,
+              "lat": 48.2082,
+              "lng": 16.3738,
+              "radiusM": 200,
+              "name": "Laden"
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": {
+              "lat": 48.2083,
+              "lng": 16.3739,
+              "acc": 10
+            },
+            "lastLoginAt": 1790409600000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_chef"
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_alt",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          }
+        }
+      }
+    },
+    "registerPinLogin": {
+      "codebase": "kasse",
+      "cases": {
+        "pin_wrong": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 1,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            }
+          }
+        },
+        "pin_wrong_locks": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 5,
+            "lockedUntil": 1790409630000,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            }
+          }
+        },
+        "pin_of_one_locked": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 1,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            }
+          }
+        },
+        "pin_with_whitespace": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_kellner",
+            "deviceId": "dev_pin",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": null,
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_kellner",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": null
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_pin",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "location_without_location": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "standortsperre": {
+              "an": true,
+              "lat": 48.2082,
+              "lng": 16.3738,
+              "radiusM": 200
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000,
+            "lastStandortAbgelehntAt": 1790409600000
+          }
+        },
+        "in_use": {
+          "users/kw_betrieb1/register_devices/dev_frei": {
+            "secretHash": "<geheim>",
+            "label": "Kasse Tresen",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "takeover": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_chef",
+            "deviceId": "dev_frei",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": {
+            "userId": "ru_kellner",
+            "deviceId": "dev_auswahl",
+            "startedAt": 1790409300000,
+            "expiresAt": 1790409600000,
+            "takenOverBy": "ru_chef"
+          },
+          "users/kw_betrieb1/register_devices/dev_frei": {
+            "secretHash": "<geheim>",
+            "label": "Kasse Tresen",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_chef",
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_frei",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 2,
+            "lockedUntil": 0,
+            "currentSession": null
+          }
+        },
+        "body_as_text": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_kellner",
+            "deviceId": "dev_pin",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": null,
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_kellner",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": null
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_pin",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "success": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_kellner",
+            "deviceId": "dev_pin",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": null,
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_kellner",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000,
+            "client": {
+              "userAgent": "Mozilla/5.0 Kasse",
+              "platform": "iPad",
+              "language": "de-AT",
+              "tz": "Europe/Vienna",
+              "app": "kasse-app/1.0.3+34",
+              "screen": {
+                "w": 1024,
+                "h": 768
+              }
+            }
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": null
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_pin",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          }
+        },
+        "success_after_failed_attempts": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/auto1": {
+            "userId": "ru_kellner",
+            "deviceId": "dev_pin",
+            "startedAt": 1790409600000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": null,
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": "ru_kellner",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "lastIp": "203.0.113.7",
+            "lastGeo": null,
+            "lastLoginAt": 1790409600000
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": null
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "auto1",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_pin",
+              "expiresAt": 1790409690000
+            },
+            "lastLoginAt": 1790409600000
+          }
+        }
+      }
+    },
+    "renewRegisterSession": {
+      "codebase": "kasse",
+      "cases": {
+        "success": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": {
+            "userId": "ru_chef",
+            "deviceId": "dev_pin",
+            "startedAt": 1790409000000,
+            "expiresAt": 1790409690000,
+            "takenOverBy": null
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": {
+              "id": "sess_chef",
+              "cashregisterId": "KASSE1",
+              "deviceId": "dev_pin",
+              "expiresAt": 1790409690000
+            }
+          }
+        }
+      }
+    },
+    "endRegisterSession": {
+      "codebase": "kasse",
+      "cases": {
+        "success": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": null
+          }
+        }
+      }
+    },
+    "unpairRegisterDevice": {
+      "codebase": "kasse",
+      "cases": {
+        "success": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": true,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            }
+          },
+          "users/kw_betrieb1/register_users/ru_alt": {
+            "name": "Dora Alt",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "currentSession": null
+          },
+          "users/kw_betrieb1/register_users/ru_chef": {
+            "name": "Anna Chef",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "all",
+              "articles": true,
+              "layout": true,
+              "reports": true,
+              "takeover": true,
+              "drawer": true,
+              "discount": true,
+              "tipAssign": true,
+              "receiptsScope": "all"
+            },
+            "registers": [
+              "KASSE1",
+              "KASSE3",
+              "KASSE4",
+              "KASSEX"
+            ],
+            "inhaber": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "pinPolicy": {
+              "stellen": 4,
+              "zeichen": "ziffern",
+              "uniqueGeprueft": true
+            },
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "currentSession": null
+          },
+          "users/kw_betrieb1/register_users/ru_gesperrt": {
+            "name": "Carla Gesperrt",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "disabled": true,
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "currentSession": null
+          },
+          "users/kw_betrieb1/register_users/ru_ohnestorno": {
+            "name": "Gerda Ohne",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "none",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "currentSession": null
+          }
+        },
+        "get_without_check": {
+          "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": null,
+          "users/kw_betrieb1/register_devices/dev_auswahl": {
+            "secretHash": "<geheim>",
+            "label": "Tablet hinten",
+            "cashregisterId": "KASSE1",
+            "disabled": true,
+            "loginMode": "auswahl",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null
+          },
+          "users/kw_betrieb1/register_users/ru_kellner": {
+            "name": "Ben Kellner",
+            "kind": "person",
+            "perms": {
+              "sell": true,
+              "cancel": true,
+              "cancelScope": "own",
+              "articles": false,
+              "layout": false,
+              "reports": false,
+              "takeover": false,
+              "drawer": false,
+              "discount": true,
+              "tipAssign": false,
+              "receiptsScope": "own"
+            },
+            "registers": [
+              "KASSE1"
+            ],
+            "pinHash": "<geheim>",
+            "pinSalt": "<geheim>",
+            "failedAttempts": 2,
+            "lockedUntil": 0,
+            "currentSession": null
+          }
+        }
+      }
+    },
+    "createReceipt": {
+      "codebase": "default",
+      "cases": {
+        "start_receipt": {
+          "users/kw_betrieb1/beleg_kopf/auto1": {
+            "companyName": "Café Welt",
+            "street": "Hauptplatz 1",
+            "zip": "1010",
+            "city": "Wien",
+            "phone": "+43 1 234 56",
+            "uid": "ATU12345678",
+            "taxnr": "12-345/6789",
+            "isSmallBusiness": false,
+            "footer1": "Danke für Ihren Besuch",
+            "footer2": null,
+            "footer3": null,
+            "footer4": null,
+            "thanksMessage": [
+              "Bis bald"
+            ],
+            "showKreiseckLogo": false,
+            "logoUrl": "https://example.invalid/logo.png",
+            "gueltigAb": 0,
+            "gueltigBis": null,
+            "quelle": "profil",
+            "notiz": null,
+            "createdAt": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1": {
+            "label": "Theke 1",
+            "token": "<geheim>",
+            "aes_key": "<geheim>",
+            "signature_id": "sig1",
+            "licenses": 5,
+            "create_time": {
+              "iso": "2026-01-02T08:00:00.000Z"
+            },
+            "onboarding": {
+              "cashbox_registered": true,
+              "startbeleg_created": true,
+              "startbeleg_transmitted": true,
+              "cashbox_registered_at": {
+                "iso": "2026-01-02T09:00:00.000Z"
+              }
+            },
+            "monthlyReportJournal": true,
+            "lastMonthlyReceiptMonth": "2026-08",
+            "lastMonthlyReceiptId": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/metadata/lastReceipt": {
+            "id": "KASSE1-ID-1"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-1": {
+            "counter": 1,
+            "receiptType": "start",
+            "zeroKind": null,
+            "receiptId": "KASSE1-ID-1",
+            "cashregisterId": "KASSE1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "items": [],
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "+kPM0FaIk0SfypManHdseA==",
+            "signaturePreviousReceipt": "<signatur>",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a64bcb18",
+            "kopfId": "auto1",
+            "layoutRegeln": 2,
+            "payments": [],
+            "sig": "<signatur>",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KASSE1_KASSE1-ID-1_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_+kPM0FaI_ABC123_<verkettung>_<signatur>"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/d_2026-09-26": {
+            "scope": "day",
+            "key": "2026-09-26",
+            "unit": "E4",
+            "count": 1,
+            "countByType": {
+              "start": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 1,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
+            "scope": "month",
+            "key": "2026-09",
+            "unit": "E4",
+            "count": 1,
+            "countByType": {
+              "start": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 1,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
+            "scope": "year",
+            "key": "2026",
+            "unit": "E4",
+            "count": 1,
+            "countByType": {
+              "start": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 1,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000
+          }
+        },
+        "sale_cashregister": {
+          "users/kw_betrieb1/cashregisters/KASSE1/metadata/lastReceipt": {
+            "id": "KASSE1-ID-2"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2": {
+            "counter": 2,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KASSE1-ID-2",
+            "cashregisterId": "KASSE1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20,
+                "priceOne": 3.2
+              }
+            ],
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 6.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "XVyQJUk2DiM4NjAKsiguYw==",
+            "signaturePreviousReceipt": "<signatur>",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000019d51dc2",
+            "kopfId": "auto1",
+            "layoutRegeln": 2,
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 640
+              }
+            ],
+            "sig": "<signatur>",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_0,00_0,00_XVyQJUk2_ABC123_<verkettung>_<signatur>",
+            "operator": {
+              "uid": "ru_kellner",
+              "name": "Ben Kellner"
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/d_2026-09-26": {
+            "scope": "day",
+            "key": "2026-09-26",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
+            "scope": "month",
+            "key": "2026-09",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            },
+            "grossByDay": {
+              "2026-09-26": {
+                "__increment": 64000
+              }
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
+            "scope": "year",
+            "key": "2026",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            },
+            "grossByMonth": {
+              "2026-09": {
+                "__increment": 64000
+              }
+            }
+          }
+        },
+        "sale_payments": {
+          "users/kw_betrieb1/cashregisters/KASSE1/metadata/lastReceipt": {
+            "id": "KASSE1-ID-2"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2": {
+            "counter": 2,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KASSE1-ID-2",
+            "cashregisterId": "KASSE1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20,
+                "priceOne": 3.2
+              }
+            ],
+            "vouchers": [],
+            "paymentMethod": "mixed",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 6.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "XVyQJUk2DiM4NjAKsiguYw==",
+            "signaturePreviousReceipt": "<signatur>",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000019d51dc2",
+            "kopfId": "auto1",
+            "layoutRegeln": 2,
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 400
+              },
+              {
+                "id": "p2",
+                "method": "creditCard",
+                "amountCents": 240,
+                "provider": "custom",
+                "providerPaymentId": "pi_7"
+              }
+            ],
+            "sig": "<signatur>",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_0,00_0,00_XVyQJUk2_ABC123_<verkettung>_<signatur>",
+            "operator": {
+              "uid": "ru_chef",
+              "name": "Anna Chef"
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/d_2026-09-26": {
+            "scope": "day",
+            "key": "2026-09-26",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 40000
+              },
+              "creditCard": {
+                "__increment": 24000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              },
+              "creditCard": {
+                "__increment": 1
+              }
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
+            "scope": "month",
+            "key": "2026-09",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 40000
+              },
+              "creditCard": {
+                "__increment": 24000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              },
+              "creditCard": {
+                "__increment": 1
+              }
+            },
+            "grossByDay": {
+              "2026-09-26": {
+                "__increment": 64000
+              }
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
+            "scope": "year",
+            "key": "2026",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 40000
+              },
+              "creditCard": {
+                "__increment": 24000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              },
+              "creditCard": {
+                "__increment": 1
+              }
+            },
+            "grossByMonth": {
+              "2026-09": {
+                "__increment": 64000
+              }
+            }
+          }
+        },
+        "sale_device": {
+          "users/kw_betrieb1/cashregisters/KASSE1/metadata/lastReceipt": {
+            "id": "KASSE1-ID-2"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2": {
+            "counter": 2,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KASSE1-ID-2",
+            "cashregisterId": "KASSE1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20,
+                "priceOne": 3.2
+              }
+            ],
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 6.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "XVyQJUk2DiM4NjAKsiguYw==",
+            "signaturePreviousReceipt": "<signatur>",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000019d51dc2",
+            "kopfId": "auto1",
+            "layoutRegeln": 2,
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 640
+              }
+            ],
+            "sig": "<signatur>",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_0,00_0,00_XVyQJUk2_ABC123_<verkettung>_<signatur>"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/d_2026-09-26": {
+            "scope": "day",
+            "key": "2026-09-26",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
+            "scope": "month",
+            "key": "2026-09",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            },
+            "grossByDay": {
+              "2026-09-26": {
+                "__increment": 64000
+              }
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
+            "scope": "year",
+            "key": "2026",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            },
+            "grossByMonth": {
+              "2026-09": {
+                "__increment": 64000
+              }
+            }
+          }
+        }
+      }
+    },
+    "cancelReceipt": {
+      "codebase": "kasse",
+      "cases": {
+        "success_full": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7": {
+            "receiptId": "KASSE1-ID-7",
+            "cashregisterId": "KASSE1",
+            "receiptType": "standard",
+            "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+            "timeStamp": "2026-09-26T09:30:00",
+            "paymentMethod": "cash",
+            "counter": 7,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              },
+              {
+                "name": "Kuchen",
+                "amount": 1,
+                "priceOneCents": 450,
+                "vat": 10
+              }
+            ],
+            "operator": {
+              "uid": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "cancellations": [
+              {
+                "receiptId": "KASSE1-ID-8",
+                "at": 1790409600000,
+                "by": "ru_chef",
+                "note": "Gast wollte Tee",
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 2
+                  },
+                  {
+                    "index": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "success_partial": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7": {
+            "receiptId": "KASSE1-ID-7",
+            "cashregisterId": "KASSE1",
+            "receiptType": "standard",
+            "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+            "timeStamp": "2026-09-26T09:30:00",
+            "paymentMethod": "cash",
+            "counter": 7,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              },
+              {
+                "name": "Kuchen",
+                "amount": 1,
+                "priceOneCents": 450,
+                "vat": 10
+              }
+            ],
+            "operator": {
+              "uid": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "cancellations": [
+              {
+                "receiptId": "KASSE1-ID-8",
+                "at": 1790409600000,
+                "by": "ru_chef",
+                "note": null,
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "success_own_receipt_cashier": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7": {
+            "receiptId": "KASSE1-ID-7",
+            "cashregisterId": "KASSE1",
+            "receiptType": "standard",
+            "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+            "timeStamp": "2026-09-26T09:30:00",
+            "paymentMethod": "cash",
+            "counter": 7,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              },
+              {
+                "name": "Kuchen",
+                "amount": 1,
+                "priceOneCents": 450,
+                "vat": 10
+              }
+            ],
+            "operator": {
+              "uid": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "cancellations": [
+              {
+                "receiptId": "KASSE1-ID-8",
+                "at": 1790409600000,
+                "by": "ru_kellner",
+                "note": null,
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 2
+                  },
+                  {
+                    "index": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "success_api_key": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7": {
+            "receiptId": "KASSE1-ID-7",
+            "cashregisterId": "KASSE1",
+            "receiptType": "standard",
+            "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+            "timeStamp": "2026-09-26T09:30:00",
+            "paymentMethod": "cash",
+            "counter": 7,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              },
+              {
+                "name": "Kuchen",
+                "amount": 1,
+                "priceOneCents": 450,
+                "vat": 10
+              }
+            ],
+            "operator": {
+              "uid": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "cancellations": [
+              {
+                "receiptId": "KASSE1-ID-8",
+                "at": 1790409600000,
+                "by": null,
+                "note": null,
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 2
+                  },
+                  {
+                    "index": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "self_call_error": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7": {
+            "receiptId": "KASSE1-ID-7",
+            "cashregisterId": "KASSE1",
+            "receiptType": "standard",
+            "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+            "timeStamp": "2026-09-26T09:30:00",
+            "paymentMethod": "cash",
+            "counter": 7,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              },
+              {
+                "name": "Kuchen",
+                "amount": 1,
+                "priceOneCents": 450,
+                "vat": 10
+              }
+            ],
+            "operator": {
+              "uid": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "cancellations": []
+          }
+        },
+        "self_call_without_response": {
+          "storno_reservierungen/kw_betrieb1_mui3ncw0-1111111111": {
+            "uid": "kw_betrieb1",
+            "cashregisterId": "KASSE1",
+            "originalReceiptId": "KASSE1-ID-7",
+            "marke": "mui3ncw0-1111111111",
+            "at": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7": {
+            "receiptId": "KASSE1-ID-7",
+            "cashregisterId": "KASSE1",
+            "receiptType": "standard",
+            "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+            "timeStamp": "2026-09-26T09:30:00",
+            "paymentMethod": "cash",
+            "counter": 7,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              },
+              {
+                "name": "Kuchen",
+                "amount": 1,
+                "priceOneCents": 450,
+                "vat": 10
+              }
+            ],
+            "operator": {
+              "uid": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "cancellations": [
+              {
+                "pending": true,
+                "marke": "mui3ncw0-1111111111",
+                "at": 1790409600000,
+                "by": "ru_chef",
+                "note": null,
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 2
+                  },
+                  {
+                    "index": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "sendReceiptEmail": {
+      "codebase": "default",
+      "cases": {
+        "too_often": {
+          "rate_limits/belegmail_beleg_a0c02d860c9bded98a03bd0d130a0b6f": {
+            "count": 6,
+            "windowStart": 1790409600000
+          },
+          "rate_limits/belegmail_kasse_87c57ff9e564bac5e069fdb2b4a812c9": {
+            "count": 6,
+            "windowStart": 1790409600000
+          }
+        },
+        "sending_failed": {
+          "rate_limits/belegmail_beleg_a0c02d860c9bded98a03bd0d130a0b6f": {
+            "count": 1,
+            "windowStart": 1790409600000
+          },
+          "rate_limits/belegmail_kasse_87c57ff9e564bac5e069fdb2b4a812c9": {
+            "count": 1,
+            "windowStart": 1790409600000
+          }
+        },
+        "success_cashregister": {
+          "rate_limits/belegmail_beleg_a0c02d860c9bded98a03bd0d130a0b6f": {
+            "count": 1,
+            "windowStart": 1790409600000
+          },
+          "rate_limits/belegmail_kasse_87c57ff9e564bac5e069fdb2b4a812c9": {
+            "count": 1,
+            "windowStart": 1790409600000
+          }
+        },
+        "success_device": {
+          "rate_limits/belegmail_beleg_a0c02d860c9bded98a03bd0d130a0b6f": {
+            "count": 1,
+            "windowStart": 1790409600000
+          },
+          "rate_limits/belegmail_kasse_87c57ff9e564bac5e069fdb2b4a812c9": {
+            "count": 1,
+            "windowStart": 1790409600000
+          }
+        }
+      }
+    },
+    "setMyKasseSettings": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "users/kw_betrieb1": {
+            "api_key": "<geheim>",
+            "company_name": "Café Welt",
+            "phone": "+43 1 234 56",
+            "address": {
+              "street": "Hauptplatz 1",
+              "zip": "1010",
+              "city": "Wien"
+            },
+            "tax_details": {
+              "uid": "ATU12345678",
+              "taxnr": "12-345/6789",
+              "is_small_business": false
+            },
+            "footer": {
+              "footer1": "Danke für Ihren Besuch"
+            },
+            "thanks_message": "Bis bald",
+            "logo_url": "https://example.invalid/logo.png",
+            "register_settings": {
+              "kasse": {
+                "stil": "klar",
+                "uhr": false
+              }
+            }
+          }
+        },
+        "success_owner": {
+          "users/kw_betrieb1": {
+            "api_key": "<geheim>",
+            "company_name": "Café Welt",
+            "phone": "+43 1 234 56",
+            "address": {
+              "street": "Hauptplatz 1",
+              "zip": "1010",
+              "city": "Wien"
+            },
+            "tax_details": {
+              "uid": "ATU12345678",
+              "taxnr": "12-345/6789",
+              "is_small_business": false
+            },
+            "footer": {
+              "footer1": "Danke für Ihren Besuch"
+            },
+            "thanks_message": "Bis bald",
+            "logo_url": "https://example.invalid/logo.png",
+            "register_settings": {
+              "kasse": {
+                "farbe": "#136B6B",
+                "schrift": "L"
+              }
+            }
+          }
+        }
+      }
+    },
+    "setMyKasseLogo": {
+      "codebase": "kasse",
+      "cases": {
+        "remove": {
+          "users/kw_betrieb1": {
+            "api_key": "<geheim>",
+            "company_name": "Café Welt",
+            "phone": "+43 1 234 56",
+            "address": {
+              "street": "Hauptplatz 1",
+              "zip": "1010",
+              "city": "Wien"
+            },
+            "tax_details": {
+              "uid": "ATU12345678",
+              "taxnr": "12-345/6789",
+              "is_small_business": false
+            },
+            "footer": {
+              "footer1": "Danke für Ihren Besuch"
+            },
+            "thanks_message": "Bis bald",
+            "logo_url": "https://example.invalid/logo.png",
+            "register_settings": {
+              "kasse": {
+                "logoBild": ""
+              }
+            }
+          }
+        },
+        "success_png": {
+          "users/kw_betrieb1": {
+            "api_key": "<geheim>",
+            "company_name": "Café Welt",
+            "phone": "+43 1 234 56",
+            "address": {
+              "street": "Hauptplatz 1",
+              "zip": "1010",
+              "city": "Wien"
+            },
+            "tax_details": {
+              "uid": "ATU12345678",
+              "taxnr": "12-345/6789",
+              "is_small_business": false
+            },
+            "footer": {
+              "footer1": "Danke für Ihren Besuch"
+            },
+            "thanks_message": "Bis bald",
+            "logo_url": "https://example.invalid/logo.png",
+            "register_settings": {
+              "kasse": {
+                "logoBild": "https://firebasestorage.googleapis.com/v0/b/kasseneck.appspot.com/o/users%2Fkw_betrieb1%2Fkasse%2Flogo.png?alt=media&token=11111111-2222-4333-8444-555555555555"
+              }
+            }
+          }
+        },
+        "success_svg_owner": {
+          "users/kw_betrieb1": {
+            "api_key": "<geheim>",
+            "company_name": "Café Welt",
+            "phone": "+43 1 234 56",
+            "address": {
+              "street": "Hauptplatz 1",
+              "zip": "1010",
+              "city": "Wien"
+            },
+            "tax_details": {
+              "uid": "ATU12345678",
+              "taxnr": "12-345/6789",
+              "is_small_business": false
+            },
+            "footer": {
+              "footer1": "Danke für Ihren Besuch"
+            },
+            "thanks_message": "Bis bald",
+            "logo_url": "https://example.invalid/logo.png",
+            "register_settings": {
+              "kasse": {
+                "logoBild": "https://firebasestorage.googleapis.com/v0/b/kasseneck.appspot.com/o/users%2Fkw_betrieb1%2Fkasse%2Flogo.svg?alt=media&token=11111111-2222-4333-8444-555555555555"
+              }
+            }
+          }
+        }
+      }
+    },
+    "setMyRegisterDeviceSettings": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "rechts",
+              "druckerAn": true,
+              "papier": "mm80"
+            }
+          }
+        },
+        "success_owner": {
+          "users/kw_betrieb1/register_devices/dev_kasse2": {
+            "secretHash": "<geheim>",
+            "label": "Tablet Keller",
+            "cashregisterId": "KASSE2",
+            "disabled": false,
+            "loginMode": "auswahl",
+            "kasse": {
+              "hoehe": "L"
+            }
+          }
+        }
+      }
+    },
+    "createPrintJob": {
+      "codebase": "kasse",
+      "cases": {
+        "success_cashregister": {
+          "users/kw_betrieb1/drucker/dr_theke/jobs/auto1": {
+            "status": "offen",
+            "xml": "<epos-print xmlns=\"http://www.epson-pos.com/schemas/2011/03/epos-print\">\n<text lang=\"de\"/>\n<text font=\"font_a\"/>\n<text align=\"left\"/>\n<text width=\"1\" height=\"1\" reverse=\"false\" em=\"false\"/>\n<text>Café Welt                                       &#10;</text>\n<text>Summe 9,40                                      &#10;</text>\n<feed line=\"1\"/>\n<text>             erstellt mit Kasseneck             &#10;</text>\n<feed line=\"2\"/>\n<cut type=\"feed\"/>\n</epos-print>",
+            "erstellt": 1790409600000,
+            "gesendetAt": null,
+            "ergebnis": null,
+            "quelle": "kasse",
+            "receiptId": "KASSE1-ID-7",
+            "titel": "Beleg 7",
+            "von": "ru_kellner"
+          }
+        },
+        "success_owner": {
+          "users/kw_betrieb1/drucker/dr_theke/jobs/auto1": {
+            "status": "offen",
+            "xml": "<epos-print xmlns=\"http://www.epson-pos.com/schemas/2011/03/epos-print\">\n<text lang=\"de\"/>\n<text font=\"font_a\"/>\n<text align=\"left\"/>\n<text width=\"1\" height=\"1\" reverse=\"false\" em=\"false\"/>\n<text>Café Welt                                       &#10;</text>\n<text>Summe 9,40                                      &#10;</text>\n<feed line=\"2\"/>\n<cut type=\"feed\"/>\n</epos-print>",
+            "erstellt": 1790409600000,
+            "gesendetAt": null,
+            "ergebnis": null,
+            "quelle": "labor",
+            "receiptId": null,
+            "titel": null,
+            "von": "kw_betrieb1"
+          }
+        },
+        "success_logo_qr": {
+          "users/kw_betrieb1/drucker/dr_theke/jobs/auto1": {
+            "status": "offen",
+            "xml": "<epos-print xmlns=\"http://www.epson-pos.com/schemas/2011/03/epos-print\">\n<text lang=\"de\"/>\n<text font=\"font_a\"/>\n<text align=\"left\"/>\n<text width=\"1\" height=\"1\" reverse=\"false\" em=\"false\"/>\n<text em=\"true\">================================================&#10;</text>\n<text em=\"false\"/>\n<text em=\"true\">                   TESTKASSE                    &#10;</text>\n<text em=\"false\"/>\n<text em=\"true\">================================================&#10;</text>\n<text em=\"false\"/>\n<feed line=\"1\"/>\n<text align=\"center\"/>\n<image width=\"10\" height=\"2\" color=\"color_1\" mode=\"mono\">gEAAgA==</image>\n<text align=\"left\"/>\n<feed line=\"1\"/>\n<text em=\"true\">                   Café Welt                    &#10;</text>\n<text em=\"false\"/>\n<text>2 x Kaffee                                  6,40&#10;</text>\n<text>------------------------------------------------&#10;</text>\n<text em=\"true\">================================================&#10;</text>\n<text em=\"false\"/>\n<text em=\"true\">                     STORNO                     &#10;</text>\n<text em=\"false\"/>\n<text em=\"true\">================================================&#10;</text>\n<text em=\"false\"/>\n<feed line=\"1\"/>\n<text align=\"center\"/>\n<symbol type=\"qrcode_model_2\" level=\"level_m\" width=\"6\" height=\"0\" size=\"0\">_R1-AT0_KASSE1_KASSE1-ID-7_2026-09-26T10:00:00_6,40_0,00_0,00_0,00_0,00_x_y_z_w</symbol>\n<text align=\"left\"/>\n<feed line=\"1\"/>\n<text>             erstellt mit Kasseneck             &#10;</text>\n<feed line=\"2\"/>\n<cut type=\"feed\"/>\n</epos-print>",
+            "erstellt": 1790409600000,
+            "gesendetAt": null,
+            "ergebnis": null,
+            "quelle": "kasse",
+            "receiptId": "KASSE1-ID-7",
+            "titel": "Beleg 7",
+            "von": "ru_kellner"
+          }
+        }
+      }
+    }
+  }
+}

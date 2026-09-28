@@ -16,13 +16,13 @@ import 'package:kasseneck_api/widgets/keck_beleg_blatt_widget.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 BelegLayout _fixture(String name) => BelegLayout.fromJson(
-    jsonDecode(File('test/fixtures/vertrag/erwartet/$name.lines.json').readAsStringSync()))!;
+    jsonDecode(File('test/fixtures/vertrag/expected/$name.lines.json').readAsStringSync()))!;
 
 Widget _huelle(Widget kind) => MaterialApp(home: Scaffold(body: SingleChildScrollView(child: kind)));
 
 void main() {
   testWidgets('jede Zeile des Blatts steht zeichengleich und in Reihenfolge; Zeile = 2 Zeichenbreiten', (tester) async {
-    final layout = _fixture('testkasse-verkauf');
+    final layout = _fixture('test-cashregister-sale');
     await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: layout, marke: true)));
     final blatt = belegBlatt(layout, marke: true);
     final soll = [for (final b in blatt.bloecke) if (b is BlattZeile) b.text];
@@ -41,9 +41,9 @@ void main() {
   });
 
   testWidgets('ohne logoUrl kein Logo-Block; Aufdruck ist Text, nicht gefuellt', (tester) async {
-    await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: _fixture('storno-voll'))));
+    await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: _fixture('cancellation-full'))));
     expect(find.byKey(const Key('keck-blatt-logo')), findsNothing);
-    // storno-voll traegt paperSize mm80 -> 48 Zeichen, also 48 Gleichheitszeichen je Rahmenzeile.
+    // cancellation-full traegt paperSize mm80 -> 48 Zeichen, also 48 Gleichheitszeichen je Rahmenzeile.
     expect(find.text('=' * 48), findsNWidgets(2));
   });
 
@@ -55,7 +55,7 @@ void main() {
     });
     LogoService.httpClient = MockClient((_) async => http.Response.bytes(png, 200));
 
-    final layout = _fixture('testkasse-verkauf');
+    final layout = _fixture('test-cashregister-sale');
     // Der ganze Ladeweg -- HTTP-Abruf plus Bild-Decode -- ist echtes Async
     // (kein Timer): er muss ausserhalb der FakeAsync-Zone des Widget-Tests
     // laufen, sonst haengt `ui.instantiateImageCodec` fuer immer.
@@ -97,7 +97,7 @@ void main() {
       });
       LogoService.httpClient = MockClient((_) async => http.Response.bytes(png, 200));
 
-      final layout = _fixture('testkasse-verkauf');
+      final layout = _fixture('test-cashregister-sale');
       await tester.runAsync(() async {
         await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: layout, logoUrl: url)));
         await Future<void>.delayed(const Duration(milliseconds: 50));
@@ -122,7 +122,7 @@ void main() {
   }
 
   testWidgets('QR am Schirm mit Korrektur M; Ruhezone: Innenflaeche = Kasten x Module / (Module + 8)', (tester) async {
-    final layout = _fixture('testkasse-verkauf');
+    final layout = _fixture('test-cashregister-sale');
     await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: layout, marke: true)));
     final ansicht = tester.widget<QrImageView>(find.byType(QrImageView));
     // qr_flutter setzt ohne Angabe L -- dann haette der Schirm bei mancher
@@ -144,7 +144,7 @@ void main() {
   // sonst stimmt die Zeichenbreite nicht mehr mit Zeilenhoehe und QR-Anteil.
   for (final (zeichen, aussen) in [(48, 380.0), (32, 280.0)]) {
     testWidgets('unter erzwungener Breite $aussen bleibt das Blatt $zeichen Zeichen breit, QR und Zeilen mittig', (tester) async {
-      final layout = _fixture('testkasse-verkauf');
+      final layout = _fixture('test-cashregister-sale');
       // fontSize 7: in der Testschrift ist ein Zeichen so breit wie hoch, das
       // Blatt passt dann samt Rand in beide Breiten.
       await tester.pumpWidget(MaterialApp(
@@ -183,7 +183,7 @@ void main() {
     // Ohne Bytes gibt es kein Logo-Block -- das Blatt steht ohne Logo.
     LogoService.httpClient = MockClient((_) async => http.Response('nicht da', 404));
     await tester.runAsync(() async {
-      await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: _fixture('verkauf-bar'), logoUrl: 'https://example.test/weg.png')));
+      await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: _fixture('sale-cash'), logoUrl: 'https://example.test/weg.png')));
       await Future<void>.delayed(const Duration(milliseconds: 20));
     });
     await tester.pump();
@@ -196,7 +196,7 @@ void main() {
     // steht ohne Logo, und der Puffer wird trotzdem freigegeben (finally).
     LogoService.httpClient = MockClient((_) async => http.Response.bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3, 4], 200));
     await tester.runAsync(() async {
-      await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: _fixture('verkauf-bar'), logoUrl: 'https://example.test/kaputt.png')));
+      await tester.pumpWidget(_huelle(KeckBelegBlattWidget(layout: _fixture('sale-cash'), logoUrl: 'https://example.test/kaputt.png')));
       await Future<void>.delayed(const Duration(milliseconds: 20));
     });
     await tester.pump();
@@ -205,7 +205,7 @@ void main() {
   });
 
   testWidgets('QR-Inhalt ohne passende Version: Hinweistext statt QR, keine Ausnahme, Zeilen stehen', (tester) async {
-    final json = jsonDecode(File('test/fixtures/vertrag/erwartet/testkasse-verkauf.lines.json').readAsStringSync()) as Map<String, dynamic>;
+    final json = jsonDecode(File('test/fixtures/vertrag/expected/test-cashregister-sale.lines.json').readAsStringSync()) as Map<String, dynamic>;
     json['lines'] = [
       for (final z in (json['lines'] as List).cast<Map<String, dynamic>>())
         if (z['kind'] == 'qr') {...z, 'data': 'x' * 2332} else z,
@@ -219,7 +219,7 @@ void main() {
   });
 
   testWidgets('qrFehltBuilder bekommt die Nutzlast und ersetzt den Standard-Hinweis', (tester) async {
-    final json = jsonDecode(File('test/fixtures/vertrag/erwartet/testkasse-verkauf.lines.json').readAsStringSync()) as Map<String, dynamic>;
+    final json = jsonDecode(File('test/fixtures/vertrag/expected/test-cashregister-sale.lines.json').readAsStringSync()) as Map<String, dynamic>;
     json['lines'] = [
       for (final z in (json['lines'] as List).cast<Map<String, dynamic>>())
         if (z['kind'] == 'qr') {...z, 'data': 'x' * 2332} else z,
@@ -240,7 +240,7 @@ void main() {
   });
 
   testWidgets('leere QR-Nutzlast: weder Hinweis noch QR (kein Ausfall, sondern nichts zu zeigen)', (tester) async {
-    final json = jsonDecode(File('test/fixtures/vertrag/erwartet/testkasse-verkauf.lines.json').readAsStringSync()) as Map<String, dynamic>;
+    final json = jsonDecode(File('test/fixtures/vertrag/expected/test-cashregister-sale.lines.json').readAsStringSync()) as Map<String, dynamic>;
     json['lines'] = [
       for (final z in (json['lines'] as List).cast<Map<String, dynamic>>())
         if (z['kind'] == 'qr') {...z, 'data': ''} else z,

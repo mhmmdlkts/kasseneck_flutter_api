@@ -1,0 +1,26 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Negativer Preis gehört in eine Gutschrift",
+  "request": {
+    "idempotencyKey": "ex-7",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Nachlass",
+        "quantity": 1,
+        "unitPriceCents": -1,
+        "vatRate": 20
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].unitPriceCents"
+    ]
+  }
+}

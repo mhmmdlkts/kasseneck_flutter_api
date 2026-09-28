@@ -85,7 +85,7 @@ void main() {
       final alteBytes = _einzigesRasterbild(alterWeg.bytes);
 
       final layout = BelegLayout.fromJson(
-          jsonDecode(File('test/fixtures/vertrag/erwartet/verkauf-bar.lines.json').readAsStringSync()))!;
+          jsonDecode(File('test/fixtures/vertrag/expected/sale-cash.lines.json').readAsStringSync()))!;
       final neuerWeg = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
       await neuerWeg.setBelegBlatt(layout, marke: true, cut: false, qrMode: QrPrintMode.native);
       final neueBytes = _einzigesRasterbild(neuerWeg.bytes);

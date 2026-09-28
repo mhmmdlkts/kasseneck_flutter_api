@@ -1,0 +1,25 @@
+{
+  "endpoint": "createCustomer",
+  "description": "UID-Nummer im falschen Format",
+  "request": {
+    "customer": {
+      "type": "company",
+      "name": "Café Muster GmbH",
+      "street": "Hauptplatz",
+      "houseNumber": "3",
+      "zip": "1010",
+      "city": "Wien",
+      "country": "AT",
+      "email": "rechnung@cafe-muster.example",
+      "externalId": "shop-4711",
+      "vatId": "ATU1"
+    }
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "customer.vatId"
+    ]
+  }
+}

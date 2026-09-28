@@ -1,0 +1,434 @@
+{
+  "charsPerLine": 48,
+  "blocks": [
+    {
+      "kind": "logo",
+      "widthFraction": 0.5208333333333334,
+      "heightLines": 5
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                Bäckerei Muster                 ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  Hauptplatz 1                  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 4830 Hallstatt                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  ATU12345678                   ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 +43 6134 12345                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:                       25.09.2026 10:15:30",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:                          AT0-KASSE1-77",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "2  x Schnitzel je 18,90                  37,80 B",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "1  x Salat                                6,55 B",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "1  x Apfelstrudel                         4,65 B",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "4  x Wein 1/4 je 5,00                    20,00 A",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Trinkgeld Personal                        6,00 D",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "MwSt%       MwSt        Netto             Brutto",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "B 10%       4,45        44,55              49,00",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "A 20%       3,33        16,67              20,00",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "D 0%        0,00        6,00                6,00",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "------------------------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamt:                                  75,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungsarten:                                  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "1. Kartenzahlung                         22,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  davon Trinkgeld                         2,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "2. Kartenzahlung                         18,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  davon Trinkgeld                         3,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "3. Kartenzahlung                         24,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "4. Barzahlung                            11,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  davon Trinkgeld                         1,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  Gegeben:                               20,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  Rückgeld:                               9,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT1_KASSE1_AT0-KASSE1-77_2026-09-25T10:15:30_20,00_49,00_0,00_6,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "widthFraction": 0.5520833333333334
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                1. Kartenzahlung                ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  Sumup Beleg                   ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kartentyp:                            MASTERCARD",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kartennummer:                **** **** **** 4720",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungstyp:                         CONTACTLESS",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamtbetrag:                          22,00 EUR",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Transaktionscode:                     TEZBA9K7QK",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Modus:                               CONTACTLESS",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                2. Kartenzahlung                ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  GP Tom Beleg                  ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                   Batch: 12                    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                Receipt: TX-9904                ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                   TID: T-55                    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 A0000000031010                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "            VISA CREDIT CONTACTLESS             ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "              **** **** **** 4720               ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "             Sale Amount EUR 18,00              ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                     PIN OK                     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "           Authorization Code 123404            ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "               Sequence Number: 4               ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                3. Kartenzahlung                ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  Sumup Beleg                   ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kartentyp:                                  VISA",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kartennummer:                **** **** **** 1881",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungstyp:                         CONTACTLESS",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamtbetrag:                          24,00 EUR",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Transaktionscode:                     TFQ2M8C4XP",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Modus:                               CONTACTLESS",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "         Vielen Dank für Ihren Einkauf          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "            www.baeckerei-muster.at             ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 352,
+      "height": 51
+    }
+  ]
+}

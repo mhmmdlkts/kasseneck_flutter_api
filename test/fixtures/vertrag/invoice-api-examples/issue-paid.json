@@ -1,0 +1,32 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Shop kassiert per Karte, Rechnung entsteht bezahlt",
+  "request": {
+    "idempotencyKey": "ex-paid",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-16",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 2,
+        "unitPriceCents": 5000,
+        "vatRate": 20,
+        "unit": "hour"
+      }
+    ],
+    "payment": {
+      "method": "card",
+      "reference": "pi_3QexampleXYZ"
+    }
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 10000,
+      "vatCents": 2000,
+      "grossCents": 12000
+    }
+  }
+}

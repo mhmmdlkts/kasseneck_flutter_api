@@ -1,8 +1,0 @@
-{
-  "aufruf": "getInvoiceSetupStatus",
-  "beschreibung": "Einrichtung abfragen, ohne Parameter",
-  "anfrage": {},
-  "erwartet": {
-    "ok": true
-  }
-}

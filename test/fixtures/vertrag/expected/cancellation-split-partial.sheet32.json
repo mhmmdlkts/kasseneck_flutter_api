@@ -1,0 +1,230 @@
+{
+  "charsPerLine": 32,
+  "blocks": [
+    {
+      "kind": "logo",
+      "widthFraction": 0.62,
+      "heightLines": 3.968
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "        Bäckerei Muster         ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          Hauptplatz 1          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         4830 Hallstatt         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          ATU12345678           ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         +43 6134 12345         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          STORNOBELEG           ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "     Stornobuchung zu Beleg     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         AT0-KASSE1-70          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "   vom 25.09.2026, 10:15 Uhr    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "       Grund: Fehleingabe       ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:       25.09.2026 10:15:30",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:          AT0-KASSE1-75",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "-1 x Salat               -6,55 B",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "-1 x Wein 1/4            -5,00 A",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "MwSt%   MwSt    Netto     Brutto",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "B 10%   -0,60   -5,95      -6,55",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "A 20%   -0,83   -4,17      -5,00",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "--------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamt:                 -11,55 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungsarten:                  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "1. Barzahlung           -10,45 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "2. Kartenzahlung         -1,10 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT1_KASSE1_AT0-KASSE1-75_2026-09-25T10:15:30_-5,00_-6,55_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "widthFraction": 0.828125
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": " Vielen Dank für Ihren Einkauf  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "    www.baeckerei-muster.at     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 234,
+      "height": 34
+    }
+  ]
+}

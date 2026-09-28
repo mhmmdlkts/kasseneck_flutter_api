@@ -1,0 +1,27 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Die Nummer vergibt der Server",
+  "request": {
+    "idempotencyKey": "ex-8",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 20
+      }
+    ],
+    "number": "2026-0001"
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "number"
+    ]
+  }
+}

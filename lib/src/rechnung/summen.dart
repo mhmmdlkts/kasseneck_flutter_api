@@ -15,7 +15,7 @@
 /// ist das Brutto der vereinbarte Preis und bleibt, wie die Zeilen es ergeben.
 /// Bei einem Fall aus [steuerfreieFaelle] zählt jede Zeile zu 0 %.
 ///
-/// Die Prüffälle stehen in `fixtures/rechnung-summen.json` des JS-Pakets;
+/// Die Prüffälle stehen in `fixtures/invoice-totals.json` des JS-Pakets;
 /// Server, JS-Paket und dieses Paket prüfen gegen dieselbe Datei. Verbindlich
 /// bleibt, was der Server rechnet — `RechnungApi.previewInvoice` fragt ihn.
 library;

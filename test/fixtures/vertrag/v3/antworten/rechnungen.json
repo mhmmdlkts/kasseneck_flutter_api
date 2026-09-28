@@ -1,0 +1,1712 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "238d2c4f15c8da89d9c2c47b15dadbbabb94e9e35217e913529317c794c8a247",
+    "inputsSha256": "cee31126cc755fd21441abae289997aeb0884a15eb230ce231defd8bb0bdc0fd",
+    "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+    "inputs": [
+      "docs/api/fehlercodes.json",
+      "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/beleg-mail-core.js",
+      "functions/gemeinsam/api-rand.js",
+      "functions/gemeinsam/api-vokabular-v3.js",
+      "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/storno-core.js",
+      "functions/gemeinsam/tip-core.js",
+      "functions/gemeinsam/vat-buckets.js",
+      "functions/gemeinsam/zahlungen-core.js",
+      "functions/invoice-api-core.js",
+      "functions/invoice-api-endpoints.js",
+      "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
+      "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
+      "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
+      "functions/test/unit/helpers/kassen-fehlerstellen.js",
+      "functions/test/unit/v3-vertrag-export.test.js"
+    ]
+  },
+  "channel": "api",
+  "cases": [
+    {
+      "name": "issue_dry_run_intra_community",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "idem-1",
+        "customerId": "k_eu",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Ware",
+            "quantity": 1,
+            "unitPriceCents": 10000,
+            "vatRate": 0,
+            "kind": "goods"
+          }
+        ],
+        "dryRun": true,
+        "taxScheme": "intraCommunitySupply"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "preview": {
+            "docType": "invoice",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_eu",
+            "taxScheme": "intraCommunitySupply",
+            "taxSchemeReason": "customer_country_eu_with_vat_id",
+            "reverseChargeReason": null,
+            "taxCountry": "AT",
+            "priceMode": "net",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 0,
+              "grossCents": 10000,
+              "byRate": [
+                {
+                  "rate": 0,
+                  "netCents": 10000,
+                  "vatCents": 0,
+                  "grossCents": 10000
+                }
+              ]
+            },
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            }
+          },
+          "notice": [
+            {
+              "code": "recapitulative_statement_due",
+              "message": "Für diesen Umsatz ist eine Zusammenfassende Meldung abzugeben (Art. 21 Abs. 3 UStG). Sie ist seit 2020 materielle Voraussetzung — ohne sie fällt die Steuerfreiheit der ig. Lieferung bzw. der Übergang der Steuerschuld nachträglich weg. Ob sie abgegeben wurde, sieht Kasseneck nicht."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "error_tax_scheme_mismatch",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "idem-1",
+        "customerId": "k_eu",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Ware",
+            "quantity": 1,
+            "unitPriceCents": 10000,
+            "vatRate": 0,
+            "kind": "goods"
+          }
+        ],
+        "dryRun": true,
+        "taxScheme": "normal"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Lieferung an ein Unternehmen in CZ mit UID: das ist „intraCommunitySupply\", nicht „normal\".",
+        "data": {
+          "code": "tax_scheme_mismatch",
+          "expected": "intraCommunitySupply",
+          "given": "normal",
+          "reason": "customer_country_eu_with_vat_id"
+        },
+        "code": "tax_scheme_mismatch"
+      }
+    },
+    {
+      "name": "error_german_tax_scheme",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "idem-1",
+        "customerId": "k_eu",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Ware",
+            "quantity": 1,
+            "unitPriceCents": 10000,
+            "vatRate": 0,
+            "kind": "goods"
+          }
+        ],
+        "dryRun": true,
+        "taxScheme": "igLieferung"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "code": "validation",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "taxScheme",
+              "message": "Unbekannter Wert."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "error_unknown_tax_scheme",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "idem-1",
+        "customerId": "k_eu",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Ware",
+            "quantity": 1,
+            "unitPriceCents": 10000,
+            "vatRate": 0,
+            "kind": "goods"
+          }
+        ],
+        "dryRun": true,
+        "taxScheme": "intra"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "taxScheme",
+              "message": "Erlaubt: normal, smallBusiness, reverseCharge, intraCommunitySupply, exportThirdCountry, domesticReverseCharge, oss, outsideScope."
+            }
+          ]
+        },
+        "code": "validation"
+      }
+    },
+    {
+      "name": "issue_final",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "i-final",
+        "customerId": "k_at",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Beratung",
+            "quantity": 2,
+            "unitPriceCents": 5000,
+            "vatRate": 20,
+            "kind": "service"
+          }
+        ],
+        "dryRun": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto1",
+            "number": "0001",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000
+          },
+          "replayed": false
+        }
+      }
+    },
+    {
+      "name": "issue_final_replayed",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "i-final",
+        "customerId": "k_at",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Beratung",
+            "quantity": 2,
+            "unitPriceCents": 5000,
+            "vatRate": 20,
+            "kind": "service"
+          }
+        ],
+        "dryRun": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto1",
+            "number": "0001",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000
+          },
+          "replayed": true
+        }
+      }
+    },
+    {
+      "name": "issue_final_intra_community",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "i-eu",
+        "customerId": "k_eu",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Ware",
+            "quantity": 1,
+            "unitPriceCents": 10000,
+            "vatRate": 0,
+            "kind": "goods"
+          }
+        ],
+        "dryRun": false,
+        "taxScheme": "intraCommunitySupply"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto2",
+            "number": "0002",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_eu",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 0,
+              "grossCents": 10000,
+              "byRate": [
+                {
+                  "rate": 0,
+                  "netCents": 10000,
+                  "vatCents": 0,
+                  "grossCents": 10000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 10000
+          },
+          "replayed": false,
+          "notice": [
+            {
+              "code": "recapitulative_statement_due",
+              "message": "Für diesen Umsatz ist eine Zusammenfassende Meldung abzugeben (Art. 21 Abs. 3 UStG). Sie ist seit 2020 materielle Voraussetzung — ohne sie fällt die Steuerfreiheit der ig. Lieferung bzw. der Übergang der Steuerschuld nachträglich weg. Ob sie abgegeben wurde, sieht Kasseneck nicht."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "error_invoice_requirements_missing",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "i-amt",
+        "customerId": "k_amt",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Beratung",
+            "quantity": 2,
+            "unitPriceCents": 5000,
+            "vatRate": 20,
+            "kind": "service"
+          }
+        ],
+        "dryRun": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Behörden-Rechnung (E-Rechnung) unvollständig — fehlt: Straße, PLZ, Ort, UID-Nummer, Auftragsreferenz. Käufer-Adresse (inkl. Land) und Auftragsreferenz sind Pflicht.",
+        "data": {
+          "code": "invoice_requirements_missing",
+          "missing": [
+            "street",
+            "zip",
+            "city",
+            "vat_id",
+            "order_reference"
+          ]
+        },
+        "code": "invoice_requirements_missing"
+      }
+    },
+    {
+      "name": "get_invoice",
+      "endpoint": "getInvoice",
+      "path": "/v3/getInvoice",
+      "params": {
+        "invoiceId": "auto1"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto1",
+            "number": "0001",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000,
+            "items": [
+              {
+                "description": "Beratung",
+                "subtitle": "",
+                "quantity": 2,
+                "unit": "piece",
+                "kind": "service",
+                "unitPriceCents": 5000,
+                "unitPriceMicros": 50000000,
+                "vatRate": 20,
+                "discountPct": 0
+              }
+            ],
+            "customer": {
+              "name": "Baecker Wien GmbH",
+              "type": "company",
+              "street": "Hauptplatz 1",
+              "houseNumber": null,
+              "zip": "1010",
+              "city": "Wien",
+              "country": "AT",
+              "vatId": "ATU87654321",
+              "shortCode": null,
+              "email": null,
+              "isAuthority": false
+            },
+            "taxScheme": "normal",
+            "reverseChargeReason": null,
+            "taxCountry": "AT",
+            "priceMode": "net",
+            "serviceStart": "2026-09-26",
+            "serviceEnd": null,
+            "paymentTermDays": 14,
+            "orderReference": null,
+            "payments": [],
+            "overdue": false,
+            "writtenOff": false,
+            "writeOffReasonCode": null,
+            "related": null,
+            "creditNotes": [],
+            "source": "api",
+            "createdAt": "2026-09-26T08:00:00.000Z",
+            "finalizedAt": "2026-09-26T08:00:00.000Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "get_invoice_intra_community",
+      "endpoint": "getInvoice",
+      "path": "/v3/getInvoice",
+      "params": {
+        "invoiceId": "auto2"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto2",
+            "number": "0002",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_eu",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 0,
+              "grossCents": 10000,
+              "byRate": [
+                {
+                  "rate": 0,
+                  "netCents": 10000,
+                  "vatCents": 0,
+                  "grossCents": 10000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 10000,
+            "items": [
+              {
+                "description": "Ware",
+                "subtitle": "",
+                "quantity": 1,
+                "unit": "piece",
+                "kind": "goods",
+                "unitPriceCents": 10000,
+                "unitPriceMicros": 100000000,
+                "vatRate": 0,
+                "discountPct": 0
+              }
+            ],
+            "customer": {
+              "name": "ACME s.r.o.",
+              "type": "company",
+              "street": "Foo 1",
+              "houseNumber": null,
+              "zip": "11000",
+              "city": "Prag",
+              "country": "CZ",
+              "vatId": "CZ12345678",
+              "shortCode": null,
+              "email": null,
+              "isAuthority": false
+            },
+            "taxScheme": "intraCommunitySupply",
+            "reverseChargeReason": null,
+            "taxCountry": "AT",
+            "priceMode": "net",
+            "serviceStart": "2026-09-26",
+            "serviceEnd": null,
+            "paymentTermDays": 14,
+            "orderReference": null,
+            "payments": [],
+            "overdue": false,
+            "writtenOff": false,
+            "writeOffReasonCode": null,
+            "related": null,
+            "creditNotes": [],
+            "source": "api",
+            "createdAt": "2026-09-26T08:00:00.000Z",
+            "finalizedAt": "2026-09-26T08:00:00.000Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "credit_note_partial",
+      "endpoint": "createCreditNote",
+      "path": "/v3/createCreditNote",
+      "params": {
+        "idempotencyKey": "gu-1",
+        "invoiceId": "auto1",
+        "reason": "price_reduction",
+        "items": [
+          {
+            "description": "Nachlass",
+            "quantity": 1,
+            "unitPriceCents": 1000,
+            "vatRate": 20,
+            "kind": "service"
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "creditNote": {
+            "id": "auto4",
+            "number": "0003",
+            "docType": "credit_note",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-09-26",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 1000,
+              "vatCents": 200,
+              "grossCents": 1200,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 1000,
+                  "vatCents": 200,
+                  "grossCents": 1200
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 1200
+          },
+          "remainingCents": 10800,
+          "replayed": false
+        }
+      }
+    },
+    {
+      "name": "get_invoice_with_credit_note",
+      "endpoint": "getInvoice",
+      "path": "/v3/getInvoice",
+      "params": {
+        "invoiceId": "auto1"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto1",
+            "number": "0001",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000,
+            "items": [
+              {
+                "description": "Beratung",
+                "subtitle": "",
+                "quantity": 2,
+                "unit": "piece",
+                "kind": "service",
+                "unitPriceCents": 5000,
+                "unitPriceMicros": 50000000,
+                "vatRate": 20,
+                "discountPct": 0
+              }
+            ],
+            "customer": {
+              "name": "Baecker Wien GmbH",
+              "type": "company",
+              "street": "Hauptplatz 1",
+              "houseNumber": null,
+              "zip": "1010",
+              "city": "Wien",
+              "country": "AT",
+              "vatId": "ATU87654321",
+              "shortCode": null,
+              "email": null,
+              "isAuthority": false
+            },
+            "taxScheme": "normal",
+            "reverseChargeReason": null,
+            "taxCountry": "AT",
+            "priceMode": "net",
+            "serviceStart": "2026-09-26",
+            "serviceEnd": null,
+            "paymentTermDays": 14,
+            "orderReference": null,
+            "payments": [],
+            "overdue": false,
+            "writtenOff": false,
+            "writeOffReasonCode": null,
+            "related": null,
+            "creditNotes": [
+              {
+                "id": "auto4",
+                "number": "0003",
+                "grossCents": 1200
+              }
+            ],
+            "source": "api",
+            "createdAt": "2026-09-26T08:00:00.000Z",
+            "finalizedAt": "2026-09-26T08:00:00.000Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "issue_final_to_cancel",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "i-storno",
+        "customerId": "k_at",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Beratung",
+            "quantity": 2,
+            "unitPriceCents": 5000,
+            "vatRate": 20,
+            "kind": "service"
+          }
+        ],
+        "dryRun": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto5",
+            "number": "0004",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000
+          },
+          "replayed": false
+        }
+      }
+    },
+    {
+      "name": "cancel_invoice",
+      "endpoint": "cancelInvoice",
+      "path": "/v3/cancelInvoice",
+      "params": {
+        "idempotencyKey": "gu-2",
+        "invoiceId": "auto5",
+        "reason": "cancellation"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "creditNote": {
+            "id": "auto6",
+            "number": "0005",
+            "docType": "credit_note",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-09-26",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000
+          },
+          "original": {
+            "id": "auto5",
+            "status": "cancelled"
+          },
+          "originalPaidCents": 0,
+          "replayed": false
+        }
+      }
+    },
+    {
+      "name": "record_payment",
+      "endpoint": "recordInvoicePayment",
+      "path": "/v3/recordInvoicePayment",
+      "params": {
+        "idempotencyKey": "z-1",
+        "invoiceId": "auto2",
+        "method": "transfer",
+        "amountCents": 5000
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto2",
+            "number": "0002",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_eu",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 0,
+              "grossCents": 10000,
+              "byRate": [
+                {
+                  "rate": 0,
+                  "netCents": 10000,
+                  "vatCents": 0,
+                  "grossCents": 10000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 5000,
+            "openCents": 5000
+          },
+          "payment": {
+            "id": "1111111111111111",
+            "amountCents": 5000,
+            "paidAt": "2026-09-26",
+            "method": "transfer",
+            "reference": null
+          },
+          "replayed": false
+        }
+      }
+    },
+    {
+      "name": "issue_final_to_write_off",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "i-abschreibung",
+        "customerId": "k_at",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Beratung",
+            "quantity": 2,
+            "unitPriceCents": 5000,
+            "vatRate": 20,
+            "kind": "service"
+          }
+        ],
+        "dryRun": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto7",
+            "number": "0006",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000
+          },
+          "replayed": false
+        }
+      }
+    },
+    {
+      "name": "get_invoice_written_off",
+      "endpoint": "getInvoice",
+      "path": "/v3/getInvoice",
+      "params": {
+        "invoiceId": "auto7"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto7",
+            "number": "0006",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000,
+            "items": [
+              {
+                "description": "Beratung",
+                "subtitle": "",
+                "quantity": 2,
+                "unit": "piece",
+                "kind": "service",
+                "unitPriceCents": 5000,
+                "unitPriceMicros": 50000000,
+                "vatRate": 20,
+                "discountPct": 0
+              }
+            ],
+            "customer": {
+              "name": "Baecker Wien GmbH",
+              "type": "company",
+              "street": "Hauptplatz 1",
+              "houseNumber": null,
+              "zip": "1010",
+              "city": "Wien",
+              "country": "AT",
+              "vatId": "ATU87654321",
+              "shortCode": null,
+              "email": null,
+              "isAuthority": false
+            },
+            "taxScheme": "normal",
+            "reverseChargeReason": null,
+            "taxCountry": "AT",
+            "priceMode": "net",
+            "serviceStart": "2026-09-26",
+            "serviceEnd": null,
+            "paymentTermDays": 14,
+            "orderReference": null,
+            "payments": [],
+            "overdue": false,
+            "writtenOff": true,
+            "writeOffReasonCode": "uncollectible",
+            "related": null,
+            "creditNotes": [],
+            "source": "api",
+            "createdAt": "2026-09-26T08:00:00.000Z",
+            "finalizedAt": "2026-09-26T08:00:00.000Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "list_all",
+      "endpoint": "listInvoices",
+      "path": "/v3/listInvoices",
+      "params": {},
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoices": [
+            {
+              "id": "auto1",
+              "number": "0001",
+              "docType": "invoice",
+              "status": "final",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-10-10",
+              "customerId": "k_at",
+              "totals": {
+                "netCents": 10000,
+                "vatCents": 2000,
+                "grossCents": 12000,
+                "byRate": [
+                  {
+                    "rate": 20,
+                    "netCents": 10000,
+                    "vatCents": 2000,
+                    "grossCents": 12000
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 0,
+              "openCents": 12000
+            },
+            {
+              "id": "auto2",
+              "number": "0002",
+              "docType": "invoice",
+              "status": "final",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-10-10",
+              "customerId": "k_eu",
+              "totals": {
+                "netCents": 10000,
+                "vatCents": 0,
+                "grossCents": 10000,
+                "byRate": [
+                  {
+                    "rate": 0,
+                    "netCents": 10000,
+                    "vatCents": 0,
+                    "grossCents": 10000
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 5000,
+              "openCents": 5000
+            },
+            {
+              "id": "auto4",
+              "number": "0003",
+              "docType": "credit_note",
+              "status": "final",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-09-26",
+              "customerId": "k_at",
+              "totals": {
+                "netCents": 1000,
+                "vatCents": 200,
+                "grossCents": 1200,
+                "byRate": [
+                  {
+                    "rate": 20,
+                    "netCents": 1000,
+                    "vatCents": 200,
+                    "grossCents": 1200
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 0,
+              "openCents": 1200
+            },
+            {
+              "id": "auto5",
+              "number": "0004",
+              "docType": "invoice",
+              "status": "cancelled",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-10-10",
+              "customerId": "k_at",
+              "totals": {
+                "netCents": 10000,
+                "vatCents": 2000,
+                "grossCents": 12000,
+                "byRate": [
+                  {
+                    "rate": 20,
+                    "netCents": 10000,
+                    "vatCents": 2000,
+                    "grossCents": 12000
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 0,
+              "openCents": 12000
+            },
+            {
+              "id": "auto6",
+              "number": "0005",
+              "docType": "credit_note",
+              "status": "final",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-09-26",
+              "customerId": "k_at",
+              "totals": {
+                "netCents": 10000,
+                "vatCents": 2000,
+                "grossCents": 12000,
+                "byRate": [
+                  {
+                    "rate": 20,
+                    "netCents": 10000,
+                    "vatCents": 2000,
+                    "grossCents": 12000
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 0,
+              "openCents": 12000
+            },
+            {
+              "id": "auto7",
+              "number": "0006",
+              "docType": "invoice",
+              "status": "final",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-10-10",
+              "customerId": "k_at",
+              "totals": {
+                "netCents": 10000,
+                "vatCents": 2000,
+                "grossCents": 12000,
+                "byRate": [
+                  {
+                    "rate": 20,
+                    "netCents": 10000,
+                    "vatCents": 2000,
+                    "grossCents": 12000
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 0,
+              "openCents": 12000
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "list_credit_notes",
+      "endpoint": "listInvoices",
+      "path": "/v3/listInvoices",
+      "params": {
+        "docType": "credit_note"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoices": [
+            {
+              "id": "auto4",
+              "number": "0003",
+              "docType": "credit_note",
+              "status": "final",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-09-26",
+              "customerId": "k_at",
+              "totals": {
+                "netCents": 1000,
+                "vatCents": 200,
+                "grossCents": 1200,
+                "byRate": [
+                  {
+                    "rate": 20,
+                    "netCents": 1000,
+                    "vatCents": 200,
+                    "grossCents": 1200
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 0,
+              "openCents": 1200
+            },
+            {
+              "id": "auto6",
+              "number": "0005",
+              "docType": "credit_note",
+              "status": "final",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-09-26",
+              "customerId": "k_at",
+              "totals": {
+                "netCents": 10000,
+                "vatCents": 2000,
+                "grossCents": 12000,
+                "byRate": [
+                  {
+                    "rate": 20,
+                    "netCents": 10000,
+                    "vatCents": 2000,
+                    "grossCents": 12000
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 0,
+              "openCents": 12000
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "name": "error_german_doc_type",
+      "endpoint": "listInvoices",
+      "path": "/v3/listInvoices",
+      "params": {
+        "docType": "RE"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "code": "validation",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "docType",
+              "message": "Unbekannter Wert."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "error_invoice_not_found",
+      "endpoint": "getInvoice",
+      "path": "/v3/getInvoice",
+      "params": {
+        "invoiceId": "r9"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Rechnung nicht gefunden.",
+        "data": {
+          "code": "invoice_not_found"
+        },
+        "code": "invoice_not_found"
+      }
+    },
+    {
+      "name": "get_invoice_setup_status",
+      "endpoint": "getInvoiceSetupStatus",
+      "path": "/v3/getInvoiceSetupStatus",
+      "params": {},
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "ready": true,
+          "environment": "test",
+          "missing": []
+        }
+      }
+    },
+    {
+      "name": "list_brands",
+      "endpoint": "listBrands",
+      "path": "/v3/listBrands",
+      "params": {},
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "brands": []
+        }
+      }
+    }
+  ]
+}

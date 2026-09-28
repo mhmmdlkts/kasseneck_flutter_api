@@ -2,7 +2,7 @@
 /// `src/rechnung/vertrag.ts` im JS-Paket `@kreiseck/kasseneck-api`.
 ///
 /// `test/rechnung_api_test.dart` vergleicht jede Liste in beide Richtungen mit
-/// dem Abschnitt `rechnung` in `test/fixtures/vertrag/oberflaeche.json` (gezogen
+/// dem Abschnitt `invoice` in `test/fixtures/vertrag/surface.json` (gezogen
 /// von `tool/zwillinge.sh`). Wer hier etwas ändert, ändert zuerst das JS-Paket.
 ///
 /// Die Feldbeschreibung selbst (Grenzen, Pflichtfelder) prüft das Backend; der

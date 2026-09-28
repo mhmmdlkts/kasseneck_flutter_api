@@ -1,0 +1,14 @@
+{
+  "endpoint": "recordInvoicePayment",
+  "description": "Ueberweisung trifft spaeter ein",
+  "request": {
+    "idempotencyKey": "ex-payment-1",
+    "invoiceId": "invoice_example",
+    "method": "transfer",
+    "amountCents": 12000,
+    "paidAt": "2026-09-20"
+  },
+  "expected": {
+    "ok": true
+  }
+}

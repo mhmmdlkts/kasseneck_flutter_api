@@ -31,12 +31,12 @@ Uint8List _rasterZeilenBytes(int breite, int hoehe, Uint8List punkte) {
 
 void main() {
   test('marke_daten.dart stimmt mit dem Vertrag ueberein -- nicht abgetippt, nicht neu erzeugt', () {
-    final raster = _vertrag['raster'] as Map<String, dynamic>;
+    final raster = _vertrag['rasters'] as Map<String, dynamic>;
     for (final papier in KeckPaperSize.values) {
       final soll = raster[papier.name] as Map<String, dynamic>;
       final ist = markeRaster[papier]!;
-      expect(ist.breite, soll['breite'], reason: '${papier.name}: Breite');
-      expect(ist.hoehe, soll['hoehe'], reason: '${papier.name}: Hoehe');
+      expect(ist.breite, soll['width'], reason: '${papier.name}: Breite');
+      expect(ist.hoehe, soll['height'], reason: '${papier.name}: Hoehe');
       expect(ist.bits, soll['bits'], reason: '${papier.name}: Bits');
     }
   });

@@ -1,0 +1,975 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Kasseneck Rechnungs-API",
+  "version": 2,
+  "package": "1.0.0-rc.1",
+  "endpoints": {
+    "createCustomer": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "customer": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "enum": [
+                  "private",
+                  "company"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "legalForm": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "email": {
+                "type": "string",
+                "maxLength": 254,
+                "format": "email"
+              },
+              "phone": {
+                "type": "string",
+                "maxLength": 40,
+                "format": "phone"
+              },
+              "street": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "houseNumber": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "zip": {
+                "type": "string",
+                "maxLength": 10
+              },
+              "city": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "country": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 2,
+                "format": "country"
+              },
+              "vatId": {
+                "type": "string",
+                "maxLength": 20,
+                "format": "vatId"
+              },
+              "shortCode": {
+                "type": "string",
+                "maxLength": 8,
+                "format": "shortCode"
+              },
+              "isAuthority": {
+                "type": "boolean"
+              },
+              "note": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "externalId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "language": {
+                "enum": [
+                  "de",
+                  "en"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "name",
+              "country"
+            ],
+            "additionalProperties": false
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "customer"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "getCustomer": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "externalId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "additionalProperties": false
+      },
+      "exactlyOne": [
+        [
+          "customerId",
+          "externalId"
+        ]
+      ]
+    },
+    "updateCustomer": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "customer": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "enum": [
+                  "private",
+                  "company"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "legalForm": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "email": {
+                "type": "string",
+                "maxLength": 254,
+                "format": "email"
+              },
+              "phone": {
+                "type": "string",
+                "maxLength": 40,
+                "format": "phone"
+              },
+              "street": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "houseNumber": {
+                "type": "string",
+                "maxLength": 20
+              },
+              "zip": {
+                "type": "string",
+                "maxLength": 10
+              },
+              "city": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "country": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 2,
+                "format": "country"
+              },
+              "vatId": {
+                "type": "string",
+                "maxLength": 20,
+                "format": "vatId"
+              },
+              "shortCode": {
+                "type": "string",
+                "maxLength": 8,
+                "format": "shortCode"
+              },
+              "isAuthority": {
+                "type": "boolean"
+              },
+              "note": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "externalId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "language": {
+                "enum": [
+                  "de",
+                  "en"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "customerId",
+          "customer"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "searchCustomers": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "vatId": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "cursor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      },
+      "atLeastOne": [
+        [
+          "externalId",
+          "vatId",
+          "email",
+          "name"
+        ]
+      ]
+    },
+    "issueInvoice": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "taxScheme": {
+            "enum": [
+              "normal",
+              "smallBusiness",
+              "reverseCharge",
+              "intraCommunitySupply",
+              "exportThirdCountry",
+              "domesticReverseCharge",
+              "oss",
+              "outsideScope"
+            ]
+          },
+          "reverseChargeReason": {
+            "enum": [
+              "construction",
+              "scrap",
+              "mobile_devices",
+              "it_devices",
+              "metals",
+              "emission_certificates",
+              "gas_electricity",
+              "energy_certificates",
+              "investment_gold",
+              "security_transfer",
+              "foreign_supplier"
+            ]
+          },
+          "priceMode": {
+            "enum": [
+              "net",
+              "gross"
+            ]
+          },
+          "serviceStart": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 10,
+            "format": "date"
+          },
+          "serviceEnd": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 10,
+            "format": "date"
+          },
+          "paymentTermDays": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 365
+          },
+          "orderReference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "intro": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "paymentReference": {
+            "type": "string",
+            "maxLength": 140
+          },
+          "girocode": {
+            "type": "boolean"
+          },
+          "tracking": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 500,
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "subtitle": {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                "quantity": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1000000000,
+                  "x-decimals": 3
+                },
+                "unit": {
+                  "enum": [
+                    "piece",
+                    "pair",
+                    "set",
+                    "dozen",
+                    "second",
+                    "minute",
+                    "hour",
+                    "day",
+                    "night",
+                    "week",
+                    "month",
+                    "quarter",
+                    "half_year",
+                    "year",
+                    "milligram",
+                    "gram",
+                    "kilogram",
+                    "tonne",
+                    "millimetre",
+                    "centimetre",
+                    "metre",
+                    "running_metre",
+                    "kilometre",
+                    "square_metre",
+                    "hectare",
+                    "millilitre",
+                    "litre",
+                    "cubic_metre",
+                    "kilowatt_hour",
+                    "megawatt_hour",
+                    "gigabyte",
+                    "terabyte",
+                    "flat_rate",
+                    "person",
+                    "licence",
+                    "user",
+                    "device",
+                    "session",
+                    "trip",
+                    "page",
+                    "sheet",
+                    "package",
+                    "box",
+                    "carton",
+                    "bottle",
+                    "can",
+                    "roll",
+                    "bag",
+                    "pallet"
+                  ]
+                },
+                "kind": {
+                  "enum": [
+                    "goods",
+                    "service"
+                  ]
+                },
+                "unitPriceCents": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100000000
+                },
+                "unitPriceMicros": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000000000
+                },
+                "vatRate": {
+                  "enum": [
+                    0,
+                    10,
+                    13,
+                    20
+                  ]
+                },
+                "discountPct": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "x-decimals": 2
+                }
+              },
+              "required": [
+                "description",
+                "quantity",
+                "vatRate"
+              ],
+              "oneOf": [
+                {
+                  "required": [
+                    "unitPriceCents"
+                  ]
+                },
+                {
+                  "required": [
+                    "unitPriceMicros"
+                  ]
+                }
+              ],
+              "additionalProperties": false
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "maxProperties": 20,
+            "propertyNames": {
+              "pattern": "^[a-zA-Z0-9_]{1,40}$"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "language": {
+            "enum": [
+              "de",
+              "en"
+            ]
+          },
+          "brandId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "payment": {
+            "type": "object",
+            "properties": {
+              "method": {
+                "enum": [
+                  "transfer",
+                  "card",
+                  "online",
+                  "cash"
+                ]
+              },
+              "amountCents": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100000000
+              },
+              "paidAt": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 10,
+                "format": "date"
+              },
+              "reference": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "onSite": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "method"
+            ],
+            "additionalProperties": false
+          },
+          "dryRun": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "priceMode",
+          "serviceStart",
+          "items"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "cancelInvoice": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "invoiceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "reason": {
+            "enum": [
+              "cancellation",
+              "price_reduction",
+              "return",
+              "incorrect_invoice",
+              "other"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "invoiceId",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "createCreditNote": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "invoiceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "reason": {
+            "enum": [
+              "cancellation",
+              "price_reduction",
+              "return",
+              "incorrect_invoice",
+              "other"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 500,
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "subtitle": {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                "quantity": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1000000000,
+                  "x-decimals": 3
+                },
+                "unit": {
+                  "enum": [
+                    "piece",
+                    "pair",
+                    "set",
+                    "dozen",
+                    "second",
+                    "minute",
+                    "hour",
+                    "day",
+                    "night",
+                    "week",
+                    "month",
+                    "quarter",
+                    "half_year",
+                    "year",
+                    "milligram",
+                    "gram",
+                    "kilogram",
+                    "tonne",
+                    "millimetre",
+                    "centimetre",
+                    "metre",
+                    "running_metre",
+                    "kilometre",
+                    "square_metre",
+                    "hectare",
+                    "millilitre",
+                    "litre",
+                    "cubic_metre",
+                    "kilowatt_hour",
+                    "megawatt_hour",
+                    "gigabyte",
+                    "terabyte",
+                    "flat_rate",
+                    "person",
+                    "licence",
+                    "user",
+                    "device",
+                    "session",
+                    "trip",
+                    "page",
+                    "sheet",
+                    "package",
+                    "box",
+                    "carton",
+                    "bottle",
+                    "can",
+                    "roll",
+                    "bag",
+                    "pallet"
+                  ]
+                },
+                "kind": {
+                  "enum": [
+                    "goods",
+                    "service"
+                  ]
+                },
+                "unitPriceCents": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100000000
+                },
+                "unitPriceMicros": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000000000
+                },
+                "vatRate": {
+                  "enum": [
+                    0,
+                    10,
+                    13,
+                    20
+                  ]
+                },
+                "discountPct": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "x-decimals": 2
+                }
+              },
+              "required": [
+                "description",
+                "quantity",
+                "vatRate"
+              ],
+              "oneOf": [
+                {
+                  "required": [
+                    "unitPriceCents"
+                  ]
+                },
+                {
+                  "required": [
+                    "unitPriceMicros"
+                  ]
+                }
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "invoiceId",
+          "reason",
+          "items"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "getInvoice": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "number": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "exactlyOne": [
+        [
+          "invoiceId",
+          "number"
+        ]
+      ]
+    },
+    "listInvoices": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 10,
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 10,
+            "format": "date"
+          },
+          "status": {
+            "enum": [
+              "final",
+              "paid",
+              "cancelled",
+              "open",
+              "overdue"
+            ]
+          },
+          "docType": {
+            "enum": [
+              "invoice",
+              "credit_note"
+            ]
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "cursor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "getInvoicePdf": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "language": {
+            "enum": [
+              "de",
+              "en"
+            ]
+          }
+        },
+        "required": [
+          "invoiceId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "getInvoiceXml": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "format": {
+            "enum": [
+              "ubl",
+              "cii"
+            ]
+          }
+        },
+        "required": [
+          "invoiceId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "getInvoiceSetupStatus": {
+      "request": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    "listBrands": {
+      "request": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      }
+    },
+    "recordInvoicePayment": {
+      "request": {
+        "type": "object",
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "invoiceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "method": {
+            "enum": [
+              "transfer",
+              "card",
+              "online",
+              "cash"
+            ]
+          },
+          "amountCents": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000
+          },
+          "paidAt": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 10,
+            "format": "date"
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "onSite": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "idempotencyKey",
+          "invoiceId",
+          "method"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "codes": [
+    "validation",
+    "idempotency_conflict",
+    "module_inactive",
+    "customer_not_found",
+    "customer_exists",
+    "short_code_taken",
+    "short_code_immutable",
+    "recipient_required",
+    "invoice_requirements_missing",
+    "invoice_not_found",
+    "invoice_ambiguous",
+    "not_cancellable",
+    "partial_credit_exists",
+    "credit_exceeds_invoice",
+    "einvoice_incomplete",
+    "invoice_api_not_enabled",
+    "invoice_setup_incomplete",
+    "language_not_allowed",
+    "brand_not_found",
+    "not_payable",
+    "payment_exceeds_invoice",
+    "tax_scheme_mismatch",
+    "vat_rate_not_in_country",
+    "reverse_charge_reason_required",
+    "reverse_charge_threshold",
+    "mixed_supply_not_allowed",
+    "oss_not_enabled",
+    "einvoice_unavailable",
+    "amount_too_large"
+  ],
+  "creditNoteReasons": [
+    "cancellation",
+    "price_reduction",
+    "return",
+    "incorrect_invoice",
+    "other"
+  ]
+}

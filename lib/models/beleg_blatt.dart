@@ -4,7 +4,7 @@
 /// und in Zeilen. Jeder Zeichner (Bon, Bildschirm) setzt nur noch das Blatt.
 ///
 /// Masseinheit ist der Druckkopf: ein Zeichen 12 Punkte, eine Zeile 24.
-/// Die Goldens `test/fixtures/vertrag/erwartet/*.blatt32.json|blatt48.json`
+/// Die Goldens `test/fixtures/vertrag/expected/*.sheet32.json|sheet48.json`
 /// halten beide Seiten gleich; die Rechenreihenfolge nicht umstellen.
 library;
 

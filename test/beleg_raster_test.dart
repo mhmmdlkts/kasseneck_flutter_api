@@ -13,14 +13,14 @@ final _wurzel = Directory('test/fixtures/vertrag');
 
 void main() {
   final manifest = jsonDecode(File('${_wurzel.path}/manifest.json').readAsStringSync()) as Map<String, dynamic>;
-  final namen = (manifest['belege'] as Map<String, dynamic>).keys.toList()..sort();
+  final namen = (manifest['receipts'] as Map<String, dynamic>).keys.toList()..sort();
 
   test('Golden: grid32/grid48 aller Fixtures zeichengenau', () {
     expect(namen.length, greaterThanOrEqualTo(17));
     for (final n in namen) {
-      final layout = BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/erwartet/$n.lines.json').readAsStringSync()))!;
+      final layout = BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/$n.lines.json').readAsStringSync()))!;
       for (final zeichen in [32, 48]) {
-        final soll = File('${_wurzel.path}/erwartet/$n.grid$zeichen.txt').readAsStringSync();
+        final soll = File('${_wurzel.path}/expected/$n.grid$zeichen.txt').readAsStringSync();
         expect(BelegRaster.render(layout, zeichen: zeichen).alsText(), soll, reason: '$n @$zeichen');
       }
     }

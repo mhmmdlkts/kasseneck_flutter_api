@@ -1,0 +1,17 @@
+{
+  "endpoint": "recordInvoicePayment",
+  "description": "Ueberweisung kann nicht vor Ort erfolgen",
+  "request": {
+    "idempotencyKey": "ex-on-site",
+    "invoiceId": "invoice_example",
+    "method": "transfer",
+    "onSite": true
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "onSite"
+    ]
+  }
+}

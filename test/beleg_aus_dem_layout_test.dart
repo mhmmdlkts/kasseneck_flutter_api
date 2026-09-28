@@ -28,7 +28,7 @@ import 'helpers/test_receipts.dart';
 final _wurzel = Directory('test/fixtures/vertrag');
 
 BelegLayout _layout(String name) =>
-    BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/erwartet/$name.lines.json').readAsStringSync()))!;
+    BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/$name.lines.json').readAsStringSync()))!;
 
 /// Der gedruckte Text, wie ihn der Bon zeigt (ohne Steuerbytes).
 Future<String> _gedruckt(KasseneckReceipt receipt) async {
@@ -41,7 +41,7 @@ void main() {
     // Das Layout gehört zu einem anderen Betrieb als der Beleg. Steht dessen
     // Firmenname auf dem Bon, kam er aus dem Layout -- und nicht aus dem
     // Beleg, den der alte Bauer gelesen hätte.
-    final receipt = buildReceipt(paymentMethod: KeckPaymentMethod.cash)..layout = _layout('verkauf-bar');
+    final receipt = buildReceipt(paymentMethod: KeckPaymentMethod.cash)..layout = _layout('sale-cash');
     expect(await _gedruckt(receipt), contains('Bäckerei Muster'));
   });
 
@@ -70,13 +70,13 @@ void main() {
         cardProvider: CreditCardProvider.stripe,
         cardPaymentData: kartendaten,
         cardPaymentId: 'pi_3Qxx',
-      )..layout = _layout('verkauf-bar');
+      )..layout = _layout('sale-cash');
       expect(receipt.layoutIstVollstaendig, isFalse);
     });
 
     test('ohne Kartendaten ist ein Layout ohne Block vollständig', () {
       // Sonst fiele JEDER Barbeleg auf den alten Bauer zurück.
-      final receipt = buildReceipt(paymentMethod: KeckPaymentMethod.cash)..layout = _layout('verkauf-bar');
+      final receipt = buildReceipt(paymentMethod: KeckPaymentMethod.cash)..layout = _layout('sale-cash');
       expect(receipt.layoutIstVollstaendig, isTrue);
     });
 
@@ -90,7 +90,7 @@ void main() {
         cardProvider: CreditCardProvider.stripe,
         cardPaymentData: kartendaten,
         cardPaymentId: 'pi_3Qxx',
-      )..layout = _layout('verkauf-bar');
+      )..layout = _layout('sale-cash');
       final text = await _gedruckt(receipt);
       expect(text, contains('Stripe'));
       expect(text, contains('4242'));

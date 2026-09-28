@@ -1,0 +1,26 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Beide Preisfelder gesetzt: genau eines ist erlaubt. Der Feldpfad zeigt auf das zuletzt hinzugekommene.",
+  "request": {
+    "idempotencyKey": "ex-micro-2",
+    "customerId": "customer_example",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Strom",
+        "quantity": 1,
+        "unitPriceCents": 100,
+        "unitPriceMicros": 1000000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].unitPriceMicros"
+    ]
+  }
+}

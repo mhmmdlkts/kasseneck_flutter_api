@@ -21,7 +21,7 @@ Map<String, dynamic> _json(String pfad) =>
 
 /// Baut aus einem Golden-Beleg die Antwortgestalt, die `fromJson` erwartet.
 KasseneckReceipt _beleg(String name) {
-  final f = _json('${_wurzel.path}/belege/$name.json');
+  final f = _json('${_wurzel.path}/receipts/$name.json');
   final firma = f['company'] as Map<String, dynamic>;
   return KasseneckReceipt.fromJson({
     'receipt': {
@@ -46,7 +46,7 @@ void main() {
   group('Mitarbeiter-Trinkgeld', () {
     late KasseneckReceipt beleg;
 
-    setUp(() => beleg = _beleg('rabatt-trinkgeld'));
+    setUp(() => beleg = _beleg('discount-tip'));
 
     test('wird als Trinkgeld erkannt und mit 0 % gefuehrt', () {
       expect(beleg.tipItems.length, 1);
@@ -75,7 +75,7 @@ void main() {
   group('Inhaber-Trinkgeld', () {
     late KasseneckReceipt beleg;
 
-    setUp(() => beleg = _beleg('rabatt-chef-trinkgeld'));
+    setUp(() => beleg = _beleg('discount-owner-tip'));
 
     test('faellt anteilig auf die Steuersaetze der Ware', () {
       // 2,00 € auf 10 % und 20 % verteilt — beides Entgelt, keine Null-Zeile.
@@ -101,7 +101,7 @@ void main() {
 
   group('Belege ohne Trinkgeld', () {
     test('bleiben bei null — auch der mit Rabattzeilen', () {
-      for (final name in ['verkauf-bar', 'verkauf-karte', 'rabatt-einfach']) {
+      for (final name in ['sale-cash', 'sale-card', 'discount-simple']) {
         final beleg = _beleg(name);
         expect(beleg.tipItems, isEmpty, reason: name);
         expect(beleg.tipCents, 0, reason: name);
@@ -111,7 +111,7 @@ void main() {
     });
 
     test('eine Rabattzeile ist kein Trinkgeld', () {
-      final beleg = _beleg('rabatt-einfach');
+      final beleg = _beleg('discount-simple');
       expect(beleg.items.any((i) => i.isDiscount), isTrue);
       expect(beleg.items.any((i) => i.isTip), isFalse);
     });
