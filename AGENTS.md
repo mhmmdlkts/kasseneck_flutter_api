@@ -6,9 +6,14 @@ Verbindliche Regeln fuer alle, die an diesem Paket arbeiten — Menschen wie Wer
 
 Ein Dart/Flutter-Paket für **Kasseneck/Kreiseck** — eine österreichische
 Registrierkasse nach RKSV. Es spricht drei Welten an: das Kasseneck-Backend
-(`api.kasseneck.at/v1` und `kasse.kasseneck.at/api`), ein lokales
+über die englische API `/v3` (`https://api.kasseneck.at/v3`, Kassenweg
+`https://kasse.kasseneck.at/api/v3`), ein lokales
 hobex-**HPS**-Kartenterminal über dessen REST-API im selben Netz, und die
 hobex-**Cloud** über das Backend.
+
+Ab 10.0 spricht das Paket nur noch `/v3`. Die alten Routen `/v1` und `/api`
+bedienen allein die eingefrorenen Linien 8.x und 9.x (Zweige `release/8.x`
+und `release/9.x`, nur Fehlerbehebungen).
 
 Konsumenten sind mehrere Flutter-Apps (sastre, herzens_kassa, karteck,
 vanillanails und weitere). Was hier bricht, bricht dort — und was hier
@@ -21,8 +26,12 @@ den Vertrag. Wer hier etwas an der gemeinsamen Oberfläche ändert, prüft dort.
 
 ## Sprache und Form
 
-- **Kommentare in `.dart`-Dateien: deutsch, OHNE Umlaute** (`ue`, `ae`, `oe`,
-  `ss`). Der Bestand ist so; ein durchgerutschtes `ü` fällt sofort auf.
+- **Öffentliche Namen englisch** (Klassen, Felder, Methoden, Parameter,
+  Enum-Werte, Bibliothekspfade, Fehlercodes), wie die API `/v3`;
+  `test/oeffentliche_namen_test.dart` prüft das gegen eine Positivliste.
+  Werte und Codes der Leitung kommen aus dem Vertrag (`test/fixtures/vertrag/`).
+- **Kommentare in `.dart`-Dateien: deutsch**, in neuem Code ohne Umlaute
+  (`ue`, `ae`, `oe`, `ss`); ältere Stellen haben noch welche.
 - **Markdown (CHANGELOG, README, `doc/`): normale Umlaute.**
 - Kommentare sagen **warum**, nicht was. Ein Kommentar, der die Codezeile
   darunter nacherzählt, ist Ballast; einer, der eine Messung oder eine
@@ -86,10 +95,13 @@ später wieder auf alle Codes ausdehnt.
 ## Geld
 
 Beträge sind **ganze Zahlen in Cent**. Euro als `double` gibt es nur an
-Außengrenzen, die es so verlangen (hobex, SumUp) — und dort an genau **einer**
-Umrechnungsstelle je Modul, nicht verstreut.
+Außengrenzen, die es so verlangen (hobex-Terminal `HpsPayments`,
+`HobexCloudPayments.pay`, SumUp), und dort an genau **einer**
+Umrechnungsstelle je Modul, nicht verstreut. Die rohen Cloud-Aufrufe
+`hobexPay` und `hobexRefund` nehmen Cent wie der JS-Zwilling und rechnen erst
+an der Hobex-Grenze in Euro um.
 
-USt-Zerlegung läuft über `nettoCentsAusBrutto` (`lib/src/vat_math.dart`):
+USt-Zerlegung läuft über `netCentsFromGross` (`lib/src/vat_math.dart`):
 **einmal** runden, die MwSt ist die Differenz. Wer Netto und MwSt getrennt aus
 Gleitkommazahlen rundet, verliert bei jedem sechsten Cent-Betrag zu 20 % einen
 Cent. Es darf nicht zwei Rechenwege für dieselbe Zahl geben.
@@ -113,6 +125,12 @@ Cent. Es darf nicht zwei Rechenwege für dieselbe Zahl geben.
   `TypeError` **nach** einem erfolgreichen Aufruf ist der schlimmste Fall — der
   Vorgang ist passiert, das Ergebnis verworfen.
 - **Keine automatischen Wiederholungen** über verändernden Aufrufen.
+- Jeder Fehler trägt einen Ausgang (`ErrorOutcome`, `isOutcomeUnknown`). Bei
+  `unknown` wird nachgelesen, nicht wiederholt. Auf den Geldwegen `hobexPay`,
+  `hobexRefund` und `stripeCaptureIntent` ist nur ein Code aus
+  `paymentCallRejectedCodes` (`lib/src/register/fehler.dart`) eine Ablehnung;
+  jede andere Fehlerhülle, auch eine ohne Code, ist `unknown`. Wer dort einen
+  Code ergänzt, belegt, dass er vor dem Anbieter entsteht.
 - Verändernde Aufrufe ohne Idempotenzschlüssel sind nicht folgenlos
   wiederholbar. Wenn du einen hinzufügst, sag im CHANGELOG, welcher Aufruf es
   betrifft.
