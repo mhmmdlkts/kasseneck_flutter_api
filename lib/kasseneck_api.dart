@@ -459,8 +459,15 @@ class KasseneckApi {
     if (zahlungen != null) {
       final fehler = zahlungenFehler(zahlungen, storno: true);
       if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
-      pruefeKartenRueckbuchung(zahlungen, original);
     }
+    if (original != null && (original.receiptId != originalReceiptId || original.cashregisterId != cashregisterId)) {
+      throw KasseneckValidationError(
+          name,
+          'original (${original.cashregisterId}/${original.receiptId}) ist nicht der Beleg '
+          '$cashregisterId/$originalReceiptId',
+          'request');
+    }
+    if (zahlungen != null) pruefeKartenRueckbuchung(zahlungen, original);
 
     final resJson = await _kasseneckJson(
       endpoint: name,

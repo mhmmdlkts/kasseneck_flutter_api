@@ -72,12 +72,45 @@ class ReceiptDueLine {
 
   /// Die Zeile einer Position; eine Trinkgeld-Position (`kind: 'tip'`) behaelt
   /// ihre Art (Inhaber, wenn `recipient.owner == true`, sonst Personal).
-  factory ReceiptDueLine.of(KasseneckItem item) => ReceiptDueLine(
+  ///
+  /// Gemeint sind lokal gebaute Positionen. Eine vom Server gelesene Position
+  /// mit Bruchmenge oder unbekanntem Satz hat [KasseneckItem.fromJson] nicht
+  /// exakt uebernehmen koennen; dann wirft dieser Aufruf, statt still falsch zu
+  /// rechnen. Solche Positionen gehen ueber [ReceiptDueLine.fromJson] und
+  /// [receiptDueBreakdownForLines].
+  factory ReceiptDueLine.of(KasseneckItem item) {
+    final ungenau = item.lossyRead;
+    if (ungenau != null) {
+      throw ArgumentError('Zahlbetrag: Position "${item.name}" ist nicht exakt gelesen ($ungenau); '
+          'Serverpositionen ueber ReceiptDueLine.fromJson und receiptDueBreakdownForLines rechnen.');
+    }
+    return ReceiptDueLine(
         quantity: item.quantity,
         priceCents: item.priceCents,
         vatRate: item.vat.rate,
         tip: item.isTip ? (item.isOwnerTip ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff) : null,
       );
+  }
+
+  /// Eine Position, wie der Server sie liefert (v1- oder v2-Form), roh: Menge
+  /// als Bruch, Satz wie geliefert, Cent-Preis. Fehlt etwas oder ist es kein
+  /// Zahlenwert, wirft der Aufruf.
+  factory ReceiptDueLine.fromJson(Map<String, dynamic> json) {
+    final menge = json['quantity'] ?? json['amount'];
+    final cents = json['unitPriceCents'] ?? json['priceOneCents'];
+    final satz = json['vatRate'] ?? json['vat'];
+    if (menge is! num || cents is! num || cents != cents.toInt() || satz is! num) {
+      throw ArgumentError('Zahlbetrag: Position "${json['name']}" ohne Menge, ganzen Cent-Preis oder Steuersatz.');
+    }
+    final recipient = json['recipient'];
+    final owner = recipient is Map && recipient['owner'] == true;
+    return ReceiptDueLine(
+      quantity: menge,
+      priceCents: cents.toInt(),
+      vatRate: satz,
+      tip: json['kind'] == 'tip' ? (owner ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff) : null,
+    );
+  }
 
   final num quantity;
   final int priceCents;

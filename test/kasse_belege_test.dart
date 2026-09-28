@@ -534,4 +534,68 @@ void main() {
       expect(jsonDecode(f.log.single.body)['params']['receiptId'], 'KASSE1-ID-42');
     });
   });
+
+  // Ruling F3 am Kassenweg: Erfolg gemeldet, Antwort unlesbar heisst, der
+  // Beleg ist signiert. Das ist `response_unreadable` mit Ausgang unklar und
+  // der Kennung, sofern die Antwort sie trug; nie ein gewoehnlicher Fehler,
+  // der die Kasse ein zweites Mal verkaufen oder stornieren liesse.
+  group('signiert, aber unlesbar', () {
+    Matcher unlesbar(String name, Object? kennung) => isA<KasseneckApiError>()
+        .having((e) => e.functionName, 'functionName', name)
+        .having((e) => e.code, 'code', 'response_unreadable')
+        .having((e) => isOutcomeUnknown(e), 'isOutcomeUnknown', isTrue)
+        .having((e) => e.details['receiptId'], 'receiptId', kennung);
+
+    Map<String, dynamic> ohneZeit() {
+      final h = huelleMitBeleg(receiptId: 'KASSE1-ID-44');
+      (h['receipt'] as Map).remove('timeStamp');
+      return h;
+    }
+
+    test('verkaufen: kaputter Beleg mit Kennung, Beleg fehlt, data kein Objekt; je genau ein Aufruf', () async {
+      for (final (data, kennung) in <(Object?, Object?)>[
+        (ohneZeit(), 'KASSE1-ID-44'),
+        (<String, dynamic>{'company': 'Testbetrieb'}, null),
+        (<dynamic>[], null),
+        ('ja', null),
+      ]) {
+        final f = clientMit([{'status': 'success', 'data': data}]);
+        await expectLater(
+          f.client.verkaufen(positionen: [kaffee], zahlungsart: KeckPaymentMethod.cash),
+          throwsA(unlesbar('createReceipt', kennung)),
+          reason: jsonEncode(data),
+        );
+        expect(f.log, hasLength(1), reason: jsonEncode(data));
+      }
+    });
+
+    test('stornieren: data kein Objekt ist ebenfalls response_unreadable', () async {
+      for (final data in <Object>[<dynamic>[], 'ja']) {
+        final f = clientMit([{'status': 'success', 'data': data}]);
+        await expectLater(
+          f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error'),
+          throwsA(unlesbar('cancelReceipt', null)),
+        );
+        expect(f.log, hasLength(1));
+      }
+    });
+
+    test('lesende Aufrufe bleiben beim alten Fehler (holen: data kein Objekt)', () async {
+      final f = clientMit([{'status': 'success', 'data': <dynamic>[]}]);
+      await expectLater(
+        f.client.holen('KASSE1-ID-42'),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'data-not-object')),
+      );
+    });
+
+    test('stornieren: original muss der Beleg originalReceiptId sein, sonst geht nichts hinaus', () async {
+      final f = clientMit([{'status': 'success', 'data': {}}]);
+      final original = KasseneckReceipt.fromJson(huelleMitBeleg(receiptId: 'KASSE1-ID-41'));
+      await expectLater(
+        f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error', original: original),
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
+      );
+      expect(f.log, isEmpty);
+    });
+  });
 }

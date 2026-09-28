@@ -260,6 +260,28 @@ void main() {
         throwsArgumentError);
   });
 
+  test('Serverpositionen mit Bruchmenge oder unbekanntem Satz: nie still falsch, sondern ein Fehler mit Ausweg', () {
+    final roh = {'name': 'Kaese', 'quantity': 0.375, 'unitPriceCents': 2400, 'vatRate': 10};
+    final unbekannt = {'name': 'Tee', 'quantity': 2, 'unitPriceCents': 300, 'vatRate': 5.5};
+    for (final p in [roh, unbekannt]) {
+      final item = KasseneckItem.fromJson(p);
+      expect(item.lossyRead, isNotNull, reason: '$p');
+      expect(
+        () => receiptDueCents([item], const [], ReceiptType.standard),
+        throwsA(isA<ArgumentError>().having((e) => '${e.message}', 'message', contains('receiptDueBreakdownForLines'))),
+        reason: '$p',
+      );
+    }
+    // Der Ausweg rechnet exakt wie der Server: 0,375 x 24,00 = 9,00; 2 x 3,00 zu 5,5 % im Topf der uebrigen Saetze.
+    expect(receiptDueBreakdownForLines([ReceiptDueLine.fromJson(roh)], const [], ReceiptType.standard).dueCents, 900);
+    final e = receiptDueBreakdownForLines([ReceiptDueLine.fromJson(unbekannt)], const [], ReceiptType.standard);
+    expect(e.bucketsCents!['amountRatOthers'], 600);
+    // Exakt gelesene Positionen (auch 2.0 als Menge) bleiben ohne Vermerk.
+    expect(KasseneckItem.fromJson({'name': 'A', 'quantity': 2.0, 'unitPriceCents': 1, 'vatRate': 20}).lossyRead, isNull);
+    expect(KasseneckItem.fromJson({'name': 'A', 'amount': 1, 'priceOneCents': 1, 'vat': 4.9}).lossyRead, isNull);
+    expect(() => ReceiptDueLine.fromJson({'name': 'A', 'quantity': 1, 'vatRate': 20}), throwsArgumentError);
+  });
+
   test('Die Paketwurzel exportiert den Zwilling', () {
     expect(wurzel.receiptDueCents, same(receiptDueCents));
     expect(wurzel.receiptDueBreakdown, same(receiptDueBreakdown));

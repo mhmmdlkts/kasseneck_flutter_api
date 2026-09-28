@@ -35,6 +35,12 @@ class KasseneckItem {
   /// `null`, wenn der Beleg es nicht nennt.
   final bool? receivedImmediately;
 
+  /// Was [KasseneckItem.fromJson] beim Lesen nicht exakt uebernehmen konnte
+  /// (Bruchmenge abgeschnitten, unbekannter Steuersatz als 0 %); `null`, wenn
+  /// alles passt. Wer mit so einer Position rechnet (`receiptDueCents`),
+  /// bekommt einen Fehler statt eines still falschen Betrags. Geht nie hinaus.
+  final String? lossyRead;
+
   /// Artikel-Verweis (Artikelstamm) — Grundlage der Erlösgruppen-Zuordnung
   /// im Bericht. Optional; Handeingaben haben keinen.
   final String? articleId;
@@ -49,6 +55,7 @@ class KasseneckItem {
     this.paymentMethod,
     this.articleId,
     this.receivedImmediately,
+    this.lossyRead,
   });
 
   /// Trinkgeld-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
@@ -153,6 +160,10 @@ class KasseneckItem {
     final quantity = json['quantity'] ?? json['amount'];
     final rate = json['vatRate'] ?? json['vat'];
     final kind = json['kind'];
+    final satzBekannt = VatRate.values.any((e) => e.rate == rate);
+    final String? ungenau = quantity is num && quantity != quantity.toInt()
+        ? 'Menge $quantity ist keine ganze Zahl'
+        : (rate != null && !satzBekannt ? 'Steuersatz $rate ist unbekannt' : null);
     return KasseneckItem(
       name: (json['name'] as String?) ?? '',
       // num statt int: manche Quellen liefern 1.0 statt 1.
@@ -164,6 +175,7 @@ class KasseneckItem {
       paymentMethod: json['paymentMethod'] as String?,
       articleId: json['articleId'] is String && (json['articleId'] as String).isNotEmpty ? json['articleId'] as String : null,
       receivedImmediately: kind == 'tip' && json['receivedImmediately'] is bool ? json['receivedImmediately'] as bool : null,
+      lossyRead: ungenau,
     );
   }
 
@@ -182,6 +194,7 @@ class KasseneckItem {
       paymentMethod: paymentMethod,
       articleId: articleId,
       receivedImmediately: receivedImmediately,
+      lossyRead: lossyRead,
     );
   }
 }

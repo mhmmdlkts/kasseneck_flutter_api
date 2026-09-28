@@ -278,7 +278,7 @@ class RegisterReceiptClient {
           name, 'Kartenanbieter gibt es nur bei zahlungsart creditCard', 'request');
     }
 
-    final daten = await transport.rufen(
+    final daten = await _signiertRufen(
       name,
       params: {
         'receiptType': 'standard',
@@ -300,7 +300,6 @@ class RegisterReceiptClient {
         'cardPaymentId': ?kartenzahlungId,
         'cardPaymentData': ?kartenzahlungsdaten,
       },
-      frist: abschlussFrist,
     );
     // Ab hier ist der Beleg signiert: wer ihn nicht lesen kann, bekommt
     // `response_unreadable` (Ausgang unklar) mit der Kennung, nie einen
@@ -405,10 +404,14 @@ class RegisterReceiptClient {
     if (zahlungen != null) {
       final fehler = zahlungenFehler(zahlungen, storno: true);
       if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
-      pruefeKartenRueckbuchung(zahlungen, original);
     }
+    if (original != null && original.receiptId != originalReceiptId) {
+      throw KasseneckValidationError(
+          name, 'original (${original.receiptId}) ist nicht der Beleg originalReceiptId ($originalReceiptId)', 'request');
+    }
+    if (zahlungen != null) pruefeKartenRueckbuchung(zahlungen, original);
 
-    final daten = await transport.rufen(
+    final daten = await _signiertRufen(
       name,
       params: {
         'originalReceiptId': originalReceiptId,
@@ -417,7 +420,6 @@ class RegisterReceiptClient {
         if (anmerkung != null && anmerkung.isNotEmpty) 'note': anmerkung,
         if (zahlungen != null) 'payments': [for (final z in zahlungen) z.toJson()],
       },
-      frist: abschlussFrist,
     );
 
     // Ab hier ist der Storno-Beleg ausgestellt und signiert. Scheitert das
@@ -510,6 +512,19 @@ class RegisterReceiptClient {
       for (final e in roh)
         if (e is Map) lesen(Map<String, dynamic>.from(e)),
     ];
+  }
+
+  /// Ein signierender Aufruf (Verkauf, Storno): `data` kein Objekt nach
+  /// gemeldetem Erfolg ist wie jede unlesbare Erfolgsantwort
+  /// `response_unreadable` mit Ausgang unklar, derselbe Code wie am
+  /// API-Schluessel-Weg. Alle anderen Fehler bleiben, wie sie sind.
+  Future<Map<String, dynamic>> _signiertRufen(String name, {required Map<String, dynamic> params}) async {
+    try {
+      return await transport.rufen(name, params: params, frist: abschlussFrist);
+    } on KasseneckHttpError catch (e) {
+      if (e.reason != 'data-not-object') rethrow;
+      return readSignedResponse(name, () => throw e);
+    }
   }
 
   /// Beleg samt Belegkopf aus der Antworthuelle. Fehlt der Beleg, ist das ein

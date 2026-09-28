@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
+import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 
 import 'helpers/test_receipts.dart';
 
@@ -171,7 +172,10 @@ void main() {
         KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -700, refundOf: 'p1', provider: CreditCardProvider.custom),
       ],
     );
-    final original = buildReceipt()
+    final original = KasseneckReceipt.fromJson({
+      ...buildReceipt().toJson(),
+      'receipt': {...buildReceipt().toJson()['receipt'] as Map, 'receiptId': 'KECK-1-ID-12', 'cashregisterId': 'KECK-1'},
+    })
       ..payments = const [
         KeckPayment(id: 'p1', methodValue: 'creditCard', amountCents: 700, providerValue: 'sumup', providerPaymentId: 'tx-4711'),
       ];
@@ -185,6 +189,18 @@ void main() {
       ],
     );
     expect(gerufen, 2);
+  });
+
+  test('original muss der Beleg originalReceiptId dieser Kasse sein, sonst geht nichts hinaus', () async {
+    final api = apiWith(nieGerufen());
+    final fremd = buildReceipt(); // TESTBOX-1 / TEST-ID-1
+    for (final (kasse, beleg) in [('KECK-1', 'KECK-1-ID-12'), ('TESTBOX-1', 'KECK-1-ID-12'), ('KECK-1', 'TEST-ID-1')]) {
+      await expectLater(
+        api.stornieren(cashregisterId: kasse, originalReceiptId: beleg, grund: 'input_error', original: fremd),
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
+        reason: '$kasse/$beleg',
+      );
+    }
   });
 
   test('fachliche Ablehnung kommt mit stabilem Code', () async {

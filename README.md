@@ -81,7 +81,7 @@ final receipt = await kasseneck.sellReceipt(
   customerDetails: ['Max Mustermann'],
   items: [
     KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20,      priceCents: 320),
-    KasseneckItem(name: 'Bread',  quantity: 1, vat: VatRate.vat4_9, priceCents: 240),
+    KasseneckItem(name: 'Bread',  quantity: 1, vat: VatRate.vat4_9,     priceCents: 240),
     // If you only have euro doubles: KasseneckItem.euro(..., singlePrice: 3.20)
   ],
 );
