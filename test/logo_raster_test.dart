@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
 
 /// Dieselbe Formel wie im npm-Golden-Test und `scripts/belege-fixtures.mjs`.
@@ -41,35 +41,35 @@ Uint8List _hoch() {
 
 void main() {
   test('Golden: hochformatige Logo-Probe 100x400, Stufe S, 32 Zeichen -- Punkt fuer Punkt wie npm', () {
-    final mass = logoMass(const BlattLogo(stufe: LogoStufe.s, pxBreite: 100, pxHoehe: 400), 32);
+    final mass = logoDimensions(const SheetLogo(size: SheetLogoSize.s, pixelWidth: 100, pixelHeight: 400), 32);
     final bild = logoRaster(_hoch(), 100, 400, mass, 32);
     final zeilen = <String>[
-      for (var y = 0; y < bild.hoehe; y++) bild.punkte.sublist(y * bild.breite, (y + 1) * bild.breite).join(),
+      for (var y = 0; y < bild.height; y++) bild.dots.sublist(y * bild.width, (y + 1) * bild.width).join(),
     ];
-    expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/erwartet/logo-probe-hoch.raster32.txt').readAsStringSync());
+    expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/expected/logo-sample-tall.raster32.txt').readAsStringSync());
   });
 
   test('Golden: Logo-Probe 300x100, Stufe S, 32 Zeichen -- Punkt fuer Punkt wie npm', () {
-    final mass = logoMass(const BlattLogo(stufe: LogoStufe.s, pxBreite: 300, pxHoehe: 100), 32);
+    final mass = logoDimensions(const SheetLogo(size: SheetLogoSize.s, pixelWidth: 300, pixelHeight: 100), 32);
     final bild = logoRaster(_verlauf(300, 100), 300, 100, mass, 32);
     final zeilen = <String>[
-      for (var y = 0; y < bild.hoehe; y++) bild.punkte.sublist(y * bild.breite, (y + 1) * bild.breite).join(),
+      for (var y = 0; y < bild.height; y++) bild.dots.sublist(y * bild.width, (y + 1) * bild.width).join(),
     ];
-    expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/erwartet/logo-probe.raster32.txt').readAsStringSync());
+    expect('${zeilen.join('\n')}\n', File('test/fixtures/vertrag/expected/logo-sample.raster32.txt').readAsStringSync());
   });
 
   test('logoPixelZulaessig: 4096 noch erlaubt, 4097 nicht mehr, 0 nie', () {
-    expect(logoPixelZulaessig(logoPixelMax, logoPixelMax), isTrue);
-    expect(logoPixelZulaessig(logoPixelMax + 1, 100), isFalse);
-    expect(logoPixelZulaessig(100, logoPixelMax + 1), isFalse);
-    expect(logoPixelZulaessig(0, 100), isFalse);
-    expect(logoPixelZulaessig(100, 0), isFalse);
+    expect(isLogoPixelSizeAllowed(logoPixelMax, logoPixelMax), isTrue);
+    expect(isLogoPixelSizeAllowed(logoPixelMax + 1, 100), isFalse);
+    expect(isLogoPixelSizeAllowed(100, logoPixelMax + 1), isFalse);
+    expect(isLogoPixelSizeAllowed(0, 100), isFalse);
+    expect(isLogoPixelSizeAllowed(100, 0), isFalse);
   });
 
   test('falsche RGBA-Laenge wirft; alsRasterImage ist schwarz/weiss und deckend', () {
-    expect(() => logoRaster(Uint8List(3), 1, 1, const LogoMass(breiteAnteil: 1 / 576, hoeheZeilen: 1 / 24), 48), throwsArgumentError);
-    final r = LogoRaster(breite: 2, hoehe: 1, punkte: Uint8List.fromList([1, 0]));
-    final img = r.alsRasterImage();
+    expect(() => logoRaster(Uint8List(3), 1, 1, const LogoDimensions(widthFraction: 1 / 576, heightLines: 1 / 24), 48), throwsArgumentError);
+    final r = LogoRaster(width: 2, height: 1, dots: Uint8List.fromList([1, 0]));
+    final img = r.toRasterImage();
     expect(img.width, 2);
     expect(img.rgba, [0, 0, 0, 255, 255, 255, 255, 255]);
   });

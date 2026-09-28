@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
@@ -39,93 +39,120 @@ bool _enthaeltFolge(List<int> bytes, List<int> folge) {
 
 void main() {
   final manifest = _json('${_wurzel.path}/manifest.json');
-  final namen = (manifest['belege'] as Map<String, dynamic>).keys.toList()..sort();
+  final namen = (manifest['receipts'] as Map<String, dynamic>).keys.toList()..sort();
 
   // Wie VIELE Golden-Belege es gibt, sagt das Manifest des Pakets -- die Zahl
   // stand hier frueher im Testnamen und war nach dem ersten neuen Beleg falsch.
   // Geprueft wird deshalb die Deckung mit dem Manifest, nicht eine Anzahl; die
   // Untergrenze faengt nur den Fall, dass die Kopie gar nicht erst ankam.
   test('Golden-Kopien stimmen mit dem Manifest des JS-Pakets ueberein', () {
-    expect(manifest['regelwerk'], 2);
+    expect(manifest['ruleset'], 2);
     expect(namen.length, greaterThanOrEqualTo(17));
     for (final n in namen) {
-      final e = (manifest['belege'] as Map)[n] as Map;
-      final eingabe = sha256.convert(File('${_wurzel.path}/belege/$n.json').readAsBytesSync()).toString();
-      final erwartet = sha256.convert(File('${_wurzel.path}/erwartet/$n.lines.json').readAsBytesSync()).toString();
-      expect(eingabe, e['eingabe'], reason: 'Fixture-Eingabe $n weicht vom JS-Paket ab');
-      expect(erwartet, e['erwartet'], reason: 'Erwartete Zeilen $n weichen vom JS-Paket ab');
+      final e = (manifest['receipts'] as Map)[n] as Map;
+      final eingabe = sha256.convert(File('${_wurzel.path}/receipts/$n.json').readAsBytesSync()).toString();
+      final erwartet = sha256.convert(File('${_wurzel.path}/expected/$n.lines.json').readAsBytesSync()).toString();
+      expect(eingabe, e['input'], reason: 'Fixture-Eingabe $n weicht vom JS-Paket ab');
+      expect(erwartet, e['expected'], reason: 'Erwartete Zeilen $n weichen vom JS-Paket ab');
     }
   });
 
   test('BelegLayout liest jede erwartete Zeilenfolge vollstaendig (keine Zeile faellt weg)', () {
     for (final n in namen) {
-      final roh = _json('${_wurzel.path}/erwartet/$n.lines.json');
-      final layout = BelegLayout.fromJson(roh)!;
+      final roh = _json('${_wurzel.path}/expected/$n.lines.json');
+      final layout = ReceiptLayout.fromJson(roh)!;
       expect(layout.lines.length, (roh['lines'] as List).length, reason: n);
-      expect(layout.regelwerk, 2);
-      expect(layout.qrDaten, isNotNull, reason: '$n ohne QR');
+      expect(layout.ruleset, 2);
+      expect(layout.qrPayload, isNotNull, reason: '$n ohne QR');
     }
     // Belegart-Aufdruck der Fixtures
-    final storno = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/storno-voll.lines.json'))!;
-    expect(storno.bannerTexte, ['STORNOBELEG']);
-    final monat = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/null-monat.lines.json'))!;
-    expect(monat.bannerTexte, ['MONATSBELEG']);
-    expect(monat.lines.whereType<BelegText>().any((t) => t.text == 'Nullbeleg 08/2026'), isTrue);
+    final storno = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/cancellation-full.lines.json'))!;
+    expect(storno.bannerTexts, ['STORNOBELEG']);
+    final monat = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/zero-monthly.lines.json'))!;
+    expect(monat.bannerTexts, ['MONATSBELEG']);
+    expect(monat.lines.whereType<LayoutTextLine>().any((t) => t.text == 'Nullbeleg 08/2026'), isTrue);
     // Regelwerk 2: Nullbeleg mit Block "Prüfangaben" statt Summenzeile
-    final monatTexte = monat.lines.whereType<BelegText>().map((t) => t.text).toList();
+    final monatTexte = monat.lines.whereType<LayoutTextLine>().map((t) => t.text).toList();
     expect(monatTexte, contains('Prüfangaben'));
     expect(monatTexte, isNot(contains('Betrag: 0,00 €')));
-    expect(monat.lines.whereType<BelegSpalten>().any((s) => s.columns.first.text == 'Karte registriert:'), isTrue);
-    final testkasse = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/testkasse-verkauf.lines.json'))!;
-    expect(testkasse.bannerTexte.first, startsWith('TESTKASSE'));
-    expect(testkasse.bannerTexte.last, startsWith('TESTKASSE'));
+    expect(monat.lines.whereType<LayoutColumnsLine>().any((s) => s.columns.first.text == 'Karte registriert:'), isTrue);
+    final testkasse = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/test-cashregister-sale.lines.json'))!;
+    expect(testkasse.bannerTexts.first, startsWith('TESTKASSE'));
+    expect(testkasse.bannerTexts.last, startsWith('TESTKASSE'));
     // unbekannte Zeilenart wird uebersprungen, nicht geworfen
-    final l = BelegLayout.fromJson({'lines': [{'kind': 'hologramm', 'x': 1}, {'kind': 'text', 'text': 'A', 'align': 'left', 'bold': false}], 'paperSize': 'mm80', 'regelwerk': 1})!;
+    final l = ReceiptLayout.fromJson({'lines': [{'kind': 'hologramm', 'x': 1}, {'kind': 'text', 'text': 'A', 'align': 'left', 'bold': false}], 'paperSize': 'mm80', 'ruleset': 1})!;
     expect(l.lines.length, 1);
-    expect(BelegLayout.fromJson(null), isNull);
+    expect(ReceiptLayout.fromJson(null), isNull);
   });
 
-  test('KasseneckReceipt.fromJson nimmt layout/testKasse/testSignatur/kopfId; altes Backend -> null/false', () {
-    final f = _json('${_wurzel.path}/belege/storno-voll.json');
+  test('Ton der Aufdrucke aus tone: receipt_type fuer die Belegart, warning fuer Testkasse und Ausfall', () {
+    final storno = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/cancellation-full.lines.json'))!;
+    expect(storno.lines.whereType<LayoutBannerLine>().map((b) => b.tone), [LayoutBannerTone.receiptType]);
+    final testkasse = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/test-cashregister-sale.lines.json'))!;
+    expect(testkasse.lines.whereType<LayoutBannerLine>().every((b) => b.warning), isTrue);
+    var warnungen = 0;
+    for (final n in namen) {
+      final roh = (_json('${_wurzel.path}/expected/$n.lines.json')['lines'] as List).cast<Map<String, dynamic>>();
+      final banner = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/$n.lines.json'))!.lines.whereType<LayoutBannerLine>().toList();
+      final soll = [for (final z in roh) if (z['kind'] == 'banner') z['tone']];
+      expect(banner.map((b) => b.tone.wire).toList(), soll, reason: n);
+      warnungen += banner.where((b) => b.warning).length;
+    }
+    expect(warnungen, greaterThan(0));
+    // Der alte 0.x-Schluessel ist kein Ton mehr: kein stilles Weiterlesen.
+    final alt = ReceiptLayout.fromJson({'lines': [{'kind': 'banner', 'text': 'X', 'ton': 'warnung'}], 'paperSize': 'mm80', 'ruleset': 2})!;
+    expect((alt.lines.single as LayoutBannerLine).warning, isFalse);
+  });
+
+  test('KasseneckReceipt.fromJson nimmt layout/testCashregister/testSignature/headerVersionId; altes Backend -> null/false', () {
+    final f = _json('${_wurzel.path}/receipts/cancellation-full.json');
     final firma = f['company'] as Map<String, dynamic>;
     final antwort = <String, dynamic>{
       'receipt': {...(f['receipt'] as Map<String, dynamic>), 'customerDetails': '', 'legalMessage': ''},
       'company': firma['companyName'], 'street': firma['street'], 'zip': firma['zip'], 'city': firma['city'], 'phone': firma['phone'],
-      'uid': firma['uid'], 'taxnr': firma['taxnr'], 'is_small_business': false, 'footer1': firma['footer1'], 'footer2': firma['footer2'],
-      'layout': _json('${_wurzel.path}/erwartet/storno-voll.lines.json'), 'testSignatur': true, 'kopfId': 'v1',
+      'vatId': firma['vatId'], 'taxNumber': firma['taxNumber'], 'is_small_business': false, 'footer1': firma['footer1'], 'footer2': firma['footer2'],
+      'layout': _json('${_wurzel.path}/expected/cancellation-full.lines.json'), 'testSignature': true, 'headerVersionId': 'v1',
     };
     final r = KasseneckReceipt.fromJson(antwort);
     expect(r.layout, isNotNull);
-    expect(r.layout!.bannerTexte, ['STORNOBELEG']);
-    expect(r.testSignatur, isTrue);
-    expect(r.testKasse, isFalse);
-    expect(r.kopfId, 'v1');
-    final alt = KasseneckReceipt.fromJson({...antwort}..remove('layout')..remove('testSignatur')..remove('kopfId'));
+    expect(r.layout!.bannerTexts, ['STORNOBELEG']);
+    expect(r.testSignature, isTrue);
+    expect(r.testCashregister, isFalse);
+    expect(r.headerVersionId, 'v1');
+    expect(r.vatId, 'ATU12345678');
+    final alt = KasseneckReceipt.fromJson({...antwort}..remove('layout')..remove('testSignature')..remove('headerVersionId'));
     expect(alt.layout, isNull);
-    expect(alt.testSignatur, isFalse);
-    expect(alt.kopfId, isNull);
+    expect(alt.testSignature, isFalse);
+    expect(alt.headerVersionId, isNull);
+  });
+
+  test('BelegLayout.toJson gibt jede erwartete Zeilenfolge unveraendert zurueck', () {
+    for (final n in namen) {
+      final roh = _json('${_wurzel.path}/expected/$n.lines.json');
+      expect(ReceiptLayout.fromJson(roh)!.toJson(), roh, reason: n);
+    }
   });
 
   test('PrintPaper.setBelegLayout druckt jede Fixture: Texte, Aufdruck im Rahmen, QR, Schnitt', () async {
     for (final n in namen) {
-      final layout = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/$n.lines.json'))!;
+      final layout = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/$n.lines.json'))!;
       final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
       // Nativ, weil dieser Test die QR-BEFEHLSBYTES prueft. Welcher Modus der
       // Standard ist, sagt der Test darunter.
-      await paper.setBelegLayout(layout, qrMode: QrPrintMode.native);
+      await paper.setReceiptLayout(layout, qrMode: QrPrintMode.native);
       final bytes = paper.bytes.expand((b) => b).toList();
       final text = latin1.decode(bytes, allowInvalid: true);
-      for (final b in layout.bannerTexte) {
+      for (final b in layout.bannerTexts) {
         expect(text, contains(b.split(' — ').first), reason: '$n: Aufdruck $b fehlt im Bytestrom');
       }
       // Jeder Aufdruck steht zwischen zwei Rahmenzeilen ('=' ueber 48 Zeichen).
-      expect(RegExp('=' * 48).allMatches(text).length, greaterThanOrEqualTo(2 * layout.bannerTexte.length), reason: '$n: Rahmen fehlt');
+      expect(RegExp('=' * 48).allMatches(text).length, greaterThanOrEqualTo(2 * layout.bannerTexts.length), reason: '$n: Rahmen fehlt');
       // Kopf steht drin, QR-Befehl (GS ( k) und Schnitt (GS V) sind da
       expect(text, contains('B'), reason: n);
       // Rasterzeilen (80 mm = 48 Zeichen): die Gesamt-Zeile steht als eine
       // Textzeile im Bytestrom, Preis buendig rechts (EUR statt Euro-Zeichen,
       // gerastert NACH dem Druckbarmachen -> weiterhin exakt 48 Zeichen).
-      final soll = File('${_wurzel.path}/erwartet/$n.grid48.txt').readAsStringSync().split('\n');
+      final soll = File('${_wurzel.path}/expected/$n.grid48.txt').readAsStringSync().split('\n');
       final gesamtZeile = soll.firstWhere((z) => z.startsWith('Gesamt:'), orElse: () => '');
       if (gesamtZeile.isNotEmpty) {
         final treffer = RegExp(r'Gesamt: +-?[\d.,]+ EUR').firstMatch(text);
@@ -146,10 +173,10 @@ void main() {
   /// Kassa ist der QR die maschinenlesbare Signatur; er darf nie
   /// stillschweigend wegfallen.
   test('setBelegLayout: der QR folgt dem Modus, wie beim alten Bauer', () async {
-    final layout = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/verkauf-bar.lines.json'))!;
+    final layout = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/sale-cash.lines.json'))!;
     Future<List<int>> mitModus(QrPrintMode modus) async {
       final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
-      await paper.setBelegLayout(layout, qrMode: modus);
+      await paper.setReceiptLayout(layout, qrMode: modus);
       return paper.bytes.expand((b) => b).toList();
     }
 
@@ -167,7 +194,7 @@ void main() {
 
     // Und der Standard ist derselbe wie beim alten Bauer: Raster.
     final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
-    await paper.setBelegLayout(layout);
+    await paper.setReceiptLayout(layout);
     expect(_enthaeltFolge(paper.bytes.expand((b) => b).toList(), [0x1D, 0x76, 0x30]), isTrue);
   });
 
@@ -180,14 +207,14 @@ void main() {
       );
 
   testWidgets('KeckReceiptLinesWidget zeigt Zeilen, Aufdruck und (verdeckten) QR', (tester) async {
-    final layout = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/training.lines.json'))!;
+    final layout = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/training.lines.json'))!;
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: KeckReceiptLinesWidget(layout: layout, qrCovered: true)))));
     expect(find.text('TRAININGSBELEG'), findsOneWidget);
     expect(aufdruck('belegart'), findsOneWidget);
     expect(find.textContaining('kein Kauf, keine Zahlung'), findsOneWidget);
     expect(find.text('Antippen zum Anzeigen'), findsOneWidget);
     // Rot-Probe: normaler Verkauf ohne Aufdruck
-    final verkauf = BelegLayout.fromJson(_json('${_wurzel.path}/erwartet/verkauf-bar.lines.json'))!;
+    final verkauf = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/sale-cash.lines.json'))!;
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: KeckReceiptLinesWidget(layout: verkauf)))));
     expect(aufdruck('belegart'), findsNothing);
     expect(find.text('Bäckerei Muster'), findsOneWidget);
@@ -197,13 +224,13 @@ void main() {
     // Kommt vor: eine Testkasse mit Test-Signatureinheit traegt beide
     // Aufdrucke. Gleiche Schluessel im selben Column sind ein Absturz -- und
     // zwar genau dann, wenn der Kassier den Beleg ansehen will.
-    const layout = BelegLayout(
+    const layout = ReceiptLayout(
       paperSize: 'mm58',
-      regelwerk: 1,
+      ruleset: 1,
       lines: [
-        BelegBanner(text: 'TESTKASSE', warnung: true),
-        BelegBanner(text: 'TESTSIGNATUR', warnung: true),
-        BelegText(text: 'Bäckerei Muster'),
+        LayoutBannerLine(text: 'TESTKASSE', tone: LayoutBannerTone.warning),
+        LayoutBannerLine(text: 'TESTSIGNATUR', tone: LayoutBannerTone.warning),
+        LayoutTextLine(text: 'Bäckerei Muster'),
       ],
     );
     await tester.pumpWidget(const MaterialApp(
@@ -218,12 +245,12 @@ void main() {
   testWidgets('auch zwei gleich lautende Aufdrucke stoeren einander nicht', (tester) async {
     // Der Schluessel darf nicht am Text haengen: dann waere derselbe Text
     // zweimal wieder ein Absturz.
-    const layout = BelegLayout(
+    const layout = ReceiptLayout(
       paperSize: 'mm58',
-      regelwerk: 1,
+      ruleset: 1,
       lines: [
-        BelegBanner(text: 'STORNO', warnung: true),
-        BelegBanner(text: 'STORNO', warnung: true),
+        LayoutBannerLine(text: 'STORNO', tone: LayoutBannerTone.warning),
+        LayoutBannerLine(text: 'STORNO', tone: LayoutBannerTone.warning),
       ],
     );
     await tester.pumpWidget(const MaterialApp(

@@ -5,9 +5,11 @@ import 'package:http/http.dart' as http;
 
 import '../aufrufe.dart';
 import '../kasse/einstellungen.dart';
+import '../v3.dart';
 import 'fehler.dart';
 import 'transport.dart';
 
+export 'codes.dart';
 export 'fehler.dart';
 export 'transport.dart' show RegisterTransport, kRegisterBaseUrl;
 
@@ -38,7 +40,7 @@ export 'transport.dart' show RegisterTransport, kRegisterBaseUrl;
 
 /// Was das Gerät über sich sagt — fürs Panel („welches Gerät ist das?").
 class RegisterClientInfo {
-  const RegisterClientInfo({this.userAgent, this.platform, this.language, this.tz, this.screen});
+  const RegisterClientInfo({this.userAgent, this.platform, this.language, this.tz, this.screen, this.app});
 
   final String? userAgent;
   final String? platform;
@@ -48,12 +50,20 @@ class RegisterClientInfo {
   final String? tz;
   final ({int w, int h})? screen;
 
+  /// Welcher Build der Anwendung gerade läuft, in derselben Form wie die
+  /// Client-Kennung der Transporte (`clientHeader`, `kasse-app/1.0.3+34`). Bei einer Störungsmeldung die
+  /// entscheidende Angabe: ohne sie lässt sich ein alter Build weder belegen
+  /// noch ausschließen. Das Backend kürzt auf 80 Zeichen und zählt die
+  /// Kopplung und Anmeldung über diesen Wert (`register_devices/{id}.client`).
+  final String? app;
+
   Map<String, dynamic> toJson() => {
         if (userAgent != null) 'userAgent': userAgent,
         if (platform != null) 'platform': platform,
         if (language != null) 'language': language,
         if (tz != null) 'tz': tz,
         if (screen != null) 'screen': {'w': screen!.w, 'h': screen!.h},
+        if (app != null) 'app': app,
       };
 }
 
@@ -71,7 +81,18 @@ class RegisterGeo {
 }
 
 /// Ergebnis der Kopplung — der vollständige Ausweis dieses Geräts.
+///
+/// **Das Speicherformat der App bleibt, wie es ist** (Nachtrag §9, B2): wer
+/// den Ausweis ablegt, bildet [companyName]/[cashregisterLabel]/
+/// [testEnvironment] auf seine bisherigen Felder ab. Die Aufrufe dieses
+/// Pakets brauchen aus einem abgelegten Satz nur `ownerUid`, `deviceId`,
+/// `deviceSecret` (und `cashregisterId` beim Login); ein Gerät, das mit 9.x
+/// gekoppelt wurde, meldet sich darum ohne neue Kopplung an.
 class PairedRegisterDevice {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'deviceId', 'deviceSecret', 'ownerUid', 'cashregisterId', 'companyName', 'cashregisterLabel', 'testEnvironment'};
+
   const PairedRegisterDevice({
     required this.ownerUid,
     required this.deviceId,
@@ -79,7 +100,7 @@ class PairedRegisterDevice {
     required this.cashregisterId,
     required this.companyName,
     required this.cashregisterLabel,
-    this.testUmgebung = false,
+    this.testEnvironment = false,
   });
 
   /// Kunde, unter dem das Gerät hängt.
@@ -92,10 +113,10 @@ class PairedRegisterDevice {
   /// Kasse, an die die Kopplung dieses Gerät gebunden hat.
   final String cashregisterId;
 
-  /// Das Gerät hängt an einer Test-Umgebung. Die Kasse muss es zeigen: ein
-  /// Beleg von dort ist kein gültiger Beleg, und wer das nicht sieht, hält
-  /// ihn für einen.
-  final bool testUmgebung;
+  /// Das Gerät hängt an einer Test-Umgebung (`kr_test_`-Konto). Die Kasse
+  /// muss es zeigen: ein Beleg von dort ist kein gültiger Beleg, und wer das
+  /// nicht sieht, hält ihn für einen.
+  final bool testEnvironment;
 
   /// Firmenname des Betriebs — Anzeige, kann leer sein.
   final String companyName;
@@ -110,11 +131,15 @@ enum RegisterUserKind { person, device }
 
 /// Ein Kassen-Benutzer, wie ihn der Anmeldebildschirm zeigt.
 class RegisterUserSummary {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'id', 'name', 'kind', 'pinPolicyOutdated'};
+
   const RegisterUserSummary({
     required this.id,
     required this.name,
     required this.kind,
-    required this.altbestand,
+    required this.pinPolicyOutdated,
   });
 
   final String id;
@@ -125,33 +150,58 @@ class RegisterUserSummary {
 
   /// Die PIN wurde noch nicht unter der aktuellen Regel gesetzt: die Kasse
   /// zeigt das Freifeld statt der Kästchen.
-  final bool altbestand;
+  final bool pinPolicyOutdated;
 }
 
 /// PIN-Regel des Betriebs — daraus baut die Kasse Kästchen und Tastatur.
 class RegisterPinPolicy {
-  const RegisterPinPolicy({required this.stellen, required this.zeichen});
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'length', 'charset'};
+
+  const RegisterPinPolicy({required this.length, required this.charset});
 
   /// Feste Stellenzahl (Backend: 3 bis 6).
-  final int stellen;
+  final int length;
 
-  /// `ziffern` (nur 0–9) oder `zeichen` (0–9 plus Kopplungs-Alphabet).
-  final String zeichen;
+  /// `digits` (nur 0 bis 9) oder `alphanumeric` (0 bis 9 plus
+  /// Kopplungs-Alphabet); ein künftiger Wert kommt unverändert durch.
+  final String charset;
 }
 
-/// Anmeldemodus des Geräts; ein unbekannter künftiger Wert gilt als [auswahl].
-enum RegisterLoginMode { auswahl, pin }
+/// Anmeldemodus des Geräts (Draht `select_user` bzw. `pin`); ein unbekannter
+/// künftiger Wert gilt als [selectUser]: das Backend weist eine Anmeldung
+/// ohne Auswahl ohnehin mit `login_mode_select_user` ab.
+enum RegisterLoginMode { selectUser, pin }
+
+/// Darf die gebundene Kasse Belege erstellen? `ready: false` mit dem Grund
+/// (Menschentext) etwa bei fehlender Signaturkarte oder fehlendem Startbeleg.
+class RegisterCashregisterState {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'ready', 'reason'};
+
+  const RegisterCashregisterState({required this.ready, this.reason});
+
+  final bool ready;
+  final String? reason;
+}
 
 /// Antwort von [RegisterClient.listRegisterUsersForDevice].
 class RegisterDeviceUsers {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'users', 'policy', 'loginMode', 'locationLock', 'testEnvironment', 'settings', 'receiptHeader', 'cashregister'};
+
   const RegisterDeviceUsers({
     required this.users,
     required this.policy,
     required this.loginMode,
-    required this.standortsperre,
-    this.testUmgebung = false,
+    required this.locationLock,
+    this.testEnvironment = false,
     required this.settings,
-    required this.betriebsdaten,
+    required this.receiptHeader,
+    this.cashregister,
   });
 
   /// Im Modus [RegisterLoginMode.pin] bewusst leer — Namen haben am nur-PIN-Gerät nichts verloren.
@@ -163,17 +213,21 @@ class RegisterDeviceUsers {
   final RegisterLoginMode loginMode;
 
   /// Der Betrieb verlangt die Ortung beim Login.
-  final bool standortsperre;
+  final bool locationLock;
 
-  /// Das Gerät hängt an einer Test-Umgebung — siehe [PairedRegisterDevice].
-  final bool testUmgebung;
+  /// Das Gerät hängt an einer Test-Umgebung, siehe [PairedRegisterDevice].
+  final bool testEnvironment;
 
   /// Kassen-Einstellungen (betriebsweit + Gerät), mit den Standardwerten
   /// gemischt — die Kasse bekommt nie ein halbes Bild.
-  final KasseSettings settings;
+  final PosSettings settings;
 
-  /// Belegkopf des Betriebs als Rohdaten (Name, Anschrift, UID, Fußzeilen).
-  final Map<String, dynamic>? betriebsdaten;
+  /// Belegkopf des Betriebs als Rohdaten (`company`, Anschrift, `vatId`,
+  /// Fußzeilen).
+  final Map<String, dynamic>? receiptHeader;
+
+  /// Stand der gebundenen Kasse; `null`, wenn das Backend keinen nennt.
+  final RegisterCashregisterState? cashregister;
 }
 
 /// Reichweite eines Rechts.
@@ -199,13 +253,13 @@ class RegisterUserPerms {
     this.tipAssign = false,
     this.cancelScope = RegisterScope.none,
     this.receiptsScope = RegisterScope.all,
-    this.weitere = const {},
+    this.other = const {},
   });
 
   /// Rechte aus der Antwort des Backends lesen. Derselbe Weg, den auch die
   /// Anmeldung nimmt — offen gelegt, damit die Zwillingsprüfung ihn benutzen
   /// kann, ohne einen zweiten Parser zu bauen.
-  factory RegisterUserPerms.aus(Map<String, dynamic> roh) => _rechte(roh);
+  factory RegisterUserPerms.fromJson(Map<String, dynamic> raw) => _rechte(raw);
 
   /// Belege ausstellen.
   final bool sell;
@@ -242,7 +296,7 @@ class RegisterUserPerms {
 
   /// Weitere Schalter, die der Inhaber gesetzt hat und die dieses Paket noch
   /// nicht kennt.
-  final Map<String, bool> weitere;
+  final Map<String, bool> other;
 
   /// Ein Recht nachschlagen, auch ein hier noch unbekanntes.
   bool operator [](String name) {
@@ -266,13 +320,17 @@ class RegisterUserPerms {
       case 'tipAssign':
         return tipAssign;
       default:
-        return weitere[name] ?? false;
+        return other[name] ?? false;
     }
   }
 }
 
 /// Der angemeldete Kassen-Benutzer.
 class RegisterUser {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'id', 'name', 'perms'};
+
   const RegisterUser({required this.id, required this.name, required this.perms});
 
   final String id;
@@ -286,32 +344,41 @@ class RegisterUser {
 /// Kassier sieht, WELCHE Sitzung weichen soll, und gibt ihre [id] als
 /// `takeoverSessionId` mit.
 class RegisterSession {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'id', 'deviceId', 'deviceLabel', 'startedAt', 'expiresAt', 'own', 'userName'};
+
   const RegisterSession({
     required this.id,
     required this.deviceId,
     required this.deviceLabel,
     required this.startedAt,
     required this.expiresAt,
-    required this.selbst,
+    required this.own,
     this.userName,
   });
 
   final String id;
   final String? deviceId;
-  /// Etikett des Geräts; „Kasse", wenn das Backend keines kennt.
-  final String deviceLabel;
+  /// Etikett des Geräts; `null`, wenn das Backend keines kennt (die
+  /// Oberfläche nennt dann ein Ersatzwort).
+  final String? deviceLabel;
   /// Millisekunden seit 1970 (`Date.now()` des Backends), null bei Altbestand.
   final int? startedAt;
   final int? expiresAt;
   /// Läuft diese Sitzung auf dem fragenden Gerät selbst?
-  final bool selbst;
-  /// Nur im Gerätemodus „auswahl" und nur, wenn das Backend einen Namen kennt.
+  final bool own;
+  /// Nur im Gerätemodus `select_user` und nur, wenn das Backend einen Namen kennt.
   final String? userName;
 }
 
 /// Antwort von [RegisterClient.listRegisterSessionsForDevice].
-class RegisterSessionsStand {
-  const RegisterSessionsStand({required this.licenses, required this.sessions});
+class RegisterSessionOverview {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'licenses', 'sessions'};
+
+  const RegisterSessionOverview({required this.licenses, required this.sessions});
 
   /// Lizenzplätze der Kasse — mindestens 1.
   final int licenses;
@@ -320,6 +387,10 @@ class RegisterSessionsStand {
 }
 
 class RegisterUserSession {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'customToken', 'sessionId', 'expiresAt', 'user'};
+
   const RegisterUserSession({
     required this.customToken,
     required this.sessionId,
@@ -344,12 +415,29 @@ class RegisterUserSession {
 
 /// Die anmeldungsfreien Aufrufe rund um Kopplung und Anmeldung.
 class RegisterClient {
-  RegisterClient({String? baseUrl, http.Client? httpClient, Duration? timeout})
-      : _baseUrl = ohneSchraegstrich(baseUrl ?? kRegisterBaseUrl),
+  /// [baseUrl] muss auf `/v3` enden (die Web-Kasse: `/api/v3`), sonst wirft
+  /// schon das Anlegen. [clientHeader] und [omitKasseneckHeaders] wie bei
+  /// [RegisterTransport]; beide gelten auch fuer [session].
+  ///
+  /// [httpClient] darf kein `RetryClient` (oder anderer wiederholender
+  /// Client) sein: ein zweites stilles Senden waere ein zweiter Beleg.
+  RegisterClient({
+    String? baseUrl,
+    http.Client? httpClient,
+    Duration? timeout,
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
+  })  : _baseUrl = v3BaseUrl('RegisterClient', baseUrl, kRegisterBaseUrl),
+        _kopf = V3Headers('RegisterClient', clientHeader: clientHeader, omit: omitKasseneckHeaders),
+        _clientHeader = clientHeader,
+        _omit = omitKasseneckHeaders,
         _http = httpClient ?? http.Client(),
         _timeout = timeout ?? const Duration(seconds: 30);
 
   final String _baseUrl;
+  final V3Headers _kopf;
+  final String? _clientHeader;
+  final bool _omit;
   final http.Client _http;
   final Duration _timeout;
 
@@ -384,9 +472,9 @@ class RegisterClient {
       deviceSecret: _pflichtfeld(name, daten, 'deviceSecret'),
       ownerUid: _pflichtfeld(name, daten, 'ownerUid'),
       cashregisterId: _pflichtfeld(name, daten, 'cashregisterId'),
-      companyName: _text(daten['betrieb']),
-      cashregisterLabel: _text(daten['kasse']),
-      testUmgebung: daten['testUmgebung'] == true,
+      companyName: _text(daten['companyName']),
+      cashregisterLabel: _text(daten['cashregisterLabel']),
+      testEnvironment: daten['testEnvironment'] == true,
     );
   }
 
@@ -419,20 +507,30 @@ class RegisterClient {
         id: _pflichtfeld(name, roh, 'id'),
         name: _text(roh['name']),
         kind: roh['kind'] == 'device' ? RegisterUserKind.device : RegisterUserKind.person,
-        altbestand: roh['altbestand'] == true,
+        pinPolicyOutdated: roh['pinPolicyOutdated'] == true,
       );
     }).toList();
 
     final settings = daten['settings'];
-    final betriebsdaten = daten['betriebsdaten'];
+    final kopf = daten['receiptHeader'];
+    final kasse = daten['cashregister'];
     return RegisterDeviceUsers(
       users: users,
       policy: _regel(daten['policy']),
-      loginMode: daten['loginMode'] == 'pin' ? RegisterLoginMode.pin : RegisterLoginMode.auswahl,
-      standortsperre: daten['standortsperre'] == true,
-      testUmgebung: daten['testUmgebung'] == true,
-      settings: KasseSettings.aus(settings is Map ? Map<String, dynamic>.from(settings) : null),
-      betriebsdaten: betriebsdaten is Map ? Map<String, dynamic>.from(betriebsdaten) : null,
+      loginMode: daten['loginMode'] == 'pin' ? RegisterLoginMode.pin : RegisterLoginMode.selectUser,
+      locationLock: daten['locationLock'] == true,
+      testEnvironment: daten['testEnvironment'] == true,
+      settings: PosSettings.fromJson({
+        'business': settings is Map ? settings['business'] : null,
+        'device': settings is Map ? settings['device'] : null,
+      }),
+      receiptHeader: kopf is Map ? Map<String, dynamic>.from(kopf) : null,
+      cashregister: kasse is Map && kasse['ready'] is bool
+          ? RegisterCashregisterState(
+              ready: kasse['ready'] as bool,
+              reason: kasse['reason'] is String ? kasse['reason'] as String : null,
+            )
+          : null,
     );
   }
 
@@ -499,7 +597,7 @@ class RegisterClient {
   /// `takeoverSessionId` bei [registerUserLogin] mit. Ausgewiesen wird sich
   /// über das Gerätegeheimnis wie bei [listRegisterUsersForDevice]; die Kasse
   /// bestimmt das Backend aus dem Gerät.
-  Future<RegisterSessionsStand> listRegisterSessionsForDevice({
+  Future<RegisterSessionOverview> listRegisterSessionsForDevice({
     required String ownerUid,
     required String deviceId,
     required String deviceSecret,
@@ -530,10 +628,10 @@ class RegisterClient {
       return RegisterSession(
         id: id,
         deviceId: geraet is String && geraet.isNotEmpty ? geraet : null,
-        deviceLabel: label is String && label.isNotEmpty ? label : 'Kasse',
+        deviceLabel: label is String && label.isNotEmpty ? label : null,
         startedAt: roh['startedAt'] is num ? (roh['startedAt'] as num).toInt() : null,
         expiresAt: roh['expiresAt'] is num ? (roh['expiresAt'] as num).toInt() : null,
-        selbst: roh['selbst'] == true,
+        own: roh['own'] == true,
         // Nur übernehmen, wenn wirklich einer kam: ein leerer String stünde in
         // der Oberfläche als namenlose Zeile, statt die Spalte wegzulassen.
         userName: userName is String && userName.isNotEmpty ? userName : null,
@@ -541,7 +639,7 @@ class RegisterClient {
     }).toList(growable: false);
     final lizenzen = daten['licenses'];
     final licenses = lizenzen is num && lizenzen > 0 ? lizenzen.toInt() : 1;
-    return RegisterSessionsStand(licenses: licenses, sessions: sessions);
+    return RegisterSessionOverview(licenses: licenses, sessions: sessions);
   }
 
   /// Anmeldung allein mit der PIN (Geräte-Modus `pin`): das Backend ermittelt
@@ -578,7 +676,7 @@ class RegisterClient {
   /// HTTP-Client und demselben Zeitlimit wie dieser. So hängt die Kasse an
   /// einer Verbindung statt an zweien, und wer für Tests einen anderen
   /// HTTP-Client einsetzt, erwischt beide Wege.
-  RegisterSessionClient sitzung({
+  RegisterSessionClient session({
     required Future<String?> Function() idToken,
     required Future<String?> Function() sessionId,
     required String cashregisterId,
@@ -590,6 +688,8 @@ class RegisterClient {
       baseUrl: _baseUrl,
       httpClient: _http,
       timeout: _timeout,
+      clientHeader: _clientHeader,
+      omitKasseneckHeaders: _omit,
     );
   }
 
@@ -599,52 +699,31 @@ class RegisterClient {
     // Programmierfehler und keine Netzstoerung.
     final String rumpf = jsonEncode({'params': params});
 
-    final http.Response antwort;
-    try {
-      antwort = await _http
-          .post(
-            Uri.parse('$_baseUrl/$name'),
-            headers: const {'Content-Type': 'application/json'},
-            body: rumpf,
-          )
-          .timeout(_timeout);
-    } on TimeoutException catch (e) {
-      // Getrennt vom Netzfehler: die Anfrage war draussen. Bei
-      // `pairRegisterDevice` heisst das, dass die Kopplung serverseitig
-      // vollzogen und der Code verbraucht sein kann — ein neuer Versuch mit
-      // demselben Code laeuft dann ins Leere.
-      throw KasseneckHttpError(name, 0, KasseneckHttpError.zeitablauf, causeType: '${e.runtimeType}');
-    } on Object catch (e) {
-      // Die Meldung kann Werte des Rumpfs tragen (manche Clients haengen ihn
-      // an) — deshalb nur der Typ, nie der Text. Hier faehrt PIN und
-      // Geraetegeheimnis im Rumpf mit.
-      throw KasseneckHttpError(name, 0, KasseneckHttpError.netz, causeType: '${e.runtimeType}');
-    }
+    // Zeitlimit getrennt vom Netzfehler: die Anfrage war draussen. Bei
+    // `pairRegisterDevice` heisst das, dass die Kopplung serverseitig
+    // vollzogen und der Code verbraucht sein kann; ein neuer Versuch mit
+    // demselben Code laeuft dann ins Leere. Von der Ursache nur der Typ: hier
+    // fahren PIN und Geraetegeheimnis im Rumpf mit.
+    final antwort = await v3Post(
+      _http,
+      functionName: name,
+      basis: _baseUrl,
+      name: name,
+      headers: const {'Content-Type': 'application/json'},
+      kasseneck: _kopf,
+      body: rumpf,
+      timeout: _timeout,
+    );
 
-    Object? roh;
-    try {
-      roh = jsonDecode(antwort.body);
-    } on FormatException {
-      throw KasseneckHttpError(name, antwort.statusCode, 'not-json');
-    }
-    if (roh is! Map) throw KasseneckHttpError(name, antwort.statusCode, 'missing-status');
-    final huelle = Map<String, dynamic>.from(roh);
+    final huelle = readEnvelope(name, antwort);
     if (huelle['status'] == 'success') {
-      final daten = huelle['data'];
       // Fehlendes `data` ist erlaubt; ein `data`, das da ist und kein Objekt
-      // ist, ist kaputt und darf nicht als leeres Objekt durchgehen — siehe
-      // dieselbe Stelle in `transport.dart`.
-      if (daten == null) return <String, dynamic>{};
-      if (daten is! Map) {
-        throw KasseneckHttpError(name, antwort.statusCode, 'data-not-object');
-      }
-      return Map<String, dynamic>.from(daten);
+      // ist, ist kaputt und darf nicht als leeres Objekt durchgehen.
+      return envelopeData(name, huelle, antwort.statusCode);
     }
     // Alles, was nicht ausdrücklich Erfolg ist, gilt als fachlicher Fehler —
     // ein unbekannter Statuswert darf nie stillschweigend durchgehen.
-    final meldung = huelle['message'];
-    throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.',
-        code: fehlercodeAus(huelle));
+    throw envelopeError(name, huelle);
   }
 
   /// Die Sitzungsantwort beider Anmeldewege — ein Vertrag, eine Lesart.
@@ -698,7 +777,7 @@ RegisterUserPerms _rechte(Object? wert) {
     // das Backend, register-auth.js).
     cancelScope: roh.containsKey('cancelScope') ? _scope(roh['cancelScope']) : (cancel ? RegisterScope.all : RegisterScope.none),
     receiptsScope: roh.containsKey('receiptsScope') ? _scope(roh['receiptsScope']) : RegisterScope.all,
-    weitere: weitere,
+    other: weitere,
   );
 }
 
@@ -717,11 +796,11 @@ RegisterScope _scope(Object? wert) {
 /// Die PIN-Regel aus der Antwort — oder `null`, wenn keine brauchbare kommt.
 RegisterPinPolicy? _regel(Object? wert) {
   if (wert is! Map) return null;
-  final stellen = wert['stellen'];
-  final zeichen = wert['zeichen'];
-  if (stellen is! int || stellen < 1) return null;
-  if (zeichen is! String || zeichen.isEmpty) return null;
-  return RegisterPinPolicy(stellen: stellen, zeichen: zeichen);
+  final length = wert['length'];
+  final charset = wert['charset'];
+  if (length is! int || length < 1) return null;
+  if (charset is! String || charset.isEmpty) return null;
+  return RegisterPinPolicy(length: length, charset: charset);
 }
 
 /// Pflichtangabe des Aufrufers. Die Meldung nennt das **Feld**, nie den Wert.
@@ -762,6 +841,8 @@ class RegisterSessionClient {
     String? baseUrl,
     http.Client? httpClient,
     Duration? timeout,
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
   }) : transport = RegisterTransport(
           idToken: idToken,
           sessionId: sessionId,
@@ -769,11 +850,13 @@ class RegisterSessionClient {
           baseUrl: baseUrl,
           httpClient: httpClient,
           timeout: timeout,
+          clientHeader: clientHeader,
+          omitKasseneckHeaders: omitKasseneckHeaders,
         );
 
   /// Aus einem bestehenden Transport — so teilen Sitzung, Belege und
   /// Einstellungen einen Ausweis statt drei.
-  RegisterSessionClient.aus(this.transport);
+  RegisterSessionClient.fromTransport(this.transport);
 
   final RegisterTransport transport;
 
@@ -786,7 +869,7 @@ class RegisterSessionClient {
   /// anmelden.") — dann hilft nur eine neue Anmeldung.
   Future<int> renewRegisterSession() async {
     const name = Aufrufe.renewRegisterSession;
-    final daten = await transport.rufen(name);
+    final daten = await transport.call(name);
     final bis = daten['expiresAt'];
     if (bis is! int) {
       // Ohne brauchbaren Ablaufzeitpunkt weiß die Kasse nicht, wann sie das
@@ -797,5 +880,5 @@ class RegisterSessionClient {
   }
 
   /// Sitzung beenden (Abmelden am Tresen).
-  Future<void> endRegisterSession() => transport.rufen(Aufrufe.endRegisterSession);
+  Future<void> endRegisterSession() => transport.call(Aufrufe.endRegisterSession);
 }

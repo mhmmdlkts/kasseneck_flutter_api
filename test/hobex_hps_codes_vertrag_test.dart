@@ -40,7 +40,7 @@ void main() {
   });
 
   test('jeder Grund hat denselben Satz', () {
-    final Map<String, dynamic> dort = vertrag['gruende'] as Map<String, dynamic>;
+    final Map<String, dynamic> dort = vertrag['reasons'] as Map<String, dynamic>;
     expect(
       {for (final r in HpsCodeReason.values) r.name: r.hint},
       dort,

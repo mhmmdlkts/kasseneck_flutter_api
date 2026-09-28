@@ -1,0 +1,33 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Zwei Steuersätze auf einer Rechnung",
+  "request": {
+    "idempotencyKey": "ex-4",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 1,
+        "unitPriceCents": 10000,
+        "vatRate": 20
+      },
+      {
+        "description": "Buch",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 10
+      }
+    ]
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 15000,
+      "vatCents": 2500,
+      "grossCents": 17500
+    }
+  }
+}

@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 
@@ -27,7 +27,7 @@ import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 /// traegt der Vorspann den Druckbereich des Blatts (`GS L` / `GS W`, acht
 /// Bytes) -- ohne ihn mittelte der Drucker Bilder in SEINER Flaeche.
 ///
-/// Grundlage ist die gezogene Vertragsdatei `verkauf-bar.lines.json`, also
+/// Grundlage ist die gezogene Vertragsdatei `sale-cash.lines.json`, also
 /// buchstaeblich dasselbe Layout auf beiden Seiten. Der QR laeuft im nativen
 /// Modus, weil nur der ohne gerastertes Bild auskommt und damit in beiden
 /// Paketen aus derselben Quelle entsteht (das gerasterte Symbol baut jede Seite
@@ -46,12 +46,12 @@ import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final BelegLayout layout = BelegLayout.fromJson(jsonDecode(
-      File('test/fixtures/vertrag/erwartet/verkauf-bar.lines.json').readAsStringSync()))!;
+  final ReceiptLayout layout = ReceiptLayout.fromJson(jsonDecode(
+      File('test/fixtures/vertrag/expected/sale-cash.lines.json').readAsStringSync()))!;
 
   Future<String> digest(KeckPaperSize size, {required bool marke}) async {
     final PrintPaper paper = PrintPaper(paperSize: size, profile: CapabilityProfile());
-    await paper.setBelegBlatt(layout, marke: marke, qrMode: QrPrintMode.native);
+    await paper.setReceiptSheet(layout, brandMark: marke, qrMode: QrPrintMode.native);
     return sha256.convert(paper.bytes.expand((e) => e).toList()).toString();
   }
 

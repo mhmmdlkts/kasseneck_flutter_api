@@ -1,0 +1,24 @@
+{
+  "endpoint": "createCreditNote",
+  "description": "Unbekannter Grund",
+  "request": {
+    "idempotencyKey": "ex-12",
+    "invoiceId": "invoice_example",
+    "reason": "storno",
+    "items": [
+      {
+        "description": "Nachlass",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "reason"
+    ]
+  }
+}

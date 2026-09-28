@@ -20,13 +20,14 @@ Future<void> main() async {
   );
 
   // 1) A simple cash sale with two items.
+  // The payments must add up to the amount due (receiptDueCents): 2 x 3.20 + 2.40.
   final receipt = await kasseneck.sellReceipt(
-    paymentMethod: KeckPaymentMethod.cash,
+    payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 880)],
     customerDetails: ['Max Mustermann'],
     items: [
       // Prices in cents (320 = EUR 3.20); alternatively KasseneckItem.euro(singlePrice: 3.20)
       KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20, priceCents: 320),
-      KasseneckItem(name: 'Bread', quantity: 1, vat: VatRate.vat4komma9, priceCents: 240),
+      KasseneckItem(name: 'Bread', quantity: 1, vat: VatRate.vat4_9, priceCents: 240),
     ],
   );
   print('Receipt ${receipt?.receiptId}, signed: ${receipt?.signatureSuccess}');
@@ -36,14 +37,14 @@ Future<void> main() async {
   await receipt?.printReceiptBluetooth();
 
   // 3) Cancel it again: a new signed cancellation receipt that references the
-  //    original. Leave out `positionen` to cancel everything that is left.
+  //    original. Leave out `items` to cancel everything that is left.
   if (receipt != null) {
-    final cancellation = await kasseneck.stornieren(
+    final cancellation = await kasseneck.cancelReceipt(
       cashregisterId: receipt.cashregisterId,
       originalReceiptId: receipt.receiptId,
-      grund: 'fehleingabe', // key from stornogruende
+      reason: 'input_error', // key from cancellationReasons
     );
-    print('Cancellation ${cancellation.beleg.receiptId}, remaining: ${cancellation.restmengen}');
+    print('Cancellation ${cancellation.receipt.receiptId}, remaining: ${cancellation.remaining}');
   }
 }
 
@@ -93,10 +94,16 @@ Future<void> cardSale(KasseneckApi kasseneck) async {
 
   final card = HobexReceipt.fromHps(res.response!);
   await kasseneck.sellReceipt(
-    paymentMethod: KeckPaymentMethod.creditCard,
-    creditCardProvider: card.creditCardProvider,
-    cardPaymentId: card.transactionId,
-    cardPaymentData: card.toCardPaymentData(),
+    // The card details belong to the payment itself.
+    payments: [
+      KeckPaymentInput(
+        method: KeckPaymentMethod.creditCard,
+        amountCents: 1250,
+        provider: card.creditCardProvider,
+        providerPaymentId: card.transactionId,
+        providerData: card.toCardPaymentData(),
+      ),
+    ],
     items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
   );
 }

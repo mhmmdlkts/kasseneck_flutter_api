@@ -1,0 +1,14 @@
+{
+  "endpoint": "searchCustomers",
+  "description": "Suche ohne Suchbegriff",
+  "request": {
+    "limit": 10
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "externalId"
+    ]
+  }
+}

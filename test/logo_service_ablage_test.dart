@@ -19,16 +19,16 @@ void main() {
 
   setUp(() {
     ordner = Directory.systemTemp.createTempSync('logo_ablage_');
-    LogoService.speicherOrdner = ordner;
-    LogoService.frist = LogoService.standardFrist;
-    LogoService.auffrischenNach = const Duration(days: 7);
-    LogoService.speicherLeeren();
+    LogoService.storageDirectory = ordner;
+    LogoService.timeout = LogoService.defaultTimeout;
+    LogoService.refreshAfter = const Duration(days: 7);
+    LogoService.clearCache();
     anfragen = 0;
   });
 
   tearDown(() {
-    LogoService.speicherOrdner = null;
-    LogoService.speicherLeeren();
+    LogoService.storageDirectory = null;
+    LogoService.clearCache();
     if (ordner.existsSync()) ordner.deleteSync(recursive: true);
   });
 
@@ -55,7 +55,7 @@ void main() {
     await LogoService.loadLogo(url);
     expect(anfragen, 1);
 
-    LogoService.speicherLeeren();
+    LogoService.clearCache();
     netzWeg();
     await LogoService.loadLogo(url);
 
@@ -78,7 +78,7 @@ void main() {
     await LogoService.loadLogo(url);
     logoDateien().single.setLastModifiedSync(DateTime.now().subtract(const Duration(days: 8)));
 
-    LogoService.speicherLeeren();
+    LogoService.clearCache();
     netzLiefert(_jpeg);
     await LogoService.loadLogo(url);
 
@@ -93,7 +93,7 @@ void main() {
     await LogoService.loadLogo(url);
     logoDateien().single.setLastModifiedSync(DateTime.now().subtract(const Duration(days: 30)));
 
-    LogoService.speicherLeeren();
+    LogoService.clearCache();
     netzWeg();
     await LogoService.loadLogo(url);
 
@@ -107,7 +107,7 @@ void main() {
     final datei = logoDateien().single;
     datei.writeAsBytesSync([1, 2, 3]); // halb geschrieben / fremd
 
-    LogoService.speicherLeeren();
+    LogoService.clearCache();
     netzLiefert(_jpeg);
     await LogoService.loadLogo(url);
 
@@ -133,13 +133,13 @@ void main() {
 
   test('hoechstens maxDateien Logos, die aeltesten gehen zuerst', () async {
     netzLiefert(_png);
-    for (var i = 0; i < LogoService.maxDateien; i++) {
+    for (var i = 0; i < LogoService.maxFiles; i++) {
       final url = 'https://example.test/alt_$i.png';
       await LogoService.loadLogo(url);
     }
     // Alter festlegen: alt_0 am aeltesten.
     final vorher = logoDateien()..sort((a, b) => a.path.compareTo(b.path));
-    expect(vorher, hasLength(LogoService.maxDateien));
+    expect(vorher, hasLength(LogoService.maxFiles));
     final aeltester = File(vorher.first.path);
     for (final (i, f) in vorher.indexed) {
       f.setLastModifiedSync(DateTime.now().subtract(Duration(hours: 100 - i)));
@@ -148,12 +148,12 @@ void main() {
     await LogoService.loadLogo('https://example.test/neu.png');
 
     final nachher = logoDateien();
-    expect(nachher, hasLength(LogoService.maxDateien));
+    expect(nachher, hasLength(LogoService.maxFiles));
     expect(aeltester.existsSync(), isFalse, reason: 'die aelteste Datei geht zuerst');
   });
 
   test('ein fehlender Ordner wird angelegt', () async {
-    LogoService.speicherOrdner = Directory('${ordner.path}/tief/drin');
+    LogoService.storageDirectory = Directory('${ordner.path}/tief/drin');
     netzLiefert(_png);
     await LogoService.loadLogo('https://example.test/ordner.png');
     expect(Directory('${ordner.path}/tief/drin').listSync().whereType<File>(), hasLength(1));
@@ -161,16 +161,16 @@ void main() {
 
   group('istBilddatei', () {
     test('PNG, JPEG, WebP ja', () {
-      expect(LogoService.istBilddatei(_png), isTrue);
-      expect(LogoService.istBilddatei(_jpeg), isTrue);
+      expect(LogoService.isImageFile(_png), isTrue);
+      expect(LogoService.isImageFile(_jpeg), isTrue);
       final webp = Uint8List.fromList([...'RIFF'.codeUnits, 0, 0, 0, 0, ...'WEBP'.codeUnits]);
-      expect(LogoService.istBilddatei(webp), isTrue);
+      expect(LogoService.isImageFile(webp), isTrue);
     });
 
     test('Text, leer und abgeschnittene Koepfe nein', () {
-      expect(LogoService.istBilddatei(Uint8List(0)), isFalse);
-      expect(LogoService.istBilddatei(Uint8List.fromList([0x89, 0x50])), isFalse);
-      expect(LogoService.istBilddatei(Uint8List.fromList('RIFF1234WAVE'.codeUnits)), isFalse);
+      expect(LogoService.isImageFile(Uint8List(0)), isFalse);
+      expect(LogoService.isImageFile(Uint8List.fromList([0x89, 0x50])), isFalse);
+      expect(LogoService.isImageFile(Uint8List.fromList('RIFF1234WAVE'.codeUnits)), isFalse);
     });
   });
 }

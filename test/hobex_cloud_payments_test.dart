@@ -120,8 +120,8 @@ void main() {
     test('genehmigt -> approved', () async {
       final (:api, :callCount) = apiWith([
         () => http.Response(
-            '{"data":${receiptJson(responseCode: '0', transactionId: 'TX-1')}}',
-            200),
+            '{"status":"success","data":${receiptJson(responseCode: '0', transactionId: 'TX-1')}}',
+            200, headers: const {'kasseneck-api-version': 'v3'}),
       ]);
       final res =
           await cloudPaymentsFor(api).pay(transactionId: 'TX-1', amount: 25);
@@ -135,7 +135,7 @@ void main() {
         () => throw Exception('Verbindung weg'),
         () => http.Response(
             '{"status":"success","data":${receiptJson(responseCode: '0', transactionId: 'TX-2')}}',
-            200),
+            200, headers: const {'kasseneck-api-version': 'v3'}),
       ]);
       final res =
           await cloudPaymentsFor(api).pay(transactionId: 'TX-2', amount: 25);
@@ -156,8 +156,8 @@ void main() {
     test('abgelehnt -> declined', () async {
       final (:api, :callCount) = apiWith([
         () => http.Response(
-            '{"data":${receiptJson(responseCode: '51', transactionId: 'TX-4')}}',
-            200),
+            '{"status":"success","data":${receiptJson(responseCode: '51', transactionId: 'TX-4')}}',
+            200, headers: const {'kasseneck-api-version': 'v3'}),
       ]);
       final res =
           await cloudPaymentsFor(api).pay(transactionId: 'TX-4', amount: 25);
@@ -173,11 +173,11 @@ void main() {
       // unentschiedener Vorgang faelschlich als declined gemeldet.
       final (:api, :callCount) = apiWith([
         () => http.Response(
-            '{"data":${receiptJson(responseCode: '', transactionId: 'TX-4c')}}',
-            200),
+            '{"status":"success","data":${receiptJson(responseCode: '', transactionId: 'TX-4c')}}',
+            200, headers: const {'kasseneck-api-version': 'v3'}),
         () => http.Response(
             '{"status":"success","data":${receiptJson(responseCode: '0', transactionId: 'TX-4c')}}',
-            200),
+            200, headers: const {'kasseneck-api-version': 'v3'}),
       ]);
       final res =
           await cloudPaymentsFor(api).pay(transactionId: 'TX-4c', amount: 25);
@@ -220,12 +220,12 @@ void main() {
       final (:api, :callCount) = apiWith([
         () => throw Exception('Verbindung weg'), // pay()
         () => throw Exception('Verbindung weg'), // status 1 -> Zaehler 1
-        () => http.Response('{"status":"pending"}', 200), // status 2 -> Reset
+        () => http.Response('{"status":"pending"}', 200, headers: const {'kasseneck-api-version': 'v3'}), // status 2 -> Reset
         () => throw Exception('Verbindung weg'), // status 3 -> Zaehler 1
         () => throw Exception('Verbindung weg'), // status 4 -> Zaehler 2
         () => http.Response(
             '{"status":"success","data":${receiptJson(responseCode: '0', transactionId: 'TX-6')}}',
-            200),
+            200, headers: const {'kasseneck-api-version': 'v3'}),
       ]);
       final res =
           await cloudPaymentsFor(api).pay(transactionId: 'TX-6', amount: 25);
@@ -242,7 +242,7 @@ void main() {
         // Der Dienst sagt dauerhaft "kein Ergebnis" -- kein Transportfehler,
         // die Klaerung laeuft also nicht ueber maxTransportFailures aus,
         // sondern wirklich ins Budget.
-        () => http.Response('{"status":"pending"}', 200),
+        () => http.Response('{"status":"pending"}', 200, headers: const {'kasseneck-api-version': 'v3'}),
       ]);
       final res = await cloudPaymentsFor(
         api,
@@ -286,7 +286,7 @@ void main() {
         () => throw Exception('Verbindung weg'), // pay()
         () => http.Response(
             '{"status":"success","data":${receiptJson(responseCode: '0', transactionId: 'TX-7')}}',
-            200),
+            200, headers: const {'kasseneck-api-version': 'v3'}),
       ]);
       await cloudPaymentsFor(api, observer: ereignisse.add)
           .pay(transactionId: 'TX-7', amount: 25);
@@ -303,8 +303,8 @@ void main() {
     test('ein werfender Beobachter reisst den Zahlweg nicht mit', () async {
       final (:api, :callCount) = apiWith([
         () => http.Response(
-            '{"data":${receiptJson(responseCode: '0', transactionId: 'TX-8')}}',
-            200),
+            '{"status":"success","data":${receiptJson(responseCode: '0', transactionId: 'TX-8')}}',
+            200, headers: const {'kasseneck-api-version': 'v3'}),
       ]);
       final res = await cloudPaymentsFor(
         api,
@@ -313,5 +313,17 @@ void main() {
       expect(res.outcome, CardPaymentOutcome.approved);
       expect(callCount(), 1);
     });
+  });
+
+  test('Bruchteils-Cent und Betrag unter einem Cent werfen vor dem Netz', () async {
+    final (:api, :callCount) = apiWith(const []);
+    for (final (amount, tip) in [(12.345, 0), (0, 0), (10, -1), (10, 0.001)]) {
+      await expectLater(
+        cloudPaymentsFor(api).pay(transactionId: 'TX-9', amount: amount, tip: tip),
+        throwsA(isA<ArgumentError>()),
+        reason: '$amount/$tip',
+      );
+    }
+    expect(callCount(), 0);
   });
 }

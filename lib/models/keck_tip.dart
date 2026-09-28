@@ -76,13 +76,13 @@ class KeckTip {
   /// entscheidet, ob der Betrieb Geld schuldet, und gewöhnliches Personal soll
   /// das nicht am Gerät umstellen können. Über einen Geräte-API-Schlüssel
   /// (ohne angemeldeten Kassen-Benutzer) gilt die Einschränkung nicht.
-  final bool? sofortErhalten;
+  final bool? receivedImmediately;
 
   const KeckTip({
     required this.cents,
     this.paymentMethod,
     this.recipients,
-    this.sofortErhalten,
+    this.receivedImmediately,
   });
 
   /// Komfort-Konstruktor mit Betrag in **Euro** (einmalige Rundung auf Cent).
@@ -90,27 +90,27 @@ class KeckTip {
     required double amount,
     KeckPaymentMethod? paymentMethod,
     List<KeckTipRecipient>? recipients,
-    bool? sofortErhalten,
+    bool? receivedImmediately,
   }) {
     return KeckTip(
       cents: (amount * 100).round(),
       paymentMethod: paymentMethod,
       recipients: recipients,
-      sofortErhalten: sofortErhalten,
+      receivedImmediately: receivedImmediately,
     );
   }
 
   /// Der 90-%-Fall: alles an eine Person.
-  factory KeckTip.fuer(
+  factory KeckTip.forRecipient(
     String registerUserId, {
     required int cents,
     KeckPaymentMethod? paymentMethod,
-    bool? sofortErhalten,
+    bool? receivedImmediately,
   }) {
     return KeckTip(
       cents: cents,
       paymentMethod: paymentMethod,
-      sofortErhalten: sofortErhalten,
+      receivedImmediately: receivedImmediately,
       recipients: [
         KeckTipRecipient(registerUserId: registerUserId, cents: cents),
       ],
@@ -126,7 +126,7 @@ class KeckTip {
   /// inklusive: Wer den Fehler hier sieht, sieht denselben Satz wie der, der
   /// ihn vom Server bekommt. Geprüft wird hier trotzdem, damit ein Tippfehler
   /// nicht erst nach einem Netzweg auffällt.
-  String? get fehler {
+  String? get validationError {
     if (cents <= 0) {
       return 'Trinkgeld: Betrag muss eine ganze Zahl in Cent > 0 sein';
     }
@@ -156,7 +156,7 @@ class KeckTip {
     return null;
   }
 
-  bool get isValid => fehler == null;
+  bool get isValid => validationError == null;
 
   /// Langform, immer.
   ///
@@ -171,6 +171,6 @@ class KeckTip {
         // Nur mitschicken, wenn gesetzt: fehlt das Feld, entscheidet die
         // Voreinstellung des Betriebs. Ein `false` wäre dort eine Aussage,
         // kein Weglassen.
-        if (sofortErhalten != null) 'sofortErhalten': sofortErhalten,
+        if (receivedImmediately != null) 'receivedImmediately': receivedImmediately,
       };
 }

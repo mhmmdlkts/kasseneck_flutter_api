@@ -55,16 +55,16 @@ void main() {
       final PrintPaper p = papier();
       p.addQrCode('TESTQRDATA');
       expect(modulgroesseByte(p), 6);
-      expect(p.qrFehler, isNull);
-      expect(p.qrAusweich, isNull);
+      expect(p.qrError, isNull);
+      expect(p.qrFallback, isNull);
     });
 
     test('realer Beleg-QR auf 58 mm: 5 statt 6 — und damit ueberhaupt ein QR', () {
       final PrintPaper p = papier();
       p.addQrCode(echterQr);
       expect(modulgroesseByte(p), 5);
-      expect(p.qrFehler, isNull);
-      expect(p.qrAusweich, isNull);
+      expect(p.qrError, isNull);
+      expect(p.qrFallback, isNull);
     });
 
     test('derselbe QR auf 80 mm bleibt bei 6', () {
@@ -75,16 +75,16 @@ void main() {
 
     test('ausdruecklich gewaehlte Groesse deckelt, hebt aber nicht an', () {
       final PrintPaper klein = papier();
-      klein.addQrCode('TESTQRDATA', groesse: QrModulGroesse.klein);
+      klein.addQrCode('TESTQRDATA', moduleSize: QrModuleSize.small);
       expect(modulgroesseByte(klein), 4);
 
       final PrintPaper gross = papier();
-      gross.addQrCode('TESTQRDATA', groesse: QrModulGroesse.gross);
+      gross.addQrCode('TESTQRDATA', moduleSize: QrModuleSize.large);
       expect(modulgroesseByte(gross), 8);
 
       // Auf 58 mm passt der echte QR auch mit `gross` nur mit 5.
       final PrintPaper eng = papier();
-      eng.addQrCode(echterQr, groesse: QrModulGroesse.gross);
+      eng.addQrCode(echterQr, moduleSize: QrModuleSize.large);
       expect(modulgroesseByte(eng), 5);
     });
 
@@ -100,9 +100,9 @@ void main() {
       final PrintPaper p = papier();
       p.addQrCode('X' * 600); // 93 Module -> 3 Punkte
       expect(modulgroesseByte(p), 3);
-      expect(p.qrFehler, isNull);
-      expect(p.qrAusweich, isNotNull);
-      expect(p.qrAusweich, contains('3'));
+      expect(p.qrError, isNull);
+      expect(p.qrFallback, isNotNull);
+      expect(p.qrFallback, contains('3'));
     });
 
     test('nativ unmoeglich: kein stiller Ausfall, sondern ein gemeldeter', () {
@@ -111,7 +111,7 @@ void main() {
       final PrintPaper p = papier();
       p.addQrCode('X' * 1000); // 121 Module -> passt auch mit 3 nicht
       expect(modulgroesseByte(p), isNull);
-      expect(p.qrFehler, isNotNull);
+      expect(p.qrError, isNotNull);
     });
   });
 
@@ -122,24 +122,24 @@ void main() {
       // GS v 0 — der Rasterbild-Befehl. Kein GS ( k.
       expect(enthaelt(flach(p), [0x1D, 0x76, 0x30]), isTrue);
       expect(enthaelt(flach(p), [0x1D, 0x28, 0x6B]), isFalse);
-      expect(p.qrAusweich, isNotNull, reason: 'die Kasse muss den Wechsel erfahren');
-      expect(p.qrFehler, isNull, reason: 'der QR steht ja auf dem Papier');
+      expect(p.qrFallback, isNotNull, reason: 'die Kasse muss den Wechsel erfahren');
+      expect(p.qrError, isNull, reason: 'der QR steht ja auf dem Papier');
     });
 
     test('passt es nativ, wird nicht ausgewichen', () async {
       final PrintPaper p = papier();
       await p.setKeckReceipt(buildReceipt(qr: echterQr), qrMode: QrPrintMode.native);
       expect(enthaelt(flach(p), [0x1D, 0x28, 0x6B]), isTrue);
-      expect(p.qrAusweich, isNull);
-      expect(p.qrFehler, isNull);
+      expect(p.qrFallback, isNull);
+      expect(p.qrError, isNull);
     });
 
     test('reset raeumt den Ausweich-Hinweis mit ab', () async {
       final PrintPaper p = papier();
       await p.setKeckReceipt(buildReceipt(qr: 'X' * 1000), qrMode: QrPrintMode.native);
-      expect(p.qrAusweich, isNotNull);
+      expect(p.qrFallback, isNotNull);
       await p.setKeckReceipt(buildReceipt(), qrMode: QrPrintMode.native);
-      expect(p.qrAusweich, isNull, reason: 'sonst klebt der Hinweis am naechsten Beleg');
+      expect(p.qrFallback, isNull, reason: 'sonst klebt der Hinweis am naechsten Beleg');
     });
   });
 
@@ -161,7 +161,7 @@ void main() {
 
     test('Modell 1 nimmt dieselbe gerechnete Modulgroesse', () {
       final PrintPaper p = papier();
-      p.addQrCode(echterQr, modell1: true);
+      p.addQrCode(echterQr, model1: true);
       expect(modulgroesseByte(p), 5);
     });
   });
@@ -170,7 +170,7 @@ void main() {
     test('die gewaehlte Groesse kommt am QR an', () async {
       final PrintPaper p = papier();
       await p.setKeckReceipt(buildReceipt(),
-          qrMode: QrPrintMode.native, qrGroesse: QrModulGroesse.klein);
+          qrMode: QrPrintMode.native, qrModuleSize: QrModuleSize.small);
       expect(modulgroesseByte(p), 4);
     });
   });

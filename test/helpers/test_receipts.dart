@@ -39,8 +39,8 @@ KasseneckReceipt buildReceipt({
     companyName: 'Kasseneck Test GmbH',
     phone: '+43 1 2345678',
     isSmallBusiness: false,
-    uid: uid,
-    taxnr: '12 345/6789',
+    vatId: uid,
+    taxNumber: '12 345/6789',
     street: 'Teststrasse 1',
     zip: '1010',
     city: 'Wien',
@@ -60,7 +60,7 @@ KasseneckReceipt buildReceipt({
 KasseneckReceipt cartA() => buildReceipt(
       items: [
         KasseneckItem(name: 'Klassiker', quantity: 3, vat: VatRate.vat20, priceCents: 1999),
-        KasseneckItem(name: 'Brot', quantity: 1, vat: VatRate.vat4komma9, priceCents: 29),
+        KasseneckItem(name: 'Brot', quantity: 1, vat: VatRate.vat4_9, priceCents: 29),
         KasseneckItem(name: 'Milch', quantity: 2, vat: VatRate.vat10, priceCents: 105),
       ],
       vouchers: [
@@ -73,7 +73,7 @@ KasseneckReceipt cartA() => buildReceipt(
 KasseneckReceipt cartB() => buildReceipt(
       items: [
         KasseneckItem(name: 'Klassiker', quantity: 3, vat: VatRate.vat20, priceCents: 1999),
-        KasseneckItem(name: 'Brot', quantity: 1, vat: VatRate.vat4komma9, priceCents: 29),
+        KasseneckItem(name: 'Brot', quantity: 1, vat: VatRate.vat4_9, priceCents: 29),
         KasseneckItem(name: 'Milch', quantity: 2, vat: VatRate.vat10, priceCents: 105),
       ],
       vouchers: [

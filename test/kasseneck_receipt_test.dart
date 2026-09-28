@@ -8,7 +8,7 @@ import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
-import 'package:kasseneck_api/kasse.dart' show KasseneckReceiptFormatError;
+import 'package:kasseneck_api/pos.dart' show KasseneckReceiptFormatError;
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
@@ -45,8 +45,8 @@ void main() {
       expect(back.companyName, original.companyName);
       expect(back.phone, original.phone);
       expect(back.isSmallBusiness, original.isSmallBusiness);
-      expect(back.uid, original.uid);
-      expect(back.taxnr, original.taxnr);
+      expect(back.vatId, original.vatId);
+      expect(back.taxNumber, original.taxNumber);
       expect(back.street, original.street);
       expect(back.zip, original.zip);
       expect(back.city, original.city);
@@ -178,7 +178,7 @@ void main() {
       // wegen einer fehlenden Fusszeile zu verlieren waere die teurere
       // Verwechslung.
       final j = baseJson()
-        ..remove('taxnr')
+        ..remove('taxNumber')
         ..remove('company')
         ..remove('phone')
         ..remove('street')
@@ -190,7 +190,7 @@ void main() {
 
       final r = KasseneckReceipt.fromJson(j);
       expect(r.receiptId, 'TEST-ID-1');
-      expect(r.taxnr, '');
+      expect(r.taxNumber, '');
       expect(r.companyName, '');
       expect(r.footer1, '');
       expect(r.isSmallBusiness, isFalse);
@@ -205,32 +205,32 @@ void main() {
         final r = KasseneckReceipt.fromJson(baseJson()..remove('company'));
 
         expect(r.receiptId, 'TEST-ID-1', reason: 'der Beleg kommt heraus');
-        expect(r.fehlendePflichtangaben, ['company']);
-        expect(r.pflichtangabenVollstaendig, isFalse);
+        expect(r.missingMandatoryFields, ['company']);
+        expect(r.hasMandatoryFields, isFalse);
       });
 
       test('eine Firma aus lauter Leerzeichen zaehlt nicht als Bezeichnung', () {
         final r = KasseneckReceipt.fromJson(baseJson()..['company'] = '   ');
-        expect(r.fehlendePflichtangaben, ['company']);
+        expect(r.missingMandatoryFields, ['company']);
       });
 
       test('falsch getippte Firma ebenso', () {
         final r = KasseneckReceipt.fromJson(baseJson()..['company'] = 42);
-        expect(r.fehlendePflichtangaben, ['company']);
+        expect(r.missingMandatoryFields, ['company']);
       });
 
       test('fromMetadata fuehrt dieselbe Pruefung', () {
         final receipt = baseJson()['receipt'] as Map<String, dynamic>;
-        expect(KasseneckReceipt.fromMetadata(receipt, const {}).fehlendePflichtangaben, ['company']);
+        expect(KasseneckReceipt.fromMetadata(receipt, const {}).missingMandatoryFields, ['company']);
         expect(
             KasseneckReceipt.fromMetadata(receipt, {'company': 'Kasseneck Test GmbH'})
-                .fehlendePflichtangaben,
+                .missingMandatoryFields,
             isEmpty);
       });
 
       test('ein vollstaendiger Beleg meldet keinen Mangel', () {
-        expect(cartA().fehlendePflichtangaben, isEmpty);
-        expect(cartA().pflichtangabenVollstaendig, isTrue);
+        expect(cartA().missingMandatoryFields, isEmpty);
+        expect(cartA().hasMandatoryFields, isTrue);
       });
 
       test('Anschrift, Steuerangabe und Fusszeilen bleiben Zierde', () {
@@ -238,13 +238,13 @@ void main() {
         // Rechnung nach § 11 UStG. Ein Mangel hier wuerde jeden Beleg eines
         // Betriebs ohne Fusszeile als unvollstaendig melden.
         final j = baseJson()
-          ..remove('taxnr')
+          ..remove('taxNumber')
           ..remove('street')
           ..remove('zip')
           ..remove('city')
           ..remove('footer1')
           ..remove('footer2');
-        expect(KasseneckReceipt.fromJson(j).fehlendePflichtangaben, isEmpty);
+        expect(KasseneckReceipt.fromJson(j).missingMandatoryFields, isEmpty);
       });
     });
 

@@ -1,0 +1,4738 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "61892b91e6a8a0f273dcfdeb63809d92d98fb837a3c0baa782f03b29dd3b8b7a",
+    "inputsSha256": "cee31126cc755fd21441abae289997aeb0884a15eb230ce231defd8bb0bdc0fd",
+    "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+    "inputs": [
+      "docs/api/fehlercodes.json",
+      "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/beleg-mail-core.js",
+      "functions/gemeinsam/api-rand.js",
+      "functions/gemeinsam/api-vokabular-v3.js",
+      "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/storno-core.js",
+      "functions/gemeinsam/tip-core.js",
+      "functions/gemeinsam/vat-buckets.js",
+      "functions/gemeinsam/zahlungen-core.js",
+      "functions/invoice-api-core.js",
+      "functions/invoice-api-endpoints.js",
+      "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
+      "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
+      "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
+      "functions/test/unit/helpers/kassen-fehlerstellen.js",
+      "functions/test/unit/v3-vertrag-export.test.js"
+    ]
+  },
+  "channel": "api",
+  "cases": [
+    {
+      "name": "start_receipt",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "start"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 1,
+            "receiptType": "start",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-1",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "Ypz0zq2NAR7wXxDJ8RIXPg==",
+            "signaturePreviousReceipt": "AshR0Dg4KFE=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000009c055361",
+            "payments": [],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMV8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9ZcHowenEyTl9BQkMxMjNfQXNoUjBEZzRLRkU9.pWSV8ZAoCLZLsM_A8R2WN5c3dkk0nNMu3rgG75zT1e67FwrhOyiV_gWBrwGqTnJZwXXO1a0zq6TM8m189Kmo5Q",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-1_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_Ypz0zq2N_ABC123_AshR0Dg4KFE=_pWSV8ZAoCLZLsM/A8R2WN5c3dkk0nNMu3rgG75zT1e67FwrhOyiV/gWBrwGqTnJZwXXO1a0zq6TM8m189Kmo5Q==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": []
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "STARTBELEG",
+                "tone": "receipt_type"
+              },
+              {
+                "kind": "text",
+                "text": "Nullbeleg zur Inbetriebnahme",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "text",
+                "text": "Prüfangaben",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Barumsatz:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Signatur:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "signiert",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Signaturkarte:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0xABC123",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zertifizierungsdienst:",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Testsignatur (AT100)",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-1_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_Ypz0zq2N_ABC123_AshR0Dg4KFE=_pWSV8ZAoCLZLsM/A8R2WN5c3dkk0nNMu3rgG75zT1e67FwrhOyiV/gWBrwGqTnJZwXXO1a0zq6TM8m189Kmo5Q=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "sale_card_with_tip",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 300,
+            "vat": 20
+          }
+        ],
+        "payments": [
+          {
+            "method": "creditCard",
+            "amountCents": 700,
+            "provider": "sumup",
+            "providerPaymentId": "tx-4711",
+            "providerData": {
+              "cardLast4": "4242",
+              "terminal": "T1"
+            }
+          }
+        ],
+        "tip": {
+          "cents": 100,
+          "receivedImmediately": false
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 2,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-2",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "creditCard",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 6,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 1,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "girlnmCVSdImcB9LEr65jQ==",
+            "signaturePreviousReceipt": "6Mn4bx4N/M8=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "creditCard",
+                "amountCents": 700,
+                "provider": "sumup"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMl8yMDI2LTA5LTI2VDEwOjAwOjAwXzYsMDBfMCwwMF8wLDAwXzEsMDBfMCwwMF9naXJsbm1DVl9BQkMxMjNfNk1uNGJ4NE4vTTg9.8VaXQwBb_1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_6,00_0,00_0,00_1,00_0,00_girlnmCV_ABC123_6Mn4bx4N/M8=_8VaXQwBb/1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg==",
+            "tipCents": 100,
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 300,
+                "vat": 20,
+                "priceOne": 3
+              },
+              {
+                "kind": "tip",
+                "name": "Trinkgeld Personal",
+                "amount": 1,
+                "quantity": 1,
+                "priceOne": 1,
+                "priceOneCents": 100,
+                "unitPriceCents": 100,
+                "vat": 0,
+                "vatRate": 0,
+                "paymentMethod": "creditCard",
+                "recipient": null,
+                "receivedImmediately": false
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-2",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2  x Kaffee je 3,00",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Trinkgeld Personal",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,00 D",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,00",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "5,00",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "D 0%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,00",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,00",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Kartenzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_6,00_0,00_0,00_1,00_0,00_girlnmCV_ABC123_6Mn4bx4N/M8=_8VaXQwBb/1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Sumup Beleg",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartentyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartennummer:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "**** **** **** ",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungstyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamtbetrag:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Transaktionscode:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Modus:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "sale_cash_tendered",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 316,
+            "tenderedCents": 500
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 3,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-3",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 3.16,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "izsnQcNu1xpqCzEZFG8+tg==",
+            "signaturePreviousReceipt": "HhOPJTRRalc=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 316,
+                "tenderedCents": 500,
+                "changeCents": 184
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtM18yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMywxNl8wLDAwXzAsMDBfMCwwMF9penNuUWNOdV9BQkMxMjNfSGhPUEpUUlJhbGM9.yWN78jiyeGFxKsTzPGv0CyrzcHFwW_Zmc5Sl3r7FyllBXKRXQf_qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_3,16_0,00_0,00_0,00_izsnQcNu_ABC123_HhOPJTRRalc=_yWN78jiyeGFxKsTzPGv0CyrzcHFwW/Zmc5Sl3r7FyllBXKRXQf/qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Semmel",
+                "amount": 4,
+                "priceOneCents": 79,
+                "vat": 10,
+                "priceOne": 0.79
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-3",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "4  x Semmel je 0,79",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,16 B",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "B 10%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,29",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2,87",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,16",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,16 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "  Gegeben:",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "5,00 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "  Rückgeld:",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,84 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_3,16_0,00_0,00_0,00_izsnQcNu_ABC123_HhOPJTRRalc=_yWN78jiyeGFxKsTzPGv0CyrzcHFwW/Zmc5Sl3r7FyllBXKRXQf/qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "sale_mixed_payments",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Torte",
+            "amount": 1,
+            "priceOneCents": 700,
+            "vat": 10
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 200
+          },
+          {
+            "method": "creditCard",
+            "amountCents": 500,
+            "provider": "sumup",
+            "providerPaymentId": "tx-4712",
+            "providerData": {
+              "cardLast4": "4242",
+              "terminal": "T1"
+            }
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 4,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-4",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "mixed",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 7,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "V2ekav20znVxKgmTPRuabQ==",
+            "signaturePreviousReceipt": "NMOAojrHQmc=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000fd4f30a9",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 200
+              },
+              {
+                "id": "p2",
+                "method": "creditCard",
+                "amountCents": 500,
+                "provider": "sumup"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfNywwMF8wLDAwXzAsMDBfMCwwMF9WMmVrYXYyMF9BQkMxMjNfTk1PQW9qckhRbWM9.-OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA-ewViGfUdVOhpPn0tpqzrp30x4B1j_yNJ3gBjVOeSNDJolfdVw",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_0,00_7,00_0,00_0,00_0,00_V2ekav20_ABC123_NMOAojrHQmc=_+OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA+ewViGfUdVOhpPn0tpqzrp30x4B1j/yNJ3gBjVOeSNDJolfdVw==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Torte",
+                "amount": 1,
+                "priceOneCents": 700,
+                "vat": 10,
+                "priceOne": 7
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-4",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Torte",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,00 B",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "B 10%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,64",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,36",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "Zahlungsarten:",
+                "align": "left",
+                "bold": false
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1. Barzahlung",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2,00 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2. Kartenzahlung",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "5,00 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_0,00_7,00_0,00_0,00_0,00_V2ekav20_ABC123_NMOAojrHQmc=_+OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA+ewViGfUdVOhpPn0tpqzrp30x4B1j/yNJ3gBjVOeSNDJolfdVw=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "2. Kartenzahlung",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Sumup Beleg",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartentyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartennummer:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "**** **** **** ",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungstyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamtbetrag:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Transaktionscode:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Modus:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "sale_v2_items_value_voucher",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Tee",
+            "quantity": 3,
+            "unitPriceCents": 290,
+            "vatRate": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "value",
+            "valueCents": 500,
+            "code": "WG-1"
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 370
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 5,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-5",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "redeem",
+                "type": "value",
+                "valueCents": 500,
+                "code": "WG-1",
+                "value": 5,
+                "name": "Wertgutschein"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 8.7,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "X1ROZbuWXJxg0xCA9eb0Tw==",
+            "signaturePreviousReceipt": "3gYQ4xAXwOM=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000081e09afe",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 370
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNV8yMDI2LTA5LTI2VDEwOjAwOjAwXzgsNzBfMCwwMF8wLDAwXzAsMDBfMCwwMF9YMVJPWmJ1V19BQkMxMjNfM2dZUTR4QVh3T009.LbacnDlwUMarI6Qc5N82XpI0zEvGbwD_LdtZxta-Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM_j9p7GtfljsTw",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-5_2026-09-26T10:00:00_8,70_0,00_0,00_0,00_0,00_X1ROZbuW_ABC123_3gYQ4xAXwOM=_LbacnDlwUMarI6Qc5N82XpI0zEvGbwD/LdtZxta+Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM/j9p7GtfljsTw==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Tee",
+                "quantity": 3,
+                "unitPriceCents": 290,
+                "vatRate": 20,
+                "amount": 3,
+                "vat": 20,
+                "priceOneCents": 290,
+                "priceOne": 2.9
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-5",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "3  x Tee je 2,90",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "8,70 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,45",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,25",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "8,70",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zwischensumme",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "8,70 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Wertgutschein",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-5,00 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,70 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-5_2026-09-26T10:00:00_8,70_0,00_0,00_0,00_0,00_X1ROZbuW_ABC123_3gYQ4xAXwOM=_LbacnDlwUMarI6Qc5N82XpI0zEvGbwD/LdtZxta+Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM/j9p7GtfljsTw=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "zero_receipt",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "zero"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 6,
+            "receiptType": "zero",
+            "zeroKind": "manual",
+            "receiptId": "KECK-1-ID-6",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "RlNOHunJ9a3wfMGEG9jAxA==",
+            "signaturePreviousReceipt": "RHX8rm7hA9M=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000003f1f973d",
+            "payments": [],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNl8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9SbE5PSHVuSl9BQkMxMjNfUkhYOHJtN2hBOU09.yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_RlNOHunJ_ABC123_RHX8rm7hA9M=_yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "registrationInfo": {
+              "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
+              "cashregisterRegisteredAt": null
+            },
+            "items": []
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": {
+            "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
+            "cashregisterRegisteredAt": null
+          },
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "NULLBELEG",
+                "tone": "receipt_type"
+              },
+              {
+                "kind": "text",
+                "text": "Prüfbeleg",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-6",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "text",
+                "text": "Prüfangaben",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Barumsatz:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Signatur:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "signiert",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Signaturkarte:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0xABC123",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zertifizierungsdienst:",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Testsignatur (AT100)",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Karte registriert:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "11.03.2024",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_RlNOHunJ_ABC123_RHX8rm7hA9M=_yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "error_payments_required",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 300,
+            "vat": 20
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "payments fehlt – unter /v3 ist die Zahlungsliste Pflicht.",
+        "data": {
+          "code": "payments_required"
+        },
+        "code": "payments_required"
+      }
+    },
+    {
+      "name": "error_payment_method_not_supported",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 300,
+            "vat": 20
+          }
+        ],
+        "paymentMethod": "cash"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "paymentMethod wird unter /v3 nicht mehr unterstützt – bitte payments verwenden.",
+        "data": {
+          "code": "payment_method_not_supported"
+        },
+        "code": "payment_method_not_supported"
+      }
+    },
+    {
+      "name": "error_payments_sum_mismatch",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 300,
+            "vat": 20
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 500
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die Summe der Zahlungen (500) entspricht nicht dem Zahlbetrag (600).",
+        "data": {
+          "code": "payments_sum_mismatch",
+          "expectedCents": 600
+        },
+        "code": "payments_sum_mismatch"
+      }
+    },
+    {
+      "name": "error_receipt_type_invalid",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "rechnung",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 300,
+            "vat": 20
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 600
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Ungültige Daten: receiptType keine von: start, standard, zero, cancellation, training",
+        "data": {
+          "code": "receipt_type_invalid"
+        },
+        "code": "receipt_type_invalid"
+      }
+    },
+    {
+      "name": "error_german_parameter",
+      "endpoint": "createReceipt",
+      "path": "/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 300,
+            "vat": 20,
+            "sofortErhalten": true
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 600
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "code": "validation",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "items[0].sofortErhalten",
+              "message": "Unbekanntes Feld."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "get_card_receipt_with_cancellation",
+      "endpoint": "getReceipt",
+      "path": "/v3/getReceipt",
+      "params": {
+        "receiptId": "KECK-1-ID-2"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "company": "Bäckerei Welt",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "phone": "+43 1 234",
+          "is_small_business": false,
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "thanks_message": "Bis bald",
+          "kreiseck_logo": false,
+          "logo_url": null,
+          "receipt": {
+            "counter": 2,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-2",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "creditCard",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 6,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 1,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "girlnmCVSdImcB9LEr65jQ==",
+            "signaturePreviousReceipt": "6Mn4bx4N/M8=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "creditCard",
+                "amountCents": 700,
+                "provider": "sumup"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMl8yMDI2LTA5LTI2VDEwOjAwOjAwXzYsMDBfMCwwMF8wLDAwXzEsMDBfMCwwMF9naXJsbm1DVl9BQkMxMjNfNk1uNGJ4NE4vTTg9.8VaXQwBb_1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_6,00_0,00_0,00_1,00_0,00_girlnmCV_ABC123_6Mn4bx4N/M8=_8VaXQwBb/1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg==",
+            "tipCents": 100,
+            "cancellations": [
+              {
+                "receiptId": "KECK-1-ID-7",
+                "at": 1790409600000,
+                "by": null,
+                "note": null,
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 2
+                  },
+                  {
+                    "index": 1,
+                    "quantity": 1
+                  }
+                ],
+                "refundedByPayment": {
+                  "p1": 700
+                }
+              }
+            ],
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 300,
+                "vat": 20,
+                "priceOne": 3
+              },
+              {
+                "kind": "tip",
+                "name": "Trinkgeld Personal",
+                "amount": 1,
+                "quantity": 1,
+                "priceOne": 1,
+                "priceOneCents": 100,
+                "unitPriceCents": 100,
+                "vat": 0,
+                "vatRate": 0,
+                "paymentMethod": "creditCard",
+                "recipient": null,
+                "receivedImmediately": false
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-2",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2  x Kaffee je 3,00",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Trinkgeld Personal",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,00 D",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,00",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "5,00",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "D 0%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,00",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,00",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Kartenzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_6,00_0,00_0,00_1,00_0,00_girlnmCV_ABC123_6Mn4bx4N/M8=_8VaXQwBb/1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Sumup Beleg",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartentyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartennummer:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "**** **** **** ",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungstyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamtbetrag:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Transaktionscode:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Modus:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "get_cancellation_receipt",
+      "endpoint": "getReceipt",
+      "path": "/v3/getReceipt",
+      "params": {
+        "receiptId": "KECK-1-ID-7"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "company": "Bäckerei Welt",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "phone": "+43 1 234",
+          "is_small_business": false,
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "thanks_message": "Bis bald",
+          "kreiseck_logo": false,
+          "logo_url": null,
+          "receipt": {
+            "counter": 7,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-7",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "creditCard",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-2 – Fehleingabe",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": -6,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": -1,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "e42Zjx66gXyXfp6ZK6VUzA==",
+            "signaturePreviousReceipt": "dESbUhmSTnM=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000d5ed0baa",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "creditCard",
+                "amountCents": -700,
+                "provider": "sumup",
+                "refundOf": "p1"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtN18yMDI2LTA5LTI2VDEwOjAwOjAwXy02LDAwXzAsMDBfMCwwMF8tMSwwMF8wLDAwX1UxUlBfQUJDMTIzX2RFU2JVaG1TVG5NPQ.qA-w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb_PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-7_2026-09-26T10:00:00_-6,00_0,00_0,00_-1,00_0,00_U1RP_ABC123_dESbUhmSTnM=_qA+w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb/PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-2",
+              "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "input_error",
+            "tipCents": -100,
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Kaffee",
+                "quantity": 2,
+                "unitPriceCents": -300,
+                "vatRate": 20,
+                "amount": 2,
+                "vat": 20,
+                "priceOneCents": -300,
+                "priceOne": -3
+              },
+              {
+                "name": "Trinkgeld Personal",
+                "quantity": 1,
+                "unitPriceCents": -100,
+                "vatRate": 0,
+                "kind": "tip",
+                "recipient": null,
+                "paymentMethod": "creditCard",
+                "amount": 1,
+                "vat": 0,
+                "priceOneCents": -100,
+                "priceOne": -1,
+                "receivedImmediately": false
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "STORNOBELEG",
+                "tone": "receipt_type"
+              },
+              {
+                "kind": "text",
+                "text": "Stornobuchung zu Beleg KECK-1-ID-2",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "vom 26.09.2026, 10:00 Uhr",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Grund: Fehleingabe",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-7",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2  x Kaffee je -3,00",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-6,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Trinkgeld Personal",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-1,00 D",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-1,00",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-5,00",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-6,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "D 0%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,00",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-1,00",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-1,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-7,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Kartenzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "STORNO zu KECK-1-ID-2 – Fehleingabe",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-7_2026-09-26T10:00:00_-6,00_0,00_0,00_-1,00_0,00_U1RP_ABC123_dESbUhmSTnM=_qA+w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb/PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Sumup Beleg",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartentyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartennummer:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "**** **** **** ",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungstyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamtbetrag:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Transaktionscode:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Modus:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "get_mixed_receipt",
+      "endpoint": "getReceipt",
+      "path": "/v3/getReceipt",
+      "params": {
+        "receiptId": "KECK-1-ID-4"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "company": "Bäckerei Welt",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "phone": "+43 1 234",
+          "is_small_business": false,
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "thanks_message": "Bis bald",
+          "kreiseck_logo": false,
+          "logo_url": null,
+          "receipt": {
+            "counter": 4,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-4",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "mixed",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 7,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "V2ekav20znVxKgmTPRuabQ==",
+            "signaturePreviousReceipt": "NMOAojrHQmc=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000fd4f30a9",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 200
+              },
+              {
+                "id": "p2",
+                "method": "creditCard",
+                "amountCents": 500,
+                "provider": "sumup"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfNywwMF8wLDAwXzAsMDBfMCwwMF9WMmVrYXYyMF9BQkMxMjNfTk1PQW9qckhRbWM9.-OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA-ewViGfUdVOhpPn0tpqzrp30x4B1j_yNJ3gBjVOeSNDJolfdVw",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_0,00_7,00_0,00_0,00_0,00_V2ekav20_ABC123_NMOAojrHQmc=_+OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA+ewViGfUdVOhpPn0tpqzrp30x4B1j/yNJ3gBjVOeSNDJolfdVw==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Torte",
+                "amount": 1,
+                "priceOneCents": 700,
+                "vat": 10,
+                "priceOne": 7
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-4",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Torte",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,00 B",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "B 10%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,64",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,36",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "Zahlungsarten:",
+                "align": "left",
+                "bold": false
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1. Barzahlung",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2,00 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2. Kartenzahlung",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "5,00 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_0,00_7,00_0,00_0,00_0,00_V2ekav20_ABC123_NMOAojrHQmc=_+OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA+ewViGfUdVOhpPn0tpqzrp30x4B1j/yNJ3gBjVOeSNDJolfdVw=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "2. Kartenzahlung",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Sumup Beleg",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartentyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kartennummer:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "**** **** **** ",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungstyp:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "n/a",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamtbetrag:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Transaktionscode:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Modus:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "get_zero_receipt",
+      "endpoint": "getReceipt",
+      "path": "/v3/getReceipt",
+      "params": {
+        "receiptId": "KECK-1-ID-6"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "company": "Bäckerei Welt",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "phone": "+43 1 234",
+          "is_small_business": false,
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "thanks_message": "Bis bald",
+          "kreiseck_logo": false,
+          "logo_url": null,
+          "receipt": {
+            "counter": 6,
+            "receiptType": "zero",
+            "zeroKind": "manual",
+            "receiptId": "KECK-1-ID-6",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "RlNOHunJ9a3wfMGEG9jAxA==",
+            "signaturePreviousReceipt": "RHX8rm7hA9M=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000003f1f973d",
+            "payments": [],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNl8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9SbE5PSHVuSl9BQkMxMjNfUkhYOHJtN2hBOU09.yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_RlNOHunJ_ABC123_RHX8rm7hA9M=_yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "registrationInfo": {
+              "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
+              "cashregisterRegisteredAt": null
+            },
+            "items": []
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": {
+            "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
+            "cashregisterRegisteredAt": null
+          },
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "NULLBELEG",
+                "tone": "receipt_type"
+              },
+              {
+                "kind": "text",
+                "text": "Prüfbeleg",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-6",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "text",
+                "text": "Prüfangaben",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Barumsatz:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Signatur:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "signiert",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Signaturkarte:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0xABC123",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zertifizierungsdienst:",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Testsignatur (AT100)",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Karte registriert:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "11.03.2024",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_RlNOHunJ_ABC123_RHX8rm7hA9M=_yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "error_receipt_not_found",
+      "endpoint": "getReceipt",
+      "path": "/v3/getReceipt",
+      "params": {
+        "receiptId": "KECK-1-ID-99"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die angegebene receiptId existiert nicht.",
+        "data": {
+          "code": "receipt_not_found"
+        },
+        "code": "receipt_not_found"
+      }
+    },
+    {
+      "name": "report",
+      "endpoint": "getReportV2",
+      "path": "/v3/getReportV2",
+      "params": {
+        "start": "2026-09-01",
+        "end": "2026-09-30"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "receipts": [
+            {
+              "counter": 1,
+              "receiptType": "start",
+              "zeroKind": null,
+              "receiptId": "KECK-1-ID-1",
+              "cashregisterId": "KECK-1",
+              "timeStamp": "2026-09-26T10:00:00",
+              "vouchers": [],
+              "paymentMethod": "cash",
+              "customerDetails": null,
+              "legalMessage": null,
+              "customProjectId": null,
+              "creditCardProvider": null,
+              "amountRateStandard": 0,
+              "amountRateReduced1": 0,
+              "amountRateReduced2": 0,
+              "amountRateZero": 0,
+              "amountRateSpecial": 0,
+              "turnoverCounterAES256ICM": "Ypz0zq2NAR7wXxDJ8RIXPg==",
+              "signaturePreviousReceipt": "AshR0Dg4KFE=",
+              "certificateSerialNumber": "ABC123",
+              "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000009c055361",
+              "payments": [],
+              "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMV8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9ZcHowenEyTl9BQkMxMjNfQXNoUjBEZzRLRkU9.pWSV8ZAoCLZLsM_A8R2WN5c3dkk0nNMu3rgG75zT1e67FwrhOyiV_gWBrwGqTnJZwXXO1a0zq6TM8m189Kmo5Q",
+              "signatureSuccess": true,
+              "qr": "_R1-AT100_KECK-1_KECK-1-ID-1_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_Ypz0zq2N_ABC123_AshR0Dg4KFE=_pWSV8ZAoCLZLsM/A8R2WN5c3dkk0nNMu3rgG75zT1e67FwrhOyiV/gWBrwGqTnJZwXXO1a0zq6TM8m189Kmo5Q==",
+              "headerVersionId": "auto1",
+              "layoutRuleset": 2,
+              "items": []
+            },
+            {
+              "counter": 2,
+              "receiptType": "standard",
+              "zeroKind": null,
+              "receiptId": "KECK-1-ID-2",
+              "cashregisterId": "KECK-1",
+              "timeStamp": "2026-09-26T10:00:00",
+              "vouchers": [],
+              "paymentMethod": "creditCard",
+              "customerDetails": null,
+              "legalMessage": null,
+              "customProjectId": null,
+              "creditCardProvider": null,
+              "amountRateStandard": 6,
+              "amountRateReduced1": 0,
+              "amountRateReduced2": 0,
+              "amountRateZero": 1,
+              "amountRateSpecial": 0,
+              "turnoverCounterAES256ICM": "girlnmCVSdImcB9LEr65jQ==",
+              "signaturePreviousReceipt": "6Mn4bx4N/M8=",
+              "certificateSerialNumber": "ABC123",
+              "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+              "payments": [
+                {
+                  "id": "p1",
+                  "method": "creditCard",
+                  "amountCents": 700,
+                  "provider": "sumup"
+                }
+              ],
+              "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMl8yMDI2LTA5LTI2VDEwOjAwOjAwXzYsMDBfMCwwMF8wLDAwXzEsMDBfMCwwMF9naXJsbm1DVl9BQkMxMjNfNk1uNGJ4NE4vTTg9.8VaXQwBb_1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg",
+              "signatureSuccess": true,
+              "qr": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_6,00_0,00_0,00_1,00_0,00_girlnmCV_ABC123_6Mn4bx4N/M8=_8VaXQwBb/1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg==",
+              "tipCents": 100,
+              "cancellations": [
+                {
+                  "receiptId": "KECK-1-ID-7",
+                  "at": 1790409600000,
+                  "by": null,
+                  "note": null,
+                  "items": [
+                    {
+                      "index": 0,
+                      "quantity": 2
+                    },
+                    {
+                      "index": 1,
+                      "quantity": 1
+                    }
+                  ],
+                  "refundedByPayment": {
+                    "p1": 700
+                  }
+                }
+              ],
+              "headerVersionId": "auto1",
+              "layoutRuleset": 2,
+              "items": [
+                {
+                  "name": "Kaffee",
+                  "amount": 2,
+                  "priceOneCents": 300,
+                  "vat": 20,
+                  "priceOne": 3
+                },
+                {
+                  "kind": "tip",
+                  "name": "Trinkgeld Personal",
+                  "amount": 1,
+                  "quantity": 1,
+                  "priceOne": 1,
+                  "priceOneCents": 100,
+                  "unitPriceCents": 100,
+                  "vat": 0,
+                  "vatRate": 0,
+                  "paymentMethod": "creditCard",
+                  "recipient": null,
+                  "receivedImmediately": false
+                }
+              ]
+            },
+            {
+              "counter": 3,
+              "receiptType": "standard",
+              "zeroKind": null,
+              "receiptId": "KECK-1-ID-3",
+              "cashregisterId": "KECK-1",
+              "timeStamp": "2026-09-26T10:00:00",
+              "vouchers": [],
+              "paymentMethod": "cash",
+              "customerDetails": null,
+              "legalMessage": null,
+              "customProjectId": null,
+              "creditCardProvider": null,
+              "amountRateStandard": 0,
+              "amountRateReduced1": 3.16,
+              "amountRateReduced2": 0,
+              "amountRateZero": 0,
+              "amountRateSpecial": 0,
+              "turnoverCounterAES256ICM": "izsnQcNu1xpqCzEZFG8+tg==",
+              "signaturePreviousReceipt": "HhOPJTRRalc=",
+              "certificateSerialNumber": "ABC123",
+              "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+              "payments": [
+                {
+                  "id": "p1",
+                  "method": "cash",
+                  "amountCents": 316,
+                  "tenderedCents": 500,
+                  "changeCents": 184
+                }
+              ],
+              "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtM18yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMywxNl8wLDAwXzAsMDBfMCwwMF9penNuUWNOdV9BQkMxMjNfSGhPUEpUUlJhbGM9.yWN78jiyeGFxKsTzPGv0CyrzcHFwW_Zmc5Sl3r7FyllBXKRXQf_qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw",
+              "signatureSuccess": true,
+              "qr": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_3,16_0,00_0,00_0,00_izsnQcNu_ABC123_HhOPJTRRalc=_yWN78jiyeGFxKsTzPGv0CyrzcHFwW/Zmc5Sl3r7FyllBXKRXQf/qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw==",
+              "cancellations": [
+                {
+                  "receiptId": "KECK-1-ID-8",
+                  "at": 1790409600000,
+                  "by": null,
+                  "note": null,
+                  "items": [
+                    {
+                      "index": 0,
+                      "quantity": 1
+                    }
+                  ],
+                  "refundedByPayment": {
+                    "p1": 79
+                  }
+                }
+              ],
+              "headerVersionId": "auto1",
+              "layoutRuleset": 2,
+              "items": [
+                {
+                  "name": "Semmel",
+                  "amount": 4,
+                  "priceOneCents": 79,
+                  "vat": 10,
+                  "priceOne": 0.79
+                }
+              ]
+            },
+            {
+              "counter": 4,
+              "receiptType": "standard",
+              "zeroKind": null,
+              "receiptId": "KECK-1-ID-4",
+              "cashregisterId": "KECK-1",
+              "timeStamp": "2026-09-26T10:00:00",
+              "vouchers": [],
+              "paymentMethod": "mixed",
+              "customerDetails": null,
+              "legalMessage": null,
+              "customProjectId": null,
+              "creditCardProvider": null,
+              "amountRateStandard": 0,
+              "amountRateReduced1": 7,
+              "amountRateReduced2": 0,
+              "amountRateZero": 0,
+              "amountRateSpecial": 0,
+              "turnoverCounterAES256ICM": "V2ekav20znVxKgmTPRuabQ==",
+              "signaturePreviousReceipt": "NMOAojrHQmc=",
+              "certificateSerialNumber": "ABC123",
+              "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000fd4f30a9",
+              "payments": [
+                {
+                  "id": "p1",
+                  "method": "cash",
+                  "amountCents": 200
+                },
+                {
+                  "id": "p2",
+                  "method": "creditCard",
+                  "amountCents": 500,
+                  "provider": "sumup"
+                }
+              ],
+              "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfNywwMF8wLDAwXzAsMDBfMCwwMF9WMmVrYXYyMF9BQkMxMjNfTk1PQW9qckhRbWM9.-OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA-ewViGfUdVOhpPn0tpqzrp30x4B1j_yNJ3gBjVOeSNDJolfdVw",
+              "signatureSuccess": true,
+              "qr": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_0,00_7,00_0,00_0,00_0,00_V2ekav20_ABC123_NMOAojrHQmc=_+OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA+ewViGfUdVOhpPn0tpqzrp30x4B1j/yNJ3gBjVOeSNDJolfdVw==",
+              "headerVersionId": "auto1",
+              "layoutRuleset": 2,
+              "items": [
+                {
+                  "name": "Torte",
+                  "amount": 1,
+                  "priceOneCents": 700,
+                  "vat": 10,
+                  "priceOne": 7
+                }
+              ]
+            },
+            {
+              "counter": 5,
+              "receiptType": "standard",
+              "zeroKind": null,
+              "receiptId": "KECK-1-ID-5",
+              "cashregisterId": "KECK-1",
+              "timeStamp": "2026-09-26T10:00:00",
+              "vouchers": [
+                {
+                  "action": "redeem",
+                  "type": "value",
+                  "valueCents": 500,
+                  "code": "WG-1",
+                  "value": 5,
+                  "name": "Wertgutschein"
+                }
+              ],
+              "paymentMethod": "cash",
+              "customerDetails": null,
+              "legalMessage": null,
+              "customProjectId": null,
+              "creditCardProvider": null,
+              "amountRateStandard": 8.7,
+              "amountRateReduced1": 0,
+              "amountRateReduced2": 0,
+              "amountRateZero": 0,
+              "amountRateSpecial": 0,
+              "turnoverCounterAES256ICM": "X1ROZbuWXJxg0xCA9eb0Tw==",
+              "signaturePreviousReceipt": "3gYQ4xAXwOM=",
+              "certificateSerialNumber": "ABC123",
+              "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000081e09afe",
+              "payments": [
+                {
+                  "id": "p1",
+                  "method": "cash",
+                  "amountCents": 370
+                }
+              ],
+              "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNV8yMDI2LTA5LTI2VDEwOjAwOjAwXzgsNzBfMCwwMF8wLDAwXzAsMDBfMCwwMF9YMVJPWmJ1V19BQkMxMjNfM2dZUTR4QVh3T009.LbacnDlwUMarI6Qc5N82XpI0zEvGbwD_LdtZxta-Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM_j9p7GtfljsTw",
+              "signatureSuccess": true,
+              "qr": "_R1-AT100_KECK-1_KECK-1-ID-5_2026-09-26T10:00:00_8,70_0,00_0,00_0,00_0,00_X1ROZbuW_ABC123_3gYQ4xAXwOM=_LbacnDlwUMarI6Qc5N82XpI0zEvGbwD/LdtZxta+Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM/j9p7GtfljsTw==",
+              "headerVersionId": "auto1",
+              "layoutRuleset": 2,
+              "items": [
+                {
+                  "name": "Tee",
+                  "quantity": 3,
+                  "unitPriceCents": 290,
+                  "vatRate": 20,
+                  "amount": 3,
+                  "vat": 20,
+                  "priceOneCents": 290,
+                  "priceOne": 2.9
+                }
+              ]
+            },
+            {
+              "counter": 6,
+              "receiptType": "zero",
+              "zeroKind": "manual",
+              "receiptId": "KECK-1-ID-6",
+              "cashregisterId": "KECK-1",
+              "timeStamp": "2026-09-26T10:00:00",
+              "vouchers": [],
+              "paymentMethod": "cash",
+              "customerDetails": null,
+              "legalMessage": null,
+              "customProjectId": null,
+              "creditCardProvider": null,
+              "amountRateStandard": 0,
+              "amountRateReduced1": 0,
+              "amountRateReduced2": 0,
+              "amountRateZero": 0,
+              "amountRateSpecial": 0,
+              "turnoverCounterAES256ICM": "RlNOHunJ9a3wfMGEG9jAxA==",
+              "signaturePreviousReceipt": "RHX8rm7hA9M=",
+              "certificateSerialNumber": "ABC123",
+              "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000003f1f973d",
+              "payments": [],
+              "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNl8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9SbE5PSHVuSl9BQkMxMjNfUkhYOHJtN2hBOU09.yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA",
+              "signatureSuccess": true,
+              "qr": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_RlNOHunJ_ABC123_RHX8rm7hA9M=_yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA==",
+              "headerVersionId": "auto1",
+              "layoutRuleset": 2,
+              "registrationInfo": {
+                "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
+                "cashregisterRegisteredAt": null
+              },
+              "items": []
+            },
+            {
+              "counter": 7,
+              "receiptType": "cancellation",
+              "zeroKind": null,
+              "receiptId": "KECK-1-ID-7",
+              "cashregisterId": "KECK-1",
+              "timeStamp": "2026-09-26T10:00:00",
+              "vouchers": [],
+              "paymentMethod": "creditCard",
+              "customerDetails": null,
+              "legalMessage": "STORNO zu KECK-1-ID-2 – Fehleingabe",
+              "customProjectId": null,
+              "creditCardProvider": null,
+              "amountRateStandard": -6,
+              "amountRateReduced1": 0,
+              "amountRateReduced2": 0,
+              "amountRateZero": -1,
+              "amountRateSpecial": 0,
+              "turnoverCounterAES256ICM": "e42Zjx66gXyXfp6ZK6VUzA==",
+              "signaturePreviousReceipt": "dESbUhmSTnM=",
+              "certificateSerialNumber": "ABC123",
+              "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000d5ed0baa",
+              "payments": [
+                {
+                  "id": "p1",
+                  "method": "creditCard",
+                  "amountCents": -700,
+                  "provider": "sumup",
+                  "refundOf": "p1"
+                }
+              ],
+              "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtN18yMDI2LTA5LTI2VDEwOjAwOjAwXy02LDAwXzAsMDBfMCwwMF8tMSwwMF8wLDAwX1UxUlBfQUJDMTIzX2RFU2JVaG1TVG5NPQ.qA-w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb_PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g",
+              "signatureSuccess": true,
+              "qr": "_R1-AT100_KECK-1_KECK-1-ID-7_2026-09-26T10:00:00_-6,00_0,00_0,00_-1,00_0,00_U1RP_ABC123_dESbUhmSTnM=_qA+w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb/PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g==",
+              "cancellationOf": {
+                "receiptId": "KECK-1-ID-2",
+                "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+                "timeStamp": "2026-09-26T10:00:00"
+              },
+              "cancellationReason": "input_error",
+              "tipCents": -100,
+              "headerVersionId": "auto1",
+              "layoutRuleset": 2,
+              "items": [
+                {
+                  "name": "Kaffee",
+                  "quantity": 2,
+                  "unitPriceCents": -300,
+                  "vatRate": 20,
+                  "amount": 2,
+                  "vat": 20,
+                  "priceOneCents": -300,
+                  "priceOne": -3
+                },
+                {
+                  "name": "Trinkgeld Personal",
+                  "quantity": 1,
+                  "unitPriceCents": -100,
+                  "vatRate": 0,
+                  "kind": "tip",
+                  "recipient": null,
+                  "paymentMethod": "creditCard",
+                  "amount": 1,
+                  "vat": 0,
+                  "priceOneCents": -100,
+                  "priceOne": -1,
+                  "receivedImmediately": false
+                }
+              ]
+            },
+            {
+              "counter": 8,
+              "receiptType": "cancellation",
+              "zeroKind": null,
+              "receiptId": "KECK-1-ID-8",
+              "cashregisterId": "KECK-1",
+              "timeStamp": "2026-09-26T10:00:00",
+              "vouchers": [],
+              "paymentMethod": "cash",
+              "customerDetails": null,
+              "legalMessage": "STORNO zu KECK-1-ID-3 – Kunde hat storniert",
+              "customProjectId": null,
+              "creditCardProvider": null,
+              "amountRateStandard": 0,
+              "amountRateReduced1": -0.79,
+              "amountRateReduced2": 0,
+              "amountRateZero": 0,
+              "amountRateSpecial": 0,
+              "turnoverCounterAES256ICM": "FKv36maM5cSDIv7d/PNpSg==",
+              "signaturePreviousReceipt": "HOeSCtN5SAs=",
+              "certificateSerialNumber": "ABC123",
+              "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000ee9d92da",
+              "payments": [
+                {
+                  "id": "p1",
+                  "method": "cash",
+                  "amountCents": -79,
+                  "refundOf": "p1"
+                }
+              ],
+              "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtOF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfLTAsNzlfMCwwMF8wLDAwXzAsMDBfVTFSUF9BQkMxMjNfSE9lU0N0TjVTQXM9.Ydu4h8T-tNbFQvEprS0UStjcp7yPkjk8zHrGpKgt5GH8RdMCKMEnjNk0tYWaO_Bhap1mggRTXBhLQhAyi8nGxg",
+              "signatureSuccess": true,
+              "qr": "_R1-AT100_KECK-1_KECK-1-ID-8_2026-09-26T10:00:00_0,00_-0,79_0,00_0,00_0,00_U1RP_ABC123_HOeSCtN5SAs=_Ydu4h8T+tNbFQvEprS0UStjcp7yPkjk8zHrGpKgt5GH8RdMCKMEnjNk0tYWaO/Bhap1mggRTXBhLQhAyi8nGxg==",
+              "cancellationOf": {
+                "receiptId": "KECK-1-ID-3",
+                "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+                "timeStamp": "2026-09-26T10:00:00"
+              },
+              "cancellationReason": "customer_cancelled",
+              "headerVersionId": "auto1",
+              "layoutRuleset": 2,
+              "items": [
+                {
+                  "name": "Semmel",
+                  "quantity": 1,
+                  "unitPriceCents": -79,
+                  "vatRate": 10,
+                  "amount": 1,
+                  "vat": 10,
+                  "priceOneCents": -79,
+                  "priceOne": -0.79
+                }
+              ]
+            }
+          ],
+          "metadata": {
+            "label": "Laden",
+            "is_small_business": false,
+            "company": "Bäckerei Welt",
+            "phone": "+43 1 234",
+            "street": "Hauptplatz 1",
+            "zip": "1010",
+            "city": "Wien",
+            "footer1": "Danke",
+            "footer2": null,
+            "footer3": null,
+            "footer4": null,
+            "logo_url": null,
+            "thanks_message": "Bis bald",
+            "kreiseck_logo": false,
+            "taxNumber": "12-345/6789",
+            "vatId": "ATU12345678"
+          }
+        }
+      }
+    }
+  ]
+}

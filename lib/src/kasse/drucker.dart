@@ -1,0 +1,240 @@
+/// Netzwerk-Bondrucker über Epson „Server Direct Print", Zwilling von
+/// `pos/drucker.ts` im JS-Paket.
+///
+/// Das Backend führt je Konto Drucker mit einer geheimen Abhol-Adresse; die
+/// Kasse legt Druckjobs aus einem Zeilenmodell ([ReceiptLayout]) an, der
+/// Drucker holt sie selbst ab (alle paar Sekunden) und meldet das Ergebnis.
+/// Das ePOS-XML baut das Backend aus dem Zeichenraster.
+library;
+
+import 'dart:convert';
+import 'dart:typed_data';
+
+import '../../models/receipt_layout.dart';
+import '../../models/print_paper.dart';
+import '../aufrufe.dart';
+import '../register/fehler.dart';
+import '../register/transport.dart';
+
+/// Ein Netzwerk-Drucker des Kontos (`listMyPrinters`).
+class NetworkPrinter {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'id', 'name', 'kind', 'paperSize', 'active', 'createdAt', 'lastSeenAt', 'lastResult', 'printerSerial', 'sdpUrl'};
+
+  const NetworkPrinter({
+    required this.id,
+    required this.name,
+    required this.kind,
+    required this.paperSize,
+    required this.active,
+    this.createdAt,
+    this.lastSeenAt,
+    this.lastResult,
+    this.printerSerial,
+    this.sdpUrl,
+  });
+
+  final String id;
+  final String name;
+
+  /// Art des Druckers; heute nur `epson-sdp`.
+  final String kind;
+
+  /// `mm58` oder `mm80`.
+  final String paperSize;
+  final bool active;
+
+  /// Millisekunden seit 1970.
+  final int? createdAt;
+
+  /// Letzter Abruf des Druckers; `null` = noch nie verbunden.
+  final int? lastSeenAt;
+  final PrintResult? lastResult;
+
+  /// Kennung, die der Drucker selbst schickt (Feld ID im Drucker-Menü).
+  final String? printerSerial;
+
+  /// Abhol-Adresse für das Drucker-Menü, nur für den Chef bzw. das Konto.
+  final String? sdpUrl;
+
+  factory NetworkPrinter.fromJson(Map<String, dynamic> d) {
+    final e = d['lastResult'];
+    return NetworkPrinter(
+      id: d['id']?.toString() ?? '',
+      name: d['name']?.toString() ?? '',
+      kind: d['kind']?.toString() ?? 'epson-sdp',
+      paperSize: d['paperSize'] == 'mm58' ? 'mm58' : 'mm80',
+      active: d['active'] != false,
+      createdAt: _zahl(d['createdAt']),
+      lastSeenAt: _zahl(d['lastSeenAt']),
+      lastResult: e is Map ? PrintResult._aus(e) : null,
+      printerSerial: _text(d['printerSerial']),
+      sdpUrl: _text(d['sdpUrl']),
+    );
+  }
+}
+
+/// Ergebnis eines Drucks, wie der Drucker es meldet.
+class PrintResult {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'success', 'code', 'status', 'at'};
+
+  const PrintResult({required this.success, this.code, this.status, this.at});
+
+  final bool success;
+  final String? code;
+  final String? status;
+
+  /// Millisekunden seit 1970.
+  final int? at;
+
+  static PrintResult _aus(Map<dynamic, dynamic> e) => PrintResult(
+        success: e['success'] == true,
+        code: _text(e['code']),
+        status: _text(e['status']),
+        at: _zahl(e['at']),
+      );
+}
+
+/// Stände eines Druckjobs (Katalog `DRUCKJOB`).
+const List<String> printJobStatuses = ['pending', 'sent', 'printed', 'failed', 'expired'];
+
+/// Stand, wenn der Server einen nennt, den dieses Paket nicht kennt (oder
+/// keinen). Er beendet die Abfrage, gilt aber nie als gedruckt.
+const String printJobStatusUnknown = 'unknown';
+
+/// Bekannte Werte für `source` (Katalog `DRUCK_QUELLE`): die Kasse oder das
+/// Panel. Der Server nimmt Freitext bis 40 Zeichen an und übersetzt nur diese
+/// beiden.
+const List<String> printJobSources = ['pos', 'panel'];
+
+/// Endet die Abfrage bei diesem Stand? `printed`, `failed`, `expired`, `unknown`.
+bool isPrintJobFinished(String status) =>
+    status == 'printed' || status == 'failed' || status == 'expired' || status == printJobStatusUnknown;
+
+class PrintJob {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'jobId', 'status', 'createdAt', 'sentAt', 'result'};
+
+  const PrintJob({required this.jobId, required this.status, this.createdAt, this.sentAt, this.result});
+
+  final String jobId;
+
+  /// Einer aus [printJobStatuses] oder [printJobStatusUnknown].
+  final String status;
+  final int? createdAt;
+  final int? sentAt;
+  final PrintResult? result;
+}
+
+String _status(Object? v) => v is String && printJobStatuses.contains(v) ? v : printJobStatusUnknown;
+
+String _jobId(String name, Map<String, dynamic> d) {
+  final id = d['jobId'];
+  if (id is! String || id.isEmpty) {
+    throw KasseneckValidationError(name, 'Antwort enthaelt keine Kennung (data.jobId fehlt)', 'response');
+  }
+  return id;
+}
+
+String? _text(Object? v) => v is String && v.isNotEmpty ? v : null;
+
+int? _zahl(Object? v) => v is num && v.isFinite ? v.toInt() : null;
+
+/// Die Rasterzeilen eines Logos als Base64 (1 Bit je Punkt, links das höchste
+/// Bit, Zeilen auf ganze Bytes aufgefüllt), Zwilling von `rasterRowsBase64`.
+String rasterRowsBase64(PrintLogo logo) {
+  final r = logo.raster;
+  final jeZeile = (r.width + 7) >> 3;
+  final bytes = Uint8List(jeZeile * r.height);
+  for (var y = 0; y < r.height; y++) {
+    for (var x = 0; x < r.width; x++) {
+      if (r.dots[y * r.width + x] != 1) continue;
+      bytes[y * jeZeile + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+  }
+  return base64Encode(bytes);
+}
+
+/// Drucker und Druckjobs über die laufende Kassen-Sitzung.
+class PosPrinterClient {
+  const PosPrinterClient(this.transport);
+
+  final RegisterTransport transport;
+
+  /// Die Netzwerk-Drucker des Kontos.
+  Future<List<NetworkPrinter>> printers() async {
+    const name = Aufrufe.listMyPrinters;
+    final daten = await transport.call(name);
+    final liste = daten['printers'];
+    if (liste is! List) {
+      // Keine Liste ist etwas anderes als eine leere Liste: „noch kein
+      // Drucker" darf nicht aussehen wie „Antwort kaputt".
+      throw const KasseneckValidationError(name, 'Antwort enthaelt keine Liste (data.printers fehlt)', 'response');
+    }
+    return [
+      for (final e in liste) NetworkPrinter.fromJson(e is Map ? Map<String, dynamic>.from(e) : const {}),
+    ];
+  }
+
+  /// Einen Druckjob anlegen. [logo] ist das fertige Rasterbild
+  /// (`loadPrintLogo`), der Server dekodiert keine Bilder. [brandMark] druckt
+  /// das Kasseneck-Logo am Ende (am Draht `brand`). [source] ist Freitext,
+  /// bekannt sind [printJobSources].
+  Future<PrintJob> createPrintJob({
+    required String printerId,
+    required ReceiptLayout layout,
+    String? receiptId,
+    String? title,
+    String? source,
+    PrintLogo? logo,
+    bool brandMark = false,
+  }) async {
+    const name = Aufrufe.createPrintJob;
+    if (printerId.trim().isEmpty) {
+      throw const KasseneckValidationError(name, 'printerId fehlt', 'request');
+    }
+    final daten = await transport.call(name, params: {
+      'printerId': printerId,
+      'layout': layout.toJson(),
+      if (receiptId != null && receiptId.isNotEmpty) 'receiptId': receiptId,
+      if (title != null && title.isNotEmpty) 'title': title,
+      if (source != null && source.isNotEmpty) 'source': source,
+      if (logo != null)
+        'logo': {
+          'scale': logo.size.code,
+          'pxWidth': logo.pixelWidth,
+          'pxHeight': logo.pixelHeight,
+          'width': logo.raster.width,
+          'height': logo.raster.height,
+          'rows': rasterRowsBase64(logo),
+        },
+      if (brandMark) 'brand': true,
+    });
+    // Ohne Kennung kann niemand den Job abfragen; ein leerer Text wäre ein
+    // angeblich angelegter Job, und der Kassier druckte ein zweites Mal.
+    return PrintJob(jobId: _jobId(name, daten), status: _status(daten['status']));
+  }
+
+  /// Stand eines Druckjobs. Der Aufrufer fragt, bis [isPrintJobFinished] wahr
+  /// ist, und begrenzt die Abfrage trotzdem selbst: ein Drucker, der nie
+  /// abholt, bleibt `pending`.
+  Future<PrintJob> getPrintJob({required String printerId, required String jobId}) async {
+    const name = Aufrufe.getPrintJob;
+    if (printerId.trim().isEmpty || jobId.trim().isEmpty) {
+      throw const KasseneckValidationError(name, 'printerId und jobId sind Pflicht', 'request');
+    }
+    final d = await transport.call(name, params: {'printerId': printerId, 'jobId': jobId});
+    final e = d['result'];
+    return PrintJob(
+      jobId: _jobId(name, d),
+      status: _status(d['status']),
+      createdAt: _zahl(d['createdAt']),
+      sentAt: _zahl(d['sentAt']),
+      result: e is Map ? PrintResult._aus(e) : null,
+    );
+  }
+}

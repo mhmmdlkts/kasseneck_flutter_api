@@ -1,0 +1,28 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Zwei Positionen netto zu 20 %",
+  "request": {
+    "idempotencyKey": "ex-1",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 2,
+        "unitPriceCents": 5000,
+        "vatRate": 20,
+        "unit": "hour"
+      }
+    ]
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 10000,
+      "vatCents": 2000,
+      "grossCents": 12000
+    }
+  }
+}

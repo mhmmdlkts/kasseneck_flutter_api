@@ -98,10 +98,10 @@ class KeckPayment {
 
   /// Liest eine Zahlungsliste; alles ausser einer Liste (auch `null`) gilt als
   /// „keine Liste" -- wie im Backend.
-  static List<KeckPayment>? listeAus(Object? roh) {
-    if (roh is! List) return null;
+  static List<KeckPayment>? listFromJson(Object? raw) {
+    if (raw is! List) return null;
     return [
-      for (final e in roh)
+      for (final e in raw)
         if (e is Map) KeckPayment.fromJson(e),
     ];
   }
@@ -120,8 +120,8 @@ class KeckPayment {
       };
 }
 
-/// Eine Zahlung, wie der Aufrufer sie an `sellReceipt`/`verkaufen`/
-/// `stornieren` schickt — Zwilling von `ReceiptPaymentInput`. `id` und
+/// Eine Zahlung, wie der Aufrufer sie an `sellReceipt`/`sell`/
+/// `cancel` schickt – Zwilling von `ReceiptPaymentInput`. `id` und
 /// `changeCents` vergibt der Server.
 ///
 /// - [method]: jede Zahlungsart ausser [KeckPaymentMethod.mixed].
@@ -134,7 +134,7 @@ class KeckPayment {
 /// - [tipCents]: Trinkgeld dieser Zahlung, ganze Cent > 0, Teil von
 ///   [amountCents]; nur am Verkauf, nie neben `tip`.
 ///
-/// Hier geprueft wird nur die Form ([zahlungenFehler]); Summe,
+/// Hier geprueft wird nur die Form ([paymentsError]); Summe,
 /// Anbieter-Pflicht und Trinkgeld prueft der Server, der den Zahlbetrag kennt.
 class KeckPaymentInput {
   const KeckPaymentInput({
@@ -171,27 +171,27 @@ class KeckPaymentInput {
 }
 
 /// Hoechstzahl der Zahlungen je Beleg (Backend: MAX_ZAHLUNGEN).
-const int zahlungenHoechstzahl = 20;
+const int maxPayments = 20;
 
 /// Was an der Zahlungsliste nicht stimmt -- `null`, wenn die Form passt.
 ///
 /// Zwilling von `gepruefteZahlungen` im Client des npm-Pakets, Wortlaut
-/// inklusive; [storno] kehrt das Vorzeichen um und erlaubt `refundOf`, verbietet
+/// inklusive; [cancellation] kehrt das Vorzeichen um und erlaubt `refundOf`, verbietet
 /// `tenderedCents`.
-String? zahlungenFehler(List<KeckPaymentInput> zahlungen, {required bool storno}) {
-  if (zahlungen.length > zahlungenHoechstzahl) {
-    return 'payments: es sind hoechstens $zahlungenHoechstzahl Eintraege erlaubt.';
+String? paymentsError(List<KeckPaymentInput> payments, {required bool cancellation}) {
+  if (payments.length > maxPayments) {
+    return 'payments: es sind hoechstens $maxPayments Eintraege erlaubt.';
   }
-  for (final (i, z) in zahlungen.indexed) {
+  for (final (i, z) in payments.indexed) {
     final nr = i + 1;
     if (z.method == KeckPaymentMethod.mixed) {
-      return 'Zahlung $nr: $mixedNichtSenden';
+      return 'Zahlung $nr: $mixedNotSentReason';
     }
-    if (storno ? z.amountCents >= 0 : z.amountCents <= 0) {
-      return 'Zahlung $nr: amountCents muss eine ganze Zahl ${storno ? 'kleiner' : 'groesser'} als 0 sein.';
+    if (cancellation ? z.amountCents >= 0 : z.amountCents <= 0) {
+      return 'Zahlung $nr: amountCents muss eine ganze Zahl ${cancellation ? 'kleiner' : 'groesser'} als 0 sein.';
     }
     final gegeben = z.tenderedCents;
-    if (gegeben != null && (storno || gegeben < z.amountCents)) {
+    if (gegeben != null && (cancellation || gegeben < z.amountCents)) {
       return 'Zahlung $nr: tenderedCents muss eine ganze Zahl von mindestens amountCents sein (nur am Verkauf).';
     }
     final trinkgeld = z.tipCents;
@@ -201,7 +201,7 @@ String? zahlungenFehler(List<KeckPaymentInput> zahlungen, {required bool storno}
     if (z.providerPaymentId != null && z.providerPaymentId!.isEmpty) {
       return 'Zahlung $nr: providerPaymentId muss ein nicht-leerer Text sein.';
     }
-    if (z.refundOf != null && (!storno || z.refundOf!.isEmpty)) {
+    if (z.refundOf != null && (!cancellation || z.refundOf!.isEmpty)) {
       return 'Zahlung $nr: refundOf gibt es nur am Storno, als id der Originalzahlung.';
     }
   }
@@ -210,14 +210,14 @@ String? zahlungenFehler(List<KeckPaymentInput> zahlungen, {required bool storno}
 
 /// Warum `mixed` nie hinausgeht -- derselbe Satz fuer Einzel-Zahlungsart und
 /// Zahlungsliste.
-const String mixedNichtSenden =
+const String mixedNotSentReason =
     'Zahlungsart "mixed" vergibt nur der Server – mehrere Zahlarten gehen als payments hinaus.';
 
 /// `payments` neben einer Einzel-Zahlungsart oder Kartenfeldern? Liefert den
-/// Grund (Backend: `PAYMENTS_CONFLICT`), sonst `null`. Nie still eines
-/// bevorzugen. [felder] nennt die Felder mit ihrem Drahtnamen.
-String? zahlungsKonflikt(Map<String, Object?> felder) {
-  for (final MapEntry(:key, :value) in felder.entries) {
+/// Grund (Backend: `payments_conflict`), sonst `null`. Nie still eines
+/// bevorzugen. [fields] nennt die Felder mit ihrem Drahtnamen.
+String? paymentsConflict(Map<String, Object?> fields) {
+  for (final MapEntry(:key, :value) in fields.entries) {
     if (value != null) {
       return 'payments und $key duerfen nicht gemeinsam gesendet werden – Kartenangaben gehoeren in die Zahlung.';
     }

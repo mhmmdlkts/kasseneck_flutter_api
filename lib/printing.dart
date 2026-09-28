@@ -41,20 +41,20 @@ export 'models/keck_print_result.dart' show KeckPrintResult;
 // Export waere der Typ aus diesem Barrel nicht benennbar.
 // DruckLogo mit seinem Ladeweg und den Massen: wer druckt, laedt das Logo
 // passend zur Papierbreite und reicht es an getPaperFromReceipt weiter.
-export 'models/print_paper.dart' show PrintPaper, DruckLogo;
-export 'services/druck_logo.dart' show ladeDruckLogo;
-export 'models/beleg_blatt.dart'
-    show LogoStufe, BlattLogo, logoMass, logoRasterMass;
-export 'models/logo_raster.dart' show LogoRaster, logoPixelMax, logoPixelZulaessig;
+export 'models/print_paper.dart' show PrintPaper, PrintLogo;
+export 'services/print_logo.dart' show loadPrintLogo;
+export 'models/receipt_sheet.dart'
+    show SheetLogoSize, SheetLogo, logoDimensions, logoRasterSize;
+export 'models/logo_raster.dart' show LogoRaster, logoPixelMax, isLogoPixelSizeAllowed;
 // Das Papierformat gehoert zur Schnittstelle: wer Bytes baut, muss die Breite
 // nennen -- 58 mm sind 32 Zeichen, 80 mm sind 48.
 export 'enums/keck_paper_size.dart' show KeckPaperSize;
 // Der QR-Modus gehoert zur Schnittstelle: wer Belegbytes baut, entscheidet
 // damit, ob der Signatur-QR als Rasterbild oder ueber den nativen ESC/POS-
 // Befehl entsteht -- und welchen davon ein Drucker versteht, weiss nur das
-// Geraet. `KasseQrModusDruck` uebersetzt die Geraete-Einstellung dorthin.
-export 'enums/qr_print_mode.dart' show QrPrintMode, KasseQrModusDruck;
+// Geraet. `PosQrModePrint` uebersetzt die Geraete-Einstellung dorthin.
+export 'enums/qr_print_mode.dart' show QrPrintMode, PosQrModePrint;
 // Die Modulgroesse des Beleg-QR gehoert zur Schnittstelle: wer Belegbytes
-// baut, waehlt hier den Deckel, und `QrMass` ist die eine Stelle, an der
+// baut, waehlt hier den Deckel, und `QrMetrics` ist die eine Stelle, an der
 // gerechnet wird, ob ein Symbol samt Ruhezone aufs Papier passt.
-export 'src/printing/qr_groesse.dart' show QrModulGroesse, QrGroesse, QrMass;
+export 'src/printing/qr_groesse.dart' show QrModuleSize, QrSizing, QrMetrics;

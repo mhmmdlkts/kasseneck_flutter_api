@@ -1,0 +1,30 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Englische Rechnung mit gewählter Marke",
+  "request": {
+    "idempotencyKey": "ex-en-1",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-15",
+    "language": "en",
+    "brandId": "brand_example",
+    "items": [
+      {
+        "description": "Consulting",
+        "quantity": 2,
+        "unitPriceCents": 5000,
+        "vatRate": 20,
+        "unit": "hour"
+      }
+    ]
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 10000,
+      "vatCents": 2000,
+      "grossCents": 12000
+    }
+  }
+}

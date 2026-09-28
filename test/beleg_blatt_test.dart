@@ -3,21 +3,15 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/src/printing/qr_groesse.dart';
 
 /// Zwilling von `belegBlatt` (npm 0.14.0): fuer jede Golden-Fixture muss das
 /// Blatt mit Probe-Logo (M, 300x120) und Marke Block fuer Block der
-/// `blatt32.json` bzw. `blatt48.json` des Pakets entsprechen.
+/// `sheet32.json` bzw. `sheet48.json` des Pakets entsprechen, in der
+/// englischen Form des Vertrags (`BelegBlatt.toJson`).
 final _wurzel = Directory('test/fixtures/vertrag');
-
-Map<String, Object?> _alsJson(BlattBlock b) => switch (b) {
-      BlattZeile() => {'art': 'zeile', 'text': b.text, 'fett': b.fett, 'leer': b.leer},
-      BlattLogoBlock() => {'art': 'logo', 'breiteAnteil': b.breiteAnteil, 'hoeheZeilen': b.hoeheZeilen},
-      BlattQr() => {'art': 'qr', 'nutzlast': b.nutzlast, 'breiteAnteil': b.breiteAnteil},
-      BlattMarke() => {'art': 'marke', 'breite': b.breite, 'hoehe': b.hoehe},
-    };
 
 void _gleich(Object? ist, Object? soll, String wo) {
   if (soll is num) {
@@ -40,46 +34,46 @@ void _gleich(Object? ist, Object? soll, String wo) {
 
 void main() {
   final manifest = jsonDecode(File('${_wurzel.path}/manifest.json').readAsStringSync()) as Map<String, dynamic>;
-  final namen = (manifest['belege'] as Map<String, dynamic>).keys.toList()..sort();
+  final namen = (manifest['receipts'] as Map<String, dynamic>).keys.toList()..sort();
 
   test('Golden: Blatt aller Fixtures mit Probe-Logo und Marke (32 und 48 Zeichen)', () {
     expect(namen.length, greaterThanOrEqualTo(31));
     for (final n in namen) {
-      final layout = BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/erwartet/$n.lines.json').readAsStringSync()))!;
+      final layout = ReceiptLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/$n.lines.json').readAsStringSync()))!;
       for (final zeichen in [32, 48]) {
-        final soll = jsonDecode(File('${_wurzel.path}/erwartet/$n.blatt$zeichen.json').readAsStringSync());
-        final blatt = belegBlatt(layout, zeichen: zeichen, logo: const BlattLogo(stufe: LogoStufe.m, pxBreite: 300, pxHoehe: 120), marke: true);
-        _gleich({'zeichen': blatt.zeichen, 'bloecke': blatt.bloecke.map(_alsJson).toList()}, soll, '$n@$zeichen');
+        final soll = jsonDecode(File('${_wurzel.path}/expected/$n.sheet$zeichen.json').readAsStringSync());
+        final blatt = receiptSheet(layout, charsPerLine: zeichen, logo: const SheetLogo(size: SheetLogoSize.m, pixelWidth: 300, pixelHeight: 120), brandMark: true);
+        _gleich(blatt.toJson(), soll, '$n@$zeichen');
       }
     }
   });
 
   test('Rot-Probe: ein Blatt ohne Marke ist nicht das Golden', () {
-    final layout = BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/erwartet/verkauf-bar.lines.json').readAsStringSync()))!;
-    final soll = jsonDecode(File('${_wurzel.path}/erwartet/verkauf-bar.blatt48.json').readAsStringSync()) as Map;
-    final ohne = belegBlatt(layout, zeichen: 48, logo: const BlattLogo(stufe: LogoStufe.m, pxBreite: 300, pxHoehe: 120));
-    expect(ohne.bloecke.length, isNot((soll['bloecke'] as List).length));
+    final layout = ReceiptLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/sale-cash.lines.json').readAsStringSync()))!;
+    final soll = jsonDecode(File('${_wurzel.path}/expected/sale-cash.sheet48.json').readAsStringSync()) as Map;
+    final ohne = receiptSheet(layout, charsPerLine: 48, logo: const SheetLogo(size: SheetLogoSize.m, pixelWidth: 300, pixelHeight: 120));
+    expect(ohne.blocks.length, isNot((soll['blocks'] as List).length));
   });
 
   test('logoMass nie hochgerechnet, Stufen wie npm, ausKuerzel faellt auf M', () {
-    final klein = logoMass(const BlattLogo(stufe: LogoStufe.xl, pxBreite: 100, pxHoehe: 50), 48);
-    expect(klein.breiteAnteil, closeTo(100 / 576, 1e-12));
-    expect(klein.hoeheZeilen, closeTo(50 / 24, 1e-12));
-    expect(logoRasterMass(klein, 48), (breite: 100, hoehe: 50));
-    expect(LogoStufe.values.map((s) => '${s.kuerzel}:${s.breiteAnteil}x${s.hoeheZeilen}').toList(), ['S:0.42x5', 'M:0.62x8', 'L:0.8x12', 'XL:0.94x16']);
-    expect(LogoStufe.ausKuerzel('XL'), LogoStufe.xl);
-    expect(LogoStufe.ausKuerzel(null), LogoStufe.m);
-    expect(() => logoMass(const BlattLogo(stufe: LogoStufe.m, pxBreite: 0, pxHoehe: 1), 48), throwsArgumentError);
+    final klein = logoDimensions(const SheetLogo(size: SheetLogoSize.xl, pixelWidth: 100, pixelHeight: 50), 48);
+    expect(klein.widthFraction, closeTo(100 / 576, 1e-12));
+    expect(klein.heightLines, closeTo(50 / 24, 1e-12));
+    expect(logoRasterSize(klein, 48), (width: 100, height: 50));
+    expect(SheetLogoSize.values.map((s) => '${s.code}:${s.widthFraction}x${s.heightLines}').toList(), ['S:0.42x5', 'M:0.62x8', 'L:0.8x12', 'XL:0.94x16']);
+    expect(SheetLogoSize.fromCode('XL'), SheetLogoSize.xl);
+    expect(SheetLogoSize.fromCode(null), SheetLogoSize.m);
+    expect(() => logoDimensions(const SheetLogo(size: SheetLogoSize.m, pixelWidth: 0, pixelHeight: 1), 48), throwsArgumentError);
   });
 
   test('qrBlattAnteil wie npm: 109 Byte -> 45 Module, 80 mm auto 6 Punkte (auto heisst in beiden Paketen dasselbe)', () {
     const qr = '_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T00:30:00_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR';
-    expect(qrModulAnzahlWieNpm(qr), 45);
-    expect(qrBlattAnteil(qr, KeckPaperSize.mm80), 53 * 6 / 576);
-    expect(qrBlattAnteil(qr, KeckPaperSize.mm80, groesse: QrModulGroesse.klein), 53 * 4 / 576);
-    expect(qrBlattAnteil('', KeckPaperSize.mm58), 0);
-    expect(papierFuerZeichen(32, 'mm80'), KeckPaperSize.mm58);
-    expect(papierFuerZeichen(40, 'mm80'), KeckPaperSize.mm80);
+    expect(qrModuleCount(qr), 45);
+    expect(qrSheetWidthFraction(qr, KeckPaperSize.mm80), 53 * 6 / 576);
+    expect(qrSheetWidthFraction(qr, KeckPaperSize.mm80, moduleSize: QrModuleSize.small), 53 * 4 / 576);
+    expect(qrSheetWidthFraction('', KeckPaperSize.mm58), 0);
+    expect(paperSizeForChars(32, 'mm80'), KeckPaperSize.mm58);
+    expect(paperSizeForChars(40, 'mm80'), KeckPaperSize.mm80);
   });
 
   test('zwei Modulzaehler, eine Zahl: qrModulAnzahlWieNpm == QrMass.modulAnzahl an jeder Versionsgrenze', () {
@@ -91,42 +85,42 @@ void main() {
     String nutzlast(int n) => 'a' * n;
     final kapazitaeten = <int>[
       for (var n = 1; n < 2331; n++)
-        if (qrModulAnzahlWieNpm(nutzlast(n + 1)) != qrModulAnzahlWieNpm(nutzlast(n))) n,
+        if (qrModuleCount(nutzlast(n + 1)) != qrModuleCount(nutzlast(n))) n,
       2331,
     ];
     expect(kapazitaeten, hasLength(40));
     expect(kapazitaeten.first, 14);
     for (final (i, kap) in kapazitaeten.indexed) {
       final version = i + 1;
-      expect(qrModulAnzahlWieNpm(nutzlast(kap)), 17 + 4 * version, reason: 'v$version, Kapazitaet $kap');
-      expect(QrMass.modulAnzahl(nutzlast(kap)), qrModulAnzahlWieNpm(nutzlast(kap)), reason: 'v$version: $kap Byte');
+      expect(qrModuleCount(nutzlast(kap)), 17 + 4 * version, reason: 'v$version, Kapazitaet $kap');
+      expect(QrMetrics.moduleCount(nutzlast(kap)), qrModuleCount(nutzlast(kap)), reason: 'v$version: $kap Byte');
       if (version < 40) {
-        expect(QrMass.modulAnzahl(nutzlast(kap + 1)), qrModulAnzahlWieNpm(nutzlast(kap + 1)), reason: 'v$version: ${kap + 1} Byte');
+        expect(QrMetrics.moduleCount(nutzlast(kap + 1)), qrModuleCount(nutzlast(kap + 1)), reason: 'v$version: ${kap + 1} Byte');
       }
     }
     // Hinter v40 gibt es kein Symbol: das Blatt lehnt ab. `QrMass.modulAnzahl`
     // meldet dort (qr 3.0.2) noch 177 Module statt abzulehnen -- ausserhalb
     // jeder druckbaren Groesse, aber keine gemeinsame Zahl mehr.
-    expect(() => qrModulAnzahlWieNpm(nutzlast(2332)), throwsArgumentError);
+    expect(() => qrModuleCount(nutzlast(2332)), throwsArgumentError);
   });
 
   test('qrBlattAnteil: Inhalt ohne passende QR-Version ergibt 0 statt zu werfen, Grenze in Byte wie npm', () {
-    expect(qrPasstInVersionWieNpm('x' * 2331), isTrue);
-    expect(qrPasstInVersionWieNpm('x' * 2332), isFalse);
+    expect(qrFitsInVersion('x' * 2331), isTrue);
+    expect(qrFitsInVersion('x' * 2332), isFalse);
     // Mehrbyte: 777 Euro-Zeichen sind 2331 Byte, eines mehr passt nicht mehr.
-    expect(qrPasstInVersionWieNpm('€' * 777), isTrue);
-    expect(qrPasstInVersionWieNpm('€' * 777 + 'x'), isFalse);
-    expect(qrBlattAnteil('x' * 2332, KeckPaperSize.mm80), 0);
-    expect(qrBlattAnteil('x' * 2331, KeckPaperSize.mm80), greaterThan(0));
+    expect(qrFitsInVersion('€' * 777), isTrue);
+    expect(qrFitsInVersion('€' * 777 + 'x'), isFalse);
+    expect(qrSheetWidthFraction('x' * 2332, KeckPaperSize.mm80), 0);
+    expect(qrSheetWidthFraction('x' * 2331, KeckPaperSize.mm80), greaterThan(0));
   });
 
   test('belegBlatt: QR-Inhalt ohne passende Version wirft nicht, der QR-Block bleibt mit Anteil 0', () {
-    final layout = BelegLayout(paperSize: 'mm80', regelwerk: 2, lines: [
-      BelegText(text: 'Firma', align: BelegAlign.center, bold: true),
-      BelegQr(data: 'x' * 2332),
+    final layout = ReceiptLayout(paperSize: 'mm80', ruleset: 2, lines: [
+      LayoutTextLine(text: 'Firma', align: LayoutAlign.center, bold: true),
+      LayoutQrLine(data: 'x' * 2332),
     ]);
-    final blatt = belegBlatt(layout, zeichen: 48);
-    final qr = blatt.bloecke.whereType<BlattQr>().single;
-    expect(qr.breiteAnteil, 0);
+    final blatt = receiptSheet(layout, charsPerLine: 48);
+    final qr = blatt.blocks.whereType<SheetQr>().single;
+    expect(qr.widthFraction, 0);
   });
 }

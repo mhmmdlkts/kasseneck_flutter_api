@@ -2,55 +2,55 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
-import 'package:kasseneck_api/services/druck_logo.dart';
+import 'package:kasseneck_api/services/print_logo.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
 
 import '../helpers/test_receipts.dart';
 
 /// Vollflaechig schwarzes RGBA-Bild -- wie in `druck_logo_test.dart`.
-({int breite, int hoehe, Uint8List rgba}) schwarz(int b, int h) {
+({int width, int height, Uint8List rgba}) schwarz(int b, int h) {
   final rgba = Uint8List(b * h * 4);
   for (var i = 3; i < rgba.length; i += 4) {
     rgba[i] = 255;
   }
-  return (breite: b, hoehe: h, rgba: rgba);
+  return (width: b, height: h, rgba: rgba);
 }
 
 /// Ein Beleg, wie das Backend ihn seit dem Beleg-Blatt liefert: mit Layout,
 /// Logo-Adresse und Stufe (nachgewiesen im Log vom 18.09.2026).
 KasseneckReceipt belegMitLogo() => buildReceipt()
-  ..layout = const BelegLayout(
-      lines: [BelegText(text: 'Danke', align: BelegAlign.center)],
+  ..layout = const ReceiptLayout(
+      lines: [LayoutTextLine(text: 'Danke', align: LayoutAlign.center)],
       paperSize: 'mm80',
-      regelwerk: 2)
+      ruleset: 2)
   ..logoUrl = 'https://beispiel.test/logo.png'
-  ..logoStufe = LogoStufe.m;
+  ..logoScale = SheetLogoSize.m;
 
 KasseneckReceipt belegOhneLogo() => belegMitLogo()..logoUrl = null;
 
 /// Ein Rasterbild, das absichtlich nicht zum Blatt passt -- 1x1 trifft
-/// [logoRasterMass] fuer keine Papierbreite/Stufe dieses Pakets.
-DruckLogo unpassendesLogo() => DruckLogo(
-      stufe: LogoStufe.m,
-      pxBreite: 400,
-      pxHoehe: 100,
-      raster: LogoRaster(breite: 1, hoehe: 1, punkte: Uint8List(1)),
+/// [logoRasterSize] fuer keine Papierbreite/Stufe dieses Pakets.
+PrintLogo unpassendesLogo() => PrintLogo(
+      size: SheetLogoSize.m,
+      pixelWidth: 400,
+      pixelHeight: 100,
+      raster: LogoRaster(width: 1, height: 1, dots: Uint8List(1)),
     );
 
 void main() {
-  setUp(druckLogoSpeicherLeeren);
-  tearDown(() => KeckPrinterService.logoLader = ladeDruckLogo);
+  setUp(clearPrintLogoCache);
+  tearDown(() => KeckPrinterService.logoLoader = loadPrintLogo);
 
   test('das hinterlegte Logo kommt aufs Papier, ohne dass es jemand uebergibt', () async {
     String? gefragteAdresse;
-    KeckPrinterService.logoLader = (url, stufe, papier) {
+    KeckPrinterService.logoLoader = (url, stufe, papier) {
       gefragteAdresse = url;
-      return ladeDruckLogo(url, stufe, papier, pixel: (_) async => schwarz(400, 100));
+      return loadPrintLogo(url, stufe, papier, pixel: (_) async => schwarz(400, 100));
     };
 
     final papier = await KeckPrinterService.getPaperFromReceipt(
@@ -65,7 +65,7 @@ void main() {
 
   test('ohne Logo-Adresse wird nichts geholt', () async {
     var gerufen = 0;
-    KeckPrinterService.logoLader = (url, stufe, papier) async {
+    KeckPrinterService.logoLoader = (url, stufe, papier) async {
       gerufen += 1;
       return null;
     };
@@ -76,7 +76,7 @@ void main() {
   });
 
   test('ein Ladefehler laesst den Beleg trotzdem hinausgehen', () async {
-    KeckPrinterService.logoLader = (url, stufe, papier) async => throw Exception('Netz weg');
+    KeckPrinterService.logoLoader = (url, stufe, papier) async => throw Exception('Netz weg');
 
     final papier = await KeckPrinterService.getPaperFromReceipt(
         belegMitLogo(), KeckPaperSize.mm80);
@@ -87,12 +87,12 @@ void main() {
   test('traegt der Beleg eine Adresse, springt ein uebergebenes Logo nicht ein', () async {
     // Ein gueltiges Logo unter einer ANDEREN Adresse -- so, wie es ein
     // Aufrufer heute noch ueber den veralteten Parameter mitgeben koennte.
-    final uebergebenesLogo = await ladeDruckLogo(
-        'https://beispiel.test/anderes-logo.png', LogoStufe.m, KeckPaperSize.mm80,
+    final uebergebenesLogo = await loadPrintLogo(
+        'https://beispiel.test/anderes-logo.png', SheetLogoSize.m, KeckPaperSize.mm80,
         pixel: (_) async => schwarz(400, 100));
     expect(uebergebenesLogo, isNotNull, reason: 'Vorbedingung: das uebergebene Logo ist gueltig');
 
-    KeckPrinterService.logoLader = (url, stufe, papier) async => throw Exception('Netz weg');
+    KeckPrinterService.logoLoader = (url, stufe, papier) async => throw Exception('Netz weg');
 
     final papier = await KeckPrinterService.getPaperFromReceipt(
         belegMitLogo(), KeckPaperSize.mm80,
@@ -105,7 +105,7 @@ void main() {
   });
 
   test('ein selbst geholtes Logo, das nicht zum Blatt passt, darf den Bon nicht verhindern', () async {
-    KeckPrinterService.logoLader = (url, stufe, papier) async => unpassendesLogo();
+    KeckPrinterService.logoLoader = (url, stufe, papier) async => unpassendesLogo();
 
     final papier = await KeckPrinterService.getPaperFromReceipt(
         belegMitLogo(), KeckPaperSize.mm80);

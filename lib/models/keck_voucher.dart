@@ -68,6 +68,18 @@ class KeckVoucher {
     };
   }
 
+  /// Die Nutzlast fuer `createReceipt` unter `/v3` (Zwilling von
+  /// `toVoucherPayload` im npm-Paket): nur `valueCents` (ganze Cent), kein
+  /// Euro-Wert; `name` und `code` nur, wenn gesetzt. [toJson] bleibt die
+  /// gespeicherte Form.
+  Map<String, dynamic> toPayload() => {
+        'action': action.name,
+        'type': type.name,
+        'valueCents': valueCents,
+        'code': ?code,
+        'name': ?name,
+      };
+
   bool get isValid {
     if (type == VoucherType.value && valueCents == null) {
       return false;

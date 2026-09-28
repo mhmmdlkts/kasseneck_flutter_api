@@ -2,7 +2,7 @@
 /// statt als Zeichenketten über die Aufrufstellen verstreut.
 ///
 /// Der Zwilling `@kreiseck/kasseneck-api` führt dieselbe Liste und gibt sie im
-/// Vertrag (`fixtures/oberflaeche.json`) aus; `test/zwillinge_test.dart`
+/// Vertrag (`fixtures/surface.json`, `calls`) aus; `test/zwillinge_test.dart`
 /// vergleicht beide. So fällt auf, wenn das JS-Paket einen Aufruf kennt, den
 /// dieses hier nicht hat — ein reiner Wertevergleich würde das nie finden.
 ///
@@ -54,6 +54,12 @@ abstract final class Aufrufe {
   static const setMyRegisterDeviceSettings = 'setMyRegisterDeviceSettings';
   static const stripeCaptureIntent = 'stripeCaptureIntent';
   static const unpairRegisterDevice = 'unpairRegisterDevice';
+  static const createPrintJob = 'createPrintJob';
+  static const generateFullReceiptId = 'generateFullReceiptId';
+  static const getPrintJob = 'getPrintJob';
+  static const listMyCashregisters = 'listMyCashregisters';
+  static const listMyPrinters = 'listMyPrinters';
+  static const setMyKasseLogo = 'setMyKasseLogo';
   static const updateCustomer = 'updateCustomer';
 
   /// Alle Namen, die dieses Paket kennt.
@@ -100,6 +106,12 @@ abstract final class Aufrufe {
     setMyRegisterDeviceSettings,
     stripeCaptureIntent,
     unpairRegisterDevice,
+    createPrintJob,
+    generateFullReceiptId,
+    getPrintJob,
+    listMyCashregisters,
+    listMyPrinters,
+    setMyKasseLogo,
     updateCustomer,
   };
 }

@@ -1,4 +1,4 @@
-/// Die Belegliste: Zeitraum, Filter, Tagesgruppen — Zwilling von `belege.ts`
+/// Die Belegliste: Zeitraum, Filter, Tagesgruppen – Zwilling von `receipts.ts`
 /// der Browser-Kasse.
 ///
 /// Reine Funktionen; das Laden macht [RegisterReceiptClient].
@@ -13,68 +13,68 @@ import '../../enums/keck_payment_method.dart';
 import '../../services/vienna_time.dart';
 import 'belege.dart';
 
-enum Zeitraum { heute, gestern, siebenTage, dreissigTage }
+enum ReceiptPeriod { today, yesterday, last7Days, last30Days }
 
-enum BelegartFilter { alle, verkauf, storno, sonstige }
+enum ReceiptTypeFilter { all, sale, cancellation, other }
 
-enum ZahlungFilter { alle, bar, karte }
+enum PaymentFilter { all, cash, card }
 
-class Belegfilter {
-  const Belegfilter({
-    this.zeitraum = Zeitraum.heute,
-    this.belegart = BelegartFilter.alle,
-    this.zahlung = ZahlungFilter.alle,
-    this.wer,
+class ReceiptFilter {
+  const ReceiptFilter({
+    this.period = ReceiptPeriod.today,
+    this.receiptType = ReceiptTypeFilter.all,
+    this.payment = PaymentFilter.all,
+    this.operator,
   });
 
-  final Zeitraum zeitraum;
-  final BelegartFilter belegart;
-  final ZahlungFilter zahlung;
+  final ReceiptPeriod period;
+  final ReceiptTypeFilter receiptType;
+  final PaymentFilter payment;
 
   /// Bediener-Name; `null` heißt alle.
-  final String? wer;
+  final String? operator;
 
-  Belegfilter kopie({
-    Zeitraum? zeitraum,
-    BelegartFilter? belegart,
-    ZahlungFilter? zahlung,
-    String? wer,
-    bool werLoeschen = false,
+  ReceiptFilter copyWith({
+    ReceiptPeriod? period,
+    ReceiptTypeFilter? receiptType,
+    PaymentFilter? payment,
+    String? operator,
+    bool clearOperator = false,
   }) =>
-      Belegfilter(
-        zeitraum: zeitraum ?? this.zeitraum,
-        belegart: belegart ?? this.belegart,
-        zahlung: zahlung ?? this.zahlung,
-        wer: werLoeschen ? null : (wer ?? this.wer),
+      ReceiptFilter(
+        period: period ?? this.period,
+        receiptType: receiptType ?? this.receiptType,
+        payment: payment ?? this.payment,
+        operator: clearOperator ? null : (operator ?? this.operator),
       );
 }
 
 String _zwei(int n) => n.toString().padLeft(2, '0');
 
 /// Der Wiener Kalendertag eines Zeitpunkts als `YYYY-MM-DD`.
-String wienDatum(DateTime zeitpunkt) {
-  final w = ViennaTime.toWallClock(zeitpunkt);
+String viennaDate(DateTime instant) {
+  final w = ViennaTime.toWallClock(instant);
   return '${w.year}-${_zwei(w.month)}-${_zwei(w.day)}';
 }
 
-/// `von`/`bis` (Wiener Wanduhr, `YYYY-MM-DD`) für den Zeitraum.
-({String von, String bis}) zeitfenster(Zeitraum zeitraum, [DateTime? jetzt]) {
-  final zeit = jetzt ?? DateTime.now();
-  final heute = wienDatum(zeit);
+/// `from`/`to` (Wiener Wanduhr, `YYYY-MM-DD`) für den Zeitraum.
+({String from, String to}) periodRange(ReceiptPeriod period, [DateTime? now]) {
+  final zeit = now ?? DateTime.now();
+  final heute = viennaDate(zeit);
   DateTime zurueck(int tage) => zeit.subtract(Duration(days: tage));
-  return switch (zeitraum) {
-    Zeitraum.heute => (von: heute, bis: heute),
-    Zeitraum.gestern => (von: wienDatum(zurueck(1)), bis: wienDatum(zurueck(1))),
+  return switch (period) {
+    ReceiptPeriod.today => (from: heute, to: heute),
+    ReceiptPeriod.yesterday => (from: viennaDate(zurueck(1)), to: viennaDate(zurueck(1))),
     // Sieben Tage schließen heute mit ein — also sechs zurück.
-    Zeitraum.siebenTage => (von: wienDatum(zurueck(6)), bis: heute),
-    Zeitraum.dreissigTage => (von: wienDatum(zurueck(29)), bis: heute),
+    ReceiptPeriod.last7Days => (from: viennaDate(zurueck(6)), to: heute),
+    ReceiptPeriod.last30Days => (from: viennaDate(zurueck(29)), to: heute),
   };
 }
 
 /// Lesbarer Name der Belegart — nie ein Rohwert.
-String belegartText(Belegzusammenfassung beleg) {
-  if (beleg.istStorno) return 'Storno';
-  switch (beleg.belegart) {
+String receiptTypeLabel(ReceiptSummary receipt) {
+  if (receipt.isCancellation) return 'Storno';
+  switch (receipt.receiptType) {
     case 'standard':
       return 'Verkauf';
     case 'start':
@@ -82,7 +82,7 @@ String belegartText(Belegzusammenfassung beleg) {
     case 'training':
       return 'Trainingsbeleg';
     case 'zero':
-      return switch (beleg.nullbelegAnlass) {
+      return switch (receipt.zeroKind) {
         'monthly' => 'Monatsbeleg',
         'annual' => 'Jahresbeleg',
         'annual_replacement' => 'Jahresbeleg (Ersatz)',
@@ -96,66 +96,66 @@ String belegartText(Belegzusammenfassung beleg) {
   }
 }
 
-List<Belegzusammenfassung> gefiltert(List<Belegzusammenfassung> belege, Belegfilter f) {
+List<ReceiptSummary> filterReceipts(List<ReceiptSummary> receipts, ReceiptFilter f) {
   return [
-    for (final b in belege)
+    for (final b in receipts)
       if (_passt(b, f)) b,
   ];
 }
 
-bool _passt(Belegzusammenfassung b, Belegfilter f) {
-  switch (f.belegart) {
-    case BelegartFilter.verkauf:
-      if (!b.istVerkauf) return false;
-    case BelegartFilter.storno:
-      if (!b.istStorno) return false;
-    case BelegartFilter.sonstige:
-      if (b.istVerkauf || b.istStorno) return false;
-    case BelegartFilter.alle:
+bool _passt(ReceiptSummary b, ReceiptFilter f) {
+  switch (f.receiptType) {
+    case ReceiptTypeFilter.sale:
+      if (!b.isSale) return false;
+    case ReceiptTypeFilter.cancellation:
+      if (!b.isCancellation) return false;
+    case ReceiptTypeFilter.other:
+      if (b.isSale || b.isCancellation) return false;
+    case ReceiptTypeFilter.all:
       break;
   }
-  final bar = b.zahlungsart == KeckPaymentMethod.cash;
-  if (f.zahlung == ZahlungFilter.bar && !bar) return false;
-  if (f.zahlung == ZahlungFilter.karte && bar) return false;
-  if (f.wer != null && (b.bediener?.name ?? '') != f.wer) return false;
+  final bar = b.paymentMethod == KeckPaymentMethod.cash;
+  if (f.payment == PaymentFilter.cash && !bar) return false;
+  if (f.payment == PaymentFilter.card && bar) return false;
+  if (f.operator != null && (b.operator?.name ?? '') != f.operator) return false;
   return true;
 }
 
 /// Bediener-Namen in der Liste, für den Filter — sortiert, ohne Doppelte.
-List<String> bediener(List<Belegzusammenfassung> belege) {
+List<String> operatorNames(List<ReceiptSummary> receipts) {
   final namen = <String>{
-    for (final b in belege)
-      if ((b.bediener?.name ?? '').isNotEmpty) b.bediener!.name,
+    for (final b in receipts)
+      if ((b.operator?.name ?? '').isNotEmpty) b.operator!.name,
   }.toList();
   namen.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
   return namen;
 }
 
-class Tagesgruppe {
-  const Tagesgruppe({required this.datum, required this.belege});
+class ReceiptDayGroup {
+  const ReceiptDayGroup({required this.date, required this.receipts});
 
   /// Wiener Kalendertag `YYYY-MM-DD`.
-  final String datum;
-  final List<Belegzusammenfassung> belege;
+  final String date;
+  final List<ReceiptSummary> receipts;
 }
 
 /// Nach Wiener Kalendertag gruppiert, neueste zuerst.
-List<Tagesgruppe> tagesgruppen(List<Belegzusammenfassung> belege) {
-  final sortiert = [...belege]..sort((a, b) => b.zeitstempel.compareTo(a.zeitstempel));
-  final aus = <Tagesgruppe>[];
+List<ReceiptDayGroup> groupByDay(List<ReceiptSummary> receipts) {
+  final sortiert = [...receipts]..sort((a, b) => b.timeStamp.compareTo(a.timeStamp));
+  final aus = <ReceiptDayGroup>[];
   for (final b in sortiert) {
-    final datum = wienDatum(ViennaTime.parseServerTimeStamp(b.zeitstempel));
-    if (aus.isNotEmpty && aus.last.datum == datum) {
-      aus.last.belege.add(b);
+    final datum = viennaDate(ViennaTime.parseServerTimeStamp(b.timeStamp));
+    if (aus.isNotEmpty && aus.last.date == datum) {
+      aus.last.receipts.add(b);
     } else {
-      aus.add(Tagesgruppe(datum: datum, belege: [b]));
+      aus.add(ReceiptDayGroup(date: datum, receipts: [b]));
     }
   }
   return aus;
 }
 
 /// Uhrzeit eines Belegs in Wiener Wanduhrzeit (`HH:MM`).
-String uhrzeit(String zeitstempel) {
-  final w = ViennaTime.toWallClock(ViennaTime.parseServerTimeStamp(zeitstempel));
+String receiptTime(String timestamp) {
+  final w = ViennaTime.toWallClock(ViennaTime.parseServerTimeStamp(timestamp));
   return '${_zwei(w.hour)}:${_zwei(w.minute)}';
 }

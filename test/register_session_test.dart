@@ -21,7 +21,7 @@ import 'package:kasseneck_api/register.dart';
     return http.Response(
       antwort is String ? antwort : jsonEncode(antwort),
       200,
-      headers: {'content-type': 'application/json'},
+      headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
     );
   });
   return (
@@ -44,7 +44,7 @@ void main() {
 
     expect(bis, 1776000180000);
     final anfrage = f.log.single;
-    expect(anfrage.url.toString(), 'https://kasse.kasseneck.at/api/renewRegisterSession');
+    expect(anfrage.url.toString(), 'https://kasse.kasseneck.at/api/v3/renewRegisterSession');
     expect(anfrage.headers['Authorization'], 'Bearer id-token-1');
     expect(anfrage.headers['register-session'], 'sess-1');
     expect(jsonDecode(anfrage.body)['params'], {'cashregisterId': 'KASSE1'});
@@ -59,7 +59,7 @@ void main() {
       cashregisterId: 'KASSE1',
       httpClient: MockClient((r) async {
         log.add(r);
-        return http.Response(jsonEncode({'status': 'success', 'data': {'expiresAt': 1}}), 200);
+        return http.Response(jsonEncode({'status': 'success', 'data': {'expiresAt': 1}}), 200, headers: const {'kasseneck-api-version': 'v3'});
       }),
     );
     await client.renewRegisterSession();
@@ -86,7 +86,7 @@ void main() {
     final log = <http.Request>[];
     http.Client mock() => MockClient((r) async {
           log.add(r);
-          return http.Response('{"status":"success","data":{"expiresAt":1}}', 200);
+          return http.Response('{"status":"success","data":{"expiresAt":1}}', 200, headers: const {'kasseneck-api-version': 'v3'});
         });
     final ohneToken = RegisterSessionClient(
       idToken: () async => '', sessionId: () async => 's', cashregisterId: 'K', httpClient: mock(),
@@ -112,16 +112,16 @@ void ausClient() {
     final log = <http.Request>[];
     final mock = MockClient((r) async {
       log.add(r);
-      return http.Response(jsonEncode({'status': 'success', 'data': {'expiresAt': 7}}), 200);
+      return http.Response(jsonEncode({'status': 'success', 'data': {'expiresAt': 7}}), 200, headers: const {'kasseneck-api-version': 'v3'});
     });
-    final client = RegisterClient(baseUrl: 'https://test.example/v9', httpClient: mock);
-    final sitzung = client.sitzung(
+    final client = RegisterClient(baseUrl: 'https://test.example/v3', httpClient: mock);
+    final sitzung = client.session(
       idToken: () async => 'tok',
       sessionId: () async => 'sess',
       cashregisterId: 'KASSE2',
     );
     expect(await sitzung.renewRegisterSession(), 7);
-    expect(log.single.url.toString(), 'https://test.example/v9/renewRegisterSession');
+    expect(log.single.url.toString(), 'https://test.example/v3/renewRegisterSession');
     expect(log.single.headers['Authorization'], 'Bearer tok');
   });
 }

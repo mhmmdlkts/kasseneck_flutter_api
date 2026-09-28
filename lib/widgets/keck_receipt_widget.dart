@@ -17,7 +17,7 @@ import '../models/keck_voucher.dart';
 import '../models/print_paper.dart';
 
 
-/// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [PrintPaper.setBelegBlatt] bzw. `KeckBelegBlattWidget`.
+/// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [PrintPaper.setReceiptSheet] bzw. `KeckReceiptSheetWidget`.
 class KeckReceiptWidget extends StatefulWidget {
   final Color paperColor;
   final Color qrColor;
@@ -153,7 +153,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       // Ganzzahlig zerlegen und die MwSt als Differenz nehmen -- getrennt aus
       // Gleitkommazahlen gerundet ging die Zeile nicht auf (39 Cent zu 20 %
       // zeigten 0,33 + 0,07 zu 0,39). Dieselbe Regel wie im JS-Zwilling.
-      final int nettoCents = nettoCentsAusBrutto(bruttoCents, key.rate);
+      final int nettoCents = netCentsFromGross(bruttoCents, key.rate);
       final int mwstCents = bruttoCents - nettoCents;
       temp[0].add('${key.category} ${key.rate.toString().replaceAll('.', ',')}%');
       temp[1].add(formatCents(mwstCents));
@@ -345,11 +345,11 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             _qr(),
             // Ein Block je Kartenzahlung, in Zahlungsreihenfolge -- siehe
             // KasseneckReceipt.kartenzahlungen.
-            for (final karte in widget.receipt.kartenzahlungen)
-              if (karte.anbieter != CreditCardProvider.custom && karte.daten.isNotEmpty)
+            for (final karte in widget.receipt.cardPayments)
+              if (karte.provider != CreditCardProvider.custom && karte.data.isNotEmpty)
                 ...[
                   const SizedBox(height: 32),
-                  _creditCardPart(karte.anbieter, karte.daten, karte.kennung),
+                  _creditCardPart(karte.provider, karte.data, karte.paymentId),
                 ],
             if (widget.receipt.thanksMessage.isNotEmpty)
               ...[

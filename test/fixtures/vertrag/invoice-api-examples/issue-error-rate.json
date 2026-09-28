@@ -1,0 +1,26 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Steuerfreies Schema mit USt-Satz",
+  "request": {
+    "idempotencyKey": "ex-6",
+    "customerId": "customer_example",
+    "taxScheme": "smallBusiness",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Reparatur",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].vatRate"
+    ]
+  }
+}

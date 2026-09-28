@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 
 /// Storno-Regeln der Kasse — Zwilling von `models/cancellation.ts` und der
 /// Storno-Regeln in `belege.ts` der Browser-Kasse.
@@ -33,8 +33,8 @@ KasseneckReceipt belegMit({List<Map<String, dynamic>>? stornos, int menge = 3}) 
     },
     'company': 'Testbetrieb',
     'is_small_business': false,
-    'uid': null,
-    'taxnr': '12/345',
+    'vatId': null,
+    'taxNumber': '12/345',
     'phone': '',
     'street': '',
     'zip': '',
@@ -45,37 +45,37 @@ KasseneckReceipt belegMit({List<Map<String, dynamic>>? stornos, int menge = 3}) 
   });
 }
 
-Belegzusammenfassung zusammenfassung({
+ReceiptSummary zusammenfassung({
   String belegart = 'standard',
   String? storniertBeleg,
-  StornoStand stand = StornoStand.offen,
+  CancellationState? stand = CancellationState.none,
   String? bedienerUid = 'u1',
 }) =>
-    Belegzusammenfassung(
+    ReceiptSummary(
       receiptId: 'KASSE1-ID-42',
-      belegart: belegart,
-      zeitstempel: '2026-08-19T10:15:00',
-      summeCents: 840,
-      zahlungsart: KeckPaymentMethod.cash,
-      signaturOk: true,
-      positionen: const [],
-      stornoStand: stand,
-      storniertBeleg: storniertBeleg,
-      bediener: Belegbediener(uid: bedienerUid, name: 'Ali'),
+      receiptType: belegart,
+      timeStamp: '2026-08-19T10:15:00',
+      totalCents: 840,
+      paymentMethod: KeckPaymentMethod.cash,
+      signatureOk: true,
+      items: const [],
+      cancellationState: stand,
+      cancellationOfReceiptId: storniertBeleg,
+      operator: ReceiptOperator(uid: bedienerUid, name: 'Ali'),
     );
 
 void main() {
   main2();
   group('Restmengen', () {
     test('ohne Storno ist alles offen', () {
-      expect(restmengen(belegMit(), jetzt: jetzt), [3, 2]);
+      expect(remainingQuantities(belegMit(), nowMs: jetzt), [3, 2]);
     });
 
     test('ein Teilstorno mindert genau seine Position', () {
       final beleg = belegMit(stornos: [
         {'at': jetzt - 5000, 'items': [{'index': 0, 'quantity': 1}]},
       ]);
-      expect(restmengen(beleg, jetzt: jetzt), [2, 2]);
+      expect(remainingQuantities(beleg, nowMs: jetzt), [2, 2]);
     });
 
     test('mehrere Stornos zählen zusammen, nie unter null', () {
@@ -83,7 +83,7 @@ void main() {
         {'at': jetzt - 9000, 'items': [{'index': 0, 'quantity': 2}]},
         {'at': jetzt - 5000, 'items': [{'index': 0, 'quantity': 5}]},
       ]);
-      expect(restmengen(beleg, jetzt: jetzt), [0, 2]);
+      expect(remainingQuantities(beleg, nowMs: jetzt), [0, 2]);
     });
 
     test('eine frische Reservierung zählt mit', () {
@@ -91,7 +91,7 @@ void main() {
       final beleg = belegMit(stornos: [
         {'at': jetzt - 5000, 'pending': true, 'items': [{'index': 0, 'quantity': 1}]},
       ]);
-      expect(restmengen(beleg, jetzt: jetzt), [2, 2]);
+      expect(remainingQuantities(beleg, nowMs: jetzt), [2, 2]);
     });
 
     test('eine liegengebliebene Reservierung zählt nicht mehr', () {
@@ -100,71 +100,77 @@ void main() {
       final beleg = belegMit(stornos: [
         {'at': jetzt - 200000, 'pending': true, 'items': [{'index': 0, 'quantity': 1}]},
       ]);
-      expect(restmengen(beleg, jetzt: jetzt), [3, 2]);
+      expect(remainingQuantities(beleg, nowMs: jetzt), [3, 2]);
     });
 
     test('ein Eintrag auf eine Position, die es nicht gibt, stört nicht', () {
       final beleg = belegMit(stornos: [
         {'at': jetzt - 5000, 'items': [{'index': 9, 'quantity': 1}]},
       ]);
-      expect(restmengen(beleg, jetzt: jetzt), [3, 2]);
+      expect(remainingQuantities(beleg, nowMs: jetzt), [3, 2]);
     });
   });
 
   group('Storno-Gründe', () {
     test('der Katalog stimmt mit dem Backend überein', () {
-      expect(stornogruende.keys.toList(), [
-        'fehleingabe',
-        'kunde_storniert',
-        'falsche_zahlart',
-        'doppelt_erfasst',
-        'sonstiges',
+      expect(cancellationReasons.keys.toList(), [
+        'input_error',
+        'customer_cancelled',
+        'wrong_payment_method',
+        'duplicate',
+        'other',
       ]);
-      expect(stornogruende['fehleingabe'], 'Fehleingabe');
+      // Die Beschriftung bleibt deutsch, sie steht so am Bon.
+      expect(cancellationReasons['input_error'], 'Fehleingabe');
     });
   });
 
   group('darf storniert werden?', () {
     test('ein Verkauf mit Vollrecht ja', () {
-      expect(stornoErlaubt(zusammenfassung(), RegisterScope.all, 'u2'), isTrue);
+      expect(canCancel(zusammenfassung(), RegisterScope.all, 'u2'), isTrue);
     });
 
     test('ohne Recht nie', () {
-      expect(stornoErlaubt(zusammenfassung(), RegisterScope.none, 'u1'), isFalse);
+      expect(canCancel(zusammenfassung(), RegisterScope.none, 'u1'), isFalse);
     });
 
     test('mit „eigene" nur die eigenen', () {
-      expect(stornoErlaubt(zusammenfassung(bedienerUid: 'u1'), RegisterScope.own, 'u1'), isTrue);
-      expect(stornoErlaubt(zusammenfassung(bedienerUid: 'u2'), RegisterScope.own, 'u1'), isFalse);
+      expect(canCancel(zusammenfassung(bedienerUid: 'u1'), RegisterScope.own, 'u1'), isTrue);
+      expect(canCancel(zusammenfassung(bedienerUid: 'u2'), RegisterScope.own, 'u1'), isFalse);
     });
 
     test('kein Storno von einem Storno', () {
       expect(
-        stornoErlaubt(zusammenfassung(belegart: 'cancellation'), RegisterScope.all, 'u1'),
+        canCancel(zusammenfassung(belegart: 'cancellation'), RegisterScope.all, 'u1'),
         isFalse,
       );
       expect(
-        stornoErlaubt(zusammenfassung(storniertBeleg: 'KASSE1-ID-41'), RegisterScope.all, 'u1'),
+        canCancel(zusammenfassung(storniertBeleg: 'KASSE1-ID-41'), RegisterScope.all, 'u1'),
         isFalse,
       );
     });
 
     test('kein Storno von Null- oder Startbelegen', () {
       for (final art in ['zero', 'start', 'training']) {
-        expect(stornoErlaubt(zusammenfassung(belegart: art), RegisterScope.all, 'u1'), isFalse, reason: art);
+        expect(canCancel(zusammenfassung(belegart: art), RegisterScope.all, 'u1'), isFalse, reason: art);
       }
     });
 
     test('ein voll stornierter Beleg ist erledigt', () {
       expect(
-        stornoErlaubt(zusammenfassung(stand: StornoStand.voll), RegisterScope.all, 'u1'),
+        canCancel(zusammenfassung(stand: CancellationState.full), RegisterScope.all, 'u1'),
         isFalse,
       );
     });
 
+    test('ein unbekannter Stornostand bietet keinen Storno an, ein fehlender laesst den Server entscheiden', () {
+      expect(canCancel(zusammenfassung(stand: CancellationState.unknown), RegisterScope.all, 'u1'), isFalse);
+      expect(canCancel(zusammenfassung(stand: null), RegisterScope.all, 'u1'), isTrue);
+    });
+
     test('ein teilweise stornierter Beleg geht weiter', () {
       expect(
-        stornoErlaubt(zusammenfassung(stand: StornoStand.teil), RegisterScope.all, 'u1'),
+        canCancel(zusammenfassung(stand: CancellationState.partial), RegisterScope.all, 'u1'),
         isTrue,
       );
     });
@@ -172,60 +178,48 @@ void main() {
 
   group('welche Belege sieht der Kassier?', () {
     test('mit „alle" alle', () {
-      expect(belegSichtbar(zusammenfassung(bedienerUid: 'u2'), RegisterScope.all, 'u1'), isTrue);
+      expect(isReceiptVisible(zusammenfassung(bedienerUid: 'u2'), RegisterScope.all, 'u1'), isTrue);
     });
 
     test('mit „eigene" nur die eigenen', () {
-      expect(belegSichtbar(zusammenfassung(bedienerUid: 'u1'), RegisterScope.own, 'u1'), isTrue);
-      expect(belegSichtbar(zusammenfassung(bedienerUid: 'u2'), RegisterScope.own, 'u1'), isFalse);
+      expect(isReceiptVisible(zusammenfassung(bedienerUid: 'u1'), RegisterScope.own, 'u1'), isTrue);
+      expect(isReceiptVisible(zusammenfassung(bedienerUid: 'u2'), RegisterScope.own, 'u1'), isFalse);
     });
 
     test('ohne Recht keine', () {
-      expect(belegSichtbar(zusammenfassung(), RegisterScope.none, 'u1'), isFalse);
+      expect(isReceiptVisible(zusammenfassung(), RegisterScope.none, 'u1'), isFalse);
     });
   });
 
   group('Beleg-Kennung', () {
     test('die Nummer lässt sich aus der vollen Kennung lesen', () {
-      expect(idNummer('KASSE1-ID-809'), '809');
-      expect(idNummer('etwas-anderes'), 'etwas-anderes');
+      expect(receiptNumber('KASSE1-ID-809'), '809');
+      expect(receiptNumber('etwas-anderes'), 'etwas-anderes');
     });
 
     test('aus getippter Nummer wird die volle Kennung', () {
-      expect(volleId('KASSE1', '809'), 'KASSE1-ID-809');
+      expect(fullReceiptIdFromNumber('KASSE1', '809'), 'KASSE1-ID-809');
       // Nur Ziffern, höchstens sieben — der Rest fällt weg.
-      expect(volleId('KASSE1', '8a0b9'), 'KASSE1-ID-809');
-      expect(volleId('KASSE1', ''), isNull);
-      expect(volleId('KASSE1', 'abc'), isNull);
+      expect(fullReceiptIdFromNumber('KASSE1', '8a0b9'), 'KASSE1-ID-809');
+      expect(fullReceiptIdFromNumber('KASSE1', ''), isNull);
+      expect(fullReceiptIdFromNumber('KASSE1', 'abc'), isNull);
     });
   });
 }
 
-// Fehlercodes von cancelReceipt -- dieselbe Liste wie functions/storno-core.js
-// STORNO_FEHLERCODES und @kreiseck/kasseneck-api CANCELLATION_ERROR_CODES.
+// Fehlercodes von cancelReceipt -- die Liste gegen das Vokabular pruefen die
+// Tests in receipt_v3_codes_test.dart; hier nur die Erkennung.
 void main2() {
   group('Fehlercodes', () {
-    test('Katalog: dieselben achtzehn Codes wie Backend und npm-Paket, in derselben Reihenfolge', () {
-      expect(stornoFehlercodes, [
-        'beleg_nicht_gefunden', 'belegart_nicht_stornierbar', 'trainingsbeleg', 'bereits_storniert',
-        'position_ungueltig', 'menge_ueber_rest', 'grund_unbekannt', 'anmerkung_zu_lang', 'items_ungueltig',
-        'kasse_nicht_zugewiesen', 'keine_berechtigung', 'nur_eigene_belege', 'kasse_unvollstaendig',
-        'storno_fehlgeschlagen',
-        // Rueckzahlung je Zahlung (mehrere Zahlungen je Beleg)
-        'STORNO_PAYMENTS_REQUIRED', 'STORNO_REFUND_EXCEEDS_PAYMENT', 'STORNO_REFUND_REFERENCE_REQUIRED',
-        'STORNO_REFUND_REFERENCE_UNKNOWN',
-      ]);
-    });
-
-    test('istStornoFehlercode nimmt Katalog-Codes an, keinen Anzeigetext, kein null', () {
-      expect(istStornoFehlercode('menge_ueber_rest'), isTrue);
-      expect(istStornoFehlercode('Storno-Menge übersteigt die verbleibende Menge (Position 1).'), isFalse);
-      expect(istStornoFehlercode(null), isFalse);
-      // Die Storno-Codes werden unter /v3 umbenannt, nicht klein geschrieben --
-      // darum exakt, anders als istZahlungFehlercode.
-      expect(istStornoFehlercode('STORNO_PAYMENTS_REQUIRED'), isTrue);
-      expect(istStornoFehlercode('storno_payments_required'), isFalse);
+    test('istStornoFehlercode nimmt Katalog-Codes an, keinen Anzeigetext, kein null, keinen alten Code', () {
+      expect(cancellationErrorCodes.first, 'receipt_not_found');
+      expect(isCancellationErrorCode('quantity_exceeds_remaining'), isTrue);
+      expect(isCancellationErrorCode('cancellation_outcome_unknown'), isTrue);
+      expect(isCancellationErrorCode('Storno-Menge übersteigt die verbleibende Menge (Position 1).'), isFalse);
+      expect(isCancellationErrorCode(null), isFalse);
+      // Die alten Codes aus /v1 (deutsch bzw. gross) sind keine /v3-Codes mehr.
+      expect(isCancellationErrorCode('menge_ueber_rest'), isFalse);
+      expect(isCancellationErrorCode('STORNO_PAYMENTS_REQUIRED'), isFalse);
     });
   });
 }
-

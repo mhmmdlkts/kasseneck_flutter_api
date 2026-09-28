@@ -1,0 +1,41 @@
+/// Die Marke als Rasterbild -- Zwilling von `brandMarkImage`/`unpackRasterBits`
+/// in `@kreiseck/kasseneck-api` ab 0.26.0. Zur Laufzeit wird nichts gerastert
+/// und nichts skaliert: die beiden Masse (352x51 auf 80 mm, 234x34 auf 58 mm)
+/// stehen fest, damit JS und Dart fuer denselben Beleg dieselben Bytes
+/// erzeugen (siehe `docs/specs/2026-09-21-marke-einheitlich-design.md`, § 3.3).
+library;
+
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:kasseneck_api/enums/keck_paper_size.dart';
+import 'package:kasseneck_api/models/logo_raster.dart';
+import 'package:kasseneck_api/models/brand_mark_data.dart';
+
+/// Entpackt gepackte Rasterzeilen (Base64, MSB zuerst, je Zeile auf volle
+/// Bytes aufgefuellt) in ein Punkt-je-Byte-Bild -- dieselbe Rechnung wie
+/// `unpackRasterBits` im JS-Paket. Jede Zeile wird eigenstaendig indiziert
+/// (`byteJeZeile` pro Zeile, nicht `width / 8` insgesamt): bei einer Breite,
+/// die nicht durch 8 teilbar ist (234 auf 58 mm), fuellt jede Zeile fuer sich
+/// auf ein volles Byte auf, der Rest bleibt 0.
+///
+/// Eigene Funktion statt Code inline in [brandMarkImage]: ein Rundlauf-Test kann so
+/// denselben Entpacker pruefen, den die Marke zur Laufzeit auch benutzt.
+LogoRaster unpackRasterBits(String bitsBase64, int width, int height) {
+  final byteJeZeile = (width / 8).ceil();
+  final roh = base64.decode(bitsBase64);
+  final punkte = Uint8List(width * height);
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
+      final byte = roh[y * byteJeZeile + (x >> 3)];
+      punkte[y * width + x] = (byte >> (7 - (x & 7))) & 1;
+    }
+  }
+  return LogoRaster(width: width, height: height, dots: punkte);
+}
+
+/// Die Marke als Rasterbild fuer diese Papierbreite.
+LogoRaster brandMarkImage(KeckPaperSize paperSize) {
+  final d = brandMarkRasters[paperSize]!;
+  return unpackRasterBits(d.bits, d.width, d.height);
+}

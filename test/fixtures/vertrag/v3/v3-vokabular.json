@@ -1,0 +1,3375 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "29994ca53adc96e7cb49b9e3688b102a69c126544ef092fc6579a2e1fcd0d555",
+    "inputsSha256": "cee31126cc755fd21441abae289997aeb0884a15eb230ce231defd8bb0bdc0fd",
+    "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+    "inputs": [
+      "docs/api/fehlercodes.json",
+      "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/beleg-mail-core.js",
+      "functions/gemeinsam/api-rand.js",
+      "functions/gemeinsam/api-vokabular-v3.js",
+      "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/storno-core.js",
+      "functions/gemeinsam/tip-core.js",
+      "functions/gemeinsam/vat-buckets.js",
+      "functions/gemeinsam/zahlungen-core.js",
+      "functions/invoice-api-core.js",
+      "functions/invoice-api-endpoints.js",
+      "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
+      "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
+      "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
+      "functions/test/unit/helpers/kassen-fehlerstellen.js",
+      "functions/test/unit/v3-vertrag-export.test.js"
+    ]
+  },
+  "endpoints": {
+    "public": [
+      "createReceipt",
+      "getReceipt",
+      "cancelReceipt",
+      "sendReceiptEmail",
+      "generateFullReceiptId",
+      "downloadReceipt",
+      "getFirstReceiptDate",
+      "getReportV2",
+      "downloadReport",
+      "downloadDailyReport",
+      "createPaymentLinkStripe",
+      "stripeCaptureIntent",
+      "hobexPayApi",
+      "hobexRefundApi",
+      "hobexGetStatus",
+      "financeWebService",
+      "listMyTipRecipients",
+      "getPartnerInfo",
+      "createPartnerCustomer",
+      "checkPartnerCustomerEmail",
+      "listPartnerCustomers",
+      "getPartnerCustomer",
+      "sendPartnerCustomerFonLink",
+      "createPartnerWebhook",
+      "updatePartnerWebhook",
+      "deletePartnerWebhook",
+      "listPartnerWebhooks",
+      "sendPartnerWebhookTest",
+      "rotatePartnerWebhookSecret",
+      "listPartnerWebhookDeliveries",
+      "requestCustomerSignature",
+      "getCustomerSignatureStatus",
+      "createCustomerCashregister",
+      "activateCashregister",
+      "listCustomerCashregisters",
+      "getCustomerCredentials",
+      "reportCustomerVertrag",
+      "createCustomer",
+      "getCustomer",
+      "updateCustomer",
+      "searchCustomers",
+      "issueInvoice",
+      "cancelInvoice",
+      "createCreditNote",
+      "getInvoice",
+      "listInvoices",
+      "getInvoicePdf",
+      "getInvoiceXml",
+      "getInvoiceSetupStatus",
+      "listBrands",
+      "recordInvoicePayment"
+    ],
+    "v3Routed": [
+      "createReceipt",
+      "getReceipt",
+      "cancelReceipt",
+      "sendReceiptEmail",
+      "generateFullReceiptId",
+      "downloadReceipt",
+      "getFirstReceiptDate",
+      "getReportV2",
+      "downloadReport",
+      "downloadDailyReport",
+      "createPaymentLinkStripe",
+      "stripeCaptureIntent",
+      "hobexPayApi",
+      "hobexRefundApi",
+      "hobexGetStatus",
+      "financeWebService",
+      "listMyTipRecipients",
+      "getPartnerInfo",
+      "createPartnerCustomer",
+      "checkPartnerCustomerEmail",
+      "listPartnerCustomers",
+      "getPartnerCustomer",
+      "sendPartnerCustomerFonLink",
+      "createPartnerWebhook",
+      "updatePartnerWebhook",
+      "deletePartnerWebhook",
+      "listPartnerWebhooks",
+      "sendPartnerWebhookTest",
+      "rotatePartnerWebhookSecret",
+      "listPartnerWebhookDeliveries",
+      "requestCustomerSignature",
+      "getCustomerSignatureStatus",
+      "createCustomerCashregister",
+      "activateCashregister",
+      "listCustomerCashregisters",
+      "getCustomerCredentials",
+      "reportCustomerVertrag",
+      "createCustomer",
+      "getCustomer",
+      "updateCustomer",
+      "searchCustomers",
+      "issueInvoice",
+      "cancelInvoice",
+      "createCreditNote",
+      "getInvoice",
+      "listInvoices",
+      "getInvoicePdf",
+      "getInvoiceXml",
+      "getInvoiceSetupStatus",
+      "listBrands",
+      "recordInvoicePayment"
+    ],
+    "register": [
+      "pairRegisterDevice",
+      "listRegisterUsersForDevice",
+      "listRegisterSessionsForDevice",
+      "registerUserLogin",
+      "registerPinLogin",
+      "renewRegisterSession",
+      "endRegisterSession",
+      "unpairRegisterDevice",
+      "listMyCashregisters",
+      "listMyReceipts",
+      "getReceipt",
+      "createReceipt",
+      "generateFullReceiptId",
+      "cancelReceipt",
+      "sendReceiptEmail",
+      "listMyArticleGroups",
+      "listMyArticles",
+      "getKasseSettings",
+      "setMyKasseSettings",
+      "setMyKasseLogo",
+      "setMyRegisterDeviceSettings",
+      "listMyPrinters",
+      "createPrintJob",
+      "getPrintJob",
+      "listMyTipRecipients"
+    ],
+    "registerInternal": [
+      "pairRegisterDevice",
+      "listRegisterUsersForDevice",
+      "listRegisterSessionsForDevice",
+      "registerUserLogin",
+      "registerPinLogin",
+      "renewRegisterSession",
+      "endRegisterSession",
+      "unpairRegisterDevice",
+      "listMyCashregisters",
+      "listMyReceipts",
+      "listMyArticleGroups",
+      "listMyArticles",
+      "getKasseSettings",
+      "setMyKasseSettings",
+      "setMyKasseLogo",
+      "setMyRegisterDeviceSettings",
+      "listMyPrinters",
+      "createPrintJob",
+      "getPrintJob"
+    ],
+    "withSchema": [
+      "activateCashregister",
+      "cancelInvoice",
+      "cancelReceipt",
+      "checkPartnerCustomerEmail",
+      "createCreditNote",
+      "createCustomer",
+      "createCustomerCashregister",
+      "createPartnerCustomer",
+      "createPartnerWebhook",
+      "createPaymentLinkStripe",
+      "createPrintJob",
+      "createReceipt",
+      "deletePartnerWebhook",
+      "downloadDailyReport",
+      "downloadReceipt",
+      "downloadReport",
+      "endRegisterSession",
+      "financeWebService",
+      "generateFullReceiptId",
+      "getCustomer",
+      "getCustomerCredentials",
+      "getCustomerSignatureStatus",
+      "getFirstReceiptDate",
+      "getInvoice",
+      "getInvoicePdf",
+      "getInvoiceSetupStatus",
+      "getInvoiceXml",
+      "getKasseSettings",
+      "getPartnerCustomer",
+      "getPartnerInfo",
+      "getPrintJob",
+      "getReceipt",
+      "getReportV2",
+      "hobexGetStatus",
+      "hobexPayApi",
+      "hobexRefundApi",
+      "issueInvoice",
+      "listBrands",
+      "listCustomerCashregisters",
+      "listInvoices",
+      "listMyArticleGroups",
+      "listMyArticles",
+      "listMyCashregisters",
+      "listMyPrinters",
+      "listMyReceipts",
+      "listMyTipRecipients",
+      "listPartnerCustomers",
+      "listPartnerWebhookDeliveries",
+      "listPartnerWebhooks",
+      "listRegisterSessionsForDevice",
+      "listRegisterUsersForDevice",
+      "pairRegisterDevice",
+      "recordInvoicePayment",
+      "registerPinLogin",
+      "registerUserLogin",
+      "renewRegisterSession",
+      "reportCustomerVertrag",
+      "requestCustomerSignature",
+      "rotatePartnerWebhookSecret",
+      "searchCustomers",
+      "sendPartnerCustomerFonLink",
+      "sendPartnerWebhookTest",
+      "sendReceiptEmail",
+      "setMyKasseLogo",
+      "setMyKasseSettings",
+      "setMyRegisterDeviceSettings",
+      "stripeCaptureIntent",
+      "unpairRegisterDevice",
+      "updateCustomer",
+      "updatePartnerWebhook"
+    ],
+    "base": "https://api.kasseneck.at/v3/"
+  },
+  "names": {
+    "reportCustomerContract": "reportCustomerVertrag"
+  },
+  "catalogs": {
+    "ABSCHREIBUNG": {
+      "uneinbringlich": "uncollectible",
+      "verjaehrt": "time_barred",
+      "verzicht": "waived",
+      "bestritten": "disputed",
+      "storniert_extern": "settled_externally",
+      "andere": "other"
+    },
+    "ANMELDEMODUS": {
+      "auswahl": "select_user",
+      "pin": "pin"
+    },
+    "AVV_MODUS": {
+      "direkt": "direct",
+      "vollmacht": "power_of_attorney",
+      "unterauftrag": "subprocessor"
+    },
+    "BUNDESLAND": {
+      "burgenland": "AT-1",
+      "kaernten": "AT-2",
+      "niederoesterreich": "AT-3",
+      "oberoesterreich": "AT-4",
+      "salzburg": "AT-5",
+      "steiermark": "AT-6",
+      "tirol": "AT-7",
+      "vorarlberg": "AT-8",
+      "wien": "AT-9"
+    },
+    "DOKART": {
+      "RE": "invoice",
+      "GU": "credit_note"
+    },
+    "DRUCK_QUELLE": {
+      "kasse": "pos",
+      "panel": "panel"
+    },
+    "DRUCKJOB": {
+      "offen": "pending",
+      "gesendet": "sent",
+      "gedruckt": "printed",
+      "fehler": "failed",
+      "abgelaufen": "expired"
+    },
+    "E1A_GRUPPE": {
+      "waren": "goods_materials",
+      "fremdleistungen": "third_party_services",
+      "personal": "staff_costs",
+      "afa": "depreciation",
+      "gwg": "low_value_assets",
+      "miete": "rent_lease",
+      "instandhaltung_gebaeude": "building_maintenance",
+      "reise": "travel_expenses",
+      "oeffi_pauschale": "public_transport_allowance",
+      "kfz": "vehicle_costs",
+      "provisionen": "commissions_royalties",
+      "werbung": "advertising_hospitality",
+      "zinsen": "interest",
+      "sv_beitraege": "social_insurance_contributions",
+      "arbeitsplatz_klein": "workspace_allowance_small",
+      "arbeitsplatz_gross": "workspace_allowance_large",
+      "anlagenabgang": "asset_disposal_book_value",
+      "telefon_buero": "phone_internet_office_supplies",
+      "beratung": "legal_advisory",
+      "uebrige_ausgaben": "other_expenses",
+      "erloese": "revenue",
+      "erloese_109a": "revenue_109a",
+      "anlagenverkauf": "asset_sales_withdrawals",
+      "uebrige_einnahmen": "other_income"
+    },
+    "EINVOICE_FEHLT": {
+      "Name": "name",
+      "Straße": "street",
+      "PLZ": "zip",
+      "Ort": "city",
+      "Land": "country",
+      "UID-Nummer": "vat_id",
+      "Auftragsreferenz": "order_reference",
+      "Auftragsreferenz (Format)": "order_reference_format"
+    },
+    "GRUND_V3": {
+      "karte_eingetragen": "card_entered",
+      "fon": "finanzonline"
+    },
+    "KASSE_BETRIEB_WERTE.cardProvider": {
+      "keiner": "none",
+      "extern": "external",
+      "gptom": "gptom",
+      "hobex": "hobex",
+      "mypos": "mypos",
+      "stripe": "stripe"
+    },
+    "KASSE_BETRIEB_WERTE.checkoutMode": {
+      "seite": "page",
+      "panel": "panel"
+    },
+    "KASSE_BETRIEB_WERTE.discount": {
+      "aus": "off",
+      "an": "on"
+    },
+    "KASSE_BETRIEB_WERTE.quantity": {
+      "aus": "off",
+      "x": "x",
+      "kg": "kg"
+    },
+    "KASSE_BETRIEB_WERTE.receiptOutput": {
+      "qr": "qr",
+      "druck": "print",
+      "mail": "email",
+      "sms": "sms",
+      "fragen": "ask"
+    },
+    "KASSE_BETRIEB_WERTE.theme": {
+      "klar": "clear",
+      "warm": "warm",
+      "nacht": "night",
+      "kontrast": "contrast"
+    },
+    "KASSE_BETRIEB_WERTE.tileStyle": {
+      "streifen": "stripe",
+      "voll": "full"
+    },
+    "KASSE_BETRIEB_WERTE.tipMode": {
+      "betrag": "amount",
+      "gesamt": "total",
+      "beides": "both"
+    },
+    "KASSE_BETRIEB_WERTE.watermark": {
+      "aus": "off",
+      "anmeldung": "login",
+      "ueberall": "everywhere"
+    },
+    "KASSE_BETRIEB_WERTE.watermarkSide": {
+      "links": "left",
+      "mitte": "center",
+      "rechts": "right"
+    },
+    "KASSE_GERAET_WERTE.categoryPosition": {
+      "oben": "top",
+      "links": "left"
+    },
+    "KASSE_GERAET_WERTE.drawerAutoOpen": {
+      "bar": "cash",
+      "immer": "always",
+      "nie": "never"
+    },
+    "KASSE_GERAET_WERTE.layout": {
+      "rechts": "right",
+      "links": "left",
+      "vollbild": "fullscreen"
+    },
+    "KASSE_GERAET_WERTE.printerType": {
+      "sdp": "sdp",
+      "netz": "network",
+      "bt": "bluetooth",
+      "usb": "usb",
+      "connect": "connect"
+    },
+    "KASSE_GERAET_WERTE.terminalType": {
+      "keins": "none",
+      "hps": "hps"
+    },
+    "KASSE_GERAET_WERTE.terminalVia": {
+      "direkt": "direct",
+      "connect": "connect"
+    },
+    "LAYOUT_TON": {
+      "belegart": "receipt_type",
+      "warnung": "warning"
+    },
+    "MAILWEG": {
+      "eigen": "own",
+      "plattform": "platform",
+      "plattform-fallback": "platform_fallback"
+    },
+    "MENGENREGEL": {
+      "stueck": "piece",
+      "dezimal": "decimal"
+    },
+    "MODUL": {
+      "registrierkasse": "cash_register",
+      "rechnung": "invoice",
+      "bank": "bank",
+      "lohn": "payroll",
+      "lager": "inventory"
+    },
+    "PIN_ZEICHEN": {
+      "ziffern": "digits",
+      "zeichen": "alphanumeric"
+    },
+    "QUELLE": {
+      "einrichten": "setup_link",
+      "prozess": "process_link",
+      "partner_vollmacht": "partner_power_of_attorney",
+      "admin_papier": "admin_paper",
+      "papier_upload": "paper_upload"
+    },
+    "RECHTSFORM": {
+      "einzel": "sole_proprietor",
+      "eu": "eu",
+      "og": "og",
+      "kg": "kg",
+      "gmbh": "gmbh",
+      "gmbhcokg": "gmbhcokg",
+      "ag": "ag",
+      "verein": "association",
+      "sonstige": "other"
+    },
+    "RHYTHMUS": {
+      "monat": "monthly",
+      "jahr": "yearly",
+      "einmal": "once"
+    },
+    "ROLLE": {
+      "geschaeftsfuehrung": "management",
+      "buchhaltung": "accounting",
+      "technik": "technical",
+      "kasse": "pos"
+    },
+    "STEUERFALL": {
+      "normal": "normal",
+      "smallBusiness": "smallBusiness",
+      "reverseCharge": "reverseCharge",
+      "igLieferung": "intraCommunitySupply",
+      "exportThirdCountry": "exportThirdCountry",
+      "domesticReverseCharge": "domesticReverseCharge",
+      "oss": "oss",
+      "outsideScope": "outsideScope"
+    },
+    "STORNO_GRUND": {
+      "fehleingabe": "input_error",
+      "kunde_storniert": "customer_cancelled",
+      "falsche_zahlart": "wrong_payment_method",
+      "doppelt_erfasst": "duplicate",
+      "sonstiges": "other"
+    },
+    "STORNO_STAND": {
+      "offen": "none",
+      "teil": "partial",
+      "voll": "full"
+    },
+    "VERTRAG_ART": {
+      "avv": "avv",
+      "nutzung": "terms"
+    },
+    "ZUSTELLUNG": {
+      "zugestellt": "delivered",
+      "offen": "pending",
+      "fehlgeschlagen": "failed",
+      "verworfen": "dropped"
+    }
+  },
+  "errorCodes": {
+    "all": [
+      "access_not_allowed",
+      "account_not_found",
+      "activation_failed",
+      "admin_required",
+      "already_accepted",
+      "already_cancelled",
+      "amount_too_large",
+      "app_not_accepted",
+      "app_not_found",
+      "brand_not_found",
+      "cancellation_failed",
+      "cancellation_outcome_unknown",
+      "cancellation_payments_required",
+      "cancellation_reference_unavailable",
+      "cancellation_refund_exceeds_payment",
+      "cancellation_refund_reference_required",
+      "cancellation_refund_reference_unknown",
+      "cashregister_closed",
+      "cashregister_decommissioned",
+      "cashregister_in_use",
+      "cashregister_incomplete",
+      "cashregister_limit",
+      "cashregister_not_assigned",
+      "cashregister_not_found",
+      "cashregister_token_invalid",
+      "cashregister_token_missing",
+      "contracts_pending",
+      "credit_exceeds_invoice",
+      "customer_conflict",
+      "customer_exists",
+      "customer_limit",
+      "customer_not_found",
+      "device_bound_elsewhere",
+      "device_not_found",
+      "device_not_paired",
+      "device_takeover_required",
+      "dialect_mismatch",
+      "einvoice_incomplete",
+      "einvoice_unavailable",
+      "email_taken",
+      "event_not_subscribed",
+      "final_receipt_expired",
+      "final_receipt_not_allowed",
+      "finanzonline_error",
+      "fon_missing",
+      "idempotency_conflict",
+      "incomplete",
+      "internal_translation_error",
+      "invalid_address",
+      "invalid_items",
+      "invalid_line",
+      "invoice_ambiguous",
+      "invoice_api_not_enabled",
+      "invoice_not_found",
+      "invoice_requirements_missing",
+      "invoice_setup_incomplete",
+      "kind_not_allowed",
+      "language_not_allowed",
+      "licenses_exhausted",
+      "live_not_allowed",
+      "live_not_enabled",
+      "location_outside",
+      "location_required",
+      "login_failed",
+      "login_mode_select_user",
+      "login_unavailable",
+      "logo_invalid",
+      "logo_invalid_type",
+      "logo_too_large",
+      "method_not_allowed",
+      "mfa_required",
+      "mixed_supply_not_allowed",
+      "mode_not_allowed",
+      "module_inactive",
+      "no_email",
+      "no_version",
+      "not_a_partner",
+      "not_cancellable",
+      "not_found",
+      "not_payable",
+      "not_permitted",
+      "note_too_long",
+      "oss_not_enabled",
+      "own_receipts_only",
+      "pairing_code_expired",
+      "pairing_code_unknown",
+      "pairing_code_used",
+      "pairing_failed",
+      "partial_credit_exists",
+      "partner_account_not_allowed",
+      "partner_locked",
+      "partner_membership_missing",
+      "partner_owner_only",
+      "payment_amount_invalid",
+      "payment_exceeds_invoice",
+      "payment_method_invalid",
+      "payment_method_not_supported",
+      "payment_provider_invalid",
+      "payment_provider_not_allowed",
+      "payment_refund_not_allowed",
+      "payment_tendered_invalid",
+      "payment_tip_invalid",
+      "payments_conflict",
+      "payments_due_negative",
+      "payments_invalid",
+      "payments_not_allowed",
+      "payments_required",
+      "payments_sum_mismatch",
+      "power_of_attorney_missing",
+      "print_job_not_found",
+      "print_layout_failed",
+      "printer_not_found",
+      "quantity_exceeds_remaining",
+      "rate_limited",
+      "receipt_limit_exceeded",
+      "receipt_not_found",
+      "receipt_outcome_unknown",
+      "receipt_type_invalid",
+      "receipt_type_not_cancellable",
+      "recipient_required",
+      "register_user_no_business",
+      "register_user_not_allowed",
+      "register_user_not_found",
+      "register_user_only",
+      "response_translation_failed",
+      "reverse_charge_reason_required",
+      "reverse_charge_threshold",
+      "scope_missing",
+      "send_failed",
+      "server_error",
+      "session_ended",
+      "session_expired",
+      "session_not_running",
+      "session_other_cashregister",
+      "short_code_immutable",
+      "short_code_taken",
+      "signature_ambiguous",
+      "signature_failed",
+      "signature_incomplete",
+      "signature_limit",
+      "signature_missing",
+      "signature_not_ready",
+      "signature_pending",
+      "signature_unknown",
+      "signing_failed",
+      "small_business_vat_not_allowed",
+      "tax_number_missing",
+      "tax_scheme_mismatch",
+      "text_changed",
+      "tip_conflict",
+      "tip_exceeds_payment",
+      "tip_invalid",
+      "tip_not_allowed",
+      "tip_payment_method_invalid",
+      "tip_payment_method_required",
+      "tip_recipient_unknown",
+      "too_many_attempts",
+      "too_many_requests",
+      "training_receipt",
+      "unauthorized",
+      "unknown_reason",
+      "unknown_version",
+      "user_disabled",
+      "user_verification_failed",
+      "validation",
+      "vat_rate_not_in_country",
+      "webhook_inactive",
+      "webhook_limit"
+    ],
+    "translation": {
+      "zugang_nicht_erlaubt": "access_not_allowed",
+      "kennung_fehlt": "tax_number_missing",
+      "vertrag_offen": "contracts_pending",
+      "art_not_allowed": "kind_not_allowed",
+      "modus_not_allowed": "mode_not_allowed",
+      "vollmacht_fehlt": "power_of_attorney_missing",
+      "kunde_nicht_gefunden": "customer_not_found",
+      "unvollstaendig": "incomplete",
+      "fon_fehler": "finanzonline_error",
+      "beleg_nicht_gefunden": "receipt_not_found",
+      "belegart_nicht_stornierbar": "receipt_type_not_cancellable",
+      "trainingsbeleg": "training_receipt",
+      "bereits_storniert": "already_cancelled",
+      "position_ungueltig": "invalid_line",
+      "menge_ueber_rest": "quantity_exceeds_remaining",
+      "grund_unbekannt": "unknown_reason",
+      "anmerkung_zu_lang": "note_too_long",
+      "items_ungueltig": "invalid_items",
+      "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+      "keine_berechtigung": "not_permitted",
+      "nur_eigene_belege": "own_receipts_only",
+      "kasse_unvollstaendig": "cashregister_incomplete",
+      "storno_fehlgeschlagen": "cancellation_failed",
+      "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
+      "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
+      "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
+      "STORNO_REFUND_REFERENCE_UNKNOWN": "cancellation_refund_reference_unknown",
+      "STORNO_OUTCOME_UNKNOWN": "cancellation_outcome_unknown",
+      "PAYMENTS_INVALID": "payments_invalid",
+      "PAYMENT_METHOD_INVALID": "payment_method_invalid",
+      "PAYMENT_AMOUNT_INVALID": "payment_amount_invalid",
+      "PAYMENT_TENDERED_INVALID": "payment_tendered_invalid",
+      "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
+      "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
+      "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+      "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
+      "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
+      "PAYMENTS_CONFLICT": "payments_conflict",
+      "PAYMENTS_REQUIRED": "payments_required",
+      "PAYMENT_METHOD_NOT_SUPPORTED": "payment_method_not_supported",
+      "TIP_PAYMENT_METHOD_INVALID": "tip_payment_method_invalid",
+      "TIP_PAYMENT_METHOD_REQUIRED": "tip_payment_method_required",
+      "TIP_EXCEEDS_PAYMENT": "tip_exceeds_payment",
+      "PAYMENT_REFUND_NOT_ALLOWED": "payment_refund_not_allowed",
+      "PAYMENT_TIP_INVALID": "payment_tip_invalid",
+      "TIP_CONFLICT": "tip_conflict",
+      "adresse_ungueltig": "invalid_address",
+      "zu_oft": "too_many_requests",
+      "versand_fehlgeschlagen": "send_failed"
+    },
+    "edge": [
+      "validation",
+      "not_found",
+      "internal_translation_error",
+      "dialect_mismatch",
+      "response_translation_failed"
+    ],
+    "auth": [
+      "method_not_allowed",
+      "validation",
+      "cashregister_token_missing",
+      "cashregister_token_invalid",
+      "cashregister_not_found",
+      "account_not_found",
+      "live_not_enabled",
+      "unauthorized",
+      "mfa_required",
+      "user_verification_failed",
+      "admin_required",
+      "register_user_not_allowed",
+      "register_user_no_business",
+      "register_user_not_found",
+      "user_disabled",
+      "session_expired",
+      "cashregister_not_assigned",
+      "session_other_cashregister",
+      "partner_locked",
+      "scope_missing",
+      "rate_limited",
+      "not_a_partner",
+      "partner_membership_missing",
+      "partner_owner_only",
+      "partner_account_not_allowed"
+    ],
+    "receiptMessages": [
+      "cancellation_reference_unavailable",
+      "cashregister_closed",
+      "cashregister_decommissioned",
+      "final_receipt_expired",
+      "final_receipt_not_allowed",
+      "module_inactive",
+      "not_permitted",
+      "receipt_limit_exceeded",
+      "receipt_not_found",
+      "receipt_outcome_unknown",
+      "receipt_type_invalid",
+      "server_error",
+      "signature_incomplete",
+      "signature_missing",
+      "signing_failed",
+      "small_business_vat_not_allowed",
+      "tip_invalid",
+      "tip_not_allowed",
+      "tip_recipient_unknown",
+      "validation"
+    ],
+    "registerHandlers": [
+      "already_cancelled",
+      "cancellation_failed",
+      "cancellation_outcome_unknown",
+      "cancellation_refund_exceeds_payment",
+      "cancellation_refund_reference_required",
+      "cancellation_refund_reference_unknown",
+      "cashregister_incomplete",
+      "cashregister_not_assigned",
+      "cashregister_not_found",
+      "device_bound_elsewhere",
+      "device_not_found",
+      "device_not_paired",
+      "device_takeover_required",
+      "invalid_address",
+      "invalid_items",
+      "invalid_line",
+      "licenses_exhausted",
+      "location_outside",
+      "location_required",
+      "login_failed",
+      "login_mode_select_user",
+      "logo_invalid",
+      "logo_invalid_type",
+      "logo_too_large",
+      "method_not_allowed",
+      "module_inactive",
+      "not_permitted",
+      "note_too_long",
+      "own_receipts_only",
+      "pairing_code_expired",
+      "pairing_code_unknown",
+      "pairing_code_used",
+      "pairing_failed",
+      "payment_amount_invalid",
+      "payment_method_invalid",
+      "payment_method_not_supported",
+      "payment_provider_invalid",
+      "payment_provider_not_allowed",
+      "payment_refund_not_allowed",
+      "payment_tendered_invalid",
+      "payment_tip_invalid",
+      "payments_conflict",
+      "payments_due_negative",
+      "payments_invalid",
+      "payments_not_allowed",
+      "payments_required",
+      "payments_sum_mismatch",
+      "print_job_not_found",
+      "print_layout_failed",
+      "printer_not_found",
+      "quantity_exceeds_remaining",
+      "receipt_not_found",
+      "receipt_type_not_cancellable",
+      "register_user_only",
+      "send_failed",
+      "server_error",
+      "session_ended",
+      "tip_conflict",
+      "tip_exceeds_payment",
+      "tip_payment_method_invalid",
+      "tip_payment_method_required",
+      "too_many_attempts",
+      "too_many_requests",
+      "training_receipt",
+      "unknown_reason",
+      "user_disabled",
+      "validation"
+    ],
+    "cancellation": [
+      "receipt_not_found",
+      "receipt_type_not_cancellable",
+      "training_receipt",
+      "already_cancelled",
+      "invalid_line",
+      "quantity_exceeds_remaining",
+      "unknown_reason",
+      "note_too_long",
+      "invalid_items",
+      "cashregister_not_assigned",
+      "not_permitted",
+      "own_receipts_only",
+      "cashregister_incomplete",
+      "cancellation_failed",
+      "cancellation_payments_required",
+      "cancellation_refund_exceeds_payment",
+      "cancellation_refund_reference_required",
+      "cancellation_refund_reference_unknown",
+      "cancellation_outcome_unknown"
+    ],
+    "payments": [
+      "payments_invalid",
+      "payment_method_invalid",
+      "payment_amount_invalid",
+      "payment_tendered_invalid",
+      "payment_provider_invalid",
+      "payment_provider_not_allowed",
+      "payments_sum_mismatch",
+      "payments_due_negative",
+      "payments_not_allowed",
+      "payments_conflict",
+      "payments_required",
+      "payment_method_not_supported",
+      "tip_payment_method_invalid",
+      "tip_payment_method_required",
+      "tip_exceeds_payment",
+      "payment_refund_not_allowed",
+      "payment_tip_invalid",
+      "tip_conflict"
+    ],
+    "receiptEmail": [
+      "invalid_address",
+      "receipt_not_found",
+      "too_many_requests",
+      "send_failed"
+    ],
+    "invoice": [
+      "validation",
+      "idempotency_conflict",
+      "module_inactive",
+      "customer_not_found",
+      "customer_exists",
+      "short_code_taken",
+      "short_code_immutable",
+      "recipient_required",
+      "invoice_requirements_missing",
+      "invoice_not_found",
+      "invoice_ambiguous",
+      "not_cancellable",
+      "partial_credit_exists",
+      "credit_exceeds_invoice",
+      "einvoice_incomplete",
+      "invoice_api_not_enabled",
+      "invoice_setup_incomplete",
+      "language_not_allowed",
+      "brand_not_found",
+      "not_payable",
+      "payment_exceeds_invoice",
+      "tax_scheme_mismatch",
+      "vat_rate_not_in_country",
+      "reverse_charge_reason_required",
+      "reverse_charge_threshold",
+      "mixed_supply_not_allowed",
+      "oss_not_enabled",
+      "einvoice_unavailable",
+      "amount_too_large"
+    ],
+    "partner": [
+      "validation",
+      "rate_limited",
+      "app_not_found",
+      "app_not_accepted",
+      "live_not_allowed",
+      "customer_exists",
+      "customer_conflict",
+      "customer_limit",
+      "access_not_allowed",
+      "email_taken",
+      "no_email",
+      "tax_number_missing",
+      "fon_missing",
+      "signature_pending",
+      "signature_missing",
+      "signature_unknown",
+      "signature_ambiguous",
+      "signature_not_ready",
+      "signature_limit",
+      "signature_failed",
+      "module_inactive",
+      "cashregister_limit",
+      "cashregister_not_found",
+      "contracts_pending",
+      "kind_not_allowed",
+      "mode_not_allowed",
+      "power_of_attorney_missing",
+      "not_found",
+      "no_version",
+      "unknown_version",
+      "text_changed",
+      "already_accepted",
+      "activation_failed",
+      "webhook_limit",
+      "webhook_inactive",
+      "event_not_subscribed"
+    ],
+    "registerCases": [
+      "already_cancelled",
+      "cancellation_failed",
+      "cancellation_outcome_unknown",
+      "cashregister_in_use",
+      "cashregister_incomplete",
+      "cashregister_not_assigned",
+      "cashregister_not_found",
+      "cashregister_token_missing",
+      "device_bound_elsewhere",
+      "device_not_found",
+      "device_not_paired",
+      "device_takeover_required",
+      "invalid_items",
+      "licenses_exhausted",
+      "live_not_enabled",
+      "location_outside",
+      "location_required",
+      "login_failed",
+      "login_mode_select_user",
+      "login_unavailable",
+      "logo_invalid",
+      "logo_invalid_type",
+      "logo_too_large",
+      "method_not_allowed",
+      "module_inactive",
+      "not_permitted",
+      "note_too_long",
+      "own_receipts_only",
+      "pairing_code_expired",
+      "pairing_code_unknown",
+      "pairing_code_used",
+      "payment_method_not_supported",
+      "print_job_not_found",
+      "print_layout_failed",
+      "printer_not_found",
+      "quantity_exceeds_remaining",
+      "receipt_not_found",
+      "receipt_type_not_cancellable",
+      "register_user_only",
+      "session_expired",
+      "session_not_running",
+      "session_other_cashregister",
+      "too_many_attempts",
+      "training_receipt",
+      "unauthorized",
+      "unknown_reason",
+      "user_disabled",
+      "validation"
+    ],
+    "translatedValues": [
+      "access_not_allowed",
+      "tax_number_missing",
+      "contracts_pending",
+      "kind_not_allowed",
+      "mode_not_allowed",
+      "power_of_attorney_missing",
+      "customer_not_found",
+      "incomplete",
+      "finanzonline_error",
+      "receipt_not_found",
+      "receipt_type_not_cancellable",
+      "training_receipt",
+      "already_cancelled",
+      "invalid_line",
+      "quantity_exceeds_remaining",
+      "unknown_reason",
+      "note_too_long",
+      "invalid_items",
+      "cashregister_not_assigned",
+      "not_permitted",
+      "own_receipts_only",
+      "cashregister_incomplete",
+      "cancellation_failed",
+      "cancellation_payments_required",
+      "cancellation_refund_exceeds_payment",
+      "cancellation_refund_reference_required",
+      "cancellation_refund_reference_unknown",
+      "cancellation_outcome_unknown",
+      "payments_invalid",
+      "payment_method_invalid",
+      "payment_amount_invalid",
+      "payment_tendered_invalid",
+      "payment_provider_invalid",
+      "payment_provider_not_allowed",
+      "payments_sum_mismatch",
+      "payments_due_negative",
+      "payments_not_allowed",
+      "payments_conflict",
+      "payments_required",
+      "payment_method_not_supported",
+      "tip_payment_method_invalid",
+      "tip_payment_method_required",
+      "tip_exceeds_payment",
+      "payment_refund_not_allowed",
+      "payment_tip_invalid",
+      "tip_conflict",
+      "invalid_address",
+      "too_many_requests",
+      "send_failed"
+    ],
+    "receiptMessagesByEndpoint": {
+      "createReceipt": [
+        "cancellation_reference_unavailable",
+        "cashregister_closed",
+        "cashregister_decommissioned",
+        "final_receipt_expired",
+        "final_receipt_not_allowed",
+        "module_inactive",
+        "not_permitted",
+        "receipt_limit_exceeded",
+        "receipt_outcome_unknown",
+        "receipt_type_invalid",
+        "signature_incomplete",
+        "signature_missing",
+        "signing_failed",
+        "small_business_vat_not_allowed",
+        "tip_invalid",
+        "tip_not_allowed",
+        "tip_recipient_unknown",
+        "validation"
+      ],
+      "getReceipt": [
+        "receipt_not_found"
+      ],
+      "listMyCashregisters": [
+        "server_error"
+      ],
+      "listMyReceipts": [
+        "server_error"
+      ],
+      "cancelReceipt": [
+        "validation"
+      ]
+    },
+    "registerHandlersByEndpoint": {
+      "pairRegisterDevice": [
+        "cashregister_not_found",
+        "device_takeover_required",
+        "licenses_exhausted",
+        "method_not_allowed",
+        "pairing_code_expired",
+        "pairing_code_unknown",
+        "pairing_code_used",
+        "pairing_failed",
+        "validation"
+      ],
+      "listRegisterUsersForDevice": [
+        "device_not_paired",
+        "method_not_allowed",
+        "validation"
+      ],
+      "listRegisterSessionsForDevice": [
+        "device_not_paired",
+        "method_not_allowed",
+        "validation"
+      ],
+      "registerUserLogin": [
+        "cashregister_not_assigned",
+        "device_bound_elsewhere",
+        "device_not_paired",
+        "location_outside",
+        "location_required",
+        "login_failed",
+        "method_not_allowed",
+        "too_many_attempts",
+        "user_disabled",
+        "validation"
+      ],
+      "registerPinLogin": [
+        "device_bound_elsewhere",
+        "device_not_paired",
+        "location_outside",
+        "location_required",
+        "login_failed",
+        "login_mode_select_user",
+        "method_not_allowed",
+        "too_many_attempts",
+        "validation"
+      ],
+      "renewRegisterSession": [
+        "register_user_only",
+        "session_ended"
+      ],
+      "endRegisterSession": [
+        "register_user_only"
+      ],
+      "unpairRegisterDevice": [
+        "device_not_found",
+        "validation"
+      ],
+      "listMyCashregisters": [],
+      "listMyReceipts": [
+        "cashregister_not_assigned",
+        "cashregister_not_found"
+      ],
+      "getReceipt": [],
+      "createReceipt": [
+        "payment_amount_invalid",
+        "payment_method_invalid",
+        "payment_method_not_supported",
+        "payment_provider_invalid",
+        "payment_provider_not_allowed",
+        "payment_refund_not_allowed",
+        "payment_tendered_invalid",
+        "payment_tip_invalid",
+        "payments_conflict",
+        "payments_due_negative",
+        "payments_invalid",
+        "payments_not_allowed",
+        "payments_required",
+        "payments_sum_mismatch",
+        "tip_conflict",
+        "tip_exceeds_payment",
+        "tip_payment_method_invalid",
+        "tip_payment_method_required"
+      ],
+      "generateFullReceiptId": [],
+      "cancelReceipt": [
+        "already_cancelled",
+        "cancellation_failed",
+        "cancellation_outcome_unknown",
+        "cancellation_refund_exceeds_payment",
+        "cancellation_refund_reference_required",
+        "cancellation_refund_reference_unknown",
+        "cashregister_incomplete",
+        "cashregister_not_assigned",
+        "invalid_items",
+        "invalid_line",
+        "not_permitted",
+        "note_too_long",
+        "own_receipts_only",
+        "payment_amount_invalid",
+        "payment_method_invalid",
+        "payment_method_not_supported",
+        "payment_provider_invalid",
+        "payment_provider_not_allowed",
+        "payment_refund_not_allowed",
+        "payment_tendered_invalid",
+        "payment_tip_invalid",
+        "payments_conflict",
+        "payments_due_negative",
+        "payments_invalid",
+        "payments_not_allowed",
+        "payments_required",
+        "payments_sum_mismatch",
+        "quantity_exceeds_remaining",
+        "receipt_not_found",
+        "receipt_type_not_cancellable",
+        "server_error",
+        "tip_conflict",
+        "tip_exceeds_payment",
+        "tip_payment_method_invalid",
+        "tip_payment_method_required",
+        "training_receipt",
+        "unknown_reason"
+      ],
+      "sendReceiptEmail": [
+        "invalid_address",
+        "receipt_not_found",
+        "send_failed",
+        "too_many_requests"
+      ],
+      "listMyArticleGroups": [
+        "module_inactive"
+      ],
+      "listMyArticles": [
+        "module_inactive"
+      ],
+      "getKasseSettings": [
+        "cashregister_not_assigned"
+      ],
+      "setMyKasseSettings": [
+        "not_permitted",
+        "validation"
+      ],
+      "setMyKasseLogo": [
+        "logo_invalid",
+        "logo_invalid_type",
+        "logo_too_large",
+        "not_permitted"
+      ],
+      "setMyRegisterDeviceSettings": [
+        "cashregister_not_assigned",
+        "device_not_found",
+        "not_permitted",
+        "validation"
+      ],
+      "listMyPrinters": [],
+      "createPrintJob": [
+        "print_layout_failed",
+        "printer_not_found",
+        "validation"
+      ],
+      "getPrintJob": [
+        "print_job_not_found"
+      ],
+      "listMyTipRecipients": []
+    }
+  },
+  "noticeCodes": [
+    "cash_receipt_required",
+    "recapitulative_statement_due",
+    "place_of_supply_check"
+  ],
+  "schemas": {
+    "activateCashregister": {
+      "fehler": {
+        "data": {
+          "module": "modul",
+          "detail": "meldung"
+        },
+        "werte": {
+          "module": {
+            "$catalog": "MODUL"
+          }
+        }
+      }
+    },
+    "cancelInvoice": {
+      "werte": {
+        "creditNote.docType": {
+          "$catalog": "DOKART"
+        },
+        "creditNote.taxScheme": {
+          "$catalog": "STEUERFALL"
+        },
+        "creditNote.writeOffReasonCode": {
+          "$catalog": "ABSCHREIBUNG"
+        },
+        "creditNote.einvoice.missing[]": {
+          "$catalog": "EINVOICE_FEHLT"
+        }
+      },
+      "fehler": {
+        "werte": {
+          "missing[]": {
+            "$catalog": "EINVOICE_FEHLT"
+          }
+        }
+      }
+    },
+    "cancelReceipt": {
+      "paramWerte": {
+        "reason": {
+          "$catalog": "STORNO_GRUND"
+        }
+      },
+      "data": {
+        "receipt": {
+          "__": "receipt",
+          "headerVersionId": "kopfId",
+          "layoutRuleset": "layoutRegeln",
+          "registrationInfo": {
+            "__": "pruefangaben",
+            "cardRegisteredAt": "karteRegistriertAm",
+            "cashregisterRegisteredAt": "kasseRegistriertAm"
+          },
+          "items": [
+            {
+              "__": "items",
+              "receivedImmediately": "sofortErhalten"
+            }
+          ]
+        }
+      },
+      "werte": {
+        "receipt.cancellationReason": {
+          "$catalog": "STORNO_GRUND"
+        }
+      },
+      "ergaenze": {
+        "$function": "belegJeKanal"
+      },
+      "fehler": {
+        "meldungen": [
+          {
+            "text": "Ungültige Daten: Kartendaten gibt es nur bei paymentMethod creditCard.",
+            "code": "validation",
+            "feld": "paymentMethod"
+          }
+        ]
+      }
+    },
+    "checkPartnerCustomerEmail": {},
+    "createCreditNote": {
+      "werte": {
+        "creditNote.docType": {
+          "$catalog": "DOKART"
+        },
+        "creditNote.taxScheme": {
+          "$catalog": "STEUERFALL"
+        },
+        "creditNote.writeOffReasonCode": {
+          "$catalog": "ABSCHREIBUNG"
+        },
+        "creditNote.einvoice.missing[]": {
+          "$catalog": "EINVOICE_FEHLT"
+        }
+      },
+      "fehler": {
+        "werte": {
+          "missing[]": {
+            "$catalog": "EINVOICE_FEHLT"
+          }
+        }
+      }
+    },
+    "createCustomer": {},
+    "createCustomerCashregister": {
+      "fehler": {
+        "data": {
+          "module": "modul",
+          "detail": "meldung"
+        },
+        "werte": {
+          "module": {
+            "$catalog": "MODUL"
+          },
+          "signatures[].error.code": {
+            "zugang_nicht_erlaubt": "access_not_allowed",
+            "kennung_fehlt": "tax_number_missing",
+            "vertrag_offen": "contracts_pending",
+            "art_not_allowed": "kind_not_allowed",
+            "modus_not_allowed": "mode_not_allowed",
+            "vollmacht_fehlt": "power_of_attorney_missing",
+            "kunde_nicht_gefunden": "customer_not_found",
+            "unvollstaendig": "incomplete",
+            "fon_fehler": "finanzonline_error",
+            "beleg_nicht_gefunden": "receipt_not_found",
+            "belegart_nicht_stornierbar": "receipt_type_not_cancellable",
+            "trainingsbeleg": "training_receipt",
+            "bereits_storniert": "already_cancelled",
+            "position_ungueltig": "invalid_line",
+            "menge_ueber_rest": "quantity_exceeds_remaining",
+            "grund_unbekannt": "unknown_reason",
+            "anmerkung_zu_lang": "note_too_long",
+            "items_ungueltig": "invalid_items",
+            "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+            "keine_berechtigung": "not_permitted",
+            "nur_eigene_belege": "own_receipts_only",
+            "kasse_unvollstaendig": "cashregister_incomplete",
+            "storno_fehlgeschlagen": "cancellation_failed",
+            "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
+            "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
+            "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
+            "STORNO_REFUND_REFERENCE_UNKNOWN": "cancellation_refund_reference_unknown",
+            "STORNO_OUTCOME_UNKNOWN": "cancellation_outcome_unknown",
+            "PAYMENTS_INVALID": "payments_invalid",
+            "PAYMENT_METHOD_INVALID": "payment_method_invalid",
+            "PAYMENT_AMOUNT_INVALID": "payment_amount_invalid",
+            "PAYMENT_TENDERED_INVALID": "payment_tendered_invalid",
+            "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
+            "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
+            "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+            "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
+            "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
+            "PAYMENTS_CONFLICT": "payments_conflict",
+            "PAYMENTS_REQUIRED": "payments_required",
+            "PAYMENT_METHOD_NOT_SUPPORTED": "payment_method_not_supported",
+            "TIP_PAYMENT_METHOD_INVALID": "tip_payment_method_invalid",
+            "TIP_PAYMENT_METHOD_REQUIRED": "tip_payment_method_required",
+            "TIP_EXCEEDS_PAYMENT": "tip_exceeds_payment",
+            "PAYMENT_REFUND_NOT_ALLOWED": "payment_refund_not_allowed",
+            "PAYMENT_TIP_INVALID": "payment_tip_invalid",
+            "TIP_CONFLICT": "tip_conflict",
+            "adresse_ungueltig": "invalid_address",
+            "zu_oft": "too_many_requests",
+            "versand_fehlgeschlagen": "send_failed"
+          }
+        }
+      }
+    },
+    "createPartnerCustomer": {
+      "paramWerte": {
+        "business.legalForm": {
+          "$catalog": "RECHTSFORM"
+        },
+        "business.state": {
+          "$catalog": "BUNDESLAND"
+        },
+        "business.contacts[].roles[]": {
+          "$catalog": "ROLLE"
+        }
+      },
+      "data": {
+        "fee": {
+          "__": "entgelt",
+          "interval": "rhythmus"
+        }
+      },
+      "werte": {
+        "fee.interval": {
+          "$catalog": "RHYTHMUS"
+        }
+      },
+      "fehler": {
+        "data": {
+          "taxNumber": "taxnr"
+        }
+      }
+    },
+    "createPartnerWebhook": {
+      "ergaenze": {
+        "$function": "ergaenze"
+      }
+    },
+    "createPaymentLinkStripe": {},
+    "createPrintJob": {
+      "params": {
+        "printerId": "druckerId",
+        "title": "titel",
+        "source": "quelle",
+        "brand": "marke",
+        "layout": {
+          "__": "layout",
+          "ruleset": "regelwerk",
+          "lines": [
+            {
+              "__": "lines",
+              "tone": "ton"
+            }
+          ]
+        },
+        "logo": {
+          "__": "logo",
+          "scale": "stufe",
+          "pxWidth": "pxBreite",
+          "pxHeight": "pxHoehe",
+          "width": "breite",
+          "height": "hoehe",
+          "rows": "zeilen"
+        }
+      },
+      "paramWerte": {
+        "source": {
+          "$catalog": "DRUCK_QUELLE"
+        },
+        "layout.lines[].tone": {
+          "$catalog": "LAYOUT_TON"
+        }
+      },
+      "werte": {
+        "status": {
+          "$catalog": "DRUCKJOB"
+        }
+      },
+      "ergaenze": {
+        "$function": "anonymous"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "druckerId": "printerId",
+          "titel": "title",
+          "quelle": "source",
+          "marke": "brand"
+        }
+      }
+    },
+    "createReceipt": {
+      "params": {
+        "tip": {
+          "__": "tip",
+          "receivedImmediately": "sofortErhalten"
+        },
+        "items": [
+          {
+            "__": "items",
+            "receivedImmediately": "sofortErhalten"
+          }
+        ]
+      },
+      "data": {
+        "receipt": {
+          "__": "receipt",
+          "headerVersionId": "kopfId",
+          "layoutRuleset": "layoutRegeln",
+          "registrationInfo": {
+            "__": "pruefangaben",
+            "cardRegisteredAt": "karteRegistriertAm",
+            "cashregisterRegisteredAt": "kasseRegistriertAm"
+          },
+          "items": [
+            {
+              "__": "items",
+              "receivedImmediately": "sofortErhalten"
+            }
+          ]
+        },
+        "taxNumber": "taxnr",
+        "vatId": "uid",
+        "headerVersionId": "kopfId",
+        "registrationInfo": {
+          "__": "pruefangaben",
+          "cardRegisteredAt": "karteRegistriertAm",
+          "cashregisterRegisteredAt": "kasseRegistriertAm"
+        },
+        "testCashregister": "testKasse",
+        "testSignature": "testSignatur",
+        "logo_scale": "logo_skala",
+        "layout": {
+          "__": "layout",
+          "ruleset": "regelwerk",
+          "lines": [
+            {
+              "__": "lines",
+              "tone": "ton"
+            }
+          ]
+        }
+      },
+      "werte": {
+        "receipt.cancellationReason": {
+          "$catalog": "STORNO_GRUND"
+        },
+        "layout.lines[].tone": {
+          "$catalog": "LAYOUT_TON"
+        }
+      },
+      "ergaenze": {
+        "$function": "belegJeKanal"
+      },
+      "fehler": {
+        "meldungen": [
+          {
+            "praefix": "Ungültige Daten: receiptType keine von: ",
+            "code": "receipt_type_invalid"
+          },
+          {
+            "text": "Trinkgeld ist nur auf Standard- und Trainingsbelegen möglich",
+            "code": "tip_not_allowed"
+          },
+          {
+            "text": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "code": "module_inactive"
+          },
+          {
+            "text": "Keine Berechtigung zum Kassieren.",
+            "code": "not_permitted"
+          },
+          {
+            "text": "Keine Berechtigung für Stornos.",
+            "code": "not_permitted"
+          },
+          {
+            "text": "Die Trinkgeld-Voreinstellung des Betriebs zu übersteuern ist für diese Anmeldung nicht freigegeben.",
+            "code": "not_permitted"
+          },
+          {
+            "text": "Trinkgeld einem anderen Kassen-Benutzer zuzuweisen ist für diese Anmeldung nicht freigegeben.",
+            "code": "not_permitted"
+          },
+          {
+            "text": "Cashregister hat keinen signature_id zugewiesen",
+            "code": "signature_missing"
+          },
+          {
+            "praefix": "Ungültige Daten: Nicht alle erforderlichen Daten existieren in signature (",
+            "code": "signature_incomplete"
+          },
+          {
+            "text": "Registrierkasse wurde außer Betrieb genommen und bei FinanzOnline abgemeldet — es können keine Belege mehr erstellt werden.",
+            "code": "cashregister_decommissioned"
+          },
+          {
+            "text": "Registrierkasse wurde beendet — der Schlussbeleg ist erstellt.",
+            "code": "cashregister_closed"
+          },
+          {
+            "text": "Schlussbeleg ist nur im Rahmen der Außerbetriebnahme möglich — kein offener Abmelde-Vorgang für diese Registrierkasse.",
+            "code": "final_receipt_not_allowed"
+          },
+          {
+            "text": "Schlussbeleg-Anfrage ist abgelaufen — bitte die Kasse erneut über \"Kasse beenden\" beenden.",
+            "code": "final_receipt_expired"
+          },
+          {
+            "text": "Startbeleg muss erfolgreich signiert sein",
+            "code": "signing_failed"
+          },
+          {
+            "text": "Planmäßiger Schlussbeleg muss erfolgreich signiert sein — Registrierkasse bleibt in Betrieb, bitte erneut versuchen.",
+            "code": "signing_failed"
+          },
+          {
+            "text": "Fehler beim Erstellen der Signatur",
+            "code": "signing_failed"
+          },
+          {
+            "text": "Storno-Bezug nicht prüfbar – bitte erneut versuchen.",
+            "code": "cancellation_reference_unavailable"
+          },
+          {
+            "praefix": "Kleinunternehmer (§ 6 Abs. 1 Z 27 UStG): ",
+            "code": "small_business_vat_not_allowed"
+          },
+          {
+            "praefix": "Belegsumme ",
+            "code": "receipt_limit_exceeded"
+          },
+          {
+            "muster": {
+              "$pattern": "^Trinkgeld: Kassen-Benutzer \\S+ unbekannt oder gesperrt$"
+            },
+            "code": "tip_recipient_unknown"
+          },
+          {
+            "muster": {
+              "$pattern": "^Trinkgeld: (sofortErhalten|recipients(?:\\[\\d+\\]\\.(?:registerUserId|cents))?) "
+            },
+            "code": "tip_invalid",
+            "feld": {
+              "$function": "feld"
+            }
+          },
+          {
+            "praefix": "Trinkgeld: ",
+            "code": "tip_invalid"
+          },
+          {
+            "text": "Trinkgeld über den Parameter tip übergeben",
+            "code": "tip_invalid"
+          },
+          {
+            "muster": {
+              "$pattern": "^Ungültige Daten: ((?:items|vouchers|paymentMethod|creditCardProvider|cardPaymentId|cardPaymentData|zeroKind|cancellationReason)(?:\\.[A-Za-z]+)?) "
+            },
+            "code": "validation",
+            "feld": {
+              "$function": "feld"
+            }
+          },
+          {
+            "muster": {
+              "$pattern": "^Fehlende Daten in (items|vouchers): ([A-Za-z]+)$"
+            },
+            "code": "validation",
+            "feld": {
+              "$function": "feld"
+            },
+            "meldung": "Pflichtfeld fehlt."
+          },
+          {
+            "text": "Ungültige Daten: es muss mindestens 1 item geben",
+            "code": "validation",
+            "feld": "items"
+          },
+          {
+            "muster": {
+              "$pattern": "^Ungültige Daten: (Gutscheine|Es darf nur ein Gutschein|Ein Gutschein|Mit einem Gutschein) "
+            },
+            "code": "validation",
+            "feld": "vouchers"
+          },
+          {
+            "praefix": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut. ",
+            "code": "receipt_outcome_unknown",
+            "ersetzeMeldung": "Ergebnis unklar: der Beleg wurde möglicherweise erstellt. Bitte vor einem neuen Versuch die Belegliste prüfen (listMyReceipts, getReceipt) und nur wiederholen, wenn der Beleg dort fehlt."
+          }
+        ],
+        "nachrichtWoerter": {
+          "sofortErhalten": "receivedImmediately"
+        }
+      }
+    },
+    "deletePartnerWebhook": {
+      "data": {
+        "deleted": "geloescht"
+      }
+    },
+    "downloadDailyReport": {},
+    "downloadReceipt": {},
+    "downloadReport": {},
+    "endRegisterSession": {},
+    "financeWebService": {
+      "ergaenze": {
+        "$function": "startbelegNachAussen"
+      }
+    },
+    "generateFullReceiptId": {},
+    "getCustomer": {},
+    "getCustomerCredentials": {},
+    "getCustomerSignatureStatus": {
+      "werte": {
+        "requests[].history[].reason": {
+          "$catalog": "GRUND_V3"
+        },
+        "requests[].error.code": {
+          "zugang_nicht_erlaubt": "access_not_allowed",
+          "kennung_fehlt": "tax_number_missing",
+          "vertrag_offen": "contracts_pending",
+          "art_not_allowed": "kind_not_allowed",
+          "modus_not_allowed": "mode_not_allowed",
+          "vollmacht_fehlt": "power_of_attorney_missing",
+          "kunde_nicht_gefunden": "customer_not_found",
+          "unvollstaendig": "incomplete",
+          "fon_fehler": "finanzonline_error",
+          "beleg_nicht_gefunden": "receipt_not_found",
+          "belegart_nicht_stornierbar": "receipt_type_not_cancellable",
+          "trainingsbeleg": "training_receipt",
+          "bereits_storniert": "already_cancelled",
+          "position_ungueltig": "invalid_line",
+          "menge_ueber_rest": "quantity_exceeds_remaining",
+          "grund_unbekannt": "unknown_reason",
+          "anmerkung_zu_lang": "note_too_long",
+          "items_ungueltig": "invalid_items",
+          "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "keine_berechtigung": "not_permitted",
+          "nur_eigene_belege": "own_receipts_only",
+          "kasse_unvollstaendig": "cashregister_incomplete",
+          "storno_fehlgeschlagen": "cancellation_failed",
+          "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
+          "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
+          "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
+          "STORNO_REFUND_REFERENCE_UNKNOWN": "cancellation_refund_reference_unknown",
+          "STORNO_OUTCOME_UNKNOWN": "cancellation_outcome_unknown",
+          "PAYMENTS_INVALID": "payments_invalid",
+          "PAYMENT_METHOD_INVALID": "payment_method_invalid",
+          "PAYMENT_AMOUNT_INVALID": "payment_amount_invalid",
+          "PAYMENT_TENDERED_INVALID": "payment_tendered_invalid",
+          "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
+          "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
+          "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
+          "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
+          "PAYMENTS_CONFLICT": "payments_conflict",
+          "PAYMENTS_REQUIRED": "payments_required",
+          "PAYMENT_METHOD_NOT_SUPPORTED": "payment_method_not_supported",
+          "TIP_PAYMENT_METHOD_INVALID": "tip_payment_method_invalid",
+          "TIP_PAYMENT_METHOD_REQUIRED": "tip_payment_method_required",
+          "TIP_EXCEEDS_PAYMENT": "tip_exceeds_payment",
+          "PAYMENT_REFUND_NOT_ALLOWED": "payment_refund_not_allowed",
+          "PAYMENT_TIP_INVALID": "payment_tip_invalid",
+          "TIP_CONFLICT": "tip_conflict",
+          "adresse_ungueltig": "invalid_address",
+          "zu_oft": "too_many_requests",
+          "versand_fehlgeschlagen": "send_failed"
+        },
+        "signatures[].error.code": {
+          "zugang_nicht_erlaubt": "access_not_allowed",
+          "kennung_fehlt": "tax_number_missing",
+          "vertrag_offen": "contracts_pending",
+          "art_not_allowed": "kind_not_allowed",
+          "modus_not_allowed": "mode_not_allowed",
+          "vollmacht_fehlt": "power_of_attorney_missing",
+          "kunde_nicht_gefunden": "customer_not_found",
+          "unvollstaendig": "incomplete",
+          "fon_fehler": "finanzonline_error",
+          "beleg_nicht_gefunden": "receipt_not_found",
+          "belegart_nicht_stornierbar": "receipt_type_not_cancellable",
+          "trainingsbeleg": "training_receipt",
+          "bereits_storniert": "already_cancelled",
+          "position_ungueltig": "invalid_line",
+          "menge_ueber_rest": "quantity_exceeds_remaining",
+          "grund_unbekannt": "unknown_reason",
+          "anmerkung_zu_lang": "note_too_long",
+          "items_ungueltig": "invalid_items",
+          "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "keine_berechtigung": "not_permitted",
+          "nur_eigene_belege": "own_receipts_only",
+          "kasse_unvollstaendig": "cashregister_incomplete",
+          "storno_fehlgeschlagen": "cancellation_failed",
+          "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
+          "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
+          "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
+          "STORNO_REFUND_REFERENCE_UNKNOWN": "cancellation_refund_reference_unknown",
+          "STORNO_OUTCOME_UNKNOWN": "cancellation_outcome_unknown",
+          "PAYMENTS_INVALID": "payments_invalid",
+          "PAYMENT_METHOD_INVALID": "payment_method_invalid",
+          "PAYMENT_AMOUNT_INVALID": "payment_amount_invalid",
+          "PAYMENT_TENDERED_INVALID": "payment_tendered_invalid",
+          "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
+          "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
+          "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
+          "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
+          "PAYMENTS_CONFLICT": "payments_conflict",
+          "PAYMENTS_REQUIRED": "payments_required",
+          "PAYMENT_METHOD_NOT_SUPPORTED": "payment_method_not_supported",
+          "TIP_PAYMENT_METHOD_INVALID": "tip_payment_method_invalid",
+          "TIP_PAYMENT_METHOD_REQUIRED": "tip_payment_method_required",
+          "TIP_EXCEEDS_PAYMENT": "tip_exceeds_payment",
+          "PAYMENT_REFUND_NOT_ALLOWED": "payment_refund_not_allowed",
+          "PAYMENT_TIP_INVALID": "payment_tip_invalid",
+          "TIP_CONFLICT": "tip_conflict",
+          "adresse_ungueltig": "invalid_address",
+          "zu_oft": "too_many_requests",
+          "versand_fehlgeschlagen": "send_failed"
+        }
+      }
+    },
+    "getFirstReceiptDate": {},
+    "getInvoice": {
+      "werte": {
+        "invoice.docType": {
+          "$catalog": "DOKART"
+        },
+        "invoice.taxScheme": {
+          "$catalog": "STEUERFALL"
+        },
+        "invoice.writeOffReasonCode": {
+          "$catalog": "ABSCHREIBUNG"
+        },
+        "invoice.einvoice.missing[]": {
+          "$catalog": "EINVOICE_FEHLT"
+        }
+      }
+    },
+    "getInvoicePdf": {},
+    "getInvoiceSetupStatus": {},
+    "getInvoiceXml": {
+      "fehler": {
+        "werte": {
+          "missing[]": {
+            "$catalog": "EINVOICE_FEHLT"
+          }
+        }
+      },
+      "ergaenze": {
+        "$function": "ergaenze"
+      }
+    },
+    "getKasseSettings": {
+      "data": {
+        "business": {
+          "__": "betrieb",
+          "logoText": "logoText",
+          "logoEnabled": "logoAn",
+          "logoSize": "logoGroesse",
+          "watermark": "wasserzeichen",
+          "color": "farbe",
+          "theme": "stil",
+          "fontSize": "schrift",
+          "settingsFontSize": "schriftEinst",
+          "tileStyle": "kachelstil",
+          "clock": "uhr",
+          "lockScreen": "sperrbild",
+          "staffPhotos": "foto",
+          "autoLogoutMinutes": "autoAbMin",
+          "logoutAfterSale": "abNachVerkauf",
+          "fastLogin": "schnellLogin",
+          "showPrices": "preisAnzeigen",
+          "showVat": "ustAnzeigen",
+          "emoji": "emoji",
+          "categoryColors": "katFarben",
+          "customAmountAllowed": "freiErlaubt",
+          "vatRates": "saetze",
+          "quantity": "menge",
+          "note": "notiz",
+          "search": "suche",
+          "discount": "rabatt",
+          "payCash": "zahlBar",
+          "payCard": "zahlKarte",
+          "paySplit": "zahlGetrennt",
+          "cardProvider": "kartenanbieter",
+          "tip": "trinkgeld",
+          "tipMode": "tgModus",
+          "tipSteps": "tgStufen",
+          "tipSplit": "tgSplit",
+          "change": "rueckgeld",
+          "tipChips": "tgChips",
+          "exactCash": "schnellbar",
+          "checkoutMode": "kassierenModus",
+          "receiptOutput": "belegAusgabe",
+          "doneScreenSeconds": "fertigSekunden",
+          "logoImage": "logoBild",
+          "watermarkSide": "wzSeite",
+          "watermarkX": "wzPos",
+          "watermarkY": "wzPosV",
+          "watermarkStrength": "wzStaerke",
+          "logoScale": "logoSkala",
+          "watermarkScale": "wzSkala",
+          "glass": "glas",
+          "hints": "hinweise",
+          "discountChips": "rabattChips"
+        },
+        "device": {
+          "__": "geraet",
+          "layout": "layout",
+          "categoryPosition": "katpos",
+          "extraColumns": "spaltenExtra",
+          "tileHeight": "hoehe",
+          "touch": "touch",
+          "shortcuts": {
+            "__": "tasten",
+            "checkout": "kassieren",
+            "complete": "abschliessen",
+            "cancel": "abbrechen",
+            "customAmount": "frei",
+            "cash": "bar",
+            "card": "karte",
+            "exactAmount": "passend",
+            "receipts": "belege",
+            "undoLast": "letzteZurueck",
+            "settings": "einstellungen",
+            "logout": "abmelden",
+            "tip": "trinkgeld",
+            "fullscreen": "vollbild",
+            "clearTendered": "gegebenLeeren",
+            "clearCart": "korbLeeren",
+            "splitPayment": "getrennt"
+          },
+          "printerEnabled": "druckerAn",
+          "printerType": "druckerArt",
+          "printerIp": "druckerIp",
+          "printerPort": "druckerPort",
+          "printerBluetoothId": "druckerBt",
+          "printerName": "druckerName",
+          "printerId": "druckerId",
+          "printerDeviceId": "druckerDevid",
+          "connectPrinterId": "connectDruckerId",
+          "paperSize": "papier",
+          "codePage": "zeichensatz",
+          "cut": "schnitt",
+          "qrMode": "qrModus",
+          "drawerEnabled": "ladeAn",
+          "drawerAutoOpen": "ladeAuto",
+          "terminalIp": "terminalIp",
+          "terminalPort": "terminalPort",
+          "terminalTid": "terminalTid",
+          "terminalVia": "terminalVia",
+          "terminalType": "terminalArt",
+          "shortcutHints": "tastenMarken"
+        }
+      },
+      "werte": {
+        "business.watermark": {
+          "$catalog": "KASSE_BETRIEB_WERTE.watermark"
+        },
+        "business.theme": {
+          "$catalog": "KASSE_BETRIEB_WERTE.theme"
+        },
+        "business.tileStyle": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tileStyle"
+        },
+        "business.quantity": {
+          "$catalog": "KASSE_BETRIEB_WERTE.quantity"
+        },
+        "business.discount": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discount"
+        },
+        "business.cardProvider": {
+          "$catalog": "KASSE_BETRIEB_WERTE.cardProvider"
+        },
+        "business.tipMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipMode"
+        },
+        "business.checkoutMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
+        },
+        "business.receiptOutput": {
+          "$catalog": "KASSE_BETRIEB_WERTE.receiptOutput"
+        },
+        "business.watermarkSide": {
+          "$catalog": "KASSE_BETRIEB_WERTE.watermarkSide"
+        },
+        "device.layout": {
+          "$catalog": "KASSE_GERAET_WERTE.layout"
+        },
+        "device.categoryPosition": {
+          "$catalog": "KASSE_GERAET_WERTE.categoryPosition"
+        },
+        "device.printerType": {
+          "$catalog": "KASSE_GERAET_WERTE.printerType"
+        },
+        "device.drawerAutoOpen": {
+          "$catalog": "KASSE_GERAET_WERTE.drawerAutoOpen"
+        },
+        "device.terminalVia": {
+          "$catalog": "KASSE_GERAET_WERTE.terminalVia"
+        },
+        "device.terminalType": {
+          "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        }
+      }
+    },
+    "getPartnerCustomer": {
+      "werte": {
+        "customer.business.legalForm": {
+          "$catalog": "RECHTSFORM"
+        },
+        "customer.business.state": {
+          "$catalog": "BUNDESLAND"
+        },
+        "customer.business.contacts[].roles[]": {
+          "$catalog": "ROLLE"
+        },
+        "customer.avv.mode": {
+          "$catalog": "AVV_MODUS"
+        }
+      }
+    },
+    "getPartnerInfo": {},
+    "getPrintJob": {
+      "params": {
+        "printerId": "druckerId"
+      },
+      "data": {
+        "createdAt": "erstellt",
+        "sentAt": "gesendetAt",
+        "result": {
+          "__": "ergebnis",
+          "success": "erfolg",
+          "at": "zeit"
+        }
+      },
+      "werte": {
+        "status": {
+          "$catalog": "DRUCKJOB"
+        }
+      },
+      "ergaenze": {
+        "$function": "anonymous"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "druckerId": "printerId",
+          "titel": "title",
+          "quelle": "source",
+          "marke": "brand"
+        }
+      }
+    },
+    "getReceipt": {
+      "data": {
+        "receipt": {
+          "__": "receipt",
+          "headerVersionId": "kopfId",
+          "layoutRuleset": "layoutRegeln",
+          "registrationInfo": {
+            "__": "pruefangaben",
+            "cardRegisteredAt": "karteRegistriertAm",
+            "cashregisterRegisteredAt": "kasseRegistriertAm"
+          },
+          "items": [
+            {
+              "__": "items",
+              "receivedImmediately": "sofortErhalten"
+            }
+          ]
+        },
+        "taxNumber": "taxnr",
+        "vatId": "uid",
+        "headerVersionId": "kopfId",
+        "registrationInfo": {
+          "__": "pruefangaben",
+          "cardRegisteredAt": "karteRegistriertAm",
+          "cashregisterRegisteredAt": "kasseRegistriertAm"
+        },
+        "testCashregister": "testKasse",
+        "testSignature": "testSignatur",
+        "logo_scale": "logo_skala",
+        "layout": {
+          "__": "layout",
+          "ruleset": "regelwerk",
+          "lines": [
+            {
+              "__": "lines",
+              "tone": "ton"
+            }
+          ]
+        }
+      },
+      "werte": {
+        "receipt.cancellationReason": {
+          "$catalog": "STORNO_GRUND"
+        },
+        "layout.lines[].tone": {
+          "$catalog": "LAYOUT_TON"
+        }
+      },
+      "ergaenze": {
+        "$function": "belegJeKanal"
+      },
+      "fehler": {
+        "meldungen": [
+          {
+            "text": "Die angegebene receiptId existiert nicht.",
+            "code": "receipt_not_found"
+          }
+        ]
+      }
+    },
+    "getReportV2": {
+      "data": {
+        "receipts": [
+          {
+            "__": "receipts",
+            "headerVersionId": "kopfId",
+            "layoutRuleset": "layoutRegeln",
+            "registrationInfo": {
+              "__": "pruefangaben",
+              "cardRegisteredAt": "karteRegistriertAm",
+              "cashregisterRegisteredAt": "kasseRegistriertAm"
+            },
+            "items": [
+              {
+                "__": "items",
+                "receivedImmediately": "sofortErhalten"
+              }
+            ]
+          }
+        ],
+        "metadata": {
+          "__": "metadata",
+          "taxNumber": "taxnr",
+          "vatId": "uid"
+        }
+      },
+      "werte": {
+        "receipts[].cancellationReason": {
+          "$catalog": "STORNO_GRUND"
+        }
+      },
+      "ergaenze": {
+        "$function": "ergaenze"
+      }
+    },
+    "hobexGetStatus": {},
+    "hobexPayApi": {},
+    "hobexRefundApi": {},
+    "issueInvoice": {
+      "paramWerte": {
+        "taxScheme": {
+          "$catalog": "STEUERFALL"
+        }
+      },
+      "werte": {
+        "invoice.docType": {
+          "$catalog": "DOKART"
+        },
+        "invoice.taxScheme": {
+          "$catalog": "STEUERFALL"
+        },
+        "invoice.writeOffReasonCode": {
+          "$catalog": "ABSCHREIBUNG"
+        },
+        "invoice.einvoice.missing[]": {
+          "$catalog": "EINVOICE_FEHLT"
+        },
+        "preview.docType": {
+          "$catalog": "DOKART"
+        },
+        "preview.taxScheme": {
+          "$catalog": "STEUERFALL"
+        },
+        "preview.writeOffReasonCode": {
+          "$catalog": "ABSCHREIBUNG"
+        },
+        "preview.einvoice.missing[]": {
+          "$catalog": "EINVOICE_FEHLT"
+        }
+      },
+      "fehler": {
+        "werte": {
+          "expected": {
+            "$catalog": "STEUERFALL"
+          },
+          "given": {
+            "$catalog": "STEUERFALL"
+          },
+          "missing[]": {
+            "$catalog": "EINVOICE_FEHLT"
+          }
+        },
+        "nachrichtWoerter": {
+          "$catalog": "STEUERFALL"
+        },
+        "meldungBeiUnbekanntemWert": [
+          {
+            "param": "taxScheme",
+            "katalog": {
+              "$catalog": "STEUERFALL"
+            },
+            "code": "validation"
+          }
+        ]
+      }
+    },
+    "listBrands": {},
+    "listCustomerCashregisters": {
+      "werte": {
+        "signatures[].error.code": {
+          "zugang_nicht_erlaubt": "access_not_allowed",
+          "kennung_fehlt": "tax_number_missing",
+          "vertrag_offen": "contracts_pending",
+          "art_not_allowed": "kind_not_allowed",
+          "modus_not_allowed": "mode_not_allowed",
+          "vollmacht_fehlt": "power_of_attorney_missing",
+          "kunde_nicht_gefunden": "customer_not_found",
+          "unvollstaendig": "incomplete",
+          "fon_fehler": "finanzonline_error",
+          "beleg_nicht_gefunden": "receipt_not_found",
+          "belegart_nicht_stornierbar": "receipt_type_not_cancellable",
+          "trainingsbeleg": "training_receipt",
+          "bereits_storniert": "already_cancelled",
+          "position_ungueltig": "invalid_line",
+          "menge_ueber_rest": "quantity_exceeds_remaining",
+          "grund_unbekannt": "unknown_reason",
+          "anmerkung_zu_lang": "note_too_long",
+          "items_ungueltig": "invalid_items",
+          "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "keine_berechtigung": "not_permitted",
+          "nur_eigene_belege": "own_receipts_only",
+          "kasse_unvollstaendig": "cashregister_incomplete",
+          "storno_fehlgeschlagen": "cancellation_failed",
+          "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
+          "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
+          "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
+          "STORNO_REFUND_REFERENCE_UNKNOWN": "cancellation_refund_reference_unknown",
+          "STORNO_OUTCOME_UNKNOWN": "cancellation_outcome_unknown",
+          "PAYMENTS_INVALID": "payments_invalid",
+          "PAYMENT_METHOD_INVALID": "payment_method_invalid",
+          "PAYMENT_AMOUNT_INVALID": "payment_amount_invalid",
+          "PAYMENT_TENDERED_INVALID": "payment_tendered_invalid",
+          "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
+          "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
+          "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
+          "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
+          "PAYMENTS_CONFLICT": "payments_conflict",
+          "PAYMENTS_REQUIRED": "payments_required",
+          "PAYMENT_METHOD_NOT_SUPPORTED": "payment_method_not_supported",
+          "TIP_PAYMENT_METHOD_INVALID": "tip_payment_method_invalid",
+          "TIP_PAYMENT_METHOD_REQUIRED": "tip_payment_method_required",
+          "TIP_EXCEEDS_PAYMENT": "tip_exceeds_payment",
+          "PAYMENT_REFUND_NOT_ALLOWED": "payment_refund_not_allowed",
+          "PAYMENT_TIP_INVALID": "payment_tip_invalid",
+          "TIP_CONFLICT": "tip_conflict",
+          "adresse_ungueltig": "invalid_address",
+          "zu_oft": "too_many_requests",
+          "versand_fehlgeschlagen": "send_failed"
+        }
+      }
+    },
+    "listInvoices": {
+      "paramWerte": {
+        "docType": {
+          "$catalog": "DOKART"
+        }
+      },
+      "werte": {
+        "invoices[].docType": {
+          "$catalog": "DOKART"
+        },
+        "invoices[].taxScheme": {
+          "$catalog": "STEUERFALL"
+        },
+        "invoices[].writeOffReasonCode": {
+          "$catalog": "ABSCHREIBUNG"
+        },
+        "invoices[].einvoice.missing[]": {
+          "$catalog": "EINVOICE_FEHLT"
+        }
+      },
+      "fehler": {
+        "meldungBeiUnbekanntemWert": [
+          {
+            "param": "docType",
+            "katalog": {
+              "$catalog": "DOKART"
+            },
+            "code": "validation"
+          }
+        ]
+      }
+    },
+    "listMyArticleGroups": {
+      "ergaenze": {
+        "$function": "gruppenNachAussen"
+      }
+    },
+    "listMyArticles": {
+      "data": {
+        "articles": [
+          {
+            "__": "articles",
+            "quantityRule": "mengenregel",
+            "askQuantity": "mengeFragen",
+            "maxQuantity": "maxMenge",
+            "tile": {
+              "__": "kasse",
+              "visible": "sichtbar",
+              "sort": "sort"
+            }
+          }
+        ]
+      },
+      "werte": {
+        "articles[].quantityRule": {
+          "$catalog": "MENGENREGEL"
+        },
+        "articles[].e1aGroup": {
+          "$catalog": "E1A_GRUPPE"
+        }
+      },
+      "ergaenze": {
+        "$function": "artikelNachAussen"
+      }
+    },
+    "listMyCashregisters": {
+      "data": {
+        "cashregisters": [
+          {
+            "__": "cashregisters",
+            "onboarding": {
+              "__": "onboarding",
+              "start_receipt_created": "startbeleg_created",
+              "start_receipt_transmitted": "startbeleg_transmitted",
+              "start_receipt_created_at": "startbeleg_created_at",
+              "start_receipt_transmitted_at": "startbeleg_transmitted_at"
+            }
+          }
+        ]
+      },
+      "fehler": {
+        "meldungen": [
+          {
+            "text": "Server error.",
+            "code": "server_error"
+          }
+        ]
+      }
+    },
+    "listMyPrinters": {
+      "data": {
+        "printers": [
+          {
+            "__": "drucker",
+            "kind": "art",
+            "paperSize": "papier",
+            "active": "aktiv",
+            "createdAt": "erstellt",
+            "lastSeenAt": "zuletztGesehen",
+            "lastResult": {
+              "__": "zuletztErgebnis",
+              "success": "erfolg",
+              "at": "zeit"
+            },
+            "printerSerial": "druckerKennung"
+          }
+        ]
+      }
+    },
+    "listMyReceipts": {
+      "params": {
+        "cashregisterId": "cashregisterid"
+      },
+      "data": {
+        "receipts": [
+          {
+            "__": "receipts",
+            "cancellationStatus": "stornoStand"
+          }
+        ],
+        "stats": {
+          "__": "stats",
+          "today": {
+            "__": "today",
+            "revenue": "umsatz"
+          },
+          "days": [
+            {
+              "__": "days",
+              "revenue": "umsatz"
+            }
+          ]
+        }
+      },
+      "werte": {
+        "receipts[].cancellationStatus": {
+          "$catalog": "STORNO_STAND"
+        },
+        "receipts[].cancellationReason": {
+          "$catalog": "STORNO_GRUND"
+        }
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "cashregisterid": "cashregisterId"
+        },
+        "meldungen": [
+          {
+            "text": "Server error.",
+            "code": "server_error"
+          }
+        ]
+      }
+    },
+    "listMyTipRecipients": {},
+    "listPartnerCustomers": {
+      "werte": {
+        "customers[].avv.mode": {
+          "$catalog": "AVV_MODUS"
+        }
+      }
+    },
+    "listPartnerWebhookDeliveries": {
+      "werte": {
+        "deliveries[].status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
+    "listPartnerWebhooks": {
+      "werte": {
+        "webhooks[].lastDelivery.status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      },
+      "ergaenze": {
+        "$function": "ergaenze"
+      }
+    },
+    "listRegisterSessionsForDevice": {
+      "data": {
+        "sessions": [
+          {
+            "__": "sessions",
+            "own": "selbst"
+          }
+        ]
+      }
+    },
+    "listRegisterUsersForDevice": {
+      "data": {
+        "users": [
+          {
+            "__": "users",
+            "pinPolicyOutdated": "altbestand"
+          }
+        ],
+        "policy": {
+          "__": "policy",
+          "length": "stellen",
+          "charset": "zeichen"
+        },
+        "settings": {
+          "__": "settings",
+          "business": {
+            "__": "betrieb",
+            "logoText": "logoText",
+            "logoEnabled": "logoAn",
+            "logoSize": "logoGroesse",
+            "watermark": "wasserzeichen",
+            "color": "farbe",
+            "theme": "stil",
+            "fontSize": "schrift",
+            "settingsFontSize": "schriftEinst",
+            "tileStyle": "kachelstil",
+            "clock": "uhr",
+            "lockScreen": "sperrbild",
+            "staffPhotos": "foto",
+            "autoLogoutMinutes": "autoAbMin",
+            "logoutAfterSale": "abNachVerkauf",
+            "fastLogin": "schnellLogin",
+            "showPrices": "preisAnzeigen",
+            "showVat": "ustAnzeigen",
+            "emoji": "emoji",
+            "categoryColors": "katFarben",
+            "customAmountAllowed": "freiErlaubt",
+            "vatRates": "saetze",
+            "quantity": "menge",
+            "note": "notiz",
+            "search": "suche",
+            "discount": "rabatt",
+            "payCash": "zahlBar",
+            "payCard": "zahlKarte",
+            "paySplit": "zahlGetrennt",
+            "cardProvider": "kartenanbieter",
+            "tip": "trinkgeld",
+            "tipMode": "tgModus",
+            "tipSteps": "tgStufen",
+            "tipSplit": "tgSplit",
+            "change": "rueckgeld",
+            "tipChips": "tgChips",
+            "exactCash": "schnellbar",
+            "checkoutMode": "kassierenModus",
+            "receiptOutput": "belegAusgabe",
+            "doneScreenSeconds": "fertigSekunden",
+            "logoImage": "logoBild",
+            "watermarkSide": "wzSeite",
+            "watermarkX": "wzPos",
+            "watermarkY": "wzPosV",
+            "watermarkStrength": "wzStaerke",
+            "logoScale": "logoSkala",
+            "watermarkScale": "wzSkala",
+            "glass": "glas",
+            "hints": "hinweise",
+            "discountChips": "rabattChips"
+          },
+          "device": {
+            "__": "geraet",
+            "layout": "layout",
+            "categoryPosition": "katpos",
+            "extraColumns": "spaltenExtra",
+            "tileHeight": "hoehe",
+            "touch": "touch",
+            "shortcuts": {
+              "__": "tasten",
+              "checkout": "kassieren",
+              "complete": "abschliessen",
+              "cancel": "abbrechen",
+              "customAmount": "frei",
+              "cash": "bar",
+              "card": "karte",
+              "exactAmount": "passend",
+              "receipts": "belege",
+              "undoLast": "letzteZurueck",
+              "settings": "einstellungen",
+              "logout": "abmelden",
+              "tip": "trinkgeld",
+              "fullscreen": "vollbild",
+              "clearTendered": "gegebenLeeren",
+              "clearCart": "korbLeeren",
+              "splitPayment": "getrennt"
+            },
+            "printerEnabled": "druckerAn",
+            "printerType": "druckerArt",
+            "printerIp": "druckerIp",
+            "printerPort": "druckerPort",
+            "printerBluetoothId": "druckerBt",
+            "printerName": "druckerName",
+            "printerId": "druckerId",
+            "printerDeviceId": "druckerDevid",
+            "connectPrinterId": "connectDruckerId",
+            "paperSize": "papier",
+            "codePage": "zeichensatz",
+            "cut": "schnitt",
+            "qrMode": "qrModus",
+            "drawerEnabled": "ladeAn",
+            "drawerAutoOpen": "ladeAuto",
+            "terminalIp": "terminalIp",
+            "terminalPort": "terminalPort",
+            "terminalTid": "terminalTid",
+            "terminalVia": "terminalVia",
+            "terminalType": "terminalArt",
+            "shortcutHints": "tastenMarken"
+          }
+        },
+        "receiptHeader": {
+          "__": "betriebsdaten",
+          "vatId": "uid",
+          "taxNumber": "taxnr"
+        },
+        "locationLock": "standortsperre",
+        "cashregister": {
+          "__": "kasse",
+          "ready": "bereit",
+          "reason": "grund"
+        },
+        "testEnvironment": "testUmgebung"
+      },
+      "werte": {
+        "policy.charset": {
+          "$catalog": "PIN_ZEICHEN"
+        },
+        "loginMode": {
+          "$catalog": "ANMELDEMODUS"
+        },
+        "settings.business.watermark": {
+          "$catalog": "KASSE_BETRIEB_WERTE.watermark"
+        },
+        "settings.business.theme": {
+          "$catalog": "KASSE_BETRIEB_WERTE.theme"
+        },
+        "settings.business.tileStyle": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tileStyle"
+        },
+        "settings.business.quantity": {
+          "$catalog": "KASSE_BETRIEB_WERTE.quantity"
+        },
+        "settings.business.discount": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discount"
+        },
+        "settings.business.cardProvider": {
+          "$catalog": "KASSE_BETRIEB_WERTE.cardProvider"
+        },
+        "settings.business.tipMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipMode"
+        },
+        "settings.business.checkoutMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
+        },
+        "settings.business.receiptOutput": {
+          "$catalog": "KASSE_BETRIEB_WERTE.receiptOutput"
+        },
+        "settings.business.watermarkSide": {
+          "$catalog": "KASSE_BETRIEB_WERTE.watermarkSide"
+        },
+        "settings.device.layout": {
+          "$catalog": "KASSE_GERAET_WERTE.layout"
+        },
+        "settings.device.categoryPosition": {
+          "$catalog": "KASSE_GERAET_WERTE.categoryPosition"
+        },
+        "settings.device.printerType": {
+          "$catalog": "KASSE_GERAET_WERTE.printerType"
+        },
+        "settings.device.drawerAutoOpen": {
+          "$catalog": "KASSE_GERAET_WERTE.drawerAutoOpen"
+        },
+        "settings.device.terminalVia": {
+          "$catalog": "KASSE_GERAET_WERTE.terminalVia"
+        },
+        "settings.device.terminalType": {
+          "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        }
+      }
+    },
+    "pairRegisterDevice": {
+      "data": {
+        "companyName": "betrieb",
+        "cashregisterLabel": "kasse",
+        "testEnvironment": "testUmgebung"
+      }
+    },
+    "recordInvoicePayment": {
+      "werte": {
+        "invoice.docType": {
+          "$catalog": "DOKART"
+        },
+        "invoice.taxScheme": {
+          "$catalog": "STEUERFALL"
+        },
+        "invoice.writeOffReasonCode": {
+          "$catalog": "ABSCHREIBUNG"
+        },
+        "invoice.einvoice.missing[]": {
+          "$catalog": "EINVOICE_FEHLT"
+        }
+      }
+    },
+    "registerPinLogin": {},
+    "registerUserLogin": {},
+    "renewRegisterSession": {},
+    "reportCustomerVertrag": {
+      "params": {
+        "customerId": "kundeId",
+        "kind": "art",
+        "signerRole": "funktion",
+        "acceptedAt": "akzeptiertAt"
+      },
+      "paramWerte": {
+        "kind": {
+          "$catalog": "VERTRAG_ART"
+        }
+      },
+      "data": {
+        "contractId": "vertragId",
+        "confirmedAt": "bestaetigtAt",
+        "kind": "art"
+      },
+      "werte": {
+        "kind": {
+          "$catalog": "VERTRAG_ART"
+        }
+      },
+      "fehler": {
+        "data": {
+          "contractId": "vertragId"
+        },
+        "felder": {
+          "art": "kind",
+          "funktion": "signerRole",
+          "akzeptiertAt": "acceptedAt"
+        }
+      }
+    },
+    "requestCustomerSignature": {
+      "data": {
+        "fee": {
+          "__": "entgelt",
+          "interval": "rhythmus"
+        }
+      },
+      "werte": {
+        "fee.interval": {
+          "$catalog": "RHYTHMUS"
+        },
+        "request.history[].reason": {
+          "$catalog": "GRUND_V3"
+        },
+        "request.error.code": {
+          "zugang_nicht_erlaubt": "access_not_allowed",
+          "kennung_fehlt": "tax_number_missing",
+          "vertrag_offen": "contracts_pending",
+          "art_not_allowed": "kind_not_allowed",
+          "modus_not_allowed": "mode_not_allowed",
+          "vollmacht_fehlt": "power_of_attorney_missing",
+          "kunde_nicht_gefunden": "customer_not_found",
+          "unvollstaendig": "incomplete",
+          "fon_fehler": "finanzonline_error",
+          "beleg_nicht_gefunden": "receipt_not_found",
+          "belegart_nicht_stornierbar": "receipt_type_not_cancellable",
+          "trainingsbeleg": "training_receipt",
+          "bereits_storniert": "already_cancelled",
+          "position_ungueltig": "invalid_line",
+          "menge_ueber_rest": "quantity_exceeds_remaining",
+          "grund_unbekannt": "unknown_reason",
+          "anmerkung_zu_lang": "note_too_long",
+          "items_ungueltig": "invalid_items",
+          "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "keine_berechtigung": "not_permitted",
+          "nur_eigene_belege": "own_receipts_only",
+          "kasse_unvollstaendig": "cashregister_incomplete",
+          "storno_fehlgeschlagen": "cancellation_failed",
+          "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
+          "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
+          "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
+          "STORNO_REFUND_REFERENCE_UNKNOWN": "cancellation_refund_reference_unknown",
+          "STORNO_OUTCOME_UNKNOWN": "cancellation_outcome_unknown",
+          "PAYMENTS_INVALID": "payments_invalid",
+          "PAYMENT_METHOD_INVALID": "payment_method_invalid",
+          "PAYMENT_AMOUNT_INVALID": "payment_amount_invalid",
+          "PAYMENT_TENDERED_INVALID": "payment_tendered_invalid",
+          "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
+          "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
+          "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
+          "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
+          "PAYMENTS_CONFLICT": "payments_conflict",
+          "PAYMENTS_REQUIRED": "payments_required",
+          "PAYMENT_METHOD_NOT_SUPPORTED": "payment_method_not_supported",
+          "TIP_PAYMENT_METHOD_INVALID": "tip_payment_method_invalid",
+          "TIP_PAYMENT_METHOD_REQUIRED": "tip_payment_method_required",
+          "TIP_EXCEEDS_PAYMENT": "tip_exceeds_payment",
+          "PAYMENT_REFUND_NOT_ALLOWED": "payment_refund_not_allowed",
+          "PAYMENT_TIP_INVALID": "payment_tip_invalid",
+          "TIP_CONFLICT": "tip_conflict",
+          "adresse_ungueltig": "invalid_address",
+          "zu_oft": "too_many_requests",
+          "versand_fehlgeschlagen": "send_failed"
+        }
+      },
+      "fehler": {
+        "felder": {
+          "art": "kind"
+        }
+      }
+    },
+    "rotatePartnerWebhookSecret": {
+      "werte": {
+        "webhook.lastDelivery.status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      },
+      "ergaenze": {
+        "$function": "ergaenze"
+      }
+    },
+    "searchCustomers": {},
+    "sendPartnerCustomerFonLink": {},
+    "sendPartnerWebhookTest": {
+      "werte": {
+        "deliveries[].status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
+    "sendReceiptEmail": {
+      "params": {
+        "language": "sprache"
+      },
+      "werte": {
+        "via": {
+          "$catalog": "MAILWEG"
+        }
+      }
+    },
+    "setMyKasseLogo": {
+      "params": {
+        "image": "bild",
+        "remove": "entfernen"
+      },
+      "data": {
+        "logoImage": "logoBild"
+      }
+    },
+    "setMyKasseSettings": {
+      "params": {
+        "business": {
+          "__": "betrieb",
+          "logoText": "logoText",
+          "logoEnabled": "logoAn",
+          "logoSize": "logoGroesse",
+          "watermark": "wasserzeichen",
+          "color": "farbe",
+          "theme": "stil",
+          "fontSize": "schrift",
+          "settingsFontSize": "schriftEinst",
+          "tileStyle": "kachelstil",
+          "clock": "uhr",
+          "lockScreen": "sperrbild",
+          "staffPhotos": "foto",
+          "autoLogoutMinutes": "autoAbMin",
+          "logoutAfterSale": "abNachVerkauf",
+          "fastLogin": "schnellLogin",
+          "showPrices": "preisAnzeigen",
+          "showVat": "ustAnzeigen",
+          "emoji": "emoji",
+          "categoryColors": "katFarben",
+          "customAmountAllowed": "freiErlaubt",
+          "vatRates": "saetze",
+          "quantity": "menge",
+          "note": "notiz",
+          "search": "suche",
+          "discount": "rabatt",
+          "payCash": "zahlBar",
+          "payCard": "zahlKarte",
+          "paySplit": "zahlGetrennt",
+          "cardProvider": "kartenanbieter",
+          "tip": "trinkgeld",
+          "tipMode": "tgModus",
+          "tipSteps": "tgStufen",
+          "tipSplit": "tgSplit",
+          "change": "rueckgeld",
+          "tipChips": "tgChips",
+          "exactCash": "schnellbar",
+          "checkoutMode": "kassierenModus",
+          "receiptOutput": "belegAusgabe",
+          "doneScreenSeconds": "fertigSekunden",
+          "logoImage": "logoBild",
+          "watermarkSide": "wzSeite",
+          "watermarkX": "wzPos",
+          "watermarkY": "wzPosV",
+          "watermarkStrength": "wzStaerke",
+          "logoScale": "logoSkala",
+          "watermarkScale": "wzSkala",
+          "glass": "glas",
+          "hints": "hinweise",
+          "discountChips": "rabattChips"
+        }
+      },
+      "paramWerte": {
+        "business.watermark": {
+          "$catalog": "KASSE_BETRIEB_WERTE.watermark"
+        },
+        "business.theme": {
+          "$catalog": "KASSE_BETRIEB_WERTE.theme"
+        },
+        "business.tileStyle": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tileStyle"
+        },
+        "business.quantity": {
+          "$catalog": "KASSE_BETRIEB_WERTE.quantity"
+        },
+        "business.discount": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discount"
+        },
+        "business.cardProvider": {
+          "$catalog": "KASSE_BETRIEB_WERTE.cardProvider"
+        },
+        "business.tipMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipMode"
+        },
+        "business.checkoutMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
+        },
+        "business.receiptOutput": {
+          "$catalog": "KASSE_BETRIEB_WERTE.receiptOutput"
+        },
+        "business.watermarkSide": {
+          "$catalog": "KASSE_BETRIEB_WERTE.watermarkSide"
+        }
+      },
+      "data": {
+        "business": {
+          "__": "betrieb",
+          "logoText": "logoText",
+          "logoEnabled": "logoAn",
+          "logoSize": "logoGroesse",
+          "watermark": "wasserzeichen",
+          "color": "farbe",
+          "theme": "stil",
+          "fontSize": "schrift",
+          "settingsFontSize": "schriftEinst",
+          "tileStyle": "kachelstil",
+          "clock": "uhr",
+          "lockScreen": "sperrbild",
+          "staffPhotos": "foto",
+          "autoLogoutMinutes": "autoAbMin",
+          "logoutAfterSale": "abNachVerkauf",
+          "fastLogin": "schnellLogin",
+          "showPrices": "preisAnzeigen",
+          "showVat": "ustAnzeigen",
+          "emoji": "emoji",
+          "categoryColors": "katFarben",
+          "customAmountAllowed": "freiErlaubt",
+          "vatRates": "saetze",
+          "quantity": "menge",
+          "note": "notiz",
+          "search": "suche",
+          "discount": "rabatt",
+          "payCash": "zahlBar",
+          "payCard": "zahlKarte",
+          "paySplit": "zahlGetrennt",
+          "cardProvider": "kartenanbieter",
+          "tip": "trinkgeld",
+          "tipMode": "tgModus",
+          "tipSteps": "tgStufen",
+          "tipSplit": "tgSplit",
+          "change": "rueckgeld",
+          "tipChips": "tgChips",
+          "exactCash": "schnellbar",
+          "checkoutMode": "kassierenModus",
+          "receiptOutput": "belegAusgabe",
+          "doneScreenSeconds": "fertigSekunden",
+          "logoImage": "logoBild",
+          "watermarkSide": "wzSeite",
+          "watermarkX": "wzPos",
+          "watermarkY": "wzPosV",
+          "watermarkStrength": "wzStaerke",
+          "logoScale": "logoSkala",
+          "watermarkScale": "wzSkala",
+          "glass": "glas",
+          "hints": "hinweise",
+          "discountChips": "rabattChips"
+        }
+      },
+      "werte": {
+        "business.watermark": {
+          "$catalog": "KASSE_BETRIEB_WERTE.watermark"
+        },
+        "business.theme": {
+          "$catalog": "KASSE_BETRIEB_WERTE.theme"
+        },
+        "business.tileStyle": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tileStyle"
+        },
+        "business.quantity": {
+          "$catalog": "KASSE_BETRIEB_WERTE.quantity"
+        },
+        "business.discount": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discount"
+        },
+        "business.cardProvider": {
+          "$catalog": "KASSE_BETRIEB_WERTE.cardProvider"
+        },
+        "business.tipMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipMode"
+        },
+        "business.checkoutMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
+        },
+        "business.receiptOutput": {
+          "$catalog": "KASSE_BETRIEB_WERTE.receiptOutput"
+        },
+        "business.watermarkSide": {
+          "$catalog": "KASSE_BETRIEB_WERTE.watermarkSide"
+        }
+      }
+    },
+    "setMyRegisterDeviceSettings": {
+      "params": {
+        "device": {
+          "__": "geraet",
+          "layout": "layout",
+          "categoryPosition": "katpos",
+          "extraColumns": "spaltenExtra",
+          "tileHeight": "hoehe",
+          "touch": "touch",
+          "shortcuts": {
+            "__": "tasten",
+            "checkout": "kassieren",
+            "complete": "abschliessen",
+            "cancel": "abbrechen",
+            "customAmount": "frei",
+            "cash": "bar",
+            "card": "karte",
+            "exactAmount": "passend",
+            "receipts": "belege",
+            "undoLast": "letzteZurueck",
+            "settings": "einstellungen",
+            "logout": "abmelden",
+            "tip": "trinkgeld",
+            "fullscreen": "vollbild",
+            "clearTendered": "gegebenLeeren",
+            "clearCart": "korbLeeren",
+            "splitPayment": "getrennt"
+          },
+          "printerEnabled": "druckerAn",
+          "printerType": "druckerArt",
+          "printerIp": "druckerIp",
+          "printerPort": "druckerPort",
+          "printerBluetoothId": "druckerBt",
+          "printerName": "druckerName",
+          "printerId": "druckerId",
+          "printerDeviceId": "druckerDevid",
+          "connectPrinterId": "connectDruckerId",
+          "paperSize": "papier",
+          "codePage": "zeichensatz",
+          "cut": "schnitt",
+          "qrMode": "qrModus",
+          "drawerEnabled": "ladeAn",
+          "drawerAutoOpen": "ladeAuto",
+          "terminalIp": "terminalIp",
+          "terminalPort": "terminalPort",
+          "terminalTid": "terminalTid",
+          "terminalVia": "terminalVia",
+          "terminalType": "terminalArt",
+          "shortcutHints": "tastenMarken"
+        }
+      },
+      "paramWerte": {
+        "device.layout": {
+          "$catalog": "KASSE_GERAET_WERTE.layout"
+        },
+        "device.categoryPosition": {
+          "$catalog": "KASSE_GERAET_WERTE.categoryPosition"
+        },
+        "device.printerType": {
+          "$catalog": "KASSE_GERAET_WERTE.printerType"
+        },
+        "device.drawerAutoOpen": {
+          "$catalog": "KASSE_GERAET_WERTE.drawerAutoOpen"
+        },
+        "device.terminalVia": {
+          "$catalog": "KASSE_GERAET_WERTE.terminalVia"
+        },
+        "device.terminalType": {
+          "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        }
+      },
+      "data": {
+        "device": {
+          "__": "geraet",
+          "layout": "layout",
+          "categoryPosition": "katpos",
+          "extraColumns": "spaltenExtra",
+          "tileHeight": "hoehe",
+          "touch": "touch",
+          "shortcuts": {
+            "__": "tasten",
+            "checkout": "kassieren",
+            "complete": "abschliessen",
+            "cancel": "abbrechen",
+            "customAmount": "frei",
+            "cash": "bar",
+            "card": "karte",
+            "exactAmount": "passend",
+            "receipts": "belege",
+            "undoLast": "letzteZurueck",
+            "settings": "einstellungen",
+            "logout": "abmelden",
+            "tip": "trinkgeld",
+            "fullscreen": "vollbild",
+            "clearTendered": "gegebenLeeren",
+            "clearCart": "korbLeeren",
+            "splitPayment": "getrennt"
+          },
+          "printerEnabled": "druckerAn",
+          "printerType": "druckerArt",
+          "printerIp": "druckerIp",
+          "printerPort": "druckerPort",
+          "printerBluetoothId": "druckerBt",
+          "printerName": "druckerName",
+          "printerId": "druckerId",
+          "printerDeviceId": "druckerDevid",
+          "connectPrinterId": "connectDruckerId",
+          "paperSize": "papier",
+          "codePage": "zeichensatz",
+          "cut": "schnitt",
+          "qrMode": "qrModus",
+          "drawerEnabled": "ladeAn",
+          "drawerAutoOpen": "ladeAuto",
+          "terminalIp": "terminalIp",
+          "terminalPort": "terminalPort",
+          "terminalTid": "terminalTid",
+          "terminalVia": "terminalVia",
+          "terminalType": "terminalArt",
+          "shortcutHints": "tastenMarken"
+        }
+      },
+      "werte": {
+        "device.layout": {
+          "$catalog": "KASSE_GERAET_WERTE.layout"
+        },
+        "device.categoryPosition": {
+          "$catalog": "KASSE_GERAET_WERTE.categoryPosition"
+        },
+        "device.printerType": {
+          "$catalog": "KASSE_GERAET_WERTE.printerType"
+        },
+        "device.drawerAutoOpen": {
+          "$catalog": "KASSE_GERAET_WERTE.drawerAutoOpen"
+        },
+        "device.terminalVia": {
+          "$catalog": "KASSE_GERAET_WERTE.terminalVia"
+        },
+        "device.terminalType": {
+          "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        }
+      }
+    },
+    "stripeCaptureIntent": {},
+    "unpairRegisterDevice": {},
+    "updateCustomer": {},
+    "updatePartnerWebhook": {
+      "werte": {
+        "webhook.lastDelivery.status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      },
+      "ergaenze": {
+        "$function": "ergaenze"
+      }
+    }
+  },
+  "events": {
+    "cashregister.failed": {
+      "werte": {
+        "code": {
+          "zugang_nicht_erlaubt": "access_not_allowed",
+          "kennung_fehlt": "tax_number_missing",
+          "vertrag_offen": "contracts_pending",
+          "art_not_allowed": "kind_not_allowed",
+          "modus_not_allowed": "mode_not_allowed",
+          "vollmacht_fehlt": "power_of_attorney_missing",
+          "kunde_nicht_gefunden": "customer_not_found",
+          "unvollstaendig": "incomplete",
+          "fon_fehler": "finanzonline_error",
+          "beleg_nicht_gefunden": "receipt_not_found",
+          "belegart_nicht_stornierbar": "receipt_type_not_cancellable",
+          "trainingsbeleg": "training_receipt",
+          "bereits_storniert": "already_cancelled",
+          "position_ungueltig": "invalid_line",
+          "menge_ueber_rest": "quantity_exceeds_remaining",
+          "grund_unbekannt": "unknown_reason",
+          "anmerkung_zu_lang": "note_too_long",
+          "items_ungueltig": "invalid_items",
+          "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "keine_berechtigung": "not_permitted",
+          "nur_eigene_belege": "own_receipts_only",
+          "kasse_unvollstaendig": "cashregister_incomplete",
+          "storno_fehlgeschlagen": "cancellation_failed",
+          "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
+          "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
+          "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
+          "STORNO_REFUND_REFERENCE_UNKNOWN": "cancellation_refund_reference_unknown",
+          "STORNO_OUTCOME_UNKNOWN": "cancellation_outcome_unknown",
+          "PAYMENTS_INVALID": "payments_invalid",
+          "PAYMENT_METHOD_INVALID": "payment_method_invalid",
+          "PAYMENT_AMOUNT_INVALID": "payment_amount_invalid",
+          "PAYMENT_TENDERED_INVALID": "payment_tendered_invalid",
+          "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
+          "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
+          "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
+          "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
+          "PAYMENTS_CONFLICT": "payments_conflict",
+          "PAYMENTS_REQUIRED": "payments_required",
+          "PAYMENT_METHOD_NOT_SUPPORTED": "payment_method_not_supported",
+          "TIP_PAYMENT_METHOD_INVALID": "tip_payment_method_invalid",
+          "TIP_PAYMENT_METHOD_REQUIRED": "tip_payment_method_required",
+          "TIP_EXCEEDS_PAYMENT": "tip_exceeds_payment",
+          "PAYMENT_REFUND_NOT_ALLOWED": "payment_refund_not_allowed",
+          "PAYMENT_TIP_INVALID": "payment_tip_invalid",
+          "TIP_CONFLICT": "tip_conflict",
+          "adresse_ungueltig": "invalid_address",
+          "zu_oft": "too_many_requests",
+          "versand_fehlgeschlagen": "send_failed"
+        }
+      }
+    },
+    "customer.avv_accepted": {
+      "werte": {
+        "kind": {
+          "$catalog": "VERTRAG_ART"
+        },
+        "source": {
+          "$catalog": "QUELLE"
+        }
+      }
+    },
+    "customer.terms_accepted": {
+      "werte": {
+        "kind": {
+          "$catalog": "VERTRAG_ART"
+        },
+        "source": {
+          "$catalog": "QUELLE"
+        }
+      }
+    },
+    "signature.failed": {
+      "werte": {
+        "code": {
+          "zugang_nicht_erlaubt": "access_not_allowed",
+          "kennung_fehlt": "tax_number_missing",
+          "vertrag_offen": "contracts_pending",
+          "art_not_allowed": "kind_not_allowed",
+          "modus_not_allowed": "mode_not_allowed",
+          "vollmacht_fehlt": "power_of_attorney_missing",
+          "kunde_nicht_gefunden": "customer_not_found",
+          "unvollstaendig": "incomplete",
+          "fon_fehler": "finanzonline_error",
+          "beleg_nicht_gefunden": "receipt_not_found",
+          "belegart_nicht_stornierbar": "receipt_type_not_cancellable",
+          "trainingsbeleg": "training_receipt",
+          "bereits_storniert": "already_cancelled",
+          "position_ungueltig": "invalid_line",
+          "menge_ueber_rest": "quantity_exceeds_remaining",
+          "grund_unbekannt": "unknown_reason",
+          "anmerkung_zu_lang": "note_too_long",
+          "items_ungueltig": "invalid_items",
+          "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "keine_berechtigung": "not_permitted",
+          "nur_eigene_belege": "own_receipts_only",
+          "kasse_unvollstaendig": "cashregister_incomplete",
+          "storno_fehlgeschlagen": "cancellation_failed",
+          "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
+          "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
+          "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
+          "STORNO_REFUND_REFERENCE_UNKNOWN": "cancellation_refund_reference_unknown",
+          "STORNO_OUTCOME_UNKNOWN": "cancellation_outcome_unknown",
+          "PAYMENTS_INVALID": "payments_invalid",
+          "PAYMENT_METHOD_INVALID": "payment_method_invalid",
+          "PAYMENT_AMOUNT_INVALID": "payment_amount_invalid",
+          "PAYMENT_TENDERED_INVALID": "payment_tendered_invalid",
+          "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
+          "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
+          "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
+          "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
+          "PAYMENTS_CONFLICT": "payments_conflict",
+          "PAYMENTS_REQUIRED": "payments_required",
+          "PAYMENT_METHOD_NOT_SUPPORTED": "payment_method_not_supported",
+          "TIP_PAYMENT_METHOD_INVALID": "tip_payment_method_invalid",
+          "TIP_PAYMENT_METHOD_REQUIRED": "tip_payment_method_required",
+          "TIP_EXCEEDS_PAYMENT": "tip_exceeds_payment",
+          "PAYMENT_REFUND_NOT_ALLOWED": "payment_refund_not_allowed",
+          "PAYMENT_TIP_INVALID": "payment_tip_invalid",
+          "TIP_CONFLICT": "tip_conflict",
+          "adresse_ungueltig": "invalid_address",
+          "zu_oft": "too_many_requests",
+          "versand_fehlgeschlagen": "send_failed"
+        }
+      }
+    }
+  },
+  "articleFields": {
+    "outer": [
+      "id",
+      "source",
+      "number",
+      "name",
+      "description",
+      "unit",
+      "unitPriceCents",
+      "vatRate",
+      "ean",
+      "internalCode",
+      "codeSpec",
+      "stockTracked",
+      "stockQty",
+      "minStock",
+      "e1aGroup",
+      "quantityRule",
+      "askQuantity",
+      "maxQuantity",
+      "revenueGroupId",
+      "active",
+      "groupId",
+      "tile"
+    ],
+    "inner": [
+      "id",
+      "source",
+      "number",
+      "name",
+      "description",
+      "unit",
+      "unitPriceCents",
+      "vatRate",
+      "ean",
+      "internalCode",
+      "codeSpec",
+      "stockTracked",
+      "stockQty",
+      "minStock",
+      "e1aGroup",
+      "mengenregel",
+      "mengeFragen",
+      "maxMenge",
+      "revenueGroupId",
+      "active",
+      "groupId",
+      "kasse"
+    ]
+  },
+  "articleGroupFields": [
+    "id",
+    "name",
+    "color",
+    "symbol",
+    "sort",
+    "vatRate"
+  ]
+}

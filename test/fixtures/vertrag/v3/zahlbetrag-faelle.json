@@ -1,0 +1,794 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "b49a1f665005b1f3b286d2c02268373f84dfb40638177ceba15dd3cda8a7da62",
+    "inputsSha256": "cee31126cc755fd21441abae289997aeb0884a15eb230ce231defd8bb0bdc0fd",
+    "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+    "inputs": [
+      "docs/api/fehlercodes.json",
+      "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/beleg-mail-core.js",
+      "functions/gemeinsam/api-rand.js",
+      "functions/gemeinsam/api-vokabular-v3.js",
+      "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/storno-core.js",
+      "functions/gemeinsam/tip-core.js",
+      "functions/gemeinsam/vat-buckets.js",
+      "functions/gemeinsam/zahlungen-core.js",
+      "functions/invoice-api-core.js",
+      "functions/invoice-api-endpoints.js",
+      "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
+      "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
+      "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
+      "functions/test/unit/helpers/kassen-fehlerstellen.js",
+      "functions/test/unit/v3-vertrag-export.test.js"
+    ]
+  },
+  "note": "Geld in ganzen Cent. serverItems: die Trinkgeld-Positionen, wie der Server sie im Beleg sendet.",
+  "cases": [
+    {
+      "name": "sale_single_rate",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 640,
+        "counterDeltaCents": 640,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "sale_mixed_rates",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          },
+          {
+            "name": "Wein",
+            "amount": 1,
+            "priceOneCents": 590,
+            "vat": 13
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 1546,
+        "counterDeltaCents": 1546,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 316,
+          "amountRateReduced2": 590,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "sale_rate_4_9",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Milch",
+            "amount": 3,
+            "priceOneCents": 129,
+            "vat": 4.9
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 703,
+        "counterDeltaCents": 703,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 0,
+          "amountRateReduced1": 316,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 387,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "sale_rate_19_and_0",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Tabak",
+            "amount": 1,
+            "priceOneCents": 700,
+            "vat": 19
+          },
+          {
+            "name": "Pfand",
+            "amount": 2,
+            "priceOneCents": 25,
+            "vat": 0
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 750,
+        "counterDeltaCents": 750,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 0,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 50,
+          "amountRateSpecial": 700,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "sale_float_rounding",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaugummi",
+            "amount": 3,
+            "priceOneCents": 10,
+            "vat": 20
+          },
+          {
+            "name": "Schnitte",
+            "amount": 7,
+            "priceOneCents": 70,
+            "vat": 10
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 520,
+        "counterDeltaCents": 520,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 30,
+          "amountRateReduced1": 490,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "sale_decimal_quantity",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Käse",
+            "amount": 0.375,
+            "priceOneCents": 2290,
+            "vat": 10
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 859,
+        "counterDeltaCents": 859,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 0,
+          "amountRateReduced1": 859,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "sale_v2_item_form",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Tee",
+            "quantity": 3,
+            "unitPriceCents": 290,
+            "vatRate": 20
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 870,
+        "counterDeltaCents": 870,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 870,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "training_sale",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "training",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 640,
+        "counterDeltaCents": 640,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "promo_proportional",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          },
+          {
+            "name": "Wein",
+            "amount": 1,
+            "priceOneCents": 590,
+            "vat": 13
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "promo",
+            "valueCents": 100,
+            "code": "RABATT1"
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 1446,
+        "counterDeltaCents": 1446,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 598,
+          "amountRateReduced1": 296,
+          "amountRateReduced2": 552,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "promo_remainder_cent",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "A",
+            "amount": 1,
+            "priceOneCents": 333,
+            "vat": 20
+          },
+          {
+            "name": "B",
+            "amount": 1,
+            "priceOneCents": 333,
+            "vat": 10
+          },
+          {
+            "name": "C",
+            "amount": 1,
+            "priceOneCents": 334,
+            "vat": 13
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "promo",
+            "valueCents": 101,
+            "code": "R"
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 899,
+        "counterDeltaCents": 899,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 300,
+          "amountRateReduced1": 300,
+          "amountRateReduced2": 299,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "promo_exceeds_total",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "promo",
+            "valueCents": 5000,
+            "code": "GROSS"
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 0,
+        "counterDeltaCents": 0,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 0,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "value_voucher_sell",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "sell",
+            "type": "value",
+            "valueCents": 2500,
+            "code": "WG-1"
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 3140,
+        "counterDeltaCents": 640,
+        "valueVoucherFlowCents": 2500,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "value_voucher_redeem_partial",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Wein",
+            "amount": 1,
+            "priceOneCents": 590,
+            "vat": 13
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "value",
+            "valueCents": 500,
+            "code": "WG-2"
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 730,
+        "counterDeltaCents": 1230,
+        "valueVoucherFlowCents": -500,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 590,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "tip_staff",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [],
+        "tip": {
+          "cents": 160
+        }
+      },
+      "expected": {
+        "dueCents": 800,
+        "counterDeltaCents": 800,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 160,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 1.6,
+          "priceOneCents": 160,
+          "unitPriceCents": 160,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
+    },
+    {
+      "name": "tip_staff_received_immediately",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": [],
+        "tip": {
+          "cents": 75,
+          "receivedImmediately": true
+        }
+      },
+      "expected": {
+        "dueCents": 1031,
+        "counterDeltaCents": 1031,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 316,
+          "amountRateReduced2": 0,
+          "amountRateZero": 75,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 0.75,
+          "priceOneCents": 75,
+          "unitPriceCents": 75,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
+    },
+    {
+      "name": "tip_staff_with_promo",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "promo",
+            "valueCents": 100,
+            "code": "R"
+          }
+        ],
+        "tip": {
+          "cents": 100
+        }
+      },
+      "expected": {
+        "dueCents": 640,
+        "counterDeltaCents": 640,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 540,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 100,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 1,
+          "priceOneCents": 100,
+          "unitPriceCents": 100,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
+    },
+    {
+      "name": "tip_owner_with_promo",
+      "verifiedBy": "computed",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "promo",
+            "valueCents": 100,
+            "code": "R"
+          }
+        ],
+        "tip": {
+          "cents": 100,
+          "owner": true
+        }
+      },
+      "expected": {
+        "dueCents": 956,
+        "counterDeltaCents": 956,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 316,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "cancellation_negative",
+      "verifiedBy": "cancelReceipt",
+      "input": {
+        "receiptType": "cancellation",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": -2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": -4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": -956,
+        "counterDeltaCents": -956,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": -640,
+          "amountRateReduced1": -316,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "cancellation_value_voucher_sell",
+      "verifiedBy": "cancelReceipt",
+      "input": {
+        "receiptType": "cancellation",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": -2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "sell",
+            "type": "value",
+            "valueCents": 2500,
+            "code": "WG-1"
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": -3140,
+        "counterDeltaCents": -640,
+        "valueVoucherFlowCents": -2500,
+        "bucketsCents": {
+          "amountRateStandard": -640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "zero_receipt",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "zero",
+        "items": [],
+        "vouchers": []
+      },
+      "expected": {
+        "dueCents": 0,
+        "counterDeltaCents": 0,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": null
+      }
+    }
+  ]
+}

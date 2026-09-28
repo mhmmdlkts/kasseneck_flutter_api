@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
-import 'package:kasseneck_api/kasse.dart' show Belegzusammenfassung, KasseSettings, Kassierstand, Positionsentwurf, VatRate, Warenkorb, barzahlung, kassierrechnung;
-import 'package:kasseneck_api/kasseneck_api.dart' show KeckPayment, KeckPaymentInput, istZahlungFehlercode, zahlungFehlercodes, zahlungenFehler;
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/pos.dart' show ReceiptSummary, PosSettings, CheckoutState, CartItemDraft, VatRate, Cart, cashPayment, checkoutTotals;
+import 'package:kasseneck_api/kasseneck_api.dart' show KeckPayment, KeckPaymentInput, isPaymentErrorCode, paymentErrorCodes, paymentsError;
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
 
@@ -54,9 +54,9 @@ KasseneckReceipt _beleg(Map<String, dynamic> felder, {Map<String, dynamic>? layo
   });
 }
 
-BelegLayout _layoutMit(List<String> texte) => BelegLayout.fromJson({
+ReceiptLayout _layoutMit(List<String> texte) => ReceiptLayout.fromJson({
       'paperSize': 'mm80',
-      'regelwerk': 2,
+      'ruleset': 2,
       'lines': [
         for (final t in texte) {'kind': 'text', 'text': t, 'align': 'center', 'bold': false},
       ],
@@ -81,7 +81,7 @@ void main() {
     });
 
     test('die Belegliste liest mixed als mixed und nimmt die Zahlungen mit', () {
-      final z = Belegzusammenfassung.aus({
+      final z = ReceiptSummary.fromJson({
         'receiptId': 'K-1',
         'paymentMethod': 'mixed',
         'payments': [
@@ -89,11 +89,11 @@ void main() {
           {'id': 'p2', 'method': 'cash', 'amountCents': 500, 'tenderedCents': 1000, 'changeCents': 500},
         ],
       });
-      expect(z.zahlungsart, KeckPaymentMethod.mixed);
-      expect(z.zahlungen!.length, 2);
-      expect(z.zahlungen![1].changeCents, 500);
-      expect(Belegzusammenfassung.aus({'paymentMethod': 'zauberei'}).zahlungsart, KeckPaymentMethod.cash);
-      expect(Belegzusammenfassung.aus({'paymentMethod': 'cash'}).zahlungen, isNull);
+      expect(z.paymentMethod, KeckPaymentMethod.mixed);
+      expect(z.payments!.length, 2);
+      expect(z.payments![1].changeCents, 500);
+      expect(ReceiptSummary.fromJson({'paymentMethod': 'zauberei'}).paymentMethod, KeckPaymentMethod.cash);
+      expect(ReceiptSummary.fromJson({'paymentMethod': 'cash'}).payments, isNull);
     });
   });
 
@@ -184,99 +184,99 @@ void main() {
 
     test('Verkauf: gueltige Liste hat keinen Fehler', () {
       expect(
-          zahlungenFehler([
+          paymentsError([
             const KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 2000, provider: CreditCardProvider.sumup, providerPaymentId: 'S-1'),
             const KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 1045, tenderedCents: 2000),
-          ], storno: false),
+          ], cancellation: false),
           isNull);
-      expect(zahlungenFehler(const [], storno: false), isNull);
+      expect(paymentsError(const [], cancellation: false), isNull);
     });
 
     test('mixed wird nie gesendet', () {
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 100)], storno: false),
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 100)], cancellation: false),
           contains('mixed'));
     });
 
     test('Betrag: am Verkauf > 0, am Storno < 0', () {
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 0)], storno: false),
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 0)], cancellation: false),
           'Zahlung 1: amountCents muss eine ganze Zahl groesser als 0 sein.');
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1)], storno: false), isNotNull);
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 1)], storno: true),
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1)], cancellation: false), isNotNull);
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 1)], cancellation: true),
           'Zahlung 1: amountCents muss eine ganze Zahl kleiner als 0 sein.');
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1)], storno: true), isNull);
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1)], cancellation: true), isNull);
     });
 
     test('tenderedCents: nur am Verkauf, mindestens der Betrag', () {
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, tenderedCents: 499)], storno: false),
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, tenderedCents: 499)], cancellation: false),
           contains('tenderedCents'));
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, tenderedCents: 500)], storno: false), isNull);
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, tenderedCents: 500)], storno: true),
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, tenderedCents: 500)], cancellation: false), isNull);
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, tenderedCents: 500)], cancellation: true),
           contains('tenderedCents'));
     });
 
     test('tipCents > 0', () {
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, tipCents: 0)], storno: false),
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, tipCents: 0)], cancellation: false),
           'Zahlung 1: tipCents muss eine ganze Zahl groesser als 0 sein.');
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, tipCents: 50)], storno: false), isNull);
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, tipCents: 50)], cancellation: false), isNull);
     });
 
     test('providerPaymentId nicht leer', () {
       expect(
-          zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 500, provider: CreditCardProvider.sumup, providerPaymentId: '')],
-              storno: false),
+          paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 500, provider: CreditCardProvider.sumup, providerPaymentId: '')],
+              cancellation: false),
           contains('providerPaymentId'));
     });
 
     test('refundOf nur am Storno und nicht leer', () {
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, refundOf: 'p1')], storno: false),
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 500, refundOf: 'p1')], cancellation: false),
           contains('refundOf'));
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, refundOf: '')], storno: true),
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, refundOf: '')], cancellation: true),
           contains('refundOf'));
-      expect(zahlungenFehler(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, refundOf: 'p1')], storno: true), isNull);
+      expect(paymentsError(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, refundOf: 'p1')], cancellation: true), isNull);
     });
 
     test('hoechstens 20 Zahlungen; die Nummer im Fehler zaehlt ab 1', () {
       final viele = List.generate(21, (_) => const KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 1));
-      expect(zahlungenFehler(viele, storno: false), 'payments: es sind hoechstens 20 Eintraege erlaubt.');
+      expect(paymentsError(viele, cancellation: false), 'payments: es sind hoechstens 20 Eintraege erlaubt.');
       expect(
-          zahlungenFehler(const [
+          paymentsError(const [
             KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 1),
             KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 0),
-          ], storno: false),
+          ], cancellation: false),
           startsWith('Zahlung 2:'));
     });
   });
 
   group('Fehlercodes', () {
-    test('dieselben 18 Codes wie npm PAYMENT_ERROR_CODES, in derselben Reihenfolge', () {
-      expect(zahlungFehlercodes, [
-        'PAYMENTS_INVALID',
-        'PAYMENT_METHOD_INVALID',
-        'PAYMENT_AMOUNT_INVALID',
-        'PAYMENT_TENDERED_INVALID',
-        'PAYMENT_PROVIDER_INVALID',
-        'PAYMENT_PROVIDER_NOT_ALLOWED',
-        'PAYMENTS_SUM_MISMATCH',
-        'PAYMENTS_DUE_NEGATIVE',
-        'PAYMENTS_NOT_ALLOWED',
-        'PAYMENTS_CONFLICT',
-        'PAYMENTS_REQUIRED',
-        'PAYMENT_METHOD_NOT_SUPPORTED',
-        'TIP_PAYMENT_METHOD_INVALID',
-        'TIP_PAYMENT_METHOD_REQUIRED',
-        'TIP_EXCEEDS_PAYMENT',
-        'PAYMENT_REFUND_NOT_ALLOWED',
-        'PAYMENT_TIP_INVALID',
-        'TIP_CONFLICT',
+    test('beginnt mit den 18 Codes der Zahlungen, klein wie unter /v3 (Rest: receipt_v3_codes_test)', () {
+      expect(paymentErrorCodes.take(18), [
+        'payments_invalid',
+        'payment_method_invalid',
+        'payment_amount_invalid',
+        'payment_tendered_invalid',
+        'payment_provider_invalid',
+        'payment_provider_not_allowed',
+        'payments_sum_mismatch',
+        'payments_due_negative',
+        'payments_not_allowed',
+        'payments_conflict',
+        'payments_required',
+        'payment_method_not_supported',
+        'tip_payment_method_invalid',
+        'tip_payment_method_required',
+        'tip_exceeds_payment',
+        'payment_refund_not_allowed',
+        'payment_tip_invalid',
+        'tip_conflict',
       ]);
     });
 
-    test('istZahlungFehlercode: gross (/v1) wie klein (/v3), kein Anzeigetext, kein null', () {
-      expect(istZahlungFehlercode('PAYMENTS_SUM_MISMATCH'), isTrue);
-      expect(istZahlungFehlercode('payments_sum_mismatch'), isTrue);
-      expect(istZahlungFehlercode('Die Summe der Zahlungen stimmt nicht.'), isFalse);
-      expect(istZahlungFehlercode(null), isFalse);
-      expect(istZahlungFehlercode(7), isFalse);
+    test('istZahlungFehlercode: exakt klein (/v3), kein grosser /v1-Code, kein Anzeigetext, kein null', () {
+      expect(isPaymentErrorCode('payments_sum_mismatch'), isTrue);
+      expect(isPaymentErrorCode('PAYMENTS_SUM_MISMATCH'), isFalse);
+      expect(isPaymentErrorCode('Die Summe der Zahlungen stimmt nicht.'), isFalse);
+      expect(isPaymentErrorCode(null), isFalse);
+      expect(isPaymentErrorCode(7), isFalse);
     });
   });
 
@@ -290,11 +290,11 @@ void main() {
           {'id': 'p3', 'method': 'cash', 'amountCents': 500},
         ],
       });
-      final bloecke = b.kartenzahlungen;
+      final bloecke = b.cardPayments;
       expect(bloecke.length, 2);
-      expect(bloecke.map((k) => k.anbieter), [CreditCardProvider.hobexHps, CreditCardProvider.hobexHps]);
-      expect(bloecke.map((k) => k.daten['no']), ['17', '18']);
-      expect(bloecke.map((k) => k.kennung), ['X-p1', 'X-p2']);
+      expect(bloecke.map((k) => k.provider), [CreditCardProvider.hobexHps, CreditCardProvider.hobexHps]);
+      expect(bloecke.map((k) => k.data['no']), ['17', '18']);
+      expect(bloecke.map((k) => k.paymentId), ['X-p1', 'X-p2']);
     });
 
     test('mit Zahlungsliste zaehlen die alten Einzelfelder nicht', () {
@@ -306,7 +306,7 @@ void main() {
           {'id': 'p2', 'method': 'cash', 'amountCents': 500},
         ],
       });
-      expect(b.kartenzahlungen.map((k) => k.anbieter), [CreditCardProvider.sumup]);
+      expect(b.cardPayments.map((k) => k.provider), [CreditCardProvider.sumup]);
     });
 
     test('eine Zahlung ohne Terminaldaten neben gesetzten Altfeldern: der Altblock', () {
@@ -318,20 +318,20 @@ void main() {
           {'id': 'p1', 'method': 'creditCard', 'amountCents': 2000, 'provider': 'sumup', 'providerPaymentId': 'S'},
         ],
       });
-      expect(b.kartenzahlungen.single.kennung, 'alt-1');
+      expect(b.cardPayments.single.paymentId, 'alt-1');
     });
 
     test('ohne Liste: der bisherige Block aus den Einzelfeldern', () {
       final b = buildReceipt(paymentMethod: KeckPaymentMethod.creditCard, cardProvider: CreditCardProvider.sumup, cardPaymentData: _sumup, cardPaymentId: 'S-1');
-      expect(b.kartenzahlungen.single.anbieter, CreditCardProvider.sumup);
-      expect(buildReceipt().kartenzahlungen, isEmpty);
+      expect(b.cardPayments.single.provider, CreditCardProvider.sumup);
+      expect(buildReceipt().cardPayments, isEmpty);
     });
 
     test('unbekannter Anbieter in der Liste bekommt keinen Block', () {
       final b = _beleg({
         'payments': [_kartenzahlung('neuland', _sumup), _kartenzahlung('sumup', _sumup, id: 'p2')],
       });
-      expect(b.kartenzahlungen.map((k) => k.anbieter), [CreditCardProvider.sumup]);
+      expect(b.cardPayments.map((k) => k.provider), [CreditCardProvider.sumup]);
     });
   });
 
@@ -345,9 +345,9 @@ void main() {
     };
 
     test('jeder Anbieter-Kopf muss im Layout stehen', () {
-      expect(_beleg(zweiKarten, layout: _layoutMit(['Sumup Beleg', 'Hobex Beleg']).toJsonForTest()).layoutIstVollstaendig, isTrue);
+      expect(_beleg(zweiKarten, layout: _layoutMit(['Sumup Beleg', 'Hobex Beleg']).toJsonForTest()).isLayoutComplete, isTrue);
       // Nur der erste Block -- so saehe ein Layout eines Pakets vor der Aufschluesselung aus.
-      expect(_beleg(zweiKarten, layout: _layoutMit(['Sumup Beleg']).toJsonForTest()).layoutIstVollstaendig, isFalse);
+      expect(_beleg(zweiKarten, layout: _layoutMit(['Sumup Beleg']).toJsonForTest()).isLayoutComplete, isFalse);
     });
 
     test('zwei Karten desselben Anbieters brauchen zwei Koepfe', () {
@@ -358,16 +358,16 @@ void main() {
           _kartenzahlung('hobexHps', _hobex, id: 'p2'),
         ],
       };
-      expect(_beleg(gleich, layout: _layoutMit(['Hobex Beleg']).toJsonForTest()).layoutIstVollstaendig, isFalse);
-      expect(_beleg(gleich, layout: _layoutMit(['Hobex Beleg', 'Hobex Beleg']).toJsonForTest()).layoutIstVollstaendig, isTrue);
+      expect(_beleg(gleich, layout: _layoutMit(['Hobex Beleg']).toJsonForTest()).isLayoutComplete, isFalse);
+      expect(_beleg(gleich, layout: _layoutMit(['Hobex Beleg', 'Hobex Beleg']).toJsonForTest()).isLayoutComplete, isTrue);
     });
 
     test('Altfelder allein bleiben wie bisher', () {
       final b = buildReceipt(paymentMethod: KeckPaymentMethod.creditCard, cardProvider: CreditCardProvider.sumup, cardPaymentData: _sumup)
         ..layout = _layoutMit(['Sumup Beleg']);
-      expect(b.layoutIstVollstaendig, isTrue);
+      expect(b.isLayoutComplete, isTrue);
       b.layout = _layoutMit(['nichts']);
-      expect(b.layoutIstVollstaendig, isFalse);
+      expect(b.isLayoutComplete, isFalse);
     });
   });
 
@@ -403,38 +403,38 @@ void main() {
   });
 
   group('Kassierrechnung -> Barzahlung', () {
-    final betrieb = KasseSettings.aus({'betrieb': {}}).betrieb;
-    Warenkorb korb(int cents) => const Warenkorb.leer().hinzugefuegt(
-          Positionsentwurf(bezeichnung: 'Ware', betragCents: cents, steuersatz: VatRate.vat20),
+    final betrieb = PosSettings.fromJson({'betrieb': {}}).business;
+    Cart korb(int cents) => const Cart.empty().added(
+          CartItemDraft(name: 'Ware', unitPriceCents: cents, vatRate: VatRate.vat20),
         );
 
     test('bar mit Gegebenem: tenderedCents geht mit', () {
-      final r = kassierrechnung(korb(1045), betrieb, const Kassierstand(zahlungsart: KeckPaymentMethod.cash, gegebenCents: 2000));
-      expect(barzahlung(r).toJson(), {'method': 'cash', 'amountCents': 1045, 'tenderedCents': 2000});
+      final r = checkoutTotals(korb(1045), betrieb, const CheckoutState(paymentMethod: KeckPaymentMethod.cash, tenderedCents: 2000));
+      expect(cashPayment(r).toJson(), {'method': 'cash', 'amountCents': 1045, 'tenderedCents': 2000});
     });
 
     test('ohne oder mit zu wenig Gegebenem: kein tenderedCents', () {
-      final ohne = kassierrechnung(korb(1045), betrieb, const Kassierstand(zahlungsart: KeckPaymentMethod.cash));
-      expect(barzahlung(ohne).toJson(), {'method': 'cash', 'amountCents': 1045});
-      final wenig = kassierrechnung(korb(1045), betrieb, const Kassierstand(zahlungsart: KeckPaymentMethod.cash, gegebenCents: 1000));
-      expect(barzahlung(wenig).tenderedCents, isNull);
+      final ohne = checkoutTotals(korb(1045), betrieb, const CheckoutState(paymentMethod: KeckPaymentMethod.cash));
+      expect(cashPayment(ohne).toJson(), {'method': 'cash', 'amountCents': 1045});
+      final wenig = checkoutTotals(korb(1045), betrieb, const CheckoutState(paymentMethod: KeckPaymentMethod.cash, tenderedCents: 1000));
+      expect(cashPayment(wenig).tenderedCents, isNull);
     });
 
     test('Restbetrag nach Karten: gegeben gilt gegen den Rest', () {
-      final r = kassierrechnung(korb(4545), betrieb, const Kassierstand(zahlungsart: KeckPaymentMethod.cash, gegebenCents: 2000));
-      final p = barzahlung(r, betragCents: 1045);
+      final r = checkoutTotals(korb(4545), betrieb, const CheckoutState(paymentMethod: KeckPaymentMethod.cash, tenderedCents: 2000));
+      final p = cashPayment(r, amountCents: 1045);
       expect(p.toJson(), {'method': 'cash', 'amountCents': 1045, 'tenderedCents': 2000});
     });
   });
 }
 
-extension on BelegLayout {
+extension on ReceiptLayout {
   /// Rohgestalt fuer `fromJson` -- nur Textzeilen, wie [_layoutMit] sie baut.
   Map<String, dynamic> toJsonForTest() => {
         'paperSize': 'mm80',
-        'regelwerk': 2,
+        'ruleset': 2,
         'lines': [
-          for (final z in lines.whereType<BelegText>()) {'kind': 'text', 'text': z.text, 'align': 'center', 'bold': false},
+          for (final z in lines.whereType<LayoutTextLine>()) {'kind': 'text', 'text': z.text, 'align': 'center', 'bold': false},
         ],
       };
 }

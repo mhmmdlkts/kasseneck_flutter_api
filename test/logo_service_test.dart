@@ -14,7 +14,7 @@ void main() {
   setUp(() {
     // Prozessweiter Zustand — sonst faerbt eine gesetzte Frist auf die
     // Nachbartests ab.
-    LogoService.frist = LogoService.standardFrist;
+    LogoService.timeout = LogoService.defaultTimeout;
   });
 
   test('null-URL: kein Request, kein Ergebnis', () async {
@@ -54,7 +54,7 @@ void main() {
     // Der Fall, der weh tut: der Host nimmt die Verbindung an und antwortet
     // nie. Kein Fehler, kein Ergebnis. Ohne Frist kehrte loadLogo — und mit
     // ihm sellReceipt hinter dem bereits signierten Beleg — nie zurueck.
-    LogoService.frist = const Duration(milliseconds: 20);
+    LogoService.timeout = const Duration(milliseconds: 20);
     LogoService.httpClient = MockClient((_) => Completer<http.Response>().future);
     const url = 'https://example.test/logo-haengt.png';
 
@@ -70,7 +70,7 @@ void main() {
     // Ein Host, der Kopf und 200 schickt und den Rumpf stehen laesst, ist
     // dieselbe Falle eine Ebene tiefer. `Client.get` liest den Rumpf, bevor
     // das Future abschliesst — die Frist muss also auch das decken.
-    LogoService.frist = const Duration(milliseconds: 20);
+    LogoService.timeout = const Duration(milliseconds: 20);
     LogoService.httpClient = MockClient.streaming((request, bodyStream) async {
       return http.StreamedResponse(
         StreamController<List<int>>().stream, // Rumpf kommt nie

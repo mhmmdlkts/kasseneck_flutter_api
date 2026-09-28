@@ -8,7 +8,7 @@
 /// * `warm` — Bäckerei und Café. Cremiges Papier statt kühlem Grau.
 /// * `nacht` — Taxi und Bar. Tief, aber **nicht schwarz**: reines Schwarz
 ///   flimmert auf OLED beim Blättern und macht jeden Rand hart.
-/// * `kontrast` — grelles Licht oder schwache Augen. Er ändert deshalb mehr
+/// * `contrastRatio` – grelles Licht oder schwache Augen. Er ändert deshalb mehr
 ///   als Farben: schärfere Linien (2 px), keine Schatten. Die Radien bleiben
 ///   — sie kommen aus dem Design-System und sind in jedem Modus gleich. Wer
 ///   nur die Farben tauscht, hat ihn nicht verstanden.
@@ -21,11 +21,11 @@
 ///
 /// **Die Textfarben halten 4,5:1 nach WCAG — die Schwelle für Fließtext —
 /// überall, wo sie stehen; Bedeutungsfarben und Marke nur dort, wo sie
-/// stehen.** Konkret: `text` und `leise` halten 4,5:1 auf `grund`, `flaeche`
-/// und `flaecheHoch`. Bedeutungsfarben (`gut`, `warnung`, `fehler`) und
-/// `marke` halten 4,5:1 auf `grund` und `flaeche` — sie stehen laut
-/// Design-System nicht auf `flaecheHoch` (Kopfzeile, aktives Feld); dort
-/// steht `text`/`leise`. Auch für den großen Betrag, denn der wird oft
+/// stehen.** Konkret: `text` und `textMuted` halten 4,5:1 auf `ground`, `surface`
+/// und `surfaceRaised`. Bedeutungsfarben (`success`, `warning`, `danger`) und
+/// `brand` halten 4,5:1 auf `ground` und `surface` – sie stehen laut
+/// Design-System nicht auf `surfaceRaised` (Kopfzeile, aktives Feld); dort
+/// steht `text`/`textMuted`. Auch für den großen Betrag, denn der wird oft
 /// schräg und in schlechtem Licht gelesen.
 ///
 /// Farbe, Form und Modi kommen aus `kreiseck_design`; dieses Thema bleibt eine
@@ -38,155 +38,154 @@ import 'package:kreiseck_design/kreiseck_design.dart';
 import 'einstellungen.dart';
 import 'farbe.dart';
 
-/// Welcher Modus des Design-Systems hinter einem Stil steht. Die Enum
-/// [KasseStil] bleibt deutsch — sie steht in Kundendaten.
-KdMode modusFuer(KasseStil stil) => switch (stil) {
-      KasseStil.klar => KdMode.light,
-      KasseStil.warm => KdMode.warm,
-      KasseStil.nacht => KdMode.dark,
-      KasseStil.kontrast => KdMode.contrast,
+/// Welcher Modus des Design-Systems hinter einem Stil steht.
+KdMode modeFor(PosTheme style) => switch (style) {
+      PosTheme.clear => KdMode.light,
+      PosTheme.warm => KdMode.warm,
+      PosTheme.night => KdMode.dark,
+      PosTheme.contrast => KdMode.contrast,
     };
 
 /// Schriftfaktoren. Auch XL bleibt bedienbar — ein Faktor, der die Kasse
 /// sprengt, hilft niemandem, der schlecht sieht.
-const Map<KasseSchrift, double> schriftfaktoren = {
-  KasseSchrift.s: 0.9,
-  KasseSchrift.m: 1.0,
-  KasseSchrift.l: 1.15,
-  KasseSchrift.xl: 1.35,
+const Map<PosFontSize, double> fontScales = {
+  PosFontSize.s: 0.9,
+  PosFontSize.m: 1.0,
+  PosFontSize.l: 1.15,
+  PosFontSize.xl: 1.35,
 };
 
 /// Kachelhöhen in dp. Auch die flachste bleibt ein Fingerziel: unter 48 dp
 /// trifft ein Finger nicht mehr verlässlich.
-const Map<KasseHoehe, double> kachelhoehen = {
-  KasseHoehe.s: 62,
-  KasseHoehe.m: 82,
-  KasseHoehe.l: 108,
+const Map<PosTileHeight, double> tileHeights = {
+  PosTileHeight.s: 62,
+  PosTileHeight.m: 82,
+  PosTileHeight.l: 108,
 };
 
-class Kassenthema {
-  const Kassenthema({
-    required this.stil,
-    required this.modus,
-    required this.schriftfaktor,
-    required this.kachelhoehe,
-    required this.spaltenExtra,
+class PosThemeData {
+  const PosThemeData({
+    required this.theme,
+    required this.mode,
+    required this.fontScale,
+    required this.tileHeight,
+    required this.extraColumns,
     required this.radius,
-    required this.radiusKachel,
-    required this.radiusKlein,
-    required this.linie,
-    required this.schattenTiefe,
-    required this.kachelstil,
+    required this.radiusTile,
+    required this.radiusSmall,
+    required this.lineWidth,
+    required this.shadowDepth,
+    required this.tileStyle,
     required this.emoji,
-    required this.katFarben,
+    required this.categoryColors,
   });
 
-  /// Das Thema aus den Einstellungen. [geraet] steuert, was nur dieses Gerät
+  /// Das Thema aus den Einstellungen. [device] steuert, was nur dieses Gerät
   /// betrifft (Kachelhöhe); ohne es gelten die Vorgaben.
-  factory Kassenthema.aus(KasseSettingsBetrieb betrieb, {KasseSettingsGeraet? geraet}) {
-    final modus = modusFuer(betrieb.stil);
+  factory PosThemeData.fromSettings(PosBusinessSettings business, {PosDeviceSettings? device}) {
+    final modus = modeFor(business.theme);
     final scharf = modus == KdMode.contrast;
 
     // **Die Marke steht fest.** Die Knöpfe, mit denen kassiert wird, sind
     // Teil des Produkts: Kassen, die einander nicht mehr ähneln, kosten jeden
     // neuen Kassier eine Eingewöhnung — und eine Hausfarbe, auf der „Bar
     // passend" nicht mehr lesbar ist, merkt niemand vor dem Tresen.
-    // `betrieb.farbe` bleibt im Datenmodell (Panel und Rechnungs-PDF lesen
+    // `business.color` bleibt im Datenmodell (Panel und Rechnungs-PDF lesen
     // es), färbt hier aber nichts mehr.
-    return Kassenthema(
-      stil: betrieb.stil,
-      modus: modus,
-      schriftfaktor: schriftfaktoren[betrieb.schrift]!,
+    return PosThemeData(
+      theme: business.theme,
+      mode: modus,
+      fontScale: fontScales[business.fontSize]!,
       // **Mal Schriftfaktor.** Die Höhe einer Kachel ist keine feste Zahl,
       // sondern das, was Name und Preis brauchen. Bei Schrift XL in eine
       // Kachel für Schrift M gepresst, wird dem Namen die Unterlänge
       // abgeschnitten — und „Leistung" ohne das g liest sich falsch.
-      kachelhoehe: kachelhoehen[geraet?.hoehe ?? KasseHoehe.m]! * schriftfaktoren[betrieb.schrift]!,
-      spaltenExtra: geraet?.spaltenExtra ?? 0,
+      tileHeight: tileHeights[device?.tileHeight ?? PosTileHeight.m]! * fontScales[business.fontSize]!,
+      extraColumns: device?.extraColumns ?? 0,
       // Radien kommen aus dem Design-System und sind in jedem Modus gleich;
       // der Kontrast-Modus schärft Ränder und nimmt Schatten, sonst nichts.
       radius: KdForm.radiusLg,
-      radiusKachel: KdForm.radius,
-      radiusKlein: KdForm.radius,
-      linie: scharf ? 2 : KdForm.borderWidth,
-      schattenTiefe: scharf ? 0 : (modus == KdMode.dark ? 0.5 : 1),
-      kachelstil: betrieb.kachelstil,
-      emoji: betrieb.emoji,
-      katFarben: betrieb.katFarben,
+      radiusTile: KdForm.radius,
+      radiusSmall: KdForm.radius,
+      lineWidth: scharf ? 2 : KdForm.borderWidth,
+      shadowDepth: scharf ? 0 : (modus == KdMode.dark ? 0.5 : 1),
+      tileStyle: business.tileStyle,
+      emoji: business.emoji,
+      categoryColors: business.categoryColors,
     );
   }
 
-  final KasseStil stil;
-  final KdMode modus;
+  final PosTheme theme;
+  final KdMode mode;
 
-  final double schriftfaktor;
-  final double kachelhoehe;
+  final double fontScale;
+  final double tileHeight;
 
   /// Wie viele Kachelspalten mehr (oder mit Minus: weniger) als die Vorgabe
   /// nebeneinander stehen sollen. Gehört zum Gerät, nicht zum Betrieb: ein
   /// Tablet an der Theke und ein Handy im Gastgarten wollen Verschiedenes.
-  final int spaltenExtra;
+  final int extraColumns;
 
   /// Karten, Blätter, Dialoge.
   final double radius;
 
   /// Knöpfe, Felder, Kästchen, Kacheln.
-  final double radiusKachel;
+  final double radiusTile;
 
   /// Kleine Bedienelemente: Auswahl, Steuersatz, Schnellbetrag.
-  final double radiusKlein;
+  final double radiusSmall;
 
-  final double linie;
+  final double lineWidth;
 
   /// 0 = keine Schatten (Kontraststil), 1 = volle Tiefe.
-  final double schattenTiefe;
+  final double shadowDepth;
 
-  final KasseKachelstil kachelstil;
+  final PosTileStyle tileStyle;
   final bool emoji;
-  final bool katFarben;
+  final bool categoryColors;
 
   /// Heller Stil? Entscheidet über Statusleiste und Bilder.
-  bool get hell => modus != KdMode.dark;
+  bool get isLight => mode != KdMode.dark;
 
   /// Der Hintergrund der Seite.
-  Farbe get grund => Farbe.ausColor(kdColor(modus, 'ground'));
+  PosColor get ground => PosColor.fromColor(kdColor(mode, 'ground'));
 
   /// Karten, Panels, alles, was auf dem Grund liegt.
-  Farbe get flaeche => Farbe.ausColor(kdColor(modus, 'surface'));
+  PosColor get surface => PosColor.fromColor(kdColor(mode, 'surface'));
 
   /// Hervorgehobene Fläche: Kopfzeile, aktives Eingabefeld.
-  Farbe get flaecheHoch => Farbe.ausColor(kdColor(modus, 'surface-raised'));
+  PosColor get surfaceRaised => PosColor.fromColor(kdColor(mode, 'surface-raised'));
 
-  Farbe get text => Farbe.ausColor(kdColor(modus, 'ink'));
+  PosColor get text => PosColor.fromColor(kdColor(mode, 'ink'));
 
   /// Nebentext — leiser, aber nie unlesbar.
-  Farbe get leise => Farbe.ausColor(kdColor(modus, 'ink-muted'));
+  PosColor get textMuted => PosColor.fromColor(kdColor(mode, 'ink-muted'));
 
   /// Umrandung.
-  Farbe get rand => Farbe.ausColor(kdColor(modus, 'border'));
+  PosColor get border => PosColor.fromColor(kdColor(mode, 'border'));
 
-  /// Trennlinie; leichter als [rand] — außer im Kontrast-Modus, dort sind
+  /// Trennlinie; leichter als [border] – außer im Kontrast-Modus, dort sind
   /// beide Schwarz.
-  Farbe get strich => Farbe.ausColor(kdColor(modus, 'divider'));
+  PosColor get divider => PosColor.fromColor(kdColor(mode, 'divider'));
 
-  Farbe get gut => Farbe.ausColor(kdColor(modus, 'success'));
-  Farbe get gutHell => Farbe.ausColor(kdColor(modus, 'success-surface'));
-  Farbe get warnung => Farbe.ausColor(kdColor(modus, 'warning'));
-  Farbe get warnungHell => Farbe.ausColor(kdColor(modus, 'warning-surface'));
-  Farbe get fehler => Farbe.ausColor(kdColor(modus, 'danger'));
-  Farbe get fehlerHell => Farbe.ausColor(kdColor(modus, 'danger-surface'));
+  PosColor get success => PosColor.fromColor(kdColor(mode, 'success'));
+  PosColor get successSurface => PosColor.fromColor(kdColor(mode, 'success-surface'));
+  PosColor get warning => PosColor.fromColor(kdColor(mode, 'warning'));
+  PosColor get warningSurface => PosColor.fromColor(kdColor(mode, 'warning-surface'));
+  PosColor get danger => PosColor.fromColor(kdColor(mode, 'danger'));
+  PosColor get dangerSurface => PosColor.fromColor(kdColor(mode, 'danger-surface'));
 
   /// Die Betriebsfarbe, für Handlungen.
-  Farbe get marke => Farbe.ausColor(kdColor(modus, 'brand'));
+  PosColor get brand => PosColor.fromColor(kdColor(mode, 'brand'));
 
   /// Dunklere Marke — Tiefe unter dem Knopf.
-  Farbe get markeTief => Farbe.ausColor(kdColor(modus, 'brand-pressed'));
+  PosColor get brandPressed => PosColor.fromColor(kdColor(mode, 'brand-pressed'));
 
   /// Sehr heller Markenton — Hintergrund der geltenden Auswahl.
-  Farbe get markeHell => Farbe.ausColor(kdColor(modus, 'brand-surface'));
+  PosColor get brandSurface => PosColor.fromColor(kdColor(mode, 'brand-surface'));
 
-  /// Lesbare Textfarbe auf [marke].
-  Farbe get aufMarke => Farbe.ausColor(kdColor(modus, 'on-brand'));
+  /// Lesbare Textfarbe auf [brand].
+  PosColor get onBrand => PosColor.fromColor(kdColor(mode, 'on-brand'));
 
   /// Schriftgrößen in dp, bereits mit dem Faktor des Betriebs.
   ///
@@ -196,9 +195,9 @@ class Kassenthema {
   /// **Die Vorgabe ist zurückhaltend.** Wer größer braucht, stellt `schrift`
   /// auf L oder XL — dafür ist die Einstellung da. Eine Kasse, die von Haus
   /// aus schreit, lässt sich nicht kleiner machen, ohne dass sie eng wirkt.
-  double get riesig => 36 * schriftfaktor; // der Betrag, das Rückgeld
-  double get gross => 24 * schriftfaktor; // Summen
-  double get titel => 18 * schriftfaktor; // Überschriften
-  double get normal => 15 * schriftfaktor; // alles Übrige
-  double get klein => 12.5 * schriftfaktor; // Nebentext
+  double get huge => 36 * fontScale; // der Betrag, das Rückgeld
+  double get large => 24 * fontScale; // Summen
+  double get title => 18 * fontScale; // Überschriften
+  double get normal => 15 * fontScale; // alles Übrige
+  double get small => 12.5 * fontScale; // Nebentext
 }

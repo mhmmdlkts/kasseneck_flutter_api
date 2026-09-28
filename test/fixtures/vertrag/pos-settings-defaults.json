@@ -1,0 +1,149 @@
+{
+  "business": {
+    "logoText": "K",
+    "logoEnabled": true,
+    "logoSize": "M",
+    "watermark": "login",
+    "color": "#136B6B",
+    "theme": "clear",
+    "fontSize": "M",
+    "settingsFontSize": "S",
+    "tileStyle": "stripe",
+    "clock": true,
+    "lockScreen": true,
+    "staffPhotos": true,
+    "autoLogoutMinutes": 0,
+    "logoutAfterSale": false,
+    "fastLogin": true,
+    "showPrices": true,
+    "showVat": false,
+    "emoji": true,
+    "categoryColors": true,
+    "customAmountAllowed": true,
+    "vatRates": {
+      "0": true,
+      "10": true,
+      "13": true,
+      "19": false,
+      "20": true,
+      "4.9": true
+    },
+    "quantity": "x",
+    "note": false,
+    "search": false,
+    "discount": "off",
+    "payCash": true,
+    "payCard": false,
+    "paySplit": false,
+    "cardProvider": "none",
+    "tip": false,
+    "tipMode": "both",
+    "tipSteps": {
+      "5": true,
+      "10": true,
+      "15": false,
+      "20": false
+    },
+    "tipSplit": true,
+    "change": true,
+    "tipChips": [
+      5,
+      10
+    ],
+    "exactCash": false,
+    "checkoutMode": "panel",
+    "receiptOutput": "ask",
+    "doneScreenSeconds": 0,
+    "logoImage": "",
+    "watermarkSide": "center",
+    "watermarkX": 50,
+    "watermarkY": 50,
+    "watermarkStrength": 6,
+    "logoScale": "M",
+    "watermarkScale": "M",
+    "glass": true,
+    "hints": true,
+    "discountChips": [
+      5,
+      10,
+      15,
+      20
+    ]
+  },
+  "device": {
+    "layout": "right",
+    "categoryPosition": "top",
+    "extraColumns": 0,
+    "tileHeight": "M",
+    "touch": false,
+    "shortcuts": {
+      "checkout": [
+        "Enter"
+      ],
+      "complete": [
+        "Enter"
+      ],
+      "cancel": [
+        "Escape"
+      ],
+      "customAmount": [
+        "Mod+D"
+      ],
+      "cash": [
+        "Mod+B"
+      ],
+      "card": [
+        "Mod+K"
+      ],
+      "exactAmount": [
+        "Mod+P"
+      ],
+      "receipts": [
+        "Mod+J"
+      ],
+      "undoLast": [
+        "Mod+Backspace"
+      ],
+      "settings": [
+        "Mod+S"
+      ],
+      "logout": [
+        "Mod+L"
+      ],
+      "tip": [
+        "Mod+G"
+      ],
+      "fullscreen": [
+        "Mod+F"
+      ],
+      "clearTendered": [
+        "Mod+C"
+      ],
+      "clearCart": [
+        "Mod+C"
+      ],
+      "splitPayment": []
+    },
+    "printerEnabled": false,
+    "printerType": "sdp",
+    "printerIp": "",
+    "printerPort": 9100,
+    "printerBluetoothId": "",
+    "printerName": "",
+    "printerId": "",
+    "printerDeviceId": "local_printer",
+    "connectPrinterId": "",
+    "paperSize": "mm80",
+    "codePage": "CP1252",
+    "cut": "partial",
+    "qrMode": "auto",
+    "drawerEnabled": false,
+    "drawerAutoOpen": "cash",
+    "terminalIp": "",
+    "terminalPort": 8080,
+    "terminalTid": "",
+    "terminalVia": "direct",
+    "terminalType": "none",
+    "shortcutHints": true
+  }
+}

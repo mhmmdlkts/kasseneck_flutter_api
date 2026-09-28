@@ -1,0 +1,224 @@
+{
+  "charsPerLine": 48,
+  "blocks": [
+    {
+      "kind": "logo",
+      "widthFraction": 0.5208333333333334,
+      "heightLines": 5
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                Bäckerei Muster                 ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  Hauptplatz 1                  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 4830 Hallstatt                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  ATU12345678                   ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 +43 6134 12345                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:                       25.09.2026 10:15:30",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:                          AT0-KASSE1-78",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "2  x Tagesteller je 18,90                37,80 B",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Trinkgeld Personal                        4,20 D",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "MwSt%       MwSt        Netto             Brutto",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "B 10%       3,44        34,36              37,80",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "D 0%        0,00        4,20                4,20",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "------------------------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamt:                                  42,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungsart:                       Kartenzahlung",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  davon Trinkgeld                         4,20 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT1_KASSE1_AT0-KASSE1-78_2026-09-25T10:15:30_0,00_37,80_0,00_4,20_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "widthFraction": 0.5520833333333334
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                  Sumup Beleg                   ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kartentyp:                            MASTERCARD",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kartennummer:                **** **** **** 4720",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungstyp:                         CONTACTLESS",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamtbetrag:                          42,00 EUR",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Transaktionscode:                     TEZBA9K7QK",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Modus:                               CONTACTLESS",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "         Vielen Dank für Ihren Einkauf          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "            www.baeckerei-muster.at             ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 352,
+      "height": 51
+    }
+  ]
+}

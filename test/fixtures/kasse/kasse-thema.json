@@ -13,7 +13,7 @@
   },
   "kachelhoeheRegel": "kachelhoehen[hoehe] * schriftfaktoren[schrift] — eine Kachel ist so hoch, wie Name und Preis sie brauchen. Eine feste Höhe schneidet bei großer Schrift die Unterlänge des Namens ab.",
   "stile": {
-    "klar": {
+    "clear": {
       "grund": "#F6F7F7",
       "flaeche": "#FFFFFF",
       "flaecheHoch": "#EDEFEF",
@@ -61,7 +61,7 @@
       "linie": 1.5,
       "schattenTiefe": 1.0
     },
-    "nacht": {
+    "night": {
       "grund": "#181A1A",
       "flaeche": "#222626",
       "flaecheHoch": "#3A3E3E",
@@ -85,7 +85,7 @@
       "linie": 1.5,
       "schattenTiefe": 0.5
     },
-    "kontrast": {
+    "contrast": {
       "grund": "#FFFFFF",
       "flaeche": "#FFFFFF",
       "flaecheHoch": "#FFFFFF",

@@ -1,0 +1,502 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "829b877ae07ecccd85a6780a6fdb0855ec50d87f7de49c891788fc65ca339b40",
+    "inputsSha256": "cee31126cc755fd21441abae289997aeb0884a15eb230ce231defd8bb0bdc0fd",
+    "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+    "inputs": [
+      "docs/api/fehlercodes.json",
+      "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/beleg-mail-core.js",
+      "functions/gemeinsam/api-rand.js",
+      "functions/gemeinsam/api-vokabular-v3.js",
+      "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/storno-core.js",
+      "functions/gemeinsam/tip-core.js",
+      "functions/gemeinsam/vat-buckets.js",
+      "functions/gemeinsam/zahlungen-core.js",
+      "functions/invoice-api-core.js",
+      "functions/invoice-api-endpoints.js",
+      "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
+      "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
+      "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
+      "functions/test/unit/helpers/kassen-fehlerstellen.js",
+      "functions/test/unit/v3-vertrag-export.test.js"
+    ]
+  },
+  "note": "Belegdokumente unter users/{uid}/cashregisters/{id}/receipts/{id} nach dem Ablauf von antworten/belege.json, wie Firestore sie haelt (innen, deutsch).",
+  "documents": {
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-1": {
+      "counter": 1,
+      "receiptType": "start",
+      "zeroKind": null,
+      "receiptId": "KECK-1-ID-1",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [],
+      "vouchers": [],
+      "paymentMethod": "cash",
+      "customerDetails": null,
+      "legalMessage": null,
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": 0,
+      "amountRateReduced1": 0,
+      "amountRateReduced2": 0,
+      "amountRateZero": 0,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "Ypz0zq2NAR7wXxDJ8RIXPg==",
+      "signaturePreviousReceipt": "AshR0Dg4KFE=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000009c055361",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [],
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMV8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9ZcHowenEyTl9BQkMxMjNfQXNoUjBEZzRLRkU9.pWSV8ZAoCLZLsM_A8R2WN5c3dkk0nNMu3rgG75zT1e67FwrhOyiV_gWBrwGqTnJZwXXO1a0zq6TM8m189Kmo5Q",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-1_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_Ypz0zq2N_ABC123_AshR0Dg4KFE=_pWSV8ZAoCLZLsM/A8R2WN5c3dkk0nNMu3rgG75zT1e67FwrhOyiV/gWBrwGqTnJZwXXO1a0zq6TM8m189Kmo5Q=="
+    },
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-2": {
+      "counter": 2,
+      "receiptType": "standard",
+      "zeroKind": null,
+      "receiptId": "KECK-1-ID-2",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [
+        {
+          "name": "Kaffee",
+          "amount": 2,
+          "priceOneCents": 300,
+          "vat": 20,
+          "priceOne": 3
+        },
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 1,
+          "priceOneCents": 100,
+          "unitPriceCents": 100,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "creditCard",
+          "recipient": null,
+          "sofortErhalten": false
+        }
+      ],
+      "vouchers": [],
+      "paymentMethod": "creditCard",
+      "customerDetails": null,
+      "legalMessage": null,
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": 6,
+      "amountRateReduced1": 0,
+      "amountRateReduced2": 0,
+      "amountRateZero": 1,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "girlnmCVSdImcB9LEr65jQ==",
+      "signaturePreviousReceipt": "6Mn4bx4N/M8=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [
+        {
+          "id": "p1",
+          "method": "creditCard",
+          "amountCents": 700,
+          "provider": "sumup",
+          "providerPaymentId": "tx-4711",
+          "providerData": {
+            "cardLast4": "4242",
+            "terminal": "T1"
+          }
+        }
+      ],
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMl8yMDI2LTA5LTI2VDEwOjAwOjAwXzYsMDBfMCwwMF8wLDAwXzEsMDBfMCwwMF9naXJsbm1DVl9BQkMxMjNfNk1uNGJ4NE4vTTg9.8VaXQwBb_1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_6,00_0,00_0,00_1,00_0,00_girlnmCV_ABC123_6Mn4bx4N/M8=_8VaXQwBb/1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg==",
+      "tipCents": 100,
+      "cancellations": [
+        {
+          "receiptId": "KECK-1-ID-7",
+          "at": 1790409600000,
+          "by": null,
+          "note": null,
+          "items": [
+            {
+              "index": 0,
+              "quantity": 2
+            },
+            {
+              "index": 1,
+              "quantity": 1
+            }
+          ],
+          "refundedByPayment": {
+            "p1": 700
+          }
+        }
+      ]
+    },
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-3": {
+      "counter": 3,
+      "receiptType": "standard",
+      "zeroKind": null,
+      "receiptId": "KECK-1-ID-3",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [
+        {
+          "name": "Semmel",
+          "amount": 4,
+          "priceOneCents": 79,
+          "vat": 10,
+          "priceOne": 0.79
+        }
+      ],
+      "vouchers": [],
+      "paymentMethod": "cash",
+      "customerDetails": null,
+      "legalMessage": null,
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": 0,
+      "amountRateReduced1": 3.16,
+      "amountRateReduced2": 0,
+      "amountRateZero": 0,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "izsnQcNu1xpqCzEZFG8+tg==",
+      "signaturePreviousReceipt": "HhOPJTRRalc=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [
+        {
+          "id": "p1",
+          "method": "cash",
+          "amountCents": 316,
+          "tenderedCents": 500,
+          "changeCents": 184
+        }
+      ],
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtM18yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMywxNl8wLDAwXzAsMDBfMCwwMF9penNuUWNOdV9BQkMxMjNfSGhPUEpUUlJhbGM9.yWN78jiyeGFxKsTzPGv0CyrzcHFwW_Zmc5Sl3r7FyllBXKRXQf_qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_3,16_0,00_0,00_0,00_izsnQcNu_ABC123_HhOPJTRRalc=_yWN78jiyeGFxKsTzPGv0CyrzcHFwW/Zmc5Sl3r7FyllBXKRXQf/qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw==",
+      "cancellations": [
+        {
+          "receiptId": "KECK-1-ID-8",
+          "at": 1790409600000,
+          "by": null,
+          "note": null,
+          "items": [
+            {
+              "index": 0,
+              "quantity": 1
+            }
+          ],
+          "refundedByPayment": {
+            "p1": 79
+          }
+        }
+      ]
+    },
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-4": {
+      "counter": 4,
+      "receiptType": "standard",
+      "zeroKind": null,
+      "receiptId": "KECK-1-ID-4",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [
+        {
+          "name": "Torte",
+          "amount": 1,
+          "priceOneCents": 700,
+          "vat": 10,
+          "priceOne": 7
+        }
+      ],
+      "vouchers": [],
+      "paymentMethod": "mixed",
+      "customerDetails": null,
+      "legalMessage": null,
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": 0,
+      "amountRateReduced1": 7,
+      "amountRateReduced2": 0,
+      "amountRateZero": 0,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "V2ekav20znVxKgmTPRuabQ==",
+      "signaturePreviousReceipt": "NMOAojrHQmc=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000fd4f30a9",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [
+        {
+          "id": "p1",
+          "method": "cash",
+          "amountCents": 200
+        },
+        {
+          "id": "p2",
+          "method": "creditCard",
+          "amountCents": 500,
+          "provider": "sumup",
+          "providerPaymentId": "tx-4712",
+          "providerData": {
+            "cardLast4": "4242",
+            "terminal": "T1"
+          }
+        }
+      ],
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfNywwMF8wLDAwXzAsMDBfMCwwMF9WMmVrYXYyMF9BQkMxMjNfTk1PQW9qckhRbWM9.-OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA-ewViGfUdVOhpPn0tpqzrp30x4B1j_yNJ3gBjVOeSNDJolfdVw",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_0,00_7,00_0,00_0,00_0,00_V2ekav20_ABC123_NMOAojrHQmc=_+OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA+ewViGfUdVOhpPn0tpqzrp30x4B1j/yNJ3gBjVOeSNDJolfdVw=="
+    },
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-5": {
+      "counter": 5,
+      "receiptType": "standard",
+      "zeroKind": null,
+      "receiptId": "KECK-1-ID-5",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [
+        {
+          "name": "Tee",
+          "quantity": 3,
+          "unitPriceCents": 290,
+          "vatRate": 20,
+          "amount": 3,
+          "vat": 20,
+          "priceOneCents": 290,
+          "priceOne": 2.9
+        }
+      ],
+      "vouchers": [
+        {
+          "action": "redeem",
+          "type": "value",
+          "valueCents": 500,
+          "code": "WG-1",
+          "value": 5,
+          "name": "Wertgutschein"
+        }
+      ],
+      "paymentMethod": "cash",
+      "customerDetails": null,
+      "legalMessage": null,
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": 8.7,
+      "amountRateReduced1": 0,
+      "amountRateReduced2": 0,
+      "amountRateZero": 0,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "X1ROZbuWXJxg0xCA9eb0Tw==",
+      "signaturePreviousReceipt": "3gYQ4xAXwOM=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000081e09afe",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [
+        {
+          "id": "p1",
+          "method": "cash",
+          "amountCents": 370
+        }
+      ],
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNV8yMDI2LTA5LTI2VDEwOjAwOjAwXzgsNzBfMCwwMF8wLDAwXzAsMDBfMCwwMF9YMVJPWmJ1V19BQkMxMjNfM2dZUTR4QVh3T009.LbacnDlwUMarI6Qc5N82XpI0zEvGbwD_LdtZxta-Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM_j9p7GtfljsTw",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-5_2026-09-26T10:00:00_8,70_0,00_0,00_0,00_0,00_X1ROZbuW_ABC123_3gYQ4xAXwOM=_LbacnDlwUMarI6Qc5N82XpI0zEvGbwD/LdtZxta+Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM/j9p7GtfljsTw=="
+    },
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-6": {
+      "counter": 6,
+      "receiptType": "zero",
+      "zeroKind": "manual",
+      "receiptId": "KECK-1-ID-6",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [],
+      "vouchers": [],
+      "paymentMethod": "cash",
+      "customerDetails": null,
+      "legalMessage": null,
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": 0,
+      "amountRateReduced1": 0,
+      "amountRateReduced2": 0,
+      "amountRateZero": 0,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "RlNOHunJ9a3wfMGEG9jAxA==",
+      "signaturePreviousReceipt": "RHX8rm7hA9M=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000003f1f973d",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [],
+      "pruefangaben": {
+        "karteRegistriertAm": "2024-03-11T08:00:00.000Z",
+        "kasseRegistriertAm": null
+      },
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNl8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9SbE5PSHVuSl9BQkMxMjNfUkhYOHJtN2hBOU09.yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_RlNOHunJ_ABC123_RHX8rm7hA9M=_yTwZpDuI85WvbixNwUIvr7LPmq8ltVYZjbufkUElaeUrAGo4QeGFJBDnEmn5LQUBOrqSQW8dZQgtM3J2gZczRA=="
+    },
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-7": {
+      "counter": 7,
+      "receiptType": "cancellation",
+      "zeroKind": null,
+      "receiptId": "KECK-1-ID-7",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": -300,
+          "vatRate": 20,
+          "amount": 2,
+          "vat": 20,
+          "priceOneCents": -300,
+          "priceOne": -3
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": -100,
+          "vatRate": 0,
+          "kind": "tip",
+          "recipient": null,
+          "paymentMethod": "creditCard",
+          "sofortErhalten": false,
+          "amount": 1,
+          "vat": 0,
+          "priceOneCents": -100,
+          "priceOne": -1
+        }
+      ],
+      "vouchers": [],
+      "paymentMethod": "creditCard",
+      "customerDetails": null,
+      "legalMessage": "STORNO zu KECK-1-ID-2 – Fehleingabe",
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": -6,
+      "amountRateReduced1": 0,
+      "amountRateReduced2": 0,
+      "amountRateZero": -1,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "e42Zjx66gXyXfp6ZK6VUzA==",
+      "signaturePreviousReceipt": "dESbUhmSTnM=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000d5ed0baa",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [
+        {
+          "id": "p1",
+          "method": "creditCard",
+          "amountCents": -700,
+          "provider": "sumup",
+          "providerPaymentId": "rf-1",
+          "providerData": {
+            "refund": "ok"
+          },
+          "refundOf": "p1"
+        }
+      ],
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtN18yMDI2LTA5LTI2VDEwOjAwOjAwXy02LDAwXzAsMDBfMCwwMF8tMSwwMF8wLDAwX1UxUlBfQUJDMTIzX2RFU2JVaG1TVG5NPQ.qA-w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb_PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-7_2026-09-26T10:00:00_-6,00_0,00_0,00_-1,00_0,00_U1RP_ABC123_dESbUhmSTnM=_qA+w3tqb63SqWOAodLTl59WKJmkLlQrNeY1GA0xLZmt9VmFEGMb/PchAM4aGEzhbRzPmFGpVpXEkptfQsiwT6g==",
+      "cancellationOf": {
+        "receiptId": "KECK-1-ID-2",
+        "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+        "timeStamp": "2026-09-26T10:00:00"
+      },
+      "stornoMarke": "mui3ncw0-1111111111",
+      "cancellationReason": "fehleingabe",
+      "tipCents": -100
+    },
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-8": {
+      "counter": 8,
+      "receiptType": "cancellation",
+      "zeroKind": null,
+      "receiptId": "KECK-1-ID-8",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [
+        {
+          "name": "Semmel",
+          "quantity": 1,
+          "unitPriceCents": -79,
+          "vatRate": 10,
+          "amount": 1,
+          "vat": 10,
+          "priceOneCents": -79,
+          "priceOne": -0.79
+        }
+      ],
+      "vouchers": [],
+      "paymentMethod": "cash",
+      "customerDetails": null,
+      "legalMessage": "STORNO zu KECK-1-ID-3 – Kunde hat storniert",
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": 0,
+      "amountRateReduced1": -0.79,
+      "amountRateReduced2": 0,
+      "amountRateZero": 0,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "FKv36maM5cSDIv7d/PNpSg==",
+      "signaturePreviousReceipt": "HOeSCtN5SAs=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000ee9d92da",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [
+        {
+          "id": "p1",
+          "method": "cash",
+          "amountCents": -79,
+          "refundOf": "p1"
+        }
+      ],
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtOF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfLTAsNzlfMCwwMF8wLDAwXzAsMDBfVTFSUF9BQkMxMjNfSE9lU0N0TjVTQXM9.Ydu4h8T-tNbFQvEprS0UStjcp7yPkjk8zHrGpKgt5GH8RdMCKMEnjNk0tYWaO_Bhap1mggRTXBhLQhAyi8nGxg",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-8_2026-09-26T10:00:00_0,00_-0,79_0,00_0,00_0,00_U1RP_ABC123_HOeSCtN5SAs=_Ydu4h8T+tNbFQvEprS0UStjcp7yPkjk8zHrGpKgt5GH8RdMCKMEnjNk0tYWaO/Bhap1mggRTXBhLQhAyi8nGxg==",
+      "cancellationOf": {
+        "receiptId": "KECK-1-ID-3",
+        "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+        "timeStamp": "2026-09-26T10:00:00"
+      },
+      "stornoMarke": "mui3ncw0-1111111111",
+      "cancellationReason": "kunde_storniert"
+    }
+  }
+}

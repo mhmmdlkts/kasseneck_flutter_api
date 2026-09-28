@@ -22,20 +22,33 @@ import 'modelle.dart';
 import 'transport.dart';
 import 'vertrag.dart';
 
-class RechnungApi {
-  RechnungApi({required String apiKey, String? baseUrl, http.Client? httpClient, Duration? timeout})
-      : _transport = RechnungTransport(apiKey: apiKey, baseUrl: baseUrl, httpClient: httpClient, timeout: timeout);
+class InvoiceApi {
+  InvoiceApi({
+    required String apiKey,
+    String? baseUrl,
+    http.Client? httpClient,
+    Duration? timeout,
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
+  }) : _transport = InvoiceTransport(
+          apiKey: apiKey,
+          baseUrl: baseUrl,
+          httpClient: httpClient,
+          timeout: timeout,
+          clientHeader: clientHeader,
+          omitKasseneckHeaders: omitKasseneckHeaders,
+        );
 
   /// Mit einem bereits gebauten Transport (Tests, eigene Adresse).
-  RechnungApi.mitTransport(RechnungTransport transport) : _transport = transport;
+  InvoiceApi.withTransport(InvoiceTransport transport) : _transport = transport;
 
-  final RechnungTransport _transport;
+  final InvoiceTransport _transport;
 
   // ---- Kunden -------------------------------------------------------------------
 
   Future<Customer> createCustomer(CustomerInput customer, {String? idempotencyKey}) async {
     const name = Aufrufe.createCustomer;
-    final daten = await _transport.rufen(name, {
+    final daten = await _transport.call(name, {
       'customer': customer.toJson(),
       'idempotencyKey': ?idempotencyKey,
     });
@@ -45,14 +58,14 @@ class RechnungApi {
   Future<Customer> getCustomer({String? customerId, String? externalId}) async {
     const name = Aufrufe.getCustomer;
     _genauEine(name, {'customerId': customerId, 'externalId': externalId});
-    final daten = await _transport.rufen(name, {'customerId': ?customerId, 'externalId': ?externalId});
+    final daten = await _transport.call(name, {'customerId': ?customerId, 'externalId': ?externalId});
     return _lesen(name, () => Customer.fromJson(_objekt(daten, 'customer')));
   }
 
   /// Nur die übergebenen Felder ändern sich (Feldnamen wie in [CustomerInput.toJson]).
   Future<Customer> updateCustomer(String customerId, Map<String, dynamic> patch) async {
     const name = Aufrufe.updateCustomer;
-    final daten = await _transport.rufen(name, {'customerId': customerId, 'customer': patch});
+    final daten = await _transport.call(name, {'customerId': customerId, 'customer': patch});
     return _lesen(name, () => Customer.fromJson(_objekt(daten, 'customer')));
   }
 
@@ -66,7 +79,7 @@ class RechnungApi {
     String? cursor,
   }) async {
     const aufruf = Aufrufe.searchCustomers;
-    final daten = await _transport.rufen(aufruf, {
+    final daten = await _transport.call(aufruf, {
       'externalId': ?externalId,
       'vatId': ?vatId,
       'email': ?email,
@@ -82,14 +95,13 @@ class RechnungApi {
 
   // ---- Rechnungen ---------------------------------------------------------------
 
-  Future<IssueResult> issueInvoice(IssueInvoiceRequest anfrage) async {
+  Future<IssueResult> issueInvoice(IssueInvoiceRequest request) async {
     const name = Aufrufe.issueInvoice;
-    final daten = await _transport.rufen(name, anfrage.toJson());
-    return _lesen(name, () => IssueResult(
-          invoice: Invoice.fromJson(_objekt(daten, 'invoice')),
-          replayed: daten['replayed'] == true,
-          notice: _hinweise(daten['notice']),
-        ));
+    if (request.dryRun == true) {
+      throw const KasseneckValidationError(name, 'dryRun: true gehört zu previewInvoice', 'request');
+    }
+    final daten = await _transport.call(name, request.toJson());
+    return _lesen(name, () => IssueResult.fromJson(daten));
   }
 
   /// Probelauf von [issueInvoice]: dieselbe Anfrage wird geprüft und gerechnet
@@ -105,13 +117,10 @@ class RechnungApi {
   /// Geht als `issueInvoice` mit `dryRun: true` hinaus; Fehler tragen deshalb
   /// den Aufrufnamen `issueInvoice`. Ein Server ohne Probelauf lehnt das
   /// unbekannte Feld als `validation` ab.
-  Future<PreviewResult> previewInvoice(IssueInvoiceRequest anfrage) async {
+  Future<PreviewResult> previewInvoice(IssueInvoiceRequest request) async {
     const name = Aufrufe.issueInvoice;
-    final daten = await _transport.rufen(name, {...anfrage.toJson(), 'dryRun': true});
-    return _lesen(name, () => PreviewResult(
-          preview: InvoicePreview.fromJson(_objekt(daten, 'preview')),
-          notice: _hinweise(daten['notice']),
-        ));
+    final daten = await _transport.call(name, {...request.toJson(), 'dryRun': true});
+    return _lesen(name, () => PreviewResult.fromJson(daten));
   }
 
   /// Vollstorno: Gutschrift über alle Positionen, das Original wird storniert.
@@ -122,39 +131,26 @@ class RechnungApi {
     String? note,
   }) async {
     const name = Aufrufe.cancelInvoice;
-    final daten = await _transport.rufen(name, {
+    final daten = await _transport.call(name, {
       'idempotencyKey': idempotencyKey,
       'invoiceId': invoiceId,
       'reason': reason,
       'note': ?note,
     });
-    return _lesen(name, () {
-      final original = _objekt(daten, 'original');
-      return CancelResult(
-        creditNote: Invoice.fromJson(_objekt(daten, 'creditNote')),
-        originalId: original['id'] as String,
-        originalStatus: original['status'] is String ? original['status'] as String : null,
-        originalPaidCents: daten['originalPaidCents'] is int ? daten['originalPaidCents'] as int : 0,
-        replayed: daten['replayed'] == true,
-      );
-    });
+    return _lesen(name, () => CancelResult.fromJson(daten));
   }
 
   /// Teilgutschrift; höchstens bis zum Brutto des Originals je USt-Satz.
-  Future<CreditNoteResult> createCreditNote(CreditNoteRequest anfrage) async {
+  Future<CreditNoteResult> createCreditNote(CreditNoteRequest request) async {
     const name = Aufrufe.createCreditNote;
-    final daten = await _transport.rufen(name, anfrage.toJson());
-    return _lesen(name, () => CreditNoteResult(
-          creditNote: Invoice.fromJson(_objekt(daten, 'creditNote')),
-          remainingCents: daten['remainingCents'] is int ? daten['remainingCents'] as int : 0,
-          replayed: daten['replayed'] == true,
-        ));
+    final daten = await _transport.call(name, request.toJson());
+    return _lesen(name, () => CreditNoteResult.fromJson(daten));
   }
 
   Future<Invoice> getInvoice({String? invoiceId, String? number}) async {
     const name = Aufrufe.getInvoice;
     _genauEine(name, {'invoiceId': invoiceId, 'number': number});
-    final daten = await _transport.rufen(name, {'invoiceId': ?invoiceId, 'number': ?number});
+    final daten = await _transport.call(name, {'invoiceId': ?invoiceId, 'number': ?number});
     return _lesen(name, () => Invoice.fromJson(_objekt(daten, 'invoice')));
   }
 
@@ -168,7 +164,7 @@ class RechnungApi {
     String? cursor,
   }) async {
     const name = Aufrufe.listInvoices;
-    final daten = await _transport.rufen(name, {
+    final daten = await _transport.call(name, {
       'from': ?from,
       'to': ?to,
       'status': ?status,
@@ -177,10 +173,7 @@ class RechnungApi {
       'limit': ?limit,
       'cursor': ?cursor,
     });
-    return _lesen(name, () => InvoicePage(
-          invoices: [for (final i in _liste(daten, 'invoices')) Invoice.fromJson(i)],
-          nextCursor: daten['nextCursor'] is String ? daten['nextCursor'] as String : null,
-        ));
+    return _lesen(name, () => InvoicePage.fromJson(daten));
   }
 
   // ---- Dateien ------------------------------------------------------------------
@@ -191,17 +184,28 @@ class RechnungApi {
   /// **Übersetzungskopie**: dieselbe Nummer, auf jeder Seite gekennzeichnet,
   /// ohne eingebettete E-Rechnung — keine eigene Rechnung.
   Future<Uint8List> getInvoicePdf(String invoiceId, {String? language}) =>
-      _transport.rufenBinaer(Aufrufe.getInvoicePdf, {'invoiceId': invoiceId, 'language': ?language});
+      _transport.callBinary(Aufrufe.getInvoicePdf, {'invoiceId': invoiceId, 'language': ?language});
 
-  /// Die E-Rechnung als XML-Text; [format] `ubl` (Peppol) oder `cii`.
-  Future<String> getInvoiceXml(String invoiceId, {String format = 'ubl'}) async {
+  /// Die E-Rechnung als XML; [format] `ubl` (Peppol) oder `cii`. Zurück kommt
+  /// die Antwort, wie der Server sie sendet: der Text, das Format und der
+  /// Dateiname (`invoice-<Nummer>.xml`). Fehlt eines davon oder ist das Format
+  /// keines aus [einvoiceFormats], ist die Antwort kaputt.
+  Future<InvoiceXml> getInvoiceXml(String invoiceId, {String format = 'ubl'}) async {
     const name = Aufrufe.getInvoiceXml;
-    final daten = await _transport.rufen(name, {'invoiceId': invoiceId, 'format': format});
+    final daten = await _transport.call(name, {'invoiceId': invoiceId, 'format': format});
     final xml = daten['xml'];
+    final gesendet = daten['format'];
+    final filename = daten['filename'];
     if (xml is! String || xml.isEmpty) {
       throw const KasseneckValidationError(name, 'Antwort ohne xml', 'response');
     }
-    return xml;
+    if (gesendet is! String || !einvoiceFormats.contains(gesendet)) {
+      throw const KasseneckValidationError(name, 'Antwort ohne gültiges format', 'response');
+    }
+    if (filename is! String || filename.isEmpty) {
+      throw const KasseneckValidationError(name, 'Antwort ohne filename', 'response');
+    }
+    return InvoiceXml(xml: xml, format: gesendet, filename: filename);
   }
 
   // ---- Freigabe und Einrichtung -------------------------------------------------
@@ -210,7 +214,7 @@ class RechnungApi {
   /// Freigabe und vor der Live-Freischaltung.
   Future<InvoiceSetupStatus> getInvoiceSetupStatus() async {
     const name = Aufrufe.getInvoiceSetupStatus;
-    final daten = await _transport.rufen(name, const {});
+    final daten = await _transport.call(name, const {});
     return _lesen(name, () => InvoiceSetupStatus.fromJson(daten));
   }
 
@@ -222,15 +226,10 @@ class RechnungApi {
   /// nach einem Zeitlimit ein zweites Mal. Bei `method: 'cash'` (und bei
   /// `onSite: true`) wird die Zahlung gebucht und die Liste `notice` trägt
   /// `cash_receipt_required` — ein Barumsatz braucht einen Beleg (§ 132a BAO).
-  Future<RecordPaymentResult> recordInvoicePayment(RecordPaymentRequest anfrage) async {
+  Future<RecordPaymentResult> recordInvoicePayment(RecordPaymentRequest request) async {
     const name = Aufrufe.recordInvoicePayment;
-    final daten = await _transport.rufen(name, anfrage.toJson());
-    return _lesen(name, () => RecordPaymentResult(
-          invoice: Invoice.fromJson(_objekt(daten, 'invoice')),
-          payment: InvoicePayment.fromJson(_objekt(daten, 'payment')),
-          replayed: daten['replayed'] == true,
-          notice: _hinweise(daten['notice']),
-        ));
+    final daten = await _transport.call(name, request.toJson());
+    return _lesen(name, () => RecordPaymentResult.fromJson(daten));
   }
 
   // ---- Marken --------------------------------------------------------------------
@@ -238,7 +237,7 @@ class RechnungApi {
   /// Die Marken des Kontos; `id` geht als `brandId` in [issueInvoice].
   Future<List<Brand>> listBrands() async {
     const name = Aufrufe.listBrands;
-    final daten = await _transport.rufen(name, const {});
+    final daten = await _transport.call(name, const {});
     return _lesen(name, () => [for (final b in _liste(daten, 'brands')) Brand.fromJson(b)]);
   }
 
@@ -273,16 +272,6 @@ class RechnungApi {
   /// gebucht. Ein Fehler liesse den Aufrufer glauben, es sei nichts entstanden,
   /// und eine Wiederholung mit demselben Schluessel liefert die Hinweise nicht
   /// noch einmal.
-  static List<InvoiceNotice> _hinweise(Object? roh) {
-    if (roh == null) return const [];
-    final liste = roh is List ? roh : [roh];
-    return [
-      for (final h in liste)
-        if (h is Map && h['code'] is String && h['message'] is String)
-          InvoiceNotice(code: h['code'] as String, message: h['message'] as String),
-    ];
-  }
-
   static Map<String, dynamic> _objekt(Map<String, dynamic> daten, String feld) {
     final wert = daten[feld];
     if (wert is Map) return Map<String, dynamic>.from(wert);
@@ -297,13 +286,13 @@ class RechnungApi {
 }
 
 /// Der Fehlercode eines geworfenen Fehlers — `null`, wenn es keiner der Rechnungs-API ist.
-String? rechnungFehlerCode(Object? fehler) =>
-    fehler is KasseneckApiError && istRechnungFehlercode(fehler.code) ? fehler.code : null;
+String? invoiceErrorCode(Object? error) =>
+    error is KasseneckApiError && isInvoiceErrorCode(error.code) ? error.code : null;
 
 /// Die Feldfehler einer `validation`-Antwort; leer, wenn es keine sind.
-List<({String field, String message})> rechnungFeldFehler(Object? fehler) {
-  if (fehler is! KasseneckApiError) return const [];
-  final roh = fehler.details['errors'];
+List<({String field, String message})> invoiceFieldErrors(Object? error) {
+  if (error is! KasseneckApiError) return const [];
+  final roh = error.details['errors'];
   if (roh is! List) return const [];
   return [
     for (final e in roh)

@@ -1,5 +1,5 @@
 /// Transport der Rechnungs-API: der `api_key` des Kontos als Bearer an
-/// `api.kasseneck.at/v1` — Zwilling von `rechnungKeyAuth` + `createTransport`
+/// `api.kasseneck.at/v3`, Zwilling von `rechnungKeyAuth` + `createTransport`
 /// im JS-Paket.
 ///
 /// Anders als [RegisterTransport] **ohne** Kassen-Sitzung: eine Rechnung
@@ -11,26 +11,32 @@
 /// Rechnung zurück statt einer zweiten.
 library;
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
 import '../register/fehler.dart';
-import '../register/transport.dart' show ohneSchraegstrich;
+import '../v3.dart';
 
-/// Standardadresse der Rechnungs-API.
-const String kRechnungBaseUrl = 'https://api.kasseneck.at/v1';
+/// Standardadresse der Rechnungs-API (die oeffentliche Basis).
+const String kInvoiceBaseUrl = kPublicBaseUrl;
 
-class RechnungTransport {
-  RechnungTransport({
+class InvoiceTransport {
+  /// [baseUrl] muss auf `/v3` enden, sonst wirft schon das Anlegen.
+  /// [httpClient] darf kein `RetryClient` (oder anderer wiederholender
+  /// Client) sein: ein zweites stilles Senden von issueInvoice ohne
+  /// idempotencyKey waere eine zweite Rechnung.
+  InvoiceTransport({
     required String apiKey,
     String? baseUrl,
     http.Client? httpClient,
     Duration? timeout,
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
   })  : _apiKey = apiKey.trim(),
-        baseUrl = ohneSchraegstrich(baseUrl ?? kRechnungBaseUrl),
+        baseUrl = v3BaseUrl('RechnungTransport', baseUrl, kInvoiceBaseUrl),
+        _kopf = V3Headers('RechnungTransport', clientHeader: clientHeader, omit: omitKasseneckHeaders),
         _http = httpClient ?? http.Client(),
         _timeout = timeout ?? const Duration(seconds: 30) {
     // Geprüft wird nur, was ohne Netz sicher falsch ist. Die Meldung nennt die
@@ -50,79 +56,48 @@ class RechnungTransport {
 
   final String _apiKey;
   final String baseUrl;
+  final V3Headers _kopf;
   final http.Client _http;
   final Duration _timeout;
 
   /// Einen Aufruf mit JSON-Antwort absetzen; liefert `data` ohne Hülle.
-  Future<Map<String, dynamic>> rufen(String name, Map<String, dynamic> params) async {
+  Future<Map<String, dynamic>> call(String name, Map<String, dynamic> params) async {
     final antwort = await _senden(name, params);
-    final huelle = _huelleAus(name, antwort);
-    if (huelle['status'] == 'success') {
-      final daten = huelle['data'];
-      if (daten == null) return <String, dynamic>{};
-      if (daten is! Map) throw KasseneckHttpError(name, antwort.statusCode, 'data-not-object');
-      return Map<String, dynamic>.from(daten);
-    }
-    throw _fachfehler(name, huelle);
+    final huelle = readEnvelope(name, antwort);
+    if (huelle['status'] == 'success') return envelopeData(name, huelle, antwort.statusCode);
+    throw envelopeError(name, huelle);
   }
 
   /// Einen Aufruf mit Binärantwort (PDF) absetzen. Im Fehlerfall antwortet der
   /// Server mit der gewohnten JSON-Hülle.
-  Future<Uint8List> rufenBinaer(String name, Map<String, dynamic> params) async {
+  Future<Uint8List> callBinary(String name, Map<String, dynamic> params) async {
     final antwort = await _senden(name, params);
     final bytes = antwort.bodyBytes;
     if (bytes.length >= 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) {
       return bytes; // %PDF
     }
-    final huelle = _huelleAus(name, antwort);
+    final huelle = readEnvelope(name, antwort);
     if (huelle['status'] == 'success') {
       throw KasseneckValidationError(name, 'Antwort ist ein Erfolgsrumpf statt eines PDF', 'response');
     }
-    throw _fachfehler(name, huelle);
+    throw envelopeError(name, huelle);
   }
 
-  Future<http.Response> _senden(String name, Map<String, dynamic> params) async {
-    // Ausserhalb des try: ein nicht serialisierbarer Parameter ist ein
+  /// Ueber issueInvoice kann die Rechnung nach einem Zeitlimit laengst
+  /// bestehen: mit demselben idempotencyKey wiederholen, nie mit einem neuen.
+  Future<http.Response> _senden(String name, Map<String, dynamic> params) {
+    // Vor dem Senden: ein nicht serialisierbarer Parameter ist ein
     // Programmierfehler und keine Netzstörung.
     final rumpf = jsonEncode({'params': params});
-    try {
-      return await _http
-          .post(
-            Uri.parse('$baseUrl/$name'),
-            headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_apiKey'},
-            body: rumpf,
-          )
-          .timeout(_timeout);
-    } on TimeoutException catch (e) {
-      // Die Anfrage war draussen — über issueInvoice kann die Rechnung längst
-      // bestehen. Mit demselben idempotencyKey wiederholen, nie mit einem neuen.
-      throw KasseneckHttpError(name, 0, KasseneckHttpError.zeitablauf, causeType: '${e.runtimeType}');
-    } on Object catch (e) {
-      throw KasseneckHttpError(name, 0, KasseneckHttpError.netz, causeType: '${e.runtimeType}');
-    }
-  }
-
-  Map<String, dynamic> _huelleAus(String name, http.Response antwort) {
-    Object? roh;
-    try {
-      roh = jsonDecode(utf8.decode(antwort.bodyBytes));
-    } on FormatException {
-      throw KasseneckHttpError(name, antwort.statusCode, 'not-json');
-    }
-    if (roh is! Map || !roh.containsKey('status')) {
-      throw KasseneckHttpError(name, antwort.statusCode, 'missing-status');
-    }
-    return Map<String, dynamic>.from(roh);
-  }
-
-  KasseneckApiError _fachfehler(String name, Map<String, dynamic> huelle) {
-    final meldung = huelle['message'];
-    final daten = huelle['data'];
-    return KasseneckApiError(
-      name,
-      meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.',
-      code: fehlercodeAus(huelle) ?? (daten is Map && daten['code'] is String ? daten['code'] as String : null),
-      details: daten is Map ? Map<String, dynamic>.from(daten) : const {},
+    return v3Post(
+      _http,
+      functionName: name,
+      basis: baseUrl,
+      name: name,
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $_apiKey'},
+      kasseneck: _kopf,
+      body: rumpf,
+      timeout: _timeout,
     );
   }
 }

@@ -22,14 +22,14 @@ void main() {
       turnoverCounterAES256ICM: '', signaturePreviousReceipt: '',
       certificateSerialNumber: '', receiptType: ReceiptType.standard,
       sig: 'h.p.s', qr: '', companyName: '', phone: '', isSmallBusiness: false,
-      uid: null, taxnr: '', street: '', zip: '', city: '', fullReceiptId: '',
+      vatId: null, taxNumber: '', street: '', zip: '', city: '', fullReceiptId: '',
       footer1: '', footer2: '',
     );
   }
 
   final items = [
     KasseneckItem(name: 'Klassiker', quantity: 3, vat: VatRate.vat20, priceCents: 1999), // 59,97
-    KasseneckItem(name: 'Brot 4,9%', quantity: 1, vat: VatRate.vat4komma9, priceCents: 29), // 0,29
+    KasseneckItem(name: 'Brot 4,9%', quantity: 1, vat: VatRate.vat4_9, priceCents: 29), // 0,29
     KasseneckItem(name: 'Milch', quantity: 2, vat: VatRate.vat10, priceCents: 105), // 2,10
   ];
 

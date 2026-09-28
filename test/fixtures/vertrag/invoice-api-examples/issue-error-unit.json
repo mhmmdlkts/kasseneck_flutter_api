@@ -1,0 +1,26 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Einheit als freier Text statt Schlüssel",
+  "request": {
+    "idempotencyKey": "ex-unit",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-15",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 2,
+        "unit": "Std",
+        "unitPriceCents": 5000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].unit"
+    ]
+  }
+}

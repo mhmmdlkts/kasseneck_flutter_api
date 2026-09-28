@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/rechnung.dart';
+import 'package:kasseneck_api/invoice.dart';
 import 'package:kasseneck_api/src/vat_math.dart';
 
 /// `rechnungSummen` gegen die Prüffälle des JS-Zwillings.
 ///
-/// Die Fälle liegen in `test/fixtures/vertrag/rechnung-summen.json` — gezogen
+/// Die Fälle liegen in `test/fixtures/vertrag/invoice-totals.json`, gezogen
 /// von `tool/zwillinge.sh` aus dem npm-Paket und in der CI byteweise gegen das
 /// Paket geprüft. Eine Kopie, die hier jemand von Hand „richtig" macht, fällt
 /// dort auf; geändert werden die Fälle nur im JS-Paket.
@@ -15,11 +15,11 @@ import 'package:kasseneck_api/src/vat_math.dart';
 /// Anlass: Ein Shop stellte im Brutto-Modus 14,79 € + 15,00 € zu 20 % aus und
 /// bekam eine Rechnung über 29,80 €.
 
-final _datei = jsonDecode(File('test/fixtures/vertrag/rechnung-summen.json').readAsStringSync()) as Map<String, dynamic>;
+final _datei = jsonDecode(File('test/fixtures/vertrag/invoice-totals.json').readAsStringSync()) as Map<String, dynamic>;
 
-List<Map<String, dynamic>> get _faelle => (_datei['faelle'] as List).cast<Map<String, dynamic>>();
+List<Map<String, dynamic>> get _faelle => (_datei['cases'] as List).cast<Map<String, dynamic>>();
 
-SummenPosition _position(Map<String, dynamic> p) => SummenPosition(
+TotalsItem _position(Map<String, dynamic> p) => TotalsItem(
       quantity: p['quantity'] as num,
       unitPriceCents: p['unitPriceCents'] as num,
       vatRate: p['vatRate'] as int,
@@ -27,7 +27,7 @@ SummenPosition _position(Map<String, dynamic> p) => SummenPosition(
     );
 
 InvoiceTotals _brutto(int cent, int satz) =>
-    rechnungSummen([SummenPosition(quantity: 1, unitPriceCents: cent, vatRate: satz)], 'gross');
+    computeInvoiceTotals([TotalsItem(quantity: 1, unitPriceCents: cent, vatRate: satz)], 'gross');
 
 void main() {
   mikropreisTests();
@@ -40,9 +40,9 @@ void main() {
       for (final f in _faelle) {
         final items = [for (final p in (f['items'] as List).cast<Map<String, dynamic>>()) _position(p)];
         final summen = f.containsKey('taxScheme')
-            ? rechnungSummen(items, f['priceMode'] as String, f['taxScheme'] as String)
-            : rechnungSummen(items, f['priceMode'] as String);
-        expect(summen.toJson(), f['erwartet'], reason: f['name'] as String);
+            ? computeInvoiceTotals(items, f['priceMode'] as String, f['taxScheme'] as String)
+            : computeInvoiceTotals(items, f['priceMode'] as String);
+        expect(summen.toJson(), f['expected'], reason: f['name'] as String);
       }
     });
 
@@ -83,14 +83,14 @@ void main() {
       final falsch = <String>[];
       for (final satz in [10, 13, 20]) {
         for (var c = 1; c <= 10000; c++) {
-          if (_brutto(c, satz).netCents != nettoCentsAusBrutto(c, satz)) falsch.add('$c@$satz');
+          if (_brutto(c, satz).netCents != netCentsFromGross(c, satz)) falsch.add('$c@$satz');
         }
       }
       expect(falsch, isEmpty);
     });
 
     test('mehrere Zeilen: das Brutto ist die Summe der Zeilen, nicht die Summe gerundeter Nettos', () {
-      final s = rechnungSummen(const [
+      final s = computeInvoiceTotals(const [
         InvoiceItemInput(description: 'Maniküre', quantity: 1, unitPriceCents: 1479, vatRate: 20),
         InvoiceItemInput(description: 'Lack', quantity: 1, unitPriceCents: 1500, vatRate: 20),
       ], 'gross');
@@ -101,16 +101,16 @@ void main() {
   group('Steuerfall', () {
     test('steuerfrei sind genau die Fälle ohne eigenen Steuerausweis', () {
       expect(
-        steuerfreieFaelle.toSet(),
+        zeroRatedTaxSchemes.toSet(),
         taxSchemes.where((s) => s != 'normal' && s != 'oss').toSet(),
       );
     });
 
     test('jeder steuerfreie Fall zählt alles zu 0 %, auch im Brutto-Modus', () {
-      for (final fall in steuerfreieFaelle) {
+      for (final fall in zeroRatedTaxSchemes) {
         for (final modus in priceModes) {
-          final s = rechnungSummen(
-            const [SummenPosition(quantity: 1, unitPriceCents: 1200, vatRate: 20)],
+          final s = computeInvoiceTotals(
+            const [TotalsItem(quantity: 1, unitPriceCents: 1200, vatRate: 20)],
             modus,
             fall,
           );
@@ -122,12 +122,12 @@ void main() {
     });
 
     test('ohne Angabe gilt normal — die Steuer wird ausgewiesen', () {
-      final s = rechnungSummen(const [SummenPosition(quantity: 1, unitPriceCents: 1200, vatRate: 20)], 'gross');
+      final s = computeInvoiceTotals(const [TotalsItem(quantity: 1, unitPriceCents: 1200, vatRate: 20)], 'gross');
       expect(s.toJson()['byRate'], [
         {'rate': 20, 'netCents': 1000, 'vatCents': 200, 'grossCents': 1200},
       ]);
       // oss ist nicht steuerfrei: der Satz bleibt stehen.
-      expect(rechnungSummen(const [SummenPosition(quantity: 1, unitPriceCents: 1200, vatRate: 20)], 'gross', 'oss')
+      expect(computeInvoiceTotals(const [TotalsItem(quantity: 1, unitPriceCents: 1200, vatRate: 20)], 'gross', 'oss')
           .byRate
           .single
           .rate, 20);
@@ -139,25 +139,25 @@ void main() {
       const a = InvoiceItemInput(description: 'A', quantity: 1, unitPriceCents: 555, vatRate: 10);
       const b = InvoiceItemInput(description: 'B', quantity: 1, unitPriceCents: 1479, vatRate: 20);
       const c = InvoiceItemInput(description: 'C', quantity: 1, unitPriceCents: 1500, vatRate: 20);
-      final eins = rechnungSummen(const [a, b, c], 'gross');
-      final zwei = rechnungSummen(const [c, a, b], 'gross');
+      final eins = computeInvoiceTotals(const [a, b, c], 'gross');
+      final zwei = computeInvoiceTotals(const [c, a, b], 'gross');
       expect(eins.byRate.map((r) => r.rate).toList(), [20, 10]);
       expect(eins.toJson(), zwei.toJson());
     });
 
     test('ein unbekannter Modus oder Steuerfall wird abgewiesen statt still gerechnet', () {
-      const p = [SummenPosition(quantity: 1, unitPriceCents: 1200, vatRate: 20)];
-      expect(() => rechnungSummen(p, 'brutto'), throwsArgumentError);
-      expect(() => rechnungSummen(p, 'gross', 'kleinunternehmer'), throwsArgumentError);
+      const p = [TotalsItem(quantity: 1, unitPriceCents: 1200, vatRate: 20)];
+      expect(() => computeInvoiceTotals(p, 'brutto'), throwsArgumentError);
+      expect(() => computeInvoiceTotals(p, 'gross', 'kleinunternehmer'), throwsArgumentError);
     });
 
     test('eine Zeile ohne endliche Zahl wird abgewiesen', () {
       for (final p in const [
-        SummenPosition(quantity: double.nan, unitPriceCents: 100, vatRate: 20),
-        SummenPosition(quantity: 1, unitPriceCents: double.infinity, vatRate: 20),
-        SummenPosition(quantity: 1, unitPriceCents: 100, vatRate: 20, discountPct: double.negativeInfinity),
+        TotalsItem(quantity: double.nan, unitPriceCents: 100, vatRate: 20),
+        TotalsItem(quantity: 1, unitPriceCents: double.infinity, vatRate: 20),
+        TotalsItem(quantity: 1, unitPriceCents: 100, vatRate: 20, discountPct: double.negativeInfinity),
       ]) {
-        expect(() => rechnungSummen([p], 'net'), throwsArgumentError);
+        expect(() => computeInvoiceTotals([p], 'net'), throwsArgumentError);
       }
     });
 
@@ -169,8 +169,8 @@ void main() {
       for (final satz in [10, 13, 20]) {
         for (var c = 1; c <= 2000; c++) {
           for (final (modus, preis) in [('gross', c), ('net', c + 0.5)]) {
-            final plus = rechnungSummen([SummenPosition(quantity: 1, unitPriceCents: preis, vatRate: satz)], modus);
-            final minus = rechnungSummen([SummenPosition(quantity: -1, unitPriceCents: preis, vatRate: satz)], modus);
+            final plus = computeInvoiceTotals([TotalsItem(quantity: 1, unitPriceCents: preis, vatRate: satz)], modus);
+            final minus = computeInvoiceTotals([TotalsItem(quantity: -1, unitPriceCents: preis, vatRate: satz)], modus);
             if (minus.netCents != -plus.netCents ||
                 minus.vatCents != -plus.vatCents ||
                 minus.grossCents != -plus.grossCents) {
@@ -180,12 +180,12 @@ void main() {
         }
       }
       expect(falsch, isEmpty);
-      final halb = rechnungSummen(const [SummenPosition(quantity: -1, unitPriceCents: 0.5, vatRate: 10)], 'net');
+      final halb = computeInvoiceTotals(const [TotalsItem(quantity: -1, unitPriceCents: 0.5, vatRate: 10)], 'net');
       expect((halb.netCents, halb.vatCents), (-1, 0));
     });
 
     test('keine Positionen ergeben null', () {
-      expect(rechnungSummen(const [], 'net').toJson(), {'netCents': 0, 'vatCents': 0, 'grossCents': 0, 'byRate': []});
+      expect(computeInvoiceTotals(const [], 'net').toJson(), {'netCents': 0, 'vatCents': 0, 'grossCents': 0, 'byRate': []});
     });
   });
 }
@@ -198,10 +198,10 @@ void mikropreisTests() {
   group('Einzelpreis in Mikro-Euro', () {
     test('genau eines der beiden Preisfelder', () {
       expect(
-        () => SummenPosition(quantity: 1, unitPriceCents: 100, unitPriceMicros: 1000000, vatRate: 20),
+        () => TotalsItem(quantity: 1, unitPriceCents: 100, unitPriceMicros: 1000000, vatRate: 20),
         throwsA(isA<AssertionError>()),
       );
-      expect(() => SummenPosition(quantity: 1, vatRate: 20), throwsA(isA<AssertionError>()));
+      expect(() => TotalsItem(quantity: 1, vatRate: 20), throwsA(isA<AssertionError>()));
       expect(
         () => InvoiceItemInput(description: 'A', quantity: 1, unitPriceCents: 100, unitPriceMicros: 4, vatRate: 20),
         throwsA(isA<AssertionError>()),
@@ -209,20 +209,20 @@ void mikropreisTests() {
     });
 
     test('preisInCent nimmt den Preis aus dem Feld, das ihn traegt', () {
-      expect(SummenPosition(quantity: 1, unitPriceCents: 3883, vatRate: 20).preisInCent, 3883);
+      expect(TotalsItem(quantity: 1, unitPriceCents: 3883, vatRate: 20).priceInCents, 3883);
       // 38.830.000 Mikro-Euro sind 3883 Cent -- derselbe Preis.
-      expect(SummenPosition(quantity: 1, unitPriceMicros: 38830000, vatRate: 20).preisInCent, 3883);
+      expect(TotalsItem(quantity: 1, unitPriceMicros: 38830000, vatRate: 20).priceInCents, 3883);
       // Unter einem Cent: 4 Mikro-Euro sind 0,0004 Cent.
-      expect(SummenPosition(quantity: 1, unitPriceMicros: 4, vatRate: 20).preisInCent, 0.0004);
+      expect(TotalsItem(quantity: 1, unitPriceMicros: 4, vatRate: 20).priceInCents, 0.0004);
     });
 
     test('dieselbe Leistung ergibt dieselbe Summe, gleich in welchem Feld', () {
-      final inCent = rechnungSummen(
-        [SummenPosition(quantity: 15, unitPriceCents: 3883, vatRate: 10, discountPct: 12.5)],
+      final inCent = computeInvoiceTotals(
+        [TotalsItem(quantity: 15, unitPriceCents: 3883, vatRate: 10, discountPct: 12.5)],
         'net',
       );
-      final inMikro = rechnungSummen(
-        [SummenPosition(quantity: 15, unitPriceMicros: 38830000, vatRate: 10, discountPct: 12.5)],
+      final inMikro = computeInvoiceTotals(
+        [TotalsItem(quantity: 15, unitPriceMicros: 38830000, vatRate: 10, discountPct: 12.5)],
         'net',
       );
       expect(inMikro.toJson(), inCent.toJson());
@@ -231,8 +231,8 @@ void mikropreisTests() {
     // Der Fall, fuer den es das Feld gibt: mit `unitPriceCents` waere der
     // Preis 0 und die Rechnung leer.
     test('ein Preis unter einem Cent ueberlebt bis in die Summe', () {
-      final summen = rechnungSummen(
-        [SummenPosition(quantity: 3500000, unitPriceMicros: 4, vatRate: 20)],
+      final summen = computeInvoiceTotals(
+        [TotalsItem(quantity: 3500000, unitPriceMicros: 4, vatRate: 20)],
         'net',
       );
       expect(summen.netCents, 1400);
@@ -257,14 +257,14 @@ void mikropreisTests() {
       expect(pos.unitPriceMicros, 4);
       // Die Anzeigehilfe bleibt 0 -- verbindlich ist der Mikropreis.
       expect(pos.unitPriceCents, 0);
-      expect(pos.preisInCent, 0.0004);
+      expect(pos.priceInCents, 0.0004);
 
       // Ein aelterer Server ohne das Feld: kein Absturz, der Cent-Preis gilt.
       final alt = InvoiceItem.fromJson({
         'description': 'Beratung', 'quantity': 1, 'unit': 'piece', 'unitPriceCents': 5000, 'vatRate': 20,
       });
       expect(alt.unitPriceMicros, isNull);
-      expect(alt.preisInCent, 5000);
+      expect(alt.priceInCents, 5000);
     });
   });
 }

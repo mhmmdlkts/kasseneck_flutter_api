@@ -28,7 +28,7 @@ MockClient successClient(void Function(http.Request) capture) => MockClient((req
       return http.Response(
         jsonEncode({'status': 'success', 'data': buildReceipt().toJson()}),
         200,
-        headers: {'content-type': 'application/json'},
+        headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
       );
     });
 
@@ -45,9 +45,9 @@ void main() {
       late http.Request captured;
       final api = apiWith(successClient((r) => captured = r));
 
-      await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]);
+      await api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]);
 
-      expect(captured.url.toString(), 'https://api.kasseneck.at/v1/createReceipt');
+      expect(captured.url.toString(), 'https://api.kasseneck.at/v3/createReceipt');
       expect(captured.headers['Authorization'], 'Bearer test-key');
       expect(captured.headers['cashregister-token'], base64Encode(utf8.encode('CASHBOX-9:secret')));
       expect(captured.headers['content-type'], startsWith('application/json'));
@@ -56,7 +56,10 @@ void main() {
       expect(body.keys, ['params']);
       final params = body['params'] as Map<String, dynamic>;
       expect(params['receiptType'], 'standard');
-      expect(params['paymentMethod'], 'cash');
+      expect(params.containsKey('paymentMethod'), isFalse);
+      expect(params['payments'], [
+        {'method': 'cash', 'amountCents': 100},
+      ]);
       final item = (params['items'] as List).first as Map<String, dynamic>;
       expect(item['quantity'], 1);
       expect(item['unitPriceCents'], 100); // v2: ganze Cent (Integer)
@@ -65,7 +68,7 @@ void main() {
 
     test('sellReceipt parst die Antwort zu einem Beleg', () async {
       final api = apiWith(successClient((_) {}));
-      final receipt = await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]);
+      final receipt = await api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]);
       expect(receipt, isNotNull);
       expect(receipt!.receiptId, 'TEST-ID-1');
     });
@@ -74,54 +77,54 @@ void main() {
   group('Fehlerpfade', () {
     test('status error -> Exception mit Backend-Message', () async {
       final api = apiWith(MockClient((_) async =>
-          http.Response(jsonEncode({'status': 'error', 'message': 'Kasse gesperrt'}), 200)));
+          http.Response(jsonEncode({'status': 'error', 'message': 'Kasse gesperrt'}), 200, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
-        () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(predicate((e) => e.toString().contains('Kasse gesperrt'))),
       );
     });
     test('HTTP 500 -> Exception mit Statuscode', () async {
-      final api = apiWith(MockClient((_) async => http.Response('kaputt', 500)));
+      final api = apiWith(MockClient((_) async => http.Response('kaputt', 500, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
-        () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(predicate((e) => e.toString().contains('500'))),
       );
     });
     test('leerer Body -> Exception', () async {
-      final api = apiWith(MockClient((_) async => http.Response('', 200)));
+      final api = apiWith(MockClient((_) async => http.Response('', 200, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
-        () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(isA<Exception>()),
       );
     });
   });
 
   group('sellReceipt-Validierung (wirft VOR dem HTTP-Call)', () {
-    test('standard ohne Items -> ArgumentError', () {
+    test('standard ohne Items -> KasseneckValidationError', () {
       final api = apiWith(neverCalled());
-      expect(() => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: []),
-          throwsArgumentError);
-      expect(() => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash),
-          throwsArgumentError);
+      expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: []),
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
+      expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)]),
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
     });
-    test('ungueltiges Item (leerer Name) -> ArgumentError', () {
+    test('ungueltiges Item (leerer Name) -> KasseneckValidationError', () {
       final api = apiWith(neverCalled());
       final bad = KasseneckItem(name: '', quantity: 1, vat: VatRate.vat20, priceCents: 1);
-      expect(() => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [bad]),
-          throwsArgumentError);
+      expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [bad]),
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
     });
-    test('ungueltiger Voucher -> ArgumentError', () {
+    test('ungueltiger Voucher -> KasseneckValidationError', () {
       final api = apiWith(neverCalled());
       final bad = KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 0);
       expect(
-        () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem], vouchers: [bad]),
-        throwsArgumentError,
+        () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem], vouchers: [bad]),
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
     });
     test('NUR Sell-Voucher ohne Items ist erlaubt (geht bis zum HTTP-Call)', () async {
       final api = apiWith(successClient((_) {}));
       final voucher = KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 1000);
-      final receipt = await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, vouchers: [voucher]);
+      final receipt = await api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], vouchers: [voucher]);
       expect(receipt, isNotNull);
     });
   });
@@ -159,18 +162,6 @@ void main() {
   });
 
   group('Weitere API-Helfer', () {
-    test('cancelReceipt negiert die Items des Originals', () async {
-      late http.Request captured;
-      final api = apiWith(successClient((r) => captured = r));
-      final original = cartA();
-      // ignore: deprecated_member_use_from_same_package
-      await api.cancelReceipt(receipt: original);
-
-      final params = (jsonDecode(captured.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
-      expect(params['receiptType'], 'cancellation');
-      final cents = (params['items'] as List).map((i) => i['unitPriceCents'] as int).toList();
-      expect(cents, [-1999, -29, -105]);
-    });
     test('zeroReceipt sendet keine Items', () async {
       late http.Request captured;
       final api = apiWith(successClient((r) => captured = r));
@@ -221,7 +212,7 @@ void main() {
             return http.Response(
               jsonEncode({'status': 'success', 'data': daten}),
               200,
-              headers: {'content-type': 'application/json'},
+              headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
             );
           });
 
@@ -236,7 +227,7 @@ void main() {
 
         final personen = await api.listTipRecipients();
 
-        expect(captured.url.toString(), 'https://api.kasseneck.at/v1/listMyTipRecipients');
+        expect(captured.url.toString(), 'https://api.kasseneck.at/v3/listMyTipRecipients');
         expect(captured.headers['Authorization'], 'Bearer test-key');
         expect(personen.map((p) => p.registerUserId), ['ru_1', 'ru_2']);
         expect(personen.first.name, 'Anna');
@@ -252,7 +243,7 @@ void main() {
           ],
         }));
 
-        final anteil = (await api.listTipRecipients()).single.mit(cents: 500);
+        final anteil = (await api.listTipRecipients()).single.share(cents: 500);
 
         expect(anteil.registerUserId, 'ru_1');
         expect(anteil.cents, 500);
@@ -274,7 +265,7 @@ void main() {
     group('newHobexTransactionId mit gesetztem Zeitpunkt', () {
       void pruefe(String was, DateTime zeitpunkt) {
         test(was, () {
-          final id = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt);
+          final id = KasseneckApi.newHobexTransactionId(now: zeitpunkt);
           expect(id.length, 19, reason: 'Hobex erwartet genau 19 Stellen');
           expect(RegExp(r'^\d+$').hasMatch(id), isTrue, reason: 'rein numerisch');
         });
@@ -289,7 +280,7 @@ void main() {
 
     test('newHobexTransactionId: Zeitanteil in den ersten 15, Zufall in den letzten 4 Stellen', () {
       final id = KasseneckApi.newHobexTransactionId(
-          zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0));
+          now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0));
       expect(id.substring(0, 15), '260102030405000');
       expect(int.parse(id.substring(15)), inInclusiveRange(0, 9999));
       expect(id.substring(15).length, 4, reason: 'der Zufallsanteil ist immer vierstellig');
@@ -317,7 +308,7 @@ void main() {
         final erwartet = '${zwei(wand.year % 100)}${zwei(wand.month)}${zwei(wand.day)}'
             '${zwei(wand.hour)}${zwei(wand.minute)}${zwei(wand.second)}'
             '${wand.millisecond.toString().padLeft(3, '0')}';
-        final id = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt);
+        final id = KasseneckApi.newHobexTransactionId(now: zeitpunkt);
         expect(id.length, 19, reason: 'Kennung zu $zeitpunkt');
         expect(id.substring(0, 15), erwartet, reason: 'Zeitanteil von $zeitpunkt');
       }
@@ -340,8 +331,8 @@ void main() {
     test('newHobexTransactionId: Golden-Wert Winterzeit (wie im JS-Zwilling)', () {
       // 02.01.2026 02:04:05.000 UTC = 03:04:05.000 Wiener Zeit (CET, +1).
       final id = KasseneckApi.newHobexTransactionId(
-        zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0),
-        zufall: () => 0.00071,
+        now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0),
+        random: () => 0.00071,
       );
       expect(id, '2601020304050000007');
       expect(RegExp(r'^\d{19}$').hasMatch(id), isTrue);
@@ -352,8 +343,8 @@ void main() {
       // Gegen den Winter-Wert steht hier allein die Sommerzeit: rechnet eine
       // der beiden Seiten die Umstellung anders, faellt genau dieser Wert.
       final id = KasseneckApi.newHobexTransactionId(
-        zeitpunkt: DateTime.utc(2026, 7, 8, 7, 4, 5, 0),
-        zufall: () => 0.00071,
+        now: DateTime.utc(2026, 7, 8, 7, 4, 5, 0),
+        random: () => 0.00071,
       );
       expect(id, '2607080904050000007');
       expect(RegExp(r'^\d{19}$').hasMatch(id), isTrue);
@@ -364,8 +355,8 @@ void main() {
       // Tageswechsel liegt zwischen beiden -- die Kennung muss den Wiener
       // Geschaeftstag tragen. Auch dieser Wert steht so im JS-Zwilling.
       final id = KasseneckApi.newHobexTransactionId(
-        zeitpunkt: DateTime.utc(2026, 8, 13, 22, 30, 5, 123),
-        zufall: () => 0.5,
+        now: DateTime.utc(2026, 8, 13, 22, 30, 5, 123),
+        random: () => 0.5,
       );
       expect(id, '2608140030051235000');
     });
@@ -374,20 +365,20 @@ void main() {
       // Eine eingespeiste Quelle haelt sich nicht an [0, 1). 1 ergaebe ohne
       // Begrenzung 10000 -- also eine 20-stellige Kennung.
       expect(KasseneckApi.newHobexTransactionId(
-              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => 1.0)
+              now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), random: () => 1.0)
           .substring(15), '9999');
       expect(KasseneckApi.newHobexTransactionId(
-              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => -3.0)
+              now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), random: () => -3.0)
           .substring(15), '0000');
       expect(KasseneckApi.newHobexTransactionId(
-              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => double.nan)
+              now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), random: () => double.nan)
           .substring(15), '0000');
     });
 
     test('newHobexTransactionId: zwei Kennungen derselben Millisekunde unterscheiden sich', () {
       final zeitpunkt = DateTime.utc(2026, 8, 13, 22, 30, 5, 123);
-      final erste = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt, zufall: () => 0.1234);
-      final zweite = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt, zufall: () => 0.9876);
+      final erste = KasseneckApi.newHobexTransactionId(now: zeitpunkt, random: () => 0.1234);
+      final zweite = KasseneckApi.newHobexTransactionId(now: zeitpunkt, random: () => 0.9876);
       expect(erste, isNot(zweite),
           reason: 'ohne Zufallsanteil waeren zwei Zahlungen derselben Millisekunde dieselbe Kennung');
       expect(erste.substring(0, 15), zweite.substring(0, 15), reason: 'der Zeitanteil ist derselbe');
@@ -409,11 +400,13 @@ void main() {
     /// gegen den die Fristen ueberhaupt da sind.
     MockClient haengt() => MockClient((_) => Completer<http.Response>().future);
 
-    /// Die Frist steht in der Meldung der `TimeoutException`. Sie ist damit
+    /// Die Frist steht am `KasseneckHttpError` (`timeout`). Sie ist damit
     /// pruefbar, ohne auf die Wanduhr zu warten: welche der drei Fristen ein
     /// Aufruf zieht, steht schwarz auf weiss im Fehler.
     Matcher fristAbgelaufen(Duration frist) =>
-        isA<TimeoutException>().having((e) => e.duration, 'duration', frist);
+        isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)
+            .having((e) => e.timeout, 'timeout', frist);
 
     test('Verkauf zieht signatureTimeout, nicht readTimeout', () async {
       // Ein Abbruch beendet nur das Warten der Kasse, nicht die Arbeit des
@@ -429,7 +422,7 @@ void main() {
       );
 
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(fristAbgelaufen(const Duration(milliseconds: 40))),
       );
     });
@@ -444,9 +437,7 @@ void main() {
         signatureTimeout: const Duration(milliseconds: 40),
       );
 
-      // ignore: deprecated_member_use_from_same_package
-
-      await expectLater(api.cancelReceipt(receipt: cartA()),
+      await expectLater(api.cancelReceipt(cashregisterId: 'CASHBOX-9', originalReceiptId: 'R-1', reason: 'input_error'),
           throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
       await expectLater(api.zeroReceipt(),
           throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
@@ -495,7 +486,7 @@ void main() {
     // — ein 200 mit Array, Skalar oder HTML gab daraus einen rohen TypeError
     // bzw. eine FormatException, im Verkauf NACH der Signatur.
     KasseneckApi apiMit(String rumpf) => apiWith(MockClient(
-        (_) async => http.Response(rumpf, 200, headers: {'content-type': 'application/json'})));
+        (_) async => http.Response(rumpf, 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'})));
 
     test('200 mit JSON-Array statt Objekt: benannter Fehler, kein TypeError', () async {
       // Gezielt fangbar: nach der Signatur ist „Antwort kaputt, der Beleg
@@ -503,7 +494,7 @@ void main() {
       // Exception laesst diesen Unterschied nicht ausdruecken.
       final api = apiMit('[1,2,3]');
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(isA<KasseneckHttpError>()
             .having((e) => e.functionName, 'functionName', 'createReceipt')
             .having((e) => e.reason, 'reason', 'missing-status')
@@ -515,20 +506,30 @@ void main() {
       // Captive Portal oder CDN-Fehlerseite — der Rumpf selbst bleibt draussen.
       final api = apiMit('<html>Gateway</html>');
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(isA<KasseneckHttpError>()
             .having((e) => e.reason, 'reason', 'not-json')
             .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('Gateway')))),
       );
     });
 
-    test('Erfolg ohne data-Objekt: benannter Fehler', () async {
+    // Erfolg gemeldet, Antwort unbrauchbar: der Beleg ist signiert. Das ist
+    // `response_unreadable` mit Ausgang unklar (Ruling F3), nie ein
+    // gewoehnlicher Fehler, der zum zweiten Verkauf einluede.
+    TypeMatcher<KasseneckApiError> unlesbar({Object? receiptId, Object? field}) => isA<KasseneckApiError>()
+        .having((e) => e.functionName, 'functionName', 'createReceipt')
+        .having((e) => e.code, 'code', 'response_unreadable')
+        .having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)
+        .having((e) => isOutcomeUnknown(e), 'isOutcomeUnknown', isTrue)
+        .having((e) => e.details['receiptId'], 'receiptId', receiptId)
+        .having((e) => e.details['field'], 'field', field);
+
+    test('Erfolg ohne data-Objekt: response_unreadable, Ausgang unklar', () async {
       final api = apiMit(jsonEncode({'status': 'success', 'data': null}));
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.functionName, 'functionName', 'createReceipt')
-            .having((e) => e.reason, 'reason', 'data-not-object')),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
+        throwsA(unlesbar(receiptId: isNull, field: isNull)
+            .having((e) => e.message, 'message', contains('data-not-object'))),
       );
     });
 
@@ -541,10 +542,8 @@ void main() {
       final api = apiMit(jsonEncode({'status': 'success', 'data': daten}));
 
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<KasseneckReceiptFormatError>()
-            .having((e) => e.field, 'field', 'qr')
-            .having((e) => e.receiptId, 'receiptId', 'TEST-ID-1')),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
+        throwsA(unlesbar(receiptId: 'TEST-ID-1', field: 'qr')),
       );
     });
 
@@ -554,10 +553,8 @@ void main() {
       final api = apiMit(jsonEncode({'status': 'success', 'data': daten}));
 
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<KasseneckReceiptFormatError>()
-            .having((e) => e.receiptId, 'receiptId', 'TEST-ID-1')
-            .having((e) => e.causeType, 'causeType', isNotNull)),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
+        throwsA(unlesbar(receiptId: 'TEST-ID-1', field: 'receipt')),
       );
     });
 
@@ -645,7 +642,7 @@ void main() {
 
   group('Logo haelt den Verkauf nicht auf', () {
     setUp(() {
-      LogoService.frist = LogoService.standardFrist;
+      LogoService.timeout = LogoService.defaultTimeout;
       LogoService.httpClient = http.Client();
     });
 
@@ -653,7 +650,7 @@ void main() {
       // Der Logo-Abruf laeuft HINTER dem bereits signierten Beleg. Haengt er,
       // steht die Kasse mit dem Gast am Tresen — und ein Neustart mit erneutem
       // Kassieren erzeugt einen zweiten Umsatz in der Signaturkette.
-      LogoService.frist = const Duration(milliseconds: 20);
+      LogoService.timeout = const Duration(milliseconds: 20);
       LogoService.httpClient = MockClient((_) => Completer<http.Response>().future);
 
       final api = apiWith(MockClient((_) async => http.Response(
@@ -665,11 +662,11 @@ void main() {
               },
             }),
             200,
-            headers: {'content-type': 'application/json'},
+            headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
           )));
 
       final beleg = await api
-          .sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem])
+          .sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem])
           .timeout(const Duration(seconds: 5),
               onTimeout: () => fail('sellReceipt haengt am Logo-Abruf'));
 

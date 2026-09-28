@@ -12,7 +12,7 @@
 # gepackt, aber noch nicht veröffentlicht ist, darf ZWILLINGE_TARBALL auf den
 # Tarball zeigen (`npm pack` dort):
 #
-#   ZWILLINGE_TARBALL=/pfad/kreiseck-kasseneck-api-0.22.0.tgz tool/zwillinge.sh ziehen
+#   ZWILLINGE_TARBALL=/pfad/kreiseck-kasseneck-api-1.0.0-rc.1.tgz tool/zwillinge.sh ziehen
 #
 # Das ist ein Zwischenstand, kein Beweis: echt ist die Kopie erst, wenn
 # `tool/zwillinge.sh pruefen` OHNE die Variable grün ist, also gegen die
@@ -59,7 +59,7 @@ if [ -n "$tarball" ]; then
   echo "Achtung: Vertrag aus dem lokalen Tarball ${tarball}, nicht aus der Registry." >&2
   echo "Nach der Veröffentlichung 'tool/zwillinge.sh pruefen' ohne ZWILLINGE_TARBALL laufen lassen." >&2
 else
-  npm pack "@kreiseck/kasseneck-api@${version}" --pack-destination "$tmp" >/dev/null
+  npm pack "@kreiseck/kasseneck-api@${version}" --pack-destination "$tmp" --silent >/dev/null
   tar -xzf "$tmp"/kreiseck-kasseneck-api-*.tgz -C "$tmp"
 fi
 
@@ -93,12 +93,59 @@ if [ ! -f "$markeModul" ]; then
   echo "Die Kopie unter ${ziel} bleibt unangetastet." >&2
   exit 1
 fi
+# Seit 1.0 heissen die Exporte englisch (BRAND_MARK_RASTERS, BRAND_MARK_PATHS),
+# die Schluessel darin ebenso (width, height, bits, paths). Fehlt ein Export,
+# bricht das Skript ab: JSON.stringify liesse `undefined` still weg, und aus
+# der Markendatei wuerde ein leeres `{}`, das erst ein Test bemerkt.
 node --input-type=module -e '
   import { writeFileSync } from "node:fs";
   const [modulPfad, zielPfad] = process.argv.slice(1);
   const mod = await import(modulPfad);
-  writeFileSync(zielPfad, JSON.stringify({ raster: mod.MARKE_RASTER, pfade: mod.MARKE_PFADE }, null, 2) + "\n");
+  for (const name of ["BRAND_MARK_RASTERS", "BRAND_MARK_PATHS"]) {
+    if (mod[name] === undefined) {
+      console.error(`marke-daten.js exportiert ${name} nicht.`);
+      process.exit(1);
+    }
+  }
+  writeFileSync(zielPfad, JSON.stringify({ rasters: mod.BRAND_MARK_RASTERS, paths: mod.BRAND_MARK_PATHS }, null, 2) + "\n");
 ' "$markeModul" "$quelle/marke.json"
+
+# Was die Zwillingstests lesen, muss im Paket stehen. `diff -r` allein merkt
+# ein fehlendes Verzeichnis nur als Abweichung zur alten Kopie; beim Ziehen
+# kaeme es gar nicht auf. Die Liste nennt die Wurzeln, die 1.0 neu einfuehrt
+# oder umbenennt, dazu die Dateien, auf die die Tests direkt zugreifen.
+pflicht=(
+  manifest.json
+  surface.json
+  pos-settings-defaults.json
+  pos-texts.json
+  pos-message-cases.json
+  hobex-hps-codes.json
+  item-from-euro.json
+  invoice-api.schema.json
+  invoice-api-examples
+  invoice-calc.json
+  invoice-calc-random.json
+  invoice-totals.json
+  invoice-texts.json
+  receipt-due-generated.json
+  renames-1.0.json
+  receipts
+  expected
+  stored
+  v3
+  v3/v3-vokabular.json
+  v3/zahlbetrag-faelle.json
+  v3/antworten
+  v3/stored
+)
+for eintrag in "${pflicht[@]}"; do
+  if [ ! -e "$quelle/$eintrag" ]; then
+    echo "Das Paket ${version} enthält fixtures/${eintrag} nicht." >&2
+    echo "Die Kopie unter ${ziel} bleibt unangetastet." >&2
+    exit 1
+  fi
+done
 
 case "$befehl" in
   ziehen)

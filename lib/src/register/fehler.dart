@@ -34,7 +34,103 @@ class KasseneckValidationError implements Exception {
       '${receiptId == null ? '' : ' [receiptId: $receiptId]'}';
 }
 
+/// Ausgang eines gescheiterten Aufrufs. [rejected]: nichts geschehen.
+/// [unknown]: der Vorgang kann ausgefuehrt sein (ein Beleg signiert, ein
+/// Storno gebucht); **nie wiederholen**, sondern das Ergebnis nachlesen.
+enum ErrorOutcome { unknown, rejected }
+
+/// Codes, deren Ausgang unklar ist. `response_translation_failed` nur, wenn
+/// der Rand nicht ausdruecklich `handled: false` meldet (Handler lief und
+/// lehnte ab); `handled: true` oder `null` heisst ausgefuehrt bzw. unbekannt.
+const Set<String> _ausgangUnklarCodes = {
+  'dialect_mismatch',
+  'receipt_outcome_unknown',
+  'cancellation_outcome_unknown',
+  'response_unreadable',
+};
+
+/// Die Geldwege: `hobexPayApi` belastet eine Karte, `hobexRefundApi`
+/// erstattet, `stripeCaptureIntent` zieht eine vorgemerkte Zahlung ein.
+const Set<String> _geldwege = {'hobexPayApi', 'hobexRefundApi', 'stripeCaptureIntent'};
+
+/// Codes, bei denen ein Geldweg sicher abgelehnt ist: sie entstehen, bevor
+/// das Backend den Zahlungsanbieter anspricht.
+///
+/// * Anmeldung und Pruefung in `checkRequest`, die vor jeder Zeile des
+///   Handlers laufen (`errorCodes.auth` im Vertrag, soweit sie einen
+///   `api_key`-Aufruf mit Kassen-Token treffen): `method_not_allowed`,
+///   `validation` (Pflichtfeld fehlt oder falscher Typ), die
+///   Kassen-Token-Codes, `account_not_found`, `live_not_enabled`,
+///   `unauthorized`, `mfa_required`, `user_verification_failed`,
+///   `admin_required` sowie die Codes der Kassen-Benutzer und ihrer Sitzung.
+/// * Der `/v3`-Rand vor dem Handler (`errorCodes.edge`): `not_found`
+///   (unbekannter Endpunkt) und `internal_translation_error` (die Anfrage
+///   liess sich nicht uebersetzen, es wurde nichts ausgefuehrt).
+/// * `module_inactive` und `not_permitted`: das Modul- bzw. Rechte-Tor steht
+///   ebenfalls vor dem Anbieter.
+/// * `route_missing`: vergibt das Paket selbst, keine Function sah den Aufruf.
+///
+/// Alles andere, auch eine Fehlerhuelle ganz ohne Code, gilt hier als
+/// Ausgang unklar: der Sammelfang des Backends (`Error hobex details`,
+/// `Fehler beim Capturing`) antwortet ohne Code auch dann, wenn der Anbieter
+/// die Belastung oder Erstattung schon angenommen hat.
+const Set<String> paymentCallRejectedCodes = {
+  'method_not_allowed',
+  'validation',
+  'cashregister_token_missing',
+  'cashregister_token_invalid',
+  'cashregister_not_found',
+  'account_not_found',
+  'live_not_enabled',
+  'unauthorized',
+  'mfa_required',
+  'user_verification_failed',
+  'admin_required',
+  'register_user_not_allowed',
+  'register_user_no_business',
+  'register_user_not_found',
+  'user_disabled',
+  'session_expired',
+  'cashregister_not_assigned',
+  'session_other_cashregister',
+  'not_found',
+  'internal_translation_error',
+  'module_inactive',
+  'not_permitted',
+  'route_missing',
+};
+
+ErrorOutcome _ausgangAusCode(String functionName, String? code, Map<String, dynamic> details) {
+  if (_geldwege.contains(functionName.split('/').first)) {
+    return code != null && paymentCallRejectedCodes.contains(code) ? ErrorOutcome.rejected : ErrorOutcome.unknown;
+  }
+  if (code == null) return ErrorOutcome.rejected;
+  if (_ausgangUnklarCodes.contains(code)) return ErrorOutcome.unknown;
+  if (code == 'response_translation_failed' && details['handled'] != false) return ErrorOutcome.unknown;
+  return ErrorOutcome.rejected;
+}
+
+/// Codes, die das Paket selbst vergibt, nicht der Server: `route_missing`
+/// (HTML statt Backend, der Aufruf kam nie an) und `response_unreadable`
+/// (ein signierender Aufruf meldete Erfolg, die Antwort ist aber unlesbar).
+/// `dialect_mismatch` vergibt das Paket ebenfalls, der Code gehoert aber zum
+/// Rand des Servers.
+const Set<String> clientErrorCodes = {'route_missing', 'response_unreadable'};
+
+/// Ist der Ausgang dieses Fehlers unklar? Dann den Aufruf **nicht
+/// wiederholen**, sondern das Ergebnis nachlesen. Gilt fuer jede Fehlerart;
+/// nur [KasseneckApiError] und [KasseneckHttpError] koennen unklar sein.
+bool isOutcomeUnknown(Object? error) =>
+    (error is KasseneckApiError && error.outcome == ErrorOutcome.unknown) ||
+    (error is KasseneckHttpError && error.outcome == ErrorOutcome.unknown);
+
 /// Fachlicher Fehler des Backends (PIN falsch, Kasse belegt, Geraet gesperrt …).
+///
+/// Das Paket vergibt selbst zwei Codes: `route_missing` (HTTP 200 mit einer
+/// HTML-Seite, die Auffangregel des Hostings hat geantwortet, keine Function
+/// sah den Aufruf) und `dialect_mismatch` (die Antwort traegt das
+/// `/v3`-Kennzeichen nicht; ein Rand ohne `/v3` hat geantwortet, Ausgang
+/// unklar). Entscheidend ist [outcome].
 class KasseneckApiError implements Exception {
   const KasseneckApiError(this.functionName, this.message, {this.code, this.details = const {}});
 
@@ -42,7 +138,7 @@ class KasseneckApiError implements Exception {
   final String message;
 
   /// Stabiler Fehlercode des Backends (`code` aus der Antworthuelle), wenn der
-  /// Endpunkt einen legt — heute `cancelReceipt` (siehe `stornoFehlercodes`).
+  /// Endpunkt einen legt – heute `cancelReceipt` (siehe `cancellationErrorCodes`).
   /// **Daran entscheiden, nie an [message]:** der Text darf sich aendern, der
   /// Code nicht. Null bei Endpunkten ohne Codes und bei Auth-/Parameterfehlern.
   final String? code;
@@ -53,14 +149,23 @@ class KasseneckApiError implements Exception {
   /// von `KasseneckApiError.details` im JS-Paket.
   final Map<String, dynamic> details;
 
+  /// [ErrorOutcome.unknown] bei `dialect_mismatch`, `receipt_outcome_unknown`,
+  /// `cancellation_outcome_unknown`, `response_unreadable` und
+  /// `response_translation_failed` (ausser mit `details.handled == false`);
+  /// sonst [ErrorOutcome.rejected]. Die Geldwege (`hobexPay`, `hobexRefund`,
+  /// `stripeCaptureIntent`) sind umgekehrt: dort ist nur ein Code aus
+  /// `paymentCallRejectedCodes` rejected, jeder andere und eine Huelle ohne
+  /// Code unknown. Bei unknown nie wiederholen, nachlesen.
+  ErrorOutcome get outcome => _ausgangAusCode(functionName, code, details);
+
   @override
   String toString() => 'KasseneckApiError($functionName): $message${code == null ? '' : ' [$code]'}';
 }
 
 /// Der `code` einer Antworthuelle — nur ein nicht leerer Text zaehlt, alles
 /// andere waere ein geratener Vertrag.
-String? fehlercodeAus(Map<dynamic, dynamic> huelle) {
-  final code = huelle['code'];
+String? errorCodeFrom(Map<dynamic, dynamic> envelope) {
+  final code = envelope['code'];
   return code is String && code.isNotEmpty ? code : null;
 }
 
@@ -77,7 +182,7 @@ String? fehlercodeAus(Map<dynamic, dynamic> huelle) {
 ///
 /// Deshalb traegt dieser Fehler die Kennung mit, sooft sie in der Antwort
 /// stand. Sie ist der Faden zum Beleg: `KasseneckApi.getReceipt(receiptId)`
-/// bzw. `RegisterReceiptClient.holen(receiptId)` holt ihn nach.
+/// bzw. `RegisterReceiptClient.get(receiptId)` holt ihn nach.
 class KasseneckReceiptFormatError implements Exception {
   const KasseneckReceiptFormatError(this.field, {this.receiptId, this.causeType});
 
@@ -107,13 +212,14 @@ class KasseneckReceiptFormatError implements Exception {
 /// scheiterte. Traegt bewusst **nichts** aus dem Rumpf: dort koennten Werte
 /// stehen, die wir gerade nicht ins Protokoll lassen wollen.
 class KasseneckHttpError implements Exception {
-  const KasseneckHttpError(this.functionName, this.statusCode, this.reason, {this.causeType});
+  const KasseneckHttpError(this.functionName, this.statusCode, this.reason,
+      {this.causeType, this.outcome = ErrorOutcome.rejected, this.timeout});
 
   /// Die Frist ist abgelaufen. Die Anfrage war **draussen**; der Zeitablauf
   /// beendet nur das Warten, nicht die Arbeit des Servers. Ueber einem
   /// veraendernden Aufruf heisst das: der Beleg kann laengst signiert und in der
   /// Kette sein.
-  static const String zeitablauf = 'timeout';
+  static const String reasonTimeout = 'timeout';
 
   /// Der Transport ist gescheitert — Verbindung nicht zustande gekommen,
   /// abgebrochen, DNS, TLS.
@@ -125,19 +231,20 @@ class KasseneckHttpError implements Exception {
   /// liest, macht denselben Fehler wie am 24.08. am Terminal: aus Nichtwissen
   /// eine Behauptung. Fuer einen veraendernden Aufruf gilt deshalb auch hier:
   /// nachsehen, nicht wiederholen.
-  static const String netz = 'network';
+  static const String reasonNetwork = 'network';
 
   final String functionName;
   final int statusCode;
 
-  /// Warum es scheiterte: [zeitablauf], [netz], `'not-json'`,
-  /// `'missing-status'`, `'data-not-object'`.
+  /// Warum es scheiterte: [reasonTimeout], [reasonNetwork], `'server-error'` (HTTP
+  /// nicht 200), `'empty-body'`, `'not-json'`, `'missing-status'`,
+  /// `'data-not-object'`.
   ///
-  /// Die Unterscheidung [zeitablauf] gegen [netz] wird **erhalten**, nicht
+  /// Die Unterscheidung [reasonTimeout] gegen [reasonNetwork] wird **erhalten**, nicht
   /// verworfen: sie ist die einzige Handhabe, die der Aufrufer hat. Welche
   /// Folge er daraus zieht, entscheidet er — dieses Paket entscheidet sie
   /// nicht fuer ihn, weil keiner der beiden Faelle beweist, dass nichts
-  /// passiert ist (siehe [netz]).
+  /// passiert ist (siehe [reasonNetwork]).
   final String reason;
 
   /// Die **Art** der zugrunde liegenden Ausnahme (`TimeoutException`,
@@ -149,7 +256,62 @@ class KasseneckHttpError implements Exception {
   /// rekonstruieren.
   final String? causeType;
 
+  /// [ErrorOutcome.unknown] auf einem Aufruf mit Wirkung (`createReceipt`,
+  /// `cancelReceipt`, `financeWebService`, `hobexPayApi`, `hobexRefundApi`,
+  /// `stripeCaptureIntent`), wenn die Anfrage unterwegs war:
+  /// Netzfehler oder Zeitlimit nach dem Senden, HTTP 5xx, oder eine
+  /// unlesbare Antwort mit HTTP 200 und `/v3`-Kennzeichen (leer, kein JSON,
+  /// ohne Statusfeld, HTML). Sonst [ErrorOutcome.rejected].
+  final ErrorOutcome outcome;
+
+  /// Die abgelaufene Frist, wenn [reason] [reasonTimeout] ist.
+  final Duration? timeout;
+
   @override
   String toString() => 'KasseneckHttpError($functionName): HTTP $statusCode ($reason)'
-      '${causeType == null ? '' : ' [$causeType]'}';
+      '${causeType == null ? '' : ' [$causeType]'}'
+      '${outcome == ErrorOutcome.unknown ? ' [Ausgang unklar]' : ''}';
+}
+
+/// Liest die Erfolgsantwort eines **wirkenden** Aufrufs (Beleg, Storno,
+/// Kartenbelastung). Scheitert das Lesen (fehlender Beleg, fehlender Bezug,
+/// unbrauchbares Feld oder ein Laufzeitfehler beim Umwandeln), hat der Server
+/// trotzdem Erfolg gemeldet: der Beleg ist signiert und im DEP, die Karte
+/// belastet. Das darf nie als gewoehnlicher Fehler enden, sonst kassiert die
+/// Kasse ein zweites Mal. Darum wird daraus [KasseneckApiError] mit Code
+/// `response_unreadable` und Ausgang unklar (Zwilling von `signiertGelesen`
+/// im npm-Paket).
+///
+/// Der Grund stammt vom Paket; aus der Antwort wird nichts uebernommen ausser
+/// der Kennung des Belegs, soweit [receiptId] sie findet: `details.receiptId`
+/// ist der Faden zum Beleg (`getReceipt`), `details.field` das Feld, an dem
+/// das Lesen scheiterte.
+T readSignedResponse<T>(String functionName, T Function() read, {String? Function()? receiptId}) {
+  try {
+    return read();
+  } on KasseneckApiError {
+    rethrow;
+  } catch (ursache) {
+    String? id;
+    try {
+      id = receiptId?.call();
+    } catch (_) {
+      id = null;
+    }
+    final (String grund, String? feld) = switch (ursache) {
+      KasseneckValidationError(:final reason) => (reason, null),
+      KasseneckReceiptFormatError(:final field) => ('Feld "$field" fehlt oder hat den falschen Typ', field),
+      KasseneckHttpError(:final reason) => (reason, null),
+      _ => ('Antwort nicht lesbar', null),
+    };
+    if (ursache is KasseneckReceiptFormatError) id ??= ursache.receiptId;
+    if (ursache is KasseneckValidationError) id ??= ursache.receiptId;
+    throw KasseneckApiError(
+      functionName,
+      'Erfolg gemeldet, Antwort aber unlesbar ($grund). Der Vorgang kann ausgefuehrt sein: '
+      'nicht wiederholen, sondern nachlesen.',
+      code: 'response_unreadable',
+      details: {'receiptId': ?id, 'field': ?feld},
+    );
+  }
 }

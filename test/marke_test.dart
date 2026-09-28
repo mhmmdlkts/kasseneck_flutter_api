@@ -6,15 +6,15 @@ import 'package:crypto/crypto.dart' show sha256;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
-import 'package:kasseneck_api/models/marke.dart';
-import 'package:kasseneck_api/models/marke_daten.dart';
+import 'package:kasseneck_api/models/brand_mark.dart';
+import 'package:kasseneck_api/models/brand_mark_data.dart';
 
 /// Zwilling von `test/marke-daten.test.ts` im JS-Paket: dieselben Masse,
 /// dasselbe Raster, derselbe Rundlauf, dasselbe Golden.
 final _vertrag = jsonDecode(File('test/fixtures/vertrag/marke.json').readAsStringSync()) as Map<String, dynamic>;
 
 /// Gegenstueck zu `rasterZeilenBytes` im JS-Paket -- packt ein Punkt-je-Byte-Bild
-/// (wie [entpackeRasterBits] es liefert) MSB zuerst, jede Zeile eigenstaendig auf
+/// (wie [unpackRasterBits] es liefert) MSB zuerst, jede Zeile eigenstaendig auf
 /// volle Bytes aufgefuellt. Nur zum Bauen der Testmatrix: dieses Paket packt
 /// nichts selbst, es entpackt nur den fertigen Vertrag.
 Uint8List _rasterZeilenBytes(int breite, int hoehe, Uint8List punkte) {
@@ -31,32 +31,32 @@ Uint8List _rasterZeilenBytes(int breite, int hoehe, Uint8List punkte) {
 
 void main() {
   test('marke_daten.dart stimmt mit dem Vertrag ueberein -- nicht abgetippt, nicht neu erzeugt', () {
-    final raster = _vertrag['raster'] as Map<String, dynamic>;
+    final raster = _vertrag['rasters'] as Map<String, dynamic>;
     for (final papier in KeckPaperSize.values) {
       final soll = raster[papier.name] as Map<String, dynamic>;
-      final ist = markeRaster[papier]!;
-      expect(ist.breite, soll['breite'], reason: '${papier.name}: Breite');
-      expect(ist.hoehe, soll['hoehe'], reason: '${papier.name}: Hoehe');
+      final ist = brandMarkRasters[papier]!;
+      expect(ist.width, soll['width'], reason: '${papier.name}: Breite');
+      expect(ist.height, soll['height'], reason: '${papier.name}: Hoehe');
       expect(ist.bits, soll['bits'], reason: '${papier.name}: Bits');
     }
   });
 
   test('die Marke hat je Papierbreite genau ein Mass', () {
-    expect(markeBild(KeckPaperSize.mm80).breite, 352);
-    expect(markeBild(KeckPaperSize.mm80).hoehe, 51);
-    expect(markeBild(KeckPaperSize.mm58).breite, 234);
-    expect(markeBild(KeckPaperSize.mm58).hoehe, 34);
+    expect(brandMarkImage(KeckPaperSize.mm80).width, 352);
+    expect(brandMarkImage(KeckPaperSize.mm80).height, 51);
+    expect(brandMarkImage(KeckPaperSize.mm58).width, 234);
+    expect(brandMarkImage(KeckPaperSize.mm58).height, 34);
   });
 
   test('das Raster ist ein Punkt je Byte und traegt Schwarz, aber nicht nur', () {
     for (final papier in KeckPaperSize.values) {
-      final bild = markeBild(papier);
-      expect(bild.punkte.length, bild.breite * bild.hoehe);
-      final schwarz = bild.punkte.fold<int>(0, (s, p) => s + p);
+      final bild = brandMarkImage(papier);
+      expect(bild.dots.length, bild.width * bild.height);
+      final schwarz = bild.dots.fold<int>(0, (s, p) => s + p);
       // Ein leeres oder volles Bild waere ein Fehler beim Ziehen, den man
       // sonst erst am Papier saehe.
-      expect(schwarz, greaterThan(bild.punkte.length * 0.05), reason: '${papier.name}: zu wenig gesetzt');
-      expect(schwarz, lessThan(bild.punkte.length * 0.6), reason: '${papier.name}: zu viel gesetzt');
+      expect(schwarz, greaterThan(bild.dots.length * 0.05), reason: '${papier.name}: zu wenig gesetzt');
+      expect(schwarz, lessThan(bild.dots.length * 0.6), reason: '${papier.name}: zu viel gesetzt');
     }
   });
 
@@ -88,8 +88,8 @@ void main() {
       punkte[2 * breite + (breite - 1)] = 1;
 
       final gepackt = _rasterZeilenBytes(breite, hoehe, punkte);
-      final entpackt = entpackeRasterBits(base64.encode(gepackt), breite, hoehe);
-      expect(entpackt.punkte, punkte, reason: 'Breite $breite: Rundlauf muss bitgenau sein');
+      final entpackt = unpackRasterBits(base64.encode(gepackt), breite, hoehe);
+      expect(entpackt.dots, punkte, reason: 'Breite $breite: Rundlauf muss bitgenau sein');
     }
   });
 
@@ -100,8 +100,8 @@ void main() {
   // test/marke-daten.test.ts im JS-Paket: stimmen sie ueberein, entpacken
   // beide Seiten denselben Vertrag bitgenau gleich.
   test('Golden: das erzeugte Raster der echten Marke stimmt mit dem JS-Zwilling ueberein', () {
-    String hash(LogoRaster bild) => sha256.convert(bild.punkte).toString();
-    expect(hash(markeBild(KeckPaperSize.mm80)), 'ce3a6fb81f86cae93a56870d893c437e07d97bafec16114cf63dfa5368d25e7f');
-    expect(hash(markeBild(KeckPaperSize.mm58)), '7fb8dcf856622eb204e68abab4a66456500ca4cbdaea17bb1592caa499d70210');
+    String hash(LogoRaster bild) => sha256.convert(bild.dots).toString();
+    expect(hash(brandMarkImage(KeckPaperSize.mm80)), 'ce3a6fb81f86cae93a56870d893c437e07d97bafec16114cf63dfa5368d25e7f');
+    expect(hash(brandMarkImage(KeckPaperSize.mm58)), '7fb8dcf856622eb204e68abab4a66456500ca4cbdaea17bb1592caa499d70210');
   });
 }

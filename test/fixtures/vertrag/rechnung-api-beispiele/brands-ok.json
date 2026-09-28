@@ -1,8 +1,0 @@
-{
-  "aufruf": "listBrands",
-  "beschreibung": "Marken ohne Parameter",
-  "anfrage": {},
-  "erwartet": {
-    "ok": true
-  }
-}

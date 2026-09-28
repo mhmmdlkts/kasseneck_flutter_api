@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kasseneck_api/rechnung.dart';
+import 'package:kasseneck_api/invoice.dart';
 import 'package:kasseneck_api/src/aufrufe.dart';
 
 /// Der Rechnungs-Client gegen den Vertrag des JS-Zwillings.
@@ -23,7 +23,7 @@ Map<String, dynamic> _json(String pfad) =>
 final _rechnung = {
   'id': 'inv1',
   'number': '2026-0042',
-  'docType': 'RE',
+  'docType': 'invoice',
   'status': 'final',
   'invoiceDate': '2026-09-15',
   'dueDate': '2026-09-29',
@@ -46,7 +46,7 @@ Map<String, dynamic> _erfolg(Object? daten) => {'status': 'success', 'message': 
 Map<String, dynamic> _fehler(String meldung, String code, [Map<String, dynamic> daten = const {}]) =>
     {'status': 'error', 'message': meldung, 'code': code, 'data': {'code': code, ...daten}};
 
-({RechnungApi api, List<http.Request> log}) _apiMit(List<Object> antworten, {Duration? timeout}) {
+({InvoiceApi api, List<http.Request> log}) _apiMit(List<Object> antworten, {Duration? timeout}) {
   final log = <http.Request>[];
   var i = 0;
   final mock = MockClient((request) async {
@@ -55,19 +55,19 @@ Map<String, dynamic> _fehler(String meldung, String code, [Map<String, dynamic> 
     i += 1;
     if (antwort is http.Response) return antwort;
     if (antwort is Future<http.Response> Function()) return antwort();
-    return http.Response.bytes(utf8.encode(jsonEncode(antwort)), 200, headers: {'content-type': 'application/json'});
+    return http.Response.bytes(utf8.encode(jsonEncode(antwort)), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
   });
-  return (api: RechnungApi(apiKey: _apiKey, httpClient: mock, timeout: timeout), log: log);
+  return (api: InvoiceApi(apiKey: _apiKey, httpClient: mock, timeout: timeout), log: log);
 }
 
 Map<String, dynamic> _params(http.Request r) => (jsonDecode(r.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
 
 void main() {
   group('Vertrag', () {
-    final vertrag = _json('test/fixtures/vertrag/oberflaeche.json');
-    final listen = vertrag['rechnung'] as Map<String, dynamic>;
+    final vertrag = _json('test/fixtures/vertrag/surface.json');
+    final listen = vertrag['invoice'] as Map<String, dynamic>;
     final hier = <String, List<Object>>{
-      'rechnungAufrufe': rechnungAufrufe,
+      'invoiceEndpoints': invoiceCalls,
       'invoiceErrorCodes': invoiceErrorCodes,
       'creditNoteReasons': creditNoteReasons,
       'taxSchemes': taxSchemes,
@@ -83,7 +83,10 @@ void main() {
       'invoicePaymentMethods': invoicePaymentMethods,
       'itemKinds': itemKinds,
       'invoiceNoticeCodes': invoiceNoticeCodes,
-      'steuerfreieFaelle': steuerfreieFaelle,
+      'zeroRatedTaxSchemes': zeroRatedTaxSchemes,
+      'einvoiceMissingCodes': einvoiceMissingCodes,
+      'writeOffReasonCodes': writeOffReasonCodes,
+      'invoiceRequestErrorCodes': invoiceRequestErrorCodes,
     };
 
     test('jede Liste des Vertrags gibt es hier, und keine mehr', () {
@@ -92,42 +95,42 @@ void main() {
 
     test('jede Liste stimmt Wert für Wert und in der Reihenfolge', () {
       for (final e in hier.entries) {
-        expect(e.value, listen[e.key], reason: 'rechnung.${e.key}');
+        expect(e.value, listen[e.key], reason: 'invoice.${e.key}');
       }
     });
 
     test('jeder Rechnungs-Aufruf steht in Aufrufe.alle', () {
-      for (final name in rechnungAufrufe) {
+      for (final name in invoiceCalls) {
         expect(Aufrufe.alle, contains(name));
       }
     });
 
     test('dieselbe Paketversion wie die Anheftung', () {
-      final schema = _json('test/fixtures/vertrag/rechnung-api.schema.json');
-      expect(schema['paket'], vertrag['version']);
-      expect((schema['aufrufe'] as Map).keys.toList(), rechnungAufrufe);
+      final schema = _json('test/fixtures/vertrag/invoice-api.schema.json');
+      expect(schema['package'], vertrag['version']);
+      expect((schema['endpoints'] as Map).keys.toList(), invoiceCalls);
       expect(schema['codes'], invoiceErrorCodes);
     });
   });
 
   group('Beispielanfragen des Vertrags', () {
-    final ordner = Directory('test/fixtures/vertrag/rechnung-api-beispiele');
+    final ordner = Directory('test/fixtures/vertrag/invoice-api-examples');
     final gute = ordner
         .listSync()
         .whereType<File>()
         .where((f) => f.path.endsWith('.json'))
         .map((f) => jsonDecode(f.readAsStringSync()) as Map<String, dynamic>)
-        .where((b) => (b['erwartet'] as Map)['ok'] == true)
+        .where((b) => (b['expected'] as Map)['ok'] == true)
         .toList();
 
     test('es gibt gültige Beispiele für die Modelle', () {
-      expect(gute.map((b) => b['aufruf']).toSet(), containsAll(['issueInvoice', 'createCustomer', 'createCreditNote']));
+      expect(gute.map((b) => b['endpoint']).toSet(), containsAll(['issueInvoice', 'createCustomer', 'createCreditNote']));
     });
 
     test('jede gültige Anfrage geht unverändert an den Server', () async {
       for (final b in gute) {
-        final aufruf = b['aufruf'] as String;
-        final anfrage = b['anfrage'] as Map<String, dynamic>;
+        final aufruf = b['endpoint'] as String;
+        final anfrage = b['request'] as Map<String, dynamic>;
         final antwort = _erfolg({
           'invoice': _rechnung,
           'creditNote': _rechnung,
@@ -164,8 +167,8 @@ void main() {
           default:
             fail('Beispiel für $aufruf ohne Testweg');
         }
-        expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/$aufruf');
-        expect(_params(log.single), anfrage, reason: '${b['beschreibung']}');
+        expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/$aufruf');
+        expect(_params(log.single), anfrage, reason: '${b['description']}');
       }
     });
   });
@@ -225,8 +228,8 @@ void main() {
 
     test('cancelInvoice und createCreditNote lesen ihre Ergebnisse', () async {
       final (:api, log: _) = _apiMit([
-        _erfolg({'creditNote': {..._rechnung, 'docType': 'GU'}, 'original': {'id': 'inv1', 'status': 'cancelled'}, 'originalPaidCents': 500, 'replayed': false}),
-        _erfolg({'creditNote': {..._rechnung, 'docType': 'GU'}, 'remainingCents': 9600, 'replayed': false}),
+        _erfolg({'creditNote': {..._rechnung, 'docType': 'credit_note'}, 'original': {'id': 'inv1', 'status': 'cancelled'}, 'originalPaidCents': 500, 'replayed': false}),
+        _erfolg({'creditNote': {..._rechnung, 'docType': 'credit_note'}, 'remainingCents': 9600, 'replayed': false}),
       ]);
       final storno = await api.cancelInvoice(idempotencyKey: 's1', invoiceId: 'inv1', reason: 'cancellation');
       expect((storno.originalId, storno.originalStatus, storno.originalPaidCents), ('inv1', 'cancelled', 500));
@@ -237,7 +240,7 @@ void main() {
         items: [InvoiceItemInput(description: 'Nachlass', quantity: 1, unitPriceCents: 2000, vatRate: 20)],
       ));
       expect(gutschrift.remainingCents, 9600);
-      expect(gutschrift.creditNote.docType, 'GU');
+      expect(gutschrift.creditNote.docType, 'credit_note');
     });
 
     test('Kunden: anlegen, suchen, ändern', () async {
@@ -274,7 +277,7 @@ void main() {
     test('getInvoicePdf liefert die Bytes, ein Fehler kommt als Fachfehler', () async {
       final pdf = utf8.encode('%PDF-1.7\n…');
       final (:api, :log) = _apiMit([
-        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'}),
+        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf', 'kasseneck-api-version': 'v3'}),
         _fehler('Rechnung nicht gefunden.', 'invoice_not_found'),
       ]);
       final bytes = await api.getInvoicePdf('inv1');
@@ -283,10 +286,35 @@ void main() {
       await expectLater(api.getInvoicePdf('x'), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'invoice_not_found')));
     });
 
-    test('getInvoiceXml: Text aus dem Umschlag, Standardformat ubl', () async {
-      final (:api, :log) = _apiMit([_erfolg({'xml': '<Invoice/>', 'format': 'ubl', 'filename': 'rechnung-2026-0042.xml'})]);
-      expect(await api.getInvoiceXml('inv1'), '<Invoice/>');
-      expect(_params(log.single), {'invoiceId': 'inv1', 'format': 'ubl'});
+    test('getInvoiceXml: xml, format und filename wie gesendet, Standardformat ubl', () async {
+      final (:api, :log) = _apiMit([
+        _erfolg({'xml': '<Invoice/>', 'format': 'ubl', 'filename': 'invoice-2026-0042.xml'}),
+        _erfolg({'xml': '<rsm:CrossIndustryInvoice/>', 'format': 'cii', 'filename': 'invoice-2026-0042.xml'}),
+      ]);
+      final ubl = await api.getInvoiceXml('inv1');
+      expect((ubl.xml, ubl.format, ubl.filename), ('<Invoice/>', 'ubl', 'invoice-2026-0042.xml'));
+      expect(_params(log.first), {'invoiceId': 'inv1', 'format': 'ubl'});
+      final cii = await api.getInvoiceXml('inv1', format: 'cii');
+      expect((cii.format, cii.filename), ('cii', 'invoice-2026-0042.xml'));
+      expect(_params(log.last), {'invoiceId': 'inv1', 'format': 'cii'});
+    });
+
+    test('getInvoiceXml: fehlt xml, format oder filename, ist die Antwort kaputt', () async {
+      for (final kaputt in [
+        {'format': 'ubl', 'filename': 'invoice-1.xml'},
+        {'xml': '', 'format': 'ubl', 'filename': 'invoice-1.xml'},
+        {'xml': '<Invoice/>', 'filename': 'invoice-1.xml'},
+        {'xml': '<Invoice/>', 'format': 'UBL', 'filename': 'invoice-1.xml'},
+        {'xml': '<Invoice/>', 'format': 'ubl'},
+        {'xml': '<Invoice/>', 'format': 'ubl', 'filename': ''},
+      ]) {
+        final (:api, log: _) = _apiMit([_erfolg(kaputt)]);
+        await expectLater(
+          api.getInvoiceXml('inv1'),
+          throwsA(isA<KasseneckValidationError>().having((e) => e.toString(), 'Meldung', contains('getInvoiceXml'))),
+          reason: '$kaputt',
+        );
+      }
     });
 
     test('getInvoiceSetupStatus: ohne Parameter, Lücken gelesen', () async {
@@ -324,40 +352,40 @@ void main() {
       const gutschrift = CreditNoteRequest(idempotencyKey: 'g', invoiceId: 'i', reason: 'other', items: []);
 
       final e1 = await api.createCreditNote(gutschrift).then<Object?>((_) => null, onError: (Object e) => e);
-      expect(rechnungFehlerCode(e1), 'credit_exceeds_invoice');
+      expect(invoiceErrorCode(e1), 'credit_exceeds_invoice');
       expect((e1 as KasseneckApiError).details['remainingCents'], {'total': 6000});
 
       final e2 = await api.createCreditNote(gutschrift).then<Object?>((_) => null, onError: (Object e) => e);
-      expect(rechnungFehlerCode(e2), 'validation');
-      expect(rechnungFeldFehler(e2).single.field, 'items[0].vatRate');
+      expect(invoiceErrorCode(e2), 'validation');
+      expect(invoiceFieldErrors(e2).single.field, 'items[0].vatRate');
 
       final e3 = await api.createCreditNote(gutschrift).then<Object?>((_) => null, onError: (Object e) => e);
-      expect(rechnungFehlerCode(e3), 'invoice_setup_incomplete');
+      expect(invoiceErrorCode(e3), 'invoice_setup_incomplete');
       expect(((e3 as KasseneckApiError).details['missing'] as List).single['requirement'], 'number_format');
 
       final e4 = await api.createCreditNote(gutschrift).then<Object?>((_) => null, onError: (Object e) => e);
       expect(e4, isA<KasseneckApiError>());
-      expect(rechnungFehlerCode(e4), isNull, reason: 'ein Code außerhalb des Katalogs ist kein Rechnungs-Fehlercode');
-      expect(rechnungFeldFehler(Exception('fremd')), isEmpty);
+      expect(invoiceErrorCode(e4), isNull, reason: 'ein Code außerhalb des Katalogs ist kein Rechnungs-Fehlercode');
+      expect(invoiceFieldErrors(Exception('fremd')), isEmpty);
     });
 
     test('Schlüssel: leer, Partner-Schlüssel und Kassen-Token werden ohne Netz abgewiesen, ohne den Wert zu nennen', () {
       for (final falsch in ['', 'pk_live_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345', 'cb_live_ZmFsc2NoZXJUb2tlbg']) {
         expect(
-          () => RechnungApi(apiKey: falsch),
+          () => InvoiceApi(apiKey: falsch),
           throwsA(isA<KasseneckValidationError>().having((e) => '$e'.contains(falsch) && falsch.isNotEmpty, 'nennt Wert', isFalse)),
         );
       }
-      expect(() => RechnungApi(apiKey: '0a1b2c3d4e5f-uid123'), returnsNormally, reason: 'Altformate bleiben gültig');
+      expect(() => InvoiceApi(apiKey: '0a1b2c3d4e5f-uid123'), returnsNormally, reason: 'Altformate bleiben gültig');
     });
 
     test('Zeitablauf ist ein eigener Grund, kein Netzfehler', () async {
       final (:api, log: _) = _apiMit([
-        () => Future<http.Response>.delayed(const Duration(milliseconds: 200), () => http.Response('{}', 200)),
+        () => Future<http.Response>.delayed(const Duration(milliseconds: 200), () => http.Response('{}', 200, headers: const {'kasseneck-api-version': 'v3'})),
       ], timeout: const Duration(milliseconds: 20));
       await expectLater(
         api.getInvoiceSetupStatus(),
-        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)),
       );
     });
   });
@@ -374,7 +402,7 @@ void main() {
       ]);
       final marken = await api.listBrands();
       expect(_params(log.single), <String, dynamic>{});
-      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/listBrands');
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/listBrands');
       expect(marken.map((m) => (m.id, m.name, m.isDefault)).toList(), [('m1', 'Haus', true), ('m2', 'Zweit', false)]);
     });
 
@@ -386,8 +414,8 @@ void main() {
     test('getInvoicePdf: language geht nur mit, wenn gesetzt', () async {
       final pdf = utf8.encode('%PDF-1.7\n');
       final (:api, :log) = _apiMit([
-        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'}),
-        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'}),
+        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf', 'kasseneck-api-version': 'v3'}),
+        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf', 'kasseneck-api-version': 'v3'}),
       ]);
       await api.getInvoicePdf('inv1');
       await api.getInvoicePdf('inv1', language: 'de');
@@ -504,7 +532,7 @@ void main() {
       })]);
       final r = await api.recordInvoicePayment(const RecordPaymentRequest(
         idempotencyKey: 'zahlung-1', invoiceId: 'inv1', method: 'transfer', amountCents: 12000, paidAt: '2026-09-20'));
-      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/recordInvoicePayment');
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/recordInvoicePayment');
       expect(_params(log.single), {
         'idempotencyKey': 'zahlung-1', 'invoiceId': 'inv1', 'method': 'transfer', 'amountCents': 12000, 'paidAt': '2026-09-20',
       });
@@ -563,11 +591,11 @@ void main() {
       ],
     );
     final vorschau = {
-      'docType': 'RE',
+      'docType': 'invoice',
       'invoiceDate': '2026-09-16',
       'dueDate': '2026-09-30',
       'customerId': 'k1',
-      'taxScheme': 'igLieferung',
+      'taxScheme': 'intraCommunitySupply',
       'taxSchemeReason': 'customer_country_eu_with_vat_id',
       'reverseChargeReason': null,
       'taxCountry': 'AT',
@@ -595,14 +623,14 @@ void main() {
         }),
       ]);
       final ergebnis = await api.previewInvoice(anfrage);
-      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/issueInvoice');
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/issueInvoice');
       expect(_params(log.single), {...anfrage.toJson(), 'dryRun': true});
       expect(anfrage.toJson().containsKey('dryRun'), isFalse, reason: 'die Anfrage selbst kennt kein dryRun');
 
       final p = ergebnis.preview;
-      expect((p.docType, p.invoiceDate, p.dueDate, p.customerId), ('RE', '2026-09-16', '2026-09-30', 'k1'));
+      expect((p.docType, p.invoiceDate, p.dueDate, p.customerId), ('invoice', '2026-09-16', '2026-09-30', 'k1'));
       expect((p.taxScheme, p.taxSchemeReason, p.reverseChargeReason, p.taxCountry),
-          ('igLieferung', 'customer_country_eu_with_vat_id', null, 'AT'));
+          ('intraCommunitySupply', 'customer_country_eu_with_vat_id', null, 'AT'));
       expect((p.priceMode, p.language, p.brandId, p.brandName), ('gross', 'en', 'm1', 'Haus'));
       expect(p.einvoice?.level, 'full');
       expect(p.einvoice?.formats, ['UBL', 'Factur-X']);
@@ -643,16 +671,16 @@ void main() {
 
     test('previewInvoice: ein Fachfehler kommt wie beim Ausstellen', () async {
       final (:api, log: _) = _apiMit([
-        _fehler('Der Steuerfall passt nicht.', 'tax_scheme_mismatch', {'expected': 'igLieferung'}),
+        _fehler('Der Steuerfall passt nicht.', 'tax_scheme_mismatch', {'expected': 'intraCommunitySupply'}),
       ]);
       final e = await api.previewInvoice(anfrage).then<Object?>((_) => null, onError: (Object e) => e);
-      expect(rechnungFehlerCode(e), 'tax_scheme_mismatch');
-      expect((e as KasseneckApiError).details['expected'], 'igLieferung');
+      expect(invoiceErrorCode(e), 'tax_scheme_mismatch');
+      expect((e as KasseneckApiError).details['expected'], 'intraCommunitySupply');
     });
 
     test('dryRun steht im Vertrag von issueInvoice', () {
-      final schema = _json('test/fixtures/vertrag/rechnung-api.schema.json');
-      final anfrageSchema = ((schema['aufrufe'] as Map)['issueInvoice'] as Map)['anfrage'] as Map;
+      final schema = _json('test/fixtures/vertrag/invoice-api.schema.json');
+      final anfrageSchema = ((schema['endpoints'] as Map)['issueInvoice'] as Map)['request'] as Map;
       expect((anfrageSchema['properties'] as Map)['dryRun'], {'type': 'boolean'});
       expect(anfrageSchema['required'] as List, isNot(contains('dryRun')));
     });

@@ -1,0 +1,8 @@
+{
+  "endpoint": "getInvoiceSetupStatus",
+  "description": "Einrichtung abfragen, ohne Parameter",
+  "request": {},
+  "expected": {
+    "ok": true
+  }
+}

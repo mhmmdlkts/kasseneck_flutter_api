@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 import 'package:kasseneck_api/register.dart';
 
 /// Kopplung und Anmeldung eines Kassengeräts — der Zwilling von
@@ -34,7 +34,7 @@ const pin = '1234';
     return http.Response(
       antwort is String ? antwort : jsonEncode(antwort),
       status,
-      headers: {'content-type': 'application/json; charset=utf-8'},
+      headers: {'content-type': 'application/json; charset=utf-8', 'kasseneck-api-version': 'v3'},
     );
   });
   return (client: RegisterClient(httpClient: mock), log: log, bodies: bodies);
@@ -47,8 +47,8 @@ const kopplungsAntwort = {
   'deviceSecret': deviceSecret,
   'ownerUid': ownerUid,
   'cashregisterId': cashregisterId,
-  'betrieb': 'Bäckerei Muster',
-  'kasse': 'Theke',
+  'companyName': 'Bäckerei Muster',
+  'cashregisterLabel': 'Theke',
 };
 
 const anmeldeAntwort = {
@@ -79,7 +79,7 @@ void main() {
       final geraet = await f.client.pairRegisterDevice(code: ' abcd1234 ', label: 'Theke');
 
       expect(f.log.single.method, 'POST');
-      expect(f.log.single.url.toString(), 'https://kasse.kasseneck.at/api/pairRegisterDevice');
+      expect(f.log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/pairRegisterDevice');
       final rumpf = jsonDecode(f.bodies.single)['params'] as Map<String, dynamic>;
       expect(rumpf['code'], ' abcd1234 ', reason: 'das Backend beschneidet selbst — der Client rät nicht am Format herum');
       expect(rumpf['label'], 'Theke');
@@ -131,13 +131,13 @@ void main() {
       final f = clientWith(erfolg({
         'users': [
           {'id': 'u1', 'name': 'Anna', 'kind': 'person'},
-          {'id': 'u2', 'name': '', 'kind': 'device', 'altbestand': true},
+          {'id': 'u2', 'name': '', 'kind': 'device', 'pinPolicyOutdated': true},
           {'id': 'u3', 'name': 'Neu', 'kind': 'kuenftig'},
         ],
-        'policy': {'stellen': 4, 'zeichen': 'ziffern'},
-        'loginMode': 'auswahl',
-        'standortsperre': true,
-        'settings': {'betrieb': {}, 'geraet': {}},
+        'policy': {'length': 4, 'charset': 'digits'},
+        'loginMode': 'select_user',
+        'locationLock': true,
+        'settings': {'business': {}, 'device': {}},
       }));
 
       final antwort = await f.client.listRegisterUsersForDevice(
@@ -149,17 +149,17 @@ void main() {
       expect(antwort.users.map((u) => u.id), ['u1', 'u2', 'u3']);
       expect(antwort.users[0].kind, RegisterUserKind.person);
       expect(antwort.users[1].kind, RegisterUserKind.device);
-      expect(antwort.users[1].altbestand, isTrue);
+      expect(antwort.users[1].pinPolicyOutdated, isTrue);
       expect(antwort.users[2].kind, RegisterUserKind.person, reason: 'unbekannte Art gilt als Person');
-      expect(antwort.users[0].altbestand, isFalse);
-      expect(antwort.policy?.stellen, 4);
-      expect(antwort.policy?.zeichen, 'ziffern');
-      expect(antwort.loginMode, RegisterLoginMode.auswahl);
-      expect(antwort.standortsperre, isTrue);
+      expect(antwort.users[0].pinPolicyOutdated, isFalse);
+      expect(antwort.policy?.length, 4);
+      expect(antwort.policy?.charset, 'digits');
+      expect(antwort.loginMode, RegisterLoginMode.selectUser);
+      expect(antwort.locationLock, isTrue);
     });
 
     test('ohne brauchbare Regel bleibt policy null; unbekannter Modus gilt als Auswahl', () async {
-      for (final regel in [null, {}, {'stellen': 'vier'}, {'stellen': 4}, {'zeichen': 'ziffern'}]) {
+      for (final regel in [null, {}, {'length': 'vier'}, {'length': 4}, {'charset': 'digits'}, {'stellen': 4, 'zeichen': 'ziffern'}]) {
         final f = clientWith(erfolg({'users': [], 'policy': regel, 'loginMode': 'was-neues'}));
         final antwort = await f.client.listRegisterUsersForDevice(
           ownerUid: ownerUid,
@@ -167,7 +167,7 @@ void main() {
           deviceSecret: deviceSecret,
         );
         expect(antwort.policy, isNull, reason: 'Regel $regel');
-        expect(antwort.loginMode, RegisterLoginMode.auswahl);
+        expect(antwort.loginMode, RegisterLoginMode.selectUser);
       }
     });
 
@@ -338,16 +338,16 @@ void einstellungen() {
     final f = clientWith(erfolg({
       'users': [],
       'settings': {
-        'betrieb': {'zahlKarte': true, 'kartenanbieter': 'hobex'},
-        'geraet': {'layout': 'vollbild'},
+        'business': {'payCard': true, 'cardProvider': 'hobex'},
+        'device': {'layout': 'fullscreen'},
       },
     }));
     final antwort = await f.client.listRegisterUsersForDevice(
       ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
     );
-    expect(antwort.settings.betrieb.kartenAktiv, isTrue);
-    expect(antwort.settings.geraet.layout, KasseLayout.vollbild);
-    expect(antwort.settings.betrieb.zahlBar, isTrue, reason: 'ungenanntes bleibt beim Standard');
+    expect(antwort.settings.business.cardPaymentEnabled, isTrue);
+    expect(antwort.settings.device.layout, PosLayout.fullscreen);
+    expect(antwort.settings.business.payCash, isTrue, reason: 'ungenanntes bleibt beim Standard');
   });
 
   test('ohne Einstellungen in der Antwort gelten die Standardwerte', () async {
@@ -355,7 +355,7 @@ void einstellungen() {
     final antwort = await f.client.listRegisterUsersForDevice(
       ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
     );
-    expect(antwort.settings.toJson(), const KasseSettings.standard().toJson());
+    expect(antwort.settings.toJson(), const PosSettings.standard().toJson());
   });
 }
 
@@ -363,16 +363,17 @@ void basisadresse() {
   test('die Vorgabe zeigt auf die Kassen-Adresse, nicht auf die api_key-Schnittstelle', () async {
     // Unter api.kasseneck.at/v1 antwortet auf diese Aufrufe eine HTML-404 —
     // die Kopplung schlug damit mit einer nichtssagenden Meldung fehl.
-    expect(kRegisterBaseUrl, 'https://kasse.kasseneck.at/api');
+    expect(kRegisterBaseUrl, 'https://kasse.kasseneck.at/api/v3');
     final log = <http.Request>[];
     final client = RegisterClient(
       httpClient: MockClient((r) async {
         log.add(r);
-        return http.Response(jsonEncode(erfolg(kopplungsAntwort)), 200);
+        return http.Response(jsonEncode(erfolg(kopplungsAntwort)), 200,
+            headers: const {'content-type': 'application/json; charset=utf-8', 'kasseneck-api-version': 'v3'});
       }),
     );
     await client.pairRegisterDevice(code: 'ABCD1234');
-    expect(log.single.url.toString(), 'https://kasse.kasseneck.at/api/pairRegisterDevice');
+    expect(log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/pairRegisterDevice');
   });
 
   group('Zeitablauf ist etwas anderes als ein Netzfehler', () {
@@ -390,7 +391,7 @@ void basisadresse() {
       await expectLater(
         client.pairRegisterDevice(code: 'ABCD1234'),
         throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)
+            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)
             .having((e) => e.causeType, 'causeType', 'TimeoutException')),
       );
     });
@@ -403,7 +404,7 @@ void basisadresse() {
       await expectLater(
         client.pairRegisterDevice(code: 'ABCD1234'),
         throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.reason, 'reason', KasseneckHttpError.netz)
+            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonNetwork)
             .having((e) => e.toString(), 'toString', isNot(contains(pin)))),
       );
     });
@@ -418,7 +419,7 @@ void basisadresse() {
       final f = clientWith(erfolg({
         'licenses': 2,
         'sessions': [
-          {'id': 's1', 'deviceId': 'd1', 'deviceLabel': 'Theke', 'startedAt': 1000, 'expiresAt': 2000, 'selbst': true, 'userName': 'Anna'},
+          {'id': 's1', 'deviceId': 'd1', 'deviceLabel': 'Theke', 'startedAt': 1000, 'expiresAt': 2000, 'own': true, 'userName': 'Anna'},
           {'id': 's2', 'deviceLabel': '', 'userName': ''},
         ],
       }));
@@ -426,12 +427,12 @@ void basisadresse() {
       expect(stand.licenses, 2);
       expect(stand.sessions.map((s) => s.id), ['s1', 's2']);
       expect(stand.sessions[0].deviceLabel, 'Theke');
-      expect(stand.sessions[0].selbst, isTrue);
+      expect(stand.sessions[0].own, isTrue);
       expect(stand.sessions[0].userName, 'Anna');
       expect(stand.sessions[1].deviceId, isNull);
-      expect(stand.sessions[1].deviceLabel, 'Kasse', reason: 'leeres Etikett faellt auf den Standard');
+      expect(stand.sessions[1].deviceLabel, isNull, reason: 'leeres Etikett ist kein Etikett (§11.7.1)');
       expect(stand.sessions[1].startedAt, isNull);
-      expect(stand.sessions[1].selbst, isFalse);
+      expect(stand.sessions[1].own, isFalse);
       expect(stand.sessions[1].userName, isNull, reason: 'leerer Name ist kein Name');
       final Map<String, dynamic> body = jsonDecode(f.log.single.body);
       expect(body['params'], {'ownerUid': ownerUid, 'deviceId': deviceId, 'deviceSecret': deviceSecret});

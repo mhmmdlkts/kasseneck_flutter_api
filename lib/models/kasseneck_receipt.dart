@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:kasseneck_api/models/beleg_blatt.dart' show LogoStufe;
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart' show SheetLogoSize;
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart' show KasseneckApi, KasseneckReceiptFormatError;
@@ -19,6 +19,7 @@ import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import 'kasseneck_item.dart';
+import 'registration_info.dart';
 import 'keck_payment.dart';
 import 'package:my_pos/enums/my_pos_print_response.dart';
 
@@ -32,8 +33,12 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   String companyName;
   String phone;
   bool isSmallBusiness;
-  String? uid;
-  String taxnr;
+
+  /// UID-Nummer (`vatId`, frueher `uid`).
+  String? vatId;
+
+  /// Steuernummer (`taxNumber`, frueher `taxnr`).
+  String taxNumber;
   String street;
   String zip;
   String city;
@@ -84,14 +89,14 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Backend als Metadatum `kreiseck_logo` mitliefert.
   bool showKreiseckLogo;
 
-  /// Groesse des Firmenlogos am Beleg (Kasse-Einstellung `logoSkala` des
-  /// Betriebs, vom Backend als Metadatum `logo_skala` mitgeliefert). Bon und
+  /// Groesse des Firmenlogos am Beleg (Kasse-Einstellung `logoScale` des
+  /// Betriebs, vom Backend als Metadatum `logo_scale` mitgeliefert). Bon und
   /// Bildschirm setzen das Logo in dieser Stufe; fehlt sie, gilt M.
-  LogoStufe logoStufe;
+  SheetLogoSize logoScale;
 
   /// Zeilenmodell des Backends (Kopf/Fuß wie beim Ausstellen, Belegart-
   /// Aufdruck, Regelwerk des Belegs); null bei altem Backend.
-  BelegLayout? layout;
+  ReceiptLayout? layout;
 
   /// Zeigt das gelieferte Zeilenmodell alles, was dieser Beleg hergibt?
   ///
@@ -113,20 +118,20 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// dann können dieser Getter, `PrintPaper.setKeckReceipt` und
   /// `KeckReceiptWidget` verschwinden, und es gibt wirklich nur einen Bauer.
   ///
-  /// Mit Zahlungsliste zaehlt jeder Kartenblock aus [kartenzahlungen]: steht
+  /// Mit Zahlungsliste zaehlt jeder Kartenblock aus [cardPayments]: steht
   /// derselbe Anbieter zweimal auf dem Beleg, muss sein Kopf auch zweimal im
   /// Layout stehen -- ein Paket vor der Aufschluesselung zeigte nur den Block
   /// der alten Einzelfelder, und der zweite Kartenbeleg fiele stumm weg.
-  bool get layoutIstVollstaendig {
-    final BelegLayout? l = layout;
+  bool get isLayoutComplete {
+    final ReceiptLayout? l = layout;
     if (l == null) return false;
     final Map<String, int> noetig = {};
-    for (final k in kartenzahlungen) {
-      final String? ueberschrift = kartenblockUeberschrift[k.anbieter];
+    for (final k in cardPayments) {
+      final String? ueberschrift = cardBlockHeadings[k.provider];
       if (ueberschrift != null) noetig[ueberschrift] = (noetig[ueberschrift] ?? 0) + 1;
     }
     for (final MapEntry(key: ueberschrift, value: anzahl) in noetig.entries) {
-      final int vorhanden = l.lines.where((z) => z is BelegText && z.text.contains(ueberschrift)).length;
+      final int vorhanden = l.lines.where((z) => z is LayoutTextLine && z.text.contains(ueberschrift)).length;
       if (vorhanden < anzahl) return false;
     }
     return true;
@@ -141,7 +146,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// ohne Terminaldaten neben gesetzten Altfeldern: dort traegt der alte
   /// Block, wie ohne Liste. `custom` bleibt drin (der Bauer entscheidet, dass
   /// er nichts zeigt), ein unbekannter Anbieter nicht.
-  List<({CreditCardProvider anbieter, Map<String, dynamic> daten, String? kennung})> get kartenzahlungen {
+  List<({CreditCardProvider provider, Map<String, dynamic> data, String? paymentId})> get cardPayments {
     final List<KeckPayment>? zahlungen = payments;
     final bool altfelderTragen = zahlungen != null &&
         zahlungen.length <= 1 &&
@@ -152,23 +157,42 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       return [
         for (final z in zahlungen)
           if (z.provider != null && z.providerData != null)
-            (anbieter: z.provider!, daten: z.providerData!, kennung: z.providerPaymentId),
+            (provider: z.provider!, data: z.providerData!, paymentId: z.providerPaymentId),
       ];
     }
     final CreditCardProvider? anbieter = creditCardProvider;
     final Map<String, dynamic>? daten = cardPaymentData;
     if (anbieter == null || daten == null) return const [];
-    return [(anbieter: anbieter, daten: daten, kennung: cardPaymentId)];
+    return [(provider: anbieter, data: daten, paymentId: cardPaymentId)];
   }
-  /// Beleg einer Testumgebung (Aufdruck TESTKASSE).
-  bool testKasse;
-  /// Produktionskonto mit Test-Signatureinheit (Aufdruck TESTSIGNATUR).
-  bool testSignatur;
-  /// Kennung der eingefrorenen Kopf/Fuß-Version.
-  String? kopfId;
+  /// Beleg einer Testumgebung (Aufdruck TESTKASSE), Drahtfeld `testCashregister`.
+  bool testCashregister;
+  /// Produktionskonto mit Test-Signatureinheit (Aufdruck TESTSIGNATUR),
+  /// Drahtfeld `testSignature`.
+  bool testSignature;
+  /// Kennung der eingefrorenen Kopf/Fuß-Version (`headerVersionId`).
+  String? headerVersionId;
+
+  /// Regelwerk, nach dem der Beleg ausgestellt wurde (`receipt.layoutRuleset`);
+  /// fehlt bei Altbelegen.
+  int? layoutRuleset;
+
+  /// Registrierdaten fuer den Block „Prüfangaben“ (nur Nullbelege).
+  RegistrationInfo? registrationInfo;
+
+  /// Nur am Storno-Beleg: das Original (Kennung, Volltext-Kennung, Zeitpunkt).
+  CancellationOf? cancellationOf;
+
+  /// Nur am Nullbeleg: die Art (`monthly`, `annual`, `annual_replacement`,
+  /// `final`, `outage_end`); bestimmt den Aufdruck (MONATSBELEG …).
+  String? zeroKind;
+
+  /// Nur am Storno-Beleg: der Grund, Code aus `cancellationReasons` (englisch, wie
+  /// unter `/v3`; ein unbekannter kuenftiger Code bleibt roh stehen).
+  String? cancellationReason;
 
   /// Was von diesem Beleg schon storniert (oder gerade reserviert) ist — roh,
-  /// wie das Backend es führt. Gedeutet wird es in `restmengen`; hier steht es
+  /// wie das Backend es führt. Gedeutet wird es in `remainingQuantities`; hier steht es
   /// nur, damit der Storno-Dialog Reste zeigen kann, bevor er den Server fragt.
   List<Map<String, dynamic>> cancellations;
 
@@ -187,8 +211,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     required this.companyName,
     required this.phone,
     required this.isSmallBusiness,
-    required this.uid,
-    required this.taxnr,
+    required this.vatId,
+    required this.taxNumber,
     required this.street,
     required this.zip,
     required this.city,
@@ -209,18 +233,23 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.signatureSuccess,
     this.customProjectId,
     this.showKreiseckLogo = false,
-    this.logoStufe = LogoStufe.m,
+    this.logoScale = SheetLogoSize.m,
     this.layout,
-    this.testKasse = false,
-    this.testSignatur = false,
-    this.kopfId,
+    this.testCashregister = false,
+    this.testSignature = false,
+    this.headerVersionId,
+    this.layoutRuleset,
+    this.registrationInfo,
+    this.cancellationOf,
+    this.zeroKind,
+    this.cancellationReason,
     this.cancellations = const [],
   });
 
   factory KasseneckReceipt.create({
     required Map<String, dynamic> receipt,
-    required String? uid,
-    required String taxnr,
+    required String? vatId,
+    required String taxNumber,
     required bool isSmallBusiness,
     required String phone,
     required String companyName,
@@ -234,11 +263,12 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     String? footer4,
     required List<String> thanksMessage,
     bool showKreiseckLogo = false,
-    LogoStufe logoStufe = LogoStufe.m,
-    BelegLayout? layout,
-    bool testKasse = false,
-    bool testSignatur = false,
-    String? kopfId,
+    SheetLogoSize logoScale = SheetLogoSize.m,
+    ReceiptLayout? layout,
+    bool testCashregister = false,
+    bool testSignature = false,
+    String? headerVersionId,
+    RegistrationInfo? registrationInfo,
   }) {
     // Zuerst die Kennung: geht danach etwas schief, ist sie das Einzige,
     // womit sich der bereits signierte Beleg nachholen laesst.
@@ -271,7 +301,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       cardPaymentData: receipt['cardPaymentData'] is Map
           ? Map<String, dynamic>.from(receipt['cardPaymentData'] as Map)
           : null,
-      payments: KeckPayment.listeAus(receipt['payments']),
+      payments: KeckPayment.listFromJson(receipt['payments']),
       customerDetails: List<String>.from(receipt['customerDetails']?.toString().split('\n')??[]),
       legalMessage: List<String>.from(receipt['legalMessage']?.toString().split('\n')??[]),
       signatureSuccess: receipt['signatureSuccess'] is bool ? receipt['signatureSuccess'] as bool : null,
@@ -279,8 +309,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       companyName: companyName,
       phone: phone,
       isSmallBusiness: isSmallBusiness,
-      uid: uid,
-      taxnr: taxnr,
+      vatId: vatId,
+      taxNumber: taxNumber,
       street: street,
       zip: zip,
       city: city,
@@ -295,15 +325,27 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
           if (e is Map) Map<String, dynamic>.from(e),
       ],
       showKreiseckLogo: showKreiseckLogo,
-      logoStufe: logoStufe,
+      logoScale: logoScale,
       layout: layout,
-      testKasse: testKasse,
-      testSignatur: testSignatur,
-      kopfId: kopfId,
+      testCashregister: testCashregister,
+      testSignature: testSignature,
+      headerVersionId: headerVersionId ?? _nichtLeer(receipt['headerVersionId']),
+      layoutRuleset: receipt['layoutRuleset'] is num ? (receipt['layoutRuleset'] as num).toInt() : null,
+      registrationInfo: registrationInfo ?? RegistrationInfo.fromJson(receipt['registrationInfo']),
+      cancellationOf: CancellationOf.fromJson(receipt['cancellationOf']),
+      zeroKind: _nichtLeer(receipt['zeroKind']),
+      cancellationReason: _nichtLeer(receipt['cancellationReason']),
     );
   }
 
 
+  /// Liest `data` von `createReceipt`/`getReceipt` unter `/v3` (bzw. die
+  /// Form aus [toJson]): Beleg unter `receipt`, daneben Kopf und Fuss
+  /// (`company`, `vatId`, `taxNumber`, …), `testCashregister`,
+  /// `testSignature`, `headerVersionId`, `registrationInfo`, `logo_scale` und
+  /// das Server-Layout. Die deutschen Namen aus 0.x (`uid`, `taxnr`,
+  /// `testCashregister`, `logo_skala` …) liest diese Stelle nicht mehr; eine in 9.x
+  /// gespeicherte Form geht vorher durch [migrateStoredReceiptJson].
   factory KasseneckReceipt.fromJson(Map<String, dynamic> json) {
     final roh = json['receipt'];
     if (roh is! Map) {
@@ -314,8 +356,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     return KasseneckReceipt.create(
       receipt: Map<String, dynamic>.from(roh),
       isSmallBusiness: json['is_small_business'] == true,
-      uid: json['uid'] is String ? json['uid'] as String : null,
-      taxnr: _text(json['taxnr']),
+      vatId: json['vatId'] is String ? json['vatId'] as String : null,
+      taxNumber: _text(json['taxNumber']),
       phone: _text(json['phone']),
       companyName: _text(json['company']),
       street: _text(json['street']),
@@ -328,11 +370,12 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       logoUrl: json['logo_url'] is String ? json['logo_url'] as String : null,
       thanksMessage: List<String>.from(json['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: json['kreiseck_logo'] == true,
-      logoStufe: LogoStufe.ausKuerzel(json['logo_skala'] is String ? json['logo_skala'] as String : null),
-      layout: BelegLayout.fromJson(json['layout']),
-      testKasse: json['testKasse'] == true,
-      testSignatur: json['testSignatur'] == true,
-      kopfId: json['kopfId'] is String ? json['kopfId'] as String : null,
+      logoScale: SheetLogoSize.fromCode(json['logo_scale'] is String ? json['logo_scale'] as String : null),
+      layout: ReceiptLayout.fromJson(json['layout']),
+      testCashregister: json['testCashregister'] == true,
+      testSignature: json['testSignature'] == true,
+      headerVersionId: _nichtLeer(json['headerVersionId']),
+      registrationInfo: RegistrationInfo.fromJson(json['registrationInfo']),
     );
   }
 
@@ -360,6 +403,13 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'legalMessage': legalMessage.join('\n'),
       'signatureSuccess': signatureSuccess,
       'customProjectId': customProjectId,
+      'headerVersionId': ?headerVersionId,
+      'layoutRuleset': ?layoutRuleset,
+      'registrationInfo': ?registrationInfo?.toJson(),
+      'cancellationOf': ?cancellationOf?.toJson(),
+      'zeroKind': ?zeroKind,
+      'cancellationReason': ?cancellationReason,
+      if (cancellations.isNotEmpty) 'cancellations': cancellations,
     };
   }
 
@@ -367,8 +417,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   Map<String, dynamic> toMetadataJson() {
     return {
       'is_small_business': isSmallBusiness,
-      'uid': uid,
-      'taxnr': taxnr,
+      'vatId': vatId,
+      'taxNumber': taxNumber,
       'phone': phone,
       'company': companyName,
       'street': street,
@@ -381,15 +431,21 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'logo_url': logoUrl,
       'thanks_message': thanksMessage.join(r'\n'),
       'kreiseck_logo': showKreiseckLogo,
-      'logo_skala': logoStufe.kuerzel,
+      'logo_scale': logoScale.code,
+      'testCashregister': testCashregister,
+      'testSignature': testSignature,
+      'headerVersionId': ?headerVersionId,
+      'registrationInfo': ?registrationInfo?.toJson(),
     };
   }
 
-// Kombiniert — für lokale Speicherung (Isar)
+// Kombiniert – für lokale Speicherung (Isar), in der Form von `/v3`;
+// [KasseneckReceipt.fromJson] liest sie zurueck.
   Map<String, dynamic> toJson() {
     return {
       'receipt': toReceiptJson(),
       ...toMetadataJson(),
+      'layout': ?layout?.toJson(),
     };
   }
 
@@ -399,8 +455,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     }
     return KasseneckReceipt.create(
       receipt: Map<String, dynamic>.from(receipt),
-      uid: metadata['uid'] is String ? metadata['uid'] as String : null,
-      taxnr: _text(metadata['taxnr']),
+      vatId: metadata['vatId'] is String ? metadata['vatId'] as String : null,
+      taxNumber: _text(metadata['taxNumber']),
       isSmallBusiness: metadata['is_small_business'] == true,
       phone: _text(metadata['phone']),
       companyName: _text(metadata['company']),
@@ -414,7 +470,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       logoUrl: metadata['logo_url'] is String ? metadata['logo_url'] as String : null,
       thanksMessage: List<String>.from(metadata['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: metadata['kreiseck_logo'] == true,
-      logoStufe: LogoStufe.ausKuerzel(metadata['logo_skala'] is String ? metadata['logo_skala'] as String : null),
+      logoScale: SheetLogoSize.fromCode(metadata['logo_scale'] is String ? metadata['logo_scale'] as String : null),
     );
   }
 
@@ -435,19 +491,19 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Konstruktor selbst und ein aus Isar zurueckgelesener Beleg — und damit
   /// sie nicht veraltet, wenn der Kopf nachgetragen wird.
   ///
-  /// **Nur die Bezeichnung des leistenden Unternehmers** steht hier: `taxnr`,
+  /// **Nur die Bezeichnung des leistenden Unternehmers** steht hier: `taxNumber`,
   /// Anschrift und Fusszeilen sind auf einem Beleg keine Pflichtangaben (erst
   /// auf einer Rechnung nach § 11 UStG). Die Signatur- und Identitaetsfelder
   /// laufen weiter ueber `_pflichttext` und werfen.
-  List<String> get fehlendePflichtangaben => [
+  List<String> get missingMandatoryFields => [
         // § 132a Abs. 3 Z 1 BAO: eindeutige Bezeichnung des liefernden oder
         // leistenden Unternehmers.
         if (companyName.trim().isEmpty) 'company',
       ];
 
   /// `false`, wenn dem Beleg eine Pflichtangabe fehlt — siehe
-  /// [fehlendePflichtangaben].
-  bool get pflichtangabenVollstaendig => fehlendePflichtangaben.isEmpty;
+  /// [missingMandatoryFields].
+  bool get hasMandatoryFields => missingMandatoryFields.isEmpty;
 
   String get downloadUrl => '${KasseneckApi.downloadBaseUrl}/$fullReceiptId';
 
@@ -515,19 +571,19 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   Future printReceiptWifi() => KeckPrinterService.printReceiptWifi(this);
   Future printReceiptBluetooth(
           {QrPrintMode qrMode = QrPrintMode.imageRaster,
-          QrModulGroesse qrGroesse = QrModulGroesse.auto}) =>
-      KeckPrinterService.printReceiptBluetooth(this, qrMode: qrMode, qrGroesse: qrGroesse);
+          QrModuleSize qrModuleSize = QrModuleSize.auto}) =>
+      KeckPrinterService.printReceiptBluetooth(this, qrMode: qrMode, qrModuleSize: qrModuleSize);
 
   Future<List<Uint8List>> getPrintBytes(
           {required KeckPaperSize paperSize,
           QrPrintMode qrMode = QrPrintMode.imageRaster,
-          QrModulGroesse qrGroesse = QrModulGroesse.auto}) =>
+          QrModuleSize qrModuleSize = QrModuleSize.auto}) =>
       KeckPrinterService.getBytesFromReceipt(this, paperSize,
-          qrMode: qrMode, qrGroesse: qrGroesse);
+          qrMode: qrMode, qrModuleSize: qrModuleSize);
 
   bool get isSigFailed => !RKSVService.isSigSuccess(sig);
 
-  String get taxInfo => (uid?.isNotEmpty??false)?uid!:taxnr;
+  String get taxInfo => (vatId?.isNotEmpty ?? false) ? vatId! : taxNumber;
 
   /// Summe der eingeloesten Promo-Gutscheine in **Cent** (exakt).
   int get totalPromoVoucherValueCents {
@@ -629,3 +685,61 @@ DateTime _zeitpunkt(Map<String, dynamic> receipt, String? kennung) {
 
 /// Ein rein darstellendes Textfeld — siehe die Grenze oben.
 String _text(Object? wert) => wert is String ? wert : '';
+
+/// Ein Text, der nur zaehlt, wenn er nicht leer ist.
+String? _nichtLeer(Object? wert) => wert is String && wert.isNotEmpty ? wert : null;
+
+/// Bringt einen Beleg in der gespeicherten Form von 9.x (`toJson` mit 0.x-
+/// Namen: `uid`, `taxnr`, `logo_skala`, `testCashregister`, `testSignatur`, `kopfId`,
+/// Layout mit `regelwerk`/`ton`) in die Form von `/v3`, die
+/// [KasseneckReceipt.fromJson] liest. Fuer lokale Ablagen, die das Update
+/// ueberleben muessen: gelesen wird migriert, verworfen wird nichts. Schon
+/// englische Schluessel bleiben, wie sie sind; ein englischer Schluessel
+/// gewinnt immer gegen seinen deutschen Vorgaenger. [stored] bleibt unberuehrt.
+Map<String, dynamic> migrateStoredReceiptJson(Map<String, dynamic> stored) {
+  final neu = Map<String, dynamic>.from(stored);
+  const namen = {
+    'uid': 'vatId',
+    'taxnr': 'taxNumber',
+    'logo_skala': 'logo_scale',
+    'testKasse': 'testCashregister',
+    'testSignatur': 'testSignature',
+    'kopfId': 'headerVersionId',
+  };
+  for (final MapEntry(key: vorher, value: nachher) in namen.entries) {
+    if (!neu.containsKey(vorher)) continue;
+    final wert = neu.remove(vorher);
+    neu.putIfAbsent(nachher, () => wert);
+  }
+  final pruef = neu.remove('pruefangaben');
+  if (pruef is Map && !neu.containsKey('registrationInfo')) {
+    neu['registrationInfo'] = {
+      'cardRegisteredAt': pruef['karteRegistriertAm'],
+      'cashregisterRegisteredAt': pruef['kasseRegistriertAm'],
+    };
+  }
+  final layout = neu['layout'];
+  if (layout is Map) {
+    final l = Map<String, dynamic>.from(layout);
+    if (l.containsKey('regelwerk')) {
+      final r = l.remove('regelwerk');
+      l.putIfAbsent('ruleset', () => r);
+    }
+    final zeilen = l['lines'];
+    if (zeilen is List) {
+      l['lines'] = [
+        for (final z in zeilen)
+          if (z is Map && z.containsKey('ton'))
+            {
+              for (final e in z.entries)
+                if (e.key != 'ton') e.key: e.value,
+              'tone': z['tone'] ?? (z['ton'] == 'warnung' ? 'warning' : 'receipt_type'),
+            }
+          else
+            z,
+      ];
+    }
+    neu['layout'] = l;
+  }
+  return neu;
+}

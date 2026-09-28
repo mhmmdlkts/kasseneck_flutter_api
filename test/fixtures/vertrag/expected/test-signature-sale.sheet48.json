@@ -1,0 +1,218 @@
+{
+  "charsPerLine": 48,
+  "blocks": [
+    {
+      "kind": "line",
+      "text": "================================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "       TESTSIGNATUR — kein gültiger Beleg       ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "================================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "logo",
+      "widthFraction": 0.5208333333333334,
+      "heightLines": 5
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                Bäckerei Muster                 ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  Hauptplatz 1                  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 4830 Hallstatt                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                  ATU12345678                   ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                 +43 6134 12345                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:                       13.08.2026 10:15:30",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:                          AT0-KASSE1-42",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "4  x Semmel je 0,79                       3,16 B",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "1  x Kaffee klein                         2,80 A",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "MwSt%       MwSt            Netto         Brutto",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "B 10%       0,29            2,87            3,16",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "A 20%       0,47            2,33            2,80",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "------------------------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamt:                                   5,96 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungsart:                          Barzahlung",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT100_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+      "widthFraction": 0.5520833333333334
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "         Vielen Dank für Ihren Einkauf          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "            www.baeckerei-muster.at             ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "================================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "       TESTSIGNATUR — kein gültiger Beleg       ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "================================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 352,
+      "height": 51
+    }
+  ]
+}

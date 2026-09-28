@@ -17,14 +17,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 import 'package:kasseneck_api/src/aufrufe.dart';
 import 'package:kasseneck_api/src/register/pairing.dart';
 
 import 'zwillinge_liste.dart';
 
 Map<String, dynamic> _vertrag() => jsonDecode(
-      File('test/fixtures/vertrag/oberflaeche.json').readAsStringSync(),
+      File('test/fixtures/vertrag/surface.json').readAsStringSync(),
     ) as Map<String, dynamic>;
 
 /// Die Funde einer einzelnen Prüfung — gesammelt statt sofort gemeldet, weil
@@ -80,6 +80,18 @@ class _Funde {
   }
 }
 
+/// Alle Aufrufe des Vertrags. Seit 1.0 je Weg geteilt: `calls.public`
+/// (api.kasseneck.at/v3) und `calls.pos` (kasse.kasseneck.at/api/v3); die
+/// Beleg-Aufrufe stehen in beiden. Dieses Paket spricht beide Wege, also
+/// zaehlt die Vereinigung.
+Set<String> _aufrufe(Map<String, dynamic> vertrag) {
+  final calls = vertrag['calls'] as Map<String, dynamic>;
+  return {
+    ...(calls['public'] as List).cast<String>(),
+    ...(calls['pos'] as List).cast<String>(),
+  };
+}
+
 void main() {
   final vertrag = _vertrag();
   final ausnahmen = ausnahmenAus('ausnahmen');
@@ -113,24 +125,31 @@ void main() {
       // Umsetzung stimmt — dann gehoert die Zuordnung hier korrigiert, nicht
       // die Umsetzung. Gefaehrlich ist das nicht: es entsteht hoechstens ein
       // falscher Roter, nie ein falscher Gruener.
+      //
+      // Seit 1.0 englisch (renames-1.0.json, surface.json enums): die Teile
+      // heissen business/device, die Felder wie in pos-settings-defaults.json.
       const betriebsfelder = {
-        'stil', 'schrift', 'wasserzeichen', 'menge', 'tgModus', 'kassierenModus',
-        'kartenanbieter', 'belegAusgabe',
+        'theme', 'fontSize', 'watermark', 'quantity', 'tipMode', 'checkoutMode',
+        'cardProvider', 'receiptOutput',
         // Zehn weitere Betriebsfelder, deren Wertelisten erst spaeter entstanden sind.
-        'logoGroesse', 'schriftEinst', 'kachelstil', 'autoAbMin', 'rabatt',
-        'wzSeite', 'wzStaerke', 'logoSkala', 'wzSkala', 'fertigSekunden',
+        'logoSize', 'settingsFontSize', 'tileStyle', 'autoLogoutMinutes', 'discount',
+        'watermarkSide', 'watermarkStrength', 'logoScale', 'watermarkScale', 'doneScreenSeconds',
       };
       for (final feld in enums.keys) {
         // Nicht auf String einengen: der Vertrag fuehrt auch Zahlenlisten
         // (autoAbMin, wzStaerke, fertigSekunden). Ein Cast wuerde beim ersten
         // Zahlenfeld abbrechen und die restliche Liste verdecken.
         for (final wert in (enums[feld] as List)) {
-          final teil = betriebsfelder.contains(feld) ? 'betrieb' : 'geraet';
-          final gelesen = KasseSettings.aus({
+          final teil = betriebsfelder.contains(feld) ? 'business' : 'device';
+          final settings = PosSettings.fromJson({
             teil: {feld: wert},
-          }).toJson();
-          final zurueck = (gelesen[teil] as Map)[feld];
-          funde.fehltNicht('enums.$feld.$wert', zurueck == wert, 'Der Wert "$wert" für $feld');
+          });
+          final zurueck = (settings.toJson()[teil] as Map)[feld];
+          // Seit 10.0 bleibt ein unbekannter Wert wörtlich erhalten
+          // (fremdeWerte), er käme also auch unverstanden zurück. Gekannt ist
+          // er nur, wenn er dabei nicht als fremd gilt.
+          final gekannt = zurueck == wert && unknownPosSettingValues(settings).isEmpty;
+          funde.fehltNicht('enums.$feld.$wert', gekannt, 'Der Wert "$wert" für $feld');
         }
       }
       funde.melden();
@@ -143,11 +162,11 @@ void main() {
     // die Pruefung scheitert: an genau diesem Fall.
     test('kein Schlüssel des Vertrags landet im Auffangbecken', () {
       final funde = _Funde(ausnahmen);
-      final rechte = (vertrag['rechte'] as List).cast<String>();
+      final rechte = (vertrag['registerPerms'] as List).cast<String>();
       final roh = <String, dynamic>{for (final r in rechte) r: r.endsWith('Scope') ? 'all' : true};
-      final perms = RegisterUserPerms.aus(roh);
+      final perms = RegisterUserPerms.fromJson(roh);
       for (final r in rechte) {
-        funde.fehltNicht('rechte.$r', !perms.weitere.containsKey(r), 'Das Recht "$r"');
+        funde.fehltNicht('registerPerms.$r', !perms.other.containsKey(r), 'Das Recht "$r"');
       }
       funde.melden();
     });
@@ -159,8 +178,8 @@ void main() {
     // ein Wertevergleich nie findet — einen Aufruf, den es hier gar nicht gibt.
     test('jeder Aufruf des Vertrags ist hier bekannt', () {
       final funde = _Funde(ausnahmen);
-      for (final name in (vertrag['aufrufe'] as List).cast<String>()) {
-        funde.fehltNicht('aufrufe.$name', Aufrufe.alle.contains(name), 'Der Aufruf "$name"');
+      for (final name in _aufrufe(vertrag)) {
+        funde.fehltNicht('calls.$name', Aufrufe.alle.contains(name), 'Der Aufruf "$name"');
       }
       funde.melden();
     });
@@ -172,8 +191,8 @@ void main() {
     // uebertragbar.
     test('jede Aktion des Vertrags ist hier bekannt', () {
       final funde = _Funde(ausnahmen);
-      for (final aktion in (vertrag['tastenAktionen'] as List).cast<String>()) {
-        funde.fehltNicht('tastenAktionen.$aktion', kasseTastenAktionen.contains(aktion),
+      for (final aktion in (vertrag['posShortcutActions'] as List).cast<String>()) {
+        funde.fehltNicht('posShortcutActions.$aktion', posShortcutActions.contains(aktion),
             'Die Tasten-Aktion "$aktion"');
       }
       funde.melden();
@@ -188,9 +207,9 @@ void main() {
     final alle = <String>{
       for (final e in (vertrag['enums'] as Map<String, dynamic>).entries)
         for (final w in (e.value as List)) 'enums.${e.key}.$w',
-      for (final r in (vertrag['rechte'] as List)) 'rechte.$r',
-      for (final a in (vertrag['aufrufe'] as List)) 'aufrufe.$a',
-      for (final t in (vertrag['tastenAktionen'] as List)) 'tastenAktionen.$t',
+      for (final r in (vertrag['registerPerms'] as List)) 'registerPerms.$r',
+      for (final a in _aufrufe(vertrag)) 'calls.$a',
+      for (final t in (vertrag['posShortcutActions'] as List)) 'posShortcutActions.$t',
     };
     for (final e in ausnahmen.keys) {
       expect(alle, contains(e),

@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
-import 'package:kasseneck_api/models/marke.dart';
+import 'package:kasseneck_api/models/brand_mark.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:qr/qr.dart';
@@ -19,6 +19,7 @@ import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
 import '../services/vienna_time.dart';
 import '../src/printing/qr_groesse.dart';
+import '../src/receipt/aufdruck.dart' show belegartBlock, warnrahmen;
 import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
 
@@ -26,13 +27,13 @@ import 'keck_voucher.dart';
 
 
 /// Firmenlogo fuer den Druck: Stufe, Pixelmass des Originals und das fertige
-/// Rasterbild aus [logoRaster] (Zwilling von `DruckLogo` im npm-Paket).
-class DruckLogo {
-  final LogoStufe stufe;
-  final int pxBreite;
-  final int pxHoehe;
+/// Rasterbild aus [logoRaster] (Zwilling von `PrintLogo` im npm-Paket).
+class PrintLogo {
+  final SheetLogoSize size;
+  final int pixelWidth;
+  final int pixelHeight;
   final LogoRaster raster;
-  const DruckLogo({required this.stufe, required this.pxBreite, required this.pxHoehe, required this.raster});
+  const PrintLogo({required this.size, required this.pixelWidth, required this.pixelHeight, required this.raster});
 }
 
 class PrintPaper {
@@ -160,19 +161,19 @@ class PrintPaper {
   /// alles gut ging. Der QR ist gesetzlich gefordert; ein Aufrufer, der den
   /// Bon nachdrucken oder den Beleg elektronisch ausgeben will, muss davon
   /// erfahren, ohne den Bytestrom zu durchsuchen. Wird von [reset] geleert.
-  String? qrFehler;
+  String? qrError;
 
   /// Der QR steht auf dem Papier, aber nicht so, wie eingestellt -- `null`,
   /// solange nichts abgewichen ist. Zwei Faelle, beide mit Grund im Text:
   /// das Symbol war fuer den nativen Befehl zu breit und wurde als **Bild**
   /// gedruckt, oder es passte nur unter der Mindest-Modulgroesse.
   ///
-  /// Getrennt von [qrFehler], weil die beiden verschiedene Handlungen
-  /// ausloesen: [qrFehler] heisst "Beleg ohne QR, nachdrucken oder
-  /// elektronisch ausgeben", [qrAusweich] heisst "gedruckt, aber der
+  /// Getrennt von [qrError], weil die beiden verschiedene Handlungen
+  /// ausloesen: [qrError] heisst "Beleg ohne QR, nachdrucken oder
+  /// elektronisch ausgeben", [qrFallback] heisst "gedruckt, aber der
   /// eingestellte Weg taugt fuer dieses Geraet nicht" -- die Kasse kann es dem
   /// Chef sagen und den Weg dauerhaft umstellen. Wird von [reset] geleert.
-  String? qrAusweich;
+  String? qrFallback;
 
   /// Nativer QR-Befehl. Die Nutzlast wird ausdruecklich **nicht** durch
   /// [_printable] geschickt: der QR traegt Daten, keine Schrift. Ein durch '?'
@@ -184,7 +185,7 @@ class PrintPaper {
   /// Bauer) gehen hier durch, damit ein neuer Modus nicht an einem von beiden
   /// vorbeigeht.
   ///
-  /// [blattAnteil] ist die Breite, die das Blatt dem QR gibt ([BlattQr]).
+  /// [blattAnteil] ist die Breite, die das Blatt dem QR gibt ([SheetQr]).
   /// Gesetzt misst der Bildweg daran statt an festen 280 Pixeln:
   /// [renderQrMatrix] rastert samt Ruhezone (4 Module je Seite) mit
   /// `floor(size / (module + 8))` Punkten je Modul, und das Blatt rechnet
@@ -194,8 +195,8 @@ class PrintPaper {
   /// Punkt je Modul hiesse mehr als 192 Module samt Ruhezone, das groesste
   /// QR-Symbol hat 177.
   Future<void> _qrNachModus(String nutzlast, QrPrintMode modus,
-      {QrModulGroesse groesse = QrModulGroesse.auto, double? blattAnteil}) async {
-    final int bildGroesse = blattAnteil == null ? 280 : (blattAnteil * paperSize.druckPunkte).round();
+      {QrModuleSize groesse = QrModuleSize.auto, double? blattAnteil}) async {
+    final int bildGroesse = blattAnteil == null ? 280 : (blattAnteil * paperSize.printWidthDots).round();
     switch (modus) {
       case QrPrintMode.imageRaster:
         await addQrCodeAsImage(nutzlast, raster: true, size: bildGroesse);
@@ -207,22 +208,22 @@ class PrintPaper {
         // nicht aufs Papier, druckt der Drucker es GAR NICHT -- er schneidet
         // nicht ab, er laesst weg. Ein Pflichtbeleg ohne QR ist der
         // schlechteste aller Ausgaenge, also geht der QR hier als Bild hinaus
-        // und der Aufrufer erfaehrt es ueber [qrAusweich].
-        final QrGroesse mass = QrMass.fuer(
-          nutzlast: nutzlast,
-          papierbreitePunkte: paperSize.druckPunkte,
-          groesse: groesse,
+        // und der Aufrufer erfaehrt es ueber [qrFallback].
+        final QrSizing mass = QrMetrics.forPayload(
+          payload: nutzlast,
+          paperWidthDots: paperSize.printWidthDots,
+          moduleSize: groesse,
         );
-        if (nutzlast.isNotEmpty && !mass.passt) {
-          qrAusweich = 'QR mit ${mass.module} Modulen passt nativ nicht auf '
-              '${paperSize.mm} mm (${paperSize.druckPunkte} Punkte) -- als Bild gedruckt';
+        if (nutzlast.isNotEmpty && !mass.fits) {
+          qrFallback = 'QR mit ${mass.modules} Modulen passt nativ nicht auf '
+              '${paperSize.mm} mm (${paperSize.printWidthDots} Punkte) -- als Bild gedruckt';
           // Mit Blatt-Anteil so gross, wie das Blatt den Ausweich setzt
           // (npm: `escPosQrRaster` mit demselben Deckel).
           await addQrCodeAsImage(nutzlast, raster: true, size: bildGroesse);
           return;
         }
         addQrCode(nutzlast,
-            groesse: groesse, modell1: modus == QrPrintMode.nativeModel1, myPosGroesse: bildGroesse);
+            moduleSize: groesse, model1: modus == QrPrintMode.nativeModel1, myPosSize: bildGroesse);
     }
   }
 
@@ -230,24 +231,24 @@ class PrintPaper {
   ///
   /// [size] setzt die Groesse fest und schaltet die Rechnung ab -- fuer
   /// Aufrufer, die genau wissen, was ihr Geraet kann. Ohne [size] entscheidet
-  /// [QrMass]: so gross wie moeglich, gedeckelt durch [groesse]. Vorher stand
+  /// [QrMetrics]: so gross wie moeglich, gedeckelt durch [moduleSize]. Vorher stand
   /// hier fest `QRSize.size6`, unabhaengig von der Papierbreite; ein Beleg-QR
   /// mit realer Nutzlast (57 Module) wurde damit 390 Punkte breit und
   /// verschwand auf jedem 58-mm-Drucker (384 Punkte) spurlos.
   ///
-  /// [modell1] waehlt den aelteren Symboltyp, siehe [QRCode].
+  /// [model1] waehlt den aelteren Symboltyp, siehe [QRCode].
   ///
   /// Fehlerkorrektur ist **M** -- dieselbe Stufe wie Blatt, ePOS und Bildweg.
   /// Mit der Generator-Vorgabe L haette der Drucker bei mancher Nutzlast ein
   /// kleineres Symbol gesetzt, als das Blatt ihm Platz gibt.
   ///
-  /// [myPosGroesse] ist die Bildbreite fuer den myPOS-Terminaldruck, der den
+  /// [myPosSize] ist die Bildbreite fuer den myPOS-Terminaldruck, der den
   /// QR selbst rendert; Vorgabe 280 wie bisher.
   void addQrCode(String data,
       {QRSize? size,
-      QrModulGroesse groesse = QrModulGroesse.auto,
-      bool modell1 = false,
-      int myPosGroesse = 280}) {
+      QrModuleSize moduleSize = QrModuleSize.auto,
+      bool model1 = false,
+      int myPosSize = 280}) {
     if (data.isEmpty) {
       _qrAusfall(data, 'leere Nutzlast');
       return;
@@ -256,30 +257,30 @@ class PrintPaper {
     if (size != null) {
       gewaehlt = size;
     } else {
-      final QrGroesse mass = QrMass.fuer(
-        nutzlast: data,
-        papierbreitePunkte: paperSize.druckPunkte,
-        groesse: groesse,
+      final QrSizing mass = QrMetrics.forPayload(
+        payload: data,
+        paperWidthDots: paperSize.printWidthDots,
+        moduleSize: moduleSize,
       );
-      if (!mass.passt) {
+      if (!mass.fits) {
         // Synchron gerufen bleibt hier kein Bildweg -- der Aufrufer bekommt
         // den Ausfall gemeldet und die Belegdaten in Klarschrift. Ueber
         // [_qrNachModus] kommt es dazu nicht, der weicht vorher aufs Bild aus.
         _qrAusfall(data,
-            'QR mit ${mass.module} Modulen ist fuer ${paperSize.mm} mm zu breit');
+            'QR mit ${mass.modules} Modulen ist fuer ${paperSize.mm} mm zu breit');
         return;
       }
-      if (mass.unterMindestmass) {
-        qrAusweich = 'QR mit ${mass.module} Modulen passt nur mit '
-            '${mass.punkte} Punkten je Modul -- unter dem Mindestmass von '
-            '${QrMass.mindestPunkte}';
+      if (mass.belowMinimum) {
+        qrFallback = 'QR mit ${mass.modules} Modulen passt nur mit '
+            '${mass.moduleDots} Punkten je Modul -- unter dem Mindestmass von '
+            '${QrMetrics.minModuleDots}';
       }
-      gewaehlt = QRSize(mass.punkte!);
+      gewaehlt = QRSize(mass.moduleDots!);
     }
     try {
       bytes.add(Uint8List.fromList(
-          generator.qrcode(data, size: gewaehlt, cor: QRCorrection.M, modell1: modell1)));
-      myPosPaper.addQrCode(data, size: myPosGroesse);
+          generator.qrcode(data, size: gewaehlt, cor: QRCorrection.M, model1: model1)));
+      myPosPaper.addQrCode(data, size: myPosSize);
     } catch (e) {
       _qrAusfall(data, e);
     }
@@ -295,10 +296,10 @@ class PrintPaper {
   /// aussieht und keiner ist; er faellt niemandem auf und laesst sich hinterher
   /// nicht mehr zuordnen. Also: der Bon laeuft durch, traegt aber einen
   /// Aufdruck und die Belegdaten in Klarschrift, sodass der Kassier den Ausfall
-  /// sieht und der Inhalt trotzdem auf dem Papier steht. [qrFehler] meldet
+  /// sieht und der Inhalt trotzdem auf dem Papier steht. [qrError] meldet
   /// dasselbe an den Aufrufer.
   void _qrAusfall(String data, Object grund) {
-    qrFehler = grund.toString();
+    qrError = grund.toString();
     if (kDebugMode) print('QR-Code nicht druckbar: $grund');
     addFeed();
     addText('!! QR-CODE FEHLT !!', styles: PosStyles(align: PosAlign.center, bold: true));
@@ -379,8 +380,8 @@ class PrintPaper {
 
   void reset() {
     bytes.clear();
-    qrFehler = null;
-    qrAusweich = null;
+    qrError = null;
+    qrFallback = null;
     // `generator.reset()` schickt die Codepage schon von selbst mit (sie
     // steht seit dem Konstruktor im `_codeTable`-Feld des Erzeugers) -- ein
     // zweiter, expliziter `setGlobalCodeTable`-Aufruf hier verdoppelte sie im
@@ -390,11 +391,32 @@ class PrintPaper {
     myPosPaper.commands.clear();
   }
 
-  /// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [setBelegBlatt] bzw. `KeckBelegBlattWidget`.
+  /// Eine Zeile des Aufdrucks im Rueckfall: Banner zwischen zwei
+  /// `=`-Rahmenzeilen (wie im Raster), Text zentriert.
+  void _aufdruckZeile(LayoutLine z) {
+    switch (z) {
+      case LayoutBannerLine():
+        addFullHorizontalLine(ch: '=');
+        addText(z.text, styles: PosStyles(align: PosAlign.center, bold: true));
+        addFullHorizontalLine(ch: '=');
+      case LayoutTextLine():
+        addText(z.text, styles: PosStyles(align: PosAlign.center, bold: z.bold));
+      default:
+        break;
+    }
+  }
+
+  /// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [setReceiptSheet] bzw. `KeckReceiptSheetWidget`.
   Future setKeckReceipt(KasseneckReceipt receipt,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
-      QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
+      QrModuleSize qrModuleSize = QrModuleSize.auto}) async {
     reset();
+
+    // Warnrahmen ueber allem (wie im Server-Layout): ein Beleg einer
+    // Testkasse oder mit Test-Signatur darf nie wie ein gueltiger aussehen.
+    for (final b in warnrahmen(receipt)) {
+      _aufdruckZeile(b);
+    }
 
     if (receipt.logo != null) {
       // Ein Logo ist Zierde, der Beleg ist Pflicht. Die Bytes stammen aus
@@ -418,6 +440,15 @@ class PrintPaper {
     addText('${receipt.zip} ${receipt.city}', styles: PosStyles(align: PosAlign.center));
     addText(receipt.taxInfo, styles: PosStyles(align: PosAlign.center));
     addText(receipt.phone, styles: PosStyles(align: PosAlign.center));
+
+    // Belegart (STORNOBELEG, TRAININGSBELEG, Nullbeleg-Arten) unter dem Kopf.
+    final belegart = belegartBlock(receipt);
+    if (belegart.isNotEmpty) {
+      addFeed();
+      for (final z in belegart) {
+        _aufdruckZeile(z);
+      }
+    }
 
     if (receipt.customerDetails.isNotEmpty) {
       addFeed();
@@ -530,7 +561,7 @@ class PrintPaper {
       // zu 20 % druckten 0,07 + 0,33 zu 0,39). Dieselbe Regel und dieselbe
       // Funktion wie im Beleg-Widget, sonst laufen Papier und Bildschirm
       // wieder auseinander.
-      final int nettoCents = nettoCentsAusBrutto(bruttoCents, key.rate);
+      final int nettoCents = netCentsFromGross(bruttoCents, key.rate);
       final int mwstCents = bruttoCents - nettoCents;
 
       _addTable('${key.category} ${key.rate.toString().replaceAll('.', ',')}%', formatCents(mwstCents), formatCents(nettoCents), formatCents(bruttoCents));
@@ -566,36 +597,36 @@ class PrintPaper {
     }
 
 
-    await _qrNachModus(receipt.qr, qrMode, groesse: qrGroesse);
+    await _qrNachModus(receipt.qr, qrMode, groesse: qrModuleSize);
 
     addFeed();
 
     // Ein Block je Kartenzahlung, in Zahlungsreihenfolge (bei mehreren
     // Zahlungen je Beleg auch zwei desselben Anbieters); ohne Zahlungsliste
     // genau der bisherige Block aus den Einzelfeldern.
-    for (final karte in receipt.kartenzahlungen) {
+    for (final karte in receipt.cardPayments) {
       try {
-        switch (karte.anbieter) {
+        switch (karte.provider) {
           case CreditCardProvider.gpTomAndroid:
           case CreditCardProvider.gpTomIos:
-            _gpTom(karte.daten);
+            _gpTom(karte.data);
             break;
           case CreditCardProvider.hobexCloudApi:
-            _hobexApi(karte.daten);
+            _hobexApi(karte.data);
             break;
           case CreditCardProvider.hobexHps:
-            _hobexHps(karte.daten);
+            _hobexHps(karte.data);
             break;
           case CreditCardProvider.sumup:
-            _sumup(karte.daten);
+            _sumup(karte.data);
             break;
           case CreditCardProvider.custom:
             break;
           case CreditCardProvider.myposPro:
-            _mypos(karte.daten);
+            _mypos(karte.data);
             break;
           case CreditCardProvider.stripe:
-            _stripe(karte.daten, karte.kennung);
+            _stripe(karte.data, karte.paymentId);
             break;
         }
         addFeed();
@@ -620,6 +651,15 @@ class PrintPaper {
       addText(receipt.footer4!, styles: PosStyles(align: PosAlign.center));
     }
 
+    // Warnrahmen unten wie im Server-Layout.
+    final warnungen = warnrahmen(receipt);
+    if (warnungen.isNotEmpty) {
+      addFeed();
+      for (final b in warnungen) {
+        _aufdruckZeile(b);
+      }
+    }
+
     if (receipt.showKreiseckLogo) {
       await _addKreiseckBranding();
     }
@@ -628,14 +668,14 @@ class PrintPaper {
   }
 
   /// Das Kasseneck-Logo als allerletzter Block vor dem Cut -- der alte Weg
-  /// (vor [setBelegBlatt]) zeigt jetzt dasselbe Raster wie das Blatt, statt
+  /// (vor [setReceiptSheet]) zeigt jetzt dasselbe Raster wie das Blatt, statt
   /// des frueheren Kreiseck-Logos mit "powered by" darunter. Das war der
   /// letzte Ort, an dem auf einem Kasseneck-Beleg noch ein Kreiseck-Logo
   /// stand (docs/specs/2026-09-21-marke-einheitlich-design.md, § 4.2).
   Future<void> _addKreiseckBranding() async {
     try {
       addFeed();
-      await addImage(markeBild(paperSize).alsRasterImage(), align: PosAlign.center);
+      await addImage(brandMarkImage(paperSize).toRasterImage(), align: PosAlign.center);
     } catch (_) {
       // Branding darf den Druck nie verhindern.
     }
@@ -678,19 +718,19 @@ class PrintPaper {
   }
 
   /// Druckt ein Beleg-Zeilenmodell des Backends (`KasseneckReceipt.layout`)
-  /// über das **Zeichenraster** ([BelegRaster], Zwilling von `renderReceiptGrid`
+  /// über das **Zeichenraster** ([ReceiptGrid], Zwilling von `renderReceiptGrid`
   /// im JS-Paket): jede Rasterzeile geht als fertige, exakt N Zeichen breite
   /// Textzeile raus (58 mm = 32, 80 mm = 48) — keine eigene Spaltenrechnung,
   /// dieselben Zeilen wie Browser-Kasse, Labor und Beleg-PDF. Bevorzugt
   /// gegenüber [setKeckReceipt], sobald ein Layout vorliegt.
   ///
-  /// Druckt ohne Logo und Marke -- siehe [setBelegBlatt].
-  Future<void> setBelegLayout(
-    BelegLayout layout, {
+  /// Druckt ohne Logo und Marke -- siehe [setReceiptSheet].
+  Future<void> setReceiptLayout(
+    ReceiptLayout layout, {
     bool cut = true,
     QrPrintMode qrMode = QrPrintMode.imageRaster,
-    QrModulGroesse qrGroesse = QrModulGroesse.auto,
-  }) => setBelegBlatt(layout, cut: cut, qrMode: qrMode, qrGroesse: qrGroesse);
+    QrModuleSize qrModuleSize = QrModuleSize.auto,
+  }) => setReceiptSheet(layout, cut: cut, qrMode: qrMode, qrModuleSize: qrModuleSize);
 
   /// Druckt das **Blatt** (Zwilling von `escPosLayoutBytes` ab npm 0.14.0):
   /// Rasterzeilen, Firmenlogo nach dem fuehrenden Rahmen, QR im eingestellten
@@ -699,42 +739,42 @@ class PrintPaper {
   /// Wirft [ArgumentError], wenn das Rasterbild von [logo] nicht so gross ist,
   /// wie das Blatt das Logo setzt -- vor dem ersten Byte, das Papier bleibt
   /// dann unangetastet.
-  Future<void> setBelegBlatt(BelegLayout layout,
-      {DruckLogo? logo,
-      bool marke = false,
+  Future<void> setReceiptSheet(ReceiptLayout layout,
+      {PrintLogo? logo,
+      bool brandMark = false,
       bool cut = true,
       QrPrintMode qrMode = QrPrintMode.imageRaster,
-      QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
-    final blatt = belegBlatt(
+      QrModuleSize qrModuleSize = QrModuleSize.auto}) async {
+    final blatt = receiptSheet(
       _druckbaresLayout(layout),
-      zeichen: paperSize.defaultCharCount,
-      logo: logo == null ? null : BlattLogo(stufe: logo.stufe, pxBreite: logo.pxBreite, pxHoehe: logo.pxHoehe),
-      marke: marke,
-      qrGroesse: qrGroesse,
+      charsPerLine: paperSize.defaultCharCount,
+      logo: logo == null ? null : SheetLogo(size: logo.size, pixelWidth: logo.pixelWidth, pixelHeight: logo.pixelHeight),
+      brandMark: brandMark,
+      qrModuleSize: qrModuleSize,
     );
     if (logo != null) {
       // Das Rasterbild muss so gross sein, wie das Blatt das Logo setzt --
       // sonst stuende am Bon ein anderes Logo als am Schirm. Vor dem ersten Byte.
-      final block = blatt.bloecke.whereType<BlattLogoBlock>().single;
-      final soll = logoRasterMass(LogoMass(breiteAnteil: block.breiteAnteil, hoeheZeilen: block.hoeheZeilen), blatt.zeichen);
-      if (logo.raster.breite != soll.breite || logo.raster.hoehe != soll.hoehe) {
-        throw ArgumentError('Logo-Raster ${logo.raster.breite}x${logo.raster.hoehe} passt nicht zum Blatt (${soll.breite}x${soll.hoehe})');
+      final block = blatt.blocks.whereType<SheetLogoBlock>().single;
+      final soll = logoRasterSize(LogoDimensions(widthFraction: block.widthFraction, heightLines: block.heightLines), blatt.charsPerLine);
+      if (logo.raster.width != soll.width || logo.raster.height != soll.height) {
+        throw ArgumentError('Logo-Raster ${logo.raster.width}x${logo.raster.height} passt nicht zum Blatt (${soll.width}x${soll.height})');
       }
     }
     reset();
-    for (final b in blatt.bloecke) {
+    for (final b in blatt.blocks) {
       switch (b) {
-        case BlattZeile():
-          if (b.leer) {
+        case SheetLine():
+          if (b.blank) {
             addFeed(lines: 1);
           } else {
-            addText(b.text.trimRight(), styles: PosStyles(align: PosAlign.left, bold: b.fett));
+            addText(b.text.trimRight(), styles: PosStyles(align: PosAlign.left, bold: b.bold));
           }
-        case BlattLogoBlock():
-          await addImage(logo!.raster.alsRasterImage(), align: PosAlign.center);
-        case BlattMarke():
-          await addImage(markeBild(paperSize).alsRasterImage(), align: PosAlign.center);
-        case BlattQr():
+        case SheetLogoBlock():
+          await addImage(logo!.raster.toRasterImage(), align: PosAlign.center);
+        case SheetBrandMark():
+          await addImage(brandMarkImage(paperSize).toRasterImage(), align: PosAlign.center);
+        case SheetQr():
           // Das Layout liefert beim QR NUR die Nutzlast; wie daraus ein QR
           // wird, entscheidet der Renderer -- am Drucker also der Modus, den
           // der Chef fuer sein Geraet eingestellt hat. Fest `addQrCode` zu
@@ -744,12 +784,12 @@ class PrintPaper {
           // wegfallen, nur weil das Blatt aus dem Zeilenmodell kommt.
           // Anteil 0 bei nicht leerer Nutzlast: der Inhalt passt in keine
           // QR-Version -- weder Befehl noch Bild koennen ihn setzen. Der Beleg
-          // geht ohne QR hinaus und meldet es ueber [qrFehler] (npm: `qrFehler`).
-          if (b.nutzlast.isNotEmpty && b.breiteAnteil <= 0) {
-            _qrAusfall(b.nutzlast, 'QR-Inhalt passt in keine QR-Version -- Beleg ohne QR');
+          // geht ohne QR hinaus und meldet es ueber [qrError] (npm: `qrError`).
+          if (b.payload.isNotEmpty && b.widthFraction <= 0) {
+            _qrAusfall(b.payload, 'QR-Inhalt passt in keine QR-Version -- Beleg ohne QR');
             break;
           }
-          await _qrNachModus(b.nutzlast, qrMode, groesse: qrGroesse, blattAnteil: b.breiteAnteil);
+          await _qrNachModus(b.payload, qrMode, groesse: qrModuleSize, blattAnteil: b.widthFraction);
       }
     }
     if (cut) addCut();
@@ -757,13 +797,13 @@ class PrintPaper {
 
   /// Erst druckbar machen (Codepage, EUR statt Euro-Zeichen), DANN rastern —
   /// damit das Raster mit den Zeichen rechnet, die aufs Papier gehen.
-  BelegLayout _druckbaresLayout(BelegLayout layout) {
-    return BelegLayout(
+  ReceiptLayout _druckbaresLayout(ReceiptLayout layout) {
+    return ReceiptLayout(
       lines: layout.lines.map((z) => switch (z) {
-        BelegText() => BelegText(text: _printable(z.text), align: z.align, bold: z.bold),
-        BelegBanner() => BelegBanner(text: _printable(z.text), warnung: z.warnung),
-        BelegSpalten() => BelegSpalten(z.columns.map((c) => BelegSpalte(text: _printable(c.text), width: c.width, align: c.align)).toList()),
-        BelegLinie() => BelegLinie(char: _printable(z.char).isEmpty ? '-' : _printable(z.char)),
+        LayoutTextLine() => LayoutTextLine(text: _printable(z.text), align: z.align, bold: z.bold),
+        LayoutBannerLine() => LayoutBannerLine(text: _printable(z.text), tone: z.tone),
+        LayoutColumnsLine() => LayoutColumnsLine(z.columns.map((c) => LayoutColumn(text: _printable(c.text), width: c.width, align: c.align)).toList()),
+        LayoutRuleLine() => LayoutRuleLine(char: _printable(z.char).isEmpty ? '-' : _printable(z.char)),
         // BelegQr bleibt bewusst unangetastet: die QR-Nutzlast ist Datum,
         // nicht Schrift — ein Ersatzzeichen ergaebe einen lesbaren QR mit
         // falschem Inhalt. Sie ueberlebt den Druck trotzdem, seit der native
@@ -771,7 +811,7 @@ class PrintPaper {
         _ => z,
       }).toList(),
       paperSize: layout.paperSize,
-      regelwerk: layout.regelwerk,
+      ruleset: layout.ruleset,
     );
   }
 
@@ -796,7 +836,7 @@ class PrintPaper {
 
 
   void _hobexHps(Map<String, dynamic> data) {
-    addText(kartenblockUeberschrift[CreditCardProvider.hobexHps]!, styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(cardBlockHeadings[CreditCardProvider.hobexHps]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('Datum:', data['date']);
     addDoubleText('TID:', data['tid']);
     addDoubleText('Nr.:', data['no']);
@@ -819,7 +859,7 @@ class PrintPaper {
   }
 
   void _hobexApi(Map<String, dynamic> data) {
-    addText(kartenblockUeberschrift[CreditCardProvider.hobexHps]!, styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(cardBlockHeadings[CreditCardProvider.hobexHps]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('Datum:', data['date']);
     addDoubleText('TID:', data['tid']);
     addDoubleText('Nr.:', data['no']);
@@ -836,7 +876,7 @@ class PrintPaper {
   }
 
   void _sumup(Map<String, dynamic> data) {
-    addText(kartenblockUeberschrift[CreditCardProvider.sumup]!, styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(cardBlockHeadings[CreditCardProvider.sumup]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('Kartentyp:', data['cardType'] ?? 'n/a');
     addDoubleText('Kartennummer:', '**** **** **** ${data['cardLastDigits'] ?? ''}');
     addDoubleText('Zahlungstyp:', data['paymentType'] ?? 'n/a');
@@ -847,7 +887,7 @@ class PrintPaper {
   }
 
   void _mypos(Map<String, dynamic> data) {
-    addText(kartenblockUeberschrift[CreditCardProvider.myposPro]!, styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(cardBlockHeadings[CreditCardProvider.myposPro]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addDoubleText('TERMINAL ID:', data['TID'] ?? '-');
     String dateTime = data['date_time'];
     String day = dateTime.substring(4, 6);
@@ -873,7 +913,7 @@ class PrintPaper {
 
   void _gpTom(Map<String, dynamic> data) {
     final String transactionType = gpTomTransactionType(data);
-    addText(kartenblockUeberschrift[CreditCardProvider.gpTomAndroid]!, styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(cardBlockHeadings[CreditCardProvider.gpTomAndroid]!, styles: PosStyles(align: PosAlign.center, bold: true));
     addText('Batch: ${data['batchNumber']}', styles: PosStyles(align: PosAlign.center));
     addText('Receipt: ${data['externalTransactionID']}', styles: PosStyles(align: PosAlign.center));
     addText('TID: ${data['terminalID']}', styles: PosStyles(align: PosAlign.center));
@@ -896,7 +936,7 @@ class PrintPaper {
   }
 
   void _stripe(Map<String, dynamic> data, String? cardPaymentId) {
-    addText(kartenblockUeberschrift[CreditCardProvider.stripe]!, styles: PosStyles(align: PosAlign.center, bold: true));
+    addText(cardBlockHeadings[CreditCardProvider.stripe]!, styles: PosStyles(align: PosAlign.center, bold: true));
     for (final String line in stripeReceiptLines(data, cardPaymentId)) {
       addText(line, styles: PosStyles(align: PosAlign.center));
     }

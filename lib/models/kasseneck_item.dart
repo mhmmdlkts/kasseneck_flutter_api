@@ -18,7 +18,7 @@ class KasseneckItem {
   final int priceCents;
 
   /// Positions-Kennzeichnung: `'tip'` (Trinkgeld, vom Backend aus dem
-  /// Parameter `tip` erzeugt) oder `'discount'` (Rabatt, [verteileRabatt]).
+  /// Parameter `tip` erzeugt) oder `'discount'` (Rabatt, [distributeDiscount]).
   /// Steuert nur die Beleg-Darstellung und die Berichts-Zuordnung, nie die
   /// Beträge. Zwilling von `ReceiptItem.kind` im JS-Paket.
   final String? kind;
@@ -28,6 +28,18 @@ class KasseneckItem {
 
   /// Zahlart der Trinkgeld-Position (kann von der des Belegs abweichen).
   final String? paymentMethod;
+
+  /// Nur an Trinkgeld-Positionen: hatte der Empfaenger das Geld beim
+  /// Ausstellen schon (`true`) oder behaelt es der Betrieb und schuldet es
+  /// (`false`)? Drahtfeld `receivedImmediately` (frueher `sofortErhalten`);
+  /// `null`, wenn der Beleg es nicht nennt.
+  final bool? receivedImmediately;
+
+  /// Was [KasseneckItem.fromJson] beim Lesen nicht exakt uebernehmen konnte
+  /// (Bruchmenge abgeschnitten, unbekannter Steuersatz als 0 %); `null`, wenn
+  /// alles passt. Wer mit so einer Position rechnet (`receiptDueCents`),
+  /// bekommt einen Fehler statt eines still falschen Betrags. Geht nie hinaus.
+  final String? lossyRead;
 
   /// Artikel-Verweis (Artikelstamm) — Grundlage der Erlösgruppen-Zuordnung
   /// im Bericht. Optional; Handeingaben haben keinen.
@@ -42,6 +54,8 @@ class KasseneckItem {
     this.recipient,
     this.paymentMethod,
     this.articleId,
+    this.receivedImmediately,
+    this.lossyRead,
   });
 
   /// Trinkgeld-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
@@ -127,6 +141,7 @@ class KasseneckItem {
         'kind': 'tip',
         'recipient': recipient,
         if (paymentMethod != null) 'paymentMethod': paymentMethod,
+        'receivedImmediately': ?receivedImmediately,
       },
       if (kind == 'discount') 'kind': 'discount',
       if (articleId != null && articleId!.isNotEmpty) 'articleId': articleId,
@@ -145,6 +160,10 @@ class KasseneckItem {
     final quantity = json['quantity'] ?? json['amount'];
     final rate = json['vatRate'] ?? json['vat'];
     final kind = json['kind'];
+    final satzBekannt = VatRate.values.any((e) => e.rate == rate);
+    final String? ungenau = quantity is num && quantity != quantity.toInt()
+        ? 'Menge $quantity ist keine ganze Zahl'
+        : (rate != null && !satzBekannt ? 'Steuersatz $rate ist unbekannt' : null);
     return KasseneckItem(
       name: (json['name'] as String?) ?? '',
       // num statt int: manche Quellen liefern 1.0 statt 1.
@@ -155,6 +174,8 @@ class KasseneckItem {
       recipient: json['recipient'] is Map ? Map<String, dynamic>.from(json['recipient'] as Map) : null,
       paymentMethod: json['paymentMethod'] as String?,
       articleId: json['articleId'] is String && (json['articleId'] as String).isNotEmpty ? json['articleId'] as String : null,
+      receivedImmediately: kind == 'tip' && json['receivedImmediately'] is bool ? json['receivedImmediately'] as bool : null,
+      lossyRead: ungenau,
     );
   }
 
@@ -172,6 +193,8 @@ class KasseneckItem {
       recipient: recipient,
       paymentMethod: paymentMethod,
       articleId: articleId,
+      receivedImmediately: receivedImmediately,
+      lossyRead: lossyRead,
     );
   }
 }

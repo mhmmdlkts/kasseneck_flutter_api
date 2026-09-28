@@ -25,7 +25,7 @@ class QRCorrection {
 
 class QRCode {
   /// Groesste Nutzlast, die das Laengenfeld (pL, pH) von GS ( k fassen kann.
-  static const int maxNutzlast = 0xFFFF - 3;
+  static const int maxPayload = 0xFFFF - 3;
 
   List<int> bytes = <int>[];
 
@@ -43,7 +43,7 @@ class QRCode {
   /// Unbekanntes): ein veraendertes Zeichen ergaebe einen QR, der sich sauber
   /// lesen laesst und trotzdem nicht mehr zum signierten Beleg passt. Falsche
   /// Daten sind schlimmer als keine.
-  /// [modell1] stellt den Modellwahl-Befehl `GS ( k 04 00 31 41 49 00` voran.
+  /// [model1] stellt den Modellwahl-Befehl `GS ( k 04 00 31 41 49 00` voran.
   /// Ohne ihn — dem Bestandsweg — waehlt der Drucker sein eigenes Modell, in
   /// aller Regel Modell 2. Genau das koennen manche guenstigen Geraete nicht:
   /// belegt ist eines, das unter dem Code eine "0" ausgibt — das Parameterbyte
@@ -51,16 +51,16 @@ class QRCode {
   /// wird deshalb weiterhin nur gesendet, wenn er ausdruecklich verlangt ist;
   /// ein aufgedraengtes "Modell 2 fuer alle" waere eine stille Umstellung an
   /// jedem Bestandsgeraet.
-  QRCode(String text, QRSize size, QRCorrection level, {bool modell1 = false}) {
-    if (modell1) {
+  QRCode(String text, QRSize size, QRCorrection level, {bool model1 = false}) {
+    if (model1) {
       bytes += cQrHeader.codeUnits + [0x04, 0x00, 0x31, 0x41, 0x31, 0x00];
     }
     bytes += cQrHeader.codeUnits + [0x03, 0x00, 0x31, 0x43] + [size.value];
     bytes += cQrHeader.codeUnits + [0x03, 0x00, 0x31, 0x45] + [level.value];
     final List<int> textBytes = utf8.encode(text);
-    if (textBytes.length > maxNutzlast) {
+    if (textBytes.length > maxPayload) {
       throw ArgumentError.value(textBytes.length, 'text',
-          'QR-Nutzlast ueberschreitet das Laengenfeld von GS ( k (max. $maxNutzlast Byte)');
+          'QR-Nutzlast ueberschreitet das Laengenfeld von GS ( k (max. $maxPayload Byte)');
     }
     // Die Laenge ist zweiteilig (pL, pH). pH stand fest auf 0x00: ab 253 Byte
     // Nutzlast lief pL still ueber (Uint8List.fromList schneidet modulo 256

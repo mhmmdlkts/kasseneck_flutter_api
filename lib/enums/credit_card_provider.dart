@@ -13,14 +13,14 @@ enum CreditCardProvider {
 ///
 /// Eine Quelle für zwei Leser: den Bon-Bauer (`PrintPaper`) und die Frage, ob
 /// ein geliefertes Zeilenmodell die Zahlung überhaupt zeigt
-/// (`KasseneckReceipt.layoutIstVollstaendig`). Stünden die Wörter zweimal
+/// (`KasseneckReceipt.isLayoutComplete`). Stünden die Wörter zweimal
 /// getippt da, könnte die Prüfung ins Leere greifen, sobald jemand eine
 /// Überschrift ändert — und ein stillschweigend falsches „vollständig" ist
 /// genau der Fehler, den sie verhindern soll.
 ///
 /// `custom` fehlt bewusst: ein eigener Anbieter bringt keine Terminaldaten mit
 /// und bekommt deshalb keinen Block.
-const Map<CreditCardProvider, String> kartenblockUeberschrift = {
+const Map<CreditCardProvider, String> cardBlockHeadings = {
   CreditCardProvider.hobexHps: 'Hobex Beleg',
   CreditCardProvider.hobexCloudApi: 'Hobex Beleg',
   CreditCardProvider.sumup: 'Sumup Beleg',

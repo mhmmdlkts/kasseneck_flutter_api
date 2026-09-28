@@ -17,23 +17,32 @@
 /// hier drin.
 library;
 
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../v3.dart';
 import 'fehler.dart';
 
-/// Basis-Adresse der Kassen-Aufrufe.
+/// Basis-Adresse der Kassen-Aufrufe (Kassenweg, Kanal `app`).
 ///
-/// **Nicht** `api.kasseneck.at/v1` — das ist die api_key-Schnittstelle für
-/// Kassengeräte. Die Kassen-Aufrufe liegen hinter den Hosting-Umschreibungen
-/// der Browser-Kasse; die App spricht dieselbe Adresse an wie sie.
-const String kRegisterBaseUrl = 'https://kasse.kasseneck.at/api';
+/// **Nicht** die oeffentliche Basis: die Kassen-Aufrufe liegen hinter den
+/// Hosting-Umschreibungen der Browser-Kasse; die App spricht dieselbe Adresse
+/// an wie sie. Alle 25 Aufrufe des Kassenwegs laufen mit der Kassen-Anmeldung
+/// hierhin.
+const String kRegisterBaseUrl = kPosBaseUrl;
 
 String ohneSchraegstrich(String url) => url.replaceAll(RegExp(r'/+$'), '');
 
 class RegisterTransport {
+  /// [baseUrl] muss auf `/v3` enden (die Web-Kasse: `/api/v3`), sonst wirft
+  /// schon das Anlegen. [clientHeader] nennt die App in der Zaehlung des
+  /// Backends (`kasse-app/<version+build>`), Vorgabe `kasseneck_api/<version>`.
+  /// [omitKasseneckHeaders] laesst die beiden Kasseneck-Kopfzeilen weg; die
+  /// Pruefung der Antwort bleibt.
+  ///
+  /// [httpClient] darf kein `RetryClient` (oder anderer wiederholender
+  /// Client) sein: ein zweites stilles Senden waere ein zweiter Beleg.
   RegisterTransport({
     required this.idToken,
     required this.sessionId,
@@ -41,7 +50,10 @@ class RegisterTransport {
     String? baseUrl,
     http.Client? httpClient,
     Duration? timeout,
-  })  : baseUrl = ohneSchraegstrich(baseUrl ?? kRegisterBaseUrl),
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
+  })  : baseUrl = v3BaseUrl('RegisterTransport', baseUrl, kRegisterBaseUrl),
+        _kopf = V3Headers('RegisterTransport', clientHeader: clientHeader, omit: omitKasseneckHeaders),
         _http = httpClient ?? http.Client(),
         _timeout = timeout ?? const Duration(seconds: 30);
 
@@ -55,6 +67,7 @@ class RegisterTransport {
   final String cashregisterId;
 
   final String baseUrl;
+  final V3Headers _kopf;
   final http.Client _http;
   final Duration _timeout;
 
@@ -62,12 +75,15 @@ class RegisterTransport {
   /// weg, damit das Backend „nicht gesetzt" nicht als ausdrückliche Angabe
   /// missversteht.
   ///
-  /// [frist] überschreibt die Vorgabe für diesen einen Aufruf — der Abschluss
+  /// [timeout] überschreibt die Vorgabe für diesen einen Aufruf – der Abschluss
   /// eines Belegs darf länger warten als eine Belegliste.
-  Future<Map<String, dynamic>> rufen(
+  ///
+  /// Fehler tragen `outcome`: bei [ErrorOutcome.unknown] nie wiederholen,
+  /// sondern nachlesen (siehe `v3Post`).
+  Future<Map<String, dynamic>> call(
     String name, {
     Map<String, dynamic> params = const {},
-    Duration? frist,
+    Duration? timeout,
   }) async {
     // Beides frisch — siehe Klassenkommentar.
     final token = await idToken();
@@ -84,61 +100,40 @@ class RegisterTransport {
       if (wert != null) nutzlast[schluessel] = wert;
     });
 
-    // Ausserhalb des try: ein nicht serialisierbarer Parameter ist ein
-    // Programmierfehler und keine Netzstoerung. Im try darunter haette ihn der
+    // Ausserhalb des Sendens: ein nicht serialisierbarer Parameter ist ein
+    // Programmierfehler und keine Netzstoerung. Sonst haette ihn der
     // Sammelfang als `network` gemeldet — ein Fehler, der nie am Netz lag,
     // saehe aus wie einer, nach dem ein Beleg entstanden sein koennte.
     final String rumpf = jsonEncode({'params': nutzlast});
 
-    final http.Response antwort;
-    try {
-      antwort = await _http
-          .post(
-            Uri.parse('$baseUrl/$name'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-              'register-session': sitzung,
-            },
-            body: rumpf,
-          )
-          .timeout(frist ?? _timeout);
-    } on TimeoutException catch (e) {
-      // Getrennt vom Netzfehler: die Anfrage war draussen, der Ausgang ist
-      // unbekannt — ueber `createReceipt` kann der Beleg laengst signiert
-      // sein. Beides in denselben Ausgang zu werfen hiess, dem Aufrufer die
-      // einzige Handhabe zu nehmen, die er hat.
-      throw KasseneckHttpError(name, 0, KasseneckHttpError.zeitablauf, causeType: '${e.runtimeType}');
-    } on Object catch (e) {
-      // Nur der Typ, nie die Meldung: die kann eine Adresse tragen. Das Token
-      // faehrt in der Kopfzeile und ist davon nicht betroffen.
-      throw KasseneckHttpError(name, 0, KasseneckHttpError.netz, causeType: '${e.runtimeType}');
-    }
+    // Zeitlimit getrennt vom Netzfehler: die Anfrage war draussen, ueber
+    // `createReceipt` kann der Beleg laengst signiert sein. Nur der Typ der
+    // Ursache, nie die Meldung: die kann eine Adresse tragen.
+    final antwort = await v3Post(
+      _http,
+      functionName: name,
+      basis: baseUrl,
+      name: name,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'register-session': sitzung,
+      },
+      kasseneck: _kopf,
+      body: rumpf,
+      timeout: timeout ?? _timeout,
+    );
 
-    Object? roh;
-    try {
-      roh = jsonDecode(antwort.body);
-    } on FormatException {
-      throw KasseneckHttpError(name, antwort.statusCode, 'not-json');
-    }
-    if (roh is! Map) throw KasseneckHttpError(name, antwort.statusCode, 'missing-status');
-    final huelle = Map<String, dynamic>.from(roh);
+    final huelle = readEnvelope(name, antwort);
     if (huelle['status'] == 'success') {
-      final daten = huelle['data'];
       // Fehlendes `data` ist erlaubt — nicht jeder Aufruf hat eine Nutzlast.
       // Ein `data`, das da ist und **kein Objekt** ist (Array, Zahl, Text), ist
       // dagegen kaputt und darf nicht als leeres Objekt durchgehen: aus dem
       // wurde weiter oben ein voller Standardsatz Einstellungen, und der
       // Bildschirm meldete „der Betrieb hat nichts eingestellt". Dieselbe
       // Grenze wie bei den Listen: leer ist etwas anderes als kaputt.
-      if (daten == null) return <String, dynamic>{};
-      if (daten is! Map) {
-        throw KasseneckHttpError(name, antwort.statusCode, 'data-not-object');
-      }
-      return Map<String, dynamic>.from(daten);
+      return envelopeData(name, huelle, antwort.statusCode);
     }
-    final meldung = huelle['message'];
-    throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.',
-        code: fehlercodeAus(huelle));
+    throw envelopeError(name, huelle);
   }
 }

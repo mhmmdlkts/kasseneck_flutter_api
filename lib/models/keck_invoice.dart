@@ -1,4 +1,4 @@
-import 'package:kasseneck_api/enums/keck_invoice_payment_methode.dart';
+import 'package:kasseneck_api/enums/keck_invoice_payment_method.dart';
 
 class KeckInvoice {
   final String invoiceNumber;
@@ -7,7 +7,7 @@ class KeckInvoice {
   final DateTime? serviceDateEnd; // optional
   final bool vatIncluded;
   final bool isTaxFree;
-  final KeckInvoicePaymentMethode paymentMethod;
+  final KeckInvoicePaymentMethod paymentMethod;
   final String company;
   final String customerName;
   final String customerPhone;
@@ -47,9 +47,9 @@ class KeckInvoice {
       serviceDateEnd: json['serviceDateEnd']?.toDate(),
       vatIncluded: json['vatIncluded'] as bool,
       isTaxFree: json['isTaxFree'] as bool,
-      paymentMethod: KeckInvoicePaymentMethode.values.firstWhere(
+      paymentMethod: KeckInvoicePaymentMethod.values.firstWhere(
         (e) => e.name == json['paymentMethod'],
-        orElse: () => KeckInvoicePaymentMethode.bankTransferUnpaid // default value
+        orElse: () => KeckInvoicePaymentMethod.bankTransferUnpaid // default value
       ),
       company: json['company'] as String,
       customerName: json['customerName'] as String,

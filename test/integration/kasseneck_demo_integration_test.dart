@@ -12,6 +12,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/receipt_type.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
@@ -71,7 +72,7 @@ void main() {
 
     test('Kartenzahlungs-Beleg + Storno (räumt sich selbst auf)', () async {
       final receipt = await api.sellReceipt(
-        paymentMethod: KeckPaymentMethod.creditCard,
+        payments: const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 1250, provider: CreditCardProvider.custom)],
         items: [
           KasseneckItem(
             name: 'Integrationstest Fahrt',
@@ -89,17 +90,20 @@ void main() {
       expect(receipt.qr, isNotEmpty);
 
       // Aufräumen gehört zum Test: Demo-Beleg sofort stornieren.
-      // ignore: deprecated_member_use_from_same_package
-      final cancel = await api.cancelReceipt(receipt: receipt);
-      expect(cancel, isNotNull);
-      expect(cancel!.receiptType, ReceiptType.cancellation);
+      final cancel = (await api.cancelReceipt(
+        cashregisterId: receipt.cashregisterId,
+        originalReceiptId: receipt.receiptId,
+        reason: 'input_error',
+      ))
+          .receipt;
+      expect(cancel.receiptType, ReceiptType.cancellation);
       expect(cancel.sumCents, -receipt.sumCents);
     }, timeout: const Timeout(Duration(minutes: 3)));
 
     test('Trinkgeld kommt als eigene Position zurück (räumt sich selbst auf)',
         () async {
       final receipt = await api.sellReceipt(
-        paymentMethod: KeckPaymentMethod.cash,
+        payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 2150)],
         items: [
           KasseneckItem(
             name: 'Integrationstest Leistung',
@@ -125,12 +129,13 @@ void main() {
       expect(receipt.sumCents, 2150);
       expect(receipt.sig, isNotEmpty);
       expect(receipt.qr, isNotEmpty);
-
-      // ignore: deprecated_member_use_from_same_package
-
-      final cancel = await api.cancelReceipt(receipt: receipt);
-      expect(cancel, isNotNull);
-      expect(cancel!.receiptType, ReceiptType.cancellation);
+      final cancel = (await api.cancelReceipt(
+        cashregisterId: receipt.cashregisterId,
+        originalReceiptId: receipt.receiptId,
+        reason: 'input_error',
+      ))
+          .receipt;
+      expect(cancel.receiptType, ReceiptType.cancellation);
       expect(cancel.sumCents, -receipt.sumCents);
       // Die Spiegelung nimmt auch das Trinkgeld zurück — sonst bliebe der Topf
       // der Mitarbeiterin voll, obwohl der Beleg storniert ist.
@@ -140,7 +145,7 @@ void main() {
     test('Trinkgeld an einen Kassen-Benutzer (räumt sich selbst auf)',
         () async {
       final receipt = await api.sellReceipt(
-        paymentMethod: KeckPaymentMethod.creditCard,
+        payments: const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 2200, provider: CreditCardProvider.custom)],
         items: [
           KasseneckItem(
             name: 'Integrationstest Leistung',
@@ -149,7 +154,7 @@ void main() {
             priceCents: 2000,
           ),
         ],
-        tip: KeckTip.fuer(creds!.registerUserId!, cents: 200),
+        tip: KeckTip.forRecipient(creds!.registerUserId!, cents: 200),
       );
 
       expect(receipt, isNotNull);
@@ -159,12 +164,13 @@ void main() {
       expect(pos.tipRecipientName, isNotNull);
       // Zahlart des Trinkgelds: ohne Angabe die des Belegs.
       expect(pos.paymentMethod, 'creditCard');
-
-      // ignore: deprecated_member_use_from_same_package
-
-      final cancel = await api.cancelReceipt(receipt: receipt);
-      expect(cancel, isNotNull);
-      expect(cancel!.tipCents, -200);
+      final cancel = (await api.cancelReceipt(
+        cashregisterId: receipt.cashregisterId,
+        originalReceiptId: receipt.receiptId,
+        reason: 'input_error',
+      ))
+          .receipt;
+      expect(cancel.tipCents, -200);
     },
         timeout: const Timeout(Duration(minutes: 3)),
         skip: creds?.registerUserId == null
@@ -252,7 +258,7 @@ void main() {
       final person = personen.first;
 
       final receipt = await api.sellReceipt(
-        paymentMethod: KeckPaymentMethod.creditCard,
+        payments: const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 2300, provider: CreditCardProvider.custom)],
         items: [
           KasseneckItem(
             name: 'Integrationstest Leistung',
@@ -261,7 +267,7 @@ void main() {
             priceCents: 2000,
           ),
         ],
-        tip: KeckTip(cents: 300, recipients: [person.mit(cents: 300)]),
+        tip: KeckTip(cents: 300, recipients: [person.share(cents: 300)]),
       );
 
       expect(receipt, isNotNull);
@@ -276,10 +282,13 @@ void main() {
 
       // Aufräumen wie in den übrigen Fällen: Demo-Beleg sofort stornieren,
       // sonst bliebe der Topf der Person voll.
-      // ignore: deprecated_member_use_from_same_package
-      final cancel = await api.cancelReceipt(receipt: receipt);
-      expect(cancel, isNotNull);
-      expect(cancel!.receiptType, ReceiptType.cancellation);
+      final cancel = (await api.cancelReceipt(
+        cashregisterId: receipt.cashregisterId,
+        originalReceiptId: receipt.receiptId,
+        reason: 'input_error',
+      ))
+          .receipt;
+      expect(cancel.receiptType, ReceiptType.cancellation);
       expect(cancel.tipCents, -300);
     }, timeout: const Timeout(Duration(minutes: 3)));
 
@@ -288,7 +297,7 @@ void main() {
       // wenn eine echte Kasse dahinterhängt.
       expect(
         () => api.sellReceipt(
-          paymentMethod: KeckPaymentMethod.cash,
+          payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 2000)],
           items: [
             KasseneckItem(
               name: 'Integrationstest Leistung',

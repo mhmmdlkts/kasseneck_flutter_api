@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 import 'package:kasseneck_api/register.dart';
 
 /// Beleg per E-Mail an den Endkunden (`sendReceiptEmail`) auf dem
@@ -12,7 +12,7 @@ import 'package:kasseneck_api/register.dart';
 /// Rot-Probe je Fall (belegt, nicht behauptet):
 ///   * „Aufruf und Nutzlast": Endpunktname auf `sendReceiptEmail` belassen und
 ///     `to` durch `email` ersetzt → rot; Adresse ungetrimmt → rot.
-///   * „Sprache": `sprache` immer mitschicken → rot beim leeren Fall.
+///   * „Sprache": `language` immer mitschicken → rot beim leeren Fall.
 ///   * „fehlende Pflichtangabe": den Wurf entfernen → rot (es ginge ein Aufruf
 ///     mit leerer Adresse hinaus, den erst das Backend abweist).
 ///   * „Fehlercodes": `code: fehlercodeAus(huelle)` im Transport streichen →
@@ -28,7 +28,7 @@ import 'package:kasseneck_api/register.dart';
     return http.Response(
       antwort is String ? antwort : jsonEncode(antwort),
       200,
-      headers: {'content-type': 'application/json'},
+      headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
     );
   });
   return (
@@ -47,7 +47,7 @@ import 'package:kasseneck_api/register.dart';
 Map<String, dynamic> erfolg({
   String to = 'gast@example.com',
   String? at = '2026-09-11T21:12:00+02:00',
-  String? via = 'eigen',
+  String? via = 'own',
 }) =>
     {
       'status': 'success',
@@ -63,9 +63,9 @@ void main() {
     test('Aufruf und Nutzlast: Beleg und Adresse gehen an sendReceiptEmail', () async {
       final f = clientMit(erfolg());
 
-      final erg = await f.client.belegSenden(
+      final erg = await f.client.sendReceiptEmail(
         fullReceiptId: 'voll-42',
-        an: '  Gast@Example.com  ',
+        to: '  Gast@Example.com  ',
       );
 
       final anfrage = f.log.single;
@@ -81,27 +81,27 @@ void main() {
       });
       expect(erg.to, 'gast@example.com');
       expect(erg.at, '2026-09-11T21:12:00+02:00');
-      expect(erg.via, 'eigen');
+      expect(erg.via, 'own');
     });
 
     test('Sprache geht nur mit, wenn sie gesetzt ist', () async {
       final mit = clientMit(erfolg());
-      await mit.client.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com', sprache: 'de');
-      expect((jsonDecode(mit.log.single.body)['params'] as Map)['sprache'], 'de');
+      await mit.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com', language: 'de');
+      expect((jsonDecode(mit.log.single.body)['params'] as Map)['language'], 'de');
 
       final ohne = clientMit(erfolg());
-      await ohne.client.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com', sprache: '  ');
-      expect((jsonDecode(ohne.log.single.body)['params'] as Map).containsKey('sprache'), isFalse);
+      await ohne.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com', language: '  ');
+      expect((jsonDecode(ohne.log.single.body)['params'] as Map).containsKey('language'), isFalse);
     });
 
     test('ohne Beleg oder ohne Adresse geht nichts hinaus', () async {
       final f = clientMit(erfolg());
       await expectLater(
-        f.client.belegSenden(fullReceiptId: '   ', an: 'gast@example.com'),
+        f.client.sendReceiptEmail(fullReceiptId: '   ', to: 'gast@example.com'),
         throwsA(isA<KasseneckValidationError>()),
       );
       await expectLater(
-        f.client.belegSenden(fullReceiptId: 'voll-42', an: '   '),
+        f.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: '   '),
         throwsA(isA<KasseneckValidationError>()),
       );
       expect(f.log, isEmpty);
@@ -115,17 +115,17 @@ void main() {
       final f = clientMit({
         'status': 'error',
         'message': 'Die E-Mail-Adresse ist ungültig.',
-        'code': 'adresse_ungueltig',
-        'data': {'code': 'adresse_ungueltig'},
+        'code': 'invalid_address',
+        'data': {'code': 'invalid_address'},
       });
       await expectLater(
-        f.client.belegSenden(fullReceiptId: 'voll-42', an: 'gast@@example'),
-        throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'adresse_ungueltig')),
+        f.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@@example'),
+        throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'invalid_address')),
       );
       expect((jsonDecode(f.log.single.body)['params'] as Map)['to'], 'gast@@example');
     });
 
-    for (final code in belegMailFehlercodes) {
+    for (final code in receiptEmailErrorCodes) {
       test('der Fehlercode "$code" kommt unverändert an', () async {
         final f = clientMit({
           'status': 'error',
@@ -134,7 +134,7 @@ void main() {
           'data': {'code': code},
         });
         await expectLater(
-          f.client.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com'),
+          f.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com'),
           throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', code)),
         );
       });
@@ -145,7 +145,7 @@ void main() {
       // die Kasse wie „nicht gesendet" — und der Kassier schickte sie erneut.
       final f = clientMit({'status': 'success', 'data': {}});
 
-      final erg = await f.client.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com');
+      final erg = await f.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com');
 
       expect(erg.to, 'gast@example.com', reason: 'ohne data.to gilt die gesendete Adresse');
       expect(erg.at, isNull);
@@ -159,7 +159,7 @@ void main() {
       // zieht der API-Schlüssel-Weg (`_daten`).
       final f = clientMit({'status': 'success', 'data': 'ja'});
       await expectLater(
-        f.client.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com'),
+        f.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com'),
         throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'data-not-object')),
       );
     });
@@ -167,7 +167,7 @@ void main() {
     test('eine Nicht-JSON-Antwort ist ein HTTP-Fehler, keine leere Zusage', () async {
       final f = clientMit('<html>Gateway</html>');
       await expectLater(
-        f.client.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com'),
+        f.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com'),
         throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'not-json')),
       );
     });
@@ -189,31 +189,37 @@ void main() {
       );
 
       await expectLater(
-        client.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com'),
-        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.netz)),
+        client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com'),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.reasonNetwork)),
       );
       expect(versuche, 1);
     });
   });
 
   group('Fehlercode-Katalog', () {
-    test('nennt genau die vier Codes des Backends', () {
-      // Zwilling von FEHLERCODES in functions/beleg-mail-core.js und von
-      // BELEG_MAIL_FEHLER im JS-Paket. Ein Code mehr oder weniger heisst: die
-      // Kasse kennt einen Ausgang nicht, den es gibt.
-      expect(belegMailFehlercodes, [
-        'adresse_ungueltig',
-        'beleg_nicht_gefunden',
-        'zu_oft',
-        'versand_fehlgeschlagen',
+    test('beginnt mit den vier fachlichen Codes des Backends (Rest: receipt_v3_codes_test)', () {
+      expect(receiptEmailErrorCodes.take(4), [
+        'invalid_address',
+        'receipt_not_found',
+        'too_many_requests',
+        'send_failed',
       ]);
+      expect(isReceiptEmailErrorCode('zu_oft'), isFalse, reason: 'alter Code aus /v1');
+    });
+
+    test('ein unbekannter Versandweg kommt als null an, auch der alte deutsche', () async {
+      for (final (roh, soll) in [('own', 'own'), ('platform_fallback', 'platform_fallback'), ('eigen', null), ('plattform-fallback', null)]) {
+        final f = clientMit({'status': 'success', 'data': {'to': 'gast@example.com', 'at': '2026-09-11T21:12:00+02:00', 'via': roh}});
+        final erg = await f.client.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com');
+        expect(erg.via, soll, reason: roh);
+      }
     });
 
     test('ein Anzeigetext ist kein Code', () {
-      expect(istBelegMailFehlercode('zu_oft'), isTrue);
-      expect(istBelegMailFehlercode('Zu viele Versandversuche'), isFalse);
-      expect(istBelegMailFehlercode(null), isFalse);
-      expect(istBelegMailFehlercode(7), isFalse);
+      expect(isReceiptEmailErrorCode('too_many_requests'), isTrue);
+      expect(isReceiptEmailErrorCode('Zu viele Versandversuche'), isFalse);
+      expect(isReceiptEmailErrorCode(null), isFalse);
+      expect(isReceiptEmailErrorCode(7), isFalse);
     });
   });
 }

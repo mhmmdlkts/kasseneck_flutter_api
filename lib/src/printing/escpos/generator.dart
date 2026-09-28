@@ -143,7 +143,7 @@ class EscPosGenerator {
   List<int> reset() {
     List<int> bytes = [];
     bytes += cInit.codeUnits;
-    bytes += setDruckbereich();
+    bytes += setPrintArea();
     _styles = PosStyles();
     bytes += setGlobalCodeTable(_codeTable);
     bytes += setGlobalFont(_font);
@@ -166,7 +166,7 @@ class EscPosGenerator {
   /// Spaltenrechnung), sondern das Raster, in dem der Text wirklich steht.
   ///
   /// Zwilling von `escPosSetDruckbereich` im npm-Paket (0.26.0).
-  List<int> setDruckbereich() {
+  List<int> setPrintArea() {
     final int punkte = _getMaxCharsPerLine(PosFontType.fontA) * 12;
     return [
       ...cLeftMargin.codeUnits, 0, 0,
@@ -201,20 +201,20 @@ class EscPosGenerator {
     return bytes;
   }
 
-  /// `zeilenanfang` (Vorgabe `true`) sagt, ob dieser Aufruf am Anfang einer
+  /// `atLineStart` (Vorgabe `true`) sagt, ob dieser Aufruf am Anfang einer
   /// Druckzeile steht. Nur dort nimmt der Drucker `ESC a` (Ausrichtung)
   /// ueberhaupt an; mitten in der Zeile verwirft er den Befehl wortlos. Der
   /// Bytestrom bekommt ihn trotzdem -- die Bytefolge soll sich dadurch nicht
   /// aendern --, aber der intern gemerkte Zustand darf sich NICHT auf den
   /// neuen Wert stellen: sonst haelt eine spaetere, echte Zeile die
   /// Ausrichtung faelschlich schon fuer gesetzt und unterlaesst den Befehl.
-  List<int> setStyles(PosStyles styles, {bool zeilenanfang = true}) {
+  List<int> setStyles(PosStyles styles, {bool atLineStart = true}) {
     List<int> bytes = [];
     if (styles.align != _styles.align) {
       bytes += latin1.encode(styles.align == PosAlign.left
           ? cAlignLeft
           : (styles.align == PosAlign.center ? cAlignCenter : cAlignRight));
-      if (zeilenanfang) {
+      if (atLineStart) {
         _styles = _styles.copyWith(align: styles.align);
       }
     }
@@ -265,7 +265,7 @@ class EscPosGenerator {
     // Die Ausrichtung wird hier bewusst NICHT nochmal mitgeschrieben (frueher
     // `copyWith(align: styles.align, ...)`): das hebelte den Schutz oben aus,
     // der eine verworfene Ausrichtung (mitten in der Zeile) gerade NICHT
-    // gemerkt haben will -- dieser Zweig lief unabhaengig vom `zeilenanfang`
+    // gemerkt haben will -- dieser Zweig lief unabhaengig vom `atLineStart`
     // immer mit.
     if (styles.codeTable != null) {
       bytes += Uint8List.fromList(
@@ -422,12 +422,12 @@ class EscPosGenerator {
     PosAlign align = PosAlign.center,
     QRSize size = QRSize.size4,
     QRCorrection cor = QRCorrection.L,
-    bool modell1 = false,
+    bool model1 = false,
   }) {
     List<int> bytes = [];
     // Set alignment
     bytes += setStyles(const PosStyles().copyWith(align: align));
-    QRCode qr = QRCode(text, size, cor, modell1: modell1);
+    QRCode qr = QRCode(text, size, cor, model1: model1);
     bytes += qr.bytes;
     return bytes;
   }
@@ -607,7 +607,7 @@ class EscPosGenerator {
     // Rasterzeile ist aber schon auf volle Breite zentriert; sie wurde also
     // ein zweites Mal zentriert und rutschte um (Zeichenzahl - Laenge) / 4
     // nach rechts.
-    bytes += setStyles(stylesFuerDrucker, zeilenanfang: colInd == 0);
+    bytes += setStyles(stylesFuerDrucker, atLineStart: colInd == 0);
 
     if (colInd != null && !volleZeile) {
       double charWidth = _getCharWidth(styles, maxCharsPerLine: maxCharsPerLine);

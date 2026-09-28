@@ -2,7 +2,7 @@
 /// `src/rechnung/vertrag.ts` im JS-Paket `@kreiseck/kasseneck-api`.
 ///
 /// `test/rechnung_api_test.dart` vergleicht jede Liste in beide Richtungen mit
-/// dem Abschnitt `rechnung` in `test/fixtures/vertrag/oberflaeche.json` (gezogen
+/// dem Abschnitt `invoice` in `test/fixtures/vertrag/surface.json` (gezogen
 /// von `tool/zwillinge.sh`). Wer hier etwas ändert, ändert zuerst das JS-Paket.
 ///
 /// Die Feldbeschreibung selbst (Grenzen, Pflichtfelder) prüft das Backend; der
@@ -10,7 +10,7 @@
 library;
 
 /// Die Aufrufe der Rechnungs-API, in der Reihenfolge des Vertrags.
-const List<String> rechnungAufrufe = [
+const List<String> invoiceCalls = [
   'createCustomer',
   'getCustomer',
   'updateCustomer',
@@ -60,6 +60,36 @@ const List<String> invoiceErrorCodes = [
   'amount_too_large',
 ];
 
+/// Fehlercodes, die nicht die Rechnung, sondern die Anfrage betreffen:
+/// Anmeldung, Freischaltung, Rand (`dialect_mismatch`,
+/// `internal_translation_error`, `response_translation_failed`) und eine
+/// fehlende Route. Sie gehören nicht zu [invoiceErrorCodes], darum liefert
+/// `invoiceErrorCode` für sie `null`.
+const List<String> invoiceRequestErrorCodes = [
+  'account_not_found',
+  'admin_required',
+  'cashregister_not_assigned',
+  'cashregister_not_found',
+  'cashregister_token_invalid',
+  'cashregister_token_missing',
+  'dialect_mismatch',
+  'internal_translation_error',
+  'live_not_enabled',
+  'method_not_allowed',
+  'mfa_required',
+  'not_found',
+  'register_user_no_business',
+  'register_user_not_allowed',
+  'register_user_not_found',
+  'response_translation_failed',
+  'session_expired',
+  'session_other_cashregister',
+  'unauthorized',
+  'user_disabled',
+  'user_verification_failed',
+  'route_missing',
+];
+
 /// Gründe einer Gutschrift; der Server druckt den deutschen Text.
 const List<String> creditNoteReasons = ['cancellation', 'price_reduction', 'return', 'incorrect_invoice', 'other'];
 
@@ -70,7 +100,7 @@ const List<String> taxSchemes = [
   'normal',
   'smallBusiness',
   'reverseCharge',
-  'igLieferung',
+  'intraCommunitySupply',
   'exportThirdCountry',
   'domesticReverseCharge',
   'oss',
@@ -78,13 +108,13 @@ const List<String> taxSchemes = [
 ];
 
 /// Steuerfälle, in denen die Rechnung keine Steuer ausweist: jede Position
-/// zählt zu 0 %, gleich welcher `vatRate` an ihr steht (`rechnungSummen`).
+/// zählt zu 0 %, gleich welcher `vatRate` an ihr steht (`computeInvoiceTotals`).
 /// `oss` gehört nicht dazu — dort wird Steuer ausgewiesen, nur nicht
 /// österreichische.
-const List<String> steuerfreieFaelle = [
+const List<String> zeroRatedTaxSchemes = [
   'smallBusiness',
   'reverseCharge',
-  'igLieferung',
+  'intraCommunitySupply',
   'exportThirdCountry',
   'domesticReverseCharge',
   'outsideScope',
@@ -118,16 +148,38 @@ const List<String> customerTypes = ['private', 'company'];
 
 const List<String> invoiceListStatus = ['final', 'paid', 'cancelled', 'open', 'overdue'];
 
-const List<String> docTypes = ['RE', 'GU'];
+/// Rechnung oder Gutschrift (bis 9.x `RE`/`GU`).
+const List<String> docTypes = ['invoice', 'credit_note'];
 
 const List<String> einvoiceFormats = ['ubl', 'cii'];
+
+/// Was einer Rechnung zur vollständigen E-Rechnung fehlt (`einvoice.missing`,
+/// auch in `details.missing` von `invoice_requirements_missing`).
+const List<String> einvoiceMissingCodes = [
+  'name',
+  'street',
+  'zip',
+  'city',
+  'country',
+  'vat_id',
+  'order_reference',
+  'order_reference_format',
+];
+
+/// Warum eine Rechnung abgeschrieben wurde (`writeOffReasonCode`).
+const List<String> writeOffReasonCodes = [
+  'uncollectible',
+  'time_barred',
+  'waived',
+  'disputed',
+  'settled_externally',
+  'other',
+];
 
 /// Sprachen einer Rechnung. Eine Rechnung hat eine Nummer und eine Sprache,
 /// beim Ausstellen eingefroren; Behörden bekommen immer `de`.
 const List<String> invoiceLanguages = ['de', 'en'];
 
-/// Einheiten einer Position. Der Aufdruck folgt der Sprache der Rechnung
-/// (Stk / pcs), in der E-Rechnung steht der Code aus UN/ECE Rec 20/21.
 /// Wie eine Rechnung bezahlt wurde. `cash` wird gebucht, die Antwort trägt dann
 /// zusätzlich den Hinweis `cash_receipt_required`: eine Barzahlung ist ein
 /// Barumsatz und braucht einen Beleg (§ 132a BAO).
@@ -140,6 +192,8 @@ const List<String> invoiceNoticeCodes = [
   'place_of_supply_check',
 ];
 
+/// Einheiten einer Position. Der Aufdruck folgt der Sprache der Rechnung
+/// (Stk / pcs), in der E-Rechnung steht der Code aus UN/ECE Rec 20/21.
 const List<String> invoiceUnits = [
   'piece', 'pair', 'set', 'dozen', 'second', 'minute', 'hour', 'day', 'night', 'week', 'month',
   'quarter', 'half_year', 'year', 'milligram', 'gram', 'kilogram', 'tonne', 'millimetre',
@@ -163,4 +217,4 @@ const List<String> invoiceSetupRequirements = [
 ];
 
 /// Gehört [code] zum Katalog der Rechnungs-API?
-bool istRechnungFehlercode(String? code) => code != null && invoiceErrorCodes.contains(code);
+bool isInvoiceErrorCode(String? code) => code != null && invoiceErrorCodes.contains(code);

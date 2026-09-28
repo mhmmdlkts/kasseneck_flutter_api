@@ -28,7 +28,7 @@ MockClient successClient(void Function(http.Request) capture) =>
       return http.Response(
         jsonEncode({'status': 'success', 'data': buildReceipt().toJson()}),
         200,
-        headers: {'content-type': 'application/json'},
+        headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
       );
     });
 
@@ -65,7 +65,7 @@ void main() {
         KeckTipRecipient(registerUserId: 'ru_7', cents: 120),
         KeckTipRecipient(registerUserId: 'ru_9', cents: 70),
       ]);
-      expect(t.fehler,
+      expect(t.validationError,
           'Trinkgeld: Summe der Empfänger (190) entspricht nicht dem Betrag (200)');
     });
 
@@ -74,7 +74,7 @@ void main() {
         KeckTipRecipient(registerUserId: 'ru_7', cents: 120),
         KeckTipRecipient(registerUserId: 'ru_9', cents: 80),
       ]);
-      expect(t.fehler, isNull);
+      expect(t.validationError, isNull);
     });
 
     test('dieselbe Person zweimal ist ein Tippfehler', () {
@@ -82,7 +82,7 @@ void main() {
         KeckTipRecipient(registerUserId: 'ru_7', cents: 100),
         KeckTipRecipient(registerUserId: 'ru_7', cents: 100),
       ]);
-      expect(t.fehler, contains('doppelt'));
+      expect(t.validationError, contains('doppelt'));
     });
 
     test('ein Anteil von 0 ist keiner', () {
@@ -103,7 +103,7 @@ void main() {
 
   group('KeckTip — Gestalt', () {
     test('fuer() legt alles auf eine Person', () {
-      final t = KeckTip.fuer('ru_7', cents: 250);
+      final t = KeckTip.forRecipient('ru_7', cents: 250);
       expect(t.recipients!.single.registerUserId, 'ru_7');
       expect(t.recipients!.single.cents, 250);
       expect(t.isValid, isTrue);
@@ -120,7 +120,7 @@ void main() {
     });
 
     test('Zahlart und Empfänger reisen mit', () {
-      final t = KeckTip.fuer('ru_7',
+      final t = KeckTip.forRecipient('ru_7',
           cents: 200, paymentMethod: KeckPaymentMethod.creditCard);
       expect(t.toJson(), {
         'cents': 200,
@@ -138,9 +138,9 @@ void main() {
       final api = apiWith(successClient((r) => captured = r));
 
       await api.sellReceipt(
-        paymentMethod: KeckPaymentMethod.creditCard,
+        payments: const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 4700)],
         items: [ware],
-        tip: KeckTip.fuer('ru_7', cents: 200),
+        tip: KeckTip.forRecipient('ru_7', cents: 200),
       );
 
       final params = paramsVon(captured);
@@ -160,7 +160,7 @@ void main() {
       final api = apiWith(successClient((r) => captured = r));
 
       await api
-          .sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [ware]);
+          .sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [ware]);
 
       expect(paramsVon(captured).containsKey('tip'), isFalse);
     });
@@ -169,11 +169,11 @@ void main() {
       final api = apiWith(neverCalled());
       expect(
         () => api.sellReceipt(
-          paymentMethod: KeckPaymentMethod.cash,
+          payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)],
           items: [ware],
           tip: const KeckTip(cents: 0),
         ),
-        throwsArgumentError,
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
     });
 
@@ -181,13 +181,13 @@ void main() {
       final api = apiWith(neverCalled());
       expect(
         () => api.sellReceipt(
-          paymentMethod: KeckPaymentMethod.cash,
+          payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)],
           items: [ware],
           tip: const KeckTip(cents: 200, recipients: [
             KeckTipRecipient(registerUserId: 'ru_7', cents: 100),
           ]),
         ),
-        throwsArgumentError,
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
     });
 
@@ -195,11 +195,11 @@ void main() {
       final api = apiWith(neverCalled());
       expect(
         () => api.sellReceipt(
-          paymentMethod: KeckPaymentMethod.cash,
+          payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)],
           items: const [],
-          tip: KeckTip.fuer('ru_7', cents: 200),
+          tip: KeckTip.forRecipient('ru_7', cents: 200),
         ),
-        throwsArgumentError,
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
     });
   });
@@ -227,33 +227,33 @@ void main() {
 /// Betriebs; deshalb darf das Feld nicht mitgeschickt werden, wenn es niemand
 /// gesetzt hat.
 void _trinkgeldMerkmalTests() {
-  group('KeckTip — sofortErhalten', () {
+  group('KeckTip – receivedImmediately', () {
     test('ohne Angabe steht das Feld NICHT in der Nutzlast', () {
       // Sonst wäre „nichts gesagt" plötzlich eine Aussage, und die
       // Voreinstellung des Betriebs käme nie zum Zug.
-      expect(const KeckTip(cents: 200).toJson().containsKey('sofortErhalten'),
+      expect(const KeckTip(cents: 200).toJson().containsKey('receivedImmediately'),
           isFalse);
     });
 
     test('true und false werden beide mitgeschickt', () {
-      expect(const KeckTip(cents: 200, sofortErhalten: true).toJson(),
-          containsPair('sofortErhalten', true));
-      expect(const KeckTip(cents: 200, sofortErhalten: false).toJson(),
-          containsPair('sofortErhalten', false));
+      expect(const KeckTip(cents: 200, receivedImmediately: true).toJson(),
+          containsPair('receivedImmediately', true));
+      expect(const KeckTip(cents: 200, receivedImmediately: false).toJson(),
+          containsPair('receivedImmediately', false));
     });
 
     test('die Komfort-Konstruktoren reichen es durch', () {
-      expect(KeckTip.euro(amount: 2.0, sofortErhalten: true).sofortErhalten,
+      expect(KeckTip.euro(amount: 2.0, receivedImmediately: true).receivedImmediately,
           isTrue);
       expect(
-          KeckTip.fuer('ru_7', cents: 200, sofortErhalten: false).toJson(),
-          containsPair('sofortErhalten', false));
+          KeckTip.forRecipient('ru_7', cents: 200, receivedImmediately: false).toJson(),
+          containsPair('receivedImmediately', false));
     });
 
     test('es berührt die Prüfungen nicht', () {
       // Das Merkmal sagt nichts über die Richtigkeit des Betrags aus.
-      expect(const KeckTip(cents: 200, sofortErhalten: true).isValid, isTrue);
-      expect(const KeckTip(cents: 0, sofortErhalten: true).isValid, isFalse);
+      expect(const KeckTip(cents: 200, receivedImmediately: true).isValid, isTrue);
+      expect(const KeckTip(cents: 0, receivedImmediately: true).isValid, isFalse);
     });
   });
 }

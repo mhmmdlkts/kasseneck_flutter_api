@@ -1,0 +1,154 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "265bcf3e14cdea33ec3c4df399eb487d40c0d7793ee23d2ee12bcf664bcad550",
+    "inputsSha256": "cee31126cc755fd21441abae289997aeb0884a15eb230ce231defd8bb0bdc0fd",
+    "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+    "inputs": [
+      "docs/api/fehlercodes.json",
+      "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/beleg-mail-core.js",
+      "functions/gemeinsam/api-rand.js",
+      "functions/gemeinsam/api-vokabular-v3.js",
+      "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/storno-core.js",
+      "functions/gemeinsam/tip-core.js",
+      "functions/gemeinsam/vat-buckets.js",
+      "functions/gemeinsam/zahlungen-core.js",
+      "functions/invoice-api-core.js",
+      "functions/invoice-api-endpoints.js",
+      "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
+      "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
+      "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
+      "functions/test/unit/helpers/kassen-fehlerstellen.js",
+      "functions/test/unit/v3-vertrag-export.test.js"
+    ]
+  },
+  "channel": "api",
+  "cases": [
+    {
+      "name": "via_own_mailbox",
+      "endpoint": "sendReceiptEmail",
+      "path": "/v3/sendReceiptEmail",
+      "params": {
+        "fullReceiptId": "INVALID_EXAMPLE_2D711642",
+        "to": "max@example.at",
+        "language": "de"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "to": "max@example.at",
+          "at": "2026-09-26T10:00:00+02:00",
+          "via": "own"
+        }
+      }
+    },
+    {
+      "name": "via_platform",
+      "endpoint": "sendReceiptEmail",
+      "path": "/v3/sendReceiptEmail",
+      "params": {
+        "fullReceiptId": "INVALID_EXAMPLE_2D711642",
+        "to": "max@example.at",
+        "language": "de"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "to": "max@example.at",
+          "at": "2026-09-26T10:00:00+02:00",
+          "via": "platform"
+        }
+      }
+    },
+    {
+      "name": "via_platform_fallback",
+      "endpoint": "sendReceiptEmail",
+      "path": "/v3/sendReceiptEmail",
+      "params": {
+        "fullReceiptId": "INVALID_EXAMPLE_2D711642",
+        "to": "max@example.at"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "to": "max@example.at",
+          "at": "2026-09-26T10:00:00+02:00",
+          "via": "platform_fallback"
+        }
+      }
+    },
+    {
+      "name": "error_invalid_address",
+      "endpoint": "sendReceiptEmail",
+      "path": "/v3/sendReceiptEmail",
+      "params": {
+        "fullReceiptId": "INVALID_EXAMPLE_2D711642",
+        "to": "kein-empfaenger"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die E-Mail-Adresse ist ungültig.",
+        "data": {
+          "code": "invalid_address"
+        },
+        "code": "invalid_address"
+      }
+    },
+    {
+      "name": "error_german_parameter",
+      "endpoint": "sendReceiptEmail",
+      "path": "/v3/sendReceiptEmail",
+      "params": {
+        "fullReceiptId": "INVALID_EXAMPLE_2D711642",
+        "to": "max@example.at",
+        "sprache": "de"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "code": "validation",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "sprache",
+              "message": "Unbekanntes Feld."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

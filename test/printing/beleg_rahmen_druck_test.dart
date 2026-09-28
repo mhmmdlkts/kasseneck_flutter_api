@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 
@@ -10,8 +10,8 @@ import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 void main() {
   test('setBelegLayout: STORNOBELEG als zwei Rahmenzeilen und Text, ohne GS ! Hoehe und ohne GS B', () async {
     final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
-    await paper.setBelegLayout(
-      const BelegLayout(lines: [BelegBanner(text: 'STORNOBELEG', warnung: true)], paperSize: 'mm58', regelwerk: 2),
+    await paper.setReceiptLayout(
+      const ReceiptLayout(lines: [LayoutBannerLine(text: 'STORNOBELEG', tone: LayoutBannerTone.warning)], paperSize: 'mm58', ruleset: 2),
       cut: false,
       qrMode: QrPrintMode.native,
     );

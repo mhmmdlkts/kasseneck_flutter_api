@@ -1,0 +1,27 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Bruttopreis: der Server rechnet die USt heraus",
+  "request": {
+    "idempotencyKey": "ex-2",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "gross",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Frühstück",
+        "quantity": 1,
+        "unitPriceCents": 1200,
+        "vatRate": 20
+      }
+    ]
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 1000,
+      "vatCents": 200,
+      "grossCents": 1200
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Beträge in ganzen Cent",
+  "request": {
+    "idempotencyKey": "ex-9",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "net",
+    "serviceStart": "2026-09-14",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 1,
+        "unitPriceCents": 12.5,
+        "vatRate": 20
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].unitPriceCents"
+    ]
+  }
+}

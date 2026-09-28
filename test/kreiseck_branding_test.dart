@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
@@ -84,10 +84,10 @@ void main() {
       final alterWeg = await render(buildReceipt(items: cartA().items, showKreiseckLogo: true));
       final alteBytes = _einzigesRasterbild(alterWeg.bytes);
 
-      final layout = BelegLayout.fromJson(
-          jsonDecode(File('test/fixtures/vertrag/erwartet/verkauf-bar.lines.json').readAsStringSync()))!;
+      final layout = ReceiptLayout.fromJson(
+          jsonDecode(File('test/fixtures/vertrag/expected/sale-cash.lines.json').readAsStringSync()))!;
       final neuerWeg = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
-      await neuerWeg.setBelegBlatt(layout, marke: true, cut: false, qrMode: QrPrintMode.native);
+      await neuerWeg.setReceiptSheet(layout, brandMark: true, cut: false, qrMode: QrPrintMode.native);
       final neueBytes = _einzigesRasterbild(neuerWeg.bytes);
 
       expect(alteBytes, neueBytes, reason: 'beide Wege muessen byteidentisch dieselbe Marke drucken');

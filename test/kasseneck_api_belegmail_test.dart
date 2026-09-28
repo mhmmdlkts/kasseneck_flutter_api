@@ -20,7 +20,7 @@ KasseneckApi apiMit(MockClient client) => KasseneckApi(
     );
 
 http.Response huelle(Map<String, dynamic> j) =>
-    http.Response(jsonEncode(j), 200, headers: {'content-type': 'application/json'});
+    http.Response(jsonEncode(j), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
 
 void main() {
   test('ruft sendReceiptEmail mit Schlüssel, Kassen-Token und Nutzlast', () async {
@@ -29,13 +29,13 @@ void main() {
       gesendet = r;
       return huelle({
         'status': 'success',
-        'data': {'to': 'gast@example.com', 'at': '2026-09-11T21:12:00+02:00', 'via': 'plattform'},
+        'data': {'to': 'gast@example.com', 'at': '2026-09-11T21:12:00+02:00', 'via': 'platform'},
       });
     }));
 
-    final erg = await api.belegSenden(fullReceiptId: 'voll-42', an: ' Gast@Example.com ');
+    final erg = await api.sendReceiptEmail(fullReceiptId: 'voll-42', to: ' Gast@Example.com ');
 
-    expect(gesendet.url.toString(), 'https://api.kasseneck.at/v1/sendReceiptEmail');
+    expect(gesendet.url.toString(), 'https://api.kasseneck.at/v3/sendReceiptEmail');
     expect(gesendet.headers['Authorization'], 'Bearer test-key');
     expect(gesendet.headers['cashregister-token'], isNotEmpty);
     final params = (jsonDecode(gesendet.body) as Map)['params'] as Map;
@@ -44,7 +44,7 @@ void main() {
     expect(params, {'fullReceiptId': 'voll-42', 'to': 'Gast@Example.com'});
     expect(erg.to, 'gast@example.com');
     expect(erg.at, '2026-09-11T21:12:00+02:00');
-    expect(erg.via, 'plattform');
+    expect(erg.via, 'platform');
   });
 
   test('die Sprache geht mit, wenn sie gesetzt ist', () async {
@@ -54,18 +54,18 @@ void main() {
       return huelle({'status': 'success', 'data': {'to': 'gast@example.com'}});
     }));
 
-    await api.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com', sprache: 'de');
-    expect(params['sprache'], 'de');
+    await api.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com', language: 'de');
+    expect(params['language'], 'de');
   });
 
   test('ohne Beleg oder Adresse geht nichts hinaus', () async {
     final api = apiMit(MockClient((r) async => fail('darf nicht rausgehen: ${r.url}')));
     await expectLater(
-      api.belegSenden(fullReceiptId: '  ', an: 'gast@example.com'),
+      api.sendReceiptEmail(fullReceiptId: '  ', to: 'gast@example.com'),
       throwsA(isA<KasseneckValidationError>()),
     );
     await expectLater(
-      api.belegSenden(fullReceiptId: 'voll-42', an: ''),
+      api.sendReceiptEmail(fullReceiptId: 'voll-42', to: ''),
       throwsA(isA<KasseneckValidationError>()),
     );
   });
@@ -74,13 +74,13 @@ void main() {
     final api = apiMit(MockClient((r) async => huelle({
           'status': 'error',
           'message': 'Zu viele Versandversuche — bitte später erneut versuchen.',
-          'code': 'zu_oft',
-          'data': {'code': 'zu_oft'},
+          'code': 'too_many_requests',
+          'data': {'code': 'too_many_requests'},
         })));
 
     await expectLater(
-      api.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com'),
-      throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'zu_oft')),
+      api.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com'),
+      throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'too_many_requests')),
     );
   });
 
@@ -89,7 +89,7 @@ void main() {
     // Hülle.
     final api = apiMit(MockClient((r) async => huelle({'status': 'success', 'data': 'ja'})));
     await expectLater(
-      api.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com'),
+      api.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com'),
       throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'data-not-object')),
     );
   });
@@ -97,7 +97,7 @@ void main() {
   test('eine unvollständige Erfolgsantwort wirft nicht — die Mail ist draussen', () async {
     final api = apiMit(MockClient((r) async => huelle({'status': 'success', 'data': {}})));
 
-    final erg = await api.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com');
+    final erg = await api.sendReceiptEmail(fullReceiptId: 'voll-42', to: 'gast@example.com');
 
     expect(erg.to, 'gast@example.com');
     expect(erg.at, isNull);
