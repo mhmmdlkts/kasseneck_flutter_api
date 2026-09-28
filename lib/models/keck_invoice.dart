@@ -1,4 +1,4 @@
-import 'package:kasseneck_api/enums/keck_invoice_payment_methode.dart';
+import 'package:kasseneck_api/enums/keck_invoice_payment_method.dart';
 
 class KeckInvoice {
   final String invoiceNumber;

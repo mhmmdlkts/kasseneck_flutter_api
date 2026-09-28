@@ -6,7 +6,7 @@ library;
 import 'dart:typed_data';
 
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/services/logo_service.dart';

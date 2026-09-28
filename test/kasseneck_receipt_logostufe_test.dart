@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 
 import 'helpers/test_receipts.dart';

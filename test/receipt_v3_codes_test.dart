@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart' show CancellationState;
+import 'package:kasseneck_api/pos.dart' show CancellationState;
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/src/receipt/codes.dart' show anmeldungUndRandCodes, cancellationErrorCodes, paymentErrorCodes, receiptEmailErrorCodes;
 

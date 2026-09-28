@@ -1,7 +1,7 @@
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// Veraltet: rechnet Spalten mit Flex und bricht anders um als das Papier;

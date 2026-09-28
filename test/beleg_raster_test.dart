@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
-import 'package:kasseneck_api/models/beleg_raster.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
+import 'package:kasseneck_api/models/receipt_grid.dart';
 
 /// Das Dart-Raster ist der Zwilling von `renderReceiptGrid` (JS-Paket): fuer
 /// jede Golden-Fixture muss der Klartext zeichengenau den `grid32.txt` und

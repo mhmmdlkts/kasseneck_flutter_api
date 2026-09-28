@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
-import 'package:kasseneck_api/models/marke.dart';
+import 'package:kasseneck_api/models/brand_mark.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 import 'package:my_pos/models/my_pos_paper.dart';
 import 'package:qr/qr.dart';

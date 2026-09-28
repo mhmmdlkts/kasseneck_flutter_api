@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
 
 /// Dieselbe Formel wie im npm-Golden-Test und `scripts/belege-fixtures.mjs`.

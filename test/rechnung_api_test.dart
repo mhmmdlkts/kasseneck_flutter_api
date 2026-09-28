@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kasseneck_api/rechnung.dart';
+import 'package:kasseneck_api/invoice.dart';
 import 'package:kasseneck_api/src/aufrufe.dart';
 
 /// Der Rechnungs-Client gegen den Vertrag des JS-Zwillings.

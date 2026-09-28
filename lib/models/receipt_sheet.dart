@@ -12,9 +12,9 @@ import 'dart:convert' show utf8;
 import 'dart:math' as math;
 
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
-import 'package:kasseneck_api/models/beleg_raster.dart';
-import 'package:kasseneck_api/models/marke_daten.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
+import 'package:kasseneck_api/models/receipt_grid.dart';
+import 'package:kasseneck_api/models/brand_mark_data.dart';
 import 'package:kasseneck_api/src/printing/qr_groesse.dart';
 
 enum SheetLogoSize {

@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kasseneck_api/rechnung.dart';
+import 'package:kasseneck_api/invoice.dart';
 
 /// Die Rechnungs-API auf dem englischen `/v3`-Draht, gegen den Vertrags-Export
 /// des Backends (`v3/antworten/rechnungen.json`, erzeugt aus den echten

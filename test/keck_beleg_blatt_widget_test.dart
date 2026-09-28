@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/src/printing/qr_groesse.dart';
 import 'package:kasseneck_api/src/printing/raster/raster_codec.dart';
 import 'package:kasseneck_api/src/printing/raster/raster_image.dart';
-import 'package:kasseneck_api/widgets/keck_beleg_blatt_widget.dart';
+import 'package:kasseneck_api/widgets/keck_receipt_sheet_widget.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 ReceiptLayout _fixture(String name) => ReceiptLayout.fromJson(

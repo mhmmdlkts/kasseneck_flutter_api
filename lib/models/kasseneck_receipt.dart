@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:kasseneck_api/models/beleg_blatt.dart' show SheetLogoSize;
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart' show SheetLogoSize;
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart' show KasseneckApi, KasseneckReceiptFormatError;

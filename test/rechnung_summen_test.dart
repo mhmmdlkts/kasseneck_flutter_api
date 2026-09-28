@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/rechnung.dart';
+import 'package:kasseneck_api/invoice.dart';
 import 'package:kasseneck_api/src/vat_math.dart';
 
 /// `rechnungSummen` gegen die Prüffälle des JS-Zwillings.

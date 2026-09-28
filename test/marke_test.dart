@@ -6,8 +6,8 @@ import 'package:crypto/crypto.dart' show sha256;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
-import 'package:kasseneck_api/models/marke.dart';
-import 'package:kasseneck_api/models/marke_daten.dart';
+import 'package:kasseneck_api/models/brand_mark.dart';
+import 'package:kasseneck_api/models/brand_mark_data.dart';
 
 /// Zwilling von `test/marke-daten.test.ts` im JS-Paket: dieselben Masse,
 /// dasselbe Raster, derselbe Rundlauf, dasselbe Golden.

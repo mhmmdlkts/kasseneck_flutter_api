@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
-import 'package:kasseneck_api/services/druck_logo.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
+import 'package:kasseneck_api/services/print_logo.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 
 ({int width, int height, Uint8List rgba}) _schwarz(int b, int h) {

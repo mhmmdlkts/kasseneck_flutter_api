@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 
 /// `verteileRabatt` (kassieren.dart) gegen die JS-Golden-Zahlen — dieselben
 /// Werte wie src/receipt/discount.ts, damit beide Pakete nachweislich gleich

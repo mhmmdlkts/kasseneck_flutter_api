@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
-import 'package:kasseneck_api/kasse.dart' show RegisterReceiptClient, CancellationState, ReceiptSummary, cardRefundReference;
+import 'package:kasseneck_api/pos.dart' show RegisterReceiptClient, CancellationState, ReceiptSummary, cardRefundReference;
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';

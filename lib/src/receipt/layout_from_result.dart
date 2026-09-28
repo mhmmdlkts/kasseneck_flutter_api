@@ -1,5 +1,5 @@
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 
 /// Was zum Drucken und Anzeigen eines Belegs aus einer Antwort gilt

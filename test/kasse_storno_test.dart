@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 
 /// Storno-Regeln der Kasse — Zwilling von `models/cancellation.ts` und der
 /// Storno-Regeln in `belege.ts` der Browser-Kasse.

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 
 /// Der laufende Verkauf: erfassen, ändern, zusammenzählen — und der Rabatt als
 /// negative Position je Steuersatz. Alles in ganzen Cent, ohne einen einzigen

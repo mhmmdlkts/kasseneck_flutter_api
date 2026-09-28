@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 
 /// Aus Artikelgruppen und Artikeln werden Kategorien und Kacheln — Zwilling
 /// von `kacheln.ts` und `kasse/artikel.ts` im JS-Paket.

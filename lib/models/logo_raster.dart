@@ -9,7 +9,7 @@ library;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:kasseneck_api/models/beleg_blatt.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
 import 'package:kasseneck_api/src/printing/raster/raster_image.dart';
 
 class LogoRaster {

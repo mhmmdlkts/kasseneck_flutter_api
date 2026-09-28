@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 import 'package:kreiseck_design/kreiseck_design.dart';
 
 /// Das Kassenthema: vier Stile, eine Betriebsfarbe, vier Schriftgrößen.

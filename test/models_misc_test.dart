@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/enums/keck_invoice_payment_methode.dart';
+import 'package:kasseneck_api/enums/keck_invoice_payment_method.dart';
 import 'package:kasseneck_api/enums/keck_month.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/receipt_type.dart';
 import 'package:kasseneck_api/models/keck_invoice.dart';
 import 'package:kasseneck_api/models/keck_user.dart';
 import 'package:kasseneck_api/models/report_month.dart';
-import 'package:kasseneck_api/models/stripe_url_seesion.dart';
+import 'package:kasseneck_api/models/stripe_url_session.dart';
 import 'package:kasseneck_api/models/sumup_checkout_response.dart';
 
 /// Firestore-Timestamp-Ersatz: alles mit toDate() wird akzeptiert (dynamic dispatch).

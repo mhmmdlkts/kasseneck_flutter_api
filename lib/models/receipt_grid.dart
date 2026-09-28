@@ -14,7 +14,7 @@
 /// des JS-Pakets halten beide Seiten zeichengenau gleich.
 library;
 
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 
 const int charsPer58mm = 32;
 const int charsPer80mm = 48;

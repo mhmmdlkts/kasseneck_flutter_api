@@ -1,5 +1,5 @@
 import 'package:kasseneck_api/enums/receipt_type.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/services/vienna_time.dart';
 

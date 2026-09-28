@@ -9,7 +9,7 @@ import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
-import 'package:kasseneck_api/rechnung.dart' show InvoiceTransport, InvoiceApi, kInvoiceBaseUrl;
+import 'package:kasseneck_api/invoice.dart' show InvoiceTransport, InvoiceApi, kInvoiceBaseUrl;
 import 'package:kasseneck_api/register.dart' show RegisterClient, RegisterTransport, kRegisterBaseUrl;
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/src/hobex_hps/discovery.dart';
@@ -668,7 +668,7 @@ void main() {
       expect(mitKopf, {'lib/src/v3.dart'});
       expect(mitV3, {
         'lib/kasseneck_api.dart',
-        'lib/rechnung.dart',
+        'lib/invoice.dart',
         'lib/register.dart',
         'lib/src/register/pairing.dart',
         'lib/src/register/transport.dart',

@@ -164,7 +164,7 @@ payments, you do not need to write any code:
 - **Receipt widgets** that render the same receipt as the printer.
 - **Reports:** daily and monthly report PDFs, receipt history.
 - **Register login flow:** device pairing, PIN login and sessions for register
-  users (`register.dart`, `kasse.dart`).
+  users (`register.dart`, `pos.dart`).
 - **Invoice API:** invoices under § 11 UStG (not receipts), customers,
   cancellation and credit notes, PDF and e-invoice XML (UBL or CII).
 
@@ -188,8 +188,8 @@ payments, you do not need to write any code:
 | Client | Import | Credentials | Use it for |
 | --- | --- | --- | --- |
 | `KasseneckApi` | `kasseneck_api.dart` | API key as bearer + `cashregister-token` header, base URL `https://api.kasseneck.at/v1` | POS devices and apps: selling, cancelling, reports, card payments |
-| `RegisterClient`, `RegisterReceiptClient` | `register.dart`, `kasse.dart` | pairing code, then device secret + PIN, then a Firebase ID token and a register session, base URL `https://kasse.kasseneck.at/api` | Register apps where staff log in personally (permissions per user) |
-| `RechnungApi` | `rechnung.dart` | API key only, no cashbox token | Invoices and customers, typically from a server |
+| `RegisterClient`, `RegisterReceiptClient` | `register.dart`, `pos.dart` | pairing code, then device secret + PIN, then a Firebase ID token and a register session, base URL `https://kasse.kasseneck.at/api` | Register apps where staff log in personally (permissions per user) |
+| `RechnungApi` | `invoice.dart` | API key only, no cashbox token | Invoices and customers, typically from a server |
 
 The register login in short: `RegisterClient().pairRegisterDevice(code: …)`
 exchanges a pairing code from the Kasseneck panel for a permanent device
@@ -199,7 +199,7 @@ identity; `registerUserLogin(…)` or `registerPinLogin(…)` returns a
 session transport:
 
 ```dart
-import 'package:kasseneck_api/kasse.dart';
+import 'package:kasseneck_api/pos.dart';
 import 'package:kasseneck_api/register.dart';
 
 final transport = RegisterTransport(
@@ -262,7 +262,7 @@ final result = await kasseneck.stornieren(
 result.beleg;       // the signed cancellation receipt
 result.restmengen;  // remaining quantity per line of the original
 
-// Register session (package:kasseneck_api/kasse.dart)
+// Register session (package:kasseneck_api/pos.dart)
 final result2 = await client.stornieren(originalReceiptId: id, grund: 'fehleingabe');
 ```
 
@@ -275,7 +275,7 @@ final result2 = await client.stornieren(originalReceiptId: id, grund: 'fehleinga
 - `KasseneckApi.stornieren` also accepts `kartenanbieter`, `kartenzahlungId` and
   `kartenzahlungsdaten` for the **refund** at the terminal (only with card as the
   refund method). `RegisterReceiptClient.stornieren` has no card arguments.
-- `restmengen(receipt)` (from `kasse.dart`) computes remaining quantities
+- `restmengen(receipt)` (from `pos.dart`) computes remaining quantities
   locally from the original's `cancellations`; the server has the final word.
 
 **Vouchers.** A value voucher is only mirrored on a full cancellation (without
@@ -299,7 +299,7 @@ itself stays byte-identical (it is part of the DEP); the backend logs the
 delivery separately.
 
 ```dart
-// Register session (package:kasseneck_api/kasse.dart)
+// Register session (package:kasseneck_api/pos.dart)
 final sent = await client.belegSenden(fullReceiptId: receipt.fullReceiptId, an: 'guest@example.com');
 // API key (package:kasseneck_api/kasseneck_api.dart)
 final sent2 = await kasseneck.belegSenden(fullReceiptId: receipt.fullReceiptId, an: 'guest@example.com');
@@ -337,8 +337,8 @@ try {
 }
 ```
 
-The error types are exported from `kasseneck_api.dart` and `rechnung.dart`.
-`kasse.dart` exports only `KasseneckReceiptFormatError`; to catch the others on
+The error types are exported from `kasseneck_api.dart` and `invoice.dart`.
+`pos.dart` exports only `KasseneckReceiptFormatError`; to catch the others on
 the register path, import `kasseneck_api.dart` as well.
 
 | Type | Meaning |
@@ -589,7 +589,7 @@ a sequential invoice number under § 11 UStG. The key is the account's
 the invoice API for the account, so check the setup first.
 
 ```dart
-import 'package:kasseneck_api/rechnung.dart';
+import 'package:kasseneck_api/invoice.dart';
 
 final invoices = RechnungApi(apiKey: 'kr_live_…');
 

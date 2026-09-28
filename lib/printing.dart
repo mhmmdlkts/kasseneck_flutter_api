@@ -42,8 +42,8 @@ export 'models/keck_print_result.dart' show KeckPrintResult;
 // DruckLogo mit seinem Ladeweg und den Massen: wer druckt, laedt das Logo
 // passend zur Papierbreite und reicht es an getPaperFromReceipt weiter.
 export 'models/print_paper.dart' show PrintPaper, PrintLogo;
-export 'services/druck_logo.dart' show loadPrintLogo;
-export 'models/beleg_blatt.dart'
+export 'services/print_logo.dart' show loadPrintLogo;
+export 'models/receipt_sheet.dart'
     show SheetLogoSize, SheetLogo, logoDimensions, logoRasterSize;
 export 'models/logo_raster.dart' show LogoRaster, logoPixelMax, isLogoPixelSizeAllowed;
 // Das Papierformat gehoert zur Schnittstelle: wer Bytes baut, muss die Breite

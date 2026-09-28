@@ -8,13 +8,13 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/qr_print_mode.dart';
-import 'package:kasseneck_api/models/beleg_blatt.dart';
-import 'package:kasseneck_api/models/beleg_layout.dart';
+import 'package:kasseneck_api/models/receipt_sheet.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
-import 'package:kasseneck_api/widgets/keck_beleg_blatt_widget.dart';
+import 'package:kasseneck_api/widgets/keck_receipt_sheet_widget.dart';
 
 /// Jeder Zeichner gegen JEDES Blatt-Golden (Zwilling von
 /// `test/blatt-zeichner.test.tsx` im npm-Paket): der ESC/POS-Druck und das

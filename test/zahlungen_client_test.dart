@@ -8,7 +8,7 @@ import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
-import 'package:kasseneck_api/kasse.dart' show RegisterReceiptClient;
+import 'package:kasseneck_api/pos.dart' show RegisterReceiptClient;
 import 'package:kasseneck_api/register.dart';
 
 import 'helpers/test_receipts.dart';

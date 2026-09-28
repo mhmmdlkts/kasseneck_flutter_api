@@ -10,7 +10,7 @@ library;
 import 'dart:convert';
 import 'dart:typed_data';
 
-import '../../models/beleg_layout.dart';
+import '../../models/receipt_layout.dart';
 import '../../models/print_paper.dart';
 import '../aufrufe.dart';
 import '../register/fehler.dart';

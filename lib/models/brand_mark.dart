@@ -10,7 +10,7 @@ import 'dart:typed_data';
 
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
-import 'package:kasseneck_api/models/marke_daten.dart';
+import 'package:kasseneck_api/models/brand_mark_data.dart';
 
 /// Entpackt gepackte Rasterzeilen (Base64, MSB zuerst, je Zeile auf volle
 /// Bytes aufgefuellt) in ein Punkt-je-Byte-Bild -- dieselbe Rechnung wie

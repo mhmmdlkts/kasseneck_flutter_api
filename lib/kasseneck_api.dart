@@ -10,7 +10,7 @@ import 'package:kasseneck_api/enums/stripe_link_mode.dart';
 import 'package:kasseneck_api/models/hobex_receipt.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/models/report_month.dart';
-import 'package:kasseneck_api/models/stripe_url_seesion.dart';
+import 'package:kasseneck_api/models/stripe_url_session.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
 import 'package:kasseneck_api/services/vienna_time.dart';
 
@@ -84,8 +84,8 @@ export 'src/receipt/codes.dart'
 // Die Typen, die der Beleg unter /v3 traegt, und der Leser fuer gespeicherte 9.x-Belege.
 export 'models/registration_info.dart' show CancellationOf, RegistrationInfo;
 export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson;
-export 'models/beleg_layout.dart' show LayoutBannerTone;
-export 'services/druck_logo.dart' show loadPrintLogo;
+export 'models/receipt_layout.dart' show LayoutBannerTone;
+export 'services/print_logo.dart' show loadPrintLogo;
 // Server-Layout zuerst, sonst Rueckfall in der gewaehlten Breite.
 export 'src/receipt/layout_from_result.dart' show ReceiptPrintLayout, receiptLayoutFromResult;
 // Zahlbetrag als Zwilling des Servers: was die Zahlungen eines Verkaufs
@@ -108,7 +108,7 @@ export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
 // Beleg-Blatt (npm 0.14.0): ein Beleg, der auf Bildschirm, Bon und PDF gleich aussieht.
 // Mit `show`: Rechenhelfer wie `qrModuleCount`, `dotsPerChar` oder
 // `clearPrintLogoCache` bleiben ausserhalb der Paket-Schnittstelle.
-export 'models/beleg_blatt.dart'
+export 'models/receipt_sheet.dart'
     show
         ReceiptSheet,
         SheetBlock,
@@ -124,9 +124,9 @@ export 'models/beleg_blatt.dart'
         logoRasterSize,
         qrSheetWidthFraction;
 export 'models/logo_raster.dart' show LogoRaster, logoRaster;
-export 'models/marke.dart' show brandMarkImage;
+export 'models/brand_mark.dart' show brandMarkImage;
 export 'models/print_paper.dart' show PrintLogo;
-export 'widgets/keck_beleg_blatt_widget.dart' show KeckReceiptSheetWidget;
+export 'widgets/keck_receipt_sheet_widget.dart' show KeckReceiptSheetWidget;
 
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///

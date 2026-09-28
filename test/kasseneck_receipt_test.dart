@@ -8,7 +8,7 @@ import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
-import 'package:kasseneck_api/kasse.dart' show KasseneckReceiptFormatError;
+import 'package:kasseneck_api/pos.dart' show KasseneckReceiptFormatError;
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
