@@ -12,7 +12,7 @@ Die vollständige Dokumentation steht im englischen README:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^9.1.0
+  kasseneck_api: ^10.0.0-rc.1
 ```
 
 Voraussetzungen: Dart SDK `^3.12.1`, Flutter `>=3.44.0`, ein Kasseneck-API-Schlüssel
@@ -25,19 +25,32 @@ import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
+import 'package:kasseneck_api/models/keck_payment.dart';
 
 final kasseneck = KasseneckApi(apiKey: 'IHR_API_SCHLUESSEL', cashregisterToken: 'IHR_KASSEN_TOKEN');
 
-// Preise in ganzen Cent (320 = 3,20 €)
+// Preise in ganzen Cent (320 = 3,20 €). Die Zahlungsliste ist Pflicht und
+// ergibt zusammen den Zahlbetrag (receiptDueCents rechnet ihn wie der Server).
 final beleg = await kasseneck.sellReceipt(
-  paymentMethod: KeckPaymentMethod.cash,
   items: [KasseneckItem(name: 'Kaffee', quantity: 2, vat: VatRate.vat20, priceCents: 320)],
+  payments: [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 640)],
 );
 print('Beleg ${beleg?.receiptId}, signiert: ${beleg?.signatureSuccess}');
 ```
 
-Stornos laufen über `kasseneck.stornieren(...)` bzw. `RegisterReceiptClient.stornieren(...)`,
-nicht über das veraltete `cancelReceipt`.
+Stornos laufen über `kasseneck.cancelReceipt(...)` bzw.
+`RegisterReceiptClient.cancelReceipt(...)`, immer mit Bezug auf den Originalbeleg.
+
+## Version 10
+
+Ab 10.0 spricht das Paket nur noch die englische API `/v3`
+(`https://api.kasseneck.at/v3`, Kassenweg `https://kasse.kasseneck.at/api/v3`),
+und auch seine eigenen Namen sind englisch (`stornieren` heißt `cancelReceipt`,
+`lib/kasse.dart` heißt `lib/pos.dart`). Was sich ändert, steht im
+[CHANGELOG](CHANGELOG.md) unter „Migrating from 9.x“, die vollständige
+Namenstabelle in [`doc/migration-10.md`](doc/migration-10.md). Die Linien 8.x
+und 9.x sind eingefroren (Zweige `release/8.x` und `release/9.x`) und
+bekommen nur noch Fehlerbehebungen.
 
 ## Welche RKSV-Pflichten die Software abdeckt
 
