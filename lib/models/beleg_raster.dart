@@ -129,11 +129,11 @@ class BelegRaster {
           // ihn jeder Weg zeichengleich -- vorher druckte der Bon doppelt hoch
           // und invers, der Bildschirm fuellte schwarz, das PDF zog ein Rechteck.
           final rahmen = '=' * n;
-          out.add(RasterZeile(text: rahmen, art: RasterArt.banner, bold: true, warnung: z.warnung));
+          out.add(RasterZeile(text: rahmen, art: RasterArt.banner, bold: true, warnung: z.warning));
           for (final t in wortzeilen(z.text, n)) {
-            out.add(RasterZeile(text: _ausrichten(t, n, BelegAlign.center), art: RasterArt.banner, bold: true, warnung: z.warnung));
+            out.add(RasterZeile(text: _ausrichten(t, n, BelegAlign.center), art: RasterArt.banner, bold: true, warnung: z.warning));
           }
-          out.add(RasterZeile(text: rahmen, art: RasterArt.banner, bold: true, warnung: z.warnung));
+          out.add(RasterZeile(text: rahmen, art: RasterArt.banner, bold: true, warnung: z.warning));
         case BelegLinie():
           out.add(RasterZeile(text: (z.char.isEmpty ? '-' : z.char[0]) * n, art: RasterArt.rule));
         case BelegLeerraum():

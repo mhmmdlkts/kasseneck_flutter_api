@@ -80,14 +80,14 @@ class _KeckReceiptLinesWidgetState extends State<KeckReceiptLinesWidget> {
         return Text(z.text, textAlign: _ta(z.align), style: _mono.copyWith(fontWeight: z.bold ? FontWeight.bold : FontWeight.normal));
       case BelegBanner():
         return Container(
-          key: Key('keck-receipt-banner-${z.warnung ? 'warnung' : 'belegart'}-$nummer'),
+          key: Key('keck-receipt-banner-${z.warning ? 'warnung' : 'belegart'}-$nummer'),
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 6),
           decoration: BoxDecoration(
             border: Border.all(color: widget.textColor, width: 1.5),
-            color: z.warnung ? widget.textColor : null,
+            color: z.warning ? widget.textColor : null,
           ),
-          child: Text(z.text, textAlign: TextAlign.center, style: _mono.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.8, color: z.warnung ? widget.paperColor : widget.textColor)),
+          child: Text(z.text, textAlign: TextAlign.center, style: _mono.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.8, color: z.warning ? widget.paperColor : widget.textColor)),
         );
       case BelegSpalten():
         return Row(

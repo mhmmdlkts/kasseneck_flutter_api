@@ -124,7 +124,7 @@ void main() {
   for (final modus in QrPrintMode.values) {
     test('setBelegBlatt $modus: QR-Inhalt ohne passende Version -- kein Absturz, qrFehler gesetzt', () async {
       final paper = PrintPaper(paperSize: KeckPaperSize.mm80, profile: CapabilityProfile());
-      final layout = BelegLayout(paperSize: 'mm80', regelwerk: 2, lines: [
+      final layout = BelegLayout(paperSize: 'mm80', ruleset: 2, lines: [
         BelegText(text: 'Firma', align: BelegAlign.center, bold: true),
         BelegQr(data: 'x' * 2332),
       ]);

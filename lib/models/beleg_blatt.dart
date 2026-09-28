@@ -51,6 +51,19 @@ class LogoMass {
 
 sealed class BlattBlock {
   const BlattBlock();
+
+  /// Der Block in der Form des Vertrags (`expected/*.sheet*.json`, npm 1.0):
+  /// `kind` `line`/`logo`/`qr`/`brandMark`, Felder englisch.
+  Map<String, Object> toJson() => switch (this) {
+        BlattZeile(:final text, :final fett, :final leer) => {'kind': 'line', 'text': text, 'bold': fett, 'blank': leer},
+        BlattLogoBlock(:final breiteAnteil, :final hoeheZeilen) => {
+            'kind': 'logo',
+            'widthFraction': breiteAnteil,
+            'heightLines': hoeheZeilen,
+          },
+        BlattQr(:final nutzlast, :final breiteAnteil) => {'kind': 'qr', 'payload': nutzlast, 'widthFraction': breiteAnteil},
+        BlattMarke(:final breite, :final hoehe) => {'kind': 'brandMark', 'width': breite, 'height': hoehe},
+      };
 }
 
 class BlattZeile extends BlattBlock {
@@ -86,6 +99,9 @@ class BelegBlatt {
   final int zeichen;
   final List<BlattBlock> bloecke;
   const BelegBlatt({required this.zeichen, required this.bloecke});
+
+  /// Das Blatt in der Form des Vertrags: `charsPerLine` und `blocks`.
+  Map<String, Object> toJson() => {'charsPerLine': zeichen, 'blocks': [for (final b in bloecke) b.toJson()]};
 }
 
 KeckPaperSize papierFuerZeichen(int zeichen, String vorgabe) {

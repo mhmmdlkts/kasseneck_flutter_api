@@ -62,7 +62,7 @@ void main() {
       final roh = _json('${_wurzel.path}/expected/$n.lines.json');
       final layout = BelegLayout.fromJson(roh)!;
       expect(layout.lines.length, (roh['lines'] as List).length, reason: n);
-      expect(layout.regelwerk, 2);
+      expect(layout.ruleset, 2);
       expect(layout.qrDaten, isNotNull, reason: '$n ohne QR');
     }
     // Belegart-Aufdruck der Fixtures
@@ -80,10 +80,29 @@ void main() {
     expect(testkasse.bannerTexte.first, startsWith('TESTKASSE'));
     expect(testkasse.bannerTexte.last, startsWith('TESTKASSE'));
     // unbekannte Zeilenart wird uebersprungen, nicht geworfen
-    final l = BelegLayout.fromJson({'lines': [{'kind': 'hologramm', 'x': 1}, {'kind': 'text', 'text': 'A', 'align': 'left', 'bold': false}], 'paperSize': 'mm80', 'regelwerk': 1})!;
+    final l = BelegLayout.fromJson({'lines': [{'kind': 'hologramm', 'x': 1}, {'kind': 'text', 'text': 'A', 'align': 'left', 'bold': false}], 'paperSize': 'mm80', 'ruleset': 1})!;
     expect(l.lines.length, 1);
     expect(BelegLayout.fromJson(null), isNull);
-  }, skip: 'Aufgabe 3 (4c): lines.json traegt seit 1.0 ruleset statt regelwerk, BelegLayout.fromJson liest noch 0.x');
+  });
+
+  test('Ton der Aufdrucke aus tone: receipt_type fuer die Belegart, warning fuer Testkasse und Ausfall', () {
+    final storno = BelegLayout.fromJson(_json('${_wurzel.path}/expected/cancellation-full.lines.json'))!;
+    expect(storno.lines.whereType<BelegBanner>().map((b) => b.tone), [LayoutBannerTone.receiptType]);
+    final testkasse = BelegLayout.fromJson(_json('${_wurzel.path}/expected/test-cashregister-sale.lines.json'))!;
+    expect(testkasse.lines.whereType<BelegBanner>().every((b) => b.warning), isTrue);
+    var warnungen = 0;
+    for (final n in namen) {
+      final roh = (_json('${_wurzel.path}/expected/$n.lines.json')['lines'] as List).cast<Map<String, dynamic>>();
+      final banner = BelegLayout.fromJson(_json('${_wurzel.path}/expected/$n.lines.json'))!.lines.whereType<BelegBanner>().toList();
+      final soll = [for (final z in roh) if (z['kind'] == 'banner') z['tone']];
+      expect(banner.map((b) => b.tone.wire).toList(), soll, reason: n);
+      warnungen += banner.where((b) => b.warning).length;
+    }
+    expect(warnungen, greaterThan(0));
+    // Der alte 0.x-Schluessel ist kein Ton mehr: kein stilles Weiterlesen.
+    final alt = BelegLayout.fromJson({'lines': [{'kind': 'banner', 'text': 'X', 'ton': 'warnung'}], 'paperSize': 'mm80', 'ruleset': 2})!;
+    expect((alt.lines.single as BelegBanner).warning, isFalse);
+  });
 
   test('KasseneckReceipt.fromJson nimmt layout/testKasse/testSignatur/kopfId; altes Backend -> null/false', () {
     final f = _json('${_wurzel.path}/receipts/cancellation-full.json');
@@ -199,10 +218,10 @@ void main() {
     // zwar genau dann, wenn der Kassier den Beleg ansehen will.
     const layout = BelegLayout(
       paperSize: 'mm58',
-      regelwerk: 1,
+      ruleset: 1,
       lines: [
-        BelegBanner(text: 'TESTKASSE', warnung: true),
-        BelegBanner(text: 'TESTSIGNATUR', warnung: true),
+        BelegBanner(text: 'TESTKASSE', tone: LayoutBannerTone.warning),
+        BelegBanner(text: 'TESTSIGNATUR', tone: LayoutBannerTone.warning),
         BelegText(text: 'Bäckerei Muster'),
       ],
     );
@@ -220,10 +239,10 @@ void main() {
     // zweimal wieder ein Absturz.
     const layout = BelegLayout(
       paperSize: 'mm58',
-      regelwerk: 1,
+      ruleset: 1,
       lines: [
-        BelegBanner(text: 'STORNO', warnung: true),
-        BelegBanner(text: 'STORNO', warnung: true),
+        BelegBanner(text: 'STORNO', tone: LayoutBannerTone.warning),
+        BelegBanner(text: 'STORNO', tone: LayoutBannerTone.warning),
       ],
     );
     await tester.pumpWidget(const MaterialApp(

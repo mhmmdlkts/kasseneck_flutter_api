@@ -761,7 +761,7 @@ class PrintPaper {
     return BelegLayout(
       lines: layout.lines.map((z) => switch (z) {
         BelegText() => BelegText(text: _printable(z.text), align: z.align, bold: z.bold),
-        BelegBanner() => BelegBanner(text: _printable(z.text), warnung: z.warnung),
+        BelegBanner() => BelegBanner(text: _printable(z.text), tone: z.tone),
         BelegSpalten() => BelegSpalten(z.columns.map((c) => BelegSpalte(text: _printable(c.text), width: c.width, align: c.align)).toList()),
         BelegLinie() => BelegLinie(char: _printable(z.char).isEmpty ? '-' : _printable(z.char)),
         // BelegQr bleibt bewusst unangetastet: die QR-Nutzlast ist Datum,
@@ -771,7 +771,7 @@ class PrintPaper {
         _ => z,
       }).toList(),
       paperSize: layout.paperSize,
-      regelwerk: layout.regelwerk,
+      ruleset: layout.ruleset,
     );
   }
 

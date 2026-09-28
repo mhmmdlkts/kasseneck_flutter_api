@@ -9,15 +9,9 @@ import 'package:kasseneck_api/src/printing/qr_groesse.dart';
 
 /// Zwilling von `belegBlatt` (npm 0.14.0): fuer jede Golden-Fixture muss das
 /// Blatt mit Probe-Logo (M, 300x120) und Marke Block fuer Block der
-/// `sheet32.json` bzw. `sheet48.json` des Pakets entsprechen.
+/// `sheet32.json` bzw. `sheet48.json` des Pakets entsprechen, in der
+/// englischen Form des Vertrags (`BelegBlatt.toJson`).
 final _wurzel = Directory('test/fixtures/vertrag');
-
-Map<String, Object?> _alsJson(BlattBlock b) => switch (b) {
-      BlattZeile() => {'art': 'zeile', 'text': b.text, 'fett': b.fett, 'leer': b.leer},
-      BlattLogoBlock() => {'art': 'logo', 'breiteAnteil': b.breiteAnteil, 'hoeheZeilen': b.hoeheZeilen},
-      BlattQr() => {'art': 'qr', 'nutzlast': b.nutzlast, 'breiteAnteil': b.breiteAnteil},
-      BlattMarke() => {'art': 'marke', 'breite': b.breite, 'hoehe': b.hoehe},
-    };
 
 void _gleich(Object? ist, Object? soll, String wo) {
   if (soll is num) {
@@ -49,11 +43,10 @@ void main() {
       for (final zeichen in [32, 48]) {
         final soll = jsonDecode(File('${_wurzel.path}/expected/$n.sheet$zeichen.json').readAsStringSync());
         final blatt = belegBlatt(layout, zeichen: zeichen, logo: const BlattLogo(stufe: LogoStufe.m, pxBreite: 300, pxHoehe: 120), marke: true);
-        _gleich({'zeichen': blatt.zeichen, 'bloecke': blatt.bloecke.map(_alsJson).toList()}, soll, '$n@$zeichen');
+        _gleich(blatt.toJson(), soll, '$n@$zeichen');
       }
     }
-  }, skip: 'Aufgabe 3 (4c): Blatt-Goldens seit 1.0 englisch (charsPerLine/blocks/kind), '
-      'belegBlatt noch 0.x (zeichen/bloecke/art)');
+  });
 
   test('Rot-Probe: ein Blatt ohne Marke ist nicht das Golden', () {
     final layout = BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/sale-cash.lines.json').readAsStringSync()))!;
@@ -122,7 +115,7 @@ void main() {
   });
 
   test('belegBlatt: QR-Inhalt ohne passende Version wirft nicht, der QR-Block bleibt mit Anteil 0', () {
-    final layout = BelegLayout(paperSize: 'mm80', regelwerk: 2, lines: [
+    final layout = BelegLayout(paperSize: 'mm80', ruleset: 2, lines: [
       BelegText(text: 'Firma', align: BelegAlign.center, bold: true),
       BelegQr(data: 'x' * 2332),
     ]);

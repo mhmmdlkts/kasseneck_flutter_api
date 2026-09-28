@@ -46,7 +46,7 @@ sealed class BelegZeile {
       case 'qr':
         return BelegQr(data: (j['data'] ?? '').toString());
       case 'banner':
-        return BelegBanner(text: (j['text'] ?? '').toString(), warnung: j['ton'] == 'warnung');
+        return BelegBanner(text: (j['text'] ?? '').toString(), tone: LayoutBannerTone.aus(j['tone']));
       default:
         return null;
     }
@@ -88,22 +88,43 @@ class BelegQr extends BelegZeile {
   const BelegQr({required this.data});
 }
 
+/// Ton einer hervorgehobenen Zeile, Drahtwert `tone` (Katalog `LAYOUT_TON`):
+/// `receipt_type` fuer die Belegart (STORNOBELEG …), `warning` fuer
+/// TESTKASSE/TESTSIGNATUR und den Ausfall der Signatureinheit.
+enum LayoutBannerTone {
+  receiptType('receipt_type'),
+  warning('warning');
+
+  const LayoutBannerTone(this.wire);
+
+  /// Der Wert am Draht.
+  final String wire;
+
+  /// Liest den Drahtwert. Ein unbekannter kuenftiger Ton zeigt die Zeile als
+  /// Belegart-Aufdruck: sichtbar bleibt sie so oder so, nur die Farbe fehlt.
+  static LayoutBannerTone aus(Object? wert) => wert == warning.wire ? warning : receiptType;
+}
+
 /// Hervorgehobene Zeile: Belegart (STORNOBELEG …) oder Warnung
 /// (TESTKASSE/TESTSIGNATUR). Im Raster steht sie zwischen zwei `=`-Rahmenzeilen.
 class BelegBanner extends BelegZeile {
   final String text;
-  final bool warnung;
-  const BelegBanner({required this.text, this.warnung = false});
+  final LayoutBannerTone tone;
+  const BelegBanner({required this.text, this.tone = LayoutBannerTone.receiptType});
+
+  /// Warnung (TESTKASSE, TESTSIGNATUR, Ausfall) statt Belegart?
+  bool get warning => tone == LayoutBannerTone.warning;
 }
 
 class BelegLayout {
   final List<BelegZeile> lines;
   /// `mm58` oder `mm80` — wonach die Spaltenbreiten der USt-Tabelle gewählt wurden.
   final String paperSize;
-  /// Version des Layout-Regelwerks (heute 1).
-  final int regelwerk;
+  /// Version des Layout-Regelwerks (Drahtwert `ruleset`, heute 2). Fehlt er
+  /// (Backend vor dem Regelwerk), gilt 1.
+  final int ruleset;
 
-  const BelegLayout({required this.lines, required this.paperSize, required this.regelwerk});
+  const BelegLayout({required this.lines, required this.paperSize, required this.ruleset});
 
   static BelegLayout? fromJson(dynamic json) {
     if (json is! Map) return null;
@@ -119,7 +140,7 @@ class BelegLayout {
     return BelegLayout(
       lines: lines,
       paperSize: (json['paperSize'] ?? 'mm58').toString(),
-      regelwerk: (json['regelwerk'] is num) ? (json['regelwerk'] as num).toInt() : 1,
+      ruleset: (json['ruleset'] is num) ? (json['ruleset'] as num).toInt() : 1,
     );
   }
 

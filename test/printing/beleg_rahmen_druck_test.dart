@@ -11,7 +11,7 @@ void main() {
   test('setBelegLayout: STORNOBELEG als zwei Rahmenzeilen und Text, ohne GS ! Hoehe und ohne GS B', () async {
     final paper = PrintPaper(paperSize: KeckPaperSize.mm58, profile: CapabilityProfile());
     await paper.setBelegLayout(
-      const BelegLayout(lines: [BelegBanner(text: 'STORNOBELEG', warnung: true)], paperSize: 'mm58', regelwerk: 2),
+      const BelegLayout(lines: [BelegBanner(text: 'STORNOBELEG', tone: LayoutBannerTone.warning)], paperSize: 'mm58', ruleset: 2),
       cut: false,
       qrMode: QrPrintMode.native,
     );

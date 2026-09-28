@@ -27,7 +27,7 @@ KasseneckReceipt belegMitLogo() => buildReceipt()
   ..layout = const BelegLayout(
       lines: [BelegText(text: 'Danke', align: BelegAlign.center)],
       paperSize: 'mm80',
-      regelwerk: 2)
+      ruleset: 2)
   ..logoUrl = 'https://beispiel.test/logo.png'
   ..logoStufe = LogoStufe.m;
 

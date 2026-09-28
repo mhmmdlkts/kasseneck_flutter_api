@@ -56,7 +56,7 @@ KasseneckReceipt _beleg(Map<String, dynamic> felder, {Map<String, dynamic>? layo
 
 BelegLayout _layoutMit(List<String> texte) => BelegLayout.fromJson({
       'paperSize': 'mm80',
-      'regelwerk': 2,
+      'ruleset': 2,
       'lines': [
         for (final t in texte) {'kind': 'text', 'text': t, 'align': 'center', 'bold': false},
       ],
@@ -432,7 +432,7 @@ extension on BelegLayout {
   /// Rohgestalt fuer `fromJson` -- nur Textzeilen, wie [_layoutMit] sie baut.
   Map<String, dynamic> toJsonForTest() => {
         'paperSize': 'mm80',
-        'regelwerk': 2,
+        'ruleset': 2,
         'lines': [
           for (final z in lines.whereType<BelegText>()) {'kind': 'text', 'text': z.text, 'align': 'center', 'bold': false},
         ],

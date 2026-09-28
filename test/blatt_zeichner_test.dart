@@ -19,7 +19,8 @@ import 'package:kasseneck_api/widgets/keck_beleg_blatt_widget.dart';
 /// Jeder Zeichner gegen JEDES Blatt-Golden (Zwilling von
 /// `test/blatt-zeichner.test.tsx` im npm-Paket): der ESC/POS-Druck und das
 /// Widget muessen Block fuer Block die Folge aus
-/// `expected/<name>.sheet<zeichen>.json` setzen.
+/// `expected/<name>.sheet<zeichen>.json` setzen (englische Form des Vertrags:
+/// `charsPerLine`, `blocks`, `kind` line/logo/qr/brandMark).
 ///
 /// Die Erwartung ist die Golden-Datei selbst -- `belegBlatt` wird hier bewusst
 /// NICHT noch einmal gerechnet. Sonst pruefte der Test nur, dass zwei Aufrufe
@@ -37,8 +38,8 @@ BelegLayout _layout(String name) =>
 
 List<Map<String, dynamic>> _golden(String name, int zeichen) {
   final blatt = jsonDecode(File('${_wurzel.path}/expected/$name.sheet$zeichen.json').readAsStringSync()) as Map<String, dynamic>;
-  expect(blatt['zeichen'], zeichen, reason: '$name/$zeichen');
-  return (blatt['bloecke'] as List).cast<Map<String, dynamic>>();
+  expect(blatt['charsPerLine'], zeichen, reason: '$name/$zeichen');
+  return (blatt['blocks'] as List).cast<Map<String, dynamic>>();
 }
 
 /// Dasselbe Probe-Logo, mit dem die Goldens erzeugt wurden (npm `scripts/belege-fixtures.mjs`).
@@ -75,12 +76,6 @@ int _anzahl(String heu, String nadel) => nadel.allMatches(heu).length;
 
 const _rasterbild = '\x1dv0'; // GS v 0
 const _qrNativ = '\x1d(k'; // GS ( k
-
-/// Wartet auf Aufgabe 3 (4c): die Blatt-Goldens (`expected/*.sheet*.json`)
-/// tragen seit npm 1.0 englische Schluessel (charsPerLine, blocks, kind ...),
-/// belegBlatt/KeckBelegBlattWidget noch die deutschen 0.x-Namen.
-const _aufgabe3 = 'Aufgabe 3 (4c): Blatt-Goldens seit 1.0 englisch (charsPerLine/blocks/kind), '
-    'belegBlatt noch 0.x (zeichen/bloecke/art)';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -124,11 +119,11 @@ void main() {
           final an = ist.lastIndexOf('\x1bE\x01');
           final aus = ist.lastIndexOf('\x1bE\x00');
           if (an >= 0 || aus >= 0) fett = an > aus;
-          switch (b['art']) {
-            case 'zeile':
+          switch (b['kind']) {
+            case 'line':
               final text = b['text'] as String;
               expect(text.length, zeichen, reason: '$wo2: Zeilenbreite');
-              if (b['leer'] == true) {
+              if (b['blank'] == true) {
                 expect(text, ' ' * zeichen, reason: '$wo2: Leerzeile mit Inhalt');
                 expect(paper.bytes[i + 1], [0x1b, 0x64, 1], reason: '$wo2: Leerzeile ist ein Vorschub');
               } else {
@@ -142,12 +137,12 @@ void main() {
                   final woerter = druck.trim().split(RegExp(r' +'));
                   expect(RegExp(woerter.map(RegExp.escape).join(' +')).hasMatch(ist), isTrue, reason: '$wo2: "$druck"');
                 }
-                expect(fett, b['fett'] == true, reason: '$wo2: fett');
+                expect(fett, b['bold'] == true, reason: '$wo2: fett');
               }
             case 'logo':
               expect(ist, startsWith('\x1ba'), reason: '$wo2: Logo mittig');
               expect(ist, contains(_rasterbild), reason: '$wo2: Logo als GS v 0');
-            case 'marke':
+            case 'brandMark':
               // Keine feste Ausrichtungsvorgabe wie beim Logo: die Ausrichtung
               // ist Druckerzustand (wie `fett`) und wird nur bei einer
               // Aenderung erneut gesetzt. Vor der Marke steht zuletzt oft der
@@ -157,14 +152,14 @@ void main() {
               expect(ist, contains(_rasterbild), reason: '$wo2: Marke als GS v 0');
             case 'qr':
               expect(ist, contains(_qrNativ), reason: '$wo2: nativer QR');
-              expect(ist, contains(b['nutzlast'] as String), reason: '$wo2: Nutzlast');
+              expect(ist, contains(b['payload'] as String), reason: '$wo2: Nutzlast');
             default:
-              fail('$wo2: unbekannte Art ${b['art']}');
+              fail('$wo2: unbekannte Art ${b['kind']}');
           }
         }
-        expect(soll.last, containsPair('art', 'marke'), reason: '$wo: Marke zuletzt');
+        expect(soll.last, containsPair('kind', 'brandMark'), reason: '$wo: Marke zuletzt');
       }
-    }, skip: _aufgabe3);
+    });
   }
 
   group('Widget', () {
@@ -183,24 +178,24 @@ void main() {
     void blockFuerBlock(WidgetTester tester, List<Map<String, dynamic>> soll, int zeichen, String wo) {
       final breite = tester.getSize(find.byKey(const Key('keck-blatt'))).width;
       expect(find.byKey(Key('keck-blatt-zeile-${soll.length}')), findsNothing, reason: '$wo: Zeilen nach dem Ende');
-      expect(find.byKey(const Key('keck-blatt-logo')), soll.any((b) => b['art'] == 'logo') ? findsOneWidget : findsNothing,
+      expect(find.byKey(const Key('keck-blatt-logo')), soll.any((b) => b['kind'] == 'logo') ? findsOneWidget : findsNothing,
           reason: '$wo: Logo-Block');
-      expect(find.byKey(const Key('keck-blatt-marke')), soll.any((b) => b['art'] == 'marke') ? findsOneWidget : findsNothing,
+      expect(find.byKey(const Key('keck-blatt-marke')), soll.any((b) => b['kind'] == 'brandMark') ? findsOneWidget : findsNothing,
           reason: '$wo: Marken-Block');
       for (var i = 0; i < soll.length; i++) {
         final b = soll[i];
         final zeile = find.byKey(Key('keck-blatt-zeile-$i'));
-        switch (b['art']) {
-          case 'zeile':
+        switch (b['kind']) {
+          case 'line':
             expect(zeile, findsOneWidget, reason: '$wo Block $i');
             final text = tester.widget<Text>(find.descendant(of: zeile, matching: find.byType(Text)));
             expect(text.data, b['text'], reason: '$wo Block $i');
-            expect(text.style?.fontWeight, b['fett'] == true ? FontWeight.w500 : FontWeight.w400, reason: '$wo Block $i: fett');
+            expect(text.style?.fontWeight, b['bold'] == true ? FontWeight.w500 : FontWeight.w400, reason: '$wo Block $i: fett');
           case 'logo':
             expect(zeile, findsNothing, reason: '$wo Block $i');
-            expect(tester.getSize(find.byKey(const Key('keck-blatt-logo'))).width, closeTo((b['breiteAnteil'] as num) * breite, 0.01),
+            expect(tester.getSize(find.byKey(const Key('keck-blatt-logo'))).width, closeTo((b['widthFraction'] as num) * breite, 0.01),
                 reason: '$wo Block $i: Logo-Breite');
-          case 'marke':
+          case 'brandMark':
             // Kein Druckraster am Bildschirm (die Logo-Komponente aus
             // kreiseck_design zeichnet Vektorpfade) -- die Groesse pruefen
             // die dedizierten Marke-Tests in keck_beleg_blatt_widget_test.dart;
@@ -209,14 +204,14 @@ void main() {
             expect(find.byKey(const Key('keck-blatt-marke')), findsOneWidget, reason: '$wo Block $i: Marke-Block');
           case 'qr':
             expect(zeile, findsNothing, reason: '$wo Block $i');
-            expect(tester.getSize(find.byKey(const Key('keck-blatt-qr'))).width, closeTo((b['breiteAnteil'] as num) * breite, 0.01),
+            expect(tester.getSize(find.byKey(const Key('keck-blatt-qr'))).width, closeTo((b['widthFraction'] as num) * breite, 0.01),
                 reason: '$wo Block $i: QR-Kasten');
           default:
-            fail('$wo Block $i: unbekannte Art ${b['art']}');
+            fail('$wo Block $i: unbekannte Art ${b['kind']}');
         }
       }
       // Eine Zeile ist zwei Zeichenbreiten hoch; Block 0 ist ohne fuehrenden Aufdruck das Logo.
-      final erste = soll.indexWhere((b) => b['art'] == 'zeile');
+      final erste = soll.indexWhere((b) => b['kind'] == 'line');
       expect(breite / zeichen, closeTo(tester.getSize(find.byKey(Key('keck-blatt-zeile-$erste'))).height / 2, 0.01), reason: wo);
     }
 
@@ -251,10 +246,10 @@ void main() {
           // stehen (Logo-Index > 0), und immer eine danach. Ohne Logo fallen
           // der Logo-Block und genau diese Leerzeilen weg -- sonst nichts.
           final golden = _golden(name, zeichen);
-          final l = golden.indexWhere((b) => b['art'] == 'logo');
+          final l = golden.indexWhere((b) => b['kind'] == 'logo');
           expect(l, isNonNegative, reason: '$name/$zeichen: Golden ohne Logo');
-          expect(golden[l + 1], containsPair('leer', true), reason: '$name/$zeichen: Leerzeile nach dem Logo');
-          if (l > 0) expect(golden[l - 1], containsPair('leer', true), reason: '$name/$zeichen: Leerzeile vor dem Logo');
+          expect(golden[l + 1], containsPair('blank', true), reason: '$name/$zeichen: Leerzeile nach dem Logo');
+          if (l > 0) expect(golden[l - 1], containsPair('blank', true), reason: '$name/$zeichen: Leerzeile vor dem Logo');
           final soll = [
             for (final (i, b) in golden.indexed)
               if (i != l && i != l + 1 && !(l > 0 && i == l - 1)) b,
@@ -270,6 +265,5 @@ void main() {
         }
       });
     }
-    // testWidgets nimmt fuer skip nur bool; die Gruppe traegt den Grund.
-  }, skip: _aufgabe3);
+  });
 }
