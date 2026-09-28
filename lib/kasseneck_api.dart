@@ -72,6 +72,18 @@ export 'src/kasse/storno.dart' show stornogruende, stornoFehlercodes, istStornoF
 export 'models/keck_payment.dart' show KeckPayment, KeckPaymentInput, zahlungenFehler, zahlungenHoechstzahl;
 export 'src/kasse/zahlungen.dart' show zahlungFehlercodes, istZahlungFehlercode;
 export 'services/druck_logo.dart' show ladeDruckLogo;
+// Zahlbetrag als Zwilling des Servers: was die Zahlungen eines Verkaufs
+// zusammen ergeben muessen (unter /v3 ist payments Pflicht).
+export 'src/receipt/due.dart'
+    show
+        ReceiptDueBreakdown,
+        ReceiptDueLine,
+        ReceiptDueTip,
+        ReceiptDueTipRecipient,
+        ReceiptDueTipShare,
+        receiptDueBreakdown,
+        receiptDueBreakdownForLines,
+        receiptDueCents;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
 // nicht benennbar.
