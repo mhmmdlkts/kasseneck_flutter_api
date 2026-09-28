@@ -100,25 +100,25 @@ void main() {
   });
 
   group('sellReceipt-Validierung (wirft VOR dem HTTP-Call)', () {
-    test('standard ohne Items -> ArgumentError', () {
+    test('standard ohne Items -> KasseneckValidationError', () {
       final api = apiWith(neverCalled());
       expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: []),
-          throwsArgumentError);
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
       expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)]),
-          throwsArgumentError);
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
     });
-    test('ungueltiges Item (leerer Name) -> ArgumentError', () {
+    test('ungueltiges Item (leerer Name) -> KasseneckValidationError', () {
       final api = apiWith(neverCalled());
       final bad = KasseneckItem(name: '', quantity: 1, vat: VatRate.vat20, priceCents: 1);
       expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [bad]),
-          throwsArgumentError);
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
     });
-    test('ungueltiger Voucher -> ArgumentError', () {
+    test('ungueltiger Voucher -> KasseneckValidationError', () {
       final api = apiWith(neverCalled());
       final bad = KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 0);
       expect(
         () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem], vouchers: [bad]),
-        throwsArgumentError,
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
     });
     test('NUR Sell-Voucher ohne Items ist erlaubt (geht bis zum HTTP-Call)', () async {

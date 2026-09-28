@@ -160,7 +160,7 @@ void main() {
       await expectLater(
         _api(m.client).sellReceipt(
             payments: const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 600)], items: _einfach),
-        throwsArgumentError,
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
       expect(m.log, isEmpty);
     });

@@ -173,7 +173,7 @@ void main() {
           items: [ware],
           tip: const KeckTip(cents: 0),
         ),
-        throwsArgumentError,
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
     });
 
@@ -187,7 +187,7 @@ void main() {
             KeckTipRecipient(registerUserId: 'ru_7', cents: 100),
           ]),
         ),
-        throwsArgumentError,
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
     });
 
@@ -199,7 +199,7 @@ void main() {
           items: const [],
           tip: KeckTip.forRecipient('ru_7', cents: 200),
         ),
-        throwsArgumentError,
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
     });
   });

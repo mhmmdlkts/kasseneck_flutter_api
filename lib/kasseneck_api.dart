@@ -612,6 +612,12 @@ class KasseneckApi {
     return null;
   }
 
+  /// Eingabefehler eines Belegs vor dem Senden: derselbe Typ wie im
+  /// Kassenweg (`RegisterReceiptClient.sell`) und im npm-Paket, damit ein
+  /// Aufrufer beide Wege mit einem `catch` abdeckt. Es ist nichts signiert.
+  static KasseneckValidationError _belegEingabe(String grund) =>
+      KasseneckValidationError(Aufrufe.createReceipt, grund, 'request');
+
   /// Gemeinsame Umsetzung von Verkauf und Nullbeleg (Zwilling von
   /// `createReceiptParams` im npm-Paket). Wirft, bevor etwas hinausgeht: ein
   /// Beleg ist nicht folgenlos wiederholbar. Ein Storno geht nur ueber
@@ -630,13 +636,13 @@ class KasseneckApi {
     if (receiptType.needsItems) {
       bool hasSellVoucher = vouchers?.any((v) => v.action == VoucherAction.sell)??false;
       if ((items == null || items.isEmpty) && !hasSellVoucher) {
-        throw ArgumentError(
+        throw _belegEingabe(
           'Items sind Pflicht bei receiptType "$receiptType" und dürfen nicht leer sein.',
         );
       }
 
       if (items?.any((item) => !item.isValid)??false) {
-        throw ArgumentError('Ungültige Items übergeben.');
+        throw _belegEingabe('Ungültige Items übergeben.');
       }
     }
 
@@ -646,14 +652,14 @@ class KasseneckApi {
 
     if (vouchers != null && vouchers.isNotEmpty) {
       if (!receiptType.allowsVouchers) {
-        throw ArgumentError('Vouchers sind nicht erlaubt bei receiptType "$receiptType".');
+        throw _belegEingabe('Vouchers sind nicht erlaubt bei receiptType "$receiptType".');
       }
       if (vouchers.any((voucher) => !voucher.isValid)) {
-        throw ArgumentError('Ungültige Vouchers übergeben.');
+        throw _belegEingabe('Ungültige Vouchers übergeben.');
       }
       String? voucherError = checkVoucherCombinationError(vouchers, items ?? []);
       if (voucherError != null) {
-        throw ArgumentError(voucherError);
+        throw _belegEingabe(voucherError);
       }
       params['vouchers'] = vouchers.map((e) => e.toPayload()).toList();
     }
@@ -669,16 +675,16 @@ class KasseneckApi {
       // ist (Entgelt, anteilig auf die Steuersaetze) oder Mitarbeiter
       // (durchlaufender Posten, 0 %). Eine Position vom Client wird abgelehnt.
       if (!receiptType.allowsTip) {
-        throw ArgumentError(
+        throw _belegEingabe(
             'Trinkgeld ist nur auf Standard- und Trainingsbelegen moeglich.');
       }
       // Ein Beleg nur mit Trinkgeld ist keiner — es haengt an einer Leistung.
       if (items == null || items.isEmpty) {
-        throw ArgumentError('Trinkgeld: Beleg braucht mindestens eine Position');
+        throw _belegEingabe('Trinkgeld: Beleg braucht mindestens eine Position');
       }
       final tipFehler = tip.validationError;
       if (tipFehler != null) {
-        throw ArgumentError(tipFehler);
+        throw _belegEingabe(tipFehler);
       }
       params['tip'] = tip.toJson();
     }
@@ -687,14 +693,14 @@ class KasseneckApi {
       // Pflicht unter /v3 (payments_required); leer erlaubt, wenn nichts zu
       // zahlen ist.
       if (payments == null) {
-        throw ArgumentError('payments fehlt: unter /v3 ist die Zahlungsliste Pflicht (Summe = receiptDueCents).');
+        throw _belegEingabe('payments fehlt: unter /v3 ist die Zahlungsliste Pflicht (Summe = receiptDueCents).');
       }
       final fehler = paymentsError(payments, cancellation: false);
-      if (fehler != null) throw ArgumentError(fehler);
+      if (fehler != null) throw _belegEingabe(fehler);
       params['payments'] = [for (final p in payments) p.toJson()];
     } else if (payments != null) {
       // Null- und Startbeleg nehmen keine Zahlungsliste (payments_not_allowed).
-      throw ArgumentError('payments sind bei receiptType "${receiptType.name}" nicht erlaubt.');
+      throw _belegEingabe('payments sind bei receiptType "${receiptType.name}" nicht erlaubt.');
     }
     if (customProjectId != null) {
       params['customProjectId'] = customProjectId;

@@ -557,8 +557,9 @@ the others on the register path, import `register.dart` as well.
 | `KasseneckReceiptFormatError` | A receipt fetched with `getReceipt` or `RegisterReceiptClient.get` could not be parsed (`receiptId` when readable). On the signing calls the same problem is `response_unreadable` with an unknown outcome. |
 
 Invalid input to `sellReceipt` and `zeroReceipt` (no items, invalid vouchers,
-payments missing or malformed) still throws an `ArgumentError` before
-anything is sent.
+payments missing or malformed) throws a `KasseneckValidationError`
+(`kind: 'request'`) before anything is sent, the same type as
+`RegisterReceiptClient.sell` and the npm package.
 
 **Code catalogues per endpoint group**, each one the server's own codes, then
 the sign-in and edge codes that can reach it, then the codes the package sets

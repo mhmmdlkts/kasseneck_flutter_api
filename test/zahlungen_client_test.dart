@@ -92,9 +92,9 @@ void main() {
       final api = apiWith(nieGerufen());
       expect(
           () => api.sellReceipt(items: [ware], payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 0)]),
-          throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('Zahlung 1'))));
+          throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', contains('Zahlung 1'))));
       expect(() => api.sellReceipt(items: [ware], payments: const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 100)]),
-          throwsArgumentError);
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
     });
   });
 
