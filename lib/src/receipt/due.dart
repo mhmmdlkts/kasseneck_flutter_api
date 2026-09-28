@@ -41,6 +41,7 @@ import '../../enums/voucher_action.dart';
 import '../../enums/voucher_type.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/keck_payment.dart';
+import '../../models/keck_tip.dart';
 import '../../models/keck_voucher.dart';
 
 /// Wer das Trinkgeld ohne `recipients` bekommt (Kennzeichen des angemeldeten
@@ -59,6 +60,21 @@ class ReceiptDueTipShare {
 /// Inhaber-Kennzeichen (das Kennzeichen kennt nur die Kasse).
 class ReceiptDueTip {
   const ReceiptDueTip(this.cents, {this.recipients});
+
+  /// Bruecke vom Trinkgeld am Verkauf ([KeckTip], wie es `sellReceipt`
+  /// nimmt) zum Trinkgeld der Rechnung. Ob ein Empfaenger Inhaber ist, weiss
+  /// nur die Kasse: [istInhaber] ist Pflicht, sobald [tip] Empfaenger nennt.
+  /// Ohne Empfaenger entscheidet `tipRecipient` an [receiptDueCents].
+  factory ReceiptDueTip.fromKeckTip(KeckTip tip, {bool Function(String registerUserId)? istInhaber}) {
+    final empfaenger = tip.recipients;
+    if (empfaenger == null || empfaenger.isEmpty) return ReceiptDueTip(tip.cents);
+    if (istInhaber == null) {
+      throw ArgumentError('istInhaber ist Pflicht, wenn das Trinkgeld Empfaenger nennt.');
+    }
+    return ReceiptDueTip(tip.cents, recipients: [
+      for (final r in empfaenger) ReceiptDueTipShare(cents: r.cents, owner: istInhaber(r.registerUserId)),
+    ]);
+  }
 
   final int cents;
   final List<ReceiptDueTipShare>? recipients;

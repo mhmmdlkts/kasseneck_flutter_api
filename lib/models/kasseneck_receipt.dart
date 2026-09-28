@@ -183,6 +183,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Nur am Storno-Beleg: das Original (Kennung, Volltext-Kennung, Zeitpunkt).
   CancellationOf? cancellationOf;
 
+  /// Nur am Nullbeleg: die Art (`monthly`, `annual`, `annual_replacement`,
+  /// `final`, `outage_end`); bestimmt den Aufdruck (MONATSBELEG …).
+  String? zeroKind;
+
   /// Nur am Storno-Beleg: der Grund, Code aus `stornogruende` (englisch, wie
   /// unter `/v3`; ein unbekannter kuenftiger Code bleibt roh stehen).
   String? cancellationReason;
@@ -237,6 +241,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.layoutRuleset,
     this.registrationInfo,
     this.cancellationOf,
+    this.zeroKind,
     this.cancellationReason,
     this.cancellations = const [],
   });
@@ -328,6 +333,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       layoutRuleset: receipt['layoutRuleset'] is num ? (receipt['layoutRuleset'] as num).toInt() : null,
       registrationInfo: registrationInfo ?? RegistrationInfo.fromJson(receipt['registrationInfo']),
       cancellationOf: CancellationOf.fromJson(receipt['cancellationOf']),
+      zeroKind: _nichtLeer(receipt['zeroKind']),
       cancellationReason: _nichtLeer(receipt['cancellationReason']),
     );
   }
@@ -401,6 +407,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'layoutRuleset': ?layoutRuleset,
       'registrationInfo': ?registrationInfo?.toJson(),
       'cancellationOf': ?cancellationOf?.toJson(),
+      'zeroKind': ?zeroKind,
       'cancellationReason': ?cancellationReason,
       if (cancellations.isNotEmpty) 'cancellations': cancellations,
     };

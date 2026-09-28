@@ -16,6 +16,7 @@ import 'package:my_pos/my_pos.dart';
 import '../enums/keck_paper_size.dart';
 import '../enums/qr_print_mode.dart';
 import '../src/printing/qr_groesse.dart';
+import '../src/receipt/layout_from_result.dart' show receiptLayoutFromResult;
 
 class KeckPrinterService {
 
@@ -134,8 +135,12 @@ class KeckPrinterService {
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
-    final BelegLayout? layout = receipt.layout;
-    if (layout != null && receipt.layoutIstVollstaendig) {
+    // Ein Server-Layout gewinnt immer (receiptLayoutFromResult), auch wenn
+    // ihm ein Kartenblock zu fehlen scheint: Aufdruck (TESTKASSE, Belegart)
+    // und QR wiegen schwerer, und Bildschirm, Bon und PDF zeigen so denselben
+    // Beleg. Nur ohne Layout zeichnet der Rueckfall.
+    final BelegLayout? layout = receiptLayoutFromResult(receipt, fallbackPaperSize: paperSize).layout;
+    if (layout != null) {
       final bool belegTraegtLogo = receipt.logoUrl != null && receipt.logoUrl!.isNotEmpty;
       DruckLogo? logoAusBeleg;
       if (belegTraegtLogo) {

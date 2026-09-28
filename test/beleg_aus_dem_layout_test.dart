@@ -84,18 +84,17 @@ void main() {
       expect(buildReceipt().layoutIstVollstaendig, isFalse);
     });
 
-    test('der Rückfall druckt die Kartenzahlung, statt sie zu verschweigen', () async {
+    test('ein unvollstaendiges Server-Layout gewinnt trotzdem (wie npm)', () async {
+      // Aufdruck und QR wiegen schwerer als ein Kartenblock, der am Layout zu
+      // fehlen scheint; sonst zeigten Bildschirm und Bon verschiedene Belege.
       final receipt = buildReceipt(
         paymentMethod: KeckPaymentMethod.creditCard,
         cardProvider: CreditCardProvider.stripe,
         cardPaymentData: kartendaten,
         cardPaymentId: 'pi_3Qxx',
       )..layout = _layout('sale-cash');
-      final text = await _gedruckt(receipt);
-      expect(text, contains('Stripe'));
-      expect(text, contains('4242'));
-      // Und eben NICHT die Zeilen des fremden Layouts.
-      expect(text, isNot(contains('Bäckerei Muster')));
+      expect(receipt.layoutIstVollstaendig, isFalse);
+      expect(await _gedruckt(receipt), contains('Bäckerei Muster'));
     });
   });
 }

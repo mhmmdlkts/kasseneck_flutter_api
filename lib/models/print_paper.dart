@@ -19,6 +19,7 @@ import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
 import '../services/vienna_time.dart';
 import '../src/printing/qr_groesse.dart';
+import '../src/receipt/aufdruck.dart' show belegartBlock, warnrahmen;
 import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
 
@@ -390,11 +391,32 @@ class PrintPaper {
     myPosPaper.commands.clear();
   }
 
+  /// Eine Zeile des Aufdrucks im Rueckfall: Banner zwischen zwei
+  /// `=`-Rahmenzeilen (wie im Raster), Text zentriert.
+  void _aufdruckZeile(BelegZeile z) {
+    switch (z) {
+      case BelegBanner():
+        addFullHorizontalLine(ch: '=');
+        addText(z.text, styles: PosStyles(align: PosAlign.center, bold: true));
+        addFullHorizontalLine(ch: '=');
+      case BelegText():
+        addText(z.text, styles: PosStyles(align: PosAlign.center, bold: z.bold));
+      default:
+        break;
+    }
+  }
+
   /// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [setBelegBlatt] bzw. `KeckBelegBlattWidget`.
   Future setKeckReceipt(KasseneckReceipt receipt,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModulGroesse qrGroesse = QrModulGroesse.auto}) async {
     reset();
+
+    // Warnrahmen ueber allem (wie im Server-Layout): ein Beleg einer
+    // Testkasse oder mit Test-Signatur darf nie wie ein gueltiger aussehen.
+    for (final b in warnrahmen(receipt)) {
+      _aufdruckZeile(b);
+    }
 
     if (receipt.logo != null) {
       // Ein Logo ist Zierde, der Beleg ist Pflicht. Die Bytes stammen aus
@@ -418,6 +440,15 @@ class PrintPaper {
     addText('${receipt.zip} ${receipt.city}', styles: PosStyles(align: PosAlign.center));
     addText(receipt.taxInfo, styles: PosStyles(align: PosAlign.center));
     addText(receipt.phone, styles: PosStyles(align: PosAlign.center));
+
+    // Belegart (STORNOBELEG, TRAININGSBELEG, Nullbeleg-Arten) unter dem Kopf.
+    final belegart = belegartBlock(receipt);
+    if (belegart.isNotEmpty) {
+      addFeed();
+      for (final z in belegart) {
+        _aufdruckZeile(z);
+      }
+    }
 
     if (receipt.customerDetails.isNotEmpty) {
       addFeed();
@@ -618,6 +649,15 @@ class PrintPaper {
     }
     if (receipt.footer4 != null) {
       addText(receipt.footer4!, styles: PosStyles(align: PosAlign.center));
+    }
+
+    // Warnrahmen unten wie im Server-Layout.
+    final warnungen = warnrahmen(receipt);
+    if (warnungen.isNotEmpty) {
+      addFeed();
+      for (final b in warnungen) {
+        _aufdruckZeile(b);
+      }
     }
 
     if (receipt.showKreiseckLogo) {

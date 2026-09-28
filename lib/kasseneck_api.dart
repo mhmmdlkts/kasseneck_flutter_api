@@ -443,7 +443,14 @@ class KasseneckApi {
       },
       kennung: () => _receiptIdAus(resJson['data']),
     );
-    await ergebnis.beleg.init();
+    // Die Storno-Antwort traegt weder Layout noch Testkennzeichen. Damit der
+    // Storno einer Testkasse nie wie ein gueltiger Beleg gedruckt wird, gelten
+    // die Kennzeichen des Originals, und ein Test-Schluessel (`kr_test_`)
+    // steht fuer eine Testumgebung.
+    final beleg = ergebnis.beleg;
+    if (original?.testCashregister == true || apiKey.startsWith('kr_test_')) beleg.testCashregister = true;
+    if (original?.testSignature == true && !beleg.testCashregister) beleg.testSignature = true;
+    await beleg.init();
     return ergebnis;
   }
 
@@ -515,19 +522,20 @@ class KasseneckApi {
     return _createReceipt(receiptType: ReceiptType.zero);
   }
 
-  /// Issues a **standard** RKSV receipt (a sale) for the given [items], paid
-  /// by [payments].
+  /// Stellt einen **Normalbeleg** (Verkauf) nach RKSV fuer [items] aus,
+  /// bezahlt mit [payments].
   ///
-  /// [payments] is required under `/v3` and may be empty only when nothing is
-  /// due (a discount covers everything). Its sum must equal the amount due
-  /// ([receiptDueCents]), otherwise the server rejects the sale with
-  /// `payments_sum_mismatch` and the expected amount (`paymentsExpectedCents`).
-  /// Card details belong to each payment (`provider`, `providerPaymentId`,
-  /// `providerData`); a single payment method and the old card fields no
-  /// longer exist. `mixed` is never sent, the server derives it.
+  /// [payments] ist unter `/v3` Pflicht und darf nur leer sein, wenn nichts
+  /// zu zahlen ist (ein Rabatt deckt alles). Die Summe muss den Zahlbetrag
+  /// treffen ([receiptDueCents], Trinkgeld ueber `ReceiptDueTip.fromKeckTip`),
+  /// sonst weist der Server mit `payments_sum_mismatch` und dem erwarteten
+  /// Betrag ab (`paymentsExpectedCents`). Kartenangaben stehen an der
+  /// einzelnen Zahlung (`provider`, `providerPaymentId`, `providerData`); eine
+  /// Einzel-Zahlungsart und die alten Kartenfelder gibt es nicht mehr. `mixed`
+  /// geht nie hinaus, das vergibt der Server.
   ///
-  /// Errors keep their code and outcome: on `isOutcomeUnknown(e)` look the
-  /// receipt up, never sell a second time.
+  /// Fehler behalten Code und Ausgang: bei `isOutcomeUnknown(e)` den Beleg
+  /// nachlesen, nie ein zweites Mal verkaufen.
   Future<KasseneckReceipt?> sellReceipt({
     required List<KeckPaymentInput> payments,
     List<KasseneckItem>? items,

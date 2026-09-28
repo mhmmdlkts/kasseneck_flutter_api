@@ -42,7 +42,7 @@ Future<void> main() async {
     final cancellation = await kasseneck.stornieren(
       cashregisterId: receipt.cashregisterId,
       originalReceiptId: receipt.receiptId,
-      grund: 'fehleingabe', // key from stornogruende
+      grund: 'input_error', // key from stornogruende
     );
     print('Cancellation ${cancellation.beleg.receiptId}, remaining: ${cancellation.restmengen}');
   }

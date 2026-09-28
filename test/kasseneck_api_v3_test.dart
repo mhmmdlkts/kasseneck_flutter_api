@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
+import 'package:kasseneck_api/enums/receipt_type.dart';
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
@@ -53,16 +54,18 @@ KasseneckApi _api(http.Client client, {Duration? signatureTimeout}) => Kasseneck
 
 Map<String, dynamic> _params(http.Request r) => (jsonDecode(r.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
 
-/// Positionen in v1- und v2-Form gleich behandeln (wie der npm-Test): der
-/// Server nimmt beide, das Paket schreibt v2.
-Map<String, dynamic> _positionV2(Map p) => {
-      'name': p['name'],
-      'quantity': p['quantity'] ?? p['amount'],
-      'unitPriceCents': p['unitPriceCents'] ?? p['priceOneCents'],
-      'vatRate': p['vatRate'] ?? p['vat'],
-    };
+/// Die Vertragsseite von v1 nach v2 umschreiben (der Server nimmt beide, das
+/// Paket schreibt v2). Die gesendete Seite bleibt unangetastet: ein
+/// zusaetzlicher Schluessel an einer Position faellt so auf.
+Map<String, dynamic> _positionV2(Map p) => p.containsKey('unitPriceCents')
+    ? Map<String, dynamic>.from(p)
+    : {
+        for (final MapEntry(:key, :value) in p.entries)
+          switch (key) { 'amount' => 'quantity', 'priceOneCents' => 'unitPriceCents', 'vat' => 'vatRate', _ => key as String }:
+              value,
+      };
 
-Map<String, dynamic> _normalisiert(Map<String, dynamic> params) => {
+Map<String, dynamic> _vertragV2(Map<String, dynamic> params) => {
       ...params,
       if (params['items'] is List) 'items': [for (final p in params['items'] as List) _positionV2(p as Map)],
     };
@@ -106,6 +109,9 @@ Future<KasseneckReceipt?> _verkaufen(KasseneckApi api, Map<String, dynamic> para
 final _einfach = [KasseneckItem(name: 'Kaffee', quantity: 2, priceCents: 300, vat: VatRate.vat20)];
 const _bar = [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 600)];
 
+Map<String, dynamic> _belegeStorno() => ((_json('antworten/storno.json')['cases'] as List).cast<Map<String, dynamic>>())
+    .firstWhere((f) => f['name'] == 'cancel_partial_items' && f['channel'] == 'api');
+
 void main() {
   group('sellReceipt sendet genau den Vertrag (belege.json)', () {
     for (final name in ['sale_card_with_tip', 'sale_cash_tendered', 'sale_mixed_payments', 'sale_v2_items_value_voucher']) {
@@ -115,7 +121,7 @@ void main() {
         final beleg = (await _verkaufen(_api(m.client), fall['params'] as Map<String, dynamic>))!;
         expect(m.log, hasLength(1));
         expect(m.log.single.url.toString(), 'https://api.kasseneck.at/v3/createReceipt');
-        expect(_normalisiert(_params(m.log.single)), _normalisiert(fall['params'] as Map<String, dynamic>));
+        expect(_params(m.log.single), _vertragV2(fall['params'] as Map<String, dynamic>));
         final daten = (fall['response'] as Map)['data'] as Map<String, dynamic>;
         expect(beleg.receiptId, (daten['receipt'] as Map)['receiptId']);
         expect(beleg.layout!.toJson(), daten['layout']);
@@ -157,6 +163,91 @@ void main() {
         throwsArgumentError,
       );
       expect(m.log, isEmpty);
+    });
+  });
+
+  group('Verkaufsfaelle treffen receiptDueCents', () {
+    for (final name in ['sale_card_with_tip', 'sale_cash_tendered', 'sale_mixed_payments', 'sale_v2_items_value_voucher']) {
+      test(name, () {
+        final p = _fall(name)['params'] as Map<String, dynamic>;
+        final tip = _tip(p);
+        final summe = _zahlungen(p).fold<int>(0, (s, z) => s + z.amountCents);
+        final faellig = receiptDueCents(
+          [for (final i in (p['items'] as List).cast<Map<String, dynamic>>()) KasseneckItem.fromJson(i)],
+          _gutscheine(p) ?? const [],
+          ReceiptType.standard,
+          tip: tip == null ? null : ReceiptDueTip.fromKeckTip(tip),
+          tipRecipient: tip == null ? null : ReceiptDueTipRecipient.staff,
+        );
+        expect(summe, faellig);
+      });
+    }
+
+    test('ohne Trinkgeld in receiptDueCents fehlt es in der Zahlung (100 ct zu wenig)', () {
+      final p = _fall('sale_card_with_tip')['params'] as Map<String, dynamic>;
+      final ohne = receiptDueCents(
+          [for (final i in (p['items'] as List).cast<Map<String, dynamic>>()) KasseneckItem.fromJson(i)], const [], ReceiptType.standard);
+      expect(_zahlungen(p).single.amountCents - ohne, 100);
+    });
+
+    test('ReceiptDueTip.fromKeckTip: Empfaenger mit Inhaber-Kennzeichen, ohne Angabe wirft', () {
+      final tip = KeckTip(cents: 300, recipients: const [
+        KeckTipRecipient(registerUserId: 'chef', cents: 100),
+        KeckTipRecipient(registerUserId: 'ru_7', cents: 200),
+      ]);
+      final due = ReceiptDueTip.fromKeckTip(tip, istInhaber: (id) => id == 'chef');
+      expect(due.cents, 300);
+      expect([for (final r in due.recipients!) (r.cents, r.owner)], [(100, true), (200, false)]);
+      expect(() => ReceiptDueTip.fromKeckTip(tip), throwsArgumentError);
+      expect(ReceiptDueTip.fromKeckTip(const KeckTip(cents: 50)).recipients, isNull);
+    });
+  });
+
+  group('stornieren: Testkennzeichen am Storno-Beleg (die Antwort traegt keine)', () {
+    final fall = _belegeStorno();
+    Future<KasseneckReceipt> storno(String apiKey, {KasseneckReceipt? original}) async {
+      final m = _mock((_) => _antwort(fall));
+      final api = KasseneckApi(apiKey: apiKey, cashregisterToken: 'x', httpClient: m.client);
+      final p = fall['params'] as Map<String, dynamic>;
+      return (await api.stornieren(
+        cashregisterId: p['cashregisterId'] as String,
+        originalReceiptId: p['originalReceiptId'] as String,
+        grund: p['reason'] as String,
+        positionen: [for (final e in (p['items'] as List).cast<Map>()) (index: e['index'] as int, menge: e['quantity'] as int)],
+        zahlungen: [
+          for (final z in (p['payments'] as List).cast<Map<String, dynamic>>())
+            KeckPaymentInput(
+                method: KeckPaymentMethod.values.byName(z['method'] as String),
+                amountCents: z['amountCents'] as int,
+                refundOf: z['refundOf'] as String?),
+        ],
+        original: original,
+      ))
+          .beleg;
+    }
+
+    test('Test-Schluessel: TESTKASSE', () async {
+      expect((await storno('kr_test_abc')).testCashregister, isTrue);
+    });
+    test('Live-Schluessel ohne Original: kein Kennzeichen', () async {
+      final b = await storno('kr_live_abc');
+      expect(b.testCashregister, isFalse);
+      expect(b.testSignature, isFalse);
+    });
+    test('Original einer Testkasse bzw. mit Testsignatur vererbt das Kennzeichen', () async {
+      KasseneckReceipt original() {
+        final daten = jsonDecode(jsonEncode((_fall('get_card_receipt_with_cancellation')['response'] as Map)['data']))
+            as Map<String, dynamic>;
+        (daten['receipt'] as Map)['receiptId'] = 'KECK-1-ID-3';
+        return KasseneckReceipt.fromJson(daten);
+      }
+      expect((await storno('kr_live_abc', original: original()..testCashregister = true)).testCashregister, isTrue);
+      expect((await storno('kr_live_abc', original: original()..testCashregister = false)).testCashregister, isFalse);
+      final sig = await storno('kr_live_abc', original: original()
+        ..testCashregister = false
+        ..testSignature = true);
+      expect(sig.testSignature, isTrue);
+      expect(sig.testCashregister, isFalse);
     });
   });
 
@@ -328,6 +419,14 @@ void main() {
       expect(wahl.layout, isNull);
       expect(wahl.paperSize, KeckPaperSize.mm58);
       expect(receiptLayoutFromResult(beleg, fallbackPaperSize: KeckPaperSize.mm80).paperSize, KeckPaperSize.mm80);
+    });
+
+    test('Server-Layout ohne paperSize meldet 80 mm', () {
+      final d = daten('sale_card_with_tip');
+      d['layout'] = Map<String, dynamic>.from(d['layout'] as Map)..remove('paperSize');
+      final wahl = receiptLayoutFromResult(KasseneckReceipt.fromJson(d), fallbackPaperSize: KeckPaperSize.mm58);
+      expect(wahl.fromServer, isTrue);
+      expect(wahl.paperSize, KeckPaperSize.mm80);
     });
 
     test('sellReceipt liefert den Beleg mit dem Server-Layout der Antwort', () async {

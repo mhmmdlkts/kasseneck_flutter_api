@@ -152,7 +152,8 @@ class BelegLayout {
     }
     return BelegLayout(
       lines: lines,
-      paperSize: (json['paperSize'] ?? 'mm58').toString(),
+      // Ohne Angabe 80 mm: das Server-Layout hat immer diese Breite.
+      paperSize: (json['paperSize'] ?? 'mm80').toString(),
       ruleset: (json['ruleset'] is num) ? (json['ruleset'] as num).toInt() : 1,
     );
   }
