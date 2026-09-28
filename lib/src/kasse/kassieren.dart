@@ -22,52 +22,52 @@ import 'warenkorb.dart';
 export '../vat_math.dart' show netCentsFromGross, vatCentsFromGross;
 
 /// Welche Zahlungsarten der Betrieb anbietet — nie keine (dann Bar).
-List<KeckPaymentMethod> offeredPaymentMethods(PosBusinessSettings betrieb) {
+List<KeckPaymentMethod> offeredPaymentMethods(PosBusinessSettings business) {
   final aus = <KeckPaymentMethod>[];
-  if (betrieb.payCash) aus.add(KeckPaymentMethod.cash);
+  if (business.payCash) aus.add(KeckPaymentMethod.cash);
   // Karte nur mit eingerichtetem Anbieter — der Schalter allein nützt nichts.
-  if (betrieb.cardPaymentEnabled) aus.add(KeckPaymentMethod.creditCard);
+  if (business.cardPaymentEnabled) aus.add(KeckPaymentMethod.creditCard);
   return aus.isEmpty ? [KeckPaymentMethod.cash] : aus;
 }
 
 enum DiscountKind { percent, amount }
 
 /// Rabatt in Cent aus der Eingabe; außerhalb von 0 … Summe gibt es keinen.
-int? discountCentsFor(DiscountKind art, num wert, int summe) {
-  if (wert.isNaN || wert.isInfinite || wert < 0) return null;
-  if (art == DiscountKind.percent && wert > 100) return null;
-  final c = art == DiscountKind.percent ? (summe * wert / 100).round() : wert.round();
-  if (c > summe) return null;
+int? discountCentsFor(DiscountKind kind, num value, int total) {
+  if (value.isNaN || value.isInfinite || value < 0) return null;
+  if (kind == DiscountKind.percent && value > 100) return null;
+  final c = kind == DiscountKind.percent ? (total * value / 100).round() : value.round();
+  if (c > total) return null;
   return c;
 }
 
 /// Positionen für den Beleg: Korb plus Rabattzeilen (eine je Steuersatz).
-List<KasseneckItem> receiptItems(Cart warenkorb, int rabatt) {
-  final basis = warenkorb.items.map((p) => p.toReceiptItem()).toList();
-  if (rabatt <= 0) return basis;
-  return [...basis, ...distributeDiscount(basis, rabatt)];
+List<KasseneckItem> receiptItems(Cart cart, int discount) {
+  final basis = cart.items.map((p) => p.toReceiptItem()).toList();
+  if (discount <= 0) return basis;
+  return [...basis, ...distributeDiscount(basis, discount)];
 }
 
 /// Zu zahlen nach Rabatt — nie unter null.
-int amountDue(Cart warenkorb, int rabatt) {
-  final rest = warenkorb.totalCents - rabatt;
+int amountDue(Cart cart, int discount) {
+  final rest = cart.totalCents - discount;
   return rest < 0 ? 0 : rest;
 }
 
-int computeChange(int zuZahlenCents, int gegebenCents) {
-  final rest = gegebenCents - zuZahlenCents;
+int computeChange(int dueCents, int tenderedCents) {
+  final rest = tenderedCents - dueCents;
   return rest < 0 ? 0 : rest;
 }
 
 /// Schnellwahl für „Gegeben": passend, der nächste runde Euro, dann Scheine.
-List<int> quickAmounts(int zuZahlenCents) {
+List<int> quickAmounts(int dueCents) {
   const scheine = [500, 1000, 2000, 5000, 10000, 20000];
-  final aus = <int>[zuZahlenCents];
-  final rund = ((zuZahlenCents + 99) ~/ 100) * 100;
-  if (rund > zuZahlenCents) aus.add(rund);
+  final aus = <int>[dueCents];
+  final rund = ((dueCents + 99) ~/ 100) * 100;
+  if (rund > dueCents) aus.add(rund);
   for (final s in scheine) {
     if (aus.length >= 4) break;
-    if (s > zuZahlenCents && !aus.contains(s)) aus.add(s);
+    if (s > dueCents && !aus.contains(s)) aus.add(s);
   }
   return aus.take(4).toList();
 }
@@ -110,8 +110,8 @@ class CheckoutState {
 
   /// Startstand: die erste Zahlungsart, die der Betrieb anbietet. Ein Betrieb
   /// ohne Bargeld darf nicht mit „Bar" vorbelegt beginnen.
-  factory CheckoutState.start(PosBusinessSettings betrieb) =>
-      CheckoutState(paymentMethod: offeredPaymentMethods(betrieb).first);
+  factory CheckoutState.start(PosBusinessSettings business) =>
+      CheckoutState(paymentMethod: offeredPaymentMethods(business).first);
 
   final KeckPaymentMethod paymentMethod;
   final int discountCents;
@@ -186,20 +186,20 @@ class CheckoutTotals {
 /// trägt den Warenwert; das Trinkgeld bucht das Backend als eigene Positionen.
 /// Für das Rückgeld zählt trotzdem beides zusammen — sonst bekäme der Gast sein
 /// Trinkgeld als Wechselgeld zurück.
-CheckoutTotals checkoutTotals(Cart warenkorb, PosBusinessSettings betrieb, CheckoutState stand) {
-  final summe = warenkorb.totalCents;
-  final rabatt = stand.discountCents > summe ? summe : (stand.discountCents < 0 ? 0 : stand.discountCents);
-  final zahlen = amountDue(warenkorb, rabatt);
-  final trinkgeld = betrieb.tip && stand.tipCents > 0 ? stand.tipCents : 0;
+CheckoutTotals checkoutTotals(Cart cart, PosBusinessSettings business, CheckoutState state) {
+  final summe = cart.totalCents;
+  final rabatt = state.discountCents > summe ? summe : (state.discountCents < 0 ? 0 : state.discountCents);
+  final zahlen = amountDue(cart, rabatt);
+  final trinkgeld = business.tip && state.tipCents > 0 ? state.tipCents : 0;
   final gesamt = zahlen + trinkgeld;
-  final bar = stand.paymentMethod == KeckPaymentMethod.cash && betrieb.change;
-  final gegeben = bar ? stand.tenderedCents : null;
+  final bar = state.paymentMethod == KeckPaymentMethod.cash && business.change;
+  final gegeben = bar ? state.tenderedCents : null;
   final pruefung = completionCheck(
-    paymentMethod: stand.paymentMethod,
+    paymentMethod: state.paymentMethod,
     dueCents: gesamt,
-    tenderedCents: stand.tenderedCents,
-    changeEnabled: betrieb.change,
-    cartEmpty: warenkorb.isEmpty,
+    tenderedCents: state.tenderedCents,
+    changeEnabled: business.change,
+    cartEmpty: cart.isEmpty,
   );
   return CheckoutTotals(
     subtotalCents: summe,
@@ -231,13 +231,13 @@ CheckoutTotals checkoutTotals(Cart warenkorb, PosBusinessSettings betrieb, Check
 /// ([CheckoutTotals.cash]) und das Gegebene den Betrag deckt: zu wenig
 /// Gegebenes lehnte der Server ab (`payment_tendered_invalid`), und ein Beleg
 /// darf an einer Anzeige-Angabe nicht scheitern.
-KeckPaymentInput cashPayment(CheckoutTotals rechnung, {int? amountCents}) {
-  final betrag = amountCents ?? rechnung.totalCents;
-  final gegeben = rechnung.tenderedCents;
+KeckPaymentInput cashPayment(CheckoutTotals invoice, {int? amountCents}) {
+  final betrag = amountCents ?? invoice.totalCents;
+  final gegeben = invoice.tenderedCents;
   return KeckPaymentInput(
     method: KeckPaymentMethod.cash,
     amountCents: betrag,
-    tenderedCents: rechnung.cash && gegeben != null && gegeben >= betrag ? gegeben : null,
+    tenderedCents: invoice.cash && gegeben != null && gegeben >= betrag ? gegeben : null,
   );
 }
 
@@ -254,15 +254,15 @@ KeckPaymentInput cashPayment(CheckoutTotals rechnung, {int? amountCents}) {
 ///    Belegposition ([distributeDiscount]) und senkt den Umsatz seines Satzes.
 ///
 /// [discountCents] ist derselbe Wert, der auch in [receiptItems] geht.
-int vatTotalCents(Cart warenkorb, {int discountCents = 0}) =>
-    vatTotalCentsOfItems(receiptItems(warenkorb, discountCents));
+int vatTotalCents(Cart cart, {int discountCents = 0}) =>
+    vatTotalCentsOfItems(receiptItems(cart, discountCents));
 
 /// Enthaltene MwSt einer Belegpositionsliste — je Steuersatz gruppiert, dann
 /// einmal zerlegt. Fuer Aufrufer, die die Positionen schon haben (Storno,
 /// Nachdruck), und die gemeinsame Rechnung hinter [vatTotalCents].
-int vatTotalCentsOfItems(List<KasseneckItem> positionen) {
+int vatTotalCentsOfItems(List<KasseneckItem> items) {
   final brutto = <VatRate, int>{};
-  for (final p in positionen) {
+  for (final p in items) {
     brutto[p.vat] = (brutto[p.vat] ?? 0) + p.totalCents;
   }
   return brutto.entries.fold(0, (s, e) => s + vatCentsFromGross(e.value, e.key.rate));
@@ -278,27 +278,27 @@ int vatTotalCentsOfItems(List<KasseneckItem> positionen) {
 ///
 /// Rabatt- und Stornozeilen (negativ) zählen nicht als Umsatz: ein zweiter
 /// Rabatt rechnet nur auf die Ware.
-List<KasseneckItem> distributeDiscount(List<KasseneckItem> positionen, int rabattCents, {String name = 'Rabatt'}) {
-  if (rabattCents < 0) {
-    throw ArgumentError.value(rabattCents, 'rabattCents', 'Rabatt muss eine ganze Zahl in Cent >= 0 sein');
+List<KasseneckItem> distributeDiscount(List<KasseneckItem> items, int discountCents, {String name = 'Rabatt'}) {
+  if (discountCents < 0) {
+    throw ArgumentError.value(discountCents, 'rabattCents', 'Rabatt muss eine ganze Zahl in Cent >= 0 sein');
   }
-  if (rabattCents == 0) return const [];
+  if (discountCents == 0) return const [];
 
   final gruppen = <VatRate, int>{};
-  for (final p in positionen) {
+  for (final p in items) {
     final betrag = p.totalCents;
     if (betrag <= 0) continue;
     gruppen[p.vat] = (gruppen[p.vat] ?? 0) + betrag;
   }
   final saetze = gruppen.keys.toList();
   final gesamt = gruppen.values.fold(0, (s, u) => s + u);
-  if (rabattCents > gesamt) {
-    throw ArgumentError.value(rabattCents, 'rabattCents', 'Rabatt uebersteigt den Umsatz');
+  if (discountCents > gesamt) {
+    throw ArgumentError.value(discountCents, 'rabattCents', 'Rabatt uebersteigt den Umsatz');
   }
 
-  final exakt = [for (final s in saetze) rabattCents * gruppen[s]! / gesamt];
+  final exakt = [for (final s in saetze) discountCents * gruppen[s]! / gesamt];
   final anteile = [for (final x in exakt) x.floor()];
-  var rest = rabattCents - anteile.fold(0, (s, a) => s + a);
+  var rest = discountCents - anteile.fold(0, (s, a) => s + a);
 
   // Restcent: größter Bruchteil zuerst, bei Gleichstand größerer Umsatz.
   final reihenfolge = List<int>.generate(saetze.length, (i) => i)

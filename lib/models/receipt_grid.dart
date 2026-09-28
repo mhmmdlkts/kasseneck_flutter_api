@@ -80,12 +80,12 @@ String _restNach(String text, String erste) {
 }
 
 /// Zwölftel → Zeichen je Spalte (ganze Zeichen, Rest an die letzte, mindestens 1).
-List<int> gridColumnWidths(List<int> zwoelftel, int zeichen) {
+List<int> gridColumnWidths(List<int> twelfths, int chars) {
   final out = <int>[];
   var vergeben = 0;
-  for (var i = 0; i < zwoelftel.length; i++) {
-    final letzte = i == zwoelftel.length - 1;
-    final b = letzte ? (zeichen - vergeben < 1 ? 1 : zeichen - vergeben) : ((zeichen * zwoelftel[i]) ~/ 12).clamp(1, 1 << 30);
+  for (var i = 0; i < twelfths.length; i++) {
+    final letzte = i == twelfths.length - 1;
+    final b = letzte ? (chars - vergeben < 1 ? 1 : chars - vergeben) : ((chars * twelfths[i]) ~/ 12).clamp(1, 1 << 30);
     out.add(b);
     vergeben += b;
   }

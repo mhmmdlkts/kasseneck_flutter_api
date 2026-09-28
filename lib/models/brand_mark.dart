@@ -21,17 +21,17 @@ import 'package:kasseneck_api/models/brand_mark_data.dart';
 ///
 /// Eigene Funktion statt Code inline in [brandMarkImage]: ein Rundlauf-Test kann so
 /// denselben Entpacker pruefen, den die Marke zur Laufzeit auch benutzt.
-LogoRaster unpackRasterBits(String bitsBase64, int breite, int hoehe) {
-  final byteJeZeile = (breite / 8).ceil();
+LogoRaster unpackRasterBits(String bitsBase64, int width, int height) {
+  final byteJeZeile = (width / 8).ceil();
   final roh = base64.decode(bitsBase64);
-  final punkte = Uint8List(breite * hoehe);
-  for (var y = 0; y < hoehe; y++) {
-    for (var x = 0; x < breite; x++) {
+  final punkte = Uint8List(width * height);
+  for (var y = 0; y < height; y++) {
+    for (var x = 0; x < width; x++) {
       final byte = roh[y * byteJeZeile + (x >> 3)];
-      punkte[y * breite + x] = (byte >> (7 - (x & 7))) & 1;
+      punkte[y * width + x] = (byte >> (7 - (x & 7))) & 1;
     }
   }
-  return LogoRaster(width: breite, height: hoehe, dots: punkte);
+  return LogoRaster(width: width, height: height, dots: punkte);
 }
 
 /// Die Marke als Rasterbild fuer diese Papierbreite.

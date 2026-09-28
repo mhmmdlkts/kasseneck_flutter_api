@@ -39,7 +39,7 @@ import 'einstellungen.dart';
 import 'farbe.dart';
 
 /// Welcher Modus des Design-Systems hinter einem Stil steht.
-KdMode modeFor(PosTheme stil) => switch (stil) {
+KdMode modeFor(PosTheme style) => switch (style) {
       PosTheme.clear => KdMode.light,
       PosTheme.warm => KdMode.warm,
       PosTheme.night => KdMode.dark,
@@ -82,8 +82,8 @@ class PosThemeData {
 
   /// Das Thema aus den Einstellungen. [device] steuert, was nur dieses Gerät
   /// betrifft (Kachelhöhe); ohne es gelten die Vorgaben.
-  factory PosThemeData.fromSettings(PosBusinessSettings betrieb, {PosDeviceSettings? device}) {
-    final modus = modeFor(betrieb.theme);
+  factory PosThemeData.fromSettings(PosBusinessSettings business, {PosDeviceSettings? device}) {
+    final modus = modeFor(business.theme);
     final scharf = modus == KdMode.contrast;
 
     // **Die Marke steht fest.** Die Knöpfe, mit denen kassiert wird, sind
@@ -93,14 +93,14 @@ class PosThemeData {
     // `business.color` bleibt im Datenmodell (Panel und Rechnungs-PDF lesen
     // es), färbt hier aber nichts mehr.
     return PosThemeData(
-      theme: betrieb.theme,
+      theme: business.theme,
       mode: modus,
-      fontScale: fontScales[betrieb.fontSize]!,
+      fontScale: fontScales[business.fontSize]!,
       // **Mal Schriftfaktor.** Die Höhe einer Kachel ist keine feste Zahl,
       // sondern das, was Name und Preis brauchen. Bei Schrift XL in eine
       // Kachel für Schrift M gepresst, wird dem Namen die Unterlänge
       // abgeschnitten — und „Leistung" ohne das g liest sich falsch.
-      tileHeight: tileHeights[device?.tileHeight ?? PosTileHeight.m]! * fontScales[betrieb.fontSize]!,
+      tileHeight: tileHeights[device?.tileHeight ?? PosTileHeight.m]! * fontScales[business.fontSize]!,
       extraColumns: device?.extraColumns ?? 0,
       // Radien kommen aus dem Design-System und sind in jedem Modus gleich;
       // der Kontrast-Modus schärft Ränder und nimmt Schatten, sonst nichts.
@@ -109,9 +109,9 @@ class PosThemeData {
       radiusSmall: KdForm.radius,
       lineWidth: scharf ? 2 : KdForm.borderWidth,
       shadowDepth: scharf ? 0 : (modus == KdMode.dark ? 0.5 : 1),
-      tileStyle: betrieb.tileStyle,
-      emoji: betrieb.emoji,
-      categoryColors: betrieb.categoryColors,
+      tileStyle: business.tileStyle,
+      emoji: business.emoji,
+      categoryColors: business.categoryColors,
     );
   }
 

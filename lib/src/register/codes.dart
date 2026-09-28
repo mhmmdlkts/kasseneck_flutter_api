@@ -63,16 +63,16 @@ const List<String> registerErrorCodes = [
   'route_missing',
 ];
 
-bool isRegisterErrorCode(Object? wert) => wert is String && registerErrorCodes.contains(wert);
+bool isRegisterErrorCode(Object? value) => value is String && registerErrorCodes.contains(value);
 
 /// Der Code eines geworfenen Fehlers, wenn er einer der Anmeldung ist; sonst `null`.
-String? registerErrorCode(Object? fehler) =>
-    fehler is KasseneckApiError && isRegisterErrorCode(fehler.code) ? fehler.code : null;
+String? registerErrorCode(Object? error) =>
+    error is KasseneckApiError && isRegisterErrorCode(error.code) ? error.code : null;
 
 /// Kurzform für `catch (e) { if (isRegisterError(e, 'cashregister_in_use')) … }`.
 /// Ohne [code]: ist es überhaupt ein Fehler der Kassen-Anmeldung?
-bool isRegisterError(Object? fehler, [String? code]) {
-  final gefunden = registerErrorCode(fehler);
+bool isRegisterError(Object? error, [String? code]) {
+  final gefunden = registerErrorCode(error);
   return gefunden != null && (code == null || gefunden == code);
 }
 
@@ -107,8 +107,8 @@ class RegisterErrorDetails {
   final num? licenses;
 }
 
-RegisterErrorDetails registerErrorDetails(Object? fehler) {
-  final d = fehler is KasseneckApiError ? fehler.details : const <String, dynamic>{};
+RegisterErrorDetails registerErrorDetails(Object? error) {
+  final d = error is KasseneckApiError ? error.details : const <String, dynamic>{};
   num? zahl(Object? v) => v is num && v.isFinite ? v : null;
   final label = d['deviceLabel'];
   return RegisterErrorDetails(
@@ -140,9 +140,9 @@ class FieldError {
 }
 
 /// Die Feldfehler einer `validation`-Antwort; leer, wenn es keine sind.
-List<FieldError> fieldErrors(Object? fehler) {
-  if (fehler is! KasseneckApiError) return const [];
-  final roh = fehler.details['errors'];
+List<FieldError> fieldErrors(Object? error) {
+  if (error is! KasseneckApiError) return const [];
+  final roh = error.details['errors'];
   if (roh is! List) return const [];
   return [
     for (final e in roh)
@@ -152,4 +152,4 @@ List<FieldError> fieldErrors(Object? fehler) {
 }
 
 /// Feldfehler der Anmeldung (Zwilling von `registerFieldErrors`).
-List<FieldError> registerFieldErrors(Object? fehler) => fieldErrors(fehler);
+List<FieldError> registerFieldErrors(Object? error) => fieldErrors(error);

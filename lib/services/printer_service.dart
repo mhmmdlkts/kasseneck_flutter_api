@@ -56,7 +56,7 @@ class KeckPrinterService {
   /// Das gedruckte Logo kommt IMMER aus dem, was am Konto liegt
   /// (`receipt.logoUrl`): Bon, PDF und Online-Ansicht sollen dasselbe zeigen.
   /// Darum nimmt dieser Weg kein Logo mehr von aussen entgegen.
-  static Future<PrintLogo?> Function(String? url, SheetLogoSize stufe, KeckPaperSize papier)
+  static Future<PrintLogo?> Function(String? url, SheetLogoSize size, KeckPaperSize paper)
       logoLoader = loadPrintLogo;
 
   static Future<List<int>> _getListIntBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize) async {
@@ -117,7 +117,7 @@ class KeckPrinterService {
   ///
   /// Das Logo kommt aus [receipt.logoUrl] -- [logo] greift nur noch als
   /// Rueckfallebene fuer Belege ohne Logo-Adresse. Fuer [paperSize] muss es
-  /// gerastert sein (`loadPrintLogo(url, stufe, paperSize)`); passt ein
+  /// gerastert sein (`loadPrintLogo(url, size, paperSize)`); passt ein
   /// `PrintLogo` nicht (z. B. fuer eine andere Papierbreite gerastert), gilt:
   /// kommt es selbst aus [receipt.logoUrl], druckt der Beleg ohne Logo weiter --
   /// ein Datenfehler am Konto darf den Bon nicht verhindern. Nur ein

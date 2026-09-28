@@ -184,17 +184,17 @@ class CancelReceiptResult {
   /// Liest die Storno-Antwort `{receipt, cancellationOf, remaining}`. Wirft
   /// [KasseneckValidationError] (Antwortfehler), wenn Bezug oder Restmengen
   /// fehlen; die Aufrufer machen daraus `response_unreadable`.
-  static CancelReceiptResult fromResponse(String name, Map<String, dynamic> daten, KasseneckReceipt Function() beleg) {
-    final bezug = CancellationOf.fromJson(daten['cancellationOf']);
+  static CancelReceiptResult fromResponse(String name, Map<String, dynamic> data, KasseneckReceipt Function() receipt) {
+    final bezug = CancellationOf.fromJson(data['cancellationOf']);
     if (bezug == null) {
       throw KasseneckValidationError(name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response');
     }
-    final rest = daten['remaining'];
+    final rest = data['remaining'];
     if (rest is! List || rest.any((n) => n is! int)) {
       throw KasseneckValidationError(name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response');
     }
     return CancelReceiptResult(
-      receipt: beleg(),
+      receipt: receipt(),
       originalReceiptId: bezug.receiptId,
       originalFullReceiptId: bezug.fullReceiptId,
       originalTimeStamp: bezug.timeStamp,

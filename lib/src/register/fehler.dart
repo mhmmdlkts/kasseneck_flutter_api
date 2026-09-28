@@ -113,8 +113,8 @@ class KasseneckApiError implements Exception {
 
 /// Der `code` einer Antworthuelle — nur ein nicht leerer Text zaehlt, alles
 /// andere waere ein geratener Vertrag.
-String? errorCodeFrom(Map<dynamic, dynamic> huelle) {
-  final code = huelle['code'];
+String? errorCodeFrom(Map<dynamic, dynamic> envelope) {
+  final code = envelope['code'];
   return code is String && code.isNotEmpty ? code : null;
 }
 
@@ -235,9 +235,9 @@ class KasseneckHttpError implements Exception {
 /// der Kennung des Belegs, soweit [receiptId] sie findet: `details.receiptId`
 /// ist der Faden zum Beleg (`getReceipt`), `details.field` das Feld, an dem
 /// das Lesen scheiterte.
-T readSignedResponse<T>(String functionName, T Function() lesen, {String? Function()? receiptId}) {
+T readSignedResponse<T>(String functionName, T Function() read, {String? Function()? receiptId}) {
   try {
-    return lesen();
+    return read();
   } on KasseneckApiError {
     rethrow;
   } catch (ursache) {

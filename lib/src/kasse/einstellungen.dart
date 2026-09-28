@@ -551,15 +551,15 @@ class PosBusinessSettings {
   /// einem deutschen aus 9.x wie `stil`), und bei einem Wert der inneren Form
   /// 0.x (`'nacht'`): eine Änderung, die still nichts bewirkt, fiele am Tresen
   /// niemandem auf.
-  PosBusinessSettings merge(Map<String, dynamic> aenderung) {
-    _pruefeAenderung('business', aenderung, _betriebSchluessel, legacyBusinessKeys);
-    return PosBusinessSettings.fromJson(_mische(toJson(), aenderung));
+  PosBusinessSettings merge(Map<String, dynamic> patch) {
+    _pruefeAenderung('business', patch, _betriebSchluessel, legacyBusinessKeys);
+    return PosBusinessSettings.fromJson(_mische(toJson(), patch));
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
-  factory PosBusinessSettings.fromJson(Map<String, dynamic> roh) {
+  factory PosBusinessSettings.fromJson(Map<String, dynamic> raw) {
     const s = PosBusinessSettings();
-    final g = _mische(s.toJson(), roh);
+    final g = _mische(s.toJson(), raw);
     final fremd = <String, Object>{};
     return PosBusinessSettings(
       logoText: _text(g['logoText'], s.logoText),
@@ -761,15 +761,15 @@ class PosDeviceSettings {
   final Map<String, Object> unknownValues;
 
   /// Siehe [PosBusinessSettings.merge]; `shortcuts` wird je Aktion gemischt.
-  PosDeviceSettings merge(Map<String, dynamic> aenderung) {
-    _pruefeAenderung('device', aenderung, _geraetSchluessel, legacyDeviceKeys);
-    return PosDeviceSettings.fromJson(_mische(toJson(), aenderung));
+  PosDeviceSettings merge(Map<String, dynamic> patch) {
+    _pruefeAenderung('device', patch, _geraetSchluessel, legacyDeviceKeys);
+    return PosDeviceSettings.fromJson(_mische(toJson(), patch));
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
-  factory PosDeviceSettings.fromJson(Map<String, dynamic> roh) {
+  factory PosDeviceSettings.fromJson(Map<String, dynamic> raw) {
     const s = PosDeviceSettings();
-    final g = _mische(s.toJson(), roh);
+    final g = _mische(s.toJson(), raw);
     final fremd = <String, Object>{};
     return PosDeviceSettings(
       layout: _wahl(g, 'layout', PosLayout.values, s.layout, fremd),
@@ -864,8 +864,8 @@ class PosSettings {
   /// 9.x-Standardwerte im Stand (`terminalPort` 20008, `kassierenModus`
   /// `seite`) gelten als gesetzt, bis die erste Serverantwort
   /// (`getKasseSettings`, Benutzerliste) den Stand ersetzt.
-  factory PosSettings.fromJson(Map<String, dynamic>? gespeichert) {
-    final roh = gespeichert ?? const <String, dynamic>{};
+  factory PosSettings.fromJson(Map<String, dynamic>? stored) {
+    final roh = stored ?? const <String, dynamic>{};
     final alt = !roh.containsKey('business') &&
         !roh.containsKey('device') &&
         (roh.containsKey('betrieb') || roh.containsKey('geraet'));
@@ -967,11 +967,11 @@ List<String> unknownPosSettingValues(PosSettings settings) {
 /// Doppelbelegungsprüfung die ganze Belegung, und eine unbekannte Aktion
 /// bleibt am Server stehen. `tipSteps` geht nur mit den geänderten Einträgen.
 /// Zwilling von `posSettingsChanges`.
-Map<String, dynamic> posSettingsChanges(Map<String, dynamic> vorher, Map<String, dynamic> nachher) {
+Map<String, dynamic> posSettingsChanges(Map<String, dynamic> before, Map<String, dynamic> after) {
   final raus = <String, dynamic>{};
-  for (final k in nachher.keys) {
-    final neu = nachher[k];
-    final alt = vorher[k];
+  for (final k in after.keys) {
+    final neu = after[k];
+    final alt = before[k];
     if (_gleich(alt, neu)) continue;
     if (k == 'shortcuts' && neu is Map) {
       raus[k] = <String, dynamic>{
@@ -1094,12 +1094,12 @@ Map<String, dynamic> _ausAltform(Map<String, dynamic> alt, Map<String, String> s
 }
 
 /// Zwilling von `untangleShortcuts` (Backend, npm `stored`): Aktionen aus
-/// [gespeichert] behalten ihre Tasten; jede andere Aktion verliert eine Taste,
+/// [stored] behalten ihre Tasten; jede andere Aktion verliert eine Taste,
 /// die eine gespeicherte Aktion beansprucht, außer die beiden dürfen sie
 /// teilen ([posShortcutSharedPairs]).
-Map<String, Object?> untangleShortcuts(Map<String, Object?> gemischt, Map<String, Object?> gespeichert) {
+Map<String, Object?> untangleShortcuts(Map<String, Object?> mixed, Map<String, Object?> stored) {
   final beansprucht = <Object?, String>{};
-  for (final e in gespeichert.entries) {
+  for (final e in stored.entries) {
     final tasten = e.value;
     if (tasten is! List) continue;
     for (final t in tasten) {
@@ -1107,8 +1107,8 @@ Map<String, Object?> untangleShortcuts(Map<String, Object?> gemischt, Map<String
     }
   }
   return {
-    for (final e in gemischt.entries)
-      e.key: e.value is! List || gespeichert.containsKey(e.key)
+    for (final e in mixed.entries)
+      e.key: e.value is! List || stored.containsKey(e.key)
           ? e.value
           : [
               for (final t in e.value as List)
@@ -1142,7 +1142,7 @@ void _pruefeAenderung(String teil, Map<String, dynamic> aenderung, Set<String> b
 }
 
 /// Ist [value] ein Wert der inneren Form 0.x für dieses Drahtfeld?
-bool isLegacyValue0x(String feld, Object? wert) => legacyValues[feld]?.containsKey(wert) ?? false;
+bool isLegacyValue0x(String field, Object? value) => legacyValues[field]?.containsKey(value) ?? false;
 
 // ------------------------------------------------------------------ Helfer
 

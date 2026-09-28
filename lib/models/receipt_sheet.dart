@@ -29,8 +29,8 @@ enum SheetLogoSize {
   const SheetLogoSize(this.code, this.widthFraction, this.heightLines);
 
   /// Die Einstellung `logoSkala` des Betriebs; fehlt sie oder ist sie unbekannt, gilt M.
-  static SheetLogoSize fromCode(String? kuerzel) =>
-      SheetLogoSize.values.firstWhere((s) => s.code == kuerzel, orElse: () => SheetLogoSize.m);
+  static SheetLogoSize fromCode(String? code) =>
+      SheetLogoSize.values.firstWhere((s) => s.code == code, orElse: () => SheetLogoSize.m);
 }
 
 const int dotsPerChar = 12;
@@ -104,18 +104,18 @@ class ReceiptSheet {
   Map<String, Object> toJson() => {'charsPerLine': charsPerLine, 'blocks': [for (final b in blocks) b.toJson()]};
 }
 
-KeckPaperSize paperSizeForChars(int zeichen, String vorgabe) {
-  if (zeichen == KeckPaperSize.mm58.defaultCharCount) return KeckPaperSize.mm58;
-  if (zeichen == KeckPaperSize.mm80.defaultCharCount) return KeckPaperSize.mm80;
-  return vorgabe == 'mm80' ? KeckPaperSize.mm80 : KeckPaperSize.mm58;
+KeckPaperSize paperSizeForChars(int chars, String fallback) {
+  if (chars == KeckPaperSize.mm58.defaultCharCount) return KeckPaperSize.mm58;
+  if (chars == KeckPaperSize.mm80.defaultCharCount) return KeckPaperSize.mm80;
+  return fallback == 'mm80' ? KeckPaperSize.mm80 : KeckPaperSize.mm58;
 }
 
 /// Ins Kaestchen der Stufe eingepasst, nie hochgerechnet (1 Bildpixel hoechstens 1 Druckpunkt).
-LogoDimensions logoDimensions(SheetLogo logo, int zeichen) {
+LogoDimensions logoDimensions(SheetLogo logo, int chars) {
   if (logo.pixelWidth <= 0 || logo.pixelHeight <= 0) {
     throw ArgumentError('Logo ohne Pixelmass');
   }
-  final blattPunkte = zeichen * dotsPerChar;
+  final blattPunkte = chars * dotsPerChar;
   final faktor = math.min(
     math.min((logo.size.widthFraction * blattPunkte) / logo.pixelWidth, (logo.size.heightLines * dotsPerLine) / logo.pixelHeight),
     1.0,
@@ -126,9 +126,9 @@ LogoDimensions logoDimensions(SheetLogo logo, int zeichen) {
   );
 }
 
-({int width, int height}) logoRasterSize(LogoDimensions mass, int zeichen) => (
-      width: math.max(1, (mass.widthFraction * zeichen * dotsPerChar).round()),
-      height: math.max(1, (mass.heightLines * dotsPerLine).round()),
+({int width, int height}) logoRasterSize(LogoDimensions dimensions, int chars) => (
+      width: math.max(1, (dimensions.widthFraction * chars * dotsPerChar).round()),
+      height: math.max(1, (dimensions.heightLines * dotsPerLine).round()),
     );
 
 /// Byte-Kapazitaet je QR-Version bei Korrektur M (ISO/IEC 18004) -- dieselbe
@@ -141,8 +141,8 @@ const List<int> _byteKapazitaetM = [
   1452, 1538, 1628, 1722, 1809, 1911, 1989, 2099, 2213, 2331,
 ];
 
-int qrModuleCount(String nutzlast) {
-  final laenge = utf8.encode(nutzlast).length;
+int qrModuleCount(String payload) {
+  final laenge = utf8.encode(payload).length;
   for (var i = 0; i < _byteKapazitaetM.length; i++) {
     if (laenge <= _byteKapazitaetM[i]) return 17 + 4 * (i + 1);
   }
@@ -151,21 +151,21 @@ int qrModuleCount(String nutzlast) {
 
 /// Ob [payload] in irgendeine QR-Version bei Korrektur M passt -- dieselbe
 /// Tabelle wie [qrModuleCount], aber ohne zu werfen (npm `qrPasstInVersion`).
-bool qrFitsInVersion(String nutzlast) => utf8.encode(nutzlast).length <= _byteKapazitaetM.last;
+bool qrFitsInVersion(String payload) => utf8.encode(payload).length <= _byteKapazitaetM.last;
 
 /// Anteil der Blattbreite, den der QR am Drucker einnimmt (nativ, sonst Bildweg).
-double qrSheetWidthFraction(String nutzlast, KeckPaperSize papier, {QrModuleSize moduleSize = QrModuleSize.auto}) {
-  if (nutzlast.isEmpty) return 0;
+double qrSheetWidthFraction(String payload, KeckPaperSize paper, {QrModuleSize moduleSize = QrModuleSize.auto}) {
+  if (payload.isEmpty) return 0;
   // Ein Inhalt, der in keine QR-Version passt, liesse [qrModuleCount]
   // werfen und risse jeden Zeichner mit (Widget, Bon). 0 wie bei leerer
   // Nutzlast: der Beleg steht ohne QR, statt gar nicht zu stehen.
-  if (!qrFitsInVersion(nutzlast)) return 0;
-  final module = qrModuleCount(nutzlast);
-  final mass = QrMetrics.compute(paperWidthDots: papier.printWidthDots, moduleCount: module, moduleSize: moduleSize);
-  if (mass.fits) return mass.widthDots / papier.printWidthDots;
+  if (!qrFitsInVersion(payload)) return 0;
+  final module = qrModuleCount(payload);
+  final mass = QrMetrics.compute(paperWidthDots: paper.printWidthDots, moduleCount: module, moduleSize: moduleSize);
+  if (mass.fits) return mass.widthDots / paper.printWidthDots;
   final gesamt = module + 2 * QrMetrics.quietZoneModules;
-  final punkte = math.max(1, math.min(moduleSize.capDots, papier.printWidthDots ~/ gesamt));
-  return (gesamt * punkte) / papier.printWidthDots;
+  final punkte = math.max(1, math.min(moduleSize.capDots, paper.printWidthDots ~/ gesamt));
+  return (gesamt * punkte) / paper.printWidthDots;
 }
 
 ReceiptSheet receiptSheet(ReceiptLayout layout,

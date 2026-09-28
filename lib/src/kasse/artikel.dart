@@ -85,8 +85,8 @@ const Map<String, int> _dezimalEinheiten = {
 
 /// Vorgabe je Einheit — was der Betrieb bei einem neuen Artikel bekommt und
 /// ändern darf.
-QuantityDefaults quantityRuleForUnit(String? einheit) {
-  final u = (einheit ?? '').trim().toLowerCase();
+QuantityDefaults quantityRuleForUnit(String? unit) {
+  final u = (unit ?? '').trim().toLowerCase();
   final stellen = _dezimalEinheiten[u];
   if (stellen == null) return const QuantityDefaults(rule: QuantityRule.piece, ask: false, decimals: 0);
   // g, ml, min: ganze Zahl, aber die Menge wird gefragt.
@@ -221,8 +221,8 @@ class PosArticle {
 }
 
 /// Deckelt eine gewünschte Menge an der Höchstmenge des Artikels.
-num allowedQuantity(PosArticle a, num gewuenscht) {
+num allowedQuantity(PosArticle a, num wanted) {
   final grenze = a.maxQuantity;
-  if (grenze == null || grenze <= 0) return gewuenscht;
-  return gewuenscht > grenze ? grenze : gewuenscht;
+  if (grenze == null || grenze <= 0) return wanted;
+  return wanted > grenze ? grenze : wanted;
 }

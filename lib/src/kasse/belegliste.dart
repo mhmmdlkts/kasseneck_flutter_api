@@ -52,17 +52,17 @@ class ReceiptFilter {
 String _zwei(int n) => n.toString().padLeft(2, '0');
 
 /// Der Wiener Kalendertag eines Zeitpunkts als `YYYY-MM-DD`.
-String viennaDate(DateTime zeitpunkt) {
-  final w = ViennaTime.toWallClock(zeitpunkt);
+String viennaDate(DateTime instant) {
+  final w = ViennaTime.toWallClock(instant);
   return '${w.year}-${_zwei(w.month)}-${_zwei(w.day)}';
 }
 
 /// `from`/`to` (Wiener Wanduhr, `YYYY-MM-DD`) für den Zeitraum.
-({String from, String to}) periodRange(ReceiptPeriod zeitraum, [DateTime? jetzt]) {
-  final zeit = jetzt ?? DateTime.now();
+({String from, String to}) periodRange(ReceiptPeriod period, [DateTime? now]) {
+  final zeit = now ?? DateTime.now();
   final heute = viennaDate(zeit);
   DateTime zurueck(int tage) => zeit.subtract(Duration(days: tage));
-  return switch (zeitraum) {
+  return switch (period) {
     ReceiptPeriod.today => (from: heute, to: heute),
     ReceiptPeriod.yesterday => (from: viennaDate(zurueck(1)), to: viennaDate(zurueck(1))),
     // Sieben Tage schließen heute mit ein — also sechs zurück.
@@ -72,9 +72,9 @@ String viennaDate(DateTime zeitpunkt) {
 }
 
 /// Lesbarer Name der Belegart — nie ein Rohwert.
-String receiptTypeLabel(ReceiptSummary beleg) {
-  if (beleg.isCancellation) return 'Storno';
-  switch (beleg.receiptType) {
+String receiptTypeLabel(ReceiptSummary receipt) {
+  if (receipt.isCancellation) return 'Storno';
+  switch (receipt.receiptType) {
     case 'standard':
       return 'Verkauf';
     case 'start':
@@ -82,7 +82,7 @@ String receiptTypeLabel(ReceiptSummary beleg) {
     case 'training':
       return 'Trainingsbeleg';
     case 'zero':
-      return switch (beleg.zeroKind) {
+      return switch (receipt.zeroKind) {
         'monthly' => 'Monatsbeleg',
         'annual' => 'Jahresbeleg',
         'annual_replacement' => 'Jahresbeleg (Ersatz)',
@@ -96,9 +96,9 @@ String receiptTypeLabel(ReceiptSummary beleg) {
   }
 }
 
-List<ReceiptSummary> filterReceipts(List<ReceiptSummary> belege, ReceiptFilter f) {
+List<ReceiptSummary> filterReceipts(List<ReceiptSummary> receipts, ReceiptFilter f) {
   return [
-    for (final b in belege)
+    for (final b in receipts)
       if (_passt(b, f)) b,
   ];
 }
@@ -122,9 +122,9 @@ bool _passt(ReceiptSummary b, ReceiptFilter f) {
 }
 
 /// Bediener-Namen in der Liste, für den Filter — sortiert, ohne Doppelte.
-List<String> operatorNames(List<ReceiptSummary> belege) {
+List<String> operatorNames(List<ReceiptSummary> receipts) {
   final namen = <String>{
-    for (final b in belege)
+    for (final b in receipts)
       if ((b.operator?.name ?? '').isNotEmpty) b.operator!.name,
   }.toList();
   namen.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
@@ -140,8 +140,8 @@ class ReceiptDayGroup {
 }
 
 /// Nach Wiener Kalendertag gruppiert, neueste zuerst.
-List<ReceiptDayGroup> groupByDay(List<ReceiptSummary> belege) {
-  final sortiert = [...belege]..sort((a, b) => b.timeStamp.compareTo(a.timeStamp));
+List<ReceiptDayGroup> groupByDay(List<ReceiptSummary> receipts) {
+  final sortiert = [...receipts]..sort((a, b) => b.timeStamp.compareTo(a.timeStamp));
   final aus = <ReceiptDayGroup>[];
   for (final b in sortiert) {
     final datum = viennaDate(ViennaTime.parseServerTimeStamp(b.timeStamp));
@@ -155,7 +155,7 @@ List<ReceiptDayGroup> groupByDay(List<ReceiptSummary> belege) {
 }
 
 /// Uhrzeit eines Belegs in Wiener Wanduhrzeit (`HH:MM`).
-String receiptTime(String zeitstempel) {
-  final w = ViennaTime.toWallClock(ViennaTime.parseServerTimeStamp(zeitstempel));
+String receiptTime(String timestamp) {
+  final w = ViennaTime.toWallClock(ViennaTime.parseServerTimeStamp(timestamp));
   return '${_zwei(w.hour)}:${_zwei(w.minute)}';
 }

@@ -16,10 +16,10 @@ class KeckTipPerson {
 
   const KeckTipPerson({required this.registerUserId, required this.name, required this.owner});
 
-  factory KeckTipPerson.fromJson(Map<String, dynamic> roh) => KeckTipPerson(
-        registerUserId: roh['registerUserId'] is String ? roh['registerUserId'] as String : '',
-        name: roh['name'] is String ? roh['name'] as String : '',
-        owner: roh['owner'] == true,
+  factory KeckTipPerson.fromJson(Map<String, dynamic> raw) => KeckTipPerson(
+        registerUserId: raw['registerUserId'] is String ? raw['registerUserId'] as String : '',
+        name: raw['name'] is String ? raw['name'] as String : '',
+        owner: raw['owner'] == true,
       );
 
   final String registerUserId;

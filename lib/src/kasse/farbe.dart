@@ -62,11 +62,11 @@ class PosColor {
     return 0.2126 * kanal(r) + 0.7152 * kanal(g) + 0.0722 * kanal(b);
   }
 
-  /// Mischt zu [andere] hin; [anteil] 0 = diese Farbe, 1 = die andere.
-  PosColor mixedWith(PosColor andere, double anteil) {
-    final t = anteil < 0 ? 0.0 : (anteil > 1 ? 1.0 : anteil);
+  /// Mischt zu [other] hin; [fraction] 0 = diese Farbe, 1 = die andere.
+  PosColor mixedWith(PosColor other, double fraction) {
+    final t = fraction < 0 ? 0.0 : (fraction > 1 ? 1.0 : fraction);
     int misch(int a, int b) => (a + (b - a) * t).round();
-    return PosColor(misch(r, andere.r), misch(g, andere.g), misch(b, andere.b));
+    return PosColor(misch(r, other.r), misch(g, other.g), misch(b, other.b));
   }
 
   @override
@@ -81,13 +81,13 @@ class PosColor {
 
 /// Aus Farbton, Sättigung und Helligkeit (HSV) eine Farbe.
 ///
-/// [ton] in Grad (0–360), [saettigung] und [luminance] von 0 bis 1. Gebraucht
+/// [hue] in Grad (0–360), [saturation] und [luminance] von 0 bis 1. Gebraucht
 /// für eine freie Farbwahl: ein Regler je Größe ist begreiflicher als sechs
 /// Hexzeichen.
-PosColor colorFromHsv(double ton, double saettigung, double helligkeit) {
-  final h = (ton % 360 + 360) % 360;
-  final s = saettigung.clamp(0.0, 1.0);
-  final v = helligkeit.clamp(0.0, 1.0);
+PosColor colorFromHsv(double hue, double saturation, double value) {
+  final h = (hue % 360 + 360) % 360;
+  final s = saturation.clamp(0.0, 1.0);
+  final v = value.clamp(0.0, 1.0);
   final c = v * s;
   final x = c * (1 - ((h / 60) % 2 - 1).abs());
   final m = v - c;
@@ -109,10 +109,10 @@ PosColor colorFromHsv(double ton, double saettigung, double helligkeit) {
 /// einen Knopf, der auf weißem Grund verschwindet — und das merkt der Chef
 /// erst am Tresen. Geprüft wird gegen **beide** hellen Gründe, weil ein Betrieb
 /// den Stil wechseln kann.
-bool isUsableBrandColor(PosColor farbe) {
+bool isUsableBrandColor(PosColor color) {
   final helleGruende = [const PosColor(0xFF, 0xFF, 0xFF), PosColor.fromColor(kdColor(KdMode.light, 'ground'))];
   for (final grund in helleGruende) {
-    if (contrastRatio(farbe, grund) < 2.0) return false;
+    if (contrastRatio(color, grund) < 2.0) return false;
   }
   return true;
 }
@@ -130,7 +130,7 @@ double contrastRatio(PosColor a, PosColor b) {
   return (hell + 0.05) / (dunkel + 0.05);
 }
 
-/// Die besser lesbare von zwei Farben auf [reason].
-PosColor readableOn(PosColor grund, {PosColor light = const PosColor(0xFF, 0xFF, 0xFF), PosColor dark = const PosColor(0x0F, 0x17, 0x2A)}) {
-  return contrastRatio(light, grund) >= contrastRatio(dark, grund) ? light : dark;
+/// Die besser lesbare von zwei Farben auf [background].
+PosColor readableOn(PosColor background, {PosColor light = const PosColor(0xFF, 0xFF, 0xFF), PosColor dark = const PosColor(0x0F, 0x17, 0x2A)}) {
+  return contrastRatio(light, background) >= contrastRatio(dark, background) ? light : dark;
 }

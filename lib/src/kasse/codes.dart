@@ -50,18 +50,18 @@ const List<String> posErrorCodes = [
   'route_missing',
 ];
 
-bool isPosErrorCode(Object? wert) => wert is String && posErrorCodes.contains(wert);
+bool isPosErrorCode(Object? value) => value is String && posErrorCodes.contains(value);
 
 /// Der Code eines geworfenen Fehlers, wenn er in [posErrorCodes] steht; sonst `null`.
-String? posErrorCode(Object? fehler) =>
-    fehler is KasseneckApiError && isPosErrorCode(fehler.code) ? fehler.code : null;
+String? posErrorCode(Object? error) =>
+    error is KasseneckApiError && isPosErrorCode(error.code) ? error.code : null;
 
 /// Kurzform für `catch (e) { if (isPosError(e, 'logo_too_large')) … }`.
-bool isPosError(Object? fehler, [String? code]) {
-  final gefunden = posErrorCode(fehler);
+bool isPosError(Object? error, [String? code]) {
+  final gefunden = posErrorCode(error);
   return gefunden != null && (code == null || gefunden == code);
 }
 
 /// Die Feldfehler einer `validation`-Antwort (`business.vatRates`,
 /// `device.shortcuts.cash`); leer, wenn es keine sind.
-List<FieldError> posFieldErrors(Object? fehler) => fieldErrors(fehler);
+List<FieldError> posFieldErrors(Object? error) => fieldErrors(error);

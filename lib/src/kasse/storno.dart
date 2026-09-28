@@ -42,7 +42,7 @@ const Map<String, String> cancellationReasons = {
 
 /// Ist [value] ein Code aus [cancellationErrorCodes]? Ein Anzeigetext ist keiner,
 /// ein alter deutscher oder grosser Code aus `/v1` auch nicht.
-bool isCancellationErrorCode(Object? wert) => wert is String && cancellationErrorCodes.contains(wert);
+bool isCancellationErrorCode(Object? value) => value is String && cancellationErrorCodes.contains(value);
 
 /// Ab wann eine liegengebliebene Reservierung nicht mehr zählt (wie im
 /// Backend). Ohne diese Grenze bliebe eine Position für immer gesperrt, weil
@@ -51,10 +51,10 @@ const int cancellationReservationMs = 120000;
 
 /// Restmenge je Position: Belegmenge minus alles, was storniert oder **frisch**
 /// reserviert ist; nie unter null.
-List<int> remainingQuantities(KasseneckReceipt beleg, {int? nowMs}) {
-  final rest = [for (final p in beleg.items) p.quantity];
+List<int> remainingQuantities(KasseneckReceipt receipt, {int? nowMs}) {
+  final rest = [for (final p in receipt.items) p.quantity];
   final zeit = nowMs ?? DateTime.now().millisecondsSinceEpoch;
-  for (final eintrag in beleg.cancellations) {
+  for (final eintrag in receipt.cancellations) {
     final at = eintrag['at'];
     // Eine Reservierung zählt nur, solange sie frisch ist.
     if (eintrag['pending'] == true && (at is! num || at < zeit - cancellationReservationMs)) continue;
@@ -77,18 +77,18 @@ List<int> remainingQuantities(KasseneckReceipt beleg, {int? nowMs}) {
 /// bei einem unbekannten Stornostand (ein kuenftiger Wert des Servers: die
 /// Kasse bietet dann nichts an, statt zu raten) – und mit der Reichweite `own`
 /// nur die eigenen. Fehlt der Stand in der Liste, entscheidet der Server.
-bool canCancel(ReceiptSummary beleg, RegisterScope reichweite, String eigeneUid) {
-  if (reichweite == RegisterScope.none) return false;
-  if (!beleg.isSale) return false;
-  if (beleg.cancellationState == CancellationState.full || beleg.cancellationState == CancellationState.unknown) return false;
-  if (reichweite == RegisterScope.own && beleg.operator?.uid != eigeneUid) return false;
+bool canCancel(ReceiptSummary receipt, RegisterScope scope, String ownUid) {
+  if (scope == RegisterScope.none) return false;
+  if (!receipt.isSale) return false;
+  if (receipt.cancellationState == CancellationState.full || receipt.cancellationState == CancellationState.unknown) return false;
+  if (scope == RegisterScope.own && receipt.operator?.uid != ownUid) return false;
   return true;
 }
 
 /// Sieht dieser Kassier den Beleg überhaupt?
-bool isReceiptVisible(ReceiptSummary beleg, RegisterScope reichweite, String eigeneUid) {
-  if (reichweite == RegisterScope.none) return false;
-  if (reichweite == RegisterScope.own) return beleg.operator?.uid == eigeneUid;
+bool isReceiptVisible(ReceiptSummary receipt, RegisterScope scope, String ownUid) {
+  if (scope == RegisterScope.none) return false;
+  if (scope == RegisterScope.own) return receipt.operator?.uid == ownUid;
   return true;
 }
 
@@ -105,8 +105,8 @@ String receiptNumber(String receiptId) {
 
 /// Aus der getippten Nummer die volle Kennung; `null`, wenn keine Ziffer dabei
 /// ist. Der Kassier tippt nur die Nummer — das Kassenkürzel steht ohnehin fest.
-String? fullReceiptIdFromNumber(String cashregisterId, String nummer) {
-  final ziffern = nummer.replaceAll(RegExp(r'\D'), '');
+String? fullReceiptIdFromNumber(String cashregisterId, String number) {
+  final ziffern = number.replaceAll(RegExp(r'\D'), '');
   final gekuerzt = ziffern.length > receiptNumberMaxDigits ? ziffern.substring(0, receiptNumberMaxDigits) : ziffern;
   return gekuerzt.isEmpty ? null : '$cashregisterId-ID-$gekuerzt';
 }
@@ -145,8 +145,8 @@ String cardRefundReference(KasseneckReceipt receipt, String paymentId) {
 ///   Terminal-Kennung (`providerPaymentId` der Erstattung) oder, liegt das
 ///   [original] vor, die Kennung der erstatteten Kartenzahlung dort. Erst wenn
 ///   beides fehlt, wirft sie.
-void assertCardRefunds(List<KeckPaymentInput> zahlungen, KasseneckReceipt? original) {
-  for (final (i, z) in zahlungen.indexed) {
+void assertCardRefunds(List<KeckPaymentInput> payments, KasseneckReceipt? original) {
+  for (final (i, z) in payments.indexed) {
     if (!z.method.needsCreditCard) continue;
     if (z.provider == null && z.providerPaymentId == null) {
       throw KasseneckValidationError(

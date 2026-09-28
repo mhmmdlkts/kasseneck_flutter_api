@@ -36,12 +36,12 @@ class TileCategory {
 
 int _nachName(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
 
-List<TileCategory> tileCategories(List<ArticleGroup> gruppen, List<PosArticle> artikel) {
+List<TileCategory> tileCategories(List<ArticleGroup> groups, List<PosArticle> articles) {
   final sichtbar = [
-    for (final a in artikel)
+    for (final a in articles)
       if (a.visible && a.active) a,
   ];
-  final sortiert = [...gruppen]..sort((a, b) {
+  final sortiert = [...groups]..sort((a, b) {
       final s = a.sort.compareTo(b.sort);
       return s != 0 ? s : _nachName(a.name, b.name);
     });
@@ -77,12 +77,12 @@ List<TileCategory> tileCategories(List<ArticleGroup> gruppen, List<PosArticle> a
 }
 
 /// Suche über alle sichtbaren Kacheln (Name, ohne Groß/Klein, Teilwort).
-List<PosArticle> searchTiles(List<TileCategory> kategorien, String text) {
+List<PosArticle> searchTiles(List<TileCategory> categories, String text) {
   final t = text.trim().toLowerCase();
   if (t.isEmpty) return const [];
   final gesehen = <String>{};
   final aus = <PosArticle>[];
-  for (final k in kategorien) {
+  for (final k in categories) {
     for (final a in k.tiles) {
       if (gesehen.contains(a.id)) continue;
       if (!a.name.toLowerCase().contains(t)) continue;
@@ -140,21 +140,21 @@ class TileBooking {
 /// Mit [bundle] wird eine gleiche Zeile (Name, Preis, Satz) hochgezählt, ohne
 /// entsteht je Griff eine Zeile. Die Höchstmenge des Artikels hält auch hier —
 /// [Cart.withQuantity] deckelt, egal woher der Griff kommt.
-TileBooking bookTile(Cart korb, CartItemDraft entwurf, {required bool bundle}) {
+TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   if (bundle) {
-    for (final p in korb.items) {
-      if (p.name != entwurf.name.trim()) continue;
-      if (p.priceCents != entwurf.unitPriceCents) continue;
-      if (p.vat != entwurf.vatRate) continue;
-      final neu = korb.withQuantity(p.id, p.quantity + 1);
+    for (final p in cart.items) {
+      if (p.name != draft.name.trim()) continue;
+      if (p.priceCents != draft.unitPriceCents) continue;
+      if (p.vat != draft.vatRate) continue;
+      final neu = cart.withQuantity(p.id, p.quantity + 1);
       final zeile = neu.items.firstWhere((z) => z.id == p.id);
       return TileBooking(cart: neu, lineId: p.id, quantity: zeile.quantity);
     }
   }
-  final neu = korb.added(entwurf);
+  final neu = cart.added(draft);
   // Ohne Bezeichnung bleibt der Korb unverändert; dann gibt es keine Zeile.
-  if (identical(neu, korb) || neu.items.isEmpty) {
-    return TileBooking(cart: korb, lineId: '', quantity: 0);
+  if (identical(neu, cart) || neu.items.isEmpty) {
+    return TileBooking(cart: cart, lineId: '', quantity: 0);
   }
   return TileBooking(cart: neu, lineId: neu.items.last.id, quantity: 1);
 }

@@ -44,8 +44,8 @@ enum QrPrintMode {
 /// nativen Befehl. Ein Standardwert an dieser Stelle hätte eine der beiden
 /// Kassen still umgestellt.
 extension PosQrModePrint on PosQrMode {
-  QrPrintMode printModeOr(QrPrintMode vorgabe) => switch (this) {
-        PosQrMode.auto => vorgabe,
+  QrPrintMode printModeOr(QrPrintMode fallback) => switch (this) {
+        PosQrMode.auto => fallback,
         PosQrMode.raster => QrPrintMode.imageRaster,
         PosQrMode.escpos => QrPrintMode.native,
       };

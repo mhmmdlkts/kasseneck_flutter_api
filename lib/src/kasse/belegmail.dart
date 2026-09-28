@@ -29,8 +29,8 @@ import '../receipt/codes.dart' show receiptEmailErrorCodes, receiptEmailVias;
 /// Dahinter die Codes von Anmeldung und Rand und `route_missing`.
 
 /// Ist [value] ein Code aus [receiptEmailErrorCodes]? Ein Anzeigetext ist keiner.
-bool isReceiptEmailErrorCode(Object? wert) =>
-    wert is String && receiptEmailErrorCodes.contains(wert);
+bool isReceiptEmailErrorCode(Object? value) =>
+    value is String && receiptEmailErrorCodes.contains(value);
 
 /// Was das Backend ueber einen **erfolgten** Versand sagt.
 ///
@@ -66,8 +66,8 @@ class SendReceiptEmailResult {
   /// bereits draussen; ein Wurf sagte der Kasse „nicht gesendet", und der
   /// Kassier schickte sie noch einmal. Fuer `at` und `via` hinge daran nur eine
   /// Zeile Anzeige — fuer den Gast eine zweite Mail.
-  factory SendReceiptEmailResult.fromResponse(Object? daten, {required String sentTo}) {
-    final map = daten is Map ? daten : const {};
+  factory SendReceiptEmailResult.fromResponse(Object? data, {required String sentTo}) {
+    final map = data is Map ? data : const {};
     final to = map['to'];
     final at = map['at'];
     final via = map['via'];

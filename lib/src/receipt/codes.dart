@@ -73,7 +73,7 @@ final List<String> receiptErrorCodes = _mitRand(const [
 ], _signierend);
 
 /// Ist [value] ein Code aus [receiptErrorCodes]?
-bool isReceiptErrorCode(Object? wert) => wert is String && receiptErrorCodes.contains(wert);
+bool isReceiptErrorCode(Object? value) => value is String && receiptErrorCodes.contains(value);
 
 /// Codes von `cancelReceipt` (Formfehler an `payments` stehen in
 /// `paymentErrorCodes`).

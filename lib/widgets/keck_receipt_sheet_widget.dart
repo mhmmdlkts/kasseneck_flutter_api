@@ -26,7 +26,7 @@ class KeckReceiptSheetWidget extends StatefulWidget {
   final bool qrCovered;
   final String qrCoveredText;
   final double fontSize;
-  final Widget Function(String nutzlast)? qrMissingBuilder;
+  final Widget Function(String payload)? qrMissingBuilder;
 
   const KeckReceiptSheetWidget({
     required this.layout,

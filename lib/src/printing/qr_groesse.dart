@@ -89,8 +89,8 @@ abstract final class QrMetrics {
   /// native Befehl mit L -- dann stand der QR bei mancher Nutzlast kleiner am
   /// Bon, als das Blatt ihm Platz gab. Zwei Rechenwege fuer denselben Code
   /// darf es nicht geben.
-  static int moduleCount(String nutzlast) => QrCode.fromData(
-        data: nutzlast,
+  static int moduleCount(String payload) => QrCode.fromData(
+        data: payload,
         errorCorrectLevel: QrErrorCorrectLevel.M,
       ).moduleCount;
 

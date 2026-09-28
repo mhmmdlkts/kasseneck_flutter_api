@@ -45,12 +45,12 @@ class PosSettingsClient {
     return PosSettings.fromJson({'business': daten['business'], 'device': daten['device']});
   }
 
-  /// Betriebsweite Einstellungen schreiben (Recht `layout`). [aenderung] mit
+  /// Betriebsweite Einstellungen schreiben (Recht `layout`). [patch] mit
   /// englischen Schlüsseln, am besten aus [posSettingsChanges]; `vatRates`
   /// immer als ganze Karte.
-  Future<PosBusinessSettings> saveBusiness(Map<String, dynamic> aenderung) async {
+  Future<PosBusinessSettings> saveBusiness(Map<String, dynamic> patch) async {
     const name = Aufrufe.setMyKasseSettings;
-    final gesendet = _pruefeTeil(name, 'business', aenderung, const PosBusinessSettings().toJson(), posBusinessValues);
+    final gesendet = _pruefeTeil(name, 'business', patch, const PosBusinessSettings().toJson(), posBusinessValues);
     if (gesendet.containsKey('vatRates')) {
       final karte = gesendet['vatRates'];
       // Unter /v3 prüft der Server die übergebene Karte für sich: ein
@@ -67,12 +67,12 @@ class PosSettingsClient {
   /// Einstellungen dieses Geräts schreiben (Recht `layout`). `shortcuts` nur
   /// als ganze Karte aller bekannten Aktionen ([posSettingsChanges] liefert
   /// sie bei jeder Tastenänderung); sie wird vorab auf Doppelbelegung geprüft.
-  Future<PosDeviceSettings> saveDevice(Map<String, dynamic> aenderung) async {
+  Future<PosDeviceSettings> saveDevice(Map<String, dynamic> patch) async {
     const name = Aufrufe.setMyRegisterDeviceSettings;
     if (deviceId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'deviceId fehlt', 'request');
     }
-    final gesendet = _pruefeTeil(name, 'device', aenderung, const PosDeviceSettings().toJson(), posDeviceValues);
+    final gesendet = _pruefeTeil(name, 'device', patch, const PosDeviceSettings().toJson(), posDeviceValues);
     if (gesendet.containsKey('shortcuts')) {
       final karte = gesendet['shortcuts'];
       if (karte is! Map) {
@@ -112,15 +112,15 @@ class PosSettingsClient {
   }
 
   /// Bild-Logo der Kasse hochladen (Recht `layout`, `setMyKasseLogo`).
-  /// [bild] ist eine Data-URL (PNG, JPEG, SVG). Liefert die neue Adresse für
+  /// [image] ist eine Data-URL (PNG, JPEG, SVG). Liefert die neue Adresse für
   /// `logoImage`. Formatfehler meldet der Server als `logo_invalid_type`,
   /// `logo_too_large` oder `logo_invalid`.
-  Future<String> setLogo(String bild) async {
+  Future<String> setLogo(String image) async {
     const name = Aufrufe.setMyKasseLogo;
-    if (bild.isEmpty) {
+    if (image.isEmpty) {
       throw const KasseneckValidationError(name, 'image fehlt (oder logoEntfernen)', 'request');
     }
-    return _logo(name, await transport.call(name, params: {'image': bild}));
+    return _logo(name, await transport.call(name, params: {'image': image}));
   }
 
   /// Bild-Logo entfernen; liefert `''`.

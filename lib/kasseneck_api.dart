@@ -871,11 +871,11 @@ class KasseneckApi {
     }
   }
 
-  Future<SignatureStatus?> getSignatureStatus(String zertifikatNrHex) async {
+  Future<SignatureStatus?> getSignatureStatus(String certificateSerialHex) async {
     final resJson = await _financeJson(
       method: 'status_signature',
       params: {
-        'zertifikatnr_hex': zertifikatNrHex
+        'zertifikatnr_hex': certificateSerialHex
       },
     );
     if (resJson['status'] != 'success') {

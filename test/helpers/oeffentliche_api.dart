@@ -231,7 +231,7 @@ class _Leser {
     for (final p in liste.parameters) {
       final innen = p is DefaultFormalParameter ? p.parameter : p;
       final n = p.name?.lexeme;
-      if (p.isNamed && n != null) _neu(n, 'parameter', '$rel:$besitzer($n)');
+      if (n != null) _neu(n, 'parameter', '$rel:$besitzer($n)');
       if (innen is SimpleFormalParameter) _signatur(rel, besitzer, innen.type);
       if (innen is FunctionTypedFormalParameter) {
         _parameter(rel, besitzer, innen.parameters);
@@ -239,7 +239,7 @@ class _Leser {
     }
   }
 
-  /// Benannte Felder von Records und benannte Parameter von Funktionstypen,
+  /// Benannte Felder von Records und die Parameter von Funktionstypen,
   /// die in einer oeffentlichen Signatur stehen.
   void _signatur(String rel, String besitzer, TypeAnnotation? typ) {
     if (typ == null) return;
@@ -270,7 +270,7 @@ class _TypLeser extends RecursiveAstVisitor<void> {
   void visitGenericFunctionType(GenericFunctionType node) {
     for (final p in node.parameters.parameters) {
       final n = p.name?.lexeme;
-      if (p.isNamed && n != null) melde(n, 'parameter');
+      if (n != null) melde(n, 'parameter');
     }
     super.visitGenericFunctionType(node);
   }

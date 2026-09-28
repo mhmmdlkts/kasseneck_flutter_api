@@ -48,7 +48,7 @@ Future<({int width, int height, Uint8List rgba})> _ausLogoService(String url) as
 }
 
 /// Laedt das Logo unter [url] und rastert es in die Groesse, die das Blatt
-/// [size] und [papier] geben ([logoDimensions]/[logoRaster]) -- `null` ohne Adresse
+/// [size] und [paper] geben ([logoDimensions]/[logoRaster]) -- `null` ohne Adresse
 /// oder bei jedem Fehler (Netz, Decode, Pixelmass). [pixel] ersetzt den
 /// Standardweg ueber [LogoService]/[decodePng] (Tests, andere Quellen).
 ///
@@ -80,14 +80,14 @@ Future<({int width, int height, Uint8List rgba})> _ausLogoService(String url) as
 /// `null`, ohne selbst zu versuchen.
 Future<PrintLogo?> loadPrintLogo(
   String? url,
-  SheetLogoSize stufe,
-  KeckPaperSize papier, {
+  SheetLogoSize size,
+  KeckPaperSize paper, {
   PixelLoader? pixel,
   Duration timeout = const Duration(seconds: 3),
   Duration negativeCacheTtl = defaultNegativeCacheTtl,
 }) {
   if (url == null || url.isEmpty) return Future.value(null);
-  final schluessel = '$url|${stufe.code}|${papier.name}';
+  final schluessel = '$url|${size.code}|${paper.name}';
   final vorhanden = _speicher[schluessel];
   if (vorhanden != null) return vorhanden;
 
@@ -96,7 +96,7 @@ Future<PrintLogo?> loadPrintLogo(
     return Future.value(null);
   }
 
-  final abruf = _laden(url, stufe, papier, pixel).timeout(timeout, onTimeout: () => null);
+  final abruf = _laden(url, size, paper, pixel).timeout(timeout, onTimeout: () => null);
   _speicher[schluessel] = abruf;
   abruf.then((logo) {
     // Nur den eigenen Eintrag entfernen: wurde der Speicher inzwischen

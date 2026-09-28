@@ -14,7 +14,7 @@ import '../register/fehler.dart' show KasseneckApiError;
 
 /// Ist [value] ein Code aus [paymentErrorCodes]? Exakt, wie unter `/v3`
 /// (klein); ein grosser Code aus `/v1` ist keiner. Ein Anzeigetext auch nicht.
-bool isPaymentErrorCode(Object? wert) => wert is String && paymentErrorCodes.contains(wert);
+bool isPaymentErrorCode(Object? value) => value is String && paymentErrorCodes.contains(value);
 
 /// Der Zahlbetrag des Servers aus einem `payments_sum_mismatch`
 /// (`details.expectedCents`), sonst `null`. Das Paket wiederholt nie selbst mit

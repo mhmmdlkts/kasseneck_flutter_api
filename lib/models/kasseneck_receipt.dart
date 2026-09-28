@@ -695,9 +695,9 @@ String? _nichtLeer(Object? wert) => wert is String && wert.isNotEmpty ? wert : n
 /// [KasseneckReceipt.fromJson] liest. Fuer lokale Ablagen, die das Update
 /// ueberleben muessen: gelesen wird migriert, verworfen wird nichts. Schon
 /// englische Schluessel bleiben, wie sie sind; ein englischer Schluessel
-/// gewinnt immer gegen seinen deutschen Vorgaenger. [alt] bleibt unberuehrt.
-Map<String, dynamic> migrateStoredReceiptJson(Map<String, dynamic> alt) {
-  final neu = Map<String, dynamic>.from(alt);
+/// gewinnt immer gegen seinen deutschen Vorgaenger. [stored] bleibt unberuehrt.
+Map<String, dynamic> migrateStoredReceiptJson(Map<String, dynamic> stored) {
+  final neu = Map<String, dynamic>.from(stored);
   const namen = {
     'uid': 'vatId',
     'taxnr': 'taxNumber',

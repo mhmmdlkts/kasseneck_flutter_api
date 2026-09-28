@@ -98,10 +98,10 @@ class KeckPayment {
 
   /// Liest eine Zahlungsliste; alles ausser einer Liste (auch `null`) gilt als
   /// „keine Liste" -- wie im Backend.
-  static List<KeckPayment>? listFromJson(Object? roh) {
-    if (roh is! List) return null;
+  static List<KeckPayment>? listFromJson(Object? raw) {
+    if (raw is! List) return null;
     return [
-      for (final e in roh)
+      for (final e in raw)
         if (e is Map) KeckPayment.fromJson(e),
     ];
   }
@@ -178,11 +178,11 @@ const int maxPayments = 20;
 /// Zwilling von `gepruefteZahlungen` im Client des npm-Pakets, Wortlaut
 /// inklusive; [cancellation] kehrt das Vorzeichen um und erlaubt `refundOf`, verbietet
 /// `tenderedCents`.
-String? paymentsError(List<KeckPaymentInput> zahlungen, {required bool cancellation}) {
-  if (zahlungen.length > maxPayments) {
+String? paymentsError(List<KeckPaymentInput> payments, {required bool cancellation}) {
+  if (payments.length > maxPayments) {
     return 'payments: es sind hoechstens $maxPayments Eintraege erlaubt.';
   }
-  for (final (i, z) in zahlungen.indexed) {
+  for (final (i, z) in payments.indexed) {
     final nr = i + 1;
     if (z.method == KeckPaymentMethod.mixed) {
       return 'Zahlung $nr: $mixedNotSentReason';
@@ -216,8 +216,8 @@ const String mixedNotSentReason =
 /// `payments` neben einer Einzel-Zahlungsart oder Kartenfeldern? Liefert den
 /// Grund (Backend: `payments_conflict`), sonst `null`. Nie still eines
 /// bevorzugen. [fields] nennt die Felder mit ihrem Drahtnamen.
-String? paymentsConflict(Map<String, Object?> felder) {
-  for (final MapEntry(:key, :value) in felder.entries) {
+String? paymentsConflict(Map<String, Object?> fields) {
+  for (final MapEntry(:key, :value) in fields.entries) {
     if (value != null) {
       return 'payments und $key duerfen nicht gemeinsam gesendet werden – Kartenangaben gehoeren in die Zahlung.';
     }

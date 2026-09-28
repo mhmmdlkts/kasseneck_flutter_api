@@ -95,12 +95,12 @@ class InvoiceApi {
 
   // ---- Rechnungen ---------------------------------------------------------------
 
-  Future<IssueResult> issueInvoice(IssueInvoiceRequest anfrage) async {
+  Future<IssueResult> issueInvoice(IssueInvoiceRequest request) async {
     const name = Aufrufe.issueInvoice;
-    if (anfrage.dryRun == true) {
+    if (request.dryRun == true) {
       throw const KasseneckValidationError(name, 'dryRun: true gehört zu previewInvoice', 'request');
     }
-    final daten = await _transport.call(name, anfrage.toJson());
+    final daten = await _transport.call(name, request.toJson());
     return _lesen(name, () => IssueResult.fromJson(daten));
   }
 
@@ -117,9 +117,9 @@ class InvoiceApi {
   /// Geht als `issueInvoice` mit `dryRun: true` hinaus; Fehler tragen deshalb
   /// den Aufrufnamen `issueInvoice`. Ein Server ohne Probelauf lehnt das
   /// unbekannte Feld als `validation` ab.
-  Future<PreviewResult> previewInvoice(IssueInvoiceRequest anfrage) async {
+  Future<PreviewResult> previewInvoice(IssueInvoiceRequest request) async {
     const name = Aufrufe.issueInvoice;
-    final daten = await _transport.call(name, {...anfrage.toJson(), 'dryRun': true});
+    final daten = await _transport.call(name, {...request.toJson(), 'dryRun': true});
     return _lesen(name, () => PreviewResult.fromJson(daten));
   }
 
@@ -141,9 +141,9 @@ class InvoiceApi {
   }
 
   /// Teilgutschrift; höchstens bis zum Brutto des Originals je USt-Satz.
-  Future<CreditNoteResult> createCreditNote(CreditNoteRequest anfrage) async {
+  Future<CreditNoteResult> createCreditNote(CreditNoteRequest request) async {
     const name = Aufrufe.createCreditNote;
-    final daten = await _transport.call(name, anfrage.toJson());
+    final daten = await _transport.call(name, request.toJson());
     return _lesen(name, () => CreditNoteResult.fromJson(daten));
   }
 
@@ -226,9 +226,9 @@ class InvoiceApi {
   /// nach einem Zeitlimit ein zweites Mal. Bei `method: 'cash'` (und bei
   /// `onSite: true`) wird die Zahlung gebucht und die Liste `notice` trägt
   /// `cash_receipt_required` — ein Barumsatz braucht einen Beleg (§ 132a BAO).
-  Future<RecordPaymentResult> recordInvoicePayment(RecordPaymentRequest anfrage) async {
+  Future<RecordPaymentResult> recordInvoicePayment(RecordPaymentRequest request) async {
     const name = Aufrufe.recordInvoicePayment;
-    final daten = await _transport.call(name, anfrage.toJson());
+    final daten = await _transport.call(name, request.toJson());
     return _lesen(name, () => RecordPaymentResult.fromJson(daten));
   }
 
@@ -286,13 +286,13 @@ class InvoiceApi {
 }
 
 /// Der Fehlercode eines geworfenen Fehlers — `null`, wenn es keiner der Rechnungs-API ist.
-String? invoiceErrorCode(Object? fehler) =>
-    fehler is KasseneckApiError && isInvoiceErrorCode(fehler.code) ? fehler.code : null;
+String? invoiceErrorCode(Object? error) =>
+    error is KasseneckApiError && isInvoiceErrorCode(error.code) ? error.code : null;
 
 /// Die Feldfehler einer `validation`-Antwort; leer, wenn es keine sind.
-List<({String field, String message})> invoiceFieldErrors(Object? fehler) {
-  if (fehler is! KasseneckApiError) return const [];
-  final roh = fehler.details['errors'];
+List<({String field, String message})> invoiceFieldErrors(Object? error) {
+  if (error is! KasseneckApiError) return const [];
+  final roh = error.details['errors'];
   if (roh is! List) return const [];
   return [
     for (final e in roh)

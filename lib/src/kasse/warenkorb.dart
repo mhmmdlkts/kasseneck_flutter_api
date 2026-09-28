@@ -47,10 +47,10 @@ class Position {
   /// Zeilensumme in ganzen Cent — beide Faktoren sind ganze Zahlen.
   int get lineTotalCents => priceCents * quantity;
 
-  Position withQuantity(int menge) => Position(
+  Position withQuantity(int quantity) => Position(
         id: id,
         name: name,
-        quantity: menge,
+        quantity: quantity,
         priceCents: priceCents,
         vat: vat,
         maxQuantity: maxQuantity,
@@ -112,19 +112,19 @@ class Cart {
   /// Ohne Bezeichnung bleibt der Korb **unveraendert** (derselbe Wert): das
   /// Backend weist eine namenlose Position ohnehin ab. Den Grund nennt der
   /// Bildschirm, bevor der Kassier drueckt — hier steht nur die letzte Grenze.
-  Cart added(CartItemDraft entwurf) {
-    final name = entwurf.name.trim();
+  Cart added(CartItemDraft draft) {
+    final name = draft.name.trim();
     if (name.isEmpty) return this;
     _laufendeNummer += 1;
-    final grenze = (entwurf.maxQuantity != null && entwurf.maxQuantity! > 0) ? entwurf.maxQuantity : null;
+    final grenze = (draft.maxQuantity != null && draft.maxQuantity! > 0) ? draft.maxQuantity : null;
     return Cart(items: [
       ...items,
       Position(
         id: 'p$_laufendeNummer',
         name: name,
         quantity: 1,
-        priceCents: entwurf.unitPriceCents,
-        vat: entwurf.vatRate,
+        priceCents: draft.unitPriceCents,
+        vat: draft.vatRate,
         maxQuantity: grenze,
       ),
     ]);
@@ -142,15 +142,15 @@ class Cart {
   ///
   /// Faellt sie auf null, faellt die Position: eine Zeile „0 × Kaffee" waere weder
   /// auf dem Schirm noch auf dem Beleg etwas wert.
-  Cart withQuantity(String id, int menge) {
-    if (menge <= 0) return removed(id);
+  Cart withQuantity(String id, int quantity) {
+    if (quantity <= 0) return removed(id);
     var getroffen = false;
     final neu = items.map((p) {
       if (p.id != id) return p;
       getroffen = true;
       // Hoechstmenge je Beleg: darueber geht es nicht — egal woher der Griff kommt.
       final grenze = (p.maxQuantity != null && p.maxQuantity! > 0) ? p.maxQuantity! : null;
-      return p.withQuantity(grenze != null && menge > grenze ? grenze : menge);
+      return p.withQuantity(grenze != null && quantity > grenze ? grenze : quantity);
     }).toList();
     return getroffen ? Cart(items: neu) : this;
   }
@@ -165,9 +165,9 @@ class Cart {
   ///
   /// Abgezogen wird nach Kennung **und** Menge: wurden zwei von drei Kaffee
   /// verkauft, bleibt einer stehen.
-  Cart subtracted(Cart verkauft) {
+  Cart subtracted(Cart sold) {
     final mengen = <String, int>{};
-    for (final p in verkauft.items) {
+    for (final p in sold.items) {
       mengen[p.id] = (mengen[p.id] ?? 0) + p.quantity;
     }
     final rest = <Position>[];
@@ -181,8 +181,8 @@ class Cart {
 
   /// Zeilen fuer die Anzeige je Mengenmodus: [PosQuantity.off] loest gebuendelte
   /// Positionen in eine Zeile je Stueck zum Einzelpreis auf.
-  List<CartLine> lines(PosQuantity modus) {
-    if (modus != PosQuantity.off) {
+  List<CartLine> lines(PosQuantity mode) {
+    if (mode != PosQuantity.off) {
       return items
           .map((p) => CartLine(key: p.id, item: p, quantity: p.quantity, amountCents: p.lineTotalCents))
           .toList();
@@ -271,8 +271,8 @@ String _mitTausenderpunkt(String ganze) {
 }
 
 /// Beschriftung eines Steuersatzes, wie sie am Tresen gelesen wird.
-String formatVatRate(VatRate satz) {
-  final zahl = satz.rate;
+String formatVatRate(VatRate rate) {
+  final zahl = rate.rate;
   final text = zahl == zahl.roundToDouble() ? zahl.toInt().toString() : zahl.toString();
   return '${text.replaceAll('.', ',')} %';
 }

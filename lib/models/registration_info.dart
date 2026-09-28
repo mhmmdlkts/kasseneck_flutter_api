@@ -11,12 +11,12 @@ class RegistrationInfo {
 
   /// Liest den Drahtwert; alles ausser einem Objekt ergibt `null`. Leere oder
   /// fremd getippte Zeitpunkte werden `null`, wie im npm-Zwilling.
-  static RegistrationInfo? fromJson(Object? roh) {
-    if (roh is! Map) return null;
+  static RegistrationInfo? fromJson(Object? raw) {
+    if (raw is! Map) return null;
     String? zeit(Object? v) => v is String && v.isNotEmpty ? v : null;
     return RegistrationInfo(
-      cardRegisteredAt: zeit(roh['cardRegisteredAt']),
-      cashregisterRegisteredAt: zeit(roh['cashregisterRegisteredAt']),
+      cardRegisteredAt: zeit(raw['cardRegisteredAt']),
+      cashregisterRegisteredAt: zeit(raw['cashregisterRegisteredAt']),
     );
   }
 
@@ -46,13 +46,13 @@ class CancellationOf {
   /// Altbelegen.
   final String? timeStamp;
 
-  /// `null`, wenn [roh] kein Bezug mit Kennung ist.
-  static CancellationOf? fromJson(Object? roh) {
-    if (roh is! Map || roh['receiptId'] is! String) return null;
-    final voll = roh['fullReceiptId'];
-    final zeit = roh['timeStamp'];
+  /// `null`, wenn [raw] kein Bezug mit Kennung ist.
+  static CancellationOf? fromJson(Object? raw) {
+    if (raw is! Map || raw['receiptId'] is! String) return null;
+    final voll = raw['fullReceiptId'];
+    final zeit = raw['timeStamp'];
     return CancellationOf(
-      receiptId: roh['receiptId'] as String,
+      receiptId: raw['receiptId'] as String,
       fullReceiptId: voll is String ? voll : null,
       timeStamp: zeit is String && zeit.isNotEmpty ? zeit : null,
     );

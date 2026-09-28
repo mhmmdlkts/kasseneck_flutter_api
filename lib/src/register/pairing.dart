@@ -259,7 +259,7 @@ class RegisterUserPerms {
   /// Rechte aus der Antwort des Backends lesen. Derselbe Weg, den auch die
   /// Anmeldung nimmt — offen gelegt, damit die Zwillingsprüfung ihn benutzen
   /// kann, ohne einen zweiten Parser zu bauen.
-  factory RegisterUserPerms.fromJson(Map<String, dynamic> roh) => _rechte(roh);
+  factory RegisterUserPerms.fromJson(Map<String, dynamic> raw) => _rechte(raw);
 
   /// Belege ausstellen.
   final bool sell;

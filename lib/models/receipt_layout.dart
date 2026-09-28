@@ -115,7 +115,7 @@ enum LayoutBannerTone {
 
   /// Liest den Drahtwert. Ein unbekannter kuenftiger Ton zeigt die Zeile als
   /// Belegart-Aufdruck: sichtbar bleibt sie so oder so, nur die Farbe fehlt.
-  static LayoutBannerTone fromWire(Object? wert) => wert == warning.wire ? warning : receiptType;
+  static LayoutBannerTone fromWire(Object? value) => value == warning.wire ? warning : receiptType;
 }
 
 /// Hervorgehobene Zeile: Belegart (STORNOBELEG …) oder Warnung

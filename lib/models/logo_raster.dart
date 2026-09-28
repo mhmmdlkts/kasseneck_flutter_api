@@ -45,29 +45,29 @@ class LogoRaster {
 const logoPixelMax = 4096;
 
 /// `true`, wenn [logoRaster] das Bild noch anfassen darf.
-bool isLogoPixelSizeAllowed(int breite, int hoehe) => breite > 0 && hoehe > 0 && breite <= logoPixelMax && hoehe <= logoPixelMax;
+bool isLogoPixelSizeAllowed(int width, int height) => width > 0 && height > 0 && width <= logoPixelMax && height <= logoPixelMax;
 
-LogoRaster logoRaster(Uint8List rgba, int pxBreite, int pxHoehe, LogoDimensions mass, int zeichen) {
-  if (pxBreite < 1 || pxHoehe < 1 || rgba.length != pxBreite * pxHoehe * 4) {
+LogoRaster logoRaster(Uint8List rgba, int pixelWidth, int pixelHeight, LogoDimensions dimensions, int chars) {
+  if (pixelWidth < 1 || pixelHeight < 1 || rgba.length != pixelWidth * pixelHeight * 4) {
     throw ArgumentError('RGBA-Laenge passt nicht zum Pixelmass');
   }
-  final m = logoRasterSize(mass, zeichen);
+  final m = logoRasterSize(dimensions, chars);
   final breite = m.width;
   final hoehe = m.height;
   final grau = Float64List(breite * hoehe);
-  final sx = pxBreite / breite;
-  final sy = pxHoehe / hoehe;
+  final sx = pixelWidth / breite;
+  final sy = pixelHeight / hoehe;
   for (var y = 0; y < hoehe; y++) {
     final y0 = (y * sy).floor();
-    final y1 = math.min(pxHoehe, math.max(y0 + 1, ((y + 1) * sy).floor()));
+    final y1 = math.min(pixelHeight, math.max(y0 + 1, ((y + 1) * sy).floor()));
     for (var x = 0; x < breite; x++) {
       final x0 = (x * sx).floor();
-      final x1 = math.min(pxBreite, math.max(x0 + 1, ((x + 1) * sx).floor()));
+      final x1 = math.min(pixelWidth, math.max(x0 + 1, ((x + 1) * sx).floor()));
       var summe = 0.0;
       var anzahl = 0;
       for (var py = y0; py < y1; py++) {
         for (var px = x0; px < x1; px++) {
-          final i = (py * pxBreite + px) * 4;
+          final i = (py * pixelWidth + px) * 4;
           final deckung = rgba[i + 3] / 255;
           final hell = 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2];
           summe += hell * deckung + 255 * (1 - deckung);
