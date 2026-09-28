@@ -206,15 +206,26 @@ class RechnungApi {
   Future<Uint8List> getInvoicePdf(String invoiceId, {String? language}) =>
       _transport.rufenBinaer(Aufrufe.getInvoicePdf, {'invoiceId': invoiceId, 'language': ?language});
 
-  /// Die E-Rechnung als XML-Text; [format] `ubl` (Peppol) oder `cii`.
-  Future<String> getInvoiceXml(String invoiceId, {String format = 'ubl'}) async {
+  /// Die E-Rechnung als XML; [format] `ubl` (Peppol) oder `cii`. Zurück kommt
+  /// die Antwort, wie der Server sie sendet: der Text, das Format und der
+  /// Dateiname (`invoice-<Nummer>.xml`). Fehlt eines davon oder ist das Format
+  /// keines aus [einvoiceFormats], ist die Antwort kaputt.
+  Future<InvoiceXml> getInvoiceXml(String invoiceId, {String format = 'ubl'}) async {
     const name = Aufrufe.getInvoiceXml;
     final daten = await _transport.rufen(name, {'invoiceId': invoiceId, 'format': format});
     final xml = daten['xml'];
+    final gesendet = daten['format'];
+    final filename = daten['filename'];
     if (xml is! String || xml.isEmpty) {
       throw const KasseneckValidationError(name, 'Antwort ohne xml', 'response');
     }
-    return xml;
+    if (gesendet is! String || !einvoiceFormats.contains(gesendet)) {
+      throw const KasseneckValidationError(name, 'Antwort ohne gültiges format', 'response');
+    }
+    if (filename is! String || filename.isEmpty) {
+      throw const KasseneckValidationError(name, 'Antwort ohne filename', 'response');
+    }
+    return InvoiceXml(xml: xml, format: gesendet, filename: filename);
   }
 
   // ---- Freigabe und Einrichtung -------------------------------------------------

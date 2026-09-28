@@ -44,7 +44,7 @@ void main() {
             : rechnungSummen(items, f['priceMode'] as String);
         expect(summen.toJson(), f['expected'], reason: f['name'] as String);
       }
-    }, skip: 'Aufgabe 5 (4c): invoice-totals.json fuehrt taxScheme seit 1.0 englisch (intraCommunitySupply), rechnungSummen kennt noch igLieferung');
+    });
 
     test('die Rückmeldung des Shops steht drin', () {
       final namen = _faelle.map((f) => f['name'] as String).join('\n');

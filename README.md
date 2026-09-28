@@ -615,6 +615,7 @@ try {
   ));
   final pdf = await invoices.getInvoicePdf(issued.invoice.id); // Uint8List
   final xml = await invoices.getInvoiceXml(issued.invoice.id); // UBL; format: 'cii' for CII
+  // xml.xml, xml.format ('ubl'), xml.filename ('invoice-<number>.xml')
 } on KasseneckApiError catch (e) {
   switch (rechnungFehlerCode(e)) {
     case 'validation':
@@ -696,11 +697,11 @@ In **gross mode** the gross amount per rate is the agreed price:
 net = round(G × 100 / (100 + rate)), VAT = G − net. In **net mode** the VAT per
 rate is rounded from the net sum. Rounding is commercial (half a cent away from
 zero), per rate, then summed. If the server derives a tax-exempt case
-(`steuerfreieFaelle`, e.g. `igLieferung`), pass it as the third argument of
+(`steuerfreieFaelle`, e.g. `intraCommunitySupply`), pass it as the third argument of
 `rechnungSummen`, otherwise the function computes tax the invoice does not show;
 `previewInvoice` names the case. Issuing is binding: customer or account may
 change between preview and invoice. Totals are positive for credit notes too;
-the sign is in the document type (`docType: 'GU'`).
+the sign is in the document type (`docType: 'credit_note'`).
 
 **Notices are always a list.** `notice` on `issueInvoice`, `previewInvoice` and
 `recordInvoicePayment` is a `List<InvoiceNotice>`, empty if there is nothing to

@@ -647,7 +647,7 @@ class VatRateTotal {
 }
 
 /// Summen einer Rechnung in Cent, **immer positiv** — auch bei einer
-/// Gutschrift (`docType: 'GU'`); das Vorzeichen steht im Belegtyp, nicht im
+/// Gutschrift (`docType: 'credit_note'`); das Vorzeichen steht im Belegtyp, nicht im
 /// Betrag. Gerechnet wird je Satz wie in `rechnungSummen`.
 class InvoiceTotals {
   const InvoiceTotals({required this.netCents, required this.vatCents, required this.grossCents, this.byRate = const []});
@@ -692,7 +692,7 @@ class InvoiceItem {
         description: _pflicht<String>(j, 'description'),
         subtitle: _text(j, 'subtitle') ?? '',
         quantity: _pflicht<num>(j, 'quantity'),
-        unit: _text(j, 'unit') ?? 'Stk',
+        unit: _text(j, 'unit') ?? 'piece',
         unitPriceCents: _pflicht<int>(j, 'unitPriceCents'),
         unitPriceMicros: j['unitPriceMicros'] is num ? j['unitPriceMicros'] as num : null,
         vatRate: _pflicht<num>(j, 'vatRate'),
@@ -761,6 +761,10 @@ class Invoice {
     this.language = 'de',
     this.brandId,
     this.brandName,
+    this.einvoice,
+    this.taxScheme,
+    this.payments,
+    this.writeOffReasonCode,
   });
 
   factory Invoice.fromJson(Map<String, dynamic> j) {
@@ -793,13 +797,17 @@ class Invoice {
       language: _text(j, 'language') == 'en' ? 'en' : 'de',
       brandId: brand is Map && brand['id'] is String ? brand['id'] as String : null,
       brandName: brand is Map && brand['name'] is String ? brand['name'] as String : null,
+      einvoice: einvoice is Map ? EInvoiceStatus.fromJson(Map<String, dynamic>.from(einvoice)) : null,
+      taxScheme: _text(j, 'taxScheme'),
+      payments: j['payments'] is List ? [for (final z in _liste(j, 'payments')) InvoiceDetailPayment.fromJson(z)] : null,
+      writeOffReasonCode: _text(j, 'writeOffReasonCode'),
     );
   }
 
   final String id;
   final String number;
 
-  /// `RE` (Rechnung) oder `GU` (Gutschrift).
+  /// `invoice` oder `credit_note` ([docTypes]).
   final String docType;
   final String status;
   final InvoiceTotals totals;
@@ -826,6 +834,60 @@ class Invoice {
   /// Die eingefrorene Marke; `null` bei der Ersatzmarke ohne eigene Einrichtung.
   final String? brandId;
   final String? brandName;
+
+  /// Wie weit die Rechnung als E-Rechnung taugt, samt der fehlenden Angaben
+  /// ([einvoiceMissingCodes]); [einvoiceLevel] ist davon die Stufe.
+  final EInvoiceStatus? einvoice;
+
+  // Detail (nur `getInvoice`)
+
+  /// Der Steuerfall ([taxSchemes]).
+  final String? taxScheme;
+
+  /// Die gebuchten Zahlungen.
+  final List<InvoiceDetailPayment>? payments;
+
+  /// Warum abgeschrieben wurde ([writeOffReasonCodes]); `null`, solange
+  /// [writtenOff] nicht `true` ist.
+  final String? writeOffReasonCode;
+}
+
+/// Die E-Rechnung aus `getInvoiceXml`, wie der Server sie sendet.
+class InvoiceXml {
+  const InvoiceXml({required this.xml, required this.format, required this.filename});
+
+  final String xml;
+
+  /// `ubl` oder `cii`.
+  final String format;
+
+  /// `invoice-<Nummer>.xml`.
+  final String filename;
+}
+
+/// Eine gebuchte Zahlung in der Detailsicht (`getInvoice`). Das Datum heißt
+/// hier `date`, in `recordInvoicePayment` `paidAt`. Altbestand kann ohne
+/// Kennung, Datum und Zahlart sein; der Betrag ist immer da.
+class InvoiceDetailPayment {
+  const InvoiceDetailPayment({required this.amountCents, this.id, this.date, this.method, this.reference});
+
+  factory InvoiceDetailPayment.fromJson(Map<String, dynamic> j) => InvoiceDetailPayment(
+        id: _text(j, 'id'),
+        amountCents: _pflicht<int>(j, 'amountCents'),
+        date: _text(j, 'date'),
+        method: _text(j, 'method'),
+        reference: _text(j, 'reference'),
+      );
+
+  final String? id;
+  final int amountCents;
+  final String? date;
+
+  /// Aus [invoicePaymentMethods].
+  final String? method;
+
+  /// Zahlungskennung des Fremdsystems, wie bei `recordInvoicePayment` gesetzt.
+  final String? reference;
 }
 
 /// Eine Marke des Kontos (Logo, Farbe, Absender); `id` geht als `brandId` in `issueInvoice`.
@@ -935,7 +997,7 @@ class InvoicePreview {
     );
   }
 
-  /// Immer `RE` — einen Probelauf gibt es nur für das Ausstellen.
+  /// Immer `invoice` — einen Probelauf gibt es nur für das Ausstellen.
   final String docType;
 
   /// Heutiger Wiener Tag — der Tag, den eine sofort ausgestellte Rechnung trüge.

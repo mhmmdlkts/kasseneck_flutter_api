@@ -35,7 +35,7 @@ RechnungApi _apiMit(Object antwort) {
 final _rechnungMit4komma9 = <String, dynamic>{
   'id': 'inv7',
   'number': '2026-0099',
-  'docType': 'RE',
+  'docType': 'invoice',
   'status': 'final',
   'invoiceDate': '2026-09-17',
   'totals': {
@@ -48,8 +48,8 @@ final _rechnungMit4komma9 = <String, dynamic>{
     ],
   },
   'items': [
-    {'description': 'Kaese', 'subtitle': '', 'quantity': 1, 'unit': 'Stk', 'unitPriceCents': 1000, 'vatRate': 4.9, 'discountPct': 0},
-    {'description': 'Altbestand', 'subtitle': '', 'quantity': 1, 'unit': 'Stk', 'unitPriceCents': 1000, 'vatRate': 19, 'discountPct': 0},
+    {'description': 'Kaese', 'subtitle': '', 'quantity': 1, 'unit': 'piece', 'unitPriceCents': 1000, 'vatRate': 4.9, 'discountPct': 0},
+    {'description': 'Altbestand', 'subtitle': '', 'quantity': 1, 'unit': 'piece', 'unitPriceCents': 1000, 'vatRate': 19, 'discountPct': 0},
   ],
 };
 
@@ -149,7 +149,7 @@ void main() {
       final summen = rechnungSummen(
         [const SummenPosition(quantity: 1, unitPriceCents: 1000, vatRate: 4.9)],
         'net',
-        'igLieferung',
+        'intraCommunitySupply',
       );
       expect(summen.byRate.single.rate, 0);
       expect(summen.vatCents, 0);

@@ -23,7 +23,7 @@ Map<String, dynamic> _json(String pfad) =>
 final _rechnung = {
   'id': 'inv1',
   'number': '2026-0042',
-  'docType': 'RE',
+  'docType': 'invoice',
   'status': 'final',
   'invoiceDate': '2026-09-15',
   'dueDate': '2026-09-29',
@@ -62,11 +62,6 @@ Map<String, dynamic> _fehler(String meldung, String code, [Map<String, dynamic> 
 
 Map<String, dynamic> _params(http.Request r) => (jsonDecode(r.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
 
-/// Die Listen des Vertrags sind seit 1.0 englisch (docTypes invoice/credit_note,
-/// taxSchemes intraCommunitySupply, invoiceEndpoints, zeroRatedTaxSchemes);
-/// lib/src/rechnung/vertrag.dart fuehrt noch die 0.x-Werte.
-const _aufgabe5 = 'Aufgabe 5 (4c): Rechnungslisten seit 1.0 englisch, vertrag.dart noch 0.x';
-
 void main() {
   group('Vertrag', () {
     final vertrag = _json('test/fixtures/vertrag/surface.json');
@@ -89,17 +84,20 @@ void main() {
       'itemKinds': itemKinds,
       'invoiceNoticeCodes': invoiceNoticeCodes,
       'zeroRatedTaxSchemes': steuerfreieFaelle,
+      'einvoiceMissingCodes': einvoiceMissingCodes,
+      'writeOffReasonCodes': writeOffReasonCodes,
+      'invoiceRequestErrorCodes': invoiceRequestErrorCodes,
     };
 
     test('jede Liste des Vertrags gibt es hier, und keine mehr', () {
       expect(hier.keys.toSet(), listen.keys.toSet());
-    }, skip: _aufgabe5);
+    });
 
     test('jede Liste stimmt Wert für Wert und in der Reihenfolge', () {
       for (final e in hier.entries) {
         expect(e.value, listen[e.key], reason: 'invoice.${e.key}');
       }
-    }, skip: _aufgabe5);
+    });
 
     test('jeder Rechnungs-Aufruf steht in Aufrufe.alle', () {
       for (final name in rechnungAufrufe) {
@@ -230,8 +228,8 @@ void main() {
 
     test('cancelInvoice und createCreditNote lesen ihre Ergebnisse', () async {
       final (:api, log: _) = _apiMit([
-        _erfolg({'creditNote': {..._rechnung, 'docType': 'GU'}, 'original': {'id': 'inv1', 'status': 'cancelled'}, 'originalPaidCents': 500, 'replayed': false}),
-        _erfolg({'creditNote': {..._rechnung, 'docType': 'GU'}, 'remainingCents': 9600, 'replayed': false}),
+        _erfolg({'creditNote': {..._rechnung, 'docType': 'credit_note'}, 'original': {'id': 'inv1', 'status': 'cancelled'}, 'originalPaidCents': 500, 'replayed': false}),
+        _erfolg({'creditNote': {..._rechnung, 'docType': 'credit_note'}, 'remainingCents': 9600, 'replayed': false}),
       ]);
       final storno = await api.cancelInvoice(idempotencyKey: 's1', invoiceId: 'inv1', reason: 'cancellation');
       expect((storno.originalId, storno.originalStatus, storno.originalPaidCents), ('inv1', 'cancelled', 500));
@@ -242,7 +240,7 @@ void main() {
         items: [InvoiceItemInput(description: 'Nachlass', quantity: 1, unitPriceCents: 2000, vatRate: 20)],
       ));
       expect(gutschrift.remainingCents, 9600);
-      expect(gutschrift.creditNote.docType, 'GU');
+      expect(gutschrift.creditNote.docType, 'credit_note');
     });
 
     test('Kunden: anlegen, suchen, ändern', () async {
@@ -288,10 +286,35 @@ void main() {
       await expectLater(api.getInvoicePdf('x'), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'invoice_not_found')));
     });
 
-    test('getInvoiceXml: Text aus dem Umschlag, Standardformat ubl', () async {
-      final (:api, :log) = _apiMit([_erfolg({'xml': '<Invoice/>', 'format': 'ubl', 'filename': 'rechnung-2026-0042.xml'})]);
-      expect(await api.getInvoiceXml('inv1'), '<Invoice/>');
-      expect(_params(log.single), {'invoiceId': 'inv1', 'format': 'ubl'});
+    test('getInvoiceXml: xml, format und filename wie gesendet, Standardformat ubl', () async {
+      final (:api, :log) = _apiMit([
+        _erfolg({'xml': '<Invoice/>', 'format': 'ubl', 'filename': 'invoice-2026-0042.xml'}),
+        _erfolg({'xml': '<rsm:CrossIndustryInvoice/>', 'format': 'cii', 'filename': 'invoice-2026-0042.xml'}),
+      ]);
+      final ubl = await api.getInvoiceXml('inv1');
+      expect((ubl.xml, ubl.format, ubl.filename), ('<Invoice/>', 'ubl', 'invoice-2026-0042.xml'));
+      expect(_params(log.first), {'invoiceId': 'inv1', 'format': 'ubl'});
+      final cii = await api.getInvoiceXml('inv1', format: 'cii');
+      expect((cii.format, cii.filename), ('cii', 'invoice-2026-0042.xml'));
+      expect(_params(log.last), {'invoiceId': 'inv1', 'format': 'cii'});
+    });
+
+    test('getInvoiceXml: fehlt xml, format oder filename, ist die Antwort kaputt', () async {
+      for (final kaputt in [
+        {'format': 'ubl', 'filename': 'invoice-1.xml'},
+        {'xml': '', 'format': 'ubl', 'filename': 'invoice-1.xml'},
+        {'xml': '<Invoice/>', 'filename': 'invoice-1.xml'},
+        {'xml': '<Invoice/>', 'format': 'UBL', 'filename': 'invoice-1.xml'},
+        {'xml': '<Invoice/>', 'format': 'ubl'},
+        {'xml': '<Invoice/>', 'format': 'ubl', 'filename': ''},
+      ]) {
+        final (:api, log: _) = _apiMit([_erfolg(kaputt)]);
+        await expectLater(
+          api.getInvoiceXml('inv1'),
+          throwsA(isA<KasseneckValidationError>().having((e) => e.toString(), 'Meldung', contains('getInvoiceXml'))),
+          reason: '$kaputt',
+        );
+      }
     });
 
     test('getInvoiceSetupStatus: ohne Parameter, Lücken gelesen', () async {
@@ -568,11 +591,11 @@ void main() {
       ],
     );
     final vorschau = {
-      'docType': 'RE',
+      'docType': 'invoice',
       'invoiceDate': '2026-09-16',
       'dueDate': '2026-09-30',
       'customerId': 'k1',
-      'taxScheme': 'igLieferung',
+      'taxScheme': 'intraCommunitySupply',
       'taxSchemeReason': 'customer_country_eu_with_vat_id',
       'reverseChargeReason': null,
       'taxCountry': 'AT',
@@ -605,9 +628,9 @@ void main() {
       expect(anfrage.toJson().containsKey('dryRun'), isFalse, reason: 'die Anfrage selbst kennt kein dryRun');
 
       final p = ergebnis.preview;
-      expect((p.docType, p.invoiceDate, p.dueDate, p.customerId), ('RE', '2026-09-16', '2026-09-30', 'k1'));
+      expect((p.docType, p.invoiceDate, p.dueDate, p.customerId), ('invoice', '2026-09-16', '2026-09-30', 'k1'));
       expect((p.taxScheme, p.taxSchemeReason, p.reverseChargeReason, p.taxCountry),
-          ('igLieferung', 'customer_country_eu_with_vat_id', null, 'AT'));
+          ('intraCommunitySupply', 'customer_country_eu_with_vat_id', null, 'AT'));
       expect((p.priceMode, p.language, p.brandId, p.brandName), ('gross', 'en', 'm1', 'Haus'));
       expect(p.einvoice?.level, 'full');
       expect(p.einvoice?.formats, ['UBL', 'Factur-X']);
@@ -648,11 +671,11 @@ void main() {
 
     test('previewInvoice: ein Fachfehler kommt wie beim Ausstellen', () async {
       final (:api, log: _) = _apiMit([
-        _fehler('Der Steuerfall passt nicht.', 'tax_scheme_mismatch', {'expected': 'igLieferung'}),
+        _fehler('Der Steuerfall passt nicht.', 'tax_scheme_mismatch', {'expected': 'intraCommunitySupply'}),
       ]);
       final e = await api.previewInvoice(anfrage).then<Object?>((_) => null, onError: (Object e) => e);
       expect(rechnungFehlerCode(e), 'tax_scheme_mismatch');
-      expect((e as KasseneckApiError).details['expected'], 'igLieferung');
+      expect((e as KasseneckApiError).details['expected'], 'intraCommunitySupply');
     });
 
     test('dryRun steht im Vertrag von issueInvoice', () {
