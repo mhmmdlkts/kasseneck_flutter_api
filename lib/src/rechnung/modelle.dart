@@ -229,7 +229,7 @@ class CustomerPage {
 
 // ---- Rechnungen -----------------------------------------------------------------
 
-/// Was für die Summe einer Rechnung zählt (`computeInvoiceTotals`) —
+/// Was für die Summe einer Rechnung zählt (`computeInvoiceTotals`) –
 /// [InvoiceItemInput] erfüllt es unverändert.
 abstract interface class TotalsItem {
   const factory TotalsItem({
@@ -1233,7 +1233,7 @@ class InvoicePreview {
   final String taxCountry;
   final String priceMode;
 
-  /// Die Summen, die die Rechnung ausweisen würde — wie `computeInvoiceTotals` sie
+  /// Die Summen, die die Rechnung ausweisen würde – wie `computeInvoiceTotals` sie
   /// vorab rechnet, hier aber vom Server.
   final InvoiceTotals totals;
   final String language;

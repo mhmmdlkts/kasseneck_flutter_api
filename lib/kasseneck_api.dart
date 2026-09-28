@@ -361,7 +361,7 @@ class KasseneckApi {
   ///
   /// Ohne [items] ist es ein Vollstorno der Restmengen; eine **leere**
   /// Liste ist ein Fehler, sonst wuerde aus einem missglueckten Teilstorno still
-  /// ein Vollstorno. [reason] ist ein Schluessel aus [cancellationReasons] — sein
+  /// ein Vollstorno. [reason] ist ein Schluessel aus [cancellationReasons] – sein
   /// Anzeigetext steht am Bon.
   ///
   /// [payments] sind die Rueckzahlungen je Zahlung (Betraege negativ,
@@ -464,7 +464,7 @@ class KasseneckApi {
   }
 
   /// Einen bereits ausgestellten Beleg als **Link auf die oeffentliche
-  /// Belegseite** an [to] schicken — Endpunkt `sendReceiptEmail`, Zwilling von
+  /// Belegseite** an [to] schicken – Endpunkt `sendReceiptEmail`, Zwilling von
   /// `sendReceiptEmail` im Client des npm-Pakets und Gegenstueck zu
   /// `RegisterReceiptClient.sendReceipt` der Kassen-Anmeldung.
   ///
@@ -759,7 +759,7 @@ class KasseneckApi {
   ///
   /// Es ist **dieselbe Menge, die [sellReceipt] akzeptiert**: Wer hier steht,
   /// wird beim Verkauf nicht zurueckgewiesen. Aus einer Person macht
-  /// [KeckTipPerson.share] den Anteil fuer [KeckTip.recipients] — so kann keine
+  /// [KeckTipPerson.share] den Anteil fuer [KeckTip.recipients] – so kann keine
   /// Kennung danebengreifen, die der Server ablehnt.
   Future<List<KeckTipPerson>> listTipRecipients() async {
     final resJson = await _kasseneckJson(endpoint: Aufrufe.listMyTipRecipients);

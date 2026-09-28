@@ -90,7 +90,7 @@ class KasseneckApiError implements Exception {
   final String message;
 
   /// Stabiler Fehlercode des Backends (`code` aus der Antworthuelle), wenn der
-  /// Endpunkt einen legt — heute `cancelReceipt` (siehe `cancellationErrorCodes`).
+  /// Endpunkt einen legt – heute `cancelReceipt` (siehe `cancellationErrorCodes`).
   /// **Daran entscheiden, nie an [message]:** der Text darf sich aendern, der
   /// Code nicht. Null bei Endpunkten ohne Codes und bei Auth-/Parameterfehlern.
   final String? code;

@@ -17,7 +17,7 @@
 ///
 /// Die Prüffälle stehen in `fixtures/invoice-totals.json` des JS-Pakets;
 /// Server, JS-Paket und dieses Paket prüfen gegen dieselbe Datei. Verbindlich
-/// bleibt, was der Server rechnet — `InvoiceApi.previewInvoice` fragt ihn.
+/// bleibt, was der Server rechnet – `InvoiceApi.previewInvoice` fragt ihn.
 library;
 
 import 'modelle.dart';
@@ -111,7 +111,7 @@ int _euroZuCent(double euro) => _ganz((_euroRund(euro) * 100).roundToDouble());
 /// halber Cent (erst auf sechs Stellen, dann ganz).
 ///
 /// Fuer ganze Brutto-Cent und die Saetze 10/13/20 faellt das mit
-/// `netCentsFromGross` (lib/src/vat_math.dart) zusammen —
+/// `netCentsFromGross` (lib/src/vat_math.dart) zusammen –
 /// test/rechnung_summen_test.dart haelt das fest. Getrennt bleibt es, weil
 /// dieser Weg dem Server folgt und jener dem Beleg.
 int _centRund(double x) {

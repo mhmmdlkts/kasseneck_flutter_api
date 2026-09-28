@@ -7,7 +7,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 /// Veraltet: rechnet Spalten mit Flex und bricht anders um als das Papier;
 /// neue Oberflaechen nutzen [KeckReceiptSheetWidget].
 ///
-/// Zeichnet ein Beleg-Zeilenmodell des Backends ([ReceiptLayout]) — genau die
+/// Zeichnet ein Beleg-Zeilenmodell des Backends ([ReceiptLayout]) – genau die
 /// Zeilen, die Browser-Kasse, Bondrucker und PDF zeigen. Kein eigenes
 /// Beleg-Wissen: Reihenfolge, Texte und Aufdrucke kommen aus dem Modell.
 ///

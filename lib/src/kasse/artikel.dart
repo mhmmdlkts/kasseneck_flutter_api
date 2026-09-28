@@ -40,7 +40,7 @@ class ArticleGroup {
         vatRate: json['vatRate'] is num ? json['vatRate'] as num : null,
       );
 
-  /// Zurück in die Form, aus der [ArticleGroup.fromJson] wieder liest — für
+  /// Zurück in die Form, aus der [ArticleGroup.fromJson] wieder liest – für
   /// Zwischenspeicher, nicht fürs Backend.
   Map<String, dynamic> toJson() => {
         'id': id,

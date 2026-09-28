@@ -75,7 +75,7 @@ class RegisterTransport {
   /// weg, damit das Backend „nicht gesetzt" nicht als ausdrückliche Angabe
   /// missversteht.
   ///
-  /// [timeout] überschreibt die Vorgabe für diesen einen Aufruf — der Abschluss
+  /// [timeout] überschreibt die Vorgabe für diesen einen Aufruf – der Abschluss
   /// eines Belegs darf länger warten als eine Belegliste.
   ///
   /// Fehler tragen `outcome`: bei [ErrorOutcome.unknown] nie wiederholen,

@@ -15,14 +15,14 @@ class PosColor {
   const PosColor(this.r, this.g, this.b);
 
   /// Aus einer Flutter-Farbe: das Design-System liefert `Color`, die Kasse
-  /// rechnet und druckt mit [PosColor]. Alpha wird verworfen — Belege kennen
+  /// rechnet und druckt mit [PosColor]. Alpha wird verworfen – Belege kennen
   /// keine Transparenz.
   factory PosColor.fromColor(Color c) {
     final v = c.toARGB32();
     return PosColor((v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF);
   }
 
-  /// `#RRGGBB`; alles andere ergibt [fallback] — eine Farbangabe aus dem Panel
+  /// `#RRGGBB`; alles andere ergibt [fallback] – eine Farbangabe aus dem Panel
   /// darf keine unsichtbare Kasse erzeugen. [fallback] ist Pflicht: ein
   /// stillschweigendes Panel-Blau als Vorgabe wäre eine Entscheidung des
   /// Aufrufers, die er nie getroffen hat.

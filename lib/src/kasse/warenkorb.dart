@@ -225,7 +225,7 @@ const int maxAmountCents = 10000000;
 /// keine Aufforderung zum Runden — wer hier rundete, entschiede am Kassier
 /// vorbei ueber Geld) und **0,00 oder negativ** (ein Nullbeleg entsteht nicht
 /// hier, und ein Storno ist eine eigene Handlung mit eigenem Beleg) sowie
-/// alles ueber [maxAmountCents] — der Deckel, den der Kommentar dort seit
+/// alles ueber [maxAmountCents] – der Deckel, den der Kommentar dort seit
 /// jeher beschreibt und den bis hierher niemand pruefte.
 int? parseAmountCents(String text) {
   final treffer = RegExp(r'^(\d+)(?:[.,](\d{1,2}))?$').firstMatch(text.trim());

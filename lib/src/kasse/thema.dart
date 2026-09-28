@@ -8,7 +8,7 @@
 /// * `warm` — Bäckerei und Café. Cremiges Papier statt kühlem Grau.
 /// * `nacht` — Taxi und Bar. Tief, aber **nicht schwarz**: reines Schwarz
 ///   flimmert auf OLED beim Blättern und macht jeden Rand hart.
-/// * `contrastRatio` — grelles Licht oder schwache Augen. Er ändert deshalb mehr
+/// * `contrastRatio` – grelles Licht oder schwache Augen. Er ändert deshalb mehr
 ///   als Farben: schärfere Linien (2 px), keine Schatten. Die Radien bleiben
 ///   — sie kommen aus dem Design-System und sind in jedem Modus gleich. Wer
 ///   nur die Farben tauscht, hat ihn nicht verstanden.
@@ -23,7 +23,7 @@
 /// überall, wo sie stehen; Bedeutungsfarben und Marke nur dort, wo sie
 /// stehen.** Konkret: `text` und `textMuted` halten 4,5:1 auf `ground`, `surface`
 /// und `surfaceRaised`. Bedeutungsfarben (`success`, `warning`, `fehler`) und
-/// `brand` halten 4,5:1 auf `ground` und `surface` — sie stehen laut
+/// `brand` halten 4,5:1 auf `ground` und `surface` – sie stehen laut
 /// Design-System nicht auf `surfaceRaised` (Kopfzeile, aktives Feld); dort
 /// steht `text`/`textMuted`. Auch für den großen Betrag, denn der wird oft
 /// schräg und in schlechtem Licht gelesen.
@@ -164,7 +164,7 @@ class PosThemeData {
   /// Umrandung.
   PosColor get border => PosColor.fromColor(kdColor(mode, 'border'));
 
-  /// Trennlinie; leichter als [border] — außer im Kontrast-Modus, dort sind
+  /// Trennlinie; leichter als [border] – außer im Kontrast-Modus, dort sind
   /// beide Schwarz.
   PosColor get divider => PosColor.fromColor(kdColor(mode, 'divider'));
 

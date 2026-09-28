@@ -539,7 +539,7 @@ class RegisterReceiptClient {
   /// Angabe, die gar keine Adresse ist.
   ///
   /// Fachliche Ablehnungen kommen als [KasseneckApiError] mit einem Code aus
-  /// [receiptEmailErrorCodes] — daran entscheiden, nie am Text.
+  /// [receiptEmailErrorCodes] – daran entscheiden, nie am Text.
   Future<SendReceiptEmailResult> sendReceipt({
     required String fullReceiptId,
     required String to,

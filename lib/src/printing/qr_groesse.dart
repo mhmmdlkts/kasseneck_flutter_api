@@ -4,11 +4,11 @@ import 'package:qr/qr.dart';
 /// Vorgabe: gedruckt wird immer die groesste Groesse, die noch aufs Papier
 /// passt, hoechstens aber diese hier.
 ///
-/// [auto] und [medium] decken beide bei 6 — das ist kein Versehen. 6 ist der
+/// [auto] und [medium] decken beide bei 6 – das ist kein Versehen. 6 ist der
 /// Wert, den der native Weg seit jeher fest gedruckt hat; ohne diesen Deckel
 /// bekaeme jedes 80-mm-Geraet ab sofort ungefragt einen groesseren QR als
 /// gestern. [auto] heisst also "rechne, aber aendere den Bestand nicht", und
-/// [large] ist der einzige Weg darueber hinaus — den waehlt ein Mensch.
+/// [large] ist der einzige Weg darueber hinaus – den waehlt ein Mensch.
 enum QrModuleSize {
   /// Gerechnet, gedeckelt auf den Bestandswert 6. Vorgabe ueberall.
   auto(6),
@@ -76,7 +76,7 @@ abstract final class QrMetrics {
   /// Untergrenze: 4 Punkte sind bei 203 dpi rund 0,5 mm je Modul.
   static const int minModuleDots = 4;
 
-  /// Ausnahme, wenn [minModuleDots] nicht passt — gemeldet, nicht still.
+  /// Ausnahme, wenn [minModuleDots] nicht passt – gemeldet, nicht still.
   static const int exceptionModuleDots = 3;
 
   /// Obergrenze des Druckbefehls in diesem Stack (`QRSize.size1..size8`).

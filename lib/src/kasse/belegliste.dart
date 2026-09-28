@@ -1,4 +1,4 @@
-/// Die Belegliste: Zeitraum, Filter, Tagesgruppen — Zwilling von `receipts.ts`
+/// Die Belegliste: Zeitraum, Filter, Tagesgruppen – Zwilling von `receipts.ts`
 /// der Browser-Kasse.
 ///
 /// Reine Funktionen; das Laden macht [RegisterReceiptClient].

@@ -121,7 +121,7 @@ class KeckPayment {
 }
 
 /// Eine Zahlung, wie der Aufrufer sie an `sellReceipt`/`sell`/
-/// `cancel` schickt — Zwilling von `ReceiptPaymentInput`. `id` und
+/// `cancel` schickt – Zwilling von `ReceiptPaymentInput`. `id` und
 /// `changeCents` vergibt der Server.
 ///
 /// - [method]: jede Zahlungsart ausser [KeckPaymentMethod.mixed].
