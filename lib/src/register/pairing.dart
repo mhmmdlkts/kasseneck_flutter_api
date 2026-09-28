@@ -373,12 +373,12 @@ class RegisterSession {
 }
 
 /// Antwort von [RegisterClient.listRegisterSessionsForDevice].
-class RegisterSessionsState {
+class RegisterSessionOverview {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
   static const Set<String> fields = {'licenses', 'sessions'};
 
-  const RegisterSessionsState({required this.licenses, required this.sessions});
+  const RegisterSessionOverview({required this.licenses, required this.sessions});
 
   /// Lizenzplätze der Kasse — mindestens 1.
   final int licenses;
@@ -597,7 +597,7 @@ class RegisterClient {
   /// `takeoverSessionId` bei [registerUserLogin] mit. Ausgewiesen wird sich
   /// über das Gerätegeheimnis wie bei [listRegisterUsersForDevice]; die Kasse
   /// bestimmt das Backend aus dem Gerät.
-  Future<RegisterSessionsState> listRegisterSessionsForDevice({
+  Future<RegisterSessionOverview> listRegisterSessionsForDevice({
     required String ownerUid,
     required String deviceId,
     required String deviceSecret,
@@ -639,7 +639,7 @@ class RegisterClient {
     }).toList(growable: false);
     final lizenzen = daten['licenses'];
     final licenses = lizenzen is num && lizenzen > 0 ? lizenzen.toInt() : 1;
-    return RegisterSessionsState(licenses: licenses, sessions: sessions);
+    return RegisterSessionOverview(licenses: licenses, sessions: sessions);
   }
 
   /// Anmeldung allein mit der PIN (Geräte-Modus `pin`): das Backend ermittelt

@@ -22,7 +22,7 @@
 /// **Die Textfarben halten 4,5:1 nach WCAG — die Schwelle für Fließtext —
 /// überall, wo sie stehen; Bedeutungsfarben und Marke nur dort, wo sie
 /// stehen.** Konkret: `text` und `textMuted` halten 4,5:1 auf `ground`, `surface`
-/// und `surfaceRaised`. Bedeutungsfarben (`success`, `warning`, `fehler`) und
+/// und `surfaceRaised`. Bedeutungsfarben (`success`, `warning`, `danger`) und
 /// `brand` halten 4,5:1 auf `ground` und `surface` – sie stehen laut
 /// Design-System nicht auf `surfaceRaised` (Kopfzeile, aktives Feld); dort
 /// steht `text`/`textMuted`. Auch für den großen Betrag, denn der wird oft

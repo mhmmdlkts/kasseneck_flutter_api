@@ -17,7 +17,9 @@ class OeffentlicherName {
 
   final String name;
 
-  /// `export`, `member`, `parameter`, `record`, `pfad`.
+  /// `export`, `erreichbar`, `member`, `parameter`, `record`, `pfad`.
+  /// `erreichbar`: ein Paket-Typ, den kein Einstieg exportiert, der aber in
+  /// einer oeffentlichen Signatur steht; ein Verbraucher kann ihn benutzen.
   final String art;
   final String herkunft;
 
@@ -52,6 +54,7 @@ List<OeffentlicherName> oeffentlicheApi(
   for (final e in dateien ?? einstiege(lib)) {
     leser.bibliothek(e.absolute.path, const _Filter.alles());
   }
+  leser.erreichbare();
   return leser.funde;
 }
 
@@ -91,6 +94,51 @@ class _Leser {
   final Directory lib;
   final Map<String, String> quelltext;
   final List<OeffentlicherName> funde = [];
+
+  /// Typnamen, die in oeffentlichen Signaturen stehen.
+  final Set<String> _genannt = {};
+
+  /// Namen, die ein Einstieg exportiert.
+  final Set<String> _exportiert = {};
+
+  /// Folgt den Typen aus oeffentlichen Signaturen in alle Dateien unter
+  /// `lib/`, auch in nicht exportierte: was dort deklariert ist, zaehlt mit
+  /// (Art `erreichbar`), samt seinen Mitgliedern und deren Signaturen.
+  void erreichbare() {
+    final index = <String, List<(String, CompilationUnitMember)>>{};
+    for (final f in lib.listSync(recursive: true).whereType<File>()) {
+      if (!f.path.endsWith('.dart')) continue;
+      final rel = _relativ(f.absolute.path);
+      for (final d in _parse(f.absolute.path).declarations) {
+        final n = _name(d);
+        if (n != null) index.putIfAbsent(n, () => []).add((rel, d));
+      }
+    }
+    final erledigt = <String>{};
+    while (true) {
+      final offen = _genannt
+          .difference(_exportiert)
+          .difference(erledigt)
+          .where(index.containsKey)
+          .toList();
+      if (offen.isEmpty) return;
+      for (final n in offen) {
+        erledigt.add(n);
+        for (final (rel, d) in index[n]!) {
+          _deklaration(rel, d, const _Filter.alles(), art: 'erreichbar');
+        }
+      }
+    }
+  }
+
+  static String? _name(CompilationUnitMember d) => switch (d) {
+    ClassDeclaration c => c.namePart.typeName.lexeme,
+    EnumDeclaration e => e.namePart.typeName.lexeme,
+    ExtensionTypeDeclaration x => x.primaryConstructor.typeName.lexeme,
+    MixinDeclaration m => m.name.lexeme,
+    TypeAlias t => t.name.lexeme,
+    _ => null,
+  };
   final Set<String> _gesehen = {};
 
   String _relativ(String pfad) =>
@@ -140,7 +188,12 @@ class _Leser {
     }
   }
 
-  void _deklaration(String rel, CompilationUnitMember d, _Filter filter) {
+  void _deklaration(
+    String rel,
+    CompilationUnitMember d,
+    _Filter filter, {
+    String art = 'export',
+  }) {
     final String? name = switch (d) {
       ClassDeclaration c => c.namePart.typeName.lexeme,
       EnumDeclaration e => e.namePart.typeName.lexeme,
@@ -155,14 +208,25 @@ class _Leser {
       for (final v in d.variables.variables) {
         final n = v.name.lexeme;
         if (n.startsWith('_') || !filter.zeigt(n)) continue;
-        _neu(n, 'export', '$rel:$n');
+        _neu(n, art, '$rel:$n');
+        if (art == 'export') _exportiert.add(n);
         _signatur(rel, n, d.variables.type);
       }
       return;
     }
     if (name == null || name.startsWith('_') || !filter.zeigt(name)) return;
-    _neu(name, 'export', '$rel:$name');
+    _neu(name, art, '$rel:$name');
+    if (art == 'export') _exportiert.add(name);
     final besitzer = name;
+    if (d is ClassDeclaration) {
+      for (final t in [
+        ?d.extendsClause?.superclass,
+        ...?d.withClause?.mixinTypes,
+        ...?d.implementsClause?.interfaces,
+      ]) {
+        _signatur(rel, besitzer, t);
+      }
+    }
     if (d is FunctionDeclaration) {
       _parameter(rel, besitzer, d.functionExpression.parameters);
       _signatur(rel, besitzer, d.returnType);
@@ -243,13 +307,22 @@ class _Leser {
   /// die in einer oeffentlichen Signatur stehen.
   void _signatur(String rel, String besitzer, TypeAnnotation? typ) {
     if (typ == null) return;
-    typ.accept(_TypLeser((n, art) => _neu(n, art, '$rel:$besitzer{$n}')));
+    typ.accept(
+      _TypLeser((n, art) => _neu(n, art, '$rel:$besitzer{$n}'), _genannt.add),
+    );
   }
 }
 
 class _TypLeser extends RecursiveAstVisitor<void> {
-  _TypLeser(this.melde);
+  _TypLeser(this.melde, this.typ);
   final void Function(String name, String art) melde;
+  final void Function(String name) typ;
+
+  @override
+  void visitNamedType(NamedType node) {
+    typ(node.name.lexeme);
+    super.visitNamedType(node);
+  }
 
   @override
   void visitRecordTypeAnnotationNamedField(RecordTypeAnnotationNamedField f) {

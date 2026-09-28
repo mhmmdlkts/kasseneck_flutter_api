@@ -274,7 +274,7 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
           tipCents: p['tip'] as int?,
         );
       case 'cancelReceipt':
-        return belege.cancel(
+        return belege.cancelReceipt(
           originalReceiptId: _s(p['originalReceiptId']),
           reason: _s(p['reason']),
           note: p['note'] as String?,
@@ -506,7 +506,7 @@ void main() {
 
     test('Sitzungen: own, deviceLabel', () async {
       final lauf = await _rufe('listRegisterSessionsForDevice', _fall('listRegisterSessionsForDevice', 'success_select'));
-      final s = lauf!.ergebnis as RegisterSessionsState;
+      final s = lauf!.ergebnis as RegisterSessionOverview;
       expect(s.licenses, 5);
       expect(s.sessions.map((x) => x.own), [false, true]);
       expect(s.sessions.first.deviceLabel, 'Tablet vorne');
@@ -700,12 +700,12 @@ void main() {
       final original = (ganz['params'] as Map)['originalReceiptId'] as String;
       final lauf = _Lauf();
       final client = RegisterReceiptClient(_transport(_mock(fall, lauf), 'KASSE1'), testEnvironment: true);
-      final ergebnis = await client.cancel(originalReceiptId: original, reason: 'input_error');
+      final ergebnis = await client.cancelReceipt(originalReceiptId: original, reason: 'input_error');
       expect(ergebnis.receipt.testCashregister, isTrue);
 
       // Ohne Test-Umgebung gelten die Kennzeichen des Originals.
       final ohne = RegisterReceiptClient(_transport(_mock(fall, _Lauf()), 'KASSE1'));
-      final normal = await ohne.cancel(originalReceiptId: original, reason: 'input_error');
+      final normal = await ohne.cancelReceipt(originalReceiptId: original, reason: 'input_error');
       expect(normal.receipt.testCashregister, isFalse);
     });
 
@@ -815,7 +815,7 @@ void main() {
       Future<KasseneckReceipt> stornieren({required bool testKasse}) async {
         original.testCashregister = testKasse;
         final client = RegisterReceiptClient(_transport(_mock(fall, _Lauf()), 'KASSE1'));
-        final e = await client.cancel(originalReceiptId: original.receiptId, reason: 'input_error', original: original);
+        final e = await client.cancelReceipt(originalReceiptId: original.receiptId, reason: 'input_error', original: original);
         return e.receipt;
       }
 
@@ -883,7 +883,7 @@ void main() {
         'listRegisterUsersForDevice.users[]': (RegisterUserSummary.fields, const {}),
         'listRegisterUsersForDevice.policy': (RegisterPinPolicy.fields, const {}),
         'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.fields, const {}),
-        'listRegisterSessionsForDevice': (RegisterSessionsState.fields, const {}),
+        'listRegisterSessionsForDevice': (RegisterSessionOverview.fields, const {}),
         'listRegisterSessionsForDevice.sessions[]': (RegisterSession.fields, const {}),
         'registerUserLogin': (RegisterUserSession.fields, const {}),
         'registerUserLogin.user': (RegisterUser.fields, const {}),

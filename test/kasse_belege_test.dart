@@ -329,7 +329,7 @@ void main() {
           },
         },
       ]);
-      final ergebnis = await f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error');
+      final ergebnis = await f.client.cancelReceipt(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error');
 
       expect(ergebnis.receipt.receiptId, 'KASSE1-ID-43');
       expect(ergebnis.originalReceiptId, 'KASSE1-ID-42');
@@ -352,7 +352,7 @@ void main() {
           },
         },
       ]);
-      await f.client.cancel(
+      await f.client.cancelReceipt(
         originalReceiptId: 'KASSE1-ID-42',
         reason: 'duplicate',
         items: const [(index: 0, quantity: 1)],
@@ -369,7 +369,7 @@ void main() {
     test('ohne Grund geht nichts hinaus', () async {
       final f = clientMit([{'status': 'success', 'data': {}}]);
       await expectLater(
-        f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: '  '),
+        f.client.cancelReceipt(originalReceiptId: 'KASSE1-ID-42', reason: '  '),
         throwsA(isA<KasseneckValidationError>()),
       );
       expect(f.log, isEmpty);
@@ -378,7 +378,7 @@ void main() {
     test('eine Storno-Menge unter 1 geht nicht hinaus', () async {
       final f = clientMit([{'status': 'success', 'data': {}}]);
       await expectLater(
-        f.client.cancel(
+        f.client.cancelReceipt(
           originalReceiptId: 'KASSE1-ID-42',
           reason: 'retoure',
           items: const [(index: 0, quantity: 0)],
@@ -392,7 +392,7 @@ void main() {
       // Sonst wuerde aus einem missglueckten Teilstorno still ein Vollstorno.
       final f = clientMit([{'status': 'success', 'data': {}}]);
       await expectLater(
-        f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'retoure', items: const []),
+        f.client.cancelReceipt(originalReceiptId: 'KASSE1-ID-42', reason: 'retoure', items: const []),
         throwsA(isA<KasseneckValidationError>()),
       );
       expect(f.log, isEmpty);
@@ -403,7 +403,7 @@ void main() {
         {'status': 'success', 'data': {...huelleMitBeleg(), 'remaining': [0]}},
       ]);
       await expectLater(
-        f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
+        f.client.cancelReceipt(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
         throwsA(isA<KasseneckApiError>()
             .having((e) => e.code, 'code', 'response_unreadable')
             .having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)),
@@ -414,7 +414,7 @@ void main() {
       for (final grund in ['retoure', 'fehleingabe']) {
         final f = clientMit([{'status': 'success', 'data': {}}]);
         await expectLater(
-          f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: grund),
+          f.client.cancelReceipt(originalReceiptId: 'KASSE1-ID-42', reason: grund),
           throwsA(isA<KasseneckValidationError>()),
         );
         expect(f.log, isEmpty, reason: grund);
@@ -437,7 +437,7 @@ void main() {
       ]) {
         final f = clientMit([{'status': 'success', 'data': kaputt}]);
         await expectLater(
-          f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
+          f.client.cancelReceipt(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
           throwsA(isA<KasseneckApiError>()
               .having((e) => e.code, 'code', 'response_unreadable')
               .having((e) => isOutcomeUnknown(e), 'unklar', isTrue)
@@ -568,7 +568,7 @@ void main() {
       for (final data in <Object>[<dynamic>[], 'ja']) {
         final f = clientMit([{'status': 'success', 'data': data}]);
         await expectLater(
-          f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
+          f.client.cancelReceipt(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
           throwsA(unlesbar('cancelReceipt', null)),
         );
         expect(f.log, hasLength(1));
@@ -587,7 +587,7 @@ void main() {
       final f = clientMit([{'status': 'success', 'data': {}}]);
       final original = KasseneckReceipt.fromJson(huelleMitBeleg(receiptId: 'KASSE1-ID-41'));
       await expectLater(
-        f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error', original: original),
+        f.client.cancelReceipt(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error', original: original),
         throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
       expect(f.log, isEmpty);

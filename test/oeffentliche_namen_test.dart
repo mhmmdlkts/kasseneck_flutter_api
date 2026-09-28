@@ -75,14 +75,14 @@ final Set<String> woerter = _liste('''
   network never new next night no none normal normalize not note notes notice
   notices november now number observer october of off offered offset omit on
   onboarding online open operation operator or order original other out
-  outcome outdated output overdue own owner package page paid pair paired
-  pairs panel paper parse partial password patch pay payload payment payments
-  per percent period persistent person phone photos piece pixel platform
-  policy port position present pressed preview previous price prices print
-  printer printers printing probe production profile progress project promo
-  provider public quantities quantity quick quiet radius raised random range
-  raster rasters rate rated rates ratio raw read readable reader ready reason
-  reasons receipt receipts received recipient recipients record redeem
+  outcome outdated output overdue overview own owner package page paid pair
+  paired pairs panel paper parse partial password patch pay payload payment
+  payments per percent period persistent person phone photos piece pixel
+  platform policy port position present pressed preview previous price prices
+  print printer printers printing probe production profile progress project
+  promo provider public quantities quantity quick quiet radius raised random
+  range raster rasters rate rated rates ratio raw read readable reader ready
+  reason reasons receipt receipts received recipient recipients record redeem
   reference refresh refund refunds register registered registration rejected
   rejects related remaining remove removed render renew replayed report
   reports request required requirement requirements reservation reset resolve
@@ -104,8 +104,8 @@ final Set<String> woerter = _liste('''
   units unknown unpack unpaid unpair unresolved unsupported untangle until
   update updated usable user users valid validation value values verification
   verify version vertical via vias vienna visible voided voucher vouchers wall
-  wanted warm warning watermark webhook widget widgets width widths wire with
-  words wrap write written wrong year yesterday zero zone
+  wanted warm warning watermark webhook webservice widget widgets width widths
+  wire with words wrap write written wrong year yesterday zero zone
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,
@@ -115,8 +115,8 @@ final Set<String> kuerzel = _liste('''
   einvoice elv emv esc escpos f fn g gen geo girocode gln h hex hps hr hri hsv
   http iban icm id img init ios ip ipv itf j json k kg l lat len lng m mac max
   micros millis min mm ms n ok params pct pdf perms pin pos pre pro q qr
-  qrcode r ref res rgb rgba s scep sdk sdp sec sepa sig sms src sub tid tids
-  ttl tx tz uid uint upc url usb vat vu w wifi x xl xml y zip
+  qrcode r ref res rgb rgba s scep sdk sdp sec sepa sig sms src sub tcp tid
+  tids ttl tx tz uid uint upc url usb vat vu w wifi x xl xml y zip
 ''');
 
 /// Produkt- und Firmennamen.
@@ -139,10 +139,6 @@ const Map<String, String> ausnahmen = {
       'Statuswert der FinanzOnline-Antwort fuer die Signaturerstellungseinheit, Parsing ueber den Enum-Namen',
   'lib/enums/signature_status.dart:SignatureStatus.AUSFALL':
       'Statuswert der FinanzOnline-Antwort fuer die Signaturerstellungseinheit, Parsing ueber den Enum-Namen',
-  'lib/models/keck_user.dart:KeckUser.benid':
-      'Webservice-Benutzerkennung von FinanzOnline, im BMF-Webservice heisst der Parameter benid',
-  'lib/models/keck_user.dart:KeckUser(benid)':
-      'Konstruktorparameter zum Feld KeckUser.benid (FinanzOnline-Begriff)',
 };
 
 Set<String> _liste(String text) =>
@@ -207,13 +203,22 @@ void main() {
       final arten = {for (final f in api) f.art};
       expect(
         arten,
-        containsAll(['pfad', 'export', 'member', 'parameter', 'record']),
+        containsAll([
+          'pfad',
+          'export',
+          'erreichbar',
+          'member',
+          'parameter',
+          'record',
+        ]),
       );
       final herkunft = {for (final f in api) f.herkunft};
       expect(herkunft, contains('lib/pos.dart'));
       expect(
         herkunft,
-        contains('lib/src/kasse/belege.dart:RegisterReceiptClient.cancel'),
+        contains(
+          'lib/src/kasse/belege.dart:RegisterReceiptClient.cancelReceipt',
+        ),
       );
       expect(api.length, greaterThan(3000));
     },
@@ -260,6 +265,7 @@ void main() {
   test('Rot-Probe: deutsche Namen fallen auf, auch ohne Sperrliste', () {
     const datei = 'lib/pos.dart';
     final quelle = File(datei).readAsStringSync();
+    const versteckt = 'lib/src/aufrufe.dart';
     final probe = oeffentlicheApi(
       lib,
       quelltext: {
@@ -272,7 +278,12 @@ void main() {
             '}\n'
             'enum Farbe { hell }\n'
             'final int zahlungÜbrig = 0;\n'
-            'class StartProbe { final String? benid = null; }\n',
+            'enum StartProbe { IN_BETRIEB }\n'
+            'class HiddenProbe { HiddenType? get hidden => null; }\n',
+        // Nicht exportiert, aber ueber HiddenProbe.hidden erreichbar.
+        versteckt:
+            '${File(versteckt).readAsStringSync()}\n'
+            'class HiddenType { int belegZahl = 0; void stornieren({int? menge}) {} }\n',
       },
     );
     final gefunden = funde(probe, <String>{});
@@ -286,8 +297,12 @@ void main() {
       'lib/pos.dart:Farbe (export)',
       'lib/pos.dart:Farbe.hell (member)',
       'lib/pos.dart:zahlungÜbrig (export)',
-      // Die Ausnahme fuer benid ist an KeckUser gebunden, nicht an den Namen.
-      'lib/pos.dart:StartProbe.benid (member)',
+      // Die Ausnahme fuer IN_BETRIEB ist an CashboxStatus gebunden, nicht an den Namen.
+      'lib/pos.dart:StartProbe.IN_BETRIEB (member)',
+      // Erreichbar ueber eine oeffentliche Signatur, obwohl nicht exportiert.
+      'lib/src/aufrufe.dart:HiddenType.belegZahl (member)',
+      'lib/src/aufrufe.dart:HiddenType.stornieren (member)',
+      'lib/src/aufrufe.dart:HiddenType.stornieren(menge) (parameter)',
     ]) {
       expect(
         gefunden.any((g) => g.startsWith(erwartet)),

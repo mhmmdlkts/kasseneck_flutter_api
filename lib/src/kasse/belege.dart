@@ -430,7 +430,7 @@ class RegisterReceiptClient {
   /// ueber einen Anbieter braucht einen Bezug: ihre eigene `providerPaymentId`
   /// oder, mit [original], die Kennung der erstatteten Kartenzahlung dort
   /// (`cardRefundReference`). Fehlt beides, wirft der Aufruf vor dem Senden.
-  Future<CancelReceiptResult> cancel({
+  Future<CancelReceiptResult> cancelReceipt({
     required String originalReceiptId,
     required String reason,
     List<CancellationItem>? items,
@@ -540,7 +540,7 @@ class RegisterReceiptClient {
   ///
   /// Fachliche Ablehnungen kommen als [KasseneckApiError] mit einem Code aus
   /// [receiptEmailErrorCodes] – daran entscheiden, nie am Text.
-  Future<SendReceiptEmailResult> sendReceipt({
+  Future<SendReceiptEmailResult> sendReceiptEmail({
     required String fullReceiptId,
     required String to,
     String? language,

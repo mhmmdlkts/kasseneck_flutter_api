@@ -207,7 +207,7 @@ void main() {
       final p = fall['params'] as Map<String, dynamic>;
       final positionen = (p['items'] as List?)?.cast<Map>().map((e) => (index: e['index'] as int, quantity: e['quantity'] as int)).toList();
       return fall['channel'] == 'app'
-          ? _kasse(client).cancel(
+          ? _kasse(client).cancelReceipt(
               originalReceiptId: p['originalReceiptId'] as String,
               reason: p['reason'] as String,
               items: positionen,
@@ -280,7 +280,7 @@ void main() {
       final original = KasseneckReceipt.fromJson(
           (_fall(_kasseBelege, 'get_card_receipt_with_cancellation')['response'] as Map)['data'] as Map<String, dynamic>);
       final m = _einmal(_fall(_storno, 'cancel_full_card_refund', channel: 'app'));
-      await _kasse(m.client).cancel(
+      await _kasse(m.client).cancelReceipt(
         originalReceiptId: 'KECK-1-ID-2',
         reason: 'input_error',
         original: original,

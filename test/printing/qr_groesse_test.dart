@@ -15,7 +15,7 @@ void main() {
       final QrSizing g = QrMetrics.compute(paperWidthDots: 384, moduleCount: 21);
       expect(g.fits, isTrue);
       expect(g.moduleDots, 6, reason: 'auto deckelt auf den Bestandswert 6');
-      expect(g.module, 21);
+      expect(g.modules, 21);
       expect(g.widthDots, 29 * 6);
       expect(g.belowMinimum, isFalse);
     });
@@ -96,7 +96,7 @@ void main() {
           'kTs5bwWJmn0PxYuAeD2cRiVgKlNpHXtMEoS4UvCa7dIB==';
       final QrSizing g =
           QrMetrics.forPayload(payload: qr, paperWidthDots: KeckPaperSize.mm58.printWidthDots);
-      expect(g.module, 57);
+      expect(g.modules, 57);
       expect(g.moduleDots, 5);
       expect(g.widthDots, 325);
       expect(g.widthDots, lessThanOrEqualTo(384));

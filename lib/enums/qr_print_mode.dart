@@ -38,7 +38,7 @@ enum QrPrintMode {
 /// bestehen, die den Modus selbst wählen; über die Einstellungen ist er nicht
 /// erreichbar.
 ///
-/// **[vorgabe] ist Pflicht und hat keinen Standardwert.** [PosQrMode.auto]
+/// **[fallback] ist Pflicht und hat keinen Standardwert.** [PosQrMode.auto]
 /// heißt „hier hat niemand entschieden", und was dann gilt, weiß nur der
 /// Aufrufer: die App druckt seit jeher das Rasterbild, die Browser-Kasse den
 /// nativen Befehl. Ein Standardwert an dieser Stelle hätte eine der beiden

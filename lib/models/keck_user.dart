@@ -17,7 +17,8 @@ class KeckUser {
   String? uid;
   String? gln;
 
-  String? benid;
+  /// FinanzOnline-Webservice-Benutzer (Draht: `webservice_user.benid`).
+  String? webserviceUserId;
   String? pin;
   String? tid;
 
@@ -57,7 +58,7 @@ class KeckUser {
     this.apiKey,
     this.uid,
     this.gln,
-    this.benid,
+    this.webserviceUserId,
     this.pin,
     this.tid
   });
@@ -77,7 +78,7 @@ class KeckUser {
       apiKey: json['api_key'] as String?,
       uid: json['tax_details']['uid'] as String?,
       gln: json['tax_details']['gln'] as String?,
-      benid: json['webservice_user']['benid'] as String?,
+      webserviceUserId: json['webservice_user']['benid'] as String?,
       tid: json['webservice_user']['tid'] as String?,
       pin: json['webservice_user']['pin'] as String?,
       addressCity: json['address']['city'] as String,

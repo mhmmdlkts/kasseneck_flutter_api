@@ -36,14 +36,14 @@ enum QrModuleSize {
 /// nur unter der Mindestgroesse ([belowMinimum]) und wie breit das Symbol
 /// wird ([widthDots]). Ein blosser `int` haette die Ausnahme verschwiegen.
 class QrSizing {
-  const QrSizing._(this.moduleDots, this.module, this.widthDots, this.belowMinimum);
+  const QrSizing._(this.moduleDots, this.modules, this.widthDots, this.belowMinimum);
 
   /// Modulgroesse in Druckpunkten, `null` wenn das Symbol auch mit der
   /// Ausnahmegroesse nicht aufs Papier passt.
   final int? moduleDots;
 
   /// Modulanzahl des Symbols (ohne Ruhezone).
-  final int module;
+  final int modules;
 
   /// Gesamtbreite inklusive Ruhezone in Druckpunkten; 0, wenn nichts passt.
   final int widthDots;
@@ -57,9 +57,9 @@ class QrSizing {
 
   @override
   String toString() => fits
-      ? 'QrGroesse($moduleDots Punkte, $module Module, $widthDots Punkte breit'
+      ? 'QrGroesse($moduleDots Punkte, $modules Module, $widthDots Punkte breit'
           '${belowMinimum ? ', unter Mindestmass' : ''})'
-      : 'QrGroesse(passt nicht, $module Module)';
+      : 'QrGroesse(passt nicht, $modules Module)';
 }
 
 /// Die Rechenregel fuer die Modulgroesse des Beleg-QR — rein, ohne Drucker.

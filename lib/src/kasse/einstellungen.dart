@@ -73,15 +73,26 @@ enum PosLogoSize implements PosSettingValue {
   final String value;
 }
 
-/// Größe des Bild-Logos am Beleg (`logoScale`) bzw. des Wasserzeichens
-/// (`watermarkScale`).
-enum PosScale implements PosSettingValue {
+/// Größe des Bild-Logos am Beleg (`logoScale`).
+enum PosLogoScale implements PosSettingValue {
   s('S'),
   m('M'),
   l('L'),
   xl('XL');
 
-  const PosScale(this.value);
+  const PosLogoScale(this.value);
+  @override
+  final String value;
+}
+
+/// Größe des Wasserzeichens (`watermarkScale`), getrennt vom Beleg-Logo.
+enum PosWatermarkScale implements PosSettingValue {
+  s('S'),
+  m('M'),
+  l('L'),
+  xl('XL');
+
+  const PosWatermarkScale(this.value);
   @override
   final String value;
 }
@@ -432,8 +443,8 @@ class PosBusinessSettings {
     this.watermarkX = 50,
     this.watermarkY = 50,
     this.watermarkStrength = 6,
-    this.logoScale = PosScale.m,
-    this.watermarkScale = PosScale.m,
+    this.logoScale = PosLogoScale.m,
+    this.watermarkScale = PosWatermarkScale.m,
     this.glass = true,
     this.hints = true,
     this.discountChips = const [5, 10, 15, 20],
@@ -516,8 +527,8 @@ class PosBusinessSettings {
   final int watermarkStrength;
 
   /// Größe des Bild-Logos am Beleg.
-  final PosScale logoScale;
-  final PosScale watermarkScale;
+  final PosLogoScale logoScale;
+  final PosWatermarkScale watermarkScale;
 
   /// Glas-Optik: Kacheln und Korb leicht durchscheinend.
   final bool glass;
@@ -606,8 +617,8 @@ class PosBusinessSettings {
       watermarkX: _ganz(g, 'watermarkX', -25, 125, s.watermarkX, fremd),
       watermarkY: _ganz(g, 'watermarkY', -25, 125, s.watermarkY, fremd),
       watermarkStrength: _ausListe(g, 'watermarkStrength', posWatermarkStrengths, s.watermarkStrength, fremd),
-      logoScale: _wahl(g, 'logoScale', PosScale.values, s.logoScale, fremd),
-      watermarkScale: _wahl(g, 'watermarkScale', PosScale.values, s.watermarkScale, fremd),
+      logoScale: _wahl(g, 'logoScale', PosLogoScale.values, s.logoScale, fremd),
+      watermarkScale: _wahl(g, 'watermarkScale', PosWatermarkScale.values, s.watermarkScale, fremd),
       glass: _bool(g['glass'], s.glass),
       hints: _bool(g['hints'], s.hints),
       discountChips: _zahlenliste(g, 'discountChips', s.discountChips, fremd),
@@ -921,8 +932,8 @@ final Map<String, List<Object>> posBusinessValues = Map.unmodifiable({
   'doneScreenSeconds': posDoneScreenSeconds,
   'watermarkSide': _werte(PosWatermarkSide.values),
   'watermarkStrength': posWatermarkStrengths,
-  'logoScale': _werte(PosScale.values),
-  'watermarkScale': _werte(PosScale.values),
+  'logoScale': _werte(PosLogoScale.values),
+  'watermarkScale': _werte(PosWatermarkScale.values),
 });
 
 /// Wie [posBusinessValues] für die Geräte-Einstellungen (`POS_DEVICE_VALUES`).

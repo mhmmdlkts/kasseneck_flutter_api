@@ -350,7 +350,7 @@ class KasseneckApi {
   /// Storno-Beleg zu einem bestehenden Beleg ueber den Endpunkt
   /// `cancelReceipt` — **der Storno-Weg mit Bezug** fuer den API-Schluessel-
   /// Zugang (Zwilling von `cancelReceipt` im Client des npm-Pakets, Gegenstueck
-  /// zu `RegisterReceiptClient.cancel` der Kassen-Anmeldung).
+  /// zu `RegisterReceiptClient.cancelReceipt` der Kassen-Anmeldung).
   ///
   /// Den alten Storno-Weg ohne Bezug (`createReceipt` mit Belegtyp Storno,
   /// die beiden alten Storno-Aufrufe aus 9.x) gibt es seit 10.0 nicht mehr.
@@ -466,7 +466,7 @@ class KasseneckApi {
   /// Einen bereits ausgestellten Beleg als **Link auf die oeffentliche
   /// Belegseite** an [to] schicken – Endpunkt `sendReceiptEmail`, Zwilling von
   /// `sendReceiptEmail` im Client des npm-Pakets und Gegenstueck zu
-  /// `RegisterReceiptClient.sendReceipt` der Kassen-Anmeldung.
+  /// `RegisterReceiptClient.sendReceiptEmail` der Kassen-Anmeldung.
   ///
   /// Verschickt wird ein Link, kein PDF im Anhang: die Belegseite setzt dasselbe
   /// Zeilenmodell wie Bildschirm und Bondrucker und gibt dort auf Wunsch ein PDF
@@ -484,7 +484,7 @@ class KasseneckApi {
   /// Sprache spaeter kein neuer Aufruf wird.
   ///
   /// Die Adresse wird hier **nicht** auf Form geprueft — siehe
-  /// `RegisterReceiptClient.sendReceipt`: es gibt genau eine Adresspruefung,
+  /// `RegisterReceiptClient.sendReceiptEmail`: es gibt genau eine Adresspruefung,
   /// und die steht im Backend. Fachliche Ablehnungen kommen als
   /// [KasseneckApiError] mit einem Code aus [receiptEmailErrorCodes]; daran
   /// entscheiden, nie am Text. Die Schleuse des Backends (fuenf Mails je Beleg

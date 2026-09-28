@@ -215,7 +215,7 @@ class PrintPaper {
           moduleSize: groesse,
         );
         if (nutzlast.isNotEmpty && !mass.fits) {
-          qrFallback = 'QR mit ${mass.module} Modulen passt nativ nicht auf '
+          qrFallback = 'QR mit ${mass.modules} Modulen passt nativ nicht auf '
               '${paperSize.mm} mm (${paperSize.printWidthDots} Punkte) -- als Bild gedruckt';
           // Mit Blatt-Anteil so gross, wie das Blatt den Ausweich setzt
           // (npm: `escPosQrRaster` mit demselben Deckel).
@@ -267,11 +267,11 @@ class PrintPaper {
         // den Ausfall gemeldet und die Belegdaten in Klarschrift. Ueber
         // [_qrNachModus] kommt es dazu nicht, der weicht vorher aufs Bild aus.
         _qrAusfall(data,
-            'QR mit ${mass.module} Modulen ist fuer ${paperSize.mm} mm zu breit');
+            'QR mit ${mass.modules} Modulen ist fuer ${paperSize.mm} mm zu breit');
         return;
       }
       if (mass.belowMinimum) {
-        qrFallback = 'QR mit ${mass.module} Modulen passt nur mit '
+        qrFallback = 'QR mit ${mass.modules} Modulen passt nur mit '
             '${mass.moduleDots} Punkten je Modul -- unter dem Mindestmass von '
             '${QrMetrics.minModuleDots}';
       }

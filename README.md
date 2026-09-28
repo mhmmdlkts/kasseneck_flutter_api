@@ -264,7 +264,7 @@ result.receipt;    // the signed cancellation receipt
 result.remaining;  // remaining quantity per line of the original
 
 // Register session (package:kasseneck_api/pos.dart)
-final result2 = await client.cancel(originalReceiptId: id, reason: 'input_error');
+final result2 = await client.cancelReceipt(originalReceiptId: id, reason: 'input_error');
 ```
 
 - Reasons (`cancellationReasons`): `input_error` (wrong entry), `customer_cancelled`
@@ -301,7 +301,7 @@ delivery separately.
 
 ```dart
 // Register session (package:kasseneck_api/pos.dart)
-final sent = await client.sendReceipt(fullReceiptId: receipt.fullReceiptId, to: 'guest@example.com');
+final sent = await client.sendReceiptEmail(fullReceiptId: receipt.fullReceiptId, to: 'guest@example.com');
 // API key (package:kasseneck_api/kasseneck_api.dart)
 final sent2 = await kasseneck.sendReceiptEmail(fullReceiptId: receipt.fullReceiptId, to: 'guest@example.com');
 

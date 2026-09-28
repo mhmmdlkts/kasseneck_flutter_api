@@ -157,7 +157,7 @@ void main() {
 
     test('stornieren mit zahlungen: Rueckzahlungen gehen hinaus; Karte ohne Bezug wirft vor dem Netz', () async {
       final f = kasseMit(stornoAntwort());
-      await f.client.cancel(
+      await f.client.cancelReceipt(
         originalReceiptId: 'KASSE1-ID-42',
         reason: 'input_error',
         payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, refundOf: 'p2')],
@@ -167,7 +167,7 @@ void main() {
         {'method': 'cash', 'amountCents': -500, 'refundOf': 'p2'},
       ]);
       await expectLater(
-          f.client.cancel(
+          f.client.cancelReceipt(
             originalReceiptId: 'KASSE1-ID-42',
             reason: 'input_error',
             payments: const [
