@@ -5,6 +5,10 @@ library;
 
 /// Kategorie der Kachel-Kasse.
 class Artikelgruppe {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'id', 'name', 'color', 'symbol', 'sort', 'vatRate'};
+
   const Artikelgruppe({
     required this.id,
     required this.name,
@@ -104,6 +108,13 @@ Mengenvorgabe mengenVorgabe(KasseArtikel a) {
 
 /// Artikel, wie ihn die Kasse für Kacheln und Belegpositionen braucht.
 class KasseArtikel {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity'};
+
+  /// Die Felder von `tile`.
+  static const Set<String> kachelFelder = {'visible', 'sort'};
+
   const KasseArtikel({
     required this.id,
     required this.name,

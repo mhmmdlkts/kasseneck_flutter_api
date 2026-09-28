@@ -212,6 +212,10 @@ const int _anmerkungHoechstlaenge = 200;
 /// Eine Kasse aus `listMyCashregisters` (Draht `/v3`). Zeitpunkte bleiben
 /// Text (ISO, UTC); ein fehlender ist `null`, nie ein erfundenes Datum.
 class KassenEintrag {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding'};
+
   const KassenEintrag({
     required this.id,
     required this.onboarding,
@@ -272,6 +276,10 @@ class KassenEintrag {
 /// Stand der Inbetriebnahme (RKSV): bei FinanzOnline registriert, Startbeleg
 /// erzeugt und übermittelt.
 class KassenInbetriebnahme {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'cashbox_registered', 'start_receipt_created', 'start_receipt_transmitted', 'cashbox_registered_at', 'start_receipt_created_at', 'start_receipt_transmitted_at'};
+
   const KassenInbetriebnahme({
     required this.cashboxRegistered,
     required this.startReceiptCreated,

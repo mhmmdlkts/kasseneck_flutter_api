@@ -10,6 +10,10 @@ import 'keck_tip.dart';
 /// (durchlaufender Posten). Entschieden wird das im Backend; hier reist es mit,
 /// damit eine Oberfläche es zeigen kann.
 class KeckTipPerson {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'registerUserId', 'name', 'owner'};
+
   const KeckTipPerson({required this.registerUserId, required this.name, required this.owner});
 
   factory KeckTipPerson.aus(Map<String, dynamic> roh) => KeckTipPerson(

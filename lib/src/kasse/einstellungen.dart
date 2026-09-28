@@ -546,8 +546,15 @@ class KasseSettingsBetrieb {
   /// Gebraucht, wo eine Einstellung **sofort** gelten soll, während der Server
   /// noch antwortet: der Bildschirm zeigt, was der Chef gewählt hat, und
   /// nimmt es zurück, falls der Server ablehnt.
-  KasseSettingsBetrieb mit(Map<String, dynamic> aenderung) =>
-      KasseSettingsBetrieb.ausJson(_mische(toJson(), aenderung));
+  ///
+  /// **Wirft [ArgumentError]** bei einem Schlüssel, den es nicht gibt (auch
+  /// einem deutschen aus 9.x wie `stil`), und bei einem Wert der inneren Form
+  /// 0.x (`'nacht'`): eine Änderung, die still nichts bewirkt, fiele am Tresen
+  /// niemandem auf.
+  KasseSettingsBetrieb mit(Map<String, dynamic> aenderung) {
+    _pruefeAenderung('business', aenderung, _betriebSchluessel, altformBetriebSchluessel);
+    return KasseSettingsBetrieb.ausJson(_mische(toJson(), aenderung));
+  }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
   factory KasseSettingsBetrieb.ausJson(Map<String, dynamic> roh) {
@@ -589,21 +596,21 @@ class KasseSettingsBetrieb {
       tipSteps: _karte(g['tipSteps'], s.tipSteps),
       tipSplit: _bool(g['tipSplit'], s.tipSplit),
       change: _bool(g['change'], s.change),
-      tipChips: _zahlenliste(g['tipChips'], s.tipChips),
+      tipChips: _zahlenliste(g, 'tipChips', s.tipChips, fremd),
       exactCash: _bool(g['exactCash'], s.exactCash),
       checkoutMode: _wahl(g, 'checkoutMode', KasseKassierenModus.values, s.checkoutMode, fremd),
       receiptOutput: _wahl(g, 'receiptOutput', KasseBelegAusgabe.values, s.receiptOutput, fremd),
       doneScreenSeconds: _ausListe(g, 'doneScreenSeconds', kasseFertigSekunden, s.doneScreenSeconds, fremd),
       logoImage: _text(g['logoImage'], s.logoImage),
       watermarkSide: _wahl(g, 'watermarkSide', KasseWasserzeichenSeite.values, s.watermarkSide, fremd),
-      watermarkX: _ganz(g['watermarkX'], -25, 125, s.watermarkX),
-      watermarkY: _ganz(g['watermarkY'], -25, 125, s.watermarkY),
+      watermarkX: _ganz(g, 'watermarkX', -25, 125, s.watermarkX, fremd),
+      watermarkY: _ganz(g, 'watermarkY', -25, 125, s.watermarkY, fremd),
       watermarkStrength: _ausListe(g, 'watermarkStrength', kasseWasserzeichenStaerken, s.watermarkStrength, fremd),
       logoScale: _wahl(g, 'logoScale', KasseSkala.values, s.logoScale, fremd),
       watermarkScale: _wahl(g, 'watermarkScale', KasseSkala.values, s.watermarkScale, fremd),
       glass: _bool(g['glass'], s.glass),
       hints: _bool(g['hints'], s.hints),
-      discountChips: _zahlenliste(g['discountChips'], s.discountChips),
+      discountChips: _zahlenliste(g, 'discountChips', s.discountChips, fremd),
       fremdeWerte: Map.unmodifiable(fremd),
     );
   }
@@ -754,8 +761,10 @@ class KasseSettingsGeraet {
   final Map<String, Object> fremdeWerte;
 
   /// Siehe [KasseSettingsBetrieb.mit]; `shortcuts` wird je Aktion gemischt.
-  KasseSettingsGeraet mit(Map<String, dynamic> aenderung) =>
-      KasseSettingsGeraet.ausJson(_mische(toJson(), aenderung));
+  KasseSettingsGeraet mit(Map<String, dynamic> aenderung) {
+    _pruefeAenderung('device', aenderung, _geraetSchluessel, altformGeraetSchluessel);
+    return KasseSettingsGeraet.ausJson(_mische(toJson(), aenderung));
+  }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
   factory KasseSettingsGeraet.ausJson(Map<String, dynamic> roh) {
@@ -765,14 +774,14 @@ class KasseSettingsGeraet {
     return KasseSettingsGeraet(
       layout: _wahl(g, 'layout', KasseLayout.values, s.layout, fremd),
       categoryPosition: _wahl(g, 'categoryPosition', KasseKatpos.values, s.categoryPosition, fremd),
-      extraColumns: _ganz(g['extraColumns'], -2, 4, s.extraColumns),
+      extraColumns: _ganz(g, 'extraColumns', -2, 4, s.extraColumns, fremd),
       tileHeight: _wahl(g, 'tileHeight', KasseHoehe.values, s.tileHeight, fremd),
       touch: _bool(g['touch'], s.touch),
       shortcuts: _tastenkarte(g['shortcuts'], s.shortcuts),
       printerEnabled: _bool(g['printerEnabled'], s.printerEnabled),
       printerType: _wahl(g, 'printerType', KasseDruckerArt.values, s.printerType, fremd),
       printerIp: _text(g['printerIp'], s.printerIp),
-      printerPort: _ganz(g['printerPort'], 1, 65535, s.printerPort),
+      printerPort: _ganz(g, 'printerPort', 1, 65535, s.printerPort, fremd),
       printerBluetoothId: _text(g['printerBluetoothId'], s.printerBluetoothId),
       printerName: _text(g['printerName'], s.printerName),
       printerId: _text(g['printerId'], s.printerId),
@@ -785,7 +794,7 @@ class KasseSettingsGeraet {
       drawerEnabled: _bool(g['drawerEnabled'], s.drawerEnabled),
       drawerAutoOpen: _wahl(g, 'drawerAutoOpen', KasseLadeAuto.values, s.drawerAutoOpen, fremd),
       terminalIp: _text(g['terminalIp'], s.terminalIp),
-      terminalPort: _ganz(g['terminalPort'], 1, 65535, s.terminalPort),
+      terminalPort: _ganz(g, 'terminalPort', 1, 65535, s.terminalPort, fremd),
       terminalTid: _text(g['terminalTid'], s.terminalTid),
       terminalVia: _wahl(g, 'terminalVia', KasseTerminalVia.values, s.terminalVia, fremd),
       terminalType: _wahl(g, 'terminalType', KasseTerminalArt.values, s.terminalType, fremd),
@@ -849,7 +858,12 @@ class KasseSettings {
   /// `device` die alten Teile `betrieb`/`geraet` (deutsche Schlüssel und
   /// Werte, so schrieb `toJson` bis 9.x), wird sie Feld für Feld übersetzt
   /// (Tabelle `renames-1.0.json`). Ein alter Stand geht so beim Update nicht
-  /// verloren.
+  /// verloren. Die Tastenkarte wird dabei wie am Server entwirrt
+  /// ([entwirreTasten]), damit die alten Vorgaben (`frei: Mod+F`) keine
+  /// Doppelbelegung mit den neuen (`fullscreen: Mod+F`) ergeben. Übrige
+  /// 9.x-Standardwerte im Stand (`terminalPort` 20008, `kassierenModus`
+  /// `seite`) gelten als gesetzt, bis die erste Serverantwort
+  /// (`getKasseSettings`, Benutzerliste) den Stand ersetzt.
   factory KasseSettings.aus(Map<String, dynamic>? gespeichert) {
     final roh = gespeichert ?? const <String, dynamic>{};
     final alt = !roh.containsKey('business') &&
@@ -859,7 +873,22 @@ class KasseSettings {
       final w = roh[alt ? altName : neu];
       if (w is! Map) return const {};
       final m = Map<String, dynamic>.from(w);
-      return alt ? _ausAltform(m, schluessel) : m;
+      if (!alt) return m;
+      final uebersetzt = _ausAltform(m, schluessel);
+      final tasten = uebersetzt['shortcuts'];
+      // Der 9.x-Stand trägt die gemischte Tastenkarte samt der alten
+      // Vorgaben (frei: Mod+F, belege: Mod+E). Wie der Server
+      // (`entwirreTasten`): die gespeicherte Wahl gewinnt, eine beanspruchte
+      // Vorgabe-Taste fällt bei der Aktion, die nicht gespeichert war (Mod+F
+      // verliert das Vollbild, statt doppelt belegt zu sein).
+      if (tasten is Map) {
+        final gespeichert = <String, Object?>{
+          for (final e in tasten.entries)
+            if (!altformTastenAktionen.containsKey(e.key)) e.key.toString(): e.value,
+        };
+        uebersetzt['shortcuts'] = entwirreTasten({...kasseTastenStandard, ...gespeichert}, gespeichert);
+      }
+      return uebersetzt;
     }
 
     return KasseSettings(
@@ -1064,6 +1093,54 @@ Map<String, dynamic> _ausAltform(Map<String, dynamic> alt, Map<String, String> s
   return raus;
 }
 
+/// Zwilling von `entwirreTasten` (Backend, npm `stored`): Aktionen aus
+/// [gespeichert] behalten ihre Tasten; jede andere Aktion verliert eine Taste,
+/// die eine gespeicherte Aktion beansprucht, außer die beiden dürfen sie
+/// teilen ([posShortcutSharedPairs]).
+Map<String, Object?> entwirreTasten(Map<String, Object?> gemischt, Map<String, Object?> gespeichert) {
+  final beansprucht = <Object?, String>{};
+  for (final e in gespeichert.entries) {
+    final tasten = e.value;
+    if (tasten is! List) continue;
+    for (final t in tasten) {
+      beansprucht[t] = e.key;
+    }
+  }
+  return {
+    for (final e in gemischt.entries)
+      e.key: e.value is! List || gespeichert.containsKey(e.key)
+          ? e.value
+          : [
+              for (final t in e.value as List)
+                if (beansprucht[t] == null || beansprucht[t] == e.key || _darfTeilen(beansprucht[t]!, e.key)) t,
+            ],
+  };
+}
+
+final Set<String> _betriebSchluessel = const KasseSettingsBetrieb().toJson().keys.toSet();
+final Set<String> _geraetSchluessel = const KasseSettingsGeraet().toJson().keys.toSet();
+
+void _pruefeAenderung(String teil, Map<String, dynamic> aenderung, Set<String> bekannt, Map<String, String> altform) {
+  for (final e in aenderung.entries) {
+    if (!bekannt.contains(e.key)) {
+      final neu = altform[e.key];
+      throw ArgumentError('$teil.${e.key}: unbekanntes Feld'
+          '${neu != null && neu != e.key ? ' (Schluessel aus 9.x, heute $neu)' : ''}');
+    }
+    if (istAltwert0x(e.key, e.value)) {
+      throw ArgumentError('$teil.${e.key}: Wert der inneren Form 0.x (${e.value}), '
+          'heute ${altformWerte[e.key]![e.value]}');
+    }
+    final wert = e.value;
+    if (e.key == 'shortcuts' && wert is Map) {
+      for (final aktion in wert.keys) {
+        final neu = altformTastenAktionen[aktion];
+        if (neu != null) throw ArgumentError('$teil.shortcuts.$aktion: Tasten-Aktion aus 9.x, heute $neu');
+      }
+    }
+  }
+}
+
 /// Ist [wert] ein Wert der inneren Form 0.x für dieses Drahtfeld?
 bool istAltwert0x(String feld, Object? wert) => altformWerte[feld]?.containsKey(wert) ?? false;
 
@@ -1103,8 +1180,15 @@ bool _bool(Object? wert, bool standard) => wert is bool ? wert : standard;
 
 String _text(Object? wert, String standard) => wert is String ? wert : standard;
 
-int _ganz(Object? wert, int min, int max, int standard) =>
-    wert is num && wert == wert.roundToDouble() && wert >= min && wert <= max ? wert.toInt() : standard;
+/// Ganze Zahl im Bereich; ein Wert außerhalb (etwa ein weiterer Bereich eines
+/// neueren Servers) wird wie ein unbekannter Aufzählungswert in [fremd]
+/// festgehalten, nie still ersetzt.
+int _ganz(Map<String, dynamic> g, String feld, int min, int max, int standard, Map<String, Object> fremd) {
+  final wert = g[feld];
+  if (wert is num && wert == wert.roundToDouble() && wert >= min && wert <= max) return wert.toInt();
+  if (wert is String || wert is num) fremd[feld] = wert as Object;
+  return standard;
+}
 
 /// Wert aus einer Wertemenge; ein unbekannter Wert (Text oder Zahl) wird
 /// wörtlich in [fremd] festgehalten, das Feld bekommt den Standard.
@@ -1148,9 +1232,15 @@ Map<String, List<String>> _tastenkarte(Object? wert, Map<String, List<String>> s
   return out;
 }
 
-/// Zahlenliste (Chips): höchstens fünf, eindeutig, in der Reihenfolge des Chefs.
-List<double> _zahlenliste(Object? wert, List<double> standard) {
-  if (wert is! List) return standard;
+/// Zahlenliste (Chips): höchstens fünf, eindeutig, in der Reihenfolge des
+/// Chefs. Eine Liste, die davon abweicht (mehr Einträge, Doppel, keine Zahl),
+/// bleibt wörtlich in [fremd], die Kasse arbeitet mit dem bereinigten Teil.
+List<double> _zahlenliste(Map<String, dynamic> g, String feld, List<double> standard, Map<String, Object> fremd) {
+  final wert = g[feld];
+  if (wert is! List) {
+    if (wert is String || wert is num) fremd[feld] = wert as Object;
+    return standard;
+  }
   final out = <double>[];
   for (final e in wert) {
     final zahl = e is num ? e.toDouble() : null;
@@ -1158,5 +1248,6 @@ List<double> _zahlenliste(Object? wert, List<double> standard) {
     out.add(zahl);
     if (out.length == 5) break;
   }
+  if (out.length != wert.length) fremd[feld] = List<Object?>.unmodifiable(wert);
   return out;
 }

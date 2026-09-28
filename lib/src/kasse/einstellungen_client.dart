@@ -64,9 +64,9 @@ class KasseEinstellungenClient {
     return KasseSettingsBetrieb.ausJson(_stand(name, daten, 'business'));
   }
 
-  /// Einstellungen dieses Geräts schreiben (Recht `layout`). Ändert sich eine
-  /// Taste, geht die ganze Karte der bekannten Aktionen hinaus
-  /// ([posSettingsChanges]); sie wird vorab auf Doppelbelegung geprüft.
+  /// Einstellungen dieses Geräts schreiben (Recht `layout`). `shortcuts` nur
+  /// als ganze Karte aller bekannten Aktionen ([posSettingsChanges] liefert
+  /// sie bei jeder Tastenänderung); sie wird vorab auf Doppelbelegung geprüft.
   Future<KasseSettingsGeraet> geraetSpeichern(Map<String, dynamic> aenderung) async {
     const name = Aufrufe.setMyRegisterDeviceSettings;
     if (deviceId.trim().isEmpty) {
@@ -87,9 +87,17 @@ class KasseEinstellungenClient {
         }
         tasten[aktion] = e.value;
       }
-      // Doppelbelegung innerhalb der gesendeten Karte; posSettingsChanges
-      // sendet bei jeder Tastenänderung die ganze Karte, so ist das die ganze
-      // Belegung.
+      // Nur die ganze Karte: der Server prüft Doppelbelegungen nur in der
+      // gesendeten Karte, eine halbe (`{cash: ['Mod+K']}`) ließe eine
+      // Doppelbelegung mit einer gespeicherten Taste durch.
+      final fehlt = kasseTastenAktionen.where((a) => !tasten.containsKey(a)).toList();
+      if (fehlt.isNotEmpty) {
+        throw KasseneckValidationError(
+            name,
+            'device.shortcuts: ganze Karte senden (posSettingsChanges), es fehlen ${fehlt.join(', ')}',
+            'request');
+      }
+      // Doppelbelegung in der ganzen Karte, also in der ganzen Belegung.
       final konflikt = posShortcutConflict(tasten);
       if (konflikt != null) {
         throw KasseneckValidationError(

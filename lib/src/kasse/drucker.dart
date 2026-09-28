@@ -18,6 +18,10 @@ import '../register/transport.dart';
 
 /// Ein Netzwerk-Drucker des Kontos (`listMyPrinters`).
 class NetworkPrinter {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'id', 'name', 'kind', 'paperSize', 'active', 'createdAt', 'lastSeenAt', 'lastResult', 'printerSerial', 'sdpUrl'};
+
   const NetworkPrinter({
     required this.id,
     required this.name,
@@ -73,6 +77,10 @@ class NetworkPrinter {
 
 /// Ergebnis eines Drucks, wie der Drucker es meldet.
 class PrintResult {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'success', 'code', 'status', 'at'};
+
   const PrintResult({required this.success, this.code, this.status, this.at});
 
   final bool success;
@@ -107,6 +115,10 @@ bool isPrintJobFinished(String status) =>
     status == 'printed' || status == 'failed' || status == 'expired' || status == printJobStatusUnknown;
 
 class PrintJob {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'jobId', 'status', 'createdAt', 'sentAt', 'result'};
+
   const PrintJob({required this.jobId, required this.status, this.createdAt, this.sentAt, this.result});
 
   final String jobId;
@@ -119,6 +131,14 @@ class PrintJob {
 }
 
 String _status(Object? v) => v is String && printJobStatuses.contains(v) ? v : printJobStatusUnknown;
+
+String _jobId(String name, Map<String, dynamic> d) {
+  final id = d['jobId'];
+  if (id is! String || id.isEmpty) {
+    throw KasseneckValidationError(name, 'Antwort enthaelt keine Kennung (data.jobId fehlt)', 'response');
+  }
+  return id;
+}
 
 String? _text(Object? v) => v is String && v.isNotEmpty ? v : null;
 
@@ -150,7 +170,11 @@ class KasseDruckerClient {
     const name = Aufrufe.listMyPrinters;
     final daten = await transport.rufen(name);
     final liste = daten['printers'];
-    if (liste is! List) return const [];
+    if (liste is! List) {
+      // Keine Liste ist etwas anderes als eine leere Liste: „noch kein
+      // Drucker" darf nicht aussehen wie „Antwort kaputt".
+      throw const KasseneckValidationError(name, 'Antwort enthaelt keine Liste (data.printers fehlt)', 'response');
+    }
     return [
       for (final e in liste) NetworkPrinter.aus(e is Map ? Map<String, dynamic>.from(e) : const {}),
     ];
@@ -190,7 +214,9 @@ class KasseDruckerClient {
         },
       if (markeZeigen) 'brand': true,
     });
-    return PrintJob(jobId: daten['jobId']?.toString() ?? '', status: _status(daten['status']));
+    // Ohne Kennung kann niemand den Job abfragen; ein leerer Text wäre ein
+    // angeblich angelegter Job, und der Kassier druckte ein zweites Mal.
+    return PrintJob(jobId: _jobId(name, daten), status: _status(daten['status']));
   }
 
   /// Stand eines Druckjobs. Der Aufrufer fragt, bis [isPrintJobFinished] wahr
@@ -204,7 +230,7 @@ class KasseDruckerClient {
     final d = await transport.rufen(name, params: {'printerId': printerId, 'jobId': jobId});
     final e = d['result'];
     return PrintJob(
-      jobId: d['jobId']?.toString() ?? jobId,
+      jobId: _jobId(name, d),
       status: _status(d['status']),
       createdAt: _zahl(d['createdAt']),
       sentAt: _zahl(d['sentAt']),

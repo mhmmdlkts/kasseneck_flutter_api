@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -43,21 +44,40 @@ const _nichtDieserWeg = {
   'createReceipt/start_receipt': 'Startbeleg: Panel bzw. API-Schlüssel, nicht der Verkauf der Kasse',
   'createReceipt/receipt_type_unknown': 'receiptType ist hier fest standard',
   'createReceipt/tip_on_start': 'Startbeleg mit Trinkgeld: Weg des API-Schlüssels',
-  'createReceipt/without_token': 'ohne Positionen und Zahlungen, der Verkauf baut so keine Anfrage',
-  'createReceipt/cashregister_missing': 'paymentMethod aus 0.x, sendet dieser Weg nie',
-  'createReceipt/session_other_cashregister': 'paymentMethod aus 0.x, sendet dieser Weg nie',
-  'createReceipt/module_off': 'paymentMethod aus 0.x, sendet dieser Weg nie',
+  'createReceipt/cashregister_missing':
+      'ohne cashregisterId: der Sitzungs-Transport legt die Kasse jeder Nutzlast bei, so geht dieser Weg nie hinaus',
   'createReceipt/payments_conflict': 'paymentMethod neben payments, sendet dieser Weg nie',
   'cancelReceipt/payments_conflict': 'paymentMethod am Storno, sendet dieser Weg nie',
   'cancelReceipt/card_data_without_card': 'cardPaymentId am Storno, sendet dieser Weg nie',
   'cancelReceipt/items_no_array': 'items ist hier immer eine Liste (Stornoposition)',
 };
 
+/// Fälle, deren Fehler die Kasse beim Verkauf im Alltag sieht (Anmeldung
+/// abgelaufen, andere Kasse, Modul aus), die der Export aber mit der alten
+/// Einzelzahlart (bzw. ohne Positionen) aufgezeichnet hat. Der Handler bricht
+/// vor dem Lesen der Zahlungen ab; der Verkauf schickt dieselbe Anfrage mit
+/// `payments` statt `paymentMethod` (und einer Position, wo keine stand).
+const _mitZahlungen = {'without_token', 'session_other_cashregister', 'module_off'};
+
+Map<String, dynamic> _alsVerkauf(Map<String, dynamic> fall) {
+  final p = Map<String, dynamic>.from(fall['params'] as Map);
+  final items = (p['items'] as List?) ?? [
+    {'name': 'Kaffee', 'amount': 2, 'priceOneCents': 320, 'vat': 20},
+  ];
+  final summe = items.fold<int>(0, (s, i) => s + ((i as Map)['amount'] as int) * (i['priceOneCents'] as int));
+  final methode = p.remove('paymentMethod') ?? 'cash';
+  p['items'] = items;
+  p['payments'] = [
+    {'method': methode, 'amountCents': summe},
+  ];
+  return {...fall, 'params': p};
+}
+
 Iterable<Map<String, dynamic>> _faelle(String endpunkt) =>
     ((_endpunkte[endpunkt] as Map)['cases'] as List).cast<Map<String, dynamic>>().where((f) {
       final p = f['params'];
       return f['method'] == 'POST' && p is Map && !p.containsKey(r'$body');
-    });
+    }).map((f) => endpunkt == 'createReceipt' && _mitZahlungen.contains(f['case']) ? _alsVerkauf(f) : f);
 
 Map<String, dynamic> _fall(String endpunkt, String name) =>
     ((_endpunkte[endpunkt] as Map)['cases'] as List).cast<Map<String, dynamic>>().firstWhere((f) => f['case'] == name);
@@ -759,6 +779,233 @@ void main() {
       expect(lauf.params['business'], {'theme': 'night'});
     });
   });
+
+  group('Nachbesserung Runde 1', () {
+    test('F2: Anmeldung abgelaufen, andere Kasse, Modul aus kommen am Verkauf mit Code und Daten an', () async {
+      for (final (name, code) in [
+        ('without_token', 'unauthorized'),
+        ('session_other_cashregister', 'session_other_cashregister'),
+        ('module_off', 'module_inactive'),
+      ]) {
+        final fall = _faelle('createReceipt').firstWhere((f) => f['case'] == name);
+        final lauf = await _rufe('createReceipt', fall);
+        expect(lauf!.log, hasLength(1), reason: name);
+        expect(lauf.params['payments'], isNotEmpty, reason: name);
+        expect(lauf.params.containsKey('paymentMethod'), isFalse, reason: name);
+        expect(lauf.fehler, isA<KasseneckApiError>()
+            .having((e) => e.code, 'code', code)
+            .having((e) => e.outcome, 'outcome', ErrorOutcome.rejected)
+            .having((e) => e.details['code'], 'details.code', code), reason: name);
+      }
+    });
+
+    test('F4: Verkauf trägt TESTSIGNATUR der Antwort, Storno übernimmt sie vom Original', () async {
+      final verkauf = await _rufe('createReceipt', _fall('createReceipt', 'sale_payments'));
+      final original = verkauf!.ergebnis as KasseneckReceipt;
+      expect(original.testSignature, isTrue, reason: 'sale_payments trägt testSignature');
+
+      final storno = jsonDecode(File('test/fixtures/vertrag/v3/antworten/storno.json').readAsStringSync()) as Map;
+      final ganz = (storno['cases'] as List).cast<Map<String, dynamic>>().firstWhere(
+          (f) => f['channel'] == 'app' && f['response']['status'] == 'success');
+      final fall = {
+        'headers': const {'Kasseneck-Api-Version': 'v3'},
+        'httpStatus': 200,
+        'response': ganz['response'],
+      };
+      Future<KasseneckReceipt> stornieren({required bool testKasse}) async {
+        original.testCashregister = testKasse;
+        final client = RegisterReceiptClient(_transport(_mock(fall, _Lauf()), 'KASSE1'));
+        final e = await client.stornieren(originalReceiptId: original.receiptId, grund: 'input_error', original: original);
+        return e.beleg;
+      }
+
+      final mitSignatur = await stornieren(testKasse: false);
+      expect(mitSignatur.testSignature, isTrue, reason: 'TESTSIGNATUR des Originals');
+      expect(mitSignatur.testCashregister, isFalse);
+      final testKasse = await stornieren(testKasse: true);
+      expect(testKasse.testCashregister, isTrue, reason: 'TESTKASSE des Originals');
+      expect(testKasse.testSignature, isFalse, reason: 'TESTKASSE verdrängt TESTSIGNATUR');
+    });
+
+    test('F6: shortcuts nur als ganze Karte, sonst geht nichts hinaus', () async {
+      final lauf = _Lauf();
+      final c = KasseEinstellungenClient(_transport(_mock(_fallErfolg('setMyRegisterDeviceSettings'), lauf), 'KASSE1'),
+          deviceId: 'dev_pin');
+      await expectLater(
+          c.geraetSpeichern({'shortcuts': {'cash': ['Mod+K']}}),
+          throwsA(isA<KasseneckValidationError>()
+              .having((e) => e.kind, 'kind', 'request')
+              .having((e) => e.reason, 'reason', contains('ganze Karte'))));
+      expect(lauf.log, isEmpty);
+      // Über posSettingsChanges geht bei einer Tastenänderung die ganze Karte,
+      // und eine Doppelbelegung mit einer gespeicherten Taste fällt auf.
+      const vorher = KasseSettingsGeraet();
+      final doppelt = posSettingsChanges(vorher.toJson(), vorher.mit({'shortcuts': {'cash': ['Mod+K']}}).toJson());
+      await expectLater(c.geraetSpeichern(doppelt),
+          throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', contains('Mod+K schon belegt'))));
+      expect(lauf.log, isEmpty);
+    });
+
+    test('F7: fehlende Druckerliste oder fehlende Job-Kennung ist ein Antwortfehler', () async {
+      Future<Object?> mit(String ep, Map<String, dynamic> daten, Future<Object?> Function(KasseDruckerClient) rufen) async {
+        final c = KasseDruckerClient(_transport(
+            _mock({
+              'headers': const {'Kasseneck-Api-Version': 'v3'},
+              'httpStatus': 200,
+              'response': {'status': 'success', 'data': daten},
+            }, _Lauf()),
+            'KASSE1'));
+        try {
+          return await rufen(c);
+        } catch (e) {
+          return e;
+        }
+      }
+
+      final layout = BelegLayout.fromJson(_fall('createPrintJob', 'success_cashregister')['params']['layout'])!;
+      final antwortfehler = isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response');
+      expect(await mit('listMyPrinters', {}, (c) => c.drucker()), antwortfehler);
+      expect(await mit('listMyPrinters', {'printers': []}, (c) => c.drucker()), isEmpty);
+      expect(await mit('createPrintJob', {'status': 'pending'}, (c) => c.druckjobAnlegen(printerId: 'dr', layout: layout)),
+          antwortfehler);
+      expect(await mit('createPrintJob', {'jobId': '', 'status': 'pending'},
+          (c) => c.druckjobAnlegen(printerId: 'dr', layout: layout)), antwortfehler);
+      expect(await mit('getPrintJob', {'status': 'printed'}, (c) => c.druckjobHolen(printerId: 'dr', jobId: 'j')),
+          antwortfehler);
+    });
+
+    group('F8: Feldmengen der Erfolgsantworten', () {
+      // Pfad in der Antwort -> Felder, die das Modell liest, und Felder, die
+      // der Vertrag heute nicht in jedem Fall zeigt (optional).
+      final modelle = <String, (Set<String>, Set<String>)>{
+        'pairRegisterDevice': (PairedRegisterDevice.felder, const {}),
+        'listRegisterUsersForDevice': (RegisterDeviceUsers.felder, const {}),
+        'listRegisterUsersForDevice.users[]': (RegisterUserSummary.felder, const {}),
+        'listRegisterUsersForDevice.policy': (RegisterPinPolicy.felder, const {}),
+        'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.felder, const {}),
+        'listRegisterSessionsForDevice': (RegisterSessionsStand.felder, const {}),
+        'listRegisterSessionsForDevice.sessions[]': (RegisterSession.felder, const {}),
+        'registerUserLogin': (RegisterUserSession.felder, const {}),
+        'registerUserLogin.user': (RegisterUser.felder, const {}),
+        'registerPinLogin': (RegisterUserSession.felder, const {}),
+        'registerPinLogin.user': (RegisterUser.felder, const {}),
+        'renewRegisterSession': (const {'expiresAt'}, const {}),
+        'listMyCashregisters': (const {'cashregisters'}, const {}),
+        'listMyCashregisters.cashregisters[]': (KassenEintrag.felder, const {}),
+        'listMyCashregisters.cashregisters[].onboarding': (KassenInbetriebnahme.felder, const {}),
+        'generateFullReceiptId': (const {'fullReceiptId'}, const {}),
+        'listMyArticleGroups': (const {'groups'}, const {}),
+        'listMyArticleGroups.groups[]': (Artikelgruppe.felder, const {'symbol', 'vatRate'}),
+        'listMyArticles': (const {'articles'}, const {}),
+        'listMyArticles.articles[]': (KasseArtikel.felder, const {'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity'}),
+        'listMyArticles.articles[].tile': (KasseArtikel.kachelFelder, const {}),
+        'setMyKasseLogo': (const {'logoImage'}, const {}),
+        'listMyPrinters': (const {'printers'}, const {}),
+        'listMyPrinters.printers[]': (NetworkPrinter.felder, const {}),
+        'listMyPrinters.printers[].lastResult': (PrintResult.felder, const {'status'}),
+        'createPrintJob': (PrintJob.felder, const {'createdAt', 'sentAt', 'result'}),
+        'getPrintJob': (PrintJob.felder, const {}),
+        'getPrintJob.result': (PrintResult.felder, const {}),
+        'listMyTipRecipients': (const {'recipients'}, const {}),
+        'listMyTipRecipients.recipients[]': (KeckTipPerson.felder, const {}),
+      };
+      // Ohne Nutzlast, die ein Modell liest: Bestätigungen (ok, id).
+      const ohneModell = {'endRegisterSession', 'unpairRegisterDevice'};
+      // Rohdaten bzw. eigene Prüfung: Einstellungen (verlustfrei getestet),
+      // Belegkopf (Rohdaten), Rechte (RegisterUserPerms kennt jeden Schlüssel).
+      const roh = {'settings', 'receiptHeader', 'perms', 'business', 'device'};
+      // Einstellungen: der Test „jede Einstellungs-Antwort liest sich verlustfrei“.
+      const einstellungen = {'getKasseSettings', 'setMyKasseSettings', 'setMyRegisterDeviceSettings'};
+
+      Map<String, Set<String>> gesendet() {
+        final pfade = <String, Set<String>>{};
+        void lauf(String pfad, Object? v) {
+          if (v is Map) {
+            (pfade[pfad] ??= {}).addAll(v.keys.cast<String>());
+            for (final e in v.entries) {
+              if (!roh.contains(e.key)) lauf('$pfad.${e.key}', e.value);
+            }
+          } else if (v is List) {
+            for (final x in v) {
+              lauf('$pfad[]', x);
+            }
+          }
+        }
+
+        for (final ep in [..._anmeldung, ..._kassenAufrufe, 'listMyCashregisters', 'generateFullReceiptId']) {
+          if (ohneModell.contains(ep) || einstellungen.contains(ep)) continue;
+          for (final f in _faelle(ep).where((f) => f['response']['status'] == 'success')) {
+            lauf(ep, f['response']['data']);
+          }
+        }
+        return pfade;
+      }
+
+      test('jedes gesendete Feld liest ein Modell, jedes gelesene Feld sendet der Vertrag', () {
+        final pfade = gesendet();
+        expect(pfade.keys.toSet(), modelle.keys.toSet(), reason: 'jede Sicht hat ein Modell');
+        for (final e in modelle.entries) {
+          final (felder, optional) = e.value;
+          final da = pfade[e.key]!;
+          expect(da.difference(felder), isEmpty, reason: '${e.key}: gesendet, aber nicht gelesen');
+          expect(felder.difference(da).difference(optional), isEmpty, reason: '${e.key}: gelesen, aber nie gesendet');
+        }
+      });
+
+      test('die Modelle mit öffentlichem Leser lesen genau ihre Felder', () {
+        Set<String> gelesen(Map<String, dynamic> roh, void Function(Map<String, dynamic>) lesen) {
+          final spur = <String>{};
+          lesen(_Mitschreiber(roh, '', spur));
+          return spur;
+        }
+
+        final beispiele = <(Set<String>, Map<String, dynamic>, void Function(Map<String, dynamic>))>[
+          (
+            {...KasseArtikel.felder, for (final k in KasseArtikel.kachelFelder) 'tile.$k'},
+            {for (final f in KasseArtikel.felder) f: null, 'tile': {'visible': true, 'sort': 1}},
+            KasseArtikel.aus,
+          ),
+          (Artikelgruppe.felder, {for (final f in Artikelgruppe.felder) f: null}, Artikelgruppe.aus),
+          (
+            {...NetworkPrinter.felder, for (final k in PrintResult.felder) 'lastResult.$k'},
+            {for (final f in NetworkPrinter.felder) f: null, 'lastResult': {for (final k in PrintResult.felder) k: null}},
+            NetworkPrinter.aus,
+          ),
+          (
+            {...KassenEintrag.felder, for (final k in KassenInbetriebnahme.felder) 'onboarding.$k'},
+            {for (final f in KassenEintrag.felder) f: null, 'onboarding': {for (final k in KassenInbetriebnahme.felder) k: null}},
+            KassenEintrag.aus,
+          ),
+          (KeckTipPerson.felder, {for (final f in KeckTipPerson.felder) f: null}, KeckTipPerson.aus),
+        ];
+        for (final (soll, roh, lesen) in beispiele) {
+          expect(gelesen(roh, lesen), soll);
+        }
+      });
+    });
+
+    group('F1: mit() weist unbekannte und deutsche Schlüssel laut ab', () {
+      test('das Beispiel des Reviews: qrModus statt qrMode', () {
+        const g = KasseSettingsGeraet();
+        expect(() => g.mit({'qrModus': 'raster'}),
+            throwsA(isA<ArgumentError>().having((e) => e.message, 'message', allOf(contains('device.qrModus'), contains('qrMode')))));
+        expect(g.mit({'qrMode': 'raster'}).qrMode, KasseQrModus.raster);
+      });
+
+      test('unbekannter Schlüssel, deutscher Wert, deutsche Tasten-Aktion', () {
+        const b = KasseSettingsBetrieb();
+        expect(() => b.mit({'stil': 'night'}), throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('business.stil'))));
+        expect(() => b.mit({'gibtsnicht': 1}), throwsA(isA<ArgumentError>()));
+        expect(() => b.mit({'theme': 'nacht'}), throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('night'))));
+        expect(() => const KasseSettingsGeraet().mit({'shortcuts': {'bar': ['F2']}}),
+            throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('cash'))));
+      });
+
+      test('ein unbekannter englischer Wert bleibt erlaubt (künftiger Wert des Servers)', () {
+        expect(const KasseSettingsBetrieb().mit({'theme': 'sepia'}).fremdeWerte, {'theme': 'sepia'});
+      });
+    });
+  });
 }
 
 Map<String, dynamic> _fallMitCode(String endpunkt, String code) => _faelle(endpunkt)
@@ -766,3 +1013,32 @@ Map<String, dynamic> _fallMitCode(String endpunkt, String code) => _faelle(endpu
 
 Map<String, dynamic> _fallErfolg(String endpunkt) =>
     _faelle(endpunkt).firstWhere((f) => f['response']['status'] == 'success');
+
+/// Eine Map, die mitschreibt, welche Schlüssel gelesen werden (auch in
+/// verschachtelten Maps, als `aussen.innen`).
+class _Mitschreiber extends MapBase<String, dynamic> {
+  _Mitschreiber(this._innen, this._vorsilbe, this._spur);
+
+  final Map<String, dynamic> _innen;
+  final String _vorsilbe;
+  final Set<String> _spur;
+
+  @override
+  dynamic operator [](Object? key) {
+    _spur.add('$_vorsilbe$key');
+    final wert = _innen[key];
+    return wert is Map ? _Mitschreiber(Map<String, dynamic>.from(wert), '$_vorsilbe$key.', _spur) : wert;
+  }
+
+  @override
+  void operator []=(String key, dynamic value) => _innen[key] = value;
+
+  @override
+  void clear() => _innen.clear();
+
+  @override
+  Iterable<String> get keys => _innen.keys;
+
+  @override
+  dynamic remove(Object? key) => _innen.remove(key);
+}

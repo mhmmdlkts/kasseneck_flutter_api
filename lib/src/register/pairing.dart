@@ -89,6 +89,10 @@ class RegisterGeo {
 /// `deviceSecret` (und `cashregisterId` beim Login); ein Gerät, das mit 9.x
 /// gekoppelt wurde, meldet sich darum ohne neue Kopplung an.
 class PairedRegisterDevice {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'deviceId', 'deviceSecret', 'ownerUid', 'cashregisterId', 'companyName', 'cashregisterLabel', 'testEnvironment'};
+
   const PairedRegisterDevice({
     required this.ownerUid,
     required this.deviceId,
@@ -127,6 +131,10 @@ enum RegisterUserKind { person, device }
 
 /// Ein Kassen-Benutzer, wie ihn der Anmeldebildschirm zeigt.
 class RegisterUserSummary {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'id', 'name', 'kind', 'pinPolicyOutdated'};
+
   const RegisterUserSummary({
     required this.id,
     required this.name,
@@ -147,6 +155,10 @@ class RegisterUserSummary {
 
 /// PIN-Regel des Betriebs — daraus baut die Kasse Kästchen und Tastatur.
 class RegisterPinPolicy {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'length', 'charset'};
+
   const RegisterPinPolicy({required this.length, required this.charset});
 
   /// Feste Stellenzahl (Backend: 3 bis 6).
@@ -165,6 +177,10 @@ enum RegisterLoginMode { selectUser, pin }
 /// Darf die gebundene Kasse Belege erstellen? `ready: false` mit dem Grund
 /// (Menschentext) etwa bei fehlender Signaturkarte oder fehlendem Startbeleg.
 class RegisterCashregisterState {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'ready', 'reason'};
+
   const RegisterCashregisterState({required this.ready, this.reason});
 
   final bool ready;
@@ -173,6 +189,10 @@ class RegisterCashregisterState {
 
 /// Antwort von [RegisterClient.listRegisterUsersForDevice].
 class RegisterDeviceUsers {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'users', 'policy', 'loginMode', 'locationLock', 'testEnvironment', 'settings', 'receiptHeader', 'cashregister'};
+
   const RegisterDeviceUsers({
     required this.users,
     required this.policy,
@@ -307,6 +327,10 @@ class RegisterUserPerms {
 
 /// Der angemeldete Kassen-Benutzer.
 class RegisterUser {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'id', 'name', 'perms'};
+
   const RegisterUser({required this.id, required this.name, required this.perms});
 
   final String id;
@@ -320,6 +344,10 @@ class RegisterUser {
 /// Kassier sieht, WELCHE Sitzung weichen soll, und gibt ihre [id] als
 /// `takeoverSessionId` mit.
 class RegisterSession {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'id', 'deviceId', 'deviceLabel', 'startedAt', 'expiresAt', 'own', 'userName'};
+
   const RegisterSession({
     required this.id,
     required this.deviceId,
@@ -346,6 +374,10 @@ class RegisterSession {
 
 /// Antwort von [RegisterClient.listRegisterSessionsForDevice].
 class RegisterSessionsStand {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'licenses', 'sessions'};
+
   const RegisterSessionsStand({required this.licenses, required this.sessions});
 
   /// Lizenzplätze der Kasse — mindestens 1.
@@ -355,6 +387,10 @@ class RegisterSessionsStand {
 }
 
 class RegisterUserSession {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> felder = {'customToken', 'sessionId', 'expiresAt', 'user'};
+
   const RegisterUserSession({
     required this.customToken,
     required this.sessionId,
