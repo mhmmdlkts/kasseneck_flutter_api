@@ -18,7 +18,7 @@ KasseneckApi apiWith(MockClient client) => KasseneckApi(
     );
 
 http.Response huelle(Map<String, dynamic> j) =>
-    http.Response(jsonEncode(j), 200, headers: {'content-type': 'application/json'});
+    http.Response(jsonEncode(j), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
 
 Map<String, dynamic> stornoAntwort() => {
       'status': 'success',
@@ -46,7 +46,7 @@ void main() {
       anmerkung: 'Auftrag abgesagt',
     );
 
-    expect(gesendet.url.toString(), 'https://api.kasseneck.at/v1/cancelReceipt');
+    expect(gesendet.url.toString(), 'https://api.kasseneck.at/v3/cancelReceipt');
     expect(gesendet.headers['Authorization'], 'Bearer test-key');
     final params = (jsonDecode(gesendet.body) as Map)['params'] as Map;
     expect(params, {

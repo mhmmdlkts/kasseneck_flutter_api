@@ -23,8 +23,21 @@ import 'transport.dart';
 import 'vertrag.dart';
 
 class RechnungApi {
-  RechnungApi({required String apiKey, String? baseUrl, http.Client? httpClient, Duration? timeout})
-      : _transport = RechnungTransport(apiKey: apiKey, baseUrl: baseUrl, httpClient: httpClient, timeout: timeout);
+  RechnungApi({
+    required String apiKey,
+    String? baseUrl,
+    http.Client? httpClient,
+    Duration? timeout,
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
+  }) : _transport = RechnungTransport(
+          apiKey: apiKey,
+          baseUrl: baseUrl,
+          httpClient: httpClient,
+          timeout: timeout,
+          clientHeader: clientHeader,
+          omitKasseneckHeaders: omitKasseneckHeaders,
+        );
 
   /// Mit einem bereits gebauten Transport (Tests, eigene Adresse).
   RechnungApi.mitTransport(RechnungTransport transport) : _transport = transport;

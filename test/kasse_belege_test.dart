@@ -58,7 +58,7 @@ Map<String, dynamic> huelleMitBeleg({
     return http.Response(
       antwort is String ? antwort : jsonEncode(antwort),
       200,
-      headers: {'content-type': 'application/json'},
+      headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
     );
   });
   return (

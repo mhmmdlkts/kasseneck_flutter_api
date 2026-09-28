@@ -26,7 +26,7 @@ KasseneckApi apiWith(MockClient client) => KasseneckApi(
     );
 
 http.Response huelle(Map<String, dynamic> j) =>
-    http.Response(jsonEncode(j), 200, headers: {'content-type': 'application/json'});
+    http.Response(jsonEncode(j), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
 
 MockClient nieGerufen() => MockClient((r) async => fail('darf nicht rausgehen: ${r.url}'));
 

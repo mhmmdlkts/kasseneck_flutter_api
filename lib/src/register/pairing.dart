@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../aufrufe.dart';
 import '../kasse/einstellungen.dart';
+import '../v3.dart';
 import 'fehler.dart';
 import 'transport.dart';
 
@@ -344,12 +345,26 @@ class RegisterUserSession {
 
 /// Die anmeldungsfreien Aufrufe rund um Kopplung und Anmeldung.
 class RegisterClient {
-  RegisterClient({String? baseUrl, http.Client? httpClient, Duration? timeout})
-      : _baseUrl = ohneSchraegstrich(baseUrl ?? kRegisterBaseUrl),
+  /// [baseUrl] muss auf `/v3` enden (die Web-Kasse: `/api/v3`), sonst wirft
+  /// schon das Anlegen. [clientHeader] und [omitKasseneckHeaders] wie bei
+  /// [RegisterTransport]; beide gelten auch fuer [sitzung].
+  RegisterClient({
+    String? baseUrl,
+    http.Client? httpClient,
+    Duration? timeout,
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
+  })  : _baseUrl = v3BaseUrl('RegisterClient', baseUrl, kRegisterBaseUrl),
+        _kopf = V3Headers('RegisterClient', clientHeader: clientHeader, omit: omitKasseneckHeaders),
+        _clientHeader = clientHeader,
+        _omit = omitKasseneckHeaders,
         _http = httpClient ?? http.Client(),
         _timeout = timeout ?? const Duration(seconds: 30);
 
   final String _baseUrl;
+  final V3Headers _kopf;
+  final String? _clientHeader;
+  final bool _omit;
   final http.Client _http;
   final Duration _timeout;
 
@@ -590,6 +605,8 @@ class RegisterClient {
       baseUrl: _baseUrl,
       httpClient: _http,
       timeout: _timeout,
+      clientHeader: _clientHeader,
+      omitKasseneckHeaders: _omit,
     );
   }
 
@@ -599,52 +616,31 @@ class RegisterClient {
     // Programmierfehler und keine Netzstoerung.
     final String rumpf = jsonEncode({'params': params});
 
-    final http.Response antwort;
-    try {
-      antwort = await _http
-          .post(
-            Uri.parse('$_baseUrl/$name'),
-            headers: const {'Content-Type': 'application/json'},
-            body: rumpf,
-          )
-          .timeout(_timeout);
-    } on TimeoutException catch (e) {
-      // Getrennt vom Netzfehler: die Anfrage war draussen. Bei
-      // `pairRegisterDevice` heisst das, dass die Kopplung serverseitig
-      // vollzogen und der Code verbraucht sein kann — ein neuer Versuch mit
-      // demselben Code laeuft dann ins Leere.
-      throw KasseneckHttpError(name, 0, KasseneckHttpError.zeitablauf, causeType: '${e.runtimeType}');
-    } on Object catch (e) {
-      // Die Meldung kann Werte des Rumpfs tragen (manche Clients haengen ihn
-      // an) — deshalb nur der Typ, nie der Text. Hier faehrt PIN und
-      // Geraetegeheimnis im Rumpf mit.
-      throw KasseneckHttpError(name, 0, KasseneckHttpError.netz, causeType: '${e.runtimeType}');
-    }
+    // Zeitlimit getrennt vom Netzfehler: die Anfrage war draussen. Bei
+    // `pairRegisterDevice` heisst das, dass die Kopplung serverseitig
+    // vollzogen und der Code verbraucht sein kann; ein neuer Versuch mit
+    // demselben Code laeuft dann ins Leere. Von der Ursache nur der Typ: hier
+    // fahren PIN und Geraetegeheimnis im Rumpf mit.
+    final antwort = await v3Post(
+      _http,
+      functionName: name,
+      basis: _baseUrl,
+      name: name,
+      headers: const {'Content-Type': 'application/json'},
+      kasseneck: _kopf,
+      body: rumpf,
+      timeout: _timeout,
+    );
 
-    Object? roh;
-    try {
-      roh = jsonDecode(antwort.body);
-    } on FormatException {
-      throw KasseneckHttpError(name, antwort.statusCode, 'not-json');
-    }
-    if (roh is! Map) throw KasseneckHttpError(name, antwort.statusCode, 'missing-status');
-    final huelle = Map<String, dynamic>.from(roh);
+    final huelle = readEnvelope(name, antwort);
     if (huelle['status'] == 'success') {
-      final daten = huelle['data'];
       // Fehlendes `data` ist erlaubt; ein `data`, das da ist und kein Objekt
-      // ist, ist kaputt und darf nicht als leeres Objekt durchgehen — siehe
-      // dieselbe Stelle in `transport.dart`.
-      if (daten == null) return <String, dynamic>{};
-      if (daten is! Map) {
-        throw KasseneckHttpError(name, antwort.statusCode, 'data-not-object');
-      }
-      return Map<String, dynamic>.from(daten);
+      // ist, ist kaputt und darf nicht als leeres Objekt durchgehen.
+      return envelopeData(name, huelle, antwort.statusCode);
     }
     // Alles, was nicht ausdrücklich Erfolg ist, gilt als fachlicher Fehler —
     // ein unbekannter Statuswert darf nie stillschweigend durchgehen.
-    final meldung = huelle['message'];
-    throw KasseneckApiError(name, meldung is String && meldung.isNotEmpty ? meldung : 'Der Aufruf ist fehlgeschlagen.',
-        code: fehlercodeAus(huelle));
+    throw envelopeError(name, huelle);
   }
 
   /// Die Sitzungsantwort beider Anmeldewege — ein Vertrag, eine Lesart.
@@ -762,6 +758,8 @@ class RegisterSessionClient {
     String? baseUrl,
     http.Client? httpClient,
     Duration? timeout,
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
   }) : transport = RegisterTransport(
           idToken: idToken,
           sessionId: sessionId,
@@ -769,6 +767,8 @@ class RegisterSessionClient {
           baseUrl: baseUrl,
           httpClient: httpClient,
           timeout: timeout,
+          clientHeader: clientHeader,
+          omitKasseneckHeaders: omitKasseneckHeaders,
         );
 
   /// Aus einem bestehenden Transport — so teilen Sitzung, Belege und

@@ -6,3 +6,4 @@
 library;
 
 export 'src/register/pairing.dart';
+export 'src/v3.dart' show kPublicBaseUrl, kPosBaseUrl;

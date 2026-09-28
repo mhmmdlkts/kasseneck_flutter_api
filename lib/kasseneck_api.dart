@@ -30,6 +30,7 @@ import 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
 import 'src/kasse/belegmail.dart' show Belegmailergebnis, belegMailFehlercodes;
 import 'src/kasse/storno.dart' show stornogruende;
 import 'src/register/fehler.dart';
+import 'src/v3.dart';
 
 export 'src/hobex_cloud/hobex_cloud_payments.dart'
     show HobexCloudPayments, HobexCloudResult;
@@ -45,7 +46,16 @@ export 'models/hobex_receipt.dart' show HobexReceipt;
 // Signatur ist etwas anderes als ein fehlgeschlagener Verkauf, und
 // unterscheiden kann das nur, wer den Typ benennen darf.
 export 'src/register/fehler.dart'
-    show KasseneckApiError, KasseneckHttpError, KasseneckReceiptFormatError, KasseneckValidationError;
+    show
+        ErrorOutcome,
+        KasseneckApiError,
+        KasseneckHttpError,
+        KasseneckReceiptFormatError,
+        KasseneckValidationError,
+        clientErrorCodes,
+        isOutcomeUnknown;
+// Die beiden Basen der 10.x-Linie (nur /v3).
+export 'src/v3.dart' show kPublicBaseUrl, kPosBaseUrl;
 // Der Storno mit Bezug (KasseneckApi.stornieren) liefert und nimmt diese Typen
 // -- ohne sie waere er aus diesem Barrel nicht benutzbar.
 export 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
@@ -104,7 +114,8 @@ export 'widgets/keck_beleg_blatt_widget.dart' show KeckBelegBlattWidget;
 /// );
 /// ```
 class KasseneckApi {
-  static final String _baseUrl = 'https://api.kasseneck.at/v1';
+  /// Die oeffentliche Basis: alle Aufrufe dieses Clients sind oeffentlich.
+  static const String _baseUrl = kPublicBaseUrl;
   static final String downloadBaseUrl = 'https://beleg.kasseneck.at';
   final String apiKey;
   final String cashregisterToken;
@@ -122,7 +133,14 @@ class KasseneckApi {
     this.readTimeout = const Duration(seconds: 30),
     this.cardTimeout = const Duration(minutes: 3),
     this.signatureTimeout = const Duration(seconds: 90),
-  }) : _http = httpClient ?? http.Client();
+    String? clientHeader,
+    bool omitKasseneckHeaders = false,
+  })  : _http = httpClient ?? http.Client(),
+        _kopf = V3Headers('KasseneckApi', clientHeader: clientHeader, omit: omitKasseneckHeaders);
+
+  /// Kasseneck-Kopfzeilen der Anfragen ([clientHeader] nennt die App in der
+  /// Zaehlung des Backends, Vorgabe `kasseneck_api/<version>`).
+  final V3Headers _kopf;
 
   /// Frist fuer lesende Aufrufe und fuer schreibende ohne Signatur.
   final Duration readTimeout;
@@ -146,64 +164,47 @@ class KasseneckApi {
   /// im Zahlweg eine durchgelaufene Zahlung als Fehlschlag gemeldet.
   final Duration cardTimeout;
 
-  Future<dynamic> _kasseneckPostRequest(
-      {required String endpoint, Map<String, dynamic> params = const {}, Duration? deadline}) async {
-    Uri uri = Uri.parse('$_baseUrl/$endpoint');
-
-    final headers = {
-      'Authorization': 'Bearer $apiKey',
-      'cashregister-token': cashregisterToken,
-      'Content-Type': 'application/json',
-    };
-
-    final response = await _http.post(
-      uri,
-      headers: headers,
-      body: jsonEncode({
-        'params': params,
-      }),
-      // Ohne Frist bleibt ein haengender Request fuer immer offen — der Aufrufer
-      // bekommt weder Ergebnis noch Fehler. Die Frist ist je Aufruf waehlbar:
-      // ein Kartenaufruf braucht deutlich mehr Zeit als eine Belegabfrage.
-    ).timeout(deadline ?? readTimeout);
-
-    if (response.statusCode == 200 && response.body.isNotEmpty) {
-      return response.body;
-    } else {
-      throw Exception(
-        'Server-Fehler beim Aufruf von $endpoint: ${response.statusCode} - ${response.body}',
-      );
-    }
+  /// Ein Aufruf unter `/v3`, gepruefter Kopf (siehe `v3Post`): ohne
+  /// Kennzeichen `dialect_mismatch`, HTML `route_missing`, HTTP != 200
+  /// `server-error`. Netzfehler und Zeitlimit kommen als [KasseneckHttpError]
+  /// mit `outcome`; die Frist ist je Aufruf waehlbar, ein Kartenaufruf braucht
+  /// deutlich mehr Zeit als eine Belegabfrage.
+  Future<http.Response> _senden(String name, String fehlerName, Map<String, dynamic> rumpf, Duration? deadline) {
+    final body = jsonEncode(rumpf);
+    return v3Post(
+      _http,
+      functionName: fehlerName,
+      basis: _baseUrl,
+      name: name,
+      headers: {
+        'Authorization': 'Bearer $apiKey',
+        'cashregister-token': cashregisterToken,
+        'Content-Type': 'application/json',
+      },
+      kasseneck: _kopf,
+      body: body,
+      timeout: deadline ?? readTimeout,
+    );
   }
+
+  /// Der Rumpf einer Antwort mit HTTP 200 und Kennzeichen; leer ist ein
+  /// [KasseneckHttpError] `empty-body` (bei signierenden Aufrufen Ausgang unklar).
+  static String _rumpf(String fehlerName, http.Response response) {
+    if (response.body.isEmpty) {
+      throw KasseneckHttpError(fehlerName, response.statusCode, 'empty-body', outcome: unreadableOutcome(fehlerName));
+    }
+    return response.body;
+  }
+
+  Future<dynamic> _kasseneckPostRequest(
+      {required String endpoint, Map<String, dynamic> params = const {}, Duration? deadline}) async =>
+      _rumpf(endpoint, await _senden(endpoint, endpoint, {'params': params}, deadline));
 
   Future<dynamic> _financeWebServicePostRequest(
       {required String method, Map<String, dynamic> params = const {}, Duration? deadline}) async {
-    Uri uri = Uri.parse('$_baseUrl/${Aufrufe.financeWebService}');
-
-    final headers = {
-      'Authorization': 'Bearer $apiKey',
-      'cashregister-token': cashregisterToken,
-      'Content-Type': 'application/json',
-    };
-
-    final response = await _http.post(
-      uri,
-      headers: headers,
-      body: jsonEncode({
-        'params': params,
-        'method': method,
-      }),
-      // Dieselbe Frist wie nebenan: eine fest verdrahtete Spanne liess den
-      // Konstruktorparameter `readTimeout` hier wirkungslos.
-    ).timeout(deadline ?? readTimeout);
-
-    if (response.statusCode == 200 && response.body.isNotEmpty) {
-      return response.body;
-    } else {
-      throw Exception(
-        'Server-Fehler beim Aufruf von financeWebService $method: ${response.statusCode} - ${response.body}',
-      );
-    }
+    final fehlerName = '${Aufrufe.financeWebService}/$method';
+    return _rumpf(
+        fehlerName, await _senden(Aufrufe.financeWebService, fehlerName, {'params': params, 'method': method}, deadline));
   }
 
   /// Ruft [endpoint] und gibt die Huelle `{status, data}` **geprueft** zurueck.
@@ -240,8 +241,9 @@ class KasseneckApi {
   /// entscheiden muss — und gezielt fangen kann er nur einen eigenen Typ.
   ///
   /// Der Statuscode steht fest auf 200: was hier ankommt, hat
-  /// [_kasseneckPostRequest] bereits als 200 mit nicht leerem Rumpf
-  /// durchgelassen, alles andere wirft dort.
+  /// [_kasseneckPostRequest] bereits als 200 mit Kennzeichen und nicht
+  /// leerem Rumpf durchgelassen, alles andere wirft dort. Bei einem
+  /// signierenden Aufruf ist eine unlesbare Antwort Ausgang unklar.
   static Map<String, dynamic> _huelle(String endpoint, dynamic rumpf) {
     final Object? roh;
     try {
@@ -249,10 +251,10 @@ class KasseneckApi {
     } on FormatException {
       // Der Rumpf selbst bleibt draussen: er kann eine fremde Fehlerseite
       // sein und gehoert nicht ins Protokoll.
-      throw KasseneckHttpError(endpoint, 200, 'not-json');
+      throw KasseneckHttpError(endpoint, 200, 'not-json', outcome: unreadableOutcome(endpoint));
     }
-    if (roh is! Map<String, dynamic>) {
-      throw KasseneckHttpError(endpoint, 200, 'missing-status');
+    if (roh is! Map<String, dynamic> || !roh.containsKey('status')) {
+      throw KasseneckHttpError(endpoint, 200, 'missing-status', outcome: unreadableOutcome(endpoint));
     }
     return roh;
   }
@@ -261,7 +263,7 @@ class KasseneckApi {
   static Map<String, dynamic> _daten(String endpoint, Map<String, dynamic> huelle) {
     final daten = huelle['data'];
     if (daten is! Map) {
-      throw KasseneckHttpError(endpoint, 200, 'data-not-object');
+      throw KasseneckHttpError(endpoint, 200, 'data-not-object', outcome: unreadableOutcome(endpoint));
     }
     return Map<String, dynamic>.from(daten);
   }
@@ -774,8 +776,9 @@ class KasseneckApi {
       await receipt.init();
       return receipt;
     } else {
-      final msg = resJson['message'] ?? 'Unbekannter Fehler';
-      throw Exception('createReceipt fehlgeschlagen: $msg');
+      // Mit Code und Details: `receipt_outcome_unknown` heisst Ausgang
+      // unklar, dann nachlesen statt wiederholen.
+      throw envelopeError(Aufrufe.createReceipt, resJson, fallback: 'Unbekannter Fehler');
     }
   }
 

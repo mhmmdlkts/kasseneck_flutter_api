@@ -16,7 +16,7 @@ import 'package:kasseneck_api/register.dart';
   final log = <http.Request>[];
   final mock = MockClient((r) async {
     log.add(r);
-    return http.Response(jsonEncode(antwort), 200, headers: {'content-type': 'application/json'});
+    return http.Response(jsonEncode(antwort), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
   });
   return (
     client: KasseEinstellungenClient(

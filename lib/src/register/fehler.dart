@@ -34,7 +34,49 @@ class KasseneckValidationError implements Exception {
       '${receiptId == null ? '' : ' [receiptId: $receiptId]'}';
 }
 
+/// Ausgang eines gescheiterten Aufrufs. [rejected]: nichts geschehen.
+/// [unknown]: der Vorgang kann ausgefuehrt sein (ein Beleg signiert, ein
+/// Storno gebucht); **nie wiederholen**, sondern das Ergebnis nachlesen.
+enum ErrorOutcome { unknown, rejected }
+
+/// Codes, deren Ausgang unklar ist. `response_translation_failed` nur, wenn
+/// der Rand nicht ausdruecklich `handled: false` meldet (Handler lief und
+/// lehnte ab); `handled: true` oder `null` heisst ausgefuehrt bzw. unbekannt.
+const Set<String> _ausgangUnklarCodes = {
+  'dialect_mismatch',
+  'receipt_outcome_unknown',
+  'cancellation_outcome_unknown',
+  'response_unreadable',
+};
+
+ErrorOutcome _ausgangAusCode(String? code, Map<String, dynamic> details) {
+  if (code == null) return ErrorOutcome.rejected;
+  if (_ausgangUnklarCodes.contains(code)) return ErrorOutcome.unknown;
+  if (code == 'response_translation_failed' && details['handled'] != false) return ErrorOutcome.unknown;
+  return ErrorOutcome.rejected;
+}
+
+/// Codes, die das Paket selbst vergibt, nicht der Server: `route_missing`
+/// (HTML statt Backend, der Aufruf kam nie an) und `response_unreadable`
+/// (ein signierender Aufruf meldete Erfolg, die Antwort ist aber unlesbar).
+/// `dialect_mismatch` vergibt das Paket ebenfalls, der Code gehoert aber zum
+/// Rand des Servers.
+const Set<String> clientErrorCodes = {'route_missing', 'response_unreadable'};
+
+/// Ist der Ausgang dieses Fehlers unklar? Dann den Aufruf **nicht
+/// wiederholen**, sondern das Ergebnis nachlesen. Gilt fuer jede Fehlerart;
+/// nur [KasseneckApiError] und [KasseneckHttpError] koennen unklar sein.
+bool isOutcomeUnknown(Object? error) =>
+    (error is KasseneckApiError && error.outcome == ErrorOutcome.unknown) ||
+    (error is KasseneckHttpError && error.outcome == ErrorOutcome.unknown);
+
 /// Fachlicher Fehler des Backends (PIN falsch, Kasse belegt, Geraet gesperrt …).
+///
+/// Das Paket vergibt selbst zwei Codes: `route_missing` (HTTP 200 mit einer
+/// HTML-Seite, die Auffangregel des Hostings hat geantwortet, keine Function
+/// sah den Aufruf) und `dialect_mismatch` (die Antwort traegt das
+/// `/v3`-Kennzeichen nicht; ein Rand ohne `/v3` hat geantwortet, Ausgang
+/// unklar). Entscheidend ist [outcome].
 class KasseneckApiError implements Exception {
   const KasseneckApiError(this.functionName, this.message, {this.code, this.details = const {}});
 
@@ -52,6 +94,12 @@ class KasseneckApiError implements Exception {
   /// `remainingCents` bei `credit_exceeds_invoice` (Rechnungs-API). Zwilling
   /// von `KasseneckApiError.details` im JS-Paket.
   final Map<String, dynamic> details;
+
+  /// [ErrorOutcome.unknown] bei `dialect_mismatch`, `receipt_outcome_unknown`,
+  /// `cancellation_outcome_unknown`, `response_unreadable` und
+  /// `response_translation_failed` (ausser mit `details.handled == false`);
+  /// sonst [ErrorOutcome.rejected]. Bei unknown nie wiederholen, nachlesen.
+  ErrorOutcome get outcome => _ausgangAusCode(code, details);
 
   @override
   String toString() => 'KasseneckApiError($functionName): $message${code == null ? '' : ' [$code]'}';
@@ -107,7 +155,8 @@ class KasseneckReceiptFormatError implements Exception {
 /// scheiterte. Traegt bewusst **nichts** aus dem Rumpf: dort koennten Werte
 /// stehen, die wir gerade nicht ins Protokoll lassen wollen.
 class KasseneckHttpError implements Exception {
-  const KasseneckHttpError(this.functionName, this.statusCode, this.reason, {this.causeType});
+  const KasseneckHttpError(this.functionName, this.statusCode, this.reason,
+      {this.causeType, this.outcome = ErrorOutcome.rejected, this.timeout});
 
   /// Die Frist ist abgelaufen. Die Anfrage war **draussen**; der Zeitablauf
   /// beendet nur das Warten, nicht die Arbeit des Servers. Ueber einem
@@ -130,8 +179,9 @@ class KasseneckHttpError implements Exception {
   final String functionName;
   final int statusCode;
 
-  /// Warum es scheiterte: [zeitablauf], [netz], `'not-json'`,
-  /// `'missing-status'`, `'data-not-object'`.
+  /// Warum es scheiterte: [zeitablauf], [netz], `'server-error'` (HTTP
+  /// nicht 200), `'empty-body'`, `'not-json'`, `'missing-status'`,
+  /// `'data-not-object'`.
   ///
   /// Die Unterscheidung [zeitablauf] gegen [netz] wird **erhalten**, nicht
   /// verworfen: sie ist die einzige Handhabe, die der Aufrufer hat. Welche
@@ -149,7 +199,18 @@ class KasseneckHttpError implements Exception {
   /// rekonstruieren.
   final String? causeType;
 
+  /// [ErrorOutcome.unknown] auf einem signierenden Aufruf (`createReceipt`,
+  /// `cancelReceipt`, `financeWebService`), wenn die Anfrage unterwegs war:
+  /// Netzfehler oder Zeitlimit nach dem Senden, HTTP 5xx, oder eine
+  /// unlesbare Antwort mit HTTP 200 und `/v3`-Kennzeichen (leer, kein JSON,
+  /// ohne Statusfeld, HTML). Sonst [ErrorOutcome.rejected].
+  final ErrorOutcome outcome;
+
+  /// Die abgelaufene Frist, wenn [reason] [zeitablauf] ist.
+  final Duration? timeout;
+
   @override
   String toString() => 'KasseneckHttpError($functionName): HTTP $statusCode ($reason)'
-      '${causeType == null ? '' : ' [$causeType]'}';
+      '${causeType == null ? '' : ' [$causeType]'}'
+      '${outcome == ErrorOutcome.unknown ? ' [Ausgang unklar]' : ''}';
 }

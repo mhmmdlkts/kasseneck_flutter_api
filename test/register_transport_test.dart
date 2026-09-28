@@ -27,7 +27,7 @@ import 'package:kasseneck_api/register.dart';
     return http.Response(
       antwort is String ? antwort : jsonEncode(antwort),
       status,
-      headers: {'content-type': 'application/json'},
+      headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
     );
   });
   return (
@@ -49,7 +49,7 @@ void main() {
 
     expect(daten, {'ok': true});
     final anfrage = f.log.single;
-    expect(anfrage.url.toString(), 'https://kasse.kasseneck.at/api/irgendwas');
+    expect(anfrage.url.toString(), 'https://kasse.kasseneck.at/api/v3/irgendwas');
     expect(anfrage.headers['Authorization'], 'Bearer id-token-1');
     expect(anfrage.headers['register-session'], 'sess-1');
     expect(jsonDecode(anfrage.body)['params'], {'cashregisterId': 'KASSE1'});
@@ -87,7 +87,7 @@ void main() {
       cashregisterId: 'KASSE1',
       httpClient: MockClient((r) async {
         log.add(r);
-        return http.Response('{"status":"success","data":{}}', 200);
+        return http.Response('{"status":"success","data":{}}', 200, headers: const {'kasseneck-api-version': 'v3'});
       }),
     );
 
@@ -202,7 +202,7 @@ void main() {
       final log = <http.Request>[];
       final transport = transportDurch(MockClient((r) async {
         log.add(r);
-        return http.Response('{"status":"success","data":{}}', 200);
+        return http.Response('{"status":"success","data":{}}', 200, headers: const {'kasseneck-api-version': 'v3'});
       }));
 
       await expectLater(

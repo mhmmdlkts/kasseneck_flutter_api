@@ -13,4 +13,6 @@ export 'src/rechnung/transport.dart' show RechnungTransport, kRechnungBaseUrl;
 export 'src/rechnung/vertrag.dart';
 // Die Fehler, die die Aufrufe werfen — ohne sie wären sie aus diesem Barrel
 // nicht zu fangen.
-export 'src/register/fehler.dart' show KasseneckApiError, KasseneckHttpError, KasseneckValidationError;
+export 'src/register/fehler.dart'
+    show ErrorOutcome, KasseneckApiError, KasseneckHttpError, KasseneckValidationError, clientErrorCodes, isOutcomeUnknown;
+export 'src/v3.dart' show kPublicBaseUrl, kPosBaseUrl;

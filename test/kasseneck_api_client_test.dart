@@ -28,7 +28,7 @@ MockClient successClient(void Function(http.Request) capture) => MockClient((req
       return http.Response(
         jsonEncode({'status': 'success', 'data': buildReceipt().toJson()}),
         200,
-        headers: {'content-type': 'application/json'},
+        headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
       );
     });
 
@@ -47,7 +47,7 @@ void main() {
 
       await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]);
 
-      expect(captured.url.toString(), 'https://api.kasseneck.at/v1/createReceipt');
+      expect(captured.url.toString(), 'https://api.kasseneck.at/v3/createReceipt');
       expect(captured.headers['Authorization'], 'Bearer test-key');
       expect(captured.headers['cashregister-token'], base64Encode(utf8.encode('CASHBOX-9:secret')));
       expect(captured.headers['content-type'], startsWith('application/json'));
@@ -74,21 +74,21 @@ void main() {
   group('Fehlerpfade', () {
     test('status error -> Exception mit Backend-Message', () async {
       final api = apiWith(MockClient((_) async =>
-          http.Response(jsonEncode({'status': 'error', 'message': 'Kasse gesperrt'}), 200)));
+          http.Response(jsonEncode({'status': 'error', 'message': 'Kasse gesperrt'}), 200, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
         () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
         throwsA(predicate((e) => e.toString().contains('Kasse gesperrt'))),
       );
     });
     test('HTTP 500 -> Exception mit Statuscode', () async {
-      final api = apiWith(MockClient((_) async => http.Response('kaputt', 500)));
+      final api = apiWith(MockClient((_) async => http.Response('kaputt', 500, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
         () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
         throwsA(predicate((e) => e.toString().contains('500'))),
       );
     });
     test('leerer Body -> Exception', () async {
-      final api = apiWith(MockClient((_) async => http.Response('', 200)));
+      final api = apiWith(MockClient((_) async => http.Response('', 200, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
         () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
         throwsA(isA<Exception>()),
@@ -221,7 +221,7 @@ void main() {
             return http.Response(
               jsonEncode({'status': 'success', 'data': daten}),
               200,
-              headers: {'content-type': 'application/json'},
+              headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
             );
           });
 
@@ -236,7 +236,7 @@ void main() {
 
         final personen = await api.listTipRecipients();
 
-        expect(captured.url.toString(), 'https://api.kasseneck.at/v1/listMyTipRecipients');
+        expect(captured.url.toString(), 'https://api.kasseneck.at/v3/listMyTipRecipients');
         expect(captured.headers['Authorization'], 'Bearer test-key');
         expect(personen.map((p) => p.registerUserId), ['ru_1', 'ru_2']);
         expect(personen.first.name, 'Anna');
@@ -409,11 +409,13 @@ void main() {
     /// gegen den die Fristen ueberhaupt da sind.
     MockClient haengt() => MockClient((_) => Completer<http.Response>().future);
 
-    /// Die Frist steht in der Meldung der `TimeoutException`. Sie ist damit
+    /// Die Frist steht am `KasseneckHttpError` (`timeout`). Sie ist damit
     /// pruefbar, ohne auf die Wanduhr zu warten: welche der drei Fristen ein
     /// Aufruf zieht, steht schwarz auf weiss im Fehler.
     Matcher fristAbgelaufen(Duration frist) =>
-        isA<TimeoutException>().having((e) => e.duration, 'duration', frist);
+        isA<KasseneckHttpError>()
+            .having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)
+            .having((e) => e.timeout, 'timeout', frist);
 
     test('Verkauf zieht signatureTimeout, nicht readTimeout', () async {
       // Ein Abbruch beendet nur das Warten der Kasse, nicht die Arbeit des
@@ -495,7 +497,7 @@ void main() {
     // — ein 200 mit Array, Skalar oder HTML gab daraus einen rohen TypeError
     // bzw. eine FormatException, im Verkauf NACH der Signatur.
     KasseneckApi apiMit(String rumpf) => apiWith(MockClient(
-        (_) async => http.Response(rumpf, 200, headers: {'content-type': 'application/json'})));
+        (_) async => http.Response(rumpf, 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'})));
 
     test('200 mit JSON-Array statt Objekt: benannter Fehler, kein TypeError', () async {
       // Gezielt fangbar: nach der Signatur ist „Antwort kaputt, der Beleg
@@ -665,7 +667,7 @@ void main() {
               },
             }),
             200,
-            headers: {'content-type': 'application/json'},
+            headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
           )));
 
       final beleg = await api

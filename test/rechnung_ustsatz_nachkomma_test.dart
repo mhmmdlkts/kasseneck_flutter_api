@@ -25,7 +25,7 @@ RechnungApi _apiMit(Object antwort) {
   final mock = MockClient((_) async => http.Response.bytes(
         utf8.encode(jsonEncode(antwort)),
         200,
-        headers: {'content-type': 'application/json'},
+        headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
       ));
   return RechnungApi(apiKey: _apiKey, httpClient: mock);
 }

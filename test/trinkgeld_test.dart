@@ -28,7 +28,7 @@ MockClient successClient(void Function(http.Request) capture) =>
       return http.Response(
         jsonEncode({'status': 'success', 'data': buildReceipt().toJson()}),
         200,
-        headers: {'content-type': 'application/json'},
+        headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
       );
     });
 

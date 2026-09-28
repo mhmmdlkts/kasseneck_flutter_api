@@ -55,7 +55,7 @@ Map<String, dynamic> _fehler(String meldung, String code, [Map<String, dynamic> 
     i += 1;
     if (antwort is http.Response) return antwort;
     if (antwort is Future<http.Response> Function()) return antwort();
-    return http.Response.bytes(utf8.encode(jsonEncode(antwort)), 200, headers: {'content-type': 'application/json'});
+    return http.Response.bytes(utf8.encode(jsonEncode(antwort)), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
   });
   return (api: RechnungApi(apiKey: _apiKey, httpClient: mock, timeout: timeout), log: log);
 }
@@ -169,7 +169,7 @@ void main() {
           default:
             fail('Beispiel für $aufruf ohne Testweg');
         }
-        expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/$aufruf');
+        expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/$aufruf');
         expect(_params(log.single), anfrage, reason: '${b['description']}');
       }
     });
@@ -279,7 +279,7 @@ void main() {
     test('getInvoicePdf liefert die Bytes, ein Fehler kommt als Fachfehler', () async {
       final pdf = utf8.encode('%PDF-1.7\n…');
       final (:api, :log) = _apiMit([
-        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'}),
+        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf', 'kasseneck-api-version': 'v3'}),
         _fehler('Rechnung nicht gefunden.', 'invoice_not_found'),
       ]);
       final bytes = await api.getInvoicePdf('inv1');
@@ -358,7 +358,7 @@ void main() {
 
     test('Zeitablauf ist ein eigener Grund, kein Netzfehler', () async {
       final (:api, log: _) = _apiMit([
-        () => Future<http.Response>.delayed(const Duration(milliseconds: 200), () => http.Response('{}', 200)),
+        () => Future<http.Response>.delayed(const Duration(milliseconds: 200), () => http.Response('{}', 200, headers: const {'kasseneck-api-version': 'v3'})),
       ], timeout: const Duration(milliseconds: 20));
       await expectLater(
         api.getInvoiceSetupStatus(),
@@ -379,7 +379,7 @@ void main() {
       ]);
       final marken = await api.listBrands();
       expect(_params(log.single), <String, dynamic>{});
-      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/listBrands');
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/listBrands');
       expect(marken.map((m) => (m.id, m.name, m.isDefault)).toList(), [('m1', 'Haus', true), ('m2', 'Zweit', false)]);
     });
 
@@ -391,8 +391,8 @@ void main() {
     test('getInvoicePdf: language geht nur mit, wenn gesetzt', () async {
       final pdf = utf8.encode('%PDF-1.7\n');
       final (:api, :log) = _apiMit([
-        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'}),
-        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'}),
+        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf', 'kasseneck-api-version': 'v3'}),
+        http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf', 'kasseneck-api-version': 'v3'}),
       ]);
       await api.getInvoicePdf('inv1');
       await api.getInvoicePdf('inv1', language: 'de');
@@ -509,7 +509,7 @@ void main() {
       })]);
       final r = await api.recordInvoicePayment(const RecordPaymentRequest(
         idempotencyKey: 'zahlung-1', invoiceId: 'inv1', method: 'transfer', amountCents: 12000, paidAt: '2026-09-20'));
-      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/recordInvoicePayment');
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/recordInvoicePayment');
       expect(_params(log.single), {
         'idempotencyKey': 'zahlung-1', 'invoiceId': 'inv1', 'method': 'transfer', 'amountCents': 12000, 'paidAt': '2026-09-20',
       });
@@ -600,7 +600,7 @@ void main() {
         }),
       ]);
       final ergebnis = await api.previewInvoice(anfrage);
-      expect(log.single.url.toString(), 'https://api.kasseneck.at/v1/issueInvoice');
+      expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/issueInvoice');
       expect(_params(log.single), {...anfrage.toJson(), 'dryRun': true});
       expect(anfrage.toJson().containsKey('dryRun'), isFalse, reason: 'die Anfrage selbst kennt kein dryRun');
 

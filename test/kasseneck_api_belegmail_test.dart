@@ -20,7 +20,7 @@ KasseneckApi apiMit(MockClient client) => KasseneckApi(
     );
 
 http.Response huelle(Map<String, dynamic> j) =>
-    http.Response(jsonEncode(j), 200, headers: {'content-type': 'application/json'});
+    http.Response(jsonEncode(j), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
 
 void main() {
   test('ruft sendReceiptEmail mit Schlüssel, Kassen-Token und Nutzlast', () async {
@@ -35,7 +35,7 @@ void main() {
 
     final erg = await api.belegSenden(fullReceiptId: 'voll-42', an: ' Gast@Example.com ');
 
-    expect(gesendet.url.toString(), 'https://api.kasseneck.at/v1/sendReceiptEmail');
+    expect(gesendet.url.toString(), 'https://api.kasseneck.at/v3/sendReceiptEmail');
     expect(gesendet.headers['Authorization'], 'Bearer test-key');
     expect(gesendet.headers['cashregister-token'], isNotEmpty);
     final params = (jsonDecode(gesendet.body) as Map)['params'] as Map;

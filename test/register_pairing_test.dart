@@ -34,7 +34,7 @@ const pin = '1234';
     return http.Response(
       antwort is String ? antwort : jsonEncode(antwort),
       status,
-      headers: {'content-type': 'application/json; charset=utf-8'},
+      headers: {'content-type': 'application/json; charset=utf-8', 'kasseneck-api-version': 'v3'},
     );
   });
   return (client: RegisterClient(httpClient: mock), log: log, bodies: bodies);
@@ -79,7 +79,7 @@ void main() {
       final geraet = await f.client.pairRegisterDevice(code: ' abcd1234 ', label: 'Theke');
 
       expect(f.log.single.method, 'POST');
-      expect(f.log.single.url.toString(), 'https://kasse.kasseneck.at/api/pairRegisterDevice');
+      expect(f.log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/pairRegisterDevice');
       final rumpf = jsonDecode(f.bodies.single)['params'] as Map<String, dynamic>;
       expect(rumpf['code'], ' abcd1234 ', reason: 'das Backend beschneidet selbst — der Client rät nicht am Format herum');
       expect(rumpf['label'], 'Theke');
@@ -363,16 +363,17 @@ void basisadresse() {
   test('die Vorgabe zeigt auf die Kassen-Adresse, nicht auf die api_key-Schnittstelle', () async {
     // Unter api.kasseneck.at/v1 antwortet auf diese Aufrufe eine HTML-404 —
     // die Kopplung schlug damit mit einer nichtssagenden Meldung fehl.
-    expect(kRegisterBaseUrl, 'https://kasse.kasseneck.at/api');
+    expect(kRegisterBaseUrl, 'https://kasse.kasseneck.at/api/v3');
     final log = <http.Request>[];
     final client = RegisterClient(
       httpClient: MockClient((r) async {
         log.add(r);
-        return http.Response(jsonEncode(erfolg(kopplungsAntwort)), 200);
+        return http.Response(jsonEncode(erfolg(kopplungsAntwort)), 200,
+            headers: const {'content-type': 'application/json; charset=utf-8', 'kasseneck-api-version': 'v3'});
       }),
     );
     await client.pairRegisterDevice(code: 'ABCD1234');
-    expect(log.single.url.toString(), 'https://kasse.kasseneck.at/api/pairRegisterDevice');
+    expect(log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/pairRegisterDevice');
   });
 
   group('Zeitablauf ist etwas anderes als ein Netzfehler', () {

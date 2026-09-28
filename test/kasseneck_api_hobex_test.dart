@@ -1,4 +1,3 @@
-import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -13,13 +12,12 @@ void main() {
       final mock = MockClient((request) async {
         await Future<void>.delayed(const Duration(milliseconds: 120));
         return http.Response(
-          '{"data":{"transactionId":"TX-1","tid":"T1","receipt":"1","'
+          '{"status":"success","data":{"transactionId":"TX-1","tid":"T1","receipt":"1","'
           'approvalCode":"A1","transactionDate":"2026-08-24T10:00:00",'
           '"cardNumber":"1234","cardExpiry":"1230","brand":"visa",'
           '"cardIssuer":"bank","responseCode":"0","transactionType":"purchase",'
           '"currency":"EUR","cvm":"0"}}',
-          200,
-        );
+          200, headers: const {'kasseneck-api-version': 'v3'});
       });
       final api = KasseneckApi(
         apiKey: 'k',
@@ -36,7 +34,7 @@ void main() {
     test('eine lesende Abfrage laeuft weiterhin in die kurze Frist', () async {
       final mock = MockClient((request) async {
         await Future<void>.delayed(const Duration(milliseconds: 200));
-        return http.Response('{"data":[]}', 200);
+        return http.Response('{"status":"success","data":[]}', 200, headers: const {'kasseneck-api-version': 'v3'});
       });
       final api = KasseneckApi(
         apiKey: 'k',
@@ -48,7 +46,7 @@ void main() {
 
       await expectLater(
         api.getReceipts(DateTime(2026, 8, 24), DateTime(2026, 8, 25)),
-        throwsA(isA<TimeoutException>()),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)),
       );
     });
   });
@@ -64,8 +62,7 @@ void main() {
           '"2026-08-24T10:00:00","cardNumber":"1234","cardExpiry":"1230",'
           '"brand":"visa","cardIssuer":"bank","responseCode":"0",'
           '"transactionType":"purchase","currency":"EUR","cvm":"0"}}',
-          200,
-        );
+          200, headers: const {'kasseneck-api-version': 'v3'});
       });
       final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
 
@@ -77,13 +74,13 @@ void main() {
     });
 
     test('hobexGetStatus: unbekannte Kennung -> null statt Ausnahme', () async {
-      final mock = MockClient((_) async => http.Response('{"status":"error"}', 200));
+      final mock = MockClient((_) async => http.Response('{"status":"error"}', 200, headers: const {'kasseneck-api-version': 'v3'}));
       final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
       expect(await api.hobexGetStatus(transactionId: 'TX-unbekannt'), isNull);
     });
 
     test('hobexGetStatus: Server-Fehler ist ein Transportfehler und darf NICHT als null (unbelastet) gelesen werden', () async {
-      final mock = MockClient((_) async => http.Response('server explodiert', 500));
+      final mock = MockClient((_) async => http.Response('server explodiert', 500, headers: const {'kasseneck-api-version': 'v3'}));
       final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
       await expectLater(
         api.hobexGetStatus(transactionId: 'TX-1'),
@@ -92,7 +89,7 @@ void main() {
     });
 
     test('hobexGetStatus: unerwarteter Rumpf (kein Objekt) wirft eine aussagekraeftige Ausnahme statt eines rohen TypeError', () async {
-      final mock = MockClient((_) async => http.Response('[1,2,3]', 200));
+      final mock = MockClient((_) async => http.Response('[1,2,3]', 200, headers: const {'kasseneck-api-version': 'v3'}));
       final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
       await expectLater(
         api.hobexGetStatus(transactionId: 'TX-1'),
@@ -106,7 +103,7 @@ void main() {
       // Der Rumpf kann tragen, was nicht ins Protokoll gehoert. Die
       // Klaerschleife schreibt ihre Ausnahmen in den Nachweistext, der im
       // Belastungsstreit gelesen wird -- dieselbe Regel wie in _huelle.
-      final mock = MockClient((_) async => http.Response('["GEHEIM-4711"]', 200));
+      final mock = MockClient((_) async => http.Response('["GEHEIM-4711"]', 200, headers: const {'kasseneck-api-version': 'v3'}));
       final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
       await expectLater(
         api.hobexGetStatus(transactionId: 'TX-1'),
@@ -118,7 +115,7 @@ void main() {
     test('hobexGetStatus: 200 mit HTML ist ein benannter Fehler, keine rohe FormatException', () async {
       // Captive Portal oder CDN-Fehlerseite. json.decode stand hier
       // ungesichert -- die FormatException traegt ihre Eingabe im Text.
-      final mock = MockClient((_) async => http.Response('<html>Gateway GEHEIM-4711</html>', 200));
+      final mock = MockClient((_) async => http.Response('<html>Gateway GEHEIM-4711</html>', 200, headers: const {'kasseneck-api-version': 'v3'}));
       final api = KasseneckApi(apiKey: 'k', cashregisterToken: 'dGVzdDp0ZXN0', httpClient: mock);
       await expectLater(
         api.hobexGetStatus(transactionId: 'TX-1'),
