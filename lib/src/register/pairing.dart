@@ -348,6 +348,9 @@ class RegisterClient {
   /// [baseUrl] muss auf `/v3` enden (die Web-Kasse: `/api/v3`), sonst wirft
   /// schon das Anlegen. [clientHeader] und [omitKasseneckHeaders] wie bei
   /// [RegisterTransport]; beide gelten auch fuer [sitzung].
+  ///
+  /// [httpClient] darf kein `RetryClient` (oder anderer wiederholender
+  /// Client) sein: ein zweites stilles Senden waere ein zweiter Beleg.
   RegisterClient({
     String? baseUrl,
     http.Client? httpClient,

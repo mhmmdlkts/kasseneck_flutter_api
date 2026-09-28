@@ -93,6 +93,12 @@ final _wege = <_Weg>[
     'createReceipt': (c) => _geraet(c).sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
     'getReceipt': (c) => _geraet(c).getReceipt('R1'),
     'financeWebService': (c) => _geraet(c).getCashboxStatus(),
+    'cancelReceipt': (c) =>
+        _geraet(c).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe'),
+    'sendReceiptEmail': (c) => _geraet(c).belegSenden(fullReceiptId: 'F1', an: 'a@b.at'),
+    'hobexPayApi': (c) => _geraet(c).hobexPay(transactionId: '1', amount: 1),
+    'hobexRefundApi': (c) => _geraet(c).hobexRefund(transactionId: '1', amount: 1),
+    'stripeCaptureIntent': (c) => _geraet(c).stripeCaptureIntent(stripeSessionId: 's1'),
   }),
   _Weg('RegisterClient (Kopplung)', 'https://kasse.kasseneck.at/api/v3', {
     'pairRegisterDevice': (c) => RegisterClient(httpClient: c).pairRegisterDevice(code: 'ABC123'),
@@ -108,7 +114,51 @@ final _wege = <_Weg>[
   }),
 ];
 
-const _signierend = {'createReceipt', 'cancelReceipt', 'financeWebService'};
+/// Aufrufe mit unklarem Ausgang nach dem Senden: signierend, FinanzOnline,
+/// und die Geldwege (Kartenbelastung, Erstattung, Stripe-Einzug).
+/// Derselbe Aufruf wie in [_wege], aber mit kurzer Frist.
+Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
+  const f = Duration(milliseconds: 20);
+  final geraet = KasseneckApi(
+      apiKey: 'k',
+      cashregisterToken: base64Encode(utf8.encode('C:s')),
+      httpClient: c,
+      readTimeout: f,
+      cardTimeout: f,
+      signatureTimeout: f);
+  switch (weg.name) {
+    case 'KasseneckApi (api_key)':
+      return switch (name) {
+        'createReceipt' => geraet.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
+        'getReceipt' => geraet.getReceipt('R1'),
+        'financeWebService' => geraet.getCashboxStatus(),
+        'cancelReceipt' => geraet.stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe'),
+        'sendReceiptEmail' => geraet.belegSenden(fullReceiptId: 'F1', an: 'a@b.at'),
+        'hobexPayApi' => geraet.hobexPay(transactionId: '1', amount: 1),
+        'hobexRefundApi' => geraet.hobexRefund(transactionId: '1', amount: 1),
+        'stripeCaptureIntent' => geraet.stripeCaptureIntent(stripeSessionId: 's1'),
+        _ => throw StateError(name),
+      };
+    case 'RegisterClient (Kopplung)':
+      return RegisterClient(httpClient: c, timeout: f).pairRegisterDevice(code: 'ABC123');
+    case 'RegisterTransport (Sitzung)':
+      return RegisterTransport(
+              idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K', httpClient: c, timeout: f)
+          .rufen(name);
+    default:
+      final t = RechnungTransport(apiKey: 'kr_test_x', httpClient: c, timeout: f);
+      return name == 'getInvoicePdf' ? t.rufenBinaer(name, {}) : t.rufen(name, {});
+  }
+}
+
+const _signierend = {
+  'createReceipt',
+  'cancelReceipt',
+  'financeWebService',
+  'hobexPayApi',
+  'hobexRefundApi',
+  'stripeCaptureIntent',
+};
 
 TypeMatcher<KasseneckApiError> _apiFehler(String code, ErrorOutcome ausgang) => isA<KasseneckApiError>()
     .having((e) => e.code, 'code', code)
@@ -117,6 +167,11 @@ TypeMatcher<KasseneckApiError> _apiFehler(String code, ErrorOutcome ausgang) => 
 TypeMatcher<KasseneckHttpError> _httpFehler(String grund, ErrorOutcome ausgang) => isA<KasseneckHttpError>()
     .having((e) => e.reason, 'reason', grund)
     .having((e) => e.outcome, 'outcome', ausgang);
+
+/// Bindet der Quelltext `v3.dart` ein, in jeder Form (`show`, `as`,
+/// doppelte Anfuehrungszeichen, `export`)?
+bool _bindetV3Ein(String text) =>
+    RegExp(r'''^\s*(import|export)\s+['"][^'"]*\bv3\.dart['"]''', multiLine: true).hasMatch(text);
 
 void main() {
   group('Basen', () {
@@ -410,6 +465,130 @@ void main() {
     });
   });
 
+  group('Zeichensatz', () {
+    // Der Server sendet UTF-8; gelesen wird immer strikt UTF-8 aus den Bytes,
+    // gleich was der Inhaltstyp behauptet (Proxy, CDN).
+    for (final typ in ['application/json; charset', 'application/json;;', 'application/json; charset=iso-8859-1',
+      'text/plain']) {
+      test('Inhaltstyp "$typ" verstuemmelt nichts und wirft nichts Rohes', () async {
+        final rumpf = utf8.encode(jsonEncode({'status': 'error', 'code': 'x_y', 'message': 'Grüße', 'data': {'n': 'Bäckerei'}}));
+        final erfolg = utf8.encode(jsonEncode({'status': 'success', 'data': {'n': 'Bäckerei'}}));
+        _Antwort a(List<int> b) => _Antwort(200, {'content-type': typ, ..._kennzeichen}, b);
+        final netz = _Netz((_) => a(erfolg));
+        expect(await _sitzung(netz.client).rufen('listMyReceipts'), {'n': 'Bäckerei'});
+        expect(await RechnungTransport(apiKey: 'kr_test_x', httpClient: netz.client).rufen('getInvoice', {}),
+            {'n': 'Bäckerei'});
+        netz.antwort = (_) => a(rumpf);
+        final fehler = isA<KasseneckApiError>().having((e) => e.message, 'message', 'Grüße');
+        await expectLater(_sitzung(netz.client).rufen('createReceipt'), throwsA(fehler));
+        await expectLater(RegisterClient(httpClient: netz.client).pairRegisterDevice(code: 'ABC123'), throwsA(fehler));
+        await expectLater(
+            _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe'),
+            throwsA(fehler));
+        await expectLater(_geraet(netz.client).sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
+            throwsA(fehler));
+      });
+    }
+
+    test('kein UTF-8: not-json, wirkend unklar, sonst abgelehnt', () async {
+      for (final weg in _wege) {
+        for (final MapEntry(key: name, value: los) in weg.aufrufe.entries) {
+          final netz = _Netz((_) => _Antwort(200, {..._json, ..._kennzeichen},
+              [...utf8.encode('{"status":"success","data":{"n":"'), 0xff, ...utf8.encode('"}}')]));
+          final ausgang = _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+          await expectLater(los(netz.client), throwsA(_httpFehler('not-json', ausgang)), reason: '${weg.name} $name');
+        }
+      }
+    });
+  });
+
+  group('Abbruch', () {
+    test('das Zeitlimit bricht die laufende Anfrage ab, auf jedem Weg', () async {
+      for (final weg in _wege) {
+        for (final name in weg.aufrufe.keys) {
+          var abgebrochen = false;
+          final c = MockClient.streaming((request, _) {
+            final antwort = Completer<http.StreamedResponse>();
+            expect(request, isA<http.Abortable>(), reason: '${weg.name} $name');
+            (request as http.Abortable).abortTrigger?.then((_) {
+              abgebrochen = true;
+              antwort.completeError(http.RequestAbortedException(request.url));
+            });
+            return antwort.future;
+          });
+          final ausgang = _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+          await expectLater(_mitFrist(weg, name, c), throwsA(_httpFehler(KasseneckHttpError.zeitablauf, ausgang)),
+              reason: '${weg.name} $name');
+          await pumpEventQueue();
+          expect(abgebrochen, isTrue, reason: '${weg.name} $name');
+        }
+      }
+    });
+
+    test('auch ein haengender Rumpf wird abgebrochen', () async {
+      var abgebrochen = false;
+      final c = MockClient.streaming((request, _) async {
+        (request as http.Abortable).abortTrigger?.then((_) => abgebrochen = true);
+        return http.StreamedResponse(StreamController<List<int>>().stream, 200, headers: {..._json, ..._kennzeichen});
+      });
+      final t = RegisterTransport(idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K',
+          httpClient: c, timeout: const Duration(milliseconds: 20));
+      await expectLater(t.rufen('createReceipt'), throwsA(_httpFehler(KasseneckHttpError.zeitablauf, ErrorOutcome.unknown)));
+      await pumpEventQueue();
+      expect(abgebrochen, isTrue);
+    });
+
+    test('404 des Rands mit haengendem Rumpf bleibt ein abgelehnter HTTP-Fehler wie in npm', () async {
+      final c = MockClient.streaming((_, _) async =>
+          http.StreamedResponse(StreamController<List<int>>().stream, 404, headers: {..._json, ..._kennzeichen}));
+      final t = RegisterTransport(idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K',
+          httpClient: c, timeout: const Duration(milliseconds: 20));
+      await expectLater(t.rufen('createReceipt'),
+          throwsA(_httpFehler('server-error', ErrorOutcome.rejected).having((e) => e.statusCode, 'statusCode', 404)));
+    });
+  });
+
+  group('Fachfehler behalten Code, Details und Ausgang', () {
+    test('stornieren und belegSenden: handled false abgelehnt, data.code als Rueckfall', () async {
+      final netz = _Netz((_) => _v3({
+            'status': 'error',
+            'code': 'response_translation_failed',
+            'message': 'x',
+            'data': {'handled': false, 'remainingCents': 5},
+          }));
+      final storno = _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe');
+      await expectLater(
+          storno,
+          throwsA(_apiFehler('response_translation_failed', ErrorOutcome.rejected)
+              .having((e) => e.details['remainingCents'], 'details', 5)));
+      await expectLater(_geraet(netz.client).belegSenden(fullReceiptId: 'F1', an: 'a@b.at'),
+          throwsA(_apiFehler('response_translation_failed', ErrorOutcome.rejected)));
+      netz.antwort = (_) => _v3({'status': 'error', 'message': 'x', 'data': {'code': 'cancellation_outcome_unknown'}});
+      await expectLater(
+          _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe'),
+          throwsA(_apiFehler('cancellation_outcome_unknown', ErrorOutcome.unknown)));
+    });
+
+    test('FinanzOnline-Abfragen reichen den Fachfehler mit Code und Ausgang weiter', () async {
+      final netz = _Netz((_) => _v3({'status': 'error', 'code': 'response_translation_failed', 'message': 'x'}));
+      await expectLater(_geraet(netz.client).getCashboxStatus(),
+          throwsA(_apiFehler('response_translation_failed', ErrorOutcome.unknown)));
+      await expectLater(_geraet(netz.client).getSignatureStatus('AB'),
+          throwsA(_apiFehler('response_translation_failed', ErrorOutcome.unknown)));
+    });
+
+    test('Geldwege: Fachfehler mit Code statt stillem false oder Lesefehler', () async {
+      final netz = _Netz((_) => _v3({'status': 'error', 'code': 'receipt_outcome_unknown', 'message': 'x'}));
+      for (final los in [
+        () => _geraet(netz.client).hobexPay(transactionId: '1', amount: 1),
+        () => _geraet(netz.client).hobexRefund(transactionId: '1', amount: 1),
+        () => _geraet(netz.client).stripeCaptureIntent(stripeSessionId: 's1'),
+      ]) {
+        await expectLater(los(), throwsA(_apiFehler('receipt_outcome_unknown', ErrorOutcome.unknown)));
+      }
+    });
+  });
+
   group('Terminal-, Drucker- und Bildwege tragen keine Kasseneck-Kopfzeile', () {
     Matcher ohneKasseneck = isNot(anyOf(contains('kasseneck-api-version'), contains('kasseneck-client')));
 
@@ -458,6 +637,21 @@ void main() {
       expect(anfragen.single.headers.keys.map((k) => k.toLowerCase()), ohneKasseneck);
     });
 
+    test('der Einbinde-Waechter erkennt jede Form', () {
+      for (final zeile in [
+        "import '../v3.dart';",
+        "import '../v3.dart' show v3Post;",
+        "import '../v3.dart' as v3;",
+        'import "../v3.dart";',
+        "  import 'package:kasseneck_api/src/v3.dart' hide x;",
+        "export 'src/v3.dart' show kPosBaseUrl;",
+      ]) {
+        expect(_bindetV3Ein('library;\n$zeile\n'), isTrue, reason: zeile);
+      }
+      expect(_bindetV3Ein("import '../nicht_v3.dart';"), isFalse);
+      expect(_bindetV3Ein("// import '../v3.dart';"), isFalse);
+    });
+
     test('nur die Kasseneck-Wege kennen die Kopfzeilen; Terminal- und Druckerwege kommen nicht heran', () {
       // Quelltext-Waechter: die beiden Kopfzeilen setzt allein lib/src/v3.dart,
       // und nur die vier Kasseneck-Wege binden es ein. Drucker (Socket, BLE),
@@ -469,11 +663,13 @@ void main() {
         final text = f.readAsStringSync();
         final pfad = f.path.replaceAll(r'\', '/');
         if (RegExp('Kasseneck-(Api-Version|Client)', caseSensitive: false).hasMatch(text)) mitKopf.add(pfad);
-        if (RegExp(r'''import '[^']*v3\.dart';''').hasMatch(text)) mitV3.add(pfad);
+        if (_bindetV3Ein(text)) mitV3.add(pfad);
       }
       expect(mitKopf, {'lib/src/v3.dart'});
       expect(mitV3, {
         'lib/kasseneck_api.dart',
+        'lib/rechnung.dart',
+        'lib/register.dart',
         'lib/src/register/pairing.dart',
         'lib/src/register/transport.dart',
         'lib/src/rechnung/transport.dart',

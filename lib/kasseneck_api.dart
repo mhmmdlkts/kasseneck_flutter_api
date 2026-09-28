@@ -123,6 +123,13 @@ class KasseneckApi {
   String? printerAddress;
 
   /// HTTP-Client; im Konstruktor austauschbar (Tests/Mocking).
+  ///
+  /// **Kein `RetryClient` und kein anderer wiederholender Client.** Ein Beleg,
+  /// ein Storno, eine Kartenbelastung (`hobexPay`), eine Erstattung und ein
+  /// Stripe-Einzug sind nicht folgenlos wiederholbar; ein Client, der nach
+  /// einem Netzfehler still ein zweites Mal sendet, erzeugt einen zweiten
+  /// Beleg bzw. eine zweite Belastung, ohne dass dieses Paket es merkt. Bei
+  /// `isOutcomeUnknown(e)` nachlesen, nie wiederholen.
   final http.Client _http;
 
   KasseneckApi({
@@ -187,13 +194,18 @@ class KasseneckApi {
     );
   }
 
-  /// Der Rumpf einer Antwort mit HTTP 200 und Kennzeichen; leer ist ein
-  /// [KasseneckHttpError] `empty-body` (bei signierenden Aufrufen Ausgang unklar).
-  static String _rumpf(String fehlerName, http.Response response) {
-    if (response.body.isEmpty) {
-      throw KasseneckHttpError(fehlerName, response.statusCode, 'empty-body', outcome: unreadableOutcome(fehlerName));
+  /// Der Rumpf einer Antwort mit HTTP 200 und Kennzeichen, strikt als UTF-8
+  /// aus den Bytes (siehe `readBodyText`): leer `empty-body`, kein UTF-8
+  /// `not-json`, bei wirkenden Aufrufen mit Ausgang unklar.
+  static String _rumpf(String fehlerName, http.Response response) => readBodyText(fehlerName, response);
+
+  /// Die Bytes einer Binaerantwort (Bericht-PDF), nie ueber eine Textdeutung.
+  Future<Uint8List> _bytes(String endpoint, Map<String, dynamic> params) async {
+    final antwort = await _senden(endpoint, endpoint, {'params': params}, null);
+    if (antwort.bodyBytes.isEmpty) {
+      throw KasseneckHttpError(endpoint, antwort.statusCode, 'empty-body', outcome: unreadableOutcome(endpoint));
     }
-    return response.body;
+    return antwort.bodyBytes;
   }
 
   Future<dynamic> _kasseneckPostRequest(
@@ -280,21 +292,17 @@ class KasseneckApi {
   }
 
   /// Downloads the daily report PDF for [dateTime] as raw bytes.
-  Future<Uint8List?> downloadDailyReport(DateTime dateTime) async => _kasseneckPostRequest(
-      endpoint: Aufrufe.downloadDailyReport,
-      params: {
+  Future<Uint8List?> downloadDailyReport(DateTime dateTime) async => _bytes(Aufrufe.downloadDailyReport, {
         'year': dateTime.year,
         'month': dateTime.month,
         'day': dateTime.day
-      }).then((value) => Uint8List.fromList(value.codeUnits));
+      });
 
   /// Downloads the monthly report PDF for [reportMonth] as raw bytes.
-  Future<Uint8List?> downloadMonthlyReport(ReportMonth reportMonth) async => _kasseneckPostRequest(
-    endpoint: Aufrufe.downloadReport,
-    params: {
-      'month': reportMonth.month.id,
-      'year': reportMonth.year
-    }).then((value) => Uint8List.fromList(value.codeUnits));
+  Future<Uint8List?> downloadMonthlyReport(ReportMonth reportMonth) async => _bytes(Aufrufe.downloadReport, {
+        'month': reportMonth.month.id,
+        'year': reportMonth.year
+      });
 
   Future<ReportMonth?> getFirstReceiptDate() async {
     final resJson = await _kasseneckJson(endpoint: Aufrufe.getFirstReceiptDate);
@@ -462,9 +470,9 @@ class KasseneckApi {
     );
 
     if (resJson['status'] != 'success') {
-      final msg = resJson['message'];
-      throw KasseneckApiError(name, msg is String && msg.isNotEmpty ? msg : 'Storno fehlgeschlagen',
-          code: fehlercodeAus(resJson));
+      // Code (auch data.code) und Details bleiben erhalten: an `handled`
+      // haengt, ob der Ausgang unklar ist.
+      throw envelopeError(name, resJson, fallback: 'Storno fehlgeschlagen');
     }
 
     // Ab hier ist der Storno-Beleg ausgestellt und signiert — jeder Fehler
@@ -543,9 +551,7 @@ class KasseneckApi {
     );
 
     if (resJson['status'] != 'success') {
-      final msg = resJson['message'];
-      throw KasseneckApiError(name, msg is String && msg.isNotEmpty ? msg : 'Belegversand fehlgeschlagen',
-          code: fehlercodeAus(resJson));
+      throw envelopeError(name, resJson, fallback: 'Belegversand fehlgeschlagen');
     }
 
     // Ab hier ist die Mail draussen. Die einzelnen Felder werden deshalb
@@ -912,6 +918,11 @@ class KasseneckApi {
 
   Future<CashboxStatus?> getCashboxStatus() async {
     final resJson = await _financeJson(method: 'status_cashbox');
+    // Eine Fehlerhuelle geht mit Code und Ausgang hinaus, nicht als
+    // Lesefehler verpackt.
+    if (resJson['status'] != 'success') {
+      throw envelopeError('${Aufrufe.financeWebService}/status_cashbox', resJson);
+    }
     try {
       String res = resJson['data']['rkdbMessage']['status'];
       return CashboxStatus.values.where((element) => element.name == res).firstOrNull;
@@ -927,6 +938,9 @@ class KasseneckApi {
         'zertifikatnr_hex': zertifikatNrHex
       },
     );
+    if (resJson['status'] != 'success') {
+      throw envelopeError('${Aufrufe.financeWebService}/status_signature', resJson);
+    }
     try {
       String rc = resJson['data']['rkdbMessage']['rc'];
       if (rc == 'B33') {
@@ -980,6 +994,9 @@ class KasseneckApi {
           'stripe_sessions_id': stripeSessionId
         },
     );
+    if (resJson['status'] != 'success') {
+      throw envelopeError(Aufrufe.stripeCaptureIntent, resJson);
+    }
     try {
       return StripeUrlSession.fromJson(resJson['data']);
     } catch (e) {
@@ -1019,6 +1036,11 @@ class KasseneckApi {
         },
         deadline: cardTimeout,
     );
+    // Fehlerhuelle mit Code und Ausgang weiterreichen: eine Kartenbelastung
+    // mit unklarem Ausgang darf nie blind wiederholt werden.
+    if (resJson['status'] != 'success') {
+      throw envelopeError(Aufrufe.hobexPayApi, resJson);
+    }
     try {
       return HobexReceipt.fromJson(resJson['data']);
     } catch (e) {
@@ -1027,6 +1049,10 @@ class KasseneckApi {
   }
 
   /// Refunds a previous **Hobex Cloud** transaction.
+  ///
+  /// Returns `true` on success; a rejection throws [KasseneckApiError]. When
+  /// `isOutcomeUnknown(e)` is true the refund may have gone through: look it
+  /// up, never retry blindly.
   Future<bool> hobexRefund({required String transactionId, required double amount, double tip = 0}) async {
     final resJson = await _kasseneckJson(
         endpoint: Aufrufe.hobexRefundApi,
@@ -1037,7 +1063,13 @@ class KasseneckApi {
         },
         deadline: cardTimeout,
     );
-    return resJson['status'] == 'success';
+    // Eine Fehlerhuelle wirft mit Code und Ausgang, statt still `false` zu
+    // liefern: bei `isOutcomeUnknown` kann die Erstattung gelaufen sein, und
+    // ein `false` luede zum zweiten Versuch ein (doppelte Erstattung).
+    if (resJson['status'] != 'success') {
+      throw envelopeError(Aufrufe.hobexRefundApi, resJson);
+    }
+    return true;
   }
 
   /// Fragt den Stand einer Hobex-Cloud-Transaktion ab.

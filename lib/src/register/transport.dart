@@ -40,6 +40,9 @@ class RegisterTransport {
   /// Backends (`kasse-app/<version+build>`), Vorgabe `kasseneck_api/<version>`.
   /// [omitKasseneckHeaders] laesst die beiden Kasseneck-Kopfzeilen weg; die
   /// Pruefung der Antwort bleibt.
+  ///
+  /// [httpClient] darf kein `RetryClient` (oder anderer wiederholender
+  /// Client) sein: ein zweites stilles Senden waere ein zweiter Beleg.
   RegisterTransport({
     required this.idToken,
     required this.sessionId,

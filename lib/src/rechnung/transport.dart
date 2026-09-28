@@ -23,6 +23,10 @@ import '../v3.dart';
 const String kRechnungBaseUrl = kPublicBaseUrl;
 
 class RechnungTransport {
+  /// [baseUrl] muss auf `/v3` enden, sonst wirft schon das Anlegen.
+  /// [httpClient] darf kein `RetryClient` (oder anderer wiederholender
+  /// Client) sein: ein zweites stilles Senden von issueInvoice ohne
+  /// idempotencyKey waere eine zweite Rechnung.
   RechnungTransport({
     required String apiKey,
     String? baseUrl,

@@ -42,9 +42,21 @@ const String _versionWert = 'v3';
 /// Zugangsdaten. Proxys, Emulator und `127.0.0.1` bekommen keine Kopfzeilen.
 const Set<String> _kasseneckHosts = {'api.kasseneck.at', 'kasse.kasseneck.at'};
 
-/// Aufrufe, die signieren bzw. bei FinanzOnline etwas ausloesen. Scheitert
-/// einer, nachdem die Anfrage unterwegs war, ist sein Ausgang offen.
-const Set<String> signingCalls = {'createReceipt', 'cancelReceipt', 'financeWebService'};
+/// Aufrufe mit Wirkung, die nie blind wiederholt werden duerfen: sie
+/// signieren (`createReceipt`, `cancelReceipt`), loesen bei FinanzOnline
+/// etwas aus (`financeWebService`) oder bewegen Geld (`hobexPayApi`
+/// belastet eine Karte, `hobexRefundApi` erstattet, `stripeCaptureIntent`
+/// zieht eine vorgemerkte Zahlung ein). Scheitert einer, nachdem die Anfrage
+/// unterwegs war (Netz, Zeitlimit, HTTP 5xx, unlesbare Erfolgsantwort), ist
+/// sein Ausgang offen.
+const Set<String> unknownOutcomeCalls = {
+  'createReceipt',
+  'cancelReceipt',
+  'financeWebService',
+  'hobexPayApi',
+  'hobexRefundApi',
+  'stripeCaptureIntent',
+};
 
 /// Produkte, die das Backend in `Kasseneck-Client` zaehlt (Positivliste).
 const Set<String> _clientProdukte = {'kasse-web', 'kasse-app', 'kasseneck-api', 'kasseneck_api'};
@@ -52,11 +64,11 @@ final RegExp _clientVersion = RegExp(r'^[0-9A-Za-z.+-]{1,40}$');
 const int _clientMax = 64;
 
 /// Ist [functionName] (auch mit Vorgang, `financeWebService/status_cashbox`)
-/// ein signierender Aufruf?
-bool isSigningCall(String functionName) => signingCalls.contains(functionName.split('/').first);
+/// ein Aufruf aus [unknownOutcomeCalls]?
+bool isSigningCall(String functionName) => unknownOutcomeCalls.contains(functionName.split('/').first);
 
 /// Ausgang einer unlesbaren Antwort, die der `/v3`-Rand mit HTTP 200 und
-/// Kennzeichen geschickt hat: bei einem signierenden Aufruf kann der Handler
+/// Kennzeichen geschickt hat: bei einem Aufruf aus [unknownOutcomeCalls] kann der Handler
 /// gelaufen sein.
 ErrorOutcome unreadableOutcome(String functionName) =>
     isSigningCall(functionName) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
@@ -126,10 +138,10 @@ bool _traegtKennzeichen(http.BaseResponse antwort) =>
 /// gelesene Antwort nur bei HTTP 200 mit Kennzeichen; sonst wirft er:
 ///
 /// 1. HTTP != 200: [KasseneckHttpError] `server-error` (5xx auf einem
-///    signierenden Aufruf mit Ausgang unklar). Einzige Ausnahme ist die
+///    Aufruf aus [unknownOutcomeCalls] mit Ausgang unklar). Einzige Ausnahme ist die
 ///    404-Huelle des Rands mit Kennzeichen und Code (`not_found`).
 /// 2. HTTP 200 mit HTML ohne Kennzeichen: `route_missing`. Mit Kennzeichen
-///    bei einem signierenden Aufruf: unlesbar, Ausgang unklar.
+///    bei einem Aufruf aus [unknownOutcomeCalls]: unlesbar, Ausgang unklar.
 /// 3. Kein Kennzeichen: `dialect_mismatch`, Ausgang unklar.
 ///
 /// In allen drei Faellen bleibt der Rumpf ungelesen (ausser der 404-Huelle).
@@ -146,12 +158,20 @@ Future<http.Response> v3Post(
   required String body,
   required Duration timeout,
 }) async {
-  final request = http.Request('POST', Uri.parse('$basis/$name'));
+  // Laeuft die Frist ab, bricht der Abbruch die Anfrage wirklich ab (auch
+  // einen noch nicht vollstaendig gesendeten Rumpf) und schliesst die
+  // Verbindung; ohne ihn endete nur das Warten.
+  final abbruch = Completer<void>();
+  final request = http.AbortableRequest('POST', Uri.parse('$basis/$name'), abortTrigger: abbruch.future);
   request.headers.addAll(_ohneKasseneckKopfzeilen(headers));
   request.headers.addAll(kasseneck.fuer(basis));
   request.body = body;
   final signierend = isSigningCall(functionName);
   final ausgangNetz = signierend ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+
+  // Liest gerade die 404-Huelle des Rands? Laeuft dabei die Frist ab, bleibt
+  // es wie in npm beim HTTP-Fehler (404, abgelehnt), nicht beim Zeitlimit.
+  var liest404 = false;
 
   Future<http.Response> ablauf() async {
     final http.StreamedResponse antwort;
@@ -163,7 +183,9 @@ Future<http.Response> v3Post(
     final inhaltstyp = antwort.headers['content-type'];
     if (antwort.statusCode != 200) {
       if (antwort.statusCode == 404 && _traegtKennzeichen(antwort)) {
+        liest404 = true;
         final fehler = await _randFehler404(functionName, antwort);
+        liest404 = false;
         if (fehler != null) throw fehler;
       }
       throw KasseneckHttpError(functionName, antwort.statusCode, 'server-error',
@@ -189,8 +211,14 @@ Future<http.Response> v3Post(
   }
 
   try {
-    return await ablauf().timeout(timeout);
+    return await ablauf().timeout(timeout, onTimeout: () {
+      if (!abbruch.isCompleted) abbruch.complete();
+      throw TimeoutException(null, timeout);
+    });
   } on TimeoutException catch (e) {
+    if (liest404) {
+      throw KasseneckHttpError(functionName, 404, 'server-error');
+    }
     // Die Anfrage war draussen; das Zeitlimit beendet nur das Warten, nicht
     // die Arbeit des Servers.
     throw KasseneckHttpError(functionName, 0, KasseneckHttpError.zeitablauf,
@@ -230,18 +258,34 @@ Map<String, String> _ohneKasseneckKopfzeilen(Map<String, String> kopfzeilen) {
   };
 }
 
-/// Die Huelle `{status, message, data, code}` einer gelesenen Antwort; wirft
-/// [KasseneckHttpError] `empty-body`, `not-json` bzw. `missing-status`, bei
-/// einem signierenden Aufruf mit Ausgang unklar.
-Map<String, dynamic> readEnvelope(String functionName, http.Response antwort) {
+/// Der Rumpf als Text: immer strikt UTF-8 aus den Bytes, gleich welchen
+/// Zeichensatz der Inhaltstyp nennt (ein kaputter Inhaltstyp darf nach der
+/// Signatur keine rohe Ausnahme werfen, ein falscher keinen Artikelnamen
+/// verstuemmeln). Leer -> `empty-body`, kein UTF-8 -> `not-json`; beides bei
+/// einem Aufruf aus [unknownOutcomeCalls] mit Ausgang unklar.
+String readBodyText(String functionName, http.Response antwort) {
   final ausgang = unreadableOutcome(functionName);
-  final bytes = antwort.bodyBytes;
-  if (utf8.decode(bytes, allowMalformed: true).trim().isEmpty) {
+  final String text;
+  try {
+    text = utf8.decode(antwort.bodyBytes);
+  } on FormatException {
+    throw KasseneckHttpError(functionName, antwort.statusCode, 'not-json', outcome: ausgang);
+  }
+  if (text.trim().isEmpty) {
     throw KasseneckHttpError(functionName, antwort.statusCode, 'empty-body', outcome: ausgang);
   }
+  return text;
+}
+
+/// Die Huelle `{status, message, data, code}` einer gelesenen Antwort; wirft
+/// [KasseneckHttpError] `empty-body`, `not-json` bzw. `missing-status`, bei
+/// einem Aufruf aus [unknownOutcomeCalls] mit Ausgang unklar.
+Map<String, dynamic> readEnvelope(String functionName, http.Response antwort) {
+  final ausgang = unreadableOutcome(functionName);
+  final text = readBodyText(functionName, antwort);
   final Object? roh;
   try {
-    roh = jsonDecode(utf8.decode(bytes));
+    roh = jsonDecode(text);
   } on FormatException {
     // Der Rumpf selbst bleibt draussen: er gehoert nicht ins Protokoll.
     throw KasseneckHttpError(functionName, antwort.statusCode, 'not-json', outcome: ausgang);

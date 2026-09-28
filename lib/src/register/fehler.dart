@@ -66,6 +66,12 @@ const Set<String> clientErrorCodes = {'route_missing', 'response_unreadable'};
 /// Ist der Ausgang dieses Fehlers unklar? Dann den Aufruf **nicht
 /// wiederholen**, sondern das Ergebnis nachlesen. Gilt fuer jede Fehlerart;
 /// nur [KasseneckApiError] und [KasseneckHttpError] koennen unklar sein.
+///
+/// **Noch nicht** fuer Einlesefehler nach der Signatur:
+/// [KasseneckReceiptFormatError] und `KasseneckValidationError` mit
+/// `kind: 'response'` und `receiptId` liefern hier `false`, obwohl der Beleg
+/// bzw. Storno existiert. Bis sie als `response_unreadable` kommen, gilt fuer
+/// sie ebenfalls: nachlesen, nie wiederholen.
 bool isOutcomeUnknown(Object? error) =>
     (error is KasseneckApiError && error.outcome == ErrorOutcome.unknown) ||
     (error is KasseneckHttpError && error.outcome == ErrorOutcome.unknown);
@@ -199,8 +205,9 @@ class KasseneckHttpError implements Exception {
   /// rekonstruieren.
   final String? causeType;
 
-  /// [ErrorOutcome.unknown] auf einem signierenden Aufruf (`createReceipt`,
-  /// `cancelReceipt`, `financeWebService`), wenn die Anfrage unterwegs war:
+  /// [ErrorOutcome.unknown] auf einem Aufruf mit Wirkung (`createReceipt`,
+  /// `cancelReceipt`, `financeWebService`, `hobexPayApi`, `hobexRefundApi`,
+  /// `stripeCaptureIntent`), wenn die Anfrage unterwegs war:
   /// Netzfehler oder Zeitlimit nach dem Senden, HTTP 5xx, oder eine
   /// unlesbare Antwort mit HTTP 200 und `/v3`-Kennzeichen (leer, kein JSON,
   /// ohne Statusfeld, HTML). Sonst [ErrorOutcome.rejected].
