@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.0.0-rc.1
+npm_version: 1.0.0-rc.2
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -29,7 +29,7 @@ npm_version: 1.0.0-rc.1
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
 #
-# Stand 1.0.0-rc.1: 20 Einträge "nicht zutreffend" (Partner-API), 35 "offen"
+# Stand 1.0.0-rc.2: 20 Einträge "nicht zutreffend" (Partner-API), 35 "offen"
 # (33 in ausnahmen, 2 in wert_ausnahmen). Keine der 33 Lücken aus 0.30.0 ist
 # durch 1.0 entfallen: der Vertrag führt jede weiter, nur unter englischem
 # Namen, und dieses Paket hat keine davon geschlossen. Neu sind drei:
