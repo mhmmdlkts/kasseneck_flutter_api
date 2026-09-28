@@ -7,18 +7,18 @@ import 'package:kasseneck_api/models/kasseneck_item.dart';
 void main() {
   group('VatRate 4,9 % (Grundnahrungsmittel)', () {
     test('Enum-Wert vorhanden: rate 4.9, Kategorie G', () {
-      expect(VatRate.vat4komma9.rate, 4.9);
-      expect(VatRate.vat4komma9.category, 'G');
+      expect(VatRate.vat4_9.rate, 4.9);
+      expect(VatRate.vat4_9.category, 'G');
     });
 
-    test('fromJson(vat: 4.9) -> vat4komma9 (frueher still als 0 % geparst!)', () {
+    test('fromJson(vat: 4.9) -> vat4_9 (frueher still als 0 % geparst!)', () {
       final item = KasseneckItem.fromJson({
         'name': 'Brot',
         'amount': 1,
         'vat': 4.9,
         'priceOne': 1.20,
       });
-      expect(item.vat, VatRate.vat4komma9, reason: 'darf NICHT auf vat0 zurueckfallen');
+      expect(item.vat, VatRate.vat4_9, reason: 'darf NICHT auf vat0 zurueckfallen');
       expect(item.vat.rate, 4.9);
     });
 
@@ -26,7 +26,7 @@ void main() {
       final item = KasseneckItem(
         name: 'Brot',
         quantity: 1,
-        vat: VatRate.vat4komma9,
+        vat: VatRate.vat4_9,
         priceCents: 120,
       );
       expect(item.toJson()['vatRate'], 4.9);

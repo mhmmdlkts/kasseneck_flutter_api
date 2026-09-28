@@ -124,7 +124,7 @@ void main() {
 
     test('Steuersatz, wie er am Tresen gelesen wird', () {
       expect(steuersatzText(VatRate.vat20), '20 %');
-      expect(steuersatzText(VatRate.vat4komma9), '4,9 %');
+      expect(steuersatzText(VatRate.vat4_9), '4,9 %');
     });
   });
 

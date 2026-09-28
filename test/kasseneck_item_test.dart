@@ -130,8 +130,8 @@ void main() {
       expect(VatRate.values.length, 6);
       expect(VatRate.vat0.rate, 0);
       expect(VatRate.vat0.category, 'D');
-      expect(VatRate.vat4komma9.rate, 4.9);
-      expect(VatRate.vat4komma9.category, 'G');
+      expect(VatRate.vat4_9.rate, 4.9);
+      expect(VatRate.vat4_9.category, 'G');
       expect(VatRate.vat10.rate, 10);
       expect(VatRate.vat10.category, 'B');
       expect(VatRate.vat13.rate, 13);

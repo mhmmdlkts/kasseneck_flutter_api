@@ -136,7 +136,7 @@ void main() {
       final r = receipt(
         items: [
           KasseneckItem(name: 'a', quantity: 3, vat: VatRate.vat10, priceCents: 333),   // 9,99
-          KasseneckItem(name: 'b', quantity: 1, vat: VatRate.vat4komma9, priceCents: 240), // 2,40
+          KasseneckItem(name: 'b', quantity: 1, vat: VatRate.vat4_9, priceCents: 240), // 2,40
         ],
         vouchers: [
           KeckVoucher(action: VoucherAction.redeem, type: VoucherType.promo, valueCents: 150),

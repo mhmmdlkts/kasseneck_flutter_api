@@ -134,7 +134,7 @@ void main() {
     });
 
     test('4,9 % kommen durch — der Satz für Grundnahrungsmittel', () {
-      expect(alsEntwurf(artikel(satz: 4.9))!.steuersatz, VatRate.vat4komma9);
+      expect(alsEntwurf(artikel(satz: 4.9))!.steuersatz, VatRate.vat4_9);
     });
 
     test('die Höchstmenge des Artikels wandert mit', () {

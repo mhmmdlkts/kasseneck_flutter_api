@@ -201,7 +201,7 @@ const List<VatRate> steuersaetze = [
   VatRate.vat19,
   VatRate.vat13,
   VatRate.vat10,
-  VatRate.vat4komma9,
+  VatRate.vat4_9,
   VatRate.vat0,
 ];
 

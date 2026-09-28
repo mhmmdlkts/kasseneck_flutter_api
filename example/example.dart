@@ -26,7 +26,7 @@ Future<void> main() async {
     items: [
       // Prices in cents (320 = EUR 3.20); alternatively KasseneckItem.euro(singlePrice: 3.20)
       KasseneckItem(name: 'Coffee', quantity: 2, vat: VatRate.vat20, priceCents: 320),
-      KasseneckItem(name: 'Bread', quantity: 1, vat: VatRate.vat4komma9, priceCents: 240),
+      KasseneckItem(name: 'Bread', quantity: 1, vat: VatRate.vat4_9, priceCents: 240),
     ],
   );
   print('Receipt ${receipt?.receiptId}, signed: ${receipt?.signatureSuccess}');
