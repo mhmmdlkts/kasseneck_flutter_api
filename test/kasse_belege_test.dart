@@ -37,8 +37,8 @@ Map<String, dynamic> huelleMitBeleg({
       },
       'company': 'Testbetrieb',
       'is_small_business': false,
-      'uid': 'ATU12345678',
-      'taxnr': '12/345',
+      'vatId': 'ATU12345678',
+      'taxNumber': '12/345',
       'phone': '+43 1 234',
       'street': 'Teststrasse 1',
       'zip': '1010',
@@ -238,16 +238,17 @@ void main() {
   });
 
   group('auflisten', () {
-    test('die Kasse geht als cashregisterid hinaus — klein geschrieben', () async {
-      // So heisst der Pflichtparameter dieses Endpunkts im Backend; ein
-      // Tippfehler faellt sonst erst im Betrieb auf.
+    test('die Kasse geht als cashregisterId hinaus (unter /v3 wie ueberall)', () async {
+      // So heisst der Pflichtparameter dieses Endpunkts unter /v3; das alte
+      // `cashregisterid` weist der Server dort als unbekanntes Feld ab.
       final f = clientMit([
         {'status': 'success', 'data': {'receipts': []}},
       ]);
       await f.client.auflisten(von: '2026-08-19', bis: '2026-08-19', hoechstens: 20);
 
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
-      expect(params['cashregisterid'], 'KASSE1');
+      expect(params['cashregisterId'], 'KASSE1');
+      expect(params.containsKey('cashregisterid'), isFalse);
       expect(params['from'], '2026-08-19');
       expect(params['to'], '2026-08-19');
       expect(params['limit'], 20);
@@ -270,7 +271,7 @@ void main() {
                   {'name': 'Kaffee', 'quantity': 1},
                 ],
                 'operator': {'uid': 'u1', 'name': 'Ali'},
-                'stornoStand': 'offen',
+                'cancellationStatus': 'none',
               },
             ],
           },
@@ -287,7 +288,7 @@ void main() {
       expect(b.bediener?.name, 'Ali');
       expect(b.istVerkauf, isTrue);
       expect(b.istStorno, isFalse);
-      expect(b.stornoStand, StornoStand.offen);
+      expect(b.stornoStand, StornoStand.none);
     });
 
     test('fehlende Liste ist ein Antwortfehler, keine leere Liste', () async {
@@ -308,7 +309,7 @@ void main() {
                 'total': -2.8,
                 'paymentMethod': 'cash',
                 'cancellationOf': {'receiptId': 'KASSE1-ID-42'},
-                'stornoStand': 'offen',
+                'cancellationStatus': 'none',
               },
             ],
           },
@@ -333,7 +334,7 @@ void main() {
           },
         },
       ]);
-      final ergebnis = await f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'fehleingabe');
+      final ergebnis = await f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error');
 
       expect(ergebnis.beleg.receiptId, 'KASSE1-ID-43');
       expect(ergebnis.originalReceiptId, 'KASSE1-ID-42');
@@ -341,7 +342,7 @@ void main() {
 
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
       expect(params['originalReceiptId'], 'KASSE1-ID-42');
-      expect(params['reason'], 'fehleingabe');
+      expect(params['reason'], 'input_error');
       expect(params, isNot(contains('items')), reason: 'ohne Positionen ist es ein Vollstorno');
     });
 
@@ -358,7 +359,7 @@ void main() {
       ]);
       await f.client.stornieren(
         originalReceiptId: 'KASSE1-ID-42',
-        grund: 'retoure',
+        grund: 'duplicate',
         positionen: const [(index: 0, menge: 1)],
         anmerkung: 'Gast hat zurückgegeben',
       );
@@ -402,14 +403,27 @@ void main() {
       expect(f.log, isEmpty);
     });
 
-    test('fehlender Bezug in der Antwort ist ein Fehler', () async {
+    test('fehlender Bezug in der Antwort ist response_unreadable mit Ausgang unklar', () async {
       final f = clientMit([
         {'status': 'success', 'data': {...huelleMitBeleg(), 'remaining': [0]}},
       ]);
       await expectLater(
-        f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'fehleingabe'),
-        throwsA(isA<KasseneckValidationError>()),
+        f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error'),
+        throwsA(isA<KasseneckApiError>()
+            .having((e) => e.code, 'code', 'response_unreadable')
+            .having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)),
       );
+    });
+
+    test('ein unbekannter oder alter deutscher Grund geht nicht hinaus', () async {
+      for (final grund in ['retoure', 'fehleingabe']) {
+        final f = clientMit([{'status': 'success', 'data': {}}]);
+        await expectLater(
+          f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: grund),
+          throwsA(isA<KasseneckValidationError>()),
+        );
+        expect(f.log, isEmpty, reason: grund);
+      }
     });
 
     test('kaputte Antwort verliert den signierten Storno-Beleg nicht: die Kennung faehrt mit', () async {
@@ -428,10 +442,11 @@ void main() {
       ]) {
         final f = clientMit([{'status': 'success', 'data': kaputt}]);
         await expectLater(
-          f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'fehleingabe'),
-          throwsA(isA<KasseneckValidationError>()
-              .having((e) => e.kind, 'kind', 'response')
-              .having((e) => e.receiptId, 'receiptId', 'KASSE1-ID-43')),
+          f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error'),
+          throwsA(isA<KasseneckApiError>()
+              .having((e) => e.code, 'code', 'response_unreadable')
+              .having((e) => isOutcomeUnknown(e), 'unklar', isTrue)
+              .having((e) => e.details['receiptId'], 'receiptId', 'KASSE1-ID-43')),
           reason: '$kaputt',
         );
       }

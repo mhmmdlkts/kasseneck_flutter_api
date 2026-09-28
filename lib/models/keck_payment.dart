@@ -214,7 +214,7 @@ const String mixedNichtSenden =
     'Zahlungsart "mixed" vergibt nur der Server – mehrere Zahlarten gehen als payments hinaus.';
 
 /// `payments` neben einer Einzel-Zahlungsart oder Kartenfeldern? Liefert den
-/// Grund (Backend: `PAYMENTS_CONFLICT`), sonst `null`. Nie still eines
+/// Grund (Backend: `payments_conflict`), sonst `null`. Nie still eines
 /// bevorzugen. [felder] nennt die Felder mit ihrem Drahtnamen.
 String? zahlungsKonflikt(Map<String, Object?> felder) {
   for (final MapEntry(:key, :value) in felder.entries) {

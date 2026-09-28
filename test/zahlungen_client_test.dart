@@ -129,29 +129,30 @@ void main() {
       await api.stornieren(
         cashregisterId: 'KECK-1',
         originalReceiptId: 'KECK-1-ID-12',
-        grund: 'fehleingabe',
+        grund: 'input_error',
         zahlungen: const [
-          KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -2000, refundOf: 'p1', provider: CreditCardProvider.sumup),
+          KeckPaymentInput(
+              method: KeckPaymentMethod.creditCard, amountCents: -2000, refundOf: 'p1', provider: CreditCardProvider.sumup, providerPaymentId: 'rf-1'),
           KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1500, refundOf: 'p2'),
         ],
       );
       expect(params['payments'], [
-        {'method': 'creditCard', 'amountCents': -2000, 'provider': 'sumup', 'refundOf': 'p1'},
+        {'method': 'creditCard', 'amountCents': -2000, 'provider': 'sumup', 'providerPaymentId': 'rf-1', 'refundOf': 'p1'},
         {'method': 'cash', 'amountCents': -1500, 'refundOf': 'p2'},
       ]);
       expect(params.containsKey('paymentMethod'), isFalse);
     });
 
-    test('Konflikt mit zahlungsart/Kartenfeldern, positive Betraege, mixed -- alles vor dem Netz', () {
+    test('positive Betraege, mixed und Karte ohne Bezug -- alles vor dem Netz', () {
       final api = apiWith(nieGerufen());
-      const rueck = [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -100)];
-      Future<void> storno({List<KeckPaymentInput>? z, KeckPaymentMethod? art, CreditCardProvider? anbieter}) => api.stornieren(
-          cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'fehleingabe', zahlungen: z, zahlungsart: art, kartenanbieter: anbieter);
-      expect(() => storno(z: rueck, art: KeckPaymentMethod.cash), throwsA(isA<KasseneckValidationError>()));
-      expect(() => storno(z: rueck, anbieter: CreditCardProvider.sumup), throwsA(isA<KasseneckValidationError>()));
-      expect(() => storno(z: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)]),
+      Future<void> storno(List<KeckPaymentInput> z) =>
+          api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'input_error', zahlungen: z);
+      expect(() => storno(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)]),
           throwsA(isA<KasseneckValidationError>()));
-      expect(() => storno(art: KeckPaymentMethod.mixed), throwsA(isA<KasseneckValidationError>()));
+      expect(() => storno(const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: -100)]),
+          throwsA(isA<KasseneckValidationError>()));
+      expect(() => storno(const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -100, refundOf: 'p1')]),
+          throwsA(isA<KasseneckValidationError>()));
     });
   });
 
@@ -179,11 +180,11 @@ void main() {
       expect(f.log, isEmpty);
     });
 
-    test('stornieren mit zahlungen: Rueckzahlungen gehen hinaus; Konflikt wirft', () async {
+    test('stornieren mit zahlungen: Rueckzahlungen gehen hinaus; Karte ohne Bezug wirft vor dem Netz', () async {
       final f = kasseMit(stornoAntwort());
       await f.client.stornieren(
         originalReceiptId: 'KASSE1-ID-42',
-        grund: 'fehleingabe',
+        grund: 'input_error',
         zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, refundOf: 'p2')],
       );
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
@@ -193,9 +194,10 @@ void main() {
       await expectLater(
           f.client.stornieren(
             originalReceiptId: 'KASSE1-ID-42',
-            grund: 'fehleingabe',
-            zahlungsart: KeckPaymentMethod.cash,
-            zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500)],
+            grund: 'input_error',
+            zahlungen: const [
+              KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -500, refundOf: 'p1', provider: CreditCardProvider.gpTomAndroid),
+            ],
           ),
           throwsA(isA<KasseneckValidationError>()));
       expect(f.log.length, 1);

@@ -29,7 +29,7 @@ KasseneckReceipt belegMitLogo() => buildReceipt()
       paperSize: 'mm80',
       ruleset: 2)
   ..logoUrl = 'https://beispiel.test/logo.png'
-  ..logoStufe = LogoStufe.m;
+  ..logoScale = LogoStufe.m;
 
 KasseneckReceipt belegOhneLogo() => belegMitLogo()..logoUrl = null;
 

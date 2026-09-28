@@ -29,6 +29,12 @@ class KasseneckItem {
   /// Zahlart der Trinkgeld-Position (kann von der des Belegs abweichen).
   final String? paymentMethod;
 
+  /// Nur an Trinkgeld-Positionen: hatte der Empfaenger das Geld beim
+  /// Ausstellen schon (`true`) oder behaelt es der Betrieb und schuldet es
+  /// (`false`)? Drahtfeld `receivedImmediately` (frueher `sofortErhalten`);
+  /// `null`, wenn der Beleg es nicht nennt.
+  final bool? receivedImmediately;
+
   /// Artikel-Verweis (Artikelstamm) — Grundlage der Erlösgruppen-Zuordnung
   /// im Bericht. Optional; Handeingaben haben keinen.
   final String? articleId;
@@ -42,6 +48,7 @@ class KasseneckItem {
     this.recipient,
     this.paymentMethod,
     this.articleId,
+    this.receivedImmediately,
   });
 
   /// Trinkgeld-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
@@ -127,6 +134,7 @@ class KasseneckItem {
         'kind': 'tip',
         'recipient': recipient,
         if (paymentMethod != null) 'paymentMethod': paymentMethod,
+        'receivedImmediately': ?receivedImmediately,
       },
       if (kind == 'discount') 'kind': 'discount',
       if (articleId != null && articleId!.isNotEmpty) 'articleId': articleId,
@@ -155,6 +163,7 @@ class KasseneckItem {
       recipient: json['recipient'] is Map ? Map<String, dynamic>.from(json['recipient'] as Map) : null,
       paymentMethod: json['paymentMethod'] as String?,
       articleId: json['articleId'] is String && (json['articleId'] as String).isNotEmpty ? json['articleId'] as String : null,
+      receivedImmediately: kind == 'tip' && json['receivedImmediately'] is bool ? json['receivedImmediately'] as bool : null,
     );
   }
 
@@ -172,6 +181,7 @@ class KasseneckItem {
       recipient: recipient,
       paymentMethod: paymentMethod,
       articleId: articleId,
+      receivedImmediately: receivedImmediately,
     );
   }
 }

@@ -94,7 +94,7 @@ final _wege = <_Weg>[
     'getReceipt': (c) => _geraet(c).getReceipt('R1'),
     'financeWebService': (c) => _geraet(c).getCashboxStatus(),
     'cancelReceipt': (c) =>
-        _geraet(c).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe'),
+        _geraet(c).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
     'sendReceiptEmail': (c) => _geraet(c).belegSenden(fullReceiptId: 'F1', an: 'a@b.at'),
     'hobexPayApi': (c) => _geraet(c).hobexPay(transactionId: '1', amount: 1),
     'hobexRefundApi': (c) => _geraet(c).hobexRefund(transactionId: '1', amount: 1),
@@ -132,7 +132,7 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
         'createReceipt' => geraet.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
         'getReceipt' => geraet.getReceipt('R1'),
         'financeWebService' => geraet.getCashboxStatus(),
-        'cancelReceipt' => geraet.stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe'),
+        'cancelReceipt' => geraet.stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
         'sendReceiptEmail' => geraet.belegSenden(fullReceiptId: 'F1', an: 'a@b.at'),
         'hobexPayApi' => geraet.hobexPay(transactionId: '1', amount: 1),
         'hobexRefundApi' => geraet.hobexRefund(transactionId: '1', amount: 1),
@@ -483,7 +483,7 @@ void main() {
         await expectLater(_sitzung(netz.client).rufen('createReceipt'), throwsA(fehler));
         await expectLater(RegisterClient(httpClient: netz.client).pairRegisterDevice(code: 'ABC123'), throwsA(fehler));
         await expectLater(
-            _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe'),
+            _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
             throwsA(fehler));
         await expectLater(_geraet(netz.client).sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
             throwsA(fehler));
@@ -556,7 +556,7 @@ void main() {
             'message': 'x',
             'data': {'handled': false, 'remainingCents': 5},
           }));
-      final storno = _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe');
+      final storno = _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error');
       await expectLater(
           storno,
           throwsA(_apiFehler('response_translation_failed', ErrorOutcome.rejected)
@@ -565,7 +565,7 @@ void main() {
           throwsA(_apiFehler('response_translation_failed', ErrorOutcome.rejected)));
       netz.antwort = (_) => _v3({'status': 'error', 'message': 'x', 'data': {'code': 'cancellation_outcome_unknown'}});
       await expectLater(
-          _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'fehleingabe'),
+          _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
           throwsA(_apiFehler('cancellation_outcome_unknown', ErrorOutcome.unknown)));
     });
 

@@ -140,7 +140,7 @@ class KeckPrinterService {
       DruckLogo? logoAusBeleg;
       if (belegTraegtLogo) {
         try {
-          logoAusBeleg = await logoLader(receipt.logoUrl, receipt.logoStufe, paperSize);
+          logoAusBeleg = await logoLader(receipt.logoUrl, receipt.logoScale, paperSize);
         } catch (_) {
           // Ein Logo, das nicht kommt, ist kein Druckfehler: der Beleg steht
           // laengst in der Signaturkette, der Bon muss hinaus.

@@ -6,30 +6,28 @@
 /// gibt dort auf Wunsch ein PDF aus. Ein mitgeschicktes waere dieselbe Sache
 /// ein zweites Mal, nur unveraenderlich veraltet.
 ///
-/// Zwilling von `BELEG_MAIL_FEHLER` (`src/kasse/texte.ts`) im JS-Paket und von
-/// `FEHLERCODES` in `functions/beleg-mail-core.js` des Backends.
+/// Zwilling von `sendReceiptEmail` in `@kreiseck/kasseneck-api` 1.0.
 library;
 
-/// Stabile Fehlercodes von `sendReceiptEmail`, in der Reihenfolge des
-/// Backend-Katalogs. Sie kommen als `KasseneckApiError.code` an —
-/// **entscheide am Code, nie am Text**, der deutsche Satz darf sich jederzeit
-/// aendern.
+import '../receipt/codes.dart' show receiptEmailErrorCodes, receiptEmailVias;
+
+/// Stabile Fehlercodes von `sendReceiptEmail` unter `/v3` — Zwilling von
+/// `RECEIPT_EMAIL_ERROR_CODES` (siehe `receipt/codes.dart`). Sie kommen als
+/// `KasseneckApiError.code` an — **entscheide am Code, nie am Text**, der
+/// deutsche Satz darf sich jederzeit aendern.
 ///
-/// Was sie bedeuten:
-///   * `adresse_ungueltig` — die Adresse, nicht der Beleg: verbessern lassen.
-///   * `beleg_nicht_gefunden` — es gibt ihn nicht **oder** er gehoert einer
+/// Was die fachlichen bedeuten:
+///   * `invalid_address` — die Adresse, nicht der Beleg: verbessern lassen.
+///   * `receipt_not_found` — es gibt ihn nicht **oder** er gehoert einer
 ///     anderen Kasse. Das Backend unterscheidet das nach aussen bewusst nicht,
 ///     sonst waere der Endpunkt ein Auskunftsdienst ueber fremde Belege.
-///   * `zu_oft` — die Schleuse: hoechstens fuenf Mails je Beleg (24 h) und 30
-///     je Kasse und Stunde. Spaeter noch einmal, nicht sofort wieder.
-///   * `versand_fehlgeschlagen` — hinaus ging nichts; ein zweiter Versuch ist
-///     hier erlaubt und sinnvoll.
-const List<String> belegMailFehlercodes = [
-  'adresse_ungueltig',
-  'beleg_nicht_gefunden',
-  'zu_oft',
-  'versand_fehlgeschlagen',
-];
+///   * `too_many_requests` — die Schleuse: hoechstens fuenf Mails je Beleg
+///     (24 h) und 30 je Kasse und Stunde. Spaeter noch einmal, nicht sofort.
+///   * `send_failed` — hinaus ging nichts; ein zweiter Versuch ist hier
+///     erlaubt und sinnvoll.
+///
+/// Dahinter die Codes von Anmeldung und Rand und `route_missing`.
+final List<String> belegMailFehlercodes = receiptEmailErrorCodes;
 
 /// Ist [wert] ein Code aus [belegMailFehlercodes]? Ein Anzeigetext ist keiner.
 bool istBelegMailFehlercode(Object? wert) =>
@@ -55,9 +53,11 @@ class Belegmailergebnis {
   /// Wien eine andere Uhrzeit am Tresen.
   final String? at;
 
-  /// Der Weg, auf dem die Mail hinausging: `eigen` (Postfach des Betriebs),
-  /// `plattform` oder `plattform-fallback` (eigenes Postfach hinterlegt, aber
-  /// gescheitert — dann ist am Konto etwas zu richten).
+  /// Der Weg, auf dem die Mail hinausging (Katalog `MAILWEG`): `own`
+  /// (Postfach des Betriebs), `platform` oder `platform_fallback` (eigenes
+  /// Postfach hinterlegt, aber gescheitert — dann ist am Konto etwas zu
+  /// richten). `null`, wenn die Antwort ihn nicht oder mit einem unbekannten
+  /// Wert nennt: das ist eine Auskunft ueber den Weg, keine ueber den Erfolg.
   final String? via;
 
   /// Liest die Antwort **defensiv**: was fehlt oder den falschen Typ hat, wird
@@ -75,7 +75,7 @@ class Belegmailergebnis {
     return Belegmailergebnis(
       to: to is String && to.trim().isNotEmpty ? to : gesendetAn,
       at: at is String && at.isNotEmpty ? at : null,
-      via: via is String && via.isNotEmpty ? via : null,
+      via: receiptEmailVias.contains(via) ? via as String : null,
     );
   }
 

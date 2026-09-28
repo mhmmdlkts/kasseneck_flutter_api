@@ -27,12 +27,16 @@ import '../aufrufe.dart';
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'artikel.dart';
+import '../../models/registration_info.dart';
 import 'belegmail.dart';
+import 'storno.dart' show pruefeKartenRueckbuchung, stornogruende;
 
-/// Storno-Stand eines Belegs. Ein unbekannter kuenftiger Wert gilt als
-/// [StornoStand.offen] — beim Lesen ist dieses Paket tolerant, die Grenze
-/// zieht ohnehin das Backend.
-enum StornoStand { offen, teil, voll }
+/// Storno-Stand eines Belegs in der Liste (Drahtfeld `cancellationStatus`,
+/// Katalog `STORNO_STAND`): `none`, `partial`, `full`. Ein unbekannter
+/// kuenftiger Wert kommt als [StornoStand.unknown] an und nie als `none`: die
+/// Kasse bietet dann keinen Storno an (siehe `stornoErlaubt`), der Server
+/// haelt ohnehin die Restmengen.
+enum StornoStand { none, partial, full, unknown }
 
 /// Eine Position, die storniert werden soll.
 typedef Stornoposition = ({int index, int menge});
@@ -58,7 +62,7 @@ class Belegzusammenfassung {
     required this.zahlungsart,
     required this.signaturOk,
     required this.positionen,
-    required this.stornoStand,
+    this.stornoStand,
     this.zaehler,
     this.bediener,
     this.storniertBeleg,
@@ -95,7 +99,9 @@ class Belegzusammenfassung {
   /// Positionen kurz (Name, Menge) — nur zur Anzeige in der Liste.
   final List<({String name, int menge})> positionen;
 
-  final StornoStand stornoStand;
+  /// `null`, wenn die Liste den Stand nicht nennt (der Server laesst ihn in
+  /// manchen Listen weg); das wird nie zu [StornoStand.none].
+  final StornoStand? stornoStand;
 
   /// Fortlaufender Belegzaehler der Kasse; fehlt bei Alt-Belegen.
   final int? zaehler;
@@ -135,10 +141,12 @@ class Belegzusammenfassung {
               menge: p['quantity'] is num ? (p['quantity'] as num).toInt() : 0,
             ),
       ],
-      stornoStand: switch (json['stornoStand']) {
-        'teil' => StornoStand.teil,
-        'voll' => StornoStand.voll,
-        _ => StornoStand.offen,
+      stornoStand: switch (json['cancellationStatus']) {
+        null => null,
+        'none' => StornoStand.none,
+        'partial' => StornoStand.partial,
+        'full' => StornoStand.full,
+        _ => StornoStand.unknown,
       },
       zaehler: json['counter'] is num ? (json['counter'] as num).toInt() : null,
       bediener: bediener is Map
@@ -163,11 +171,37 @@ class Stornoergebnis {
     required this.originalReceiptId,
     required this.restmengen,
     this.originalFullReceiptId,
+    this.originalTimeStamp,
   });
 
   final KasseneckReceipt beleg;
   final String originalReceiptId;
   final String? originalFullReceiptId;
+
+  /// Zeitstempel des Originals (`cancellationOf.timeStamp`, Wiener Wanduhr);
+  /// fehlt bei Altbelegen.
+  final String? originalTimeStamp;
+
+  /// Liest die Storno-Antwort `{receipt, cancellationOf, remaining}`. Wirft
+  /// [KasseneckValidationError] (Antwortfehler), wenn Bezug oder Restmengen
+  /// fehlen; die Aufrufer machen daraus `response_unreadable`.
+  static Stornoergebnis ausAntwort(String name, Map<String, dynamic> daten, KasseneckReceipt Function() beleg) {
+    final bezug = CancellationOf.fromJson(daten['cancellationOf']);
+    if (bezug == null) {
+      throw KasseneckValidationError(name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response');
+    }
+    final rest = daten['remaining'];
+    if (rest is! List || rest.any((n) => n is! int)) {
+      throw KasseneckValidationError(name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response');
+    }
+    return Stornoergebnis(
+      beleg: beleg(),
+      originalReceiptId: bezug.receiptId,
+      originalFullReceiptId: bezug.fullReceiptId,
+      originalTimeStamp: bezug.timeStamp,
+      restmengen: rest.cast<int>(),
+    );
+  }
 
   /// Was von jeder Position des Originals noch offen ist — daraus weiss die
   /// Kasse, ob ein weiteres Teilstorno noch moeglich ist.
@@ -197,7 +231,7 @@ class RegisterReceiptClient {
   /// **Mehrere Zahlungen** gehen als [zahlungen] hinaus (siehe
   /// [KeckPaymentInput], Rest bar etwa ueber `barzahlung`). Sie schliessen
   /// [zahlungsart] und die Kartenfelder aus -- die Kartenangaben stehen dann in
-  /// der einzelnen Zahlung (Backend: `PAYMENTS_CONFLICT`). Eines von beiden
+  /// der einzelnen Zahlung (Backend: `payments_conflict`). Eines von beiden
   /// ist Pflicht; `mixed` wird nie gesendet.
   Future<KasseneckReceipt> verkaufen({
     required List<KasseneckItem> positionen,
@@ -268,7 +302,10 @@ class RegisterReceiptClient {
       },
       frist: abschlussFrist,
     );
-    return _belegAus(daten, name);
+    // Ab hier ist der Beleg signiert: wer ihn nicht lesen kann, bekommt
+    // `response_unreadable` (Ausgang unklar) mit der Kennung, nie einen
+    // gewoehnlichen Fehler, der zum zweiten Verkauf einluede.
+    return readSignedResponse(name, () => _belegAus(daten, name), kennung: () => _kennungAus(daten));
   }
 
   /// Belege dieser Kasse — Zusammenfassungen, neueste zuerst (Serverordnung).
@@ -289,9 +326,7 @@ class RegisterReceiptClient {
     final daten = await transport.rufen(
       name,
       params: {
-        // Klein geschrieben — anders als das `cashregisterId` der Sitzung. So
-        // heisst der Pflichtparameter dieses Endpunkts im Backend.
-        'cashregisterid': transport.cashregisterId,
+        'cashregisterId': transport.cashregisterId,
         'from': von,
         'to': bis,
         'limit': hoechstens,
@@ -327,30 +362,34 @@ class RegisterReceiptClient {
   /// Die Restmengen und die Reichweite des Rechts haelt der Server; die Kasse
   /// bietet nur an, was sie fuer moeglich haelt.
   ///
-  /// **Kein Kartenanbieter, keine Terminaldaten:** anders als beim Verkauf baut
-  /// der Server den Storno-Beleg selbst und nimmt dafuer nur `items`, `note` und
-  /// `paymentMethod` entgegen. Ein hier mitgegebener Anbieter fiele stumm weg —
-  /// deshalb gibt es das Argument gar nicht erst.
+  /// [grund] ist ein Code aus `stornogruende` (`input_error` …, wie unter
+  /// `/v3`); ein unbekannter wirft, bevor etwas hinausgeht.
   ///
   /// [zahlungen] sind die Rueckzahlungen je Zahlung (Betraege negativ,
-  /// `refundOf` = `id` der Originalzahlung) und schliessen [zahlungsart] aus.
-  /// Ohne Angabe spiegelt der Server die Restbetraege jeder Originalzahlung;
-  /// ein Teilstorno eines Belegs mit mehreren Zahlungen braucht sie
-  /// (`STORNO_PAYMENTS_REQUIRED`).
+  /// `refundOf` = `id` der Originalzahlung). Ohne Angabe spiegelt der Server
+  /// die Restbetraege jeder Originalzahlung; ein Teilstorno eines Belegs mit
+  /// mehreren Zahlungen braucht sie (`cancellation_payments_required`). Eine
+  /// Einzel-Zahlungsart am Storno gibt es unter `/v3` nicht mehr.
+  ///
+  /// **Karten-Storno:** `provider`, `providerPaymentId` und `providerData` der
+  /// Zahlung beschreiben die ERSTATTUNG am Terminal. Eine Karten-Rueckbuchung
+  /// ueber einen Anbieter braucht einen Bezug: ihre eigene `providerPaymentId`
+  /// oder, mit [original], die Kennung der erstatteten Kartenzahlung dort
+  /// (`cardRefundReference`). Fehlt beides, wirft der Aufruf vor dem Senden.
   Future<Stornoergebnis> stornieren({
     required String originalReceiptId,
     required String grund,
     List<Stornoposition>? positionen,
     String? anmerkung,
-    KeckPaymentMethod? zahlungsart,
     List<KeckPaymentInput>? zahlungen,
+    KasseneckReceipt? original,
   }) async {
     const name = Aufrufe.cancelReceipt;
     if (originalReceiptId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'originalReceiptId fehlt', 'request');
     }
-    if (grund.trim().isEmpty) {
-      throw const KasseneckValidationError(name, 'Storno-Grund fehlt', 'request');
+    if (!stornogruende.containsKey(grund)) {
+      throw const KasseneckValidationError(name, 'Storno-Grund fehlt oder ist unbekannt', 'request');
     }
     if (positionen != null) {
       if (positionen.isEmpty) {
@@ -364,49 +403,32 @@ class RegisterReceiptClient {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
     if (zahlungen != null) {
-      final fehler = zahlungsKonflikt({'paymentMethod': zahlungsart}) ?? zahlungenFehler(zahlungen, storno: true);
+      final fehler = zahlungenFehler(zahlungen, storno: true);
       if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
-    } else if (zahlungsart == KeckPaymentMethod.mixed) {
-      throw const KasseneckValidationError(name, mixedNichtSenden, 'request');
+      pruefeKartenRueckbuchung(zahlungen, original);
     }
 
     final daten = await transport.rufen(
       name,
       params: {
         'originalReceiptId': originalReceiptId,
-        'reason': grund.trim(),
+        'reason': grund,
         if (positionen != null) 'items': [for (final p in positionen) {'index': p.index, 'quantity': p.menge}],
         if (anmerkung != null && anmerkung.isNotEmpty) 'note': anmerkung,
-        if (zahlungsart != null) 'paymentMethod': zahlungsart.name,
         if (zahlungen != null) 'payments': [for (final z in zahlungen) z.toJson()],
       },
       frist: abschlussFrist,
     );
 
-    // Ab hier ist der Storno-Beleg ausgestellt und signiert. Jeder Fehler
-    // dieses Abschnitts traegt deshalb die Kennung mit, sofern die Antwort sie
-    // mitbrachte: ohne sie ist der gesetzlich vorgeschriebene Storno-Beleg da,
-    // aber fuer die Kasse unerreichbar — sie kann ihn weder drucken noch
-    // nachholen, und ein zweiter Storno waere eine zweite Ruecknahme.
-    final String? kennung = _kennungAus(daten);
-
-    final bezug = daten['cancellationOf'];
-    if (bezug is! Map || bezug['receiptId'] is! String) {
-      throw KasseneckValidationError(
-          name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response',
-          receiptId: kennung);
-    }
-    final rest = daten['remaining'];
-    if (rest is! List || rest.any((n) => n is! int)) {
-      throw KasseneckValidationError(
-          name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response',
-          receiptId: kennung);
-    }
-    return Stornoergebnis(
-      beleg: _belegAus(daten, name),
-      originalReceiptId: bezug['receiptId'] as String,
-      originalFullReceiptId: bezug['fullReceiptId'] is String ? bezug['fullReceiptId'] as String : null,
-      restmengen: rest.cast<int>(),
+    // Ab hier ist der Storno-Beleg ausgestellt und signiert. Scheitert das
+    // Lesen, kommt `response_unreadable` (Ausgang unklar) mit der Kennung,
+    // sofern die Antwort sie mitbrachte: ohne sie ist der gesetzlich
+    // vorgeschriebene Storno-Beleg da, aber fuer die Kasse unerreichbar, und
+    // ein zweiter Storno waere eine zweite Ruecknahme.
+    return readSignedResponse(
+      name,
+      () => Stornoergebnis.ausAntwort(name, daten, () => _belegAus(daten, name)),
+      kennung: () => _kennungAus(daten),
     );
   }
 
@@ -417,10 +439,10 @@ class RegisterReceiptClient {
   /// die Unter-Sammlung `receipts/{id}/mails`, nie an den Beleg selbst (DEP,
   /// BAO §131). Welcher Beleg gemeint ist, sagt [fullReceiptId]; welche Kasse,
   /// entscheidet die **angemeldete** Sitzung — ein Beleg einer anderen Kasse
-  /// kommt als `beleg_nicht_gefunden` zurueck, genau wie ein Beleg, den es
+  /// kommt als `receipt_not_found` zurueck, genau wie ein Beleg, den es
   /// nicht gibt.
   ///
-  /// [sprache] nimmt das Backend heute entgegen, ohne es auszuwerten (es gibt
+  /// [language] nimmt das Backend heute entgegen, ohne es auszuwerten (es gibt
   /// eine Fassung, Deutsch). Es steht im Vertrag, damit eine zweite Sprache
   /// spaeter kein neuer Aufruf wird.
   ///
@@ -435,7 +457,7 @@ class RegisterReceiptClient {
   Future<Belegmailergebnis> belegSenden({
     required String fullReceiptId,
     required String an,
-    String? sprache,
+    String? language,
   }) async {
     const name = Aufrufe.sendReceiptEmail;
     final beleg = fullReceiptId.trim();
@@ -446,7 +468,7 @@ class RegisterReceiptClient {
     if (adresse.isEmpty) {
       throw const KasseneckValidationError(name, 'to fehlt', 'request');
     }
-    final gewuenschteSprache = sprache?.trim() ?? '';
+    final gewuenschteSprache = language?.trim() ?? '';
 
     // Die Kasse steht im Transport (er legt `cashregisterId` zu jeder Nutzlast)
     // — hier nicht ein zweites Mal, sonst gaebe es zwei Angaben, die sich
@@ -456,7 +478,7 @@ class RegisterReceiptClient {
       params: {
         'fullReceiptId': beleg,
         'to': adresse,
-        if (gewuenschteSprache.isNotEmpty) 'sprache': gewuenschteSprache,
+        if (gewuenschteSprache.isNotEmpty) 'language': gewuenschteSprache,
       },
     );
 

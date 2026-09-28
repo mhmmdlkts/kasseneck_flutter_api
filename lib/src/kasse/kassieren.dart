@@ -229,7 +229,7 @@ Kassierrechnung kassierrechnung(Warenkorb warenkorb, KasseSettingsBetrieb betrie
 ///
 /// `tenderedCents` geht nur mit, wenn das Rueckgeld gerechnet wird
 /// ([Kassierrechnung.bar]) und das Gegebene den Betrag deckt: zu wenig
-/// Gegebenes lehnte der Server ab (`PAYMENT_TENDERED_INVALID`), und ein Beleg
+/// Gegebenes lehnte der Server ab (`payment_tendered_invalid`), und ein Beleg
 /// darf an einer Anzeige-Angabe nicht scheitern.
 KeckPaymentInput barzahlung(Kassierrechnung rechnung, {int? betragCents}) {
   final betrag = betragCents ?? rechnung.gesamtCents;

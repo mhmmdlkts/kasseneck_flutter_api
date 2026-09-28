@@ -15,6 +15,9 @@ export 'enums/vat_rate.dart';
 export 'enums/credit_card_provider.dart';
 export 'models/kasseneck_item.dart';
 export 'models/kasseneck_receipt.dart';
+export 'models/registration_info.dart';
+export 'src/receipt/codes.dart'
+    show cancellationStatuses, isReceiptErrorCode, receiptEmailSendErrorCodes, receiptEmailVias, receiptErrorCodes;
 // Wer einen Beleg einliest, muss den Lesefehler fangen koennen: er traegt die
 // receiptId eines bereits signierten Belegs.
 export 'src/register/fehler.dart' show KasseneckReceiptFormatError;

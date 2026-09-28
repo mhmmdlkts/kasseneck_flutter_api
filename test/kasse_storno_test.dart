@@ -33,8 +33,8 @@ KasseneckReceipt belegMit({List<Map<String, dynamic>>? stornos, int menge = 3}) 
     },
     'company': 'Testbetrieb',
     'is_small_business': false,
-    'uid': null,
-    'taxnr': '12/345',
+    'vatId': null,
+    'taxNumber': '12/345',
     'phone': '',
     'street': '',
     'zip': '',
@@ -48,7 +48,7 @@ KasseneckReceipt belegMit({List<Map<String, dynamic>>? stornos, int menge = 3}) 
 Belegzusammenfassung zusammenfassung({
   String belegart = 'standard',
   String? storniertBeleg,
-  StornoStand stand = StornoStand.offen,
+  StornoStand? stand = StornoStand.none,
   String? bedienerUid = 'u1',
 }) =>
     Belegzusammenfassung(
@@ -114,13 +114,14 @@ void main() {
   group('Storno-Gründe', () {
     test('der Katalog stimmt mit dem Backend überein', () {
       expect(stornogruende.keys.toList(), [
-        'fehleingabe',
-        'kunde_storniert',
-        'falsche_zahlart',
-        'doppelt_erfasst',
-        'sonstiges',
+        'input_error',
+        'customer_cancelled',
+        'wrong_payment_method',
+        'duplicate',
+        'other',
       ]);
-      expect(stornogruende['fehleingabe'], 'Fehleingabe');
+      // Die Beschriftung bleibt deutsch, sie steht so am Bon.
+      expect(stornogruende['input_error'], 'Fehleingabe');
     });
   });
 
@@ -157,14 +158,19 @@ void main() {
 
     test('ein voll stornierter Beleg ist erledigt', () {
       expect(
-        stornoErlaubt(zusammenfassung(stand: StornoStand.voll), RegisterScope.all, 'u1'),
+        stornoErlaubt(zusammenfassung(stand: StornoStand.full), RegisterScope.all, 'u1'),
         isFalse,
       );
     });
 
+    test('ein unbekannter Stornostand bietet keinen Storno an, ein fehlender laesst den Server entscheiden', () {
+      expect(stornoErlaubt(zusammenfassung(stand: StornoStand.unknown), RegisterScope.all, 'u1'), isFalse);
+      expect(stornoErlaubt(zusammenfassung(stand: null), RegisterScope.all, 'u1'), isTrue);
+    });
+
     test('ein teilweise stornierter Beleg geht weiter', () {
       expect(
-        stornoErlaubt(zusammenfassung(stand: StornoStand.teil), RegisterScope.all, 'u1'),
+        stornoErlaubt(zusammenfassung(stand: StornoStand.partial), RegisterScope.all, 'u1'),
         isTrue,
       );
     });
@@ -201,31 +207,19 @@ void main() {
   });
 }
 
-// Fehlercodes von cancelReceipt -- dieselbe Liste wie functions/storno-core.js
-// STORNO_FEHLERCODES und @kreiseck/kasseneck-api CANCELLATION_ERROR_CODES.
+// Fehlercodes von cancelReceipt -- die Liste gegen das Vokabular pruefen die
+// Tests in receipt_v3_codes_test.dart; hier nur die Erkennung.
 void main2() {
   group('Fehlercodes', () {
-    test('Katalog: dieselben achtzehn Codes wie Backend und npm-Paket, in derselben Reihenfolge', () {
-      expect(stornoFehlercodes, [
-        'beleg_nicht_gefunden', 'belegart_nicht_stornierbar', 'trainingsbeleg', 'bereits_storniert',
-        'position_ungueltig', 'menge_ueber_rest', 'grund_unbekannt', 'anmerkung_zu_lang', 'items_ungueltig',
-        'kasse_nicht_zugewiesen', 'keine_berechtigung', 'nur_eigene_belege', 'kasse_unvollstaendig',
-        'storno_fehlgeschlagen',
-        // Rueckzahlung je Zahlung (mehrere Zahlungen je Beleg)
-        'STORNO_PAYMENTS_REQUIRED', 'STORNO_REFUND_EXCEEDS_PAYMENT', 'STORNO_REFUND_REFERENCE_REQUIRED',
-        'STORNO_REFUND_REFERENCE_UNKNOWN',
-      ]);
-    });
-
-    test('istStornoFehlercode nimmt Katalog-Codes an, keinen Anzeigetext, kein null', () {
-      expect(istStornoFehlercode('menge_ueber_rest'), isTrue);
+    test('istStornoFehlercode nimmt Katalog-Codes an, keinen Anzeigetext, kein null, keinen alten Code', () {
+      expect(stornoFehlercodes.first, 'receipt_not_found');
+      expect(istStornoFehlercode('quantity_exceeds_remaining'), isTrue);
+      expect(istStornoFehlercode('cancellation_outcome_unknown'), isTrue);
       expect(istStornoFehlercode('Storno-Menge übersteigt die verbleibende Menge (Position 1).'), isFalse);
       expect(istStornoFehlercode(null), isFalse);
-      // Die Storno-Codes werden unter /v3 umbenannt, nicht klein geschrieben --
-      // darum exakt, anders als istZahlungFehlercode.
-      expect(istStornoFehlercode('STORNO_PAYMENTS_REQUIRED'), isTrue);
-      expect(istStornoFehlercode('storno_payments_required'), isFalse);
+      // Die alten Codes aus /v1 (deutsch bzw. gross) sind keine /v3-Codes mehr.
+      expect(istStornoFehlercode('menge_ueber_rest'), isFalse);
+      expect(istStornoFehlercode('STORNO_PAYMENTS_REQUIRED'), isFalse);
     });
   });
 }
-

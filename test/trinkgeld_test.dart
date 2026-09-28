@@ -227,33 +227,33 @@ void main() {
 /// Betriebs; deshalb darf das Feld nicht mitgeschickt werden, wenn es niemand
 /// gesetzt hat.
 void _trinkgeldMerkmalTests() {
-  group('KeckTip — sofortErhalten', () {
+  group('KeckTip — receivedImmediately', () {
     test('ohne Angabe steht das Feld NICHT in der Nutzlast', () {
       // Sonst wäre „nichts gesagt" plötzlich eine Aussage, und die
       // Voreinstellung des Betriebs käme nie zum Zug.
-      expect(const KeckTip(cents: 200).toJson().containsKey('sofortErhalten'),
+      expect(const KeckTip(cents: 200).toJson().containsKey('receivedImmediately'),
           isFalse);
     });
 
     test('true und false werden beide mitgeschickt', () {
-      expect(const KeckTip(cents: 200, sofortErhalten: true).toJson(),
-          containsPair('sofortErhalten', true));
-      expect(const KeckTip(cents: 200, sofortErhalten: false).toJson(),
-          containsPair('sofortErhalten', false));
+      expect(const KeckTip(cents: 200, receivedImmediately: true).toJson(),
+          containsPair('receivedImmediately', true));
+      expect(const KeckTip(cents: 200, receivedImmediately: false).toJson(),
+          containsPair('receivedImmediately', false));
     });
 
     test('die Komfort-Konstruktoren reichen es durch', () {
-      expect(KeckTip.euro(amount: 2.0, sofortErhalten: true).sofortErhalten,
+      expect(KeckTip.euro(amount: 2.0, receivedImmediately: true).receivedImmediately,
           isTrue);
       expect(
-          KeckTip.fuer('ru_7', cents: 200, sofortErhalten: false).toJson(),
-          containsPair('sofortErhalten', false));
+          KeckTip.fuer('ru_7', cents: 200, receivedImmediately: false).toJson(),
+          containsPair('receivedImmediately', false));
     });
 
     test('es berührt die Prüfungen nicht', () {
       // Das Merkmal sagt nichts über die Richtigkeit des Betrags aus.
-      expect(const KeckTip(cents: 200, sofortErhalten: true).isValid, isTrue);
-      expect(const KeckTip(cents: 0, sofortErhalten: true).isValid, isFalse);
+      expect(const KeckTip(cents: 200, receivedImmediately: true).isValid, isTrue);
+      expect(const KeckTip(cents: 0, receivedImmediately: true).isValid, isFalse);
     });
   });
 }

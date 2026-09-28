@@ -29,7 +29,7 @@ void main() {
       gesendet = r;
       return huelle({
         'status': 'success',
-        'data': {'to': 'gast@example.com', 'at': '2026-09-11T21:12:00+02:00', 'via': 'plattform'},
+        'data': {'to': 'gast@example.com', 'at': '2026-09-11T21:12:00+02:00', 'via': 'platform'},
       });
     }));
 
@@ -44,7 +44,7 @@ void main() {
     expect(params, {'fullReceiptId': 'voll-42', 'to': 'Gast@Example.com'});
     expect(erg.to, 'gast@example.com');
     expect(erg.at, '2026-09-11T21:12:00+02:00');
-    expect(erg.via, 'plattform');
+    expect(erg.via, 'platform');
   });
 
   test('die Sprache geht mit, wenn sie gesetzt ist', () async {
@@ -54,8 +54,8 @@ void main() {
       return huelle({'status': 'success', 'data': {'to': 'gast@example.com'}});
     }));
 
-    await api.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com', sprache: 'de');
-    expect(params['sprache'], 'de');
+    await api.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com', language: 'de');
+    expect(params['language'], 'de');
   });
 
   test('ohne Beleg oder Adresse geht nichts hinaus', () async {
@@ -74,13 +74,13 @@ void main() {
     final api = apiMit(MockClient((r) async => huelle({
           'status': 'error',
           'message': 'Zu viele Versandversuche — bitte später erneut versuchen.',
-          'code': 'zu_oft',
-          'data': {'code': 'zu_oft'},
+          'code': 'too_many_requests',
+          'data': {'code': 'too_many_requests'},
         })));
 
     await expectLater(
       api.belegSenden(fullReceiptId: 'voll-42', an: 'gast@example.com'),
-      throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'zu_oft')),
+      throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'too_many_requests')),
     );
   });
 

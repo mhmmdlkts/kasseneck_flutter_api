@@ -22,7 +22,7 @@ void main() {
       turnoverCounterAES256ICM: '', signaturePreviousReceipt: '',
       certificateSerialNumber: '', receiptType: ReceiptType.standard,
       sig: 'h.p.s', qr: '', companyName: '', phone: '', isSmallBusiness: false,
-      uid: null, taxnr: '', street: '', zip: '', city: '', fullReceiptId: '',
+      vatId: null, taxNumber: '', street: '', zip: '', city: '', fullReceiptId: '',
       footer1: '', footer2: '',
     );
   }

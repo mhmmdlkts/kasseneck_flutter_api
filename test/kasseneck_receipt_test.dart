@@ -45,8 +45,8 @@ void main() {
       expect(back.companyName, original.companyName);
       expect(back.phone, original.phone);
       expect(back.isSmallBusiness, original.isSmallBusiness);
-      expect(back.uid, original.uid);
-      expect(back.taxnr, original.taxnr);
+      expect(back.vatId, original.vatId);
+      expect(back.taxNumber, original.taxNumber);
       expect(back.street, original.street);
       expect(back.zip, original.zip);
       expect(back.city, original.city);
@@ -178,7 +178,7 @@ void main() {
       // wegen einer fehlenden Fusszeile zu verlieren waere die teurere
       // Verwechslung.
       final j = baseJson()
-        ..remove('taxnr')
+        ..remove('taxNumber')
         ..remove('company')
         ..remove('phone')
         ..remove('street')
@@ -190,7 +190,7 @@ void main() {
 
       final r = KasseneckReceipt.fromJson(j);
       expect(r.receiptId, 'TEST-ID-1');
-      expect(r.taxnr, '');
+      expect(r.taxNumber, '');
       expect(r.companyName, '');
       expect(r.footer1, '');
       expect(r.isSmallBusiness, isFalse);
@@ -238,7 +238,7 @@ void main() {
         // Rechnung nach § 11 UStG. Ein Mangel hier wuerde jeden Beleg eines
         // Betriebs ohne Fusszeile als unvollstaendig melden.
         final j = baseJson()
-          ..remove('taxnr')
+          ..remove('taxNumber')
           ..remove('street')
           ..remove('zip')
           ..remove('city')

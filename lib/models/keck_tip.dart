@@ -76,13 +76,13 @@ class KeckTip {
   /// entscheidet, ob der Betrieb Geld schuldet, und gewöhnliches Personal soll
   /// das nicht am Gerät umstellen können. Über einen Geräte-API-Schlüssel
   /// (ohne angemeldeten Kassen-Benutzer) gilt die Einschränkung nicht.
-  final bool? sofortErhalten;
+  final bool? receivedImmediately;
 
   const KeckTip({
     required this.cents,
     this.paymentMethod,
     this.recipients,
-    this.sofortErhalten,
+    this.receivedImmediately,
   });
 
   /// Komfort-Konstruktor mit Betrag in **Euro** (einmalige Rundung auf Cent).
@@ -90,13 +90,13 @@ class KeckTip {
     required double amount,
     KeckPaymentMethod? paymentMethod,
     List<KeckTipRecipient>? recipients,
-    bool? sofortErhalten,
+    bool? receivedImmediately,
   }) {
     return KeckTip(
       cents: (amount * 100).round(),
       paymentMethod: paymentMethod,
       recipients: recipients,
-      sofortErhalten: sofortErhalten,
+      receivedImmediately: receivedImmediately,
     );
   }
 
@@ -105,12 +105,12 @@ class KeckTip {
     String registerUserId, {
     required int cents,
     KeckPaymentMethod? paymentMethod,
-    bool? sofortErhalten,
+    bool? receivedImmediately,
   }) {
     return KeckTip(
       cents: cents,
       paymentMethod: paymentMethod,
-      sofortErhalten: sofortErhalten,
+      receivedImmediately: receivedImmediately,
       recipients: [
         KeckTipRecipient(registerUserId: registerUserId, cents: cents),
       ],
@@ -171,6 +171,6 @@ class KeckTip {
         // Nur mitschicken, wenn gesetzt: fehlt das Feld, entscheidet die
         // Voreinstellung des Betriebs. Ein `false` wäre dort eine Aussage,
         // kein Weglassen.
-        if (sofortErhalten != null) 'sofortErhalten': sofortErhalten,
+        if (receivedImmediately != null) 'receivedImmediately': receivedImmediately,
       };
 }

@@ -104,25 +104,33 @@ void main() {
     expect((alt.lines.single as BelegBanner).warning, isFalse);
   });
 
-  test('KasseneckReceipt.fromJson nimmt layout/testKasse/testSignatur/kopfId; altes Backend -> null/false', () {
+  test('KasseneckReceipt.fromJson nimmt layout/testCashregister/testSignature/headerVersionId; altes Backend -> null/false', () {
     final f = _json('${_wurzel.path}/receipts/cancellation-full.json');
     final firma = f['company'] as Map<String, dynamic>;
     final antwort = <String, dynamic>{
       'receipt': {...(f['receipt'] as Map<String, dynamic>), 'customerDetails': '', 'legalMessage': ''},
       'company': firma['companyName'], 'street': firma['street'], 'zip': firma['zip'], 'city': firma['city'], 'phone': firma['phone'],
-      'uid': firma['uid'], 'taxnr': firma['taxnr'], 'is_small_business': false, 'footer1': firma['footer1'], 'footer2': firma['footer2'],
-      'layout': _json('${_wurzel.path}/expected/cancellation-full.lines.json'), 'testSignatur': true, 'kopfId': 'v1',
+      'vatId': firma['vatId'], 'taxNumber': firma['taxNumber'], 'is_small_business': false, 'footer1': firma['footer1'], 'footer2': firma['footer2'],
+      'layout': _json('${_wurzel.path}/expected/cancellation-full.lines.json'), 'testSignature': true, 'headerVersionId': 'v1',
     };
     final r = KasseneckReceipt.fromJson(antwort);
     expect(r.layout, isNotNull);
     expect(r.layout!.bannerTexte, ['STORNOBELEG']);
-    expect(r.testSignatur, isTrue);
-    expect(r.testKasse, isFalse);
-    expect(r.kopfId, 'v1');
-    final alt = KasseneckReceipt.fromJson({...antwort}..remove('layout')..remove('testSignatur')..remove('kopfId'));
+    expect(r.testSignature, isTrue);
+    expect(r.testCashregister, isFalse);
+    expect(r.headerVersionId, 'v1');
+    expect(r.vatId, 'ATU12345678');
+    final alt = KasseneckReceipt.fromJson({...antwort}..remove('layout')..remove('testSignature')..remove('headerVersionId'));
     expect(alt.layout, isNull);
-    expect(alt.testSignatur, isFalse);
-    expect(alt.kopfId, isNull);
+    expect(alt.testSignature, isFalse);
+    expect(alt.headerVersionId, isNull);
+  });
+
+  test('BelegLayout.toJson gibt jede erwartete Zeilenfolge unveraendert zurueck', () {
+    for (final n in namen) {
+      final roh = _json('${_wurzel.path}/expected/$n.lines.json');
+      expect(BelegLayout.fromJson(roh)!.toJson(), roh, reason: n);
+    }
   });
 
   test('PrintPaper.setBelegLayout druckt jede Fixture: Texte, Aufdruck im Rahmen, QR, Schnitt', () async {

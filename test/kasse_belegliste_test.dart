@@ -28,7 +28,7 @@ Belegzusammenfassung beleg({
       zahlungsart: zahlungsart,
       signaturOk: true,
       positionen: const [],
-      stornoStand: StornoStand.offen,
+      stornoStand: StornoStand.none,
       storniertBeleg: storniertBeleg,
       bediener: Belegbediener(uid: 'u1', name: bediener),
     );
@@ -72,7 +72,7 @@ void main() {
             zahlungsart: KeckPaymentMethod.cash,
             signaturOk: true,
             positionen: const [],
-            stornoStand: StornoStand.offen,
+            stornoStand: StornoStand.none,
             nullbelegAnlass: anlass,
           );
       expect(belegartText(null_('monthly')), 'Monatsbeleg');

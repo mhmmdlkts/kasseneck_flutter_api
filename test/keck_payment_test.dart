@@ -248,32 +248,32 @@ void main() {
   });
 
   group('Fehlercodes', () {
-    test('dieselben 18 Codes wie npm PAYMENT_ERROR_CODES, in derselben Reihenfolge', () {
-      expect(zahlungFehlercodes, [
-        'PAYMENTS_INVALID',
-        'PAYMENT_METHOD_INVALID',
-        'PAYMENT_AMOUNT_INVALID',
-        'PAYMENT_TENDERED_INVALID',
-        'PAYMENT_PROVIDER_INVALID',
-        'PAYMENT_PROVIDER_NOT_ALLOWED',
-        'PAYMENTS_SUM_MISMATCH',
-        'PAYMENTS_DUE_NEGATIVE',
-        'PAYMENTS_NOT_ALLOWED',
-        'PAYMENTS_CONFLICT',
-        'PAYMENTS_REQUIRED',
-        'PAYMENT_METHOD_NOT_SUPPORTED',
-        'TIP_PAYMENT_METHOD_INVALID',
-        'TIP_PAYMENT_METHOD_REQUIRED',
-        'TIP_EXCEEDS_PAYMENT',
-        'PAYMENT_REFUND_NOT_ALLOWED',
-        'PAYMENT_TIP_INVALID',
-        'TIP_CONFLICT',
+    test('beginnt mit den 18 Codes der Zahlungen, klein wie unter /v3 (Rest: receipt_v3_codes_test)', () {
+      expect(zahlungFehlercodes.take(18), [
+        'payments_invalid',
+        'payment_method_invalid',
+        'payment_amount_invalid',
+        'payment_tendered_invalid',
+        'payment_provider_invalid',
+        'payment_provider_not_allowed',
+        'payments_sum_mismatch',
+        'payments_due_negative',
+        'payments_not_allowed',
+        'payments_conflict',
+        'payments_required',
+        'payment_method_not_supported',
+        'tip_payment_method_invalid',
+        'tip_payment_method_required',
+        'tip_exceeds_payment',
+        'payment_refund_not_allowed',
+        'payment_tip_invalid',
+        'tip_conflict',
       ]);
     });
 
-    test('istZahlungFehlercode: gross (/v1) wie klein (/v3), kein Anzeigetext, kein null', () {
-      expect(istZahlungFehlercode('PAYMENTS_SUM_MISMATCH'), isTrue);
+    test('istZahlungFehlercode: exakt klein (/v3), kein grosser /v1-Code, kein Anzeigetext, kein null', () {
       expect(istZahlungFehlercode('payments_sum_mismatch'), isTrue);
+      expect(istZahlungFehlercode('PAYMENTS_SUM_MISMATCH'), isFalse);
       expect(istZahlungFehlercode('Die Summe der Zahlungen stimmt nicht.'), isFalse);
       expect(istZahlungFehlercode(null), isFalse);
       expect(istZahlungFehlercode(7), isFalse);

@@ -42,7 +42,7 @@ void main() {
     final erg = await api.stornieren(
       cashregisterId: 'KECK-1',
       originalReceiptId: 'KECK-1-ID-12',
-      grund: 'kunde_storniert',
+      grund: 'customer_cancelled',
       anmerkung: 'Auftrag abgesagt',
     );
 
@@ -52,7 +52,7 @@ void main() {
     expect(params, {
       'cashregisterId': 'KECK-1',
       'originalReceiptId': 'KECK-1-ID-12',
-      'reason': 'kunde_storniert',
+      'reason': 'customer_cancelled',
       'note': 'Auftrag abgesagt',
     });
     expect(erg.originalReceiptId, 'KECK-1-ID-12');
@@ -61,7 +61,7 @@ void main() {
     expect(erg.beleg.receiptId, isNotEmpty);
   });
 
-  test('Teilstorno und Kartendaten der Erstattung gehen mit', () async {
+  test('Teilstorno und Kartendaten der Erstattung gehen in der Zahlung mit, nie als Einzelfelder', () async {
     late Map params;
     final api = apiWith(MockClient((r) async {
       params = (jsonDecode(r.body) as Map)['params'] as Map;
@@ -71,93 +71,146 @@ void main() {
     await api.stornieren(
       cashregisterId: 'KECK-1',
       originalReceiptId: 'KECK-1-ID-12',
-      grund: 'fehleingabe',
+      grund: 'input_error',
       positionen: [(index: 1, menge: 2)],
-      zahlungsart: KeckPaymentMethod.creditCard,
-      kartenanbieter: CreditCardProvider.hobexHps,
-      kartenzahlungId: '178834783507100000',
-      kartenzahlungsdaten: {'cardNumber': '541333******0021'},
+      zahlungen: const [
+        KeckPaymentInput(
+          method: KeckPaymentMethod.creditCard,
+          amountCents: -700,
+          refundOf: 'p1',
+          provider: CreditCardProvider.hobexHps,
+          providerPaymentId: '178834783507100000',
+          providerData: {'cardNumber': '541333******0021'},
+        ),
+      ],
     );
 
     expect(params['items'], [
       {'index': 1, 'quantity': 2}
     ]);
-    expect(params['paymentMethod'], 'creditCard');
-    expect(params['creditCardProvider'], 'hobexHps');
-    expect(params['cardPaymentId'], '178834783507100000');
-    expect(params['cardPaymentData'], {'cardNumber': '541333******0021'});
-  });
-
-  test('ohne Kartendaten keine Kartenfelder', () async {
-    late Map params;
-    final api = apiWith(MockClient((r) async {
-      params = (jsonDecode(r.body) as Map)['params'] as Map;
-      return huelle(stornoAntwort());
-    }));
-    await api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'fehleingabe');
-    expect(params.containsKey('creditCardProvider'), isFalse);
-    expect(params.containsKey('cardPaymentId'), isFalse);
-    expect(params.containsKey('cardPaymentData'), isFalse);
+    expect(params['payments'], [
+      {
+        'method': 'creditCard',
+        'amountCents': -700,
+        'provider': 'hobexHps',
+        'providerPaymentId': '178834783507100000',
+        'providerData': {'cardNumber': '541333******0021'},
+        'refundOf': 'p1',
+      }
+    ]);
+    for (final alt in ['paymentMethod', 'creditCardProvider', 'cardPaymentId', 'cardPaymentData']) {
+      expect(params.containsKey(alt), isFalse, reason: alt);
+    }
   });
 
   group('Abweisung vor dem Aufruf', () {
     final api = apiWith(nieGerufen());
 
-    test('unbekannter Grund', () {
-      expect(
-        () => api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'weil'),
-        throwsA(isA<KasseneckValidationError>()),
-      );
+    test('unbekannter Grund, auch der alte deutsche', () {
+      for (final grund in ['weil', 'fehleingabe', 'kunde_storniert']) {
+        expect(
+          () => api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: grund),
+          throwsA(isA<KasseneckValidationError>()),
+          reason: grund,
+        );
+      }
     });
 
     test('leere Positionsliste waere ein stiller Vollstorno', () {
       expect(
-        () => api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'fehleingabe', positionen: []),
+        () => api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'input_error', positionen: []),
         throwsA(isA<KasseneckValidationError>()),
       );
     });
 
-    test('Kartendaten bei Barerstattung', () {
+    test('Karten-Rueckbuchung ohne Anbieter und ohne Kennung', () {
       expect(
         () => api.stornieren(
           cashregisterId: 'KECK-1',
           originalReceiptId: 'KECK-1-ID-12',
-          grund: 'kunde_storniert',
-          zahlungsart: KeckPaymentMethod.cash,
-          kartenzahlungId: 'x',
+          grund: 'customer_cancelled',
+          zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -700, refundOf: 'p1')],
         ),
-        throwsA(isA<KasseneckValidationError>()),
+        throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', contains('ohne Anbieter'))),
+      );
+    });
+
+    test('Karten-Rueckbuchung ueber einen Anbieter ohne Bezug', () {
+      expect(
+        () => api.stornieren(
+          cashregisterId: 'KECK-1',
+          originalReceiptId: 'KECK-1-ID-12',
+          grund: 'customer_cancelled',
+          zahlungen: const [
+            KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -700, refundOf: 'p1', provider: CreditCardProvider.sumup),
+          ],
+        ),
+        throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', contains('ohne Bezug'))),
       );
     });
 
     test('fehlender Bezug', () {
       expect(
-        () => api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: ' ', grund: 'fehleingabe'),
+        () => api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: ' ', grund: 'input_error'),
         throwsA(isA<KasseneckValidationError>()),
       );
     });
+  });
+
+  test('custom braucht keine Kennung, und das Original vom Kassenweg liefert den Bezug', () async {
+    var gerufen = 0;
+    final api = apiWith(MockClient((r) async {
+      gerufen++;
+      return huelle(stornoAntwort());
+    }));
+    await api.stornieren(
+      cashregisterId: 'KECK-1',
+      originalReceiptId: 'KECK-1-ID-12',
+      grund: 'input_error',
+      zahlungen: const [
+        KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -700, refundOf: 'p1', provider: CreditCardProvider.custom),
+      ],
+    );
+    final original = buildReceipt()
+      ..payments = const [
+        KeckPayment(id: 'p1', methodValue: 'creditCard', amountCents: 700, providerValue: 'sumup', providerPaymentId: 'tx-4711'),
+      ];
+    await api.stornieren(
+      cashregisterId: 'KECK-1',
+      originalReceiptId: 'KECK-1-ID-12',
+      grund: 'input_error',
+      original: original,
+      zahlungen: const [
+        KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -700, refundOf: 'p1', provider: CreditCardProvider.sumup),
+      ],
+    );
+    expect(gerufen, 2);
   });
 
   test('fachliche Ablehnung kommt mit stabilem Code', () async {
     final api = apiWith(MockClient((r) async => huelle({
           'status': 'error',
           'message': 'Beleg ist bereits vollständig storniert.',
-          'code': 'bereits_storniert',
+          'code': 'already_cancelled',
         })));
     await expectLater(
-      api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'fehleingabe'),
-      throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'bereits_storniert')),
+      api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'input_error'),
+      throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'already_cancelled')),
     );
-    expect(istStornoFehlercode('bereits_storniert'), isTrue);
+    expect(istStornoFehlercode('already_cancelled'), isTrue);
+    expect(istStornoFehlercode('bereits_storniert'), isFalse);
   });
 
-  test('Antwort ohne Bezug: Fehler traegt die Kennung des schon signierten Stornos', () async {
+  test('Antwort ohne Bezug: response_unreadable mit Ausgang unklar und der Kennung des schon signierten Stornos', () async {
     final antwort = stornoAntwort();
     (antwort['data'] as Map).remove('cancellationOf');
     final api = apiWith(MockClient((r) async => huelle(antwort)));
     await expectLater(
-      api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'fehleingabe'),
-      throwsA(isA<KasseneckValidationError>().having((e) => e.receiptId, 'receiptId', isNotNull)),
+      api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'input_error'),
+      throwsA(isA<KasseneckApiError>()
+          .having((e) => e.code, 'code', 'response_unreadable')
+          .having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)
+          .having((e) => e.details['receiptId'], 'receiptId', isNotNull)),
     );
   });
 }

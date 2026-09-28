@@ -221,3 +221,46 @@ class KasseneckHttpError implements Exception {
       '${causeType == null ? '' : ' [$causeType]'}'
       '${outcome == ErrorOutcome.unknown ? ' [Ausgang unklar]' : ''}';
 }
+
+/// Liest die Erfolgsantwort eines **wirkenden** Aufrufs (Beleg, Storno,
+/// Kartenbelastung). Scheitert das Lesen (fehlender Beleg, fehlender Bezug,
+/// unbrauchbares Feld oder ein Laufzeitfehler beim Umwandeln), hat der Server
+/// trotzdem Erfolg gemeldet: der Beleg ist signiert und im DEP, die Karte
+/// belastet. Das darf nie als gewoehnlicher Fehler enden, sonst kassiert die
+/// Kasse ein zweites Mal. Darum wird daraus [KasseneckApiError] mit Code
+/// `response_unreadable` und Ausgang unklar (Zwilling von `signiertGelesen`
+/// im npm-Paket).
+///
+/// Der Grund stammt vom Paket; aus der Antwort wird nichts uebernommen ausser
+/// der Kennung des Belegs, soweit [kennung] sie findet: `details.receiptId`
+/// ist der Faden zum Beleg (`getReceipt`), `details.field` das Feld, an dem
+/// das Lesen scheiterte.
+T readSignedResponse<T>(String functionName, T Function() lesen, {String? Function()? kennung}) {
+  try {
+    return lesen();
+  } on KasseneckApiError {
+    rethrow;
+  } catch (ursache) {
+    String? id;
+    try {
+      id = kennung?.call();
+    } catch (_) {
+      id = null;
+    }
+    final (String grund, String? feld) = switch (ursache) {
+      KasseneckValidationError(:final reason) => (reason, null),
+      KasseneckReceiptFormatError(:final field) => ('Feld "$field" fehlt oder hat den falschen Typ', field),
+      KasseneckHttpError(:final reason) => (reason, null),
+      _ => ('Antwort nicht lesbar', null),
+    };
+    if (ursache is KasseneckReceiptFormatError) id ??= ursache.receiptId;
+    if (ursache is KasseneckValidationError) id ??= ursache.receiptId;
+    throw KasseneckApiError(
+      functionName,
+      'Erfolg gemeldet, Antwort aber unlesbar ($grund). Der Vorgang kann ausgefuehrt sein: '
+      'nicht wiederholen, sondern nachlesen.',
+      code: 'response_unreadable',
+      details: {'receiptId': ?id, 'field': ?feld},
+    );
+  }
+}

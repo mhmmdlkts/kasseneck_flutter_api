@@ -25,6 +25,19 @@ BelegAlign _align(dynamic v) {
 sealed class BelegZeile {
   const BelegZeile();
 
+  /// Die Zeile in der Form des Vertrags (`expected/*.lines.json`).
+  Map<String, Object> toJson() => switch (this) {
+        BelegText(:final text, :final align, :final bold) => {'kind': 'text', 'text': text, 'align': align.name, 'bold': bold},
+        BelegSpalten(:final columns) => {
+            'kind': 'columns',
+            'columns': [for (final c in columns) {'text': c.text, 'width': c.width, 'align': c.align.name}],
+          },
+        BelegLinie(:final char) => {'kind': 'rule', 'char': char},
+        BelegLeerraum(:final lines) => {'kind': 'space', 'lines': lines},
+        BelegQr(:final data) => {'kind': 'qr', 'data': data},
+        BelegBanner(:final text, :final tone) => {'kind': 'banner', 'text': text, 'tone': tone.wire},
+      };
+
   /// Liest eine Zeile; `null` für unbekannte Arten.
   static BelegZeile? fromJson(Map<String, dynamic> j) {
     switch (j['kind']) {
@@ -143,6 +156,13 @@ class BelegLayout {
       ruleset: (json['ruleset'] is num) ? (json['ruleset'] as num).toInt() : 1,
     );
   }
+
+  /// Das Layout in der Form des Vertrags (`paperSize`, `ruleset`, `lines`).
+  Map<String, Object> toJson() => {
+        'paperSize': paperSize,
+        'ruleset': ruleset,
+        'lines': [for (final z in lines) z.toJson()],
+      };
 
   /// Alle Banner-Texte (Belegart/Warnungen) — für Tests und Anzeigen.
   List<String> get bannerTexte => lines.whereType<BelegBanner>().map((b) => b.text).toList();

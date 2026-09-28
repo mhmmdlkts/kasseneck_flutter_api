@@ -11,51 +11,38 @@
 /// Zurücknehmen — nur einen weiteren Beleg.
 library;
 
+import '../../enums/credit_card_provider.dart';
 import '../../models/kasseneck_receipt.dart';
+import '../../models/keck_payment.dart';
+import '../aufrufe.dart';
+import '../register/fehler.dart' show KasseneckValidationError;
+import '../receipt/codes.dart' show cancellationErrorCodes;
 import '../register/pairing.dart' show RegisterScope;
 import 'belege.dart';
 
-/// Die Gründe, die das Backend annimmt — Schlüssel wie dort, Beschriftung für
-/// den Bildschirm. Reihenfolge wie im Katalog des Backends.
+/// Die Gründe, die das Backend annimmt — Codes wie unter `/v3` (Katalog
+/// `STORNO_GRUND`), Beschriftung für den Bildschirm und den Bon (bleibt
+/// deutsch, sie steht so am Beleg). Reihenfolge wie im Katalog des Backends.
 const Map<String, String> stornogruende = {
-  'fehleingabe': 'Fehleingabe',
-  'kunde_storniert': 'Kunde hat storniert',
-  'falsche_zahlart': 'Falsche Zahlart',
-  'doppelt_erfasst': 'Doppelt erfasst',
-  'sonstiges': 'Sonstiges',
+  'input_error': 'Fehleingabe',
+  'customer_cancelled': 'Kunde hat storniert',
+  'wrong_payment_method': 'Falsche Zahlart',
+  'duplicate': 'Doppelt erfasst',
+  'other': 'Sonstiges',
 };
 
-/// Stabile Fehlercodes von `cancelReceipt` — Zwilling von
-/// `functions/storno-core.js` STORNO_FEHLERCODES und
-/// `@kreiseck/kasseneck-api` CANCELLATION_ERROR_CODES, in derselben Reihenfolge.
-/// Das Backend legt sie als `code` neben die Meldung; sie kommen als
-/// `KasseneckApiError.code` an. **Entscheide am Code, nie am Text.**
-const List<String> stornoFehlercodes = [
-  'beleg_nicht_gefunden', // Original fehlt oder gehört nicht zu dieser Kasse
-  'belegart_nicht_stornierbar', // Original ist selbst Storno-, Null- oder Startbeleg
-  'trainingsbeleg', // Trainingsbelege werden nicht storniert
-  'bereits_storniert', // keine Restmenge mehr (auch beim positionslosen Beleg)
-  'position_ungueltig', // Index unbekannt oder doppelt
-  'menge_ueber_rest', // Menge nicht ganzzahlig >= 1 oder größer als der Rest
-  'grund_unbekannt', // reason fehlt oder nicht im Katalog
-  'anmerkung_zu_lang', // note länger als 200 Zeichen
-  'items_ungueltig', // items ist keine Liste
-  'kasse_nicht_zugewiesen', // Register-Benutzer darf diese Kasse nicht
-  'keine_berechtigung', // Register-Benutzer ohne Storno-Recht
-  'nur_eigene_belege', // Recht „eigene", fremder Beleg
-  'kasse_unvollstaendig', // api_key/token fehlen am Konto bzw. an der Kasse
-  'storno_fehlgeschlagen', // der Storno-Beleg selbst wurde abgelehnt (z. B. Signatur)
-  // Rueckzahlung je Zahlung (mehrere Zahlungen je Beleg); Formfehler an
-  // `payments` selbst melden die Codes aus zahlungFehlercodes. Unter /v3
-  // heissen diese Codes anders (umbenannt, nicht klein geschrieben) -- darum
-  // prueft istStornoFehlercode exakt.
-  'STORNO_PAYMENTS_REQUIRED', // Teilstorno eines Belegs mit mehreren Zahlungen ohne payments
-  'STORNO_REFUND_EXCEEDS_PAYMENT', // Rueckzahlungen auf eine Zahlung uebersteigen deren Rest
-  'STORNO_REFUND_REFERENCE_REQUIRED', // Karten-Rueckzahlung ohne refundOf einer Kartenzahlung
-  'STORNO_REFUND_REFERENCE_UNKNOWN', // refundOf nennt keine Zahlung des Originals
-];
+/// Stabile Fehlercodes von `cancelReceipt` unter `/v3` — Zwilling von
+/// `CANCELLATION_ERROR_CODES` in `@kreiseck/kasseneck-api` 1.0, in derselben
+/// Reihenfolge (siehe `receipt/codes.dart`). Das Backend legt sie als `code`
+/// neben die Meldung; sie kommen als `KasseneckApiError.code` an.
+/// **Entscheide am Code, nie am Text.** Formfehler an `payments` selbst melden
+/// die Codes aus `zahlungFehlercodes`. `cancellation_outcome_unknown` heisst:
+/// der Storno ist moeglicherweise gebucht; nie wiederholen, sondern das
+/// Original nachlesen.
+final List<String> stornoFehlercodes = cancellationErrorCodes;
 
-/// Ist [wert] ein Code aus [stornoFehlercodes]? Ein Anzeigetext ist keiner.
+/// Ist [wert] ein Code aus [stornoFehlercodes]? Ein Anzeigetext ist keiner,
+/// ein alter deutscher oder grosser Code aus `/v1` auch nicht.
 bool istStornoFehlercode(Object? wert) => wert is String && stornoFehlercodes.contains(wert);
 
 /// Ab wann eine liegengebliebene Reservierung nicht mehr zählt (wie im
@@ -87,12 +74,14 @@ List<int> restmengen(KasseneckReceipt beleg, {int? jetzt}) {
 /// Darf dieser Beleg storniert werden?
 ///
 /// Kein Storno von einem Storno, keines von Null-, Start- oder
-/// Trainingsbelegen, keines von einem bereits voll stornierten Beleg — und mit
-/// der Reichweite `own` nur die eigenen.
+/// Trainingsbelegen, keines von einem bereits voll stornierten Beleg und keines
+/// bei einem unbekannten Stornostand (ein kuenftiger Wert des Servers: die
+/// Kasse bietet dann nichts an, statt zu raten) — und mit der Reichweite `own`
+/// nur die eigenen. Fehlt der Stand in der Liste, entscheidet der Server.
 bool stornoErlaubt(Belegzusammenfassung beleg, RegisterScope reichweite, String eigeneUid) {
   if (reichweite == RegisterScope.none) return false;
   if (!beleg.istVerkauf) return false;
-  if (beleg.stornoStand == StornoStand.voll) return false;
+  if (beleg.stornoStand == StornoStand.full || beleg.stornoStand == StornoStand.unknown) return false;
   if (reichweite == RegisterScope.own && beleg.bediener?.uid != eigeneUid) return false;
   return true;
 }
@@ -121,4 +110,65 @@ String? volleId(String cashregisterId, String nummer) {
   final ziffern = nummer.replaceAll(RegExp(r'\D'), '');
   final gekuerzt = ziffern.length > idHoechststellen ? ziffern.substring(0, idHoechststellen) : ziffern;
   return gekuerzt.isEmpty ? null : '$cashregisterId-ID-$gekuerzt';
+}
+
+/// Kennung der Originalzahlung fuer die Rueckbuchung am Terminal (Hobex
+/// `originalTransactionId`, SumUp-Transaktion …): `providerPaymentId` der
+/// Zahlung [paymentId] des Originals. Die liefert nur der Kassenweg
+/// (`kasse.kasseneck.at/api/v3`, Kanal `app`); am oeffentlichen Weg fehlt sie,
+/// und dann wirft dieser Aufruf, statt `null` an ein Terminal weiterzugeben.
+/// Zwilling von `cardRefundReference` im npm-Paket.
+String cardRefundReference(KasseneckReceipt receipt, String paymentId) {
+  final zahlung = (receipt.payments ?? const <KeckPayment>[]).where((z) => z.id == paymentId).firstOrNull;
+  if (zahlung == null) {
+    throw KasseneckValidationError(Aufrufe.cancelReceipt, 'Zahlung "$paymentId" gibt es am Beleg nicht', 'request');
+  }
+  if (zahlung.method?.needsCreditCard != true) {
+    throw KasseneckValidationError(Aufrufe.cancelReceipt, 'Zahlung "$paymentId" ist keine Kartenzahlung', 'request');
+  }
+  final kennung = zahlung.providerPaymentId;
+  if (kennung == null || kennung.isEmpty) {
+    throw KasseneckValidationError(
+      Aufrufe.cancelReceipt,
+      'Kennung der Kartenzahlung "$paymentId" fehlt: sie kommt nur ueber den Kassenweg '
+          '(kasse.kasseneck.at/api/v3), nicht ueber den oeffentlichen Weg',
+      'request',
+    );
+  }
+  return kennung;
+}
+
+/// Karten-Rueckbuchung am Storno, geprueft **bevor** etwas hinausgeht
+/// (Zwilling von `pruefeKartenRueckbuchung` im npm-Paket):
+/// - Sie nennt ihren Anbieter (`provider`; `custom` fuer eine Erstattung ohne
+///   angebundenes Terminal). Ganz ohne Anbieterfelder faellt sie.
+/// - Ueber einen Anbieter (nicht `custom`) braucht sie einen Bezug: ihre eigene
+///   Terminal-Kennung (`providerPaymentId` der Erstattung) oder, liegt das
+///   [original] vor, die Kennung der erstatteten Kartenzahlung dort. Erst wenn
+///   beides fehlt, wirft sie.
+void pruefeKartenRueckbuchung(List<KeckPaymentInput> zahlungen, KasseneckReceipt? original) {
+  for (final (i, z) in zahlungen.indexed) {
+    if (!z.method.needsCreditCard) continue;
+    if (z.provider == null && z.providerPaymentId == null) {
+      throw KasseneckValidationError(
+        Aufrufe.cancelReceipt,
+        'Zahlung ${i + 1}: Karten-Rueckbuchung ohne Anbieter und ohne Kennung '
+            '(provider angeben, custom fuer eine Erstattung ohne angebundenes Terminal)',
+        'request',
+      );
+    }
+    if (z.provider == CreditCardProvider.custom || z.providerPaymentId != null) continue;
+    final bezug = z.refundOf;
+    final orig = original != null && bezug != null
+        ? (original.payments ?? const <KeckPayment>[]).where((o) => o.id == bezug).firstOrNull
+        : null;
+    final kennung = orig?.providerPaymentId;
+    if (kennung != null && kennung.isNotEmpty) continue;
+    throw KasseneckValidationError(
+      Aufrufe.cancelReceipt,
+      'Zahlung ${i + 1}: Karten-Rueckbuchung ohne Bezug: providerPaymentId der Erstattung am Terminal angeben '
+          '(oder das Original ueber den Kassenweg lesen, dort traegt es die Kennung der Kartenzahlung)',
+      'request',
+    );
+  }
 }

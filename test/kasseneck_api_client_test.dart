@@ -524,13 +524,23 @@ void main() {
       );
     });
 
-    test('Erfolg ohne data-Objekt: benannter Fehler', () async {
+    // Erfolg gemeldet, Antwort unbrauchbar: der Beleg ist signiert. Das ist
+    // `response_unreadable` mit Ausgang unklar (Ruling F3), nie ein
+    // gewoehnlicher Fehler, der zum zweiten Verkauf einluede.
+    TypeMatcher<KasseneckApiError> unlesbar({Object? receiptId, Object? field}) => isA<KasseneckApiError>()
+        .having((e) => e.functionName, 'functionName', 'createReceipt')
+        .having((e) => e.code, 'code', 'response_unreadable')
+        .having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)
+        .having((e) => isOutcomeUnknown(e), 'isOutcomeUnknown', isTrue)
+        .having((e) => e.details['receiptId'], 'receiptId', receiptId)
+        .having((e) => e.details['field'], 'field', field);
+
+    test('Erfolg ohne data-Objekt: response_unreadable, Ausgang unklar', () async {
       final api = apiMit(jsonEncode({'status': 'success', 'data': null}));
       await expectLater(
         api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.functionName, 'functionName', 'createReceipt')
-            .having((e) => e.reason, 'reason', 'data-not-object')),
+        throwsA(unlesbar(receiptId: isNull, field: isNull)
+            .having((e) => e.message, 'message', contains('data-not-object'))),
       );
     });
 
@@ -544,9 +554,7 @@ void main() {
 
       await expectLater(
         api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<KasseneckReceiptFormatError>()
-            .having((e) => e.field, 'field', 'qr')
-            .having((e) => e.receiptId, 'receiptId', 'TEST-ID-1')),
+        throwsA(unlesbar(receiptId: 'TEST-ID-1', field: 'qr')),
       );
     });
 
@@ -557,9 +565,7 @@ void main() {
 
       await expectLater(
         api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
-        throwsA(isA<KasseneckReceiptFormatError>()
-            .having((e) => e.receiptId, 'receiptId', 'TEST-ID-1')
-            .having((e) => e.causeType, 'causeType', isNotNull)),
+        throwsA(unlesbar(receiptId: 'TEST-ID-1', field: 'receipt')),
       );
     });
 
