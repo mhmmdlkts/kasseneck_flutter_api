@@ -29,12 +29,17 @@ class OeffentlicherName {
 /// als `package:kasseneck_api/<pfad>` importierbar, nicht nur die Dateien
 /// direkt unter `lib/`; `lib/src/` ist nach Dart-Konvention privat und zaehlt
 /// nur mit dem, was ein Einstieg daraus exportiert.
-List<File> einstiege(Directory lib) => lib
-    .listSync(recursive: true)
-    .whereType<File>()
-    .where((f) => f.path.endsWith('.dart') && !f.absolute.path.contains('/lib/src/'))
-    .toList()
-  ..sort((a, b) => a.path.compareTo(b.path));
+List<File> einstiege(Directory lib) =>
+    lib
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where(
+          (f) =>
+              f.path.endsWith('.dart') &&
+              !f.absolute.path.contains('/lib/src/'),
+        )
+        .toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
 
 /// Liest die Oberflaeche aus den [dateien] (Standard: alle Einstiege unter
 /// `lib/`). `quelltext` ersetzt einzelne Dateien im Speicher (Rot-Probe).
@@ -51,9 +56,7 @@ List<OeffentlicherName> oeffentlicheApi(
 }
 
 class _Filter {
-  const _Filter.alles()
-      : show = null,
-        hide = const {};
+  const _Filter.alles() : show = null, hide = const {};
   const _Filter(this.show, this.hide);
 
   final Set<String>? show;
@@ -96,8 +99,11 @@ class _Leser {
   CompilationUnit _parse(String pfad) {
     final rel = _relativ(pfad);
     final text = quelltext[rel] ?? File(pfad).readAsStringSync();
-    return parseString(content: text, path: pfad, throwIfDiagnostics: false)
-        .unit;
+    return parseString(
+      content: text,
+      path: pfad,
+      throwIfDiagnostics: false,
+    ).unit;
   }
 
   String? _ziel(String von, String uri) {
@@ -180,8 +186,11 @@ class _Leser {
     }
     if (d is ExtensionTypeDeclaration) {
       final p = d.primaryConstructor;
-      _neu(p.formalParameters.parameters.first.name?.lexeme ?? '', 'member',
-          '$rel:$besitzer.${p.formalParameters.parameters.first.name?.lexeme}');
+      _neu(
+        p.formalParameters.parameters.first.name?.lexeme ?? '',
+        'member',
+        '$rel:$besitzer.${p.formalParameters.parameters.first.name?.lexeme}',
+      );
     }
     for (final m in members) {
       _member(rel, besitzer, m);
@@ -250,7 +259,8 @@ class _TypLeser extends RecursiveAstVisitor<void> {
 
   @override
   void visitRecordTypeAnnotationPositionalField(
-      RecordTypeAnnotationPositionalField f) {
+    RecordTypeAnnotationPositionalField f,
+  ) {
     final n = f.name?.lexeme;
     if (n != null) melde(n, 'record');
     super.visitRecordTypeAnnotationPositionalField(f);
