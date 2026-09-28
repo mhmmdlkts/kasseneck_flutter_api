@@ -227,7 +227,7 @@ void main() {
 /// Betriebs; deshalb darf das Feld nicht mitgeschickt werden, wenn es niemand
 /// gesetzt hat.
 void _trinkgeldMerkmalTests() {
-  group('KeckTip — receivedImmediately', () {
+  group('KeckTip – receivedImmediately', () {
     test('ohne Angabe steht das Feld NICHT in der Nutzlast', () {
       // Sonst wäre „nichts gesagt" plötzlich eine Aussage, und die
       // Voreinstellung des Betriebs käme nie zum Zug.

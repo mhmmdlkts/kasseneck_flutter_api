@@ -432,7 +432,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     };
   }
 
-// Kombiniert — für lokale Speicherung (Isar), in der Form von `/v3`;
+// Kombiniert – für lokale Speicherung (Isar), in der Form von `/v3`;
 // [KasseneckReceipt.fromJson] liest sie zurueck.
   Map<String, dynamic> toJson() {
     return {

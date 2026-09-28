@@ -11,19 +11,19 @@ library;
 
 import '../receipt/codes.dart' show receiptEmailErrorCodes, receiptEmailVias;
 
-/// Stabile Fehlercodes von `sendReceiptEmail` unter `/v3` — Zwilling von
+/// Stabile Fehlercodes von `sendReceiptEmail` unter `/v3` – Zwilling von
 /// `RECEIPT_EMAIL_ERROR_CODES` (siehe `receipt/codes.dart`). Sie kommen als
-/// `KasseneckApiError.code` an — **entscheide am Code, nie am Text**, der
+/// `KasseneckApiError.code` an – **entscheide am Code, nie am Text**, der
 /// deutsche Satz darf sich jederzeit aendern.
 ///
 /// Was die fachlichen bedeuten:
-///   * `invalid_address` — die Adresse, nicht der Beleg: verbessern lassen.
-///   * `receipt_not_found` — es gibt ihn nicht **oder** er gehoert einer
+///   * `invalid_address` – die Adresse, nicht der Beleg: verbessern lassen.
+///   * `receipt_not_found` – es gibt ihn nicht **oder** er gehoert einer
 ///     anderen Kasse. Das Backend unterscheidet das nach aussen bewusst nicht,
 ///     sonst waere der Endpunkt ein Auskunftsdienst ueber fremde Belege.
-///   * `too_many_requests` — die Schleuse: hoechstens fuenf Mails je Beleg
+///   * `too_many_requests` – die Schleuse: hoechstens fuenf Mails je Beleg
 ///     (24 h) und 30 je Kasse und Stunde. Spaeter noch einmal, nicht sofort.
-///   * `send_failed` — hinaus ging nichts; ein zweiter Versuch ist hier
+///   * `send_failed` – hinaus ging nichts; ein zweiter Versuch ist hier
 ///     erlaubt und sinnvoll.
 ///
 /// Dahinter die Codes von Anmeldung und Rand und `route_missing`.
@@ -55,7 +55,7 @@ class Belegmailergebnis {
 
   /// Der Weg, auf dem die Mail hinausging (Katalog `MAILWEG`): `own`
   /// (Postfach des Betriebs), `platform` oder `platform_fallback` (eigenes
-  /// Postfach hinterlegt, aber gescheitert — dann ist am Konto etwas zu
+  /// Postfach hinterlegt, aber gescheitert – dann ist am Konto etwas zu
   /// richten). `null`, wenn die Antwort ihn nicht oder mit einem unbekannten
   /// Wert nennt: das ist eine Auskunft ueber den Weg, keine ueber den Erfolg.
   final String? via;

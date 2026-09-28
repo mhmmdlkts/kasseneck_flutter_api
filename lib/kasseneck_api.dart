@@ -423,7 +423,7 @@ class KasseneckApi {
   /// (`cardRefundReference`). Fehlt beides, wirft der Aufruf vor dem Senden.
   ///
   /// Fachliche Ablehnungen kommen als [KasseneckApiError] mit `code` aus
-  /// `stornoFehlercodes` — daran entscheiden, nie am Text. Ist der Storno
+  /// `stornoFehlercodes` – daran entscheiden, nie am Text. Ist der Storno
   /// gebucht, die Antwort aber unlesbar, kommt `response_unreadable` mit
   /// Ausgang unklar (`isOutcomeUnknown`): nachlesen, nie wiederholen.
   Future<Stornoergebnis> stornieren({

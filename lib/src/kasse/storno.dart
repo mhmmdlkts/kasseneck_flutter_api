@@ -20,7 +20,7 @@ import '../receipt/codes.dart' show cancellationErrorCodes;
 import '../register/pairing.dart' show RegisterScope;
 import 'belege.dart';
 
-/// Die Gründe, die das Backend annimmt — Codes wie unter `/v3` (Katalog
+/// Die Gründe, die das Backend annimmt – Codes wie unter `/v3` (Katalog
 /// `STORNO_GRUND`), Beschriftung für den Bildschirm und den Bon (bleibt
 /// deutsch, sie steht so am Beleg). Reihenfolge wie im Katalog des Backends.
 const Map<String, String> stornogruende = {
@@ -31,7 +31,7 @@ const Map<String, String> stornogruende = {
   'other': 'Sonstiges',
 };
 
-/// Stabile Fehlercodes von `cancelReceipt` unter `/v3` — Zwilling von
+/// Stabile Fehlercodes von `cancelReceipt` unter `/v3` – Zwilling von
 /// `CANCELLATION_ERROR_CODES` in `@kreiseck/kasseneck-api` 1.0, in derselben
 /// Reihenfolge (siehe `receipt/codes.dart`). Das Backend legt sie als `code`
 /// neben die Meldung; sie kommen als `KasseneckApiError.code` an.
@@ -76,7 +76,7 @@ List<int> restmengen(KasseneckReceipt beleg, {int? jetzt}) {
 /// Kein Storno von einem Storno, keines von Null-, Start- oder
 /// Trainingsbelegen, keines von einem bereits voll stornierten Beleg und keines
 /// bei einem unbekannten Stornostand (ein kuenftiger Wert des Servers: die
-/// Kasse bietet dann nichts an, statt zu raten) — und mit der Reichweite `own`
+/// Kasse bietet dann nichts an, statt zu raten) – und mit der Reichweite `own`
 /// nur die eigenen. Fehlt der Stand in der Liste, entscheidet der Server.
 bool stornoErlaubt(Belegzusammenfassung beleg, RegisterScope reichweite, String eigeneUid) {
   if (reichweite == RegisterScope.none) return false;
