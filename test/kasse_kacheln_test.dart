@@ -28,9 +28,9 @@ KasseArtikel artikel({
       'vatRate': satz,
       'unit': einheit,
       'groupId': gruppe,
-      'kasse': {'sichtbar': sichtbar, 'sort': sort},
+      'tile': {'visible': sichtbar, 'sort': sort},
       'active': aktiv,
-      'maxMenge': maxMenge,
+      'maxQuantity': maxMenge,
     });
 
 Artikelgruppe gruppe({String id = 'g1', String name = 'Getränke', int sort = 0, String farbe = '#1B46F5'}) =>
@@ -191,20 +191,20 @@ void main() {
   group('Mengenregel je Einheit', () {
     test('Stück wird ganzzahlig gebucht und nicht gefragt', () {
       final v = mengenregelFuerEinheit('stk');
-      expect(v.regel, Mengenregel.stueck);
+      expect(v.regel, Mengenregel.piece);
       expect(v.fragen, isFalse);
     });
 
     test('Kilogramm ist eine Kommamenge und wird gefragt', () {
       final v = mengenregelFuerEinheit('kg');
-      expect(v.regel, Mengenregel.dezimal);
+      expect(v.regel, Mengenregel.decimal);
       expect(v.fragen, isTrue);
       expect(v.stellen, 3);
     });
 
     test('Gramm wird gefragt, bleibt aber ganzzahlig', () {
       final v = mengenregelFuerEinheit('g');
-      expect(v.regel, Mengenregel.stueck);
+      expect(v.regel, Mengenregel.piece);
       expect(v.fragen, isTrue);
     });
 
@@ -213,11 +213,11 @@ void main() {
         'id': 'a1',
         'name': 'Wurst',
         'unit': 'kg',
-        'mengenregel': 'stueck',
-        'mengeFragen': false,
+        'quantityRule': 'piece',
+        'askQuantity': false,
       });
       final v = mengenVorgabe(a);
-      expect(v.regel, Mengenregel.stueck);
+      expect(v.regel, Mengenregel.piece);
       expect(v.fragen, isFalse);
     });
   });

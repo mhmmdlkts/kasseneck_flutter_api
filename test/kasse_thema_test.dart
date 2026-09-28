@@ -8,12 +8,12 @@ import 'package:kreiseck_design/kreiseck_design.dart';
 /// Bäckerei bei Sonne, Bar am Abend, und ein Stil für grelles Licht oder
 /// schwache Augen. Was sie unterscheidet, ist deshalb mehr als Farbe.
 
-KasseSettingsBetrieb betriebMit(Map<String, dynamic> g) => KasseSettings.aus({'betrieb': g}).betrieb;
+KasseSettingsBetrieb betriebMit(Map<String, dynamic> g) => KasseSettings.aus({'business': g}).betrieb;
 
 Kassenthema themaMit(Map<String, dynamic> g) => Kassenthema.aus(betriebMit(g));
 
 /// Ein Betrieb mit Standardwerten, nur der Stil gesetzt.
-KasseSettingsBetrieb betrieb(KasseStil stil) => betriebMit({'stil': stil.name});
+KasseSettingsBetrieb betrieb(KasseStil stil) => betriebMit({'theme': stil.wert});
 
 /// `Farbe.ausHex` mit einem Ersatzwert, der in diesen Tests nie greifen soll
 /// — jeder hier verwendete Hex-Code ist gültig. `ersatz` ist seit 6.0.0
@@ -23,10 +23,10 @@ Farbe hex(String h) => Farbe.ausHex(h, ersatz: const Farbe(0xFF, 0x00, 0xFF));
 void main() {
   group('Design-System', () {
     test('jeder Stil bildet auf einen Modus des Design-Systems ab', () {
-      expect(Kassenthema.aus(betrieb(KasseStil.klar)).modus, KdMode.light);
+      expect(Kassenthema.aus(betrieb(KasseStil.clear)).modus, KdMode.light);
       expect(Kassenthema.aus(betrieb(KasseStil.warm)).modus, KdMode.warm);
-      expect(Kassenthema.aus(betrieb(KasseStil.nacht)).modus, KdMode.dark);
-      expect(Kassenthema.aus(betrieb(KasseStil.kontrast)).modus, KdMode.contrast);
+      expect(Kassenthema.aus(betrieb(KasseStil.night)).modus, KdMode.dark);
+      expect(Kassenthema.aus(betrieb(KasseStil.contrast)).modus, KdMode.contrast);
     });
 
     test('die Farben sind die Rollen des Design-Systems, keine eigenen Tabellen', () {
@@ -36,16 +36,16 @@ void main() {
       String rolle(KdMode modus, String name) =>
           '#${kdColor(modus, name).toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
-      final t = Kassenthema.aus(betrieb(KasseStil.nacht));
+      final t = Kassenthema.aus(betrieb(KasseStil.night));
       expect(t.grund.hex.toUpperCase(), rolle(KdMode.dark, 'ground'));
       expect(t.marke.hex.toUpperCase(), rolle(KdMode.dark, 'brand'));
       expect(t.aufMarke.hex.toUpperCase(), rolle(KdMode.dark, 'on-brand'));
-      final k = Kassenthema.aus(betrieb(KasseStil.klar));
+      final k = Kassenthema.aus(betrieb(KasseStil.clear));
       expect(k.text.hex.toUpperCase(), rolle(KdMode.light, 'ink'));
     });
 
     test('der Kontrast-Stil schärft Ränder, nicht Radien', () {
-      final t = Kassenthema.aus(betrieb(KasseStil.kontrast));
+      final t = Kassenthema.aus(betrieb(KasseStil.contrast));
       expect(t.linie, 2);
       expect(t.radiusKlein, 10);
       expect(t.radius, 14);
@@ -54,7 +54,7 @@ void main() {
 
     test('hell folgt den Farben, nicht der Aufzählung', () {
       for (final stil in KasseStil.values) {
-        final t = themaMit({'stil': stil.name});
+        final t = themaMit({'theme': stil.wert});
         expect(t.hell, t.text.helligkeit < t.grund.helligkeit, reason: stil.name);
       }
     });
@@ -63,7 +63,7 @@ void main() {
   group('Stile', () {
     test('klar ist die Vorgabe: heller Grund, dunkler Text', () {
       final t = themaMit({});
-      expect(t.stil, KasseStil.klar);
+      expect(t.stil, KasseStil.clear);
       expect(t.hell, isTrue);
       expect(t.grund.helligkeit, greaterThan(0.8));
       expect(t.text.helligkeit, lessThan(0.2));
@@ -72,7 +72,7 @@ void main() {
     test('nacht dreht es um — dunkler Grund, heller Text', () {
       // Für Taxi und Bar. Reines Schwarz wäre falsch: es flimmert auf OLED
       // beim Blättern und lässt jeden Rand hart wirken.
-      final t = themaMit({'stil': 'nacht'});
+      final t = themaMit({'theme': 'night'});
       expect(t.hell, isFalse);
       expect(t.grund.helligkeit, lessThan(0.15));
       expect(t.grund, isNot(hex('#000000')));
@@ -81,7 +81,7 @@ void main() {
 
     test('warm ist heller Grund mit warmem Ton', () {
       final klar = themaMit({});
-      final warm = themaMit({'stil': 'warm'});
+      final warm = themaMit({'theme': 'warm'});
       expect(warm.hell, isTrue);
       // Mehr Rot als Blau — das unterscheidet cremiges Papier von kühlem Grau.
       expect(warm.grund.r - warm.grund.b, greaterThan(klar.grund.r - klar.grund.b));
@@ -92,7 +92,7 @@ void main() {
       // keine Schatten. Radien bleiben unverändert — das unterscheidet ihn
       // von einem reinen Farbtausch, ohne die Kasse in der Form zu verstellen.
       final klar = themaMit({});
-      final k = themaMit({'stil': 'kontrast'});
+      final k = themaMit({'theme': 'contrast'});
 
       expect(k.text, hex('#000000'));
       expect(k.grund, hex('#FFFFFF'));
@@ -107,7 +107,7 @@ void main() {
       // Die Zusage, die alles andere trägt. 4,5:1 ist die Schwelle für
       // Fließtext (WCAG AA).
       for (final stil in KasseStil.values) {
-        final t = themaMit({'stil': stil.name});
+        final t = themaMit({'theme': stil.wert});
         expect(kontrast(t.text, t.grund), greaterThanOrEqualTo(4.5), reason: '${stil.name}: Text auf Grund');
         expect(kontrast(t.text, t.flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: Text auf Flaeche');
         // Nebentext darf leiser sein, aber nicht unlesbar.
@@ -122,7 +122,7 @@ void main() {
     // flaecheHoch (Kopfzeile, aktives Feld) — dort steht text/leise.
     test('text und leise halten 4,5:1 auf grund, flaeche und flaecheHoch', () {
       for (final stil in KasseStil.values) {
-        final t = themaMit({'stil': stil.name});
+        final t = themaMit({'theme': stil.wert});
         for (final MapEntry(key: name, value: flaeche) in {'grund': t.grund, 'flaeche': t.flaeche, 'flaecheHoch': t.flaecheHoch}.entries) {
           expect(kontrast(t.text, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: text auf $name');
           expect(kontrast(t.leise, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: leise auf $name');
@@ -132,7 +132,7 @@ void main() {
 
     test('Bedeutungsfarben und Marke halten 4,5:1 auf grund und flaeche', () {
       for (final stil in KasseStil.values) {
-        final t = themaMit({'stil': stil.name});
+        final t = themaMit({'theme': stil.wert});
         for (final MapEntry(key: name, value: flaeche) in {'grund': t.grund, 'flaeche': t.flaeche}.entries) {
           expect(kontrast(t.gut, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: gut auf $name');
           expect(kontrast(t.warnung, flaeche), greaterThanOrEqualTo(4.5), reason: '${stil.name}: warnung auf $name');
@@ -149,7 +149,7 @@ void main() {
       // Schalter. Die Grenze: deutlich weniger als die halbe Hoehe eines
       // Chips (rund 32 dp) waere vollrund.
       for (final stil in KasseStil.values) {
-        final t = themaMit({'stil': stil.name});
+        final t = themaMit({'theme': stil.wert});
         expect(t.radiusKlein, greaterThan(0), reason: '${stil.name}: gar keine Rundung waere hart');
         expect(t.radiusKlein, lessThan(12), reason: '${stil.name}: zu rund');
         expect(t.radiusKlein, lessThanOrEqualTo(t.radiusKachel));
@@ -164,13 +164,13 @@ void main() {
       // Tippfehler aus dem Panel hier nichts mehr anrichten.
       final vorgabe = themaMit({}).marke;
       for (final wert in ['#1B46F5', '#FFE066', '', 'blau', '#12345']) {
-        expect(themaMit({'farbe': wert}).marke, vorgabe, reason: wert);
+        expect(themaMit({'color': wert}).marke, vorgabe, reason: wert);
       }
     });
 
     test('auf der Marke steht immer lesbarer Text', () {
       for (final stil in KasseStil.values) {
-        final t = themaMit({'stil': stil.name});
+        final t = themaMit({'theme': stil.wert});
         expect(kontrast(t.aufMarke, t.marke), greaterThanOrEqualTo(4.5), reason: stil.name);
       }
     });
@@ -183,7 +183,7 @@ void main() {
 
     test('S ist kleiner, L und XL größer — in dieser Reihenfolge', () {
       final faktoren = [
-        for (final s in ['S', 'M', 'L', 'XL']) themaMit({'schrift': s}).schriftfaktor,
+        for (final s in ['S', 'M', 'L', 'XL']) themaMit({'fontSize': s}).schriftfaktor,
       ];
       expect(faktoren, orderedEquals([...faktoren]..sort()));
       expect(faktoren.first, lessThan(1.0));
@@ -191,21 +191,21 @@ void main() {
     });
 
     test('auch XL bleibt bedienbar — kein Faktor, der die Kasse sprengt', () {
-      expect(themaMit({'schrift': 'XL'}).schriftfaktor, lessThanOrEqualTo(1.5));
+      expect(themaMit({'fontSize': 'XL'}).schriftfaktor, lessThanOrEqualTo(1.5));
     });
   });
 
   group('Kachelhöhe', () {
     test('flach, normal, hoch — in dieser Reihenfolge', () {
       final hoehen = [
-        for (final h in ['S', 'M', 'L']) Kassenthema.aus(betriebMit({}), geraet: KasseSettings.aus({'geraet': {'hoehe': h}}).geraet).kachelhoehe,
+        for (final h in ['S', 'M', 'L']) Kassenthema.aus(betriebMit({}), geraet: KasseSettings.aus({'device': {'tileHeight': h}}).geraet).kachelhoehe,
       ];
       expect(hoehen, orderedEquals([...hoehen]..sort()));
     });
 
     test('auch die flachste Kachel bleibt ein Fingerziel', () {
       // 48 dp ist die Untergrenze, unter der ein Finger nicht mehr trifft.
-      final flach = Kassenthema.aus(betriebMit({}), geraet: KasseSettings.aus({'geraet': {'hoehe': 'S'}}).geraet);
+      final flach = Kassenthema.aus(betriebMit({}), geraet: KasseSettings.aus({'device': {'tileHeight': 'S'}}).geraet);
       expect(flach.kachelhoehe, greaterThanOrEqualTo(48));
     });
   });
@@ -269,7 +269,7 @@ void main() {
       // ähneln — und eine Hausfarbe, die auf einem Knopf nicht mehr lesbar
       // ist, merkt niemand vor dem Tresen.
       final vorgabe = themaMit({}).marke;
-      final eigen = themaMit({'farbe': '#B3261E'});
+      final eigen = themaMit({'color': '#B3261E'});
       expect(eigen.marke, vorgabe);
       expect(vorgabe.hex.toUpperCase(), '#136B6B');
     });
@@ -278,7 +278,7 @@ void main() {
       // Ein sattes Petrol auf fast schwarzem Grund ist kaum zu sehen — die
       // Rolle des Design-Systems hellt sie im Dunkeln von sich aus auf.
       final klar = themaMit({});
-      final nacht = themaMit({'stil': 'nacht'});
+      final nacht = themaMit({'theme': 'night'});
       expect(nacht.marke.helligkeit, greaterThan(klar.marke.helligkeit));
       expect(nacht.marke.g, greaterThan(nacht.marke.r));
     });

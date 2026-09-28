@@ -9,6 +9,7 @@ import '../v3.dart';
 import 'fehler.dart';
 import 'transport.dart';
 
+export 'codes.dart';
 export 'fehler.dart';
 export 'transport.dart' show RegisterTransport, kRegisterBaseUrl;
 
@@ -39,7 +40,7 @@ export 'transport.dart' show RegisterTransport, kRegisterBaseUrl;
 
 /// Was das Gerät über sich sagt — fürs Panel („welches Gerät ist das?").
 class RegisterClientInfo {
-  const RegisterClientInfo({this.userAgent, this.platform, this.language, this.tz, this.screen});
+  const RegisterClientInfo({this.userAgent, this.platform, this.language, this.tz, this.screen, this.app});
 
   final String? userAgent;
   final String? platform;
@@ -49,12 +50,20 @@ class RegisterClientInfo {
   final String? tz;
   final ({int w, int h})? screen;
 
+  /// Welcher Build der Anwendung gerade läuft, in derselben Form wie die
+  /// Client-Kennung der Transporte (`clientHeader`, `kasse-app/1.0.3+34`). Bei einer Störungsmeldung die
+  /// entscheidende Angabe: ohne sie lässt sich ein alter Build weder belegen
+  /// noch ausschließen. Das Backend kürzt auf 80 Zeichen und zählt die
+  /// Kopplung und Anmeldung über diesen Wert (`register_devices/{id}.client`).
+  final String? app;
+
   Map<String, dynamic> toJson() => {
         if (userAgent != null) 'userAgent': userAgent,
         if (platform != null) 'platform': platform,
         if (language != null) 'language': language,
         if (tz != null) 'tz': tz,
         if (screen != null) 'screen': {'w': screen!.w, 'h': screen!.h},
+        if (app != null) 'app': app,
       };
 }
 
@@ -72,6 +81,13 @@ class RegisterGeo {
 }
 
 /// Ergebnis der Kopplung — der vollständige Ausweis dieses Geräts.
+///
+/// **Das Speicherformat der App bleibt, wie es ist** (Nachtrag §9, B2): wer
+/// den Ausweis ablegt, bildet [companyName]/[cashregisterLabel]/
+/// [testEnvironment] auf seine bisherigen Felder ab. Die Aufrufe dieses
+/// Pakets brauchen aus einem abgelegten Satz nur `ownerUid`, `deviceId`,
+/// `deviceSecret` (und `cashregisterId` beim Login); ein Gerät, das mit 9.x
+/// gekoppelt wurde, meldet sich darum ohne neue Kopplung an.
 class PairedRegisterDevice {
   const PairedRegisterDevice({
     required this.ownerUid,
@@ -80,7 +96,7 @@ class PairedRegisterDevice {
     required this.cashregisterId,
     required this.companyName,
     required this.cashregisterLabel,
-    this.testUmgebung = false,
+    this.testEnvironment = false,
   });
 
   /// Kunde, unter dem das Gerät hängt.
@@ -93,10 +109,10 @@ class PairedRegisterDevice {
   /// Kasse, an die die Kopplung dieses Gerät gebunden hat.
   final String cashregisterId;
 
-  /// Das Gerät hängt an einer Test-Umgebung. Die Kasse muss es zeigen: ein
-  /// Beleg von dort ist kein gültiger Beleg, und wer das nicht sieht, hält
-  /// ihn für einen.
-  final bool testUmgebung;
+  /// Das Gerät hängt an einer Test-Umgebung (`kr_test_`-Konto). Die Kasse
+  /// muss es zeigen: ein Beleg von dort ist kein gültiger Beleg, und wer das
+  /// nicht sieht, hält ihn für einen.
+  final bool testEnvironment;
 
   /// Firmenname des Betriebs — Anzeige, kann leer sein.
   final String companyName;
@@ -115,7 +131,7 @@ class RegisterUserSummary {
     required this.id,
     required this.name,
     required this.kind,
-    required this.altbestand,
+    required this.pinPolicyOutdated,
   });
 
   final String id;
@@ -126,22 +142,34 @@ class RegisterUserSummary {
 
   /// Die PIN wurde noch nicht unter der aktuellen Regel gesetzt: die Kasse
   /// zeigt das Freifeld statt der Kästchen.
-  final bool altbestand;
+  final bool pinPolicyOutdated;
 }
 
 /// PIN-Regel des Betriebs — daraus baut die Kasse Kästchen und Tastatur.
 class RegisterPinPolicy {
-  const RegisterPinPolicy({required this.stellen, required this.zeichen});
+  const RegisterPinPolicy({required this.length, required this.charset});
 
   /// Feste Stellenzahl (Backend: 3 bis 6).
-  final int stellen;
+  final int length;
 
-  /// `ziffern` (nur 0–9) oder `zeichen` (0–9 plus Kopplungs-Alphabet).
-  final String zeichen;
+  /// `digits` (nur 0 bis 9) oder `alphanumeric` (0 bis 9 plus
+  /// Kopplungs-Alphabet); ein künftiger Wert kommt unverändert durch.
+  final String charset;
 }
 
-/// Anmeldemodus des Geräts; ein unbekannter künftiger Wert gilt als [auswahl].
-enum RegisterLoginMode { auswahl, pin }
+/// Anmeldemodus des Geräts (Draht `select_user` bzw. `pin`); ein unbekannter
+/// künftiger Wert gilt als [selectUser]: das Backend weist eine Anmeldung
+/// ohne Auswahl ohnehin mit `login_mode_select_user` ab.
+enum RegisterLoginMode { selectUser, pin }
+
+/// Darf die gebundene Kasse Belege erstellen? `ready: false` mit dem Grund
+/// (Menschentext) etwa bei fehlender Signaturkarte oder fehlendem Startbeleg.
+class RegisterCashregisterState {
+  const RegisterCashregisterState({required this.ready, this.reason});
+
+  final bool ready;
+  final String? reason;
+}
 
 /// Antwort von [RegisterClient.listRegisterUsersForDevice].
 class RegisterDeviceUsers {
@@ -149,10 +177,11 @@ class RegisterDeviceUsers {
     required this.users,
     required this.policy,
     required this.loginMode,
-    required this.standortsperre,
-    this.testUmgebung = false,
+    required this.locationLock,
+    this.testEnvironment = false,
     required this.settings,
-    required this.betriebsdaten,
+    required this.receiptHeader,
+    this.cashregister,
   });
 
   /// Im Modus [RegisterLoginMode.pin] bewusst leer — Namen haben am nur-PIN-Gerät nichts verloren.
@@ -164,17 +193,21 @@ class RegisterDeviceUsers {
   final RegisterLoginMode loginMode;
 
   /// Der Betrieb verlangt die Ortung beim Login.
-  final bool standortsperre;
+  final bool locationLock;
 
-  /// Das Gerät hängt an einer Test-Umgebung — siehe [PairedRegisterDevice].
-  final bool testUmgebung;
+  /// Das Gerät hängt an einer Test-Umgebung, siehe [PairedRegisterDevice].
+  final bool testEnvironment;
 
   /// Kassen-Einstellungen (betriebsweit + Gerät), mit den Standardwerten
   /// gemischt — die Kasse bekommt nie ein halbes Bild.
   final KasseSettings settings;
 
-  /// Belegkopf des Betriebs als Rohdaten (Name, Anschrift, UID, Fußzeilen).
-  final Map<String, dynamic>? betriebsdaten;
+  /// Belegkopf des Betriebs als Rohdaten (`company`, Anschrift, `vatId`,
+  /// Fußzeilen).
+  final Map<String, dynamic>? receiptHeader;
+
+  /// Stand der gebundenen Kasse; `null`, wenn das Backend keinen nennt.
+  final RegisterCashregisterState? cashregister;
 }
 
 /// Reichweite eines Rechts.
@@ -293,20 +326,21 @@ class RegisterSession {
     required this.deviceLabel,
     required this.startedAt,
     required this.expiresAt,
-    required this.selbst,
+    required this.own,
     this.userName,
   });
 
   final String id;
   final String? deviceId;
-  /// Etikett des Geräts; „Kasse", wenn das Backend keines kennt.
-  final String deviceLabel;
+  /// Etikett des Geräts; `null`, wenn das Backend keines kennt (die
+  /// Oberfläche nennt dann ein Ersatzwort).
+  final String? deviceLabel;
   /// Millisekunden seit 1970 (`Date.now()` des Backends), null bei Altbestand.
   final int? startedAt;
   final int? expiresAt;
   /// Läuft diese Sitzung auf dem fragenden Gerät selbst?
-  final bool selbst;
-  /// Nur im Gerätemodus „auswahl" und nur, wenn das Backend einen Namen kennt.
+  final bool own;
+  /// Nur im Gerätemodus `select_user` und nur, wenn das Backend einen Namen kennt.
   final String? userName;
 }
 
@@ -402,9 +436,9 @@ class RegisterClient {
       deviceSecret: _pflichtfeld(name, daten, 'deviceSecret'),
       ownerUid: _pflichtfeld(name, daten, 'ownerUid'),
       cashregisterId: _pflichtfeld(name, daten, 'cashregisterId'),
-      companyName: _text(daten['betrieb']),
-      cashregisterLabel: _text(daten['kasse']),
-      testUmgebung: daten['testUmgebung'] == true,
+      companyName: _text(daten['companyName']),
+      cashregisterLabel: _text(daten['cashregisterLabel']),
+      testEnvironment: daten['testEnvironment'] == true,
     );
   }
 
@@ -437,20 +471,30 @@ class RegisterClient {
         id: _pflichtfeld(name, roh, 'id'),
         name: _text(roh['name']),
         kind: roh['kind'] == 'device' ? RegisterUserKind.device : RegisterUserKind.person,
-        altbestand: roh['altbestand'] == true,
+        pinPolicyOutdated: roh['pinPolicyOutdated'] == true,
       );
     }).toList();
 
     final settings = daten['settings'];
-    final betriebsdaten = daten['betriebsdaten'];
+    final kopf = daten['receiptHeader'];
+    final kasse = daten['cashregister'];
     return RegisterDeviceUsers(
       users: users,
       policy: _regel(daten['policy']),
-      loginMode: daten['loginMode'] == 'pin' ? RegisterLoginMode.pin : RegisterLoginMode.auswahl,
-      standortsperre: daten['standortsperre'] == true,
-      testUmgebung: daten['testUmgebung'] == true,
-      settings: KasseSettings.aus(settings is Map ? Map<String, dynamic>.from(settings) : null),
-      betriebsdaten: betriebsdaten is Map ? Map<String, dynamic>.from(betriebsdaten) : null,
+      loginMode: daten['loginMode'] == 'pin' ? RegisterLoginMode.pin : RegisterLoginMode.selectUser,
+      locationLock: daten['locationLock'] == true,
+      testEnvironment: daten['testEnvironment'] == true,
+      settings: KasseSettings.aus({
+        'business': settings is Map ? settings['business'] : null,
+        'device': settings is Map ? settings['device'] : null,
+      }),
+      receiptHeader: kopf is Map ? Map<String, dynamic>.from(kopf) : null,
+      cashregister: kasse is Map && kasse['ready'] is bool
+          ? RegisterCashregisterState(
+              ready: kasse['ready'] as bool,
+              reason: kasse['reason'] is String ? kasse['reason'] as String : null,
+            )
+          : null,
     );
   }
 
@@ -548,10 +592,10 @@ class RegisterClient {
       return RegisterSession(
         id: id,
         deviceId: geraet is String && geraet.isNotEmpty ? geraet : null,
-        deviceLabel: label is String && label.isNotEmpty ? label : 'Kasse',
+        deviceLabel: label is String && label.isNotEmpty ? label : null,
         startedAt: roh['startedAt'] is num ? (roh['startedAt'] as num).toInt() : null,
         expiresAt: roh['expiresAt'] is num ? (roh['expiresAt'] as num).toInt() : null,
-        selbst: roh['selbst'] == true,
+        own: roh['own'] == true,
         // Nur übernehmen, wenn wirklich einer kam: ein leerer String stünde in
         // der Oberfläche als namenlose Zeile, statt die Spalte wegzulassen.
         userName: userName is String && userName.isNotEmpty ? userName : null,
@@ -716,11 +760,11 @@ RegisterScope _scope(Object? wert) {
 /// Die PIN-Regel aus der Antwort — oder `null`, wenn keine brauchbare kommt.
 RegisterPinPolicy? _regel(Object? wert) {
   if (wert is! Map) return null;
-  final stellen = wert['stellen'];
-  final zeichen = wert['zeichen'];
-  if (stellen is! int || stellen < 1) return null;
-  if (zeichen is! String || zeichen.isEmpty) return null;
-  return RegisterPinPolicy(stellen: stellen, zeichen: zeichen);
+  final length = wert['length'];
+  final charset = wert['charset'];
+  if (length is! int || length < 1) return null;
+  if (charset is! String || charset.isEmpty) return null;
+  return RegisterPinPolicy(length: length, charset: charset);
 }
 
 /// Pflichtangabe des Aufrufers. Die Meldung nennt das **Feld**, nie den Wert.

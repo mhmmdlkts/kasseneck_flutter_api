@@ -17,7 +17,6 @@
 /// auf dem etwas schiefgehen kann — mitten zwischen Beleg und Gast.
 library;
 
-import '../../enums/credit_card_provider.dart';
 import '../../enums/keck_payment_method.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
@@ -210,43 +209,122 @@ class Stornoergebnis {
 
 const int _anmerkungHoechstlaenge = 200;
 
+/// Eine Kasse aus `listMyCashregisters` (Draht `/v3`). Zeitpunkte bleiben
+/// Text (ISO, UTC); ein fehlender ist `null`, nie ein erfundenes Datum.
+class KassenEintrag {
+  const KassenEintrag({
+    required this.id,
+    required this.onboarding,
+    this.label,
+    this.description,
+    this.createTime,
+    this.signatureId,
+    this.token,
+    this.finalReceiptId,
+    this.decommissioned = false,
+    this.licenses,
+    this.monthlyReportJournal = false,
+  });
+
+  final String id;
+  final String? label;
+  final String? description;
+  final String? createTime;
+  final String? signatureId;
+
+  /// Kassen-Token; für Kassen-Benutzer ist er bewusst `null`.
+  final String? token;
+  final String? finalReceiptId;
+
+  /// Außer Betrieb genommen (Schlussbeleg); es entstehen keine Belege mehr.
+  final bool decommissioned;
+  final int? licenses;
+  final bool monthlyReportJournal;
+  final KassenInbetriebnahme onboarding;
+
+  factory KassenEintrag.aus(Map<String, dynamic> j) {
+    String? text(Object? v) => v is String && v.isNotEmpty ? v : null;
+    final ob = j['onboarding'];
+    final o = ob is Map ? ob : const {};
+    return KassenEintrag(
+      id: text(j['id']) ?? '',
+      label: text(j['label']),
+      description: text(j['description']),
+      createTime: text(j['create_time']),
+      signatureId: text(j['signature_id']),
+      token: text(j['token']),
+      finalReceiptId: text(j['final_receipt_id']),
+      decommissioned: j['decommissioned'] == true,
+      licenses: j['licenses'] is num ? (j['licenses'] as num).toInt() : null,
+      monthlyReportJournal: j['monthly_report_journal'] == true,
+      onboarding: KassenInbetriebnahme(
+        cashboxRegistered: o['cashbox_registered'] == true,
+        startReceiptCreated: o['start_receipt_created'] == true,
+        startReceiptTransmitted: o['start_receipt_transmitted'] == true,
+        cashboxRegisteredAt: text(o['cashbox_registered_at']),
+        startReceiptCreatedAt: text(o['start_receipt_created_at']),
+        startReceiptTransmittedAt: text(o['start_receipt_transmitted_at']),
+      ),
+    );
+  }
+}
+
+/// Stand der Inbetriebnahme (RKSV): bei FinanzOnline registriert, Startbeleg
+/// erzeugt und übermittelt.
+class KassenInbetriebnahme {
+  const KassenInbetriebnahme({
+    required this.cashboxRegistered,
+    required this.startReceiptCreated,
+    required this.startReceiptTransmitted,
+    this.cashboxRegisteredAt,
+    this.startReceiptCreatedAt,
+    this.startReceiptTransmittedAt,
+  });
+
+  final bool cashboxRegistered;
+  final bool startReceiptCreated;
+  final bool startReceiptTransmitted;
+  final String? cashboxRegisteredAt;
+  final String? startReceiptCreatedAt;
+  final String? startReceiptTransmittedAt;
+}
+
 class RegisterReceiptClient {
-  RegisterReceiptClient(this.transport, {Duration? abschlussFrist})
+  /// [testEnvironment]: das Gerät hängt an einer Test-Umgebung
+  /// ([PairedRegisterDevice.testEnvironment] bzw. die Benutzerliste). Dann
+  /// trägt jeder Storno-Beleg TESTKASSE, auch ohne das Original.
+  RegisterReceiptClient(this.transport, {Duration? abschlussFrist, this.testEnvironment = false})
       : abschlussFrist = abschlussFrist ?? const Duration(seconds: 90);
 
   final RegisterTransport transport;
+
+  /// Siehe Konstruktor.
+  final bool testEnvironment;
 
   /// Der Abschluss darf laenger warten als eine Belegliste: die Signatureinheit
   /// braucht ihre Zeit, und ein Abbruch beendet nur das Warten der Kasse, nicht
   /// die Arbeit des Servers.
   final Duration abschlussFrist;
 
-  /// Normalbeleg (Verkauf) — der signierte Beleg samt Belegkopf.
+  /// Normalbeleg (Verkauf): der signierte Beleg samt Belegkopf.
   ///
-  /// [kartenanbieter] gehoert zu jeder Kartenzahlung: Backend und Bon-Bauer
-  /// schalten den Kartenblock ueber dieses Feld. Fehlt es, steht am Beleg
-  /// `creditCardProvider: null`, kein Zweig trifft, und der Gast bekommt keinen
-  /// Kartenbeleg — auch dann nicht, wenn Kennung und Terminaldaten mitgehen.
-  ///
-  /// **Mehrere Zahlungen** gehen als [zahlungen] hinaus (siehe
-  /// [KeckPaymentInput], Rest bar etwa ueber `barzahlung`). Sie schliessen
-  /// [zahlungsart] und die Kartenfelder aus -- die Kartenangaben stehen dann in
-  /// der einzelnen Zahlung (Backend: `payments_conflict`). Eines von beiden
-  /// ist Pflicht; `mixed` wird nie gesendet.
+  /// Unter `/v3` gehen die Zahlungen **immer** als [zahlungen] hinaus (siehe
+  /// [KeckPaymentInput]: Karte mit Anbieter und Kennung, Bar mit
+  /// `tenderedCents`), nie die Einzelfelder `paymentMethod`,
+  /// `creditCardProvider`, `cardPaymentId`, `cardPaymentData` aus 0.x; `mixed`
+  /// wird nie gesendet. Den Zahlbetrag rechnet der Server; weicht die Summe
+  /// ab, kommt `payments_sum_mismatch` mit `expectedCents`
+  /// ([paymentsExpectedCents]), und es wurde nichts signiert.
   Future<KasseneckReceipt> verkaufen({
     required List<KasseneckItem> positionen,
-    KeckPaymentMethod? zahlungsart,
-    List<KeckPaymentInput>? zahlungen,
+    required List<KeckPaymentInput> zahlungen,
     int? trinkgeldCents,
     List<String>? kundendaten,
     List<String>? rechtshinweise,
-    CreditCardProvider? kartenanbieter,
-    String? kartenzahlungId,
-    Map<String, dynamic>? kartenzahlungsdaten,
   }) async {
     const name = Aufrufe.createReceipt;
     if (positionen.isEmpty) {
-      // Ein leerer Verkauf ist kein Verkauf — und der Fehler soll fallen,
+      // Ein leerer Verkauf ist kein Verkauf, und der Fehler soll fallen,
       // bevor irgendetwas in die Signaturkette geraet.
       throw const KasseneckValidationError(name, 'Positionen fehlen', 'request');
     }
@@ -256,49 +334,18 @@ class RegisterReceiptClient {
     if (trinkgeldCents != null && trinkgeldCents < 0) {
       throw const KasseneckValidationError(name, 'Trinkgeld muss >= 0 sein', 'request');
     }
-    if (zahlungen != null) {
-      final fehler = zahlungsKonflikt({
-            'paymentMethod': zahlungsart,
-            'creditCardProvider': kartenanbieter,
-            'cardPaymentId': kartenzahlungId,
-            'cardPaymentData': kartenzahlungsdaten,
-          }) ??
-          zahlungenFehler(zahlungen, storno: false);
-      if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
-    } else if (zahlungsart == null) {
-      throw const KasseneckValidationError(name, 'zahlungsart oder zahlungen ist Pflicht', 'request');
-    } else if (zahlungsart == KeckPaymentMethod.mixed) {
-      throw const KasseneckValidationError(name, mixedNichtSenden, 'request');
-    }
-    if (kartenanbieter != null && zahlungsart != KeckPaymentMethod.creditCard) {
-      // Ein Anbieter an einer Barzahlung ist ein Widerspruch: entweder ist die
-      // Zahlungsart falsch oder der Anbieter. Beides gehoert an den Tresen
-      // zurueck, bevor der Beleg in der Signaturkette haengt.
-      throw const KasseneckValidationError(
-          name, 'Kartenanbieter gibt es nur bei zahlungsart creditCard', 'request');
-    }
+    final fehler = zahlungenFehler(zahlungen, storno: false);
+    if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
 
     final daten = await _signiertRufen(
       name,
       params: {
         'receiptType': 'standard',
         'items': positionen.map((p) => p.toJson()).toList(),
-        'paymentMethod': ?zahlungsart?.name,
-        if (zahlungen != null) 'payments': [for (final z in zahlungen) z.toJson()],
+        'payments': [for (final z in zahlungen) z.toJson()],
         if (trinkgeldCents != null && trinkgeldCents > 0) 'tip': trinkgeldCents,
         if (kundendaten != null && kundendaten.isNotEmpty) 'customerDetails': kundendaten.join('\n'),
         if (rechtshinweise != null && rechtshinweise.isNotEmpty) 'legalMessage': rechtshinweise.join('\n'),
-        // Der Enum-Name ist das Drahtformat — dasselbe Wort sendet der
-        // JS-Zwilling, und der Bon schaltet daran.
-        //
-        // Bewusst OHNE die Regel des alten Wegs („Kennung ist Pflicht bei einem
-        // Anbieter ausser custom", `KasseneckApi._createReceipt`): ein eigenes
-        // Terminal meldet keine Kennung, und ein Verkauf, der deshalb scheitert,
-        // laesst das Geld geflossen und den Beleg aus. Der Anbieter geht mit,
-        // was immer sonst fehlt.
-        'creditCardProvider': ?kartenanbieter?.name,
-        'cardPaymentId': ?kartenzahlungId,
-        'cardPaymentData': ?kartenzahlungsdaten,
       },
     );
     // Ab hier ist der Beleg signiert: wer ihn nicht lesen kann, bekommt
@@ -427,12 +474,41 @@ class RegisterReceiptClient {
     // sofern die Antwort sie mitbrachte: ohne sie ist der gesetzlich
     // vorgeschriebene Storno-Beleg da, aber fuer die Kasse unerreichbar, und
     // ein zweiter Storno waere eine zweite Ruecknahme.
-    return readSignedResponse(
+    final Stornoergebnis ergebnis = readSignedResponse(
       name,
       () => Stornoergebnis.ausAntwort(name, daten, () => _belegAus(daten, name)),
       kennung: () => _kennungAus(daten),
     );
+    // Die Storno-Antwort trägt weder Layout noch Testkennzeichen. Damit der
+    // Storno einer Testkasse nie wie ein gültiger Beleg gedruckt wird, gelten
+    // die Kennzeichen des Originals, und eine Test-Umgebung steht für
+    // TESTKASSE (wie `KasseneckApi.stornieren` mit `kr_test_`).
+    final beleg = ergebnis.beleg;
+    if (original?.testCashregister == true || testEnvironment) beleg.testCashregister = true;
+    if (original?.testSignature == true && !beleg.testCashregister) beleg.testSignature = true;
+    return ergebnis;
   }
+
+  /// Verschlüsselte Volltext-Belegnummer (`generateFullReceiptId`): der
+  /// Bezeichner, unter dem der Beleg öffentlich abrufbar ist.
+  Future<String> volleBelegId(String receiptId) async {
+    const name = Aufrufe.generateFullReceiptId;
+    if (receiptId.trim().isEmpty) {
+      throw const KasseneckValidationError(name, 'receiptId fehlt', 'request');
+    }
+    final daten = await transport.rufen(name, params: {'receiptId': receiptId});
+    final id = daten['fullReceiptId'];
+    if (id is! String || id.isEmpty) {
+      throw const KasseneckValidationError(name, 'Antwort enthaelt keine fullReceiptId', 'response');
+    }
+    return id;
+  }
+
+  /// Die Kassen, die dem angemeldeten Benutzer offenstehen
+  /// (`listMyCashregisters`); für einen Kassen-Benutzer genau die ihm
+  /// zugewiesenen.
+  Future<List<KassenEintrag>> kassen() async =>
+      _liste(Aufrufe.listMyCashregisters, 'cashregisters', KassenEintrag.aus);
 
   /// Einen bereits ausgestellten Beleg als **Link auf die oeffentliche
   /// Belegseite** an [an] schicken (`sendReceiptEmail`).

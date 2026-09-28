@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -78,9 +79,11 @@ final kaffee = KasseneckItem(name: 'Kaffee', quantity: 1, priceCents: 280, vat: 
 
 void main() {
   group('verkaufen', () {
-    test('Positionen und Zahlungsart gehen hinaus, der signierte Beleg kommt zurück', () async {
+    const bar = KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 280, tenderedCents: 500);
+
+    test('Positionen und Zahlungen gehen hinaus, der signierte Beleg kommt zurück', () async {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      final beleg = await f.client.verkaufen(positionen: [kaffee], zahlungsart: KeckPaymentMethod.cash);
+      final beleg = await f.client.verkaufen(positionen: [kaffee], zahlungen: [bar]);
 
       expect(beleg.receiptId, 'KASSE1-ID-42');
       expect(beleg.companyName, 'Testbetrieb');
@@ -91,20 +94,71 @@ void main() {
       final params = jsonDecode(anfrage.body)['params'] as Map<String, dynamic>;
       expect(params['cashregisterId'], 'KASSE1');
       expect(params['receiptType'], 'standard');
-      expect(params['paymentMethod'], 'cash');
+      expect(params['payments'], [
+        {'method': 'cash', 'amountCents': 280, 'tenderedCents': 500},
+      ]);
       expect(params['items'], [
         {'name': 'Kaffee', 'quantity': 1, 'unitPriceCents': 280, 'vatRate': 20},
       ]);
     });
 
+    test('nie die Einzelfelder aus 0.x: paymentMethod, creditCardProvider, cardPaymentId, cardPaymentData', () async {
+      // Unter /v3 ist payments Pflicht; ein zusaetzliches paymentMethod waere
+      // payment_method_not_supported.
+      final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
+      await f.client.verkaufen(positionen: [kaffee], zahlungen: const [
+        KeckPaymentInput(
+          method: KeckPaymentMethod.creditCard,
+          amountCents: 280,
+          provider: CreditCardProvider.gpTomAndroid,
+          providerPaymentId: 'tx-1',
+          providerData: {'trasanctionID': 'tx-1'},
+        ),
+      ]);
+      final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
+      for (final alt in ['paymentMethod', 'creditCardProvider', 'cardPaymentId', 'cardPaymentData']) {
+        expect(params.containsKey(alt), isFalse, reason: alt);
+      }
+      expect(params['payments'], [
+        {
+          'method': 'creditCard',
+          'amountCents': 280,
+          'provider': 'gpTomAndroid',
+          'providerPaymentId': 'tx-1',
+          'providerData': {'trasanctionID': 'tx-1'},
+        },
+      ]);
+    });
+
+    test('Quelltext-Waechter: der Verkauf der Kasse kennt keine 0.x-Zahlfelder mehr', () {
+      final quelle = File('lib/src/kasse/belege.dart').readAsStringSync();
+      final verkauf = quelle.substring(quelle.indexOf('Future<KasseneckReceipt> verkaufen('),
+          quelle.indexOf('Future<List<Belegzusammenfassung>> auflisten('));
+      for (final alt in ["'paymentMethod'", "'creditCardProvider'", "'cardPaymentId'", "'cardPaymentData'"]) {
+        expect(verkauf, isNot(contains(alt)), reason: alt);
+      }
+    });
+
     test('ohne Positionen geht gar nichts hinaus', () async {
-      // Ein leerer Verkauf ist kein Verkauf — und der Fehler soll fallen,
+      // Ein leerer Verkauf ist kein Verkauf, und der Fehler soll fallen,
       // bevor irgendetwas in die Signaturkette gerät.
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
       await expectLater(
-        f.client.verkaufen(positionen: const [], zahlungsart: KeckPaymentMethod.cash),
+        f.client.verkaufen(positionen: const [], zahlungen: [bar]),
         throwsA(isA<KasseneckValidationError>()),
       );
+      expect(f.log, isEmpty);
+    });
+
+    test('eine ungueltige Zahlung (mixed, negativ) geht nicht hinaus', () async {
+      final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
+      for (final z in const [
+        KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 280),
+        KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1),
+      ]) {
+        await expectLater(f.client.verkaufen(positionen: [kaffee], zahlungen: [z]),
+            throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
+      }
       expect(f.log, isEmpty);
     });
 
@@ -124,8 +178,8 @@ void main() {
       );
 
       await expectLater(
-        client.verkaufen(positionen: [kaffee], zahlungsart: KeckPaymentMethod.cash),
-        throwsA(isA<KasseneckHttpError>()),
+        client.verkaufen(positionen: [kaffee], zahlungen: [bar]),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)),
       );
       expect(versuche, 1, reason: 'genau ein Aufruf, egal wie es ausgeht');
     });
@@ -134,7 +188,7 @@ void main() {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
       await f.client.verkaufen(
         positionen: [kaffee],
-        zahlungsart: KeckPaymentMethod.cash,
+        zahlungen: [bar],
         trinkgeldCents: 50,
         kundendaten: const ['Firma Muster', 'Musterweg 3'],
       );
@@ -146,94 +200,35 @@ void main() {
 
     test('ohne Trinkgeld steht das Feld nicht im Rumpf', () async {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      await f.client.verkaufen(positionen: [kaffee], zahlungsart: KeckPaymentMethod.cash);
+      await f.client.verkaufen(positionen: [kaffee], zahlungen: [bar]);
       expect(jsonDecode(f.log.single.body)['params'], isNot(contains('tip')));
     });
   });
 
   group('Kartenanbieter am Verkauf', () {
-    test('der Anbieter geht als creditCardProvider hinaus', () async {
-      // Ohne dieses Feld steht am Beleg `creditCardProvider: null`, und weder
-      // Backend noch Bon-Bauer finden einen Zweig für den Kartenblock: der
-      // Gast bekommt keinen Kartenbeleg.
-      final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      await f.client.verkaufen(
-        positionen: [kaffee],
-        zahlungsart: KeckPaymentMethod.creditCard,
-        kartenanbieter: CreditCardProvider.gpTomAndroid,
-        kartenzahlungId: 'tx-1',
-        kartenzahlungsdaten: const {'trasanctionID': 'tx-1'},
-      );
-
-      final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
-      expect(params['creditCardProvider'], 'gpTomAndroid');
-      expect(params['cardPaymentId'], 'tx-1');
-      expect(params['cardPaymentData'], {'trasanctionID': 'tx-1'});
-    });
-
-    test('jeder Anbieter geht unter seinem Enum-Namen hinaus', () async {
-      // Der Name ist das Drahtformat — das JS-Paket sendet denselben Schlüssel,
-      // und der Bon schaltet daran. Ein `toString()` ergäbe
-      // „CreditCardProvider.stripe" und liefe still ins Leere.
+    test('jeder Anbieter geht unter seinem Enum-Namen in der Zahlung hinaus', () async {
+      // Der Name ist das Drahtformat; ohne ihn findet der Bon keinen Zweig
+      // fuer den Kartenblock.
       for (final anbieter in CreditCardProvider.values) {
         final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-        await f.client.verkaufen(
-          positionen: [kaffee],
-          zahlungsart: KeckPaymentMethod.creditCard,
-          kartenanbieter: anbieter,
-          kartenzahlungId: 'tx-1',
-        );
+        await f.client.verkaufen(positionen: [kaffee], zahlungen: [
+          KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 280, provider: anbieter, providerPaymentId: 'tx-1'),
+        ]);
         final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
-        expect(params['creditCardProvider'], anbieter.name, reason: '$anbieter');
+        expect((params['payments'] as List).single['provider'], anbieter.name, reason: '$anbieter');
       }
-    });
-
-    test('ohne Anbieter steht das Feld nicht im Rumpf', () async {
-      // Nicht als `null`: ein Aufrufer, der den Anbieter nicht kennt, soll das
-      // Feld nicht belegen — das Backend entscheidet dann wie bisher.
-      final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      await f.client.verkaufen(
-        positionen: [kaffee],
-        zahlungsart: KeckPaymentMethod.creditCard,
-        kartenzahlungId: 'tx-1',
-      );
-      expect(jsonDecode(f.log.single.body)['params'], isNot(contains('creditCardProvider')));
     });
 
     test('der Anbieter geht auch ohne Kennung mit', () async {
       // Ein eigenes Terminal meldet keine Transaktionskennung. Der Verkauf
-      // scheitert daran NICHT: das Geld ist an dieser Stelle geflossen, und ein
-      // Beleg, den die Kasse wegen einer fehlenden Kennung nicht ausstellt,
-      // wäre der teurere Fehler.
+      // scheitert daran NICHT: das Geld ist geflossen.
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      await f.client.verkaufen(
-        positionen: [kaffee],
-        zahlungsart: KeckPaymentMethod.creditCard,
-        kartenanbieter: CreditCardProvider.custom,
-      );
-
-      final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
-      expect(params['creditCardProvider'], 'custom');
-      expect(params, isNot(contains('cardPaymentId')));
-    });
-
-    test('ein Anbieter ohne Kartenzahlung geht gar nicht erst hinaus', () async {
-      // Bar mit Kartenanbieter ist ein Widerspruch: entweder ist die Zahlungsart
-      // falsch oder der Anbieter — beides gehört an den Tresen zurück, nicht in
-      // die Signaturkette.
-      for (final zahlungsart in KeckPaymentMethod.values.where((z) => z != KeckPaymentMethod.creditCard)) {
-        final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-        await expectLater(
-          f.client.verkaufen(
-            positionen: [kaffee],
-            zahlungsart: zahlungsart,
-            kartenanbieter: CreditCardProvider.hobexHps,
-          ),
-          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
-          reason: '$zahlungsart',
-        );
-        expect(f.log, isEmpty, reason: '$zahlungsart');
-      }
+      await f.client.verkaufen(positionen: [kaffee], zahlungen: const [
+        KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 280, provider: CreditCardProvider.custom),
+      ]);
+      final zahlung = (jsonDecode(f.log.single.body)['params']['payments'] as List).single as Map;
+      expect(zahlung['provider'], 'custom');
+      expect(zahlung, isNot(contains('providerPaymentId')));
     });
   });
 
@@ -561,7 +556,7 @@ void main() {
       ]) {
         final f = clientMit([{'status': 'success', 'data': data}]);
         await expectLater(
-          f.client.verkaufen(positionen: [kaffee], zahlungsart: KeckPaymentMethod.cash),
+          f.client.verkaufen(positionen: [kaffee], zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 280)]),
           throwsA(unlesbar('createReceipt', kennung)),
           reason: jsonEncode(data),
         );

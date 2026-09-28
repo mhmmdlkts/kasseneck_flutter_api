@@ -38,13 +38,12 @@ import 'package:kreiseck_design/kreiseck_design.dart';
 import 'einstellungen.dart';
 import 'farbe.dart';
 
-/// Welcher Modus des Design-Systems hinter einem Stil steht. Die Enum
-/// [KasseStil] bleibt deutsch — sie steht in Kundendaten.
+/// Welcher Modus des Design-Systems hinter einem Stil steht.
 KdMode modusFuer(KasseStil stil) => switch (stil) {
-      KasseStil.klar => KdMode.light,
+      KasseStil.clear => KdMode.light,
       KasseStil.warm => KdMode.warm,
-      KasseStil.nacht => KdMode.dark,
-      KasseStil.kontrast => KdMode.contrast,
+      KasseStil.night => KdMode.dark,
+      KasseStil.contrast => KdMode.contrast,
     };
 
 /// Schriftfaktoren. Auch XL bleibt bedienbar — ein Faktor, der die Kasse
@@ -84,25 +83,25 @@ class Kassenthema {
   /// Das Thema aus den Einstellungen. [geraet] steuert, was nur dieses Gerät
   /// betrifft (Kachelhöhe); ohne es gelten die Vorgaben.
   factory Kassenthema.aus(KasseSettingsBetrieb betrieb, {KasseSettingsGeraet? geraet}) {
-    final modus = modusFuer(betrieb.stil);
+    final modus = modusFuer(betrieb.theme);
     final scharf = modus == KdMode.contrast;
 
     // **Die Marke steht fest.** Die Knöpfe, mit denen kassiert wird, sind
     // Teil des Produkts: Kassen, die einander nicht mehr ähneln, kosten jeden
     // neuen Kassier eine Eingewöhnung — und eine Hausfarbe, auf der „Bar
     // passend" nicht mehr lesbar ist, merkt niemand vor dem Tresen.
-    // `betrieb.farbe` bleibt im Datenmodell (Panel und Rechnungs-PDF lesen
+    // `betrieb.color` bleibt im Datenmodell (Panel und Rechnungs-PDF lesen
     // es), färbt hier aber nichts mehr.
     return Kassenthema(
-      stil: betrieb.stil,
+      stil: betrieb.theme,
       modus: modus,
-      schriftfaktor: schriftfaktoren[betrieb.schrift]!,
+      schriftfaktor: schriftfaktoren[betrieb.fontSize]!,
       // **Mal Schriftfaktor.** Die Höhe einer Kachel ist keine feste Zahl,
       // sondern das, was Name und Preis brauchen. Bei Schrift XL in eine
       // Kachel für Schrift M gepresst, wird dem Namen die Unterlänge
       // abgeschnitten — und „Leistung" ohne das g liest sich falsch.
-      kachelhoehe: kachelhoehen[geraet?.hoehe ?? KasseHoehe.m]! * schriftfaktoren[betrieb.schrift]!,
-      spaltenExtra: geraet?.spaltenExtra ?? 0,
+      kachelhoehe: kachelhoehen[geraet?.tileHeight ?? KasseHoehe.m]! * schriftfaktoren[betrieb.fontSize]!,
+      spaltenExtra: geraet?.extraColumns ?? 0,
       // Radien kommen aus dem Design-System und sind in jedem Modus gleich;
       // der Kontrast-Modus schärft Ränder und nimmt Schatten, sonst nichts.
       radius: KdForm.radiusLg,
@@ -110,9 +109,9 @@ class Kassenthema {
       radiusKlein: KdForm.radius,
       linie: scharf ? 2 : KdForm.borderWidth,
       schattenTiefe: scharf ? 0 : (modus == KdMode.dark ? 0.5 : 1),
-      kachelstil: betrieb.kachelstil,
+      kachelstil: betrieb.tileStyle,
       emoji: betrieb.emoji,
-      katFarben: betrieb.katFarben,
+      katFarben: betrieb.categoryColors,
     );
   }
 

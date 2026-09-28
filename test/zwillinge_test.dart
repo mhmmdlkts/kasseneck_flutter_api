@@ -141,16 +141,19 @@ void main() {
         // Zahlenfeld abbrechen und die restliche Liste verdecken.
         for (final wert in (enums[feld] as List)) {
           final teil = betriebsfelder.contains(feld) ? 'business' : 'device';
-          final gelesen = KasseSettings.aus({
+          final settings = KasseSettings.aus({
             teil: {feld: wert},
-          }).toJson();
-          final zurueck = (gelesen[teil] as Map)[feld];
-          funde.fehltNicht('enums.$feld.$wert', zurueck == wert, 'Der Wert "$wert" für $feld');
+          });
+          final zurueck = (settings.toJson()[teil] as Map)[feld];
+          // Seit 10.0 bleibt ein unbekannter Wert wörtlich erhalten
+          // (fremdeWerte), er käme also auch unverstanden zurück. Gekannt ist
+          // er nur, wenn er dabei nicht als fremd gilt.
+          final gekannt = zurueck == wert && unknownPosSettingValues(settings).isEmpty;
+          funde.fehltNicht('enums.$feld.$wert', gekannt, 'Der Wert "$wert" für $feld');
         }
       }
       funde.melden();
-    }, skip: 'Aufgabe 6 (4c): KasseSettings liest noch die deutschen 0.x-Felder und -Werte, '
-        'der Vertrag 1.0 fuehrt sie englisch (theme/night, printerType/network ...).');
+    });
   });
 
   group('Rechte-Schlüssel', () {
@@ -193,8 +196,7 @@ void main() {
             'Die Tasten-Aktion "$aktion"');
       }
       funde.melden();
-    }, skip: 'Aufgabe 6 (4c): kasseTastenAktionen fuehrt noch die deutschen 0.x-Namen '
-        '(kassieren, frei ...), der Vertrag 1.0 englische (checkout, customAmount ...).');
+    });
   });
 
   test('keine Ausnahme ohne Gegenstück im Vertrag', () {

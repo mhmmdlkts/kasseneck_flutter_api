@@ -47,8 +47,8 @@ const kopplungsAntwort = {
   'deviceSecret': deviceSecret,
   'ownerUid': ownerUid,
   'cashregisterId': cashregisterId,
-  'betrieb': 'Bäckerei Muster',
-  'kasse': 'Theke',
+  'companyName': 'Bäckerei Muster',
+  'cashregisterLabel': 'Theke',
 };
 
 const anmeldeAntwort = {
@@ -131,13 +131,13 @@ void main() {
       final f = clientWith(erfolg({
         'users': [
           {'id': 'u1', 'name': 'Anna', 'kind': 'person'},
-          {'id': 'u2', 'name': '', 'kind': 'device', 'altbestand': true},
+          {'id': 'u2', 'name': '', 'kind': 'device', 'pinPolicyOutdated': true},
           {'id': 'u3', 'name': 'Neu', 'kind': 'kuenftig'},
         ],
-        'policy': {'stellen': 4, 'zeichen': 'ziffern'},
-        'loginMode': 'auswahl',
-        'standortsperre': true,
-        'settings': {'betrieb': {}, 'geraet': {}},
+        'policy': {'length': 4, 'charset': 'digits'},
+        'loginMode': 'select_user',
+        'locationLock': true,
+        'settings': {'business': {}, 'device': {}},
       }));
 
       final antwort = await f.client.listRegisterUsersForDevice(
@@ -149,17 +149,17 @@ void main() {
       expect(antwort.users.map((u) => u.id), ['u1', 'u2', 'u3']);
       expect(antwort.users[0].kind, RegisterUserKind.person);
       expect(antwort.users[1].kind, RegisterUserKind.device);
-      expect(antwort.users[1].altbestand, isTrue);
+      expect(antwort.users[1].pinPolicyOutdated, isTrue);
       expect(antwort.users[2].kind, RegisterUserKind.person, reason: 'unbekannte Art gilt als Person');
-      expect(antwort.users[0].altbestand, isFalse);
-      expect(antwort.policy?.stellen, 4);
-      expect(antwort.policy?.zeichen, 'ziffern');
-      expect(antwort.loginMode, RegisterLoginMode.auswahl);
-      expect(antwort.standortsperre, isTrue);
+      expect(antwort.users[0].pinPolicyOutdated, isFalse);
+      expect(antwort.policy?.length, 4);
+      expect(antwort.policy?.charset, 'digits');
+      expect(antwort.loginMode, RegisterLoginMode.selectUser);
+      expect(antwort.locationLock, isTrue);
     });
 
     test('ohne brauchbare Regel bleibt policy null; unbekannter Modus gilt als Auswahl', () async {
-      for (final regel in [null, {}, {'stellen': 'vier'}, {'stellen': 4}, {'zeichen': 'ziffern'}]) {
+      for (final regel in [null, {}, {'length': 'vier'}, {'length': 4}, {'charset': 'digits'}, {'stellen': 4, 'zeichen': 'ziffern'}]) {
         final f = clientWith(erfolg({'users': [], 'policy': regel, 'loginMode': 'was-neues'}));
         final antwort = await f.client.listRegisterUsersForDevice(
           ownerUid: ownerUid,
@@ -167,7 +167,7 @@ void main() {
           deviceSecret: deviceSecret,
         );
         expect(antwort.policy, isNull, reason: 'Regel $regel');
-        expect(antwort.loginMode, RegisterLoginMode.auswahl);
+        expect(antwort.loginMode, RegisterLoginMode.selectUser);
       }
     });
 
@@ -338,16 +338,16 @@ void einstellungen() {
     final f = clientWith(erfolg({
       'users': [],
       'settings': {
-        'betrieb': {'zahlKarte': true, 'kartenanbieter': 'hobex'},
-        'geraet': {'layout': 'vollbild'},
+        'business': {'payCard': true, 'cardProvider': 'hobex'},
+        'device': {'layout': 'fullscreen'},
       },
     }));
     final antwort = await f.client.listRegisterUsersForDevice(
       ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
     );
     expect(antwort.settings.betrieb.kartenAktiv, isTrue);
-    expect(antwort.settings.geraet.layout, KasseLayout.vollbild);
-    expect(antwort.settings.betrieb.zahlBar, isTrue, reason: 'ungenanntes bleibt beim Standard');
+    expect(antwort.settings.geraet.layout, KasseLayout.fullscreen);
+    expect(antwort.settings.betrieb.payCash, isTrue, reason: 'ungenanntes bleibt beim Standard');
   });
 
   test('ohne Einstellungen in der Antwort gelten die Standardwerte', () async {
@@ -419,7 +419,7 @@ void basisadresse() {
       final f = clientWith(erfolg({
         'licenses': 2,
         'sessions': [
-          {'id': 's1', 'deviceId': 'd1', 'deviceLabel': 'Theke', 'startedAt': 1000, 'expiresAt': 2000, 'selbst': true, 'userName': 'Anna'},
+          {'id': 's1', 'deviceId': 'd1', 'deviceLabel': 'Theke', 'startedAt': 1000, 'expiresAt': 2000, 'own': true, 'userName': 'Anna'},
           {'id': 's2', 'deviceLabel': '', 'userName': ''},
         ],
       }));
@@ -427,12 +427,12 @@ void basisadresse() {
       expect(stand.licenses, 2);
       expect(stand.sessions.map((s) => s.id), ['s1', 's2']);
       expect(stand.sessions[0].deviceLabel, 'Theke');
-      expect(stand.sessions[0].selbst, isTrue);
+      expect(stand.sessions[0].own, isTrue);
       expect(stand.sessions[0].userName, 'Anna');
       expect(stand.sessions[1].deviceId, isNull);
-      expect(stand.sessions[1].deviceLabel, 'Kasse', reason: 'leeres Etikett faellt auf den Standard');
+      expect(stand.sessions[1].deviceLabel, isNull, reason: 'leeres Etikett ist kein Etikett (§11.7.1)');
       expect(stand.sessions[1].startedAt, isNull);
-      expect(stand.sessions[1].selbst, isFalse);
+      expect(stand.sessions[1].own, isFalse);
       expect(stand.sessions[1].userName, isNull, reason: 'leerer Name ist kein Name');
       final Map<String, dynamic> body = jsonDecode(f.log.single.body);
       expect(body['params'], {'ownerUid': ownerUid, 'deviceId': deviceId, 'deviceSecret': deviceSecret});

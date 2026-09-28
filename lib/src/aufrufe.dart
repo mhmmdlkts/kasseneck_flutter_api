@@ -54,6 +54,12 @@ abstract final class Aufrufe {
   static const setMyRegisterDeviceSettings = 'setMyRegisterDeviceSettings';
   static const stripeCaptureIntent = 'stripeCaptureIntent';
   static const unpairRegisterDevice = 'unpairRegisterDevice';
+  static const createPrintJob = 'createPrintJob';
+  static const generateFullReceiptId = 'generateFullReceiptId';
+  static const getPrintJob = 'getPrintJob';
+  static const listMyCashregisters = 'listMyCashregisters';
+  static const listMyPrinters = 'listMyPrinters';
+  static const setMyKasseLogo = 'setMyKasseLogo';
   static const updateCustomer = 'updateCustomer';
 
   /// Alle Namen, die dieses Paket kennt.
@@ -100,6 +106,12 @@ abstract final class Aufrufe {
     setMyRegisterDeviceSettings,
     stripeCaptureIntent,
     unpairRegisterDevice,
+    createPrintJob,
+    generateFullReceiptId,
+    getPrintJob,
+    listMyCashregisters,
+    listMyPrinters,
+    setMyKasseLogo,
     updateCustomer,
   };
 }

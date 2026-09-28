@@ -51,8 +51,8 @@ Map<String, dynamic> jetzigesThema() => {
           'Schrift die Unterlänge des Namens ab.',
       'stile': {
         for (final stil in KasseStil.values)
-          stil.name: stilWerte(Kassenthema.aus(KasseSettings.aus({
-            'betrieb': {'stil': stil.name},
+          stil.wert: stilWerte(Kassenthema.aus(KasseSettings.aus({
+            'business': {'theme': stil.wert},
           }).betrieb)),
       },
     };

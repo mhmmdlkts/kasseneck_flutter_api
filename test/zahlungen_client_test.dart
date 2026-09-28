@@ -144,14 +144,10 @@ void main() {
       expect(params.containsKey('paymentMethod'), isFalse);
     });
 
-    test('verkaufen: Konflikt, fehlende Zahlungsart und mixed werfen vor dem Netz', () async {
+    test('verkaufen: mixed und ungueltige Betraege werfen vor dem Netz', () async {
       final f = kasseMit(belegAntwort());
-      await expectLater(f.client.verkaufen(positionen: [ware], zahlungen: [bar], zahlungsart: KeckPaymentMethod.cash),
-          throwsA(isA<KasseneckValidationError>()));
-      await expectLater(f.client.verkaufen(positionen: [ware], zahlungen: [bar], kartenanbieter: CreditCardProvider.sumup),
-          throwsA(isA<KasseneckValidationError>()));
-      await expectLater(f.client.verkaufen(positionen: [ware]), throwsA(isA<KasseneckValidationError>()));
-      await expectLater(f.client.verkaufen(positionen: [ware], zahlungsart: KeckPaymentMethod.mixed),
+      await expectLater(
+          f.client.verkaufen(positionen: [ware], zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 100)]),
           throwsA(isA<KasseneckValidationError>()));
       await expectLater(
           f.client.verkaufen(positionen: [ware], zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1)]),

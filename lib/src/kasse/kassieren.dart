@@ -24,7 +24,7 @@ export '../vat_math.dart' show nettoCentsAusBrutto, ustCentsAusBrutto;
 /// Welche Zahlungsarten der Betrieb anbietet — nie keine (dann Bar).
 List<KeckPaymentMethod> zahlungsarten(KasseSettingsBetrieb betrieb) {
   final aus = <KeckPaymentMethod>[];
-  if (betrieb.zahlBar) aus.add(KeckPaymentMethod.cash);
+  if (betrieb.payCash) aus.add(KeckPaymentMethod.cash);
   // Karte nur mit eingerichtetem Anbieter — der Schalter allein nützt nichts.
   if (betrieb.kartenAktiv) aus.add(KeckPaymentMethod.creditCard);
   return aus.isEmpty ? [KeckPaymentMethod.cash] : aus;
@@ -190,15 +190,15 @@ Kassierrechnung kassierrechnung(Warenkorb warenkorb, KasseSettingsBetrieb betrie
   final summe = warenkorb.summeCents;
   final rabatt = stand.rabattCents > summe ? summe : (stand.rabattCents < 0 ? 0 : stand.rabattCents);
   final zahlen = zuZahlen(warenkorb, rabatt);
-  final trinkgeld = betrieb.trinkgeld && stand.trinkgeldCents > 0 ? stand.trinkgeldCents : 0;
+  final trinkgeld = betrieb.tip && stand.trinkgeldCents > 0 ? stand.trinkgeldCents : 0;
   final gesamt = zahlen + trinkgeld;
-  final bar = stand.zahlungsart == KeckPaymentMethod.cash && betrieb.rueckgeld;
+  final bar = stand.zahlungsart == KeckPaymentMethod.cash && betrieb.change;
   final gegeben = bar ? stand.gegebenCents : null;
   final pruefung = abschlussPruefung(
     zahlungsart: stand.zahlungsart,
     zuZahlen: gesamt,
     gegeben: stand.gegebenCents,
-    rueckgeldAn: betrieb.rueckgeld,
+    rueckgeldAn: betrieb.change,
     leer: warenkorb.istLeer,
   );
   return Kassierrechnung(

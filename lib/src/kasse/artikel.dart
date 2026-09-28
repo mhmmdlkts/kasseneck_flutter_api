@@ -50,11 +50,15 @@ class Artikelgruppe {
 
 /// Mengenregel eines Artikels.
 ///
-/// [stueck] = ganze Stück (1, 2, 3 …), [dezimal] = Kommamenge in der Einheit
-/// (0,250 kg; 1,5 m). **Beleg und DEP bleiben ganzzahlig:** eine Kommamenge
-/// wird als EINE Position mit ausgerechnetem Betrag gebucht, und die
-/// Bezeichnung trägt die Menge („Wurst 0,250 kg").
-enum Mengenregel { stueck, dezimal }
+/// [piece] = ganze Stück (1, 2, 3 …), [decimal] = Kommamenge in der Einheit
+/// (0,250 kg; 1,5 m); der Name ist der Wert am Draht (`quantityRule`).
+/// **Beleg und DEP bleiben ganzzahlig:** eine Kommamenge wird als EINE
+/// Position mit ausgerechnetem Betrag gebucht, und die Bezeichnung trägt die
+/// Menge („Wurst 0,250 kg").
+enum Mengenregel { piece, decimal }
+
+/// Die Werte von `quantityRule` (Katalog `MENGENREGEL`).
+const List<String> quantityRules = ['piece', 'decimal'];
 
 class Mengenvorgabe {
   const Mengenvorgabe({required this.regel, required this.fragen, required this.stellen});
@@ -65,7 +69,7 @@ class Mengenvorgabe {
   /// Semmel: nein).
   final bool fragen;
 
-  /// Nachkommastellen bei [Mengenregel.dezimal].
+  /// Nachkommastellen bei [Mengenregel.decimal].
   final int stellen;
 }
 
@@ -80,10 +84,10 @@ const Map<String, int> _dezimalEinheiten = {
 Mengenvorgabe mengenregelFuerEinheit(String? einheit) {
   final u = (einheit ?? '').trim().toLowerCase();
   final stellen = _dezimalEinheiten[u];
-  if (stellen == null) return const Mengenvorgabe(regel: Mengenregel.stueck, fragen: false, stellen: 0);
+  if (stellen == null) return const Mengenvorgabe(regel: Mengenregel.piece, fragen: false, stellen: 0);
   // g, ml, min: ganze Zahl, aber die Menge wird gefragt.
-  if (stellen == 0) return const Mengenvorgabe(regel: Mengenregel.stueck, fragen: true, stellen: 0);
-  return Mengenvorgabe(regel: Mengenregel.dezimal, fragen: true, stellen: stellen);
+  if (stellen == 0) return const Mengenvorgabe(regel: Mengenregel.piece, fragen: true, stellen: 0);
+  return Mengenvorgabe(regel: Mengenregel.decimal, fragen: true, stellen: stellen);
 }
 
 /// Wirksame Regel eines Artikels: die gespeicherte Angabe schlägt die Vorgabe
@@ -94,7 +98,7 @@ Mengenvorgabe mengenVorgabe(KasseArtikel a) {
   return Mengenvorgabe(
     regel: regel,
     fragen: a.mengeFragen ?? v.fragen,
-    stellen: regel == Mengenregel.dezimal ? (v.stellen < 1 ? 2 : v.stellen) : 0,
+    stellen: regel == Mengenregel.decimal ? (v.stellen < 1 ? 2 : v.stellen) : 0,
   );
 }
 
@@ -110,6 +114,7 @@ class KasseArtikel {
     this.preisCents,
     this.steuersatz,
     this.gruppeId,
+    this.erloesgruppeId,
     this.mengenregel,
     this.mengeFragen,
     this.maxMenge,
@@ -127,6 +132,9 @@ class KasseArtikel {
   final String einheit;
   final String? gruppeId;
 
+  /// Erlösgruppe (Buchhaltung, Draht `revenueGroupId`); `null` = keine.
+  final String? erloesgruppeId;
+
   /// Im Panel für die Kasse freigegeben.
   final bool sichtbar;
   final int sort;
@@ -141,8 +149,20 @@ class KasseArtikel {
   /// Höchstmenge je Beleg; `null` = keine Grenze.
   final num? maxMenge;
 
+  /// Aus der Drahtform `/api/v3` (`tile {visible, sort}`, `quantityRule`,
+  /// `askQuantity`, `maxQuantity`, `revenueGroupId`).
+  ///
+  /// Liest auch einen **Zwischenspeicher der Version 9.x** (`kasse
+  /// {sichtbar, sort}`, `mengenregel stueck|dezimal`, `mengeFragen`,
+  /// `maxMenge`, so schrieb `toJson` bis 9.x): nach dem Update gehen die
+  /// Kacheln des letzten Stands nicht verloren.
   factory KasseArtikel.aus(Map<String, dynamic> json) {
-    final kasse = json['kasse'];
+    final alt = !json.containsKey('tile') && json.containsKey('kasse');
+    final kachel = json[alt ? 'kasse' : 'tile'];
+    final regel = json[alt ? 'mengenregel' : 'quantityRule'];
+    final fragen = json[alt ? 'mengeFragen' : 'askQuantity'];
+    final grenze = json[alt ? 'maxMenge' : 'maxQuantity'];
+    final erloes = json['revenueGroupId'];
     return KasseArtikel(
       id: json['id'] is String ? json['id'] as String : '',
       name: json['name'] is String ? json['name'] as String : '',
@@ -155,23 +175,24 @@ class KasseArtikel {
       steuersatz: json['vatRate'] is num ? json['vatRate'] as num : null,
       einheit: json['unit'] is String ? json['unit'] as String : '',
       gruppeId: json['groupId'] is String ? json['groupId'] as String : null,
-      // Fehlt die Angabe, ist der Artikel sichtbar — ein Betrieb, der nie
+      erloesgruppeId: erloes is String && erloes.isNotEmpty ? erloes : null,
+      // Fehlt die Angabe, ist der Artikel sichtbar: ein Betrieb, der nie
       // etwas eingestellt hat, soll seine Artikel trotzdem sehen.
-      sichtbar: kasse is Map ? kasse['sichtbar'] != false : true,
-      sort: kasse is Map && kasse['sort'] is num ? (kasse['sort'] as num).toInt() : 0,
+      sichtbar: kachel is Map ? kachel[alt ? 'sichtbar' : 'visible'] != false : true,
+      sort: kachel is Map && kachel['sort'] is num ? (kachel['sort'] as num).toInt() : 0,
       aktiv: json['active'] != false,
-      mengenregel: switch (json['mengenregel']) {
-        'stueck' => Mengenregel.stueck,
-        'dezimal' => Mengenregel.dezimal,
+      mengenregel: switch (regel) {
+        'piece' || 'stueck' => Mengenregel.piece,
+        'decimal' || 'dezimal' => Mengenregel.decimal,
         _ => null,
       },
-      mengeFragen: json['mengeFragen'] is bool ? json['mengeFragen'] as bool : null,
-      maxMenge: json['maxMenge'] is num ? json['maxMenge'] as num : null,
+      mengeFragen: fragen is bool ? fragen : null,
+      maxMenge: grenze is num && grenze.isFinite && grenze > 0 ? grenze : null,
     );
   }
 
-  /// Zurück in die Form, aus der [KasseArtikel.aus] wieder liest — für
-  /// Zwischenspeicher, nicht fürs Backend.
+  /// Zurück in die Drahtform, aus der [KasseArtikel.aus] wieder liest (für
+  /// Zwischenspeicher, nicht fürs Backend).
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
@@ -179,11 +200,12 @@ class KasseArtikel {
         'vatRate': steuersatz,
         'unit': einheit,
         'groupId': gruppeId,
-        'kasse': {'sichtbar': sichtbar, 'sort': sort},
+        'revenueGroupId': erloesgruppeId,
+        'tile': {'visible': sichtbar, 'sort': sort},
         'active': aktiv,
-        'mengenregel': mengenregel?.name,
-        'mengeFragen': mengeFragen,
-        'maxMenge': maxMenge,
+        'quantityRule': mengenregel?.name,
+        'askQuantity': mengeFragen,
+        'maxQuantity': maxMenge,
       };
 }
 

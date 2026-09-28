@@ -179,10 +179,10 @@ class Warenkorb {
     return Warenkorb(positionen: rest);
   }
 
-  /// Zeilen fuer die Anzeige je Mengenmodus: [KasseMenge.aus] loest gebuendelte
+  /// Zeilen fuer die Anzeige je Mengenmodus: [KasseMenge.off] loest gebuendelte
   /// Positionen in eine Zeile je Stueck zum Einzelpreis auf.
   List<Korbzeile> zeilen(KasseMenge modus) {
-    if (modus != KasseMenge.aus) {
+    if (modus != KasseMenge.off) {
       return positionen
           .map((p) => Korbzeile(key: p.id, position: p, menge: p.quantity, betragCents: p.zeilensummeCents))
           .toList();

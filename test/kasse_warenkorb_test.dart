@@ -75,7 +75,7 @@ void main() {
       expect(gebuendelt.single.menge, 3);
       expect(gebuendelt.single.betragCents, 840);
 
-      final einzeln = korb.zeilen(KasseMenge.aus);
+      final einzeln = korb.zeilen(KasseMenge.off);
       expect(einzeln, hasLength(3));
       expect(einzeln.every((z) => z.menge == 1 && z.betragCents == 280), isTrue);
       expect(einzeln.map((z) => z.key).toSet(), hasLength(3), reason: 'jede Zeile eindeutig');
@@ -176,13 +176,13 @@ void main() {
     const bar = KasseSettingsBetrieb();
     test('Zahlungsarten: nie keine, Karte nur mit Anbieter', () {
       expect(zahlungsarten(bar), [KeckPaymentMethod.cash]);
-      expect(zahlungsarten(const KasseSettingsBetrieb(zahlKarte: true)), [KeckPaymentMethod.cash],
+      expect(zahlungsarten(const KasseSettingsBetrieb(payCard: true)), [KeckPaymentMethod.cash],
           reason: 'ohne Anbieter nützt der Schalter nichts');
       expect(
-        zahlungsarten(const KasseSettingsBetrieb(zahlKarte: true, kartenanbieter: KasseKartenanbieter.hobex)),
+        zahlungsarten(const KasseSettingsBetrieb(payCard: true, cardProvider: KasseKartenanbieter.hobex)),
         [KeckPaymentMethod.cash, KeckPaymentMethod.creditCard],
       );
-      expect(zahlungsarten(const KasseSettingsBetrieb(zahlBar: false)), [KeckPaymentMethod.cash],
+      expect(zahlungsarten(const KasseSettingsBetrieb(payCash: false)), [KeckPaymentMethod.cash],
           reason: 'ohne jede Zahlungsart bliebe die Kasse stehen');
     });
 

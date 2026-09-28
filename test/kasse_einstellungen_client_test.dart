@@ -38,14 +38,14 @@ void main() {
       final f = clientMit({
         'status': 'success',
         'data': {
-          'betrieb': {'uhr': false},
-          'geraet': {'touch': false},
+          'business': {'clock': false},
+          'device': {'touch': false},
         },
       });
       final e = await f.client.laden();
 
-      expect(e.betrieb.uhr, isFalse, reason: 'gespeichert');
-      expect(e.betrieb.zahlBar, isTrue, reason: 'Standard, weil nichts gespeichert');
+      expect(e.betrieb.clock, isFalse, reason: 'gespeichert');
+      expect(e.betrieb.payCash, isTrue, reason: 'Standard, weil nichts gespeichert');
       expect(e.geraet.touch, isFalse);
 
       expect(f.log.single.url.toString(), endsWith('/getKasseSettings'));
@@ -57,7 +57,7 @@ void main() {
       // Ausweichen. Ein leeres Objekt ist ein Objekt; siehe den Nachbartest.
       final f = clientMit({'status': 'success', 'data': {}});
       final e = await f.client.laden();
-      expect(e.betrieb.uhr, const KasseSettings.standard().betrieb.uhr);
+      expect(e.betrieb.clock, const KasseSettings.standard().betrieb.clock);
     });
 
     test('kaputte Antwort ist NICHT „nichts eingestellt"', () async {
@@ -76,14 +76,14 @@ void main() {
       final f = clientMit({
         'status': 'success',
         'data': {
-          'betrieb': {'uhr': false},
+          'business': {'clock': false},
         },
       });
-      final betrieb = await f.client.betriebSpeichern({'uhr': false});
+      final betrieb = await f.client.betriebSpeichern({'clock': false});
 
-      expect(betrieb.uhr, isFalse);
+      expect(betrieb.clock, isFalse);
       expect(f.log.single.url.toString(), endsWith('/setMyKasseSettings'));
-      expect(jsonDecode(f.log.single.body)['params']['betrieb'], {'uhr': false});
+      expect(jsonDecode(f.log.single.body)['params']['business'], {'clock': false});
     });
 
     test('ohne Änderung geht gar nichts hinaus', () async {
@@ -100,17 +100,17 @@ void main() {
       // Stand bildet.
       final f = clientMit({'status': 'success', 'data': {}});
       await expectLater(
-        f.client.betriebSpeichern({'uhr': false}),
+        f.client.betriebSpeichern({'clock': false}),
         throwsA(isA<KasseneckValidationError>()
             .having((e) => e.kind, 'kind', 'response')
-            .having((e) => e.reason, 'reason', contains('data.betrieb'))),
+            .having((e) => e.reason, 'reason', contains('data.business'))),
       );
     });
 
     test('Antwort mit unbrauchbarem Stand ebenso', () async {
-      final f = clientMit({'status': 'success', 'data': {'betrieb': 'kaputt'}});
+      final f = clientMit({'status': 'success', 'data': {'business': 'kaputt'}});
       await expectLater(
-        f.client.betriebSpeichern({'uhr': false}),
+        f.client.betriebSpeichern({'clock': false}),
         throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response')),
       );
     });
@@ -121,7 +121,7 @@ void main() {
       final f = clientMit({
         'status': 'success',
         'data': {
-          'geraet': {'touch': false},
+          'device': {'touch': false},
         },
       });
       final geraet = await f.client.geraetSpeichern({'touch': false});
@@ -129,7 +129,7 @@ void main() {
       expect(geraet.touch, isFalse);
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
       expect(params['deviceId'], 'GERAET1');
-      expect(params['geraet'], {'touch': false});
+      expect(params['device'], {'touch': false});
     });
 
     test('ohne Gerätekennung geht nichts hinaus', () async {
@@ -157,7 +157,7 @@ void main() {
         f.client.geraetSpeichern({'touch': false}),
         throwsA(isA<KasseneckValidationError>()
             .having((e) => e.kind, 'kind', 'response')
-            .having((e) => e.reason, 'reason', contains('data.geraet'))),
+            .having((e) => e.reason, 'reason', contains('data.device'))),
       );
     });
   });
