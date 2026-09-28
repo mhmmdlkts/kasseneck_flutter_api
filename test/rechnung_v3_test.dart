@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
@@ -41,8 +42,10 @@ final _faelle = (_export['cases'] as List).cast<Map<String, dynamic>>();
 Future<Object> _rufe(RechnungApi api, String endpunkt, Map<String, dynamic> p) async {
   switch (endpunkt) {
     case 'issueInvoice':
-      final anfrage = IssueInvoiceRequest.fromJson(Map.of(p)..remove('dryRun'));
-      return p['dryRun'] == true ? api.previewInvoice(anfrage) : api.issueInvoice(anfrage);
+      if (p['dryRun'] == true) {
+        return api.previewInvoice(IssueInvoiceRequest.fromJson(Map.of(p)..remove('dryRun')));
+      }
+      return api.issueInvoice(IssueInvoiceRequest.fromJson(p));
     case 'getInvoice':
       return api.getInvoice(invoiceId: p['invoiceId'] as String?, number: p['number'] as String?);
     case 'createCreditNote':
@@ -139,6 +142,167 @@ void _pruefeErgebnis(Object ergebnis, String wo) {
   }
 }
 
+/// Eine Map, die mitschreibt, welche Felder gelesen werden. Verschachtelte
+/// Maps (auch in Listen) werden mit umhuellt; die Modelle kopieren eine schon
+/// getypte Map nicht, darum kommt jeder Zugriff hier an.
+class _Spur extends MapBase<String, dynamic> {
+  _Spur(Map<String, dynamic> roh) : _daten = {for (final e in roh.entries) e.key: _umhuelle(e.value)};
+
+  final Map<String, dynamic> _daten;
+  final Set<String> gelesen = {};
+
+  static Object? _umhuelle(Object? wert) => switch (wert) {
+        Map<String, dynamic> m => _Spur(m),
+        List l => [for (final e in l) _umhuelle(e)],
+        _ => wert,
+      };
+
+  @override
+  Object? operator [](Object? key) {
+    if (key is String) gelesen.add(key);
+    return _daten[key];
+  }
+
+  @override
+  bool containsKey(Object? key) {
+    if (key is String) gelesen.add(key);
+    return _daten.containsKey(key);
+  }
+
+  @override
+  void operator []=(String key, dynamic value) => throw UnsupportedError('nur lesen');
+  @override
+  void clear() => throw UnsupportedError('nur lesen');
+  @override
+  Iterable<String> get keys => _daten.keys;
+
+  // Durchlaufen zaehlt nicht als Lesen: sonst markierte eine Kopie
+  // (Map.from) jedes Feld als gelesen, und der Test waere blind.
+  @override
+  void forEach(void Function(String key, dynamic value) action) => _daten.forEach(action);
+  @override
+  Iterable<MapEntry<String, dynamic>> get entries => _daten.entries;
+  @override
+  Iterable<dynamic> get values => _daten.values;
+  @override
+  dynamic remove(Object? key) => throw UnsupportedError('nur lesen');
+}
+
+/// Felder, die eine Sicht fuehrt, die aber in einer Antwort fehlen duerfen.
+const _optional = {'unitPriceMicros', 'notice'};
+
+/// Prueft eine Sicht in drei Richtungen: jedes gesendete Feld steht in der
+/// Liste des Modells und in der Antwort fehlt keines der Liste (bis auf
+/// [_optional]); jedes gesendete Feld hat das Modell auch gelesen; und das
+/// Modell liest nichts, was nicht in [liesAlles] (seiner vollen Liste) steht.
+void _feldmenge(Object? knoten, Set<String> felder, String pfad, {Set<String>? liesAlles}) {
+  if (knoten == null) return;
+  expect(knoten, isA<_Spur>(), reason: '$pfad: kein Objekt');
+  final spur = knoten as _Spur;
+  final da = spur.keys.toSet();
+  expect(da.difference(felder), isEmpty, reason: '$pfad: Felder ohne Eintrag im Modell');
+  expect(felder.difference(da).difference(_optional), isEmpty, reason: '$pfad: Felder fehlen in der Antwort');
+  expect(da.difference(spur.gelesen), isEmpty, reason: '$pfad: gesendet, aber vom Modell nicht gelesen');
+  expect(spur.gelesen.difference(liesAlles ?? felder), isEmpty, reason: '$pfad: gelesen, aber nicht in der Liste');
+}
+
+void _rechnungssicht(Object? r, String pfad, {required bool detail}) {
+  final spur = r! as _Spur;
+  _feldmenge(spur, detail ? Invoice.detailFelder : Invoice.felder, pfad, liesAlles: Invoice.detailFelder);
+  final totals = spur['totals'] as _Spur;
+  _feldmenge(totals, InvoiceTotals.felder, '$pfad.totals');
+  for (final (i, satz) in (totals['byRate'] as List).indexed) {
+    _feldmenge(satz, VatRateTotal.felder, '$pfad.totals.byRate[$i]');
+  }
+  _feldmenge(spur['einvoice'], EInvoiceStatus.felder, '$pfad.einvoice');
+  _feldmenge(spur['brand'], Invoice.brandFelder, '$pfad.brand');
+  if (!detail) return;
+  for (final (i, p) in (spur['items'] as List).indexed) {
+    _feldmenge(p, InvoiceItem.felder, '$pfad.items[$i]');
+  }
+  _feldmenge(spur['customer'], InvoiceRecipient.felder, '$pfad.customer');
+  for (final (i, z) in (spur['payments'] as List).indexed) {
+    _feldmenge(z, InvoiceDetailPayment.felder, '$pfad.payments[$i]');
+  }
+  _feldmenge(spur['related'], Invoice.relatedFelder, '$pfad.related');
+  for (final (i, g) in (spur['creditNotes'] as List).indexed) {
+    _feldmenge(g, CreditNoteSummary.felder, '$pfad.creditNotes[$i]');
+  }
+}
+
+void _hinweisSichten(_Spur d, String pfad) {
+  final roh = d['notice'];
+  for (final (i, h) in (roh is List ? roh : [?roh]).indexed) {
+    _feldmenge(h, InvoiceNotice.felder, '$pfad.notice[$i]');
+  }
+}
+
+/// Liest die Daten eines Erfolgsfalls mit dem Modell des Endpunkts und prueft
+/// danach jede Sicht.
+void _feldmengenDesFalls(Map<String, dynamic> fall) {
+  final p = fall['name'] as String;
+  final d = _Spur(((fall['response'] as Map)['data'] as Map).cast<String, dynamic>());
+  switch (fall['endpoint']) {
+    case 'issueInvoice':
+      if (d.keys.contains('preview')) {
+        PreviewResult.fromJson(d);
+        _feldmenge(d, PreviewResult.felder, p);
+        final v = d['preview'] as _Spur;
+        _feldmenge(v, InvoicePreview.felder, '$p.preview');
+        _feldmenge(v['totals'], InvoiceTotals.felder, '$p.preview.totals');
+        for (final (i, satz) in ((v['totals'] as _Spur)['byRate'] as List).indexed) {
+          _feldmenge(satz, VatRateTotal.felder, '$p.preview.totals.byRate[$i]');
+        }
+        _feldmenge(v['einvoice'], EInvoiceStatus.felder, '$p.preview.einvoice');
+        _feldmenge(v['brand'], Invoice.brandFelder, '$p.preview.brand');
+      } else {
+        IssueResult.fromJson(d);
+        _feldmenge(d, IssueResult.felder, p);
+        _rechnungssicht(d['invoice'], '$p.invoice', detail: false);
+      }
+      _hinweisSichten(d, p);
+    case 'getInvoice':
+      Invoice.fromJson(d['invoice'] as _Spur);
+      _feldmenge(d, const {'invoice'}, p);
+      _rechnungssicht(d['invoice'], '$p.invoice', detail: true);
+    case 'listInvoices':
+      InvoicePage.fromJson(d);
+      _feldmenge(d, InvoicePage.felder, p);
+      for (final (i, r) in (d['invoices'] as List).indexed) {
+        _rechnungssicht(r, '$p.invoices[$i]', detail: false);
+      }
+    case 'createCreditNote':
+      CreditNoteResult.fromJson(d);
+      _feldmenge(d, CreditNoteResult.felder, p);
+      _rechnungssicht(d['creditNote'], '$p.creditNote', detail: false);
+    case 'cancelInvoice':
+      CancelResult.fromJson(d);
+      _feldmenge(d, CancelResult.felder, p);
+      _rechnungssicht(d['creditNote'], '$p.creditNote', detail: false);
+      _feldmenge(d['original'], CancelResult.originalFelder, '$p.original');
+    case 'recordInvoicePayment':
+      RecordPaymentResult.fromJson(d);
+      _feldmenge(d, RecordPaymentResult.felder, p);
+      _rechnungssicht(d['invoice'], '$p.invoice', detail: false);
+      _feldmenge(d['payment'], InvoicePayment.felder, '$p.payment');
+      _hinweisSichten(d, p);
+    case 'getInvoiceSetupStatus':
+      InvoiceSetupStatus.fromJson(d);
+      _feldmenge(d, InvoiceSetupStatus.felder, p);
+      for (final (i, l) in (d['missing'] as List).indexed) {
+        _feldmenge(l, InvoiceSetupGap.felder, '$p.missing[$i]');
+      }
+    case 'listBrands':
+      expect(d.keys, ['brands'], reason: p);
+      for (final (i, b) in (d['brands'] as List).indexed) {
+        Brand.fromJson(b as _Spur);
+        _feldmenge(b, Brand.felder, '$p.brands[$i]');
+      }
+    default:
+      fail('$p: Endpunkt ${fall['endpoint']} ohne Feldpruefung');
+  }
+}
+
 void main() {
   test('der Export ist der oeffentliche Kanal und hat alle Faelle', () {
     expect(_export['channel'], 'api');
@@ -163,11 +327,7 @@ void main() {
         expect(log, hasLength(1));
         expect(log.single.url.path, fall['path']);
         expect(log.single.url.host, 'api.kasseneck.at');
-        // Einzige Abweichung: `dryRun: false` schickt issueInvoice nicht mit,
-        // das Backend liest ein fehlendes dryRun als false.
-        final erwartet = Map.of(fall['params'] as Map);
-        if (fall['endpoint'] == 'issueInvoice' && erwartet['dryRun'] == false) erwartet.remove('dryRun');
-        expect((jsonDecode(log.single.body) as Map)['params'], erwartet);
+        expect((jsonDecode(log.single.body) as Map)['params'], fall['params']);
 
         if (antwort['status'] == 'error') {
           expect(fehler, isA<KasseneckApiError>(), reason: '$fehler');
@@ -258,5 +418,75 @@ void main() {
         throwsFormatException,
       );
     });
+  });
+
+  group('Feldmengen (Zwilling von npm F6)', () {
+    test('jede Sicht jedes Erfolgsfalls: gesendet = Liste des Modells, alles gelesen', () {
+      final erfolge = _faelle.where((f) => (f['response'] as Map)['status'] == 'success').toList();
+      expect(erfolge.length, greaterThanOrEqualTo(15));
+      for (final fall in erfolge) {
+        _feldmengenDesFalls(fall);
+      }
+    });
+
+    test('Detailsicht: InvoiceRecipient, Bezug und Positionsart gelesen', () {
+      final r = Invoice.fromJson({
+        ...((_faelle.firstWhere((f) => f['name'] == 'get_invoice')['response'] as Map)['data'] as Map)['invoice'] as Map<String, dynamic>,
+        'related': {'invoiceId': 'auto0', 'number': '2026-0001'},
+        'reverseChargeReason': 'construction',
+      });
+      final k = r.customer!;
+      expect((k.name, k.type, k.street, k.houseNumber, k.zip, k.city, k.country, k.vatId, k.shortCode, k.email, k.isAuthority),
+          ('Baecker Wien GmbH', 'company', 'Hauptplatz 1', null, '1010', 'Wien', 'AT', 'ATU87654321', null, null, false));
+      expect((r.relatedInvoiceId, r.relatedNumber, r.reverseChargeReason), ('auto0', '2026-0001', 'construction'));
+      expect((r.taxCountry, r.priceMode, r.serviceStart, r.serviceEnd, r.paymentTermDays, r.orderReference),
+          ('AT', 'net', '2026-09-26', null, 14, null));
+      expect((r.source, r.createdAt, r.finalizedAt), ('api', '2026-09-26T08:00:00.000Z', '2026-09-26T08:00:00.000Z'));
+      expect(r.items!.single.kind, 'service');
+      expect(InvoiceItem.fromJson({'description': 'x', 'quantity': 1, 'unitPriceCents': 1, 'vatRate': 20}).kind, 'goods');
+    });
+
+    test('Rot-Probe: ein Feld ohne Eintrag in der Liste faellt auf', () {
+      final fall = _faelle.firstWhere((f) => f['name'] == 'get_invoice');
+      final d = _Spur(((fall['response'] as Map)['data'] as Map).cast<String, dynamic>());
+      Invoice.fromJson(d['invoice'] as _Spur);
+      final ohne = Invoice.detailFelder.difference({'finalizedAt'});
+      expect(() => _feldmenge(d['invoice'], ohne, 'probe', liesAlles: ohne), throwsA(isA<TestFailure>()));
+    });
+
+    test('Rot-Probe: ein gesendetes, aber nicht gelesenes Feld faellt auf', () {
+      final d = _Spur({'code': 'cash_receipt_required', 'message': 'x', 'neu': 1});
+      InvoiceNotice.fromJson(d);
+      expect(() => _feldmenge(d, {...InvoiceNotice.felder, 'neu'}, 'probe'), throwsA(isA<TestFailure>()));
+    });
+  });
+
+  group('dryRun', () {
+    test('fromJson behaelt dryRun, issueInvoice sendet false mit', () async {
+      final fall = _faelle.firstWhere((f) => f['name'] == 'issue_final');
+      final anfrage = IssueInvoiceRequest.fromJson((fall['params'] as Map).cast<String, dynamic>());
+      expect(anfrage.dryRun, false);
+      expect(anfrage.toJson()['dryRun'], false);
+    });
+
+    test('issueInvoice mit dryRun: true wird vor dem Senden abgewiesen', () async {
+      final fall = _faelle.firstWhere((f) => f['name'] == 'issue_dry_run_intra_community');
+      final (:api, :log) = _apiFuer(fall);
+      await expectLater(
+        api.issueInvoice(IssueInvoiceRequest.fromJson((fall['params'] as Map).cast<String, dynamic>())),
+        throwsA(isA<KasseneckValidationError>()),
+      );
+      expect(log, isEmpty);
+    });
+  });
+
+  test('Anfrage-Codes und Rechnungs-Codes sind getrennt, rechnungFehlerCode kennt nur diese', () {
+    expect(invoiceRequestErrorCodes.toSet().intersection(invoiceErrorCodes.toSet()), isEmpty);
+    for (final code in invoiceRequestErrorCodes) {
+      expect(rechnungFehlerCode(KasseneckApiError('getInvoice', 'x', code: code)), isNull, reason: code);
+    }
+    for (final code in invoiceErrorCodes) {
+      expect(rechnungFehlerCode(KasseneckApiError('getInvoice', 'x', code: code)), code);
+    }
   });
 }

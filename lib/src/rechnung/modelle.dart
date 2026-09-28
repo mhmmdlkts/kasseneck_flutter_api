@@ -22,16 +22,40 @@ String? _text(Map<String, dynamic> j, String feld) => j[feld] is String ? j[feld
 
 int? _ganz(Map<String, dynamic> j, String feld) => j[feld] is int ? j[feld] as int : null;
 
+/// Eine Map als `Map<String, dynamic>`; eine schon so getypte wird nicht
+/// kopiert (der Feldmengen-Test verfolgt daran, welche Felder gelesen werden).
+Map<String, dynamic> _alsObjekt(Map wert) => wert is Map<String, dynamic> ? wert : Map<String, dynamic>.from(wert);
+
 Map<String, dynamic> _objekt(Map<String, dynamic> j, String feld) {
   final wert = j[feld];
-  if (wert is Map) return Map<String, dynamic>.from(wert);
+  if (wert is Map) return _alsObjekt(wert);
+  throw FormatException(feld);
+}
+
+Map<String, dynamic>? _objektOderNull(Map<String, dynamic> j, String feld) {
+  final wert = j[feld];
+  if (wert == null) return null;
+  if (wert is Map) return _alsObjekt(wert);
   throw FormatException(feld);
 }
 
 List<Map<String, dynamic>> _liste(Map<String, dynamic> j, String feld) {
   final wert = j[feld];
   if (wert is! List) throw FormatException(feld);
-  return [for (final e in wert) if (e is Map) Map<String, dynamic>.from(e) else throw FormatException(feld)];
+  return [for (final e in wert) if (e is Map) _alsObjekt(e) else throw FormatException(feld)];
+}
+
+/// Hinweise einer Antwort: fehlt das Feld, keine; ein einzelnes Objekt zählt
+/// als Liste mit einem Eintrag. Ein Eintrag ohne `code` oder `message` wird
+/// übergangen (die Rechnung ist da schon ausgestellt).
+List<InvoiceNotice> _hinweise(Map<String, dynamic> j) {
+  final roh = j['notice'];
+  if (roh == null) return const [];
+  final liste = roh is List ? roh : [roh];
+  return [
+    for (final h in liste)
+      if (h is Map && h['code'] is String && h['message'] is String) InvoiceNotice.fromJson(_alsObjekt(h)),
+  ];
 }
 
 void _setzen(Map<String, dynamic> ziel, String feld, Object? wert) {
@@ -377,6 +401,7 @@ class IssueInvoiceRequest {
     this.language,
     this.brandId,
     this.payment,
+    this.dryRun,
   });
 
   factory IssueInvoiceRequest.fromJson(Map<String, dynamic> j) => IssueInvoiceRequest(
@@ -399,6 +424,7 @@ class IssueInvoiceRequest {
         language: _text(j, 'language'),
         brandId: _text(j, 'brandId'),
         payment: j['payment'] is Map ? PaymentInput.fromJson(Map<String, dynamic>.from(j['payment'] as Map)) : null,
+        dryRun: j['dryRun'] is bool ? j['dryRun'] as bool : null,
       );
 
   /// Pflicht: dieselbe Anfrage mit demselben Schlüssel erzeugt nie eine zweite Rechnung.
@@ -439,6 +465,12 @@ class IssueInvoiceRequest {
   /// Festschreiben, das PDF trägt dann keine Zahlungsinformationen.
   final PaymentInput? payment;
 
+  /// Wie im Vertrag von `issueInvoice`; bleibt beim Lesen aus JSON erhalten
+  /// und geht so hinaus. `true` gehört zu `previewInvoice`: `issueInvoice`
+  /// weist eine Anfrage mit `dryRun: true` vor dem Senden ab, statt die
+  /// Probe-Absicht still zu verlieren.
+  final bool? dryRun;
+
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'idempotencyKey': idempotencyKey};
     _setzen(j, 'customerId', customerId);
@@ -459,6 +491,7 @@ class IssueInvoiceRequest {
     _setzen(j, 'language', language);
     _setzen(j, 'brandId', brandId);
     _setzen(j, 'payment', payment?.toJson());
+    _setzen(j, 'dryRun', dryRun);
     return j;
   }
 }
@@ -547,6 +580,9 @@ class InvoicePayment {
         reference: _text(j, 'reference'),
       );
 
+  /// Die Felder dieser Sicht, wie `/v3` sie sendet (Feldmengen-Test).
+  static const felder = {'id', 'amountCents', 'paidAt', 'method', 'reference'};
+
   final String id;
   final int amountCents;
   final String? paidAt;
@@ -568,6 +604,8 @@ class InvoiceNotice {
         message: _pflicht<String>(j, 'message'),
       );
 
+  static const felder = {'code', 'message'};
+
   final String code;
   final String message;
 }
@@ -575,6 +613,16 @@ class InvoiceNotice {
 /// Ergebnis von `recordInvoicePayment`.
 class RecordPaymentResult {
   const RecordPaymentResult({required this.invoice, required this.payment, required this.replayed, this.notice = const []});
+
+  factory RecordPaymentResult.fromJson(Map<String, dynamic> j) => RecordPaymentResult(
+        invoice: Invoice.fromJson(_objekt(j, 'invoice')),
+        payment: InvoicePayment.fromJson(_objekt(j, 'payment')),
+        replayed: j['replayed'] == true,
+        notice: _hinweise(j),
+      );
+
+  /// `notice` fehlt ohne Hinweis.
+  static const felder = {'invoice', 'payment', 'replayed', 'notice'};
 
   final Invoice invoice;
   final InvoicePayment payment;
@@ -635,6 +683,8 @@ class VatRateTotal {
   /// Der USt-Satz in Prozent — `num`, weil es Saetze mit Nachkommastelle gibt
   /// (4,9 % Grundnahrungsmittel ab 01.07.2026). Ein `int` liess `getInvoice`
   /// bei so einer Rechnung mit `FormatException` scheitern.
+  static const felder = {'rate', 'netCents', 'vatCents', 'grossCents'};
+
   final num rate;
   final int netCents;
   final int vatCents;
@@ -659,6 +709,8 @@ class InvoiceTotals {
         byRate: j['byRate'] is List ? [for (final r in _liste(j, 'byRate')) VatRateTotal.fromJson(r)] : const [],
       );
 
+  static const felder = {'netCents', 'vatCents', 'grossCents', 'byRate'};
+
   final int netCents;
   final int vatCents;
   final int grossCents;
@@ -675,7 +727,7 @@ class InvoiceTotals {
       };
 }
 
-/// Eine gespeicherte Position — wie gesendet, fehlende Angaben mit ihrem Standardwert.
+/// Eine gespeicherte Position: wie gesendet, fehlende Angaben mit ihrem Standardwert.
 class InvoiceItem {
   const InvoiceItem({
     required this.description,
@@ -683,6 +735,7 @@ class InvoiceItem {
     required this.unit,
     required this.unitPriceCents,
     required this.vatRate,
+    this.kind = 'goods',
     this.unitPriceMicros,
     this.subtitle = '',
     this.discountPct = 0,
@@ -693,24 +746,36 @@ class InvoiceItem {
         subtitle: _text(j, 'subtitle') ?? '',
         quantity: _pflicht<num>(j, 'quantity'),
         unit: _text(j, 'unit') ?? 'piece',
+        kind: _text(j, 'kind') ?? 'goods',
         unitPriceCents: _pflicht<int>(j, 'unitPriceCents'),
         unitPriceMicros: j['unitPriceMicros'] is num ? j['unitPriceMicros'] as num : null,
         vatRate: _pflicht<num>(j, 'vatRate'),
         discountPct: j['discountPct'] is num ? j['discountPct'] as num : 0,
       );
 
+  /// `unitPriceMicros` fehlt beim Altbestand, den der Server nicht darstellen kann.
+  static const felder = {
+    'description', 'subtitle', 'quantity', 'unit', 'kind', 'unitPriceCents', 'unitPriceMicros', 'vatRate', 'discountPct',
+  };
+
   final String description;
   final String subtitle;
   final num quantity;
+
+  /// Einer von [invoiceUnits].
   final String unit;
 
-  /// Einzelpreis in ganzen Cent — eine ANZEIGEHILFE: kaufmännisch aus
+  /// Ware oder Leistung ([itemKinds]); ohne Angabe `goods`. Wer Positionen
+  /// für eine Gutschrift übernimmt, gibt es mit: es entscheidet den Steuerfall.
+  final String kind;
+
+  /// Einzelpreis in ganzen Cent: eine ANZEIGEHILFE, kaufmännisch aus
   /// [unitPriceMicros] gerundet und damit 0, sobald der Preis unter einem
   /// halben Cent liegt. Verbindlich sind [unitPriceMicros] und die Beträge je
   /// Position (§ 9.3).
   final int unitPriceCents;
 
-  /// Einzelpreis in Mikro-Euro (10⁻⁶ €) — der verbindliche Preis. `null` nur,
+  /// Einzelpreis in Mikro-Euro (10⁻⁶ €), der verbindliche Preis. `null` nur,
   /// wenn der Server ihn nicht darstellen konnte (Altbestand mit mehr als
   /// sechs Nachkommastellen); ein geratener Wert wäre schlimmer als keiner.
   final num? unitPriceMicros;
@@ -730,9 +795,65 @@ class CreditNoteSummary {
         grossCents: _pflicht<int>(j, 'grossCents'),
       );
 
+  static const felder = {'id', 'number', 'grossCents'};
+
   final String id;
   final String? number;
   final int grossCents;
+}
+
+/// Der Empfänger, wie er auf der Rechnung steht (beim Ausstellen eingefroren,
+/// nicht der heutige Kundenstamm).
+class InvoiceRecipient {
+  const InvoiceRecipient({
+    required this.name,
+    required this.type,
+    required this.country,
+    required this.isAuthority,
+    this.street,
+    this.houseNumber,
+    this.zip,
+    this.city,
+    this.vatId,
+    this.shortCode,
+    this.email,
+  });
+
+  factory InvoiceRecipient.fromJson(Map<String, dynamic> j) => InvoiceRecipient(
+        name: _pflicht<String>(j, 'name'),
+        type: _pflicht<String>(j, 'type'),
+        street: _text(j, 'street'),
+        houseNumber: _text(j, 'houseNumber'),
+        zip: _text(j, 'zip'),
+        city: _text(j, 'city'),
+        country: _pflicht<String>(j, 'country'),
+        vatId: _text(j, 'vatId'),
+        shortCode: _text(j, 'shortCode'),
+        email: _text(j, 'email'),
+        isAuthority: j['isAuthority'] == true,
+      );
+
+  static const felder = {
+    'name', 'type', 'street', 'houseNumber', 'zip', 'city', 'country', 'vatId', 'shortCode', 'email', 'isAuthority',
+  };
+
+  final String name;
+
+  /// `private` oder `company` ([customerTypes]).
+  final String type;
+  final String? street;
+  final String? houseNumber;
+  final String? zip;
+  final String? city;
+
+  /// ISO-3166-Alpha-2.
+  final String country;
+  final String? vatId;
+  final String? shortCode;
+  final String? email;
+
+  /// Behörde: die Rechnung geht als E-Rechnung hinaus.
+  final bool isAuthority;
 }
 
 /// Eine Rechnung oder Gutschrift. Die Felder unter „Detail" liefert nur
@@ -758,6 +879,7 @@ class Invoice {
     this.writtenOff,
     this.creditNotes,
     this.relatedInvoiceId,
+    this.relatedNumber,
     this.language = 'de',
     this.brandId,
     this.brandName,
@@ -765,13 +887,25 @@ class Invoice {
     this.taxScheme,
     this.payments,
     this.writeOffReasonCode,
+    this.customer,
+    this.reverseChargeReason,
+    this.taxCountry,
+    this.priceMode,
+    this.serviceStart,
+    this.serviceEnd,
+    this.paymentTermDays,
+    this.orderReference,
+    this.source,
+    this.createdAt,
+    this.finalizedAt,
   });
 
   factory Invoice.fromJson(Map<String, dynamic> j) {
-    final einvoice = j['einvoice'];
+    final einvoice = _objektOderNull(j, 'einvoice');
     final metadaten = j['metadata'];
-    final related = j['related'];
-    final brand = j['brand'];
+    final related = _objektOderNull(j, 'related');
+    final brand = _objektOderNull(j, 'brand');
+    final customer = _objektOderNull(j, 'customer');
     return Invoice(
       id: _pflicht<String>(j, 'id'),
       number: _pflicht<String>(j, 'number'),
@@ -783,7 +917,7 @@ class Invoice {
       customerId: _text(j, 'customerId'),
       statusUrl: _text(j, 'statusUrl'),
       statusPassword: _text(j, 'statusPassword'),
-      einvoiceLevel: einvoice is Map && einvoice['level'] is String ? einvoice['level'] as String : null,
+      einvoiceLevel: einvoice != null && einvoice['level'] is String ? einvoice['level'] as String : null,
       metadata: metadaten is Map
           ? {for (final e in metadaten.entries) if (e.value is String) '${e.key}': e.value as String}
           : const {},
@@ -793,16 +927,46 @@ class Invoice {
       overdue: j['overdue'] is bool ? j['overdue'] as bool : null,
       writtenOff: j['writtenOff'] is bool ? j['writtenOff'] as bool : null,
       creditNotes: j['creditNotes'] is List ? [for (final c in _liste(j, 'creditNotes')) CreditNoteSummary.fromJson(c)] : null,
-      relatedInvoiceId: related is Map && related['invoiceId'] is String ? related['invoiceId'] as String : null,
+      relatedInvoiceId: related != null && related['invoiceId'] is String ? related['invoiceId'] as String : null,
+      relatedNumber: related != null && related['number'] is String ? related['number'] as String : null,
       language: _text(j, 'language') == 'en' ? 'en' : 'de',
-      brandId: brand is Map && brand['id'] is String ? brand['id'] as String : null,
-      brandName: brand is Map && brand['name'] is String ? brand['name'] as String : null,
-      einvoice: einvoice is Map ? EInvoiceStatus.fromJson(Map<String, dynamic>.from(einvoice)) : null,
+      brandId: brand != null && brand['id'] is String ? brand['id'] as String : null,
+      brandName: brand != null && brand['name'] is String ? brand['name'] as String : null,
+      einvoice: einvoice != null ? EInvoiceStatus.fromJson(einvoice) : null,
       taxScheme: _text(j, 'taxScheme'),
       payments: j['payments'] is List ? [for (final z in _liste(j, 'payments')) InvoiceDetailPayment.fromJson(z)] : null,
       writeOffReasonCode: _text(j, 'writeOffReasonCode'),
+      customer: customer != null ? InvoiceRecipient.fromJson(customer) : null,
+      reverseChargeReason: _text(j, 'reverseChargeReason'),
+      taxCountry: _text(j, 'taxCountry'),
+      priceMode: _text(j, 'priceMode'),
+      serviceStart: _text(j, 'serviceStart'),
+      serviceEnd: _text(j, 'serviceEnd'),
+      paymentTermDays: _ganz(j, 'paymentTermDays'),
+      orderReference: _text(j, 'orderReference'),
+      source: _text(j, 'source'),
+      createdAt: _text(j, 'createdAt'),
+      finalizedAt: _text(j, 'finalizedAt'),
     );
   }
+
+  /// Die Felder in Listen und Ausstell-Antworten.
+  static const felder = {
+    'id', 'number', 'docType', 'status', 'invoiceDate', 'dueDate', 'customerId', 'totals', 'einvoice', 'statusUrl',
+    'statusPassword', 'metadata', 'language', 'brand', 'paidCents', 'openCents',
+  };
+
+  /// Die Felder der Detailsicht (`getInvoice`).
+  static const detailFelder = {
+    ...felder,
+    'items', 'customer', 'taxScheme', 'reverseChargeReason', 'taxCountry', 'priceMode', 'serviceStart', 'serviceEnd',
+    'paymentTermDays', 'orderReference', 'payments', 'overdue', 'writtenOff', 'writeOffReasonCode', 'related',
+    'creditNotes', 'source', 'createdAt', 'finalizedAt',
+  };
+
+  /// Die Felder von `brand` und `related`.
+  static const brandFelder = {'id', 'name'};
+  static const relatedFelder = {'invoiceId', 'number'};
 
   final String id;
   final String number;
@@ -819,15 +983,6 @@ class Invoice {
   final String? einvoiceLevel;
   final Map<String, String> metadata;
 
-  // Detail
-  final List<InvoiceItem>? items;
-  final int? paidCents;
-  final int? openCents;
-  final bool? overdue;
-  final bool? writtenOff;
-  final List<CreditNoteSummary>? creditNotes;
-  final String? relatedInvoiceId;
-
   /// Beim Ausstellen eingefroren; ältere Rechnungen `de`.
   final String language;
 
@@ -839,17 +994,50 @@ class Invoice {
   /// ([einvoiceMissingCodes]); [einvoiceLevel] ist davon die Stufe.
   final EInvoiceStatus? einvoice;
 
+  final int? paidCents;
+  final int? openCents;
+
   // Detail (nur `getInvoice`)
+
+  final List<InvoiceItem>? items;
+
+  /// Der Empfänger auf der Rechnung.
+  final InvoiceRecipient? customer;
 
   /// Der Steuerfall ([taxSchemes]).
   final String? taxScheme;
 
+  /// Nur bei `domesticReverseCharge` ([reverseChargeReasons]).
+  final String? reverseChargeReason;
+
+  /// Land, dessen Steuer die Rechnung trägt; Altbestand `AT`.
+  final String? taxCountry;
+
+  /// `net` oder `gross` ([priceModes]).
+  final String? priceMode;
+  final String? serviceStart;
+  final String? serviceEnd;
+  final int? paymentTermDays;
+  final String? orderReference;
+
   /// Die gebuchten Zahlungen.
   final List<InvoiceDetailPayment>? payments;
+  final bool? overdue;
+  final bool? writtenOff;
 
   /// Warum abgeschrieben wurde ([writeOffReasonCodes]); `null`, solange
   /// [writtenOff] nicht `true` ist.
   final String? writeOffReasonCode;
+
+  /// Bei einer Gutschrift: die Rechnung, auf die sie sich bezieht.
+  final String? relatedInvoiceId;
+  final String? relatedNumber;
+  final List<CreditNoteSummary>? creditNotes;
+
+  /// Woher die Rechnung kam (z. B. `api`).
+  final String? source;
+  final String? createdAt;
+  final String? finalizedAt;
 }
 
 /// Die E-Rechnung aus `getInvoiceXml`, wie der Server sie sendet.
@@ -879,6 +1067,8 @@ class InvoiceDetailPayment {
         reference: _text(j, 'reference'),
       );
 
+  static const felder = {'id', 'amountCents', 'date', 'method', 'reference'};
+
   final String? id;
   final int amountCents;
   final String? date;
@@ -900,6 +1090,8 @@ class Brand {
         isDefault: j['isDefault'] == true,
       );
 
+  static const felder = {'id', 'name', 'isDefault'};
+
   final String id;
   final String name;
   final bool isDefault;
@@ -907,6 +1099,13 @@ class Brand {
 
 class InvoicePage {
   const InvoicePage({required this.invoices, this.nextCursor});
+
+  factory InvoicePage.fromJson(Map<String, dynamic> j) => InvoicePage(
+        invoices: [for (final i in _liste(j, 'invoices')) Invoice.fromJson(i)],
+        nextCursor: _text(j, 'nextCursor'),
+      );
+
+  static const felder = {'invoices', 'nextCursor'};
 
   final List<Invoice> invoices;
 
@@ -917,6 +1116,15 @@ class InvoicePage {
 
 class IssueResult {
   const IssueResult({required this.invoice, required this.replayed, this.notice = const []});
+
+  factory IssueResult.fromJson(Map<String, dynamic> j) => IssueResult(
+        invoice: Invoice.fromJson(_objekt(j, 'invoice')),
+        replayed: j['replayed'] == true,
+        notice: _hinweise(j),
+      );
+
+  /// `notice` fehlt ohne Hinweis.
+  static const felder = {'invoice', 'replayed', 'notice'};
 
   final Invoice invoice;
 
@@ -938,6 +1146,8 @@ class EInvoiceStatus {
         formats: _texte(j, 'formats'),
         missing: _texte(j, 'missing'),
       );
+
+  static const felder = {'level', 'formats', 'missing'};
 
   /// `full`, `partial` oder `insufficient`.
   final String level;
@@ -977,8 +1187,8 @@ class InvoicePreview {
   });
 
   factory InvoicePreview.fromJson(Map<String, dynamic> j) {
-    final brand = j['brand'];
-    final einvoice = j['einvoice'];
+    final brand = _objektOderNull(j, 'brand');
+    final einvoice = _objektOderNull(j, 'einvoice');
     return InvoicePreview(
       docType: _pflicht<String>(j, 'docType'),
       invoiceDate: _pflicht<String>(j, 'invoiceDate'),
@@ -991,13 +1201,18 @@ class InvoicePreview {
       taxSchemeReason: _text(j, 'taxSchemeReason'),
       reverseChargeReason: _text(j, 'reverseChargeReason'),
       language: _text(j, 'language') == 'en' ? 'en' : 'de',
-      brandId: brand is Map && brand['id'] is String ? brand['id'] as String : null,
-      brandName: brand is Map && brand['name'] is String ? brand['name'] as String : null,
-      einvoice: einvoice is Map ? EInvoiceStatus.fromJson(Map<String, dynamic>.from(einvoice)) : null,
+      brandId: brand != null && brand['id'] is String ? brand['id'] as String : null,
+      brandName: brand != null && brand['name'] is String ? brand['name'] as String : null,
+      einvoice: einvoice != null ? EInvoiceStatus.fromJson(einvoice) : null,
     );
   }
 
-  /// Immer `invoice` — einen Probelauf gibt es nur für das Ausstellen.
+  static const felder = {
+    'docType', 'invoiceDate', 'dueDate', 'customerId', 'taxScheme', 'taxSchemeReason', 'reverseChargeReason',
+    'taxCountry', 'priceMode', 'totals', 'language', 'brand', 'einvoice',
+  };
+
+  /// Immer `invoice`: einen Probelauf gibt es nur für das Ausstellen.
   final String docType;
 
   /// Heutiger Wiener Tag — der Tag, den eine sofort ausgestellte Rechnung trüge.
@@ -1033,6 +1248,13 @@ class InvoicePreview {
 class PreviewResult {
   const PreviewResult({required this.preview, this.notice = const []});
 
+  factory PreviewResult.fromJson(Map<String, dynamic> j) => PreviewResult(
+        preview: InvoicePreview.fromJson(_objekt(j, 'preview')),
+        notice: _hinweise(j),
+      );
+
+  static const felder = {'preview', 'notice'};
+
   final InvoicePreview preview;
 
   /// Dieselben Hinweise, die das Ausstellen liefern würde; leer ohne Hinweis.
@@ -1048,6 +1270,20 @@ class CancelResult {
     required this.replayed,
   });
 
+  factory CancelResult.fromJson(Map<String, dynamic> j) {
+    final original = _objekt(j, 'original');
+    return CancelResult(
+      creditNote: Invoice.fromJson(_objekt(j, 'creditNote')),
+      originalId: _pflicht<String>(original, 'id'),
+      originalStatus: _text(original, 'status'),
+      originalPaidCents: _ganz(j, 'originalPaidCents') ?? 0,
+      replayed: j['replayed'] == true,
+    );
+  }
+
+  static const felder = {'creditNote', 'original', 'originalPaidCents', 'replayed'};
+  static const originalFelder = {'id', 'status'};
+
   final Invoice creditNote;
   final String originalId;
   final String? originalStatus;
@@ -1059,6 +1295,14 @@ class CancelResult {
 
 class CreditNoteResult {
   const CreditNoteResult({required this.creditNote, required this.remainingCents, required this.replayed});
+
+  factory CreditNoteResult.fromJson(Map<String, dynamic> j) => CreditNoteResult(
+        creditNote: Invoice.fromJson(_objekt(j, 'creditNote')),
+        remainingCents: _ganz(j, 'remainingCents') ?? 0,
+        replayed: j['replayed'] == true,
+      );
+
+  static const felder = {'creditNote', 'remainingCents', 'replayed'};
 
   final Invoice creditNote;
 
@@ -1077,6 +1321,8 @@ class InvoiceSetupGap {
         message: _pflicht<String>(j, 'message'),
       );
 
+  static const felder = {'requirement', 'message'};
+
   /// Einer von [invoiceSetupRequirements].
   final String requirement;
   final String message;
@@ -1090,6 +1336,8 @@ class InvoiceSetupStatus {
         environment: _text(j, 'environment') == 'test' ? 'test' : 'live',
         missing: [for (final m in _liste(j, 'missing')) InvoiceSetupGap.fromJson(m)],
       );
+
+  static const felder = {'ready', 'environment', 'missing'};
 
   final bool ready;
 

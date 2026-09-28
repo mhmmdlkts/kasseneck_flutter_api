@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/src/receipt/codes.dart';
 
@@ -58,6 +59,14 @@ String _neuerAbschnitt(String alt) => ((_strukturKasse['file'] as Map)[alt] as S
 
 void main() {
   test('die eingefrorenen 0.x-Dateien sind die aus 0.31.0', () {
+    // Aus dem Registry-Tarball @kreiseck/kasseneck-api@0.31.0 (npm pack),
+    // byteweise. NICHT aus npm test/fixtures/vor-1.0/ auffrischen: dort sind
+    // die Storno-Zahlungscodes schon englisch, das wurde nie ausgeliefert.
+    String sha(String pfad) => sha256.convert(File(pfad).readAsBytesSync()).toString();
+    expect(sha('test/fixtures/vor-1.0/kasse-texte.json'),
+        '9e14e8488be5803668fad94238bb1478615cf844388c7d4ef75bca0ae23d1b93');
+    expect(sha('test/fixtures/vor-1.0/rechnung-texte.json'),
+        '6acf334aa64b169ff3ee2e5a338c7541df6ba159fcc85b50ee9fcbaf59bc0faf');
     expect(_altKasse['version'], '0.31.0');
     expect(_altRechnung['version'], '0.31.0');
     expect(_neuKasse['version'], startsWith('1.'));
@@ -95,7 +104,9 @@ void main() {
           expect(gefuelltNeu, gefuelltAlt, reason: e.value);
           if (altPlatz.isNotEmpty) mitPlatzhalter++;
         }
-        if (alt == 'meldungen') expect(mitPlatzhalter, greaterThan(10));
+        // Untergrenzen nach dem Stand 0.31.0 (Meldungen 30, Beschriftungen 15
+        // mit Platzhalter): eine versehentlich leere Pruefung faellt auf.
+        expect(mitPlatzhalter, greaterThanOrEqualTo(alt == 'meldungen' ? 25 : 12));
       });
     }
 
@@ -151,6 +162,11 @@ void main() {
         expect(_texteRechnung.keys.toSet(), alt.keys.toSet(), reason: sprache);
         expect(_texteRechnung.values.toSet(), neu.keys.toSet(), reason: sprache);
       }
+      // Schreibweise wie npm: jeder Teil klein mit Unterstrich, nur
+      // Laendercodes gross (`country.AT`).
+      for (final k in _texteRechnung.values) {
+        expect(k, matches(RegExp(r'^[a-z0-9_]+(\.([a-z0-9_]+|[A-Z]{2}))+$')), reason: k);
+      }
     });
 
     test('jeder Text alt und neu gefuellt Zeichen fuer Zeichen gleich, de und en', () {
@@ -171,6 +187,33 @@ void main() {
   });
 
   group('Platzhalter', () {
+    test('die Tabelle nennt genau diese 30 Namen', () {
+      expect(_platzhalter, {
+        'an': 'recipient', 'antwort': 'response', 'beleg': 'receipt', 'betrag': 'amount', 'betrieb': 'business',
+        'code': 'code', 'datum': 'date', 'gegeben': 'tendered', 'gesamt': 'total', 'grund': 'reason',
+        'kaeufer': 'buyer', 'kennung': 'reference', 'link': 'link', 'meldung': 'message', 'n': 'n', 'name': 'name',
+        'netto': 'net', 'nummer': 'number', 'offen': 'open', 'ort': 'place', 'prozent': 'percent',
+        'rueckgeld': 'change', 'satz': 'rate', 'sekunden': 'seconds', 'status': 'status', 'uid': 'vatId',
+        'verkaeufer': 'seller', 'weg': 'channel', 'zeit': 'time', 'ziel': 'target',
+      });
+    });
+
+    test('jeder alte Name kommt in den 0.31.0-Texten vor', () {
+      final gefunden = <String>{};
+      void sammle(String text, RegExp muster) => gefunden.addAll(muster.allMatches(text).map((m) => m[1]!));
+      for (final abschnitt in ['meldungen', 'beschriftungen']) {
+        for (final eintrag in _abschnitt(_altKasse, abschnitt).values) {
+          sammle((eintrag as Map)['text'] as String, _kassenMuster);
+        }
+      }
+      for (final texte in (_altRechnung['texte'] as Map).values) {
+        for (final t in (texte as Map).values) {
+          sammle(t as String, _rechnungsMuster);
+        }
+      }
+      expect(gefunden, _platzhalter.keys.toSet());
+    });
+
     test('eins zu eins, kein neuer Name ist ein alter', () {
       expect(_platzhalter.values.toSet(), hasLength(_platzhalter.length));
       final umbenannt = {for (final e in _platzhalter.entries) if (e.key != e.value) e.key};
@@ -193,7 +236,7 @@ void main() {
           sammle(t as String, _rechnungsMuster);
         }
       }
-      expect(_platzhalter.values, containsAll(gefunden));
+      expect(gefunden, _platzhalter.values.toSet(), reason: 'jeder neue Name kommt in den 1.0-Texten vor');
       expect(gefunden.intersection(umbenannt), isEmpty);
     });
 

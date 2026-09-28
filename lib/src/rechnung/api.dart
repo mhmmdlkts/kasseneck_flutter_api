@@ -97,12 +97,11 @@ class RechnungApi {
 
   Future<IssueResult> issueInvoice(IssueInvoiceRequest anfrage) async {
     const name = Aufrufe.issueInvoice;
+    if (anfrage.dryRun == true) {
+      throw const KasseneckValidationError(name, 'dryRun: true gehört zu previewInvoice', 'request');
+    }
     final daten = await _transport.rufen(name, anfrage.toJson());
-    return _lesen(name, () => IssueResult(
-          invoice: Invoice.fromJson(_objekt(daten, 'invoice')),
-          replayed: daten['replayed'] == true,
-          notice: _hinweise(daten['notice']),
-        ));
+    return _lesen(name, () => IssueResult.fromJson(daten));
   }
 
   /// Probelauf von [issueInvoice]: dieselbe Anfrage wird geprüft und gerechnet
@@ -121,10 +120,7 @@ class RechnungApi {
   Future<PreviewResult> previewInvoice(IssueInvoiceRequest anfrage) async {
     const name = Aufrufe.issueInvoice;
     final daten = await _transport.rufen(name, {...anfrage.toJson(), 'dryRun': true});
-    return _lesen(name, () => PreviewResult(
-          preview: InvoicePreview.fromJson(_objekt(daten, 'preview')),
-          notice: _hinweise(daten['notice']),
-        ));
+    return _lesen(name, () => PreviewResult.fromJson(daten));
   }
 
   /// Vollstorno: Gutschrift über alle Positionen, das Original wird storniert.
@@ -141,27 +137,14 @@ class RechnungApi {
       'reason': reason,
       'note': ?note,
     });
-    return _lesen(name, () {
-      final original = _objekt(daten, 'original');
-      return CancelResult(
-        creditNote: Invoice.fromJson(_objekt(daten, 'creditNote')),
-        originalId: original['id'] as String,
-        originalStatus: original['status'] is String ? original['status'] as String : null,
-        originalPaidCents: daten['originalPaidCents'] is int ? daten['originalPaidCents'] as int : 0,
-        replayed: daten['replayed'] == true,
-      );
-    });
+    return _lesen(name, () => CancelResult.fromJson(daten));
   }
 
   /// Teilgutschrift; höchstens bis zum Brutto des Originals je USt-Satz.
   Future<CreditNoteResult> createCreditNote(CreditNoteRequest anfrage) async {
     const name = Aufrufe.createCreditNote;
     final daten = await _transport.rufen(name, anfrage.toJson());
-    return _lesen(name, () => CreditNoteResult(
-          creditNote: Invoice.fromJson(_objekt(daten, 'creditNote')),
-          remainingCents: daten['remainingCents'] is int ? daten['remainingCents'] as int : 0,
-          replayed: daten['replayed'] == true,
-        ));
+    return _lesen(name, () => CreditNoteResult.fromJson(daten));
   }
 
   Future<Invoice> getInvoice({String? invoiceId, String? number}) async {
@@ -190,10 +173,7 @@ class RechnungApi {
       'limit': ?limit,
       'cursor': ?cursor,
     });
-    return _lesen(name, () => InvoicePage(
-          invoices: [for (final i in _liste(daten, 'invoices')) Invoice.fromJson(i)],
-          nextCursor: daten['nextCursor'] is String ? daten['nextCursor'] as String : null,
-        ));
+    return _lesen(name, () => InvoicePage.fromJson(daten));
   }
 
   // ---- Dateien ------------------------------------------------------------------
@@ -249,12 +229,7 @@ class RechnungApi {
   Future<RecordPaymentResult> recordInvoicePayment(RecordPaymentRequest anfrage) async {
     const name = Aufrufe.recordInvoicePayment;
     final daten = await _transport.rufen(name, anfrage.toJson());
-    return _lesen(name, () => RecordPaymentResult(
-          invoice: Invoice.fromJson(_objekt(daten, 'invoice')),
-          payment: InvoicePayment.fromJson(_objekt(daten, 'payment')),
-          replayed: daten['replayed'] == true,
-          notice: _hinweise(daten['notice']),
-        ));
+    return _lesen(name, () => RecordPaymentResult.fromJson(daten));
   }
 
   // ---- Marken --------------------------------------------------------------------
@@ -297,16 +272,6 @@ class RechnungApi {
   /// gebucht. Ein Fehler liesse den Aufrufer glauben, es sei nichts entstanden,
   /// und eine Wiederholung mit demselben Schluessel liefert die Hinweise nicht
   /// noch einmal.
-  static List<InvoiceNotice> _hinweise(Object? roh) {
-    if (roh == null) return const [];
-    final liste = roh is List ? roh : [roh];
-    return [
-      for (final h in liste)
-        if (h is Map && h['code'] is String && h['message'] is String)
-          InvoiceNotice(code: h['code'] as String, message: h['message'] as String),
-    ];
-  }
-
   static Map<String, dynamic> _objekt(Map<String, dynamic> daten, String feld) {
     final wert = daten[feld];
     if (wert is Map) return Map<String, dynamic>.from(wert);
