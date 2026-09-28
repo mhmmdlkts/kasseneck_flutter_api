@@ -1,3 +1,328 @@
+## 10.0.0-rc.1
+
+Release candidate of 10.0.0. The package speaks the English API `/v3` and
+nothing else, and its own surface is English as well: class, field, method,
+parameter and enum names, library paths, error codes and the contract files it
+is tested against. Reason: the backend now runs `/v3` for every endpoint group
+used here, including the register path, and a half-German client on an English
+wire would translate twice and drift from its JavaScript twin
+`@kreiseck/kasseneck-api` 1.0 (checked against `1.0.0-rc.3`). One breaking
+release instead of several: every app migrates once. Printed receipts are byte
+for byte the same as in 9.1.0 for every golden receipt.
+
+This entry is written in English, like the README; older entries stay German.
+
+### Migrating from 9.x
+
+#### The 8.x and 9.x lines
+
+8.x and 9.x keep talking to the old routes (`/v1` and `/api`) and are frozen:
+fixes only, from the branches `release/8.x` and `release/9.x`. Pin `^9.1.0` or
+`^8.0.0` if you are not ready to move; nothing forces an upgrade while the old
+routes are served. Data stored by 9.x stays readable (see "Stored data" below).
+
+#### Wire: `/v3` only
+
+- **Base URLs.** `KasseneckApi` calls `https://api.kasseneck.at/v3`
+  (`kPublicBaseUrl`, was `/v1`), `InvoiceApi` the same host (`kInvoiceBaseUrl`),
+  and the register path (`RegisterClient`, `RegisterTransport`,
+  `RegisterSessionClient`) `https://kasse.kasseneck.at/api/v3`
+  (`kPosBaseUrl`/`kRegisterBaseUrl`, was `/api`). A custom `baseUrl` must end
+  in `/v3` once trailing slashes are removed; `/v1`, `/api` or any other base
+  throws when the client is created. Reason: a 10.x client must never speak an
+  old route by accident. Emulator and test bases need `/v3` as well.
+- **Marker, fail closed.** Requests to a Kasseneck base carry
+  `Kasseneck-Api-Version: v3` and `Kasseneck-Client: kasseneck_api/<version>`
+  (new options `clientHeader` for apps that name themselves, e.g.
+  `kasse-app/1.0.3+34`, and `omitKasseneckHeaders`). Every response is
+  checked before its body is read: HTTP 200 with HTML is `route_missing`, a
+  response without `Kasseneck-Api-Version: v3` is `dialect_mismatch` (outcome
+  unknown), HTTP 404 with marker and error envelope is the envelope's error.
+  All three are `KasseneckApiError`s. Test doubles and proxies in your own
+  tests must send the marker. Reason: an answer from an edge without `/v3` may
+  still have signed a receipt, and reading it as a normal answer would hide
+  that.
+- **HTTP status first.** On the register, pairing and invoice paths a status
+  other than 200 is a `KasseneckHttpError` (`server-error`) without code; 9.x
+  read the error envelope there. Exception: the 404 of the `/v3` edge with
+  marker (above).
+- **UTF-8, strictly.** Every response is decoded as UTF-8 from its bytes,
+  whatever the content type says; invalid UTF-8 is `not-json`. Report PDFs
+  (`downloadDailyReport`, `downloadMonthlyReport`) come back as the raw bytes.
+- **English keys, values and codes.** Error codes are English, lower case,
+  `snake_case` (`bereits_storniert` is `already_cancelled`,
+  `PAYMENTS_SUM_MISMATCH` is `payments_sum_mismatch`, `adresse_ungueltig` is
+  `invalid_address`, `zu_oft` is `too_many_requests`). Cancellation reasons are
+  `input_error`, `customer_cancelled`, `wrong_payment_method`, `duplicate`,
+  `other`; the German display text stays in `cancellationReasons`. Register
+  settings are `{business, device}` with English keys and values
+  (`stil: 'nacht'` is `theme: 'night'`). The invoice API uses `docType`
+  `invoice`/`credit_note` (was `RE`/`GU`) and `taxScheme`
+  `intraCommunitySupply` (was `igLieferung`). Texts for people (`message`,
+  `nextSteps`) and BMF and FinanzOnline terms stay German. Hard-coded old
+  values (`'RE'`, `'igLieferung'`, `'STORNO_…'`) still compile but fail at run
+  time, so search your code for them.
+
+#### Renamed names
+
+Every public German name is English now: 11 library paths, about 200
+top-level names, 340 members, 350 parameters and 11 record fields, plus about
+110 fields, values and parameters that changed with the `/v3` wire. The
+complete table, old name to new name with the file it was declared in, is
+**[`doc/migration-10.md`](doc/migration-10.md)** (it ships with the package).
+It is a separate file and not part of this entry on purpose: at more than a
+thousand rows it would bury the changes that need thought, which are listed
+here, while the compiler already points at every renamed name and the table
+only has to answer "what is it called now". The most visible ones:
+
+- Libraries: `kasse.dart` is `pos.dart`, `rechnung.dart` is `invoice.dart`,
+  `models/beleg_layout.dart` is `models/receipt_layout.dart`,
+  `models/beleg_blatt.dart` is `models/receipt_sheet.dart`,
+  `services/druck_logo.dart` is `services/print_logo.dart`,
+  `widgets/keck_beleg_blatt_widget.dart` is
+  `widgets/keck_receipt_sheet_widget.dart`.
+- Receipts: `stornieren` is `cancelReceipt`, `belegSenden` is
+  `sendReceiptEmail`, `verkaufen` is `sell`, `holen` is `get`, `auflisten` is
+  `list`, `Stornoergebnis` is `CancelReceiptResult`, `StornoStand` is
+  `CancellationState`, `BelegLayout` is `ReceiptLayout`, `BelegBlatt` is
+  `ReceiptSheet`, `restmengen` is `remainingQuantities`.
+- **Watch out:** `KasseneckApi.cancelReceipt` existed in 9.x as the old
+  cancellation without reference (`cancelReceipt(receipt:)`). In 10.0 the name
+  belongs to the cancellation with reference (the former `stornieren`, with
+  `cashregisterId`, `originalReceiptId`, `reason`). A 9.x call
+  `cancelReceipt(receipt: r)` fails to compile; rewrite it, do not just rename.
+- Register: `KasseSettings` is `PosSettings`, `KasseSettingsBetrieb` is
+  `PosBusinessSettings`, `KasseSettingsGeraet` is `PosDeviceSettings`,
+  `KasseEinstellungenClient` is `PosSettingsClient` (`laden`/`betriebSpeichern`/
+  `geraetSpeichern` are `load`/`saveBusiness`/`saveDevice`), `KasseArtikel` is
+  `PosArticle`, `KasseDruckerClient` is `PosPrinterClient`, the `Kasse…`
+  enums are `Pos…` enums with English values (`KasseStil.nacht` is
+  `PosTheme.night`, `KasseDruckerArt.bt` is `PosPrinterType.bluetooth`).
+- Invoices: `RechnungApi` is `InvoiceApi`, `RechnungTransport` is
+  `InvoiceTransport`, `rechnungSummen` is `computeInvoiceTotals`,
+  `rechnungFehlerCode` is `invoiceErrorCode`, `steuerfreieFaelle` is
+  `zeroRatedTaxSchemes`.
+- Receipt fields: `uid` is `vatId`, `taxnr` is `taxNumber`, `testKasse` is
+  `testCashregister`, `testSignatur` is `testSignature`, `kopfId` is
+  `headerVersionId`, `logoStufe` is `logoScale`; `KeckTip.sofortErhalten` is
+  `receivedImmediately`; `VatRate.vat4komma9` is `VatRate.vat4_9`;
+  `KeckUser.taxnr` is `taxNumber`, `KeckUser.benid` is `webserviceUserId` (the
+  wire keys of the FinanzOnline data stay).
+
+Three FinanzOnline status values keep their German names on purpose:
+`CashboxStatus.IN_BETRIEB`, `SignatureStatus.IN_BETRIEB` and
+`SignatureStatus.AUSFALL` are the values FinanzOnline sends.
+
+#### Text keys and placeholders
+
+The package has no text catalogue of its own, but the contract files it is
+tested against (`pos-texts.json`, `invoice-texts.json` of the npm twin) are
+English now, and apps that generate their texts from them must follow:
+
+- Keys: `netz.keine_verbindung` is `network.no_connection`,
+  `kopplung.code_fehlt` is `pairing.code_missing`, `allgemein.abbrechen` is
+  `common.cancel`, `pdf.titel.rechnung` is `pdf.title.invoice` and so on (the
+  complete list is `texts` in `renames-1.0.json`).
+- Structure: `meldungen`/`beschriftungen`/`fehlerregeln` are
+  `messages`/`labels`/`errorRules`, an entry's `platzhalter`/`nur` are
+  `placeholders`/`only`, an error rule's `art`/`verhalten`/`schluessel` are
+  `kind`/`behavior`/`key`; `belegMailFehler` and `stornoZahlungFehler` are
+  `receiptEmailErrors` and `cancellationPaymentErrors`, keyed by the `/v3`
+  codes.
+- Placeholders, 25 of 30 renamed: `{an}` → `{recipient}`, `{antwort}` →
+  `{response}`, `{beleg}` → `{receipt}`, `{betrag}` → `{amount}`, `{betrieb}`
+  → `{business}`, `{datum}` → `{date}`, `{gegeben}` → `{tendered}`,
+  `{gesamt}` → `{total}`, `{grund}` → `{reason}`, `{kaeufer}` → `{buyer}`,
+  `{kennung}` → `{reference}`, `{meldung}` → `{message}`, `{netto}` →
+  `{net}`, `{nummer}` → `{number}`, `{offen}` → `{open}`, `{ort}` →
+  `{place}`, `{prozent}` → `{percent}`, `{rueckgeld}` → `{change}`, `{satz}`
+  → `{rate}`, `{sekunden}` → `{seconds}`, `{uid}` → `{vatId}`,
+  `{verkaeufer}` → `{seller}`, `{weg}` → `{channel}`, `{zeit}` → `{time}`,
+  `{ziel}` → `{target}`.
+- The texts themselves are unchanged, character for character (checked
+  against the 0.31.0 files).
+
+#### Removed
+
+- `KasseneckApi.cancelReceipt(receipt:)` and `createCancelReceipt`: the old
+  cancellation through `createReceipt` without a reference to the original.
+  `/v3` rejects it. Use `cancelReceipt(cashregisterId:, originalReceiptId:,
+  reason:)`.
+- The single payment method: `sellReceipt(paymentMethod:,
+  creditCardProvider:, cardPaymentId:, cardPaymentData:)`,
+  `RegisterReceiptClient.verkaufen(zahlungsart:, kartenanbieter:,
+  kartenzahlungId:, kartenzahlungsdaten:)` (now `sell`) and the same
+  parameters on both cancellations. Card
+  data travels on each `KeckPaymentInput` (`provider`, `providerPaymentId`,
+  `providerData`).
+- The German 0.x names in `KasseneckReceipt.fromJson` (use
+  `migrateStoredReceiptJson`, below), the upper-case payment and cancellation
+  codes of `/v1`, the German settings keys and values in `merge` and in the
+  settings client.
+
+#### Behaviour changes
+
+- **`payments` is mandatory** on every sale: `sellReceipt(payments:)`,
+  `RegisterReceiptClient.sell(payments:)`, and `createReceipt` with a standard
+  or training receipt (empty only when the amount due is 0; a zero receipt
+  takes none). The payments must add up to the amount due. The new
+  `receiptDueCents(items, vouchers, receiptType, {tip, payments,
+  tipRecipient})` computes it as the backend does, including its rounding
+  (checked against the 1206 cases of `receipt-due-generated.json`);
+  `receiptDueBreakdown` adds the buckets, `receiptDueBreakdownForLines` takes
+  fractional quantities, `paymentsExpectedCents(error)` reads the amount of a
+  `payments_sum_mismatch`. `tipRecipient` (`owner` or `staff`) is required for
+  a tip without recipients, and `ReceiptDueTip.fromKeckTip(tip, isOwner:)`
+  bridges a `KeckTip`. Reason: `/v3` knows no single payment method, and only
+  the register knows whether the signed-in user is the owner.
+- **Errors are typed, and carry an outcome.** Nothing the backend or the
+  transport reports arrives as a plain `Exception`, `TimeoutException` or
+  `ClientException` any more:
+  - timeouts and network errors are `KasseneckHttpError` (`reason` `timeout`
+    or `network`, `timeout`, `statusCode` 0); a timeout now aborts the
+    request;
+  - HTTP errors and empty bodies are `KasseneckHttpError` (`server-error`,
+    `empty-body`);
+  - the error envelope of `createReceipt` (`sellReceipt`, `zeroReceipt`),
+    `getReceipt`, `getReceipts` (reported as `getReportV2`),
+    `getFirstReceiptDate`, `listTipRecipients`, `createStripeLink`,
+    `hobexPay`, `stripeCaptureIntent`, `getCashboxStatus` and
+    `getSignatureStatus` is a `KasseneckApiError` with `code` and `details`;
+  - `hobexRefund` throws on refusal instead of returning `false`, so it only
+    ever returns `true`;
+  - a response without `status` is `missing-status`.
+  
+  `KasseneckApiError` and `KasseneckHttpError` have an `outcome`
+  (`ErrorOutcome.unknown` or `.rejected`), and `isOutcomeUnknown(error)`
+  answers it for any error. Unknown are the codes `dialect_mismatch`,
+  `receipt_outcome_unknown`, `cancellation_outcome_unknown`,
+  `response_unreadable` and `response_translation_failed` (unless
+  `details['handled'] == false`), and on `createReceipt`, `cancelReceipt`,
+  `financeWebService`, `hobexPayApi`, `hobexRefundApi` and
+  `stripeCaptureIntent` a network error, timeout or HTTP 5xx after sending and
+  an unreadable success body. **Never retry those; read the result back.** Do
+  not pass a `RetryClient` or any other resending `http.Client` as
+  `httpClient`. Reason: a retried receipt is a second signed receipt in the
+  chain, and a retried card call can charge or refund twice.
+- **`response_unreadable` instead of format errors.** A sale, cancellation,
+  `hobexPay` or `stripeCaptureIntent` that reported success but whose answer
+  cannot be read (receipt, reference, remaining quantities, Hobex receipt or
+  payment intent missing or broken) throws `KasseneckApiError`
+  `response_unreadable` with an unknown outcome and `details['receiptId']`
+  where readable. 9.x threw `KasseneckReceiptFormatError`,
+  `KasseneckValidationError`, `KasseneckHttpError` (`data-not-object`) or a
+  plain `Exception` there. `KasseneckReceiptFormatError` remains for reading
+  calls (`getReceipt`, `RegisterReceiptClient.get`).
+- **Strict validation before sending.** The 0.x payment fields are gone (see
+  Removed). Register settings: an unknown key, a German key from 9.x, a value
+  outside a field's list, a `vatRates` map without any rate switched on, an
+  unknown shortcut action and a key bound twice throw a
+  `KasseneckValidationError` (`kind: 'request'`) before sending;
+  `saveDevice` takes `shortcuts` only as the whole map of all 16 known
+  actions; `merge` throws an `ArgumentError` with the current name for a 9.x
+  key (`qrModus`, now `qrMode`) or a 0.x value (`nacht`, now `night`). A
+  cancellation checks its reason against `cancellationReasons`, requires
+  `original` to be the receipt named by `originalReceiptId`, and refuses a
+  card refund through a provider without its own `providerPaymentId` and
+  without the original payment's id. `issueInvoice` rejects `dryRun: true`
+  (use `previewInvoice`). A card payment through a provider other than
+  `custom` without `providerPaymentId` is no longer rejected locally (9.x threw
+  an `ArgumentError`); the server answers with a code.
+- **Register settings: patches, and unknown values stay.** Values this
+  version does not know (from a newer server) are kept verbatim in
+  `unknownValues`, written back unchanged, and listed by
+  `unknownPosSettingValues(settings)` so the screen can show them as "set on
+  the server"; the typed field then holds the default. `posSettingsChanges`
+  produces the patch of changed fields only, with `vatRates` and `shortcuts`
+  as whole maps. Reason: the server merges deeply, and a whole block would
+  overwrite values a newer server knows. (npm keeps such a value in the field
+  itself; the wire effect is the same.)
+- **New defaults.** `checkoutMode` is `panel` (9.x: `seite`): registers
+  without a stored setting check out in the panel after the update.
+  `terminalPort` is 8080 (was 20008). The 16 shortcut actions and their
+  defaults follow the contract (`customAmount` Mod+D, `receipts` Mod+J,
+  `fullscreen` Mod+F; new actions `settings`, `logout`, `tip`, `fullscreen`,
+  `clearTendered`, `clearCart`, `splitPayment`). `InvoiceItem.unit` without a
+  value is `piece` (was `Stk`).
+- **Server layout first.** `receiptLayoutFromResult(receipt,
+  fallbackPaperSize:)` (new) returns the server's layout (80 mm) whenever the
+  response carries one and otherwise `layout == null` with the fallback width
+  (default `mm58`); the local fallback then draws. Unlike npm there is no
+  local line-model builder in Dart. `KeckPrinterService.getPaperFromReceipt`
+  prints a server layout always (9.x fell back to the local builder when a
+  card block seemed missing), and the local fallback now prints the TESTKASSE
+  and TESTSIGNATUR frames and the receipt type block (STORNOBELEG,
+  TRAININGSBELEG, STARTBELEG, NULLBELEG and the others). A cancellation copies
+  the test marks of `original`; a `kr_test_` key or
+  `RegisterReceiptClient(testEnvironment: true)` sets TESTKASSE.
+  `ReceiptLayout.fromJson` without `paperSize` means `mm80`.
+- **Unknown values stay visible.** `ReceiptSummary.cancellationState` is
+  `none`/`partial`/`full`, or `unknown` for a value this version does not
+  know, and `null` when the field is missing (never `none`). Print job status
+  `unknown` counts as finished.
+- **Receipt e-mail.** `sendReceiptEmail(language:)` (was `sprache`); `via`
+  is `own`, `platform`, `platform_fallback` or `null`. The success reply is
+  read leniently: without `to` the sent address, without `at` `null`, because
+  the mail is already out and an error would invite a second one.
+- **Register sign-in.** `PairedRegisterDevice.testEnvironment`,
+  `RegisterUserSummary.pinPolicyOutdated`, `RegisterPinPolicy.length`/
+  `charset` (`digits`/`alphanumeric`), `RegisterLoginMode.selectUser`,
+  `RegisterDeviceUsers.locationLock`/`receiptHeader`/`testEnvironment` and the
+  new `cashregister` (`ready`, `reason`), `RegisterSession.own`;
+  `RegisterSession.deviceLabel` is nullable (9.x filled in "Kasse").
+  `RegisterClientInfo.app` names the app at pairing and sign-in.
+- **Printers and articles.** `PosPrinterClient.printers()` without
+  `data.printers` and `createPrintJob`/`getPrintJob` without `data.jobId`
+  throw a `KasseneckValidationError` (`kind: 'response'`) instead of an empty
+  list or id. `PosArticle.toJson` writes the wire form (`tile`,
+  `quantityRule`, `askQuantity`, `maxQuantity`, `revenueGroupId`);
+  `QuantityRule` is `piece`/`decimal`.
+- **Invoices.** `getInvoiceXml` returns `InvoiceXml {xml, format, filename}`
+  instead of a `String` and throws if one is missing. `EInvoiceStatus.missing`
+  and `details.missing` of `invoice_requirements_missing` are codes (`vat_id`,
+  `street`, ...) instead of German labels; `details.expected`/`given` of
+  `tax_scheme_mismatch` are English. `Invoice` reads every detail field of
+  the contract (`customer`, `payments`, `einvoice`, `taxScheme`,
+  `writeOffReasonCode`, `serviceStart`/`End`, ...), `InvoiceItem.kind`
+  defaults to `goods`.
+- **Vouchers** go out without the euro `value` (`KeckVoucher.toPayload`).
+
+#### Stored data
+
+- A receipt map written by 9.x (`KasseneckReceipt.toJson`) has German keys;
+  `KasseneckReceipt.fromJson` reads only the `/v3` form. Convert it with
+  `migrateStoredReceiptJson(map)` (input untouched, an English key wins).
+- Register settings and articles cached by 9.x (`{betrieb, geraet}`) are read
+  by `PosSettings.fromJson` and `PosArticle.fromJson` as they are, and written
+  back in the `/v3` form. The 9.x shortcut map is untangled on the way
+  (`untangleShortcuts`); the other 9.x defaults apply until the first answer
+  from the server.
+
+#### New
+
+`receiptDueCents` and relatives, `receiptLayoutFromResult`,
+`migrateStoredReceiptJson`, `isOutcomeUnknown`, `ErrorOutcome`,
+`clientErrorCodes`, `kPublicBaseUrl`, `kPosBaseUrl`, per-group code catalogues
+(`receiptErrorCodes`, `cancellationErrorCodes`, `paymentErrorCodes`,
+`receiptEmailErrorCodes`, `registerErrorCodes`, `posErrorCodes`,
+`invoiceRequestErrorCodes`, `einvoiceMissingCodes`, `writeOffReasonCodes`)
+with `is…Error`/`…FieldErrors` helpers, `registerErrorDetails`,
+`cardRefundReference`, `RegistrationInfo`, `CancellationOf`,
+`KasseneckReceipt.zeroKind`, the print jobs of the register
+(`PosPrinterClient`, `NetworkPrinter`, `PrintJob`, `rasterRowsBase64`),
+`RegisterReceiptClient.fullReceiptId` and `cashregisters()`,
+`PosSettingsClient.setLogo`/`removeLogo`, and `fields` constants on the
+response models (the field sets the tests check against the contract).
+
+### Also in this release
+
+- The twins are pinned to `@kreiseck/kasseneck-api` `1.0.0-rc.3`. Its three
+  rc.3 findings (start receipt fields `start_receipt_*`, lenient e-mail reply,
+  missing printer list or job id as a response error, shortcuts only as the
+  whole map) were already in place here.
+- A test compiles every Dart example of the README and README.de.md against
+  the current surface, so an example can no longer go stale silently.
+
 ## 9.1.0
 
 ### Mehrere Zahlungen je Beleg
