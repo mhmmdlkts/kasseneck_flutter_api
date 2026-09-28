@@ -1,10 +1,49 @@
+import 'dart:convert';
+
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 
+KasseneckApi _mit(Object? daten, List<http.Request> log) => KasseneckApi(
+      apiKey: 'k',
+      cashregisterToken: 'dGVzdDp0ZXN0',
+      httpClient: MockClient((r) async {
+        log.add(r);
+        return http.Response(jsonEncode({'status': 'success', 'message': '', 'data': daten}), 200,
+            headers: const {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
+      }),
+    );
+
 void main() {
+  // Zwilling von npm rc.2 (06679d1, test/geldwege-ausgang.test.ts): Erfolg
+  // gemeldet heisst, die Karte ist belastet bzw. der Einzug gelaufen. Ist die
+  // Nutzlast dann unbrauchbar, ist das `response_unreadable` mit Ausgang
+  // unklar, nie ein gewoehnlicher Lesefehler, der zum zweiten Versuch einluede.
+  group('Geldwege: Erfolg gemeldet, Nutzlast unbrauchbar', () {
+    final faelle = <(String, Object?, Future<Object?> Function(KasseneckApi))>[
+      ('hobexPayApi', <String, dynamic>{}, (api) => api.hobexPay(transactionId: 'tx-1', amount: 12.34)),
+      ('hobexPayApi', null, (api) => api.hobexPay(transactionId: 'tx-1', amount: 12.34)),
+      ('stripeCaptureIntent', {'id': 'pi_1'}, (api) => api.stripeCaptureIntent(stripeSessionId: 'cs_test_a1b2c3')),
+      ('stripeCaptureIntent', null, (api) => api.stripeCaptureIntent(stripeSessionId: 'cs_test_a1b2c3')),
+    ];
+    for (final (name, daten, aufruf) in faelle) {
+      test('$name mit data ${jsonEncode(daten)} ist response_unreadable, Ausgang unklar, genau ein Aufruf', () async {
+        final log = <http.Request>[];
+        await expectLater(
+          aufruf(_mit(daten, log)),
+          throwsA(isA<KasseneckApiError>()
+              .having((e) => e.functionName, 'functionName', name)
+              .having((e) => e.code, 'code', 'response_unreadable')
+              .having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)
+              .having((e) => isOutcomeUnknown(e), 'isOutcomeUnknown', isTrue)),
+        );
+        expect(log, hasLength(1));
+      });
+    }
+  });
+
   group('Fristen im Cloud-Weg', () {
     test('hobexPay bekommt die Kartenfrist, nicht die kurze Lesefrist', () async {
       // Eine Antwort, die laenger braucht als die Lesefrist, aber kuerzer als

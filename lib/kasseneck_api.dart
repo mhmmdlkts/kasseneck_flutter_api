@@ -999,11 +999,10 @@ class KasseneckApi {
     if (resJson['status'] != 'success') {
       throw envelopeError(Aufrufe.stripeCaptureIntent, resJson);
     }
-    try {
-      return StripeUrlSession.fromJson(resJson['data']);
-    } catch (e) {
-      throw Exception('Fehler beim Erstellen des Stripe-Links: $e');
-    }
+    // Erfolg gemeldet heisst: eingezogen. Eine unlesbare Nutzlast bleibt
+    // Ausgang unklar (`response_unreadable`), nie ein gewoehnlicher Lesefehler.
+    return readSignedResponse(
+        Aufrufe.stripeCaptureIntent, () => StripeUrlSession.fromJson(resJson['data'] as Map<String, dynamic>));
   }
 
   /// Die Kassen-ID, gelesen aus [cashregisterToken].
@@ -1043,11 +1042,10 @@ class KasseneckApi {
     if (resJson['status'] != 'success') {
       throw envelopeError(Aufrufe.hobexPayApi, resJson);
     }
-    try {
-      return HobexReceipt.fromJson(resJson['data']);
-    } catch (e) {
-      throw Exception('Fehler beim Parsen des Hobex-Belegs: $e');
-    }
+    // Erfolg gemeldet heisst: die Karte ist belastet. Ist der Beleg dann
+    // unlesbar, bleibt der Ausgang unklar (`response_unreadable`), damit keine
+    // App ein zweites Mal belastet.
+    return readSignedResponse(Aufrufe.hobexPayApi, () => HobexReceipt.fromJson(resJson['data'] as Map<String, dynamic>));
   }
 
   /// Refunds a previous **Hobex Cloud** transaction.
