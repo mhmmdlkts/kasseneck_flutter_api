@@ -1,4 +1,4 @@
-/// Das Beleg-Blatt (Zwilling von `belegBlatt` in `@kreiseck/kasseneck-api`
+/// Das Beleg-Blatt (Zwilling von `receiptSheet` in `@kreiseck/kasseneck-api`
 /// ab 0.14.0): die vollstaendige Folge dessen, was auf dem Papier steht --
 /// Rasterzeilen, Firmenlogo, QR und Marke, Groessen als Anteil der Blattbreite
 /// und in Zeilen. Jeder Zeichner (Bon, Bildschirm) setzt nur noch das Blatt.
@@ -17,122 +17,122 @@ import 'package:kasseneck_api/models/beleg_raster.dart';
 import 'package:kasseneck_api/models/marke_daten.dart';
 import 'package:kasseneck_api/src/printing/qr_groesse.dart';
 
-enum LogoStufe {
+enum SheetLogoSize {
   s('S', 0.42, 5),
   m('M', 0.62, 8),
   l('L', 0.8, 12),
   xl('XL', 0.94, 16);
 
-  final String kuerzel;
-  final double breiteAnteil;
-  final int hoeheZeilen;
-  const LogoStufe(this.kuerzel, this.breiteAnteil, this.hoeheZeilen);
+  final String code;
+  final double widthFraction;
+  final int heightLines;
+  const SheetLogoSize(this.code, this.widthFraction, this.heightLines);
 
   /// Die Einstellung `logoSkala` des Betriebs; fehlt sie oder ist sie unbekannt, gilt M.
-  static LogoStufe ausKuerzel(String? kuerzel) =>
-      LogoStufe.values.firstWhere((s) => s.kuerzel == kuerzel, orElse: () => LogoStufe.m);
+  static SheetLogoSize fromCode(String? kuerzel) =>
+      SheetLogoSize.values.firstWhere((s) => s.code == kuerzel, orElse: () => SheetLogoSize.m);
 }
 
-const int punkteJeZeichen = 12;
-const int punkteJeZeile = 24;
+const int dotsPerChar = 12;
+const int dotsPerLine = 24;
 
-class BlattLogo {
-  final LogoStufe stufe;
-  final int pxBreite;
-  final int pxHoehe;
-  const BlattLogo({required this.stufe, required this.pxBreite, required this.pxHoehe});
+class SheetLogo {
+  final SheetLogoSize size;
+  final int pixelWidth;
+  final int pixelHeight;
+  const SheetLogo({required this.size, required this.pixelWidth, required this.pixelHeight});
 }
 
-class LogoMass {
-  final double breiteAnteil;
-  final double hoeheZeilen;
-  const LogoMass({required this.breiteAnteil, required this.hoeheZeilen});
+class LogoDimensions {
+  final double widthFraction;
+  final double heightLines;
+  const LogoDimensions({required this.widthFraction, required this.heightLines});
 }
 
-sealed class BlattBlock {
-  const BlattBlock();
+sealed class SheetBlock {
+  const SheetBlock();
 
   /// Der Block in der Form des Vertrags (`expected/*.sheet*.json`, npm 1.0):
   /// `kind` `line`/`logo`/`qr`/`brandMark`, Felder englisch.
   Map<String, Object> toJson() => switch (this) {
-        BlattZeile(:final text, :final fett, :final leer) => {'kind': 'line', 'text': text, 'bold': fett, 'blank': leer},
-        BlattLogoBlock(:final breiteAnteil, :final hoeheZeilen) => {
+        SheetLine(:final text, :final bold, :final blank) => {'kind': 'line', 'text': text, 'bold': bold, 'blank': blank},
+        SheetLogoBlock(:final widthFraction, :final heightLines) => {
             'kind': 'logo',
-            'widthFraction': breiteAnteil,
-            'heightLines': hoeheZeilen,
+            'widthFraction': widthFraction,
+            'heightLines': heightLines,
           },
-        BlattQr(:final nutzlast, :final breiteAnteil) => {'kind': 'qr', 'payload': nutzlast, 'widthFraction': breiteAnteil},
-        BlattMarke(:final breite, :final hoehe) => {'kind': 'brandMark', 'width': breite, 'height': hoehe},
+        SheetQr(:final payload, :final widthFraction) => {'kind': 'qr', 'payload': payload, 'widthFraction': widthFraction},
+        SheetBrandMark(:final width, :final height) => {'kind': 'brandMark', 'width': width, 'height': height},
       };
 }
 
-class BlattZeile extends BlattBlock {
+class SheetLine extends SheetBlock {
   final String text;
-  final bool fett;
-  final bool leer;
-  const BlattZeile({required this.text, required this.fett, required this.leer});
+  final bool bold;
+  final bool blank;
+  const SheetLine({required this.text, required this.bold, required this.blank});
 }
 
-class BlattLogoBlock extends BlattBlock {
-  final double breiteAnteil;
-  final double hoeheZeilen;
-  const BlattLogoBlock({required this.breiteAnteil, required this.hoeheZeilen});
+class SheetLogoBlock extends SheetBlock {
+  final double widthFraction;
+  final double heightLines;
+  const SheetLogoBlock({required this.widthFraction, required this.heightLines});
 }
 
-class BlattQr extends BlattBlock {
-  final String nutzlast;
-  final double breiteAnteil;
-  const BlattQr({required this.nutzlast, required this.breiteAnteil});
+class SheetQr extends SheetBlock {
+  final String payload;
+  final double widthFraction;
+  const SheetQr({required this.payload, required this.widthFraction});
 }
 
-/// Das Kasseneck-Logo am Belegende, als Rasterbild fest in [breite] x [hoehe]
-/// Druckpunkten -- diese Masse kommen aus [markeRaster], nicht aus einem
+/// Das Kasseneck-Logo am Belegende, als Rasterbild fest in [width] x [height]
+/// Druckpunkten -- diese Masse kommen aus [brandMarkRasters], nicht aus einem
 /// Anteil der Blattbreite: das Raster liegt fertig vor (Vertrag), nur welches
 /// der beiden Masse gilt, entscheidet die Papierbreite.
-class BlattMarke extends BlattBlock {
-  final int breite;
-  final int hoehe;
-  const BlattMarke({required this.breite, required this.hoehe});
+class SheetBrandMark extends SheetBlock {
+  final int width;
+  final int height;
+  const SheetBrandMark({required this.width, required this.height});
 }
 
-class BelegBlatt {
-  final int zeichen;
-  final List<BlattBlock> bloecke;
-  const BelegBlatt({required this.zeichen, required this.bloecke});
+class ReceiptSheet {
+  final int charsPerLine;
+  final List<SheetBlock> blocks;
+  const ReceiptSheet({required this.charsPerLine, required this.blocks});
 
   /// Das Blatt in der Form des Vertrags: `charsPerLine` und `blocks`.
-  Map<String, Object> toJson() => {'charsPerLine': zeichen, 'blocks': [for (final b in bloecke) b.toJson()]};
+  Map<String, Object> toJson() => {'charsPerLine': charsPerLine, 'blocks': [for (final b in blocks) b.toJson()]};
 }
 
-KeckPaperSize papierFuerZeichen(int zeichen, String vorgabe) {
+KeckPaperSize paperSizeForChars(int zeichen, String vorgabe) {
   if (zeichen == KeckPaperSize.mm58.defaultCharCount) return KeckPaperSize.mm58;
   if (zeichen == KeckPaperSize.mm80.defaultCharCount) return KeckPaperSize.mm80;
   return vorgabe == 'mm80' ? KeckPaperSize.mm80 : KeckPaperSize.mm58;
 }
 
 /// Ins Kaestchen der Stufe eingepasst, nie hochgerechnet (1 Bildpixel hoechstens 1 Druckpunkt).
-LogoMass logoMass(BlattLogo logo, int zeichen) {
-  if (logo.pxBreite <= 0 || logo.pxHoehe <= 0) {
+LogoDimensions logoDimensions(SheetLogo logo, int zeichen) {
+  if (logo.pixelWidth <= 0 || logo.pixelHeight <= 0) {
     throw ArgumentError('Logo ohne Pixelmass');
   }
-  final blattPunkte = zeichen * punkteJeZeichen;
+  final blattPunkte = zeichen * dotsPerChar;
   final faktor = math.min(
-    math.min((logo.stufe.breiteAnteil * blattPunkte) / logo.pxBreite, (logo.stufe.hoeheZeilen * punkteJeZeile) / logo.pxHoehe),
+    math.min((logo.size.widthFraction * blattPunkte) / logo.pixelWidth, (logo.size.heightLines * dotsPerLine) / logo.pixelHeight),
     1.0,
   );
-  return LogoMass(
-    breiteAnteil: (logo.pxBreite * faktor) / blattPunkte,
-    hoeheZeilen: (logo.pxHoehe * faktor) / punkteJeZeile,
+  return LogoDimensions(
+    widthFraction: (logo.pixelWidth * faktor) / blattPunkte,
+    heightLines: (logo.pixelHeight * faktor) / dotsPerLine,
   );
 }
 
-({int breite, int hoehe}) logoRasterMass(LogoMass mass, int zeichen) => (
-      breite: math.max(1, (mass.breiteAnteil * zeichen * punkteJeZeichen).round()),
-      hoehe: math.max(1, (mass.hoeheZeilen * punkteJeZeile).round()),
+({int width, int height}) logoRasterSize(LogoDimensions mass, int zeichen) => (
+      width: math.max(1, (mass.widthFraction * zeichen * dotsPerChar).round()),
+      height: math.max(1, (mass.heightLines * dotsPerLine).round()),
     );
 
 /// Byte-Kapazitaet je QR-Version bei Korrektur M (ISO/IEC 18004) -- dieselbe
-/// Tabelle wie `qrModulAnzahl` im npm-Paket. Bewusst nicht `QrMass.modulAnzahl`:
+/// Tabelle wie `qrModulAnzahl` im npm-Paket. Bewusst nicht `QrMetrics.moduleCount`:
 /// das Blatt muss dieselben Zahlen liefern wie die npm-Goldens.
 const List<int> _byteKapazitaetM = [
   14, 26, 42, 62, 84, 106, 122, 152, 180, 213,
@@ -141,7 +141,7 @@ const List<int> _byteKapazitaetM = [
   1452, 1538, 1628, 1722, 1809, 1911, 1989, 2099, 2213, 2331,
 ];
 
-int qrModulAnzahlWieNpm(String nutzlast) {
+int qrModuleCount(String nutzlast) {
   final laenge = utf8.encode(nutzlast).length;
   for (var i = 0; i < _byteKapazitaetM.length; i++) {
     if (laenge <= _byteKapazitaetM[i]) return 17 + 4 * (i + 1);
@@ -149,61 +149,61 @@ int qrModulAnzahlWieNpm(String nutzlast) {
   throw ArgumentError('QR-Inhalt ist zu lang');
 }
 
-/// Ob [nutzlast] in irgendeine QR-Version bei Korrektur M passt -- dieselbe
-/// Tabelle wie [qrModulAnzahlWieNpm], aber ohne zu werfen (npm `qrPasstInVersion`).
-bool qrPasstInVersionWieNpm(String nutzlast) => utf8.encode(nutzlast).length <= _byteKapazitaetM.last;
+/// Ob [payload] in irgendeine QR-Version bei Korrektur M passt -- dieselbe
+/// Tabelle wie [qrModuleCount], aber ohne zu werfen (npm `qrPasstInVersion`).
+bool qrFitsInVersion(String nutzlast) => utf8.encode(nutzlast).length <= _byteKapazitaetM.last;
 
 /// Anteil der Blattbreite, den der QR am Drucker einnimmt (nativ, sonst Bildweg).
-double qrBlattAnteil(String nutzlast, KeckPaperSize papier, {QrModulGroesse groesse = QrModulGroesse.auto}) {
+double qrSheetWidthFraction(String nutzlast, KeckPaperSize papier, {QrModuleSize moduleSize = QrModuleSize.auto}) {
   if (nutzlast.isEmpty) return 0;
-  // Ein Inhalt, der in keine QR-Version passt, liesse [qrModulAnzahlWieNpm]
+  // Ein Inhalt, der in keine QR-Version passt, liesse [qrModuleCount]
   // werfen und risse jeden Zeichner mit (Widget, Bon). 0 wie bei leerer
   // Nutzlast: der Beleg steht ohne QR, statt gar nicht zu stehen.
-  if (!qrPasstInVersionWieNpm(nutzlast)) return 0;
-  final module = qrModulAnzahlWieNpm(nutzlast);
-  final mass = QrMass.berechne(papierbreitePunkte: papier.druckPunkte, moduleAnzahl: module, groesse: groesse);
-  if (mass.passt) return mass.breitePunkte / papier.druckPunkte;
-  final gesamt = module + 2 * QrMass.ruhezoneModule;
-  final punkte = math.max(1, math.min(groesse.deckelPunkte, papier.druckPunkte ~/ gesamt));
-  return (gesamt * punkte) / papier.druckPunkte;
+  if (!qrFitsInVersion(nutzlast)) return 0;
+  final module = qrModuleCount(nutzlast);
+  final mass = QrMetrics.compute(paperWidthDots: papier.printWidthDots, moduleCount: module, moduleSize: moduleSize);
+  if (mass.fits) return mass.widthDots / papier.printWidthDots;
+  final gesamt = module + 2 * QrMetrics.quietZoneModules;
+  final punkte = math.max(1, math.min(moduleSize.capDots, papier.printWidthDots ~/ gesamt));
+  return (gesamt * punkte) / papier.printWidthDots;
 }
 
-BelegBlatt belegBlatt(BelegLayout layout,
-    {int? zeichen, BlattLogo? logo, bool marke = false, QrModulGroesse qrGroesse = QrModulGroesse.auto}) {
-  final raster = BelegRaster.render(layout, zeichen: zeichen);
-  final n = raster.zeichen;
-  final papier = papierFuerZeichen(n, layout.paperSize);
-  final leerzeile = BlattZeile(text: ' ' * n, fett: false, leer: true);
-  BlattBlock block(RasterZeile z) => z.art == RasterArt.qr
-      ? BlattQr(nutzlast: z.qr ?? '', breiteAnteil: qrBlattAnteil(z.qr ?? '', papier, groesse: qrGroesse))
-      : BlattZeile(text: z.text, fett: z.bold, leer: z.art == RasterArt.space);
+ReceiptSheet receiptSheet(ReceiptLayout layout,
+    {int? charsPerLine, SheetLogo? logo, bool brandMark = false, QrModuleSize qrModuleSize = QrModuleSize.auto}) {
+  final raster = ReceiptGrid.render(layout, charsPerLine: charsPerLine);
+  final n = raster.charsPerLine;
+  final papier = paperSizeForChars(n, layout.paperSize);
+  final leerzeile = SheetLine(text: ' ' * n, bold: false, blank: true);
+  SheetBlock block(GridLine z) => z.kind == GridLineKind.qr
+      ? SheetQr(payload: z.qr ?? '', widthFraction: qrSheetWidthFraction(z.qr ?? '', papier, moduleSize: qrModuleSize))
+      : SheetLine(text: z.text, bold: z.bold, blank: z.kind == GridLineKind.space);
 
-  final bloecke = <BlattBlock>[];
+  final bloecke = <SheetBlock>[];
   var i = 0;
   if (logo != null) {
     // Fuehrende Aufdrucke bleiben ganz oben; die Leerzeilen um das Logo sind Vertrag.
-    while (i < raster.lines.length && raster.lines[i].art == RasterArt.banner) {
+    while (i < raster.lines.length && raster.lines[i].kind == GridLineKind.banner) {
       bloecke.add(block(raster.lines[i]));
       i += 1;
     }
     if (i > 0) bloecke.add(leerzeile);
-    final mass = logoMass(logo, n);
-    bloecke.add(BlattLogoBlock(breiteAnteil: mass.breiteAnteil, hoeheZeilen: mass.hoeheZeilen));
+    final mass = logoDimensions(logo, n);
+    bloecke.add(SheetLogoBlock(widthFraction: mass.widthFraction, heightLines: mass.heightLines));
     bloecke.add(leerzeile);
   }
   for (; i < raster.lines.length; i++) {
     bloecke.add(block(raster.lines[i]));
   }
-  if (marke) {
+  if (brandMark) {
     // Das Raster deckt nur die beiden bekannten Papierbreiten ab
     // (markeRaster). Faende sich hier eine dritte, faellt die Marke weg statt
     // ein Raster in falscher Groesse zu drucken -- derselbe Grundsatz wie
     // beim Firmenlogo: eine Marke ist Zierde, der Beleg ist Pflicht.
-    final raster = markeRaster[papier];
+    final raster = brandMarkRasters[papier];
     if (raster != null) {
       bloecke.add(leerzeile);
-      bloecke.add(BlattMarke(breite: raster.breite, hoehe: raster.hoehe));
+      bloecke.add(SheetBrandMark(width: raster.width, height: raster.height));
     }
   }
-  return BelegBlatt(zeichen: n, bloecke: bloecke);
+  return ReceiptSheet(charsPerLine: n, blocks: bloecke);
 }

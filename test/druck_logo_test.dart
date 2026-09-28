@@ -9,41 +9,41 @@ import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/services/druck_logo.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 
-({int breite, int hoehe, Uint8List rgba}) _schwarz(int b, int h) {
+({int width, int height, Uint8List rgba}) _schwarz(int b, int h) {
   final rgba = Uint8List(b * h * 4);
   for (var i = 3; i < rgba.length; i += 4) {
     rgba[i] = 255;
   }
-  return (breite: b, hoehe: h, rgba: rgba);
+  return (width: b, height: h, rgba: rgba);
 }
 
 void main() {
-  setUp(druckLogoSpeicherLeeren);
+  setUp(clearPrintLogoCache);
 
   test('rastert in der Groesse, die das Blatt dem Logo gibt', () async {
-    final logo = await ladeDruckLogo('https://x/l.png', LogoStufe.s, KeckPaperSize.mm80, pixel: (_) async => _schwarz(1000, 100));
-    final soll = logoRasterMass(logoMass(const BlattLogo(stufe: LogoStufe.s, pxBreite: 1000, pxHoehe: 100), 48), 48);
+    final logo = await loadPrintLogo('https://x/l.png', SheetLogoSize.s, KeckPaperSize.mm80, pixel: (_) async => _schwarz(1000, 100));
+    final soll = logoRasterSize(logoDimensions(const SheetLogo(size: SheetLogoSize.s, pixelWidth: 1000, pixelHeight: 100), 48), 48);
     expect(logo, isNotNull);
-    expect((logo!.raster.breite, logo.raster.hoehe), (soll.breite, soll.hoehe));
-    expect(logo.stufe, LogoStufe.s);
+    expect((logo!.raster.width, logo.raster.height), (soll.width, soll.height));
+    expect(logo.size, SheetLogoSize.s);
   });
 
   test('ohne URL oder bei einem Ladefehler: kein Logo, keine Ausnahme', () async {
-    expect(await ladeDruckLogo(null, LogoStufe.m, KeckPaperSize.mm58, pixel: (_) async => _schwarz(10, 10)), isNull);
-    expect(await ladeDruckLogo('https://x/weg.png', LogoStufe.m, KeckPaperSize.mm58, pixel: (_) async => throw Exception('404')), isNull);
+    expect(await loadPrintLogo(null, SheetLogoSize.m, KeckPaperSize.mm58, pixel: (_) async => _schwarz(10, 10)), isNull);
+    expect(await loadPrintLogo('https://x/weg.png', SheetLogoSize.m, KeckPaperSize.mm58, pixel: (_) async => throw Exception('404')), isNull);
   });
 
   test('merkt sich das Ergebnis je Adresse, Stufe und Papier', () async {
     var geladen = 0;
-    Future<({int breite, int hoehe, Uint8List rgba})> lader(String _) async {
+    Future<({int width, int height, Uint8List rgba})> lader(String _) async {
       geladen += 1;
       return _schwarz(20, 20);
     }
 
-    await ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm80, pixel: lader);
-    await ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm80, pixel: lader);
+    await loadPrintLogo('https://x/l.png', SheetLogoSize.m, KeckPaperSize.mm80, pixel: lader);
+    await loadPrintLogo('https://x/l.png', SheetLogoSize.m, KeckPaperSize.mm80, pixel: lader);
     expect(geladen, 1);
-    await ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm58, pixel: lader);
+    await loadPrintLogo('https://x/l.png', SheetLogoSize.m, KeckPaperSize.mm58, pixel: lader);
     expect(geladen, 2);
   });
 
@@ -53,22 +53,22 @@ void main() {
     // ein Fehlschlag ohne (bzw. mit abgelaufener) Sperre keinen Dauerzustand
     // hinterlaesst.
     var geladen = 0;
-    final erst = await ladeDruckLogo(
-      'https://x/wackel.png', LogoStufe.m, KeckPaperSize.mm80,
+    final erst = await loadPrintLogo(
+      'https://x/wackel.png', SheetLogoSize.m, KeckPaperSize.mm80,
       pixel: (_) async {
         geladen += 1;
         throw Exception('Netz weg');
       },
-      negativFrist: Duration.zero,
+      negativeCacheTtl: Duration.zero,
     );
     expect(erst, isNull);
-    final dann = await ladeDruckLogo(
-      'https://x/wackel.png', LogoStufe.m, KeckPaperSize.mm80,
+    final dann = await loadPrintLogo(
+      'https://x/wackel.png', SheetLogoSize.m, KeckPaperSize.mm80,
       pixel: (_) async {
         geladen += 1;
         return _schwarz(20, 20);
       },
-      negativFrist: Duration.zero,
+      negativeCacheTtl: Duration.zero,
     );
     expect(dann, isNotNull);
     expect(geladen, 2);
@@ -79,12 +79,12 @@ void main() {
     // JEDEM Bon erneut bis zu drei Sekunden (bzw. hier: einen Aufruf des
     // Laders). Ein Fehlschlag wird jetzt kurz gemerkt.
     var geladen = 0;
-    final erst = await ladeDruckLogo('https://x/kaputt.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+    final erst = await loadPrintLogo('https://x/kaputt.png', SheetLogoSize.m, KeckPaperSize.mm80, pixel: (_) async {
       geladen += 1;
       throw Exception('404');
     });
     expect(erst, isNull);
-    final dann = await ladeDruckLogo('https://x/kaputt.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+    final dann = await loadPrintLogo('https://x/kaputt.png', SheetLogoSize.m, KeckPaperSize.mm80, pixel: (_) async {
       geladen += 1;
       return _schwarz(20, 20);
     });
@@ -94,23 +94,23 @@ void main() {
 
   test('nach Ablauf der Negativ-Frist versucht der naechste Aufruf es wieder', () async {
     var geladen = 0;
-    final erst = await ladeDruckLogo(
-      'https://x/kaputt-kurz.png', LogoStufe.m, KeckPaperSize.mm80,
+    final erst = await loadPrintLogo(
+      'https://x/kaputt-kurz.png', SheetLogoSize.m, KeckPaperSize.mm80,
       pixel: (_) async {
         geladen += 1;
         throw Exception('404');
       },
-      negativFrist: const Duration(milliseconds: 20),
+      negativeCacheTtl: const Duration(milliseconds: 20),
     );
     expect(erst, isNull);
     await Future<void>.delayed(const Duration(milliseconds: 30));
-    final dann = await ladeDruckLogo(
-      'https://x/kaputt-kurz.png', LogoStufe.m, KeckPaperSize.mm80,
+    final dann = await loadPrintLogo(
+      'https://x/kaputt-kurz.png', SheetLogoSize.m, KeckPaperSize.mm80,
       pixel: (_) async {
         geladen += 1;
         return _schwarz(20, 20);
       },
-      negativFrist: const Duration(milliseconds: 20),
+      negativeCacheTtl: const Duration(milliseconds: 20),
     );
     expect(dann, isNotNull);
     expect(geladen, 2);
@@ -118,12 +118,12 @@ void main() {
 
   test('ein Pixel-Lader, der nie fertig wird: null innerhalb der Frist', () async {
     final sw = Stopwatch()..start();
-    final logo = await ladeDruckLogo(
+    final logo = await loadPrintLogo(
       'https://x/haengt.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
-      pixel: (_) => Completer<({int breite, int hoehe, Uint8List rgba})>().future,
-      frist: const Duration(milliseconds: 30),
+      pixel: (_) => Completer<({int width, int height, Uint8List rgba})>().future,
+      timeout: const Duration(milliseconds: 30),
     );
     sw.stop();
     expect(logo, isNull);
@@ -134,100 +134,100 @@ void main() {
     // negativFrist: Duration.zero, weil dieser Test die Positiv-Cache-Frage
     // prueft ("kein Cache" im Titel), nicht das Negativ-Gedaechtnis.
     var geladen = 0;
-    final erst = await ladeDruckLogo(
+    final erst = await loadPrintLogo(
       'https://x/haengt2.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
       pixel: (_) {
         geladen += 1;
-        return Completer<({int breite, int hoehe, Uint8List rgba})>().future;
+        return Completer<({int width, int height, Uint8List rgba})>().future;
       },
-      frist: const Duration(milliseconds: 30),
-      negativFrist: Duration.zero,
+      timeout: const Duration(milliseconds: 30),
+      negativeCacheTtl: Duration.zero,
     );
     expect(erst, isNull);
-    final dann = await ladeDruckLogo(
+    final dann = await loadPrintLogo(
       'https://x/haengt2.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
       pixel: (_) async {
         geladen += 1;
         return _schwarz(20, 20);
       },
-      frist: const Duration(milliseconds: 30),
-      negativFrist: Duration.zero,
+      timeout: const Duration(milliseconds: 30),
+      negativeCacheTtl: Duration.zero,
     );
     expect(dann, isNotNull);
     expect(geladen, 2);
   });
 
   test('ein Lader, der erst nach der Frist fertig wird: kein Eintrag im Speicher', () async {
-    final spaet = Completer<({int breite, int hoehe, Uint8List rgba})>();
+    final spaet = Completer<({int width, int height, Uint8List rgba})>();
     var geladen = 0;
-    final erst = await ladeDruckLogo(
+    final erst = await loadPrintLogo(
       'https://x/spaet.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
       pixel: (_) {
         geladen += 1;
         return spaet.future;
       },
-      frist: const Duration(milliseconds: 30),
-      negativFrist: Duration.zero,
+      timeout: const Duration(milliseconds: 30),
+      negativeCacheTtl: Duration.zero,
     );
     expect(erst, isNull);
     spaet.complete(_schwarz(20, 20)); // kommt zu spaet, darf den Speicher nicht mehr fuellen
     await Future<void>.delayed(const Duration(milliseconds: 20));
-    final dann = await ladeDruckLogo(
+    final dann = await loadPrintLogo(
       'https://x/spaet.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
       pixel: (_) async {
         geladen += 1;
         return _schwarz(30, 30);
       },
-      frist: const Duration(milliseconds: 30),
-      negativFrist: Duration.zero,
+      timeout: const Duration(milliseconds: 30),
+      negativeCacheTtl: Duration.zero,
     );
     expect(dann, isNotNull);
-    expect(dann!.pxBreite, 30); // waere 20, haette der spaete Treffer den Speicher gefuellt
+    expect(dann!.pixelWidth, 30); // waere 20, haette der spaete Treffer den Speicher gefuellt
     expect(geladen, 2);
   });
 
   test('ein Lader, der rechtzeitig fertig wird: liefert das Logo trotz Frist', () async {
-    final logo = await ladeDruckLogo(
+    final logo = await loadPrintLogo(
       'https://x/schnell.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
       pixel: (_) async => _schwarz(15, 15),
-      frist: const Duration(milliseconds: 200),
+      timeout: const Duration(milliseconds: 200),
     );
     expect(logo, isNotNull);
-    expect(logo!.pxBreite, 15);
+    expect(logo!.pixelWidth, 15);
   });
 
   test('ein Bild ueber der Pixel-Obergrenze: null statt Rasterlauf, naechster Aufruf laedt neu', () async {
     var geladen = 0;
-    final zuGross = await ladeDruckLogo(
+    final zuGross = await loadPrintLogo(
       'https://x/riesig.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
       pixel: (_) async {
         geladen += 1;
         return _schwarz(4097, 10); // ueber logoPixelMax (4096)
       },
-      negativFrist: Duration.zero,
+      negativeCacheTtl: Duration.zero,
     );
     expect(zuGross, isNull);
-    final dann = await ladeDruckLogo(
+    final dann = await loadPrintLogo(
       'https://x/riesig.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
       pixel: (_) async {
         geladen += 1;
         return _schwarz(20, 20);
       },
-      negativFrist: Duration.zero,
+      negativeCacheTtl: Duration.zero,
     );
     expect(dann, isNotNull);
     expect(geladen, 2); // der Ausschluss wurde nicht gemerkt -- wie jeder andere Fehlschlag
@@ -239,19 +239,19 @@ void main() {
     // noetig, um den Standardweg (_ausLogoService -> LogoService -> decodePng)
     // statt des Test-Laders pixel zu pruefen.
     final alterClient = LogoService.httpClient;
-    final alteFrist = LogoService.frist;
+    final alteFrist = LogoService.timeout;
     addTearDown(() {
       LogoService.httpClient = alterClient;
-      LogoService.frist = alteFrist;
+      LogoService.timeout = alteFrist;
     });
     LogoService.httpClient = MockClient((_) => Completer<http.Response>().future);
 
     final sw = Stopwatch()..start();
-    final logo = await ladeDruckLogo(
+    final logo = await loadPrintLogo(
       'https://x/standardweg-haengt.png',
-      LogoStufe.m,
+      SheetLogoSize.m,
       KeckPaperSize.mm80,
-      frist: const Duration(milliseconds: 30),
+      timeout: const Duration(milliseconds: 30),
     );
     sw.stop();
     expect(logo, isNull);
@@ -261,19 +261,19 @@ void main() {
   test('Leeren waehrend eines Fehlschlags: der neuere Abruf im Speicher bleibt stehen', () async {
     final sperre = Completer<void>();
     var geladen = 0;
-    final alt = ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+    final alt = loadPrintLogo('https://x/l.png', SheetLogoSize.m, KeckPaperSize.mm80, pixel: (_) async {
       await sperre.future;
       throw Exception('zu spaet');
     });
-    druckLogoSpeicherLeeren();
-    final neu = await ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+    clearPrintLogoCache();
+    final neu = await loadPrintLogo('https://x/l.png', SheetLogoSize.m, KeckPaperSize.mm80, pixel: (_) async {
       geladen += 1;
       return _schwarz(20, 20);
     });
     sperre.complete();
     expect(await alt, isNull);
     // Der alte Fehlschlag darf den Eintrag des neuen Abrufs nicht entfernen.
-    final wieder = await ladeDruckLogo('https://x/l.png', LogoStufe.m, KeckPaperSize.mm80, pixel: (_) async {
+    final wieder = await loadPrintLogo('https://x/l.png', SheetLogoSize.m, KeckPaperSize.mm80, pixel: (_) async {
       geladen += 1;
       return _schwarz(20, 20);
     });

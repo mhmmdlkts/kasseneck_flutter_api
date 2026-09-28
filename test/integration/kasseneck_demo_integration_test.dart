@@ -90,12 +90,12 @@ void main() {
       expect(receipt.qr, isNotEmpty);
 
       // Aufräumen gehört zum Test: Demo-Beleg sofort stornieren.
-      final cancel = (await api.stornieren(
+      final cancel = (await api.cancelReceipt(
         cashregisterId: receipt.cashregisterId,
         originalReceiptId: receipt.receiptId,
-        grund: 'input_error',
+        reason: 'input_error',
       ))
-          .beleg;
+          .receipt;
       expect(cancel.receiptType, ReceiptType.cancellation);
       expect(cancel.sumCents, -receipt.sumCents);
     }, timeout: const Timeout(Duration(minutes: 3)));
@@ -129,12 +129,12 @@ void main() {
       expect(receipt.sumCents, 2150);
       expect(receipt.sig, isNotEmpty);
       expect(receipt.qr, isNotEmpty);
-      final cancel = (await api.stornieren(
+      final cancel = (await api.cancelReceipt(
         cashregisterId: receipt.cashregisterId,
         originalReceiptId: receipt.receiptId,
-        grund: 'input_error',
+        reason: 'input_error',
       ))
-          .beleg;
+          .receipt;
       expect(cancel.receiptType, ReceiptType.cancellation);
       expect(cancel.sumCents, -receipt.sumCents);
       // Die Spiegelung nimmt auch das Trinkgeld zurück — sonst bliebe der Topf
@@ -154,7 +154,7 @@ void main() {
             priceCents: 2000,
           ),
         ],
-        tip: KeckTip.fuer(creds!.registerUserId!, cents: 200),
+        tip: KeckTip.forRecipient(creds!.registerUserId!, cents: 200),
       );
 
       expect(receipt, isNotNull);
@@ -164,12 +164,12 @@ void main() {
       expect(pos.tipRecipientName, isNotNull);
       // Zahlart des Trinkgelds: ohne Angabe die des Belegs.
       expect(pos.paymentMethod, 'creditCard');
-      final cancel = (await api.stornieren(
+      final cancel = (await api.cancelReceipt(
         cashregisterId: receipt.cashregisterId,
         originalReceiptId: receipt.receiptId,
-        grund: 'input_error',
+        reason: 'input_error',
       ))
-          .beleg;
+          .receipt;
       expect(cancel.tipCents, -200);
     },
         timeout: const Timeout(Duration(minutes: 3)),
@@ -267,7 +267,7 @@ void main() {
             priceCents: 2000,
           ),
         ],
-        tip: KeckTip(cents: 300, recipients: [person.mit(cents: 300)]),
+        tip: KeckTip(cents: 300, recipients: [person.share(cents: 300)]),
       );
 
       expect(receipt, isNotNull);
@@ -282,12 +282,12 @@ void main() {
 
       // Aufräumen wie in den übrigen Fällen: Demo-Beleg sofort stornieren,
       // sonst bliebe der Topf der Person voll.
-      final cancel = (await api.stornieren(
+      final cancel = (await api.cancelReceipt(
         cashregisterId: receipt.cashregisterId,
         originalReceiptId: receipt.receiptId,
-        grund: 'input_error',
+        reason: 'input_error',
       ))
-          .beleg;
+          .receipt;
       expect(cancel.receiptType, ReceiptType.cancellation);
       expect(cancel.tipCents, -300);
     }, timeout: const Timeout(Duration(minutes: 3)));

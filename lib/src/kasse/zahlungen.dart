@@ -11,11 +11,10 @@ import '../receipt/codes.dart' show paymentErrorCodes;
 import '../register/fehler.dart' show KasseneckApiError;
 
 /// Die Codes, gleiche Reihenfolge wie `PAYMENT_ERROR_CODES`.
-final List<String> zahlungFehlercodes = paymentErrorCodes;
 
-/// Ist [wert] ein Code aus [zahlungFehlercodes]? Exakt, wie unter `/v3`
+/// Ist [value] ein Code aus [paymentErrorCodes]? Exakt, wie unter `/v3`
 /// (klein); ein grosser Code aus `/v1` ist keiner. Ein Anzeigetext auch nicht.
-bool istZahlungFehlercode(Object? wert) => wert is String && zahlungFehlercodes.contains(wert);
+bool isPaymentErrorCode(Object? wert) => wert is String && paymentErrorCodes.contains(wert);
 
 /// Der Zahlbetrag des Servers aus einem `payments_sum_mismatch`
 /// (`details.expectedCents`), sonst `null`. Das Paket wiederholt nie selbst mit

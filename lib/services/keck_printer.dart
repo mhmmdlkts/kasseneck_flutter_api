@@ -183,25 +183,25 @@ class KeckPrinter {
   /// in EINEM Byte-Strom.
   ///
   /// Konnte der gesetzlich geforderte QR-Code nicht gesetzt werden, geht der
-  /// Bon trotzdem hinaus und das Ergebnis traegt [KeckPrintResult.qrFehler].
+  /// Bon trotzdem hinaus und das Ergebnis traegt [KeckPrintResult.qrError].
   /// Dieser Weg meidet globalen Zustand: der Ausfall kommt aus dem Papier
-  /// selbst, und [KeckPrinterService.letzterQrFehler] wird dabei weder
+  /// selbst, und [KeckPrinterService.lastQrError] wird dabei weder
   /// gelesen noch geschrieben -- ein Druck hier ueberschreibt also nicht das
   /// Signal eines gleichzeitig laufenden Terminaldrucks.
   Future<KeckPrintResult> printReceipt(
     KasseneckReceipt r, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
-    QrModulGroesse qrGroesse = QrModulGroesse.auto,
+    QrModuleSize qrModuleSize = QrModuleSize.auto,
   }) async {
     final PrintPaper paper = await KeckPrinterService.getPaperFromReceipt(r, size,
-        qrMode: qrMode, qrGroesse: qrGroesse);
+        qrMode: qrMode, qrModuleSize: qrModuleSize);
     final List<int> bytes = <int>[for (final p in paper.bytes) ...p];
     final KeckPrintResult ergebnis = await transport.send(bytes);
-    if (paper.qrFehler == null && paper.qrAusweich == null) return ergebnis;
+    if (paper.qrError == null && paper.qrFallback == null) return ergebnis;
     return ergebnis.success
-        ? KeckPrintResult.success(qrFehler: paper.qrFehler, qrAusweich: paper.qrAusweich)
+        ? KeckPrintResult.success(qrError: paper.qrError, qrFallback: paper.qrFallback)
         : KeckPrintResult.failure(ergebnis.error ?? 'Druck fehlgeschlagen',
-            qrFehler: paper.qrFehler, qrAusweich: paper.qrAusweich);
+            qrError: paper.qrError, qrFallback: paper.qrFallback);
   }
 
   /// Druckt einen Text (mit optionalen [styles]).

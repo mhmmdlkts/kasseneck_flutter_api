@@ -37,14 +37,14 @@ Future<void> main() async {
   await receipt?.printReceiptBluetooth();
 
   // 3) Cancel it again: a new signed cancellation receipt that references the
-  //    original. Leave out `positionen` to cancel everything that is left.
+  //    original. Leave out `items` to cancel everything that is left.
   if (receipt != null) {
-    final cancellation = await kasseneck.stornieren(
+    final cancellation = await kasseneck.cancelReceipt(
       cashregisterId: receipt.cashregisterId,
       originalReceiptId: receipt.receiptId,
-      grund: 'input_error', // key from stornogruende
+      reason: 'input_error', // key from stornogruende
     );
-    print('Cancellation ${cancellation.beleg.receiptId}, remaining: ${cancellation.restmengen}');
+    print('Cancellation ${cancellation.receipt.receiptId}, remaining: ${cancellation.remaining}');
   }
 }
 

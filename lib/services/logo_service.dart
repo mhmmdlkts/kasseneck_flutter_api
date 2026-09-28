@@ -22,13 +22,13 @@ class LogoService {
   /// HTTP-Client; austauschbar (Tests/Mocking).
   static http.Client httpClient = http.Client();
 
-  /// Vorgabe fuer [frist].
+  /// Vorgabe fuer [timeout].
   ///
   /// Drei Sekunden sind ein Kompromiss zwischen zwei Kosten: eine langsame
   /// Mobilverbindung soll das Logo noch schaffen, und ein Host, der gar nicht
   /// antwortet, soll **jeden** Verkauf um hoechstens diese Spanne verzoegern.
   /// Hoehere Werte verlagern die Kosten auf den Regelbetrieb am Tresen.
-  static const Duration standardFrist = Duration(seconds: 3);
+  static const Duration defaultTimeout = Duration(seconds: 3);
 
   /// Harte Obergrenze fuer einen Logo-Abruf.
   ///
@@ -39,23 +39,23 @@ class LogoService {
   /// erneut kassierte, erzeugte einen zweiten Umsatz.
   ///
   /// Prozessweit — wie [httpClient]. Wer sie setzt, setzt sie fuer alle.
-  static Duration frist = standardFrist;
+  static Duration timeout = defaultTimeout;
 
   /// Ordner fuer die dauerhafte Ablage geladener Logos; `null` = keine Ablage.
   ///
   /// Ohne Ablage lebt ein Logo nur so lange wie der Prozess: nach jedem
-  /// App-Start muss es wieder binnen [frist] ueber das Netz kommen, sonst
+  /// App-Start muss es wieder binnen [timeout] ueber das Netz kommen, sonst
   /// steht der erste Bon ohne Logo da. Mit Ablage kommt es sofort von der
-  /// Platte. Die App setzt den Ordner beim Start ([dauerhaftAblegen]); das
+  /// Platte. Die App setzt den Ordner beim Start ([enablePersistentStorage]); das
   /// Paket ruft beim Laden selbst kein Plugin auf.
-  static Directory? speicherOrdner;
+  static Directory? storageDirectory;
 
   /// Hoechstens so viele Logos bleiben abgelegt — ein Betrieb hat eines, ein
   /// Geraet selten mehr als eine Handvoll. Die aeltesten gehen zuerst.
-  static const int maxDateien = 20;
+  static const int maxFiles = 20;
 
   /// Groessere Antworten werden nicht abgelegt (ein Logo hat einige hundert KB).
-  static const int maxDateiBytes = 5 * 1024 * 1024;
+  static const int maxFileBytes = 5 * 1024 * 1024;
 
   /// Nach dieser Spanne wird ein abgelegtes Logo neu geholt.
   ///
@@ -63,16 +63,16 @@ class LogoService {
   /// einer Adresse steht also kein anderes Bild. Aeltere Uploads mit festem
   /// Namen koennten ueberschrieben worden sein — die Auffrischung haelt deren
   /// Abweichung klein. Schlaegt sie fehl, bleibt das abgelegte Logo.
-  static Duration auffrischenNach = const Duration(days: 7);
+  static Duration refreshAfter = const Duration(days: 7);
 
-  /// Setzt [speicherOrdner] auf den App-Support-Ordner des Geraets.
+  /// Setzt [storageDirectory] auf den App-Support-Ordner des Geraets.
   ///
   /// Wirft nie: ohne Ordner (Plattform ohne Dateisystem, Plugin fehlt) laeuft
   /// alles wie bisher, nur ohne Ablage.
-  static Future<void> dauerhaftAblegen() async {
+  static Future<void> enablePersistentStorage() async {
     try {
       final basis = await getApplicationSupportDirectory();
-      speicherOrdner = Directory('${basis.path}${Platform.pathSeparator}kasseneck_logos');
+      storageDirectory = Directory('${basis.path}${Platform.pathSeparator}kasseneck_logos');
     } catch (e) {
       if (kDebugMode) {
         print('Logo-Ablage nicht verfuegbar: $e');
@@ -121,7 +121,7 @@ class LogoService {
       // Die Frist deckt den ganzen Abruf: `Client.get` liest den Rumpf
       // vollstaendig aus, bevor das Future abschliesst — Kopf und Rumpf sind
       // damit gedeckt, nicht nur der Antwortkopf.
-      final response = await httpClient.get(Uri.parse(imageUrl)).timeout(frist);
+      final response = await httpClient.get(Uri.parse(imageUrl)).timeout(timeout);
       if (response.statusCode == 200) {
         _logoBytes[imageUrl] = response.bodyBytes;
         await _ablegen(datei, response.bodyBytes);
@@ -140,7 +140,7 @@ class LogoService {
   }
 
   static File? _dateiFuer(String imageUrl) {
-    final ordner = speicherOrdner;
+    final ordner = storageDirectory;
     if (ordner == null) return null;
     return File('${ordner.path}${Platform.pathSeparator}${_dateiname(imageUrl)}.logo');
   }
@@ -161,20 +161,20 @@ class LogoService {
     try {
       if (!await datei.exists()) return null;
       final bytes = await datei.readAsBytes();
-      if (!istBilddatei(bytes)) {
+      if (!isImageFile(bytes)) {
         // Abgebrochenes Schreiben oder fremde Datei: weg damit, neu holen.
         await datei.delete();
         return null;
       }
       final alter = DateTime.now().difference(await datei.lastModified());
-      return (bytes: bytes, alt: alter >= auffrischenNach);
+      return (bytes: bytes, alt: alter >= refreshAfter);
     } catch (_) {
       return null;
     }
   }
 
   static Future<void> _ablegen(File? datei, Uint8List bytes) async {
-    if (datei == null || bytes.length > maxDateiBytes || !istBilddatei(bytes)) return;
+    if (datei == null || bytes.length > maxFileBytes || !isImageFile(bytes)) return;
     try {
       await datei.parent.create(recursive: true);
       // Erst unter anderem Namen schreiben, dann umbenennen: ein Abbruch
@@ -197,9 +197,9 @@ class LogoService {
         dateien.add((datei: e, zeit: await e.lastModified()));
       }
     }
-    if (dateien.length <= maxDateien) return;
+    if (dateien.length <= maxFiles) return;
     dateien.sort((a, b) => b.zeit.compareTo(a.zeit));
-    for (final alt in dateien.skip(maxDateien)) {
+    for (final alt in dateien.skip(maxFiles)) {
       await alt.datei.delete();
     }
   }
@@ -207,7 +207,7 @@ class LogoService {
   /// PNG, JPEG oder WebP am Dateikopf — nur solche Dateien werden abgelegt
   /// und von der Platte uebernommen.
   @visibleForTesting
-  static bool istBilddatei(Uint8List b) {
+  static bool isImageFile(Uint8List b) {
     bool beginntMit(List<int> kopf, [int ab = 0]) {
       if (b.length < ab + kopf.length) return false;
       for (var i = 0; i < kopf.length; i++) {
@@ -224,7 +224,7 @@ class LogoService {
   /// Vergisst alle Logos im Speicher — wie ein Neustart der App. Die Ablage
   /// auf der Platte bleibt.
   @visibleForTesting
-  static void speicherLeeren() => _logoBytes.clear();
+  static void clearCache() => _logoBytes.clear();
 
   /// Gibt das Bild als `Uint8List` für den Belegdruck zurück
   static Uint8List? getLogoBytes(String? imageUrl) => imageUrl==null?null:_logoBytes[imageUrl];

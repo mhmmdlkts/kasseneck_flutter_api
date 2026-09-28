@@ -65,7 +65,7 @@ void main() {
         KeckTipRecipient(registerUserId: 'ru_7', cents: 120),
         KeckTipRecipient(registerUserId: 'ru_9', cents: 70),
       ]);
-      expect(t.fehler,
+      expect(t.validationError,
           'Trinkgeld: Summe der Empfänger (190) entspricht nicht dem Betrag (200)');
     });
 
@@ -74,7 +74,7 @@ void main() {
         KeckTipRecipient(registerUserId: 'ru_7', cents: 120),
         KeckTipRecipient(registerUserId: 'ru_9', cents: 80),
       ]);
-      expect(t.fehler, isNull);
+      expect(t.validationError, isNull);
     });
 
     test('dieselbe Person zweimal ist ein Tippfehler', () {
@@ -82,7 +82,7 @@ void main() {
         KeckTipRecipient(registerUserId: 'ru_7', cents: 100),
         KeckTipRecipient(registerUserId: 'ru_7', cents: 100),
       ]);
-      expect(t.fehler, contains('doppelt'));
+      expect(t.validationError, contains('doppelt'));
     });
 
     test('ein Anteil von 0 ist keiner', () {
@@ -103,7 +103,7 @@ void main() {
 
   group('KeckTip — Gestalt', () {
     test('fuer() legt alles auf eine Person', () {
-      final t = KeckTip.fuer('ru_7', cents: 250);
+      final t = KeckTip.forRecipient('ru_7', cents: 250);
       expect(t.recipients!.single.registerUserId, 'ru_7');
       expect(t.recipients!.single.cents, 250);
       expect(t.isValid, isTrue);
@@ -120,7 +120,7 @@ void main() {
     });
 
     test('Zahlart und Empfänger reisen mit', () {
-      final t = KeckTip.fuer('ru_7',
+      final t = KeckTip.forRecipient('ru_7',
           cents: 200, paymentMethod: KeckPaymentMethod.creditCard);
       expect(t.toJson(), {
         'cents': 200,
@@ -140,7 +140,7 @@ void main() {
       await api.sellReceipt(
         payments: const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 4700)],
         items: [ware],
-        tip: KeckTip.fuer('ru_7', cents: 200),
+        tip: KeckTip.forRecipient('ru_7', cents: 200),
       );
 
       final params = paramsVon(captured);
@@ -197,7 +197,7 @@ void main() {
         () => api.sellReceipt(
           payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)],
           items: const [],
-          tip: KeckTip.fuer('ru_7', cents: 200),
+          tip: KeckTip.forRecipient('ru_7', cents: 200),
         ),
         throwsArgumentError,
       );
@@ -246,7 +246,7 @@ void _trinkgeldMerkmalTests() {
       expect(KeckTip.euro(amount: 2.0, receivedImmediately: true).receivedImmediately,
           isTrue);
       expect(
-          KeckTip.fuer('ru_7', cents: 200, receivedImmediately: false).toJson(),
+          KeckTip.forRecipient('ru_7', cents: 200, receivedImmediately: false).toJson(),
           containsPair('receivedImmediately', false));
     });
 

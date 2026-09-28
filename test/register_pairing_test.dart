@@ -345,9 +345,9 @@ void einstellungen() {
     final antwort = await f.client.listRegisterUsersForDevice(
       ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
     );
-    expect(antwort.settings.betrieb.kartenAktiv, isTrue);
-    expect(antwort.settings.geraet.layout, KasseLayout.fullscreen);
-    expect(antwort.settings.betrieb.payCash, isTrue, reason: 'ungenanntes bleibt beim Standard');
+    expect(antwort.settings.business.cardPaymentEnabled, isTrue);
+    expect(antwort.settings.device.layout, PosLayout.fullscreen);
+    expect(antwort.settings.business.payCash, isTrue, reason: 'ungenanntes bleibt beim Standard');
   });
 
   test('ohne Einstellungen in der Antwort gelten die Standardwerte', () async {
@@ -355,7 +355,7 @@ void einstellungen() {
     final antwort = await f.client.listRegisterUsersForDevice(
       ownerUid: ownerUid, deviceId: deviceId, deviceSecret: deviceSecret,
     );
-    expect(antwort.settings.toJson(), const KasseSettings.standard().toJson());
+    expect(antwort.settings.toJson(), const PosSettings.standard().toJson());
   });
 }
 
@@ -391,7 +391,7 @@ void basisadresse() {
       await expectLater(
         client.pairRegisterDevice(code: 'ABCD1234'),
         throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)
+            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)
             .having((e) => e.causeType, 'causeType', 'TimeoutException')),
       );
     });
@@ -404,7 +404,7 @@ void basisadresse() {
       await expectLater(
         client.pairRegisterDevice(code: 'ABCD1234'),
         throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.reason, 'reason', KasseneckHttpError.netz)
+            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonNetwork)
             .having((e) => e.toString(), 'toString', isNot(contains(pin)))),
       );
     });

@@ -24,9 +24,10 @@ import 'models/keck_tip_person.dart';
 import 'models/kasseneck_receipt.dart';
 import 'models/keck_payment.dart';
 import 'src/aufrufe.dart';
-import 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
-import 'src/kasse/belegmail.dart' show Belegmailergebnis, belegMailFehlercodes;
-import 'src/kasse/storno.dart' show pruefeKartenRueckbuchung, stornogruende;
+import 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
+import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
+import 'src/receipt/codes.dart' show receiptEmailErrorCodes;
+import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons;
 import 'src/register/fehler.dart';
 import 'src/v3.dart';
 
@@ -56,27 +57,35 @@ export 'src/register/fehler.dart'
 export 'src/v3.dart' show kPublicBaseUrl, kPosBaseUrl;
 // Der Storno mit Bezug (KasseneckApi.stornieren) liefert und nimmt diese Typen
 // -- ohne sie waere er aus diesem Barrel nicht benutzbar.
-export 'src/kasse/belege.dart' show Stornoergebnis, Stornoposition;
+export 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
 // Der Belegversand per Mail (KasseneckApi.belegSenden) liefert sein Ergebnis
 // und nennt seine Fehlercodes aus diesem Teil -- ohne die Exporte koennte ein
 // Aufrufer, der nur dieses Barrel importiert, weder das Ergebnis benennen noch
 // pruefen, ob ein Code zum Katalog gehoert.
 export 'src/kasse/belegmail.dart'
-    show Belegmailergebnis, belegMailFehlercodes, istBelegMailFehlercode;
-export 'src/kasse/storno.dart' show stornogruende, stornoFehlercodes, istStornoFehlercode, cardRefundReference;
+    show SendReceiptEmailResult, isReceiptEmailErrorCode;
+export 'src/kasse/storno.dart' show cancellationReasons, isCancellationErrorCode, cardRefundReference;
 // Mehrere Zahlungen je Beleg: `sellReceipt(payments:)` und
-// `stornieren(zahlungen:)` nehmen KeckPaymentInput, der Beleg traegt
-// KeckPayment, Ablehnungen kommen mit einem Code aus zahlungFehlercodes.
-export 'models/keck_payment.dart' show KeckPayment, KeckPaymentInput, zahlungenFehler, zahlungenHoechstzahl;
-export 'src/kasse/zahlungen.dart' show zahlungFehlercodes, istZahlungFehlercode, paymentsExpectedCents;
+// `cancel(zahlungen:)` nehmen KeckPaymentInput, der Beleg traegt
+// KeckPayment, Ablehnungen kommen mit einem Code aus paymentErrorCodes.
+export 'models/keck_payment.dart' show KeckPayment, KeckPaymentInput, paymentsError, maxPayments;
+export 'src/kasse/zahlungen.dart' show isPaymentErrorCode, paymentsExpectedCents;
 // Fehlercodes und Kataloge der Belegwelt unter /v3.
 export 'src/receipt/codes.dart'
-    show cancellationStatuses, isReceiptErrorCode, receiptEmailSendErrorCodes, receiptEmailVias, receiptErrorCodes;
+    show
+        cancellationErrorCodes,
+        cancellationStatuses,
+        isReceiptErrorCode,
+        paymentErrorCodes,
+        receiptEmailErrorCodes,
+        receiptEmailSendErrorCodes,
+        receiptEmailVias,
+        receiptErrorCodes;
 // Die Typen, die der Beleg unter /v3 traegt, und der Leser fuer gespeicherte 9.x-Belege.
 export 'models/registration_info.dart' show CancellationOf, RegistrationInfo;
 export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson;
 export 'models/beleg_layout.dart' show LayoutBannerTone;
-export 'services/druck_logo.dart' show ladeDruckLogo;
+export 'services/druck_logo.dart' show loadPrintLogo;
 // Server-Layout zuerst, sonst Rueckfall in der gewaehlten Breite.
 export 'src/receipt/layout_from_result.dart' show ReceiptPrintLayout, receiptLayoutFromResult;
 // Zahlbetrag als Zwilling des Servers: was die Zahlungen eines Verkaufs
@@ -97,27 +106,27 @@ export 'src/receipt/due.dart'
 export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
 
 // Beleg-Blatt (npm 0.14.0): ein Beleg, der auf Bildschirm, Bon und PDF gleich aussieht.
-// Mit `show`: Rechenhelfer wie `qrModulAnzahlWieNpm`, `punkteJeZeichen` oder
-// `druckLogoSpeicherLeeren` bleiben ausserhalb der Paket-Schnittstelle.
+// Mit `show`: Rechenhelfer wie `qrModuleCount`, `dotsPerChar` oder
+// `clearPrintLogoCache` bleiben ausserhalb der Paket-Schnittstelle.
 export 'models/beleg_blatt.dart'
     show
-        BelegBlatt,
-        BlattBlock,
-        BlattZeile,
-        BlattLogoBlock,
-        BlattQr,
-        BlattMarke,
-        BlattLogo,
-        LogoMass,
-        LogoStufe,
-        belegBlatt,
-        logoMass,
-        logoRasterMass,
-        qrBlattAnteil;
+        ReceiptSheet,
+        SheetBlock,
+        SheetLine,
+        SheetLogoBlock,
+        SheetQr,
+        SheetBrandMark,
+        SheetLogo,
+        LogoDimensions,
+        SheetLogoSize,
+        receiptSheet,
+        logoDimensions,
+        logoRasterSize,
+        qrSheetWidthFraction;
 export 'models/logo_raster.dart' show LogoRaster, logoRaster;
-export 'models/marke.dart' show markeBild;
-export 'models/print_paper.dart' show DruckLogo;
-export 'widgets/keck_beleg_blatt_widget.dart' show KeckBelegBlattWidget;
+export 'models/marke.dart' show brandMarkImage;
+export 'models/print_paper.dart' show PrintLogo;
+export 'widgets/keck_beleg_blatt_widget.dart' show KeckReceiptSheetWidget;
 
 /// Client for the **Kasseneck** RKSV cash-register backend.
 ///
@@ -179,7 +188,7 @@ class KasseneckApi {
   /// Servers. Laeuft die Frist ab, ist der Beleg womoeglich laengst signiert
   /// und in der Kette — der Aufrufer bekommt aber eine `TimeoutException` und
   /// liest sie als Fehlschlag. Je knapper die Frist, desto oefter passiert
-  /// genau das. Der Kassen-Weg (`RegisterReceiptClient.abschlussFrist`) gibt
+  /// genau das. Der Kassen-Weg (`RegisterReceiptClient.signingTimeout`) gibt
   /// aus demselben Grund seit jeher 90 Sekunden; die pauschalen 30 Sekunden
   /// hier waren ein uebersehener Rest.
   final Duration signatureTimeout;
@@ -265,7 +274,7 @@ class KasseneckApi {
           await _financeWebServicePostRequest(method: method, params: params, deadline: deadline));
 
   /// Geworfen wird [KasseneckHttpError] mit denselben `reason`-Werten, die der
-  /// Kassen-Weg (`RegisterTransport.rufen`) fuer dieselben drei Lagen setzt.
+  /// Kassen-Weg (`RegisterTransport.call`) fuer dieselben drei Lagen setzt.
   /// Ein blankes `Exception` waere hier zu wenig: im Verkauf, **nach** der
   /// Signatur, ist der Unterschied zwischen „die Antwort ist kaputt, der Beleg
   /// existiert" und „der Verkauf ist fehlgeschlagen" das, was der Aufrufer
@@ -341,7 +350,7 @@ class KasseneckApi {
   /// Storno-Beleg zu einem bestehenden Beleg ueber den Endpunkt
   /// `cancelReceipt` — **der Storno-Weg mit Bezug** fuer den API-Schluessel-
   /// Zugang (Zwilling von `cancelReceipt` im Client des npm-Pakets, Gegenstueck
-  /// zu `RegisterReceiptClient.stornieren` der Kassen-Anmeldung).
+  /// zu `RegisterReceiptClient.cancel` der Kassen-Anmeldung).
   ///
   /// Den alten Storno-Weg ohne Bezug (`createReceipt` mit Belegtyp Storno,
   /// die beiden alten Storno-Aufrufe aus 9.x) gibt es seit 10.0 nicht mehr.
@@ -350,12 +359,12 @@ class KasseneckApi {
   /// `cancellations[]` am Original), nimmt Gutscheine und Rabatte zurueck und
   /// weist einen zweiten Storno desselben Restes mit `already_cancelled` ab.
   ///
-  /// Ohne [positionen] ist es ein Vollstorno der Restmengen; eine **leere**
+  /// Ohne [items] ist es ein Vollstorno der Restmengen; eine **leere**
   /// Liste ist ein Fehler, sonst wuerde aus einem missglueckten Teilstorno still
-  /// ein Vollstorno. [grund] ist ein Schluessel aus [stornogruende] — sein
+  /// ein Vollstorno. [reason] ist ein Schluessel aus [cancellationReasons] — sein
   /// Anzeigetext steht am Bon.
   ///
-  /// [zahlungen] sind die Rueckzahlungen je Zahlung (Betraege negativ,
+  /// [payments] sind die Rueckzahlungen je Zahlung (Betraege negativ,
   /// `refundOf` = `id` der Originalzahlung); ohne Angabe spiegelt der Server
   /// die Restbetraege jeder Originalzahlung. Eine Einzel-Zahlungsart und
   /// Kartenfelder am Storno gibt es unter `/v3` nicht mehr: die Erstattung am
@@ -367,16 +376,16 @@ class KasseneckApi {
   /// (`cardRefundReference`). Fehlt beides, wirft der Aufruf vor dem Senden.
   ///
   /// Fachliche Ablehnungen kommen als [KasseneckApiError] mit `code` aus
-  /// `stornoFehlercodes` – daran entscheiden, nie am Text. Ist der Storno
+  /// `cancellationErrorCodes` – daran entscheiden, nie am Text. Ist der Storno
   /// gebucht, die Antwort aber unlesbar, kommt `response_unreadable` mit
   /// Ausgang unklar (`isOutcomeUnknown`): nachlesen, nie wiederholen.
-  Future<Stornoergebnis> stornieren({
+  Future<CancelReceiptResult> cancelReceipt({
     required String cashregisterId,
     required String originalReceiptId,
-    required String grund,
-    List<Stornoposition>? positionen,
-    String? anmerkung,
-    List<KeckPaymentInput>? zahlungen,
+    required String reason,
+    List<CancellationItem>? items,
+    String? note,
+    List<KeckPaymentInput>? payments,
     KasseneckReceipt? original,
   }) async {
     const name = Aufrufe.cancelReceipt;
@@ -386,22 +395,22 @@ class KasseneckApi {
     if (originalReceiptId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'originalReceiptId fehlt', 'request');
     }
-    if (!stornogruende.containsKey(grund)) {
+    if (!cancellationReasons.containsKey(reason)) {
       throw const KasseneckValidationError(name, 'Storno-Grund fehlt oder ist unbekannt', 'request');
     }
-    if (positionen != null) {
-      if (positionen.isEmpty) {
+    if (items != null) {
+      if (items.isEmpty) {
         throw const KasseneckValidationError(name, 'positionen muss eine nicht leere Liste sein', 'request');
       }
-      if (positionen.any((p) => p.index < 0 || p.menge < 1)) {
+      if (items.any((p) => p.index < 0 || p.quantity < 1)) {
         throw const KasseneckValidationError(name, 'Storno-Menge muss eine ganze Zahl >= 1 sein', 'request');
       }
     }
-    if (anmerkung != null && anmerkung.length > 200) {
+    if (note != null && note.length > 200) {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
-    if (zahlungen != null) {
-      final fehler = zahlungenFehler(zahlungen, storno: true);
+    if (payments != null) {
+      final fehler = paymentsError(payments, cancellation: true);
       if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     }
     if (original != null && (original.receiptId != originalReceiptId || original.cashregisterId != cashregisterId)) {
@@ -411,17 +420,17 @@ class KasseneckApi {
           '$cashregisterId/$originalReceiptId',
           'request');
     }
-    if (zahlungen != null) pruefeKartenRueckbuchung(zahlungen, original);
+    if (payments != null) assertCardRefunds(payments, original);
 
     final resJson = await _kasseneckJson(
       endpoint: name,
       params: {
         'cashregisterId': cashregisterId,
         'originalReceiptId': originalReceiptId,
-        'reason': grund,
-        if (positionen != null) 'items': [for (final p in positionen) {'index': p.index, 'quantity': p.menge}],
-        if (anmerkung != null && anmerkung.isNotEmpty) 'note': anmerkung,
-        if (zahlungen != null) 'payments': [for (final z in zahlungen) z.toJson()],
+        'reason': reason,
+        if (items != null) 'items': [for (final p in items) {'index': p.index, 'quantity': p.quantity}],
+        if (note != null && note.isNotEmpty) 'note': note,
+        if (payments != null) 'payments': [for (final z in payments) z.toJson()],
       },
       deadline: signatureTimeout,
     );
@@ -435,19 +444,19 @@ class KasseneckApi {
     // Ab hier ist der Storno-Beleg ausgestellt und signiert: scheitert das
     // Lesen, kommt `response_unreadable` mit der Kennung, sofern die Antwort
     // sie mitbrachte; ein zweiter Storno waere eine zweite Ruecknahme.
-    final Stornoergebnis ergebnis = readSignedResponse(
+    final CancelReceiptResult ergebnis = readSignedResponse(
       name,
       () {
         final daten = _daten(name, resJson);
-        return Stornoergebnis.ausAntwort(name, daten, () => _belegAus(name, daten));
+        return CancelReceiptResult.fromResponse(name, daten, () => _belegAus(name, daten));
       },
-      kennung: () => _receiptIdAus(resJson['data']),
+      receiptId: () => _receiptIdAus(resJson['data']),
     );
     // Die Storno-Antwort traegt weder Layout noch Testkennzeichen. Damit der
     // Storno einer Testkasse nie wie ein gueltiger Beleg gedruckt wird, gelten
     // die Kennzeichen des Originals, und ein Test-Schluessel (`kr_test_`)
     // steht fuer eine Testumgebung.
-    final beleg = ergebnis.beleg;
+    final beleg = ergebnis.receipt;
     if (original?.testCashregister == true || apiKey.startsWith('kr_test_')) beleg.testCashregister = true;
     if (original?.testSignature == true && !beleg.testCashregister) beleg.testSignature = true;
     await beleg.init();
@@ -455,9 +464,9 @@ class KasseneckApi {
   }
 
   /// Einen bereits ausgestellten Beleg als **Link auf die oeffentliche
-  /// Belegseite** an [an] schicken — Endpunkt `sendReceiptEmail`, Zwilling von
+  /// Belegseite** an [to] schicken — Endpunkt `sendReceiptEmail`, Zwilling von
   /// `sendReceiptEmail` im Client des npm-Pakets und Gegenstueck zu
-  /// `RegisterReceiptClient.belegSenden` der Kassen-Anmeldung.
+  /// `RegisterReceiptClient.sendReceipt` der Kassen-Anmeldung.
   ///
   /// Verschickt wird ein Link, kein PDF im Anhang: die Belegseite setzt dasselbe
   /// Zeilenmodell wie Bildschirm und Bondrucker und gibt dort auf Wunsch ein PDF
@@ -475,19 +484,19 @@ class KasseneckApi {
   /// Sprache spaeter kein neuer Aufruf wird.
   ///
   /// Die Adresse wird hier **nicht** auf Form geprueft — siehe
-  /// `RegisterReceiptClient.belegSenden`: es gibt genau eine Adresspruefung,
+  /// `RegisterReceiptClient.sendReceipt`: es gibt genau eine Adresspruefung,
   /// und die steht im Backend. Fachliche Ablehnungen kommen als
-  /// [KasseneckApiError] mit einem Code aus [belegMailFehlercodes]; daran
+  /// [KasseneckApiError] mit einem Code aus [receiptEmailErrorCodes]; daran
   /// entscheiden, nie am Text. Die Schleuse des Backends (fuenf Mails je Beleg
   /// in 24 Stunden, 30 je Kasse und Stunde) meldet sich als `too_many_requests`.
-  Future<Belegmailergebnis> belegSenden({
+  Future<SendReceiptEmailResult> sendReceiptEmail({
     required String fullReceiptId,
-    required String an,
+    required String to,
     String? language,
   }) async {
     const name = Aufrufe.sendReceiptEmail;
     final beleg = fullReceiptId.trim();
-    final adresse = an.trim();
+    final adresse = to.trim();
     if (beleg.isEmpty) {
       throw const KasseneckValidationError(name, 'fullReceiptId fehlt', 'request');
     }
@@ -514,7 +523,7 @@ class KasseneckApi {
     // fehlenden `at` saehe fuer die Kasse aus wie „nicht gesendet", und der
     // Kassier schickte sie ein zweites Mal an den Gast. Die Huelle selbst muss
     // trotzdem eine sein -- dieselbe Grenze zieht der Kassen-Weg im Transport.
-    return Belegmailergebnis.aus(_daten(name, resJson), gesendetAn: adresse);
+    return SendReceiptEmailResult.fromResponse(_daten(name, resJson), sentTo: adresse);
   }
 
   /// Issues a **zero** receipt (_Nullbeleg_), e.g. for the periodic RKSV check.
@@ -606,7 +615,7 @@ class KasseneckApi {
   /// Gemeinsame Umsetzung von Verkauf und Nullbeleg (Zwilling von
   /// `createReceiptParams` im npm-Paket). Wirft, bevor etwas hinausgeht: ein
   /// Beleg ist nicht folgenlos wiederholbar. Ein Storno geht nur ueber
-  /// [stornieren] (Bezug, Grund, Restmengen).
+  /// [cancelReceipt] (Bezug, Grund, Restmengen).
   Future<KasseneckReceipt?> _createReceipt({
     required ReceiptType receiptType,
     List<KeckPaymentInput>? payments,
@@ -667,7 +676,7 @@ class KasseneckApi {
       if (items == null || items.isEmpty) {
         throw ArgumentError('Trinkgeld: Beleg braucht mindestens eine Position');
       }
-      final tipFehler = tip.fehler;
+      final tipFehler = tip.validationError;
       if (tipFehler != null) {
         throw ArgumentError(tipFehler);
       }
@@ -680,7 +689,7 @@ class KasseneckApi {
       if (payments == null) {
         throw ArgumentError('payments fehlt: unter /v3 ist die Zahlungsliste Pflicht (Summe = receiptDueCents).');
       }
-      final fehler = zahlungenFehler(payments, storno: false);
+      final fehler = paymentsError(payments, cancellation: false);
       if (fehler != null) throw ArgumentError(fehler);
       params['payments'] = [for (final p in payments) p.toJson()];
     } else if (payments != null) {
@@ -711,7 +720,7 @@ class KasseneckApi {
       final KasseneckReceipt receipt = readSignedResponse(
         Aufrufe.createReceipt,
         () => _belegAus(Aufrufe.createReceipt, _daten(Aufrufe.createReceipt, resJson)),
-        kennung: () => _receiptIdAus(resJson['data']),
+        receiptId: () => _receiptIdAus(resJson['data']),
       );
       await receipt.init();
       return receipt;
@@ -750,7 +759,7 @@ class KasseneckApi {
   ///
   /// Es ist **dieselbe Menge, die [sellReceipt] akzeptiert**: Wer hier steht,
   /// wird beim Verkauf nicht zurueckgewiesen. Aus einer Person macht
-  /// [KeckTipPerson.mit] den Anteil fuer [KeckTip.recipients] — so kann keine
+  /// [KeckTipPerson.share] den Anteil fuer [KeckTip.recipients] — so kann keine
   /// Kennung danebengreifen, die der Server ablehnt.
   Future<List<KeckTipPerson>> listTipRecipients() async {
     final resJson = await _kasseneckJson(endpoint: Aufrufe.listMyTipRecipients);
@@ -767,7 +776,7 @@ class KasseneckApi {
     }
     return [
       for (final e in roh)
-        if (e is Map) KeckTipPerson.aus(Map<String, dynamic>.from(e)),
+        if (e is Map) KeckTipPerson.fromJson(Map<String, dynamic>.from(e)),
     ];
   }
 
@@ -808,7 +817,7 @@ class KasseneckApi {
       if (rohBelege is! List) {
         // Keine Liste ist etwas anderes als eine leere Liste: „im Zeitraum
         // nichts verkauft" darf nicht aussehen wie „Antwort kaputt". Wortgleich
-        // mit `belege.dart` auf dem Kassen-Weg -- dieselbe Lage, derselbe Typ.
+        // mit `receipts.dart` auf dem Kassen-Weg -- dieselbe Lage, derselbe Typ.
         throw const KasseneckValidationError(
             Aufrufe.getReportV2, 'Antwort enthaelt keine Belegliste (data.receipts fehlt)', 'response');
       }
@@ -1065,11 +1074,11 @@ class KasseneckApi {
   /// unterscheiden, und der Tageswechsel in der Kennung faende nicht zum
   /// Geschaeftstag statt.
   ///
-  /// [zeitpunkt] und [zufall] dienen dem Test; ohne Angabe gelten
+  /// [now] und [random] dienen dem Test; ohne Angabe gelten
   /// `DateTime.now()` und `Random.nextDouble`.
-  static String newHobexTransactionId({DateTime? zeitpunkt, double Function()? zufall}) {
-    final DateTime wand = ViennaTime.toWallClock(zeitpunkt ?? DateTime.now());
-    final double Function() quelle = zufall ?? _hobexZufall.nextDouble;
+  static String newHobexTransactionId({DateTime? now, double Function()? random}) {
+    final DateTime wand = ViennaTime.toWallClock(now ?? DateTime.now());
+    final double Function() quelle = random ?? _hobexZufall.nextDouble;
     String zwei(int wert) => wert.toString().padLeft(2, '0');
     final StringBuffer kennung = StringBuffer()
       ..write(zwei(wand.year % 100))

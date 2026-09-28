@@ -27,8 +27,8 @@ import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'einstellungen.dart';
 
-class KasseEinstellungenClient {
-  const KasseEinstellungenClient(this.transport, {required this.deviceId});
+class PosSettingsClient {
+  const PosSettingsClient(this.transport, {required this.deviceId});
 
   final RegisterTransport transport;
 
@@ -37,20 +37,20 @@ class KasseEinstellungenClient {
 
   /// Betriebsweite und gerätebezogene Einstellungen, mit den Standardwerten
   /// gemischt (`getKasseSettings`).
-  Future<KasseSettings> laden() async {
-    final daten = await transport.rufen(
+  Future<PosSettings> load() async {
+    final daten = await transport.call(
       Aufrufe.getKasseSettings,
       params: {if (deviceId.trim().isNotEmpty) 'deviceId': deviceId},
     );
-    return KasseSettings.aus({'business': daten['business'], 'device': daten['device']});
+    return PosSettings.fromJson({'business': daten['business'], 'device': daten['device']});
   }
 
   /// Betriebsweite Einstellungen schreiben (Recht `layout`). [aenderung] mit
   /// englischen Schlüsseln, am besten aus [posSettingsChanges]; `vatRates`
   /// immer als ganze Karte.
-  Future<KasseSettingsBetrieb> betriebSpeichern(Map<String, dynamic> aenderung) async {
+  Future<PosBusinessSettings> saveBusiness(Map<String, dynamic> aenderung) async {
     const name = Aufrufe.setMyKasseSettings;
-    final gesendet = _pruefeTeil(name, 'business', aenderung, const KasseSettingsBetrieb().toJson(), posBusinessValues);
+    final gesendet = _pruefeTeil(name, 'business', aenderung, const PosBusinessSettings().toJson(), posBusinessValues);
     if (gesendet.containsKey('vatRates')) {
       final karte = gesendet['vatRates'];
       // Unter /v3 prüft der Server die übergebene Karte für sich: ein
@@ -60,19 +60,19 @@ class KasseEinstellungenClient {
             name, 'business.vatRates: mindestens ein Steuersatz muss an sein (immer die ganze Karte senden)', 'request');
       }
     }
-    final daten = await transport.rufen(name, params: {'business': gesendet});
-    return KasseSettingsBetrieb.ausJson(_stand(name, daten, 'business'));
+    final daten = await transport.call(name, params: {'business': gesendet});
+    return PosBusinessSettings.fromJson(_stand(name, daten, 'business'));
   }
 
   /// Einstellungen dieses Geräts schreiben (Recht `layout`). `shortcuts` nur
   /// als ganze Karte aller bekannten Aktionen ([posSettingsChanges] liefert
   /// sie bei jeder Tastenänderung); sie wird vorab auf Doppelbelegung geprüft.
-  Future<KasseSettingsGeraet> geraetSpeichern(Map<String, dynamic> aenderung) async {
+  Future<PosDeviceSettings> saveDevice(Map<String, dynamic> aenderung) async {
     const name = Aufrufe.setMyRegisterDeviceSettings;
     if (deviceId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'deviceId fehlt', 'request');
     }
-    final gesendet = _pruefeTeil(name, 'device', aenderung, const KasseSettingsGeraet().toJson(), posDeviceValues);
+    final gesendet = _pruefeTeil(name, 'device', aenderung, const PosDeviceSettings().toJson(), posDeviceValues);
     if (gesendet.containsKey('shortcuts')) {
       final karte = gesendet['shortcuts'];
       if (karte is! Map) {
@@ -82,7 +82,7 @@ class KasseEinstellungenClient {
       for (final e in karte.entries) {
         if (e.value == null) continue;
         final aktion = e.key.toString();
-        if (!kasseTastenAktionen.contains(aktion)) {
+        if (!posShortcutActions.contains(aktion)) {
           throw KasseneckValidationError(name, 'device.shortcuts.$aktion: unbekannte Aktion', 'request');
         }
         tasten[aktion] = e.value;
@@ -90,7 +90,7 @@ class KasseEinstellungenClient {
       // Nur die ganze Karte: der Server prüft Doppelbelegungen nur in der
       // gesendeten Karte, eine halbe (`{cash: ['Mod+K']}`) ließe eine
       // Doppelbelegung mit einer gespeicherten Taste durch.
-      final fehlt = kasseTastenAktionen.where((a) => !tasten.containsKey(a)).toList();
+      final fehlt = posShortcutActions.where((a) => !tasten.containsKey(a)).toList();
       if (fehlt.isNotEmpty) {
         throw KasseneckValidationError(
             name,
@@ -107,26 +107,26 @@ class KasseEinstellungenClient {
       }
       gesendet['shortcuts'] = tasten;
     }
-    final daten = await transport.rufen(name, params: {'deviceId': deviceId, 'device': gesendet});
-    return KasseSettingsGeraet.ausJson(_stand(name, daten, 'device'));
+    final daten = await transport.call(name, params: {'deviceId': deviceId, 'device': gesendet});
+    return PosDeviceSettings.fromJson(_stand(name, daten, 'device'));
   }
 
   /// Bild-Logo der Kasse hochladen (Recht `layout`, `setMyKasseLogo`).
   /// [bild] ist eine Data-URL (PNG, JPEG, SVG). Liefert die neue Adresse für
   /// `logoImage`. Formatfehler meldet der Server als `logo_invalid_type`,
   /// `logo_too_large` oder `logo_invalid`.
-  Future<String> logoSetzen(String bild) async {
+  Future<String> setLogo(String bild) async {
     const name = Aufrufe.setMyKasseLogo;
     if (bild.isEmpty) {
       throw const KasseneckValidationError(name, 'image fehlt (oder logoEntfernen)', 'request');
     }
-    return _logo(name, await transport.rufen(name, params: {'image': bild}));
+    return _logo(name, await transport.call(name, params: {'image': bild}));
   }
 
   /// Bild-Logo entfernen; liefert `''`.
-  Future<String> logoEntfernen() async {
+  Future<String> removeLogo() async {
     const name = Aufrufe.setMyKasseLogo;
-    return _logo(name, await transport.rufen(name, params: {'remove': true}));
+    return _logo(name, await transport.call(name, params: {'remove': true}));
   }
 
   String _logo(String name, Map<String, dynamic> daten) {
@@ -175,7 +175,7 @@ class KasseEinstellungenClient {
       if (erlaubt != null && !erlaubt.contains(e.value)) {
         // Kein Altwert: dann ein Wert, den der Server kennt und dieses Paket
         // nicht. Wer den ganzen Block zurückschickt, braucht den Hinweis.
-        final hinweis = istAltwert0x(e.key, e.value)
+        final hinweis = isLegacyValue0x(e.key, e.value)
             ? 'ungueltiger Wert (innere Form 0.x)'
             : 'ungueltiger Wert (vom Server unbekannt? nur geaenderte Felder senden: posSettingsChanges)';
         throw KasseneckValidationError(name, '$teil.${e.key}: $hinweis', 'request');

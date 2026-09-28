@@ -62,27 +62,27 @@ void main() {
 
     test('getPaperFromReceipt traegt den Ausfall im Rueckgabewert', () async {
       final paper = await KeckPrinterService.getPaperFromReceipt(belegOhneQr(), KeckPaperSize.mm58);
-      expect(paper.qrFehler, isNotNull);
+      expect(paper.qrError, isNotNull);
     });
 
     test('getPaperFromReceipt: ein gelungener QR setzt keinen Fehler', () async {
       final paper = await KeckPrinterService.getPaperFromReceipt(cartA(), KeckPaperSize.mm58);
-      expect(paper.qrFehler, isNull);
+      expect(paper.qrError, isNull);
     });
 
     test('getBytesFromReceipt meldet den Ausfall am Dienst', () async {
       await KeckPrinterService.getBytesFromReceipt(belegOhneQr(), KeckPaperSize.mm58);
-      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+      expect(KeckPrinterService.lastQrError, isNotNull);
     });
 
     test('KasseneckReceipt.getPrintBytes ebenso — der Bluetooth-Weg baut darueber', () async {
       await belegOhneQr().getPrintBytes(paperSize: KeckPaperSize.mm58);
-      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+      expect(KeckPrinterService.lastQrError, isNotNull);
     });
 
     test('getMyPosPaperFromReceipt ebenso — der MyPos-Terminaldruck baut darueber', () async {
       await KeckPrinterService.getMyPosPaperFromReceipt(belegOhneQr());
-      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+      expect(KeckPrinterService.lastQrError, isNotNull);
     });
 
     test('printReceiptWifi meldet den Ausfall, auch ohne konfigurierten Drucker', () async {
@@ -91,14 +91,14 @@ void main() {
       addTearDown(() => KeckPrinterService.ipAddress = vorher);
 
       await KeckPrinterService.printReceiptWifi(belegOhneQr());
-      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+      expect(KeckPrinterService.lastQrError, isNotNull);
     });
 
     test('ein gelungener Beleg raeumt die Meldung wieder weg', () async {
       await KeckPrinterService.getBytesFromReceipt(belegOhneQr(), KeckPaperSize.mm58);
-      expect(KeckPrinterService.letzterQrFehler, isNotNull);
+      expect(KeckPrinterService.lastQrError, isNotNull);
       await KeckPrinterService.getBytesFromReceipt(cartA(), KeckPaperSize.mm58);
-      expect(KeckPrinterService.letzterQrFehler, isNull,
+      expect(KeckPrinterService.lastQrError, isNull,
           reason: 'sonst haengt der Ausfall eines frueheren Belegs am naechsten');
     });
 
@@ -106,19 +106,19 @@ void main() {
       final fake = FakeTransport();
       final res = await KeckPrinter(fake, size: KeckPaperSize.mm58).printReceipt(belegOhneQr());
 
-      expect(res.qrFehler, isNotNull);
+      expect(res.qrError, isNotNull);
       expect(res.success, isTrue, reason: 'der Bon geht trotzdem hinaus');
       expect(fake.sendCount, 1);
     });
 
     test('KeckPrinter.printReceipt: gelungener QR laesst das Ergebnis leer', () async {
       final res = await KeckPrinter(FakeTransport(), size: KeckPaperSize.mm58).printReceipt(cartA());
-      expect(res.qrFehler, isNull);
+      expect(res.qrError, isNull);
     });
 
     test('printRawBytesWifi kennt keinen Beleg und meldet keinen QR-Ausfall', () async {
       final res = await KeckPrinterService.printRawBytesWifi(const [1, 2, 3], ip: '');
-      expect(res.qrFehler, isNull);
+      expect(res.qrError, isNull);
     });
 
     group('die global-freien Wege schreiben das Signal nicht um', () {
@@ -129,38 +129,38 @@ void main() {
 
       test('getPaperFromReceipt loescht einen fremden Ausfall nicht', () async {
         await KeckPrinterService.getMyPosPaperFromReceipt(belegOhneQr());
-        final String? fremd = KeckPrinterService.letzterQrFehler;
+        final String? fremd = KeckPrinterService.lastQrError;
         expect(fremd, isNotNull);
 
         await KeckPrinterService.getPaperFromReceipt(cartA(), KeckPaperSize.mm58);
-        expect(KeckPrinterService.letzterQrFehler, fremd);
+        expect(KeckPrinterService.lastQrError, fremd);
       });
 
       test('getPaperFromReceipt setzt auch keinen eigenen', () async {
         await KeckPrinterService.getBytesFromReceipt(cartA(), KeckPaperSize.mm58);
-        expect(KeckPrinterService.letzterQrFehler, isNull);
+        expect(KeckPrinterService.lastQrError, isNull);
 
         final paper =
             await KeckPrinterService.getPaperFromReceipt(belegOhneQr(), KeckPaperSize.mm58);
-        expect(paper.qrFehler, isNotNull, reason: 'am Papier steht er sehr wohl');
-        expect(KeckPrinterService.letzterQrFehler, isNull, reason: 'am Dienst nicht');
+        expect(paper.qrError, isNotNull, reason: 'am Papier steht er sehr wohl');
+        expect(KeckPrinterService.lastQrError, isNull, reason: 'am Dienst nicht');
       });
 
       test('KeckPrinter.printReceipt ruehrt das Signal in keine Richtung an', () async {
         await KeckPrinterService.getMyPosPaperFromReceipt(belegOhneQr());
-        final String? fremd = KeckPrinterService.letzterQrFehler;
+        final String? fremd = KeckPrinterService.lastQrError;
         expect(fremd, isNotNull);
 
         await KeckPrinter(FakeTransport(), size: KeckPaperSize.mm58).printReceipt(cartA());
-        expect(KeckPrinterService.letzterQrFehler, fremd);
+        expect(KeckPrinterService.lastQrError, fremd);
 
         await KeckPrinterService.getBytesFromReceipt(cartA(), KeckPaperSize.mm58);
-        expect(KeckPrinterService.letzterQrFehler, isNull);
+        expect(KeckPrinterService.lastQrError, isNull);
 
         final res = await KeckPrinter(FakeTransport(), size: KeckPaperSize.mm58)
             .printReceipt(belegOhneQr());
-        expect(res.qrFehler, isNotNull, reason: 'im Ergebnis steht er');
-        expect(KeckPrinterService.letzterQrFehler, isNull, reason: 'am Dienst nicht');
+        expect(res.qrError, isNotNull, reason: 'im Ergebnis steht er');
+        expect(KeckPrinterService.lastQrError, isNull, reason: 'am Dienst nicht');
       });
     });
   });

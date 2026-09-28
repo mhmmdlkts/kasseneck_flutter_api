@@ -141,7 +141,7 @@ void main() {
         // Zahlenfeld abbrechen und die restliche Liste verdecken.
         for (final wert in (enums[feld] as List)) {
           final teil = betriebsfelder.contains(feld) ? 'business' : 'device';
-          final settings = KasseSettings.aus({
+          final settings = PosSettings.fromJson({
             teil: {feld: wert},
           });
           final zurueck = (settings.toJson()[teil] as Map)[feld];
@@ -164,9 +164,9 @@ void main() {
       final funde = _Funde(ausnahmen);
       final rechte = (vertrag['registerPerms'] as List).cast<String>();
       final roh = <String, dynamic>{for (final r in rechte) r: r.endsWith('Scope') ? 'all' : true};
-      final perms = RegisterUserPerms.aus(roh);
+      final perms = RegisterUserPerms.fromJson(roh);
       for (final r in rechte) {
-        funde.fehltNicht('registerPerms.$r', !perms.weitere.containsKey(r), 'Das Recht "$r"');
+        funde.fehltNicht('registerPerms.$r', !perms.other.containsKey(r), 'Das Recht "$r"');
       }
       funde.melden();
     });
@@ -192,7 +192,7 @@ void main() {
     test('jede Aktion des Vertrags ist hier bekannt', () {
       final funde = _Funde(ausnahmen);
       for (final aktion in (vertrag['posShortcutActions'] as List).cast<String>()) {
-        funde.fehltNicht('posShortcutActions.$aktion', kasseTastenAktionen.contains(aktion),
+        funde.fehltNicht('posShortcutActions.$aktion', posShortcutActions.contains(aktion),
             'Die Tasten-Aktion "$aktion"');
       }
       funde.melden();

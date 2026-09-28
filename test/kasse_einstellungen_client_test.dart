@@ -12,14 +12,14 @@ import 'package:kasseneck_api/register.dart';
 /// Kassen desselben Betriebs dürfen einander nicht überschreiben, bloß weil
 /// beide gerade ihren Bildschirm offen hatten.
 
-({KasseEinstellungenClient client, List<http.Request> log}) clientMit(Object antwort) {
+({PosSettingsClient client, List<http.Request> log}) clientMit(Object antwort) {
   final log = <http.Request>[];
   final mock = MockClient((r) async {
     log.add(r);
     return http.Response(jsonEncode(antwort), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
   });
   return (
-    client: KasseEinstellungenClient(
+    client: PosSettingsClient(
       RegisterTransport(
         idToken: () async => 'tok',
         sessionId: () async => 'sess',
@@ -42,11 +42,11 @@ void main() {
           'device': {'touch': false},
         },
       });
-      final e = await f.client.laden();
+      final e = await f.client.load();
 
-      expect(e.betrieb.clock, isFalse, reason: 'gespeichert');
-      expect(e.betrieb.payCash, isTrue, reason: 'Standard, weil nichts gespeichert');
-      expect(e.geraet.touch, isFalse);
+      expect(e.business.clock, isFalse, reason: 'gespeichert');
+      expect(e.business.payCash, isTrue, reason: 'Standard, weil nichts gespeichert');
+      expect(e.device.touch, isFalse);
 
       expect(f.log.single.url.toString(), endsWith('/getKasseSettings'));
       expect(jsonDecode(f.log.single.body)['params']['deviceId'], 'GERAET1');
@@ -56,8 +56,8 @@ void main() {
       // „Der Betrieb hat nichts eingestellt" — eine Aussage des Servers, kein
       // Ausweichen. Ein leeres Objekt ist ein Objekt; siehe den Nachbartest.
       final f = clientMit({'status': 'success', 'data': {}});
-      final e = await f.client.laden();
-      expect(e.betrieb.clock, const KasseSettings.standard().betrieb.clock);
+      final e = await f.client.load();
+      expect(e.business.clock, const PosSettings.standard().business.clock);
     });
 
     test('kaputte Antwort ist NICHT „nichts eingestellt"', () async {
@@ -65,7 +65,7 @@ void main() {
       // Standard-Beleglayout und Standard-Belegausgabe — und sieht dabei aus
       // wie ein frisch angelegter Betrieb.
       final f = clientMit({'status': 'success', 'data': <dynamic>[]});
-      await expectLater(f.client.laden(), throwsA(isA<KasseneckHttpError>()));
+      await expectLater(f.client.load(), throwsA(isA<KasseneckHttpError>()));
     });
   });
 
@@ -79,7 +79,7 @@ void main() {
           'business': {'clock': false},
         },
       });
-      final betrieb = await f.client.betriebSpeichern({'clock': false});
+      final betrieb = await f.client.saveBusiness({'clock': false});
 
       expect(betrieb.clock, isFalse);
       expect(f.log.single.url.toString(), endsWith('/setMyKasseSettings'));
@@ -88,7 +88,7 @@ void main() {
 
     test('ohne Änderung geht gar nichts hinaus', () async {
       final f = clientMit({'status': 'success', 'data': {}});
-      await expectLater(f.client.betriebSpeichern(const {}), throwsA(isA<KasseneckValidationError>()));
+      await expectLater(f.client.saveBusiness(const {}), throwsA(isA<KasseneckValidationError>()));
       expect(f.log, isEmpty);
     });
 
@@ -100,7 +100,7 @@ void main() {
       // Stand bildet.
       final f = clientMit({'status': 'success', 'data': {}});
       await expectLater(
-        f.client.betriebSpeichern({'clock': false}),
+        f.client.saveBusiness({'clock': false}),
         throwsA(isA<KasseneckValidationError>()
             .having((e) => e.kind, 'kind', 'response')
             .having((e) => e.reason, 'reason', contains('data.business'))),
@@ -110,7 +110,7 @@ void main() {
     test('Antwort mit unbrauchbarem Stand ebenso', () async {
       final f = clientMit({'status': 'success', 'data': {'business': 'kaputt'}});
       await expectLater(
-        f.client.betriebSpeichern({'clock': false}),
+        f.client.saveBusiness({'clock': false}),
         throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response')),
       );
     });
@@ -124,7 +124,7 @@ void main() {
           'device': {'touch': false},
         },
       });
-      final geraet = await f.client.geraetSpeichern({'touch': false});
+      final geraet = await f.client.saveDevice({'touch': false});
 
       expect(geraet.touch, isFalse);
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
@@ -134,7 +134,7 @@ void main() {
 
     test('ohne Gerätekennung geht nichts hinaus', () async {
       final log = <http.Request>[];
-      final client = KasseEinstellungenClient(
+      final client = PosSettingsClient(
         RegisterTransport(
           idToken: () async => 'tok',
           sessionId: () async => 'sess',
@@ -147,14 +147,14 @@ void main() {
         deviceId: '  ',
       );
 
-      await expectLater(client.geraetSpeichern(const {'touch': false}), throwsA(isA<KasseneckValidationError>()));
+      await expectLater(client.saveDevice(const {'touch': false}), throwsA(isA<KasseneckValidationError>()));
       expect(log, isEmpty);
     });
 
     test('Antwort ohne neuen Stand: Fehler statt Standardwerten', () async {
       final f = clientMit({'status': 'success', 'data': {}});
       await expectLater(
-        f.client.geraetSpeichern({'touch': false}),
+        f.client.saveDevice({'touch': false}),
         throwsA(isA<KasseneckValidationError>()
             .having((e) => e.kind, 'kind', 'response')
             .having((e) => e.reason, 'reason', contains('data.device'))),

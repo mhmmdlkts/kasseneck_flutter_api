@@ -83,7 +83,7 @@ void main() {
 
     test('Positionen und Zahlungen gehen hinaus, der signierte Beleg kommt zurück', () async {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      final beleg = await f.client.verkaufen(positionen: [kaffee], zahlungen: [bar]);
+      final beleg = await f.client.sell(items: [kaffee], payments: [bar]);
 
       expect(beleg.receiptId, 'KASSE1-ID-42');
       expect(beleg.companyName, 'Testbetrieb');
@@ -106,7 +106,7 @@ void main() {
       // Unter /v3 ist payments Pflicht; ein zusaetzliches paymentMethod waere
       // payment_method_not_supported.
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      await f.client.verkaufen(positionen: [kaffee], zahlungen: const [
+      await f.client.sell(items: [kaffee], payments: const [
         KeckPaymentInput(
           method: KeckPaymentMethod.creditCard,
           amountCents: 280,
@@ -132,8 +132,8 @@ void main() {
 
     test('Quelltext-Waechter: der Verkauf der Kasse kennt keine 0.x-Zahlfelder mehr', () {
       final quelle = File('lib/src/kasse/belege.dart').readAsStringSync();
-      final verkauf = quelle.substring(quelle.indexOf('Future<KasseneckReceipt> verkaufen('),
-          quelle.indexOf('Future<List<Belegzusammenfassung>> auflisten('));
+      final verkauf = quelle.substring(quelle.indexOf('Future<KasseneckReceipt> sell('),
+          quelle.indexOf('Future<List<ReceiptSummary>> list('));
       for (final alt in ["'paymentMethod'", "'creditCardProvider'", "'cardPaymentId'", "'cardPaymentData'"]) {
         expect(verkauf, isNot(contains(alt)), reason: alt);
       }
@@ -144,7 +144,7 @@ void main() {
       // bevor irgendetwas in die Signaturkette gerät.
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
       await expectLater(
-        f.client.verkaufen(positionen: const [], zahlungen: [bar]),
+        f.client.sell(items: const [], payments: [bar]),
         throwsA(isA<KasseneckValidationError>()),
       );
       expect(f.log, isEmpty);
@@ -156,7 +156,7 @@ void main() {
         KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 280),
         KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1),
       ]) {
-        await expectLater(f.client.verkaufen(positionen: [kaffee], zahlungen: [z]),
+        await expectLater(f.client.sell(items: [kaffee], payments: [z]),
             throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
       }
       expect(f.log, isEmpty);
@@ -178,7 +178,7 @@ void main() {
       );
 
       await expectLater(
-        client.verkaufen(positionen: [kaffee], zahlungen: [bar]),
+        client.sell(items: [kaffee], payments: [bar]),
         throwsA(isA<KasseneckHttpError>().having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)),
       );
       expect(versuche, 1, reason: 'genau ein Aufruf, egal wie es ausgeht');
@@ -186,11 +186,11 @@ void main() {
 
     test('Trinkgeld und Kundendaten gehen mit, wenn sie da sind', () async {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      await f.client.verkaufen(
-        positionen: [kaffee],
-        zahlungen: [bar],
-        trinkgeldCents: 50,
-        kundendaten: const ['Firma Muster', 'Musterweg 3'],
+      await f.client.sell(
+        items: [kaffee],
+        payments: [bar],
+        tipCents: 50,
+        customerLines: const ['Firma Muster', 'Musterweg 3'],
       );
 
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
@@ -200,7 +200,7 @@ void main() {
 
     test('ohne Trinkgeld steht das Feld nicht im Rumpf', () async {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      await f.client.verkaufen(positionen: [kaffee], zahlungen: [bar]);
+      await f.client.sell(items: [kaffee], payments: [bar]);
       expect(jsonDecode(f.log.single.body)['params'], isNot(contains('tip')));
     });
   });
@@ -211,7 +211,7 @@ void main() {
       // fuer den Kartenblock.
       for (final anbieter in CreditCardProvider.values) {
         final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-        await f.client.verkaufen(positionen: [kaffee], zahlungen: [
+        await f.client.sell(items: [kaffee], payments: [
           KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 280, provider: anbieter, providerPaymentId: 'tx-1'),
         ]);
         final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
@@ -223,7 +223,7 @@ void main() {
       // Ein eigenes Terminal meldet keine Transaktionskennung. Der Verkauf
       // scheitert daran NICHT: das Geld ist geflossen.
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      await f.client.verkaufen(positionen: [kaffee], zahlungen: const [
+      await f.client.sell(items: [kaffee], payments: const [
         KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 280, provider: CreditCardProvider.custom),
       ]);
       final zahlung = (jsonDecode(f.log.single.body)['params']['payments'] as List).single as Map;
@@ -239,7 +239,7 @@ void main() {
       final f = clientMit([
         {'status': 'success', 'data': {'receipts': []}},
       ]);
-      await f.client.auflisten(von: '2026-08-19', bis: '2026-08-19', hoechstens: 20);
+      await f.client.list(from: '2026-08-19', to: '2026-08-19', limit: 20);
 
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
       expect(params['cashregisterId'], 'KASSE1');
@@ -272,23 +272,23 @@ void main() {
           },
         },
       ]);
-      final liste = await f.client.auflisten();
+      final liste = await f.client.list();
 
       expect(liste, hasLength(1));
       final b = liste.single;
       expect(b.receiptId, 'KASSE1-ID-42');
       // Das Backend liefert Euro; die Kasse rechnet in Cent — sonst schleicht
       // sich der Fliesskomma-Fehler bis in die Tagessumme.
-      expect(b.summeCents, 280);
-      expect(b.bediener?.name, 'Ali');
-      expect(b.istVerkauf, isTrue);
-      expect(b.istStorno, isFalse);
-      expect(b.stornoStand, StornoStand.none);
+      expect(b.totalCents, 280);
+      expect(b.operator?.name, 'Ali');
+      expect(b.isSale, isTrue);
+      expect(b.isCancellation, isFalse);
+      expect(b.cancellationState, CancellationState.none);
     });
 
     test('fehlende Liste ist ein Antwortfehler, keine leere Liste', () async {
       final f = clientMit([{'status': 'success', 'data': {}}]);
-      await expectLater(f.client.auflisten(), throwsA(isA<KasseneckValidationError>()));
+      await expectLater(f.client.list(), throwsA(isA<KasseneckValidationError>()));
     });
 
     test('ein Storno-Beleg ist als solcher erkennbar', () async {
@@ -310,10 +310,10 @@ void main() {
           },
         },
       ]);
-      final b = (await f.client.auflisten()).single;
-      expect(b.istStorno, isTrue);
-      expect(b.istVerkauf, isFalse);
-      expect(b.summeCents, -280);
+      final b = (await f.client.list()).single;
+      expect(b.isCancellation, isTrue);
+      expect(b.isSale, isFalse);
+      expect(b.totalCents, -280);
     });
   });
 
@@ -329,11 +329,11 @@ void main() {
           },
         },
       ]);
-      final ergebnis = await f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error');
+      final ergebnis = await f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error');
 
-      expect(ergebnis.beleg.receiptId, 'KASSE1-ID-43');
+      expect(ergebnis.receipt.receiptId, 'KASSE1-ID-43');
       expect(ergebnis.originalReceiptId, 'KASSE1-ID-42');
-      expect(ergebnis.restmengen, [0]);
+      expect(ergebnis.remaining, [0]);
 
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
       expect(params['originalReceiptId'], 'KASSE1-ID-42');
@@ -352,11 +352,11 @@ void main() {
           },
         },
       ]);
-      await f.client.stornieren(
+      await f.client.cancel(
         originalReceiptId: 'KASSE1-ID-42',
-        grund: 'duplicate',
-        positionen: const [(index: 0, menge: 1)],
-        anmerkung: 'Gast hat zurückgegeben',
+        reason: 'duplicate',
+        items: const [(index: 0, quantity: 1)],
+        note: 'Gast hat zurückgegeben',
       );
 
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
@@ -369,7 +369,7 @@ void main() {
     test('ohne Grund geht nichts hinaus', () async {
       final f = clientMit([{'status': 'success', 'data': {}}]);
       await expectLater(
-        f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: '  '),
+        f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: '  '),
         throwsA(isA<KasseneckValidationError>()),
       );
       expect(f.log, isEmpty);
@@ -378,10 +378,10 @@ void main() {
     test('eine Storno-Menge unter 1 geht nicht hinaus', () async {
       final f = clientMit([{'status': 'success', 'data': {}}]);
       await expectLater(
-        f.client.stornieren(
+        f.client.cancel(
           originalReceiptId: 'KASSE1-ID-42',
-          grund: 'retoure',
-          positionen: const [(index: 0, menge: 0)],
+          reason: 'retoure',
+          items: const [(index: 0, quantity: 0)],
         ),
         throwsA(isA<KasseneckValidationError>()),
       );
@@ -392,7 +392,7 @@ void main() {
       // Sonst wuerde aus einem missglueckten Teilstorno still ein Vollstorno.
       final f = clientMit([{'status': 'success', 'data': {}}]);
       await expectLater(
-        f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'retoure', positionen: const []),
+        f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'retoure', items: const []),
         throwsA(isA<KasseneckValidationError>()),
       );
       expect(f.log, isEmpty);
@@ -403,7 +403,7 @@ void main() {
         {'status': 'success', 'data': {...huelleMitBeleg(), 'remaining': [0]}},
       ]);
       await expectLater(
-        f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error'),
+        f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
         throwsA(isA<KasseneckApiError>()
             .having((e) => e.code, 'code', 'response_unreadable')
             .having((e) => e.outcome, 'outcome', ErrorOutcome.unknown)),
@@ -414,7 +414,7 @@ void main() {
       for (final grund in ['retoure', 'fehleingabe']) {
         final f = clientMit([{'status': 'success', 'data': {}}]);
         await expectLater(
-          f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: grund),
+          f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: grund),
           throwsA(isA<KasseneckValidationError>()),
         );
         expect(f.log, isEmpty, reason: grund);
@@ -437,7 +437,7 @@ void main() {
       ]) {
         final f = clientMit([{'status': 'success', 'data': kaputt}]);
         await expectLater(
-          f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error'),
+          f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
           throwsA(isA<KasseneckApiError>()
               .having((e) => e.code, 'code', 'response_unreadable')
               .having((e) => isOutcomeUnknown(e), 'unklar', isTrue)
@@ -460,7 +460,7 @@ void main() {
           },
         },
       ]);
-      final gruppen = await f.client.artikelgruppen();
+      final gruppen = await f.client.articleGroups();
 
       expect(gruppen.single.name, 'Getränke');
       expect(f.log.single.url.toString(), endsWith('/listMyArticleGroups'));
@@ -468,7 +468,7 @@ void main() {
 
     test('eine fehlende Liste ist ein Antwortfehler, keine leere Liste', () async {
       final f = clientMit([{'status': 'success', 'data': {}}]);
-      await expectLater(f.client.artikel(), throwsA(isA<KasseneckValidationError>()));
+      await expectLater(f.client.articles(), throwsA(isA<KasseneckValidationError>()));
     });
   });
 
@@ -485,7 +485,7 @@ void main() {
           },
         },
       ]);
-      final personen = await f.client.tipEmpfaenger();
+      final personen = await f.client.tipRecipients();
 
       expect(f.log.single.url.toString(), endsWith('/listMyTipRecipients'));
       expect(personen.map((p) => p.registerUserId), ['ru_1', 'ru_2']);
@@ -507,7 +507,7 @@ void main() {
           },
         },
       ]);
-      final anteil = (await f.client.tipEmpfaenger()).single.mit(cents: 500);
+      final anteil = (await f.client.tipRecipients()).single.share(cents: 500);
 
       expect(anteil.registerUserId, 'ru_1');
       expect(anteil.cents, 500);
@@ -515,14 +515,14 @@ void main() {
 
     test('eine fehlende Liste ist ein Antwortfehler, keine leere Liste', () async {
       final f = clientMit([{'status': 'success', 'data': {}}]);
-      await expectLater(f.client.tipEmpfaenger(), throwsA(isA<KasseneckValidationError>()));
+      await expectLater(f.client.tipRecipients(), throwsA(isA<KasseneckValidationError>()));
     });
   });
 
   group('einzelnen Beleg holen', () {
     test('holt Beleg samt Firmendaten', () async {
       final f = clientMit([{'status': 'success', 'data': huelleMitBeleg()}]);
-      final beleg = await f.client.holen('KASSE1-ID-42');
+      final beleg = await f.client.get('KASSE1-ID-42');
 
       expect(beleg.receiptId, 'KASSE1-ID-42');
       expect(f.log.single.url.toString(), endsWith('/getReceipt'));
@@ -556,7 +556,7 @@ void main() {
       ]) {
         final f = clientMit([{'status': 'success', 'data': data}]);
         await expectLater(
-          f.client.verkaufen(positionen: [kaffee], zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 280)]),
+          f.client.sell(items: [kaffee], payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 280)]),
           throwsA(unlesbar('createReceipt', kennung)),
           reason: jsonEncode(data),
         );
@@ -568,7 +568,7 @@ void main() {
       for (final data in <Object>[<dynamic>[], 'ja']) {
         final f = clientMit([{'status': 'success', 'data': data}]);
         await expectLater(
-          f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error'),
+          f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error'),
           throwsA(unlesbar('cancelReceipt', null)),
         );
         expect(f.log, hasLength(1));
@@ -578,7 +578,7 @@ void main() {
     test('lesende Aufrufe bleiben beim alten Fehler (holen: data kein Objekt)', () async {
       final f = clientMit([{'status': 'success', 'data': <dynamic>[]}]);
       await expectLater(
-        f.client.holen('KASSE1-ID-42'),
+        f.client.get('KASSE1-ID-42'),
         throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'data-not-object')),
       );
     });
@@ -587,7 +587,7 @@ void main() {
       final f = clientMit([{'status': 'success', 'data': {}}]);
       final original = KasseneckReceipt.fromJson(huelleMitBeleg(receiptId: 'KASSE1-ID-41'));
       await expectLater(
-        f.client.stornieren(originalReceiptId: 'KASSE1-ID-42', grund: 'input_error', original: original),
+        f.client.cancel(originalReceiptId: 'KASSE1-ID-42', reason: 'input_error', original: original),
         throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')),
       );
       expect(f.log, isEmpty);

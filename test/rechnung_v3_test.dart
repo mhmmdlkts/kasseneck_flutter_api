@@ -11,7 +11,7 @@ import 'package:kasseneck_api/rechnung.dart';
 /// des Backends (`v3/antworten/rechnungen.json`, erzeugt aus den echten
 /// Handlern).
 ///
-/// Jeder Fall laeuft durch [RechnungApi]: Adresse und Parameter muessen genau
+/// Jeder Fall laeuft durch [InvoiceApi]: Adresse und Parameter muessen genau
 /// so hinausgehen, wie der Export sie aufgezeichnet hat, und jede gelesene
 /// Rechnungssicht traegt nur Werte aus den Katalogen von `vertrag.dart`
 /// (Belegart, Steuerfall, Abschreibungsgrund, fehlende E-Rechnungs-Angaben,
@@ -23,7 +23,7 @@ final _export = jsonDecode(File('test/fixtures/vertrag/v3/antworten/rechnungen.j
     as Map<String, dynamic>;
 final _faelle = (_export['cases'] as List).cast<Map<String, dynamic>>();
 
-({RechnungApi api, List<http.Request> log}) _apiFuer(Map<String, dynamic> fall) {
+({InvoiceApi api, List<http.Request> log}) _apiFuer(Map<String, dynamic> fall) {
   final log = <http.Request>[];
   final kopf = (fall['headers'] as Map).cast<String, String>();
   final mock = MockClient((request) async {
@@ -34,12 +34,12 @@ final _faelle = (_export['cases'] as List).cast<Map<String, dynamic>>();
       headers: {'content-type': 'application/json', for (final e in kopf.entries) e.key.toLowerCase(): e.value},
     );
   });
-  return (api: RechnungApi(apiKey: _apiKey, httpClient: mock), log: log);
+  return (api: InvoiceApi(apiKey: _apiKey, httpClient: mock), log: log);
 }
 
 /// Ruft den Endpunkt des Falls mit dessen Parametern ueber die oeffentlichen
 /// Methoden auf; die Anfrage-Modelle werden dabei aus den Parametern gebaut.
-Future<Object> _rufe(RechnungApi api, String endpunkt, Map<String, dynamic> p) async {
+Future<Object> _rufe(InvoiceApi api, String endpunkt, Map<String, dynamic> p) async {
   switch (endpunkt) {
     case 'issueInvoice':
       if (p['dryRun'] == true) {
@@ -208,32 +208,32 @@ void _feldmenge(Object? knoten, Set<String> felder, String pfad, {Set<String>? l
 
 void _rechnungssicht(Object? r, String pfad, {required bool detail}) {
   final spur = r! as _Spur;
-  _feldmenge(spur, detail ? Invoice.detailFelder : Invoice.felder, pfad, liesAlles: Invoice.detailFelder);
+  _feldmenge(spur, detail ? Invoice.detailFields : Invoice.fields, pfad, liesAlles: Invoice.detailFields);
   final totals = spur['totals'] as _Spur;
-  _feldmenge(totals, InvoiceTotals.felder, '$pfad.totals');
+  _feldmenge(totals, InvoiceTotals.fields, '$pfad.totals');
   for (final (i, satz) in (totals['byRate'] as List).indexed) {
-    _feldmenge(satz, VatRateTotal.felder, '$pfad.totals.byRate[$i]');
+    _feldmenge(satz, VatRateTotal.fields, '$pfad.totals.byRate[$i]');
   }
-  _feldmenge(spur['einvoice'], EInvoiceStatus.felder, '$pfad.einvoice');
-  _feldmenge(spur['brand'], Invoice.brandFelder, '$pfad.brand');
+  _feldmenge(spur['einvoice'], EInvoiceStatus.fields, '$pfad.einvoice');
+  _feldmenge(spur['brand'], Invoice.brandFields, '$pfad.brand');
   if (!detail) return;
   for (final (i, p) in (spur['items'] as List).indexed) {
-    _feldmenge(p, InvoiceItem.felder, '$pfad.items[$i]');
+    _feldmenge(p, InvoiceItem.fields, '$pfad.items[$i]');
   }
-  _feldmenge(spur['customer'], InvoiceRecipient.felder, '$pfad.customer');
+  _feldmenge(spur['customer'], InvoiceRecipient.fields, '$pfad.customer');
   for (final (i, z) in (spur['payments'] as List).indexed) {
-    _feldmenge(z, InvoiceDetailPayment.felder, '$pfad.payments[$i]');
+    _feldmenge(z, InvoiceDetailPayment.fields, '$pfad.payments[$i]');
   }
-  _feldmenge(spur['related'], Invoice.relatedFelder, '$pfad.related');
+  _feldmenge(spur['related'], Invoice.relatedFields, '$pfad.related');
   for (final (i, g) in (spur['creditNotes'] as List).indexed) {
-    _feldmenge(g, CreditNoteSummary.felder, '$pfad.creditNotes[$i]');
+    _feldmenge(g, CreditNoteSummary.fields, '$pfad.creditNotes[$i]');
   }
 }
 
 void _hinweisSichten(_Spur d, String pfad) {
   final roh = d['notice'];
   for (final (i, h) in (roh is List ? roh : [?roh]).indexed) {
-    _feldmenge(h, InvoiceNotice.felder, '$pfad.notice[$i]');
+    _feldmenge(h, InvoiceNotice.fields, '$pfad.notice[$i]');
   }
 }
 
@@ -246,18 +246,18 @@ void _feldmengenDesFalls(Map<String, dynamic> fall) {
     case 'issueInvoice':
       if (d.keys.contains('preview')) {
         PreviewResult.fromJson(d);
-        _feldmenge(d, PreviewResult.felder, p);
+        _feldmenge(d, PreviewResult.fields, p);
         final v = d['preview'] as _Spur;
-        _feldmenge(v, InvoicePreview.felder, '$p.preview');
-        _feldmenge(v['totals'], InvoiceTotals.felder, '$p.preview.totals');
+        _feldmenge(v, InvoicePreview.fields, '$p.preview');
+        _feldmenge(v['totals'], InvoiceTotals.fields, '$p.preview.totals');
         for (final (i, satz) in ((v['totals'] as _Spur)['byRate'] as List).indexed) {
-          _feldmenge(satz, VatRateTotal.felder, '$p.preview.totals.byRate[$i]');
+          _feldmenge(satz, VatRateTotal.fields, '$p.preview.totals.byRate[$i]');
         }
-        _feldmenge(v['einvoice'], EInvoiceStatus.felder, '$p.preview.einvoice');
-        _feldmenge(v['brand'], Invoice.brandFelder, '$p.preview.brand');
+        _feldmenge(v['einvoice'], EInvoiceStatus.fields, '$p.preview.einvoice');
+        _feldmenge(v['brand'], Invoice.brandFields, '$p.preview.brand');
       } else {
         IssueResult.fromJson(d);
-        _feldmenge(d, IssueResult.felder, p);
+        _feldmenge(d, IssueResult.fields, p);
         _rechnungssicht(d['invoice'], '$p.invoice', detail: false);
       }
       _hinweisSichten(d, p);
@@ -267,36 +267,36 @@ void _feldmengenDesFalls(Map<String, dynamic> fall) {
       _rechnungssicht(d['invoice'], '$p.invoice', detail: true);
     case 'listInvoices':
       InvoicePage.fromJson(d);
-      _feldmenge(d, InvoicePage.felder, p);
+      _feldmenge(d, InvoicePage.fields, p);
       for (final (i, r) in (d['invoices'] as List).indexed) {
         _rechnungssicht(r, '$p.invoices[$i]', detail: false);
       }
     case 'createCreditNote':
       CreditNoteResult.fromJson(d);
-      _feldmenge(d, CreditNoteResult.felder, p);
+      _feldmenge(d, CreditNoteResult.fields, p);
       _rechnungssicht(d['creditNote'], '$p.creditNote', detail: false);
     case 'cancelInvoice':
       CancelResult.fromJson(d);
-      _feldmenge(d, CancelResult.felder, p);
+      _feldmenge(d, CancelResult.fields, p);
       _rechnungssicht(d['creditNote'], '$p.creditNote', detail: false);
-      _feldmenge(d['original'], CancelResult.originalFelder, '$p.original');
+      _feldmenge(d['original'], CancelResult.originalFields, '$p.original');
     case 'recordInvoicePayment':
       RecordPaymentResult.fromJson(d);
-      _feldmenge(d, RecordPaymentResult.felder, p);
+      _feldmenge(d, RecordPaymentResult.fields, p);
       _rechnungssicht(d['invoice'], '$p.invoice', detail: false);
-      _feldmenge(d['payment'], InvoicePayment.felder, '$p.payment');
+      _feldmenge(d['payment'], InvoicePayment.fields, '$p.payment');
       _hinweisSichten(d, p);
     case 'getInvoiceSetupStatus':
       InvoiceSetupStatus.fromJson(d);
-      _feldmenge(d, InvoiceSetupStatus.felder, p);
+      _feldmenge(d, InvoiceSetupStatus.fields, p);
       for (final (i, l) in (d['missing'] as List).indexed) {
-        _feldmenge(l, InvoiceSetupGap.felder, '$p.missing[$i]');
+        _feldmenge(l, InvoiceSetupGap.fields, '$p.missing[$i]');
       }
     case 'listBrands':
       expect(d.keys, ['brands'], reason: p);
       for (final (i, b) in (d['brands'] as List).indexed) {
         Brand.fromJson(b as _Spur);
-        _feldmenge(b, Brand.felder, '$p.brands[$i]');
+        _feldmenge(b, Brand.fields, '$p.brands[$i]');
       }
     default:
       fail('$p: Endpunkt ${fall['endpoint']} ohne Feldpruefung');
@@ -334,7 +334,7 @@ void main() {
           final e = fehler! as KasseneckApiError;
           expect(e.code, antwort['code']);
           expect(invoiceErrorCodes, contains(e.code));
-          expect(rechnungFehlerCode(e), antwort['code']);
+          expect(invoiceErrorCode(e), antwort['code']);
           final missing = e.details['missing'];
           if (missing is List) {
             for (final m in missing) {
@@ -450,14 +450,14 @@ void main() {
       final fall = _faelle.firstWhere((f) => f['name'] == 'get_invoice');
       final d = _Spur(((fall['response'] as Map)['data'] as Map).cast<String, dynamic>());
       Invoice.fromJson(d['invoice'] as _Spur);
-      final ohne = Invoice.detailFelder.difference({'finalizedAt'});
+      final ohne = Invoice.detailFields.difference({'finalizedAt'});
       expect(() => _feldmenge(d['invoice'], ohne, 'probe', liesAlles: ohne), throwsA(isA<TestFailure>()));
     });
 
     test('Rot-Probe: ein gesendetes, aber nicht gelesenes Feld faellt auf', () {
       final d = _Spur({'code': 'cash_receipt_required', 'message': 'x', 'neu': 1});
       InvoiceNotice.fromJson(d);
-      expect(() => _feldmenge(d, {...InvoiceNotice.felder, 'neu'}, 'probe'), throwsA(isA<TestFailure>()));
+      expect(() => _feldmenge(d, {...InvoiceNotice.fields, 'neu'}, 'probe'), throwsA(isA<TestFailure>()));
     });
   });
 
@@ -483,10 +483,10 @@ void main() {
   test('Anfrage-Codes und Rechnungs-Codes sind getrennt, rechnungFehlerCode kennt nur diese', () {
     expect(invoiceRequestErrorCodes.toSet().intersection(invoiceErrorCodes.toSet()), isEmpty);
     for (final code in invoiceRequestErrorCodes) {
-      expect(rechnungFehlerCode(KasseneckApiError('getInvoice', 'x', code: code)), isNull, reason: code);
+      expect(invoiceErrorCode(KasseneckApiError('getInvoice', 'x', code: code)), isNull, reason: code);
     }
     for (final code in invoiceErrorCodes) {
-      expect(rechnungFehlerCode(KasseneckApiError('getInvoice', 'x', code: code)), code);
+      expect(invoiceErrorCode(KasseneckApiError('getInvoice', 'x', code: code)), code);
     }
   });
 }

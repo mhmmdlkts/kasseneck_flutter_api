@@ -90,7 +90,7 @@ class KasseneckApiError implements Exception {
   final String message;
 
   /// Stabiler Fehlercode des Backends (`code` aus der Antworthuelle), wenn der
-  /// Endpunkt einen legt — heute `cancelReceipt` (siehe `stornoFehlercodes`).
+  /// Endpunkt einen legt — heute `cancelReceipt` (siehe `cancellationErrorCodes`).
   /// **Daran entscheiden, nie an [message]:** der Text darf sich aendern, der
   /// Code nicht. Null bei Endpunkten ohne Codes und bei Auth-/Parameterfehlern.
   final String? code;
@@ -113,7 +113,7 @@ class KasseneckApiError implements Exception {
 
 /// Der `code` einer Antworthuelle — nur ein nicht leerer Text zaehlt, alles
 /// andere waere ein geratener Vertrag.
-String? fehlercodeAus(Map<dynamic, dynamic> huelle) {
+String? errorCodeFrom(Map<dynamic, dynamic> huelle) {
   final code = huelle['code'];
   return code is String && code.isNotEmpty ? code : null;
 }
@@ -131,7 +131,7 @@ String? fehlercodeAus(Map<dynamic, dynamic> huelle) {
 ///
 /// Deshalb traegt dieser Fehler die Kennung mit, sooft sie in der Antwort
 /// stand. Sie ist der Faden zum Beleg: `KasseneckApi.getReceipt(receiptId)`
-/// bzw. `RegisterReceiptClient.holen(receiptId)` holt ihn nach.
+/// bzw. `RegisterReceiptClient.get(receiptId)` holt ihn nach.
 class KasseneckReceiptFormatError implements Exception {
   const KasseneckReceiptFormatError(this.field, {this.receiptId, this.causeType});
 
@@ -168,7 +168,7 @@ class KasseneckHttpError implements Exception {
   /// beendet nur das Warten, nicht die Arbeit des Servers. Ueber einem
   /// veraendernden Aufruf heisst das: der Beleg kann laengst signiert und in der
   /// Kette sein.
-  static const String zeitablauf = 'timeout';
+  static const String reasonTimeout = 'timeout';
 
   /// Der Transport ist gescheitert — Verbindung nicht zustande gekommen,
   /// abgebrochen, DNS, TLS.
@@ -180,20 +180,20 @@ class KasseneckHttpError implements Exception {
   /// liest, macht denselben Fehler wie am 24.08. am Terminal: aus Nichtwissen
   /// eine Behauptung. Fuer einen veraendernden Aufruf gilt deshalb auch hier:
   /// nachsehen, nicht wiederholen.
-  static const String netz = 'network';
+  static const String reasonNetwork = 'network';
 
   final String functionName;
   final int statusCode;
 
-  /// Warum es scheiterte: [zeitablauf], [netz], `'server-error'` (HTTP
+  /// Warum es scheiterte: [reasonTimeout], [reasonNetwork], `'server-error'` (HTTP
   /// nicht 200), `'empty-body'`, `'not-json'`, `'missing-status'`,
   /// `'data-not-object'`.
   ///
-  /// Die Unterscheidung [zeitablauf] gegen [netz] wird **erhalten**, nicht
+  /// Die Unterscheidung [reasonTimeout] gegen [reasonNetwork] wird **erhalten**, nicht
   /// verworfen: sie ist die einzige Handhabe, die der Aufrufer hat. Welche
   /// Folge er daraus zieht, entscheidet er — dieses Paket entscheidet sie
   /// nicht fuer ihn, weil keiner der beiden Faelle beweist, dass nichts
-  /// passiert ist (siehe [netz]).
+  /// passiert ist (siehe [reasonNetwork]).
   final String reason;
 
   /// Die **Art** der zugrunde liegenden Ausnahme (`TimeoutException`,
@@ -213,7 +213,7 @@ class KasseneckHttpError implements Exception {
   /// ohne Statusfeld, HTML). Sonst [ErrorOutcome.rejected].
   final ErrorOutcome outcome;
 
-  /// Die abgelaufene Frist, wenn [reason] [zeitablauf] ist.
+  /// Die abgelaufene Frist, wenn [reason] [reasonTimeout] ist.
   final Duration? timeout;
 
   @override
@@ -232,10 +232,10 @@ class KasseneckHttpError implements Exception {
 /// im npm-Paket).
 ///
 /// Der Grund stammt vom Paket; aus der Antwort wird nichts uebernommen ausser
-/// der Kennung des Belegs, soweit [kennung] sie findet: `details.receiptId`
+/// der Kennung des Belegs, soweit [receiptId] sie findet: `details.receiptId`
 /// ist der Faden zum Beleg (`getReceipt`), `details.field` das Feld, an dem
 /// das Lesen scheiterte.
-T readSignedResponse<T>(String functionName, T Function() lesen, {String? Function()? kennung}) {
+T readSignedResponse<T>(String functionName, T Function() lesen, {String? Function()? receiptId}) {
   try {
     return lesen();
   } on KasseneckApiError {
@@ -243,7 +243,7 @@ T readSignedResponse<T>(String functionName, T Function() lesen, {String? Functi
   } catch (ursache) {
     String? id;
     try {
-      id = kennung?.call();
+      id = receiptId?.call();
     } catch (_) {
       id = null;
     }

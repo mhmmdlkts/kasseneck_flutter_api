@@ -18,7 +18,7 @@ class KasseneckItem {
   final int priceCents;
 
   /// Positions-Kennzeichnung: `'tip'` (Trinkgeld, vom Backend aus dem
-  /// Parameter `tip` erzeugt) oder `'discount'` (Rabatt, [verteileRabatt]).
+  /// Parameter `tip` erzeugt) oder `'discount'` (Rabatt, [distributeDiscount]).
   /// Steuert nur die Beleg-Darstellung und die Berichts-Zuordnung, nie die
   /// Beträge. Zwilling von `ReceiptItem.kind` im JS-Paket.
   final String? kind;

@@ -46,7 +46,7 @@ Map<String, dynamic> _erfolg(Object? daten) => {'status': 'success', 'message': 
 Map<String, dynamic> _fehler(String meldung, String code, [Map<String, dynamic> daten = const {}]) =>
     {'status': 'error', 'message': meldung, 'code': code, 'data': {'code': code, ...daten}};
 
-({RechnungApi api, List<http.Request> log}) _apiMit(List<Object> antworten, {Duration? timeout}) {
+({InvoiceApi api, List<http.Request> log}) _apiMit(List<Object> antworten, {Duration? timeout}) {
   final log = <http.Request>[];
   var i = 0;
   final mock = MockClient((request) async {
@@ -57,7 +57,7 @@ Map<String, dynamic> _fehler(String meldung, String code, [Map<String, dynamic> 
     if (antwort is Future<http.Response> Function()) return antwort();
     return http.Response.bytes(utf8.encode(jsonEncode(antwort)), 200, headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
   });
-  return (api: RechnungApi(apiKey: _apiKey, httpClient: mock, timeout: timeout), log: log);
+  return (api: InvoiceApi(apiKey: _apiKey, httpClient: mock, timeout: timeout), log: log);
 }
 
 Map<String, dynamic> _params(http.Request r) => (jsonDecode(r.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
@@ -67,7 +67,7 @@ void main() {
     final vertrag = _json('test/fixtures/vertrag/surface.json');
     final listen = vertrag['invoice'] as Map<String, dynamic>;
     final hier = <String, List<Object>>{
-      'invoiceEndpoints': rechnungAufrufe,
+      'invoiceEndpoints': invoiceCalls,
       'invoiceErrorCodes': invoiceErrorCodes,
       'creditNoteReasons': creditNoteReasons,
       'taxSchemes': taxSchemes,
@@ -83,7 +83,7 @@ void main() {
       'invoicePaymentMethods': invoicePaymentMethods,
       'itemKinds': itemKinds,
       'invoiceNoticeCodes': invoiceNoticeCodes,
-      'zeroRatedTaxSchemes': steuerfreieFaelle,
+      'zeroRatedTaxSchemes': zeroRatedTaxSchemes,
       'einvoiceMissingCodes': einvoiceMissingCodes,
       'writeOffReasonCodes': writeOffReasonCodes,
       'invoiceRequestErrorCodes': invoiceRequestErrorCodes,
@@ -100,7 +100,7 @@ void main() {
     });
 
     test('jeder Rechnungs-Aufruf steht in Aufrufe.alle', () {
-      for (final name in rechnungAufrufe) {
+      for (final name in invoiceCalls) {
         expect(Aufrufe.alle, contains(name));
       }
     });
@@ -108,7 +108,7 @@ void main() {
     test('dieselbe Paketversion wie die Anheftung', () {
       final schema = _json('test/fixtures/vertrag/invoice-api.schema.json');
       expect(schema['package'], vertrag['version']);
-      expect((schema['endpoints'] as Map).keys.toList(), rechnungAufrufe);
+      expect((schema['endpoints'] as Map).keys.toList(), invoiceCalls);
       expect(schema['codes'], invoiceErrorCodes);
     });
   });
@@ -352,31 +352,31 @@ void main() {
       const gutschrift = CreditNoteRequest(idempotencyKey: 'g', invoiceId: 'i', reason: 'other', items: []);
 
       final e1 = await api.createCreditNote(gutschrift).then<Object?>((_) => null, onError: (Object e) => e);
-      expect(rechnungFehlerCode(e1), 'credit_exceeds_invoice');
+      expect(invoiceErrorCode(e1), 'credit_exceeds_invoice');
       expect((e1 as KasseneckApiError).details['remainingCents'], {'total': 6000});
 
       final e2 = await api.createCreditNote(gutschrift).then<Object?>((_) => null, onError: (Object e) => e);
-      expect(rechnungFehlerCode(e2), 'validation');
-      expect(rechnungFeldFehler(e2).single.field, 'items[0].vatRate');
+      expect(invoiceErrorCode(e2), 'validation');
+      expect(invoiceFieldErrors(e2).single.field, 'items[0].vatRate');
 
       final e3 = await api.createCreditNote(gutschrift).then<Object?>((_) => null, onError: (Object e) => e);
-      expect(rechnungFehlerCode(e3), 'invoice_setup_incomplete');
+      expect(invoiceErrorCode(e3), 'invoice_setup_incomplete');
       expect(((e3 as KasseneckApiError).details['missing'] as List).single['requirement'], 'number_format');
 
       final e4 = await api.createCreditNote(gutschrift).then<Object?>((_) => null, onError: (Object e) => e);
       expect(e4, isA<KasseneckApiError>());
-      expect(rechnungFehlerCode(e4), isNull, reason: 'ein Code außerhalb des Katalogs ist kein Rechnungs-Fehlercode');
-      expect(rechnungFeldFehler(Exception('fremd')), isEmpty);
+      expect(invoiceErrorCode(e4), isNull, reason: 'ein Code außerhalb des Katalogs ist kein Rechnungs-Fehlercode');
+      expect(invoiceFieldErrors(Exception('fremd')), isEmpty);
     });
 
     test('Schlüssel: leer, Partner-Schlüssel und Kassen-Token werden ohne Netz abgewiesen, ohne den Wert zu nennen', () {
       for (final falsch in ['', 'pk_live_ABCDEFGHIJKLMNOPQRSTUVWXYZ012345', 'cb_live_ZmFsc2NoZXJUb2tlbg']) {
         expect(
-          () => RechnungApi(apiKey: falsch),
+          () => InvoiceApi(apiKey: falsch),
           throwsA(isA<KasseneckValidationError>().having((e) => '$e'.contains(falsch) && falsch.isNotEmpty, 'nennt Wert', isFalse)),
         );
       }
-      expect(() => RechnungApi(apiKey: '0a1b2c3d4e5f-uid123'), returnsNormally, reason: 'Altformate bleiben gültig');
+      expect(() => InvoiceApi(apiKey: '0a1b2c3d4e5f-uid123'), returnsNormally, reason: 'Altformate bleiben gültig');
     });
 
     test('Zeitablauf ist ein eigener Grund, kein Netzfehler', () async {
@@ -385,7 +385,7 @@ void main() {
       ], timeout: const Duration(milliseconds: 20));
       await expectLater(
         api.getInvoiceSetupStatus(),
-        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)),
       );
     });
   });
@@ -674,7 +674,7 @@ void main() {
         _fehler('Der Steuerfall passt nicht.', 'tax_scheme_mismatch', {'expected': 'intraCommunitySupply'}),
       ]);
       final e = await api.previewInvoice(anfrage).then<Object?>((_) => null, onError: (Object e) => e);
-      expect(rechnungFehlerCode(e), 'tax_scheme_mismatch');
+      expect(invoiceErrorCode(e), 'tax_scheme_mismatch');
       expect((e as KasseneckApiError).details['expected'], 'intraCommunitySupply');
     });
 

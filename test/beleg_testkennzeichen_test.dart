@@ -12,25 +12,25 @@ import 'package:kasseneck_api/kasse.dart';
 
 void main() {
   test('der Testpfad wird am QR erkannt', () {
-    expect(signaturIstTest('_R1-AT100_KASSE1_...'), isTrue);
+    expect(signatureIsTest('_R1-AT100_KASSE1_...'), isTrue);
   });
 
   test('eine echte Signatur nicht', () {
     for (final qr in ['_R1-AT1_KASSE1_...', '_R1-AT0_x', '', '_R1-AT1000_x']) {
-      expect(signaturIstTest(qr), isFalse, reason: qr);
+      expect(signatureIsTest(qr), isFalse, reason: qr);
     }
   });
 
   test('das Kennzeichen greift auch ohne Feld vom Backend', () {
     // Ältere Backends senden `testKasse` nicht. Der QR ist trotzdem da.
-    expect(belegIstTest(testKasse: false, qr: '_R1-AT100_x'), isTrue);
+    expect(receiptIsTest(testCashregister: false, qr: '_R1-AT100_x'), isTrue);
   });
 
   test('und auch ohne QR, wenn das Backend es sagt', () {
-    expect(belegIstTest(testKasse: true, qr: null), isTrue);
+    expect(receiptIsTest(testCashregister: true, qr: null), isTrue);
   });
 
   test('ein gewöhnlicher Beleg bleibt ungekennzeichnet', () {
-    expect(belegIstTest(testKasse: false, qr: '_R1-AT1_x'), isFalse);
+    expect(receiptIsTest(testCashregister: false, qr: '_R1-AT1_x'), isFalse);
   });
 }

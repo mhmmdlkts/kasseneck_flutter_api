@@ -91,7 +91,7 @@ class RegisterGeo {
 class PairedRegisterDevice {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'deviceId', 'deviceSecret', 'ownerUid', 'cashregisterId', 'companyName', 'cashregisterLabel', 'testEnvironment'};
+  static const Set<String> fields = {'deviceId', 'deviceSecret', 'ownerUid', 'cashregisterId', 'companyName', 'cashregisterLabel', 'testEnvironment'};
 
   const PairedRegisterDevice({
     required this.ownerUid,
@@ -133,7 +133,7 @@ enum RegisterUserKind { person, device }
 class RegisterUserSummary {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'id', 'name', 'kind', 'pinPolicyOutdated'};
+  static const Set<String> fields = {'id', 'name', 'kind', 'pinPolicyOutdated'};
 
   const RegisterUserSummary({
     required this.id,
@@ -157,7 +157,7 @@ class RegisterUserSummary {
 class RegisterPinPolicy {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'length', 'charset'};
+  static const Set<String> fields = {'length', 'charset'};
 
   const RegisterPinPolicy({required this.length, required this.charset});
 
@@ -179,7 +179,7 @@ enum RegisterLoginMode { selectUser, pin }
 class RegisterCashregisterState {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'ready', 'reason'};
+  static const Set<String> fields = {'ready', 'reason'};
 
   const RegisterCashregisterState({required this.ready, this.reason});
 
@@ -191,7 +191,7 @@ class RegisterCashregisterState {
 class RegisterDeviceUsers {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'users', 'policy', 'loginMode', 'locationLock', 'testEnvironment', 'settings', 'receiptHeader', 'cashregister'};
+  static const Set<String> fields = {'users', 'policy', 'loginMode', 'locationLock', 'testEnvironment', 'settings', 'receiptHeader', 'cashregister'};
 
   const RegisterDeviceUsers({
     required this.users,
@@ -220,7 +220,7 @@ class RegisterDeviceUsers {
 
   /// Kassen-Einstellungen (betriebsweit + Gerät), mit den Standardwerten
   /// gemischt — die Kasse bekommt nie ein halbes Bild.
-  final KasseSettings settings;
+  final PosSettings settings;
 
   /// Belegkopf des Betriebs als Rohdaten (`company`, Anschrift, `vatId`,
   /// Fußzeilen).
@@ -253,13 +253,13 @@ class RegisterUserPerms {
     this.tipAssign = false,
     this.cancelScope = RegisterScope.none,
     this.receiptsScope = RegisterScope.all,
-    this.weitere = const {},
+    this.other = const {},
   });
 
   /// Rechte aus der Antwort des Backends lesen. Derselbe Weg, den auch die
   /// Anmeldung nimmt — offen gelegt, damit die Zwillingsprüfung ihn benutzen
   /// kann, ohne einen zweiten Parser zu bauen.
-  factory RegisterUserPerms.aus(Map<String, dynamic> roh) => _rechte(roh);
+  factory RegisterUserPerms.fromJson(Map<String, dynamic> roh) => _rechte(roh);
 
   /// Belege ausstellen.
   final bool sell;
@@ -296,7 +296,7 @@ class RegisterUserPerms {
 
   /// Weitere Schalter, die der Inhaber gesetzt hat und die dieses Paket noch
   /// nicht kennt.
-  final Map<String, bool> weitere;
+  final Map<String, bool> other;
 
   /// Ein Recht nachschlagen, auch ein hier noch unbekanntes.
   bool operator [](String name) {
@@ -320,7 +320,7 @@ class RegisterUserPerms {
       case 'tipAssign':
         return tipAssign;
       default:
-        return weitere[name] ?? false;
+        return other[name] ?? false;
     }
   }
 }
@@ -329,7 +329,7 @@ class RegisterUserPerms {
 class RegisterUser {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'id', 'name', 'perms'};
+  static const Set<String> fields = {'id', 'name', 'perms'};
 
   const RegisterUser({required this.id, required this.name, required this.perms});
 
@@ -346,7 +346,7 @@ class RegisterUser {
 class RegisterSession {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'id', 'deviceId', 'deviceLabel', 'startedAt', 'expiresAt', 'own', 'userName'};
+  static const Set<String> fields = {'id', 'deviceId', 'deviceLabel', 'startedAt', 'expiresAt', 'own', 'userName'};
 
   const RegisterSession({
     required this.id,
@@ -373,12 +373,12 @@ class RegisterSession {
 }
 
 /// Antwort von [RegisterClient.listRegisterSessionsForDevice].
-class RegisterSessionsStand {
+class RegisterSessionsState {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'licenses', 'sessions'};
+  static const Set<String> fields = {'licenses', 'sessions'};
 
-  const RegisterSessionsStand({required this.licenses, required this.sessions});
+  const RegisterSessionsState({required this.licenses, required this.sessions});
 
   /// Lizenzplätze der Kasse — mindestens 1.
   final int licenses;
@@ -389,7 +389,7 @@ class RegisterSessionsStand {
 class RegisterUserSession {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'customToken', 'sessionId', 'expiresAt', 'user'};
+  static const Set<String> fields = {'customToken', 'sessionId', 'expiresAt', 'user'};
 
   const RegisterUserSession({
     required this.customToken,
@@ -417,7 +417,7 @@ class RegisterUserSession {
 class RegisterClient {
   /// [baseUrl] muss auf `/v3` enden (die Web-Kasse: `/api/v3`), sonst wirft
   /// schon das Anlegen. [clientHeader] und [omitKasseneckHeaders] wie bei
-  /// [RegisterTransport]; beide gelten auch fuer [sitzung].
+  /// [RegisterTransport]; beide gelten auch fuer [session].
   ///
   /// [httpClient] darf kein `RetryClient` (oder anderer wiederholender
   /// Client) sein: ein zweites stilles Senden waere ein zweiter Beleg.
@@ -520,7 +520,7 @@ class RegisterClient {
       loginMode: daten['loginMode'] == 'pin' ? RegisterLoginMode.pin : RegisterLoginMode.selectUser,
       locationLock: daten['locationLock'] == true,
       testEnvironment: daten['testEnvironment'] == true,
-      settings: KasseSettings.aus({
+      settings: PosSettings.fromJson({
         'business': settings is Map ? settings['business'] : null,
         'device': settings is Map ? settings['device'] : null,
       }),
@@ -597,7 +597,7 @@ class RegisterClient {
   /// `takeoverSessionId` bei [registerUserLogin] mit. Ausgewiesen wird sich
   /// über das Gerätegeheimnis wie bei [listRegisterUsersForDevice]; die Kasse
   /// bestimmt das Backend aus dem Gerät.
-  Future<RegisterSessionsStand> listRegisterSessionsForDevice({
+  Future<RegisterSessionsState> listRegisterSessionsForDevice({
     required String ownerUid,
     required String deviceId,
     required String deviceSecret,
@@ -639,7 +639,7 @@ class RegisterClient {
     }).toList(growable: false);
     final lizenzen = daten['licenses'];
     final licenses = lizenzen is num && lizenzen > 0 ? lizenzen.toInt() : 1;
-    return RegisterSessionsStand(licenses: licenses, sessions: sessions);
+    return RegisterSessionsState(licenses: licenses, sessions: sessions);
   }
 
   /// Anmeldung allein mit der PIN (Geräte-Modus `pin`): das Backend ermittelt
@@ -676,7 +676,7 @@ class RegisterClient {
   /// HTTP-Client und demselben Zeitlimit wie dieser. So hängt die Kasse an
   /// einer Verbindung statt an zweien, und wer für Tests einen anderen
   /// HTTP-Client einsetzt, erwischt beide Wege.
-  RegisterSessionClient sitzung({
+  RegisterSessionClient session({
     required Future<String?> Function() idToken,
     required Future<String?> Function() sessionId,
     required String cashregisterId,
@@ -777,7 +777,7 @@ RegisterUserPerms _rechte(Object? wert) {
     // das Backend, register-auth.js).
     cancelScope: roh.containsKey('cancelScope') ? _scope(roh['cancelScope']) : (cancel ? RegisterScope.all : RegisterScope.none),
     receiptsScope: roh.containsKey('receiptsScope') ? _scope(roh['receiptsScope']) : RegisterScope.all,
-    weitere: weitere,
+    other: weitere,
   );
 }
 
@@ -856,7 +856,7 @@ class RegisterSessionClient {
 
   /// Aus einem bestehenden Transport — so teilen Sitzung, Belege und
   /// Einstellungen einen Ausweis statt drei.
-  RegisterSessionClient.aus(this.transport);
+  RegisterSessionClient.fromTransport(this.transport);
 
   final RegisterTransport transport;
 
@@ -869,7 +869,7 @@ class RegisterSessionClient {
   /// anmelden.") — dann hilft nur eine neue Anmeldung.
   Future<int> renewRegisterSession() async {
     const name = Aufrufe.renewRegisterSession;
-    final daten = await transport.rufen(name);
+    final daten = await transport.call(name);
     final bis = daten['expiresAt'];
     if (bis is! int) {
       // Ohne brauchbaren Ablaufzeitpunkt weiß die Kasse nicht, wann sie das
@@ -880,5 +880,5 @@ class RegisterSessionClient {
   }
 
   /// Sitzung beenden (Abmelden am Tresen).
-  Future<void> endRegisterSession() => transport.rufen(Aufrufe.endRegisterSession);
+  Future<void> endRegisterSession() => transport.call(Aufrufe.endRegisterSession);
 }

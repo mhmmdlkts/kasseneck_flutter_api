@@ -13,47 +13,47 @@ import 'package:kasseneck_api/models/beleg_blatt.dart';
 import 'package:kasseneck_api/src/printing/raster/raster_image.dart';
 
 class LogoRaster {
-  final int breite;
-  final int hoehe;
+  final int width;
+  final int height;
 
-  /// `punkte[y * breite + x]`, 1 = schwarz.
-  final Uint8List punkte;
-  const LogoRaster({required this.breite, required this.hoehe, required this.punkte});
+  /// `dots[y * breite + x]`, 1 = schwarz.
+  final Uint8List dots;
+  const LogoRaster({required this.width, required this.height, required this.dots});
 
   /// Als deckendes Schwarz-Weiss-Bild fuer den Druck-Stack (GS v 0, myPOS-PNG).
-  RasterImage alsRasterImage() {
-    final rgba = Uint8List(breite * hoehe * 4);
-    for (var i = 0; i < breite * hoehe; i++) {
-      final wert = punkte[i] == 1 ? 0 : 255;
+  RasterImage toRasterImage() {
+    final rgba = Uint8List(width * height * 4);
+    for (var i = 0; i < width * height; i++) {
+      final wert = dots[i] == 1 ? 0 : 255;
       rgba[i * 4] = wert;
       rgba[i * 4 + 1] = wert;
       rgba[i * 4 + 2] = wert;
       rgba[i * 4 + 3] = 255;
     }
-    return RasterImage(breite, hoehe, rgba);
+    return RasterImage(width, height, rgba);
   }
 }
 
 /// Obergrenze der Rohpixel, die [logoRaster] noch anfasst (Zwilling von
 /// `LOGO_PIXEL_MAX` im Druck-Kit der Browser-Kasse). Die Flaechenmittel-
-/// Schleife in [logoRaster] laeuft synchron ueber `pxBreite x pxHoehe` --
+/// Schleife in [logoRaster] laeuft synchron ueber `pixelWidth x pxHoehe` --
 /// bei einem stark komprimierten Logo unter der Upload-Grenze (1 MB), das
 /// trotzdem auf z. B. 6000x6000 Rohpixel entpackt, blockiert das den
 /// UI-Isolate weit laenger als die Drei-Sekunden-Hausregel; `Future.timeout`
-/// in `ladeDruckLogo` kann laufenden synchronen Code nicht unterbrechen.
+/// in `loadPrintLogo` kann laufenden synchronen Code nicht unterbrechen.
 /// Eigene, pure Funktion, damit die Grenze ohne echtes Bild testbar ist.
 const logoPixelMax = 4096;
 
 /// `true`, wenn [logoRaster] das Bild noch anfassen darf.
-bool logoPixelZulaessig(int breite, int hoehe) => breite > 0 && hoehe > 0 && breite <= logoPixelMax && hoehe <= logoPixelMax;
+bool isLogoPixelSizeAllowed(int breite, int hoehe) => breite > 0 && hoehe > 0 && breite <= logoPixelMax && hoehe <= logoPixelMax;
 
-LogoRaster logoRaster(Uint8List rgba, int pxBreite, int pxHoehe, LogoMass mass, int zeichen) {
+LogoRaster logoRaster(Uint8List rgba, int pxBreite, int pxHoehe, LogoDimensions mass, int zeichen) {
   if (pxBreite < 1 || pxHoehe < 1 || rgba.length != pxBreite * pxHoehe * 4) {
     throw ArgumentError('RGBA-Laenge passt nicht zum Pixelmass');
   }
-  final m = logoRasterMass(mass, zeichen);
-  final breite = m.breite;
-  final hoehe = m.hoehe;
+  final m = logoRasterSize(mass, zeichen);
+  final breite = m.width;
+  final hoehe = m.height;
   final grau = Float64List(breite * hoehe);
   final sx = pxBreite / breite;
   final sy = pxHoehe / hoehe;
@@ -93,5 +93,5 @@ LogoRaster logoRaster(Uint8List rgba, int pxBreite, int pxHoehe, LogoMass mass, 
       }
     }
   }
-  return LogoRaster(breite: breite, hoehe: hoehe, punkte: punkte);
+  return LogoRaster(width: breite, height: hoehe, dots: punkte);
 }

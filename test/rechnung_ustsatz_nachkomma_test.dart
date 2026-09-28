@@ -21,13 +21,13 @@ const _apiKey = 'kr_test_Beispielschluessel0123456789';
 
 Map<String, dynamic> _erfolg(Object? daten) => {'status': 'success', 'message': '', 'data': daten};
 
-RechnungApi _apiMit(Object antwort) {
+InvoiceApi _apiMit(Object antwort) {
   final mock = MockClient((_) async => http.Response.bytes(
         utf8.encode(jsonEncode(antwort)),
         200,
         headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'},
       ));
-  return RechnungApi(apiKey: _apiKey, httpClient: mock);
+  return InvoiceApi(apiKey: _apiKey, httpClient: mock);
 }
 
 /// Eine Rechnung, wie der Server sie nach einer Panel-Erfassung mit
@@ -104,8 +104,8 @@ void main() {
 
   group('gerechnet wird mit jedem Satz', () {
     test('rechnungSummen: 4,9 % netto und brutto', () {
-      final netto = rechnungSummen(
-        [const SummenPosition(quantity: 1, unitPriceCents: 1000, vatRate: 4.9)],
+      final netto = computeInvoiceTotals(
+        [const TotalsItem(quantity: 1, unitPriceCents: 1000, vatRate: 4.9)],
         'net',
       );
       expect(netto.toJson(), {
@@ -119,8 +119,8 @@ void main() {
 
       // Im Brutto-Modus bleibt der vereinbarte Preis stehen, die USt ist die
       // Differenz -- wie am Server.
-      final brutto = rechnungSummen(
-        [const SummenPosition(quantity: 1, unitPriceCents: 1049, vatRate: 4.9)],
+      final brutto = computeInvoiceTotals(
+        [const TotalsItem(quantity: 1, unitPriceCents: 1049, vatRate: 4.9)],
         'gross',
       );
       expect(brutto.grossCents, 1049);
@@ -129,13 +129,13 @@ void main() {
     });
 
     test('Saetze bleiben getrennt und absteigend sortiert, 4,9 sortiert unter 10', () {
-      final summen = rechnungSummen(
+      final summen = computeInvoiceTotals(
         [
-          const SummenPosition(quantity: 1, unitPriceCents: 1000, vatRate: 4.9),
-          const SummenPosition(quantity: 1, unitPriceCents: 1000, vatRate: 20),
-          const SummenPosition(quantity: 1, unitPriceCents: 1000, vatRate: 10),
+          const TotalsItem(quantity: 1, unitPriceCents: 1000, vatRate: 4.9),
+          const TotalsItem(quantity: 1, unitPriceCents: 1000, vatRate: 20),
+          const TotalsItem(quantity: 1, unitPriceCents: 1000, vatRate: 10),
           // Derselbe Satz noch einmal: eine Zeile mehr, kein zweiter Eintrag.
-          const SummenPosition(quantity: 1, unitPriceCents: 500, vatRate: 4.9),
+          const TotalsItem(quantity: 1, unitPriceCents: 500, vatRate: 4.9),
         ],
         'net',
       );
@@ -146,8 +146,8 @@ void main() {
     });
 
     test('steuerfreier Fall stellt auch eine 4,9-Zeile auf 0 %', () {
-      final summen = rechnungSummen(
-        [const SummenPosition(quantity: 1, unitPriceCents: 1000, vatRate: 4.9)],
+      final summen = computeInvoiceTotals(
+        [const TotalsItem(quantity: 1, unitPriceCents: 1000, vatRate: 4.9)],
         'net',
         'intraCommunitySupply',
       );

@@ -1,4 +1,4 @@
-enum KeckInvoicePaymentMethode {
+enum KeckInvoicePaymentMethod {
   bankTransferUnpaid(false),
   bankTransferPaid(true),
   cash(true),
@@ -8,5 +8,5 @@ enum KeckInvoicePaymentMethode {
 
   final bool isPaid;
 
-  const KeckInvoicePaymentMethode(this.isPaid);
+  const KeckInvoicePaymentMethod(this.isPaid);
 }

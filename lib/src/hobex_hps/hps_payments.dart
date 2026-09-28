@@ -832,7 +832,7 @@ class HpsPayments {
   ///
   /// Liefert ein Ergebnis nur im beweisbaren Fall: das Terminal quittiert das
   /// Storno mit `'0'`. Jeder andere Ausgang ist `null`, der Aufrufer fragt
-  /// dann den Status ab. Ohne [betrag] (Gutschrift) wird nichts gesendet.
+  /// dann den Status ab. Ohne [amount] (Gutschrift) wird nichts gesendet.
   Future<HpsResult?> _sendReversal(
     String id,
     List<String> steps,
@@ -1194,7 +1194,7 @@ class HpsPayments {
   /// Klaerung gab -- als [HpsResult.lastResponse] fuer Anzeige und Katalog,
   /// ausdruecklich NICHT als [HpsResult.response].
   ///
-  /// [grund] siehe [_offenerGrund].
+  /// [reason] siehe [_offenerGrund].
   HpsResult _open(String id, List<String> steps,
       [TransactionResponse? letzteAntwort, HpsCodeReason? grund]) {
     _emit(HpsEventKind.resolved, steps.last, id);

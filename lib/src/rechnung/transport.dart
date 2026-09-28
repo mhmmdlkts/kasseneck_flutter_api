@@ -20,14 +20,14 @@ import '../register/fehler.dart';
 import '../v3.dart';
 
 /// Standardadresse der Rechnungs-API (die oeffentliche Basis).
-const String kRechnungBaseUrl = kPublicBaseUrl;
+const String kInvoiceBaseUrl = kPublicBaseUrl;
 
-class RechnungTransport {
+class InvoiceTransport {
   /// [baseUrl] muss auf `/v3` enden, sonst wirft schon das Anlegen.
   /// [httpClient] darf kein `RetryClient` (oder anderer wiederholender
   /// Client) sein: ein zweites stilles Senden von issueInvoice ohne
   /// idempotencyKey waere eine zweite Rechnung.
-  RechnungTransport({
+  InvoiceTransport({
     required String apiKey,
     String? baseUrl,
     http.Client? httpClient,
@@ -35,7 +35,7 @@ class RechnungTransport {
     String? clientHeader,
     bool omitKasseneckHeaders = false,
   })  : _apiKey = apiKey.trim(),
-        baseUrl = v3BaseUrl('RechnungTransport', baseUrl, kRechnungBaseUrl),
+        baseUrl = v3BaseUrl('RechnungTransport', baseUrl, kInvoiceBaseUrl),
         _kopf = V3Headers('RechnungTransport', clientHeader: clientHeader, omit: omitKasseneckHeaders),
         _http = httpClient ?? http.Client(),
         _timeout = timeout ?? const Duration(seconds: 30) {
@@ -61,7 +61,7 @@ class RechnungTransport {
   final Duration _timeout;
 
   /// Einen Aufruf mit JSON-Antwort absetzen; liefert `data` ohne Hülle.
-  Future<Map<String, dynamic>> rufen(String name, Map<String, dynamic> params) async {
+  Future<Map<String, dynamic>> call(String name, Map<String, dynamic> params) async {
     final antwort = await _senden(name, params);
     final huelle = readEnvelope(name, antwort);
     if (huelle['status'] == 'success') return envelopeData(name, huelle, antwort.statusCode);
@@ -70,7 +70,7 @@ class RechnungTransport {
 
   /// Einen Aufruf mit Binärantwort (PDF) absetzen. Im Fehlerfall antwortet der
   /// Server mit der gewohnten JSON-Hülle.
-  Future<Uint8List> rufenBinaer(String name, Map<String, dynamic> params) async {
+  Future<Uint8List> callBinary(String name, Map<String, dynamic> params) async {
     final antwort = await _senden(name, params);
     final bytes = antwort.bodyBytes;
     if (bytes.length >= 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) {

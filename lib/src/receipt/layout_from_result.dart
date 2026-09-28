@@ -8,7 +8,7 @@ class ReceiptPrintLayout {
   /// Das Zeilenmodell des Servers (`data.layout`); `null`, wenn die Antwort
   /// keines trug. Dann zeichnet der lokale Rueckfall (`setKeckReceipt`) in
   /// [paperSize].
-  final BelegLayout? layout;
+  final ReceiptLayout? layout;
 
   /// Breite, nach der das Layout gebaut ist: beim Server-Layout seine eigene
   /// (80 mm), sonst die Rueckfallbreite.
@@ -34,7 +34,7 @@ ReceiptPrintLayout receiptLayoutFromResult(
   KasseneckReceipt receipt, {
   KeckPaperSize fallbackPaperSize = KeckPaperSize.mm58,
 }) {
-  final BelegLayout? server = receipt.layout;
+  final ReceiptLayout? server = receipt.layout;
   if (server != null) {
     return ReceiptPrintLayout._(server, KeckPaperSize.values.asNameMap()[server.paperSize] ?? KeckPaperSize.mm80);
   }

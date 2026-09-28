@@ -10,7 +10,7 @@
 library;
 
 /// Die Aufrufe der Rechnungs-API, in der Reihenfolge des Vertrags.
-const List<String> rechnungAufrufe = [
+const List<String> invoiceCalls = [
   'createCustomer',
   'getCustomer',
   'updateCustomer',
@@ -64,7 +64,7 @@ const List<String> invoiceErrorCodes = [
 /// Anmeldung, Freischaltung, Rand (`dialect_mismatch`,
 /// `internal_translation_error`, `response_translation_failed`) und eine
 /// fehlende Route. Sie gehören nicht zu [invoiceErrorCodes], darum liefert
-/// `rechnungFehlerCode` für sie `null`.
+/// `invoiceErrorCode` für sie `null`.
 const List<String> invoiceRequestErrorCodes = [
   'account_not_found',
   'admin_required',
@@ -108,10 +108,10 @@ const List<String> taxSchemes = [
 ];
 
 /// Steuerfälle, in denen die Rechnung keine Steuer ausweist: jede Position
-/// zählt zu 0 %, gleich welcher `vatRate` an ihr steht (`rechnungSummen`).
+/// zählt zu 0 %, gleich welcher `vatRate` an ihr steht (`computeInvoiceTotals`).
 /// `oss` gehört nicht dazu — dort wird Steuer ausgewiesen, nur nicht
 /// österreichische.
-const List<String> steuerfreieFaelle = [
+const List<String> zeroRatedTaxSchemes = [
   'smallBusiness',
   'reverseCharge',
   'intraCommunitySupply',
@@ -217,4 +217,4 @@ const List<String> invoiceSetupRequirements = [
 ];
 
 /// Gehört [code] zum Katalog der Rechnungs-API?
-bool istRechnungFehlercode(String? code) => code != null && invoiceErrorCodes.contains(code);
+bool isInvoiceErrorCode(String? code) => code != null && invoiceErrorCodes.contains(code);

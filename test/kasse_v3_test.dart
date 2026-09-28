@@ -141,7 +141,7 @@ KeckPaymentInput _zahlung(Map<dynamic, dynamic> z) => KeckPaymentInput(
     );
 
 /// Das Logo eines Druckjobs aus seinen Rasterzeilen zurückgebaut.
-DruckLogo _logoAus(Map<dynamic, dynamic> l) {
+PrintLogo _logoAus(Map<dynamic, dynamic> l) {
   final breite = l['width'] as int;
   final hoehe = l['height'] as int;
   final bytes = base64Decode(l['rows'] as String);
@@ -152,11 +152,11 @@ DruckLogo _logoAus(Map<dynamic, dynamic> l) {
       if (bytes[y * jeZeile + (x >> 3)] & (0x80 >> (x & 7)) != 0) punkte[y * breite + x] = 1;
     }
   }
-  return DruckLogo(
-    stufe: LogoStufe.values.firstWhere((s) => s.kuerzel == l['scale']),
-    pxBreite: l['pxWidth'] as int,
-    pxHoehe: l['pxHeight'] as int,
-    raster: LogoRaster(breite: breite, hoehe: hoehe, punkte: punkte),
+  return PrintLogo(
+    size: SheetLogoSize.values.firstWhere((s) => s.code == l['scale']),
+    pixelWidth: l['pxWidth'] as int,
+    pixelHeight: l['pxHeight'] as int,
+    raster: LogoRaster(width: breite, height: hoehe, dots: punkte),
   );
 }
 
@@ -171,7 +171,7 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
   final register = RegisterClient(httpClient: http);
   final transport = _transport(http, kasse);
   final belege = RegisterReceiptClient(transport);
-  final drucker = KasseDruckerClient(transport);
+  final drucker = PosPrinterClient(transport);
   Future<Object?> aufruf() async {
     switch (endpunkt) {
       case 'pairRegisterDevice':
@@ -218,70 +218,70 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
           geo: _geo(p['geo']),
         );
       case 'renewRegisterSession':
-        return RegisterSessionClient.aus(transport).renewRegisterSession();
+        return RegisterSessionClient.fromTransport(transport).renewRegisterSession();
       case 'endRegisterSession':
-        await RegisterSessionClient.aus(transport).endRegisterSession();
+        await RegisterSessionClient.fromTransport(transport).endRegisterSession();
         return true;
       case 'listMyCashregisters':
-        return belege.kassen();
+        return belege.cashregisters();
       case 'generateFullReceiptId':
-        return belege.volleBelegId(_s(p['receiptId']));
+        return belege.fullReceiptId(_s(p['receiptId']));
       case 'listMyArticleGroups':
-        return belege.artikelgruppen();
+        return belege.articleGroups();
       case 'listMyArticles':
-        return belege.artikel();
+        return belege.articles();
       case 'listMyTipRecipients':
-        return belege.tipEmpfaenger();
+        return belege.tipRecipients();
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();
-        return KasseEinstellungenClient(transport, deviceId: _s(p['deviceId'])).laden();
+        return PosSettingsClient(transport, deviceId: _s(p['deviceId'])).load();
       case 'setMyKasseSettings':
         if (p['business'] is! Map) throw const _NichtDarstellbar();
-        return KasseEinstellungenClient(transport, deviceId: '')
-            .betriebSpeichern((p['business'] as Map).cast<String, dynamic>());
+        return PosSettingsClient(transport, deviceId: '')
+            .saveBusiness((p['business'] as Map).cast<String, dynamic>());
       case 'setMyRegisterDeviceSettings':
         if (p['device'] is! Map) throw const _NichtDarstellbar();
-        return KasseEinstellungenClient(transport, deviceId: _s(p['deviceId']))
-            .geraetSpeichern((p['device'] as Map).cast<String, dynamic>());
+        return PosSettingsClient(transport, deviceId: _s(p['deviceId']))
+            .saveDevice((p['device'] as Map).cast<String, dynamic>());
       case 'setMyKasseLogo':
-        final c = KasseEinstellungenClient(transport, deviceId: '');
-        if (p['remove'] == true) return c.logoEntfernen();
+        final c = PosSettingsClient(transport, deviceId: '');
+        if (p['remove'] == true) return c.removeLogo();
         if (p['image'] != null && p['image'] is! String) throw const _NichtDarstellbar();
-        return c.logoSetzen(_s(p['image']));
+        return c.setLogo(_s(p['image']));
       case 'listMyPrinters':
-        return drucker.drucker();
+        return drucker.printers();
       case 'createPrintJob':
-        final layout = BelegLayout.fromJson(p['layout']);
+        final layout = ReceiptLayout.fromJson(p['layout']);
         if (layout == null || (p['title'] != null && p['title'] is! String)) throw const _NichtDarstellbar();
         final logoRoh = p['logo'];
         // Ein Logo ohne Raster (scale: 'riesig') baut DruckLogo nicht.
         if (logoRoh is Map && logoRoh['rows'] is! String) throw const _NichtDarstellbar();
-        return drucker.druckjobAnlegen(
+        return drucker.createPrintJob(
           printerId: _s(p['printerId']),
           layout: layout,
           receiptId: p['receiptId'] as String?,
-          titel: p['title'] as String?,
-          quelle: p['source'] as String?,
+          title: p['title'] as String?,
+          source: p['source'] as String?,
           logo: p['logo'] is Map ? _logoAus(p['logo'] as Map) : null,
-          markeZeigen: p['brand'] == true,
+          brandMark: p['brand'] == true,
         );
       case 'getPrintJob':
-        return drucker.druckjobHolen(printerId: _s(p['printerId']), jobId: _s(p['jobId']));
+        return drucker.getPrintJob(printerId: _s(p['printerId']), jobId: _s(p['jobId']));
       case 'createReceipt':
-        return belege.verkaufen(
-          positionen: [for (final i in (p['items'] as List? ?? const [])) KasseneckItem.fromJson((i as Map).cast())],
-          zahlungen: [for (final z in (p['payments'] as List? ?? const [])) _zahlung(z as Map)],
-          trinkgeldCents: p['tip'] as int?,
+        return belege.sell(
+          items: [for (final i in (p['items'] as List? ?? const [])) KasseneckItem.fromJson((i as Map).cast())],
+          payments: [for (final z in (p['payments'] as List? ?? const [])) _zahlung(z as Map)],
+          tipCents: p['tip'] as int?,
         );
       case 'cancelReceipt':
-        return belege.stornieren(
+        return belege.cancel(
           originalReceiptId: _s(p['originalReceiptId']),
-          grund: _s(p['reason']),
-          anmerkung: p['note'] as String?,
-          positionen: p['items'] == null
+          reason: _s(p['reason']),
+          note: p['note'] as String?,
+          items: p['items'] == null
               ? null
-              : [for (final i in p['items'] as List) (index: (i as Map)['index'] as int, menge: i['quantity'] as int)],
-          zahlungen: p['payments'] == null ? null : [for (final z in p['payments'] as List) _zahlung(z as Map)],
+              : [for (final i in p['items'] as List) (index: (i as Map)['index'] as int, quantity: i['quantity'] as int)],
+          payments: p['payments'] == null ? null : [for (final z in p['payments'] as List) _zahlung(z as Map)],
         );
     }
     throw StateError('Endpunkt $endpunkt ohne Aufruf');
@@ -325,8 +325,8 @@ Map<String, dynamic> _soll(String endpunkt, Map<String, dynamic> fall) {
   // Das Zeilenmodell geht in der Form von BelegLayout.toJson hinaus: ruleset
   // immer gesetzt, Standardwerte der Zeilen ausgeschrieben. Für ein Layout des
   // Servers (success_logo_qr) ist das dieselbe Form, siehe eigener Test.
-  if (endpunkt == 'createPrintJob' && BelegLayout.fromJson(p['layout']) != null) {
-    p['layout'] = BelegLayout.fromJson(p['layout'])!.toJson();
+  if (endpunkt == 'createPrintJob' && ReceiptLayout.fromJson(p['layout']) != null) {
+    p['layout'] = ReceiptLayout.fromJson(p['layout'])!.toJson();
   }
   return p;
 }
@@ -476,8 +476,8 @@ void main() {
       expect(u.users.where((b) => b.pinPolicyOutdated).length, 6);
       expect(u.receiptHeader?['company'], 'Café Welt');
       expect(u.cashregister?.ready, isTrue);
-      expect(u.settings.betrieb.theme, KasseStil.night);
-      expect(u.settings.betrieb.color, '#222222');
+      expect(u.settings.business.theme, PosTheme.night);
+      expect(u.settings.business.color, '#222222');
       expect(unknownPosSettingValues(u.settings), isEmpty);
 
       final stillgelegt =
@@ -501,12 +501,12 @@ void main() {
           await _rufe('listRegisterUsersForDevice', _fall('listRegisterUsersForDevice', 'account_without_settings'));
       expect((konto!.ergebnis as RegisterDeviceUsers).settings.toJson()['business'], soll['business']);
       final geraet = await _rufe('getKasseSettings', _fall('getKasseSettings', 'cashier_unknown_device'));
-      expect((geraet!.ergebnis as KasseSettings).toJson()['device'], soll['device']);
+      expect((geraet!.ergebnis as PosSettings).toJson()['device'], soll['device']);
     });
 
     test('Sitzungen: own, deviceLabel', () async {
       final lauf = await _rufe('listRegisterSessionsForDevice', _fall('listRegisterSessionsForDevice', 'success_select'));
-      final s = lauf!.ergebnis as RegisterSessionsStand;
+      final s = lauf!.ergebnis as RegisterSessionsState;
       expect(s.licenses, 5);
       expect(s.sessions.map((x) => x.own), [false, true]);
       expect(s.sessions.first.deviceLabel, 'Tablet vorne');
@@ -557,17 +557,17 @@ void main() {
     });
 
     test('zwischengespeicherte Kacheln der Version 9.x lesen sich weiter', () {
-      final a = KasseArtikel.aus({
+      final a = PosArticle.fromJson({
         'id': 'a1', 'name': 'Wurst', 'unitPriceCents': 1290, 'vatRate': 10, 'unit': 'kg', 'groupId': 'g1',
         'kasse': {'sichtbar': false, 'sort': 3}, 'active': true,
         'mengenregel': 'dezimal', 'mengeFragen': true, 'maxMenge': 2.5,
       });
-      expect([a.sichtbar, a.sort, a.mengenregel, a.mengeFragen, a.maxMenge], [false, 3, Mengenregel.decimal, true, 2.5]);
+      expect([a.visible, a.sort, a.quantityRule, a.askQuantity, a.maxQuantity], [false, 3, QuantityRule.decimal, true, 2.5]);
       // Neu geschrieben wird die Drahtform.
       final neu = a.toJson();
       expect(neu['tile'], {'visible': false, 'sort': 3});
       expect(neu['quantityRule'], 'decimal');
-      expect(KasseArtikel.aus(neu).toJson(), neu);
+      expect(PosArticle.fromJson(neu).toJson(), neu);
     });
   });
 
@@ -576,24 +576,24 @@ void main() {
       for (final name in ['success_cashregister', 'success_owner', 'module_inventory']) {
         final fall = _fall('listMyArticles', name);
         final lauf = await _rufe('listMyArticles', fall);
-        final artikel = lauf!.ergebnis as List<KasseArtikel>;
+        final artikel = lauf!.ergebnis as List<PosArticle>;
         final roh = (fall['response']['data']['articles'] as List).cast<Map<String, dynamic>>();
         expect(artikel.length, roh.length);
         for (final (i, a) in artikel.indexed) {
           final r = roh[i];
           expect(a.id, r['id']);
-          expect(a.sichtbar, (r['tile'] as Map?)?['visible'] != false, reason: a.id);
+          expect(a.visible, (r['tile'] as Map?)?['visible'] != false, reason: a.id);
           expect(a.sort, (r['tile'] as Map?)?['sort'] ?? 0);
-          expect(a.mengenregel?.name, r['quantityRule']);
-          expect(a.mengeFragen, r['askQuantity']);
-          expect(a.erloesgruppeId, r['revenueGroupId']);
+          expect(a.quantityRule?.name, r['quantityRule']);
+          expect(a.askQuantity, r['askQuantity']);
+          expect(a.revenueGroupId, r['revenueGroupId']);
         }
       }
     });
 
     test('Einstellungen des Kontos: nacht wird night, Gerät mit eigenen Tasten', () async {
       final lauf = await _rufe('getKasseSettings', _fall('getKasseSettings', 'manager_with_device'));
-      final e = lauf!.ergebnis as KasseSettings;
+      final e = lauf!.ergebnis as PosSettings;
       final roh = _fall('getKasseSettings', 'manager_with_device')['response']['data'];
       expect(e.toJson(), {'business': roh['business'], 'device': roh['device']},
           reason: 'die Antwort ist schon gemischt; gelesen und zurückgeschrieben ergibt sie sich selbst');
@@ -605,9 +605,9 @@ void main() {
           final lauf = await _rufe(ep, fall);
           final daten = fall['response']['data'] as Map<String, dynamic>;
           final json = switch (lauf!.ergebnis) {
-            final KasseSettings s => s.toJson(),
-            final KasseSettingsBetrieb b => {'business': b.toJson()},
-            final KasseSettingsGeraet g => {'device': g.toJson()},
+            final PosSettings s => s.toJson(),
+            final PosBusinessSettings b => {'business': b.toJson()},
+            final PosDeviceSettings g => {'device': g.toJson()},
             _ => throw StateError('${fall['case']}'),
           };
           for (final teil in json.keys) {
@@ -654,26 +654,26 @@ void main() {
       expect([offen.status, offen.result, isPrintJobFinished(offen.status)], ['pending', null, false]);
 
       final lauf = _Lauf();
-      final fremd = await KasseDruckerClient(_transport(
+      final fremd = await PosPrinterClient(_transport(
               _mock({
                 'headers': {'Kasseneck-Api-Version': 'v3'},
                 'httpStatus': 200,
                 'response': {'status': 'success', 'data': {'jobId': 'j', 'status': 'cancelled'}},
               }, lauf),
               'KASSE1'))
-          .druckjobHolen(printerId: 'dr_theke', jobId: 'j');
+          .getPrintJob(printerId: 'dr_theke', jobId: 'j');
       expect(fremd.status, printJobStatusUnknown);
       expect(isPrintJobFinished(fremd.status), isTrue, reason: 'nie bis zum Zeitlimit abfragen');
     });
 
     test('Kassenliste und Volltext-Belegnummer', () async {
       final kassen = (await _rufe('listMyCashregisters', _fall('listMyCashregisters', 'manager')))!.ergebnis
-          as List<KassenEintrag>;
+          as List<CashregisterEntry>;
       expect(kassen.first.id, 'KASSE1');
       expect(kassen.first.onboarding.startReceiptCreated, isTrue);
       expect(kassen.first.token, isNull, reason: 'Kassen-Benutzer bekommen keinen Kassen-Token');
       final owner = (await _rufe('listMyCashregisters', _fall('listMyCashregisters', 'owner')))!.ergebnis
-          as List<KassenEintrag>;
+          as List<CashregisterEntry>;
       expect(owner.map((k) => k.id), ['KASSE1', 'KASSE2', 'KASSE3', 'KASSE4']);
       expect(owner.map((k) => k.decommissioned), [false, true, false, false]);
       expect(owner.first.token, isNotNull, reason: 'der Inhaber bekommt ihn');
@@ -700,13 +700,13 @@ void main() {
       final original = (ganz['params'] as Map)['originalReceiptId'] as String;
       final lauf = _Lauf();
       final client = RegisterReceiptClient(_transport(_mock(fall, lauf), 'KASSE1'), testEnvironment: true);
-      final ergebnis = await client.stornieren(originalReceiptId: original, grund: 'input_error');
-      expect(ergebnis.beleg.testCashregister, isTrue);
+      final ergebnis = await client.cancel(originalReceiptId: original, reason: 'input_error');
+      expect(ergebnis.receipt.testCashregister, isTrue);
 
       // Ohne Test-Umgebung gelten die Kennzeichen des Originals.
       final ohne = RegisterReceiptClient(_transport(_mock(fall, _Lauf()), 'KASSE1'));
-      final normal = await ohne.stornieren(originalReceiptId: original, grund: 'input_error');
-      expect(normal.beleg.testCashregister, isFalse);
+      final normal = await ohne.cancel(originalReceiptId: original, reason: 'input_error');
+      expect(normal.receipt.testCashregister, isFalse);
     });
 
     test('Storno-Ausgang unklar bleibt unklar (cancellation_outcome_unknown)', () async {
@@ -732,11 +732,11 @@ void main() {
   group('Einstellungen: Prüfung vor dem Senden', () {
     Future<(Object?, _Lauf)> schreiben(String teil, Map<String, dynamic> block) async {
       final lauf = _Lauf();
-      final c = KasseEinstellungenClient(
+      final c = PosSettingsClient(
           _transport(_mock(_fallErfolg(teil == 'business' ? 'setMyKasseSettings' : 'setMyRegisterDeviceSettings'), lauf), 'KASSE1'),
           deviceId: 'dev_pin');
       try {
-        await (teil == 'business' ? c.betriebSpeichern(block) : c.geraetSpeichern(block));
+        await (teil == 'business' ? c.saveBusiness(block) : c.saveDevice(block));
         return (null, lauf);
       } catch (e) {
         return (e, lauf);
@@ -765,7 +765,7 @@ void main() {
     test('Tasten: unbekannte Aktion und Doppelbelegung', () async {
       expect((await schreiben('device', {'shortcuts': {'kassieren': ['F9']}})).$1,
           abgewiesen('device.shortcuts.kassieren: unbekannte Aktion'));
-      final karte = {...kasseTastenStandard, 'card': ['Mod+B']};
+      final karte = {...posShortcutDefaults, 'card': ['Mod+B']};
       expect((await schreiben('device', {'shortcuts': karte})).$1, abgewiesen('schon belegt'));
       // Wird cash zugleich frei, geht die ganze Karte hinaus.
       final (f, lauf) = await schreiben('device', {'shortcuts': {...karte, 'cash': ['F2']}});
@@ -815,8 +815,8 @@ void main() {
       Future<KasseneckReceipt> stornieren({required bool testKasse}) async {
         original.testCashregister = testKasse;
         final client = RegisterReceiptClient(_transport(_mock(fall, _Lauf()), 'KASSE1'));
-        final e = await client.stornieren(originalReceiptId: original.receiptId, grund: 'input_error', original: original);
-        return e.beleg;
+        final e = await client.cancel(originalReceiptId: original.receiptId, reason: 'input_error', original: original);
+        return e.receipt;
       }
 
       final mitSignatur = await stornieren(testKasse: false);
@@ -829,26 +829,26 @@ void main() {
 
     test('F6: shortcuts nur als ganze Karte, sonst geht nichts hinaus', () async {
       final lauf = _Lauf();
-      final c = KasseEinstellungenClient(_transport(_mock(_fallErfolg('setMyRegisterDeviceSettings'), lauf), 'KASSE1'),
+      final c = PosSettingsClient(_transport(_mock(_fallErfolg('setMyRegisterDeviceSettings'), lauf), 'KASSE1'),
           deviceId: 'dev_pin');
       await expectLater(
-          c.geraetSpeichern({'shortcuts': {'cash': ['Mod+K']}}),
+          c.saveDevice({'shortcuts': {'cash': ['Mod+K']}}),
           throwsA(isA<KasseneckValidationError>()
               .having((e) => e.kind, 'kind', 'request')
               .having((e) => e.reason, 'reason', contains('ganze Karte'))));
       expect(lauf.log, isEmpty);
       // Über posSettingsChanges geht bei einer Tastenänderung die ganze Karte,
       // und eine Doppelbelegung mit einer gespeicherten Taste fällt auf.
-      const vorher = KasseSettingsGeraet();
-      final doppelt = posSettingsChanges(vorher.toJson(), vorher.mit({'shortcuts': {'cash': ['Mod+K']}}).toJson());
-      await expectLater(c.geraetSpeichern(doppelt),
+      const vorher = PosDeviceSettings();
+      final doppelt = posSettingsChanges(vorher.toJson(), vorher.merge({'shortcuts': {'cash': ['Mod+K']}}).toJson());
+      await expectLater(c.saveDevice(doppelt),
           throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', contains('Mod+K schon belegt'))));
       expect(lauf.log, isEmpty);
     });
 
     test('F7: fehlende Druckerliste oder fehlende Job-Kennung ist ein Antwortfehler', () async {
-      Future<Object?> mit(String ep, Map<String, dynamic> daten, Future<Object?> Function(KasseDruckerClient) rufen) async {
-        final c = KasseDruckerClient(_transport(
+      Future<Object?> mit(String ep, Map<String, dynamic> daten, Future<Object?> Function(PosPrinterClient) rufen) async {
+        final c = PosPrinterClient(_transport(
             _mock({
               'headers': const {'Kasseneck-Api-Version': 'v3'},
               'httpStatus': 200,
@@ -862,15 +862,15 @@ void main() {
         }
       }
 
-      final layout = BelegLayout.fromJson(_fall('createPrintJob', 'success_cashregister')['params']['layout'])!;
+      final layout = ReceiptLayout.fromJson(_fall('createPrintJob', 'success_cashregister')['params']['layout'])!;
       final antwortfehler = isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response');
-      expect(await mit('listMyPrinters', {}, (c) => c.drucker()), antwortfehler);
-      expect(await mit('listMyPrinters', {'printers': []}, (c) => c.drucker()), isEmpty);
-      expect(await mit('createPrintJob', {'status': 'pending'}, (c) => c.druckjobAnlegen(printerId: 'dr', layout: layout)),
+      expect(await mit('listMyPrinters', {}, (c) => c.printers()), antwortfehler);
+      expect(await mit('listMyPrinters', {'printers': []}, (c) => c.printers()), isEmpty);
+      expect(await mit('createPrintJob', {'status': 'pending'}, (c) => c.createPrintJob(printerId: 'dr', layout: layout)),
           antwortfehler);
       expect(await mit('createPrintJob', {'jobId': '', 'status': 'pending'},
-          (c) => c.druckjobAnlegen(printerId: 'dr', layout: layout)), antwortfehler);
-      expect(await mit('getPrintJob', {'status': 'printed'}, (c) => c.druckjobHolen(printerId: 'dr', jobId: 'j')),
+          (c) => c.createPrintJob(printerId: 'dr', layout: layout)), antwortfehler);
+      expect(await mit('getPrintJob', {'status': 'printed'}, (c) => c.getPrintJob(printerId: 'dr', jobId: 'j')),
           antwortfehler);
     });
 
@@ -878,36 +878,36 @@ void main() {
       // Pfad in der Antwort -> Felder, die das Modell liest, und Felder, die
       // der Vertrag heute nicht in jedem Fall zeigt (optional).
       final modelle = <String, (Set<String>, Set<String>)>{
-        'pairRegisterDevice': (PairedRegisterDevice.felder, const {}),
-        'listRegisterUsersForDevice': (RegisterDeviceUsers.felder, const {}),
-        'listRegisterUsersForDevice.users[]': (RegisterUserSummary.felder, const {}),
-        'listRegisterUsersForDevice.policy': (RegisterPinPolicy.felder, const {}),
-        'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.felder, const {}),
-        'listRegisterSessionsForDevice': (RegisterSessionsStand.felder, const {}),
-        'listRegisterSessionsForDevice.sessions[]': (RegisterSession.felder, const {}),
-        'registerUserLogin': (RegisterUserSession.felder, const {}),
-        'registerUserLogin.user': (RegisterUser.felder, const {}),
-        'registerPinLogin': (RegisterUserSession.felder, const {}),
-        'registerPinLogin.user': (RegisterUser.felder, const {}),
+        'pairRegisterDevice': (PairedRegisterDevice.fields, const {}),
+        'listRegisterUsersForDevice': (RegisterDeviceUsers.fields, const {}),
+        'listRegisterUsersForDevice.users[]': (RegisterUserSummary.fields, const {}),
+        'listRegisterUsersForDevice.policy': (RegisterPinPolicy.fields, const {}),
+        'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.fields, const {}),
+        'listRegisterSessionsForDevice': (RegisterSessionsState.fields, const {}),
+        'listRegisterSessionsForDevice.sessions[]': (RegisterSession.fields, const {}),
+        'registerUserLogin': (RegisterUserSession.fields, const {}),
+        'registerUserLogin.user': (RegisterUser.fields, const {}),
+        'registerPinLogin': (RegisterUserSession.fields, const {}),
+        'registerPinLogin.user': (RegisterUser.fields, const {}),
         'renewRegisterSession': (const {'expiresAt'}, const {}),
         'listMyCashregisters': (const {'cashregisters'}, const {}),
-        'listMyCashregisters.cashregisters[]': (KassenEintrag.felder, const {}),
-        'listMyCashregisters.cashregisters[].onboarding': (KassenInbetriebnahme.felder, const {}),
+        'listMyCashregisters.cashregisters[]': (CashregisterEntry.fields, const {}),
+        'listMyCashregisters.cashregisters[].onboarding': (CashregisterOnboarding.fields, const {}),
         'generateFullReceiptId': (const {'fullReceiptId'}, const {}),
         'listMyArticleGroups': (const {'groups'}, const {}),
-        'listMyArticleGroups.groups[]': (Artikelgruppe.felder, const {'symbol', 'vatRate'}),
+        'listMyArticleGroups.groups[]': (ArticleGroup.fields, const {'symbol', 'vatRate'}),
         'listMyArticles': (const {'articles'}, const {}),
-        'listMyArticles.articles[]': (KasseArtikel.felder, const {'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity'}),
-        'listMyArticles.articles[].tile': (KasseArtikel.kachelFelder, const {}),
+        'listMyArticles.articles[]': (PosArticle.fields, const {'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity'}),
+        'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),
         'setMyKasseLogo': (const {'logoImage'}, const {}),
         'listMyPrinters': (const {'printers'}, const {}),
-        'listMyPrinters.printers[]': (NetworkPrinter.felder, const {}),
-        'listMyPrinters.printers[].lastResult': (PrintResult.felder, const {'status'}),
-        'createPrintJob': (PrintJob.felder, const {'createdAt', 'sentAt', 'result'}),
-        'getPrintJob': (PrintJob.felder, const {}),
-        'getPrintJob.result': (PrintResult.felder, const {}),
+        'listMyPrinters.printers[]': (NetworkPrinter.fields, const {}),
+        'listMyPrinters.printers[].lastResult': (PrintResult.fields, const {'status'}),
+        'createPrintJob': (PrintJob.fields, const {'createdAt', 'sentAt', 'result'}),
+        'getPrintJob': (PrintJob.fields, const {}),
+        'getPrintJob.result': (PrintResult.fields, const {}),
         'listMyTipRecipients': (const {'recipients'}, const {}),
-        'listMyTipRecipients.recipients[]': (KeckTipPerson.felder, const {}),
+        'listMyTipRecipients.recipients[]': (KeckTipPerson.fields, const {}),
       };
       // Ohne Nutzlast, die ein Modell liest: Bestätigungen (ok, id).
       const ohneModell = {'endRegisterSession', 'unpairRegisterDevice'};
@@ -961,22 +961,22 @@ void main() {
 
         final beispiele = <(Set<String>, Map<String, dynamic>, void Function(Map<String, dynamic>))>[
           (
-            {...KasseArtikel.felder, for (final k in KasseArtikel.kachelFelder) 'tile.$k'},
-            {for (final f in KasseArtikel.felder) f: null, 'tile': {'visible': true, 'sort': 1}},
-            KasseArtikel.aus,
+            {...PosArticle.fields, for (final k in PosArticle.tileFields) 'tile.$k'},
+            {for (final f in PosArticle.fields) f: null, 'tile': {'visible': true, 'sort': 1}},
+            PosArticle.fromJson,
           ),
-          (Artikelgruppe.felder, {for (final f in Artikelgruppe.felder) f: null}, Artikelgruppe.aus),
+          (ArticleGroup.fields, {for (final f in ArticleGroup.fields) f: null}, ArticleGroup.fromJson),
           (
-            {...NetworkPrinter.felder, for (final k in PrintResult.felder) 'lastResult.$k'},
-            {for (final f in NetworkPrinter.felder) f: null, 'lastResult': {for (final k in PrintResult.felder) k: null}},
-            NetworkPrinter.aus,
+            {...NetworkPrinter.fields, for (final k in PrintResult.fields) 'lastResult.$k'},
+            {for (final f in NetworkPrinter.fields) f: null, 'lastResult': {for (final k in PrintResult.fields) k: null}},
+            NetworkPrinter.fromJson,
           ),
           (
-            {...KassenEintrag.felder, for (final k in KassenInbetriebnahme.felder) 'onboarding.$k'},
-            {for (final f in KassenEintrag.felder) f: null, 'onboarding': {for (final k in KassenInbetriebnahme.felder) k: null}},
-            KassenEintrag.aus,
+            {...CashregisterEntry.fields, for (final k in CashregisterOnboarding.fields) 'onboarding.$k'},
+            {for (final f in CashregisterEntry.fields) f: null, 'onboarding': {for (final k in CashregisterOnboarding.fields) k: null}},
+            CashregisterEntry.fromJson,
           ),
-          (KeckTipPerson.felder, {for (final f in KeckTipPerson.felder) f: null}, KeckTipPerson.aus),
+          (KeckTipPerson.fields, {for (final f in KeckTipPerson.fields) f: null}, KeckTipPerson.fromJson),
         ];
         for (final (soll, roh, lesen) in beispiele) {
           expect(gelesen(roh, lesen), soll);
@@ -986,23 +986,23 @@ void main() {
 
     group('F1: mit() weist unbekannte und deutsche Schlüssel laut ab', () {
       test('das Beispiel des Reviews: qrModus statt qrMode', () {
-        const g = KasseSettingsGeraet();
-        expect(() => g.mit({'qrModus': 'raster'}),
+        const g = PosDeviceSettings();
+        expect(() => g.merge({'qrModus': 'raster'}),
             throwsA(isA<ArgumentError>().having((e) => e.message, 'message', allOf(contains('device.qrModus'), contains('qrMode')))));
-        expect(g.mit({'qrMode': 'raster'}).qrMode, KasseQrModus.raster);
+        expect(g.merge({'qrMode': 'raster'}).qrMode, PosQrMode.raster);
       });
 
       test('unbekannter Schlüssel, deutscher Wert, deutsche Tasten-Aktion', () {
-        const b = KasseSettingsBetrieb();
-        expect(() => b.mit({'stil': 'night'}), throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('business.stil'))));
-        expect(() => b.mit({'gibtsnicht': 1}), throwsA(isA<ArgumentError>()));
-        expect(() => b.mit({'theme': 'nacht'}), throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('night'))));
-        expect(() => const KasseSettingsGeraet().mit({'shortcuts': {'bar': ['F2']}}),
+        const b = PosBusinessSettings();
+        expect(() => b.merge({'stil': 'night'}), throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('business.stil'))));
+        expect(() => b.merge({'gibtsnicht': 1}), throwsA(isA<ArgumentError>()));
+        expect(() => b.merge({'theme': 'nacht'}), throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('night'))));
+        expect(() => const PosDeviceSettings().merge({'shortcuts': {'bar': ['F2']}}),
             throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('cash'))));
       });
 
       test('ein unbekannter englischer Wert bleibt erlaubt (künftiger Wert des Servers)', () {
-        expect(const KasseSettingsBetrieb().mit({'theme': 'sepia'}).fremdeWerte, {'theme': 'sepia'});
+        expect(const PosBusinessSettings().merge({'theme': 'sepia'}).unknownValues, {'theme': 'sepia'});
       });
     });
   });

@@ -5,16 +5,16 @@ import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// Veraltet: rechnet Spalten mit Flex und bricht anders um als das Papier;
-/// neue Oberflaechen nutzen [KeckBelegBlattWidget].
+/// neue Oberflaechen nutzen [KeckReceiptSheetWidget].
 ///
-/// Zeichnet ein Beleg-Zeilenmodell des Backends ([BelegLayout]) — genau die
+/// Zeichnet ein Beleg-Zeilenmodell des Backends ([ReceiptLayout]) — genau die
 /// Zeilen, die Browser-Kasse, Bondrucker und PDF zeigen. Kein eigenes
 /// Beleg-Wissen: Reihenfolge, Texte und Aufdrucke kommen aus dem Modell.
 ///
 /// [qrCovered]: RKSV-QR zunächst weichgezeichnet, ein Tipp macht ihn lesbar
 /// (wie [KeckReceiptWidget.qrCovered]).
 class KeckReceiptLinesWidget extends StatefulWidget {
-  final BelegLayout layout;
+  final ReceiptLayout layout;
   final Color paperColor;
   final Color textColor;
   final bool qrCovered;
@@ -40,7 +40,7 @@ class _KeckReceiptLinesWidgetState extends State<KeckReceiptLinesWidget> {
 
   TextStyle get _mono => TextStyle(fontFamily: 'monospace', fontFamilyFallback: const ['Courier', 'Menlo'], fontSize: widget.fontSize, color: widget.textColor, height: 1.35);
 
-  TextAlign _ta(BelegAlign a) => switch (a) { BelegAlign.center => TextAlign.center, BelegAlign.right => TextAlign.right, BelegAlign.left => TextAlign.left };
+  TextAlign _ta(LayoutAlign a) => switch (a) { LayoutAlign.center => TextAlign.center, LayoutAlign.right => TextAlign.right, LayoutAlign.left => TextAlign.left };
 
   Widget _qr(String data) {
     final qr = QrImageView(
@@ -74,11 +74,11 @@ class _KeckReceiptLinesWidgetState extends State<KeckReceiptLinesWidget> {
   /// selben Column sind ein Absturz — ausgerechnet dann, wenn der Kassier den
   /// Beleg ansehen will. Am Text darf er auch nicht hängen: derselbe Aufdruck
   /// zweimal wäre wieder derselbe Fall.
-  Widget _zeile(BelegZeile z, int nummer) {
+  Widget _zeile(LayoutLine z, int nummer) {
     switch (z) {
-      case BelegText():
+      case LayoutTextLine():
         return Text(z.text, textAlign: _ta(z.align), style: _mono.copyWith(fontWeight: z.bold ? FontWeight.bold : FontWeight.normal));
-      case BelegBanner():
+      case LayoutBannerLine():
         return Container(
           key: Key('keck-receipt-banner-${z.warning ? 'warnung' : 'belegart'}-$nummer'),
           margin: const EdgeInsets.symmetric(vertical: 4),
@@ -89,18 +89,18 @@ class _KeckReceiptLinesWidgetState extends State<KeckReceiptLinesWidget> {
           ),
           child: Text(z.text, textAlign: TextAlign.center, style: _mono.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.8, color: z.warning ? widget.paperColor : widget.textColor)),
         );
-      case BelegSpalten():
+      case LayoutColumnsLine():
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: z.columns
               .map((c) => Expanded(flex: c.width, child: Text(c.text, textAlign: _ta(c.align), style: _mono, softWrap: true)))
               .toList(),
         );
-      case BelegLinie():
+      case LayoutRuleLine():
         return Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Divider(color: widget.textColor, height: 1, thickness: 0.6));
-      case BelegLeerraum():
+      case LayoutSpaceLine():
         return SizedBox(height: widget.fontSize * 1.35 * z.lines);
-      case BelegQr():
+      case LayoutQrLine():
         return Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: _qr(z.data));
     }
   }

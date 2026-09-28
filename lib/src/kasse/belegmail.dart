@@ -27,19 +27,18 @@ import '../receipt/codes.dart' show receiptEmailErrorCodes, receiptEmailVias;
 ///     erlaubt und sinnvoll.
 ///
 /// Dahinter die Codes von Anmeldung und Rand und `route_missing`.
-final List<String> belegMailFehlercodes = receiptEmailErrorCodes;
 
-/// Ist [wert] ein Code aus [belegMailFehlercodes]? Ein Anzeigetext ist keiner.
-bool istBelegMailFehlercode(Object? wert) =>
-    wert is String && belegMailFehlercodes.contains(wert);
+/// Ist [value] ein Code aus [receiptEmailErrorCodes]? Ein Anzeigetext ist keiner.
+bool isReceiptEmailErrorCode(Object? wert) =>
+    wert is String && receiptEmailErrorCodes.contains(wert);
 
 /// Was das Backend ueber einen **erfolgten** Versand sagt.
 ///
 /// Die drei Felder heissen wie in der Antwort (`data.to`, `data.at`,
 /// `data.via`) — dieselben Namen fuehrt der JS-Zwilling, und so sagt in beiden
 /// Paketen dasselbe Wort dasselbe.
-class Belegmailergebnis {
-  const Belegmailergebnis({required this.to, this.at, this.via});
+class SendReceiptEmailResult {
+  const SendReceiptEmailResult({required this.to, this.at, this.via});
 
   /// Die Adresse, an die es ging — normalisiert, wie das Backend sie
   /// protokolliert (getrimmt, kleingeschrieben). Fehlt sie in der Antwort,
@@ -67,13 +66,13 @@ class Belegmailergebnis {
   /// bereits draussen; ein Wurf sagte der Kasse „nicht gesendet", und der
   /// Kassier schickte sie noch einmal. Fuer `at` und `via` hinge daran nur eine
   /// Zeile Anzeige — fuer den Gast eine zweite Mail.
-  factory Belegmailergebnis.aus(Object? daten, {required String gesendetAn}) {
+  factory SendReceiptEmailResult.fromResponse(Object? daten, {required String sentTo}) {
     final map = daten is Map ? daten : const {};
     final to = map['to'];
     final at = map['at'];
     final via = map['via'];
-    return Belegmailergebnis(
-      to: to is String && to.trim().isNotEmpty ? to : gesendetAn,
+    return SendReceiptEmailResult(
+      to: to is String && to.trim().isNotEmpty ? to : sentTo,
       at: at is String && at.isNotEmpty ? at : null,
       via: receiptEmailVias.contains(via) ? via as String : null,
     );

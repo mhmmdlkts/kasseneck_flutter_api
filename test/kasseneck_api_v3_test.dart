@@ -195,7 +195,7 @@ void main() {
         KeckTipRecipient(registerUserId: 'chef', cents: 100),
         KeckTipRecipient(registerUserId: 'ru_7', cents: 200),
       ]);
-      final due = ReceiptDueTip.fromKeckTip(tip, istInhaber: (id) => id == 'chef');
+      final due = ReceiptDueTip.fromKeckTip(tip, isOwner: (id) => id == 'chef');
       expect(due.cents, 300);
       expect([for (final r in due.recipients!) (r.cents, r.owner)], [(100, true), (200, false)]);
       expect(() => ReceiptDueTip.fromKeckTip(tip), throwsArgumentError);
@@ -209,12 +209,12 @@ void main() {
       final m = _mock((_) => _antwort(fall));
       final api = KasseneckApi(apiKey: apiKey, cashregisterToken: 'x', httpClient: m.client);
       final p = fall['params'] as Map<String, dynamic>;
-      return (await api.stornieren(
+      return (await api.cancelReceipt(
         cashregisterId: p['cashregisterId'] as String,
         originalReceiptId: p['originalReceiptId'] as String,
-        grund: p['reason'] as String,
-        positionen: [for (final e in (p['items'] as List).cast<Map>()) (index: e['index'] as int, menge: e['quantity'] as int)],
-        zahlungen: [
+        reason: p['reason'] as String,
+        items: [for (final e in (p['items'] as List).cast<Map>()) (index: e['index'] as int, quantity: e['quantity'] as int)],
+        payments: [
           for (final z in (p['payments'] as List).cast<Map<String, dynamic>>())
             KeckPaymentInput(
                 method: KeckPaymentMethod.values.byName(z['method'] as String),
@@ -223,7 +223,7 @@ void main() {
         ],
         original: original,
       ))
-          .beleg;
+          .receipt;
     }
 
     test('Test-Schluessel: TESTKASSE', () async {

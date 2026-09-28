@@ -85,7 +85,7 @@ void main() {
 
       await expectLater(
         api.getReceipts(DateTime(2026, 8, 24), DateTime(2026, 8, 25)),
-        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)),
       );
     });
   });

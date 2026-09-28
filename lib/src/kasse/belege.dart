@@ -28,21 +28,21 @@ import '../register/transport.dart';
 import 'artikel.dart';
 import '../../models/registration_info.dart';
 import 'belegmail.dart';
-import 'storno.dart' show pruefeKartenRueckbuchung, stornogruende;
+import 'storno.dart' show assertCardRefunds, cancellationReasons;
 
 /// Storno-Stand eines Belegs in der Liste (Drahtfeld `cancellationStatus`,
 /// Katalog `STORNO_STAND`): `none`, `partial`, `full`. Ein unbekannter
-/// kuenftiger Wert kommt als [StornoStand.unknown] an und nie als `none`: die
-/// Kasse bietet dann keinen Storno an (siehe `stornoErlaubt`), der Server
+/// kuenftiger Wert kommt als [CancellationState.unknown] an und nie als `none`: die
+/// Kasse bietet dann keinen Storno an (siehe `canCancel`), der Server
 /// haelt ohnehin die Restmengen.
-enum StornoStand { none, partial, full, unknown }
+enum CancellationState { none, partial, full, unknown }
 
 /// Eine Position, die storniert werden soll.
-typedef Stornoposition = ({int index, int menge});
+typedef CancellationItem = ({int index, int quantity});
 
 /// Bediener an einem Beleg.
-class Belegbediener {
-  const Belegbediener({required this.uid, required this.name});
+class ReceiptOperator {
+  const ReceiptOperator({required this.uid, required this.name});
 
   /// Kann fehlen (Altbeleg, Geraetebenutzer).
   final String? uid;
@@ -51,129 +51,129 @@ class Belegbediener {
 
 /// Ein Beleg in der Liste — eine **Zusammenfassung**, kein vollstaendiger
 /// Beleg. Fuer Nachdruck oder Storno gehoert der Beleg ueber
-/// [RegisterReceiptClient.holen] einzeln geholt.
-class Belegzusammenfassung {
-  const Belegzusammenfassung({
+/// [RegisterReceiptClient.get] einzeln geholt.
+class ReceiptSummary {
+  const ReceiptSummary({
     required this.receiptId,
-    required this.belegart,
-    required this.zeitstempel,
-    required this.summeCents,
-    required this.zahlungsart,
-    required this.signaturOk,
-    required this.positionen,
-    this.stornoStand,
-    this.zaehler,
-    this.bediener,
-    this.storniertBeleg,
-    this.stornogrund,
-    this.nullbelegAnlass,
-    this.zahlungen,
+    required this.receiptType,
+    required this.timeStamp,
+    required this.totalCents,
+    required this.paymentMethod,
+    required this.signatureOk,
+    required this.items,
+    this.cancellationState,
+    this.counter,
+    this.operator,
+    this.cancellationOfReceiptId,
+    this.cancellationReason,
+    this.zeroKind,
+    this.payments,
   });
 
   final String receiptId;
 
   /// Roher Wert des Backends (`standard`, `cancellation`, `zero`, …).
-  final String belegart;
+  final String receiptType;
 
   /// Roher Belegzeitstempel (Wiener Wanduhrzeit ohne Offset).
-  final String zeitstempel;
+  final String timeStamp;
 
   /// Belegsumme in ganzen Cent. Das Backend liefert **Euro**; hier wird
   /// einmal gerundet, damit sich der Gleitkommafehler nicht bis in die
   /// Tagessumme fortpflanzt.
-  final int summeCents;
+  final int totalCents;
 
   /// Einzel-Zahlungsart des Belegs; `mixed` bei mehreren Zahlarten. Ein
   /// unbekannter kuenftiger Wert gilt als Barzahlung.
-  final KeckPaymentMethod zahlungsart;
+  final KeckPaymentMethod paymentMethod;
 
   /// Zahlungsliste, nur bei Belegen, die eine tragen. Die Liste liefert nur die
   /// oeffentlichen Felder (id, method, amountCents, provider, tenderedCents,
   /// changeCents, refundOf, tipCents) -- Anbieter-Interna bleiben im Backend.
-  final List<KeckPayment>? zahlungen;
+  final List<KeckPayment>? payments;
 
   /// Wurde der Beleg mit funktionierender Signatureinheit ausgestellt?
-  final bool signaturOk;
+  final bool signatureOk;
 
   /// Positionen kurz (Name, Menge) — nur zur Anzeige in der Liste.
-  final List<({String name, int menge})> positionen;
+  final List<({String name, int quantity})> items;
 
   /// `null`, wenn die Liste den Stand nicht nennt (der Server laesst ihn in
-  /// manchen Listen weg); das wird nie zu [StornoStand.none].
-  final StornoStand? stornoStand;
+  /// manchen Listen weg); das wird nie zu [CancellationState.none].
+  final CancellationState? cancellationState;
 
   /// Fortlaufender Belegzaehler der Kasse; fehlt bei Alt-Belegen.
-  final int? zaehler;
+  final int? counter;
 
-  final Belegbediener? bediener;
+  final ReceiptOperator? operator;
 
   /// Nur am Storno-Beleg: das Original.
-  final String? storniertBeleg;
-  final String? stornogrund;
+  final String? cancellationOfReceiptId;
+  final String? cancellationReason;
 
   /// Nur am Nullbeleg: Anlass (`monthly`, `annual`, `outage_end`, `final`, …).
-  final String? nullbelegAnlass;
+  final String? zeroKind;
 
-  bool get istStorno => belegart == 'cancellation' || storniertBeleg != null;
-  bool get istVerkauf => belegart == 'standard' && storniertBeleg == null;
+  bool get isCancellation => receiptType == 'cancellation' || cancellationOfReceiptId != null;
+  bool get isSale => receiptType == 'standard' && cancellationOfReceiptId == null;
 
-  factory Belegzusammenfassung.aus(Map<String, dynamic> json) {
+  factory ReceiptSummary.fromJson(Map<String, dynamic> json) {
     final bediener = json['operator'];
     final bezug = json['cancellationOf'];
-    return Belegzusammenfassung(
+    return ReceiptSummary(
       receiptId: json['receiptId'] is String ? json['receiptId'] as String : '',
-      belegart: json['receiptType'] is String ? json['receiptType'] as String : '',
-      zeitstempel: json['timeStamp'] is String ? json['timeStamp'] as String : '',
-      summeCents: _euroInCent(json['total']),
-      zahlungsart: KeckPaymentMethod.values.firstWhere(
+      receiptType: json['receiptType'] is String ? json['receiptType'] as String : '',
+      timeStamp: json['timeStamp'] is String ? json['timeStamp'] as String : '',
+      totalCents: _euroInCent(json['total']),
+      paymentMethod: KeckPaymentMethod.values.firstWhere(
         (z) => z.name == json['paymentMethod'],
         orElse: () => KeckPaymentMethod.cash,
       ),
       // Das Backend meldet hier `signatureSuccess != false` — also true,
       // solange nichts Gegenteiliges vermerkt ist.
-      signaturOk: json['signature_ok'] != false,
-      positionen: [
+      signatureOk: json['signature_ok'] != false,
+      items: [
         for (final p in (json['items'] as List?) ?? const [])
           if (p is Map)
             (
               name: p['name'] is String ? p['name'] as String : '',
-              menge: p['quantity'] is num ? (p['quantity'] as num).toInt() : 0,
+              quantity: p['quantity'] is num ? (p['quantity'] as num).toInt() : 0,
             ),
       ],
-      stornoStand: switch (json['cancellationStatus']) {
+      cancellationState: switch (json['cancellationStatus']) {
         null => null,
-        'none' => StornoStand.none,
-        'partial' => StornoStand.partial,
-        'full' => StornoStand.full,
-        _ => StornoStand.unknown,
+        'none' => CancellationState.none,
+        'partial' => CancellationState.partial,
+        'full' => CancellationState.full,
+        _ => CancellationState.unknown,
       },
-      zaehler: json['counter'] is num ? (json['counter'] as num).toInt() : null,
-      bediener: bediener is Map
-          ? Belegbediener(
+      counter: json['counter'] is num ? (json['counter'] as num).toInt() : null,
+      operator: bediener is Map
+          ? ReceiptOperator(
               uid: bediener['uid'] is String ? bediener['uid'] as String : null,
               name: bediener['name'] is String ? bediener['name'] as String : '',
             )
           : null,
-      storniertBeleg: bezug is Map && bezug['receiptId'] is String ? bezug['receiptId'] as String : null,
-      stornogrund: json['cancellationReason'] is String ? json['cancellationReason'] as String : null,
-      nullbelegAnlass: json['zeroKind'] is String ? json['zeroKind'] as String : null,
-      zahlungen: KeckPayment.listeAus(json['payments']),
+      cancellationOfReceiptId: bezug is Map && bezug['receiptId'] is String ? bezug['receiptId'] as String : null,
+      cancellationReason: json['cancellationReason'] is String ? json['cancellationReason'] as String : null,
+      zeroKind: json['zeroKind'] is String ? json['zeroKind'] as String : null,
+      payments: KeckPayment.listFromJson(json['payments']),
     );
   }
 }
 
 /// Ergebnis eines Stornos: der neue, signierte Storno-Beleg, der Bezug zum
 /// Original und die verbliebenen Restmengen je Position.
-class Stornoergebnis {
-  const Stornoergebnis({
-    required this.beleg,
+class CancelReceiptResult {
+  const CancelReceiptResult({
+    required this.receipt,
     required this.originalReceiptId,
-    required this.restmengen,
+    required this.remaining,
     this.originalFullReceiptId,
     this.originalTimeStamp,
   });
 
-  final KasseneckReceipt beleg;
+  final KasseneckReceipt receipt;
   final String originalReceiptId;
   final String? originalFullReceiptId;
 
@@ -184,7 +184,7 @@ class Stornoergebnis {
   /// Liest die Storno-Antwort `{receipt, cancellationOf, remaining}`. Wirft
   /// [KasseneckValidationError] (Antwortfehler), wenn Bezug oder Restmengen
   /// fehlen; die Aufrufer machen daraus `response_unreadable`.
-  static Stornoergebnis ausAntwort(String name, Map<String, dynamic> daten, KasseneckReceipt Function() beleg) {
+  static CancelReceiptResult fromResponse(String name, Map<String, dynamic> daten, KasseneckReceipt Function() beleg) {
     final bezug = CancellationOf.fromJson(daten['cancellationOf']);
     if (bezug == null) {
       throw KasseneckValidationError(name, 'Antwort enthaelt keinen Bezug (data.cancellationOf fehlt)', 'response');
@@ -193,30 +193,30 @@ class Stornoergebnis {
     if (rest is! List || rest.any((n) => n is! int)) {
       throw KasseneckValidationError(name, 'Antwort enthaelt keine Restmengen (data.remaining fehlt)', 'response');
     }
-    return Stornoergebnis(
-      beleg: beleg(),
+    return CancelReceiptResult(
+      receipt: beleg(),
       originalReceiptId: bezug.receiptId,
       originalFullReceiptId: bezug.fullReceiptId,
       originalTimeStamp: bezug.timeStamp,
-      restmengen: rest.cast<int>(),
+      remaining: rest.cast<int>(),
     );
   }
 
   /// Was von jeder Position des Originals noch offen ist — daraus weiss die
   /// Kasse, ob ein weiteres Teilstorno noch moeglich ist.
-  final List<int> restmengen;
+  final List<int> remaining;
 }
 
 const int _anmerkungHoechstlaenge = 200;
 
 /// Eine Kasse aus `listMyCashregisters` (Draht `/v3`). Zeitpunkte bleiben
 /// Text (ISO, UTC); ein fehlender ist `null`, nie ein erfundenes Datum.
-class KassenEintrag {
+class CashregisterEntry {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding'};
+  static const Set<String> fields = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding'};
 
-  const KassenEintrag({
+  const CashregisterEntry({
     required this.id,
     required this.onboarding,
     this.label,
@@ -244,13 +244,13 @@ class KassenEintrag {
   final bool decommissioned;
   final int? licenses;
   final bool monthlyReportJournal;
-  final KassenInbetriebnahme onboarding;
+  final CashregisterOnboarding onboarding;
 
-  factory KassenEintrag.aus(Map<String, dynamic> j) {
+  factory CashregisterEntry.fromJson(Map<String, dynamic> j) {
     String? text(Object? v) => v is String && v.isNotEmpty ? v : null;
     final ob = j['onboarding'];
     final o = ob is Map ? ob : const {};
-    return KassenEintrag(
+    return CashregisterEntry(
       id: text(j['id']) ?? '',
       label: text(j['label']),
       description: text(j['description']),
@@ -261,7 +261,7 @@ class KassenEintrag {
       decommissioned: j['decommissioned'] == true,
       licenses: j['licenses'] is num ? (j['licenses'] as num).toInt() : null,
       monthlyReportJournal: j['monthly_report_journal'] == true,
-      onboarding: KassenInbetriebnahme(
+      onboarding: CashregisterOnboarding(
         cashboxRegistered: o['cashbox_registered'] == true,
         startReceiptCreated: o['start_receipt_created'] == true,
         startReceiptTransmitted: o['start_receipt_transmitted'] == true,
@@ -275,12 +275,12 @@ class KassenEintrag {
 
 /// Stand der Inbetriebnahme (RKSV): bei FinanzOnline registriert, Startbeleg
 /// erzeugt und übermittelt.
-class KassenInbetriebnahme {
+class CashregisterOnboarding {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'cashbox_registered', 'start_receipt_created', 'start_receipt_transmitted', 'cashbox_registered_at', 'start_receipt_created_at', 'start_receipt_transmitted_at'};
+  static const Set<String> fields = {'cashbox_registered', 'start_receipt_created', 'start_receipt_transmitted', 'cashbox_registered_at', 'start_receipt_created_at', 'start_receipt_transmitted_at'};
 
-  const KassenInbetriebnahme({
+  const CashregisterOnboarding({
     required this.cashboxRegistered,
     required this.startReceiptCreated,
     required this.startReceiptTransmitted,
@@ -301,8 +301,8 @@ class RegisterReceiptClient {
   /// [testEnvironment]: das Gerät hängt an einer Test-Umgebung
   /// ([PairedRegisterDevice.testEnvironment] bzw. die Benutzerliste). Dann
   /// trägt jeder Storno-Beleg TESTKASSE, auch ohne das Original.
-  RegisterReceiptClient(this.transport, {Duration? abschlussFrist, this.testEnvironment = false})
-      : abschlussFrist = abschlussFrist ?? const Duration(seconds: 90);
+  RegisterReceiptClient(this.transport, {Duration? signingTimeout, this.testEnvironment = false})
+      : signingTimeout = signingTimeout ?? const Duration(seconds: 90);
 
   final RegisterTransport transport;
 
@@ -312,78 +312,78 @@ class RegisterReceiptClient {
   /// Der Abschluss darf laenger warten als eine Belegliste: die Signatureinheit
   /// braucht ihre Zeit, und ein Abbruch beendet nur das Warten der Kasse, nicht
   /// die Arbeit des Servers.
-  final Duration abschlussFrist;
+  final Duration signingTimeout;
 
   /// Normalbeleg (Verkauf): der signierte Beleg samt Belegkopf.
   ///
-  /// Unter `/v3` gehen die Zahlungen **immer** als [zahlungen] hinaus (siehe
+  /// Unter `/v3` gehen die Zahlungen **immer** als [payments] hinaus (siehe
   /// [KeckPaymentInput]: Karte mit Anbieter und Kennung, Bar mit
   /// `tenderedCents`), nie die Einzelfelder `paymentMethod`,
   /// `creditCardProvider`, `cardPaymentId`, `cardPaymentData` aus 0.x; `mixed`
   /// wird nie gesendet. Den Zahlbetrag rechnet der Server; weicht die Summe
   /// ab, kommt `payments_sum_mismatch` mit `expectedCents`
   /// ([paymentsExpectedCents]), und es wurde nichts signiert.
-  Future<KasseneckReceipt> verkaufen({
-    required List<KasseneckItem> positionen,
-    required List<KeckPaymentInput> zahlungen,
-    int? trinkgeldCents,
-    List<String>? kundendaten,
-    List<String>? rechtshinweise,
+  Future<KasseneckReceipt> sell({
+    required List<KasseneckItem> items,
+    required List<KeckPaymentInput> payments,
+    int? tipCents,
+    List<String>? customerLines,
+    List<String>? legalNotices,
   }) async {
     const name = Aufrufe.createReceipt;
-    if (positionen.isEmpty) {
+    if (items.isEmpty) {
       // Ein leerer Verkauf ist kein Verkauf, und der Fehler soll fallen,
       // bevor irgendetwas in die Signaturkette geraet.
       throw const KasseneckValidationError(name, 'Positionen fehlen', 'request');
     }
-    if (positionen.any((p) => !p.isValid)) {
+    if (items.any((p) => !p.isValid)) {
       throw const KasseneckValidationError(name, 'Ungueltige Position uebergeben', 'request');
     }
-    if (trinkgeldCents != null && trinkgeldCents < 0) {
+    if (tipCents != null && tipCents < 0) {
       throw const KasseneckValidationError(name, 'Trinkgeld muss >= 0 sein', 'request');
     }
-    final fehler = zahlungenFehler(zahlungen, storno: false);
+    final fehler = paymentsError(payments, cancellation: false);
     if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
 
     final daten = await _signiertRufen(
       name,
       params: {
         'receiptType': 'standard',
-        'items': positionen.map((p) => p.toJson()).toList(),
-        'payments': [for (final z in zahlungen) z.toJson()],
-        if (trinkgeldCents != null && trinkgeldCents > 0) 'tip': trinkgeldCents,
-        if (kundendaten != null && kundendaten.isNotEmpty) 'customerDetails': kundendaten.join('\n'),
-        if (rechtshinweise != null && rechtshinweise.isNotEmpty) 'legalMessage': rechtshinweise.join('\n'),
+        'items': items.map((p) => p.toJson()).toList(),
+        'payments': [for (final z in payments) z.toJson()],
+        if (tipCents != null && tipCents > 0) 'tip': tipCents,
+        if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
+        if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
       },
     );
     // Ab hier ist der Beleg signiert: wer ihn nicht lesen kann, bekommt
     // `response_unreadable` (Ausgang unklar) mit der Kennung, nie einen
     // gewoehnlichen Fehler, der zum zweiten Verkauf einluede.
-    return readSignedResponse(name, () => _belegAus(daten, name), kennung: () => _kennungAus(daten));
+    return readSignedResponse(name, () => _belegAus(daten, name), receiptId: () => _kennungAus(daten));
   }
 
   /// Belege dieser Kasse — Zusammenfassungen, neueste zuerst (Serverordnung).
   ///
-  /// [von] und [bis] sind Wiener Kalendertage (`YYYY-MM-DD`); der Server
+  /// [from] und [to] sind Wiener Kalendertage (`YYYY-MM-DD`); der Server
   /// deckelt das Fenster auf 90 Tage und die Anzahl auf 200.
-  Future<List<Belegzusammenfassung>> auflisten({String? von, String? bis, int? hoechstens}) async {
+  Future<List<ReceiptSummary>> list({String? from, String? to, int? limit}) async {
     const name = Aufrufe.listMyReceipts;
-    for (final (feld, wert) in [('von', von), ('bis', bis)]) {
+    for (final (feld, wert) in [('von', from), ('bis', to)]) {
       if (wert != null && !RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(wert)) {
         throw KasseneckValidationError(name, '$feld muss mit YYYY-MM-DD beginnen', 'request');
       }
     }
-    if (hoechstens != null && hoechstens < 1) {
+    if (limit != null && limit < 1) {
       throw const KasseneckValidationError(name, 'hoechstens muss eine ganze Zahl ab 1 sein', 'request');
     }
 
-    final daten = await transport.rufen(
+    final daten = await transport.call(
       name,
       params: {
         'cashregisterId': transport.cashregisterId,
-        'from': von,
-        'to': bis,
-        'limit': hoechstens,
+        'from': from,
+        'to': to,
+        'limit': limit,
       },
     );
     final liste = daten['receipts'];
@@ -394,32 +394,32 @@ class RegisterReceiptClient {
     }
     return [
       for (final eintrag in liste)
-        if (eintrag is Map) Belegzusammenfassung.aus(Map<String, dynamic>.from(eintrag)),
+        if (eintrag is Map) ReceiptSummary.fromJson(Map<String, dynamic>.from(eintrag)),
     ];
   }
 
   /// Einen Beleg vollstaendig holen — samt Belegkopf, fuer Nachdruck und Storno.
-  Future<KasseneckReceipt> holen(String receiptId) async {
+  Future<KasseneckReceipt> get(String receiptId) async {
     const name = Aufrufe.getReceipt;
     if (receiptId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'receiptId fehlt', 'request');
     }
-    return _belegAus(await transport.rufen(name, params: {'receiptId': receiptId}), name);
+    return _belegAus(await transport.call(name, params: {'receiptId': receiptId}), name);
   }
 
   /// Storno-Beleg zu einem bestehenden Beleg — voll oder in Teilen.
   ///
-  /// Ohne [positionen] ist es ein Vollstorno. Eine **leere** Positionsliste ist
+  /// Ohne [items] ist es ein Vollstorno. Eine **leere** Positionsliste ist
   /// dagegen ein Fehler: sonst wuerde aus einem missglueckten Teilstorno still
   /// ein Vollstorno.
   ///
   /// Die Restmengen und die Reichweite des Rechts haelt der Server; die Kasse
   /// bietet nur an, was sie fuer moeglich haelt.
   ///
-  /// [grund] ist ein Code aus `stornogruende` (`input_error` …, wie unter
+  /// [reason] ist ein Code aus `cancellationReasons` (`input_error` …, wie unter
   /// `/v3`); ein unbekannter wirft, bevor etwas hinausgeht.
   ///
-  /// [zahlungen] sind die Rueckzahlungen je Zahlung (Betraege negativ,
+  /// [payments] sind die Rueckzahlungen je Zahlung (Betraege negativ,
   /// `refundOf` = `id` der Originalzahlung). Ohne Angabe spiegelt der Server
   /// die Restbetraege jeder Originalzahlung; ein Teilstorno eines Belegs mit
   /// mehreren Zahlungen braucht sie (`cancellation_payments_required`). Eine
@@ -430,50 +430,50 @@ class RegisterReceiptClient {
   /// ueber einen Anbieter braucht einen Bezug: ihre eigene `providerPaymentId`
   /// oder, mit [original], die Kennung der erstatteten Kartenzahlung dort
   /// (`cardRefundReference`). Fehlt beides, wirft der Aufruf vor dem Senden.
-  Future<Stornoergebnis> stornieren({
+  Future<CancelReceiptResult> cancel({
     required String originalReceiptId,
-    required String grund,
-    List<Stornoposition>? positionen,
-    String? anmerkung,
-    List<KeckPaymentInput>? zahlungen,
+    required String reason,
+    List<CancellationItem>? items,
+    String? note,
+    List<KeckPaymentInput>? payments,
     KasseneckReceipt? original,
   }) async {
     const name = Aufrufe.cancelReceipt;
     if (originalReceiptId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'originalReceiptId fehlt', 'request');
     }
-    if (!stornogruende.containsKey(grund)) {
+    if (!cancellationReasons.containsKey(reason)) {
       throw const KasseneckValidationError(name, 'Storno-Grund fehlt oder ist unbekannt', 'request');
     }
-    if (positionen != null) {
-      if (positionen.isEmpty) {
+    if (items != null) {
+      if (items.isEmpty) {
         throw const KasseneckValidationError(name, 'positionen muss eine nicht leere Liste sein', 'request');
       }
-      if (positionen.any((p) => p.index < 0 || p.menge < 1)) {
+      if (items.any((p) => p.index < 0 || p.quantity < 1)) {
         throw const KasseneckValidationError(name, 'Storno-Menge muss eine ganze Zahl >= 1 sein', 'request');
       }
     }
-    if (anmerkung != null && anmerkung.length > _anmerkungHoechstlaenge) {
+    if (note != null && note.length > _anmerkungHoechstlaenge) {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
-    if (zahlungen != null) {
-      final fehler = zahlungenFehler(zahlungen, storno: true);
+    if (payments != null) {
+      final fehler = paymentsError(payments, cancellation: true);
       if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     }
     if (original != null && original.receiptId != originalReceiptId) {
       throw KasseneckValidationError(
           name, 'original (${original.receiptId}) ist nicht der Beleg originalReceiptId ($originalReceiptId)', 'request');
     }
-    if (zahlungen != null) pruefeKartenRueckbuchung(zahlungen, original);
+    if (payments != null) assertCardRefunds(payments, original);
 
     final daten = await _signiertRufen(
       name,
       params: {
         'originalReceiptId': originalReceiptId,
-        'reason': grund,
-        if (positionen != null) 'items': [for (final p in positionen) {'index': p.index, 'quantity': p.menge}],
-        if (anmerkung != null && anmerkung.isNotEmpty) 'note': anmerkung,
-        if (zahlungen != null) 'payments': [for (final z in zahlungen) z.toJson()],
+        'reason': reason,
+        if (items != null) 'items': [for (final p in items) {'index': p.index, 'quantity': p.quantity}],
+        if (note != null && note.isNotEmpty) 'note': note,
+        if (payments != null) 'payments': [for (final z in payments) z.toJson()],
       },
     );
 
@@ -482,16 +482,16 @@ class RegisterReceiptClient {
     // sofern die Antwort sie mitbrachte: ohne sie ist der gesetzlich
     // vorgeschriebene Storno-Beleg da, aber fuer die Kasse unerreichbar, und
     // ein zweiter Storno waere eine zweite Ruecknahme.
-    final Stornoergebnis ergebnis = readSignedResponse(
+    final CancelReceiptResult ergebnis = readSignedResponse(
       name,
-      () => Stornoergebnis.ausAntwort(name, daten, () => _belegAus(daten, name)),
-      kennung: () => _kennungAus(daten),
+      () => CancelReceiptResult.fromResponse(name, daten, () => _belegAus(daten, name)),
+      receiptId: () => _kennungAus(daten),
     );
     // Die Storno-Antwort trägt weder Layout noch Testkennzeichen. Damit der
     // Storno einer Testkasse nie wie ein gültiger Beleg gedruckt wird, gelten
     // die Kennzeichen des Originals, und eine Test-Umgebung steht für
-    // TESTKASSE (wie `KasseneckApi.stornieren` mit `kr_test_`).
-    final beleg = ergebnis.beleg;
+    // TESTKASSE (wie `KasseneckApi.cancelReceipt` mit `kr_test_`).
+    final beleg = ergebnis.receipt;
     if (original?.testCashregister == true || testEnvironment) beleg.testCashregister = true;
     if (original?.testSignature == true && !beleg.testCashregister) beleg.testSignature = true;
     return ergebnis;
@@ -499,12 +499,12 @@ class RegisterReceiptClient {
 
   /// Verschlüsselte Volltext-Belegnummer (`generateFullReceiptId`): der
   /// Bezeichner, unter dem der Beleg öffentlich abrufbar ist.
-  Future<String> volleBelegId(String receiptId) async {
+  Future<String> fullReceiptId(String receiptId) async {
     const name = Aufrufe.generateFullReceiptId;
     if (receiptId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'receiptId fehlt', 'request');
     }
-    final daten = await transport.rufen(name, params: {'receiptId': receiptId});
+    final daten = await transport.call(name, params: {'receiptId': receiptId});
     final id = daten['fullReceiptId'];
     if (id is! String || id.isEmpty) {
       throw const KasseneckValidationError(name, 'Antwort enthaelt keine fullReceiptId', 'response');
@@ -515,11 +515,11 @@ class RegisterReceiptClient {
   /// Die Kassen, die dem angemeldeten Benutzer offenstehen
   /// (`listMyCashregisters`); für einen Kassen-Benutzer genau die ihm
   /// zugewiesenen.
-  Future<List<KassenEintrag>> kassen() async =>
-      _liste(Aufrufe.listMyCashregisters, 'cashregisters', KassenEintrag.aus);
+  Future<List<CashregisterEntry>> cashregisters() async =>
+      _liste(Aufrufe.listMyCashregisters, 'cashregisters', CashregisterEntry.fromJson);
 
   /// Einen bereits ausgestellten Beleg als **Link auf die oeffentliche
-  /// Belegseite** an [an] schicken (`sendReceiptEmail`).
+  /// Belegseite** an [to] schicken (`sendReceiptEmail`).
   ///
   /// Der Beleg bleibt dabei byteidentisch: das Backend schreibt den Versand in
   /// die Unter-Sammlung `receipts/{id}/mails`, nie an den Beleg selbst (DEP,
@@ -539,15 +539,15 @@ class RegisterReceiptClient {
   /// Angabe, die gar keine Adresse ist.
   ///
   /// Fachliche Ablehnungen kommen als [KasseneckApiError] mit einem Code aus
-  /// [belegMailFehlercodes] — daran entscheiden, nie am Text.
-  Future<Belegmailergebnis> belegSenden({
+  /// [receiptEmailErrorCodes] — daran entscheiden, nie am Text.
+  Future<SendReceiptEmailResult> sendReceipt({
     required String fullReceiptId,
-    required String an,
+    required String to,
     String? language,
   }) async {
     const name = Aufrufe.sendReceiptEmail;
     final beleg = fullReceiptId.trim();
-    final adresse = an.trim();
+    final adresse = to.trim();
     if (beleg.isEmpty) {
       throw const KasseneckValidationError(name, 'fullReceiptId fehlt', 'request');
     }
@@ -559,7 +559,7 @@ class RegisterReceiptClient {
     // Die Kasse steht im Transport (er legt `cashregisterId` zu jeder Nutzlast)
     // — hier nicht ein zweites Mal, sonst gaebe es zwei Angaben, die sich
     // widersprechen koennten.
-    final daten = await transport.rufen(
+    final daten = await transport.call(
       name,
       params: {
         'fullReceiptId': beleg,
@@ -568,24 +568,24 @@ class RegisterReceiptClient {
       },
     );
 
-    return Belegmailergebnis.aus(daten, gesendetAn: adresse);
+    return SendReceiptEmailResult.fromResponse(daten, sentTo: adresse);
   }
 
   /// Artikelgruppen (Kategorien der Kachel-Kasse).
-  Future<List<Artikelgruppe>> artikelgruppen() async =>
-      _liste(Aufrufe.listMyArticleGroups, 'groups', Artikelgruppe.aus);
+  Future<List<ArticleGroup>> articleGroups() async =>
+      _liste(Aufrufe.listMyArticleGroups, 'groups', ArticleGroup.fromJson);
 
   /// Artikel in der Form, die die Kacheln brauchen.
-  Future<List<KasseArtikel>> artikel() async => _liste(Aufrufe.listMyArticles, 'articles', KasseArtikel.aus);
+  Future<List<PosArticle>> articles() async => _liste(Aufrufe.listMyArticles, 'articles', PosArticle.fromJson);
 
   /// Personen, denen sich Trinkgeld zuweisen laesst. Dieselbe Menge, die der
   /// Verkauf akzeptiert; ohne das Recht `tipAssign` steht nur der Angemeldete
   /// darin.
-  Future<List<KeckTipPerson>> tipEmpfaenger() async =>
-      _liste(Aufrufe.listMyTipRecipients, 'recipients', KeckTipPerson.aus);
+  Future<List<KeckTipPerson>> tipRecipients() async =>
+      _liste(Aufrufe.listMyTipRecipients, 'recipients', KeckTipPerson.fromJson);
 
   Future<List<T>> _liste<T>(String name, String feld, T Function(Map<String, dynamic>) lesen) async {
-    final daten = await transport.rufen(name);
+    final daten = await transport.call(name);
     final roh = daten[feld];
     if (roh is! List) {
       // Keine Liste ist etwas anderes als eine leere Liste: „noch keine
@@ -604,7 +604,7 @@ class RegisterReceiptClient {
   /// API-Schluessel-Weg. Alle anderen Fehler bleiben, wie sie sind.
   Future<Map<String, dynamic>> _signiertRufen(String name, {required Map<String, dynamic> params}) async {
     try {
-      return await transport.rufen(name, params: params, frist: abschlussFrist);
+      return await transport.call(name, params: params, timeout: signingTimeout);
     } on KasseneckHttpError catch (e) {
       if (e.reason != 'data-not-object') rethrow;
       return readSignedResponse(name, () => throw e);

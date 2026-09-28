@@ -13,11 +13,11 @@
 ///
 /// Zeile = Einzelpreis × Menge × (1 − Rabatt/100), ungerundet. Im Brutto-Modus
 /// ist das Brutto der vereinbarte Preis und bleibt, wie die Zeilen es ergeben.
-/// Bei einem Fall aus [steuerfreieFaelle] zählt jede Zeile zu 0 %.
+/// Bei einem Fall aus [zeroRatedTaxSchemes] zählt jede Zeile zu 0 %.
 ///
 /// Die Prüffälle stehen in `fixtures/invoice-totals.json` des JS-Pakets;
 /// Server, JS-Paket und dieses Paket prüfen gegen dieselbe Datei. Verbindlich
-/// bleibt, was der Server rechnet — `RechnungApi.previewInvoice` fragt ihn.
+/// bleibt, was der Server rechnet — `InvoiceApi.previewInvoice` fragt ihn.
 library;
 
 import 'modelle.dart';
@@ -35,14 +35,14 @@ import 'vertrag.dart';
 /// einem [taxScheme] außerhalb von [taxSchemes] und bei einer Zeile, die keine
 /// endliche Zahl ergibt. Im JS-Paket schließt der Typ die ersten beiden aus;
 /// eine stille Rechnung im falschen Modus wäre hier ein falscher Betrag.
-InvoiceTotals rechnungSummen(Iterable<SummenPosition> items, String priceMode, [String taxScheme = 'normal']) {
+InvoiceTotals computeInvoiceTotals(Iterable<TotalsItem> items, String priceMode, [String taxScheme = 'normal']) {
   if (!priceModes.contains(priceMode)) {
     throw ArgumentError.value(priceMode, 'priceMode', 'erwartet: ${priceModes.join(', ')}');
   }
   if (!taxSchemes.contains(taxScheme)) {
     throw ArgumentError.value(taxScheme, 'taxScheme', 'erwartet: ${taxSchemes.join(', ')}');
   }
-  final steuerfrei = steuerfreieFaelle.contains(taxScheme);
+  final steuerfrei = zeroRatedTaxSchemes.contains(taxScheme);
   final bruttoPreise = priceMode == 'gross' && !steuerfrei;
 
   // Ungerundete Zeilen je Satz, in Euro wie am Server. Die Reihenfolge der
@@ -54,11 +54,11 @@ InvoiceTotals rechnungSummen(Iterable<SummenPosition> items, String priceMode, [
   final jeSatz = <num, double>{};
   for (final p in items) {
     final satz = steuerfrei ? 0 : p.vatRate;
-    // `preisInCent` nimmt den Preis aus dem Feld, das ihn traegt (Cent oder
+    // `priceInCents` nimmt den Preis aus dem Feld, das ihn traegt (Cent oder
     // Mikro-Euro). Die Rechenschritte bleiben dieselben wie im JS-Zwilling:
     // nur so trifft das Gleitkomma Bit fuer Bit dieselbe Zahl. Exakt gerundet
     // wird erst mit dem Stichtag (Schalter), im Zwilling ebenso.
-    final zeile = (p.preisInCent / 100) * p.quantity * (1 - (p.discountPct ?? 0) / 100);
+    final zeile = (p.priceInCents / 100) * p.quantity * (1 - (p.discountPct ?? 0) / 100);
     if (!zeile.isFinite) {
       throw ArgumentError('Position ergibt keine endliche Zahl (Menge, Preis oder Rabatt)');
     }
@@ -111,7 +111,7 @@ int _euroZuCent(double euro) => _ganz((_euroRund(euro) * 100).roundToDouble());
 /// halber Cent (erst auf sechs Stellen, dann ganz).
 ///
 /// Fuer ganze Brutto-Cent und die Saetze 10/13/20 faellt das mit
-/// `nettoCentsAusBrutto` (lib/src/vat_math.dart) zusammen —
+/// `netCentsFromGross` (lib/src/vat_math.dart) zusammen —
 /// test/rechnung_summen_test.dart haelt das fest. Getrennt bleibt es, weil
 /// dieser Weg dem Server folgt und jener dem Beleg.
 int _centRund(double x) {

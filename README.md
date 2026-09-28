@@ -310,7 +310,7 @@ sent.via;  // 'eigen' (business mailbox), 'plattform' or 'plattform-fallback'
 ```
 
 With the API key, the cashbox token decides which register is meant. Error codes
-(`belegMailFehlercodes`): `adresse_ungueltig` (let the user correct it),
+(`receiptEmailErrorCodes`): `adresse_ungueltig` (let the user correct it),
 `zu_oft` (the backend allows five mails per receipt in 24 hours and 30 per
 register per hour; try later), `versand_fehlgeschlagen` (nothing was sent, a new
 attempt is fine), `beleg_nicht_gefunden` (unknown receipt **or** one of another
@@ -343,7 +343,7 @@ the register path, import `kasseneck_api.dart` as well.
 
 | Type | Meaning |
 | --- | --- |
-| `KasseneckApiError` | The backend refused (`code`, `message`, `details`). Code catalogues: `stornoFehlercodes`, `belegMailFehlercodes`, `invoiceErrorCodes`. |
+| `KasseneckApiError` | The backend refused (`code`, `message`, `details`). Code catalogues: `cancellationErrorCodes`, `receiptEmailErrorCodes`, `invoiceErrorCodes`. |
 | `KasseneckValidationError` | A request was rejected before sending (`'request'`), or a response lacks a required field (`'response'`, may carry `receiptId`). |
 | `KasseneckHttpError` | Transport problem: `reason` is e.g. `KasseneckHttpError.zeitablauf` (timeout), `KasseneckHttpError.netz` (network) or `'not-json'`. |
 | `KasseneckReceiptFormatError` | The receipt was issued and signed, but the response could not be read. It carries the `receiptId`; fetch the receipt with `getReceipt`. **Do not sell again.** |

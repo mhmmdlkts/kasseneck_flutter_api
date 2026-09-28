@@ -48,7 +48,7 @@ void main() {
       final roh = (_json('${_wurzel.path}/receipts/$n.json')['receipt'] as Map)['payments'] as List;
       final b = _beleg(n);
       expect(b.payments!.length, roh.length, reason: n);
-      expect(b.layoutIstVollstaendig, isTrue, reason: n);
+      expect(b.isLayoutComplete, isTrue, reason: n);
     }
   }, skip: skip);
 
@@ -64,10 +64,10 @@ void main() {
   }, skip: skip);
 
   test('ein Layout ohne die Kartenbloecke gilt nicht als vollstaendig', () {
-    final mitKarte = [for (final n in namen) if (_beleg(n).kartenzahlungen.isNotEmpty) n];
+    final mitKarte = [for (final n in namen) if (_beleg(n).cardPayments.isNotEmpty) n];
     expect(mitKarte, isNotEmpty);
     for (final n in mitKarte) {
-      expect(_beleg(n, layoutVon: 'sale-cash').layoutIstVollstaendig, isFalse, reason: n);
+      expect(_beleg(n, layoutVon: 'sale-cash').isLayoutComplete, isFalse, reason: n);
     }
   }, skip: skip);
 

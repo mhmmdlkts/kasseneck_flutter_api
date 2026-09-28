@@ -11,7 +11,7 @@ import 'package:kasseneck_api/kasse.dart';
 /// 19.08.2026, 00:30 Wiener Wanduhrzeit (also 22:30 UTC am 18.8.).
 final jetzt = DateTime.utc(2026, 8, 18, 22, 30);
 
-Belegzusammenfassung beleg({
+ReceiptSummary beleg({
   String receiptId = 'KASSE1-ID-1',
   String belegart = 'standard',
   String zeitstempel = '2026-08-19T10:15:00',
@@ -20,17 +20,17 @@ Belegzusammenfassung beleg({
   String? storniertBeleg,
   String bediener = 'Ali',
 }) =>
-    Belegzusammenfassung(
+    ReceiptSummary(
       receiptId: receiptId,
-      belegart: belegart,
-      zeitstempel: zeitstempel,
-      summeCents: summeCents,
-      zahlungsart: zahlungsart,
-      signaturOk: true,
-      positionen: const [],
-      stornoStand: StornoStand.none,
-      storniertBeleg: storniertBeleg,
-      bediener: Belegbediener(uid: 'u1', name: bediener),
+      receiptType: belegart,
+      timeStamp: zeitstempel,
+      totalCents: summeCents,
+      paymentMethod: zahlungsart,
+      signatureOk: true,
+      items: const [],
+      cancellationState: CancellationState.none,
+      cancellationOfReceiptId: storniertBeleg,
+      operator: ReceiptOperator(uid: 'u1', name: bediener),
     );
 
 void main() {
@@ -38,51 +38,51 @@ void main() {
     test('heute ist der Wiener Kalendertag — auch kurz nach Mitternacht', () {
       // Um 00:30 Wien ist es UTC noch der Vortag. Wer hier UTC nimmt, zeigt
       // dem Kassier um halb eins die Belege von gestern.
-      expect(zeitfenster(Zeitraum.heute, jetzt), (von: '2026-08-19', bis: '2026-08-19'));
+      expect(periodRange(ReceiptPeriod.today, jetzt), (from: '2026-08-19', to: '2026-08-19'));
     });
 
     test('gestern ist genau ein Tag', () {
-      expect(zeitfenster(Zeitraum.gestern, jetzt), (von: '2026-08-18', bis: '2026-08-18'));
+      expect(periodRange(ReceiptPeriod.yesterday, jetzt), (from: '2026-08-18', to: '2026-08-18'));
     });
 
     test('sieben Tage schließen heute mit ein', () {
-      expect(zeitfenster(Zeitraum.siebenTage, jetzt), (von: '2026-08-13', bis: '2026-08-19'));
+      expect(periodRange(ReceiptPeriod.last7Days, jetzt), (from: '2026-08-13', to: '2026-08-19'));
     });
 
     test('dreißig Tage ebenso', () {
-      expect(zeitfenster(Zeitraum.dreissigTage, jetzt), (von: '2026-07-21', bis: '2026-08-19'));
+      expect(periodRange(ReceiptPeriod.last30Days, jetzt), (from: '2026-07-21', to: '2026-08-19'));
     });
   });
 
   group('Belegart lesbar', () {
     test('Verkauf, Storno, Startbeleg', () {
-      expect(belegartText(beleg()), 'Verkauf');
-      expect(belegartText(beleg(belegart: 'cancellation')), 'Storno');
-      expect(belegartText(beleg(storniertBeleg: 'KASSE1-ID-1')), 'Storno');
-      expect(belegartText(beleg(belegart: 'start')), 'Startbeleg');
-      expect(belegartText(beleg(belegart: 'training')), 'Trainingsbeleg');
+      expect(receiptTypeLabel(beleg()), 'Verkauf');
+      expect(receiptTypeLabel(beleg(belegart: 'cancellation')), 'Storno');
+      expect(receiptTypeLabel(beleg(storniertBeleg: 'KASSE1-ID-1')), 'Storno');
+      expect(receiptTypeLabel(beleg(belegart: 'start')), 'Startbeleg');
+      expect(receiptTypeLabel(beleg(belegart: 'training')), 'Trainingsbeleg');
     });
 
     test('Nullbelege nennen ihren Anlass', () {
-      Belegzusammenfassung null_(String anlass) => Belegzusammenfassung(
+      ReceiptSummary null_(String anlass) => ReceiptSummary(
             receiptId: 'x',
-            belegart: 'zero',
-            zeitstempel: '2026-08-19T10:15:00',
-            summeCents: 0,
-            zahlungsart: KeckPaymentMethod.cash,
-            signaturOk: true,
-            positionen: const [],
-            stornoStand: StornoStand.none,
-            nullbelegAnlass: anlass,
+            receiptType: 'zero',
+            timeStamp: '2026-08-19T10:15:00',
+            totalCents: 0,
+            paymentMethod: KeckPaymentMethod.cash,
+            signatureOk: true,
+            items: const [],
+            cancellationState: CancellationState.none,
+            zeroKind: anlass,
           );
-      expect(belegartText(null_('monthly')), 'Monatsbeleg');
-      expect(belegartText(null_('annual')), 'Jahresbeleg');
-      expect(belegartText(null_('annual_replacement')), 'Jahresbeleg (Ersatz)');
-      expect(belegartText(null_('outage_end')), 'Nullbeleg nach Ausfall');
-      expect(belegartText(null_('final')), 'Schlussbeleg');
-      expect(belegartText(null_('manual')), 'Nullbeleg (Prüfbeleg)');
+      expect(receiptTypeLabel(null_('monthly')), 'Monatsbeleg');
+      expect(receiptTypeLabel(null_('annual')), 'Jahresbeleg');
+      expect(receiptTypeLabel(null_('annual_replacement')), 'Jahresbeleg (Ersatz)');
+      expect(receiptTypeLabel(null_('outage_end')), 'Nullbeleg nach Ausfall');
+      expect(receiptTypeLabel(null_('final')), 'Schlussbeleg');
+      expect(receiptTypeLabel(null_('manual')), 'Nullbeleg (Prüfbeleg)');
       // Ein künftiger, hier unbekannter Anlass bleibt trotzdem ein Nullbeleg.
-      expect(belegartText(null_('was_neues')), 'Nullbeleg (Prüfbeleg)');
+      expect(receiptTypeLabel(null_('was_neues')), 'Nullbeleg (Prüfbeleg)');
     });
   });
 
@@ -95,50 +95,50 @@ void main() {
     ];
 
     test('ohne Filter alles', () {
-      expect(gefiltert(liste, const Belegfilter()).length, 4);
+      expect(filterReceipts(liste, const ReceiptFilter()).length, 4);
     });
 
     test('nur Verkäufe', () {
-      final aus = gefiltert(liste, const Belegfilter(belegart: BelegartFilter.verkauf));
+      final aus = filterReceipts(liste, const ReceiptFilter(receiptType: ReceiptTypeFilter.sale));
       expect(aus.map((b) => b.receiptId), ['a', 'd']);
     });
 
     test('nur Stornos', () {
-      expect(gefiltert(liste, const Belegfilter(belegart: BelegartFilter.storno)).map((b) => b.receiptId), ['b']);
+      expect(filterReceipts(liste, const ReceiptFilter(receiptType: ReceiptTypeFilter.cancellation)).map((b) => b.receiptId), ['b']);
     });
 
     test('sonstige ist alles, was weder Verkauf noch Storno ist', () {
-      expect(gefiltert(liste, const Belegfilter(belegart: BelegartFilter.sonstige)).map((b) => b.receiptId), ['c']);
+      expect(filterReceipts(liste, const ReceiptFilter(receiptType: ReceiptTypeFilter.other)).map((b) => b.receiptId), ['c']);
     });
 
     test('nach Zahlungsart', () {
-      expect(gefiltert(liste, const Belegfilter(zahlung: ZahlungFilter.karte)).map((b) => b.receiptId), ['d']);
-      expect(gefiltert(liste, const Belegfilter(zahlung: ZahlungFilter.bar)).length, 3);
+      expect(filterReceipts(liste, const ReceiptFilter(payment: PaymentFilter.card)).map((b) => b.receiptId), ['d']);
+      expect(filterReceipts(liste, const ReceiptFilter(payment: PaymentFilter.cash)).length, 3);
     });
 
     test('nach Bediener', () {
-      expect(gefiltert(liste, const Belegfilter(wer: 'Bea')).map((b) => b.receiptId), ['d']);
+      expect(filterReceipts(liste, const ReceiptFilter(operator: 'Bea')).map((b) => b.receiptId), ['d']);
     });
 
     test('die Bedienerliste ist sortiert und ohne Doppelte', () {
-      expect(bediener(liste), ['Ali', 'Bea']);
+      expect(operatorNames(liste), ['Ali', 'Bea']);
     });
   });
 
   group('Tagesgruppen', () {
     test('nach Wiener Kalendertag, neueste zuerst', () {
-      final aus = tagesgruppen([
+      final aus = groupByDay([
         beleg(receiptId: 'a', zeitstempel: '2026-08-18T09:00:00'),
         beleg(receiptId: 'b', zeitstempel: '2026-08-19T08:00:00'),
         beleg(receiptId: 'c', zeitstempel: '2026-08-19T10:00:00'),
       ]);
 
-      expect(aus.map((g) => g.datum), ['2026-08-19', '2026-08-18']);
-      expect(aus.first.belege.map((b) => b.receiptId), ['c', 'b'], reason: 'innerhalb des Tages auch neueste zuerst');
+      expect(aus.map((g) => g.date), ['2026-08-19', '2026-08-18']);
+      expect(aus.first.receipts.map((b) => b.receiptId), ['c', 'b'], reason: 'innerhalb des Tages auch neueste zuerst');
     });
 
     test('die Uhrzeit kommt in Wiener Wanduhrzeit', () {
-      expect(uhrzeit('2026-08-19T08:05:00'), '08:05');
+      expect(receiptTime('2026-08-19T08:05:00'), '08:05');
     });
   });
 }

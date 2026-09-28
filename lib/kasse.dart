@@ -17,7 +17,15 @@ export 'models/kasseneck_item.dart';
 export 'models/kasseneck_receipt.dart';
 export 'models/registration_info.dart';
 export 'src/receipt/codes.dart'
-    show cancellationStatuses, isReceiptErrorCode, receiptEmailSendErrorCodes, receiptEmailVias, receiptErrorCodes;
+    show
+        cancellationErrorCodes,
+        cancellationStatuses,
+        isReceiptErrorCode,
+        paymentErrorCodes,
+        receiptEmailErrorCodes,
+        receiptEmailSendErrorCodes,
+        receiptEmailVias,
+        receiptErrorCodes;
 // Wer einen Beleg einliest, muss den Lesefehler fangen koennen: er traegt die
 // receiptId eines bereits signierten Belegs.
 export 'src/register/fehler.dart' show KasseneckReceiptFormatError;
@@ -26,7 +34,7 @@ export 'src/register/fehler.dart' show KasseneckReceiptFormatError;
 export 'models/keck_tip.dart';
 export 'models/keck_tip_person.dart';
 // Mehrere Zahlungen je Beleg: Eingabe am Verkauf/Storno, Zahlung am Beleg.
-export 'models/keck_payment.dart' show KeckPayment, KeckPaymentInput, zahlungenFehler, zahlungenHoechstzahl;
+export 'models/keck_payment.dart' show KeckPayment, KeckPaymentInput, paymentsError, maxPayments;
 // Die Storno-Regeln fragen nach der Reichweite eines Rechts; wer sie benutzt,
 // braucht den Typ.
 export 'src/register/pairing.dart' show RegisterScope;

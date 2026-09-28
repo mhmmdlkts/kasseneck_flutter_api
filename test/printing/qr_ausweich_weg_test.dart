@@ -42,31 +42,31 @@ void main() {
   test('getBytesFromReceipt meldet den Ausweich am Dienst', () async {
     await KeckPrinterService.getBytesFromReceipt(belegZuBreit(), KeckPaperSize.mm58,
         qrMode: QrPrintMode.native);
-    expect(KeckPrinterService.letzterQrAusweich, isNotNull);
-    expect(KeckPrinterService.letzterQrFehler, isNull);
+    expect(KeckPrinterService.lastQrFallback, isNotNull);
+    expect(KeckPrinterService.lastQrError, isNull);
   });
 
   test('ein sauber nativ gedruckter Beleg raeumt die Meldung weg', () async {
     await KeckPrinterService.getBytesFromReceipt(belegZuBreit(), KeckPaperSize.mm58,
         qrMode: QrPrintMode.native);
-    expect(KeckPrinterService.letzterQrAusweich, isNotNull);
+    expect(KeckPrinterService.lastQrFallback, isNotNull);
     await KeckPrinterService.getBytesFromReceipt(buildReceipt(qr: echterQr), KeckPaperSize.mm58,
         qrMode: QrPrintMode.native);
-    expect(KeckPrinterService.letzterQrAusweich, isNull,
+    expect(KeckPrinterService.lastQrFallback, isNull,
         reason: 'sonst haengt der Ausweich eines frueheren Belegs am naechsten');
   });
 
   test('getPaperFromReceipt bleibt frei von globalem Zustand', () async {
     await KeckPrinterService.getBytesFromReceipt(belegZuBreit(), KeckPaperSize.mm58,
         qrMode: QrPrintMode.native);
-    final String? fremd = KeckPrinterService.letzterQrAusweich;
+    final String? fremd = KeckPrinterService.lastQrFallback;
     expect(fremd, isNotNull);
 
     final PrintPaper paper = await KeckPrinterService.getPaperFromReceipt(
         buildReceipt(qr: echterQr), KeckPaperSize.mm58,
         qrMode: QrPrintMode.native);
-    expect(paper.qrAusweich, isNull, reason: 'am eigenen Papier steht nichts');
-    expect(KeckPrinterService.letzterQrAusweich, fremd,
+    expect(paper.qrFallback, isNull, reason: 'am eigenen Papier steht nichts');
+    expect(KeckPrinterService.lastQrFallback, fremd,
         reason: 'und das Signal eines fremden Druckvorgangs bleibt stehen');
   });
 
@@ -74,8 +74,8 @@ void main() {
     final FakeTransport fake = FakeTransport();
     final KeckPrintResult res = await KeckPrinter(fake, size: KeckPaperSize.mm58)
         .printReceipt(belegZuBreit(), qrMode: QrPrintMode.native);
-    expect(res.qrAusweich, isNotNull);
-    expect(res.qrFehler, isNull);
+    expect(res.qrFallback, isNotNull);
+    expect(res.qrError, isNull);
     expect(res.success, isTrue);
     expect(fake.sendCount, 1);
   });
@@ -83,7 +83,7 @@ void main() {
   test('die gewaehlte Modulgroesse erreicht die Bytes', () async {
     final List<int> bytes = (await KeckPrinterService.getBytesFromReceipt(
             buildReceipt(qr: echterQr), KeckPaperSize.mm80,
-            qrMode: QrPrintMode.native, qrGroesse: QrModulGroesse.gross))
+            qrMode: QrPrintMode.native, qrModuleSize: QrModuleSize.large))
         .expand((e) => e)
         .toList();
     expect(modulgroesse(bytes), 8);
@@ -93,7 +93,7 @@ void main() {
     final List<int> bytes = (await buildReceipt(qr: echterQr).getPrintBytes(
             paperSize: KeckPaperSize.mm58,
             qrMode: QrPrintMode.native,
-            qrGroesse: QrModulGroesse.klein))
+            qrModuleSize: QrModuleSize.small))
         .expand((e) => e)
         .toList();
     expect(modulgroesse(bytes), 4);

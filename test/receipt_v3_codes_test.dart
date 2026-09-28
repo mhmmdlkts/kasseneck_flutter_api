@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kasseneck_api/kasse.dart' show StornoStand;
+import 'package:kasseneck_api/kasse.dart' show CancellationState;
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/src/receipt/codes.dart' show anmeldungUndRandCodes, cancellationErrorCodes, paymentErrorCodes, receiptEmailErrorCodes;
 
@@ -62,17 +62,17 @@ void main() {
     final beleg = {...(je['createReceipt'] as List).cast<String>(), ...(je['getReceipt'] as List).cast<String>()}.toList()..sort();
     expect(receiptErrorCodes, mitRand(beleg, signierend));
     // Die oeffentlichen Namen zeigen auf dieselben Listen.
-    expect(stornoFehlercodes, same(cancellationErrorCodes));
-    expect(zahlungFehlercodes, same(paymentErrorCodes));
-    expect(belegMailFehlercodes, same(receiptEmailErrorCodes));
+    expect(cancellationErrorCodes, same(cancellationErrorCodes));
+    expect(paymentErrorCodes, same(paymentErrorCodes));
+    expect(receiptEmailErrorCodes, same(receiptEmailErrorCodes));
   });
 
   test('jeder Fehlercode eines Belegfalls im Vertrag steht in einer Liste seines Endpunkts', () {
     final listen = <String, List<String>>{
-      'createReceipt': [...receiptErrorCodes, ...zahlungFehlercodes],
+      'createReceipt': [...receiptErrorCodes, ...paymentErrorCodes],
       'getReceipt': receiptErrorCodes,
-      'cancelReceipt': [...stornoFehlercodes, ...zahlungFehlercodes],
-      'sendReceiptEmail': belegMailFehlercodes,
+      'cancelReceipt': [...cancellationErrorCodes, ...paymentErrorCodes],
+      'sendReceiptEmail': receiptEmailErrorCodes,
     };
     var geprueft = 0;
     for (final datei in ['belege', 'kasse-belege', 'storno', 'belegmail']) {
@@ -89,7 +89,7 @@ void main() {
 
   test('jeder Code ist ein /v3-Code (klein, englisch) oder einer des Pakets', () {
     final alle = liste('all').toSet();
-    for (final code in [...stornoFehlercodes, ...zahlungFehlercodes, ...belegMailFehlercodes, ...receiptErrorCodes]) {
+    for (final code in [...cancellationErrorCodes, ...paymentErrorCodes, ...receiptEmailErrorCodes, ...receiptErrorCodes]) {
       expect(alle.contains(code) || clientErrorCodes.contains(code), isTrue, reason: code);
       expect(code, code.toLowerCase(), reason: code);
     }
@@ -101,9 +101,9 @@ void main() {
   test('Kataloge: Stornogruende, Stornostand, Mailweg, Layout-Ton wie das Vokabular', () {
     final kataloge = (vok['catalogs'] as Map).cast<String, dynamic>();
     List<String> werte(String k) => (kataloge[k] as Map).values.cast<String>().toList();
-    expect(stornogruende.keys.toList(), werte('STORNO_GRUND'));
+    expect(cancellationReasons.keys.toList(), werte('STORNO_GRUND'));
     expect(cancellationStatuses, werte('STORNO_STAND'));
-    expect([for (final s in StornoStand.values) if (s != StornoStand.unknown) s.name], werte('STORNO_STAND'));
+    expect([for (final s in CancellationState.values) if (s != CancellationState.unknown) s.name], werte('STORNO_STAND'));
     expect(receiptEmailVias, werte('MAILWEG'));
     expect(LayoutBannerTone.values.map((t) => t.wire).toList(), werte('LAYOUT_TON'));
   });

@@ -8,7 +8,7 @@
 /// Fliesskommazahl faellt beim Hinsehen nicht auf (0.33 sieht aus wie 33 Cent) —
 /// er faellt auf, wenn drei davon zusammenkommen: `3 * 0.33` ist
 /// `0.9899999999999999`, und je nach Rundung steht auf dem Beleg ein Cent zu
-/// wenig. Deshalb liest auch [betragAusText] die Eingabe ueber die Ziffern.
+/// wenig. Deshalb liest auch [parseAmountCents] die Eingabe ueber die Ziffern.
 ///
 /// **2. Der Steuersatz wird nur durchgereicht.** An [VatRate] haengt der
 /// RKSV-Kategoriebuchstabe (A/B/C/D/E/G), und der haengt an der Signaturkette
@@ -27,7 +27,7 @@ class Position {
     required this.quantity,
     required this.priceCents,
     required this.vat,
-    this.maxMenge,
+    this.maxQuantity,
   });
 
   /// Kennung nur fuer diesen Bildschirm: zwei gleich aussehende Positionen sind
@@ -42,117 +42,117 @@ class Position {
   final VatRate vat;
 
   /// Hoechstmenge je Beleg (vom Artikel); fehlt bei freien Positionen.
-  final int? maxMenge;
+  final int? maxQuantity;
 
   /// Zeilensumme in ganzen Cent — beide Faktoren sind ganze Zahlen.
-  int get zeilensummeCents => priceCents * quantity;
+  int get lineTotalCents => priceCents * quantity;
 
-  Position mitMenge(int menge) => Position(
+  Position withQuantity(int menge) => Position(
         id: id,
         name: name,
         quantity: menge,
         priceCents: priceCents,
         vat: vat,
-        maxMenge: maxMenge,
+        maxQuantity: maxQuantity,
       );
 
   /// Als Belegposition — ohne die Kassen-Kennung, die das Backend nichts angeht.
-  KasseneckItem alsBelegposition() =>
+  KasseneckItem toReceiptItem() =>
       KasseneckItem(name: name, quantity: quantity, priceCents: priceCents, vat: vat);
 }
 
 /// Was der Kassier eingegeben hat, bevor daraus eine Position wird.
-class Positionsentwurf {
-  const Positionsentwurf({
-    required this.bezeichnung,
-    required this.betragCents,
-    required this.steuersatz,
-    this.maxMenge,
+class CartItemDraft {
+  const CartItemDraft({
+    required this.name,
+    required this.unitPriceCents,
+    required this.vatRate,
+    this.maxQuantity,
   });
 
   /// Pflicht. § 132a BAO verlangt die handelsuebliche Bezeichnung auf dem Beleg.
-  final String bezeichnung;
+  final String name;
 
   /// Einzelpreis in ganzen Cent.
-  final int betragCents;
-  final VatRate steuersatz;
+  final int unitPriceCents;
+  final VatRate vatRate;
 
   /// Hoechstmenge je Beleg (Artikel); die Menge im Korb geht nie darueber.
-  final int? maxMenge;
+  final int? maxQuantity;
 }
 
 /// Eine Anzeigezeile des Korbs: gebuendelt (Menge × Preis) oder je Stueck einzeln.
-class Korbzeile {
-  const Korbzeile({required this.key, required this.position, required this.menge, required this.betragCents});
+class CartLine {
+  const CartLine({required this.key, required this.item, required this.quantity, required this.amountCents});
 
   final String key;
-  final Position position;
-  final int menge;
-  final int betragCents;
+  final Position item;
+  final int quantity;
+  final int amountCents;
 }
 
 /// Fortlaufende Nummer fuer die Kennung — sie braucht nur Eindeutigkeit
 /// innerhalb dieser Sitzung.
 int _laufendeNummer = 0;
 
-class Warenkorb {
-  const Warenkorb({required this.positionen});
+class Cart {
+  const Cart({required this.items});
 
   /// Ein Verkauf, an dem noch nichts erfasst ist.
-  const Warenkorb.leer() : positionen = const [];
+  const Cart.empty() : items = const [];
 
-  final List<Position> positionen;
+  final List<Position> items;
 
-  int get summeCents => positionen.fold(0, (s, p) => s + p.zeilensummeCents);
+  int get totalCents => items.fold(0, (s, p) => s + p.lineTotalCents);
 
-  bool get istLeer => positionen.isEmpty;
+  bool get isEmpty => items.isEmpty;
 
   /// Legt eine Position mit Menge 1 an.
   ///
   /// Ohne Bezeichnung bleibt der Korb **unveraendert** (derselbe Wert): das
   /// Backend weist eine namenlose Position ohnehin ab. Den Grund nennt der
   /// Bildschirm, bevor der Kassier drueckt — hier steht nur die letzte Grenze.
-  Warenkorb hinzugefuegt(Positionsentwurf entwurf) {
-    final name = entwurf.bezeichnung.trim();
+  Cart added(CartItemDraft entwurf) {
+    final name = entwurf.name.trim();
     if (name.isEmpty) return this;
     _laufendeNummer += 1;
-    final grenze = (entwurf.maxMenge != null && entwurf.maxMenge! > 0) ? entwurf.maxMenge : null;
-    return Warenkorb(positionen: [
-      ...positionen,
+    final grenze = (entwurf.maxQuantity != null && entwurf.maxQuantity! > 0) ? entwurf.maxQuantity : null;
+    return Cart(items: [
+      ...items,
       Position(
         id: 'p$_laufendeNummer',
         name: name,
         quantity: 1,
-        priceCents: entwurf.betragCents,
-        vat: entwurf.steuersatz,
-        maxMenge: grenze,
+        priceCents: entwurf.unitPriceCents,
+        vat: entwurf.vatRate,
+        maxQuantity: grenze,
       ),
     ]);
   }
 
   /// Nimmt genau eine Position heraus.
-  Warenkorb entfernt(String id) {
-    final rest = positionen.where((p) => p.id != id).toList();
+  Cart removed(String id) {
+    final rest = items.where((p) => p.id != id).toList();
     // Unveraendert heisst unveraendert: derselbe Wert, damit oben niemand ohne
     // Grund neu zeichnet.
-    return rest.length == positionen.length ? this : Warenkorb(positionen: rest);
+    return rest.length == items.length ? this : Cart(items: rest);
   }
 
   /// Setzt die Menge einer Position.
   ///
   /// Faellt sie auf null, faellt die Position: eine Zeile „0 × Kaffee" waere weder
   /// auf dem Schirm noch auf dem Beleg etwas wert.
-  Warenkorb mengeGesetzt(String id, int menge) {
-    if (menge <= 0) return entfernt(id);
+  Cart withQuantity(String id, int menge) {
+    if (menge <= 0) return removed(id);
     var getroffen = false;
-    final neu = positionen.map((p) {
+    final neu = items.map((p) {
       if (p.id != id) return p;
       getroffen = true;
       // Hoechstmenge je Beleg: darueber geht es nicht — egal woher der Griff kommt.
-      final grenze = (p.maxMenge != null && p.maxMenge! > 0) ? p.maxMenge! : null;
-      return p.mitMenge(grenze != null && menge > grenze ? grenze : menge);
+      final grenze = (p.maxQuantity != null && p.maxQuantity! > 0) ? p.maxQuantity! : null;
+      return p.withQuantity(grenze != null && menge > grenze ? grenze : menge);
     }).toList();
-    return getroffen ? Warenkorb(positionen: neu) : this;
+    return getroffen ? Cart(items: neu) : this;
   }
 
   /// Zieht die verkauften Positionen ab.
@@ -165,38 +165,38 @@ class Warenkorb {
   ///
   /// Abgezogen wird nach Kennung **und** Menge: wurden zwei von drei Kaffee
   /// verkauft, bleibt einer stehen.
-  Warenkorb abgezogen(Warenkorb verkauft) {
+  Cart subtracted(Cart verkauft) {
     final mengen = <String, int>{};
-    for (final p in verkauft.positionen) {
+    for (final p in verkauft.items) {
       mengen[p.id] = (mengen[p.id] ?? 0) + p.quantity;
     }
     final rest = <Position>[];
-    for (final p in positionen) {
+    for (final p in items) {
       final bleibt = p.quantity - (mengen[p.id] ?? 0);
       if (bleibt <= 0) continue;
-      rest.add(bleibt == p.quantity ? p : p.mitMenge(bleibt));
+      rest.add(bleibt == p.quantity ? p : p.withQuantity(bleibt));
     }
-    return Warenkorb(positionen: rest);
+    return Cart(items: rest);
   }
 
-  /// Zeilen fuer die Anzeige je Mengenmodus: [KasseMenge.off] loest gebuendelte
+  /// Zeilen fuer die Anzeige je Mengenmodus: [PosQuantity.off] loest gebuendelte
   /// Positionen in eine Zeile je Stueck zum Einzelpreis auf.
-  List<Korbzeile> zeilen(KasseMenge modus) {
-    if (modus != KasseMenge.off) {
-      return positionen
-          .map((p) => Korbzeile(key: p.id, position: p, menge: p.quantity, betragCents: p.zeilensummeCents))
+  List<CartLine> lines(PosQuantity modus) {
+    if (modus != PosQuantity.off) {
+      return items
+          .map((p) => CartLine(key: p.id, item: p, quantity: p.quantity, amountCents: p.lineTotalCents))
           .toList();
     }
     return [
-      for (final p in positionen)
+      for (final p in items)
         for (var i = 0; i < (p.quantity < 1 ? 1 : p.quantity); i++)
-          Korbzeile(key: '${p.id}#$i', position: p, menge: 1, betragCents: p.priceCents),
+          CartLine(key: '${p.id}#$i', item: p, quantity: 1, amountCents: p.priceCents),
     ];
   }
 }
 
 /// Die Steuersaetze zur Wahl — haeufige zuerst.
-const List<VatRate> steuersaetze = [
+const List<VatRate> vatRateChoices = [
   VatRate.vat20,
   VatRate.vat19,
   VatRate.vat13,
@@ -206,7 +206,7 @@ const List<VatRate> steuersaetze = [
 ];
 
 /// Der uebliche Fall am Tresen.
-const VatRate vorgabeSteuersatz = VatRate.vat20;
+const VatRate defaultVatRate = VatRate.vat20;
 
 /// Obergrenze je Position: 100.000,00 €.
 ///
@@ -214,7 +214,7 @@ const VatRate vorgabeSteuersatz = VatRate.vat20;
 /// Cent-Kasse kommt, tippt „1250" fuer 12,50 € — und bekaeme ohne Deckel
 /// 1250,00 € auf einen unveraenderlichen Beleg. Der Deckel faengt den groben Fall
 /// ab, nicht den knappen.
-const int hoechstbetragCent = 10000000;
+const int maxAmountCents = 10000000;
 
 /// Betrag aus dem Eingabefeld in ganzen Cent — oder `null`.
 ///
@@ -225,9 +225,9 @@ const int hoechstbetragCent = 10000000;
 /// keine Aufforderung zum Runden — wer hier rundete, entschiede am Kassier
 /// vorbei ueber Geld) und **0,00 oder negativ** (ein Nullbeleg entsteht nicht
 /// hier, und ein Storno ist eine eigene Handlung mit eigenem Beleg) sowie
-/// alles ueber [hoechstbetragCent] — der Deckel, den der Kommentar dort seit
+/// alles ueber [maxAmountCents] — der Deckel, den der Kommentar dort seit
 /// jeher beschreibt und den bis hierher niemand pruefte.
-int? betragAusText(String text) {
+int? parseAmountCents(String text) {
   final treffer = RegExp(r'^(\d+)(?:[.,](\d{1,2}))?$').firstMatch(text.trim());
   if (treffer == null) return null;
   final ganzeText = treffer.group(1)!;
@@ -240,7 +240,7 @@ int? betragAusText(String text) {
   final nachkommaText = (treffer.group(2) ?? '').padRight(2, '0');
   final nachkomma = nachkommaText.isEmpty ? 0 : int.parse(nachkommaText);
   final cents = ganze * 100 + nachkomma;
-  if (cents <= 0 || cents > hoechstbetragCent) return null;
+  if (cents <= 0 || cents > maxAmountCents) return null;
   return cents;
 }
 
@@ -249,7 +249,7 @@ int? betragAusText(String text) {
 /// Aus den Ziffern zusammengesetzt und nicht ueber eine Zahlenformatierung: die
 /// Cent stehen bereits als ganze Zahl da, es gibt nichts zu formatieren, was
 /// eine Division nicht wieder unscharf machen wuerde.
-String alsEuro(int cents) {
+String formatEuro(int cents) {
   final negativ = cents < 0;
   final ziffern = cents.abs().toString().padLeft(3, '0');
   final ganze = ziffern.substring(0, ziffern.length - 2);
@@ -271,7 +271,7 @@ String _mitTausenderpunkt(String ganze) {
 }
 
 /// Beschriftung eines Steuersatzes, wie sie am Tresen gelesen wird.
-String steuersatzText(VatRate satz) {
+String formatVatRate(VatRate satz) {
   final zahl = satz.rate;
   final text = zahl == zahl.roundToDouble() ? zahl.toInt().toString() : zahl.toString();
   return '${text.replaceAll('.', ',')} %';

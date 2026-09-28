@@ -1,7 +1,7 @@
 /// Farben ohne Flutter — damit das Kassenthema auch dort gilt, wo kein
 /// Bildschirm ist (Prüfungen, Bonlayout, künftig die Browser-Kasse).
 ///
-/// Gerechnet wird nach WCAG: [kontrast] liefert dasselbe Verhältnis, das jedes
+/// Gerechnet wird nach WCAG: [contrastRatio] liefert dasselbe Verhältnis, das jedes
 /// Prüfwerkzeug meldet. Das ist kein Selbstzweck — an dieser Zahl hängt, ob
 /// ein Kassier am Fenster seine Summe noch lesen kann.
 library;
@@ -11,27 +11,27 @@ import 'dart:ui' show Color;
 
 import 'package:kreiseck_design/kreiseck_design.dart';
 
-class Farbe {
-  const Farbe(this.r, this.g, this.b);
+class PosColor {
+  const PosColor(this.r, this.g, this.b);
 
   /// Aus einer Flutter-Farbe: das Design-System liefert `Color`, die Kasse
-  /// rechnet und druckt mit [Farbe]. Alpha wird verworfen — Belege kennen
+  /// rechnet und druckt mit [PosColor]. Alpha wird verworfen — Belege kennen
   /// keine Transparenz.
-  factory Farbe.ausColor(Color c) {
+  factory PosColor.fromColor(Color c) {
     final v = c.toARGB32();
-    return Farbe((v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF);
+    return PosColor((v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF);
   }
 
-  /// `#RRGGBB`; alles andere ergibt [ersatz] — eine Farbangabe aus dem Panel
-  /// darf keine unsichtbare Kasse erzeugen. [ersatz] ist Pflicht: ein
+  /// `#RRGGBB`; alles andere ergibt [fallback] — eine Farbangabe aus dem Panel
+  /// darf keine unsichtbare Kasse erzeugen. [fallback] ist Pflicht: ein
   /// stillschweigendes Panel-Blau als Vorgabe wäre eine Entscheidung des
   /// Aufrufers, die er nie getroffen hat.
-  factory Farbe.ausHex(String hex, {required Farbe ersatz}) {
+  factory PosColor.fromHex(String hex, {required PosColor fallback}) {
     final h = hex.trim().replaceFirst('#', '');
-    if (h.length != 6) return ersatz;
+    if (h.length != 6) return fallback;
     final wert = int.tryParse(h, radix: 16);
-    if (wert == null) return ersatz;
-    return Farbe((wert >> 16) & 0xFF, (wert >> 8) & 0xFF, wert & 0xFF);
+    if (wert == null) return fallback;
+    return PosColor((wert >> 16) & 0xFF, (wert >> 8) & 0xFF, wert & 0xFF);
   }
 
   final int r;
@@ -39,7 +39,7 @@ class Farbe {
   final int b;
 
   /// Sieht eine Farbangabe wie `#RRGGBB` aus?
-  static bool istHex(String hex) {
+  static bool isHex(String hex) {
     final h = hex.trim().replaceFirst('#', '');
     return h.length == 6 && int.tryParse(h, radix: 16) != null;
   }
@@ -50,10 +50,10 @@ class Farbe {
       '${b.toRadixString(16).padLeft(2, '0')}'
       .toUpperCase();
 
-  int get wert => 0xFF000000 | (r << 16) | (g << 8) | b;
+  int get value => 0xFF000000 | (r << 16) | (g << 8) | b;
 
   /// Relative Helligkeit nach WCAG (0 = Schwarz, 1 = Weiß).
-  double get helligkeit {
+  double get luminance {
     double kanal(int v) {
       final s = v / 255;
       return s <= 0.03928 ? s / 12.92 : math.pow((s + 0.055) / 1.055, 2.4).toDouble();
@@ -63,14 +63,14 @@ class Farbe {
   }
 
   /// Mischt zu [andere] hin; [anteil] 0 = diese Farbe, 1 = die andere.
-  Farbe gemischt(Farbe andere, double anteil) {
+  PosColor mixedWith(PosColor andere, double anteil) {
     final t = anteil < 0 ? 0.0 : (anteil > 1 ? 1.0 : anteil);
     int misch(int a, int b) => (a + (b - a) * t).round();
-    return Farbe(misch(r, andere.r), misch(g, andere.g), misch(b, andere.b));
+    return PosColor(misch(r, andere.r), misch(g, andere.g), misch(b, andere.b));
   }
 
   @override
-  bool operator ==(Object other) => other is Farbe && other.r == r && other.g == g && other.b == b;
+  bool operator ==(Object other) => other is PosColor && other.r == r && other.g == g && other.b == b;
 
   @override
   int get hashCode => Object.hash(r, g, b);
@@ -81,10 +81,10 @@ class Farbe {
 
 /// Aus Farbton, Sättigung und Helligkeit (HSV) eine Farbe.
 ///
-/// [ton] in Grad (0–360), [saettigung] und [helligkeit] von 0 bis 1. Gebraucht
+/// [ton] in Grad (0–360), [saettigung] und [luminance] von 0 bis 1. Gebraucht
 /// für eine freie Farbwahl: ein Regler je Größe ist begreiflicher als sechs
 /// Hexzeichen.
-Farbe farbeAusHsv(double ton, double saettigung, double helligkeit) {
+PosColor colorFromHsv(double ton, double saettigung, double helligkeit) {
   final h = (ton % 360 + 360) % 360;
   final s = saettigung.clamp(0.0, 1.0);
   final v = helligkeit.clamp(0.0, 1.0);
@@ -100,7 +100,7 @@ Farbe farbeAusHsv(double ton, double saettigung, double helligkeit) {
     _ => (c, 0.0, x),
   };
   int acht(double f) => ((f + m) * 255).round().clamp(0, 255);
-  return Farbe(acht(r), acht(g), acht(b));
+  return PosColor(acht(r), acht(g), acht(b));
 }
 
 /// Taugt diese Farbe als Betriebsfarbe?
@@ -109,10 +109,10 @@ Farbe farbeAusHsv(double ton, double saettigung, double helligkeit) {
 /// einen Knopf, der auf weißem Grund verschwindet — und das merkt der Chef
 /// erst am Tresen. Geprüft wird gegen **beide** hellen Gründe, weil ein Betrieb
 /// den Stil wechseln kann.
-bool markeTaugt(Farbe farbe) {
-  final helleGruende = [const Farbe(0xFF, 0xFF, 0xFF), Farbe.ausColor(kdColor(KdMode.light, 'ground'))];
+bool isUsableBrandColor(PosColor farbe) {
+  final helleGruende = [const PosColor(0xFF, 0xFF, 0xFF), PosColor.fromColor(kdColor(KdMode.light, 'ground'))];
   for (final grund in helleGruende) {
-    if (kontrast(farbe, grund) < 2.0) return false;
+    if (contrastRatio(farbe, grund) < 2.0) return false;
   }
   return true;
 }
@@ -122,15 +122,15 @@ bool markeTaugt(Farbe farbe) {
 /// 4,5 ist die Schwelle für Fließtext, 3 für große Schrift. Die Kasse hält
 /// sich an 4,5 — auch für den großen Betrag, denn gelesen wird er oft schräg
 /// und in schlechtem Licht.
-double kontrast(Farbe a, Farbe b) {
-  final ha = a.helligkeit;
-  final hb = b.helligkeit;
+double contrastRatio(PosColor a, PosColor b) {
+  final ha = a.luminance;
+  final hb = b.luminance;
   final hell = ha > hb ? ha : hb;
   final dunkel = ha > hb ? hb : ha;
   return (hell + 0.05) / (dunkel + 0.05);
 }
 
-/// Die besser lesbare von zwei Farben auf [grund].
-Farbe lesbarAuf(Farbe grund, {Farbe hell = const Farbe(0xFF, 0xFF, 0xFF), Farbe dunkel = const Farbe(0x0F, 0x17, 0x2A)}) {
-  return kontrast(hell, grund) >= kontrast(dunkel, grund) ? hell : dunkel;
+/// Die besser lesbare von zwei Farben auf [reason].
+PosColor readableOn(PosColor grund, {PosColor light = const PosColor(0xFF, 0xFF, 0xFF), PosColor dark = const PosColor(0x0F, 0x17, 0x2A)}) {
+  return contrastRatio(light, grund) >= contrastRatio(dark, grund) ? light : dark;
 }

@@ -115,7 +115,7 @@ void ausClient() {
       return http.Response(jsonEncode({'status': 'success', 'data': {'expiresAt': 7}}), 200, headers: const {'kasseneck-api-version': 'v3'});
     });
     final client = RegisterClient(baseUrl: 'https://test.example/v3', httpClient: mock);
-    final sitzung = client.sitzung(
+    final sitzung = client.session(
       idToken: () async => 'tok',
       sessionId: () async => 'sess',
       cashregisterId: 'KASSE2',

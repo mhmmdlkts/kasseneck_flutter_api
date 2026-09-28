@@ -27,8 +27,8 @@ import 'helpers/test_receipts.dart';
 /// zeigt als der Beleg hergibt.
 final _wurzel = Directory('test/fixtures/vertrag');
 
-BelegLayout _layout(String name) =>
-    BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/$name.lines.json').readAsStringSync()))!;
+ReceiptLayout _layout(String name) =>
+    ReceiptLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/$name.lines.json').readAsStringSync()))!;
 
 /// Der gedruckte Text, wie ihn der Bon zeigt (ohne Steuerbytes).
 Future<String> _gedruckt(KasseneckReceipt receipt) async {
@@ -71,17 +71,17 @@ void main() {
         cardPaymentData: kartendaten,
         cardPaymentId: 'pi_3Qxx',
       )..layout = _layout('sale-cash');
-      expect(receipt.layoutIstVollstaendig, isFalse);
+      expect(receipt.isLayoutComplete, isFalse);
     });
 
     test('ohne Kartendaten ist ein Layout ohne Block vollständig', () {
       // Sonst fiele JEDER Barbeleg auf den alten Bauer zurück.
       final receipt = buildReceipt(paymentMethod: KeckPaymentMethod.cash)..layout = _layout('sale-cash');
-      expect(receipt.layoutIstVollstaendig, isTrue);
+      expect(receipt.isLayoutComplete, isTrue);
     });
 
     test('ohne Layout ist unvollstaendig', () {
-      expect(buildReceipt().layoutIstVollstaendig, isFalse);
+      expect(buildReceipt().isLayoutComplete, isFalse);
     });
 
     test('ein unvollstaendiges Server-Layout gewinnt trotzdem (wie npm)', () async {
@@ -93,7 +93,7 @@ void main() {
         cardPaymentData: kartendaten,
         cardPaymentId: 'pi_3Qxx',
       )..layout = _layout('sale-cash');
-      expect(receipt.layoutIstVollstaendig, isFalse);
+      expect(receipt.isLayoutComplete, isFalse);
       expect(await _gedruckt(receipt), contains('Bäckerei Muster'));
     });
   });

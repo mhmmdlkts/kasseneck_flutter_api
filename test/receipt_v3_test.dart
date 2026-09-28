@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
-import 'package:kasseneck_api/kasse.dart' show RegisterReceiptClient, StornoStand, Belegzusammenfassung, cardRefundReference;
+import 'package:kasseneck_api/kasse.dart' show RegisterReceiptClient, CancellationState, ReceiptSummary, cardRefundReference;
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
@@ -99,7 +99,7 @@ void _pruefeBeleg(KasseneckReceipt r, Map<String, dynamic> daten, String wo, {re
   expect(r.testCashregister, daten['testCashregister'], reason: wo);
   expect(r.testSignature, daten['testSignature'], reason: wo);
   expect(r.headerVersionId, daten['headerVersionId'], reason: wo);
-  expect(r.logoScale.kuerzel, daten['logo_scale'], reason: wo);
+  expect(r.logoScale.code, daten['logo_scale'], reason: wo);
   expect(r.registrationInfo, RegistrationInfo.fromJson(daten['registrationInfo']), reason: wo);
   expect(r.layoutRuleset, roh['layoutRuleset'], reason: wo);
   expect(r.layout, isNotNull, reason: wo);
@@ -119,7 +119,7 @@ void _pruefeBeleg(KasseneckReceipt r, Map<String, dynamic> daten, String wo, {re
   final bezug = roh['cancellationOf'] as Map<String, dynamic>?;
   expect(r.cancellationOf?.toJson(), bezug, reason: wo);
   if (roh['cancellationReason'] != null) {
-    expect(stornogruende.containsKey(r.cancellationReason), isTrue, reason: '$wo: ${r.cancellationReason}');
+    expect(cancellationReasons.containsKey(r.cancellationReason), isTrue, reason: '$wo: ${r.cancellationReason}');
   }
 }
 
@@ -145,7 +145,7 @@ void main() {
   test('der Kassenweg (holen) liest den Kartenbeleg mit Kennung, der oeffentliche (getReceipt) ohne', () async {
     final app = _fall(_kasseBelege, 'get_card_receipt_with_cancellation');
     final k = _einmal(app);
-    final ueberKasse = await _kasse(k.client).holen('KECK-1-ID-2');
+    final ueberKasse = await _kasse(k.client).get('KECK-1-ID-2');
     expect(_params(k.log.single), {...app['params'] as Map, 'cashregisterId': 'KECK-1'});
     expect(k.log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/getReceipt');
     expect(cardRefundReference(ueberKasse, 'p1'), 'tx-4711');
@@ -203,22 +203,22 @@ void main() {
             ))
         .toList();
 
-    Future<Stornoergebnis> stornieren(Map<String, dynamic> fall, http.Client client) {
+    Future<CancelReceiptResult> stornieren(Map<String, dynamic> fall, http.Client client) {
       final p = fall['params'] as Map<String, dynamic>;
-      final positionen = (p['items'] as List?)?.cast<Map>().map((e) => (index: e['index'] as int, menge: e['quantity'] as int)).toList();
+      final positionen = (p['items'] as List?)?.cast<Map>().map((e) => (index: e['index'] as int, quantity: e['quantity'] as int)).toList();
       return fall['channel'] == 'app'
-          ? _kasse(client).stornieren(
+          ? _kasse(client).cancel(
               originalReceiptId: p['originalReceiptId'] as String,
-              grund: p['reason'] as String,
-              positionen: positionen,
-              zahlungen: zahlungen(p),
+              reason: p['reason'] as String,
+              items: positionen,
+              payments: zahlungen(p),
             )
-          : _api(client).stornieren(
+          : _api(client).cancelReceipt(
               cashregisterId: p['cashregisterId'] as String,
               originalReceiptId: p['originalReceiptId'] as String,
-              grund: p['reason'] as String,
-              positionen: positionen,
-              zahlungen: zahlungen(p),
+              reason: p['reason'] as String,
+              items: positionen,
+              payments: zahlungen(p),
             );
     }
 
@@ -227,7 +227,7 @@ void main() {
         final m = _einmal(fall);
         final resp = fall['response'] as Map<String, dynamic>;
         final reason = (fall['params'] as Map)['reason'];
-        if (!stornogruende.containsKey(reason)) {
+        if (!cancellationReasons.containsKey(reason)) {
           // Unbekannter und alter deutscher Grund: faellt vor dem Senden.
           await expectLater(stornieren(fall, m.client), throwsA(isA<KasseneckValidationError>()));
           expect(m.log, isEmpty);
@@ -239,9 +239,9 @@ void main() {
           expect(erg.originalReceiptId, (daten['cancellationOf'] as Map)['receiptId']);
           expect(erg.originalFullReceiptId, (daten['cancellationOf'] as Map)['fullReceiptId']);
           expect(erg.originalTimeStamp, (daten['cancellationOf'] as Map)['timeStamp']);
-          expect(erg.restmengen, daten['remaining']);
-          expect(erg.beleg.cancellationReason, (daten['receipt'] as Map)['cancellationReason']);
-          expect(erg.beleg.cancellationOf?.timeStamp, isNotNull);
+          expect(erg.remaining, daten['remaining']);
+          expect(erg.receipt.cancellationReason, (daten['receipt'] as Map)['cancellationReason']);
+          expect(erg.receipt.cancellationOf?.timeStamp, isNotNull);
         } else {
           await expectLater(
             stornieren(fall, m.client),
@@ -249,7 +249,7 @@ void main() {
                 .having((e) => e.code, 'code', resp['code'])
                 .having((e) => e.outcome, 'outcome', ErrorOutcome.rejected)),
           );
-          expect(istStornoFehlercode(resp['code']), isTrue);
+          expect(isCancellationErrorCode(resp['code']), isTrue);
         }
         expect(m.log, hasLength(1));
         expect(_params(m.log.single), fall['params'], reason: 'genau die Parameter des Vertrags');
@@ -262,12 +262,12 @@ void main() {
           (_fall(_belege, 'get_card_receipt_with_cancellation')['response'] as Map)['data'] as Map<String, dynamic>);
       final m = _einmal(_fall(_storno, 'cancel_full_card_refund', channel: 'api'));
       await expectLater(
-        _api(m.client).stornieren(
+        _api(m.client).cancelReceipt(
           cashregisterId: 'KECK-1',
           originalReceiptId: 'KECK-1-ID-2',
-          grund: 'input_error',
+          reason: 'input_error',
           original: original,
-          zahlungen: const [
+          payments: const [
             KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -700, refundOf: 'p1', provider: CreditCardProvider.sumup),
           ],
         ),
@@ -280,11 +280,11 @@ void main() {
       final original = KasseneckReceipt.fromJson(
           (_fall(_kasseBelege, 'get_card_receipt_with_cancellation')['response'] as Map)['data'] as Map<String, dynamic>);
       final m = _einmal(_fall(_storno, 'cancel_full_card_refund', channel: 'app'));
-      await _kasse(m.client).stornieren(
+      await _kasse(m.client).cancel(
         originalReceiptId: 'KECK-1-ID-2',
-        grund: 'input_error',
+        reason: 'input_error',
         original: original,
-        zahlungen: const [
+        payments: const [
           KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -700, refundOf: 'p1', provider: CreditCardProvider.sumup),
         ],
       );
@@ -298,7 +298,7 @@ void main() {
       if (params.containsKey('sprache')) {
         test('${fall['name']}: der alte Parameter sprache geht nie hinaus', () async {
           final m = _einmal(_fall(_mail, 'via_own_mailbox'));
-          await _api(m.client).belegSenden(fullReceiptId: 'voll', an: 'max@example.at', language: 'de');
+          await _api(m.client).sendReceiptEmail(fullReceiptId: 'voll', to: 'max@example.at', language: 'de');
           expect(_params(m.log.single).containsKey('sprache'), isFalse);
           expect(_params(m.log.single)['language'], 'de');
         });
@@ -307,9 +307,9 @@ void main() {
       test('${fall['name']}: Parameter wie im Vertrag, via und Codes englisch', () async {
         final m = _einmal(fall);
         final resp = fall['response'] as Map<String, dynamic>;
-        final aufruf = _api(m.client).belegSenden(
+        final aufruf = _api(m.client).sendReceiptEmail(
           fullReceiptId: params['fullReceiptId'] as String,
-          an: params['to'] as String,
+          to: params['to'] as String,
           language: params['language'] as String?,
         );
         if (resp['status'] == 'success') {
@@ -318,7 +318,7 @@ void main() {
           expect(erg.at, (resp['data'] as Map)['at']);
         } else {
           await expectLater(aufruf, throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', resp['code'])));
-          expect(istBelegMailFehlercode(resp['code']), isTrue);
+          expect(isReceiptEmailErrorCode(resp['code']), isTrue);
         }
         expect(_params(m.log.single), params);
       });
@@ -327,16 +327,16 @@ void main() {
 
   test('Belegliste: cancellationStatus englisch, unbekannt bleibt unknown, fehlend bleibt null', () {
     for (final (roh, soll) in [
-      ('none', StornoStand.none),
-      ('partial', StornoStand.partial),
-      ('full', StornoStand.full),
-      ('voll', StornoStand.unknown),
-      ('refunded', StornoStand.unknown),
+      ('none', CancellationState.none),
+      ('partial', CancellationState.partial),
+      ('full', CancellationState.full),
+      ('voll', CancellationState.unknown),
+      ('refunded', CancellationState.unknown),
     ]) {
-      expect(Belegzusammenfassung.aus({'receiptId': 'X', 'cancellationStatus': roh}).stornoStand, soll, reason: roh);
+      expect(ReceiptSummary.fromJson({'receiptId': 'X', 'cancellationStatus': roh}).cancellationState, soll, reason: roh);
     }
-    expect(Belegzusammenfassung.aus({'receiptId': 'X'}).stornoStand, isNull);
-    expect(Belegzusammenfassung.aus({'receiptId': 'X', 'stornoStand': 'voll'}).stornoStand, isNull, reason: 'alter Schluessel');
+    expect(ReceiptSummary.fromJson({'receiptId': 'X'}).cancellationState, isNull);
+    expect(ReceiptSummary.fromJson({'receiptId': 'X', 'stornoStand': 'voll'}).cancellationState, isNull, reason: 'alter Schluessel');
   });
 
   test('migrateStoredReceiptJson: ein in 9.x gespeicherter Beleg liest sich nach dem Update unveraendert', () {

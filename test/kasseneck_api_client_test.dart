@@ -243,7 +243,7 @@ void main() {
           ],
         }));
 
-        final anteil = (await api.listTipRecipients()).single.mit(cents: 500);
+        final anteil = (await api.listTipRecipients()).single.share(cents: 500);
 
         expect(anteil.registerUserId, 'ru_1');
         expect(anteil.cents, 500);
@@ -265,7 +265,7 @@ void main() {
     group('newHobexTransactionId mit gesetztem Zeitpunkt', () {
       void pruefe(String was, DateTime zeitpunkt) {
         test(was, () {
-          final id = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt);
+          final id = KasseneckApi.newHobexTransactionId(now: zeitpunkt);
           expect(id.length, 19, reason: 'Hobex erwartet genau 19 Stellen');
           expect(RegExp(r'^\d+$').hasMatch(id), isTrue, reason: 'rein numerisch');
         });
@@ -280,7 +280,7 @@ void main() {
 
     test('newHobexTransactionId: Zeitanteil in den ersten 15, Zufall in den letzten 4 Stellen', () {
       final id = KasseneckApi.newHobexTransactionId(
-          zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0));
+          now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0));
       expect(id.substring(0, 15), '260102030405000');
       expect(int.parse(id.substring(15)), inInclusiveRange(0, 9999));
       expect(id.substring(15).length, 4, reason: 'der Zufallsanteil ist immer vierstellig');
@@ -308,7 +308,7 @@ void main() {
         final erwartet = '${zwei(wand.year % 100)}${zwei(wand.month)}${zwei(wand.day)}'
             '${zwei(wand.hour)}${zwei(wand.minute)}${zwei(wand.second)}'
             '${wand.millisecond.toString().padLeft(3, '0')}';
-        final id = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt);
+        final id = KasseneckApi.newHobexTransactionId(now: zeitpunkt);
         expect(id.length, 19, reason: 'Kennung zu $zeitpunkt');
         expect(id.substring(0, 15), erwartet, reason: 'Zeitanteil von $zeitpunkt');
       }
@@ -331,8 +331,8 @@ void main() {
     test('newHobexTransactionId: Golden-Wert Winterzeit (wie im JS-Zwilling)', () {
       // 02.01.2026 02:04:05.000 UTC = 03:04:05.000 Wiener Zeit (CET, +1).
       final id = KasseneckApi.newHobexTransactionId(
-        zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0),
-        zufall: () => 0.00071,
+        now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0),
+        random: () => 0.00071,
       );
       expect(id, '2601020304050000007');
       expect(RegExp(r'^\d{19}$').hasMatch(id), isTrue);
@@ -343,8 +343,8 @@ void main() {
       // Gegen den Winter-Wert steht hier allein die Sommerzeit: rechnet eine
       // der beiden Seiten die Umstellung anders, faellt genau dieser Wert.
       final id = KasseneckApi.newHobexTransactionId(
-        zeitpunkt: DateTime.utc(2026, 7, 8, 7, 4, 5, 0),
-        zufall: () => 0.00071,
+        now: DateTime.utc(2026, 7, 8, 7, 4, 5, 0),
+        random: () => 0.00071,
       );
       expect(id, '2607080904050000007');
       expect(RegExp(r'^\d{19}$').hasMatch(id), isTrue);
@@ -355,8 +355,8 @@ void main() {
       // Tageswechsel liegt zwischen beiden -- die Kennung muss den Wiener
       // Geschaeftstag tragen. Auch dieser Wert steht so im JS-Zwilling.
       final id = KasseneckApi.newHobexTransactionId(
-        zeitpunkt: DateTime.utc(2026, 8, 13, 22, 30, 5, 123),
-        zufall: () => 0.5,
+        now: DateTime.utc(2026, 8, 13, 22, 30, 5, 123),
+        random: () => 0.5,
       );
       expect(id, '2608140030051235000');
     });
@@ -365,20 +365,20 @@ void main() {
       // Eine eingespeiste Quelle haelt sich nicht an [0, 1). 1 ergaebe ohne
       // Begrenzung 10000 -- also eine 20-stellige Kennung.
       expect(KasseneckApi.newHobexTransactionId(
-              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => 1.0)
+              now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), random: () => 1.0)
           .substring(15), '9999');
       expect(KasseneckApi.newHobexTransactionId(
-              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => -3.0)
+              now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), random: () => -3.0)
           .substring(15), '0000');
       expect(KasseneckApi.newHobexTransactionId(
-              zeitpunkt: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), zufall: () => double.nan)
+              now: DateTime.utc(2026, 1, 2, 2, 4, 5, 0), random: () => double.nan)
           .substring(15), '0000');
     });
 
     test('newHobexTransactionId: zwei Kennungen derselben Millisekunde unterscheiden sich', () {
       final zeitpunkt = DateTime.utc(2026, 8, 13, 22, 30, 5, 123);
-      final erste = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt, zufall: () => 0.1234);
-      final zweite = KasseneckApi.newHobexTransactionId(zeitpunkt: zeitpunkt, zufall: () => 0.9876);
+      final erste = KasseneckApi.newHobexTransactionId(now: zeitpunkt, random: () => 0.1234);
+      final zweite = KasseneckApi.newHobexTransactionId(now: zeitpunkt, random: () => 0.9876);
       expect(erste, isNot(zweite),
           reason: 'ohne Zufallsanteil waeren zwei Zahlungen derselben Millisekunde dieselbe Kennung');
       expect(erste.substring(0, 15), zweite.substring(0, 15), reason: 'der Zeitanteil ist derselbe');
@@ -405,7 +405,7 @@ void main() {
     /// Aufruf zieht, steht schwarz auf weiss im Fehler.
     Matcher fristAbgelaufen(Duration frist) =>
         isA<KasseneckHttpError>()
-            .having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)
+            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)
             .having((e) => e.timeout, 'timeout', frist);
 
     test('Verkauf zieht signatureTimeout, nicht readTimeout', () async {
@@ -437,7 +437,7 @@ void main() {
         signatureTimeout: const Duration(milliseconds: 40),
       );
 
-      await expectLater(api.stornieren(cashregisterId: 'CASHBOX-9', originalReceiptId: 'R-1', grund: 'input_error'),
+      await expectLater(api.cancelReceipt(cashregisterId: 'CASHBOX-9', originalReceiptId: 'R-1', reason: 'input_error'),
           throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
       await expectLater(api.zeroReceipt(),
           throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
@@ -642,7 +642,7 @@ void main() {
 
   group('Logo haelt den Verkauf nicht auf', () {
     setUp(() {
-      LogoService.frist = LogoService.standardFrist;
+      LogoService.timeout = LogoService.defaultTimeout;
       LogoService.httpClient = http.Client();
     });
 
@@ -650,7 +650,7 @@ void main() {
       // Der Logo-Abruf laeuft HINTER dem bereits signierten Beleg. Haengt er,
       // steht die Kasse mit dem Gast am Tresen — und ein Neustart mit erneutem
       // Kassieren erzeugt einen zweiten Umsatz in der Signaturkette.
-      LogoService.frist = const Duration(milliseconds: 20);
+      LogoService.timeout = const Duration(milliseconds: 20);
       LogoService.httpClient = MockClient((_) => Completer<http.Response>().future);
 
       final api = apiWith(MockClient((_) async => http.Response(

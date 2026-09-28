@@ -11,124 +11,124 @@
 /// **Unbekannte Werte des Servers bleiben erhalten.** Kommt ein Wert, den
 /// dieses Paket nicht kennt (`theme: 'sepia'`, ein neuer Wert einer neueren
 /// Backend-Version), arbeitet die Kasse mit dem Standard, hält den Wert aber
-/// wörtlich fest: [KasseSettingsBetrieb.fremdeWerte] bzw.
-/// [KasseSettingsGeraet.fremdeWerte], `toJson` gibt ihn unverändert aus, und
+/// wörtlich fest: [PosBusinessSettings.unknownValues] bzw.
+/// [PosDeviceSettings.unknownValues], `toJson` gibt ihn unverändert aus, und
 /// [unknownPosSettingValues] nennt die Felder. Geschrieben wird nur, was sich
 /// geändert hat ([posSettingsChanges]); so bleibt der Wert am Server stehen.
 ///
-/// **Werte der inneren Form 0.x** (`stil: 'nacht'`, `layout: 'rechts'`) fallen
+/// **Werte der inneren Form 0.x** (`theme: 'nacht'`, `layout: 'rechts'`) fallen
 /// auf den Standard zurück, nie in das englische Modell. Ein zwischengespeicherter
 /// Stand der Version 9.x (`{betrieb, geraet}`, deutsche Schlüssel und Werte)
-/// wird beim Lesen übersetzt ([KasseSettings.aus]): nach dem Update geht keine
+/// wird beim Lesen übersetzt ([PosSettings.fromJson]): nach dem Update geht keine
 /// Einstellung verloren.
 library;
 
 // ------------------------------------------------------------------ Enums
 
-/// Gemeinsame Sicht auf die Aufzählungen der Einstellungen: [wert] ist der
+/// Gemeinsame Sicht auf die Aufzählungen der Einstellungen: [value] ist der
 /// Wert am Draht.
-abstract interface class KasseWert {
-  Object get wert;
+abstract interface class PosSettingValue {
+  Object get value;
 }
 
-enum KasseStil implements KasseWert {
+enum PosTheme implements PosSettingValue {
   clear,
   warm,
   night,
   contrast;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseSchrift implements KasseWert {
+enum PosFontSize implements PosSettingValue {
   s('S'),
   m('M'),
   l('L'),
   xl('XL');
 
-  const KasseSchrift(this.wert);
+  const PosFontSize(this.value);
   @override
-  final String wert;
+  final String value;
 }
 
-enum KasseEinstellSchrift implements KasseWert {
+enum PosSettingsFontSize implements PosSettingValue {
   s('S'),
   m('M'),
   l('L');
 
-  const KasseEinstellSchrift(this.wert);
+  const PosSettingsFontSize(this.value);
   @override
-  final String wert;
+  final String value;
 }
 
 /// Größe des Kürzel-Logos in der Kopfzeile der Kasse (`logoSize`).
-enum KasseGroesse implements KasseWert {
+enum PosLogoSize implements PosSettingValue {
   s('S'),
   m('M'),
   l('L');
 
-  const KasseGroesse(this.wert);
+  const PosLogoSize(this.value);
   @override
-  final String wert;
+  final String value;
 }
 
 /// Größe des Bild-Logos am Beleg (`logoScale`) bzw. des Wasserzeichens
 /// (`watermarkScale`).
-enum KasseSkala implements KasseWert {
+enum PosScale implements PosSettingValue {
   s('S'),
   m('M'),
   l('L'),
   xl('XL');
 
-  const KasseSkala(this.wert);
+  const PosScale(this.value);
   @override
-  final String wert;
+  final String value;
 }
 
-enum KasseWasserzeichen implements KasseWert {
+enum PosWatermark implements PosSettingValue {
   off,
   login,
   everywhere;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
 /// Seite des Wasserzeichens; alt, abgelöst von `watermarkX`, bleibt fürs
 /// Mischen alter Stände.
-enum KasseWasserzeichenSeite implements KasseWert {
+enum PosWatermarkSide implements PosSettingValue {
   left,
   center,
   right;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseKachelstil implements KasseWert {
+enum PosTileStyle implements PosSettingValue {
   stripe,
   full;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseMenge implements KasseWert {
+enum PosQuantity implements PosSettingValue {
   off,
   x,
   kg;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseRabatt implements KasseWert {
+enum PosDiscount implements PosSettingValue {
   off,
   on;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
 /// Karte gibt es erst mit eingerichtetem Anbieter.
@@ -138,8 +138,8 @@ enum KasseRabatt implements KasseWert {
 ///   gültiger Weg, kein Notbehelf.
 /// - `gptom`: GP Tom, angesprochen über die Terminal-App auf demselben Gerät.
 /// - `hobex`: Hobex HPS über die Terminal-Adresse im Kassennetz
-///   ([KasseSettingsGeraet.terminalIp] / `terminalPort`).
-enum KasseKartenanbieter implements KasseWert {
+///   ([PosDeviceSettings.terminalIp] / `terminalPort`).
+enum PosCardProvider implements PosSettingValue {
   none,
   external,
   gptom,
@@ -148,27 +148,27 @@ enum KasseKartenanbieter implements KasseWert {
   stripe;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseTgModus implements KasseWert {
+enum PosTipMode implements PosSettingValue {
   amount,
   total,
   both;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseKassierenModus implements KasseWert {
+enum PosCheckoutMode implements PosSettingValue {
   page,
   panel;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseBelegAusgabe implements KasseWert {
+enum PosReceiptOutput implements PosSettingValue {
   qr,
   print,
   email,
@@ -176,40 +176,40 @@ enum KasseBelegAusgabe implements KasseWert {
   ask;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseLayout implements KasseWert {
+enum PosLayout implements PosSettingValue {
   right,
   left,
   fullscreen;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseKatpos implements KasseWert {
+enum PosCategoryPosition implements PosSettingValue {
   top,
   left;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseHoehe implements KasseWert {
+enum PosTileHeight implements PosSettingValue {
   s('S'),
   m('M'),
   l('L');
 
-  const KasseHoehe(this.wert);
+  const PosTileHeight(this.value);
   @override
-  final String wert;
+  final String value;
 }
 
 /// `sdp` = Netzwerk über Epson Server Direct Print (der Drucker holt die Jobs
 /// vom Backend), `network` = direkt per IP (ePOS), `bluetooth`, `usb` = Kabel,
 /// `connect` = Kasseneck Connect (lokaler Agent auf dem Kassen-Rechner).
-enum KasseDruckerArt implements KasseWert {
+enum PosPrinterType implements PosSettingValue {
   sdp,
   network,
   bluetooth,
@@ -217,51 +217,51 @@ enum KasseDruckerArt implements KasseWert {
   connect;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
 /// Terminal-Ansprache: direkt per IP oder über Kasseneck Connect.
-enum KasseTerminalVia implements KasseWert {
+enum PosTerminalVia implements PosSettingValue {
   direct,
   connect;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
 /// Art des Kartenterminals an dieser Kasse: keines oder Hobex HPS.
-enum KasseTerminalArt implements KasseWert {
+enum PosTerminalType implements PosSettingValue {
   none,
   hps;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KassePapier implements KasseWert {
+enum PosPaperSize implements PosSettingValue {
   mm58,
   mm80;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseZeichensatz implements KasseWert {
+enum PosCodePage implements PosSettingValue {
   cp1252('CP1252'),
   cp437('CP437');
 
-  const KasseZeichensatz(this.wert);
+  const PosCodePage(this.value);
   @override
-  final String wert;
+  final String value;
 }
 
-enum KasseSchnitt implements KasseWert {
+enum PosCut implements PosSettingValue {
   partial,
   full,
   none;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
 /// Mit welchem Befehl der Signatur-QR auf den Bon kommt.
@@ -282,43 +282,43 @@ enum KasseSchnitt implements KasseWert {
 /// nicht kosmetisch: nach § 132a BAO ist der QR Teil des Belegs; im falschen
 /// Modus kommt ein Bon ohne lesbare Signatur heraus, und das fällt am Tresen
 /// niemandem auf.
-enum KasseQrModus implements KasseWert {
+enum PosQrMode implements PosSettingValue {
   auto,
   raster,
   escpos;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
-enum KasseLadeAuto implements KasseWert {
+enum PosDrawerAutoOpen implements PosSettingValue {
   cash,
   always,
   never;
 
   @override
-  String get wert => name;
+  String get value => name;
 }
 
 /// Automatisches Abmelden nach Minuten Ruhe; 0 = nie.
-const List<int> kasseAutoAbmeldenMinuten = [0, 1, 5, 15, 30];
+const List<int> posAutoLogoutMinutes = [0, 1, 5, 15, 30];
 
 /// Wie lange die Fertig-Seite stehen bleibt, in Sekunden; 0 = bis zum Tippen.
-const List<int> kasseFertigSekunden = [0, 3, 5, 10, 15, 30, 60];
+const List<int> posDoneScreenSeconds = [0, 3, 5, 10, 15, 30, 60];
 
 /// Deckkraft des Wasserzeichens in Prozent, bewusst Stufen.
-const List<int> kasseWasserzeichenStaerken = [3, 6, 10, 16];
+const List<int> posWatermarkStrengths = [3, 6, 10, 16];
 
 /// Aktionen der Kasse, die eine Taste bekommen können (Schlüssel von
 /// `device.shortcuts`), Zwilling von `POS_SHORTCUT_ACTIONS`.
-const List<String> kasseTastenAktionen = [
+const List<String> posShortcutActions = [
   'checkout', 'complete', 'cancel', 'customAmount', 'cash', 'card', 'exactAmount', 'receipts', 'undoLast',
   'settings', 'logout', 'tip', 'fullscreen', 'clearTendered', 'clearCart', 'splitPayment',
 ];
 
 /// Tastenbelegung: Aktion -> Tasten (`Mod+F`, `Enter`, `Escape`, `F5` ...;
 /// `Mod` = Cmd auf dem Mac, Strg sonst). Zwilling von `POS_SHORTCUT_DEFAULTS`.
-const Map<String, List<String>> kasseTastenStandard = {
+const Map<String, List<String>> posShortcutDefaults = {
   'checkout': ['Enter'],
   'complete': ['Enter'],
   'cancel': ['Escape'],
@@ -374,7 +374,7 @@ bool _darfTeilen(String a, String b) =>
 }
 
 /// Steuersätze in der Reihenfolge, in der die Kasse sie zeigt.
-const List<double> kasseSaetzeReihenfolge = [20, 19, 13, 10, 4.9, 0];
+const List<double> posVatRateOrder = [20, 19, 13, 10, 4.9, 0];
 
 const Map<String, bool> _saetzeStandard = {'20': true, '19': false, '13': true, '10': true, '4.9': true, '0': true};
 const Map<String, bool> _tgStufenStandard = {'5': true, '10': true, '15': false, '20': false};
@@ -382,19 +382,19 @@ const Map<String, bool> _tgStufenStandard = {'5': true, '10': true, '15': false,
 // ------------------------------------------------------------- Betriebsteil
 
 /// Was für den ganzen Betrieb gilt (im Panel eingestellt).
-class KasseSettingsBetrieb {
-  const KasseSettingsBetrieb({
+class PosBusinessSettings {
+  const PosBusinessSettings({
     this.logoText = 'K',
     this.logoEnabled = true,
-    this.logoSize = KasseGroesse.m,
-    this.watermark = KasseWasserzeichen.login,
+    this.logoSize = PosLogoSize.m,
+    this.watermark = PosWatermark.login,
     // Die Farbe der Marke Kasseneck (Rolle `brand` des Design-Systems), wie
     // im Vertrag ab npm 0.14.0.
     this.color = '#136B6B',
-    this.theme = KasseStil.clear,
-    this.fontSize = KasseSchrift.m,
-    this.settingsFontSize = KasseEinstellSchrift.s,
-    this.tileStyle = KasseKachelstil.stripe,
+    this.theme = PosTheme.clear,
+    this.fontSize = PosFontSize.m,
+    this.settingsFontSize = PosSettingsFontSize.s,
+    this.tileStyle = PosTileStyle.stripe,
     this.clock = true,
     this.lockScreen = true,
     this.staffPhotos = true,
@@ -407,50 +407,50 @@ class KasseSettingsBetrieb {
     this.categoryColors = true,
     this.customAmountAllowed = true,
     this.vatRates = _saetzeStandard,
-    this.quantity = KasseMenge.x,
+    this.quantity = PosQuantity.x,
     this.note = false,
     this.search = false,
-    this.discount = KasseRabatt.off,
+    this.discount = PosDiscount.off,
     this.payCash = true,
     this.payCard = false,
     this.paySplit = false,
-    this.cardProvider = KasseKartenanbieter.none,
+    this.cardProvider = PosCardProvider.none,
     this.tip = false,
-    this.tipMode = KasseTgModus.both,
+    this.tipMode = PosTipMode.both,
     this.tipSteps = _tgStufenStandard,
     this.tipSplit = true,
     this.change = true,
     this.tipChips = const [5, 10],
     this.exactCash = false,
-    this.checkoutMode = KasseKassierenModus.panel,
+    this.checkoutMode = PosCheckoutMode.panel,
     // Die Fertig-Seite fragt: QR oder Bon. Ein Betrieb ohne eigene
     // Einstellung soll am Tresen nicht ungefragt auf den QR festgelegt sein.
-    this.receiptOutput = KasseBelegAusgabe.ask,
+    this.receiptOutput = PosReceiptOutput.ask,
     this.doneScreenSeconds = 0,
     this.logoImage = '',
-    this.watermarkSide = KasseWasserzeichenSeite.center,
+    this.watermarkSide = PosWatermarkSide.center,
     this.watermarkX = 50,
     this.watermarkY = 50,
     this.watermarkStrength = 6,
-    this.logoScale = KasseSkala.m,
-    this.watermarkScale = KasseSkala.m,
+    this.logoScale = PosScale.m,
+    this.watermarkScale = PosScale.m,
     this.glass = true,
     this.hints = true,
     this.discountChips = const [5, 10, 15, 20],
-    this.fremdeWerte = const {},
+    this.unknownValues = const {},
   });
 
   final String logoText;
   final bool logoEnabled;
-  final KasseGroesse logoSize;
-  final KasseWasserzeichen watermark;
+  final PosLogoSize logoSize;
+  final PosWatermark watermark;
   final String color;
-  final KasseStil theme;
-  final KasseSchrift fontSize;
+  final PosTheme theme;
+  final PosFontSize fontSize;
 
   /// Schriftgröße im Einstellungsbereich (dort darf es kleiner sein).
-  final KasseEinstellSchrift settingsFontSize;
-  final KasseKachelstil tileStyle;
+  final PosSettingsFontSize settingsFontSize;
+  final PosTileStyle tileStyle;
   final bool clock;
   final bool lockScreen;
 
@@ -458,7 +458,7 @@ class KasseSettingsBetrieb {
   final bool staffPhotos;
 
   /// Nach so vielen Minuten ohne Bedienung abmelden; 0 = nie
-  /// ([kasseAutoAbmeldenMinuten]).
+  /// ([posAutoLogoutMinutes]).
   final int autoLogoutMinutes;
   final bool logoutAfterSale;
 
@@ -473,19 +473,19 @@ class KasseSettingsBetrieb {
   /// Eingeschaltete Steuersätze (Schlüssel = Satz als Text). Beim Schreiben
   /// immer die ganze Karte senden (Nachtrag §11.7.2).
   final Map<String, bool> vatRates;
-  final KasseMenge quantity;
+  final PosQuantity quantity;
   final bool note;
   final bool search;
-  final KasseRabatt discount;
+  final PosDiscount discount;
   final bool payCash;
   final bool payCard;
 
   /// Getrennt zahlen: dritter Knopf neben Bar und Karte, ein Beleg mit
   /// mehreren Zahlungen.
   final bool paySplit;
-  final KasseKartenanbieter cardProvider;
+  final PosCardProvider cardProvider;
   final bool tip;
-  final KasseTgModus tipMode;
+  final PosTipMode tipMode;
   final Map<String, bool> tipSteps;
   final bool tipSplit;
 
@@ -497,27 +497,27 @@ class KasseSettingsBetrieb {
 
   /// „Bar passend": schließt den Betrag ohne Eintippen bar ab.
   final bool exactCash;
-  final KasseKassierenModus checkoutMode;
-  final KasseBelegAusgabe receiptOutput;
+  final PosCheckoutMode checkoutMode;
+  final PosReceiptOutput receiptOutput;
 
   /// Wie lange der Fertig-Bildschirm stehen bleibt; 0 = bis zum Tippen
-  /// ([kasseFertigSekunden]).
+  /// ([posDoneScreenSeconds]).
   final int doneScreenSeconds;
 
   /// Bild-Logo (Adresse aus `setMyKasseLogo`); '' = Kürzel verwenden.
   final String logoImage;
-  final KasseWasserzeichenSeite watermarkSide;
+  final PosWatermarkSide watermarkSide;
 
   /// Lage der Wasserzeichen-Mitte in Prozent (-25 bis 125).
   final int watermarkX;
   final int watermarkY;
 
-  /// Deckkraft in Prozent ([kasseWasserzeichenStaerken]).
+  /// Deckkraft in Prozent ([posWatermarkStrengths]).
   final int watermarkStrength;
 
   /// Größe des Bild-Logos am Beleg.
-  final KasseSkala logoScale;
-  final KasseSkala watermarkScale;
+  final PosScale logoScale;
+  final PosScale watermarkScale;
 
   /// Glas-Optik: Kacheln und Korb leicht durchscheinend.
   final bool glass;
@@ -531,14 +531,14 @@ class KasseSettingsBetrieb {
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
-  final Map<String, Object> fremdeWerte;
+  final Map<String, Object> unknownValues;
 
   /// Kartenzahlung ist möglich: eingeschaltet **und** ein Anbieter eingerichtet.
-  bool get kartenAktiv => payCard && cardProvider != KasseKartenanbieter.none;
+  bool get cardPaymentEnabled => payCard && cardProvider != PosCardProvider.none;
 
   /// Die eingeschalteten Steuersätze in der Reihenfolge des Bildschirms.
-  List<double> get aktiveSaetze =>
-      kasseSaetzeReihenfolge.where((s) => vatRates[_satzSchluessel(s)] == true).toList();
+  List<double> get activeVatRates =>
+      posVatRateOrder.where((s) => vatRates[_satzSchluessel(s)] == true).toList();
 
   /// Diesen Stand mit einer Änderung (englische Schlüssel) mischen. Karten
   /// (`vatRates`, `tipSteps`) werden je Eintrag gemischt.
@@ -551,30 +551,30 @@ class KasseSettingsBetrieb {
   /// einem deutschen aus 9.x wie `stil`), und bei einem Wert der inneren Form
   /// 0.x (`'nacht'`): eine Änderung, die still nichts bewirkt, fiele am Tresen
   /// niemandem auf.
-  KasseSettingsBetrieb mit(Map<String, dynamic> aenderung) {
-    _pruefeAenderung('business', aenderung, _betriebSchluessel, altformBetriebSchluessel);
-    return KasseSettingsBetrieb.ausJson(_mische(toJson(), aenderung));
+  PosBusinessSettings merge(Map<String, dynamic> aenderung) {
+    _pruefeAenderung('business', aenderung, _betriebSchluessel, legacyBusinessKeys);
+    return PosBusinessSettings.fromJson(_mische(toJson(), aenderung));
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
-  factory KasseSettingsBetrieb.ausJson(Map<String, dynamic> roh) {
-    const s = KasseSettingsBetrieb();
+  factory PosBusinessSettings.fromJson(Map<String, dynamic> roh) {
+    const s = PosBusinessSettings();
     final g = _mische(s.toJson(), roh);
     final fremd = <String, Object>{};
-    return KasseSettingsBetrieb(
+    return PosBusinessSettings(
       logoText: _text(g['logoText'], s.logoText),
       logoEnabled: _bool(g['logoEnabled'], s.logoEnabled),
-      logoSize: _wahl(g, 'logoSize', KasseGroesse.values, s.logoSize, fremd),
-      watermark: _wahl(g, 'watermark', KasseWasserzeichen.values, s.watermark, fremd),
+      logoSize: _wahl(g, 'logoSize', PosLogoSize.values, s.logoSize, fremd),
+      watermark: _wahl(g, 'watermark', PosWatermark.values, s.watermark, fremd),
       color: _text(g['color'], s.color),
-      theme: _wahl(g, 'theme', KasseStil.values, s.theme, fremd),
-      fontSize: _wahl(g, 'fontSize', KasseSchrift.values, s.fontSize, fremd),
-      settingsFontSize: _wahl(g, 'settingsFontSize', KasseEinstellSchrift.values, s.settingsFontSize, fremd),
-      tileStyle: _wahl(g, 'tileStyle', KasseKachelstil.values, s.tileStyle, fremd),
+      theme: _wahl(g, 'theme', PosTheme.values, s.theme, fremd),
+      fontSize: _wahl(g, 'fontSize', PosFontSize.values, s.fontSize, fremd),
+      settingsFontSize: _wahl(g, 'settingsFontSize', PosSettingsFontSize.values, s.settingsFontSize, fremd),
+      tileStyle: _wahl(g, 'tileStyle', PosTileStyle.values, s.tileStyle, fremd),
       clock: _bool(g['clock'], s.clock),
       lockScreen: _bool(g['lockScreen'], s.lockScreen),
       staffPhotos: _bool(g['staffPhotos'], s.staffPhotos),
-      autoLogoutMinutes: _ausListe(g, 'autoLogoutMinutes', kasseAutoAbmeldenMinuten, s.autoLogoutMinutes, fremd),
+      autoLogoutMinutes: _ausListe(g, 'autoLogoutMinutes', posAutoLogoutMinutes, s.autoLogoutMinutes, fremd),
       logoutAfterSale: _bool(g['logoutAfterSale'], s.logoutAfterSale),
       fastLogin: _bool(g['fastLogin'], s.fastLogin),
       showPrices: _bool(g['showPrices'], s.showPrices),
@@ -583,48 +583,48 @@ class KasseSettingsBetrieb {
       categoryColors: _bool(g['categoryColors'], s.categoryColors),
       customAmountAllowed: _bool(g['customAmountAllowed'], s.customAmountAllowed),
       vatRates: _karte(g['vatRates'], s.vatRates),
-      quantity: _wahl(g, 'quantity', KasseMenge.values, s.quantity, fremd),
+      quantity: _wahl(g, 'quantity', PosQuantity.values, s.quantity, fremd),
       note: _bool(g['note'], s.note),
       search: _bool(g['search'], s.search),
-      discount: _wahl(g, 'discount', KasseRabatt.values, s.discount, fremd),
+      discount: _wahl(g, 'discount', PosDiscount.values, s.discount, fremd),
       payCash: _bool(g['payCash'], s.payCash),
       payCard: _bool(g['payCard'], s.payCard),
       paySplit: _bool(g['paySplit'], s.paySplit),
-      cardProvider: _wahl(g, 'cardProvider', KasseKartenanbieter.values, s.cardProvider, fremd),
+      cardProvider: _wahl(g, 'cardProvider', PosCardProvider.values, s.cardProvider, fremd),
       tip: _bool(g['tip'], s.tip),
-      tipMode: _wahl(g, 'tipMode', KasseTgModus.values, s.tipMode, fremd),
+      tipMode: _wahl(g, 'tipMode', PosTipMode.values, s.tipMode, fremd),
       tipSteps: _karte(g['tipSteps'], s.tipSteps),
       tipSplit: _bool(g['tipSplit'], s.tipSplit),
       change: _bool(g['change'], s.change),
       tipChips: _zahlenliste(g, 'tipChips', s.tipChips, fremd),
       exactCash: _bool(g['exactCash'], s.exactCash),
-      checkoutMode: _wahl(g, 'checkoutMode', KasseKassierenModus.values, s.checkoutMode, fremd),
-      receiptOutput: _wahl(g, 'receiptOutput', KasseBelegAusgabe.values, s.receiptOutput, fremd),
-      doneScreenSeconds: _ausListe(g, 'doneScreenSeconds', kasseFertigSekunden, s.doneScreenSeconds, fremd),
+      checkoutMode: _wahl(g, 'checkoutMode', PosCheckoutMode.values, s.checkoutMode, fremd),
+      receiptOutput: _wahl(g, 'receiptOutput', PosReceiptOutput.values, s.receiptOutput, fremd),
+      doneScreenSeconds: _ausListe(g, 'doneScreenSeconds', posDoneScreenSeconds, s.doneScreenSeconds, fremd),
       logoImage: _text(g['logoImage'], s.logoImage),
-      watermarkSide: _wahl(g, 'watermarkSide', KasseWasserzeichenSeite.values, s.watermarkSide, fremd),
+      watermarkSide: _wahl(g, 'watermarkSide', PosWatermarkSide.values, s.watermarkSide, fremd),
       watermarkX: _ganz(g, 'watermarkX', -25, 125, s.watermarkX, fremd),
       watermarkY: _ganz(g, 'watermarkY', -25, 125, s.watermarkY, fremd),
-      watermarkStrength: _ausListe(g, 'watermarkStrength', kasseWasserzeichenStaerken, s.watermarkStrength, fremd),
-      logoScale: _wahl(g, 'logoScale', KasseSkala.values, s.logoScale, fremd),
-      watermarkScale: _wahl(g, 'watermarkScale', KasseSkala.values, s.watermarkScale, fremd),
+      watermarkStrength: _ausListe(g, 'watermarkStrength', posWatermarkStrengths, s.watermarkStrength, fremd),
+      logoScale: _wahl(g, 'logoScale', PosScale.values, s.logoScale, fremd),
+      watermarkScale: _wahl(g, 'watermarkScale', PosScale.values, s.watermarkScale, fremd),
       glass: _bool(g['glass'], s.glass),
       hints: _bool(g['hints'], s.hints),
       discountChips: _zahlenliste(g, 'discountChips', s.discountChips, fremd),
-      fremdeWerte: Map.unmodifiable(fremd),
+      unknownValues: Map.unmodifiable(fremd),
     );
   }
 
   Map<String, dynamic> toJson() => {
         'logoText': logoText,
         'logoEnabled': logoEnabled,
-        'logoSize': logoSize.wert,
-        'watermark': watermark.wert,
+        'logoSize': logoSize.value,
+        'watermark': watermark.value,
         'color': color,
-        'theme': theme.wert,
-        'fontSize': fontSize.wert,
-        'settingsFontSize': settingsFontSize.wert,
-        'tileStyle': tileStyle.wert,
+        'theme': theme.value,
+        'fontSize': fontSize.value,
+        'settingsFontSize': settingsFontSize.value,
+        'tileStyle': tileStyle.value,
         'clock': clock,
         'lockScreen': lockScreen,
         'staffPhotos': staffPhotos,
@@ -637,51 +637,51 @@ class KasseSettingsBetrieb {
         'categoryColors': categoryColors,
         'customAmountAllowed': customAmountAllowed,
         'vatRates': {...vatRates},
-        'quantity': quantity.wert,
+        'quantity': quantity.value,
         'note': note,
         'search': search,
-        'discount': discount.wert,
+        'discount': discount.value,
         'payCash': payCash,
         'payCard': payCard,
         'paySplit': paySplit,
-        'cardProvider': cardProvider.wert,
+        'cardProvider': cardProvider.value,
         'tip': tip,
-        'tipMode': tipMode.wert,
+        'tipMode': tipMode.value,
         'tipSteps': {...tipSteps},
         'tipSplit': tipSplit,
         'change': change,
         'tipChips': [...tipChips],
         'exactCash': exactCash,
-        'checkoutMode': checkoutMode.wert,
-        'receiptOutput': receiptOutput.wert,
+        'checkoutMode': checkoutMode.value,
+        'receiptOutput': receiptOutput.value,
         'doneScreenSeconds': doneScreenSeconds,
         'logoImage': logoImage,
-        'watermarkSide': watermarkSide.wert,
+        'watermarkSide': watermarkSide.value,
         'watermarkX': watermarkX,
         'watermarkY': watermarkY,
         'watermarkStrength': watermarkStrength,
-        'logoScale': logoScale.wert,
-        'watermarkScale': watermarkScale.wert,
+        'logoScale': logoScale.value,
+        'watermarkScale': watermarkScale.value,
         'glass': glass,
         'hints': hints,
         'discountChips': [...discountChips],
-        ...fremdeWerte,
+        ...unknownValues,
       };
 }
 
 // --------------------------------------------------------------- Geraeteteil
 
 /// Was nur für dieses Gerät gilt (in der Kasse selbst eingestellt).
-class KasseSettingsGeraet {
-  const KasseSettingsGeraet({
-    this.layout = KasseLayout.right,
-    this.categoryPosition = KasseKatpos.top,
+class PosDeviceSettings {
+  const PosDeviceSettings({
+    this.layout = PosLayout.right,
+    this.categoryPosition = PosCategoryPosition.top,
     this.extraColumns = 0,
-    this.tileHeight = KasseHoehe.m,
+    this.tileHeight = PosTileHeight.m,
     this.touch = false,
-    this.shortcuts = kasseTastenStandard,
+    this.shortcuts = posShortcutDefaults,
     this.printerEnabled = false,
-    this.printerType = KasseDruckerArt.sdp,
+    this.printerType = PosPrinterType.sdp,
     this.printerIp = '',
     this.printerPort = 9100,
     this.printerBluetoothId = '',
@@ -689,34 +689,34 @@ class KasseSettingsGeraet {
     this.printerId = '',
     this.printerDeviceId = 'local_printer',
     this.connectPrinterId = '',
-    this.paperSize = KassePapier.mm80,
-    this.codePage = KasseZeichensatz.cp1252,
-    this.cut = KasseSchnitt.partial,
-    this.qrMode = KasseQrModus.auto,
+    this.paperSize = PosPaperSize.mm80,
+    this.codePage = PosCodePage.cp1252,
+    this.cut = PosCut.partial,
+    this.qrMode = PosQrMode.auto,
     this.drawerEnabled = false,
-    this.drawerAutoOpen = KasseLadeAuto.cash,
+    this.drawerAutoOpen = PosDrawerAutoOpen.cash,
     this.terminalIp = '',
     this.terminalPort = 8080,
     this.terminalTid = '',
-    this.terminalVia = KasseTerminalVia.direct,
-    this.terminalType = KasseTerminalArt.none,
+    this.terminalVia = PosTerminalVia.direct,
+    this.terminalType = PosTerminalType.none,
     this.shortcutHints = true,
-    this.fremdeWerte = const {},
+    this.unknownValues = const {},
   });
 
-  final KasseLayout layout;
-  final KasseKatpos categoryPosition;
+  final PosLayout layout;
+  final PosCategoryPosition categoryPosition;
 
   /// Zusätzliche Kachelspalten gegenüber der berechneten Breite (-2 bis 4).
   final int extraColumns;
-  final KasseHoehe tileHeight;
+  final PosTileHeight tileHeight;
   final bool touch;
 
   /// Tastenbelegung dieses Geräts. Aktionen, die dieses Paket nicht kennt
   /// (eine künftige des Servers), bleiben stehen.
   final Map<String, List<String>> shortcuts;
   final bool printerEnabled;
-  final KasseDruckerArt printerType;
+  final PosPrinterType printerType;
   final String printerIp;
   final int printerPort;
   final String printerBluetoothId;
@@ -729,57 +729,57 @@ class KasseSettingsGeraet {
   /// '' = keiner gewählt.
   final String printerId;
 
-  /// ePOS Device-ID bei [KasseDruckerArt.network] (Epson direkt per IP).
+  /// ePOS Device-ID bei [PosPrinterType.network] (Epson direkt per IP).
   final String printerDeviceId;
 
   /// Kennung des Druckers im lokalen Kasseneck-Connect-Agenten, bei
-  /// [KasseDruckerArt.connect].
+  /// [PosPrinterType.connect].
   final String connectPrinterId;
-  final KassePapier paperSize;
-  final KasseZeichensatz codePage;
-  final KasseSchnitt cut;
+  final PosPaperSize paperSize;
+  final PosCodePage codePage;
+  final PosCut cut;
 
-  /// Welcher Druckbefehl den Signatur-QR erzeugt; [KasseQrModus.auto] heißt
+  /// Welcher Druckbefehl den Signatur-QR erzeugt; [PosQrMode.auto] heißt
   /// unbestimmt.
-  final KasseQrModus qrMode;
+  final PosQrMode qrMode;
   final bool drawerEnabled;
-  final KasseLadeAuto drawerAutoOpen;
+  final PosDrawerAutoOpen drawerAutoOpen;
   final String terminalIp;
   final int terminalPort;
 
   /// Terminal-ID aus dem Hobex-Vertrag (ohne führende Null).
   final String terminalTid;
-  final KasseTerminalVia terminalVia;
+  final PosTerminalVia terminalVia;
 
-  /// Art des Terminals ([KasseTerminalArt.none] = keine Anbindung).
-  final KasseTerminalArt terminalType;
+  /// Art des Terminals ([PosTerminalType.none] = keine Anbindung).
+  final PosTerminalType terminalType;
 
   /// Tastenmarken (die kleinen Kürzel an den Knöpfen) anzeigen.
   final bool shortcutHints;
 
-  /// Siehe [KasseSettingsBetrieb.fremdeWerte].
-  final Map<String, Object> fremdeWerte;
+  /// Siehe [PosBusinessSettings.unknownValues].
+  final Map<String, Object> unknownValues;
 
-  /// Siehe [KasseSettingsBetrieb.mit]; `shortcuts` wird je Aktion gemischt.
-  KasseSettingsGeraet mit(Map<String, dynamic> aenderung) {
-    _pruefeAenderung('device', aenderung, _geraetSchluessel, altformGeraetSchluessel);
-    return KasseSettingsGeraet.ausJson(_mische(toJson(), aenderung));
+  /// Siehe [PosBusinessSettings.merge]; `shortcuts` wird je Aktion gemischt.
+  PosDeviceSettings merge(Map<String, dynamic> aenderung) {
+    _pruefeAenderung('device', aenderung, _geraetSchluessel, legacyDeviceKeys);
+    return PosDeviceSettings.fromJson(_mische(toJson(), aenderung));
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
-  factory KasseSettingsGeraet.ausJson(Map<String, dynamic> roh) {
-    const s = KasseSettingsGeraet();
+  factory PosDeviceSettings.fromJson(Map<String, dynamic> roh) {
+    const s = PosDeviceSettings();
     final g = _mische(s.toJson(), roh);
     final fremd = <String, Object>{};
-    return KasseSettingsGeraet(
-      layout: _wahl(g, 'layout', KasseLayout.values, s.layout, fremd),
-      categoryPosition: _wahl(g, 'categoryPosition', KasseKatpos.values, s.categoryPosition, fremd),
+    return PosDeviceSettings(
+      layout: _wahl(g, 'layout', PosLayout.values, s.layout, fremd),
+      categoryPosition: _wahl(g, 'categoryPosition', PosCategoryPosition.values, s.categoryPosition, fremd),
       extraColumns: _ganz(g, 'extraColumns', -2, 4, s.extraColumns, fremd),
-      tileHeight: _wahl(g, 'tileHeight', KasseHoehe.values, s.tileHeight, fremd),
+      tileHeight: _wahl(g, 'tileHeight', PosTileHeight.values, s.tileHeight, fremd),
       touch: _bool(g['touch'], s.touch),
       shortcuts: _tastenkarte(g['shortcuts'], s.shortcuts),
       printerEnabled: _bool(g['printerEnabled'], s.printerEnabled),
-      printerType: _wahl(g, 'printerType', KasseDruckerArt.values, s.printerType, fremd),
+      printerType: _wahl(g, 'printerType', PosPrinterType.values, s.printerType, fremd),
       printerIp: _text(g['printerIp'], s.printerIp),
       printerPort: _ganz(g, 'printerPort', 1, 65535, s.printerPort, fremd),
       printerBluetoothId: _text(g['printerBluetoothId'], s.printerBluetoothId),
@@ -787,31 +787,31 @@ class KasseSettingsGeraet {
       printerId: _text(g['printerId'], s.printerId),
       printerDeviceId: _text(g['printerDeviceId'], s.printerDeviceId),
       connectPrinterId: _text(g['connectPrinterId'], s.connectPrinterId),
-      paperSize: _wahl(g, 'paperSize', KassePapier.values, s.paperSize, fremd),
-      codePage: _wahl(g, 'codePage', KasseZeichensatz.values, s.codePage, fremd),
-      cut: _wahl(g, 'cut', KasseSchnitt.values, s.cut, fremd),
-      qrMode: _wahl(g, 'qrMode', KasseQrModus.values, s.qrMode, fremd),
+      paperSize: _wahl(g, 'paperSize', PosPaperSize.values, s.paperSize, fremd),
+      codePage: _wahl(g, 'codePage', PosCodePage.values, s.codePage, fremd),
+      cut: _wahl(g, 'cut', PosCut.values, s.cut, fremd),
+      qrMode: _wahl(g, 'qrMode', PosQrMode.values, s.qrMode, fremd),
       drawerEnabled: _bool(g['drawerEnabled'], s.drawerEnabled),
-      drawerAutoOpen: _wahl(g, 'drawerAutoOpen', KasseLadeAuto.values, s.drawerAutoOpen, fremd),
+      drawerAutoOpen: _wahl(g, 'drawerAutoOpen', PosDrawerAutoOpen.values, s.drawerAutoOpen, fremd),
       terminalIp: _text(g['terminalIp'], s.terminalIp),
       terminalPort: _ganz(g, 'terminalPort', 1, 65535, s.terminalPort, fremd),
       terminalTid: _text(g['terminalTid'], s.terminalTid),
-      terminalVia: _wahl(g, 'terminalVia', KasseTerminalVia.values, s.terminalVia, fremd),
-      terminalType: _wahl(g, 'terminalType', KasseTerminalArt.values, s.terminalType, fremd),
+      terminalVia: _wahl(g, 'terminalVia', PosTerminalVia.values, s.terminalVia, fremd),
+      terminalType: _wahl(g, 'terminalType', PosTerminalType.values, s.terminalType, fremd),
       shortcutHints: _bool(g['shortcutHints'], s.shortcutHints),
-      fremdeWerte: Map.unmodifiable(fremd),
+      unknownValues: Map.unmodifiable(fremd),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'layout': layout.wert,
-        'categoryPosition': categoryPosition.wert,
+        'layout': layout.value,
+        'categoryPosition': categoryPosition.value,
         'extraColumns': extraColumns,
-        'tileHeight': tileHeight.wert,
+        'tileHeight': tileHeight.value,
         'touch': touch,
         'shortcuts': {for (final e in shortcuts.entries) e.key: [...e.value]},
         'printerEnabled': printerEnabled,
-        'printerType': printerType.wert,
+        'printerType': printerType.value,
         'printerIp': printerIp,
         'printerPort': printerPort,
         'printerBluetoothId': printerBluetoothId,
@@ -819,52 +819,52 @@ class KasseSettingsGeraet {
         'printerId': printerId,
         'printerDeviceId': printerDeviceId,
         'connectPrinterId': connectPrinterId,
-        'paperSize': paperSize.wert,
-        'codePage': codePage.wert,
-        'cut': cut.wert,
-        'qrMode': qrMode.wert,
+        'paperSize': paperSize.value,
+        'codePage': codePage.value,
+        'cut': cut.value,
+        'qrMode': qrMode.value,
         'drawerEnabled': drawerEnabled,
-        'drawerAutoOpen': drawerAutoOpen.wert,
+        'drawerAutoOpen': drawerAutoOpen.value,
         'terminalIp': terminalIp,
         'terminalPort': terminalPort,
         'terminalTid': terminalTid,
-        'terminalVia': terminalVia.wert,
-        'terminalType': terminalType.wert,
+        'terminalVia': terminalVia.value,
+        'terminalType': terminalType.value,
         'shortcutHints': shortcutHints,
-        ...fremdeWerte,
+        ...unknownValues,
       };
 }
 
 // ------------------------------------------------------------------ Ganzes
 
-class KasseSettings {
-  const KasseSettings({required this.betrieb, required this.geraet});
+class PosSettings {
+  const PosSettings({required this.business, required this.device});
 
   /// Die Standardwerte, deckungsgleich mit Backend und Browser-Kasse.
-  const KasseSettings.standard()
-      : betrieb = const KasseSettingsBetrieb(),
-        geraet = const KasseSettingsGeraet();
+  const PosSettings.standard()
+      : business = const PosBusinessSettings(),
+        device = const PosDeviceSettings();
 
-  final KasseSettingsBetrieb betrieb;
-  final KasseSettingsGeraet geraet;
+  final PosBusinessSettings business;
+  final PosDeviceSettings device;
 
   /// Standard + Gespeichertes in der Drahtform `{business, device}`. Was
   /// fehlt, bleibt beim Standard; ein Schlüssel, den der Standard nicht
   /// führt, bleibt draußen; ein Wert der inneren Form 0.x fällt auf den
   /// Standard; ein unbekannter englischer Wert bleibt wörtlich erhalten
-  /// ([KasseSettingsBetrieb.fremdeWerte]).
+  /// ([PosBusinessSettings.unknownValues]).
   ///
   /// **Zwischenspeicher der Version 9.x:** trägt die Map statt `business` und
   /// `device` die alten Teile `betrieb`/`geraet` (deutsche Schlüssel und
   /// Werte, so schrieb `toJson` bis 9.x), wird sie Feld für Feld übersetzt
   /// (Tabelle `renames-1.0.json`). Ein alter Stand geht so beim Update nicht
   /// verloren. Die Tastenkarte wird dabei wie am Server entwirrt
-  /// ([entwirreTasten]), damit die alten Vorgaben (`frei: Mod+F`) keine
+  /// ([untangleShortcuts]), damit die alten Vorgaben (`frei: Mod+F`) keine
   /// Doppelbelegung mit den neuen (`fullscreen: Mod+F`) ergeben. Übrige
   /// 9.x-Standardwerte im Stand (`terminalPort` 20008, `kassierenModus`
   /// `seite`) gelten als gesetzt, bis die erste Serverantwort
   /// (`getKasseSettings`, Benutzerliste) den Stand ersetzt.
-  factory KasseSettings.aus(Map<String, dynamic>? gespeichert) {
+  factory PosSettings.fromJson(Map<String, dynamic>? gespeichert) {
     final roh = gespeichert ?? const <String, dynamic>{};
     final alt = !roh.containsKey('business') &&
         !roh.containsKey('device') &&
@@ -878,26 +878,26 @@ class KasseSettings {
       final tasten = uebersetzt['shortcuts'];
       // Der 9.x-Stand trägt die gemischte Tastenkarte samt der alten
       // Vorgaben (frei: Mod+F, belege: Mod+E). Wie der Server
-      // (`entwirreTasten`): die gespeicherte Wahl gewinnt, eine beanspruchte
+      // (`untangleShortcuts`): die gespeicherte Wahl gewinnt, eine beanspruchte
       // Vorgabe-Taste fällt bei der Aktion, die nicht gespeichert war (Mod+F
       // verliert das Vollbild, statt doppelt belegt zu sein).
       if (tasten is Map) {
         final gespeichert = <String, Object?>{
           for (final e in tasten.entries)
-            if (!altformTastenAktionen.containsKey(e.key)) e.key.toString(): e.value,
+            if (!legacyShortcutActions.containsKey(e.key)) e.key.toString(): e.value,
         };
-        uebersetzt['shortcuts'] = entwirreTasten({...kasseTastenStandard, ...gespeichert}, gespeichert);
+        uebersetzt['shortcuts'] = untangleShortcuts({...posShortcutDefaults, ...gespeichert}, gespeichert);
       }
       return uebersetzt;
     }
 
-    return KasseSettings(
-      betrieb: KasseSettingsBetrieb.ausJson(teil('business', 'betrieb', altformBetriebSchluessel)),
-      geraet: KasseSettingsGeraet.ausJson(teil('device', 'geraet', altformGeraetSchluessel)),
+    return PosSettings(
+      business: PosBusinessSettings.fromJson(teil('business', 'betrieb', legacyBusinessKeys)),
+      device: PosDeviceSettings.fromJson(teil('device', 'geraet', legacyDeviceKeys)),
     );
   }
 
-  Map<String, dynamic> toJson() => {'business': betrieb.toJson(), 'device': geraet.toJson()};
+  Map<String, dynamic> toJson() => {'business': business.toJson(), 'device': device.toJson()};
 }
 
 // ------------------------------------------- Wertemengen, Aenderungen, Pruefung
@@ -905,62 +905,62 @@ class KasseSettings {
 /// Die Wertemenge je Betriebsfeld, soweit das Feld eine hat (Zwilling von
 /// `POS_BUSINESS_VALUES`); dagegen prüft der Schreibweg vor dem Senden.
 final Map<String, List<Object>> posBusinessValues = Map.unmodifiable({
-  'logoSize': _werte(KasseGroesse.values),
-  'watermark': _werte(KasseWasserzeichen.values),
-  'theme': _werte(KasseStil.values),
-  'fontSize': _werte(KasseSchrift.values),
-  'settingsFontSize': _werte(KasseEinstellSchrift.values),
-  'tileStyle': _werte(KasseKachelstil.values),
-  'autoLogoutMinutes': kasseAutoAbmeldenMinuten,
-  'quantity': _werte(KasseMenge.values),
-  'discount': _werte(KasseRabatt.values),
-  'cardProvider': _werte(KasseKartenanbieter.values),
-  'tipMode': _werte(KasseTgModus.values),
-  'checkoutMode': _werte(KasseKassierenModus.values),
-  'receiptOutput': _werte(KasseBelegAusgabe.values),
-  'doneScreenSeconds': kasseFertigSekunden,
-  'watermarkSide': _werte(KasseWasserzeichenSeite.values),
-  'watermarkStrength': kasseWasserzeichenStaerken,
-  'logoScale': _werte(KasseSkala.values),
-  'watermarkScale': _werte(KasseSkala.values),
+  'logoSize': _werte(PosLogoSize.values),
+  'watermark': _werte(PosWatermark.values),
+  'theme': _werte(PosTheme.values),
+  'fontSize': _werte(PosFontSize.values),
+  'settingsFontSize': _werte(PosSettingsFontSize.values),
+  'tileStyle': _werte(PosTileStyle.values),
+  'autoLogoutMinutes': posAutoLogoutMinutes,
+  'quantity': _werte(PosQuantity.values),
+  'discount': _werte(PosDiscount.values),
+  'cardProvider': _werte(PosCardProvider.values),
+  'tipMode': _werte(PosTipMode.values),
+  'checkoutMode': _werte(PosCheckoutMode.values),
+  'receiptOutput': _werte(PosReceiptOutput.values),
+  'doneScreenSeconds': posDoneScreenSeconds,
+  'watermarkSide': _werte(PosWatermarkSide.values),
+  'watermarkStrength': posWatermarkStrengths,
+  'logoScale': _werte(PosScale.values),
+  'watermarkScale': _werte(PosScale.values),
 });
 
 /// Wie [posBusinessValues] für die Geräte-Einstellungen (`POS_DEVICE_VALUES`).
 final Map<String, List<Object>> posDeviceValues = Map.unmodifiable({
-  'layout': _werte(KasseLayout.values),
-  'categoryPosition': _werte(KasseKatpos.values),
-  'tileHeight': _werte(KasseHoehe.values),
-  'printerType': _werte(KasseDruckerArt.values),
-  'paperSize': _werte(KassePapier.values),
-  'codePage': _werte(KasseZeichensatz.values),
-  'cut': _werte(KasseSchnitt.values),
-  'qrMode': _werte(KasseQrModus.values),
-  'drawerAutoOpen': _werte(KasseLadeAuto.values),
-  'terminalVia': _werte(KasseTerminalVia.values),
-  'terminalType': _werte(KasseTerminalArt.values),
+  'layout': _werte(PosLayout.values),
+  'categoryPosition': _werte(PosCategoryPosition.values),
+  'tileHeight': _werte(PosTileHeight.values),
+  'printerType': _werte(PosPrinterType.values),
+  'paperSize': _werte(PosPaperSize.values),
+  'codePage': _werte(PosCodePage.values),
+  'cut': _werte(PosCut.values),
+  'qrMode': _werte(PosQrMode.values),
+  'drawerAutoOpen': _werte(PosDrawerAutoOpen.values),
+  'terminalVia': _werte(PosTerminalVia.values),
+  'terminalType': _werte(PosTerminalType.values),
 });
 
-List<Object> _werte(List<KasseWert> werte) => List.unmodifiable([for (final w in werte) w.wert]);
+List<Object> _werte(List<PosSettingValue> werte) => List.unmodifiable([for (final w in werte) w.value]);
 
 /// Die Felder, deren Wert dieses Paket nicht kennt, als Pfade
 /// (`business.theme`, `device.shortcuts.<aktion>`). Die Oberfläche zeigt sie
 /// als „vom Server, hier nicht einstellbar"; sie bleiben erhalten, solange nur
 /// geänderte Felder geschrieben werden ([posSettingsChanges]). Zwilling von
 /// `unknownPosSettingValues`.
-List<String> unknownPosSettingValues(KasseSettings settings) {
+List<String> unknownPosSettingValues(PosSettings settings) {
   final raus = <String>[
-    for (final k in settings.betrieb.fremdeWerte.keys) 'business.$k',
-    for (final k in settings.geraet.fremdeWerte.keys) 'device.$k',
+    for (final k in settings.business.unknownValues.keys) 'business.$k',
+    for (final k in settings.device.unknownValues.keys) 'device.$k',
   ];
-  for (final aktion in settings.geraet.shortcuts.keys) {
-    if (!kasseTastenAktionen.contains(aktion)) raus.add('device.shortcuts.$aktion');
+  for (final aktion in settings.device.shortcuts.keys) {
+    if (!posShortcutActions.contains(aktion)) raus.add('device.shortcuts.$aktion');
   }
   return raus;
 }
 
 /// Was sich zwischen zwei Ständen eines Teils (`toJson` von Betrieb oder
-/// Gerät) geändert hat, als Nutzlast für `betriebSpeichern` bzw.
-/// `geraetSpeichern`: **nur geänderte Felder** (der Server mischt; ein nicht
+/// Gerät) geändert hat, als Nutzlast für `saveBusiness` bzw.
+/// `saveDevice`: **nur geänderte Felder** (der Server mischt; ein nicht
 /// geänderter, hier unbekannter Wert geht so nie verloren). `vatRates` geht
 /// bei einer Änderung als ganze Karte (Nachtrag §11.7.2), `shortcuts` ebenfalls
 /// ganz, aber nur mit den Aktionen, die dieses Paket kennt: so sieht die
@@ -976,7 +976,7 @@ Map<String, dynamic> posSettingsChanges(Map<String, dynamic> vorher, Map<String,
     if (k == 'shortcuts' && neu is Map) {
       raus[k] = <String, dynamic>{
         for (final e in neu.entries)
-          if (kasseTastenAktionen.contains(e.key)) e.key.toString(): e.value,
+          if (posShortcutActions.contains(e.key)) e.key.toString(): e.value,
       };
       continue;
     }
@@ -1016,7 +1016,7 @@ bool _gleich(Object? a, Object? b) {
 /// Schlüssel der inneren Form (0.x, Zwischenspeicher bis Dart 9.x) -> Draht,
 /// Betriebsteil. Ein Test hält die Tabelle deckungsgleich mit
 /// `renames-1.0.json` (`structure.pos-settings-defaults.json.business`).
-const Map<String, String> altformBetriebSchluessel = {
+const Map<String, String> legacyBusinessKeys = {
   'logoText': 'logoText', 'logoAn': 'logoEnabled', 'logoGroesse': 'logoSize', 'wasserzeichen': 'watermark',
   'farbe': 'color', 'stil': 'theme', 'schrift': 'fontSize', 'schriftEinst': 'settingsFontSize',
   'kachelstil': 'tileStyle', 'uhr': 'clock', 'sperrbild': 'lockScreen', 'foto': 'staffPhotos',
@@ -1032,8 +1032,8 @@ const Map<String, String> altformBetriebSchluessel = {
   'wzSkala': 'watermarkScale', 'glas': 'glass', 'hinweise': 'hints', 'rabattChips': 'discountChips',
 };
 
-/// Wie [altformBetriebSchluessel] für den Geräteteil.
-const Map<String, String> altformGeraetSchluessel = {
+/// Wie [legacyBusinessKeys] für den Geräteteil.
+const Map<String, String> legacyDeviceKeys = {
   'layout': 'layout', 'katpos': 'categoryPosition', 'spaltenExtra': 'extraColumns', 'hoehe': 'tileHeight',
   'touch': 'touch', 'tasten': 'shortcuts', 'druckerAn': 'printerEnabled', 'druckerArt': 'printerType',
   'druckerIp': 'printerIp', 'druckerPort': 'printerPort', 'druckerBt': 'printerBluetoothId',
@@ -1045,7 +1045,7 @@ const Map<String, String> altformGeraetSchluessel = {
 };
 
 /// Tasten-Aktionen der inneren Form -> Draht.
-const Map<String, String> altformTastenAktionen = {
+const Map<String, String> legacyShortcutActions = {
   'kassieren': 'checkout', 'abschliessen': 'complete', 'abbrechen': 'cancel', 'frei': 'customAmount',
   'bar': 'cash', 'karte': 'card', 'passend': 'exactAmount', 'belege': 'receipts', 'letzteZurueck': 'undoLast',
   'einstellungen': 'settings', 'abmelden': 'logout', 'trinkgeld': 'tip', 'vollbild': 'fullscreen',
@@ -1055,7 +1055,7 @@ const Map<String, String> altformTastenAktionen = {
 /// Werte der inneren Form -> Draht, je Drahtfeld; gleichlautende Werte
 /// (`gptom`, `S`) stehen nicht darin. Ein Test hält die Tabelle deckungsgleich
 /// mit `renames-1.0.json` (`values.pos-settings-defaults.json`).
-const Map<String, Map<String, String>> altformWerte = {
+const Map<String, Map<String, String>> legacyValues = {
   'cardProvider': {'keiner': 'none', 'extern': 'external'},
   'checkoutMode': {'seite': 'page'},
   'discount': {'aus': 'off', 'an': 'on'},
@@ -1083,21 +1083,21 @@ Map<String, dynamic> _ausAltform(Map<String, dynamic> alt, Map<String, String> s
     var wert = e.value;
     if (neu == 'shortcuts' && wert is Map) {
       wert = <String, dynamic>{
-        for (final t in wert.entries) (altformTastenAktionen[t.key.toString()] ?? t.key.toString()): t.value,
+        for (final t in wert.entries) (legacyShortcutActions[t.key.toString()] ?? t.key.toString()): t.value,
       };
     } else if (wert is String) {
-      wert = altformWerte[neu]?[wert] ?? wert;
+      wert = legacyValues[neu]?[wert] ?? wert;
     }
     raus[neu] = wert;
   }
   return raus;
 }
 
-/// Zwilling von `entwirreTasten` (Backend, npm `stored`): Aktionen aus
+/// Zwilling von `untangleShortcuts` (Backend, npm `stored`): Aktionen aus
 /// [gespeichert] behalten ihre Tasten; jede andere Aktion verliert eine Taste,
 /// die eine gespeicherte Aktion beansprucht, außer die beiden dürfen sie
 /// teilen ([posShortcutSharedPairs]).
-Map<String, Object?> entwirreTasten(Map<String, Object?> gemischt, Map<String, Object?> gespeichert) {
+Map<String, Object?> untangleShortcuts(Map<String, Object?> gemischt, Map<String, Object?> gespeichert) {
   final beansprucht = <Object?, String>{};
   for (final e in gespeichert.entries) {
     final tasten = e.value;
@@ -1117,8 +1117,8 @@ Map<String, Object?> entwirreTasten(Map<String, Object?> gemischt, Map<String, O
   };
 }
 
-final Set<String> _betriebSchluessel = const KasseSettingsBetrieb().toJson().keys.toSet();
-final Set<String> _geraetSchluessel = const KasseSettingsGeraet().toJson().keys.toSet();
+final Set<String> _betriebSchluessel = const PosBusinessSettings().toJson().keys.toSet();
+final Set<String> _geraetSchluessel = const PosDeviceSettings().toJson().keys.toSet();
 
 void _pruefeAenderung(String teil, Map<String, dynamic> aenderung, Set<String> bekannt, Map<String, String> altform) {
   for (final e in aenderung.entries) {
@@ -1127,22 +1127,22 @@ void _pruefeAenderung(String teil, Map<String, dynamic> aenderung, Set<String> b
       throw ArgumentError('$teil.${e.key}: unbekanntes Feld'
           '${neu != null && neu != e.key ? ' (Schluessel aus 9.x, heute $neu)' : ''}');
     }
-    if (istAltwert0x(e.key, e.value)) {
+    if (isLegacyValue0x(e.key, e.value)) {
       throw ArgumentError('$teil.${e.key}: Wert der inneren Form 0.x (${e.value}), '
-          'heute ${altformWerte[e.key]![e.value]}');
+          'heute ${legacyValues[e.key]![e.value]}');
     }
     final wert = e.value;
     if (e.key == 'shortcuts' && wert is Map) {
       for (final aktion in wert.keys) {
-        final neu = altformTastenAktionen[aktion];
+        final neu = legacyShortcutActions[aktion];
         if (neu != null) throw ArgumentError('$teil.shortcuts.$aktion: Tasten-Aktion aus 9.x, heute $neu');
       }
     }
   }
 }
 
-/// Ist [wert] ein Wert der inneren Form 0.x für dieses Drahtfeld?
-bool istAltwert0x(String feld, Object? wert) => altformWerte[feld]?.containsKey(wert) ?? false;
+/// Ist [value] ein Wert der inneren Form 0.x für dieses Drahtfeld?
+bool isLegacyValue0x(String feld, Object? wert) => legacyValues[feld]?.containsKey(wert) ?? false;
 
 // ------------------------------------------------------------------ Helfer
 
@@ -1161,10 +1161,10 @@ Map<String, dynamic> _mische(Map<String, dynamic> standard, Map<String, dynamic>
       out[key] = <String, dynamic>{
         ...Map<String, dynamic>.from(alt),
         for (final k in wert.entries)
-          if (!(key == 'shortcuts' && altformTastenAktionen.containsKey(k.key))) k.key.toString(): k.value,
+          if (!(key == 'shortcuts' && legacyShortcutActions.containsKey(k.key))) k.key.toString(): k.value,
       };
     } else if (wert != null) {
-      if (istAltwert0x(key, wert)) continue;
+      if (isLegacyValue0x(key, wert)) continue;
       out[key] = wert;
     }
   }
@@ -1192,10 +1192,10 @@ int _ganz(Map<String, dynamic> g, String feld, int min, int max, int standard, M
 
 /// Wert aus einer Wertemenge; ein unbekannter Wert (Text oder Zahl) wird
 /// wörtlich in [fremd] festgehalten, das Feld bekommt den Standard.
-T _wahl<T extends KasseWert>(Map<String, dynamic> g, String feld, List<T> werte, T standard, Map<String, Object> fremd) {
+T _wahl<T extends PosSettingValue>(Map<String, dynamic> g, String feld, List<T> werte, T standard, Map<String, Object> fremd) {
   final wert = g[feld];
   for (final e in werte) {
-    if (e.wert == wert) return e;
+    if (e.value == wert) return e;
   }
   if (wert is String || wert is num) fremd[feld] = wert as Object;
   return standard;

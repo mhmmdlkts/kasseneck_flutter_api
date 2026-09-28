@@ -75,15 +75,15 @@ class RegisterTransport {
   /// weg, damit das Backend „nicht gesetzt" nicht als ausdrückliche Angabe
   /// missversteht.
   ///
-  /// [frist] überschreibt die Vorgabe für diesen einen Aufruf — der Abschluss
+  /// [timeout] überschreibt die Vorgabe für diesen einen Aufruf — der Abschluss
   /// eines Belegs darf länger warten als eine Belegliste.
   ///
   /// Fehler tragen `outcome`: bei [ErrorOutcome.unknown] nie wiederholen,
   /// sondern nachlesen (siehe `v3Post`).
-  Future<Map<String, dynamic>> rufen(
+  Future<Map<String, dynamic>> call(
     String name, {
     Map<String, dynamic> params = const {},
-    Duration? frist,
+    Duration? timeout,
   }) async {
     // Beides frisch — siehe Klassenkommentar.
     final token = await idToken();
@@ -121,7 +121,7 @@ class RegisterTransport {
       },
       kasseneck: _kopf,
       body: rumpf,
-      timeout: frist ?? _timeout,
+      timeout: timeout ?? _timeout,
     );
 
     final huelle = readEnvelope(name, antwort);

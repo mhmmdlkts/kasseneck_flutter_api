@@ -45,7 +45,7 @@ import 'package:kasseneck_api/register.dart';
 void main() {
   test('Ausweis in den Kopfzeilen, Kasse im Rumpf', () async {
     final f = transportMit({'status': 'success', 'data': {'ok': true}});
-    final daten = await f.transport.rufen('irgendwas');
+    final daten = await f.transport.call('irgendwas');
 
     expect(daten, {'ok': true});
     final anfrage = f.log.single;
@@ -57,7 +57,7 @@ void main() {
 
   test('eigene Parameter kommen dazu, die Kasse bleibt', () async {
     final f = transportMit({'status': 'success', 'data': {}});
-    await f.transport.rufen('listMyReceipts', params: {'limit': 20, 'cashregisterid': 'KASSE1'});
+    await f.transport.call('listMyReceipts', params: {'limit': 20, 'cashregisterid': 'KASSE1'});
 
     expect(jsonDecode(f.log.single.body)['params'], {
       'cashregisterId': 'KASSE1',
@@ -70,7 +70,7 @@ void main() {
     // Sonst stuende `"limit": null` im Rumpf und das Backend deutete das als
     // ausdrueckliche Angabe statt als „nicht gesetzt".
     final f = transportMit({'status': 'success', 'data': {}});
-    await f.transport.rufen('listMyReceipts', params: {'limit': null, 'from': '2026-08-19'});
+    await f.transport.call('listMyReceipts', params: {'limit': null, 'from': '2026-08-19'});
 
     expect(jsonDecode(f.log.single.body)['params'], {
       'cashregisterId': 'KASSE1',
@@ -91,14 +91,14 @@ void main() {
       }),
     );
 
-    await transport.rufen('a');
-    await transport.rufen('b');
+    await transport.call('a');
+    await transport.call('b');
     expect(log.map((r) => r.headers['Authorization']), ['Bearer token-1', 'Bearer token-2']);
   });
 
   test('ohne Token gibt es keinen Aufruf', () async {
     final f = transportMit({'status': 'success', 'data': {}}, idToken: null);
-    await expectLater(f.transport.rufen('a'), throwsA(isA<KasseneckValidationError>()));
+    await expectLater(f.transport.call('a'), throwsA(isA<KasseneckValidationError>()));
     expect(f.log, isEmpty, reason: 'ohne Ausweis geht nichts hinaus');
   });
 
@@ -107,19 +107,19 @@ void main() {
   test('fachlicher Fehler traegt den Code des Backends; ohne Code bleibt er null; kein Text zaehlt nicht', () async {
     final mit = transportMit({'status': 'error', 'message': 'Beleg ist bereits vollständig storniert.', 'code': 'bereits_storniert'});
     await expectLater(
-      mit.transport.rufen('cancelReceipt'),
+      mit.transport.call('cancelReceipt'),
       throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'bereits_storniert')),
     );
     final ohne = transportMit({'status': 'error', 'message': 'Kasse ist gesperrt'});
-    await expectLater(ohne.transport.rufen('a'), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', isNull)));
+    await expectLater(ohne.transport.call('a'), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', isNull)));
     final zahl = transportMit({'status': 'error', 'message': 'x', 'code': 42});
-    await expectLater(zahl.transport.rufen('a'), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', isNull)));
+    await expectLater(zahl.transport.call('a'), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', isNull)));
   });
 
   test('fachlicher Fehler traegt die Meldung des Backends', () async {
     final f = transportMit({'status': 'error', 'message': 'Sitzung beendet — bitte neu anmelden.'});
     await expectLater(
-      f.transport.rufen('a'),
+      f.transport.call('a'),
       throwsA(isA<KasseneckApiError>().having((e) => e.message, 'message', 'Sitzung beendet — bitte neu anmelden.')),
     );
   });
@@ -127,7 +127,7 @@ void main() {
   test('kaputte Antwort ist ein HTTP-Fehler, kein Erfolg', () async {
     final f = transportMit('<html>404</html>', status: 404);
     await expectLater(
-      f.transport.rufen('a'),
+      f.transport.call('a'),
       throwsA(isA<KasseneckHttpError>().having((e) => e.statusCode, 'statusCode', 404)),
     );
   });
@@ -137,7 +137,7 @@ void main() {
     // das Warten der Kasse, nicht die Arbeit des Servers.
     final f = transportMit({'status': 'success', 'data': {}});
     expect(
-      () => f.transport.rufen('createReceipt', frist: const Duration(minutes: 2)),
+      () => f.transport.call('createReceipt', timeout: const Duration(minutes: 2)),
       returnsNormally,
     );
   });
@@ -163,9 +163,9 @@ void main() {
       );
 
       await expectLater(
-        transport.rufen('createReceipt'),
+        transport.call('createReceipt'),
         throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.reason, 'reason', KasseneckHttpError.zeitablauf)
+            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)
             .having((e) => e.causeType, 'causeType', 'TimeoutException')),
       );
     });
@@ -176,9 +176,9 @@ void main() {
       );
 
       await expectLater(
-        transport.rufen('createReceipt'),
+        transport.call('createReceipt'),
         throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.reason, 'reason', KasseneckHttpError.netz)
+            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonNetwork)
             .having((e) => e.causeType, 'causeType', 'SocketException')),
       );
     });
@@ -189,7 +189,7 @@ void main() {
       );
 
       await expectLater(
-        transport.rufen('a'),
+        transport.call('a'),
         throwsA(isA<KasseneckHttpError>()
             .having((e) => e.toString(), 'toString', isNot(contains('geheim-abc123')))),
       );
@@ -206,7 +206,7 @@ void main() {
       }));
 
       await expectLater(
-        transport.rufen('createReceipt', params: {'kaputt': Object()}),
+        transport.call('createReceipt', params: {'kaputt': Object()}),
         throwsA(isNot(isA<KasseneckHttpError>())),
       );
       expect(log, isEmpty, reason: 'es geht nichts hinaus');
@@ -216,7 +216,7 @@ void main() {
   group('data: leer ist etwas anderes als kaputt', () {
     test('fehlendes data bleibt ein leeres Objekt', () async {
       final f = transportMit({'status': 'success'});
-      expect(await f.transport.rufen('a'), <String, dynamic>{});
+      expect(await f.transport.call('a'), <String, dynamic>{});
     });
 
     test('data, das kein Objekt ist, ist ein Antwortfehler', () async {
@@ -225,7 +225,7 @@ void main() {
       // eingestellt", obwohl die Antwort kaputt war.
       for (final kaputt in <Object>[<dynamic>[], 42, 'text', true]) {
         await expectLater(
-          transportMit({'status': 'success', 'data': kaputt}).transport.rufen('getKasseSettings'),
+          transportMit({'status': 'success', 'data': kaputt}).transport.call('getKasseSettings'),
           throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', 'data-not-object')),
           reason: 'data=$kaputt',
         );

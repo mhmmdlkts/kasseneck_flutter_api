@@ -10,7 +10,7 @@ import 'helpers/test_receipts.dart';
 void main() {
   test('fromJson liest logo_scale; fehlt oder unbekannt: M', () {
     final basis = cartA().toJson();
-    for (final (roh, soll) in [('XL', LogoStufe.xl), ('S', LogoStufe.s), (null, LogoStufe.m), ('riesig', LogoStufe.m)]) {
+    for (final (roh, soll) in [('XL', SheetLogoSize.xl), ('S', SheetLogoSize.s), (null, SheetLogoSize.m), ('riesig', SheetLogoSize.m)]) {
       final json = Map<String, dynamic>.from(basis)..remove('logo_scale');
       if (roh != null) json['logo_scale'] = roh;
       expect(KasseneckReceipt.fromJson(json).logoScale, soll, reason: 'logo_scale=$roh');
@@ -18,9 +18,9 @@ void main() {
   });
 
   test('toMetadataJson schreibt logo_scale, fromMetadata liest es zurueck', () {
-    final beleg = cartA()..logoScale = LogoStufe.l;
+    final beleg = cartA()..logoScale = SheetLogoSize.l;
     final meta = beleg.toMetadataJson();
     expect(meta['logo_scale'], 'L');
-    expect(KasseneckReceipt.fromMetadata(beleg.toJson()['receipt'], meta).logoScale, LogoStufe.l);
+    expect(KasseneckReceipt.fromMetadata(beleg.toJson()['receipt'], meta).logoScale, SheetLogoSize.l);
   });
 }

@@ -1,4 +1,4 @@
-/// Die Marke als Rasterbild -- Zwilling von `markeBild`/`entpackeRasterBits`
+/// Die Marke als Rasterbild -- Zwilling von `brandMarkImage`/`unpackRasterBits`
 /// in `@kreiseck/kasseneck-api` ab 0.26.0. Zur Laufzeit wird nichts gerastert
 /// und nichts skaliert: die beiden Masse (352x51 auf 80 mm, 234x34 auf 58 mm)
 /// stehen fest, damit JS und Dart fuer denselben Beleg dieselben Bytes
@@ -14,14 +14,14 @@ import 'package:kasseneck_api/models/marke_daten.dart';
 
 /// Entpackt gepackte Rasterzeilen (Base64, MSB zuerst, je Zeile auf volle
 /// Bytes aufgefuellt) in ein Punkt-je-Byte-Bild -- dieselbe Rechnung wie
-/// `entpackeRasterBits` im JS-Paket. Jede Zeile wird eigenstaendig indiziert
-/// (`byteJeZeile` pro Zeile, nicht `breite / 8` insgesamt): bei einer Breite,
+/// `unpackRasterBits` im JS-Paket. Jede Zeile wird eigenstaendig indiziert
+/// (`byteJeZeile` pro Zeile, nicht `width / 8` insgesamt): bei einer Breite,
 /// die nicht durch 8 teilbar ist (234 auf 58 mm), fuellt jede Zeile fuer sich
 /// auf ein volles Byte auf, der Rest bleibt 0.
 ///
-/// Eigene Funktion statt Code inline in [markeBild]: ein Rundlauf-Test kann so
+/// Eigene Funktion statt Code inline in [brandMarkImage]: ein Rundlauf-Test kann so
 /// denselben Entpacker pruefen, den die Marke zur Laufzeit auch benutzt.
-LogoRaster entpackeRasterBits(String bitsBase64, int breite, int hoehe) {
+LogoRaster unpackRasterBits(String bitsBase64, int breite, int hoehe) {
   final byteJeZeile = (breite / 8).ceil();
   final roh = base64.decode(bitsBase64);
   final punkte = Uint8List(breite * hoehe);
@@ -31,11 +31,11 @@ LogoRaster entpackeRasterBits(String bitsBase64, int breite, int hoehe) {
       punkte[y * breite + x] = (byte >> (7 - (x & 7))) & 1;
     }
   }
-  return LogoRaster(breite: breite, hoehe: hoehe, punkte: punkte);
+  return LogoRaster(width: breite, height: hoehe, dots: punkte);
 }
 
 /// Die Marke als Rasterbild fuer diese Papierbreite.
-LogoRaster markeBild(KeckPaperSize paperSize) {
-  final d = markeRaster[paperSize]!;
-  return entpackeRasterBits(d.bits, d.breite, d.hoehe);
+LogoRaster brandMarkImage(KeckPaperSize paperSize) {
+  final d = brandMarkRasters[paperSize]!;
+  return unpackRasterBits(d.bits, d.width, d.height);
 }

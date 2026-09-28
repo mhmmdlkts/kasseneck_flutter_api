@@ -46,12 +46,12 @@ import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final BelegLayout layout = BelegLayout.fromJson(jsonDecode(
+  final ReceiptLayout layout = ReceiptLayout.fromJson(jsonDecode(
       File('test/fixtures/vertrag/expected/sale-cash.lines.json').readAsStringSync()))!;
 
   Future<String> digest(KeckPaperSize size, {required bool marke}) async {
     final PrintPaper paper = PrintPaper(paperSize: size, profile: CapabilityProfile());
-    await paper.setBelegBlatt(layout, marke: marke, qrMode: QrPrintMode.native);
+    await paper.setReceiptSheet(layout, brandMark: marke, qrMode: QrPrintMode.native);
     return sha256.convert(paper.bytes.expand((e) => e).toList()).toString();
   }
 

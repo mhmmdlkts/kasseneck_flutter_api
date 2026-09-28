@@ -16,10 +16,10 @@ enum KeckPaperSize {
   /// aufs Papier passt, braucht die echte Kopfbreite: ein QR, der auch nur
   /// einen Punkt zu breit ist, wird von den meisten Geraeten **gar nicht**
   /// gedruckt.
-  final int druckPunkte;
+  final int printWidthDots;
 
   const KeckPaperSize(this.paperSize, this.defaultCharCount, this.mm, this.imageWidth,
-      this.druckPunkte);
+      this.printWidthDots);
 
   bool operator <(KeckPaperSize other) => mm < other.mm;
   bool operator >(KeckPaperSize other) => mm > other.mm;

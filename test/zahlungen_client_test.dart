@@ -105,11 +105,11 @@ void main() {
         params = (jsonDecode(r.body) as Map)['params'] as Map;
         return huelle(stornoAntwort());
       }));
-      await api.stornieren(
+      await api.cancelReceipt(
         cashregisterId: 'KECK-1',
         originalReceiptId: 'KECK-1-ID-12',
-        grund: 'input_error',
-        zahlungen: const [
+        reason: 'input_error',
+        payments: const [
           KeckPaymentInput(
               method: KeckPaymentMethod.creditCard, amountCents: -2000, refundOf: 'p1', provider: CreditCardProvider.sumup, providerPaymentId: 'rf-1'),
           KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1500, refundOf: 'p2'),
@@ -125,7 +125,7 @@ void main() {
     test('positive Betraege, mixed und Karte ohne Bezug -- alles vor dem Netz', () {
       final api = apiWith(nieGerufen());
       Future<void> storno(List<KeckPaymentInput> z) =>
-          api.stornieren(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', grund: 'input_error', zahlungen: z);
+          api.cancelReceipt(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', reason: 'input_error', payments: z);
       expect(() => storno(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)]),
           throwsA(isA<KasseneckValidationError>()));
       expect(() => storno(const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: -100)]),
@@ -138,7 +138,7 @@ void main() {
   group('RegisterReceiptClient', () {
     test('verkaufen mit zahlungen: Liste geht hinaus, keine Einzel-Zahlungsart', () async {
       final f = kasseMit(belegAntwort());
-      await f.client.verkaufen(positionen: [ware], zahlungen: [karte, bar]);
+      await f.client.sell(items: [ware], payments: [karte, bar]);
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
       expect((params['payments'] as List).length, 2);
       expect(params.containsKey('paymentMethod'), isFalse);
@@ -147,30 +147,30 @@ void main() {
     test('verkaufen: mixed und ungueltige Betraege werfen vor dem Netz', () async {
       final f = kasseMit(belegAntwort());
       await expectLater(
-          f.client.verkaufen(positionen: [ware], zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 100)]),
+          f.client.sell(items: [ware], payments: const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 100)]),
           throwsA(isA<KasseneckValidationError>()));
       await expectLater(
-          f.client.verkaufen(positionen: [ware], zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1)]),
+          f.client.sell(items: [ware], payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -1)]),
           throwsA(isA<KasseneckValidationError>()));
       expect(f.log, isEmpty);
     });
 
     test('stornieren mit zahlungen: Rueckzahlungen gehen hinaus; Karte ohne Bezug wirft vor dem Netz', () async {
       final f = kasseMit(stornoAntwort());
-      await f.client.stornieren(
+      await f.client.cancel(
         originalReceiptId: 'KASSE1-ID-42',
-        grund: 'input_error',
-        zahlungen: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, refundOf: 'p2')],
+        reason: 'input_error',
+        payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -500, refundOf: 'p2')],
       );
       final params = jsonDecode(f.log.single.body)['params'] as Map<String, dynamic>;
       expect(params['payments'], [
         {'method': 'cash', 'amountCents': -500, 'refundOf': 'p2'},
       ]);
       await expectLater(
-          f.client.stornieren(
+          f.client.cancel(
             originalReceiptId: 'KASSE1-ID-42',
-            grund: 'input_error',
-            zahlungen: const [
+            reason: 'input_error',
+            payments: const [
               KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: -500, refundOf: 'p1', provider: CreditCardProvider.gpTomAndroid),
             ],
           ),

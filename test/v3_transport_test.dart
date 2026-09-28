@@ -9,7 +9,7 @@ import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
-import 'package:kasseneck_api/rechnung.dart' show RechnungTransport, RechnungApi, kRechnungBaseUrl;
+import 'package:kasseneck_api/rechnung.dart' show InvoiceTransport, InvoiceApi, kInvoiceBaseUrl;
 import 'package:kasseneck_api/register.dart' show RegisterClient, RegisterTransport, kRegisterBaseUrl;
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/src/hobex_hps/discovery.dart';
@@ -94,8 +94,8 @@ final _wege = <_Weg>[
     'getReceipt': (c) => _geraet(c).getReceipt('R1'),
     'financeWebService': (c) => _geraet(c).getCashboxStatus(),
     'cancelReceipt': (c) =>
-        _geraet(c).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
-    'sendReceiptEmail': (c) => _geraet(c).belegSenden(fullReceiptId: 'F1', an: 'a@b.at'),
+        _geraet(c).cancelReceipt(cashregisterId: 'K1', originalReceiptId: 'R1', reason: 'input_error'),
+    'sendReceiptEmail': (c) => _geraet(c).sendReceiptEmail(fullReceiptId: 'F1', to: 'a@b.at'),
     'hobexPayApi': (c) => _geraet(c).hobexPay(transactionId: '1', amount: 1),
     'hobexRefundApi': (c) => _geraet(c).hobexRefund(transactionId: '1', amount: 1),
     'stripeCaptureIntent': (c) => _geraet(c).stripeCaptureIntent(stripeSessionId: 's1'),
@@ -104,13 +104,13 @@ final _wege = <_Weg>[
     'pairRegisterDevice': (c) => RegisterClient(httpClient: c).pairRegisterDevice(code: 'ABC123'),
   }),
   _Weg('RegisterTransport (Sitzung)', 'https://kasse.kasseneck.at/api/v3', {
-    'createReceipt': (c) => _sitzung(c).rufen('createReceipt'),
-    'cancelReceipt': (c) => _sitzung(c).rufen('cancelReceipt'),
-    'listMyReceipts': (c) => _sitzung(c).rufen('listMyReceipts'),
+    'createReceipt': (c) => _sitzung(c).call('createReceipt'),
+    'cancelReceipt': (c) => _sitzung(c).call('cancelReceipt'),
+    'listMyReceipts': (c) => _sitzung(c).call('listMyReceipts'),
   }),
   _Weg('RechnungTransport', 'https://api.kasseneck.at/v3', {
-    'getInvoice': (c) => RechnungTransport(apiKey: 'kr_test_x', httpClient: c).rufen('getInvoice', {}),
-    'getInvoicePdf': (c) => RechnungTransport(apiKey: 'kr_test_x', httpClient: c).rufenBinaer('getInvoicePdf', {}),
+    'getInvoice': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).call('getInvoice', {}),
+    'getInvoicePdf': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).callBinary('getInvoicePdf', {}),
   }),
 ];
 
@@ -132,8 +132,8 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
         'createReceipt' => geraet.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [_posten]),
         'getReceipt' => geraet.getReceipt('R1'),
         'financeWebService' => geraet.getCashboxStatus(),
-        'cancelReceipt' => geraet.stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
-        'sendReceiptEmail' => geraet.belegSenden(fullReceiptId: 'F1', an: 'a@b.at'),
+        'cancelReceipt' => geraet.cancelReceipt(cashregisterId: 'K1', originalReceiptId: 'R1', reason: 'input_error'),
+        'sendReceiptEmail' => geraet.sendReceiptEmail(fullReceiptId: 'F1', to: 'a@b.at'),
         'hobexPayApi' => geraet.hobexPay(transactionId: '1', amount: 1),
         'hobexRefundApi' => geraet.hobexRefund(transactionId: '1', amount: 1),
         'stripeCaptureIntent' => geraet.stripeCaptureIntent(stripeSessionId: 's1'),
@@ -144,10 +144,10 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
     case 'RegisterTransport (Sitzung)':
       return RegisterTransport(
               idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K', httpClient: c, timeout: f)
-          .rufen(name);
+          .call(name);
     default:
-      final t = RechnungTransport(apiKey: 'kr_test_x', httpClient: c, timeout: f);
-      return name == 'getInvoicePdf' ? t.rufenBinaer(name, {}) : t.rufen(name, {});
+      final t = InvoiceTransport(apiKey: 'kr_test_x', httpClient: c, timeout: f);
+      return name == 'getInvoicePdf' ? t.callBinary(name, {}) : t.call(name, {});
   }
 }
 
@@ -180,7 +180,7 @@ void main() {
     test('die beiden Basen stehen wie im Vertrag', () {
       expect(kPublicBaseUrl, vertrag['baseUrls']['public']);
       expect(kPosBaseUrl, vertrag['baseUrls']['pos']);
-      expect(kRechnungBaseUrl, kPublicBaseUrl);
+      expect(kInvoiceBaseUrl, kPublicBaseUrl);
       expect(kRegisterBaseUrl, kPosBaseUrl);
     });
 
@@ -202,13 +202,13 @@ void main() {
       for (final falsch in ['https://kasse.kasseneck.at/api', 'https://api.kasseneck.at/v1', '/api', '/v3x', '']) {
         expect(() => RegisterClient(baseUrl: falsch), abgewiesen, reason: falsch);
         expect(() => _sitzung(http.Client(), baseUrl: falsch), abgewiesen, reason: falsch);
-        expect(() => RechnungTransport(apiKey: 'kr_test_x', baseUrl: falsch), abgewiesen, reason: falsch);
-        expect(() => RechnungApi(apiKey: 'kr_test_x', baseUrl: falsch), abgewiesen, reason: falsch);
+        expect(() => InvoiceTransport(apiKey: 'kr_test_x', baseUrl: falsch), abgewiesen, reason: falsch);
+        expect(() => InvoiceApi(apiKey: 'kr_test_x', baseUrl: falsch), abgewiesen, reason: falsch);
       }
       for (final gut in ['/api/v3', '/api/v3/', 'https://proxy.example/kasse/v3']) {
         expect(RegisterClient(baseUrl: gut), isNotNull);
         expect(_sitzung(http.Client(), baseUrl: gut).baseUrl, gut.replaceAll(RegExp(r'/+$'), ''));
-        expect(RechnungTransport(apiKey: 'kr_test_x', baseUrl: gut).baseUrl, gut.replaceAll(RegExp(r'/+$'), ''));
+        expect(InvoiceTransport(apiKey: 'kr_test_x', baseUrl: gut).baseUrl, gut.replaceAll(RegExp(r'/+$'), ''));
       }
     });
   });
@@ -241,8 +241,8 @@ void main() {
         '//proxy.example/api/v3',
       ]) {
         final netz = _Netz((_) => _v3({'status': 'success', 'data': {}}));
-        await _sitzung(netz.client, baseUrl: basis).rufen('listMyReceipts');
-        await RechnungTransport(apiKey: 'kr_test_x', baseUrl: basis, httpClient: netz.client).rufen('getInvoice', {});
+        await _sitzung(netz.client, baseUrl: basis).call('listMyReceipts');
+        await InvoiceTransport(apiKey: 'kr_test_x', baseUrl: basis, httpClient: netz.client).call('getInvoice', {});
         for (final a in netz.anfragen) {
           expect(a.headers.keys.map((k) => k.toLowerCase()),
               isNot(anyOf(contains('kasseneck-api-version'), contains('kasseneck-client'))),
@@ -253,19 +253,19 @@ void main() {
 
     test('eine relative Basis (gleicher Ursprung) ist eine Kasseneck-Basis', () async {
       final netz = _Netz((_) => _v3({'status': 'success', 'data': {}}));
-      await _sitzung(netz.client, baseUrl: '/api/v3').rufen('listMyReceipts');
+      await _sitzung(netz.client, baseUrl: '/api/v3').call('listMyReceipts');
       expect(netz.anfragen.single.headers['Kasseneck-Api-Version'], 'v3');
     });
 
     test('eigene Client-Kennung nur aus der Positivliste', () async {
       final netz = _Netz((_) => _v3({'status': 'success', 'data': {}}));
-      await _sitzung(netz.client, clientHeader: 'kasse-app/1.0.3+34').rufen('listMyReceipts');
+      await _sitzung(netz.client, clientHeader: 'kasse-app/1.0.3+34').call('listMyReceipts');
       expect(netz.anfragen.single.headers['Kasseneck-Client'], 'kasse-app/1.0.3+34');
       for (final falsch in ['kasse/1.0', 'kasse-app/', 'kasse-app', 'kasse-app/1 0', 'kasse-web/${'1' * 41}', '']) {
         expect(() => _sitzung(http.Client(), clientHeader: falsch),
             throwsA(isA<KasseneckValidationError>()), reason: falsch);
         expect(() => RegisterClient(clientHeader: falsch), throwsA(isA<KasseneckValidationError>()), reason: falsch);
-        expect(() => RechnungTransport(apiKey: 'kr_test_x', clientHeader: falsch),
+        expect(() => InvoiceTransport(apiKey: 'kr_test_x', clientHeader: falsch),
             throwsA(isA<KasseneckValidationError>()), reason: falsch);
         expect(() => KasseneckApi(apiKey: 'k', cashregisterToken: 't', clientHeader: falsch),
             throwsA(isA<KasseneckValidationError>()), reason: falsch);
@@ -274,11 +274,11 @@ void main() {
 
     test('omitKasseneckHeaders laesst beide weg, die Antwortpruefung bleibt', () async {
       final netz = _Netz((_) => _v3({'status': 'success', 'data': {}}));
-      await _sitzung(netz.client, omit: true).rufen('listMyReceipts');
+      await _sitzung(netz.client, omit: true).call('listMyReceipts');
       expect(netz.anfragen.single.headers.keys.map((k) => k.toLowerCase()),
           isNot(anyOf(contains('kasseneck-api-version'), contains('kasseneck-client'))));
       netz.antwort = (_) => _ohneKennzeichen();
-      await expectLater(_sitzung(netz.client, omit: true).rufen('listMyReceipts'),
+      await expectLater(_sitzung(netz.client, omit: true).call('listMyReceipts'),
           throwsA(_apiFehler('dialect_mismatch', ErrorOutcome.unknown)));
     });
   });
@@ -299,12 +299,12 @@ void main() {
     test('Kennzeichen in anderer Schreibweise und mit Leerraum zaehlt', () async {
       final netz = _Netz((_) => _Antwort(200, {..._json, 'kasseneck-api-version': ' V3 '},
           utf8.encode(jsonEncode({'status': 'success', 'data': {'a': 1}}))));
-      expect(await _sitzung(netz.client).rufen('listMyReceipts'), {'a': 1});
+      expect(await _sitzung(netz.client).call('listMyReceipts'), {'a': 1});
     });
 
     test('falscher Wert des Kennzeichens ist kein v3', () async {
       final netz = _Netz((_) => _Antwort(200, {..._json, 'kasseneck-api-version': 'v2'}, utf8.encode('{}')));
-      await expectLater(_sitzung(netz.client).rufen('listMyReceipts'),
+      await expectLater(_sitzung(netz.client).call('listMyReceipts'),
           throwsA(_apiFehler('dialect_mismatch', ErrorOutcome.unknown)));
       expect(netz.gelesen, isFalse);
     });
@@ -364,7 +364,7 @@ void main() {
     test('HTTP 404 ohne Kennzeichen bleibt ungelesen ein HTTP-Fehler', () async {
       final netz = _Netz((_) => _Antwort(404, _json, utf8.encode(jsonEncode({'status': 'error', 'code': 'not_found'}))));
       await expectLater(
-          _sitzung(netz.client).rufen('listMyReceipts'), throwsA(_httpFehler('server-error', ErrorOutcome.rejected)));
+          _sitzung(netz.client).call('listMyReceipts'), throwsA(_httpFehler('server-error', ErrorOutcome.rejected)));
       expect(netz.gelesen, isFalse);
     });
   });
@@ -393,7 +393,7 @@ void main() {
             'message': 'x',
             'data': {'handled': false},
           }));
-      await expectLater(_sitzung(netz.client).rufen('createReceipt'),
+      await expectLater(_sitzung(netz.client).call('createReceipt'),
           throwsA(_apiFehler('response_translation_failed', ErrorOutcome.rejected)));
       await expectLater(RegisterClient(httpClient: netz.client).pairRegisterDevice(code: 'ABC123'),
           throwsA(_apiFehler('response_translation_failed', ErrorOutcome.rejected)));
@@ -410,7 +410,7 @@ void main() {
         for (final MapEntry(key: name, value: los) in weg.aufrufe.entries) {
           final c = MockClient((_) async => throw const SocketException('weg'));
           final ausgang = _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
-          await expectLater(los(c), throwsA(_httpFehler(KasseneckHttpError.netz, ausgang)),
+          await expectLater(los(c), throwsA(_httpFehler(KasseneckHttpError.reasonNetwork, ausgang)),
               reason: '${weg.name} $name');
         }
       }
@@ -421,10 +421,10 @@ void main() {
       final haengt = MockClient((_) => Completer<http.Response>().future);
       final t = RegisterTransport(
           idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K', httpClient: haengt, timeout: frist);
-      await expectLater(t.rufen('createReceipt'),
-          throwsA(_httpFehler(KasseneckHttpError.zeitablauf, ErrorOutcome.unknown).having((e) => e.timeout, 'timeout', frist)));
-      await expectLater(t.rufen('listMyReceipts'),
-          throwsA(_httpFehler(KasseneckHttpError.zeitablauf, ErrorOutcome.rejected)));
+      await expectLater(t.call('createReceipt'),
+          throwsA(_httpFehler(KasseneckHttpError.reasonTimeout, ErrorOutcome.unknown).having((e) => e.timeout, 'timeout', frist)));
+      await expectLater(t.call('listMyReceipts'),
+          throwsA(_httpFehler(KasseneckHttpError.reasonTimeout, ErrorOutcome.rejected)));
     });
 
     test('Zeitlimit greift auch, wenn der Rumpf haengt', () async {
@@ -432,8 +432,8 @@ void main() {
           StreamController<List<int>>().stream, 200, headers: {..._json, ..._kennzeichen}));
       final t = RegisterTransport(idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K',
           httpClient: c, timeout: const Duration(milliseconds: 20));
-      await expectLater(t.rufen('createReceipt'),
-          throwsA(_httpFehler(KasseneckHttpError.zeitablauf, ErrorOutcome.unknown)));
+      await expectLater(t.call('createReceipt'),
+          throwsA(_httpFehler(KasseneckHttpError.reasonTimeout, ErrorOutcome.unknown)));
     });
 
     test('unlesbare Erfolgsantwort: signierend unklar, sonst abgelehnt', () async {
@@ -475,15 +475,15 @@ void main() {
         final erfolg = utf8.encode(jsonEncode({'status': 'success', 'data': {'n': 'Bäckerei'}}));
         _Antwort a(List<int> b) => _Antwort(200, {'content-type': typ, ..._kennzeichen}, b);
         final netz = _Netz((_) => a(erfolg));
-        expect(await _sitzung(netz.client).rufen('listMyReceipts'), {'n': 'Bäckerei'});
-        expect(await RechnungTransport(apiKey: 'kr_test_x', httpClient: netz.client).rufen('getInvoice', {}),
+        expect(await _sitzung(netz.client).call('listMyReceipts'), {'n': 'Bäckerei'});
+        expect(await InvoiceTransport(apiKey: 'kr_test_x', httpClient: netz.client).call('getInvoice', {}),
             {'n': 'Bäckerei'});
         netz.antwort = (_) => a(rumpf);
         final fehler = isA<KasseneckApiError>().having((e) => e.message, 'message', 'Grüße');
-        await expectLater(_sitzung(netz.client).rufen('createReceipt'), throwsA(fehler));
+        await expectLater(_sitzung(netz.client).call('createReceipt'), throwsA(fehler));
         await expectLater(RegisterClient(httpClient: netz.client).pairRegisterDevice(code: 'ABC123'), throwsA(fehler));
         await expectLater(
-            _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
+            _geraet(netz.client).cancelReceipt(cashregisterId: 'K1', originalReceiptId: 'R1', reason: 'input_error'),
             throwsA(fehler));
         await expectLater(_geraet(netz.client).sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [_posten]),
             throwsA(fehler));
@@ -517,7 +517,7 @@ void main() {
             return antwort.future;
           });
           final ausgang = _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
-          await expectLater(_mitFrist(weg, name, c), throwsA(_httpFehler(KasseneckHttpError.zeitablauf, ausgang)),
+          await expectLater(_mitFrist(weg, name, c), throwsA(_httpFehler(KasseneckHttpError.reasonTimeout, ausgang)),
               reason: '${weg.name} $name');
           await pumpEventQueue();
           expect(abgebrochen, isTrue, reason: '${weg.name} $name');
@@ -533,7 +533,7 @@ void main() {
       });
       final t = RegisterTransport(idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K',
           httpClient: c, timeout: const Duration(milliseconds: 20));
-      await expectLater(t.rufen('createReceipt'), throwsA(_httpFehler(KasseneckHttpError.zeitablauf, ErrorOutcome.unknown)));
+      await expectLater(t.call('createReceipt'), throwsA(_httpFehler(KasseneckHttpError.reasonTimeout, ErrorOutcome.unknown)));
       await pumpEventQueue();
       expect(abgebrochen, isTrue);
     });
@@ -543,7 +543,7 @@ void main() {
           http.StreamedResponse(StreamController<List<int>>().stream, 404, headers: {..._json, ..._kennzeichen}));
       final t = RegisterTransport(idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K',
           httpClient: c, timeout: const Duration(milliseconds: 20));
-      await expectLater(t.rufen('createReceipt'),
+      await expectLater(t.call('createReceipt'),
           throwsA(_httpFehler('server-error', ErrorOutcome.rejected).having((e) => e.statusCode, 'statusCode', 404)));
     });
   });
@@ -556,16 +556,16 @@ void main() {
             'message': 'x',
             'data': {'handled': false, 'remainingCents': 5},
           }));
-      final storno = _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error');
+      final storno = _geraet(netz.client).cancelReceipt(cashregisterId: 'K1', originalReceiptId: 'R1', reason: 'input_error');
       await expectLater(
           storno,
           throwsA(_apiFehler('response_translation_failed', ErrorOutcome.rejected)
               .having((e) => e.details['remainingCents'], 'details', 5)));
-      await expectLater(_geraet(netz.client).belegSenden(fullReceiptId: 'F1', an: 'a@b.at'),
+      await expectLater(_geraet(netz.client).sendReceiptEmail(fullReceiptId: 'F1', to: 'a@b.at'),
           throwsA(_apiFehler('response_translation_failed', ErrorOutcome.rejected)));
       netz.antwort = (_) => _v3({'status': 'error', 'message': 'x', 'data': {'code': 'cancellation_outcome_unknown'}});
       await expectLater(
-          _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
+          _geraet(netz.client).cancelReceipt(cashregisterId: 'K1', originalReceiptId: 'R1', reason: 'input_error'),
           throwsA(_apiFehler('cancellation_outcome_unknown', ErrorOutcome.unknown)));
     });
 

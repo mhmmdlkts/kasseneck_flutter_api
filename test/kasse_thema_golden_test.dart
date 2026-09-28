@@ -14,29 +14,29 @@ import 'package:kasseneck_api/kasse.dart';
 /// Ändert sich das Thema absichtlich, schreibt `KECK_GOLDEN=schreiben` die
 /// Datei neu — und der Unterschied steht dann im Commit, wo man ihn sieht.
 
-Map<String, dynamic> stilWerte(Kassenthema t) => {
-      'grund': t.grund.hex,
-      'flaeche': t.flaeche.hex,
-      'flaecheHoch': t.flaecheHoch.hex,
+Map<String, dynamic> stilWerte(PosThemeData t) => {
+      'grund': t.ground.hex,
+      'flaeche': t.surface.hex,
+      'flaecheHoch': t.surfaceRaised.hex,
       'text': t.text.hex,
-      'leise': t.leise.hex,
-      'rand': t.rand.hex,
-      'strich': t.strich.hex,
-      'gut': t.gut.hex,
-      'gutHell': t.gutHell.hex,
-      'warnung': t.warnung.hex,
-      'warnungHell': t.warnungHell.hex,
-      'fehler': t.fehler.hex,
-      'fehlerHell': t.fehlerHell.hex,
-      'marke': t.marke.hex,
-      'markeTief': t.markeTief.hex,
-      'markeHell': t.markeHell.hex,
-      'aufMarke': t.aufMarke.hex,
+      'leise': t.textMuted.hex,
+      'rand': t.border.hex,
+      'strich': t.divider.hex,
+      'gut': t.success.hex,
+      'gutHell': t.successSurface.hex,
+      'warnung': t.warning.hex,
+      'warnungHell': t.warningSurface.hex,
+      'fehler': t.danger.hex,
+      'fehlerHell': t.dangerSurface.hex,
+      'marke': t.brand.hex,
+      'markeTief': t.brandPressed.hex,
+      'markeHell': t.brandSurface.hex,
+      'aufMarke': t.onBrand.hex,
       'radius': t.radius,
-      'radiusKachel': t.radiusKachel,
-      'radiusKlein': t.radiusKlein,
-      'linie': t.linie,
-      'schattenTiefe': t.schattenTiefe,
+      'radiusKachel': t.radiusTile,
+      'radiusKlein': t.radiusSmall,
+      'linie': t.lineWidth,
+      'schattenTiefe': t.shadowDepth,
     };
 
 Map<String, dynamic> jetzigesThema() => {
@@ -44,16 +44,16 @@ Map<String, dynamic> jetzigesThema() => {
           '(Modus je Stil), Betriebsfarbe bewusst nicht. Die Browser-Kasse liest dieselben '
           'Werte, damit App und Browser nicht auseinanderlaufen. Erzeugt gegen kreiseck_design '
           'dfe4a27 (bis zur Veröffentlichung; danach die Version).',
-      'schriftfaktoren': {for (final e in schriftfaktoren.entries) e.key.wert: e.value},
-      'kachelhoehen': {for (final e in kachelhoehen.entries) e.key.wert: e.value},
+      'schriftfaktoren': {for (final e in fontScales.entries) e.key.value: e.value},
+      'kachelhoehen': {for (final e in tileHeights.entries) e.key.value: e.value},
       'kachelhoeheRegel': 'kachelhoehen[hoehe] * schriftfaktoren[schrift] — eine Kachel ist '
           'so hoch, wie Name und Preis sie brauchen. Eine feste Höhe schneidet bei großer '
           'Schrift die Unterlänge des Namens ab.',
       'stile': {
-        for (final stil in KasseStil.values)
-          stil.wert: stilWerte(Kassenthema.aus(KasseSettings.aus({
-            'business': {'theme': stil.wert},
-          }).betrieb)),
+        for (final stil in PosTheme.values)
+          stil.value: stilWerte(PosThemeData.fromSettings(PosSettings.fromJson({
+            'business': {'theme': stil.value},
+          }).business)),
       },
     };
 

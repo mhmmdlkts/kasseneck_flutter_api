@@ -205,32 +205,32 @@ void main() {
         final r = KasseneckReceipt.fromJson(baseJson()..remove('company'));
 
         expect(r.receiptId, 'TEST-ID-1', reason: 'der Beleg kommt heraus');
-        expect(r.fehlendePflichtangaben, ['company']);
-        expect(r.pflichtangabenVollstaendig, isFalse);
+        expect(r.missingMandatoryFields, ['company']);
+        expect(r.hasMandatoryFields, isFalse);
       });
 
       test('eine Firma aus lauter Leerzeichen zaehlt nicht als Bezeichnung', () {
         final r = KasseneckReceipt.fromJson(baseJson()..['company'] = '   ');
-        expect(r.fehlendePflichtangaben, ['company']);
+        expect(r.missingMandatoryFields, ['company']);
       });
 
       test('falsch getippte Firma ebenso', () {
         final r = KasseneckReceipt.fromJson(baseJson()..['company'] = 42);
-        expect(r.fehlendePflichtangaben, ['company']);
+        expect(r.missingMandatoryFields, ['company']);
       });
 
       test('fromMetadata fuehrt dieselbe Pruefung', () {
         final receipt = baseJson()['receipt'] as Map<String, dynamic>;
-        expect(KasseneckReceipt.fromMetadata(receipt, const {}).fehlendePflichtangaben, ['company']);
+        expect(KasseneckReceipt.fromMetadata(receipt, const {}).missingMandatoryFields, ['company']);
         expect(
             KasseneckReceipt.fromMetadata(receipt, {'company': 'Kasseneck Test GmbH'})
-                .fehlendePflichtangaben,
+                .missingMandatoryFields,
             isEmpty);
       });
 
       test('ein vollstaendiger Beleg meldet keinen Mangel', () {
-        expect(cartA().fehlendePflichtangaben, isEmpty);
-        expect(cartA().pflichtangabenVollstaendig, isTrue);
+        expect(cartA().missingMandatoryFields, isEmpty);
+        expect(cartA().hasMandatoryFields, isTrue);
       });
 
       test('Anschrift, Steuerangabe und Fusszeilen bleiben Zierde', () {
@@ -244,7 +244,7 @@ void main() {
           ..remove('city')
           ..remove('footer1')
           ..remove('footer2');
-        expect(KasseneckReceipt.fromJson(j).fehlendePflichtangaben, isEmpty);
+        expect(KasseneckReceipt.fromJson(j).missingMandatoryFields, isEmpty);
       });
     });
 

@@ -14,43 +14,43 @@ import 'package:qr_flutter/qr_flutter.dart';
 /// und im PDF (Zwilling von `BelegBlattView` im npm-Paket). Eine Zeile ist
 /// zwei Zeichenbreiten hoch, Logo und QR stehen in ihrem Blattanteil. Die
 /// Zeichenbreite wird an der Schrift gemessen, nicht angenommen.
-class KeckBelegBlattWidget extends StatefulWidget {
-  final BelegLayout layout;
-  final int? zeichen;
+class KeckReceiptSheetWidget extends StatefulWidget {
+  final ReceiptLayout layout;
+  final int? charsPerLine;
   final String? logoUrl;
-  final LogoStufe logoStufe;
-  final bool marke;
-  final QrModulGroesse qrGroesse;
+  final SheetLogoSize logoSize;
+  final bool brandMark;
+  final QrModuleSize qrModuleSize;
   final Color paperColor;
   final Color textColor;
   final bool qrCovered;
   final String qrCoveredText;
   final double fontSize;
-  final Widget Function(String nutzlast)? qrFehltBuilder;
+  final Widget Function(String nutzlast)? qrMissingBuilder;
 
-  const KeckBelegBlattWidget({
+  const KeckReceiptSheetWidget({
     required this.layout,
-    this.zeichen,
+    this.charsPerLine,
     this.logoUrl,
-    this.logoStufe = LogoStufe.m,
-    this.marke = false,
-    this.qrGroesse = QrModulGroesse.auto,
+    this.logoSize = SheetLogoSize.m,
+    this.brandMark = false,
+    this.qrModuleSize = QrModuleSize.auto,
     this.paperColor = Colors.white,
     this.textColor = Colors.black,
     this.qrCovered = false,
     this.qrCoveredText = 'Antippen zum Anzeigen',
     this.fontSize = 12,
-    this.qrFehltBuilder,
+    this.qrMissingBuilder,
     super.key,
   });
 
   @override
-  State<KeckBelegBlattWidget> createState() => _KeckBelegBlattWidgetState();
+  State<KeckReceiptSheetWidget> createState() => _KeckBelegBlattWidgetState();
 }
 
-class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
+class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
   bool _qrOffen = false;
-  ({String url, int breite, int hoehe})? _logo;
+  ({String url, int width, int height})? _logo;
 
   @override
   void initState() {
@@ -59,7 +59,7 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
   }
 
   @override
-  void didUpdateWidget(KeckBelegBlattWidget alt) {
+  void didUpdateWidget(KeckReceiptSheetWidget alt) {
     super.didUpdateWidget(alt);
     if (alt.logoUrl != widget.logoUrl) _ladeLogo();
   }
@@ -98,8 +98,8 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
       }
       // Ein zu grosses Logo ist wie ein Logo, das nicht geladen hat: kein
       // Logo-Block, dieselben Zeilen wie ohne Logo -- kein Merken des Fehlers.
-      if (!logoPixelZulaessig(breite, hoehe)) return;
-      final mass = (url: url, breite: breite, hoehe: hoehe);
+      if (!isLogoPixelSizeAllowed(breite, hoehe)) return;
+      final mass = (url: url, width: breite, height: hoehe);
       if (mounted && widget.logoUrl == url) setState(() => _logo = mass);
     } catch (_) {
       // Ein Logo, das sich nicht lesen laesst, kostet den Beleg nicht: das Blatt steht ohne Logo.
@@ -124,16 +124,16 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
     // Ohne Bytes kein Logo-Block -- auch wenn das Mass schon bekannt ist.
     final logoBytes = LogoService.getLogoBytes(widget.logoUrl);
     final geladen = _logo != null && _logo!.url == widget.logoUrl && logoBytes != null;
-    final blatt = belegBlatt(
+    final blatt = receiptSheet(
       widget.layout,
-      zeichen: widget.zeichen,
-      logo: geladen ? BlattLogo(stufe: widget.logoStufe, pxBreite: _logo!.breite, pxHoehe: _logo!.hoehe) : null,
-      marke: widget.marke,
-      qrGroesse: widget.qrGroesse,
+      charsPerLine: widget.charsPerLine,
+      logo: geladen ? SheetLogo(size: widget.logoSize, pixelWidth: _logo!.width, pixelHeight: _logo!.height) : null,
+      brandMark: widget.brandMark,
+      qrModuleSize: widget.qrModuleSize,
     );
-    final breite = blatt.zeichen * cw;
+    final breite = blatt.charsPerLine * cw;
     // Align loest eine straffe Breite von aussen (die App setzt den Beleg in
-    // `SizedBox(width: 280/380)`): das Papier bleibt `zeichen x cw` breit und
+    // `SizedBox(width: 280/380)`): das Papier bleibt `charsPerLine x cw` breit und
     // steht oben mittig, statt auf die Huelle gezogen zu werden.
     return Align(
       alignment: Alignment.topCenter,
@@ -146,9 +146,9 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final (i, b) in blatt.bloecke.indexed)
+              for (final (i, b) in blatt.blocks.indexed)
                 switch (b) {
-                  BlattZeile() => SizedBox(
+                  SheetLine() => SizedBox(
                       key: Key('keck-blatt-zeile-$i'),
                       height: 2 * cw,
                       child: Align(
@@ -157,7 +157,7 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
                             maxLines: 1,
                             softWrap: false,
                             overflow: TextOverflow.clip,
-                            style: stil.copyWith(fontWeight: b.fett ? FontWeight.w500 : FontWeight.w400)),
+                            style: stil.copyWith(fontWeight: b.bold ? FontWeight.w500 : FontWeight.w400)),
                       ),
                     ),
                   // Die Zeilen darueber stehen in einer Column mit
@@ -165,11 +165,11 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
                   // eine straffe Breitenzwang auf die volle Blattbreite. Erst
                   // Center loest den Zwang; nur so wird das Logo tatsaechlich
                   // schmaler als das Blatt (wie beim QR unten).
-                  BlattLogoBlock() => Center(
+                  SheetLogoBlock() => Center(
                       child: SizedBox(
                         key: const Key('keck-blatt-logo'),
-                        width: b.breiteAnteil * breite,
-                        height: b.hoeheZeilen * 2 * cw,
+                        width: b.widthFraction * breite,
+                        height: b.heightLines * 2 * cw,
                         // `geladen` setzt Bytes voraus; ohne sie entsteht kein Logo-Block.
                         // `cacheWidth` laesst Flutter nur in der angezeigten
                         // Groesse dekodieren statt in der vollen Bildaufloesung
@@ -180,21 +180,21 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
                             : Image.memory(
                                 logoBytes,
                                 fit: BoxFit.contain,
-                                cacheWidth: math.max(1, (b.breiteAnteil * breite * MediaQuery.devicePixelRatioOf(context)).round()),
+                                cacheWidth: math.max(1, (b.widthFraction * breite * MediaQuery.devicePixelRatioOf(context)).round()),
                               ),
                       ),
                     ),
-                  BlattQr() => Center(child: _qr(b, breite, stil)),
+                  SheetQr() => Center(child: _qr(b, breite, stil)),
                   // Nicht das Druckraster: die Logo-Komponente aus
                   // kreiseck_design zeichnet die Marke am Bildschirm als
                   // Vektor, scharf in jeder Aufloesung (siehe
                   // docs/specs/2026-09-21-marke-einheitlich-design.md, § 3.2).
                   // Die Hoehe folgt derselben Rechnung wie beim Firmenlogo:
                   // Druckpunkte -> Zeilen -> Bildschirm-Pixel.
-                  BlattMarke() => Center(
+                  SheetBrandMark() => Center(
                       child: KdLogo(
                         key: const Key('keck-blatt-marke'),
-                        height: (b.hoehe / punkteJeZeile) * 2 * cw,
+                        height: (b.height / dotsPerLine) * 2 * cw,
                         ink: widget.textColor,
                         accent: widget.textColor,
                       ),
@@ -207,21 +207,21 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
     );
   }
 
-  Widget _qr(BlattQr b, double breite, TextStyle stil) {
+  Widget _qr(SheetQr b, double breite, TextStyle stil) {
     // Anteil 0: der QR hat auf dem Blatt keinen Platz. Eine leere Nutzlast
     // ist kein Ausfall dieses Blatts -- wie Bon und PDF zeigt das Widget dann
     // einfach keinen QR. Eine nicht-leere Nutzlast, die in keine QR-Version
     // passt, ist dagegen der eigentliche Ausfall (Registrierkasse: der QR ist
     // die maschinenlesbare Signatur) -- das muss sichtbar sein, sonst ginge
     // ein Beleg ohne Hinweis und ohne Signatur raus.
-    if (b.breiteAnteil <= 0) {
-      if (b.nutzlast.isEmpty) return const SizedBox.shrink();
-      return widget.qrFehltBuilder?.call(b.nutzlast) ?? _qrFehltHinweis(stil);
+    if (b.widthFraction <= 0) {
+      if (b.payload.isEmpty) return const SizedBox.shrink();
+      return widget.qrMissingBuilder?.call(b.payload) ?? _qrFehltHinweis(stil);
     }
-    final seite = b.breiteAnteil * breite;
+    final seite = b.widthFraction * breite;
     // Die Breite enthaelt die Ruhezone (4 Module je Seite) -- wie am Drucker.
-    final module = b.nutzlast.isEmpty ? 1 : qrModulAnzahlWieNpm(b.nutzlast);
-    final rand = seite * QrMass.ruhezoneModule / (module + 2 * QrMass.ruhezoneModule);
+    final module = b.payload.isEmpty ? 1 : qrModuleCount(b.payload);
+    final rand = seite * QrMetrics.quietZoneModules / (module + 2 * QrMetrics.quietZoneModules);
     final qr = SizedBox(
       key: const Key('keck-blatt-qr'),
       width: seite,
@@ -229,7 +229,7 @@ class _KeckBelegBlattWidgetState extends State<KeckBelegBlattWidget> {
       child: Padding(
         padding: EdgeInsets.all(rand),
         child: QrImageView(
-          data: b.nutzlast,
+          data: b.payload,
           // Korrektur M wie Bon, ePOS und Blatt; qr_flutter setzt sonst L und
           // zeichnete bei mancher Nutzlast weniger Module, als das Blatt rechnet.
           errorCorrectionLevel: QrErrorCorrectLevel.M,

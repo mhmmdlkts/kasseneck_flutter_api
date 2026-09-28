@@ -6,7 +6,7 @@
 /// „nicht gesetzt" nicht als ausdrückliche Angabe missversteht.
 ///
 /// Antworten werden streng gelesen: fehlt ein zugesagtes Feld, wirft das Lesen
-/// eine [FormatException] mit dem Feldnamen (nie dem Wert); [RechnungApi] macht
+/// eine [FormatException] mit dem Feldnamen (nie dem Wert); [InvoiceApi] macht
 /// daraus einen Antwortfehler statt eines `TypeError` an unpassender Stelle.
 library;
 
@@ -229,10 +229,10 @@ class CustomerPage {
 
 // ---- Rechnungen -----------------------------------------------------------------
 
-/// Was für die Summe einer Rechnung zählt (`rechnungSummen`) —
+/// Was für die Summe einer Rechnung zählt (`computeInvoiceTotals`) —
 /// [InvoiceItemInput] erfüllt es unverändert.
-abstract interface class SummenPosition {
-  const factory SummenPosition({
+abstract interface class TotalsItem {
+  const factory TotalsItem({
     required num quantity,
     num? unitPriceCents,
     num? unitPriceMicros,
@@ -253,7 +253,7 @@ abstract interface class SummenPosition {
   /// zählt dabei als Zehntausendstel Cent. Wer rechnet, nimmt das hier und
   /// nicht eines der beiden Felder: sonst stünde die Fallunterscheidung an
   /// jeder Rechenstelle, und eine davon vergäße man.
-  num get preisInCent => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
+  num get priceInCents => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
 
   /// Der USt-Satz in Prozent. Als `num`, weil es Saetze mit Nachkommastelle
   /// gibt (4,9 % Grundnahrungsmittel ab 01.07.2026).
@@ -261,7 +261,7 @@ abstract interface class SummenPosition {
   num? get discountPct;
 }
 
-class _SummenPosition implements SummenPosition {
+class _SummenPosition implements TotalsItem {
   const _SummenPosition({
     required this.quantity,
     this.unitPriceCents,
@@ -285,10 +285,10 @@ class _SummenPosition implements SummenPosition {
   final num? discountPct;
 
   @override
-  num get preisInCent => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
+  num get priceInCents => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
 }
 
-class InvoiceItemInput implements SummenPosition {
+class InvoiceItemInput implements TotalsItem {
   /// Genau eines von [unitPriceCents] und [unitPriceMicros] (§ 9.1). Der
   /// `assert` fängt den Irrtum schon im Debug-Lauf; der Server weist ihn sonst
   /// als `validation` mit Feldpfad ab.
@@ -361,7 +361,7 @@ class InvoiceItemInput implements SummenPosition {
   final num? discountPct;
 
   @override
-  num get preisInCent => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
+  num get priceInCents => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
 
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{};
@@ -581,7 +581,7 @@ class InvoicePayment {
       );
 
   /// Die Felder dieser Sicht, wie `/v3` sie sendet (Feldmengen-Test).
-  static const felder = {'id', 'amountCents', 'paidAt', 'method', 'reference'};
+  static const fields = {'id', 'amountCents', 'paidAt', 'method', 'reference'};
 
   final String id;
   final int amountCents;
@@ -594,7 +594,7 @@ class InvoicePayment {
 /// Aufrufer wissen sollte. Die Codes stehen in `invoiceNoticeCodes`.
 ///
 /// `code` und `message` sind beide Pflicht — fehlt eines, ist es kein Hinweis:
-/// [InvoiceNotice.fromJson] wirft dann, und die Aufrufe von `RechnungApi`
+/// [InvoiceNotice.fromJson] wirft dann, und die Aufrufe von `InvoiceApi`
 /// übergehen den Eintrag (die Rechnung ist da schon ausgestellt).
 class InvoiceNotice {
   const InvoiceNotice({required this.code, required this.message});
@@ -604,7 +604,7 @@ class InvoiceNotice {
         message: _pflicht<String>(j, 'message'),
       );
 
-  static const felder = {'code', 'message'};
+  static const fields = {'code', 'message'};
 
   final String code;
   final String message;
@@ -622,7 +622,7 @@ class RecordPaymentResult {
       );
 
   /// `notice` fehlt ohne Hinweis.
-  static const felder = {'invoice', 'payment', 'replayed', 'notice'};
+  static const fields = {'invoice', 'payment', 'replayed', 'notice'};
 
   final Invoice invoice;
   final InvoicePayment payment;
@@ -683,7 +683,7 @@ class VatRateTotal {
   /// Der USt-Satz in Prozent — `num`, weil es Saetze mit Nachkommastelle gibt
   /// (4,9 % Grundnahrungsmittel ab 01.07.2026). Ein `int` liess `getInvoice`
   /// bei so einer Rechnung mit `FormatException` scheitern.
-  static const felder = {'rate', 'netCents', 'vatCents', 'grossCents'};
+  static const fields = {'rate', 'netCents', 'vatCents', 'grossCents'};
 
   final num rate;
   final int netCents;
@@ -698,7 +698,7 @@ class VatRateTotal {
 
 /// Summen einer Rechnung in Cent, **immer positiv** — auch bei einer
 /// Gutschrift (`docType: 'credit_note'`); das Vorzeichen steht im Belegtyp, nicht im
-/// Betrag. Gerechnet wird je Satz wie in `rechnungSummen`.
+/// Betrag. Gerechnet wird je Satz wie in `computeInvoiceTotals`.
 class InvoiceTotals {
   const InvoiceTotals({required this.netCents, required this.vatCents, required this.grossCents, this.byRate = const []});
 
@@ -709,7 +709,7 @@ class InvoiceTotals {
         byRate: j['byRate'] is List ? [for (final r in _liste(j, 'byRate')) VatRateTotal.fromJson(r)] : const [],
       );
 
-  static const felder = {'netCents', 'vatCents', 'grossCents', 'byRate'};
+  static const fields = {'netCents', 'vatCents', 'grossCents', 'byRate'};
 
   final int netCents;
   final int vatCents;
@@ -754,7 +754,7 @@ class InvoiceItem {
       );
 
   /// `unitPriceMicros` fehlt beim Altbestand, den der Server nicht darstellen kann.
-  static const felder = {
+  static const fields = {
     'description', 'subtitle', 'quantity', 'unit', 'kind', 'unitPriceCents', 'unitPriceMicros', 'vatRate', 'discountPct',
   };
 
@@ -783,7 +783,7 @@ class InvoiceItem {
   final num discountPct;
 
   /// Der Preis in Cent, gleich welches Feld ihn trägt.
-  num get preisInCent => unitPriceMicros != null ? unitPriceMicros! / 10000 : unitPriceCents;
+  num get priceInCents => unitPriceMicros != null ? unitPriceMicros! / 10000 : unitPriceCents;
 }
 
 class CreditNoteSummary {
@@ -795,7 +795,7 @@ class CreditNoteSummary {
         grossCents: _pflicht<int>(j, 'grossCents'),
       );
 
-  static const felder = {'id', 'number', 'grossCents'};
+  static const fields = {'id', 'number', 'grossCents'};
 
   final String id;
   final String? number;
@@ -833,7 +833,7 @@ class InvoiceRecipient {
         isAuthority: j['isAuthority'] == true,
       );
 
-  static const felder = {
+  static const fields = {
     'name', 'type', 'street', 'houseNumber', 'zip', 'city', 'country', 'vatId', 'shortCode', 'email', 'isAuthority',
   };
 
@@ -951,22 +951,22 @@ class Invoice {
   }
 
   /// Die Felder in Listen und Ausstell-Antworten.
-  static const felder = {
+  static const fields = {
     'id', 'number', 'docType', 'status', 'invoiceDate', 'dueDate', 'customerId', 'totals', 'einvoice', 'statusUrl',
     'statusPassword', 'metadata', 'language', 'brand', 'paidCents', 'openCents',
   };
 
   /// Die Felder der Detailsicht (`getInvoice`).
-  static const detailFelder = {
-    ...felder,
+  static const detailFields = {
+    ...fields,
     'items', 'customer', 'taxScheme', 'reverseChargeReason', 'taxCountry', 'priceMode', 'serviceStart', 'serviceEnd',
     'paymentTermDays', 'orderReference', 'payments', 'overdue', 'writtenOff', 'writeOffReasonCode', 'related',
     'creditNotes', 'source', 'createdAt', 'finalizedAt',
   };
 
   /// Die Felder von `brand` und `related`.
-  static const brandFelder = {'id', 'name'};
-  static const relatedFelder = {'invoiceId', 'number'};
+  static const brandFields = {'id', 'name'};
+  static const relatedFields = {'invoiceId', 'number'};
 
   final String id;
   final String number;
@@ -1067,7 +1067,7 @@ class InvoiceDetailPayment {
         reference: _text(j, 'reference'),
       );
 
-  static const felder = {'id', 'amountCents', 'date', 'method', 'reference'};
+  static const fields = {'id', 'amountCents', 'date', 'method', 'reference'};
 
   final String? id;
   final int amountCents;
@@ -1090,7 +1090,7 @@ class Brand {
         isDefault: j['isDefault'] == true,
       );
 
-  static const felder = {'id', 'name', 'isDefault'};
+  static const fields = {'id', 'name', 'isDefault'};
 
   final String id;
   final String name;
@@ -1105,7 +1105,7 @@ class InvoicePage {
         nextCursor: _text(j, 'nextCursor'),
       );
 
-  static const felder = {'invoices', 'nextCursor'};
+  static const fields = {'invoices', 'nextCursor'};
 
   final List<Invoice> invoices;
 
@@ -1124,7 +1124,7 @@ class IssueResult {
       );
 
   /// `notice` fehlt ohne Hinweis.
-  static const felder = {'invoice', 'replayed', 'notice'};
+  static const fields = {'invoice', 'replayed', 'notice'};
 
   final Invoice invoice;
 
@@ -1147,7 +1147,7 @@ class EInvoiceStatus {
         missing: _texte(j, 'missing'),
       );
 
-  static const felder = {'level', 'formats', 'missing'};
+  static const fields = {'level', 'formats', 'missing'};
 
   /// `full`, `partial` oder `insufficient`.
   final String level;
@@ -1207,7 +1207,7 @@ class InvoicePreview {
     );
   }
 
-  static const felder = {
+  static const fields = {
     'docType', 'invoiceDate', 'dueDate', 'customerId', 'taxScheme', 'taxSchemeReason', 'reverseChargeReason',
     'taxCountry', 'priceMode', 'totals', 'language', 'brand', 'einvoice',
   };
@@ -1233,7 +1233,7 @@ class InvoicePreview {
   final String taxCountry;
   final String priceMode;
 
-  /// Die Summen, die die Rechnung ausweisen würde — wie `rechnungSummen` sie
+  /// Die Summen, die die Rechnung ausweisen würde — wie `computeInvoiceTotals` sie
   /// vorab rechnet, hier aber vom Server.
   final InvoiceTotals totals;
   final String language;
@@ -1253,7 +1253,7 @@ class PreviewResult {
         notice: _hinweise(j),
       );
 
-  static const felder = {'preview', 'notice'};
+  static const fields = {'preview', 'notice'};
 
   final InvoicePreview preview;
 
@@ -1281,8 +1281,8 @@ class CancelResult {
     );
   }
 
-  static const felder = {'creditNote', 'original', 'originalPaidCents', 'replayed'};
-  static const originalFelder = {'id', 'status'};
+  static const fields = {'creditNote', 'original', 'originalPaidCents', 'replayed'};
+  static const originalFields = {'id', 'status'};
 
   final Invoice creditNote;
   final String originalId;
@@ -1302,7 +1302,7 @@ class CreditNoteResult {
         replayed: j['replayed'] == true,
       );
 
-  static const felder = {'creditNote', 'remainingCents', 'replayed'};
+  static const fields = {'creditNote', 'remainingCents', 'replayed'};
 
   final Invoice creditNote;
 
@@ -1321,7 +1321,7 @@ class InvoiceSetupGap {
         message: _pflicht<String>(j, 'message'),
       );
 
-  static const felder = {'requirement', 'message'};
+  static const fields = {'requirement', 'message'};
 
   /// Einer von [invoiceSetupRequirements].
   final String requirement;
@@ -1337,7 +1337,7 @@ class InvoiceSetupStatus {
         missing: [for (final m in _liste(j, 'missing')) InvoiceSetupGap.fromJson(m)],
       );
 
-  static const felder = {'ready', 'environment', 'missing'};
+  static const fields = {'ready', 'environment', 'missing'};
 
   final bool ready;
 

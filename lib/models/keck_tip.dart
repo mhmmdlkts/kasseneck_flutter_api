@@ -101,7 +101,7 @@ class KeckTip {
   }
 
   /// Der 90-%-Fall: alles an eine Person.
-  factory KeckTip.fuer(
+  factory KeckTip.forRecipient(
     String registerUserId, {
     required int cents,
     KeckPaymentMethod? paymentMethod,
@@ -126,7 +126,7 @@ class KeckTip {
   /// inklusive: Wer den Fehler hier sieht, sieht denselben Satz wie der, der
   /// ihn vom Server bekommt. Geprüft wird hier trotzdem, damit ein Tippfehler
   /// nicht erst nach einem Netzweg auffällt.
-  String? get fehler {
+  String? get validationError {
     if (cents <= 0) {
       return 'Trinkgeld: Betrag muss eine ganze Zahl in Cent > 0 sein';
     }
@@ -156,7 +156,7 @@ class KeckTip {
     return null;
   }
 
-  bool get isValid => fehler == null;
+  bool get isValid => validationError == null;
 
   /// Langform, immer.
   ///

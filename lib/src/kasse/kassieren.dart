@@ -1,7 +1,7 @@
 /// Die Rechnung hinter dem Kassieren — ohne Bildschirm, ohne Netz.
 ///
 /// Zwilling von `lib/kassieren.ts` der Browser-Kasse. Rabatt ist **kein Feld**
-/// am Beleg, sondern eine negative Position je Steuersatz ([verteileRabatt]):
+/// am Beleg, sondern eine negative Position je Steuersatz ([distributeDiscount]):
 /// so stimmt die MwSt-Tabelle des Belegs immer, das DEP zeigt den Rabatt als
 /// Position, und Signatur und Backend bleiben unberührt.
 ///
@@ -19,48 +19,48 @@ import 'warenkorb.dart';
 
 // Die USt-Zerlegung gehoert zur Kassieren-Schnittstelle: wer die enthaltene
 // MwSt anzeigt, braucht dieselbe Regel wie der Beleg — und nicht eine eigene.
-export '../vat_math.dart' show nettoCentsAusBrutto, ustCentsAusBrutto;
+export '../vat_math.dart' show netCentsFromGross, vatCentsFromGross;
 
 /// Welche Zahlungsarten der Betrieb anbietet — nie keine (dann Bar).
-List<KeckPaymentMethod> zahlungsarten(KasseSettingsBetrieb betrieb) {
+List<KeckPaymentMethod> offeredPaymentMethods(PosBusinessSettings betrieb) {
   final aus = <KeckPaymentMethod>[];
   if (betrieb.payCash) aus.add(KeckPaymentMethod.cash);
   // Karte nur mit eingerichtetem Anbieter — der Schalter allein nützt nichts.
-  if (betrieb.kartenAktiv) aus.add(KeckPaymentMethod.creditCard);
+  if (betrieb.cardPaymentEnabled) aus.add(KeckPaymentMethod.creditCard);
   return aus.isEmpty ? [KeckPaymentMethod.cash] : aus;
 }
 
-enum RabattArt { prozent, betrag }
+enum DiscountKind { percent, amount }
 
 /// Rabatt in Cent aus der Eingabe; außerhalb von 0 … Summe gibt es keinen.
-int? rabattCents(RabattArt art, num wert, int summe) {
+int? discountCentsFor(DiscountKind art, num wert, int summe) {
   if (wert.isNaN || wert.isInfinite || wert < 0) return null;
-  if (art == RabattArt.prozent && wert > 100) return null;
-  final c = art == RabattArt.prozent ? (summe * wert / 100).round() : wert.round();
+  if (art == DiscountKind.percent && wert > 100) return null;
+  final c = art == DiscountKind.percent ? (summe * wert / 100).round() : wert.round();
   if (c > summe) return null;
   return c;
 }
 
 /// Positionen für den Beleg: Korb plus Rabattzeilen (eine je Steuersatz).
-List<KasseneckItem> belegPositionen(Warenkorb warenkorb, int rabatt) {
-  final basis = warenkorb.positionen.map((p) => p.alsBelegposition()).toList();
+List<KasseneckItem> receiptItems(Cart warenkorb, int rabatt) {
+  final basis = warenkorb.items.map((p) => p.toReceiptItem()).toList();
   if (rabatt <= 0) return basis;
-  return [...basis, ...verteileRabatt(basis, rabatt)];
+  return [...basis, ...distributeDiscount(basis, rabatt)];
 }
 
 /// Zu zahlen nach Rabatt — nie unter null.
-int zuZahlen(Warenkorb warenkorb, int rabatt) {
-  final rest = warenkorb.summeCents - rabatt;
+int amountDue(Cart warenkorb, int rabatt) {
+  final rest = warenkorb.totalCents - rabatt;
   return rest < 0 ? 0 : rest;
 }
 
-int rueckgeld(int zuZahlenCents, int gegebenCents) {
+int computeChange(int zuZahlenCents, int gegebenCents) {
   final rest = gegebenCents - zuZahlenCents;
   return rest < 0 ? 0 : rest;
 }
 
 /// Schnellwahl für „Gegeben": passend, der nächste runde Euro, dann Scheine.
-List<int> schnellbetraege(int zuZahlenCents) {
+List<int> quickAmounts(int zuZahlenCents) {
   const scheine = [500, 1000, 2000, 5000, 10000, 20000];
   final aus = <int>[zuZahlenCents];
   final rund = ((zuZahlenCents + 99) ~/ 100) * 100;
@@ -72,111 +72,111 @@ List<int> schnellbetraege(int zuZahlenCents) {
   return aus.take(4).toList();
 }
 
-class AbschlussPruefung {
-  const AbschlussPruefung({required this.bereit, this.grund});
+class CompletionCheck {
+  const CompletionCheck({required this.ready, this.reason});
 
-  final bool bereit;
-  final String? grund;
+  final bool ready;
+  final String? reason;
 }
 
 /// Darf abgeschlossen werden? Bar mit Rückgeld-Rechnung braucht genug Gegebenes.
-AbschlussPruefung abschlussPruefung({
-  required KeckPaymentMethod zahlungsart,
-  required int zuZahlen,
-  required int? gegeben,
-  required bool rueckgeldAn,
-  required bool leer,
+CompletionCheck completionCheck({
+  required KeckPaymentMethod paymentMethod,
+  required int dueCents,
+  required int? tenderedCents,
+  required bool changeEnabled,
+  required bool cartEmpty,
 }) {
-  if (leer) {
-    return const AbschlussPruefung(
-      bereit: false,
-      grund: 'Noch nichts erfasst — bitte zuerst eine Position aufnehmen.',
+  if (cartEmpty) {
+    return const CompletionCheck(
+      ready: false,
+      reason: 'Noch nichts erfasst — bitte zuerst eine Position aufnehmen.',
     );
   }
-  if (zahlungsart == KeckPaymentMethod.cash && rueckgeldAn && gegeben != null && gegeben < zuZahlen) {
-    return const AbschlussPruefung(bereit: false, grund: 'Gegeben ist weniger als der Betrag.');
+  if (paymentMethod == KeckPaymentMethod.cash && changeEnabled && tenderedCents != null && tenderedCents < dueCents) {
+    return const CompletionCheck(ready: false, reason: 'Gegeben ist weniger als der Betrag.');
   }
-  return const AbschlussPruefung(bereit: true);
+  return const CompletionCheck(ready: true);
 }
 
 /// Was der Kassier am Kassieren-Bildschirm eingestellt hat.
-class Kassierstand {
-  const Kassierstand({
-    required this.zahlungsart,
-    this.rabattCents = 0,
-    this.gegebenCents,
-    this.trinkgeldCents = 0,
+class CheckoutState {
+  const CheckoutState({
+    required this.paymentMethod,
+    this.discountCents = 0,
+    this.tenderedCents,
+    this.tipCents = 0,
   });
 
   /// Startstand: die erste Zahlungsart, die der Betrieb anbietet. Ein Betrieb
   /// ohne Bargeld darf nicht mit „Bar" vorbelegt beginnen.
-  factory Kassierstand.start(KasseSettingsBetrieb betrieb) =>
-      Kassierstand(zahlungsart: zahlungsarten(betrieb).first);
+  factory CheckoutState.start(PosBusinessSettings betrieb) =>
+      CheckoutState(paymentMethod: offeredPaymentMethods(betrieb).first);
 
-  final KeckPaymentMethod zahlungsart;
-  final int rabattCents;
+  final KeckPaymentMethod paymentMethod;
+  final int discountCents;
 
   /// Bar gegeben; `null`, solange nichts getippt wurde — das ist etwas anderes
   /// als „null Euro gegeben".
-  final int? gegebenCents;
-  final int trinkgeldCents;
+  final int? tenderedCents;
+  final int tipCents;
 
-  Kassierstand kopie({
-    KeckPaymentMethod? zahlungsart,
-    int? rabattCents,
-    int? gegebenCents,
-    bool gegebenLoeschen = false,
-    int? trinkgeldCents,
+  CheckoutState copyWith({
+    KeckPaymentMethod? paymentMethod,
+    int? discountCents,
+    int? tenderedCents,
+    bool clearTendered = false,
+    int? tipCents,
   }) =>
-      Kassierstand(
-        zahlungsart: zahlungsart ?? this.zahlungsart,
-        rabattCents: rabattCents ?? this.rabattCents,
-        gegebenCents: gegebenLoeschen ? null : (gegebenCents ?? this.gegebenCents),
-        trinkgeldCents: trinkgeldCents ?? this.trinkgeldCents,
+      CheckoutState(
+        paymentMethod: paymentMethod ?? this.paymentMethod,
+        discountCents: discountCents ?? this.discountCents,
+        tenderedCents: clearTendered ? null : (tenderedCents ?? this.tenderedCents),
+        tipCents: tipCents ?? this.tipCents,
       );
 }
 
 /// Alle Beträge des Kassiervorgangs auf einen Blick.
-class Kassierrechnung {
-  const Kassierrechnung({
-    required this.summeCents,
-    required this.rabattCents,
-    required this.zuZahlenCents,
-    required this.trinkgeldCents,
-    required this.gesamtCents,
-    required this.bar,
-    required this.gegebenCents,
-    required this.fehltCents,
-    required this.rueckgeldCents,
-    required this.bereit,
-    this.grund,
+class CheckoutTotals {
+  const CheckoutTotals({
+    required this.subtotalCents,
+    required this.discountCents,
+    required this.dueCents,
+    required this.tipCents,
+    required this.totalCents,
+    required this.cash,
+    required this.tenderedCents,
+    required this.missingCents,
+    required this.changeCents,
+    required this.ready,
+    this.reason,
   });
 
   /// Warenkorb ohne Rabatt.
-  final int summeCents;
-  final int rabattCents;
+  final int subtotalCents;
+  final int discountCents;
 
   /// **Belegbetrag** nach Rabatt — ohne Trinkgeld.
-  final int zuZahlenCents;
+  final int dueCents;
 
   /// Trinkgeld; steht nicht im Belegbetrag, aber im Gegebenen.
-  final int trinkgeldCents;
+  final int tipCents;
 
-  /// Was der Gast tatsächlich gibt: [zuZahlenCents] + [trinkgeldCents].
-  final int gesamtCents;
+  /// Was der Gast tatsächlich gibt: [dueCents] + [tipCents].
+  final int totalCents;
 
   /// Wird bar mit Rückgeld gerechnet?
-  final bool bar;
+  final bool cash;
 
-  /// Nur bei [bar]: was gegeben wurde.
-  final int? gegebenCents;
+  /// Nur bei [cash]: was gegeben wurde.
+  final int? tenderedCents;
 
   /// Was noch fehlt; 0, solange nichts getippt wurde.
-  final int fehltCents;
-  final int rueckgeldCents;
+  final int missingCents;
+  final int changeCents;
 
-  final bool bereit;
-  final String? grund;
+  final bool ready;
+  final String? reason;
 }
 
 /// Die ganze Rechnung des Kassierens — Zwilling von `kassierenRechnung` der
@@ -186,35 +186,35 @@ class Kassierrechnung {
 /// trägt den Warenwert; das Trinkgeld bucht das Backend als eigene Positionen.
 /// Für das Rückgeld zählt trotzdem beides zusammen — sonst bekäme der Gast sein
 /// Trinkgeld als Wechselgeld zurück.
-Kassierrechnung kassierrechnung(Warenkorb warenkorb, KasseSettingsBetrieb betrieb, Kassierstand stand) {
-  final summe = warenkorb.summeCents;
-  final rabatt = stand.rabattCents > summe ? summe : (stand.rabattCents < 0 ? 0 : stand.rabattCents);
-  final zahlen = zuZahlen(warenkorb, rabatt);
-  final trinkgeld = betrieb.tip && stand.trinkgeldCents > 0 ? stand.trinkgeldCents : 0;
+CheckoutTotals checkoutTotals(Cart warenkorb, PosBusinessSettings betrieb, CheckoutState stand) {
+  final summe = warenkorb.totalCents;
+  final rabatt = stand.discountCents > summe ? summe : (stand.discountCents < 0 ? 0 : stand.discountCents);
+  final zahlen = amountDue(warenkorb, rabatt);
+  final trinkgeld = betrieb.tip && stand.tipCents > 0 ? stand.tipCents : 0;
   final gesamt = zahlen + trinkgeld;
-  final bar = stand.zahlungsart == KeckPaymentMethod.cash && betrieb.change;
-  final gegeben = bar ? stand.gegebenCents : null;
-  final pruefung = abschlussPruefung(
-    zahlungsart: stand.zahlungsart,
-    zuZahlen: gesamt,
-    gegeben: stand.gegebenCents,
-    rueckgeldAn: betrieb.change,
-    leer: warenkorb.istLeer,
+  final bar = stand.paymentMethod == KeckPaymentMethod.cash && betrieb.change;
+  final gegeben = bar ? stand.tenderedCents : null;
+  final pruefung = completionCheck(
+    paymentMethod: stand.paymentMethod,
+    dueCents: gesamt,
+    tenderedCents: stand.tenderedCents,
+    changeEnabled: betrieb.change,
+    cartEmpty: warenkorb.isEmpty,
   );
-  return Kassierrechnung(
-    summeCents: summe,
-    rabattCents: rabatt,
-    zuZahlenCents: zahlen,
-    trinkgeldCents: trinkgeld,
-    gesamtCents: gesamt,
-    bar: bar,
-    gegebenCents: gegeben,
+  return CheckoutTotals(
+    subtotalCents: summe,
+    discountCents: rabatt,
+    dueCents: zahlen,
+    tipCents: trinkgeld,
+    totalCents: gesamt,
+    cash: bar,
+    tenderedCents: gegeben,
     // Nichts getippt heißt nicht „zu wenig": der Kassier ist schlicht noch
     // nicht fertig, und dafür gibt es keine rote Meldung.
-    fehltCents: bar && gegeben != null && gegeben > 0 && gegeben < gesamt ? gesamt - gegeben : 0,
-    rueckgeldCents: bar && gegeben != null ? rueckgeld(gesamt, gegeben) : 0,
-    bereit: pruefung.bereit,
-    grund: pruefung.grund,
+    missingCents: bar && gegeben != null && gegeben > 0 && gegeben < gesamt ? gesamt - gegeben : 0,
+    changeCents: bar && gegeben != null ? computeChange(gesamt, gegeben) : 0,
+    ready: pruefung.ready,
+    reason: pruefung.reason,
   );
 }
 
@@ -222,22 +222,22 @@ Kassierrechnung kassierrechnung(Warenkorb warenkorb, KasseSettingsBetrieb betrie
 /// mit `tenderedCents`, damit das Backend Gegeben und Rueckgeld am Beleg
 /// fuehrt und der Bon sie zeigt.
 ///
-/// [betragCents] ist der Teil, der bar bezahlt wird; ohne Angabe alles, was
-/// der Gast gibt ([Kassierrechnung.gesamtCents], also samt Trinkgeld -- der
+/// [amountCents] ist der Teil, der bar bezahlt wird; ohne Angabe alles, was
+/// der Gast gibt ([CheckoutTotals.totalCents], also samt Trinkgeld -- der
 /// Zahlbetrag des Backends zaehlt das Mitarbeiter-Trinkgeld mit). Bei
 /// mehreren Zahlungen ist es der Rest nach den Karten.
 ///
 /// `tenderedCents` geht nur mit, wenn das Rueckgeld gerechnet wird
-/// ([Kassierrechnung.bar]) und das Gegebene den Betrag deckt: zu wenig
+/// ([CheckoutTotals.cash]) und das Gegebene den Betrag deckt: zu wenig
 /// Gegebenes lehnte der Server ab (`payment_tendered_invalid`), und ein Beleg
 /// darf an einer Anzeige-Angabe nicht scheitern.
-KeckPaymentInput barzahlung(Kassierrechnung rechnung, {int? betragCents}) {
-  final betrag = betragCents ?? rechnung.gesamtCents;
-  final gegeben = rechnung.gegebenCents;
+KeckPaymentInput cashPayment(CheckoutTotals rechnung, {int? amountCents}) {
+  final betrag = amountCents ?? rechnung.totalCents;
+  final gegeben = rechnung.tenderedCents;
   return KeckPaymentInput(
     method: KeckPaymentMethod.cash,
     amountCents: betrag,
-    tenderedCents: rechnung.bar && gegeben != null && gegeben >= betrag ? gegeben : null,
+    tenderedCents: rechnung.cash && gegeben != null && gegeben >= betrag ? gegeben : null,
   );
 }
 
@@ -251,21 +251,21 @@ KeckPaymentInput barzahlung(Kassierrechnung rechnung, {int? betragCents}) {
 ///    ist die Gruppe, nicht die Zeile.
 /// 2. **Der Rabatt zaehlt mit.** Ein Korb ueber 12,00 € zu 20 % mit 2,00 €
 ///    Rabatt enthaelt 1,67 € MwSt, nicht 2,00 € — der Rabatt ist eine negative
-///    Belegposition ([verteileRabatt]) und senkt den Umsatz seines Satzes.
+///    Belegposition ([distributeDiscount]) und senkt den Umsatz seines Satzes.
 ///
-/// [rabattCents] ist derselbe Wert, der auch in [belegPositionen] geht.
-int ustSumme(Warenkorb warenkorb, {int rabattCents = 0}) =>
-    ustSummePositionen(belegPositionen(warenkorb, rabattCents));
+/// [discountCents] ist derselbe Wert, der auch in [receiptItems] geht.
+int vatTotalCents(Cart warenkorb, {int discountCents = 0}) =>
+    vatTotalCentsOfItems(receiptItems(warenkorb, discountCents));
 
 /// Enthaltene MwSt einer Belegpositionsliste — je Steuersatz gruppiert, dann
 /// einmal zerlegt. Fuer Aufrufer, die die Positionen schon haben (Storno,
-/// Nachdruck), und die gemeinsame Rechnung hinter [ustSumme].
-int ustSummePositionen(List<KasseneckItem> positionen) {
+/// Nachdruck), und die gemeinsame Rechnung hinter [vatTotalCents].
+int vatTotalCentsOfItems(List<KasseneckItem> positionen) {
   final brutto = <VatRate, int>{};
   for (final p in positionen) {
     brutto[p.vat] = (brutto[p.vat] ?? 0) + p.totalCents;
   }
-  return brutto.entries.fold(0, (s, e) => s + ustCentsAusBrutto(e.value, e.key.rate));
+  return brutto.entries.fold(0, (s, e) => s + vatCentsFromGross(e.value, e.key.rate));
 }
 
 /// Rabatt als negative Position(en) — eine je Steuersatz, anteilig zum
@@ -278,7 +278,7 @@ int ustSummePositionen(List<KasseneckItem> positionen) {
 ///
 /// Rabatt- und Stornozeilen (negativ) zählen nicht als Umsatz: ein zweiter
 /// Rabatt rechnet nur auf die Ware.
-List<KasseneckItem> verteileRabatt(List<KasseneckItem> positionen, int rabattCents, {String name = 'Rabatt'}) {
+List<KasseneckItem> distributeDiscount(List<KasseneckItem> positionen, int rabattCents, {String name = 'Rabatt'}) {
   if (rabattCents < 0) {
     throw ArgumentError.value(rabattCents, 'rabattCents', 'Rabatt muss eine ganze Zahl in Cent >= 0 sein');
   }

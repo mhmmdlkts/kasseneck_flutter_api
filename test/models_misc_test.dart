@@ -98,11 +98,11 @@ void main() {
       expect(inv.invoiceDate, DateTime(2026, 5, 16));
       expect(inv.serviceDateEnd, isNull);
       expect(inv.payUntil, 10);
-      expect(inv.paymentMethod, KeckInvoicePaymentMethode.bankTransferUnpaid);
+      expect(inv.paymentMethod, KeckInvoicePaymentMethod.bankTransferUnpaid);
     });
     test('unbekannte paymentMethod -> bankTransferUnpaid-Fallback', () {
       final j = invoiceJson()..['paymentMethod'] = 'xyz';
-      expect(KeckInvoice.fromJson(j).paymentMethod, KeckInvoicePaymentMethode.bankTransferUnpaid);
+      expect(KeckInvoice.fromJson(j).paymentMethod, KeckInvoicePaymentMethod.bankTransferUnpaid);
     });
     test('payUntil optional', () {
       final j = invoiceJson()..remove('payUntil');

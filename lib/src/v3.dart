@@ -146,7 +146,7 @@ bool _traegtKennzeichen(http.BaseResponse antwort) =>
 ///
 /// In allen drei Faellen bleibt der Rumpf ungelesen (ausser der 404-Huelle).
 /// Netzfehler und Zeitlimit werden [KasseneckHttpError] mit
-/// [KasseneckHttpError.netz] bzw. [KasseneckHttpError.zeitablauf]; die Frist
+/// [KasseneckHttpError.reasonNetwork] bzw. [KasseneckHttpError.reasonTimeout]; die Frist
 /// deckt Senden **und** Lesen des Rumpfs.
 Future<http.Response> v3Post(
   http.Client client, {
@@ -221,11 +221,11 @@ Future<http.Response> v3Post(
     }
     // Die Anfrage war draussen; das Zeitlimit beendet nur das Warten, nicht
     // die Arbeit des Servers.
-    throw KasseneckHttpError(functionName, 0, KasseneckHttpError.zeitablauf,
+    throw KasseneckHttpError(functionName, 0, KasseneckHttpError.reasonTimeout,
         causeType: '${e.runtimeType}', outcome: ausgangNetz, timeout: timeout);
   } on _Netzfehler catch (e) {
     // Nur der Typ, nie die Meldung: die kann Werte des Rumpfs tragen.
-    throw KasseneckHttpError(functionName, 0, KasseneckHttpError.netz,
+    throw KasseneckHttpError(functionName, 0, KasseneckHttpError.reasonNetwork,
         causeType: '${e.ursache.runtimeType}', outcome: ausgangNetz);
   }
 }
@@ -318,7 +318,7 @@ KasseneckApiError envelopeError(String functionName, Map<String, dynamic> huelle
   return KasseneckApiError(
     functionName,
     meldung is String && meldung.isNotEmpty ? meldung : (fallback ?? 'Der Aufruf ist fehlgeschlagen.'),
-    code: fehlercodeAus(huelle) ?? datenCode,
+    code: errorCodeFrom(huelle) ?? datenCode,
     details: daten is Map ? Map<String, dynamic>.from(daten) : const {},
   );
 }

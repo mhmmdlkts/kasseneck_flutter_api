@@ -9,96 +9,96 @@
 /// als Fehler behandelt — ein Beleg muss sich immer zeigen lassen.
 library;
 
-enum BelegAlign { left, center, right }
+enum LayoutAlign { left, center, right }
 
-BelegAlign _align(dynamic v) {
+LayoutAlign _align(dynamic v) {
   switch (v) {
     case 'center':
-      return BelegAlign.center;
+      return LayoutAlign.center;
     case 'right':
-      return BelegAlign.right;
+      return LayoutAlign.right;
     default:
-      return BelegAlign.left;
+      return LayoutAlign.left;
   }
 }
 
-sealed class BelegZeile {
-  const BelegZeile();
+sealed class LayoutLine {
+  const LayoutLine();
 
   /// Die Zeile in der Form des Vertrags (`expected/*.lines.json`).
   Map<String, Object> toJson() => switch (this) {
-        BelegText(:final text, :final align, :final bold) => {'kind': 'text', 'text': text, 'align': align.name, 'bold': bold},
-        BelegSpalten(:final columns) => {
+        LayoutTextLine(:final text, :final align, :final bold) => {'kind': 'text', 'text': text, 'align': align.name, 'bold': bold},
+        LayoutColumnsLine(:final columns) => {
             'kind': 'columns',
             'columns': [for (final c in columns) {'text': c.text, 'width': c.width, 'align': c.align.name}],
           },
-        BelegLinie(:final char) => {'kind': 'rule', 'char': char},
-        BelegLeerraum(:final lines) => {'kind': 'space', 'lines': lines},
-        BelegQr(:final data) => {'kind': 'qr', 'data': data},
-        BelegBanner(:final text, :final tone) => {'kind': 'banner', 'text': text, 'tone': tone.wire},
+        LayoutRuleLine(:final char) => {'kind': 'rule', 'char': char},
+        LayoutSpaceLine(:final lines) => {'kind': 'space', 'lines': lines},
+        LayoutQrLine(:final data) => {'kind': 'qr', 'data': data},
+        LayoutBannerLine(:final text, :final tone) => {'kind': 'banner', 'text': text, 'tone': tone.wire},
       };
 
   /// Liest eine Zeile; `null` für unbekannte Arten.
-  static BelegZeile? fromJson(Map<String, dynamic> j) {
+  static LayoutLine? fromJson(Map<String, dynamic> j) {
     switch (j['kind']) {
       case 'text':
-        return BelegText(text: (j['text'] ?? '').toString(), align: _align(j['align']), bold: j['bold'] == true);
+        return LayoutTextLine(text: (j['text'] ?? '').toString(), align: _align(j['align']), bold: j['bold'] == true);
       case 'columns':
         final spalten = ((j['columns'] as List?) ?? const [])
-            .map((c) => BelegSpalte(
+            .map((c) => LayoutColumn(
                   text: (c['text'] ?? '').toString(),
                   width: (c['width'] is num) ? (c['width'] as num).toInt() : 1,
                   align: _align(c['align']),
                 ))
             .toList();
-        return BelegSpalten(spalten);
+        return LayoutColumnsLine(spalten);
       case 'rule':
-        return BelegLinie(char: (j['char'] ?? '-').toString());
+        return LayoutRuleLine(char: (j['char'] ?? '-').toString());
       case 'space':
-        return BelegLeerraum(lines: (j['lines'] is num) ? (j['lines'] as num).toInt() : 1);
+        return LayoutSpaceLine(lines: (j['lines'] is num) ? (j['lines'] as num).toInt() : 1);
       case 'qr':
-        return BelegQr(data: (j['data'] ?? '').toString());
+        return LayoutQrLine(data: (j['data'] ?? '').toString());
       case 'banner':
-        return BelegBanner(text: (j['text'] ?? '').toString(), tone: LayoutBannerTone.aus(j['tone']));
+        return LayoutBannerLine(text: (j['text'] ?? '').toString(), tone: LayoutBannerTone.fromWire(j['tone']));
       default:
         return null;
     }
   }
 }
 
-class BelegText extends BelegZeile {
+class LayoutTextLine extends LayoutLine {
   final String text;
-  final BelegAlign align;
+  final LayoutAlign align;
   final bool bold;
-  const BelegText({required this.text, this.align = BelegAlign.left, this.bold = false});
+  const LayoutTextLine({required this.text, this.align = LayoutAlign.left, this.bold = false});
 }
 
-class BelegSpalte {
+class LayoutColumn {
   final String text;
   /// Zwölftel-Anteil der Breite (1..12).
   final int width;
-  final BelegAlign align;
-  const BelegSpalte({required this.text, required this.width, this.align = BelegAlign.left});
+  final LayoutAlign align;
+  const LayoutColumn({required this.text, required this.width, this.align = LayoutAlign.left});
 }
 
-class BelegSpalten extends BelegZeile {
-  final List<BelegSpalte> columns;
-  const BelegSpalten(this.columns);
+class LayoutColumnsLine extends LayoutLine {
+  final List<LayoutColumn> columns;
+  const LayoutColumnsLine(this.columns);
 }
 
-class BelegLinie extends BelegZeile {
+class LayoutRuleLine extends LayoutLine {
   final String char;
-  const BelegLinie({this.char = '-'});
+  const LayoutRuleLine({this.char = '-'});
 }
 
-class BelegLeerraum extends BelegZeile {
+class LayoutSpaceLine extends LayoutLine {
   final int lines;
-  const BelegLeerraum({this.lines = 1});
+  const LayoutSpaceLine({this.lines = 1});
 }
 
-class BelegQr extends BelegZeile {
+class LayoutQrLine extends LayoutLine {
   final String data;
-  const BelegQr({required this.data});
+  const LayoutQrLine({required this.data});
 }
 
 /// Ton einer hervorgehobenen Zeile, Drahtwert `tone` (Katalog `LAYOUT_TON`):
@@ -115,42 +115,42 @@ enum LayoutBannerTone {
 
   /// Liest den Drahtwert. Ein unbekannter kuenftiger Ton zeigt die Zeile als
   /// Belegart-Aufdruck: sichtbar bleibt sie so oder so, nur die Farbe fehlt.
-  static LayoutBannerTone aus(Object? wert) => wert == warning.wire ? warning : receiptType;
+  static LayoutBannerTone fromWire(Object? wert) => wert == warning.wire ? warning : receiptType;
 }
 
 /// Hervorgehobene Zeile: Belegart (STORNOBELEG …) oder Warnung
 /// (TESTKASSE/TESTSIGNATUR). Im Raster steht sie zwischen zwei `=`-Rahmenzeilen.
-class BelegBanner extends BelegZeile {
+class LayoutBannerLine extends LayoutLine {
   final String text;
   final LayoutBannerTone tone;
-  const BelegBanner({required this.text, this.tone = LayoutBannerTone.receiptType});
+  const LayoutBannerLine({required this.text, this.tone = LayoutBannerTone.receiptType});
 
   /// Warnung (TESTKASSE, TESTSIGNATUR, Ausfall) statt Belegart?
   bool get warning => tone == LayoutBannerTone.warning;
 }
 
-class BelegLayout {
-  final List<BelegZeile> lines;
+class ReceiptLayout {
+  final List<LayoutLine> lines;
   /// `mm58` oder `mm80` — wonach die Spaltenbreiten der USt-Tabelle gewählt wurden.
   final String paperSize;
   /// Version des Layout-Regelwerks (Drahtwert `ruleset`, heute 2). Fehlt er
   /// (Backend vor dem Regelwerk), gilt 1.
   final int ruleset;
 
-  const BelegLayout({required this.lines, required this.paperSize, required this.ruleset});
+  const ReceiptLayout({required this.lines, required this.paperSize, required this.ruleset});
 
-  static BelegLayout? fromJson(dynamic json) {
+  static ReceiptLayout? fromJson(dynamic json) {
     if (json is! Map) return null;
     final roh = json['lines'];
     if (roh is! List) return null;
-    final lines = <BelegZeile>[];
+    final lines = <LayoutLine>[];
     for (final z in roh) {
       if (z is Map) {
-        final zeile = BelegZeile.fromJson(Map<String, dynamic>.from(z));
+        final zeile = LayoutLine.fromJson(Map<String, dynamic>.from(z));
         if (zeile != null) lines.add(zeile);
       }
     }
-    return BelegLayout(
+    return ReceiptLayout(
       lines: lines,
       // Ohne Angabe 80 mm: das Server-Layout hat immer diese Breite.
       paperSize: (json['paperSize'] ?? 'mm80').toString(),
@@ -166,8 +166,8 @@ class BelegLayout {
       };
 
   /// Alle Banner-Texte (Belegart/Warnungen) — für Tests und Anzeigen.
-  List<String> get bannerTexte => lines.whereType<BelegBanner>().map((b) => b.text).toList();
+  List<String> get bannerTexts => lines.whereType<LayoutBannerLine>().map((b) => b.text).toList();
 
   /// Nutzlast des RKSV-QR (erste QR-Zeile) oder null.
-  String? get qrDaten => lines.whereType<BelegQr>().map((q) => q.data).cast<String?>().firstWhere((_) => true, orElse: () => null);
+  String? get qrPayload => lines.whereType<LayoutQrLine>().map((q) => q.data).cast<String?>().firstWhere((_) => true, orElse: () => null);
 }

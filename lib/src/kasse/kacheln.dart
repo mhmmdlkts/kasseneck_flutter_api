@@ -1,5 +1,5 @@
 /// Aus Artikelgruppen und Artikeln werden Kategorien und Kacheln — Zwilling
-/// von `kacheln.ts` der Browser-Kasse.
+/// von `tiles.ts` der Browser-Kasse.
 ///
 /// Reine Ableitung ohne Netz: sichtbar ist nur, was der Betrieb im Panel für
 /// die Kasse freigegeben hat und was nicht stillgelegt ist. Die Sortierung
@@ -15,31 +15,31 @@ import '../../enums/vat_rate.dart';
 import 'artikel.dart';
 import 'warenkorb.dart';
 
-const String ohneGruppeId = '__ohne__';
-const String ohneGruppeFarbe = '#64748B';
+const String ungroupedId = '__ohne__';
+const String ungroupedColor = '#64748B';
 
-class Kategorie {
-  const Kategorie({
+class TileCategory {
+  const TileCategory({
     required this.id,
     required this.name,
-    required this.farbe,
-    required this.kacheln,
+    required this.color,
+    required this.tiles,
     this.symbol,
   });
 
   final String id;
   final String name;
-  final String farbe;
+  final String color;
   final String? symbol;
-  final List<KasseArtikel> kacheln;
+  final List<PosArticle> tiles;
 }
 
 int _nachName(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());
 
-List<Kategorie> kategorien(List<Artikelgruppe> gruppen, List<KasseArtikel> artikel) {
+List<TileCategory> tileCategories(List<ArticleGroup> gruppen, List<PosArticle> artikel) {
   final sichtbar = [
     for (final a in artikel)
-      if (a.sichtbar && a.aktiv) a,
+      if (a.visible && a.active) a,
   ];
   final sortiert = [...gruppen]..sort((a, b) {
       final s = a.sort.compareTo(b.sort);
@@ -47,7 +47,7 @@ List<Kategorie> kategorien(List<Artikelgruppe> gruppen, List<KasseArtikel> artik
     });
   final bekannt = {for (final g in sortiert) g.id};
 
-  List<KasseArtikel> kachelnJe(bool Function(KasseArtikel) passt) {
+  List<PosArticle> kachelnJe(bool Function(PosArticle) passt) {
     final aus = [
       for (final a in sichtbar)
         if (passt(a)) a,
@@ -59,31 +59,31 @@ List<Kategorie> kategorien(List<Artikelgruppe> gruppen, List<KasseArtikel> artik
     return aus;
   }
 
-  final aus = <Kategorie>[];
+  final aus = <TileCategory>[];
   for (final g in sortiert) {
-    final kacheln = kachelnJe((a) => a.gruppeId == g.id);
+    final kacheln = kachelnJe((a) => a.groupId == g.id);
     // Eine leere Kategorie ist kein Angebot, sondern ein Griff ins Leere.
     if (kacheln.isEmpty) continue;
-    aus.add(Kategorie(id: g.id, name: g.name, farbe: g.farbe, symbol: g.symbol, kacheln: kacheln));
+    aus.add(TileCategory(id: g.id, name: g.name, color: g.color, symbol: g.symbol, tiles: kacheln));
   }
 
   // Artikel ohne (oder mit gelöschter) Gruppe gehen nicht verloren — sie
   // landen hinten, damit der Betrieb sie überhaupt bemerkt.
-  final rest = kachelnJe((a) => a.gruppeId == null || !bekannt.contains(a.gruppeId));
+  final rest = kachelnJe((a) => a.groupId == null || !bekannt.contains(a.groupId));
   if (rest.isNotEmpty) {
-    aus.add(Kategorie(id: ohneGruppeId, name: 'Ohne Gruppe', farbe: ohneGruppeFarbe, kacheln: rest));
+    aus.add(TileCategory(id: ungroupedId, name: 'Ohne Gruppe', color: ungroupedColor, tiles: rest));
   }
   return aus;
 }
 
 /// Suche über alle sichtbaren Kacheln (Name, ohne Groß/Klein, Teilwort).
-List<KasseArtikel> suche(List<Kategorie> kategorien, String text) {
+List<PosArticle> searchTiles(List<TileCategory> kategorien, String text) {
   final t = text.trim().toLowerCase();
   if (t.isEmpty) return const [];
   final gesehen = <String>{};
-  final aus = <KasseArtikel>[];
+  final aus = <PosArticle>[];
   for (final k in kategorien) {
-    for (final a in k.kacheln) {
+    for (final a in k.tiles) {
       if (gesehen.contains(a.id)) continue;
       if (!a.name.toLowerCase().contains(t)) continue;
       gesehen.add(a.id);
@@ -94,7 +94,7 @@ List<KasseArtikel> suche(List<Kategorie> kategorien, String text) {
 }
 
 /// Der RKSV-Steuersatz zu einer Prozentzahl — oder `null` bei Unbekanntem.
-VatRate? steuersatzZu(num rate) {
+VatRate? vatRateFor(num rate) {
   for (final v in VatRate.values) {
     if (v.rate == rate) return v;
   }
@@ -102,21 +102,21 @@ VatRate? steuersatzZu(num rate) {
 }
 
 /// Was aus einer Kachel im Korb wird; `null`, wenn die Kachel nicht buchbar ist.
-Positionsentwurf? alsEntwurf(KasseArtikel a) {
-  final satz = a.steuersatz == null ? null : steuersatzZu(a.steuersatz!);
-  final preis = a.preisCents;
+CartItemDraft? draftFromArticle(PosArticle a) {
+  final satz = a.vatRate == null ? null : vatRateFor(a.vatRate!);
+  final preis = a.unitPriceCents;
   if (satz == null || preis == null || preis < 0) return null;
-  return Positionsentwurf(
-    bezeichnung: a.name,
-    betragCents: preis,
-    steuersatz: satz,
-    maxMenge: a.maxMenge?.toInt(),
+  return CartItemDraft(
+    name: a.name,
+    unitPriceCents: preis,
+    vatRate: satz,
+    maxQuantity: a.maxQuantity?.toInt(),
   );
 }
 
 /// Kontrastfarbe für Text auf voller Kachelfläche. Eine kaputte Farbe bekommt
 /// hellen Text statt eines Absturzes.
-String textAuf(String hex) {
+String textColorOn(String hex) {
   final h = hex.replaceFirst('#', '');
   if (h.length != 6) return '#ffffff';
   final r = int.tryParse(h.substring(0, 2), radix: 16);
@@ -127,34 +127,34 @@ String textAuf(String hex) {
 }
 
 /// Ergebnis eines Kachelgriffs: der neue Korb und die betroffene Zeile.
-class Kachelbuchung {
-  const Kachelbuchung({required this.korb, required this.zeileId, required this.menge});
+class TileBooking {
+  const TileBooking({required this.cart, required this.lineId, required this.quantity});
 
-  final Warenkorb korb;
-  final String zeileId;
-  final int menge;
+  final Cart cart;
+  final String lineId;
+  final int quantity;
 }
 
 /// Kachel in den Korb.
 ///
-/// Mit [buendeln] wird eine gleiche Zeile (Name, Preis, Satz) hochgezählt, ohne
+/// Mit [bundle] wird eine gleiche Zeile (Name, Preis, Satz) hochgezählt, ohne
 /// entsteht je Griff eine Zeile. Die Höchstmenge des Artikels hält auch hier —
-/// [Warenkorb.mengeGesetzt] deckelt, egal woher der Griff kommt.
-Kachelbuchung gebucht(Warenkorb korb, Positionsentwurf entwurf, {required bool buendeln}) {
-  if (buendeln) {
-    for (final p in korb.positionen) {
-      if (p.name != entwurf.bezeichnung.trim()) continue;
-      if (p.priceCents != entwurf.betragCents) continue;
-      if (p.vat != entwurf.steuersatz) continue;
-      final neu = korb.mengeGesetzt(p.id, p.quantity + 1);
-      final zeile = neu.positionen.firstWhere((z) => z.id == p.id);
-      return Kachelbuchung(korb: neu, zeileId: p.id, menge: zeile.quantity);
+/// [Cart.withQuantity] deckelt, egal woher der Griff kommt.
+TileBooking bookTile(Cart korb, CartItemDraft entwurf, {required bool bundle}) {
+  if (bundle) {
+    for (final p in korb.items) {
+      if (p.name != entwurf.name.trim()) continue;
+      if (p.priceCents != entwurf.unitPriceCents) continue;
+      if (p.vat != entwurf.vatRate) continue;
+      final neu = korb.withQuantity(p.id, p.quantity + 1);
+      final zeile = neu.items.firstWhere((z) => z.id == p.id);
+      return TileBooking(cart: neu, lineId: p.id, quantity: zeile.quantity);
     }
   }
-  final neu = korb.hinzugefuegt(entwurf);
+  final neu = korb.added(entwurf);
   // Ohne Bezeichnung bleibt der Korb unverändert; dann gibt es keine Zeile.
-  if (identical(neu, korb) || neu.positionen.isEmpty) {
-    return Kachelbuchung(korb: korb, zeileId: '', menge: 0);
+  if (identical(neu, korb) || neu.items.isEmpty) {
+    return TileBooking(cart: korb, lineId: '', quantity: 0);
   }
-  return Kachelbuchung(korb: neu, zeileId: neu.positionen.last.id, menge: 1);
+  return TileBooking(cart: neu, lineId: neu.items.last.id, quantity: 1);
 }

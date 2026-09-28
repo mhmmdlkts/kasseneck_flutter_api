@@ -33,8 +33,8 @@ final List<String> _namen = (() {
   return (manifest['receipts'] as Map<String, dynamic>).keys.toList()..sort();
 })();
 
-BelegLayout _layout(String name) =>
-    BelegLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/$name.lines.json').readAsStringSync()))!;
+ReceiptLayout _layout(String name) =>
+    ReceiptLayout.fromJson(jsonDecode(File('${_wurzel.path}/expected/$name.lines.json').readAsStringSync()))!;
 
 List<Map<String, dynamic>> _golden(String name, int zeichen) {
   final blatt = jsonDecode(File('${_wurzel.path}/expected/$name.sheet$zeichen.json').readAsStringSync()) as Map<String, dynamic>;
@@ -43,15 +43,15 @@ List<Map<String, dynamic>> _golden(String name, int zeichen) {
 }
 
 /// Dasselbe Probe-Logo, mit dem die Goldens erzeugt wurden (npm `scripts/belege-fixtures.mjs`).
-const _probe = BlattLogo(stufe: LogoStufe.m, pxBreite: 300, pxHoehe: 120);
+const _probe = SheetLogo(size: SheetLogoSize.m, pixelWidth: 300, pixelHeight: 120);
 
-DruckLogo _druckLogo(int zeichen) {
-  final m = logoRasterMass(logoMass(_probe, zeichen), zeichen);
-  return DruckLogo(
-    stufe: _probe.stufe,
-    pxBreite: _probe.pxBreite,
-    pxHoehe: _probe.pxHoehe,
-    raster: LogoRaster(breite: m.breite, hoehe: m.hoehe, punkte: Uint8List(m.breite * m.hoehe)..fillRange(0, m.breite * m.hoehe, 1)),
+PrintLogo _druckLogo(int zeichen) {
+  final m = logoRasterSize(logoDimensions(_probe, zeichen), zeichen);
+  return PrintLogo(
+    size: _probe.size,
+    pixelWidth: _probe.pixelWidth,
+    pixelHeight: _probe.pixelHeight,
+    raster: LogoRaster(width: m.width, height: m.height, dots: Uint8List(m.width * m.height)..fillRange(0, m.width * m.height, 1)),
   );
 }
 
@@ -96,8 +96,8 @@ void main() {
         final soll = _golden(name, zeichen);
         final wo = '$name/$zeichen';
         final paper = PrintPaper(paperSize: zeichen == 32 ? KeckPaperSize.mm58 : KeckPaperSize.mm80, profile: CapabilityProfile());
-        await paper.setBelegBlatt(layout, logo: _druckLogo(zeichen), marke: true, cut: false, qrMode: QrPrintMode.native);
-        expect(paper.qrFehler, isNull, reason: '$wo: QR fiel aus');
+        await paper.setReceiptSheet(layout, logo: _druckLogo(zeichen), brandMark: true, cut: false, qrMode: QrPrintMode.native);
+        expect(paper.qrError, isNull, reason: '$wo: QR fiel aus');
 
         // Nach dem einen Kopfbefehl von reset() (Initialisieren + Codepage in
         // einem Block, seit Task 7 Punkt 4 nicht mehr doppelt) setzt jeder
@@ -167,7 +167,7 @@ void main() {
     late Uint8List png;
 
     setUpAll(() async {
-      png = await encodePng(RasterImage.filled(_probe.pxBreite, _probe.pxHoehe, 0, 0, 0, 255));
+      png = await encodePng(RasterImage.filled(_probe.pixelWidth, _probe.pixelHeight, 0, 0, 0, 255));
     });
     setUp(() {
       LogoService.httpClient = MockClient((_) async => http.Response.bytes(png, 200));
@@ -225,8 +225,8 @@ void main() {
           await tester.runAsync(() => tester.pumpWidget(MaterialApp(
                 home: Scaffold(
                   body: SingleChildScrollView(
-                    child: KeckBelegBlattWidget(
-                        key: ValueKey(zeichen), layout: layout, zeichen: zeichen, logoUrl: logoUrl, logoStufe: _probe.stufe, marke: true),
+                    child: KeckReceiptSheetWidget(
+                        key: ValueKey(zeichen), layout: layout, charsPerLine: zeichen, logoUrl: logoUrl, logoSize: _probe.size, brandMark: true),
                   ),
                 ),
               )));
@@ -257,7 +257,7 @@ void main() {
           await tester.pumpWidget(MaterialApp(
             home: Scaffold(
               body: SingleChildScrollView(
-                child: KeckBelegBlattWidget(key: ValueKey(zeichen), layout: layout, zeichen: zeichen, marke: true),
+                child: KeckReceiptSheetWidget(key: ValueKey(zeichen), layout: layout, charsPerLine: zeichen, brandMark: true),
               ),
             ),
           ));

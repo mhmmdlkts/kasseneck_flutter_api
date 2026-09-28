@@ -12,79 +12,79 @@ void main() {
   group('QrMass.berechne', () {
     test('Normalfall: groesste passende Groesse, gedeckelt', () {
       // 21 Module + 8 Ruhezone = 29; 384 / 29 = 13 -> der Deckel entscheidet.
-      final QrGroesse g = QrMass.berechne(papierbreitePunkte: 384, moduleAnzahl: 21);
-      expect(g.passt, isTrue);
-      expect(g.punkte, 6, reason: 'auto deckelt auf den Bestandswert 6');
+      final QrSizing g = QrMetrics.compute(paperWidthDots: 384, moduleCount: 21);
+      expect(g.fits, isTrue);
+      expect(g.moduleDots, 6, reason: 'auto deckelt auf den Bestandswert 6');
       expect(g.module, 21);
-      expect(g.breitePunkte, 29 * 6);
-      expect(g.unterMindestmass, isFalse);
+      expect(g.widthDots, 29 * 6);
+      expect(g.belowMinimum, isFalse);
     });
 
     test('der Deckel hebt nie an, was nicht passt', () {
       // 57 Module -> 65; 384 / 65 = 5. `gross` will 8 und bekommt trotzdem 5.
-      for (final QrModulGroesse w in QrModulGroesse.values) {
-        final QrGroesse g =
-            QrMass.berechne(papierbreitePunkte: 384, moduleAnzahl: 57, groesse: w);
-        expect(g.punkte, w == QrModulGroesse.klein ? 4 : 5, reason: w.name);
+      for (final QrModuleSize w in QrModuleSize.values) {
+        final QrSizing g =
+            QrMetrics.compute(paperWidthDots: 384, moduleCount: 57, moduleSize: w);
+        expect(g.moduleDots, w == QrModuleSize.small ? 4 : 5, reason: w.name);
       }
     });
 
     test('80 mm: gerechnet waeren 8, `auto` bleibt bei 6', () {
       // Hier haengt die Byteidentitaet des Bestands: ohne Deckel druckte jedes
       // 80-mm-Geraet ab sofort einen groesseren QR als gestern.
-      expect(QrMass.berechne(papierbreitePunkte: 576, moduleAnzahl: 57).punkte, 6);
+      expect(QrMetrics.compute(paperWidthDots: 576, moduleCount: 57).moduleDots, 6);
       expect(
-          QrMass.berechne(
-                  papierbreitePunkte: 576,
-                  moduleAnzahl: 57,
-                  groesse: QrModulGroesse.gross)
-              .punkte,
+          QrMetrics.compute(
+                  paperWidthDots: 576,
+                  moduleCount: 57,
+                  moduleSize: QrModuleSize.large)
+              .moduleDots,
           8);
     });
 
     test('genau an der Mindestgroesse: 4 Punkte, ohne Ausnahmemeldung', () {
       // 77 Module -> 85; 384 / 85 = 4.
-      final QrGroesse g = QrMass.berechne(papierbreitePunkte: 384, moduleAnzahl: 77);
-      expect(g.punkte, 4);
-      expect(g.unterMindestmass, isFalse);
+      final QrSizing g = QrMetrics.compute(paperWidthDots: 384, moduleCount: 77);
+      expect(g.moduleDots, 4);
+      expect(g.belowMinimum, isFalse);
     });
 
     test('unter der Mindestgroesse: 3 Punkte, und der Aufrufer erfaehrt es', () {
       // 93 Module -> 101; 384 / 101 = 3. Erlaubt, aber keine stille Notloesung.
-      final QrGroesse g = QrMass.berechne(papierbreitePunkte: 384, moduleAnzahl: 93);
-      expect(g.punkte, 3);
-      expect(g.unterMindestmass, isTrue);
-      expect(g.passt, isTrue);
+      final QrSizing g = QrMetrics.compute(paperWidthDots: 384, moduleCount: 93);
+      expect(g.moduleDots, 3);
+      expect(g.belowMinimum, isTrue);
+      expect(g.fits, isTrue);
     });
 
     test('auch mit 3 zu breit: es passt nicht, und das steht im Ergebnis', () {
       // 121 Module -> 129; 384 / 129 = 2.
-      final QrGroesse g = QrMass.berechne(papierbreitePunkte: 384, moduleAnzahl: 121);
-      expect(g.passt, isFalse);
-      expect(g.punkte, isNull);
-      expect(g.breitePunkte, 0);
+      final QrSizing g = QrMetrics.compute(paperWidthDots: 384, moduleCount: 121);
+      expect(g.fits, isFalse);
+      expect(g.moduleDots, isNull);
+      expect(g.widthDots, 0);
     });
 
     test('sinnlose Eingaben werfen, statt still 0 zu liefern', () {
-      expect(() => QrMass.berechne(papierbreitePunkte: 0, moduleAnzahl: 21),
+      expect(() => QrMetrics.compute(paperWidthDots: 0, moduleCount: 21),
           throwsArgumentError);
-      expect(() => QrMass.berechne(papierbreitePunkte: 384, moduleAnzahl: 0),
+      expect(() => QrMetrics.compute(paperWidthDots: 384, moduleCount: 0),
           throwsArgumentError);
     });
   });
 
   group('QrMass.modulAnzahl', () {
     test('rechnet mit Fehlerkorrektur M, nicht mit einer Tabelle im Kopf', () {
-      expect(QrMass.modulAnzahl('TESTQRDATA'), 21);
-      expect(QrMass.modulAnzahl('X' * 400), 77);
-      expect(QrMass.modulAnzahl('X' * 1000), 121);
+      expect(QrMetrics.moduleCount('TESTQRDATA'), 21);
+      expect(QrMetrics.moduleCount('X' * 400), 77);
+      expect(QrMetrics.moduleCount('X' * 1000), 121);
     });
 
     test('M liegt nie unter L -- die Rechnung ist konservativ', () {
       // Der native Befehl druckt mit L. Wer mit M rechnet, rechnet also nie zu
       // knapp. Waere es umgekehrt, passte das Symbol rechnerisch und auf dem
       // Papier nicht.
-      expect(QrMass.modulAnzahl('X' * 300), greaterThanOrEqualTo(61));
+      expect(QrMetrics.moduleCount('X' * 300), greaterThanOrEqualTo(61));
     });
   });
 
@@ -94,23 +94,23 @@ void main() {
           '_R1-AT1_Demo-Kassa-01_AT0_2026-09-11T12:34:56_10,00_0,00_0,00_0,00_0,00_'
           'qVTG5xZ8kQA=_a1b2c3d4_wO4NfGk2pLQ=_hIRFbbuAUUk9j7t0lwdZQtVUqbLfOyvF6Qr8zZ3+'
           'kTs5bwWJmn0PxYuAeD2cRiVgKlNpHXtMEoS4UvCa7dIB==';
-      final QrGroesse g =
-          QrMass.fuer(nutzlast: qr, papierbreitePunkte: KeckPaperSize.mm58.druckPunkte);
+      final QrSizing g =
+          QrMetrics.forPayload(payload: qr, paperWidthDots: KeckPaperSize.mm58.printWidthDots);
       expect(g.module, 57);
-      expect(g.punkte, 5);
-      expect(g.breitePunkte, 325);
-      expect(g.breitePunkte, lessThanOrEqualTo(384));
+      expect(g.moduleDots, 5);
+      expect(g.widthDots, 325);
+      expect(g.widthDots, lessThanOrEqualTo(384));
       // Mit der alten festen Groesse waere es 390 gewesen -- zu breit.
-      expect(65 * 6, greaterThan(KeckPaperSize.mm58.druckPunkte));
+      expect(65 * 6, greaterThan(KeckPaperSize.mm58.printWidthDots));
     });
 
     test('leere Nutzlast wirft nicht, sondern passt nicht', () {
-      expect(QrMass.fuer(nutzlast: '', papierbreitePunkte: 384).passt, isFalse);
+      expect(QrMetrics.forPayload(payload: '', paperWidthDots: 384).fits, isFalse);
     });
   });
 
   test('Papierbreiten stehen in Druckpunkten am Format', () {
-    expect(KeckPaperSize.mm58.druckPunkte, 384);
-    expect(KeckPaperSize.mm80.druckPunkte, 576);
+    expect(KeckPaperSize.mm58.printWidthDots, 384);
+    expect(KeckPaperSize.mm80.printWidthDots, 576);
   });
 }

@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:kasseneck_api/models/beleg_blatt.dart' show LogoStufe;
+import 'package:kasseneck_api/models/beleg_blatt.dart' show SheetLogoSize;
 import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
@@ -92,11 +92,11 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Groesse des Firmenlogos am Beleg (Kasse-Einstellung `logoScale` des
   /// Betriebs, vom Backend als Metadatum `logo_scale` mitgeliefert). Bon und
   /// Bildschirm setzen das Logo in dieser Stufe; fehlt sie, gilt M.
-  LogoStufe logoScale;
+  SheetLogoSize logoScale;
 
   /// Zeilenmodell des Backends (Kopf/Fuß wie beim Ausstellen, Belegart-
   /// Aufdruck, Regelwerk des Belegs); null bei altem Backend.
-  BelegLayout? layout;
+  ReceiptLayout? layout;
 
   /// Zeigt das gelieferte Zeilenmodell alles, was dieser Beleg hergibt?
   ///
@@ -118,20 +118,20 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// dann können dieser Getter, `PrintPaper.setKeckReceipt` und
   /// `KeckReceiptWidget` verschwinden, und es gibt wirklich nur einen Bauer.
   ///
-  /// Mit Zahlungsliste zaehlt jeder Kartenblock aus [kartenzahlungen]: steht
+  /// Mit Zahlungsliste zaehlt jeder Kartenblock aus [cardPayments]: steht
   /// derselbe Anbieter zweimal auf dem Beleg, muss sein Kopf auch zweimal im
   /// Layout stehen -- ein Paket vor der Aufschluesselung zeigte nur den Block
   /// der alten Einzelfelder, und der zweite Kartenbeleg fiele stumm weg.
-  bool get layoutIstVollstaendig {
-    final BelegLayout? l = layout;
+  bool get isLayoutComplete {
+    final ReceiptLayout? l = layout;
     if (l == null) return false;
     final Map<String, int> noetig = {};
-    for (final k in kartenzahlungen) {
-      final String? ueberschrift = kartenblockUeberschrift[k.anbieter];
+    for (final k in cardPayments) {
+      final String? ueberschrift = cardBlockHeadings[k.provider];
       if (ueberschrift != null) noetig[ueberschrift] = (noetig[ueberschrift] ?? 0) + 1;
     }
     for (final MapEntry(key: ueberschrift, value: anzahl) in noetig.entries) {
-      final int vorhanden = l.lines.where((z) => z is BelegText && z.text.contains(ueberschrift)).length;
+      final int vorhanden = l.lines.where((z) => z is LayoutTextLine && z.text.contains(ueberschrift)).length;
       if (vorhanden < anzahl) return false;
     }
     return true;
@@ -146,7 +146,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// ohne Terminaldaten neben gesetzten Altfeldern: dort traegt der alte
   /// Block, wie ohne Liste. `custom` bleibt drin (der Bauer entscheidet, dass
   /// er nichts zeigt), ein unbekannter Anbieter nicht.
-  List<({CreditCardProvider anbieter, Map<String, dynamic> daten, String? kennung})> get kartenzahlungen {
+  List<({CreditCardProvider provider, Map<String, dynamic> data, String? paymentId})> get cardPayments {
     final List<KeckPayment>? zahlungen = payments;
     final bool altfelderTragen = zahlungen != null &&
         zahlungen.length <= 1 &&
@@ -157,13 +157,13 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       return [
         for (final z in zahlungen)
           if (z.provider != null && z.providerData != null)
-            (anbieter: z.provider!, daten: z.providerData!, kennung: z.providerPaymentId),
+            (provider: z.provider!, data: z.providerData!, paymentId: z.providerPaymentId),
       ];
     }
     final CreditCardProvider? anbieter = creditCardProvider;
     final Map<String, dynamic>? daten = cardPaymentData;
     if (anbieter == null || daten == null) return const [];
-    return [(anbieter: anbieter, daten: daten, kennung: cardPaymentId)];
+    return [(provider: anbieter, data: daten, paymentId: cardPaymentId)];
   }
   /// Beleg einer Testumgebung (Aufdruck TESTKASSE), Drahtfeld `testCashregister`.
   bool testCashregister;
@@ -187,12 +187,12 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// `final`, `outage_end`); bestimmt den Aufdruck (MONATSBELEG …).
   String? zeroKind;
 
-  /// Nur am Storno-Beleg: der Grund, Code aus `stornogruende` (englisch, wie
+  /// Nur am Storno-Beleg: der Grund, Code aus `cancellationReasons` (englisch, wie
   /// unter `/v3`; ein unbekannter kuenftiger Code bleibt roh stehen).
   String? cancellationReason;
 
   /// Was von diesem Beleg schon storniert (oder gerade reserviert) ist — roh,
-  /// wie das Backend es führt. Gedeutet wird es in `restmengen`; hier steht es
+  /// wie das Backend es führt. Gedeutet wird es in `remainingQuantities`; hier steht es
   /// nur, damit der Storno-Dialog Reste zeigen kann, bevor er den Server fragt.
   List<Map<String, dynamic>> cancellations;
 
@@ -233,7 +233,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.signatureSuccess,
     this.customProjectId,
     this.showKreiseckLogo = false,
-    this.logoScale = LogoStufe.m,
+    this.logoScale = SheetLogoSize.m,
     this.layout,
     this.testCashregister = false,
     this.testSignature = false,
@@ -263,8 +263,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     String? footer4,
     required List<String> thanksMessage,
     bool showKreiseckLogo = false,
-    LogoStufe logoScale = LogoStufe.m,
-    BelegLayout? layout,
+    SheetLogoSize logoScale = SheetLogoSize.m,
+    ReceiptLayout? layout,
     bool testCashregister = false,
     bool testSignature = false,
     String? headerVersionId,
@@ -301,7 +301,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       cardPaymentData: receipt['cardPaymentData'] is Map
           ? Map<String, dynamic>.from(receipt['cardPaymentData'] as Map)
           : null,
-      payments: KeckPayment.listeAus(receipt['payments']),
+      payments: KeckPayment.listFromJson(receipt['payments']),
       customerDetails: List<String>.from(receipt['customerDetails']?.toString().split('\n')??[]),
       legalMessage: List<String>.from(receipt['legalMessage']?.toString().split('\n')??[]),
       signatureSuccess: receipt['signatureSuccess'] is bool ? receipt['signatureSuccess'] as bool : null,
@@ -344,7 +344,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// (`company`, `vatId`, `taxNumber`, …), `testCashregister`,
   /// `testSignature`, `headerVersionId`, `registrationInfo`, `logo_scale` und
   /// das Server-Layout. Die deutschen Namen aus 0.x (`uid`, `taxnr`,
-  /// `testKasse`, `logo_skala` …) liest diese Stelle nicht mehr; eine in 9.x
+  /// `testCashregister`, `logo_skala` …) liest diese Stelle nicht mehr; eine in 9.x
   /// gespeicherte Form geht vorher durch [migrateStoredReceiptJson].
   factory KasseneckReceipt.fromJson(Map<String, dynamic> json) {
     final roh = json['receipt'];
@@ -370,8 +370,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       logoUrl: json['logo_url'] is String ? json['logo_url'] as String : null,
       thanksMessage: List<String>.from(json['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: json['kreiseck_logo'] == true,
-      logoScale: LogoStufe.ausKuerzel(json['logo_scale'] is String ? json['logo_scale'] as String : null),
-      layout: BelegLayout.fromJson(json['layout']),
+      logoScale: SheetLogoSize.fromCode(json['logo_scale'] is String ? json['logo_scale'] as String : null),
+      layout: ReceiptLayout.fromJson(json['layout']),
       testCashregister: json['testCashregister'] == true,
       testSignature: json['testSignature'] == true,
       headerVersionId: _nichtLeer(json['headerVersionId']),
@@ -431,7 +431,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'logo_url': logoUrl,
       'thanks_message': thanksMessage.join(r'\n'),
       'kreiseck_logo': showKreiseckLogo,
-      'logo_scale': logoScale.kuerzel,
+      'logo_scale': logoScale.code,
       'testCashregister': testCashregister,
       'testSignature': testSignature,
       'headerVersionId': ?headerVersionId,
@@ -470,7 +470,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       logoUrl: metadata['logo_url'] is String ? metadata['logo_url'] as String : null,
       thanksMessage: List<String>.from(metadata['thanks_message']?.toString().split(r'\n')??[]),
       showKreiseckLogo: metadata['kreiseck_logo'] == true,
-      logoScale: LogoStufe.ausKuerzel(metadata['logo_scale'] is String ? metadata['logo_scale'] as String : null),
+      logoScale: SheetLogoSize.fromCode(metadata['logo_scale'] is String ? metadata['logo_scale'] as String : null),
     );
   }
 
@@ -495,15 +495,15 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Anschrift und Fusszeilen sind auf einem Beleg keine Pflichtangaben (erst
   /// auf einer Rechnung nach § 11 UStG). Die Signatur- und Identitaetsfelder
   /// laufen weiter ueber `_pflichttext` und werfen.
-  List<String> get fehlendePflichtangaben => [
+  List<String> get missingMandatoryFields => [
         // § 132a Abs. 3 Z 1 BAO: eindeutige Bezeichnung des liefernden oder
         // leistenden Unternehmers.
         if (companyName.trim().isEmpty) 'company',
       ];
 
   /// `false`, wenn dem Beleg eine Pflichtangabe fehlt — siehe
-  /// [fehlendePflichtangaben].
-  bool get pflichtangabenVollstaendig => fehlendePflichtangaben.isEmpty;
+  /// [missingMandatoryFields].
+  bool get hasMandatoryFields => missingMandatoryFields.isEmpty;
 
   String get downloadUrl => '${KasseneckApi.downloadBaseUrl}/$fullReceiptId';
 
@@ -571,15 +571,15 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   Future printReceiptWifi() => KeckPrinterService.printReceiptWifi(this);
   Future printReceiptBluetooth(
           {QrPrintMode qrMode = QrPrintMode.imageRaster,
-          QrModulGroesse qrGroesse = QrModulGroesse.auto}) =>
-      KeckPrinterService.printReceiptBluetooth(this, qrMode: qrMode, qrGroesse: qrGroesse);
+          QrModuleSize qrModuleSize = QrModuleSize.auto}) =>
+      KeckPrinterService.printReceiptBluetooth(this, qrMode: qrMode, qrModuleSize: qrModuleSize);
 
   Future<List<Uint8List>> getPrintBytes(
           {required KeckPaperSize paperSize,
           QrPrintMode qrMode = QrPrintMode.imageRaster,
-          QrModulGroesse qrGroesse = QrModulGroesse.auto}) =>
+          QrModuleSize qrModuleSize = QrModuleSize.auto}) =>
       KeckPrinterService.getBytesFromReceipt(this, paperSize,
-          qrMode: qrMode, qrGroesse: qrGroesse);
+          qrMode: qrMode, qrModuleSize: qrModuleSize);
 
   bool get isSigFailed => !RKSVService.isSigSuccess(sig);
 
@@ -690,7 +690,7 @@ String _text(Object? wert) => wert is String ? wert : '';
 String? _nichtLeer(Object? wert) => wert is String && wert.isNotEmpty ? wert : null;
 
 /// Bringt einen Beleg in der gespeicherten Form von 9.x (`toJson` mit 0.x-
-/// Namen: `uid`, `taxnr`, `logo_skala`, `testKasse`, `testSignatur`, `kopfId`,
+/// Namen: `uid`, `taxnr`, `logo_skala`, `testCashregister`, `testSignatur`, `kopfId`,
 /// Layout mit `regelwerk`/`ton`) in die Form von `/v3`, die
 /// [KasseneckReceipt.fromJson] liest. Fuer lokale Ablagen, die das Update
 /// ueberleben muessen: gelesen wird migriert, verworfen wird nichts. Schon

@@ -1,7 +1,7 @@
 /// Zahlbetrag eines Belegs in ganzen Cent: Zwilling von `receiptDueCents` in
 /// `@kreiseck/kasseneck-api` 1.0 (`src/receipt/due.ts`) und damit von
-/// `createReceipt` im Backend, also `beleg-toepfe.belegToepfe(...).zaehlerDeltaCents`
-/// plus `zahlungen-core.wertgutscheinFlussCents`, mit den Trinkgeld-Positionen,
+/// `createReceipt` im Backend, also `receipt-toepfe.belegToepfe(...).zaehlerDeltaCents`
+/// plus `payments-core.wertgutscheinFlussCents`, mit den Trinkgeld-Positionen,
 /// die `tip-core.buildTipItems` aus `tip` bzw. aus `payments[].tipCents` baut.
 ///
 /// `createReceipt` hat keinen Probelauf. Unter `/v3` ist `payments[]` Pflicht,
@@ -63,16 +63,16 @@ class ReceiptDueTip {
 
   /// Bruecke vom Trinkgeld am Verkauf ([KeckTip], wie es `sellReceipt`
   /// nimmt) zum Trinkgeld der Rechnung. Ob ein Empfaenger Inhaber ist, weiss
-  /// nur die Kasse: [istInhaber] ist Pflicht, sobald [tip] Empfaenger nennt.
+  /// nur die Kasse: [isOwner] ist Pflicht, sobald [tip] Empfaenger nennt.
   /// Ohne Empfaenger entscheidet `tipRecipient` an [receiptDueCents].
-  factory ReceiptDueTip.fromKeckTip(KeckTip tip, {bool Function(String registerUserId)? istInhaber}) {
+  factory ReceiptDueTip.fromKeckTip(KeckTip tip, {bool Function(String registerUserId)? isOwner}) {
     final empfaenger = tip.recipients;
     if (empfaenger == null || empfaenger.isEmpty) return ReceiptDueTip(tip.cents);
-    if (istInhaber == null) {
+    if (isOwner == null) {
       throw ArgumentError('istInhaber ist Pflicht, wenn das Trinkgeld Empfaenger nennt.');
     }
     return ReceiptDueTip(tip.cents, recipients: [
-      for (final r in empfaenger) ReceiptDueTipShare(cents: r.cents, owner: istInhaber(r.registerUserId)),
+      for (final r in empfaenger) ReceiptDueTipShare(cents: r.cents, owner: isOwner(r.registerUserId)),
     ]);
   }
 
@@ -245,10 +245,10 @@ double _jsRound(double x) {
   return x - unten >= 0.5 ? unten + 1 : unten;
 }
 
-/// `beleg-toepfe.euroToCent`.
+/// `receipt-toepfe.euroToCent`.
 int _euroToCent(double euro) => _jsRound(euro * 100).toInt();
 
-/// Position in der inneren Form des Backends (`beleg-toepfe.interneForm`).
+/// Position in der inneren Form des Backends (`receipt-toepfe.interneForm`).
 class _Innen {
   const _Innen(this.amount, this.priceOne, this.vat, this.tip);
   final double amount;
@@ -411,7 +411,7 @@ String _topfFuerSatz(double vat) {
   return _others;
 }
 
-/// `beleg-toepfe.belegToepfe`, Schritt fuer Schritt.
+/// `receipt-toepfe.belegToepfe`, Schritt fuer Schritt.
 ({Map<String, double> toepfe, int zaehlerDeltaCents}) _belegToepfe(List<_Innen> positionen, List<_Gutschein> gutscheine) {
   final t = {for (final n in _alleToepfe) n: 0.0};
   var personal = 0.0;
@@ -460,7 +460,7 @@ String _topfFuerSatz(double vat) {
   return (toepfe: t, zaehlerDeltaCents: delta);
 }
 
-/// `zahlungen-core.wertgutscheinFlussCents`.
+/// `payments-core.wertgutscheinFlussCents`.
 int _wertgutscheinFlussCents(List<_Gutschein> gutscheine, ReceiptType art) {
   final vz = art == ReceiptType.cancellation ? -1 : 1;
   var cents = 0;

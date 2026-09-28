@@ -16,21 +16,21 @@ library;
 
 import 'package:kasseneck_api/models/beleg_layout.dart';
 
-const int zeichen58mm = 32;
-const int zeichen80mm = 48;
+const int charsPer58mm = 32;
+const int charsPer80mm = 48;
 
-enum RasterArt { text, columns, rule, space, qr, banner }
+enum GridLineKind { text, columns, rule, space, qr, banner }
 
-class RasterZeile {
+class GridLine {
   /// Genau N Zeichen (bei `qr`: zentrierter Platzhalter).
   final String text;
-  final RasterArt art;
+  final GridLineKind kind;
   final bool bold;
   /// Bei `banner` (Rahmen- und Textzeilen): Testkasse/Testsignatur/Ausfall.
-  final bool warnung;
+  final bool warning;
   /// Bei `qr`: die Nutzlast.
   final String? qr;
-  const RasterZeile({required this.text, required this.art, this.bold = false, this.warnung = false, this.qr});
+  const GridLine({required this.text, required this.kind, this.bold = false, this.warning = false, this.qr});
 }
 
 const String _nbsp = '\u00a0';
@@ -38,7 +38,7 @@ const String _nbsp = '\u00a0';
 /// Wortweiser Umbruch auf höchstens [max] Zeichen (Zwilling von `wortzeilenText`):
 /// geschütztes Leerzeichen bricht nie (wird als Leerzeichen ausgegeben), ein
 /// überlanges Wort bricht nach einem Bindestrich, sonst hart.
-List<String> wortzeilen(String text, int max) {
+List<String> wrapWords(String text, int max) {
   final grenze = max < 1 ? 1 : max;
   final out = <String>[];
   var rest = text;
@@ -80,7 +80,7 @@ String _restNach(String text, String erste) {
 }
 
 /// Zwölftel → Zeichen je Spalte (ganze Zeichen, Rest an die letzte, mindestens 1).
-List<int> rasterSpaltenBreiten(List<int> zwoelftel, int zeichen) {
+List<int> gridColumnWidths(List<int> zwoelftel, int zeichen) {
   final out = <int>[];
   var vergeben = 0;
   for (var i = 0; i < zwoelftel.length; i++) {
@@ -92,60 +92,60 @@ List<int> rasterSpaltenBreiten(List<int> zwoelftel, int zeichen) {
   return out;
 }
 
-String _ausrichten(String text, int breite, BelegAlign align) {
+String _ausrichten(String text, int breite, LayoutAlign align) {
   final t = text.length > breite ? text.substring(0, breite) : text;
   final rest = breite - t.length;
   switch (align) {
-    case BelegAlign.right:
+    case LayoutAlign.right:
       return ' ' * rest + t;
-    case BelegAlign.center:
+    case LayoutAlign.center:
       final links = rest ~/ 2;
       return ' ' * links + t + ' ' * (rest - links);
-    case BelegAlign.left:
+    case LayoutAlign.left:
       return t + ' ' * rest;
   }
 }
 
-class BelegRaster {
-  final List<RasterZeile> lines;
-  final int zeichen;
-  const BelegRaster({required this.lines, required this.zeichen});
+class ReceiptGrid {
+  final List<GridLine> lines;
+  final int charsPerLine;
+  const ReceiptGrid({required this.lines, required this.charsPerLine});
 
-  /// Setzt das Zeilenmodell ins Raster; [zeichen] fehlt → nach `paperSize` (32/48).
-  static BelegRaster render(BelegLayout layout, {int? zeichen}) {
-    final n0 = zeichen ?? (layout.paperSize == 'mm80' ? zeichen80mm : zeichen58mm);
+  /// Setzt das Zeilenmodell ins Raster; [charsPerLine] fehlt → nach `paperSize` (32/48).
+  static ReceiptGrid render(ReceiptLayout layout, {int? charsPerLine}) {
+    final n0 = charsPerLine ?? (layout.paperSize == 'mm80' ? charsPer80mm : charsPer58mm);
     final n = n0 < 8 ? 8 : n0;
     final leer = ' ' * n;
-    final out = <RasterZeile>[];
+    final out = <GridLine>[];
     for (final z in layout.lines) {
       switch (z) {
-        case BelegText():
-          for (final t in wortzeilen(z.text, n)) {
-            out.add(RasterZeile(text: _ausrichten(t, n, z.align), art: RasterArt.text, bold: z.bold));
+        case LayoutTextLine():
+          for (final t in wrapWords(z.text, n)) {
+            out.add(GridLine(text: _ausrichten(t, n, z.align), kind: GridLineKind.text, bold: z.bold));
           }
-        case BelegBanner():
+        case LayoutBannerLine():
           // Der Rahmen ist Teil des Rasters (Zwilling von renderReceiptGrid ab
           // npm 0.14.0): '=' ueber die volle Breite davor und danach. So setzt
           // ihn jeder Weg zeichengleich -- vorher druckte der Bon doppelt hoch
           // und invers, der Bildschirm fuellte schwarz, das PDF zog ein Rechteck.
           final rahmen = '=' * n;
-          out.add(RasterZeile(text: rahmen, art: RasterArt.banner, bold: true, warnung: z.warning));
-          for (final t in wortzeilen(z.text, n)) {
-            out.add(RasterZeile(text: _ausrichten(t, n, BelegAlign.center), art: RasterArt.banner, bold: true, warnung: z.warning));
+          out.add(GridLine(text: rahmen, kind: GridLineKind.banner, bold: true, warning: z.warning));
+          for (final t in wrapWords(z.text, n)) {
+            out.add(GridLine(text: _ausrichten(t, n, LayoutAlign.center), kind: GridLineKind.banner, bold: true, warning: z.warning));
           }
-          out.add(RasterZeile(text: rahmen, art: RasterArt.banner, bold: true, warnung: z.warning));
-        case BelegLinie():
-          out.add(RasterZeile(text: (z.char.isEmpty ? '-' : z.char[0]) * n, art: RasterArt.rule));
-        case BelegLeerraum():
+          out.add(GridLine(text: rahmen, kind: GridLineKind.banner, bold: true, warning: z.warning));
+        case LayoutRuleLine():
+          out.add(GridLine(text: (z.char.isEmpty ? '-' : z.char[0]) * n, kind: GridLineKind.rule));
+        case LayoutSpaceLine():
           for (var i = 0; i < z.lines; i++) {
-            out.add(RasterZeile(text: leer, art: RasterArt.space));
+            out.add(GridLine(text: leer, kind: GridLineKind.space));
           }
-        case BelegQr():
-          out.add(RasterZeile(text: _ausrichten('[QR-Code]', n, BelegAlign.center), art: RasterArt.qr, qr: z.data));
-        case BelegSpalten():
-          final breiten = rasterSpaltenBreiten(z.columns.map((c) => c.width).toList(), n);
+        case LayoutQrLine():
+          out.add(GridLine(text: _ausrichten('[QR-Code]', n, LayoutAlign.center), kind: GridLineKind.qr, qr: z.data));
+        case LayoutColumnsLine():
+          final breiten = gridColumnWidths(z.columns.map((c) => c.width).toList(), n);
           final inhalt = <int>[for (var i = 0; i < breiten.length; i++) i < breiten.length - 1 ? (breiten[i] - 1 < 1 ? 1 : breiten[i] - 1) : breiten[i]];
-          final teile = <List<String>>[for (var i = 0; i < z.columns.length; i++) wortzeilen(z.columns[i].text, inhalt[i])];
+          final teile = <List<String>>[for (var i = 0; i < z.columns.length; i++) wrapWords(z.columns[i].text, inhalt[i])];
           // Fließregel (wie renderReceiptGrid): läuft nur EINE Spalte über die erste Zeile
           // hinaus, bekommt ihr Rest die volle Breite; laufen mehrere weiter, bleibt das Raster.
           final weiterlaufend = <int>[for (var i = 0; i < teile.length; i++) if (teile[i].length > 1) i];
@@ -163,20 +163,20 @@ class BelegRaster {
               sb.write(i < breiten.length - 1 ? zelle + ' ' * (breiten[i] - inhalt[i]) : zelle);
             }
             final text = sb.toString();
-            out.add(RasterZeile(text: text.length == n ? text : _ausrichten(text, n, BelegAlign.left), art: RasterArt.columns));
+            out.add(GridLine(text: text.length == n ? text : _ausrichten(text, n, LayoutAlign.left), kind: GridLineKind.columns));
           }
           if (fliesst) {
             final i = weiterlaufend.first;
             final rest = _restNach(z.columns[i].text, teile[i].first);
-            for (final t in wortzeilen(rest, n)) {
-              out.add(RasterZeile(text: _ausrichten(t, n, z.columns[i].align), art: RasterArt.columns));
+            for (final t in wrapWords(rest, n)) {
+              out.add(GridLine(text: _ausrichten(t, n, z.columns[i].align), kind: GridLineKind.columns));
             }
           }
       }
     }
-    return BelegRaster(lines: out, zeichen: n);
+    return ReceiptGrid(lines: out, charsPerLine: n);
   }
 
   /// Klartext (eine Zeile je Rasterzeile) — für Golden-Vergleiche und Logs.
-  String alsText() => lines.map((z) => z.text).join('\n');
+  String toText() => lines.map((z) => z.text).join('\n');
 }

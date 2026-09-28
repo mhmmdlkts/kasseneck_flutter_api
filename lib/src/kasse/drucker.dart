@@ -2,7 +2,7 @@
 /// `pos/drucker.ts` im JS-Paket.
 ///
 /// Das Backend führt je Konto Drucker mit einer geheimen Abhol-Adresse; die
-/// Kasse legt Druckjobs aus einem Zeilenmodell ([BelegLayout]) an, der
+/// Kasse legt Druckjobs aus einem Zeilenmodell ([ReceiptLayout]) an, der
 /// Drucker holt sie selbst ab (alle paar Sekunden) und meldet das Ergebnis.
 /// Das ePOS-XML baut das Backend aus dem Zeichenraster.
 library;
@@ -20,7 +20,7 @@ import '../register/transport.dart';
 class NetworkPrinter {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'id', 'name', 'kind', 'paperSize', 'active', 'createdAt', 'lastSeenAt', 'lastResult', 'printerSerial', 'sdpUrl'};
+  static const Set<String> fields = {'id', 'name', 'kind', 'paperSize', 'active', 'createdAt', 'lastSeenAt', 'lastResult', 'printerSerial', 'sdpUrl'};
 
   const NetworkPrinter({
     required this.id,
@@ -58,7 +58,7 @@ class NetworkPrinter {
   /// Abhol-Adresse für das Drucker-Menü, nur für den Chef bzw. das Konto.
   final String? sdpUrl;
 
-  factory NetworkPrinter.aus(Map<String, dynamic> d) {
+  factory NetworkPrinter.fromJson(Map<String, dynamic> d) {
     final e = d['lastResult'];
     return NetworkPrinter(
       id: d['id']?.toString() ?? '',
@@ -79,7 +79,7 @@ class NetworkPrinter {
 class PrintResult {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'success', 'code', 'status', 'at'};
+  static const Set<String> fields = {'success', 'code', 'status', 'at'};
 
   const PrintResult({required this.success, this.code, this.status, this.at});
 
@@ -117,7 +117,7 @@ bool isPrintJobFinished(String status) =>
 class PrintJob {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'jobId', 'status', 'createdAt', 'sentAt', 'result'};
+  static const Set<String> fields = {'jobId', 'status', 'createdAt', 'sentAt', 'result'};
 
   const PrintJob({required this.jobId, required this.status, this.createdAt, this.sentAt, this.result});
 
@@ -146,13 +146,13 @@ int? _zahl(Object? v) => v is num && v.isFinite ? v.toInt() : null;
 
 /// Die Rasterzeilen eines Logos als Base64 (1 Bit je Punkt, links das höchste
 /// Bit, Zeilen auf ganze Bytes aufgefüllt), Zwilling von `rasterRowsBase64`.
-String rasterZeilenBase64(DruckLogo logo) {
+String rasterRowsBase64(PrintLogo logo) {
   final r = logo.raster;
-  final jeZeile = (r.breite + 7) >> 3;
-  final bytes = Uint8List(jeZeile * r.hoehe);
-  for (var y = 0; y < r.hoehe; y++) {
-    for (var x = 0; x < r.breite; x++) {
-      if (r.punkte[y * r.breite + x] != 1) continue;
+  final jeZeile = (r.width + 7) >> 3;
+  final bytes = Uint8List(jeZeile * r.height);
+  for (var y = 0; y < r.height; y++) {
+    for (var x = 0; x < r.width; x++) {
+      if (r.dots[y * r.width + x] != 1) continue;
       bytes[y * jeZeile + (x >> 3)] |= 0x80 >> (x & 7);
     }
   }
@@ -160,15 +160,15 @@ String rasterZeilenBase64(DruckLogo logo) {
 }
 
 /// Drucker und Druckjobs über die laufende Kassen-Sitzung.
-class KasseDruckerClient {
-  const KasseDruckerClient(this.transport);
+class PosPrinterClient {
+  const PosPrinterClient(this.transport);
 
   final RegisterTransport transport;
 
   /// Die Netzwerk-Drucker des Kontos.
-  Future<List<NetworkPrinter>> drucker() async {
+  Future<List<NetworkPrinter>> printers() async {
     const name = Aufrufe.listMyPrinters;
-    final daten = await transport.rufen(name);
+    final daten = await transport.call(name);
     final liste = daten['printers'];
     if (liste is! List) {
       // Keine Liste ist etwas anderes als eine leere Liste: „noch kein
@@ -176,43 +176,43 @@ class KasseDruckerClient {
       throw const KasseneckValidationError(name, 'Antwort enthaelt keine Liste (data.printers fehlt)', 'response');
     }
     return [
-      for (final e in liste) NetworkPrinter.aus(e is Map ? Map<String, dynamic>.from(e) : const {}),
+      for (final e in liste) NetworkPrinter.fromJson(e is Map ? Map<String, dynamic>.from(e) : const {}),
     ];
   }
 
   /// Einen Druckjob anlegen. [logo] ist das fertige Rasterbild
-  /// (`ladeDruckLogo`), der Server dekodiert keine Bilder. [markeZeigen] druckt
-  /// das Kasseneck-Logo am Ende (am Draht `brand`). [quelle] ist Freitext,
+  /// (`loadPrintLogo`), der Server dekodiert keine Bilder. [brandMark] druckt
+  /// das Kasseneck-Logo am Ende (am Draht `brand`). [source] ist Freitext,
   /// bekannt sind [printJobSources].
-  Future<PrintJob> druckjobAnlegen({
+  Future<PrintJob> createPrintJob({
     required String printerId,
-    required BelegLayout layout,
+    required ReceiptLayout layout,
     String? receiptId,
-    String? titel,
-    String? quelle,
-    DruckLogo? logo,
-    bool markeZeigen = false,
+    String? title,
+    String? source,
+    PrintLogo? logo,
+    bool brandMark = false,
   }) async {
     const name = Aufrufe.createPrintJob;
     if (printerId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'printerId fehlt', 'request');
     }
-    final daten = await transport.rufen(name, params: {
+    final daten = await transport.call(name, params: {
       'printerId': printerId,
       'layout': layout.toJson(),
       if (receiptId != null && receiptId.isNotEmpty) 'receiptId': receiptId,
-      if (titel != null && titel.isNotEmpty) 'title': titel,
-      if (quelle != null && quelle.isNotEmpty) 'source': quelle,
+      if (title != null && title.isNotEmpty) 'title': title,
+      if (source != null && source.isNotEmpty) 'source': source,
       if (logo != null)
         'logo': {
-          'scale': logo.stufe.kuerzel,
-          'pxWidth': logo.pxBreite,
-          'pxHeight': logo.pxHoehe,
-          'width': logo.raster.breite,
-          'height': logo.raster.hoehe,
-          'rows': rasterZeilenBase64(logo),
+          'scale': logo.size.code,
+          'pxWidth': logo.pixelWidth,
+          'pxHeight': logo.pixelHeight,
+          'width': logo.raster.width,
+          'height': logo.raster.height,
+          'rows': rasterRowsBase64(logo),
         },
-      if (markeZeigen) 'brand': true,
+      if (brandMark) 'brand': true,
     });
     // Ohne Kennung kann niemand den Job abfragen; ein leerer Text wäre ein
     // angeblich angelegter Job, und der Kassier druckte ein zweites Mal.
@@ -222,12 +222,12 @@ class KasseDruckerClient {
   /// Stand eines Druckjobs. Der Aufrufer fragt, bis [isPrintJobFinished] wahr
   /// ist, und begrenzt die Abfrage trotzdem selbst: ein Drucker, der nie
   /// abholt, bleibt `pending`.
-  Future<PrintJob> druckjobHolen({required String printerId, required String jobId}) async {
+  Future<PrintJob> getPrintJob({required String printerId, required String jobId}) async {
     const name = Aufrufe.getPrintJob;
     if (printerId.trim().isEmpty || jobId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'printerId und jobId sind Pflicht', 'request');
     }
-    final d = await transport.rufen(name, params: {'printerId': printerId, 'jobId': jobId});
+    final d = await transport.call(name, params: {'printerId': printerId, 'jobId': jobId});
     final e = d['result'];
     return PrintJob(
       jobId: _jobId(name, d),

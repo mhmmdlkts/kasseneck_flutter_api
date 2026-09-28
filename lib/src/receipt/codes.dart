@@ -48,7 +48,7 @@ List<String> _mitRand(List<String> eigen, List<String> paket) => List.unmodifiab
 const _signierend = ['route_missing', 'response_unreadable'];
 
 /// Codes von `createReceipt` und `getReceipt` (ohne die Zahlungscodes, die
-/// stehen in `zahlungFehlercodes`). `receipt_outcome_unknown` heisst: der
+/// stehen in `paymentErrorCodes`). `receipt_outcome_unknown` heisst: der
 /// Beleg ist moeglicherweise signiert, nachlesen statt wiederholen.
 final List<String> receiptErrorCodes = _mitRand(const [
   'cancellation_reference_unavailable',
@@ -72,11 +72,11 @@ final List<String> receiptErrorCodes = _mitRand(const [
   'validation',
 ], _signierend);
 
-/// Ist [wert] ein Code aus [receiptErrorCodes]?
+/// Ist [value] ein Code aus [receiptErrorCodes]?
 bool isReceiptErrorCode(Object? wert) => wert is String && receiptErrorCodes.contains(wert);
 
 /// Codes von `cancelReceipt` (Formfehler an `payments` stehen in
-/// `zahlungFehlercodes`).
+/// `paymentErrorCodes`).
 final List<String> cancellationErrorCodes = _mitRand(const [
   'receipt_not_found', // Original fehlt oder gehoert nicht zu dieser Kasse
   'receipt_type_not_cancellable', // Original ist selbst Storno-, Null- oder Startbeleg

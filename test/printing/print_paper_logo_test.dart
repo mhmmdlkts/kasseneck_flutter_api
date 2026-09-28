@@ -34,7 +34,7 @@ Future<PrintPaper> drucke(KasseneckReceipt receipt) async {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUp(() => LogoService.frist = LogoService.standardFrist);
+  setUp(() => LogoService.timeout = LogoService.defaultTimeout);
 
   test('kaputte Logo-Bytes: der Beleg entsteht trotzdem, samt QR', () async {
     // Genau die Bytes, die der eigene LogoService-Test als "erfolgreich

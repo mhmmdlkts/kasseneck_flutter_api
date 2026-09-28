@@ -15,7 +15,7 @@ library;
 /// „0,82 / 0,17" statt „0,83 / 0,16", und Netto + MwSt ergab nicht Brutto.
 /// Der Betrag wird ueber den Absolutwert gerechnet, damit ein Storno
 /// spiegelbildlich zu seinem Beleg zerfaellt.
-int nettoCentsAusBrutto(int bruttoCents, num rate) {
+int netCentsFromGross(int bruttoCents, num rate) {
   final int betrag = ((bruttoCents.abs() * 100) / (100 + rate)).round();
   return bruttoCents < 0 ? -betrag : betrag;
 }
@@ -28,5 +28,5 @@ int nettoCentsAusBrutto(int bruttoCents, num rate) {
 /// ueber 1…10000 Cent gemessen 1667 abweichende Betraege. Bei 19/13/10/4,9 %
 /// trifft der exakte Quotient die 0,5-Grenze nie, dort fallen die beiden
 /// Regeln nicht auseinander; genau deshalb faellt der Fehler so selten auf.
-int ustCentsAusBrutto(int bruttoCents, num rate) =>
-    bruttoCents - nettoCentsAusBrutto(bruttoCents, rate);
+int vatCentsFromGross(int bruttoCents, num rate) =>
+    bruttoCents - netCentsFromGross(bruttoCents, rate);

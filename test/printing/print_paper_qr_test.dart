@@ -30,7 +30,7 @@ void main() {
     final paper = papier();
     paper.addQrCode('TESTTOKEN'); // native
     expect(flach(paper).join(','), contains([0x31, 0x43].join(','))); // FN167 QR-Modulgroesse
-    expect(paper.qrFehler, isNull);
+    expect(paper.qrError, isNull);
   });
 
   test('Zeichen ueber 0xFF reissen den Druck nicht mehr ab', () {
@@ -40,7 +40,7 @@ void main() {
     final paper = papier();
     paper.addQrCode(daten);
 
-    expect(paper.qrFehler, isNull);
+    expect(paper.qrError, isNull);
     // Die Nutzlast steht unveraendert als UTF-8 im Bytestrom — nicht als '?'.
     expect(flach(paper), containsAllInOrder(utf8.encode(daten)));
     expect(paper.myPosPaper.commands.firstWhere((c) => c['type'] == 'qrCode')['value'], daten);
@@ -75,7 +75,7 @@ void main() {
   });
 
   test('unmoegliche Nutzlast wirft im Generator, nicht erst am Drucker', () {
-    expect(() => QRCode('A' * (QRCode.maxNutzlast + 1), QRSize.size6, QRCorrection.L),
+    expect(() => QRCode('A' * (QRCode.maxPayload + 1), QRSize.size6, QRCorrection.L),
         throwsArgumentError);
   });
 
@@ -84,7 +84,7 @@ void main() {
       final paper = papier();
       paper.addQrCode('');
 
-      expect(paper.qrFehler, isNotNull);
+      expect(paper.qrError, isNotNull);
       expect(texte(paper), contains('!! QR-CODE FEHLT !!'));
       expect(paper.myPosPaper.commands.map((c) => c['type']), isNot(contains('qrCode')));
     });
@@ -97,7 +97,7 @@ void main() {
       final paper = papier();
       await paper.addQrCodeAsImage(daten);
 
-      expect(paper.qrFehler, isNotNull);
+      expect(paper.qrError, isNotNull);
       final t = texte(paper);
       expect(t, contains('!! QR-CODE FEHLT !!'));
       // Die Belegdaten stehen trotzdem auf dem Papier, auf 32 Zeichen
@@ -111,7 +111,7 @@ void main() {
     test('ein gelungener QR setzt keinen Fehler', () async {
       final paper = papier();
       await paper.addQrCodeAsImage('_R1-AT0_kurz');
-      expect(paper.qrFehler, isNull);
+      expect(paper.qrError, isNull);
       expect(paper.myPosPaper.commands.map((c) => c['type']), contains('image'));
       expect(texte(paper), isNot(contains('!! QR-CODE FEHLT !!')));
     });
@@ -119,16 +119,16 @@ void main() {
     test('setKeckReceipt: qrFehler bleibt leer, wenn der QR steht', () async {
       final paper = papier();
       await paper.setKeckReceipt(cartA(), qrMode: QrPrintMode.native);
-      expect(paper.qrFehler, isNull);
+      expect(paper.qrError, isNull);
       expect(texte(paper), isNot(contains('!! QR-CODE FEHLT !!')));
     });
 
     test('reset raeumt den Fehler weg', () {
       final paper = papier();
       paper.addQrCode('');
-      expect(paper.qrFehler, isNotNull);
+      expect(paper.qrError, isNotNull);
       paper.reset();
-      expect(paper.qrFehler, isNull);
+      expect(paper.qrError, isNull);
     });
   });
 }

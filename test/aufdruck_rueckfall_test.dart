@@ -40,7 +40,7 @@ void main() {
         final beleg = KasseneckReceipt.fromMetadata(ein['receipt'], {'company': (ein['company'] as Map)['companyName']})
           ..testCashregister = optionen['testCashregister'] == true
           ..testSignature = optionen['testSignature'] == true;
-        final erwartet = BelegLayout.fromJson(_json('${_wurzel.path}/expected/$name.lines.json'))!;
+        final erwartet = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/$name.lines.json'))!;
         final zeilen = [for (final z in erwartet.lines) z.toJson()];
 
         final warn = [for (final b in warnrahmen(beleg)) b.toJson()];
@@ -102,8 +102,8 @@ void main() {
         cardPaymentId: 'pi_1',
       )
         ..testCashregister = true
-        ..layout = BelegLayout.fromJson(_json('${_wurzel.path}/expected/test-cashregister-sale.lines.json'));
-      expect(beleg.layoutIstVollstaendig, isFalse);
+        ..layout = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/test-cashregister-sale.lines.json'));
+      expect(beleg.isLayoutComplete, isFalse);
       final text = await _gedruckt(beleg);
       expect(text, contains('TESTKASSE'));
       expect(text, contains('Bäckerei Muster'));

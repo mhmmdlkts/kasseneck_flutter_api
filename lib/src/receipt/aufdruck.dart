@@ -3,8 +3,8 @@ import 'package:kasseneck_api/models/beleg_layout.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/services/vienna_time.dart';
 
-import '../kasse/storno.dart' show stornogruende;
-import '../kasse/testkennzeichen.dart' show signaturIstTest;
+import '../kasse/storno.dart' show cancellationReasons;
+import '../kasse/testkennzeichen.dart' show signatureIsTest;
 
 /// Aufdruck eines Belegs, der ohne Server-Layout gezeichnet wird: Warnrahmen
 /// (TESTKASSE/TESTSIGNATUR) und Belegart-Block (STORNOBELEG, TRAININGSBELEG,
@@ -33,17 +33,17 @@ const List<String> _trainingErklaerung = [
 /// der Bericht senden sie nicht), der QR aber eine Test-Signatur (`AT100`),
 /// steht TESTSIGNATUR: ein solcher Beleg ist in keinem Fall gueltig, und das
 /// muss er zeigen.
-List<BelegBanner> warnrahmen(KasseneckReceipt beleg) => [
-      if (beleg.testCashregister) BelegBanner(text: testkasseText, tone: LayoutBannerTone.warning),
-      if (beleg.testSignature || (!beleg.testCashregister && signaturIstTest(beleg.qr)))
-        BelegBanner(text: testsignaturText, tone: LayoutBannerTone.warning),
+List<LayoutBannerLine> warnrahmen(KasseneckReceipt beleg) => [
+      if (beleg.testCashregister) LayoutBannerLine(text: testkasseText, tone: LayoutBannerTone.warning),
+      if (beleg.testSignature || (!beleg.testCashregister && signatureIsTest(beleg.qr)))
+        LayoutBannerLine(text: testsignaturText, tone: LayoutBannerTone.warning),
     ];
 
 /// Belegart unter dem Kopf: Titel als Banner, Untertitel zentriert.
 /// Verkaufsbelege bekommen keinen Block.
-List<BelegZeile> belegartBlock(KasseneckReceipt beleg) {
-  BelegText mitte(String text) => BelegText(text: text, align: BelegAlign.center);
-  BelegBanner banner(String text) => BelegBanner(text: text, tone: LayoutBannerTone.receiptType);
+List<LayoutLine> belegartBlock(KasseneckReceipt beleg) {
+  LayoutTextLine mitte(String text) => LayoutTextLine(text: text, align: LayoutAlign.center);
+  LayoutBannerLine banner(String text) => LayoutBannerLine(text: text, tone: LayoutBannerTone.receiptType);
   switch (beleg.receiptType) {
     case ReceiptType.cancellation:
       final bezug = beleg.cancellationOf;
@@ -53,7 +53,7 @@ List<BelegZeile> belegartBlock(KasseneckReceipt beleg) {
         banner('STORNOBELEG'),
         mitte(bezug != null ? 'Stornobuchung zu Beleg ${bezug.receiptId}' : 'Stornobuchung'),
         if (datum != null) mitte('vom $datum'),
-        if (grund != null && grund.isNotEmpty) mitte('Grund: ${stornogruende[grund] ?? grund}'),
+        if (grund != null && grund.isNotEmpty) mitte('Grund: ${cancellationReasons[grund] ?? grund}'),
       ];
     case ReceiptType.training:
       return [banner('TRAININGSBELEG'), for (final z in _trainingErklaerung) mitte(z)];

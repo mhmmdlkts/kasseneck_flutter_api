@@ -12,11 +12,11 @@ import 'keck_tip.dart';
 class KeckTipPerson {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> felder = {'registerUserId', 'name', 'owner'};
+  static const Set<String> fields = {'registerUserId', 'name', 'owner'};
 
   const KeckTipPerson({required this.registerUserId, required this.name, required this.owner});
 
-  factory KeckTipPerson.aus(Map<String, dynamic> roh) => KeckTipPerson(
+  factory KeckTipPerson.fromJson(Map<String, dynamic> roh) => KeckTipPerson(
         registerUserId: roh['registerUserId'] is String ? roh['registerUserId'] as String : '',
         name: roh['name'] is String ? roh['name'] as String : '',
         owner: roh['owner'] == true,
@@ -39,7 +39,7 @@ class KeckTipPerson {
   /// Anteil für diese Person. Der wahrscheinlichste Fehler eines Aufrufers ist,
   /// eine Kennung von Hand zu übertragen und dabei eine zu erwischen, die der
   /// Server ablehnt — wer die Liste benutzt, kann nicht danebengreifen.
-  KeckTipRecipient mit({required int cents}) {
+  KeckTipRecipient share({required int cents}) {
     if (cents <= 0) throw ArgumentError.value(cents, 'cents', 'Anteil muss > 0 sein');
     return KeckTipRecipient(registerUserId: registerUserId, cents: cents);
   }
