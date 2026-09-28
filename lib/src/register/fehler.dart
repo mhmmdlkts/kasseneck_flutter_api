@@ -49,7 +49,61 @@ const Set<String> _ausgangUnklarCodes = {
   'response_unreadable',
 };
 
-ErrorOutcome _ausgangAusCode(String? code, Map<String, dynamic> details) {
+/// Die Geldwege: `hobexPayApi` belastet eine Karte, `hobexRefundApi`
+/// erstattet, `stripeCaptureIntent` zieht eine vorgemerkte Zahlung ein.
+const Set<String> _geldwege = {'hobexPayApi', 'hobexRefundApi', 'stripeCaptureIntent'};
+
+/// Codes, bei denen ein Geldweg sicher abgelehnt ist: sie entstehen, bevor
+/// das Backend den Zahlungsanbieter anspricht.
+///
+/// * Anmeldung und Pruefung in `checkRequest`, die vor jeder Zeile des
+///   Handlers laufen (`errorCodes.auth` im Vertrag, soweit sie einen
+///   `api_key`-Aufruf mit Kassen-Token treffen): `method_not_allowed`,
+///   `validation` (Pflichtfeld fehlt oder falscher Typ), die
+///   Kassen-Token-Codes, `account_not_found`, `live_not_enabled`,
+///   `unauthorized`, `mfa_required`, `user_verification_failed`,
+///   `admin_required` sowie die Codes der Kassen-Benutzer und ihrer Sitzung.
+/// * Der `/v3`-Rand vor dem Handler (`errorCodes.edge`): `not_found`
+///   (unbekannter Endpunkt) und `internal_translation_error` (die Anfrage
+///   liess sich nicht uebersetzen, es wurde nichts ausgefuehrt).
+/// * `module_inactive` und `not_permitted`: das Modul- bzw. Rechte-Tor steht
+///   ebenfalls vor dem Anbieter.
+/// * `route_missing`: vergibt das Paket selbst, keine Function sah den Aufruf.
+///
+/// Alles andere, auch eine Fehlerhuelle ganz ohne Code, gilt hier als
+/// Ausgang unklar: der Sammelfang des Backends (`Error hobex details`,
+/// `Fehler beim Capturing`) antwortet ohne Code auch dann, wenn der Anbieter
+/// die Belastung oder Erstattung schon angenommen hat.
+const Set<String> paymentCallRejectedCodes = {
+  'method_not_allowed',
+  'validation',
+  'cashregister_token_missing',
+  'cashregister_token_invalid',
+  'cashregister_not_found',
+  'account_not_found',
+  'live_not_enabled',
+  'unauthorized',
+  'mfa_required',
+  'user_verification_failed',
+  'admin_required',
+  'register_user_not_allowed',
+  'register_user_no_business',
+  'register_user_not_found',
+  'user_disabled',
+  'session_expired',
+  'cashregister_not_assigned',
+  'session_other_cashregister',
+  'not_found',
+  'internal_translation_error',
+  'module_inactive',
+  'not_permitted',
+  'route_missing',
+};
+
+ErrorOutcome _ausgangAusCode(String functionName, String? code, Map<String, dynamic> details) {
+  if (_geldwege.contains(functionName.split('/').first)) {
+    return code != null && paymentCallRejectedCodes.contains(code) ? ErrorOutcome.rejected : ErrorOutcome.unknown;
+  }
   if (code == null) return ErrorOutcome.rejected;
   if (_ausgangUnklarCodes.contains(code)) return ErrorOutcome.unknown;
   if (code == 'response_translation_failed' && details['handled'] != false) return ErrorOutcome.unknown;
@@ -66,12 +120,6 @@ const Set<String> clientErrorCodes = {'route_missing', 'response_unreadable'};
 /// Ist der Ausgang dieses Fehlers unklar? Dann den Aufruf **nicht
 /// wiederholen**, sondern das Ergebnis nachlesen. Gilt fuer jede Fehlerart;
 /// nur [KasseneckApiError] und [KasseneckHttpError] koennen unklar sein.
-///
-/// **Noch nicht** fuer Einlesefehler nach der Signatur:
-/// [KasseneckReceiptFormatError] und `KasseneckValidationError` mit
-/// `kind: 'response'` und `receiptId` liefern hier `false`, obwohl der Beleg
-/// bzw. Storno existiert. Bis sie als `response_unreadable` kommen, gilt fuer
-/// sie ebenfalls: nachlesen, nie wiederholen.
 bool isOutcomeUnknown(Object? error) =>
     (error is KasseneckApiError && error.outcome == ErrorOutcome.unknown) ||
     (error is KasseneckHttpError && error.outcome == ErrorOutcome.unknown);
@@ -104,8 +152,11 @@ class KasseneckApiError implements Exception {
   /// [ErrorOutcome.unknown] bei `dialect_mismatch`, `receipt_outcome_unknown`,
   /// `cancellation_outcome_unknown`, `response_unreadable` und
   /// `response_translation_failed` (ausser mit `details.handled == false`);
-  /// sonst [ErrorOutcome.rejected]. Bei unknown nie wiederholen, nachlesen.
-  ErrorOutcome get outcome => _ausgangAusCode(code, details);
+  /// sonst [ErrorOutcome.rejected]. Die Geldwege (`hobexPay`, `hobexRefund`,
+  /// `stripeCaptureIntent`) sind umgekehrt: dort ist nur ein Code aus
+  /// `paymentCallRejectedCodes` rejected, jeder andere und eine Huelle ohne
+  /// Code unknown. Bei unknown nie wiederholen, nachlesen.
+  ErrorOutcome get outcome => _ausgangAusCode(functionName, code, details);
 
   @override
   String toString() => 'KasseneckApiError($functionName): $message${code == null ? '' : ' [$code]'}';

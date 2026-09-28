@@ -126,6 +126,8 @@ class HobexCloudPayments {
   /// Kartenzahlung mit geklaertem Ausgang.
   ///
   /// [amount] und [tip] sind in Hauptwaehrungseinheiten (25 = 25,00 Euro).
+  /// Ein Bruchteils-Cent, ein Betrag unter einem Cent oder ein negatives
+  /// Trinkgeld wirft [ArgumentError], bevor ein Request hinausgeht.
   Future<HobexCloudResult> pay({
     required String transactionId,
     required num amount,
@@ -142,6 +144,12 @@ class HobexCloudPayments {
       );
     }
 
+    // In ganze Cent, bevor ein Request hinausgeht: ein Betrag unter einem
+    // Cent oder ein Bruchteils-Cent wuerde sonst erst in hobexPay scheitern,
+    // und die Klaerung fragte dann nach einer Zahlung, die es nie gab.
+    final amountCents = _inCent(amount, 'amount', mindestens: 1);
+    final tipCents = _inCent(tip, 'tip', mindestens: 0);
+
     final steps = <String>[];
 
     // Das try liegt bewusst ENG um den Netzweg: was danach kommt, ist unser
@@ -151,8 +159,8 @@ class HobexCloudPayments {
     try {
       receipt = await _api.hobexPay(
         transactionId: transactionId,
-        amount: amount.toDouble(),
-        tip: tip.toDouble(),
+        amountCents: amountCents,
+        tipCents: tipCents,
         reference: reference,
       );
     } catch (e) {
@@ -310,4 +318,14 @@ class HobexCloudPayments {
     }
     return call().timeout(left);
   }
+}
+
+/// Euro-Betrag in ganze Cent; ein Bruchteils-Cent oder ein Wert unter
+/// [mindestens] Cent ist ein Aufruffehler.
+int _inCent(num euro, String feld, {required int mindestens}) {
+  final cent = (euro * 100).round();
+  if (!euro.isFinite || (euro * 100 - cent).abs() > 1e-6 || cent < mindestens) {
+    throw ArgumentError.value(euro, feld, 'muss ein Betrag in ganzen Cent ab $mindestens Cent sein');
+  }
+  return cent;
 }

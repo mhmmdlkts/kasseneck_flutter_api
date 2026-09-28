@@ -314,4 +314,16 @@ void main() {
       expect(callCount(), 1);
     });
   });
+
+  test('Bruchteils-Cent und Betrag unter einem Cent werfen vor dem Netz', () async {
+    final (:api, :callCount) = apiWith(const []);
+    for (final (amount, tip) in [(12.345, 0), (0, 0), (10, -1), (10, 0.001)]) {
+      await expectLater(
+        cloudPaymentsFor(api).pay(transactionId: 'TX-9', amount: amount, tip: tip),
+        throwsA(isA<ArgumentError>()),
+        reason: '$amount/$tip',
+      );
+    }
+    expect(callCount(), 0);
+  });
 }

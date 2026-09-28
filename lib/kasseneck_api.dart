@@ -972,14 +972,25 @@ class KasseneckApi {
     return decoded.split(':').first;
   }
 
-  /// Charges a card via the **Hobex Cloud** API and returns the resulting [HobexReceipt].
-  Future<HobexReceipt> hobexPay({required String transactionId, required double amount, double tip = 0, String? reference}) async {
+  /// Belastet eine Karte ueber **Hobex Cloud** und liefert den [HobexReceipt].
+  ///
+  /// [amountCents] und [tipCents] sind ganze Cent (1234 = 12,34 Euro), wie im
+  /// npm-Paket; in Euro umgerechnet wird genau einmal, an der Hobex-Grenze.
+  /// Eine leere Kennung, ein Betrag unter 1 Cent oder ein negatives
+  /// Trinkgeld werfen [KasseneckValidationError] (`kind: 'request'`), bevor
+  /// etwas hinausgeht.
+  ///
+  /// Scheitert der Aufruf, entscheidet `isOutcomeUnknown(e)`: nur ein Code,
+  /// der vor dem Anbieter entsteht (Anmeldung, Pflichtfeld, Modul), ist eine
+  /// Ablehnung. Jede andere Fehlerhuelle, auch eine ohne Code, heisst Ausgang
+  /// unklar: die Karte kann belastet sein. Dann mit `hobexGetStatus`
+  /// nachlesen, nie mit neuer Kennung wiederholen.
+  Future<HobexReceipt> hobexPay({required String transactionId, required int amountCents, int tipCents = 0, String? reference}) async {
+    final nutzlast = _hobexNutzlast(Aufrufe.hobexPayApi, transactionId, amountCents, tipCents);
     final resJson = await _kasseneckJson(
         endpoint: Aufrufe.hobexPayApi,
         params: {
-          'transactionId': transactionId,
-          'amount': amount,
-          'tip': tip,
+          ...nutzlast,
           'reference': reference
         },
         deadline: cardTimeout,
@@ -995,19 +1006,18 @@ class KasseneckApi {
     return readSignedResponse(Aufrufe.hobexPayApi, () => HobexReceipt.fromJson(resJson['data'] as Map<String, dynamic>));
   }
 
-  /// Refunds a previous **Hobex Cloud** transaction.
+  /// Erstattet eine fruehere **Hobex-Cloud**-Zahlung.
   ///
-  /// Returns `true` on success; a rejection throws [KasseneckApiError]. When
-  /// `isOutcomeUnknown(e)` is true the refund may have gone through: look it
-  /// up, never retry blindly.
-  Future<bool> hobexRefund({required String transactionId, required double amount, double tip = 0}) async {
+  /// Betraege in ganzen Cent wie bei [hobexPay]. Liefert `true`; jeder
+  /// Fehlschlag wirft [KasseneckApiError]. Abgelehnt ist nur ein Code, der
+  /// vor dem Anbieter entsteht; eine Fehlerhuelle ohne Code oder mit anderem
+  /// Code heisst `isOutcomeUnknown(e) == true`: die Erstattung kann gelaufen
+  /// sein. Dann nachlesen, nie blind wiederholen.
+  Future<bool> hobexRefund({required String transactionId, required int amountCents, int tipCents = 0}) async {
+    final nutzlast = _hobexNutzlast(Aufrufe.hobexRefundApi, transactionId, amountCents, tipCents);
     final resJson = await _kasseneckJson(
         endpoint: Aufrufe.hobexRefundApi,
-        params: {
-          'transactionId': transactionId,
-          'amount': amount,
-          'tip': tip,
-        },
+        params: nutzlast,
         deadline: cardTimeout,
     );
     // Eine Fehlerhuelle wirft mit Code und Ausgang, statt still `false` zu
@@ -1017,6 +1027,27 @@ class KasseneckApi {
       throw envelopeError(Aufrufe.hobexRefundApi, resJson);
     }
     return true;
+  }
+
+  /// Gemeinsame Nutzlast von [hobexPay] und [hobexRefund] (Zwilling von
+  /// `zahlungsNutzlast` im npm-Paket): geprueft, bevor etwas hinausgeht, und
+  /// die Cent-Betraege genau hier in Euro umgerechnet, weil das Backend und
+  /// Hobex Euro erwarten.
+  static Map<String, dynamic> _hobexNutzlast(String name, String transactionId, int amountCents, int tipCents) {
+    if (transactionId.trim().isEmpty) {
+      throw KasseneckValidationError(name, 'transactionId fehlt', 'request');
+    }
+    if (amountCents < 1) {
+      throw KasseneckValidationError(name, 'amountCents muss mindestens 1 Cent betragen.', 'request');
+    }
+    if (tipCents < 0) {
+      throw KasseneckValidationError(name, 'tipCents muss mindestens 0 Cent betragen.', 'request');
+    }
+    return {
+      'transactionId': transactionId,
+      'amount': amountCents / 100,
+      'tip': tipCents / 100,
+    };
   }
 
   /// Fragt den Stand einer Hobex-Cloud-Transaktion ab.

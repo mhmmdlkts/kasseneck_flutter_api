@@ -318,9 +318,10 @@ have run. A test double or proxy in your own tests has to send the marker as
 well.
 
 **Unknown outcome.** Each `KasseneckApiError` and `KasseneckHttpError` has an
-`outcome`: `ErrorOutcome.rejected` (nothing happened, a new attempt is safe) or
-`ErrorOutcome.unknown` (the operation **may have happened**).
-`isOutcomeUnknown(error)` answers it for any error. Unknown are:
+`outcome`: `ErrorOutcome.rejected` (the call was refused, nothing was
+signed, charged or refunded) or `ErrorOutcome.unknown` (the operation **may
+have happened**). `isOutcomeUnknown(error)` answers it for any error. Unknown
+are:
 
 - the codes `dialect_mismatch`, `receipt_outcome_unknown`,
   `cancellation_outcome_unknown`, `response_unreadable` (the call reported
@@ -331,7 +332,24 @@ well.
   `zeroReceipt` and `RegisterReceiptClient.sell`; `cancelReceipt`;
   `financeWebService`; the card calls `hobexPay`, `hobexRefund` and
   `stripeCaptureIntent`): a network error, a timeout or HTTP 5xx after the
-  request was sent, and an unreadable success body.
+  request was sent, and an unreadable success body;
+- on the money calls `hobexPay`, `hobexRefund` and `stripeCaptureIntent`:
+  **every error envelope**, including one without a code, unless its code is
+  one of the explicit rejections below. The backend answers from its catch-all
+  without a code even when hobex or Stripe already accepted the charge or
+  refund.
+
+On the money calls only these codes mean rejected, because each is raised
+before the backend contacts the provider: the sign-in and request checks
+(`method_not_allowed`, `validation`, `cashregister_token_missing`,
+`cashregister_token_invalid`, `cashregister_not_found`, `account_not_found`,
+`live_not_enabled`, `unauthorized`, `mfa_required`,
+`user_verification_failed`, `admin_required`, `register_user_not_allowed`,
+`register_user_no_business`, `register_user_not_found`, `user_disabled`,
+`session_expired`, `cashregister_not_assigned`,
+`session_other_cashregister`), the `/v3` edge before the handler
+(`not_found`, `internal_translation_error`), the module and permission gates
+(`module_inactive`, `not_permitted`) and the package's own `route_missing`.
 
 **Never retry a call whose outcome is unknown.** Read the result back
 (`getReceipt`, `getReceipts`, the receipt list, `hobexGetStatus`) and act on
@@ -346,8 +364,10 @@ does not mean the call failed.
 
 **Amounts are integer cents.** `KasseneckItem.priceCents` is the gross unit
 price in cents, `quantity` a whole number. `KasseneckItem.euro(singlePrice: …)`
-converts a euro double once. Euro doubles appear only where an external API
-requires them (hobex, SumUp).
+converts a euro double once. Euro doubles appear only where a terminal API
+requires them (hobex HPS, `HobexCloudPayments.pay`, SumUp); the raw cloud calls
+`hobexPay` and `hobexRefund` take `amountCents` and `tipCents` like the npm
+package.
 
 **`payments` is mandatory.** `/v3` knows no single payment method per receipt:
 each sale sends a list of `KeckPaymentInput` (cash, card, voucher, ...; a table
@@ -590,7 +610,10 @@ ID instead of starting a new charge. A lost answer ends in
 | **SumUp** | thin wrapper around the `sumup` plugin: `SumupService` in `services/sumup_service.dart` |
 | **any other terminal** (for example GP Tom or myPOS) | pass your terminal's result on the card payment as `KeckPaymentInput(provider: …, providerPaymentId: …, providerData: …)`; it is stored and printed on the receipt |
 
-hobex amounts are euros (`amount: 12.50`), as the hobex API expects.
+`HpsPayments` and `HobexCloudPayments.pay` take euros (`amount: 12.50`), as
+the hobex API expects; the raw calls `kasseneck.hobexPay(...)` and
+`hobexRefund(...)` take integer cents (`amountCents: 1250`), like the npm
+package.
 
 <details>
 <summary><b>Example: hobex terminal (HPS) to signed receipt</b></summary>
@@ -699,9 +722,10 @@ await kasseneck.sellReceipt(
 
 `HobexCloudPayments` has no `refund()` or `cancel()`. A cloud refund still goes
 through the raw call `kasseneck.hobexRefund(...)`: it returns `true` or throws
-(a refusal is a `KasseneckApiError` with its code, never `false`), and it does
-not resolve its outcome. On an unknown outcome (`isOutcomeUnknown`) check with
-`hobexGetStatus` before refunding again.
+a `KasseneckApiError`, never `false`, and it does not resolve its outcome. Only
+the rejection codes listed under "Unknown outcome" mean nothing was refunded;
+any other failure, including an error without a code, is an unknown outcome
+(`isOutcomeUnknown`): check with `hobexGetStatus` before refunding again.
 </details>
 
 <details>

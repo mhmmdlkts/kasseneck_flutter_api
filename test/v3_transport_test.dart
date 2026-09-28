@@ -96,8 +96,8 @@ final _wege = <_Weg>[
     'cancelReceipt': (c) =>
         _geraet(c).cancelReceipt(cashregisterId: 'K1', originalReceiptId: 'R1', reason: 'input_error'),
     'sendReceiptEmail': (c) => _geraet(c).sendReceiptEmail(fullReceiptId: 'F1', to: 'a@b.at'),
-    'hobexPayApi': (c) => _geraet(c).hobexPay(transactionId: '1', amount: 1),
-    'hobexRefundApi': (c) => _geraet(c).hobexRefund(transactionId: '1', amount: 1),
+    'hobexPayApi': (c) => _geraet(c).hobexPay(transactionId: '1', amountCents: 100),
+    'hobexRefundApi': (c) => _geraet(c).hobexRefund(transactionId: '1', amountCents: 100),
     'stripeCaptureIntent': (c) => _geraet(c).stripeCaptureIntent(stripeSessionId: 's1'),
   }),
   _Weg('RegisterClient (Kopplung)', 'https://kasse.kasseneck.at/api/v3', {
@@ -134,8 +134,8 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
         'financeWebService' => geraet.getCashboxStatus(),
         'cancelReceipt' => geraet.cancelReceipt(cashregisterId: 'K1', originalReceiptId: 'R1', reason: 'input_error'),
         'sendReceiptEmail' => geraet.sendReceiptEmail(fullReceiptId: 'F1', to: 'a@b.at'),
-        'hobexPayApi' => geraet.hobexPay(transactionId: '1', amount: 1),
-        'hobexRefundApi' => geraet.hobexRefund(transactionId: '1', amount: 1),
+        'hobexPayApi' => geraet.hobexPay(transactionId: '1', amountCents: 100),
+        'hobexRefundApi' => geraet.hobexRefund(transactionId: '1', amountCents: 100),
         'stripeCaptureIntent' => geraet.stripeCaptureIntent(stripeSessionId: 's1'),
         _ => throw StateError(name),
       };
@@ -580,8 +580,8 @@ void main() {
     test('Geldwege: Fachfehler mit Code statt stillem false oder Lesefehler', () async {
       final netz = _Netz((_) => _v3({'status': 'error', 'code': 'receipt_outcome_unknown', 'message': 'x'}));
       for (final los in [
-        () => _geraet(netz.client).hobexPay(transactionId: '1', amount: 1),
-        () => _geraet(netz.client).hobexRefund(transactionId: '1', amount: 1),
+        () => _geraet(netz.client).hobexPay(transactionId: '1', amountCents: 100),
+        () => _geraet(netz.client).hobexRefund(transactionId: '1', amountCents: 100),
         () => _geraet(netz.client).stripeCaptureIntent(stripeSessionId: 's1'),
       ]) {
         await expectLater(los(), throwsA(_apiFehler('receipt_outcome_unknown', ErrorOutcome.unknown)));

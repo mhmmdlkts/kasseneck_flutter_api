@@ -34,7 +34,7 @@ Contents:
 
 ## A. Changed by the /v3 rebuild
 
-112 names. Register settings fields and enum values follow the contract file
+114 names. Register settings fields and enum values follow the contract file
 `renames-1.0.json` of the npm twin (`test/fixtures/vertrag/`); the Dart field
 is named like its wire key.
 
@@ -62,6 +62,8 @@ is named like its wire key.
 | `KasseLayout.vollbild` | `PosLayout.fullscreen` |
 | `KasseMenge.aus` | `PosQuantity.off` |
 | `KasseneckApi.belegSenden(sprache)` | `KasseneckApi.sendReceiptEmail(language)` |
+| `KasseneckApi.hobexPay(amount, tip)` (euro `double`) | `KasseneckApi.hobexPay(amountCents, tipCents)` (`int` cents) |
+| `KasseneckApi.hobexRefund(amount, tip)` (euro `double`) | `KasseneckApi.hobexRefund(amountCents, tipCents)` (`int` cents) |
 | `KasseneckReceipt.kopfId` | `KasseneckReceipt.headerVersionId` |
 | `KasseneckReceipt.logoStufe` | `KasseneckReceipt.logoScale` |
 | `KasseneckReceipt.taxnr` | `KasseneckReceipt.taxNumber` |

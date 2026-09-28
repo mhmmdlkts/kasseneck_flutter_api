@@ -41,6 +41,28 @@ print('Beleg ${beleg?.receiptId}, signiert: ${beleg?.signatureSuccess}');
 Stornos laufen über `kasseneck.cancelReceipt(...)` bzw.
 `RegisterReceiptClient.cancelReceipt(...)`, immer mit Bezug auf den Originalbeleg.
 
+## Ausgang unklar: nie blind wiederholen
+
+Jeder `KasseneckApiError` und `KasseneckHttpError` trägt ein `outcome`;
+`isOutcomeUnknown(fehler)` beantwortet es für jeden Fehler. `rejected` heißt:
+abgelehnt, nichts wurde signiert, belastet oder erstattet. `unknown` heißt: der
+Vorgang **kann gelaufen sein**. Dann das Ergebnis nachlesen (`getReceipt`,
+`hobexGetStatus`) statt den Aufruf zu wiederholen; ein wiederholter Verkauf ist
+ein zweiter signierter Beleg, ein wiederholter Kartenaufruf kann doppelt
+belasten oder erstatten.
+
+Auf den Geldwegen `hobexPay`, `hobexRefund` und `stripeCaptureIntent` ist
+**jede Fehlerhülle** Ausgang unklar, auch eine ohne Code, denn das Backend
+antwortet aus seinem Sammelfang ohne Code auch dann, wenn hobex oder Stripe
+schon angenommen hat. Abgelehnt sind dort nur die Codes, die vor dem Anbieter
+entstehen: Anmeldung und Prüfung (`method_not_allowed`, `validation`, die
+Kassen-Token-Codes, `account_not_found`, `live_not_enabled`, `unauthorized`,
+`mfa_required`, `user_verification_failed`, `admin_required`, die Codes der
+Kassen-Benutzer und ihrer Sitzung), der `/v3`-Rand vor dem Handler
+(`not_found`, `internal_translation_error`), das Modul- und Rechte-Tor
+(`module_inactive`, `not_permitted`) und das paketeigene `route_missing`. Die
+vollständige Liste steht im englischen README unter „Unknown outcome“.
+
 ## Version 10
 
 Ab 10.0 spricht das Paket nur noch die englische API `/v3`

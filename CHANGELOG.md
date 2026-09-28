@@ -204,6 +204,37 @@ English now, and apps that generate their texts from them must follow:
   not pass a `RetryClient` or any other resending `http.Client` as
   `httpClient`. Reason: a retried receipt is a second signed receipt in the
   chain, and a retried card call can charge or refund twice.
+- **Money calls: an error without a code is an unknown outcome.** On
+  `hobexPay`, `hobexRefund` and `stripeCaptureIntent` every error envelope is
+  `ErrorOutcome.unknown` unless its code is an explicit rejection raised before
+  the backend contacts hobex or Stripe: the sign-in and request checks
+  (`method_not_allowed`, `validation`, `cashregister_token_missing`,
+  `cashregister_token_invalid`, `cashregister_not_found`, `account_not_found`,
+  `live_not_enabled`, `unauthorized`, `mfa_required`,
+  `user_verification_failed`, `admin_required`, `register_user_not_allowed`,
+  `register_user_no_business`, `register_user_not_found`, `user_disabled`,
+  `session_expired`, `cashregister_not_assigned`,
+  `session_other_cashregister`), the `/v3` edge before the handler
+  (`not_found`, `internal_translation_error`), `module_inactive`,
+  `not_permitted` and `route_missing`. Reason: the backend's catch-all answers
+  without a code even after the provider accepted the charge or refund, and a
+  new attempt would charge or refund twice. All other calls keep the rule
+  "no code means rejected".
+- **hobex cloud amounts in cents.** `hobexPay` and `hobexRefund` take
+  `amountCents` and `tipCents` (integers) instead of the euro doubles `amount`
+  and `tip`, like the npm twin; the package converts to euros once, at the
+  hobex boundary. An empty `transactionId`, an amount below one cent or a
+  negative tip throws `KasseneckValidationError` (`kind: 'request'`) before
+  sending. Reason: money is an integer with a fixed scale everywhere else in
+  the package, and code moved between the web and Flutter apps would otherwise
+  charge a hundred times the amount. `HobexCloudPayments.pay` and
+  `HpsPayments` keep euro amounts, as the hobex terminal APIs expect;
+  `HobexCloudPayments.pay` rejects a fraction of a cent or an amount below one
+  cent with an `ArgumentError` before sending.
+- **`sellReceipt` and `zeroReceipt` throw `KasseneckValidationError`**
+  (`kind: 'request'`) for invalid input before sending, instead of
+  `ArgumentError`, the same as `RegisterReceiptClient.sell` and the npm
+  package.
 - **`response_unreadable` instead of format errors.** A sale, cancellation,
   `hobexPay` or `stripeCaptureIntent` that reported success but whose answer
   cannot be read (receipt, reference, remaining quantities, Hobex receipt or
