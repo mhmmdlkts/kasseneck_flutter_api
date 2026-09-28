@@ -112,48 +112,48 @@ enum HpsCodeReason {
   approvedWithCondition(
     'Das Terminal meldet eine Genehmigung mit Vorbehalt (etwa nur über '
     'einen Teilbetrag). Ob und in welcher Höhe belastet wurde, bitte am '
-    'Terminalbeleg prüfen — nicht erneut kassieren, bevor es geklärt ist.',
+    'Terminalbeleg prüfen – nicht erneut kassieren, bevor es geklärt ist.',
   ),
   aborted('Der Vorgang wurde abgebrochen. Es wurde kein Geld bewegt.'),
   noCard(
-    'Es wurde keine Karte vorgehalten. Es wurde kein Geld bewegt — '
+    'Es wurde keine Karte vorgehalten. Es wurde kein Geld bewegt – '
     'bitte erneut versuchen.',
   ),
   cardReadFailed(
     'Die Karte konnte nicht gelesen werden. Es wurde kein Geld '
-    'bewegt — bitte erneut versuchen, notfalls die Karte stecken statt '
+    'bewegt – bitte erneut versuchen, notfalls die Karte stecken statt '
     'auflegen.',
   ),
   cardDeclined(
     'Die Karte wurde vom Terminal abgelehnt. Es wurde kein Geld '
-    'bewegt — bitte eine andere Karte oder Zahlungsart verwenden.',
+    'bewegt – bitte eine andere Karte oder Zahlungsart verwenden.',
   ),
   issuerDeclined(
-    'Die Zahlung wurde von der Bank abgelehnt. Es wurde kein Geld bewegt — '
+    'Die Zahlung wurde von der Bank abgelehnt. Es wurde kein Geld bewegt – '
     'bitte eine andere Karte oder Zahlungsart verwenden.',
   ),
   cardBlocked(
-    'Die Karte ist gesperrt. Es wurde kein Geld bewegt — bitte eine andere '
+    'Die Karte ist gesperrt. Es wurde kein Geld bewegt – bitte eine andere '
     'Karte oder Zahlungsart verwenden.',
   ),
   cardExpired(
-    'Die Karte ist abgelaufen. Es wurde kein Geld bewegt — bitte eine andere '
+    'Die Karte ist abgelaufen. Es wurde kein Geld bewegt – bitte eine andere '
     'Karte oder Zahlungsart verwenden.',
   ),
   insufficientFunds(
     'Das Konto ist nicht gedeckt oder das Kartenlimit ist erreicht. Es wurde '
-    'kein Geld bewegt — bitte eine andere Karte oder Zahlungsart verwenden.',
+    'kein Geld bewegt – bitte eine andere Karte oder Zahlungsart verwenden.',
   ),
   wrongPin(
-    'Die PIN war falsch. Es wurde kein Geld bewegt — bitte erneut '
+    'Die PIN war falsch. Es wurde kein Geld bewegt – bitte erneut '
     'versuchen.',
   ),
   pinTriesExceeded(
-    'Die PIN wurde zu oft falsch eingegeben. Es wurde kein Geld bewegt — '
+    'Die PIN wurde zu oft falsch eingegeben. Es wurde kein Geld bewegt – '
     'bitte eine andere Karte oder Zahlungsart verwenden.',
   ),
   pinRequired(
-    'Die Bank verlangt die PIN. Es wurde kein Geld bewegt — bitte erneut '
+    'Die Bank verlangt die PIN. Es wurde kein Geld bewegt – bitte erneut '
     'versuchen, die Karte stecken und die PIN eingeben.',
   ),
   amountInvalid(
@@ -162,40 +162,40 @@ enum HpsCodeReason {
   ),
   tipNotSelected(
     'Das Trinkgeld wurde nicht rechtzeitig gewählt. Es wurde '
-    'kein Geld bewegt — bitte erneut versuchen.',
+    'kein Geld bewegt – bitte erneut versuchen.',
   ),
   terminalBusy(
     'Das Terminal ist noch mit einem anderen Vorgang beschäftigt. '
-    'Es wurde kein Geld bewegt — kurz warten und erneut versuchen.',
+    'Es wurde kein Geld bewegt – kurz warten und erneut versuchen.',
   ),
   terminalBlocked(
-    'Das Terminal ist gesperrt. Es wurde kein Geld bewegt — '
+    'Das Terminal ist gesperrt. Es wurde kein Geld bewegt – '
     'bitte hobex kontaktieren.',
   ),
   terminalSetup(
     'Das Terminal ist nicht richtig eingerichtet. Es wurde kein '
-    'Geld bewegt — bitte die Terminal-ID in den Einstellungen prüfen, sonst '
+    'Geld bewegt – bitte die Terminal-ID in den Einstellungen prüfen, sonst '
     'hobex kontaktieren.',
   ),
   acquirerSetup(
     'hobex nimmt dieses Terminal oder diesen Händler so nicht an. Es wurde '
-    'kein Geld bewegt — bitte hobex kontaktieren.',
+    'kein Geld bewegt – bitte hobex kontaktieren.',
   ),
   terminalFault(
     'Das Terminal meldet eine Störung. Es wurde kein Geld bewegt '
-    '— bitte das Terminal neu starten und erneut versuchen.',
+    '– bitte das Terminal neu starten und erneut versuchen.',
   ),
   requestRejected(
     'Das Terminal hat die Anfrage abgewiesen. Es wurde kein '
-    'Geld bewegt — tritt das wieder auf, bitte den Support kontaktieren.',
+    'Geld bewegt – tritt das wieder auf, bitte den Support kontaktieren.',
   ),
   hostRejected(
-    'hobex hat die Zahlung abgewiesen. Es wurde kein Geld bewegt — bitte '
+    'hobex hat die Zahlung abgewiesen. Es wurde kein Geld bewegt – bitte '
     'erneut versuchen; tritt das wieder auf, hobex kontaktieren.',
   ),
   hostUnavailable(
     'Die Bank oder hobex ist gerade nicht erreichbar. Es wurde kein Geld '
-    'bewegt — bitte später erneut versuchen oder eine andere Zahlungsart '
+    'bewegt – bitte später erneut versuchen oder eine andere Zahlungsart '
     'verwenden.',
   ),
   invalidTransaction(
@@ -208,7 +208,7 @@ enum HpsCodeReason {
   ),
   refundDisabled(
     'Gutschriften sind an diesem Terminal abgeschaltet. Es wurde '
-    'nichts ausgezahlt — bitte hobex kontaktieren.',
+    'nichts ausgezahlt – bitte hobex kontaktieren.',
   ),
   refundRejected(
     'Die Gutschrift wurde abgewiesen (Betrag zu hoch, bereits erstattet oder '
@@ -216,36 +216,36 @@ enum HpsCodeReason {
   ),
   hostTimeoutReversed(
     'hobex hat nicht rechtzeitig geantwortet, das Terminal '
-    'hat den Vorgang selbst storniert. Es wird kein Geld bewegt — bitte '
+    'hat den Vorgang selbst storniert. Es wird kein Geld bewegt – bitte '
     'erneut versuchen.',
   ),
   reversedByHost(
     'Die Zahlung wurde wegen einer Störung automatisch storniert. Es wurde '
-    'kein Geld bewegt — bitte erneut versuchen.',
+    'kein Geld bewegt – bitte erneut versuchen.',
   ),
   voidedAfterHostFault(
     'hobex hat nicht sauber geantwortet, die Zahlung wurde deshalb '
-    'sicherheitshalber storniert. Es wurde kein Geld bewegt — bitte erneut '
+    'sicherheitshalber storniert. Es wurde kein Geld bewegt – bitte erneut '
     'versuchen.',
   ),
   hostFault(
     'Die Verbindung zwischen Terminal und hobex ist gestört. Ob die '
-    'Karte belastet wurde, weiß das Terminal nicht — bitte nicht erneut '
+    'Karte belastet wurde, weiß das Terminal nicht – bitte nicht erneut '
     'kassieren, bevor es geklärt ist.',
   ),
   hostTimeout(
     'hobex hat nicht rechtzeitig geantwortet. Ob die Karte belastet wurde, '
-    'weiß das Terminal nicht — bitte nicht erneut kassieren, bevor es '
+    'weiß das Terminal nicht – bitte nicht erneut kassieren, bevor es '
     'geklärt ist.',
   ),
   internalError(
     'Das Terminal meldet einen internen Fehler. Ob die Karte '
-    'belastet wurde, ist unklar — bitte nicht erneut kassieren, bevor es '
+    'belastet wurde, ist unklar – bitte nicht erneut kassieren, bevor es '
     'geklärt ist.',
   ),
   canceled('Die Zahlung ist aufgehoben.'),
   cancelDenied(
-    'Die Zahlung lässt sich nicht mehr aufheben und bleibt belastet — bitte '
+    'Die Zahlung lässt sich nicht mehr aufheben und bleibt belastet – bitte '
     'stattdessen eine Gutschrift ausführen.',
   ),
   originalDeclined(
