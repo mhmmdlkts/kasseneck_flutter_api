@@ -20,8 +20,9 @@ Future<void> main() async {
   );
 
   // 1) A simple cash sale with two items.
+  // The payments must add up to the amount due (receiptDueCents): 2 x 3.20 + 2.40.
   final receipt = await kasseneck.sellReceipt(
-    paymentMethod: KeckPaymentMethod.cash,
+    payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 880)],
     customerDetails: ['Max Mustermann'],
     items: [
       // Prices in cents (320 = EUR 3.20); alternatively KasseneckItem.euro(singlePrice: 3.20)
@@ -93,10 +94,16 @@ Future<void> cardSale(KasseneckApi kasseneck) async {
 
   final card = HobexReceipt.fromHps(res.response!);
   await kasseneck.sellReceipt(
-    paymentMethod: KeckPaymentMethod.creditCard,
-    creditCardProvider: card.creditCardProvider,
-    cardPaymentId: card.transactionId,
-    cardPaymentData: card.toCardPaymentData(),
+    // The card details belong to the payment itself.
+    payments: [
+      KeckPaymentInput(
+        method: KeckPaymentMethod.creditCard,
+        amountCents: 1250,
+        provider: card.creditCardProvider,
+        providerPaymentId: card.transactionId,
+        providerData: card.toCardPaymentData(),
+      ),
+    ],
     items: [KasseneckItem(name: 'Lunch', quantity: 1, vat: VatRate.vat10, priceCents: 1250)],
   );
 }

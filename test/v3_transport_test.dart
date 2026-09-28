@@ -90,7 +90,7 @@ RegisterTransport _sitzung(http.Client c, {String? baseUrl, String? clientHeader
 
 final _wege = <_Weg>[
   _Weg('KasseneckApi (api_key)', 'https://api.kasseneck.at/v3', {
-    'createReceipt': (c) => _geraet(c).sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
+    'createReceipt': (c) => _geraet(c).sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [_posten]),
     'getReceipt': (c) => _geraet(c).getReceipt('R1'),
     'financeWebService': (c) => _geraet(c).getCashboxStatus(),
     'cancelReceipt': (c) =>
@@ -129,7 +129,7 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
   switch (weg.name) {
     case 'KasseneckApi (api_key)':
       return switch (name) {
-        'createReceipt' => geraet.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
+        'createReceipt' => geraet.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [_posten]),
         'getReceipt' => geraet.getReceipt('R1'),
         'financeWebService' => geraet.getCashboxStatus(),
         'cancelReceipt' => geraet.stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
@@ -401,7 +401,7 @@ void main() {
 
     test('receipt_outcome_unknown am Geraete-Client ist ein KasseneckApiError mit unklarem Ausgang', () async {
       final netz = _Netz((_) => _v3({'status': 'error', 'code': 'receipt_outcome_unknown', 'message': 'x'}));
-      await expectLater(_geraet(netz.client).sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
+      await expectLater(_geraet(netz.client).sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [_posten]),
           throwsA(_apiFehler('receipt_outcome_unknown', ErrorOutcome.unknown)));
     });
 
@@ -485,7 +485,7 @@ void main() {
         await expectLater(
             _geraet(netz.client).stornieren(cashregisterId: 'K1', originalReceiptId: 'R1', grund: 'input_error'),
             throwsA(fehler));
-        await expectLater(_geraet(netz.client).sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [_posten]),
+        await expectLater(_geraet(netz.client).sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [_posten]),
             throwsA(fehler));
       });
     }

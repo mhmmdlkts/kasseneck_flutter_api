@@ -138,7 +138,7 @@ void main() {
       final api = apiWith(successClient((r) => captured = r));
 
       await api.sellReceipt(
-        paymentMethod: KeckPaymentMethod.creditCard,
+        payments: const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 4700)],
         items: [ware],
         tip: KeckTip.fuer('ru_7', cents: 200),
       );
@@ -160,7 +160,7 @@ void main() {
       final api = apiWith(successClient((r) => captured = r));
 
       await api
-          .sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [ware]);
+          .sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [ware]);
 
       expect(paramsVon(captured).containsKey('tip'), isFalse);
     });
@@ -169,7 +169,7 @@ void main() {
       final api = apiWith(neverCalled());
       expect(
         () => api.sellReceipt(
-          paymentMethod: KeckPaymentMethod.cash,
+          payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)],
           items: [ware],
           tip: const KeckTip(cents: 0),
         ),
@@ -181,7 +181,7 @@ void main() {
       final api = apiWith(neverCalled());
       expect(
         () => api.sellReceipt(
-          paymentMethod: KeckPaymentMethod.cash,
+          payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)],
           items: [ware],
           tip: const KeckTip(cents: 200, recipients: [
             KeckTipRecipient(registerUserId: 'ru_7', cents: 100),
@@ -195,7 +195,7 @@ void main() {
       final api = apiWith(neverCalled());
       expect(
         () => api.sellReceipt(
-          paymentMethod: KeckPaymentMethod.cash,
+          payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)],
           items: const [],
           tip: KeckTip.fuer('ru_7', cents: 200),
         ),

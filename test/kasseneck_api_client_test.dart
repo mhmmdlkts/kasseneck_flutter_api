@@ -45,7 +45,7 @@ void main() {
       late http.Request captured;
       final api = apiWith(successClient((r) => captured = r));
 
-      await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]);
+      await api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]);
 
       expect(captured.url.toString(), 'https://api.kasseneck.at/v3/createReceipt');
       expect(captured.headers['Authorization'], 'Bearer test-key');
@@ -56,7 +56,10 @@ void main() {
       expect(body.keys, ['params']);
       final params = body['params'] as Map<String, dynamic>;
       expect(params['receiptType'], 'standard');
-      expect(params['paymentMethod'], 'cash');
+      expect(params.containsKey('paymentMethod'), isFalse);
+      expect(params['payments'], [
+        {'method': 'cash', 'amountCents': 100},
+      ]);
       final item = (params['items'] as List).first as Map<String, dynamic>;
       expect(item['quantity'], 1);
       expect(item['unitPriceCents'], 100); // v2: ganze Cent (Integer)
@@ -65,7 +68,7 @@ void main() {
 
     test('sellReceipt parst die Antwort zu einem Beleg', () async {
       final api = apiWith(successClient((_) {}));
-      final receipt = await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]);
+      final receipt = await api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]);
       expect(receipt, isNotNull);
       expect(receipt!.receiptId, 'TEST-ID-1');
     });
@@ -76,21 +79,21 @@ void main() {
       final api = apiWith(MockClient((_) async =>
           http.Response(jsonEncode({'status': 'error', 'message': 'Kasse gesperrt'}), 200, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
-        () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(predicate((e) => e.toString().contains('Kasse gesperrt'))),
       );
     });
     test('HTTP 500 -> Exception mit Statuscode', () async {
       final api = apiWith(MockClient((_) async => http.Response('kaputt', 500, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
-        () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(predicate((e) => e.toString().contains('500'))),
       );
     });
     test('leerer Body -> Exception', () async {
       final api = apiWith(MockClient((_) async => http.Response('', 200, headers: const {'kasseneck-api-version': 'v3'})));
       expect(
-        () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(isA<Exception>()),
       );
     });
@@ -99,29 +102,29 @@ void main() {
   group('sellReceipt-Validierung (wirft VOR dem HTTP-Call)', () {
     test('standard ohne Items -> ArgumentError', () {
       final api = apiWith(neverCalled());
-      expect(() => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: []),
+      expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: []),
           throwsArgumentError);
-      expect(() => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash),
+      expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)]),
           throwsArgumentError);
     });
     test('ungueltiges Item (leerer Name) -> ArgumentError', () {
       final api = apiWith(neverCalled());
       final bad = KasseneckItem(name: '', quantity: 1, vat: VatRate.vat20, priceCents: 1);
-      expect(() => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [bad]),
+      expect(() => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [bad]),
           throwsArgumentError);
     });
     test('ungueltiger Voucher -> ArgumentError', () {
       final api = apiWith(neverCalled());
       final bad = KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 0);
       expect(
-        () => api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem], vouchers: [bad]),
+        () => api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem], vouchers: [bad]),
         throwsArgumentError,
       );
     });
     test('NUR Sell-Voucher ohne Items ist erlaubt (geht bis zum HTTP-Call)', () async {
       final api = apiWith(successClient((_) {}));
       final voucher = KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 1000);
-      final receipt = await api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, vouchers: [voucher]);
+      final receipt = await api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], vouchers: [voucher]);
       expect(receipt, isNotNull);
     });
   });
@@ -159,18 +162,6 @@ void main() {
   });
 
   group('Weitere API-Helfer', () {
-    test('cancelReceipt negiert die Items des Originals', () async {
-      late http.Request captured;
-      final api = apiWith(successClient((r) => captured = r));
-      final original = cartA();
-      // ignore: deprecated_member_use_from_same_package
-      await api.cancelReceipt(receipt: original);
-
-      final params = (jsonDecode(captured.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
-      expect(params['receiptType'], 'cancellation');
-      final cents = (params['items'] as List).map((i) => i['unitPriceCents'] as int).toList();
-      expect(cents, [-1999, -29, -105]);
-    });
     test('zeroReceipt sendet keine Items', () async {
       late http.Request captured;
       final api = apiWith(successClient((r) => captured = r));
@@ -431,7 +422,7 @@ void main() {
       );
 
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(fristAbgelaufen(const Duration(milliseconds: 40))),
       );
     });
@@ -446,9 +437,7 @@ void main() {
         signatureTimeout: const Duration(milliseconds: 40),
       );
 
-      // ignore: deprecated_member_use_from_same_package
-
-      await expectLater(api.cancelReceipt(receipt: cartA()),
+      await expectLater(api.stornieren(cashregisterId: 'CASHBOX-9', originalReceiptId: 'R-1', grund: 'input_error'),
           throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
       await expectLater(api.zeroReceipt(),
           throwsA(fristAbgelaufen(const Duration(milliseconds: 40))));
@@ -505,7 +494,7 @@ void main() {
       // Exception laesst diesen Unterschied nicht ausdruecken.
       final api = apiMit('[1,2,3]');
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(isA<KasseneckHttpError>()
             .having((e) => e.functionName, 'functionName', 'createReceipt')
             .having((e) => e.reason, 'reason', 'missing-status')
@@ -517,7 +506,7 @@ void main() {
       // Captive Portal oder CDN-Fehlerseite — der Rumpf selbst bleibt draussen.
       final api = apiMit('<html>Gateway</html>');
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(isA<KasseneckHttpError>()
             .having((e) => e.reason, 'reason', 'not-json')
             .having((e) => e.toString(), 'ohne Rumpf', isNot(contains('Gateway')))),
@@ -538,7 +527,7 @@ void main() {
     test('Erfolg ohne data-Objekt: response_unreadable, Ausgang unklar', () async {
       final api = apiMit(jsonEncode({'status': 'success', 'data': null}));
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(unlesbar(receiptId: isNull, field: isNull)
             .having((e) => e.message, 'message', contains('data-not-object'))),
       );
@@ -553,7 +542,7 @@ void main() {
       final api = apiMit(jsonEncode({'status': 'success', 'data': daten}));
 
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(unlesbar(receiptId: 'TEST-ID-1', field: 'qr')),
       );
     });
@@ -564,7 +553,7 @@ void main() {
       final api = apiMit(jsonEncode({'status': 'success', 'data': daten}));
 
       await expectLater(
-        api.sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem]),
+        api.sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem]),
         throwsA(unlesbar(receiptId: 'TEST-ID-1', field: 'receipt')),
       );
     });
@@ -677,7 +666,7 @@ void main() {
           )));
 
       final beleg = await api
-          .sellReceipt(paymentMethod: KeckPaymentMethod.cash, items: [validItem])
+          .sellReceipt(payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)], items: [validItem])
           .timeout(const Duration(seconds: 5),
               onTimeout: () => fail('sellReceipt haengt am Logo-Abruf'));
 

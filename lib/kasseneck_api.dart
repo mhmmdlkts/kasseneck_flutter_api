@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:kasseneck_api/enums/cashbox_status.dart';
-import 'package:kasseneck_api/enums/credit_card_provider.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/receipt_print_type.dart';
 import 'package:kasseneck_api/enums/stripe_link_mode.dart';
@@ -15,7 +14,6 @@ import 'package:kasseneck_api/models/stripe_url_seesion.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
 import 'package:kasseneck_api/services/vienna_time.dart';
 
-import 'enums/keck_payment_method.dart';
 import 'enums/receipt_type.dart';
 import 'enums/signature_status.dart';
 import 'enums/voucher_action.dart';
@@ -79,6 +77,8 @@ export 'models/registration_info.dart' show CancellationOf, RegistrationInfo;
 export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson;
 export 'models/beleg_layout.dart' show LayoutBannerTone;
 export 'services/druck_logo.dart' show ladeDruckLogo;
+// Server-Layout zuerst, sonst Rueckfall in der gewaehlten Breite.
+export 'src/receipt/layout_from_result.dart' show ReceiptPrintLayout, receiptLayoutFromResult;
 // Zahlbetrag als Zwilling des Servers: was die Zahlungen eines Verkaufs
 // zusammen ergeben muessen (unter /v3 ist payments Pflicht).
 export 'src/receipt/due.dart'
@@ -128,7 +128,7 @@ export 'widgets/keck_beleg_blatt_widget.dart' show KeckBelegBlattWidget;
 /// ```dart
 /// final kasseneck = KasseneckApi(apiKey: '…', cashregisterToken: '…');
 /// final receipt = await kasseneck.sellReceipt(
-///   paymentMethod: KeckPaymentMethod.cash,
+///   payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 320)],
 ///   items: [KasseneckItem(name: 'Coffee', quantity: 1, vat: VatRate.vat20, priceCents: 320)],
 /// );
 /// ```
@@ -334,66 +334,8 @@ class KasseneckApi {
       DateTime dateTime = DateTime.parse(roh);
       return ReportMonth.fromDateTime(dateTime);
     } else {
-      final msg = resJson['message'] ?? 'Unbekannter Fehler';
-      throw Exception('getFirstReceiptDate fehlgeschlagen: $msg');
+      throw envelopeError(Aufrufe.getFirstReceiptDate, resJson);
     }
-  }
-
-  /// Issues a **cancellation** receipt that reverses [receipt] (its items, negated).
-  ///
-  /// **Deprecated — old cancellation path.** Runs through `createReceipt` without
-  /// a reference to the original: no remaining quantities, no protection against
-  /// cancelling twice, vouchers are not taken back. The backend still accepts it
-  /// and answers with `deprecation`. Use [stornieren] instead (or
-  /// `RegisterReceiptClient.stornieren` with a register login): reference,
-  /// reason, partial cancellation, stable error codes.
-  @Deprecated('Alter Storno-Weg ohne Bezug — KasseneckApi.stornieren (bzw. RegisterReceiptClient.stornieren) verwenden')
-  Future<KasseneckReceipt?> cancelReceipt({
-    required KasseneckReceipt receipt,
-    KeckPaymentMethod? paymentMethod,
-    CreditCardProvider? creditCardProvider,
-    String? customProjectId,
-    String? cardPaymentId,
-    Map<String, dynamic>? cardPaymentData,
-    List<String>? legalMessage,
-  }) async {
-    paymentMethod ??= receipt.paymentMethod;
-    return _createReceipt(
-        receiptType: ReceiptType.cancellation,
-        customerDetails: receipt.customerDetails,
-        items: receipt.items.map((item) => item.negative).toList(),
-        paymentMethod: paymentMethod,
-        cardPaymentData: cardPaymentData,
-        cardPaymentId: cardPaymentId,
-        creditCardProvider: creditCardProvider,
-        customProjectId: customProjectId,
-        legalMessage: legalMessage
-    );
-  }
-
-  /// **Deprecated — old cancellation path**, see [cancelReceipt].
-  @Deprecated('Alter Storno-Weg ohne Bezug — KasseneckApi.stornieren (bzw. RegisterReceiptClient.stornieren) verwenden')
-  Future<KasseneckReceipt?> createCancelReceipt({
-    required KeckPaymentMethod paymentMethod,
-    required List<KasseneckItem> items,
-    List<String>? customerDetails,
-    CreditCardProvider? creditCardProvider,
-    String? customProjectId,
-    String? cardPaymentId,
-    Map<String, dynamic>? cardPaymentData,
-    List<String>? legalMessage,
-  }) async {
-    return _createReceipt(
-        receiptType: ReceiptType.cancellation,
-        customerDetails: customerDetails,
-        items: items,
-        paymentMethod: paymentMethod,
-        cardPaymentData: cardPaymentData,
-        cardPaymentId: cardPaymentId,
-        creditCardProvider: creditCardProvider,
-        customProjectId: customProjectId,
-        legalMessage: legalMessage
-    );
   }
 
   /// Storno-Beleg zu einem bestehenden Beleg ueber den Endpunkt
@@ -401,7 +343,9 @@ class KasseneckApi {
   /// Zugang (Zwilling von `cancelReceipt` im Client des npm-Pakets, Gegenstueck
   /// zu `RegisterReceiptClient.stornieren` der Kassen-Anmeldung).
   ///
-  /// Anders als [cancelReceipt] negiert hier der **Server**: er prueft Restmengen
+  /// Den alten Storno-Weg ohne Bezug (`createReceipt` mit Belegtyp Storno,
+  /// die beiden alten Storno-Aufrufe aus 9.x) gibt es seit 10.0 nicht mehr.
+  /// Hier negiert der **Server**: er prueft Restmengen
   /// und Rechte, verkettet Original und Storno (`cancellationOf` am Storno,
   /// `cancellations[]` am Original), nimmt Gutscheine und Rabatte zurueck und
   /// weist einen zweiten Storno desselben Restes mit `already_cancelled` ab.
@@ -571,41 +515,37 @@ class KasseneckApi {
     return _createReceipt(receiptType: ReceiptType.zero);
   }
 
-  /// Issues a **standard** RKSV receipt (a sale) for the given [items] and [paymentMethod].
+  /// Issues a **standard** RKSV receipt (a sale) for the given [items], paid
+  /// by [payments].
   ///
-  /// Several payments on one receipt (two cards, the rest in cash) go out as
-  /// [payments] instead. They exclude [paymentMethod] and the card fields --
-  /// the card details belong to each payment (backend: `PAYMENTS_CONFLICT`).
-  /// One of the two is required; `mixed` is never sent, the server derives it.
+  /// [payments] is required under `/v3` and may be empty only when nothing is
+  /// due (a discount covers everything). Its sum must equal the amount due
+  /// ([receiptDueCents]), otherwise the server rejects the sale with
+  /// `payments_sum_mismatch` and the expected amount (`paymentsExpectedCents`).
+  /// Card details belong to each payment (`provider`, `providerPaymentId`,
+  /// `providerData`); a single payment method and the old card fields no
+  /// longer exist. `mixed` is never sent, the server derives it.
+  ///
+  /// Errors keep their code and outcome: on `isOutcomeUnknown(e)` look the
+  /// receipt up, never sell a second time.
   Future<KasseneckReceipt?> sellReceipt({
-    KeckPaymentMethod? paymentMethod,
-    List<KeckPaymentInput>? payments,
+    required List<KeckPaymentInput> payments,
     List<KasseneckItem>? items,
     List<KeckVoucher>? vouchers,
     List<String>? customerDetails,
     List<String>? legalMessage,
-    CreditCardProvider? creditCardProvider,
-    String? cardPaymentId,
     String? customProjectId,
-    Map<String, dynamic>? cardPaymentData,
     KeckTip? tip,
   }) async {
-    if (paymentMethod == null && payments == null) {
-      throw ArgumentError('paymentMethod oder payments ist Pflicht.');
-    }
     return _createReceipt(
       receiptType: ReceiptType.standard,
       tip: tip,
       customerDetails: customerDetails,
       items: items,
       vouchers: vouchers,
-      paymentMethod: paymentMethod,
       payments: payments,
-      cardPaymentData: cardPaymentData,
-      cardPaymentId: cardPaymentId,
-      creditCardProvider: creditCardProvider,
       customProjectId: customProjectId,
-      legalMessage: legalMessage
+      legalMessage: legalMessage,
     );
   }
 
@@ -655,18 +595,18 @@ class KasseneckApi {
     return null;
   }
 
+  /// Gemeinsame Umsetzung von Verkauf und Nullbeleg (Zwilling von
+  /// `createReceiptParams` im npm-Paket). Wirft, bevor etwas hinausgeht: ein
+  /// Beleg ist nicht folgenlos wiederholbar. Ein Storno geht nur ueber
+  /// [stornieren] (Bezug, Grund, Restmengen).
   Future<KasseneckReceipt?> _createReceipt({
     required ReceiptType receiptType,
-    KeckPaymentMethod? paymentMethod,
     List<KeckPaymentInput>? payments,
-    CreditCardProvider? creditCardProvider,
     String? customProjectId,
-    String? cardPaymentId,
     List<KasseneckItem>? items,
     List<KeckVoucher>? vouchers,
     List<String>? customerDetails,
     List<String>? legalMessage,
-    Map<String, dynamic>? cardPaymentData,
     KeckTip? tip,
   }) async {
 
@@ -698,7 +638,7 @@ class KasseneckApi {
       if (voucherError != null) {
         throw ArgumentError(voucherError);
       }
-      params['vouchers'] = vouchers.map((e) => e.toJson()).toList();
+      params['vouchers'] = vouchers.map((e) => e.toPayload()).toList();
     }
 
 
@@ -725,42 +665,19 @@ class KasseneckApi {
       }
       params['tip'] = tip.toJson();
     }
-    if (payments != null) {
-      // Der alte Storno-Weg und der Null-/Startbeleg nehmen keine
-      // Zahlungsliste (Backend: payments_not_allowed); ein Storno mit mehreren
-      // Zahlungen laeuft ueber [stornieren].
-      if (receiptType == ReceiptType.cancellation) {
-        throw ArgumentError('payments am Storno gehen nur ueber stornieren.');
+    final bool umsatz = receiptType == ReceiptType.standard || receiptType == ReceiptType.training;
+    if (umsatz) {
+      // Pflicht unter /v3 (payments_required); leer erlaubt, wenn nichts zu
+      // zahlen ist.
+      if (payments == null) {
+        throw ArgumentError('payments fehlt: unter /v3 ist die Zahlungsliste Pflicht (Summe = receiptDueCents).');
       }
-      if (receiptType != ReceiptType.standard && receiptType != ReceiptType.training) {
-        throw ArgumentError('payments sind bei receiptType "${receiptType.name}" nicht erlaubt.');
-      }
-      final fehler = zahlungsKonflikt({
-            'paymentMethod': paymentMethod,
-            'creditCardProvider': creditCardProvider,
-            'cardPaymentId': cardPaymentId,
-            'cardPaymentData': cardPaymentData,
-          }) ??
-          zahlungenFehler(payments, storno: false);
+      final fehler = zahlungenFehler(payments, storno: false);
       if (fehler != null) throw ArgumentError(fehler);
       params['payments'] = [for (final p in payments) p.toJson()];
-    }
-    if (paymentMethod == KeckPaymentMethod.mixed) {
-      throw ArgumentError(mixedNichtSenden);
-    }
-    if (paymentMethod != null) {
-      params['paymentMethod'] = paymentMethod.name;
-      creditCardProvider ??= CreditCardProvider.custom;
-      if (paymentMethod == KeckPaymentMethod.creditCard) {
-        if (cardPaymentId != null) {
-          params['cardPaymentId'] = cardPaymentId;
-          params['creditCardProvider'] = creditCardProvider.name;
-          params['cardPaymentData'] = cardPaymentData;
-        } else if (creditCardProvider != CreditCardProvider.custom) {
-          throw ArgumentError(
-              'cardPaymentId ist Pflicht bei creditCardProvider "$creditCardProvider".');
-        }
-      }
+    } else if (payments != null) {
+      // Null- und Startbeleg nehmen keine Zahlungsliste (payments_not_allowed).
+      throw ArgumentError('payments sind bei receiptType "${receiptType.name}" nicht erlaubt.');
     }
     if (customProjectId != null) {
       params['customProjectId'] = customProjectId;
@@ -831,8 +748,7 @@ class KasseneckApi {
     final resJson = await _kasseneckJson(endpoint: Aufrufe.listMyTipRecipients);
 
     if (resJson['status'] != 'success') {
-      final msg = resJson['message'] ?? 'Unbekannter Fehler';
-      throw Exception('listMyTipRecipients fehlgeschlagen: $msg');
+      throw envelopeError(Aufrufe.listMyTipRecipients, resJson);
     }
     final roh = resJson['data'] is Map ? resJson['data']['recipients'] : null;
     if (roh is! List) {
@@ -858,8 +774,7 @@ class KasseneckApi {
       await receipt.init();
       return receipt;
     } else {
-      final msg = resJson['message'] ?? 'Unbekannter Fehler';
-      throw Exception('getReceipt fehlgeschlagen: $msg');
+      throw envelopeError(Aufrufe.getReceipt, resJson);
     }
   }
 
@@ -909,8 +824,7 @@ class KasseneckApi {
       await Future.wait(receipts.map((r) => r.init()));
       return receipts;
     } else {
-      final msg = resJson['message'] ?? 'Unbekannter Fehler';
-      throw Exception('getReceipts fehlgeschlagen: $msg');
+      throw envelopeError(Aufrufe.getReportV2, resJson);
     }
   }
 
@@ -987,6 +901,9 @@ class KasseneckApi {
           'customer_email': ?customerEmail
         },
     );
+    if (resJson['status'] != 'success') {
+      throw envelopeError(Aufrufe.createPaymentLinkStripe, resJson);
+    }
     try {
       return StripeUrlSession.fromJson(resJson['data']);
     } catch (e) {

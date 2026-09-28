@@ -88,21 +88,6 @@ void main() {
       expect(params.containsKey('cardPaymentData'), isFalse);
     });
 
-    test('payments neben paymentMethod oder Kartenfeldern: Konflikt vor dem Netz', () {
-      final api = apiWith(nieGerufen());
-      expect(() => api.sellReceipt(items: [ware], payments: [bar], paymentMethod: KeckPaymentMethod.cash),
-          throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('paymentMethod'))));
-      expect(() => api.sellReceipt(items: [ware], payments: [bar], creditCardProvider: CreditCardProvider.sumup),
-          throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('creditCardProvider'))));
-      expect(() => api.sellReceipt(items: [ware], payments: [bar], cardPaymentId: 'x'), throwsArgumentError);
-      expect(() => api.sellReceipt(items: [ware], payments: [bar], cardPaymentData: {'a': 1}), throwsArgumentError);
-    });
-
-    test('weder paymentMethod noch payments: Fehler vor dem Netz', () {
-      final api = apiWith(nieGerufen());
-      expect(() => api.sellReceipt(items: [ware]), throwsArgumentError);
-    });
-
     test('Formfehler einer Zahlung wirft vor dem Netz', () {
       final api = apiWith(nieGerufen());
       expect(
@@ -110,12 +95,6 @@ void main() {
           throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('Zahlung 1'))));
       expect(() => api.sellReceipt(items: [ware], payments: const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 100)]),
           throwsArgumentError);
-    });
-
-    test('mixed als Einzel-Zahlungsart wird nie gesendet', () {
-      final api = apiWith(nieGerufen());
-      expect(() => api.sellReceipt(items: [ware], paymentMethod: KeckPaymentMethod.mixed),
-          throwsA(isA<ArgumentError>().having((e) => e.message, 'message', contains('mixed'))));
     });
   });
 
