@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-rc.4",
+  "version": "1.0.0-rc.5",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -399,6 +399,16 @@
     "splitPayment"
   ],
   "pos": {
+    "callsWithEffect": [
+      "createReceipt",
+      "cancelReceipt",
+      "financeWebService",
+      "hobexPayApi",
+      "hobexRefundApi",
+      "stripeCaptureIntent",
+      "createPrintJob",
+      "sendReceiptEmail"
+    ],
     "posErrorCodes": [
       "account_not_found",
       "admin_required",

@@ -31,6 +31,7 @@ Contents:
 - [E. Parameters](#e-parameters)
 - [F. Named record fields](#f-named-record-fields)
 - [G. Removed without a direct successor](#g-removed-without-a-direct-successor)
+- [H. Changed between the release candidates](#h-changed-between-the-release-candidates)
 
 ## A. Changed by the /v3 rebuild
 
@@ -1120,3 +1121,16 @@ is named like its wire key.
 | `RegisterReceiptClient.verkaufen(zahlungsart, kartenanbieter, kartenzahlungId, kartenzahlungsdaten)` | `RegisterReceiptClient.sell(payments: [KeckPaymentInput(...)])` |
 | `KasseneckApi.stornieren(zahlungsart, kartenanbieter, kartenzahlungId, kartenzahlungsdaten)` | `KasseneckApi.cancelReceipt(payments: [KeckPaymentInput(...)], original:)` |
 | `RegisterReceiptClient.stornieren(zahlungsart)` | `RegisterReceiptClient.cancelReceipt(payments: [KeckPaymentInput(...)])` |
+
+## H. Changed between the release candidates
+
+Only relevant if you already moved to `10.0.0-rc.1`. From 9.x, parts A to G
+are enough; the names below are new in 10.0 either way.
+
+| 10.0.0-rc.1 | 10.0.0-rc.2 |
+|---|---|
+| `receiptDueCents`, `receiptDueBreakdown`, `receiptDueBreakdownForLines`, `ReceiptDueLine.of`, `ReceiptDueLine.fromJson`, `ReceiptDueTip.fromKeckTip` (recipients without `isOwner`) throw `ArgumentError` | they throw `ReceiptDueError` (`code` `receipt_due_unavailable`, `reason` from `receiptDueErrorReasons`, `outcome` `rejected`); check `isReceiptDueError(e)` or `e.reason` |
+| `ReceiptDueTip.fromKeckTip` with an empty `recipients` list gives a tip without recipients | it throws `ReceiptDueError` `invalid_tip`, like `ReceiptDueTip(cents, recipients: [])` |
+| `migrateStoredReceiptJson` keeps a stored layout with empty `lines`, a line that is not an object, or no `paperSize` | the layout is left out, so `receiptLayoutFromResult` rebuilds the receipt locally with TESTKASSE and warning lines; `storedLayoutJson` is the same step for a layout on its own |
+| `migrateStoredReceiptJson` turns an unknown banner `ton` into `receipt_type` | an unknown `ton` goes through as it is (as in npm) |
+| no text catalogue in the package | `pos.dart`: `posMessages`, `posLabels`, `messageText`, `labelText`, `messageAppliesTo`, `errorRules`, `errorCodeRules`, `errorOutcomeRules`, `callsWithEffect`, `findErrorRule`, `messageOutcome`, `receiptEmailErrorMessage`, `cancellationPaymentErrorMessage` |

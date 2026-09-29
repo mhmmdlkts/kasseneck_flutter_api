@@ -12,7 +12,7 @@ Die vollständige Dokumentation steht im englischen README:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.0.0-rc.1
+  kasseneck_api: ^10.0.0-rc.2
 ```
 
 Voraussetzungen: Dart SDK `^3.12.1`, Flutter `>=3.44.0`, ein Kasseneck-API-Schlüssel
@@ -62,6 +62,14 @@ Kassen-Benutzer und ihrer Sitzung), der `/v3`-Rand vor dem Handler
 (`not_found`, `internal_translation_error`), das Modul- und Rechte-Tor
 (`module_inactive`, `not_permitted`) und das paketeigene `route_missing`. Die
 vollständige Liste steht im englischen README unter „Unknown outcome“.
+
+Was der Kassier dazu liest, entscheidet `findErrorRule` aus `pos.dart`
+(Code-Regel, dann Ausgangs-Regel, dann die Regel der Art) mit dem Ausgang aus
+`messageOutcome`: eine Frist oder ein Netzfehler auf einem Aufruf mit Wirkung
+(`callsWithEffect`: Beleg, Storno, FinanzOnline, Geldwege, Druckjob, Belegmail)
+bekommt den Satz „Der Server hat nicht geantwortet, der Vorgang kann trotzdem
+gebucht sein …“, nie „erneut versuchen“. Die Sätze sind dieselben wie in der
+Web-Kasse (`messageText`, `labelText`, erzeugt aus `pos-texts.json`).
 
 ## Version 10
 

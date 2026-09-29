@@ -83,7 +83,7 @@ export 'src/receipt/codes.dart'
         receiptErrorCodes;
 // Die Typen, die der Beleg unter /v3 traegt, und der Leser fuer gespeicherte 9.x-Belege.
 export 'models/registration_info.dart' show CancellationOf, RegistrationInfo;
-export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson;
+export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson, storedLayoutJson;
 export 'models/receipt_layout.dart' show LayoutBannerTone;
 export 'services/print_logo.dart' show loadPrintLogo;
 // Server-Layout zuerst, sonst Rueckfall in der gewaehlten Breite.
@@ -93,13 +93,17 @@ export 'src/receipt/layout_from_result.dart' show ReceiptPrintLayout, receiptLay
 export 'src/receipt/due.dart'
     show
         ReceiptDueBreakdown,
+        ReceiptDueError,
         ReceiptDueLine,
         ReceiptDueTip,
         ReceiptDueTipRecipient,
         ReceiptDueTipShare,
         receiptDueBreakdown,
         receiptDueBreakdownForLines,
-        receiptDueCents;
+        receiptDueCents,
+        receiptDueErrorCode,
+        receiptDueErrorReasons,
+        isReceiptDueError;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
 // nicht benennbar.

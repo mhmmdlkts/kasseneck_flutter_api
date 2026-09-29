@@ -66,7 +66,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.0.0-rc.1
+  kasseneck_api: ^10.0.0-rc.2
 ```
 
 ```bash
@@ -400,6 +400,13 @@ not match, the server answers `payments_sum_mismatch`, and
 `paymentsExpectedCents(error)` reads the amount it expected. An empty list is
 allowed only when the amount due is 0.
 
+When the amount cannot be computed from the input (a tip without goods, a tip
+on a zero receipt, an item without a VAT rate, ...), `receiptDueCents` throws a
+`ReceiptDueError` before anything is sent: `code` is always
+`receipt_due_unavailable`, `reason` names the cause (`tip_without_goods`,
+`invalid_item`, ... see `receiptDueErrorReasons`), `outcome` is always
+`rejected`. Decide on `reason`, never on the message.
+
 `sellReceipt` takes, besides `items` and `payments`:
 
 - `vouchers`: `KeckVoucher(action: VoucherAction.sell or .redeem, type: VoucherType.value or .promo, valueCents: …)`.
@@ -566,8 +573,9 @@ try {
 ```
 
 The error types are exported from `kasseneck_api.dart`, `register.dart` and
-`invoice.dart`. `pos.dart` exports only `KasseneckReceiptFormatError`; to catch
-the others on the register path, import `register.dart` as well.
+`invoice.dart`. `pos.dart` exports only `KasseneckReceiptFormatError`,
+`ErrorOutcome` and `isOutcomeUnknown`; to catch the others on the register
+path, import `register.dart` as well.
 
 | Type | Meaning |
 | --- | --- |
@@ -580,6 +588,44 @@ Invalid input to `sellReceipt` and `zeroReceipt` (no items, invalid vouchers,
 payments missing or malformed) throws a `KasseneckValidationError`
 (`kind: 'request'`) before anything is sent, the same type as
 `RegisterReceiptClient.sell` and the npm package.
+
+**What the cashier sees.** `pos.dart` carries the register's sentences, the
+same ones the web register shows (`posMessages`, `posLabels`, `messageText`,
+`labelText`, generated from the contract file `pos-texts.json`), and the rules
+that pick one for an error. Classify the error yourself (`ErrorKind.api` for a
+`KasseneckApiError`, `ErrorKind.timeout`/`ErrorKind.network` for the
+`KasseneckHttpError` reasons of the same name, ...), then:
+
+```dart
+import 'package:kasseneck_api/pos.dart';
+import 'package:kasseneck_api/register.dart';
+
+String sentence(Object e, String fallback) {
+  final kind = switch (e) {
+    KasseneckApiError() => ErrorKind.api,
+    KasseneckHttpError(reason: KasseneckHttpError.reasonTimeout) => ErrorKind.timeout,
+    KasseneckHttpError(reason: KasseneckHttpError.reasonNetwork) => ErrorKind.network,
+    KasseneckHttpError() => ErrorKind.unexpected,
+    _ => ErrorKind.other,
+  };
+  final rule = findErrorRule(kind, code: e is KasseneckApiError ? e.code : null, outcome: messageOutcome(e));
+  if (rule.key case final key?) {
+    return messageText(key, key == 'server.unexpected' ? {'status': e is KasseneckHttpError ? e.statusCode : 0} : const {});
+  }
+  return switch (rule.behavior!) {
+    ErrorRuleBehavior.serverText => (e as KasseneckApiError).message,
+    ErrorRuleBehavior.ownText || ErrorRuleBehavior.fallback => fallback,
+  };
+}
+```
+
+`findErrorRule` applies a code rule (`errorCodeRules`: edge codes get a human
+sentence instead of the technical one), then an outcome rule
+(`errorOutcomeRules`), then the one rule of the kind (`errorRules`, unchanged
+since 10.0.0-rc.1). `messageOutcome` treats a timeout or network error on a call
+from `callsWithEffect` (receipt, cancellation, FinanzOnline, card payments,
+print job, receipt email) as outcome unknown: the sentence then says to check
+whether the last operation went through, never to try again.
 
 **Code catalogues per endpoint group**, each one the server's own codes, then
 the sign-in and edge codes that can reach it, then the codes the package sets

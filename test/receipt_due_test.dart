@@ -12,6 +12,7 @@ import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/src/receipt/due.dart';
+import 'package:kasseneck_api/src/register/fehler.dart' show ErrorOutcome, isOutcomeUnknown;
 
 /// Zahlbetrag als Zwilling des Backends (npm `test/due.test.ts`): jeder Fall
 /// aus `v3/zahlbetrag-faelle.json` (20, gegen den echten Handler geprueft) und
@@ -174,8 +175,9 @@ void main() {
         try {
           _genRechnen(input);
           abweichend.add('${f['name']}: Fehler erwartet');
-        } on ArgumentError {
-          // erwartet
+        } on ReceiptDueError catch (e) {
+          // Der eine Fehlerfall der Datei ist Trinkgeld ohne Ware.
+          if (e.reason != 'tip_without_goods') abweichend.add('${f['name']}: ${e.reason} statt tip_without_goods');
         }
         continue;
       }
@@ -230,34 +232,121 @@ void main() {
     expect(e.dueCents, -14);
   });
 
-  test('Unbrauchbare Eingaben werfen statt still falsch zu rechnen', () {
+  test('Unbrauchbare Eingaben werfen ReceiptDueError mit Grund statt still falsch zu rechnen', () {
+    Matcher grund(String reason, [String? text]) => throwsA(isA<ReceiptDueError>()
+        .having((e) => e.reason, 'reason', reason)
+        .having((e) => e.code, 'code', 'receipt_due_unavailable')
+        .having((e) => e.message, 'message', contains(text ?? '')));
     final gut = KasseneckItem(name: 'A', quantity: 1, priceCents: 100, vat: VatRate.vat20);
     expect(() => receiptDueCents([gut], [KeckVoucher(action: VoucherAction.redeem, type: VoucherType.value, valueCents: null)], ReceiptType.standard),
-        throwsArgumentError);
+        grund('invalid_voucher'));
     expect(() => receiptDueCents([gut], const [], ReceiptType.zero, tip: ReceiptDueTip(100), tipRecipient: ReceiptDueTipRecipient.staff),
-        throwsArgumentError);
+        grund('tip_not_allowed'));
     expect(() => receiptDueCents(const [], const [], ReceiptType.standard, tip: ReceiptDueTip(100), tipRecipient: ReceiptDueTipRecipient.owner),
-        throwsArgumentError);
-    expect(() => receiptDueCents([gut], const [], ReceiptType.standard, tip: ReceiptDueTip(100)),
-        throwsA(isA<ArgumentError>().having((e) => '${e.message}', 'message', contains('tipRecipient'))));
+        grund('tip_without_goods'));
+    expect(() => receiptDueCents([gut], const [], ReceiptType.standard, tip: ReceiptDueTip(100)), grund('tip_recipient_missing', 'tipRecipient'));
     expect(
         () => receiptDueCents([gut], const [], ReceiptType.standard,
             payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 110, tipCents: 10)]),
-        throwsA(isA<ArgumentError>().having((e) => '${e.message}', 'message', contains('tipRecipient'))));
+        grund('tip_recipient_missing', 'tipRecipient'));
     expect(
         () => receiptDueCents([gut], const [], ReceiptType.standard,
             tip: ReceiptDueTip(10),
             tipRecipient: ReceiptDueTipRecipient.staff,
             payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 110, tipCents: 10)]),
-        throwsA(isA<ArgumentError>().having((e) => '${e.message}', 'message', contains('tip_conflict'))));
+        grund('tip_conflict', 'tip_conflict'));
     expect(() => receiptDueCents([gut], const [], ReceiptType.standard, tip: ReceiptDueTip(0), tipRecipient: ReceiptDueTipRecipient.staff),
-        throwsArgumentError);
+        grund('invalid_tip'));
     expect(
         () => receiptDueCents([gut], const [], ReceiptType.standard,
             tip: ReceiptDueTip(10, recipients: const [ReceiptDueTipShare(cents: 9, owner: false)])),
-        throwsArgumentError);
+        grund('invalid_tip'));
+    expect(() => receiptDueCents([gut], const [], ReceiptType.standard, tip: ReceiptDueTip(10, recipients: const [])), grund('invalid_tip'));
+    expect(
+        () => receiptDueCents([gut], const [], ReceiptType.standard,
+            tipRecipient: ReceiptDueTipRecipient.staff,
+            payments: const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: 110, tipCents: 10)]),
+        grund('unknown_payment_method'));
     expect(() => receiptDueBreakdownForLines(const [ReceiptDueLine(quantity: double.nan, priceCents: 1, vatRate: 20)], const [], ReceiptType.standard),
-        throwsArgumentError);
+        grund('invalid_item'));
+    expect(() => receiptDueBreakdownForLines(const [ReceiptDueLine(quantity: 1, priceCents: 1, vatRate: double.infinity)], const [], ReceiptType.standard),
+        grund('invalid_item'));
+  });
+
+  test('ReceiptDueError: Ausgang abgelehnt, nie unklar, kein ArgumentError', () {
+    const e = ReceiptDueError('tip_without_goods', 'x');
+    expect(e.outcome, ErrorOutcome.rejected);
+    expect(isOutcomeUnknown(e), isFalse);
+    expect(isReceiptDueError(e), isTrue);
+    expect(isReceiptDueError(ArgumentError('x')), isFalse);
+    expect(e, isNot(isA<ArgumentError>()));
+    expect(e.toString(), 'ReceiptDueError(tip_without_goods): Zahlbetrag: x');
+  });
+
+  group('Nicht rechenbare Faelle (receipt-due-errors.json, auch fuer npm)', () {
+    final datei = _json('receipt-due-errors.json');
+    final faelle = (datei['cases'] as List).cast<Map<String, dynamic>>();
+
+    // Was der Dart-Typ gar nicht erst annimmt: ein fremder Belegtyp ist kein
+    // ReceiptType, eine unbekannte Zahlart kein KeckPaymentMethod, ein halber
+    // Cent kein int. Der Fall geht dann den naechsten Weg, den Dart hat.
+    Object? rechne(Map<String, dynamic> input) {
+      final typ = ReceiptType.values.asNameMap()[input['receiptType']];
+      if (typ == null) return 'kein ReceiptType';
+      final zahlungen = (input['payments'] as List?)?.cast<Map<String, dynamic>>();
+      return receiptDueBreakdownForLines(
+        [
+          for (final p in (input['items'] as List).cast<Map<String, dynamic>>())
+            ReceiptDueLine.fromJson({'name': p['name'], 'quantity': p['quantity'], 'unitPriceCents': p['priceCents'], 'vatRate': p['vatRate']}),
+        ],
+        [
+          for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>())
+            KeckVoucher(
+              action: VoucherAction.values.byName(v['action'] as String),
+              type: VoucherType.values.byName(v['type'] as String),
+              valueCents: v['valueCents'] is int ? v['valueCents'] as int : null,
+            ),
+        ],
+        typ,
+        tip: _tipAus(input['tip']),
+        payments: zahlungen == null
+            ? null
+            : [
+                for (final z in zahlungen)
+                  KeckPaymentInput(
+                    // Der einzige Wert, den der Server als Trinkgeld-Zahlart nicht kennt.
+                    method: KeckPaymentMethod.values.asNameMap()[z['method']] ?? KeckPaymentMethod.mixed,
+                    amountCents: 1,
+                    tipCents: z['tipCents'] as int?,
+                  ),
+              ],
+        tipRecipient: switch (input['tipRecipient']) {
+          'owner' => ReceiptDueTipRecipient.owner,
+          'staff' => ReceiptDueTipRecipient.staff,
+          _ => null,
+        },
+      );
+    }
+
+    test('Kopf: Code und Gruende wie in diesem Paket, jeder Grund hat einen Fall', () {
+      expect(datei['code'], receiptDueErrorCode);
+      expect(datei['reasons'], receiptDueErrorReasons);
+      expect(receiptDueErrorReasons.toSet().difference({for (final f in faelle) (f['expected'] as Map)['reason']}), isEmpty);
+      expect(faelle.where((f) => (f['expected'] as Map)['reason'] == 'tip_without_goods').length, greaterThanOrEqualTo(3));
+    });
+
+    for (final f in faelle) {
+      final reason = (f['expected'] as Map)['reason'] as String;
+      test('${f['name']} -> $reason', () {
+        final input = f['input'] as Map<String, dynamic>;
+        if (reason == 'unknown_receipt_type') {
+          // In Dart nicht darstellbar: der Typ laesst den Wert nicht zu.
+          expect(rechne(input), 'kein ReceiptType');
+          return;
+        }
+        expect(() => rechne(input), throwsA(isA<ReceiptDueError>().having((e) => e.reason, 'reason', reason)));
+      });
+    }
   });
 
   test('Serverpositionen mit Bruchmenge oder unbekanntem Satz: nie still falsch, sondern ein Fehler mit Ausweg', () {
@@ -268,7 +357,9 @@ void main() {
       expect(item.lossyRead, isNotNull, reason: '$p');
       expect(
         () => receiptDueCents([item], const [], ReceiptType.standard),
-        throwsA(isA<ArgumentError>().having((e) => '${e.message}', 'message', contains('receiptDueBreakdownForLines'))),
+        throwsA(isA<ReceiptDueError>()
+            .having((e) => e.reason, 'reason', 'invalid_item')
+            .having((e) => e.message, 'message', contains('receiptDueBreakdownForLines'))),
         reason: '$p',
       );
     }
@@ -279,12 +370,17 @@ void main() {
     // Exakt gelesene Positionen (auch 2.0 als Menge) bleiben ohne Vermerk.
     expect(KasseneckItem.fromJson({'name': 'A', 'quantity': 2.0, 'unitPriceCents': 1, 'vatRate': 20}).lossyRead, isNull);
     expect(KasseneckItem.fromJson({'name': 'A', 'amount': 1, 'priceOneCents': 1, 'vat': 4.9}).lossyRead, isNull);
-    expect(() => ReceiptDueLine.fromJson({'name': 'A', 'quantity': 1, 'vatRate': 20}), throwsArgumentError);
+    expect(() => ReceiptDueLine.fromJson({'name': 'A', 'quantity': 1, 'vatRate': 20}),
+        throwsA(isA<ReceiptDueError>().having((e) => e.reason, 'reason', 'invalid_item')));
   });
 
   test('Die Paketwurzel exportiert den Zwilling', () {
     expect(wurzel.receiptDueCents, same(receiptDueCents));
     expect(wurzel.receiptDueBreakdown, same(receiptDueBreakdown));
     expect(wurzel.receiptDueBreakdownForLines, same(receiptDueBreakdownForLines));
+    expect(wurzel.isReceiptDueError, same(isReceiptDueError));
+    expect(wurzel.receiptDueErrorReasons, same(receiptDueErrorReasons));
+    expect(wurzel.receiptDueErrorCode, receiptDueErrorCode);
+    expect(const wurzel.ReceiptDueError('invalid_tip', 'x'), isA<ReceiptDueError>());
   });
 }

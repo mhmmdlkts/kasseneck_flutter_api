@@ -34,9 +34,9 @@ import 'helpers/oeffentliche_api.dart';
 final Set<String> woerter = _liste('''
   abort abortable aborted above account acquirer action actions active add
   added address affiliate after agent align all allowed allows always amount
-  amounts and approval approved april area article articles as ask assert
+  amounts and applies approval approved april area article articles as ask assert
   assign at august auth authority authorization authorized auto background
-  backoff bad bank banner barcode base batch before below between binary bit
+  backoff bad bank banner barcode base batch before behavior below between binary bit
   bits blank block blocked blocks body bold bolt book booking border both
   brand brands breakdown buckets budget build builder bundle business busy by
   byte bytes cache call calls can cancel canceled cancellation cancellations
@@ -57,7 +57,7 @@ final Set<String> woerter = _liste('''
   enrollment entered entry enums envelope environment error errors euro event
   everywhere exact exceeded exception expected expired expires expiry external
   extra failed failure failures fallback fast fault fax february feed field
-  fields file filename files filled filter final finalized finished firmware
+  fields file filename files filled filter final finalized find finished firmware
   first fits flip flow font footer for force foreign form format formats found
   fraction free from full fullscreen function funds gap gateway generator
   german get glass global graphics grid gross ground group groups hardware has
@@ -74,10 +74,11 @@ final Set<String> woerter = _liste('''
   modules month monthly muted my name names native need needs negative net
   network never new next night no none normal normalize not note notes notice
   notices november now number observer october of off offered offset omit on
-  onboarding online open operation operator or order original other out
+  onboarding online only open operation operator or order original other out
   outcome outdated output overdue overview own owner package page paid pair
   paired pairs panel paper parse partial password patch pay payload payment
   payments per percent period persistent person phone photos piece pixel
+  placeholders plain
   platform policy port position present pressed preview previous price prices
   print printer printers printing probe production profile progress project
   promo provider public quantities quantity quick quiet radius raised random
@@ -101,10 +102,10 @@ final Set<String> woerter = _liste('''
   time timeout timestamp tip title to today token tone top total totals touch
   tracking training transaction transfer transmitted transport tries turn
   turnover twelfths type types unavailable uncertain underline ungrouped unit
-  units unknown unpack unpaid unpair unresolved unsupported untangle until
+  unexpected units unknown unpack unpaid unpair unresolved unsupported untangle until
   update updated usable user users valid validation value values verification
   verify version vertical via vias vienna visible voided voucher vouchers wall
-  wanted warm warning watermark webhook webservice widget widgets width widths
+  wanted warm warning watermark web webhook webservice widget widgets width widths
   wire with words wrap write written wrong year yesterday zero zone
 ''');
 

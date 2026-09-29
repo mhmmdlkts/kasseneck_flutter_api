@@ -696,6 +696,9 @@ String? _nichtLeer(Object? wert) => wert is String && wert.isNotEmpty ? wert : n
 /// ueberleben muessen: gelesen wird migriert, verworfen wird nichts. Schon
 /// englische Schluessel bleiben, wie sie sind; ein englischer Schluessel
 /// gewinnt immer gegen seinen deutschen Vorgaenger. [stored] bleibt unberuehrt.
+///
+/// Das Layout geht durch [storedLayoutJson]: ist es nicht ganz lesbar, fehlt
+/// es im Ergebnis, und die Kasse baut den Beleg selbst.
 Map<String, dynamic> migrateStoredReceiptJson(Map<String, dynamic> stored) {
   final neu = Map<String, dynamic>.from(stored);
   const namen = {
@@ -718,28 +721,62 @@ Map<String, dynamic> migrateStoredReceiptJson(Map<String, dynamic> stored) {
       'cashregisterRegisteredAt': pruef['kasseRegistriertAm'],
     };
   }
-  final layout = neu['layout'];
-  if (layout is Map) {
-    final l = Map<String, dynamic>.from(layout);
-    if (l.containsKey('regelwerk')) {
-      final r = l.remove('regelwerk');
-      l.putIfAbsent('ruleset', () => r);
+  if (neu.containsKey('layout')) {
+    final layout = storedLayoutJson(neu['layout']);
+    // Ein halb lesbares Zeilenmodell faellt weg: ohne Layout baut die Kasse
+    // den Beleg aus seinen Angaben neu (receiptLayoutFromResult), samt
+    // TESTKASSE und Warnzeilen. Ein halbes gewaenne sonst immer.
+    if (layout == null) {
+      neu.remove('layout');
+    } else {
+      neu['layout'] = layout;
     }
-    final zeilen = l['lines'];
-    if (zeilen is List) {
-      l['lines'] = [
-        for (final z in zeilen)
-          if (z is Map && z.containsKey('ton'))
-            {
-              for (final e in z.entries)
-                if (e.key != 'ton') e.key: e.value,
-              'tone': z['tone'] ?? (z['ton'] == 'warnung' ? 'warning' : 'receipt_type'),
-            }
-          else
-            z,
-      ];
-    }
-    neu['layout'] = l;
   }
   return neu;
+}
+
+/// Ein gespeichertes Zeilenmodell (`layout`) in der Form von `/v3`, wie
+/// [ReceiptLayout.fromJson] es liest. Zwilling von `fromStoredLayout` im
+/// npm-Paket: nimmt die Form von 0.x bzw. 9.x (`regelwerk`, Bannerzeilen mit
+/// `ton` `belegart`/`warnung`) und die Form 1.0 (`ruleset`, `tone`
+/// `receipt_type`/`warning`); ein unbekannter Ton geht woertlich durch. Die
+/// Schluessel werden an ihrer Stelle umbenannt, die Reihenfolge bleibt; traegt
+/// ein Objekt beide Namen, gewinnt der englische.
+///
+/// `null`, wenn es kein ganzes Zeilenmodell ist: kein Objekt, keine oder leere
+/// `lines`, eine Zeile, die kein Objekt ist, oder kein `paperSize`. Dann baut
+/// der Aufrufer neu (aus Beleg und `testCashregister`/`testSignature`), und
+/// TESTKASSE und die Warnzeilen stehen wieder da. [stored] bleibt unberuehrt.
+///
+/// Die Gegenrichtung (`toStoredLayout` im npm-Paket) gibt es hier nicht: dieses
+/// Paket schreibt das Zeilenmodell nur noch in der Form 1.0
+/// ([ReceiptLayout.toJson], auch an `createPrintJob` unter `/v3`), nie in der
+/// inneren Form von 0.x.
+Map<String, dynamic>? storedLayoutJson(Object? stored) {
+  if (stored is! Map) return null;
+  final zeilen = stored['lines'];
+  if (zeilen is! List || zeilen.isEmpty || zeilen.any((z) => z is! Map)) return null;
+  final papier = stored['paperSize'];
+  if (papier is! String || papier.isEmpty) return null;
+  final raus = _umbenannt(stored, const {'regelwerk': 'ruleset'});
+  raus['lines'] = [
+    for (final z in zeilen.cast<Map>())
+      _umbenannt(z, const {'ton': 'tone'}, werte: {'ton': (w) => _tonNach10[w] ?? w}),
+  ];
+  return raus;
+}
+
+const Map<Object?, String> _tonNach10 = {'belegart': 'receipt_type', 'warnung': 'warning'};
+
+/// [objekt] mit umbenannten Schluesseln an derselben Stelle; [werte] ersetzt
+/// den Wert eines (alten) Schluessels.
+Map<String, dynamic> _umbenannt(Map objekt, Map<String, String> namen, {Map<String, Object? Function(Object?)> werte = const {}}) {
+  final raus = <String, dynamic>{};
+  for (final MapEntry(:key, :value) in objekt.entries) {
+    final alt = '$key';
+    final neu = namen[alt] ?? alt;
+    if (neu != alt && objekt.containsKey(neu)) continue;
+    raus[neu] = werte[alt]?.call(value) ?? value;
+  }
+  return raus;
 }
