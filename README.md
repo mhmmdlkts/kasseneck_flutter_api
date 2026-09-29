@@ -66,7 +66,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.0.0-rc.2
+  kasseneck_api: ^10.0.0
 ```
 
 ```bash

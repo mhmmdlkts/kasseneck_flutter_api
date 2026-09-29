@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-rc.5",
+  "version": "1.0.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
