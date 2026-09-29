@@ -33,8 +33,11 @@ Second release candidate of 10.0.0, the twin of `@kreiseck/kasseneck-api`
   `reason` from `receiptDueErrorReasons` (the same nine names as npm) and
   `outcome` `rejected`: nothing was sent. The shared cases of
   `receipt-due-errors.json` pass; the generated cases compute unchanged.
-  `ReceiptDueTip.fromKeckTip` without `isOwner` stays an `ArgumentError`
-  (a missing argument, not an amount that cannot be computed).
+  `ReceiptDueTip.fromKeckTip` throws the same error (`invalid_tip`) when the
+  tip names recipients but `isOwner` is missing (was `ArgumentError`), and now
+  also for an empty `recipients` list, which rc.1 treated as a tip without
+  recipients (as npm, the direct `ReceiptDueTip(cents, recipients: [])` and
+  the server do).
 - **Stored layouts.** `migrateStoredReceiptJson` leaves out a layout that is
   only partly readable (no or empty `lines`, a line that is not an object, no
   `paperSize`), so the receipt is rebuilt locally with TESTKASSE and the

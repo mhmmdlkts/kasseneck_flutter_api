@@ -198,8 +198,26 @@ void main() {
       final due = ReceiptDueTip.fromKeckTip(tip, isOwner: (id) => id == 'chef');
       expect(due.cents, 300);
       expect([for (final r in due.recipients!) (r.cents, r.owner)], [(100, true), (200, false)]);
-      expect(() => ReceiptDueTip.fromKeckTip(tip), throwsArgumentError);
+      // Wie npm (recipients[].owner nicht boolesch): ein Fehler mit Code, kein ArgumentError.
+      expect(
+          () => ReceiptDueTip.fromKeckTip(tip),
+          throwsA(isA<ReceiptDueError>()
+              .having((e) => e.reason, 'reason', 'invalid_tip')
+              .having((e) => e.code, 'code', 'receipt_due_unavailable')
+              .having((e) => e.message, 'message', contains('isOwner'))));
       expect(ReceiptDueTip.fromKeckTip(const KeckTip(cents: 50)).recipients, isNull);
+    });
+
+    test('ReceiptDueTip.fromKeckTip: leere Empfaengerliste ist invalid_tip, wie ReceiptDueTip und npm', () {
+      const leer = KeckTip(cents: 50, recipients: []);
+      for (final isOwner in <bool Function(String)?>[null, (_) => true]) {
+        expect(() => ReceiptDueTip.fromKeckTip(leer, isOwner: isOwner),
+            throwsA(isA<ReceiptDueError>().having((e) => e.reason, 'reason', 'invalid_tip')));
+      }
+      // Derselbe Grund wie ueber den direkten Weg.
+      final gut = [KasseneckItem(name: 'A', quantity: 1, priceCents: 100, vat: VatRate.vat20)];
+      expect(() => receiptDueCents(gut, const [], ReceiptType.standard, tip: const ReceiptDueTip(50, recipients: [])),
+          throwsA(isA<ReceiptDueError>().having((e) => e.reason, 'reason', 'invalid_tip')));
     });
   });
 

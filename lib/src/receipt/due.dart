@@ -119,13 +119,17 @@ class ReceiptDueTip {
 
   /// Bruecke vom Trinkgeld am Verkauf ([KeckTip], wie es `sellReceipt`
   /// nimmt) zum Trinkgeld der Rechnung. Ob ein Empfaenger Inhaber ist, weiss
-  /// nur die Kasse: [isOwner] ist Pflicht, sobald [tip] Empfaenger nennt.
-  /// Ohne Empfaenger entscheidet `tipRecipient` an [receiptDueCents].
+  /// nur die Kasse: [isOwner] ist Pflicht, sobald [tip] Empfaenger nennt,
+  /// sonst [ReceiptDueError] `invalid_tip`. Ohne Empfaenger (`recipients`
+  /// fehlt) entscheidet `tipRecipient` an [receiptDueCents]; eine leere Liste
+  /// ist wie in npm und am Server kein Trinkgeld ohne Empfaenger, sondern
+  /// `invalid_tip`.
   factory ReceiptDueTip.fromKeckTip(KeckTip tip, {bool Function(String registerUserId)? isOwner}) {
     final empfaenger = tip.recipients;
-    if (empfaenger == null || empfaenger.isEmpty) return ReceiptDueTip(tip.cents);
+    if (empfaenger == null) return ReceiptDueTip(tip.cents);
+    if (empfaenger.isEmpty) throw const ReceiptDueError('invalid_tip', 'recipients darf nicht leer sein.');
     if (isOwner == null) {
-      throw ArgumentError('isOwner ist Pflicht, wenn das Trinkgeld Empfaenger nennt.');
+      throw const ReceiptDueError('invalid_tip', 'isOwner ist Pflicht, wenn das Trinkgeld Empfaenger nennt.');
     }
     return ReceiptDueTip(tip.cents, recipients: [
       for (final r in empfaenger) ReceiptDueTipShare(cents: r.cents, owner: isOwner(r.registerUserId)),
