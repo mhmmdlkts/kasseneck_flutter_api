@@ -1,3 +1,51 @@
+## 10.0.0-rc.2
+
+Second release candidate of 10.0.0, the twin of `@kreiseck/kasseneck-api`
+`1.0.0-rc.5` (contract files pulled from that version). Changes since
+`10.0.0-rc.1`:
+
+- **The register's sentences and the rules that pick them** (`pos.dart`, new).
+  `posMessages`, `posLabels`, `messageText`, `labelText` and
+  `messageAppliesTo` are generated from the contract file `pos-texts.json`
+  (`tool/texte_erzeugen.dart`; a test fails when the generated file and the
+  contract differ), so the app shows the web register's sentence word for word.
+  `findErrorRule(kind, code:, outcome:)` applies a rule from `errorCodeRules`,
+  then from `errorOutcomeRules`, then the one rule of the kind from
+  `errorRules`. `errorRules` is the list of `1.0.0-rc.4`, one rule per kind:
+  code that looks rules up by kind only keeps showing the same sentences.
+  Reason: the edge codes (`route_missing`, `dialect_mismatch`, ...) put a
+  technical sentence in front of the cashier.
+- **Timeout and network error on a call with an effect.** `messageOutcome`
+  treats them as outcome unknown on every call from `callsWithEffect`
+  (`createReceipt`, `cancelReceipt`, `financeWebService`, `hobexPayApi`,
+  `hobexRefundApi`, `stripeCaptureIntent`, `createPrintJob`,
+  `sendReceiptEmail`), and the sentence is the new `network.outcome_unknown`
+  ("... der Vorgang kann trotzdem gebucht sein ..."), never "erneut
+  versuchen". The transport keeps its own `outcome` (print job and receipt
+  email stay `rejected`). Reason: a retry after a lost answer booked, printed
+  or mailed twice.
+- **New sentences and labels:** `server.connection_disturbed`,
+  `server.response_unreadable`, `network.outcome_unknown`;
+  `register.device_unnamed`, `login.locked_seconds` (`{seconds}`),
+  `split.remaining_with_rounding` (`{amount}`, `{cents}`).
+- **`ReceiptDueError` instead of `ArgumentError`.** `receiptDueCents` and its
+  siblings throw a typed error with `code` `receipt_due_unavailable`, a
+  `reason` from `receiptDueErrorReasons` (the same nine names as npm) and
+  `outcome` `rejected`: nothing was sent. The shared cases of
+  `receipt-due-errors.json` pass; the generated cases compute unchanged.
+  `ReceiptDueTip.fromKeckTip` without `isOwner` stays an `ArgumentError`
+  (a missing argument, not an amount that cannot be computed).
+- **Stored layouts.** `migrateStoredReceiptJson` leaves out a layout that is
+  only partly readable (no or empty `lines`, a line that is not an object, no
+  `paperSize`), so the receipt is rebuilt locally with TESTKASSE and the
+  warning lines; keys are renamed in place, an unknown banner tone goes
+  through as it is. New `storedLayoutJson` does the same for a layout on its
+  own (twin of npm `fromStoredLayout`). There is no `toStoredLayout`: this
+  package never writes the 0.x inner form.
+- `pos.dart` also exports `ErrorOutcome` and `isOutcomeUnknown`.
+
+The table of these changes is part H of [`doc/migration-10.md`](doc/migration-10.md).
+
 ## 10.0.0-rc.1
 
 Release candidate of 10.0.0. The package speaks the English API `/v3` and
