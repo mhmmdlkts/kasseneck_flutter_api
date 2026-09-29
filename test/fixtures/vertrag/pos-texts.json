@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-rc.4",
+  "version": "1.0.0-rc.5",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -7,11 +7,20 @@
     "network.timeout": {
       "text": "Der Server antwortet nicht. Bitte die Internetverbindung prüfen und erneut versuchen."
     },
+    "network.outcome_unknown": {
+      "text": "Der Server hat nicht geantwortet, der Vorgang kann trotzdem gebucht sein. Bitte vor einem neuen Versuch prüfen, ob der letzte Vorgang schon gebucht ist."
+    },
     "server.unexpected": {
       "text": "Der Server hat unerwartet geantwortet (HTTP {status}). Bitte den Support verständigen.",
       "placeholders": [
         "status"
       ]
+    },
+    "server.connection_disturbed": {
+      "text": "Die Verbindung zum Kassenserver ist gestört. Bitte kurz warten und erneut versuchen."
+    },
+    "server.response_unreadable": {
+      "text": "Die Antwort des Kassenservers war nicht lesbar. Bitte die Kasse neu öffnen und vor einem neuen Versuch prüfen, ob der letzte Vorgang schon gebucht ist."
     },
     "pairing.code_missing": {
       "text": "Bitte den Kopplungs-Code eingeben."
@@ -681,6 +690,48 @@
       "behavior": "fallback"
     }
   ],
+  "errorCodeRules": [
+    {
+      "kind": "api",
+      "codes": [
+        "dialect_mismatch",
+        "response_translation_failed",
+        "response_unreadable"
+      ],
+      "key": "server.response_unreadable"
+    },
+    {
+      "kind": "api",
+      "codes": [
+        "route_missing",
+        "not_found",
+        "internal_translation_error"
+      ],
+      "key": "server.connection_disturbed"
+    }
+  ],
+  "errorOutcomeRules": [
+    {
+      "kind": "timeout",
+      "outcome": "unknown",
+      "key": "network.outcome_unknown"
+    },
+    {
+      "kind": "network",
+      "outcome": "unknown",
+      "key": "network.outcome_unknown"
+    }
+  ],
+  "callsWithEffect": [
+    "createReceipt",
+    "cancelReceipt",
+    "financeWebService",
+    "hobexPayApi",
+    "hobexRefundApi",
+    "stripeCaptureIntent",
+    "createPrintJob",
+    "sendReceiptEmail"
+  ],
   "receiptEmailErrors": {
     "invalid_address": "receipt.mail_address_invalid",
     "too_many_requests": "receipt.mail_too_often",
@@ -713,6 +764,15 @@
     },
     "pairing.pair_again": {
       "text": "Neu koppeln"
+    },
+    "register.device_unnamed": {
+      "text": "Kasse"
+    },
+    "login.locked_seconds": {
+      "text": "Noch {seconds} s gesperrt",
+      "placeholders": [
+        "seconds"
+      ]
     },
     "logout.question": {
       "text": "Wirklich abmelden?"
@@ -788,6 +848,13 @@
     },
     "split.remaining": {
       "text": "Rest"
+    },
+    "split.remaining_with_rounding": {
+      "text": "Rest inkl. Rundung {amount} ({cents} ct)",
+      "placeholders": [
+        "amount",
+        "cents"
+      ]
     },
     "split.divide": {
       "text": "÷ {n}",

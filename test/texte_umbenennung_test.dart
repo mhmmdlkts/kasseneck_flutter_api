@@ -35,6 +35,19 @@ final _texteKasse = ((_tabelle['texts'] as Map)['pos'] as Map).cast<String, dyna
 final _texteRechnung = ((_tabelle['texts'] as Map)['invoice'] as Map).cast<String, String>();
 final _strukturKasse = ((_tabelle['structure'] as Map)['pos-texts.json'] as Map).cast<String, dynamic>();
 
+/// Was nach 1.0 dazukam und darum keinen alten Namen hat (wie `NACH_1_0` in
+/// `umbenennung-1.0.test.ts` des npm-Pakets): drei Saetze und drei
+/// Beschriftungen aus 1.0.0-rc.5, dazu die Verfeinerungen der Fehlerregeln als
+/// eigene Dateischluessel neben `errorRules`.
+const _nach10 = (
+  messages: {'network.outcome_unknown', 'server.connection_disturbed', 'server.response_unreadable'},
+  labels: {'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding'},
+  fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect'],
+  placeholders: {'cents'},
+);
+
+Set<String> _nach10In(String abschnitt) => abschnitt == 'messages' ? _nach10.messages : _nach10.labels;
+
 final _kassenMuster = RegExp(r'\{([a-z]+)\}');
 final _rechnungsMuster = RegExp(r'\{([a-zA-Z]+)\}');
 
@@ -81,7 +94,11 @@ void main() {
         final zuordnung = (_texteKasse[neu] as Map).cast<String, String>();
         expect(zuordnung.keys.toSet(), altKatalog.keys.toSet());
         expect(zuordnung.values.toSet(), hasLength(zuordnung.length), reason: 'neue Schluessel eindeutig');
-        expect(zuordnung.values.toSet(), _abschnitt(_neuKasse, neu).keys.toSet());
+        final neuKatalog = _abschnitt(_neuKasse, neu).keys.toSet();
+        expect(zuordnung.values.toSet(), neuKatalog.difference(_nach10In(neu)));
+        // Was nach 1.0 dazukam, steht wirklich im Katalog und traegt keinen alten Namen.
+        expect(neuKatalog, containsAll(_nach10In(neu)));
+        expect(zuordnung.values.toSet().intersection(_nach10In(neu)), isEmpty);
         for (final k in zuordnung.values) {
           expect(k, matches(RegExp(r'^[a-z0-9_]+(\.[a-z0-9_]+)+$')), reason: k);
         }
@@ -109,6 +126,13 @@ void main() {
         expect(mitPlatzhalter, greaterThanOrEqualTo(alt == 'meldungen' ? 25 : 12));
       });
     }
+
+    test('Dateischluessel: die 0.x-Abschnitte umbenannt, die Verfeinerungen nach 1.0 eigens', () {
+      final datei = (_strukturKasse['file'] as Map).cast<String, String>();
+      final neu = _neuKasse.keys.toList();
+      expect(neu.where((k) => !_nach10.fileKeys.contains(k)).toList(), [for (final k in _altKasse.keys) datei[k]]);
+      expect(neu.where(_nach10.fileKeys.contains).toList(), _nach10.fileKeys);
+    });
 
     test('Belegmail-Fehler: Schluessel sind die /v3-Codes, Ziel der umbenannte Text', () {
       final alt = _abschnitt(_altKasse, 'belegMailFehler');
@@ -236,7 +260,15 @@ void main() {
           sammle(t as String, _rechnungsMuster);
         }
       }
-      expect(gefunden, _platzhalter.values.toSet(), reason: 'jeder neue Name kommt in den 1.0-Texten vor');
+      // Neu nach 1.0 ist nur `{cents}` (split.remaining_with_rounding); es hat keinen alten Namen.
+      expect(gefunden, {..._platzhalter.values, ..._nach10.placeholders}, reason: 'jeder neue Name kommt in den 1.0-Texten vor');
+      expect(_platzhalter.keys.toSet().intersection(_nach10.placeholders), isEmpty);
+      for (final abschnitt in ['messages', 'labels']) {
+        for (final e in _abschnitt(_neuKasse, abschnitt).entries) {
+          final namen = _kassenMuster.allMatches((e.value as Map)['text'] as String).map((m) => m[1]!).toSet();
+          if (namen.intersection(_nach10.placeholders).isNotEmpty) expect(_nach10In(abschnitt), contains(e.key));
+        }
+      }
       expect(gefunden.intersection(umbenannt), isEmpty);
     });
 
