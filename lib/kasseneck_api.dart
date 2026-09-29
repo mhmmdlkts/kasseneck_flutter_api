@@ -93,13 +93,17 @@ export 'src/receipt/layout_from_result.dart' show ReceiptPrintLayout, receiptLay
 export 'src/receipt/due.dart'
     show
         ReceiptDueBreakdown,
+        ReceiptDueError,
         ReceiptDueLine,
         ReceiptDueTip,
         ReceiptDueTipRecipient,
         ReceiptDueTipShare,
         receiptDueBreakdown,
         receiptDueBreakdownForLines,
-        receiptDueCents;
+        receiptDueCents,
+        receiptDueErrorCode,
+        receiptDueErrorReasons,
+        isReceiptDueError;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
 // nicht benennbar.

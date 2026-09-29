@@ -43,6 +43,62 @@ import '../../models/kasseneck_item.dart';
 import '../../models/keck_payment.dart';
 import '../../models/keck_tip.dart';
 import '../../models/keck_voucher.dart';
+import '../register/fehler.dart' show ErrorOutcome;
+
+/// Stabiler Code von [ReceiptDueError], gleich fuer jede Ursache.
+const String receiptDueErrorCode = 'receipt_due_unavailable';
+
+/// Warum sich der Zahlbetrag nicht rechnen laesst ([ReceiptDueError.reason]).
+/// Fest wie ein Backend-Code; dieselbe Liste im npm-Paket
+/// (`RECEIPT_DUE_ERROR_REASONS`) und in `receipt-due-errors.json`.
+///
+/// `unknown_receipt_type` kann hier nicht entstehen: der Belegtyp ist ein
+/// [ReceiptType], ein fremder Wert laesst sich gar nicht uebergeben. Der Name
+/// steht trotzdem in der Liste, damit beide Pakete dieselben Gruende fuehren.
+const List<String> receiptDueErrorReasons = [
+  'unknown_receipt_type',
+  'tip_not_allowed',
+  'invalid_item',
+  'invalid_voucher',
+  'invalid_tip',
+  'unknown_payment_method',
+  'tip_conflict',
+  'tip_recipient_missing',
+  'tip_without_goods',
+];
+
+/// Der Zahlbetrag laesst sich aus dieser Eingabe nicht rechnen, etwa
+/// Trinkgeld mit Betrag ohne Ware ([reason] `tip_without_goods`). Zwilling von
+/// `ReceiptDueError` im npm-Paket.
+///
+/// Eindeutig **nicht gesendet**: die Rechnung laeuft ganz im Paket, vor jedem
+/// Aufruf. [outcome] ist darum immer [ErrorOutcome.rejected]; nichts ist
+/// geschehen, keine Belegnummer verbraucht, keine Karte belastet. Die Kasse
+/// sagt das dem Kassier, bevor sie ein Terminal anspricht. Entscheiden am
+/// [code] bzw. [reason], nie an [message] (die ist fuers Protokoll).
+///
+/// Bis 10.0.0-rc.1 warf die Rechnung hier einen `ArgumentError` ohne Code.
+class ReceiptDueError implements Exception {
+  const ReceiptDueError(this.reason, this.message);
+
+  /// Die Ursache im Einzelnen, ein Wert aus [receiptDueErrorReasons].
+  final String reason;
+
+  /// Fuers Protokoll, nie zum Entscheiden.
+  final String message;
+
+  /// Immer [receiptDueErrorCode].
+  String get code => receiptDueErrorCode;
+
+  /// Immer [ErrorOutcome.rejected]: es ging nichts hinaus.
+  ErrorOutcome get outcome => ErrorOutcome.rejected;
+
+  @override
+  String toString() => 'ReceiptDueError($reason): Zahlbetrag: $message';
+}
+
+/// Ist [error] ein [ReceiptDueError]?
+bool isReceiptDueError(Object? error) => error is ReceiptDueError;
 
 /// Wer das Trinkgeld ohne `recipients` bekommt (Kennzeichen des angemeldeten
 /// Kassen-Benutzers). Auch die Art einer fertigen Trinkgeld-Position.
@@ -69,7 +125,7 @@ class ReceiptDueTip {
     final empfaenger = tip.recipients;
     if (empfaenger == null || empfaenger.isEmpty) return ReceiptDueTip(tip.cents);
     if (isOwner == null) {
-      throw ArgumentError('istInhaber ist Pflicht, wenn das Trinkgeld Empfaenger nennt.');
+      throw ArgumentError('isOwner ist Pflicht, wenn das Trinkgeld Empfaenger nennt.');
     }
     return ReceiptDueTip(tip.cents, recipients: [
       for (final r in empfaenger) ReceiptDueTipShare(cents: r.cents, owner: isOwner(r.registerUserId)),
@@ -97,7 +153,7 @@ class ReceiptDueLine {
   factory ReceiptDueLine.of(KasseneckItem item) {
     final ungenau = item.lossyRead;
     if (ungenau != null) {
-      throw ArgumentError('Zahlbetrag: Position "${item.name}" ist nicht exakt gelesen ($ungenau); '
+      throw ReceiptDueError('invalid_item', 'Position "${item.name}" ist nicht exakt gelesen ($ungenau); '
           'Serverpositionen ueber ReceiptDueLine.fromJson und receiptDueBreakdownForLines rechnen.');
     }
     return ReceiptDueLine(
@@ -116,7 +172,7 @@ class ReceiptDueLine {
     final cents = json['unitPriceCents'] ?? json['priceOneCents'];
     final satz = json['vatRate'] ?? json['vat'];
     if (menge is! num || cents is! num || cents != cents.toInt() || satz is! num) {
-      throw ArgumentError('Zahlbetrag: Position "${json['name']}" ohne Menge, ganzen Cent-Preis oder Steuersatz.');
+      throw ReceiptDueError('invalid_item', 'Position "${json['name']}" ohne Menge, ganzen Cent-Preis oder Steuersatz.');
     }
     final recipient = json['recipient'];
     final owner = recipient is Map && recipient['owner'] == true;
@@ -199,7 +255,7 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
 }) {
   final trinkgelder = _trinkgeldAuftraege(tip, payments);
   if (trinkgelder.isNotEmpty && !_trinkgeldErlaubt.contains(receiptType)) {
-    throw ArgumentError('Zahlbetrag: Trinkgeld gibt es nur bei standard und training, nicht bei "${receiptType.name}".');
+    throw ReceiptDueError('tip_not_allowed', 'Trinkgeld gibt es nur bei standard und training, nicht bei "${receiptType.name}".');
   }
   if (!_umsatz.contains(receiptType)) {
     return const ReceiptDueBreakdown(dueCents: 0, counterDeltaCents: 0, valueVoucherFlowCents: 0, bucketsCents: null);
@@ -268,15 +324,15 @@ class _Gutschein {
 /// (in JavaScript fallen beide Saetze als Schluessel `"0"` zusammen).
 _Innen _innen(ReceiptDueLine z, int i) {
   final satz = z.vatRate.toDouble();
-  if (!satz.isFinite) throw ArgumentError('Zahlbetrag: Position ${i + 1} ohne Steuersatz.');
+  if (!satz.isFinite) throw ReceiptDueError('invalid_item', 'Position ${i + 1} ohne Steuersatz.');
   final menge = z.quantity.toDouble();
-  if (!menge.isFinite) throw ArgumentError('Zahlbetrag: Position ${i + 1} hat keine gueltige Menge.');
+  if (!menge.isFinite) throw ReceiptDueError('invalid_item', 'Position ${i + 1} hat keine gueltige Menge.');
   return _Innen(menge, z.priceCents / 100, satz == 0 ? 0.0 : satz, z.tip);
 }
 
 _Gutschein _gutscheinInnen(KeckVoucher v, int i) {
   final cents = v.valueCents;
-  if (cents == null) throw ArgumentError('Zahlbetrag: Gutschein ${i + 1} hat keinen ganzen Cent-Wert.');
+  if (cents == null) throw ReceiptDueError('invalid_voucher', 'Gutschein ${i + 1} hat keinen ganzen Cent-Wert.');
   return _Gutschein(v.action, v.type, cents / 100);
 }
 
@@ -288,19 +344,19 @@ List<_Auftrag> _trinkgeldAuftraege(ReceiptDueTip? tip, List<KeckPaymentInput>? p
   final raus = <_Auftrag>[];
   final mitTipCents = (payments ?? const []).any((z) => z.tipCents != null);
   if (tip != null && mitTipCents) {
-    throw ArgumentError('Zahlbetrag: tip und payments[].tipCents gehen nicht zugleich (tip_conflict).');
+    throw const ReceiptDueError('tip_conflict', 'tip und payments[].tipCents gehen nicht zugleich (tip_conflict).');
   }
   if (tip != null) {
     _pruefeCent(tip.cents, 'Trinkgeld');
     final recipients = tip.recipients;
     if (recipients != null) {
-      if (recipients.isEmpty) throw ArgumentError('Zahlbetrag: recipients darf nicht leer sein.');
+      if (recipients.isEmpty) throw const ReceiptDueError('invalid_tip', 'recipients darf nicht leer sein.');
       var summe = 0;
       for (final r in recipients) {
         _pruefeCent(r.cents, 'Trinkgeld-Anteil');
         summe += r.cents;
       }
-      if (summe != tip.cents) throw ArgumentError('Zahlbetrag: die Anteile des Trinkgelds ergeben nicht den Betrag.');
+      if (summe != tip.cents) throw const ReceiptDueError('invalid_tip', 'die Anteile des Trinkgelds ergeben nicht den Betrag.');
       raus.add([for (final r in recipients) (cents: r.cents, owner: r.owner)]);
     } else {
       raus.add([(cents: tip.cents, owner: null)]);
@@ -312,7 +368,7 @@ List<_Auftrag> _trinkgeldAuftraege(ReceiptDueTip? tip, List<KeckPaymentInput>? p
     final cents = z.tipCents;
     if (cents == null) continue;
     _pruefeCent(cents, 'tipCents');
-    if (!_zahlarten.contains(z.method)) throw ArgumentError('Zahlbetrag: unbekannte Zahlart "${z.method.name}".');
+    if (!_zahlarten.contains(z.method)) throw ReceiptDueError('unknown_payment_method', 'unbekannte Zahlart "${z.method.name}".');
     je[z.method] = (je[z.method] ?? 0) + cents;
   }
   for (final cents in je.values) {
@@ -322,20 +378,21 @@ List<_Auftrag> _trinkgeldAuftraege(ReceiptDueTip? tip, List<KeckPaymentInput>? p
 }
 
 void _pruefeCent(int wert, String was) {
-  if (wert <= 0) throw ArgumentError('Zahlbetrag: $was muss eine ganze Zahl in Cent > 0 sein.');
+  if (wert <= 0) throw ReceiptDueError('invalid_tip', '$was muss eine ganze Zahl in Cent > 0 sein.');
 }
 
 /// `tip-core.buildTipItems`: Personal in den Null-%-Satz, Inhaber anteilig auf die Saetze der Ware.
 List<_Innen> _trinkgeldPositionen(_Auftrag auftrag, List<_Innen> positionen, ReceiptDueTipRecipient? standard) {
   final basis = _warenCentsJeSatz(positionen);
   final summe = basis.values.fold<int>(0, (s, c) => s + c);
-  if (summe <= 0) throw ArgumentError('Zahlbetrag: Trinkgeld braucht mindestens eine Position mit Betrag.');
+  if (summe <= 0) throw const ReceiptDueError('tip_without_goods', 'Trinkgeld braucht mindestens eine Position mit Betrag.');
   final raus = <_Innen>[];
   for (final e in auftrag) {
     var owner = e.owner;
     if (owner == null) {
       if (standard == null) {
-        throw ArgumentError("Zahlbetrag: tipRecipient fehlt ('owner' oder 'staff', wie der angemeldete Kassen-Benutzer).");
+        throw const ReceiptDueError(
+            'tip_recipient_missing', "tipRecipient fehlt ('owner' oder 'staff', wie der angemeldete Kassen-Benutzer).");
       }
       owner = standard == ReceiptDueTipRecipient.owner;
     }
@@ -344,7 +401,7 @@ List<_Innen> _trinkgeldPositionen(_Auftrag auftrag, List<_Innen> positionen, Rec
       continue;
     }
     final teile = _splitOwnerTip(e.cents, basis);
-    if (teile.isEmpty) throw ArgumentError('Zahlbetrag: Inhaber-Trinkgeld braucht mindestens eine Position mit Betrag.');
+    if (teile.isEmpty) throw const ReceiptDueError('tip_without_goods', 'Inhaber-Trinkgeld braucht mindestens eine Position mit Betrag.');
     for (final teil in teile) {
       if (teil.cents != 0) raus.add(_Innen(1, teil.cents / 100, teil.vat, ReceiptDueTipRecipient.owner));
     }
