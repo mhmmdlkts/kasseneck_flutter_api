@@ -29,6 +29,9 @@ export 'src/receipt/codes.dart'
 // Wer einen Beleg einliest, muss den Lesefehler fangen koennen: er traegt die
 // receiptId eines bereits signierten Belegs.
 export 'src/register/fehler.dart' show KasseneckReceiptFormatError;
+// Welcher Fehler welchen Satz bekommt, entscheidet der Ausgang: ohne diese
+// beiden Namen liesse sich [messageOutcome] aus diesem Barrel nicht lesen.
+export 'src/register/fehler.dart' show ErrorOutcome, isOutcomeUnknown;
 // Wer Trinkgeld zuweist, braucht die Personenliste und den Anteil, der daraus
 // entsteht.
 export 'models/keck_tip.dart';
@@ -52,5 +55,6 @@ export 'src/kasse/einstellungen_client.dart';
 export 'src/kasse/kacheln.dart';
 export 'src/kasse/kassieren.dart';
 export 'src/kasse/storno.dart';
+export 'src/kasse/texte.dart';
 export 'src/kasse/warenkorb.dart';
 export 'src/kasse/zahlungen.dart';
