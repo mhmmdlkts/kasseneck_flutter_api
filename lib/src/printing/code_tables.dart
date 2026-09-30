@@ -88,6 +88,10 @@ CodeTable codeTableById(CodeTableId id) => codeTables.firstWhere((t) => t.id == 
 
 /// Tabelle aus der gespeicherten Einstellung `codePage` (`CP1252`/`CP437`).
 /// Keine Einstellung ist die Vorgabe `wpc1252`.
+///
+/// Anders als npm (`'cp1252' | 'cp437'`) nimmt diese Seite [PosCodePage]:
+/// die Einstellungen der Kasse tragen in Dart schon diesen Enum (Drahtwerte
+/// `CP1252`/`CP437`), ein Text muesste erst wieder zurueckuebersetzt werden.
 CodeTableId codeTableFromSetting(PosCodePage? setting) =>
     setting == PosCodePage.cp437 ? CodeTableId.pc437 : CodeTableId.wpc1252;
 

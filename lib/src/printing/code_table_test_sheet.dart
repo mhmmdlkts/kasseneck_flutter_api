@@ -73,6 +73,11 @@ const int _rand80 = (576 - codeTableTestSheetChars * 12) ~/ 2;
 const int _vorgabeEscT = 16;
 
 /// Die Vorlage-Zeile als Rasterbild (384 x 24 Punkte), wie sie am Papier steht.
+///
+/// Anders als npm (`RasterImage` mit `dots`) kommt ein [LogoRaster]: das
+/// Dart-`RasterImage` ist ein RGBA-Bild, das Punkt-je-Byte-Bild mit `dots`
+/// (1 = schwarz) heisst hier `LogoRaster`, wie bei Logo und Marke.
+/// `toRasterImage()` macht daraus das Bild fuer den Erzeuger.
 LogoRaster codeTableReferenceImage() =>
     unpackRasterBits(codeTableReferenceRaster.bits, codeTableReferenceRaster.width, codeTableReferenceRaster.height);
 
@@ -106,6 +111,11 @@ String _zweistellig(int n) => '$n'.padLeft(2, '0');
 /// Das Testblatt im Zeilenmodell des Beleg-Blatts -- dieselben Zeilen wie am
 /// Papier. [cashregisterLabel] steht in der Kopfzeile (keine Personendaten),
 /// [time] in Wiener Zeit; [paper] aendert das Blatt nicht (immer 32 Spalten).
+///
+/// Anders als npm (ein Objekt `options` mit denselben drei Feldern) sind es
+/// benannte Parameter, der uebliche Weg in Dart; das Papier ist
+/// [KeckPaperSize] statt `'mm58' | 'mm80'`. Gilt ebenso fuer
+/// [codeTableTestSheetBytes].
 CodeTableTestSheet codeTableTestSheet({
   required String cashregisterLabel,
   required DateTime time,
