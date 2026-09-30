@@ -14,6 +14,7 @@ import 'package:kasseneck_api/services/vienna_time.dart';
 import '../enums/credit_card_provider.dart';
 import '../enums/keck_payment_method.dart';
 import '../enums/qr_print_mode.dart';
+import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/qr_groesse.dart';
 import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
@@ -577,9 +578,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   Future<List<Uint8List>> getPrintBytes(
           {required KeckPaperSize paperSize,
           QrPrintMode qrMode = QrPrintMode.imageRaster,
-          QrModuleSize qrModuleSize = QrModuleSize.auto}) =>
+          QrModuleSize qrModuleSize = QrModuleSize.auto,
+          CodeTableId? codeTable}) =>
       KeckPrinterService.getBytesFromReceipt(this, paperSize,
-          qrMode: qrMode, qrModuleSize: qrModuleSize);
+          qrMode: qrMode, qrModuleSize: qrModuleSize, codeTable: codeTable);
 
   bool get isSigFailed => !RKSVService.isSigSuccess(sig);
 

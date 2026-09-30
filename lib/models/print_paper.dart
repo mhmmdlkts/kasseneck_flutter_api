@@ -18,6 +18,8 @@ import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import '../services/rksv_service.dart';
 import '../services/vienna_time.dart';
+import '../src/printing/code_tables.dart' show CodeTableId;
+import '../src/printing/printable.dart' show printableText;
 import '../src/printing/qr_groesse.dart';
 import '../src/receipt/aufdruck.dart' show belegartBlock, warnrahmen;
 import '../src/vat_math.dart';
@@ -43,13 +45,19 @@ class PrintPaper {
   List<Uint8List> bytes = [];
   final MyPosPaper myPosPaper = MyPosPaper();
 
-  PrintPaper({required this.paperSize, required CapabilityProfile profile})
+  /// Die im Drucker-Wizard gewaehlte Code-Tabelle dieses Druckers. `null`
+  /// (keine Wahl) druckt wie bis 10.0: Tabelle 16 und `EUR` statt `€`, Byte
+  /// fuer Byte gleich. Mit Wahl sagt jede Zeile `ESC t` dieser Tabelle an und
+  /// traegt ihre Bytes (Zwilling von `escPosLayoutBytes(..., { codeTable })`).
+  final CodeTableId? codeTable;
+
+  PrintPaper({required this.paperSize, required CapabilityProfile profile, this.codeTable})
       : generator = EscPosGenerator(paperSize.paperSize, profile) {
     // Nur einmal im Erzeuger hinterlegen (dessen `_codeTable`-Feld) --
     // `generator.reset()` liest sie von dort und schickt sie bei jedem
     // Reset von selbst wieder mit. Die Rueckgabe hier wird bewusst
     // verworfen: `reset()` gleich danach leert `bytes` ohnehin.
-    generator.setGlobalCodeTable('CP1252');
+    generator.setGlobalCodeTable(codeTable?.name ?? 'CP1252');
     reset();
   }
 
@@ -66,53 +74,12 @@ class PrintPaper {
     myPosPaper.addText(text, alignment: styles.myposAlign);
   }
 
-  /// Macht Text fuer den ESC/POS-Drucker sicher: der Generator kodiert per
-  /// latin1 und wirft bei Zeichen ausserhalb (typografische Anfuehrungszeichen,
-  /// Gedankenstriche, Euro, Emoji, ...). Gaengige Zeichen werden auf ein
-  /// ASCII-Aequivalent gemappt, alles andere durch '?' ersetzt -> der Druck
-  /// laeuft durch statt komplett auszufallen. Latin-1-Zeichen (inkl. Umlaute,
-  /// 0..0xFF) bleiben unveraendert.
-  static String _printable(String text) {
-    const Map<int, String> repl = {
-      0x2013: '-', 0x2014: '-', 0x2011: '-', 0x2212: '-', // – — ‑ −
-      0x201C: '"', 0x201D: '"', 0x201E: '"', 0x201F: '"', // “ ” „ ‟
-      0x2018: "'", 0x2019: "'", 0x201A: "'", 0x2032: "'", // ‘ ’ ‚ ′
-      0x2026: '...', 0x2022: '*', // … •
-      0x2713: 'x', 0x2714: 'x', // ✓ ✔
-      0x20AC: 'EUR', 0x2122: 'TM', 0x20BA: 'TL', // € ™ ₺
-    };
-    final StringBuffer sb = StringBuffer();
-    for (final int rune in text.runes) {
-      final String? mapped = repl[rune];
-      if (mapped != null) {
-        sb.write(mapped);
-      } else if (rune <= 0xFF) {
-        sb.writeCharCode(rune); // Latin-1 (inkl. Umlaute) -> unveraendert
-      } else if (_isEmojiOrZeroWidth(rune)) {
-        // Emoji/Modifier/Nullbreiten-Zeichen ersatzlos entfernen – sonst wuerde
-        // ein einzelnes (oft aus mehreren Code-Points bestehendes) Emoji als
-        // ein oder mehrere '?' auf dem Bon landen.
-      } else {
-        sb.write('?'); // sonstiges Zeichen (z.B. andere Schrift) -> Platzhalter
-      }
-    }
-    return sb.toString();
-  }
-
-  /// Emoji-, Modifier- und Nullbreiten-/Steuerzeichen, die auf dem Beleg nichts
-  /// verloren haben und sonst als '?' erscheinen wuerden.
-  static bool _isEmojiOrZeroWidth(int r) {
-    return r == 0x200D || // Zero-Width Joiner
-        (r >= 0x200B && r <= 0x200F) ||
-        r == 0x2060 ||
-        r == 0xFEFF ||
-        (r >= 0xFE00 && r <= 0xFE0F) || // Variation Selectors
-        (r >= 0x1F3FB && r <= 0x1F3FF) || // Hautton-Modifier
-        (r >= 0x1F000 && r <= 0x1FAFF) || // Emoji-Bloecke
-        (r >= 0x2600 && r <= 0x27BF) || // Symbole + Dingbats
-        (r >= 0x2B00 && r <= 0x2BFF) || // Symbole & Pfeile
-        (r >= 0x2300 && r <= 0x23FF); // technische Symbole (z.B. ⌚⏰)
-  }
+  /// Macht Text fuer den ESC/POS-Drucker sicher (siehe [printableText]):
+  /// gaengige Zeichen auf ein ASCII-Aequivalent, Latin-1 bleibt, alles andere
+  /// '?' -- der Druck laeuft durch statt komplett auszufallen. Mit gewaehlter
+  /// [codeTable] bleibt `€`, wo die Tabelle es hat, und fehlende Zeichen
+  /// werden Ersatzbuchstaben.
+  String _printable(String text) => printableText(text, codeTable: codeTable);
 
   void addCut() {
     bytes.add(Uint8List.fromList(generator.cut()));
