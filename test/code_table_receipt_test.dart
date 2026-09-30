@@ -18,8 +18,10 @@ import 'package:kasseneck_api/printing.dart' show CapabilityProfile, CodeTableId
 /// Beleg); das Layout baut das npm-Paket (`fromReceiptPayload` +
 /// `buildReceiptLayout`), dieses Paket hat keinen Layout-Bauer.
 /// `test/fixtures/zeichensatz/special-characters.lines.json` ist dieses Layout,
-/// erzeugt mit dem Tarball von 1.1.0 wie `scripts/zeichensatz-fixtures.mjs`.
-/// Echt ist es, weil es hier fuer alle sechs Tabellen die Hex-Dateien trifft.
+/// erzeugt mit `tool/zeichensatz_layout.sh` aus dem angehefteten npm-Paket;
+/// die Herkunft (Version, shasum des Tarballs, sha256) steht daneben in
+/// `special-characters.source.json`. Echt ist es, weil es hier fuer alle
+/// sechs Tabellen die Hex-Dateien trifft.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -51,6 +53,16 @@ void main() {
     }
     return '${teile.join('\n')}\n';
   }
+
+  test('abgeleitetes Layout: Hash wie aufgezeichnet, aus der angehefteten npm-Version', () {
+    final herkunft = jsonDecode(File('test/fixtures/zeichensatz/special-characters.source.json').readAsStringSync()) as Map<String, dynamic>;
+    final datei = File('test/fixtures/zeichensatz/special-characters.lines.json').readAsBytesSync();
+    expect(sha256.convert(datei).toString(), herkunft['sha256'],
+        reason: 'von Hand geaendert? Neu erzeugen mit tool/zeichensatz_layout.sh');
+    final angeheftet = RegExp(r'^npm_version:\s*"?([^"\s]+)', multiLine: true).firstMatch(File('zwillinge.yaml').readAsStringSync())![1];
+    expect(herkunft['npmVersion'], angeheftet, reason: 'npm_version geaendert: tool/zeichensatz_layout.sh erneut laufen lassen');
+    expect(herkunft['tarballShasum'], matches(RegExp(r'^[0-9a-f]{40}$')));
+  });
 
   test('Prueffall: alle sechs Tabellen, jede Hex-Datei gehoert zu einem Fall', () {
     expect(tabellen, codeTables.map((t) => t.id.name).toList());
