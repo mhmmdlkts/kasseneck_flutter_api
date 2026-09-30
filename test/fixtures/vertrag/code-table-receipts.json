@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "_note": "Receipts per code table: ESC/POS bytes of each case for every table in code-tables.json, written by `npm run fixtures:zeichensatz` to expected/code-table-receipt.<case>.<table>.hex (32 bytes per line). A case names a golden receipt under receipts/ or carries its own input. Print options: escPosLayoutBytes(layout, { codeTable }), everything else default.",
+  "tables": [
+    "wpc1252",
+    "pc858",
+    "pc850",
+    "pc437",
+    "iso8859_15",
+    "replacement"
+  ],
+  "cases": [
+    {
+      "name": "sale-cash",
+      "receipt": "sale-cash"
+    },
+    {
+      "name": "test-cashregister-sale",
+      "receipt": "test-cashregister-sale"
+    },
+    {
+      "name": "long-item-name",
+      "receipt": "long-item-name"
+    },
+    {
+      "name": "special-characters",
+      "input": {
+        "company": {
+          "companyName": "Bäckerei Muster",
+          "street": "Hauptplatz 1",
+          "zip": "4830",
+          "city": "Hallstatt",
+          "phone": "+43 6134 12345",
+          "vatId": "ATU12345678",
+          "taxNumber": "",
+          "isSmallBusiness": false,
+          "footer1": "Preise in € inkl. USt., Pfand nach § 3",
+          "footer2": "Danke & auf Wiedersehen",
+          "thanksMessage": [],
+          "showKreiseckLogo": false
+        },
+        "receipt": {
+          "receiptId": "AT0-KASSE1-43",
+          "cashregisterId": "KASSE1",
+          "timeStamp": "2026-08-13T10:15:30",
+          "items": [
+            {
+              "name": "Tee 80° heiß",
+              "quantity": 2,
+              "unitPriceCents": 320,
+              "vatRate": 10
+            },
+            {
+              "name": "Pfand § 3 Mehrweg",
+              "quantity": 1,
+              "unitPriceCents": 100,
+              "vatRate": 20
+            },
+            {
+              "name": "Grüner Öl-Kürbis Größe XL",
+              "quantity": 1,
+              "unitPriceCents": 1250,
+              "vatRate": 10
+            }
+          ],
+          "vouchers": [],
+          "paymentMethod": "cash",
+          "turnoverCounterAES256ICM": "UMSATZ",
+          "signaturePreviousReceipt": "VORGAENGER",
+          "certificateSerialNumber": "6F0404F0",
+          "receiptType": "standard",
+          "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+          "qr": "_R1-AT1_KASSE1_AT0-KASSE1-43_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+          "fullReceiptId": "VOLL",
+          "customerDetails": [],
+          "legalMessage": []
+        },
+        "options": {
+          "paperSize": "mm58"
+        }
+      }
+    }
+  ]
+}
