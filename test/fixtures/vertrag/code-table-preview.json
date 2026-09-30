@@ -1,0 +1,14 @@
+{
+  "sample": [
+    "Käsekrainer 3,50 €",
+    "Tee 80°"
+  ],
+  "tables": {
+    "wpc1252": "Käsekrainer 3,50 €\nTee 80°",
+    "pc858": "Käsekrainer 3,50 €\nTee 80°",
+    "pc850": "Käsekrainer 3,50 EUR\nTee 80°",
+    "pc437": "Käsekrainer 3,50 EUR\nTee 80°",
+    "iso8859_15": "Käsekrainer 3,50 €\nTee 80°",
+    "replacement": "Kaesekrainer 3,50 EUR\nTee 80Grad"
+  }
+}

@@ -66,7 +66,34 @@ void main() {
     expect(t, contains(labelText('codetable.title')));
     expect(t, contains(labelText('codetable.reference')));
     expect(t, contains(labelText('codetable.replacement_note')));
-    expect(t.sublist(17, 20).join(' '), messageText('codetable.instruction'));
+    expect(t[17], labelText('codetable.instruction_title'));
+    // Am Papier Ersatzbuchstaben wie jeder Text ausserhalb der Testzeilen: „Lücke“ steht als „Luecke“.
+    expect(t.sublist(18, 22).join(' '), messageText('codetable.instruction').replaceAll('ü', 'ue'));
+    expect(t[22], messageText('codetable.instruction_none', {'number': 6}));
+  });
+
+  test('die Regel waehlt die Zeile ohne falsches Zeichen, nicht die erste mit richtigen Umlauten', () {
+    // Ein Drucker mit nur PC437 druckt Zeile 2 und 3 mit richtigen Umlauten,
+    // aber falschem € und § (╒, ⌡); Zeile 4 ist richtig, mit Luecken.
+    final anleitung = messageText('codetable.instruction');
+    expect(anleitung, contains('KEIN falsches Zeichen'));
+    expect(anleitung, contains('Lücke ist in Ordnung'));
+    expect(anleitung, contains('wenigsten Lücken'));
+    expect(anleitung.toLowerCase(), isNot(contains('erste')));
+    expect(messageText('codetable.question'), 'In welcher Zeile steht kein falsches Zeichen?');
+    expect(messageText('codetable.question_hint'), 'Lücken sind in Ordnung.');
+    expect(labelText('codetable.preview_title'), 'So steht es dann am Bon:');
+    expect(labelText('codetable.apply'), 'Übernehmen');
+    expect(labelText('codetable.other_row'), 'Andere Zeile');
+    expect(labelText('codetable.reference'), 'So sehen die Zeichen richtig aus');
+  });
+
+  test('ausserhalb der Testzeilen nur ASCII', () {
+    final b = blatt().blocks.cast<SheetLine>().toList();
+    for (var i = 0; i < b.length; i++) {
+      if (i == 5 || b[i].doubleSizeLead != null) continue;
+      expect(RegExp(r'^[\x20-\x7e]*$').hasMatch(b[i].text), isTrue, reason: b[i].text);
+    }
   });
 
   test('Nummern gross (doubleSizeLead 2), je Zeile Tabelle und fehlende Zeichen', () {

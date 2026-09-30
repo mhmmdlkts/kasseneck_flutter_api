@@ -37,18 +37,20 @@ final _strukturKasse = ((_tabelle['structure'] as Map)['pos-texts.json'] as Map)
 
 /// Was nach 1.0 dazukam und darum keinen alten Namen hat (wie `NACH_1_0` in
 /// `umbenennung-1.0.test.ts` des npm-Pakets): drei Saetze und drei
-/// Beschriftungen aus 1.0.0-rc.5, die Texte des Zeichensatz-Tests aus 1.1.0,
+/// Beschriftungen aus 1.0.0-rc.5, die Texte des Zeichensatz-Tests aus 1.1.0
+/// und 1.1.1,
 /// dazu die Verfeinerungen der Fehlerregeln als eigene Dateischluessel neben
 /// `errorRules`.
 const _nach10 = (
   messages: {
     'network.outcome_unknown', 'server.connection_disturbed', 'server.response_unreadable',
-    'codetable.question', 'codetable.instruction',
+    'codetable.question', 'codetable.instruction', 'codetable.question_hint', 'codetable.instruction_none',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
     'codetable.title', 'codetable.reference', 'codetable.replacement_note', 'codetable.missing',
     'codetable.print_again', 'codetable.not_checked', 'codetable.check', 'codetable.current',
+    'codetable.instruction_title', 'codetable.preview_title', 'codetable.apply', 'codetable.other_row',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect'],
   placeholders: {'cents', 'chars'},
