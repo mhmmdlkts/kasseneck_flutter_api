@@ -1,0 +1,191 @@
+{
+  "input": {
+    "cashregisterLabel": "Kasse KECK-1",
+    "time": "2026-09-30T12:05:00.000Z"
+  },
+  "sheet": {
+    "charsPerLine": 32,
+    "blocks": [
+      {
+        "kind": "line",
+        "text": "================================",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "        ZEICHENSATZ-TEST        ",
+        "bold": true,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "   Kasse KECK-1  30.09. 14:05   ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "================================",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "So muss jede Zeile aussehen:    ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "     ä ö ü Ä Ö Ü ß € § °        ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "--------------------------------",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": " 1 | ä ö ü Ä Ö Ü ß € § °        ",
+        "bold": false,
+        "blank": false,
+        "doubleSizeLead": 2
+      },
+      {
+        "kind": "line",
+        "text": " 2 | ä ö ü Ä Ö Ü ß € § °        ",
+        "bold": false,
+        "blank": false,
+        "doubleSizeLead": 2
+      },
+      {
+        "kind": "line",
+        "text": " 3 | ä ö ü Ä Ö Ü ß   § °        ",
+        "bold": false,
+        "blank": false,
+        "doubleSizeLead": 2
+      },
+      {
+        "kind": "line",
+        "text": " 4 | ä ö ü Ä Ö Ü ß     °        ",
+        "bold": false,
+        "blank": false,
+        "doubleSizeLead": 2
+      },
+      {
+        "kind": "line",
+        "text": " 5 | ä ö ü Ä Ö Ü ß € § °        ",
+        "bold": false,
+        "blank": false,
+        "doubleSizeLead": 2
+      },
+      {
+        "kind": "line",
+        "text": "--------------------------------",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": " 6 | ae oe ue Ae Oe Ue ss EUR   ",
+        "bold": false,
+        "blank": false,
+        "doubleSizeLead": 2
+      },
+      {
+        "kind": "line",
+        "text": "     Par. Grad                  ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "     (Ersatz, passt immer)      ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "================================",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "Die Nummer der ersten Zeile, die",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "genau wie oben aussieht, in der ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "Kasse antippen.                 ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "================================",
+        "bold": false,
+        "blank": false
+      }
+    ],
+    "rows": [
+      {
+        "number": 1,
+        "codeTable": "wpc1252",
+        "missing": []
+      },
+      {
+        "number": 2,
+        "codeTable": "pc858",
+        "missing": []
+      },
+      {
+        "number": 3,
+        "codeTable": "pc850",
+        "missing": [
+          "€"
+        ]
+      },
+      {
+        "number": 4,
+        "codeTable": "pc437",
+        "missing": [
+          "€",
+          "§"
+        ]
+      },
+      {
+        "number": 5,
+        "codeTable": "iso8859_15",
+        "missing": []
+      },
+      {
+        "number": 6,
+        "codeTable": "replacement",
+        "missing": [
+          "ä",
+          "ö",
+          "ü",
+          "Ä",
+          "Ö",
+          "Ü",
+          "ß",
+          "€",
+          "§",
+          "°"
+        ]
+      }
+    ]
+  }
+}

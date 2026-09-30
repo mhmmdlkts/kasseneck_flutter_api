@@ -31,6 +31,18 @@ export 'src/printing/escpos/pos_styles.dart' show PosStyles;
 export 'src/printing/escpos/pos_column.dart' show PosColumn;
 export 'src/printing/escpos/qrcode.dart' show QRSize, QRCorrection, QRCode;
 export 'src/printing/escpos/capability_profile.dart' show CapabilityProfile;
+// Katalog der Code-Tabellen (Zeichensatz-Test im Drucker-Wizard): welche
+// Tabelle ein Drucker fuer Umlaute braucht, waehlt der Kassier am Testblatt.
+export 'src/printing/code_tables.dart'
+    show CodeTableId, CodeTable, codeTables, codeTableById, codeTableFromSetting, encodeForCodeTable;
+export 'src/printing/code_table_test_sheet.dart'
+    show
+        CodeTableTestSheet,
+        CodeTableTestSheetRow,
+        codeTableTestSheet,
+        codeTableTestSheetBytes,
+        codeTableTestSheetChars,
+        codeTableReferenceImage;
 export 'src/printing/raster/raster_image.dart' show RasterImage;
 export 'services/printer_service.dart' show KeckPrinterService, CustomPrintJob;
 export 'services/keck_printer.dart'

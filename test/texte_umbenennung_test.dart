@@ -37,13 +37,21 @@ final _strukturKasse = ((_tabelle['structure'] as Map)['pos-texts.json'] as Map)
 
 /// Was nach 1.0 dazukam und darum keinen alten Namen hat (wie `NACH_1_0` in
 /// `umbenennung-1.0.test.ts` des npm-Pakets): drei Saetze und drei
-/// Beschriftungen aus 1.0.0-rc.5, dazu die Verfeinerungen der Fehlerregeln als
-/// eigene Dateischluessel neben `errorRules`.
+/// Beschriftungen aus 1.0.0-rc.5, die Texte des Zeichensatz-Tests aus 1.1.0,
+/// dazu die Verfeinerungen der Fehlerregeln als eigene Dateischluessel neben
+/// `errorRules`.
 const _nach10 = (
-  messages: {'network.outcome_unknown', 'server.connection_disturbed', 'server.response_unreadable'},
-  labels: {'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding'},
+  messages: {
+    'network.outcome_unknown', 'server.connection_disturbed', 'server.response_unreadable',
+    'codetable.question', 'codetable.instruction',
+  },
+  labels: {
+    'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
+    'codetable.title', 'codetable.reference', 'codetable.replacement_note', 'codetable.missing',
+    'codetable.print_again', 'codetable.not_checked', 'codetable.check', 'codetable.current',
+  },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect'],
-  placeholders: {'cents'},
+  placeholders: {'cents', 'chars'},
 );
 
 Set<String> _nach10In(String abschnitt) => abschnitt == 'messages' ? _nach10.messages : _nach10.labels;
@@ -260,7 +268,8 @@ void main() {
           sammle(t as String, _rechnungsMuster);
         }
       }
-      // Neu nach 1.0 ist nur `{cents}` (split.remaining_with_rounding); es hat keinen alten Namen.
+      // Neu nach 1.0 sind nur `{cents}` (split.remaining_with_rounding) und
+      // `{chars}` (codetable.missing); sie haben keinen alten Namen.
       expect(gefunden, {..._platzhalter.values, ..._nach10.placeholders}, reason: 'jeder neue Name kommt in den 1.0-Texten vor');
       expect(_platzhalter.keys.toSet().intersection(_nach10.placeholders), isEmpty);
       for (final abschnitt in ['messages', 'labels']) {

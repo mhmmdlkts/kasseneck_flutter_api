@@ -16,6 +16,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 /// Zeichenbreite wird an der Schrift gemessen, nicht angenommen.
 class KeckReceiptSheetWidget extends StatefulWidget {
   final ReceiptLayout layout;
+
+  /// Ein fertiges Blatt statt eines Layouts (etwa das Testblatt des
+  /// Zeichensatzes, `codeTableTestSheet`); gesetzt nur ueber
+  /// [KeckReceiptSheetWidget.fromSheet]. Dann gilt [layout] nicht.
+  final ReceiptSheet? sheet;
   final int? charsPerLine;
   final String? logoUrl;
   final SheetLogoSize logoSize;
@@ -42,7 +47,26 @@ class KeckReceiptSheetWidget extends StatefulWidget {
     this.fontSize = 12,
     this.qrMissingBuilder,
     super.key,
-  });
+  }) : sheet = null;
+
+  /// Zeichnet ein fertiges [sheet] -- dieselben Zeilen, die das Papier traegt.
+  /// Eine Zeile mit `doubleSizeLead` steht zwei Zeilen hoch, ihre Nummer
+  /// doppelt gross und fett wie am Papier (`GS !` + `ESC E`).
+  const KeckReceiptSheetWidget.fromSheet({
+    required ReceiptSheet this.sheet,
+    this.logoUrl,
+    this.paperColor = Colors.white,
+    this.textColor = Colors.black,
+    this.qrCovered = false,
+    this.qrCoveredText = 'Antippen zum Anzeigen',
+    this.fontSize = 12,
+    this.qrMissingBuilder,
+    super.key,
+  })  : layout = const ReceiptLayout(lines: [], paperSize: 'mm58', ruleset: 2),
+        charsPerLine = null,
+        logoSize = SheetLogoSize.m,
+        brandMark = false,
+        qrModuleSize = QrModuleSize.auto;
 
   @override
   State<KeckReceiptSheetWidget> createState() => _KeckBelegBlattWidgetState();
@@ -124,7 +148,7 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
     // Ohne Bytes kein Logo-Block -- auch wenn das Mass schon bekannt ist.
     final logoBytes = LogoService.getLogoBytes(widget.logoUrl);
     final geladen = _logo != null && _logo!.url == widget.logoUrl && logoBytes != null;
-    final blatt = receiptSheet(
+    final blatt = widget.sheet ?? receiptSheet(
       widget.layout,
       charsPerLine: widget.charsPerLine,
       logo: geladen ? SheetLogo(size: widget.logoSize, pixelWidth: _logo!.width, pixelHeight: _logo!.height) : null,
@@ -148,6 +172,7 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
             children: [
               for (final (i, b) in blatt.blocks.indexed)
                 switch (b) {
+                  SheetLine(:final doubleSizeLead?) when doubleSizeLead > 0 => _grosseZeile(i, b, doubleSizeLead, cw, stil),
                   SheetLine() => SizedBox(
                       key: Key('keck-blatt-zeile-$i'),
                       height: 2 * cw,
@@ -203,6 +228,49 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Wie am Papier (`GS !` doppelt): die ersten [lead] Spalten sind eine
+  /// Zelle mit der Nummer in doppelter Schrift und fett, die Zeile ist zwei
+  /// Zeilen hoch, der Rest steht auf der Grundlinie unter seinen Spalten.
+  Widget _grosseZeile(int i, SheetLine b, int lead, double cw, TextStyle stil) {
+    // Das Feld ist oeffentlich baubar: ein zu grosses `lead` darf das Blatt
+    // nicht mit einem RangeError abbrechen, die Zelle nimmt dann den ganzen Text.
+    final schnitt = math.min(lead, b.text.length);
+    final gewicht = b.bold ? FontWeight.w500 : FontWeight.w400;
+    return SizedBox(
+      key: Key('keck-blatt-zeile-$i'),
+      height: 4 * cw,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          SizedBox(
+            key: Key('keck-blatt-zeile-$i-nummer'),
+            width: lead * cw,
+            height: 4 * cw,
+            child: Center(
+              child: Text(b.text.substring(0, schnitt).trim(),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: stil.copyWith(fontSize: 2 * widget.fontSize, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          Expanded(
+            child: SizedBox(
+              height: 2 * cw,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(b.text.substring(schnitt),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.clip,
+                    style: stil.copyWith(fontWeight: gewicht)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

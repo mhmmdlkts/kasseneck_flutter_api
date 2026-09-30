@@ -15,6 +15,7 @@ import 'package:my_pos/my_pos.dart';
 
 import '../enums/keck_paper_size.dart';
 import '../enums/qr_print_mode.dart';
+import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/qr_groesse.dart';
 import '../src/receipt/layout_from_result.dart' show receiptLayoutFromResult;
 
@@ -123,18 +124,22 @@ class KeckPrinterService {
   /// ein Datenfehler am Konto darf den Bon nicht verhindern. Nur ein
   /// ausdruecklich uebergebenes [logo] laesst den Druck mit [ArgumentError]
   /// abbrechen, bevor ein Byte entsteht.
+  ///
+  /// [codeTable] ist die im Drucker-Wizard gewaehlte Tabelle dieses Druckers
+  /// (siehe [PrintPaper.codeTable]); ohne Wahl bleibt der Bon byte-gleich.
   static Future<PrintPaper> getPaperFromReceipt(
     KasseneckReceipt receipt,
     KeckPaperSize paperSize, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModuleSize qrModuleSize = QrModuleSize.auto,
+    CodeTableId? codeTable,
     @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
     PrintLogo? logo,
     @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
     bool brandMark = false,
   }) async {
     final PrintPaper paper =
-        PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile());
+        PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile(), codeTable: codeTable);
     // Ein Server-Layout gewinnt immer (receiptLayoutFromResult), auch wenn
     // ihm ein Kartenblock zu fehlen scheint: Aufdruck (TESTKASSE, Belegart)
     // und QR wiegen schwerer, und Bildschirm, Bon und PDF zeigen so denselben
@@ -191,12 +196,13 @@ class KeckPrinterService {
   static Future<List<Uint8List>> getBytesFromReceipt(KasseneckReceipt receipt, KeckPaperSize paperSize,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModuleSize qrModuleSize = QrModuleSize.auto,
+      CodeTableId? codeTable,
       @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       PrintLogo? logo,
       @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       bool brandMark = false}) async {
     final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
-        qrMode: qrMode, qrModuleSize: qrModuleSize, logo: logo, brandMark: brandMark);
+        qrMode: qrMode, qrModuleSize: qrModuleSize, codeTable: codeTable, logo: logo, brandMark: brandMark);
     _letzterQrFehler = paper.qrError;
     _letzterQrAusweich = paper.qrFallback;
     return paper.bytes;

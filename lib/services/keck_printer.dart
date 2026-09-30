@@ -7,6 +7,7 @@ import 'package:kasseneck_api/models/print_paper.dart';
 
 import '../enums/keck_paper_size.dart';
 import '../enums/qr_print_mode.dart';
+import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/qr_groesse.dart';
 import 'printer_service.dart';
 
@@ -188,13 +189,17 @@ class KeckPrinter {
   /// selbst, und [KeckPrinterService.lastQrError] wird dabei weder
   /// gelesen noch geschrieben -- ein Druck hier ueberschreibt also nicht das
   /// Signal eines gleichzeitig laufenden Terminaldrucks.
+  ///
+  /// [codeTable]: die im Drucker-Wizard gewaehlte Tabelle dieses Druckers;
+  /// ohne Wahl bleibt der Bon byte-gleich (Tabelle 16).
   Future<KeckPrintResult> printReceipt(
     KasseneckReceipt r, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModuleSize qrModuleSize = QrModuleSize.auto,
+    CodeTableId? codeTable,
   }) async {
     final PrintPaper paper = await KeckPrinterService.getPaperFromReceipt(r, size,
-        qrMode: qrMode, qrModuleSize: qrModuleSize);
+        qrMode: qrMode, qrModuleSize: qrModuleSize, codeTable: codeTable);
     final List<int> bytes = <int>[for (final p in paper.bytes) ...p];
     final KeckPrintResult ergebnis = await transport.send(bytes);
     if (paper.qrError == null && paper.qrFallback == null) return ergebnis;

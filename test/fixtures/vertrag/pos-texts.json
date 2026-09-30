@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -552,6 +552,12 @@
     "print.wizard_cancelled": {
       "text": "Nichts gespeichert."
     },
+    "codetable.question": {
+      "text": "Welche Zeile sieht auf dem Papier aus wie oben?"
+    },
+    "codetable.instruction": {
+      "text": "Die Nummer der ersten Zeile, die genau wie oben aussieht, in der Kasse antippen."
+    },
     "bluetooth.off": {
       "text": "Bluetooth ist ausgeschaltet. Bitte einschalten und erneut suchen.",
       "only": [
@@ -1019,6 +1025,36 @@
     },
     "cancellation.difference": {
       "text": "Differenz"
+    },
+    "codetable.title": {
+      "text": "ZEICHENSATZ-TEST"
+    },
+    "codetable.reference": {
+      "text": "So muss jede Zeile aussehen:"
+    },
+    "codetable.replacement_note": {
+      "text": "(Ersatz, passt immer)"
+    },
+    "codetable.missing": {
+      "text": "ohne {chars}",
+      "placeholders": [
+        "chars"
+      ]
+    },
+    "codetable.print_again": {
+      "text": "Nochmal drucken"
+    },
+    "codetable.not_checked": {
+      "text": "Umlaute noch nicht geprüft"
+    },
+    "codetable.check": {
+      "text": "Umlaute prüfen"
+    },
+    "codetable.current": {
+      "text": "Zeichensatz: Nr. {number}",
+      "placeholders": [
+        "number"
+      ]
     }
   }
 }

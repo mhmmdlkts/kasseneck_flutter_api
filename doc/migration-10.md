@@ -32,6 +32,7 @@ Contents:
 - [F. Named record fields](#f-named-record-fields)
 - [G. Removed without a direct successor](#g-removed-without-a-direct-successor)
 - [H. Changed between the release candidates](#h-changed-between-the-release-candidates)
+- [10.1](#101)
 
 ## A. Changed by the /v3 rebuild
 
@@ -1134,3 +1135,16 @@ are enough; the names below are new in 10.0 either way.
 | `migrateStoredReceiptJson` keeps a stored layout with empty `lines`, a line that is not an object, or no `paperSize` | the layout is left out, so `receiptLayoutFromResult` rebuilds the receipt locally with TESTKASSE and warning lines; `storedLayoutJson` is the same step for a layout on its own |
 | `migrateStoredReceiptJson` turns an unknown banner `ton` into `receipt_type` | an unknown `ton` goes through as it is (as in npm) |
 | no text catalogue in the package | `pos.dart`: `posMessages`, `posLabels`, `messageText`, `labelText`, `messageAppliesTo`, `errorRules`, `errorCodeRules`, `errorOutcomeRules`, `callsWithEffect`, `findErrorRule`, `messageOutcome`, `receiptEmailErrorMessage`, `cancellationPaymentErrorMessage` |
+
+## 10.1
+
+Nothing is renamed or removed; 10.1 only adds names (code tables and the test
+sheet, see the [CHANGELOG](../CHANGELOG.md)). A receipt printed without a
+chosen code table keeps its bytes. One fix changes what reaches the printer:
+
+| 10.0 | 10.1 |
+|---|---|
+| `EscPosGenerator` with `CP437` sends `ESC t 0` and Latin-1 bytes (`ä` = 0xE4, printed as `Σ`); this includes every text printed with `PosStyles.defaults()`, which carries `codeTable: 'CP437'` (`gen.text`/`gen.row`, `KeckPrinter.printText`, `KeckPrinterService.printText`, `CustomPrintJob.text`) | it sends the CP437 bytes (`ä` = 0x84, `ß` = 0xE1); `§` becomes `Par.`, anything else without a CP437 place `?`. Receipts, test print, logo and QR of the package never use `PosStyles.defaults()` and keep their bytes |
+| `setGlobalCodeTable` knows `CP1252` and `CP437`; any other name sends `ESC t 0` with Latin-1 bytes | it also knows the catalogue names (`wpc1252`, `pc858`, `pc850`, `pc437`, `iso8859_15`, `replacement`) with their `ESC t` number and bytes |
+| receipts always print with table 16 and `EUR` | pass `codeTable:` (the table the cashier picked on the test sheet) to `PrintPaper`, `getPaperFromReceipt`, `getBytesFromReceipt`, `getPrintBytes` or `KeckPrinter.printReceipt`; without it nothing changes |
+| `KeckReceiptSheetWidget` draws a `ReceiptLayout` | `KeckReceiptSheetWidget.fromSheet(sheet: codeTableTestSheet(...))` draws a finished sheet, `SheetLine.doubleSizeLead` lines two lines high |

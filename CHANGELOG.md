@@ -1,3 +1,66 @@
+## 10.1.0
+
+Twin of `@kreiseck/kasseneck-api` `1.1.0` (contract files pulled from that
+version). Additive: a receipt printed without a chosen code table is byte for
+byte the same as in 10.0.0. One fix changes bytes, see the last point.
+
+- **Code tables for thermal printers** (`printing.dart`, new). `CodeTableId`
+  (`wpc1252`, `pc858`, `pc850`, `pc437`, `iso8859_15`, `replacement`),
+  `CodeTable` (`id`, `number`, `escT`, `missing`), `codeTables`,
+  `codeTableById`, `codeTableFromSetting` (the stored `codePage` setting to a
+  table) and `encodeForCodeTable`. Every table prints the ten German
+  characters (ä ö ü Ä Ö Ü ß € § °) as one byte or, where the table lacks one,
+  as replacement letters (`€` -> `EUR`, `§` -> `Par.`), never as `?`. Bytes
+  and `ESC t` numbers as in the shared case `code-tables.json`. Reason: `ESC
+  t n` is not numbered the same on every printer; many printers printed
+  umlauts wrong, and the register had no way to pick the right table.
+- **Test sheet** (`printing.dart`, new). `codeTableTestSheet` gives the sheet
+  in the receipt sheet model (`CodeTableTestSheet` with `rows`),
+  `codeTableTestSheetBytes` the ESC/POS bytes: the reference line as a raster
+  image, then one line per table, its number large, switched with `ESC t n`.
+  Always 32 columns; on 80 mm the block is centred with `GS L`. Also
+  `CodeTableTestSheetRow`, `codeTableTestSheetChars`,
+  `codeTableReferenceImage`. Lines and bytes match the shared cases
+  `code-table-test-sheet.*` of npm. Reason: the cashier picks the table by
+  the first line that looks like the reference.
+- **Receipts with a chosen table.** New optional `codeTable` on
+  `PrintPaper`, `KeckPrinterService.getPaperFromReceipt`,
+  `KeckPrinterService.getBytesFromReceipt`, `KasseneckReceipt.getPrintBytes`
+  and `KeckPrinter.printReceipt`. With a table, every line announces its `ESC
+  t`, `€` stays a real byte where the table has it, and characters the table
+  lacks become replacement letters before the columns are computed, so no
+  column shifts. Byte for byte the shared cases `code-table-receipt.*` (four
+  receipts, six tables). Without `codeTable` nothing changes (table 16,
+  `EUR`).
+- **Sheet model and widget.** `SheetLine.doubleSizeLead` (optional): the
+  first n columns are one cell printed double width and height (only the test
+  sheet sets it; `toJson` writes it only when set). New
+  `KeckReceiptSheetWidget.fromSheet(sheet: ...)` draws a finished sheet and
+  shows such a line two lines high with the number double size and bold, as
+  on paper.
+- **Texts.** The catalogue carries the new `codetable.*` sentences and labels
+  of `pos-texts.json` 1.1.0 (`codetable.question`, `codetable.instruction`;
+  `codetable.title`, `codetable.reference`, `codetable.replacement_note`,
+  `codetable.missing` with `{chars}`, `codetable.print_again`,
+  `codetable.not_checked`, `codetable.check`, `codetable.current` with
+  `{number}`).
+- **Fix: `CP437` sent Latin-1.** `EscPosGenerator` announced `ESC t 0` for
+  `setGlobalCodeTable('CP437')` (or `PosStyles(codeTable: 'CP437')`) but sent
+  the Latin-1 bytes, so an `ä` (0xE4) printed as `Σ`. It now sends the CP437
+  bytes (`ä` = 0x84, as `pc437`); `§`, which CP437 lacks, prints as `Par.`.
+  `CP1252` and no table are unchanged. The generator also accepts the table
+  names of the catalogue (`setGlobalCodeTable('pc858')`). Reason: a device
+  set to CP437 printed wrong umlauts on every line.
+  **`PosStyles.defaults()` carries `codeTable: 'CP437'`**, so text printed
+  with it changes the same way: `EscPosGenerator.text`/`row`,
+  `KeckPrinter.printText`, `KeckPrinterService.printText` and
+  `CustomPrintJob.text` when the caller passes `PosStyles.defaults()` (or
+  another style with `CP437`). No path of the package itself uses that
+  style: receipts, the printer test print, logo, brand mark and QR print the
+  same bytes as in 10.0.
+
+Migration: `doc/migration-10.md`, section "10.1".
+
 ## 10.0.0
 
 First stable release of 10.0, the twin of `@kreiseck/kasseneck-api` `1.0.0`
