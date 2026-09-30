@@ -1,3 +1,32 @@
+## 10.1.1
+
+Twin of `@kreiseck/kasseneck-api` `1.1.1` (contract files pulled from that
+version). Additive; receipts are byte for byte the same as in 10.1.0 (the
+shared cases `code-table-receipt.*` are unchanged).
+
+- **Test sheet asks for the right row.** Reason: a Bluetooth printer that
+  only knows PC437 printed rows 2 and 3 with correct umlauts but wrong glyphs
+  for `€` and `§` (`╒`, `⌡`), and row 4 correct with gaps for `€` and `§`.
+  "The first line that looks like the reference" confused users, and "the
+  row with correct umlauts" would pick row 2. The sheet now says: the row
+  with no wrong character; a gap is fine; if several fit, the one with the
+  fewest gaps; if none fits, 6. The reference heading reads "So sehen die
+  Zeichen richtig aus" (32 columns, no colon, which would make it wrap).
+  Everything outside the test rows stays pure ASCII, so "Lücke" from the
+  catalogue stands as "Luecke" on the sheet. Rows, big numbers, margins and
+  the end reset are unchanged. Lines and bytes match the shared cases
+  `code-table-test-sheet.*` of npm.
+- **Screen texts** (`pos.dart`, regenerated from `pos-texts.json`):
+  `codetable.question` is now "In welcher Zeile steht kein falsches
+  Zeichen?"; new `codetable.question_hint`, `codetable.preview_title`,
+  `codetable.apply`, `codetable.other_row`, and for the sheet
+  `codetable.instruction_title` and `codetable.instruction_none`.
+- **Preview** (`printing.dart`, new): `codeTablePreviewText(CodeTableId)`
+  returns the sample "Käsekrainer 3,50 €" / "Tee 80°" as it prints with that
+  table (lines joined by `\n`), e.g. `pc437` gives "Käsekrainer 3,50 EUR".
+  Reason: the cashier sees the effect of a row before applying it. Matches
+  the shared case `code-table-preview.json`.
+
 ## 10.1.0
 
 Twin of `@kreiseck/kasseneck-api` `1.1.0` (contract files pulled from that
