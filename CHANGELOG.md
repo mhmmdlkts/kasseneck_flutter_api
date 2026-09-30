@@ -1,3 +1,11 @@
+## 10.0.0
+
+First stable release of 10.0, the twin of `@kreiseck/kasseneck-api` `1.0.0`
+(contract files pulled from that version). Content identical to
+`10.0.0-rc.2`; the sections below list what 10.0 changes against 9.x and what
+changed between the release candidates. 8.x and 9.x stay frozen on the
+`release/8.x` and `release/9.x` branches. Migration: `doc/migration-10.md`.
+
 ## 10.0.0-rc.2
 
 Second release candidate of 10.0.0, the twin of `@kreiseck/kasseneck-api`
