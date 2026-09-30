@@ -8,6 +8,7 @@ import 'pos_styles.dart';
 import 'pos_column.dart';
 import 'qrcode.dart';
 import 'capability_profile.dart';
+import '../code_tables.dart' show CodeTableId, encodeForCodeTable;
 
 class EscPosGenerator {
   EscPosGenerator(this._paperSize, this._profile, {this.spaceBetweenRows = 5});
@@ -59,7 +60,8 @@ class EscPosGenerator {
     return charsPerLine;
   }
 
-  /// Text in Druckerbytes.
+  /// Text in Druckerbytes, in der Tabelle, die fuer diesen Text gilt
+  /// ([codeTable] des Stils, sonst die globale).
   ///
   /// **Ein unbekanntes Zeichen darf den Druck nie abstürzen lassen.**
   /// Artikelnamen kommen aus dem Panel und können alles enthalten — ein Emoji,
@@ -67,26 +69,38 @@ class EscPosGenerator {
   /// besser als eine Ausnahme: der Beleg ist längst signiert und im DEP, es
   /// fehlte dann nur das Papier.
   ///
-  /// Häufige Zeichen bekommen vorher eine lesbare Entsprechung, statt zu `?`
-  /// zu werden: „0,50 ?" wäre eine Zumutung, „0,50 EUR" ist eine Auskunft.
-  Uint8List _encode(String text) {
-    text = text
-        .replaceAll('’', "'")
-        .replaceAll('´', "'")
-        .replaceAll('»', '"')
-        .replaceAll('«', '"')
-        .replaceAll('•', '.')
-        .replaceAll('€', 'EUR')
-        .replaceAll('–', '-')
-        .replaceAll('—', '-')
-        .replaceAll('„', '"')
-        .replaceAll('“', '"')
-        .replaceAll('”', '"')
-        .replaceAll('…', '...');
+  /// Eine Tabelle des Katalogs (`pc858`, `iso8859_15` ...) kodiert ueber
+  /// [encodeForCodeTable]: `€` als echtes Byte, wo die Tabelle es hat.
+  /// `CP437` bekam bis 10.0 die Bytes von Latin-1 -- am Drucker in Tabelle 0
+  /// stand dann statt `ä` ein `Σ`. Jetzt: die alten Ersetzungen, dann die
+  /// Bytes von `pc437`. `CP1252` und keine Tabelle bleiben byte-gleich zu
+  /// bisher (Latin-1 roh).
+  Uint8List _encode(String text, {String? codeTable}) {
+    final String? tabelle = codeTable ?? _codeTable;
+    final CodeTableId? katalog = CodeTableId.values.asNameMap()[tabelle];
+    if (katalog != null) return encodeForCodeTable(text, katalog);
+    text = _alteErsetzungen(text);
+    if (tabelle == 'CP437') return encodeForCodeTable(text, CodeTableId.pc437);
     return Uint8List.fromList([
       for (final zeichen in text.runes) zeichen <= 0xFF ? zeichen : 0x3F, // '?'
     ]);
   }
+
+  /// Häufige Zeichen bekommen eine lesbare Entsprechung, statt zu `?` zu
+  /// werden: „0,50 ?" wäre eine Zumutung, „0,50 EUR" ist eine Auskunft.
+  static String _alteErsetzungen(String text) => text
+      .replaceAll('’', "'")
+      .replaceAll('´', "'")
+      .replaceAll('»', '"')
+      .replaceAll('«', '"')
+      .replaceAll('•', '.')
+      .replaceAll('€', 'EUR')
+      .replaceAll('–', '-')
+      .replaceAll('—', '-')
+      .replaceAll('„', '"')
+      .replaceAll('“', '"')
+      .replaceAll('”', '"')
+      .replaceAll('…', '...');
 
   /// Generate multiple bytes for a number: In lower and higher parts, or more parts as needed.
   ///
@@ -292,7 +306,7 @@ class EscPosGenerator {
   }) {
     List<int> bytes = [];
     bytes += _text(
-      _encode(text),
+      _encode(text, codeTable: styles.codeTable),
       styles: styles,
       maxCharsPerLine: maxCharsPerLine,
     );
@@ -372,7 +386,7 @@ class EscPosGenerator {
 
       Uint8List encodedToPrint = cols[i].textEncoded != null
           ? cols[i].textEncoded!
-          : _encode(cols[i].text);
+          : _encode(cols[i].text, codeTable: cols[i].styles.codeTable);
 
       // If the col's content is too long, split it to the next row
       int realCharactersNb = encodedToPrint.length;
