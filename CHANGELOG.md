@@ -51,6 +51,13 @@ byte the same as in 10.0.0. One fix changes bytes, see the last point.
   `CP1252` and no table are unchanged. The generator also accepts the table
   names of the catalogue (`setGlobalCodeTable('pc858')`). Reason: a device
   set to CP437 printed wrong umlauts on every line.
+  **`PosStyles.defaults()` carries `codeTable: 'CP437'`**, so text printed
+  with it changes the same way: `EscPosGenerator.text`/`row`,
+  `KeckPrinter.printText`, `KeckPrinterService.printText` and
+  `CustomPrintJob.text` when the caller passes `PosStyles.defaults()` (or
+  another style with `CP437`). No path of the package itself uses that
+  style: receipts, the printer test print, logo, brand mark and QR print the
+  same bytes as in 10.0.
 
 Migration: `doc/migration-10.md`, section "10.1".
 

@@ -37,6 +37,20 @@ void main() {
     });
   }
 
+  test('PosStyles.defaults() (CP437) auf dem Weg KeckPrinter.printText und CustomPrintJob: CP437-Bytes', () async {
+    // `PosStyles.defaults()` traegt `codeTable: 'CP437'`. Kein Weg des Pakets
+    // (Beleg, Testdruck, Logo, QR) benutzt diesen Stil; betroffen sind nur
+    // eigene Druckauftraege, die ihn selbst uebergeben: `EscPosGenerator.text`/
+    // `row`, `KeckPrinter.printText`, `KeckPrinterService.printText`,
+    // `CustomPrintJob.text`. Bis 10.0 kam dort Latin-1 unter `ESC t 0` an.
+    // Bis 10.0: ... 1b 74 00 47 72 fc df 65 0a (Latin-1, am Drucker "Gr³▀e").
+    final fake = _MitschnittTransport();
+    await KeckPrinter(fake, size: KeckPaperSize.mm58).printText('Grüße', styles: const PosStyles.defaults());
+    expect(ende(fake.bytes, 11), [0x1c, 0x2e, 0x1b, 0x74, 0, ...'Gr'.codeUnits, 0x81, 0xe1, 0x65, 0x0a]);
+    final job = CustomPrintJob().text('Grüße', styles: const PosStyles.defaults());
+    expect(ende(job.build(EscPosGenerator(EscPaperSize.mm58, CapabilityProfile())), 11), ende(fake.bytes, 11));
+  });
+
   test('Spalten rechnen an den fertigen Bytes: € auf pc437 ist EUR, der Betrag bleibt rechtsbuendig', () {
     List<int> zeile(String betrag) {
       final gen = EscPosGenerator(EscPaperSize.mm58, CapabilityProfile())..setGlobalCodeTable('pc437');
@@ -48,3 +62,16 @@ void main() {
     expect(zeile('2,50 €'), zeile('2,50 EUR'));
   });
 }
+
+class _MitschnittTransport implements PrinterTransport {
+  List<int> bytes = [];
+  @override
+  Future<KeckPrintResult> send(List<int> b) async {
+    bytes = List.of(b);
+    return const KeckPrintResult.success();
+  }
+
+  @override
+  Future<void> dispose() async {}
+}
+
