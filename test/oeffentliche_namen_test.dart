@@ -53,7 +53,7 @@ final Set<String> woerter = _liste('''
   description detail details device devices diagnosis differs digits
   dimensions direct directory disabled discount discover discovered discovery
   dispose distance distribute divider documented done dots double download
-  draft drawer dry due effect email emoji empty enable enabled encoded end
+  draft drawer dry due effect email emoji empty enable enabled encode encoded end
   enrollment entered entry enums envelope environment error errors euro event
   everywhere exact exceeded exception expected expired expires expiry external
   extra failed failure failures fallback fast fault fax february feed field
@@ -66,7 +66,7 @@ final Set<String> woerter = _liste('''
   info input installments instant insufficient intent interface interfaces
   internal intro invalid invert invoice invoices is issue issuer item items
   january job journal july june key keys kind kinds label language languages
-  large last layout left legacy legal length level licenses light limit line
+  large last layout lead left legacy legal length level licenses light limit line
   lines link list load loader local location lock login logo logout lookup
   lossy luminance mandate mandatory map march mark matrix may meaning measured
   media medium merchant merge message metadata method methods metrics migrate
@@ -85,7 +85,7 @@ final Set<String> woerter = _liste('''
   range raster rasters rate rated rates ratio raw read readable reader ready
   reason reasons receipt receipts received recipient recipients record redeem
   reference refresh refund refunds register registered registration rejected
-  rejects related remaining remove removed render renew replayed report
+  rejects related remaining remove removed render renew replacement replayed report
   reports request required requirement requirements reservation reset resolve
   resolved resolving response result retries retry revenue reversal reverse
   reversed right rotate row rows rule rules ruleset run safely sale saturation
@@ -97,7 +97,7 @@ final Set<String> woerter = _liste('''
   source sources space split staff stamp standard start started state
   statement status statuses step steps stop storage stored street strength
   strengths string style styles subnet subtitle subtotal subtracted succeeded
-  success sum summary supported surface symbol table takeover tax technical
+  success sum summary supported surface symbol table tables takeover tax technical
   tendered term terminal terminals test text texts thanks theme tile tiles
   time timeout timestamp tip title to today token tone top total totals touch
   tracking training transaction transfer transmitted transport tries turn
@@ -110,14 +110,15 @@ final Set<String> woerter = _liste('''
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,
-/// QR-Fehlerkorrektur, Barcode-Arten, Terminalfelder von Hobex/ZVT).
+/// QR-Fehlerkorrektur, Barcode-Arten, Terminalfelder von Hobex/ZVT,
+/// Code-Tabellen `pc858`/`wpc1252`/`iso8859_15` und `ESC t`).
 final Set<String> kuerzel = _liste('''
   a acc aes aid api app b bic bin c ch codabar cols cor cp cvm d dec doc e ean
   einvoice elv emv esc escpos f fn g gen geo girocode gln h hex hps hr hri hsv
-  http iban icm id img init ios ip ipv itf j json k kg l lat len lng m mac max
-  micros millis min mm ms n ok params pct pdf perms pin pos pre pro q qr
-  qrcode r ref res rgb rgba s scep sdk sdp sec sepa sig sms src sub tcp tid
-  tids ttl tx tz uid uint upc url usb vat vu w wifi x xl xml y zip
+  http iban icm id img init ios ip ipv iso itf j json k kg l lat len lng m mac max
+  micros millis min mm ms n ok params pc pct pdf perms pin pos pre pro q qr
+  qrcode r ref res rgb rgba s scep sdk sdp sec sepa sig sms src sub t tcp tid
+  tids ttl tx tz uid uint upc url usb vat vu w wifi wpc x xl xml y zip
 ''');
 
 /// Produkt- und Firmennamen.

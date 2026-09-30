@@ -35,6 +35,14 @@ export 'src/printing/escpos/capability_profile.dart' show CapabilityProfile;
 // Tabelle ein Drucker fuer Umlaute braucht, waehlt der Kassier am Testblatt.
 export 'src/printing/code_tables.dart'
     show CodeTableId, CodeTable, codeTables, codeTableById, codeTableFromSetting, encodeForCodeTable;
+export 'src/printing/code_table_test_sheet.dart'
+    show
+        CodeTableTestSheet,
+        CodeTableTestSheetRow,
+        codeTableTestSheet,
+        codeTableTestSheetBytes,
+        codeTableTestSheetChars,
+        codeTableReferenceImage;
 export 'src/printing/raster/raster_image.dart' show RasterImage;
 export 'services/printer_service.dart' show KeckPrinterService, CustomPrintJob;
 export 'services/keck_printer.dart'

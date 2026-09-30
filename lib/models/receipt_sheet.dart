@@ -55,7 +55,13 @@ sealed class SheetBlock {
   /// Der Block in der Form des Vertrags (`expected/*.sheet*.json`, npm 1.0):
   /// `kind` `line`/`logo`/`qr`/`brandMark`, Felder englisch.
   Map<String, Object> toJson() => switch (this) {
-        SheetLine(:final text, :final bold, :final blank) => {'kind': 'line', 'text': text, 'bold': bold, 'blank': blank},
+        SheetLine(:final text, :final bold, :final blank, :final doubleSizeLead) => {
+            'kind': 'line',
+            'text': text,
+            'bold': bold,
+            'blank': blank,
+            'doubleSizeLead': ?doubleSizeLead,
+          },
         SheetLogoBlock(:final widthFraction, :final heightLines) => {
             'kind': 'logo',
             'widthFraction': widthFraction,
@@ -70,7 +76,15 @@ class SheetLine extends SheetBlock {
   final String text;
   final bool bold;
   final bool blank;
-  const SheetLine({required this.text, required this.bold, required this.blank});
+
+  /// Die ersten n Spalten sind EINE Zelle, deren Inhalt (ohne Leerraum)
+  /// doppelt breit und doppelt hoch steht -- die Zeile ist dann zwei Zeilen
+  /// hoch. Nur das Testblatt des Zeichensatzes setzt das (Nummern links);
+  /// `null` heisst alles einfach gross. Ein Zeichner, der das Feld nicht
+  /// kennt, zeigt die Zeile in einfacher Groesse, die Spalten bleiben dieselben.
+  final int? doubleSizeLead;
+
+  const SheetLine({required this.text, required this.bold, required this.blank, this.doubleSizeLead});
 }
 
 class SheetLogoBlock extends SheetBlock {
