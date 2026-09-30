@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.1.0
+npm_version: 1.1.1
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -29,7 +29,7 @@ npm_version: 1.1.0
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
 #
-# Stand 1.1.0, Dart 10.1: 20 Einträge "nicht zutreffend" (Partner-API),
+# Stand 1.1.1, Dart 10.1: 20 Einträge "nicht zutreffend" (Partner-API),
 # keiner "offen". Die 35 offenen aus 9.x sind mit dem Umbau auf den Draht
 # /api/v3 geschlossen: Druckjobs (#22), Druckweg connect und Terminal (#23),
 # die fehlenden Einstellungsfelder samt setMyKasseLogo (#24), die 16

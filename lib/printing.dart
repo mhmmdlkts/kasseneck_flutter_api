@@ -43,6 +43,7 @@ export 'src/printing/code_table_test_sheet.dart'
         codeTableTestSheetBytes,
         codeTableTestSheetChars,
         codeTableReferenceImage;
+export 'src/printing/code_table_preview.dart' show codeTablePreviewText;
 export 'src/printing/raster/raster_image.dart' show RasterImage;
 export 'services/printer_service.dart' show KeckPrinterService, CustomPrintJob;
 export 'services/keck_printer.dart'

@@ -32,7 +32,7 @@
       },
       {
         "kind": "line",
-        "text": "So muss jede Zeile aussehen:    ",
+        "text": "So sehen die Zeichen richtig aus",
         "bold": false,
         "blank": false
       },
@@ -116,19 +116,37 @@
       },
       {
         "kind": "line",
-        "text": "Die Nummer der ersten Zeile, die",
+        "text": "Welche Zeile nehmen?            ",
+        "bold": true,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "Die Zeile, in der KEIN falsches ",
         "bold": false,
         "blank": false
       },
       {
         "kind": "line",
-        "text": "genau wie oben aussieht, in der ",
+        "text": "Zeichen steht. Eine Luecke ist  ",
         "bold": false,
         "blank": false
       },
       {
         "kind": "line",
-        "text": "Kasse antippen.                 ",
+        "text": "in Ordnung. Passen mehrere, die ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "mit den wenigsten Luecken.      ",
+        "bold": false,
+        "blank": false
+      },
+      {
+        "kind": "line",
+        "text": "Passt keine: 6.                 ",
         "bold": false,
         "blank": false
       },

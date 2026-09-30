@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.1.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.1.1). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.1.0';
+const String posTextsVersion = '1.1.1';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -139,8 +139,10 @@ const Map<String, PosText> posMessages = {
   'print.wizard_nothing_arrived': PosText('Nichts gekommen? Drucker an, Papier drin, richtiges Gerät gewählt?'),
   'print.wizard_saved': PosText('{name} ist eingerichtet.', placeholders: ['name']),
   'print.wizard_cancelled': PosText('Nichts gespeichert.'),
-  'codetable.question': PosText('Welche Zeile sieht auf dem Papier aus wie oben?'),
-  'codetable.instruction': PosText('Die Nummer der ersten Zeile, die genau wie oben aussieht, in der Kasse antippen.'),
+  'codetable.question': PosText('In welcher Zeile steht kein falsches Zeichen?'),
+  'codetable.question_hint': PosText('Lücken sind in Ordnung.'),
+  'codetable.instruction': PosText('Die Zeile, in der KEIN falsches Zeichen steht. Eine Lücke ist in Ordnung. Passen mehrere, die mit den wenigsten Lücken.'),
+  'codetable.instruction_none': PosText('Passt keine: {number}.', placeholders: ['number']),
   'bluetooth.off': PosText('Bluetooth ist ausgeschaltet. Bitte einschalten und erneut suchen.', only: [PosSurface.app]),
   'bluetooth.permission_missing': PosText('Bitte die Freigabe in den Geräte-Einstellungen erteilen.', only: [PosSurface.app]),
   'bluetooth.search_failed': PosText('Die Suche ist fehlgeschlagen: {reason}', placeholders: ['reason'], only: [PosSurface.app]),
@@ -239,13 +241,17 @@ const Map<String, PosText> posLabels = {
   'cancellation.payment_remainder': PosText('Rest {amount}', placeholders: ['amount']),
   'cancellation.difference': PosText('Differenz'),
   'codetable.title': PosText('ZEICHENSATZ-TEST'),
-  'codetable.reference': PosText('So muss jede Zeile aussehen:'),
+  'codetable.reference': PosText('So sehen die Zeichen richtig aus'),
   'codetable.replacement_note': PosText('(Ersatz, passt immer)'),
   'codetable.missing': PosText('ohne {chars}', placeholders: ['chars']),
   'codetable.print_again': PosText('Nochmal drucken'),
   'codetable.not_checked': PosText('Umlaute noch nicht geprüft'),
   'codetable.check': PosText('Umlaute prüfen'),
   'codetable.current': PosText('Zeichensatz: Nr. {number}', placeholders: ['number']),
+  'codetable.instruction_title': PosText('Welche Zeile nehmen?'),
+  'codetable.preview_title': PosText('So steht es dann am Bon:'),
+  'codetable.apply': PosText('Übernehmen'),
+  'codetable.other_row': PosText('Andere Zeile'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].
