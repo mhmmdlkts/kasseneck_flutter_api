@@ -236,6 +236,9 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
   /// Zelle mit der Nummer in doppelter Schrift und fett, die Zeile ist zwei
   /// Zeilen hoch, der Rest steht auf der Grundlinie unter seinen Spalten.
   Widget _grosseZeile(int i, SheetLine b, int lead, double cw, TextStyle stil) {
+    // Das Feld ist oeffentlich baubar: ein zu grosses `lead` darf das Blatt
+    // nicht mit einem RangeError abbrechen, die Zelle nimmt dann den ganzen Text.
+    final schnitt = math.min(lead, b.text.length);
     final gewicht = b.bold ? FontWeight.w500 : FontWeight.w400;
     return SizedBox(
       key: Key('keck-blatt-zeile-$i'),
@@ -248,7 +251,7 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
             width: lead * cw,
             height: 4 * cw,
             child: Center(
-              child: Text(b.text.substring(0, lead).trim(),
+              child: Text(b.text.substring(0, schnitt).trim(),
                   maxLines: 1,
                   softWrap: false,
                   style: stil.copyWith(fontSize: 2 * widget.fontSize, fontWeight: FontWeight.bold)),
@@ -259,7 +262,7 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
               height: 2 * cw,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text(b.text.substring(lead),
+                child: Text(b.text.substring(schnitt),
                     maxLines: 1,
                     softWrap: false,
                     overflow: TextOverflow.clip,

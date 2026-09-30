@@ -39,6 +39,18 @@ void main() {
     }
   });
 
+  testWidgets('doubleSizeLead laenger als der Text: kein Absturz, der ganze Text steht in der Nummernzelle', (tester) async {
+    final kurz = CodeTableTestSheet(
+      charsPerLine: 32,
+      rows: const [],
+      blocks: const [SheetLine(text: ' 7', bold: false, blank: false, doubleSizeLead: 5)],
+    );
+    await tester.pumpWidget(huelle(KeckReceiptSheetWidget.fromSheet(sheet: kurz)));
+    expect(tester.takeException(), isNull);
+    final texte = tester.widgetList<Text>(find.descendant(of: find.byKey(const Key('keck-blatt-zeile-0')), matching: find.byType(Text))).toList();
+    expect(texte.map((t) => t.data), ['7', '']);
+  });
+
   testWidgets('ein Beleg ohne das Feld zeichnet wie bisher (einfach gross)', (tester) async {
     final einfach = ReceiptSheetOhneLead.aus(blatt);
     await tester.pumpWidget(huelle(KeckReceiptSheetWidget.fromSheet(sheet: einfach)));
