@@ -15,8 +15,8 @@ Ab 10.0 spricht das Paket nur noch `/v3`. Die alten Routen `/v1` und `/api`
 bedienen allein die eingefrorenen Linien 8.x und 9.x (Zweige `release/8.x`
 und `release/9.x`, nur Fehlerbehebungen).
 
-Konsumenten sind mehrere Flutter-Apps (sastre, herzens_kassa, karteck,
-vanillanails und weitere). Was hier bricht, bricht dort — und was hier
+Konsumenten sind mehrere Flutter-Apps (darunter sastre und karteck sowie
+Apps einzelner Kunden). Was hier bricht, bricht dort — und was hier
 schlampig ist, wird dort abgeschrieben.
 
 Das Paket hat einen **Zwilling in JavaScript**: `@kreiseck/kasseneck-api`
