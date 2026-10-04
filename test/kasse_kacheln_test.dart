@@ -225,6 +225,22 @@ void main() {
       ]);
     });
 
+    test('eine von Hand gebaute Position mit leerer Artikel-ID bündelt wie eine ohne ID', () {
+      const handgebaut = Cart(items: [
+        Position(id: 'p1', name: 'Kaffee', quantity: 1, priceCents: 280, vat: VatRate.vat20, articleId: ''),
+      ]);
+      final frei = bookTile(handgebaut, entwurf, bundle: true);
+      expect((frei.lineId, frei.quantity, frei.cart.items.length), ('p1', 2, 1));
+      final leer = bookTile(
+          handgebaut,
+          const CartItemDraft(name: 'Kaffee', unitPriceCents: 280, vatRate: VatRate.vat20, articleId: ''),
+          bundle: true);
+      expect((leer.lineId, leer.quantity, leer.cart.items.length), ('p1', 2, 1));
+      // Ein echter Artikel gleichen Aussehens bleibt trotzdem eine eigene Zeile.
+      final artikelzeile = bookTile(handgebaut, draftFromArticle(artikel())!, bundle: true);
+      expect([for (final p in artikelzeile.cart.items) (p.articleId, p.quantity)], [('', 1), ('a1', 1)]);
+    });
+
     test('eine Position ohne Artikel-ID (alter Aufrufer) bleibt gültig und schlank', () {
       const alt = Position(id: 'p1', name: 'Semmel', quantity: 2, priceCents: 79, vat: VatRate.vat10);
       expect(alt.articleId, isNull);

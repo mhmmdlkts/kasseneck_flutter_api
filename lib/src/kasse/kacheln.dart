@@ -142,16 +142,18 @@ class TileBooking {
 /// Artikel-ID) hochgezählt, ohne entsteht je Griff eine Zeile. Zwei Artikel
 /// gleichen Aussehens bleiben zwei Zeilen (jeder bucht sein eigenes Lager),
 /// ebenso ein Artikel und eine freie Position; freie Positionen ohne ID
-/// bündeln wie bisher. Die Höchstmenge des Artikels hält auch hier —
-/// [Cart.withQuantity] deckelt, egal woher der Griff kommt.
+/// bündeln wie bisher. Eine leere Artikel-ID gilt auf beiden Seiten als
+/// keine (auch an einer von Hand gebauten [Position]). Die Höchstmenge des
+/// Artikels hält auch hier — [Cart.withQuantity] deckelt, egal woher der
+/// Griff kommt.
 TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   if (bundle) {
-    final artikel = draft.articleId == null || draft.articleId!.isEmpty ? null : draft.articleId;
+    final artikel = _artikelId(draft.articleId);
     for (final p in cart.items) {
       if (p.name != draft.name.trim()) continue;
       if (p.priceCents != draft.unitPriceCents) continue;
       if (p.vat != draft.vatRate) continue;
-      if (p.articleId != artikel) continue;
+      if (_artikelId(p.articleId) != artikel) continue;
       final neu = cart.withQuantity(p.id, p.quantity + 1);
       final zeile = neu.items.firstWhere((z) => z.id == p.id);
       return TileBooking(cart: neu, lineId: p.id, quantity: zeile.quantity);
@@ -164,3 +166,6 @@ TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   }
   return TileBooking(cart: neu, lineId: neu.items.last.id, quantity: 1);
 }
+
+/// Leere Artikel-ID → `null`, damit „leer" und „keine" gleich vergleichen.
+String? _artikelId(String? id) => id == null || id.isEmpty ? null : id;
