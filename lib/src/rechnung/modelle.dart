@@ -391,9 +391,9 @@ class InvoiceItemInput implements TotalsItem {
 
 /// Eine Gutschriftsposition: wie [InvoiceItemInput], dazu die Rückgabe-Wahl.
 ///
-/// Geht in [CreditNoteRequest.items]; an einer Rechnung ([IssueInvoiceRequest])
-/// weist `issueInvoice` eine gesetzte [returnDisposition] vor dem Senden ab
-/// (der Server kennt das Feld dort nicht).
+/// Geht in [CreditNoteRequest.items]. An einer Rechnung ([IssueInvoiceRequest])
+/// kennt der Server das Feld nicht und weist eine gesetzte [returnDisposition]
+/// als `validation` (`items[i].returnDisposition`) ab.
 class CreditNoteItemInput extends InvoiceItemInput {
   const CreditNoteItemInput({
     required super.description,
@@ -426,10 +426,11 @@ class CreditNoteItemInput extends InvoiceItemInput {
     );
   }
 
-  /// Wohin die Ware dieser Position geht, aus [returnDispositions]; fehlt =
+  /// Wohin die Ware dieser Position geht, aus `returnDispositions`; fehlt =
   /// die Vorgabe der Gutschrift ([CreditNoteRequest.returnDisposition]) bzw.
-  /// `restock`. Wirkt nur an Positionen mit [articleId]. Ein unbekannter Wert
-  /// ist ein Anfragefehler vor dem Senden.
+  /// `restock`. Wirkt nur an Positionen mit [articleId]. Als `String`, damit
+  /// ein unbekannter Wert unverändert beim Server ankommt und als
+  /// `validation` mit Feldpfad zurückkommt.
   final String? returnDisposition;
 
   @override
@@ -733,7 +734,7 @@ class CreditNoteRequest {
   final List<InvoiceItemInput> items;
 
   /// Vorgabe der Rückgabe-Wahl für alle bestandsgeführten Positionen, aus
-  /// [returnDispositions]; fehlt = `restock`. Je Position abweichend über
+  /// `returnDispositions`; fehlt = `restock`. Je Position abweichend über
   /// [CreditNoteItemInput.returnDisposition].
   final String? returnDisposition;
 

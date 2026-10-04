@@ -1087,9 +1087,9 @@ invoice books it out, from `IssueInvoiceRequest.stockLocationId` or the
 default location. The invoice never fails because of stock. `cancelInvoice`
 and `createCreditNote` take `returnDisposition` (`restock`, `defective`,
 `disposed`); credit-note lines use `CreditNoteItemInput` with their own
-`returnDisposition`. An unknown choice, or a choice on an invoice line, throws
-`KasseneckValidationError` (`request`) before sending; the shape of the ids is
-checked by the server (`validation` with the field path).
+`returnDisposition`. The fields go out only when set; the server checks them
+(an unknown choice, a choice on an invoice line or an id of the wrong shape
+comes back as `validation` with the field path).
 
 ```dart
 await invoices.createCreditNote(const CreditNoteRequest(

@@ -72,12 +72,10 @@ new fields send the same bytes as in 10.1.2. One behaviour change in
   `returnDisposition` on `cancelInvoice` and `CreditNoteRequest`, per line
   through the new `CreditNoteItemInput` (a subclass of `InvoiceItemInput`, so
   `CreditNoteRequest.items` keeps its type and existing callers stay valid).
-  Fields go out only when set. Unlike npm, which leaves every check to the
-  server, an unknown return choice, and a choice on an invoice line (possible
-  here because a `CreditNoteItemInput` fits into `IssueInvoiceRequest.items`),
-  throws `KasseneckValidationError` (`request`) with the field path before
-  sending, the same rule as at the register. The shape of `articleId` and
-  `stockLocationId` is checked by the server. The six stock examples of the
+  Fields go out only when set and exactly as given. As in npm, the server
+  checks them: an unknown return choice, a choice on an invoice line or an
+  id of the wrong shape comes back as `validation` with the field path
+  (`invoiceFieldErrors`). The six stock examples of the
   contract (`invoice-api-examples/`) now run in `rechnung_api_test`; the skip
   is gone.
 - **Contract npm 1.3.0**: the `stock.*` labels (`stock.all_articles`,
