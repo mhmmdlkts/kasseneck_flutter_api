@@ -52,6 +52,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 - [The /v3 wire: marker, fail closed, unknown outcome](#the-v3-wire-marker-fail-closed-unknown-outcome)
 - [Selling: items, amounts, vouchers, tips](#selling-items-amounts-vouchers-tips)
 - [Cancellations (Storno)](#cancellations-storno)
+- [Stock at the register](#stock-at-the-register)
 - [Sending a receipt by email](#sending-a-receipt-by-email)
 - [Register settings](#register-settings)
 - [Error handling](#error-handling)
@@ -66,7 +67,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.1.2
+  kasseneck_api: ^10.2.0
 ```
 
 ```bash
@@ -477,6 +478,70 @@ adjustment). What a cancellation granted is stored on its entry in
 The old cancellation through `createReceipt` without a reference to the
 original (`KasseneckApi.cancelReceipt(receipt:)`, `createCancelReceipt`) is gone
 in 10.0; `/v3` rejects it.
+
+## Stock at the register
+
+If the account runs the stock module, the backend books sales, cancellations
+and invoices against the stock of a location. The register reads locations and
+stock, picks its own location and says where returned goods go. Three calls on
+the register path (`/api/v3` only), permissions checked by the server:
+
+```dart
+import 'package:kasseneck_api/pos.dart';
+
+final client = RegisterReceiptClient(transport);
+final locations = await client.stockLocations();        // List<StockLocation>
+final list = await client.stock(locationId: 'van-1');   // StockList: stock, values
+await client.setStockLocation(stockLocationId: 'van-1'); // null resets to the default location
+```
+
+- Quantities (`StockLevel.sellable`, `defective`, `reserved`, `available`) are
+  integer thousandths of the base unit and keep their sign; the package never
+  rounds or clamps them. `StockList.values` is `null` without the permission
+  `stockCosts`, never an empty list.
+- **Stock must never block a sale.** A response the package cannot read (a
+  missing or fractional quantity) is never turned into `0`: it throws
+  `KasseneckValidationError` with `kind: 'response'`. Treat that as "stock
+  temporarily unavailable", hide the figures and keep selling.
+- **Who may see stock:** `stockViewOf(user.perms)`. A missing `stockView`
+  counts as granted, only an explicit `false` blocks it, as in the backend.
+  Always use `stockViewOf` for the display: `perms['stockView']` returns the
+  raw value and is `false` when the key is missing. The other stock
+  permissions (`stockCosts`, `stockMove`, `stockLoss`, `stocktakeCount`,
+  `stocktakeClose`, `stockLocation`) count only when present.
+- Articles carry `stockLocationIds` and their codes `number`, `ean`,
+  `internalCode` plus `stockTracked`; registers `stockLocationId`
+  (`CashregisterEntry`, `RegisterCashregisterState`). The stock words of the
+  register are `stock.*` labels (`labelText('stock.where_to')`).
+
+**Article id in the cart.** `draftFromArticle` puts the article id on the
+draft, the cart keeps it on its `Position`, and the receipt item sends it as
+`articleId`; that is how the server knows which stock to book. `bookTile`
+bundles only lines with the same article id: two articles that look the same
+stay two lines, and so do an article and a free item. Free items (no id, or
+an empty one) bundle as before and send the same bytes as before.
+
+**Returns on cancellation.** `cancelReceipt` takes `returnDisposition` from
+`returnDispositions`: `restock` (back into stock, the server's default),
+`defective` (into stock as defective) or `disposed`. It is the default for the
+call; a different choice per line goes into `itemReturnDispositions`, keyed by
+the line index used in `items`:
+
+```dart
+await client.cancelReceipt(
+  originalReceiptId: id,
+  reason: 'customer_cancelled',
+  items: [(index: 0, quantity: 1), (index: 2, quantity: 1)],
+  returnDisposition: ReturnDisposition.restock.name,
+  itemReturnDispositions: {2: ReturnDisposition.defective.name},
+);
+```
+
+An unknown value, a per-line choice without `items` or for an index not in
+`items` throws `KasseneckValidationError` (`request`) before anything is sent.
+The choice only affects lines with an article; `returnDispositionLabels` maps
+each value to its label (`labelText(returnDispositionLabels['restock']!)` is
+"Zurück ins Lager"). Without a choice the request is the same as before.
 
 ## Sending a receipt by email
 
@@ -1015,6 +1080,29 @@ zero), per rate, then summed. If the server derives a tax-exempt case
 `previewInvoice` names the case. Issuing is binding: customer or account may
 change between preview and invoice. Totals are positive for credit notes too;
 the sign is in the document type (`docType: 'credit_note'`).
+
+**Stock.** An item may name its article (`InvoiceItemInput.articleId`); if
+the article is stock-tracked and the stock module is active, issuing the
+invoice books it out, from `IssueInvoiceRequest.stockLocationId` or the
+default location. The invoice never fails because of stock. `cancelInvoice`
+and `createCreditNote` take `returnDisposition` (`restock`, `defective`,
+`disposed`); credit-note lines use `CreditNoteItemInput` with their own
+`returnDisposition`. An unknown choice, or a choice on an invoice line, throws
+`KasseneckValidationError` (`request`) before sending; the shape of the ids is
+checked by the server (`validation` with the field path).
+
+```dart
+await invoices.createCreditNote(const CreditNoteRequest(
+  idempotencyKey: 'return-4711',
+  invoiceId: 'inv_…',
+  reason: 'return',
+  returnDisposition: 'restock',
+  items: [
+    CreditNoteItemInput(description: 'Rye bread', quantity: 1, unitPriceCents: 450, vatRate: 10,
+        articleId: 'rye-bread', returnDisposition: 'defective'),
+  ],
+));
+```
 
 **Notices are always a list.** `notice` on `issueInvoice`, `previewInvoice` and
 `recordInvoicePayment` is a `List<InvoiceNotice>`, empty if there is nothing to
