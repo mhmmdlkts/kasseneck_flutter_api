@@ -4,7 +4,7 @@
     "default": {
       "sha256": "bf1e7c100e328517c72d5badf31904183efe22d1fddec308e2fe2722068854bc",
       "head": [],
-      "inputsSha256": "be31e4ca73dc3851a6b303da8aff60ba25842c6641fc24779051bb07a671b649",
+      "inputsSha256": "6aae196464196c3abcfb6afed5fb78a99d8c067c79247ca442badf2471e39ddc",
       "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "a769893a8ee82a0075c87c6ef270ce090112acb12088d8296d14fb0db293551b",
+      "sha256": "eefa51fff36bc4fccd530c9f2693c66f0aec1aadfef9756014ca150954e8eace",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "e76a8dd30e5411d23956f19ec239b06dafaf882515f79bc10c2be4e33838fd5f",
+      "inputsSha256": "b7483cf62e025b0c980b90d013c81c88a99f7acdeaf70f510a7554329ee19285",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -12686,6 +12686,665 @@
                   "owner": false
                 }
               ]
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "listMyStockLocations": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "session_wrong",
+          "method": "POST",
+          "caller": "register_user_wrong_session",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "data": {
+              "code": "session_expired"
+            },
+            "code": "session_expired"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Lager\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Lagervorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "locations": [
+                {
+                  "id": "haupt",
+                  "name": "Hauptstandort",
+                  "type": "store",
+                  "address": null,
+                  "licensePlate": null,
+                  "active": true,
+                  "virtual": true
+                },
+                {
+                  "id": "auto1",
+                  "name": "Lieferwagen W-12345",
+                  "type": "vehicle",
+                  "address": null,
+                  "licensePlate": "W-12345",
+                  "active": true
+                },
+                {
+                  "id": "alt",
+                  "name": "Altes Lager",
+                  "type": "warehouse",
+                  "address": {
+                    "street": "Hauptplatz 1",
+                    "zip": "1010",
+                    "city": "Wien",
+                    "country": "AT"
+                  },
+                  "licensePlate": null,
+                  "active": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_owner",
+          "method": "POST",
+          "caller": "owner",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "locations": [
+                {
+                  "id": "haupt",
+                  "name": "Hauptstandort",
+                  "type": "store",
+                  "address": null,
+                  "licensePlate": null,
+                  "active": true,
+                  "virtual": true
+                },
+                {
+                  "id": "auto1",
+                  "name": "Lieferwagen W-12345",
+                  "type": "vehicle",
+                  "address": null,
+                  "licensePlate": "W-12345",
+                  "active": true
+                },
+                {
+                  "id": "alt",
+                  "name": "Altes Lager",
+                  "type": "warehouse",
+                  "address": {
+                    "street": "Hauptplatz 1",
+                    "zip": "1010",
+                    "city": "Wien",
+                    "country": "AT"
+                  },
+                  "licensePlate": null,
+                  "active": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "listMyStock": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "session_wrong",
+          "method": "POST",
+          "caller": "register_user_wrong_session",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "data": {
+              "code": "session_expired"
+            },
+            "code": "session_expired"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Lager\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Lagervorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stock": [
+                {
+                  "articleId": "art_kaffee",
+                  "locationId": "haupt",
+                  "sellable": 12000,
+                  "defective": 0,
+                  "reserved": 2000,
+                  "available": 10000
+                },
+                {
+                  "articleId": "art_kaffee",
+                  "locationId": "auto1",
+                  "sellable": 3000,
+                  "defective": 1000,
+                  "reserved": 0,
+                  "available": 3000
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_owner",
+          "method": "POST",
+          "caller": "owner",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stock": [
+                {
+                  "articleId": "art_kaffee",
+                  "locationId": "haupt",
+                  "sellable": 12000,
+                  "defective": 0,
+                  "reserved": 2000,
+                  "available": 10000
+                },
+                {
+                  "articleId": "art_kaffee",
+                  "locationId": "auto1",
+                  "sellable": 3000,
+                  "defective": 1000,
+                  "reserved": 0,
+                  "available": 3000
+                }
+              ],
+              "values": [
+                {
+                  "articleId": "art_kaffee",
+                  "stockValueCents": 4800,
+                  "averageCostMicros": 3000000
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_location",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "locationId": "auto1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stock": [
+                {
+                  "articleId": "art_kaffee",
+                  "locationId": "auto1",
+                  "sellable": 3000,
+                  "defective": 1000,
+                  "reserved": 0,
+                  "available": 3000
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "setMyCashregisterStockLocation": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "stockLocationId": "auto1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: cashregisterId, stockLocationId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "stockLocationId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "stockLocationId": "auto1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Lager\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "manager_without_permission",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "stockLocationId": "auto1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Lagervorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE2",
+            "stockLocationId": "auto1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "location_unknown",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "stockLocationId": "gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Standort nicht gefunden.",
+            "data": {
+              "code": "location_not_found"
+            },
+            "code": "location_not_found"
+          }
+        },
+        {
+          "case": "location_inactive",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "stockLocationId": "alt"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Standort ist aufgelöst.",
+            "data": {
+              "code": "location_inactive"
+            },
+            "code": "location_inactive"
+          }
+        },
+        {
+          "case": "cashregister_unknown",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "cashregisterId": "KASSE9",
+            "stockLocationId": "auto1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Kasse nicht gefunden.",
+            "data": {
+              "code": "cashregister_not_found"
+            },
+            "code": "cashregister_not_found"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "stockLocationId": "auto1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cashregisterId": "KASSE1",
+              "stockLocationId": "auto1"
+            }
+          }
+        },
+        {
+          "case": "success_reset",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "stockLocationId": ""
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cashregisterId": "KASSE1",
+              "stockLocationId": null
             }
           }
         },

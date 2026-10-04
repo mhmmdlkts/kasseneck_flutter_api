@@ -1,5 +1,5 @@
 {
-  "version": "1.1.1",
+  "version": "1.2.2",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -70,6 +70,8 @@
       "listMyCashregisters",
       "listMyPrinters",
       "listMyReceipts",
+      "listMyStock",
+      "listMyStockLocations",
       "listMyTipRecipients",
       "listRegisterUsersForDevice",
       "listRegisterSessionsForDevice",
@@ -78,6 +80,7 @@
       "registerUserLogin",
       "renewRegisterSession",
       "sendReceiptEmail",
+      "setMyCashregisterStockLocation",
       "setMyKasseLogo",
       "setMyKasseSettings",
       "setMyRegisterDeviceSettings",
@@ -123,6 +126,8 @@
       "listCustomerCashregisters",
       "getCustomerCredentials",
       "reportCustomerContract",
+      "getPartnerBilling",
+      "getPartnerBillingMonth",
       "createCustomer",
       "getCustomer",
       "updateCustomer",
@@ -136,7 +141,14 @@
       "getInvoiceXml",
       "getInvoiceSetupStatus",
       "listBrands",
-      "recordInvoicePayment"
+      "recordInvoicePayment",
+      "createInvoiceItem",
+      "updateInvoiceItem",
+      "withdrawInvoiceItem",
+      "getInvoiceItem",
+      "listInvoiceItems",
+      "setCustomerMandate",
+      "revokeCustomerMandate"
     ],
     "pos": [
       "pairRegisterDevice",
@@ -163,7 +175,10 @@
       "listMyPrinters",
       "createPrintJob",
       "getPrintJob",
-      "listMyTipRecipients"
+      "listMyTipRecipients",
+      "listMyStockLocations",
+      "listMyStock",
+      "setMyCashregisterStockLocation"
     ]
   },
   "enums": {
@@ -334,11 +349,19 @@
     "receiptsScope",
     "drawer",
     "discount",
-    "tipAssign"
+    "tipAssign",
+    "stockView",
+    "stockCosts",
+    "stockMove",
+    "stockLoss",
+    "stocktakeCount",
+    "stocktakeClose",
+    "stockLocation"
   ],
   "registerErrorCodes": [
     "account_not_found",
     "admin_required",
+    "api_not_approved",
     "cashregister_in_use",
     "cashregister_not_assigned",
     "cashregister_not_found",
@@ -412,6 +435,7 @@
     "posErrorCodes": [
       "account_not_found",
       "admin_required",
+      "api_not_approved",
       "cashregister_not_assigned",
       "cashregister_not_found",
       "cashregister_token_invalid",
@@ -420,6 +444,8 @@
       "dialect_mismatch",
       "internal_translation_error",
       "live_not_enabled",
+      "location_inactive",
+      "location_not_found",
       "logo_invalid",
       "logo_invalid_type",
       "logo_too_large",
@@ -435,6 +461,7 @@
       "register_user_not_allowed",
       "register_user_not_found",
       "response_translation_failed",
+      "server_error",
       "session_expired",
       "session_other_cashregister",
       "unauthorized",
@@ -457,6 +484,17 @@
     "quantityRules": [
       "piece",
       "decimal"
+    ],
+    "returnDispositions": [
+      "restock",
+      "defective",
+      "disposed"
+    ],
+    "stockLocationTypes": [
+      "warehouse",
+      "store",
+      "vehicle",
+      "other"
     ]
   },
   "partner": {
@@ -761,6 +799,7 @@
     "invoiceRequestErrorCodes": [
       "account_not_found",
       "admin_required",
+      "api_not_approved",
       "cashregister_not_assigned",
       "cashregister_not_found",
       "cashregister_token_invalid",
@@ -850,6 +889,11 @@
     "priceModes": [
       "net",
       "gross"
+    ],
+    "returnDispositions": [
+      "restock",
+      "defective",
+      "disposed"
     ],
     "taxSchemes": [
       "normal",

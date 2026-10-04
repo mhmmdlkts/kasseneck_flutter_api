@@ -1,0 +1,17 @@
+{
+  "endpoint": "cancelInvoice",
+  "description": "Unbekannte Rueckgabe-Wahl beim Vollstorno",
+  "request": {
+    "idempotencyKey": "ex-16",
+    "invoiceId": "invoice_example",
+    "reason": "return",
+    "returnDisposition": "lost"
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "returnDisposition"
+    ]
+  }
+}

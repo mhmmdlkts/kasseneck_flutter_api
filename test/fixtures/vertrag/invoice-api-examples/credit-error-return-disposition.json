@@ -1,0 +1,26 @@
+{
+  "endpoint": "createCreditNote",
+  "description": "Unbekannte Rueckgabe-Wahl an der Position",
+  "request": {
+    "idempotencyKey": "ex-15",
+    "invoiceId": "invoice_example",
+    "reason": "return",
+    "items": [
+      {
+        "description": "Roggenbrot",
+        "quantity": 1,
+        "unitPriceCents": 450,
+        "vatRate": 10,
+        "articleId": "rye-bread",
+        "returnDisposition": "lost"
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].returnDisposition"
+    ]
+  }
+}

@@ -17,7 +17,7 @@ Beleg-ID:                          AT0-KASSE1-48
                   Prüfangaben                   
 Barumsatz:                                0,00 €
 Signatur:                               signiert
-Signaturkarte:                        0x6F0404F0
+Signaturkarte:                        0x5A1C3E07
 Zertifizierungsdienst:             A-Trust (AT1)
 Karte registriert:                    12.03.2024
 Kasse registriert:                    12.03.2024

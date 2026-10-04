@@ -57,21 +57,21 @@ void main() {
 
   test('58 mm ohne Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm58, marke: false),
-        '42a673115d099035009a72aa171d0785f1ec697bd9042a669720e3b416d6d749');
+        '521e45bb716bc552eab2163868806be07e626a6dc47cb1fdd71c3018d2c9d48b');
   });
 
   test('80 mm ohne Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm80, marke: false),
-        '76d9c93b23f062ffa53ff1a0cba53a2b2f0db3dd9bd36ad6cced638c20e547d8');
+        '947423a069cb37ada914bb9db3feeda4a07a5f9b627795cc769f98d06f605158');
   });
 
   test('58 mm mit Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm58, marke: true),
-        '98e98cfdbd54741634a6b2189970c72ea01594c97f193ca8f69c6df4b5013a34');
+        '83d391bdf5ab85602686009c59281223d267b10b57cca9750a88007d9c984823');
   });
 
   test('80 mm mit Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm80, marke: true),
-        '31fee883750041872ce63d07e5f4ba819be78892f6569611b4bdc98f66913fe6');
+        'b40133de3fc03e9a3884123ebc16a5dc8bf97b089e7609952590dfb119203ace');
   });
 }

@@ -24,7 +24,7 @@ Map<String, dynamic> _golden(String pfad) =>
 void main() {
   test('Golden-Paare: die 40 Zeilenmodelle von 0.31.0, byteweise wie im npm-Repo, jedes mit einem heutigen Golden', () {
     expect(sha256.convert(File('test/fixtures/vor-1.0/layouts-0.31.json').readAsBytesSync()).toString(),
-        'a92202a7db8b5c03a2d3c819a85259919c448434a164509c5b453b9cab40f2b1');
+        'cc00130372c572b72357b0f55a935763770850d6333e746a26fc185457533ec2');
     expect(_alt['version'], '0.31.0');
     expect(_alt['ref'], 'e4b2887');
     expect(_paare, hasLength(40));

@@ -1,0 +1,27 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Lager-Kennungen ohne Schraegstrich und nicht nur Punkte",
+  "request": {
+    "idempotencyKey": "ex-18",
+    "priceMode": "gross",
+    "serviceStart": "2026-10-01",
+    "stockLocationId": "..",
+    "items": [
+      {
+        "description": "Roggenbrot",
+        "quantity": 1,
+        "unitPriceCents": 450,
+        "vatRate": 10,
+        "articleId": "a/b"
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "stockLocationId",
+      "items[0].articleId"
+    ]
+  }
+}
