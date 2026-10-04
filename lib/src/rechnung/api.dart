@@ -4,8 +4,12 @@
 /// **Geprüft wird hier nichts Fachliches.** Die Anfrage geht unverändert an das
 /// Backend, das sie gegen denselben Vertrag prüft und einen Formfehler als
 /// `validation` mit `details['errors']` zurückgibt — zwei Prüfungen hießen zwei
-/// Wahrheiten. Ausnahme sind Aufrufe mit „genau einer" Kennung: welche gemeint
-/// ist, lässt sich ohne Server entscheiden.
+/// Wahrheiten. Ausnahmen: Aufrufe mit „genau einer" Kennung (welche gemeint
+/// ist, lässt sich ohne Server entscheiden) und die Rückgabe-Wahl des Lagers —
+/// ein Wert außerhalb von [returnDispositions] (dieselbe Liste wie beim
+/// Kassen-Storno) oder eine Wahl an einer Rechnungsposition ist ein
+/// Anfragefehler (`request`) mit Feldpfad, bevor etwas hinausgeht. Die Form der
+/// Lager-Kennungen (`articleId`, `stockLocationId`) prüft nur der Server.
 ///
 /// **Vor dem ersten Ausstellen [getInvoiceSetupStatus] aufrufen.** Ohne Freigabe
 /// durch Kasseneck (live) oder mit unvollständiger Einrichtung antworten die
@@ -17,6 +21,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import '../aufrufe.dart';
+import '../kasse/rueckgabe.dart';
 import '../register/fehler.dart';
 import 'modelle.dart';
 import 'transport.dart';
@@ -100,6 +105,7 @@ class InvoiceApi {
     if (request.dryRun == true) {
       throw const KasseneckValidationError(name, 'dryRun: true gehört zu previewInvoice', 'request');
     }
+    _keineRueckgabeWahl(name, request);
     final daten = await _transport.call(name, request.toJson());
     return _lesen(name, () => IssueResult.fromJson(daten));
   }
@@ -119,30 +125,48 @@ class InvoiceApi {
   /// unbekannte Feld als `validation` ab.
   Future<PreviewResult> previewInvoice(IssueInvoiceRequest request) async {
     const name = Aufrufe.issueInvoice;
+    _keineRueckgabeWahl(name, request);
     final daten = await _transport.call(name, {...request.toJson(), 'dryRun': true});
     return _lesen(name, () => PreviewResult.fromJson(daten));
   }
 
   /// Vollstorno: Gutschrift über alle Positionen, das Original wird storniert.
+  ///
+  /// [returnDisposition] (aus [returnDispositions]) sagt, wohin die Ware der
+  /// bestandsgeführten Positionen geht; fehlt = `restock`. Ein unbekannter
+  /// Wert ist ein Anfragefehler, bevor etwas hinausgeht.
   Future<CancelResult> cancelInvoice({
     required String idempotencyKey,
     required String invoiceId,
     required String reason,
     String? note,
+    String? returnDisposition,
   }) async {
     const name = Aufrufe.cancelInvoice;
+    if (returnDisposition != null) _rueckgabeWahl(name, returnDisposition, 'returnDisposition');
     final daten = await _transport.call(name, {
       'idempotencyKey': idempotencyKey,
       'invoiceId': invoiceId,
       'reason': reason,
       'note': ?note,
+      'returnDisposition': ?returnDisposition,
     });
     return _lesen(name, () => CancelResult.fromJson(daten));
   }
 
   /// Teilgutschrift; höchstens bis zum Brutto des Originals je USt-Satz.
+  ///
+  /// Die Rückgabe-Wahl ([CreditNoteRequest.returnDisposition] als Vorgabe,
+  /// [CreditNoteItemInput.returnDisposition] je Position) wird vor dem Senden
+  /// gegen [returnDispositions] geprüft.
   Future<CreditNoteResult> createCreditNote(CreditNoteRequest request) async {
     const name = Aufrufe.createCreditNote;
+    if (request.returnDisposition case final wahl?) _rueckgabeWahl(name, wahl, 'returnDisposition');
+    for (final (i, p) in request.items.indexed) {
+      if (p case CreditNoteItemInput(returnDisposition: final wahl?)) {
+        _rueckgabeWahl(name, wahl, 'items[$i].returnDisposition');
+      }
+    }
     final daten = await _transport.call(name, request.toJson());
     return _lesen(name, () => CreditNoteResult.fromJson(daten));
   }
@@ -242,6 +266,27 @@ class InvoiceApi {
   }
 
   // ---- Hilfen -------------------------------------------------------------------
+
+  /// Eine Rückgabe-Wahl aus [returnDispositions] — sonst ein Anfragefehler mit
+  /// Feldpfad. Der Grund nennt die erlaubten Werte, nie den gesendeten.
+  static void _rueckgabeWahl(String name, String wahl, String pfad) {
+    if (!isReturnDisposition(wahl)) {
+      throw KasseneckValidationError(name, '$pfad: erlaubt sind ${returnDispositions.join(', ')}', 'request');
+    }
+  }
+
+  /// Eine Rechnungsposition trägt keine Rückgabe-Wahl: sie gehört an die
+  /// Gutschrift. Der Server wiese das Feld als unbekannt ab; im JS-Zwilling
+  /// verhindert es schon der Typ, hier lässt sich eine [CreditNoteItemInput]
+  /// an die Rechnung hängen.
+  static void _keineRueckgabeWahl(String name, IssueInvoiceRequest request) {
+    for (final (i, p) in request.items.indexed) {
+      if (p case CreditNoteItemInput(returnDisposition: _?)) {
+        throw KasseneckValidationError(
+            name, 'items[$i].returnDisposition: gehört an die Gutschrift, nicht an die Rechnung', 'request');
+      }
+    }
+  }
 
   static void _genauEine(String name, Map<String, String?> kennungen) {
     final gesetzt = kennungen.values.where((w) => w != null && w.isNotEmpty).length;

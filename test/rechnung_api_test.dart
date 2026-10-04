@@ -122,9 +122,6 @@ void main() {
         .where((f) => f.path.endsWith('.json'))
         .map((f) => jsonDecode(f.readAsStringSync()) as Map<String, dynamic>)
         .where((b) => (b['expected'] as Map)['ok'] == true)
-        // Lager-Felder (articleId, stockLocationId, returnDisposition) sendet
-        // dieses Paket noch nicht: Issue 85. Erst dort wieder mitprüfen.
-        .where((b) => !RegExp(r'"(articleId|stockLocationId|returnDisposition)"').hasMatch(jsonEncode(b['request'])))
         .toList();
 
     test('es gibt gültige Beispiele für die Modelle', () {
@@ -146,6 +143,8 @@ void main() {
           'missing': [],
           'brands': [],
           'payment': {'id': 'z1', 'amountCents': 12000, 'paidAt': '2026-09-20', 'method': 'transfer', 'reference': null},
+          'original': {'id': 'inv1', 'status': 'cancelled'},
+          'originalPaidCents': 0,
         });
         final (:api, :log) = _apiMit([antwort]);
         switch (aufruf) {
@@ -153,6 +152,14 @@ void main() {
             await api.issueInvoice(IssueInvoiceRequest.fromJson(anfrage));
           case 'createCreditNote':
             await api.createCreditNote(CreditNoteRequest.fromJson(anfrage));
+          case 'cancelInvoice':
+            await api.cancelInvoice(
+              idempotencyKey: anfrage['idempotencyKey'] as String,
+              invoiceId: anfrage['invoiceId'] as String,
+              reason: anfrage['reason'] as String,
+              note: anfrage['note'] as String?,
+              returnDisposition: anfrage['returnDisposition'] as String?,
+            );
           case 'createCustomer':
             await api.createCustomer(CustomerInput.fromJson(anfrage['customer'] as Map<String, dynamic>));
           case 'getInvoiceSetupStatus':
@@ -174,6 +181,96 @@ void main() {
         expect(log.single.url.toString(), 'https://api.kasseneck.at/v3/$aufruf');
         expect(_params(log.single), anfrage, reason: '${b['description']}');
       }
+    });
+
+    test('die Lager-Beispiele laufen mit (Issue 85)', () {
+      final namen = gute.map((b) => b['request']).map(jsonEncode).toList();
+      expect(namen.where((n) => n.contains('"stockLocationId"')), isNotEmpty);
+      expect(namen.where((n) => n.contains('"articleId"')).length, greaterThanOrEqualTo(2));
+      expect(namen.where((n) => n.contains('"returnDisposition"')), isNotEmpty);
+    });
+
+    // Die ungueltigen Lager-Beispiele: eine unbekannte Rueckgabe-Wahl weist
+    // schon das Paket ab (vor dem Senden, `request`), eine Rueckgabe-Wahl an
+    // einer Rechnungsposition ebenso; die Form der Lager-Kennungen prueft nur
+    // der Server -- die Anfrage geht unveraendert hinaus, seine Feldfehler
+    // kommen lesbar zurueck.
+    final lagerFehler = {
+      for (final f in ordner.listSync().whereType<File>().where((f) => f.path.endsWith('.json')))
+        if (jsonDecode(f.readAsStringSync()) case final Map<String, dynamic> b
+            when (b['expected'] as Map)['ok'] == false &&
+                RegExp(r'"(articleId|stockLocationId|returnDisposition)"').hasMatch(jsonEncode(b['request'])))
+          f.uri.pathSegments.last: b,
+    };
+
+    test('die ungültigen Lager-Beispiele sind die erwarteten vier', () {
+      expect(lagerFehler.keys.toSet(), {
+        'cancel-error-return-disposition.json',
+        'credit-error-return-disposition.json',
+        'issue-error-return-disposition.json',
+        'issue-error-stock-id.json',
+      });
+    });
+
+    test('unbekannte Rückgabe-Wahl (Vertragsbeispiele): Anfragefehler mit Feldpfad, nichts gesendet', () async {
+      final (:api, :log) = _apiMit([_erfolg({})]);
+      final storno = lagerFehler['cancel-error-return-disposition.json']!;
+      final s = storno['request'] as Map<String, dynamic>;
+      Object? fehler = await api
+          .cancelInvoice(
+            idempotencyKey: s['idempotencyKey'] as String,
+            invoiceId: s['invoiceId'] as String,
+            reason: s['reason'] as String,
+            returnDisposition: s['returnDisposition'] as String?,
+          )
+          .then<Object?>((_) => null, onError: (Object e) => e);
+      expect(fehler, isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request'));
+      expect((fehler as KasseneckValidationError).reason, startsWith('${((storno['expected'] as Map)['fields'] as List).single}:'));
+
+      final gutschrift = lagerFehler['credit-error-return-disposition.json']!;
+      fehler = await api
+          .createCreditNote(CreditNoteRequest.fromJson(gutschrift['request'] as Map<String, dynamic>))
+          .then<Object?>((_) => null, onError: (Object e) => e);
+      expect(fehler, isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request'));
+      expect((fehler as KasseneckValidationError).reason,
+          startsWith('${((gutschrift['expected'] as Map)['fields'] as List).single}:'));
+      expect(log, isEmpty);
+    });
+
+    test('Rückgabe-Wahl an einer Rechnungsposition (Vertragsbeispiel): Anfragefehler, nichts gesendet', () async {
+      final (:api, :log) = _apiMit([_erfolg({'invoice': _rechnung})]);
+      final b = lagerFehler['issue-error-return-disposition.json']!;
+      final r = b['request'] as Map<String, dynamic>;
+      final anfrage = IssueInvoiceRequest(
+        idempotencyKey: r['idempotencyKey'] as String,
+        priceMode: r['priceMode'] as String,
+        serviceStart: r['serviceStart'] as String,
+        items: [for (final p in r['items'] as List) CreditNoteItemInput.fromJson(p as Map<String, dynamic>)],
+      );
+      for (final aufruf in [api.issueInvoice, api.previewInvoice]) {
+        final fehler = await aufruf(anfrage).then<Object?>((_) => null, onError: (Object e) => e);
+        expect(fehler, isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request'));
+        expect((fehler as KasseneckValidationError).reason,
+            startsWith('${((b['expected'] as Map)['fields'] as List).single}:'));
+      }
+      expect(log, isEmpty);
+    });
+
+    test('Form der Lager-Kennungen (Vertragsbeispiel): geht unverändert hinaus, Feldfehler des Servers lesbar', () async {
+      final b = lagerFehler['issue-error-stock-id.json']!;
+      final anfrage = b['request'] as Map<String, dynamic>;
+      final felder = ((b['expected'] as Map)['fields'] as List).cast<String>();
+      final (:api, :log) = _apiMit([
+        _fehler('Bitte Eingaben prüfen.', 'validation', {
+          'errors': [for (final f in felder) {'field': f, 'message': 'ungültige Kennung'}],
+        }),
+      ]);
+      final fehler = await api
+          .issueInvoice(IssueInvoiceRequest.fromJson(anfrage))
+          .then<Object?>((_) => null, onError: (Object e) => e);
+      expect(_params(log.single), anfrage);
+      expect(invoiceErrorCode(fehler), (b['expected'] as Map)['code']);
+      expect(invoiceFieldErrors(fehler).map((e) => e.field).toList(), felder);
     });
   });
 
@@ -788,6 +885,202 @@ void main() {
           {'rate': 20, 'netCents': 10000, 'vatCents': 2000, 'grossCents': 12000},
         ],
       });
+    });
+  });
+
+  group('Lager-Felder (Vertrag 1.2.0, Issue 85)', () {
+    const roggen = InvoiceItemInput(description: 'Roggenbrot', quantity: 2, unitPriceCents: 450, vatRate: 10);
+
+    test('issueInvoice: stockLocationId und items[].articleId gehen nur mit, wenn gesetzt', () async {
+      final (:api, :log) = _apiMit([_erfolg({'invoice': _rechnung}), _erfolg({'invoice': _rechnung})]);
+      const ohne = IssueInvoiceRequest(
+          idempotencyKey: 'l1', priceMode: 'gross', serviceStart: '2026-10-01', items: [roggen]);
+      await api.issueInvoice(ohne);
+      expect(_params(log[0]).containsKey('stockLocationId'), isFalse);
+      expect((_params(log[0])['items'] as List).single, {
+        'description': 'Roggenbrot',
+        'quantity': 2,
+        'unitPriceCents': 450,
+        'vatRate': 10,
+      });
+      await api.issueInvoice(const IssueInvoiceRequest(
+        idempotencyKey: 'l2',
+        priceMode: 'gross',
+        serviceStart: '2026-10-01',
+        stockLocationId: 'van-1',
+        items: [
+          InvoiceItemInput(
+              description: 'Roggenbrot', quantity: 2, unitPriceCents: 450, vatRate: 10, discountPct: 5, articleId: 'rye-bread'),
+        ],
+      ));
+      final p = _params(log[1]);
+      expect(p['stockLocationId'], 'van-1');
+      // Reihenfolge wie im Vertrag: hinter brandId, vor payment; articleId als letztes Positionsfeld.
+      expect(p.keys.toList(), ['idempotencyKey', 'priceMode', 'serviceStart', 'items', 'stockLocationId']);
+      expect(((p['items'] as List).single as Map).keys.last, 'articleId');
+      expect(((p['items'] as List).single as Map)['articleId'], 'rye-bread');
+    });
+
+    test('fromJson liest die Lager-Felder, toJson schreibt sie zurück', () {
+      final rechnung = IssueInvoiceRequest.fromJson({
+        'idempotencyKey': 'l3',
+        'priceMode': 'gross',
+        'serviceStart': '2026-10-01',
+        'stockLocationId': 'van-1',
+        'items': [
+          {'description': 'Roggenbrot', 'quantity': 1, 'unitPriceCents': 450, 'vatRate': 10, 'articleId': 'rye-bread'},
+        ],
+      });
+      expect(rechnung.stockLocationId, 'van-1');
+      expect(rechnung.items.single.articleId, 'rye-bread');
+      expect(rechnung.toJson()['stockLocationId'], 'van-1');
+
+      final gutschrift = CreditNoteRequest.fromJson({
+        'idempotencyKey': 'g1',
+        'invoiceId': 'inv1',
+        'reason': 'return',
+        'returnDisposition': 'restock',
+        'items': [
+          {'description': 'Roggenbrot', 'quantity': 1, 'unitPriceCents': 450, 'vatRate': 10, 'articleId': 'rye-bread', 'returnDisposition': 'defective'},
+          {'description': 'Nachlass', 'quantity': 1, 'unitPriceCents': 100, 'vatRate': 10},
+        ],
+      });
+      expect(gutschrift.returnDisposition, 'restock');
+      final erste = gutschrift.items.first as CreditNoteItemInput;
+      expect((erste.articleId, erste.returnDisposition), ('rye-bread', 'defective'));
+      expect((gutschrift.items.last as CreditNoteItemInput).returnDisposition, isNull);
+      expect(gutschrift.items.last.toJson().containsKey('returnDisposition'), isFalse);
+      expect(gutschrift.items.last.toJson().containsKey('articleId'), isFalse);
+    });
+
+    test('cancelInvoice: ohne Wahl die Anfrage von bisher, mit Wahl hinter note', () async {
+      final storno = {'creditNote': {..._rechnung, 'docType': 'credit_note'}, 'original': {'id': 'inv1', 'status': 'cancelled'}};
+      final (:api, :log) = _apiMit([_erfolg(storno), _erfolg(storno)]);
+      await api.cancelInvoice(idempotencyKey: 's1', invoiceId: 'inv1', reason: 'return');
+      expect(_params(log[0]), {'idempotencyKey': 's1', 'invoiceId': 'inv1', 'reason': 'return'});
+      await api.cancelInvoice(idempotencyKey: 's2', invoiceId: 'inv1', reason: 'return', note: 'kaputt', returnDisposition: 'disposed');
+      expect(_params(log[1]).keys.toList(), ['idempotencyKey', 'invoiceId', 'reason', 'note', 'returnDisposition']);
+      expect(_params(log[1])['returnDisposition'], 'disposed');
+    });
+
+    test('createCreditNote: Vorgabe und Wahl je Position, gemischt mit Positionen ohne Wahl', () async {
+      final (:api, :log) = _apiMit([
+        _erfolg({'creditNote': {..._rechnung, 'docType': 'credit_note'}, 'remainingCents': 0}),
+        _erfolg({'creditNote': {..._rechnung, 'docType': 'credit_note'}, 'remainingCents': 0}),
+      ]);
+      await api.createCreditNote(const CreditNoteRequest(
+          idempotencyKey: 'g1', invoiceId: 'inv1', reason: 'return', items: [roggen]));
+      expect(_params(log[0]).containsKey('returnDisposition'), isFalse);
+      await api.createCreditNote(const CreditNoteRequest(
+        idempotencyKey: 'g2',
+        invoiceId: 'inv1',
+        reason: 'return',
+        returnDisposition: 'restock',
+        items: [
+          CreditNoteItemInput(
+              description: 'Roggenbrot', quantity: 1, unitPriceCents: 450, vatRate: 10, articleId: 'rye-bread', returnDisposition: 'defective'),
+          CreditNoteItemInput(description: 'Semmel', quantity: 1, unitPriceCents: 50, vatRate: 10, articleId: 'roll'),
+          roggen,
+        ],
+      ));
+      final p = _params(log[1]);
+      expect(p.keys.toList(), ['idempotencyKey', 'invoiceId', 'reason', 'items', 'returnDisposition']);
+      final items = (p['items'] as List).cast<Map>();
+      expect(items[0].keys.toList().sublist(items[0].length - 2), ['articleId', 'returnDisposition']);
+      expect(items[0]['returnDisposition'], 'defective');
+      expect(items[1].containsKey('returnDisposition'), isFalse);
+      expect(items[2].containsKey('articleId'), isFalse);
+    });
+
+    test('unbekannte Rückgabe-Wahl: Anfragefehler vor dem Senden, an jeder Stelle', () async {
+      final (:api, :log) = _apiMit([_erfolg({})]);
+      for (final falsch in ['lager', 'broken', '', 'Restock']) {
+        final versuche = <(String, Future<Object?> Function())>[
+          ('returnDisposition', () => api.cancelInvoice(idempotencyKey: 's', invoiceId: 'i', reason: 'return', returnDisposition: falsch)),
+          ('returnDisposition', () => api.createCreditNote(CreditNoteRequest(
+              idempotencyKey: 'g', invoiceId: 'i', reason: 'return', returnDisposition: falsch, items: const [roggen]))),
+          ('items[1].returnDisposition', () => api.createCreditNote(CreditNoteRequest(
+                idempotencyKey: 'g',
+                invoiceId: 'i',
+                reason: 'return',
+                items: [
+                  roggen,
+                  CreditNoteItemInput(description: 'X', quantity: 1, unitPriceCents: 1, vatRate: 10, returnDisposition: falsch),
+                ],
+              ))),
+        ];
+        for (final (pfad, versuch) in versuche) {
+          final fehler = await versuch().then<Object?>((_) => null, onError: (Object e) => e);
+          expect(fehler, isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request'), reason: '$pfad = "$falsch"');
+          final v = fehler as KasseneckValidationError;
+          expect(v.reason, startsWith('$pfad:'));
+          // Der Grund nennt die erlaubten Werte, nicht den falschen.
+          if (falsch.isNotEmpty) expect(v.reason, isNot(contains(falsch)));
+        }
+      }
+      expect(log, isEmpty);
+    });
+
+    test('Rückgabe-Wahl an einer Rechnungsposition: Anfragefehler; ohne Wahl darf die Position mit', () async {
+      final (:api, :log) = _apiMit([_erfolg({'invoice': _rechnung})]);
+      final mitWahl = IssueInvoiceRequest(
+        idempotencyKey: 'l4',
+        priceMode: 'gross',
+        serviceStart: '2026-10-01',
+        items: const [
+          roggen,
+          CreditNoteItemInput(description: 'X', quantity: 1, unitPriceCents: 1, vatRate: 10, returnDisposition: 'restock'),
+        ],
+      );
+      final fehler = await api.issueInvoice(mitWahl).then<Object?>((_) => null, onError: (Object e) => e);
+      expect(fehler, isA<KasseneckValidationError>().having((e) => e.reason, 'reason', startsWith('items[1].returnDisposition:')));
+      expect(log, isEmpty);
+      await api.issueInvoice(const IssueInvoiceRequest(
+        idempotencyKey: 'l5',
+        priceMode: 'gross',
+        serviceStart: '2026-10-01',
+        items: [CreditNoteItemInput(description: 'X', quantity: 1, unitPriceCents: 1, vatRate: 10, articleId: 'a1')],
+      ));
+      expect((_params(log.single)['items'] as List).single, {
+        'description': 'X',
+        'quantity': 1,
+        'unitPriceCents': 1,
+        'vatRate': 10,
+        'articleId': 'a1',
+      });
+    });
+
+    test('jedes Anfragefeld des Vertrags kann das Modell senden', () {
+      final schema = _json('test/fixtures/vertrag/invoice-api.schema.json');
+      Map<String, dynamic> anfrage(String aufruf) =>
+          ((schema['endpoints'] as Map)[aufruf] as Map)['request'] as Map<String, dynamic>;
+      Set<String> felder(Map<String, dynamic> s) => (s['properties'] as Map).keys.cast<String>().toSet();
+      Set<String> positionsFelder(String aufruf) =>
+          felder(((anfrage(aufruf)['properties'] as Map)['items'] as Map)['items'] as Map<String, dynamic>);
+
+      const voll = InvoiceItemInput(
+        description: 'a', subtitle: 'b', quantity: 1, unit: 'piece', kind: 'goods', unitPriceCents: 1, vatRate: 20,
+        discountPct: 1, articleId: 'x',
+      );
+      const micro = InvoiceItemInput(description: 'a', quantity: 1, unitPriceMicros: 1, vatRate: 20);
+      const gutschriftVoll = CreditNoteItemInput(
+        description: 'a', subtitle: 'b', quantity: 1, unit: 'piece', kind: 'goods', unitPriceCents: 1, vatRate: 20,
+        discountPct: 1, articleId: 'x', returnDisposition: 'restock',
+      );
+      expect({...voll.toJson().keys, ...micro.toJson().keys}, positionsFelder('issueInvoice'));
+      expect({...gutschriftVoll.toJson().keys, ...micro.toJson().keys}, positionsFelder('createCreditNote'));
+
+      final rechnung = IssueInvoiceRequest(
+        idempotencyKey: 'k', customerId: 'c', taxScheme: 'normal', reverseChargeReason: 'construction', priceMode: 'net',
+        serviceStart: '2026-10-01', serviceEnd: '2026-10-02', paymentTermDays: 14, orderReference: 'o', intro: 'i', note: 'n',
+        paymentReference: 'p', girocode: true, tracking: true, items: const [voll], metadata: const {'a': 'b'}, language: 'de',
+        brandId: 'b', stockLocationId: 's', payment: const PaymentInput(method: 'card'), dryRun: false,
+      );
+      expect(rechnung.toJson().keys.toSet(), felder(anfrage('issueInvoice')));
+      const gutschrift = CreditNoteRequest(
+          idempotencyKey: 'k', invoiceId: 'i', reason: 'return', note: 'n', returnDisposition: 'restock', items: [gutschriftVoll]);
+      expect(gutschrift.toJson().keys.toSet(), felder(anfrage('createCreditNote')));
+      expect(felder(anfrage('cancelInvoice')), {'idempotencyKey', 'invoiceId', 'reason', 'note', 'returnDisposition'});
     });
   });
 }
