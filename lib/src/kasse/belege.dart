@@ -28,6 +28,7 @@ import '../register/transport.dart';
 import 'artikel.dart';
 import '../../models/registration_info.dart';
 import 'belegmail.dart';
+import 'lager.dart';
 import 'storno.dart' show assertCardRefunds, cancellationReasons;
 
 /// Storno-Stand eines Belegs in der Liste (Drahtfeld `cancellationStatus`,
@@ -214,7 +215,7 @@ const int _anmerkungHoechstlaenge = 200;
 class CashregisterEntry {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding'};
+  static const Set<String> fields = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding', 'stockLocationId'};
 
   const CashregisterEntry({
     required this.id,
@@ -228,6 +229,7 @@ class CashregisterEntry {
     this.decommissioned = false,
     this.licenses,
     this.monthlyReportJournal = false,
+    this.stockLocationId,
   });
 
   final String id;
@@ -246,6 +248,10 @@ class CashregisterEntry {
   final bool monthlyReportJournal;
   final CashregisterOnboarding onboarding;
 
+  /// Lager-Standort der Kasse; `null` = Standard-Standort des Betriebs (der
+  /// Server laesst das Feld dann weg).
+  final String? stockLocationId;
+
   factory CashregisterEntry.fromJson(Map<String, dynamic> j) {
     String? text(Object? v) => v is String && v.isNotEmpty ? v : null;
     final ob = j['onboarding'];
@@ -261,6 +267,7 @@ class CashregisterEntry {
       decommissioned: j['decommissioned'] == true,
       licenses: j['licenses'] is num ? (j['licenses'] as num).toInt() : null,
       monthlyReportJournal: j['monthly_report_journal'] == true,
+      stockLocationId: text(j['stockLocationId']),
       onboarding: CashregisterOnboarding(
         cashboxRegistered: o['cashbox_registered'] == true,
         startReceiptCreated: o['start_receipt_created'] == true,
@@ -583,6 +590,71 @@ class RegisterReceiptClient {
   /// darin.
   Future<List<KeckTipPerson>> tipRecipients() async =>
       _liste(Aufrufe.listMyTipRecipients, 'recipients', KeckTipPerson.fromJson);
+
+  /// Standorte des Betriebs (`listMyStockLocations`), samt aufgeloester
+  /// (`active: false`) und dem Hauptstandort. Recht `stockView`.
+  ///
+  /// Eine Antwort, die sich nicht lesen laesst, endet mit
+  /// [KasseneckValidationError] (`kind: response`): die Kasse zeigt dann kein
+  /// Lager an und verkauft weiter.
+  Future<List<StockLocation>> stockLocations() async {
+    const name = Aufrufe.listMyStockLocations;
+    final daten = await transport.call(name);
+    return lagerListe(daten, 'locations', name, (e, i) => lagerStandortLesen(name, e, i));
+  }
+
+  /// Bestand je Artikel und Standort (`listMyStock`), Mengen in Tausendstel
+  /// der Basiseinheit. Recht `stockView`; [StockList.values] nur mit
+  /// `stockCosts`, sonst `null`.
+  ///
+  /// Ein leerer Filter gilt wie keiner; [belowMinimum] geht nur als `true`
+  /// hinaus (`false` filtert am Server nicht). Eine fehlende oder gebrochene
+  /// Menge wird nie zu 0, sondern endet mit [KasseneckValidationError]
+  /// (`kind: response`) — „Lager voruebergehend nicht verfuegbar", der Verkauf
+  /// laeuft weiter.
+  Future<StockList> stock({String? locationId, String? articleId, bool? belowMinimum}) async {
+    const name = Aufrufe.listMyStock;
+    final daten = await transport.call(name, params: {
+      if (locationId != null && locationId.isNotEmpty) 'locationId': locationId,
+      if (articleId != null && articleId.isNotEmpty) 'articleId': articleId,
+      if (belowMinimum == true) 'belowMinimum': true,
+    });
+    return lagerBestandslisteLesen(name, daten);
+  }
+
+  /// Standort der Kasse setzen (`setMyCashregisterStockLocation`) — von dort
+  /// bucht der Server Verkauf und Storno ab. Recht `stockLocation`.
+  ///
+  /// `stockLocationId: null` setzt auf den Standard-Standort des Betriebs
+  /// zurueck (am Draht der leere Text). Nur Leerraum wuerde der Server kuerzen
+  /// und damit still zuruecksetzen; das ist kein Standort, sondern ein Fehler
+  /// vor dem Senden. Ohne [cashregisterId] gilt die Kasse der Anmeldung.
+  ///
+  /// Fehler am Code: `location_not_found`, `location_inactive`,
+  /// `cashregister_not_found`, `cashregister_not_assigned`, `not_permitted`,
+  /// `module_inactive`. Der Aufruf setzt einen Zustand und ist darum folgenlos
+  /// wiederholbar.
+  Future<CashregisterStockLocation> setStockLocation({
+    required String? stockLocationId,
+    String? cashregisterId,
+  }) async {
+    const name = Aufrufe.setMyCashregisterStockLocation;
+    final ziel = stockLocationId;
+    if (ziel != null && ziel.isNotEmpty && ziel.trim().isEmpty) {
+      throw const KasseneckValidationError(
+          name, 'stockLocationId ist nur Leerraum (Kennung angeben, oder null zum Zuruecksetzen)', 'request');
+    }
+    if (cashregisterId != null && cashregisterId.trim().isEmpty) {
+      throw const KasseneckValidationError(name, 'cashregisterId ist leer', 'request');
+    }
+    // Die Kasse der Anmeldung legt der Transport bei; eine ausdrueckliche
+    // ersetzt sie (Parameter gehen nach der Grundnutzlast hinein).
+    final daten = await transport.call(name, params: {
+      'stockLocationId': ziel ?? '',
+      'cashregisterId': ?cashregisterId,
+    });
+    return lagerKassenStandortLesen(name, daten);
+  }
 
   Future<List<T>> _liste<T>(String name, String feld, T Function(Map<String, dynamic>) lesen) async {
     final daten = await transport.call(name);

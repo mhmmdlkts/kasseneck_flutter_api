@@ -110,7 +110,7 @@ QuantityDefaults quantityDefaults(PosArticle a) {
 class PosArticle {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity'};
+  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds'};
 
   /// Die Felder von `tile`.
   static const Set<String> tileFields = {'visible', 'sort'};
@@ -129,6 +129,7 @@ class PosArticle {
     this.quantityRule,
     this.askQuantity,
     this.maxQuantity,
+    this.stockLocationIds,
   });
 
   final String id;
@@ -160,8 +161,13 @@ class PosArticle {
   /// Höchstmenge je Beleg; `null` = keine Grenze.
   final num? maxQuantity;
 
+  /// Standorte, an denen der Artikel gefuehrt wird (Lager); `null`, wenn der
+  /// Artikel keine Angabe traegt. Wie die Kasse daraus Kacheln filtert,
+  /// entscheidet die Oberflaeche.
+  final List<String>? stockLocationIds;
+
   /// Aus der Drahtform `/api/v3` (`tile {visible, sort}`, `quantityRule`,
-  /// `askQuantity`, `maxQuantity`, `revenueGroupId`).
+  /// `askQuantity`, `maxQuantity`, `revenueGroupId`, `stockLocationIds`).
   ///
   /// Liest auch einen **Zwischenspeicher der Version 9.x** (`kasse
   /// {sichtbar, sort}`, `quantityRule stueck|dezimal`, `askQuantity`,
@@ -174,6 +180,7 @@ class PosArticle {
     final fragen = json[alt ? 'mengeFragen' : 'askQuantity'];
     final grenze = json[alt ? 'maxMenge' : 'maxQuantity'];
     final erloes = json['revenueGroupId'];
+    final standorte = json['stockLocationIds'];
     return PosArticle(
       id: json['id'] is String ? json['id'] as String : '',
       name: json['name'] is String ? json['name'] as String : '',
@@ -199,6 +206,9 @@ class PosArticle {
       },
       askQuantity: fragen is bool ? fragen : null,
       maxQuantity: grenze is num && grenze.isFinite && grenze > 0 ? grenze : null,
+      // Leere und fremde Eintraege fallen heraus wie im JS-Zwilling; eine
+      // leere Liste bleibt leer und wird nicht zu null.
+      stockLocationIds: standorte is List ? [for (final s in standorte) if (s is String && s.isNotEmpty) s] : null,
     );
   }
 
@@ -217,6 +227,7 @@ class PosArticle {
         'quantityRule': quantityRule?.name,
         'askQuantity': askQuantity,
         'maxQuantity': maxQuantity,
+        'stockLocationIds': stockLocationIds,
       };
 }
 

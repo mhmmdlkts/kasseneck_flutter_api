@@ -29,8 +29,9 @@ npm_version: 1.3.0
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
 #
-# Stand 1.2.2, Dart 10.1.2: zusätzlich 10 "offen" (Lager, Issue 85).
-# Davor Stand 1.1.1, Dart 10.1: 20 Einträge "nicht zutreffend" (Partner-API),
+# Stand 1.3.0: die 10 "offen" aus 1.2.2 (Lager, Issue 85: drei Kassenaufrufe,
+# sieben Kassenrechte) sind geschlossen; übrig bleiben die 20 "nicht
+# zutreffend". Davor Stand 1.1.1, Dart 10.1: 20 Einträge "nicht zutreffend" (Partner-API),
 # keiner "offen". Die 35 offenen aus 9.x sind mit dem Umbau auf den Draht
 # /api/v3 geschlossen: Druckjobs (#22), Druckweg connect und Terminal (#23),
 # die fehlenden Einstellungsfelder samt setMyKasseLogo (#24), die 16
@@ -108,48 +109,6 @@ ausnahmen:
   - eintrag: calls.updatePartnerWebhook
     art: nicht_zutreffend
     grund: "Partner-API (npm ./partner): Server-zu-Server mit Partner-Schlüssel pk_live_…, der nie auf ein Kassengerät gehört. Dieses Paket ist der Kassenclient und bekommt bewusst keinen Partner-Zwilling."
-
-  # ---- Lager (npm 1.2.0), Issue 85 ----
-  - eintrag: calls.listMyStock
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: calls.listMyStockLocations
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: calls.setMyCashregisterStockLocation
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: registerPerms.stockView
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: registerPerms.stockCosts
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: registerPerms.stockMove
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: registerPerms.stockLoss
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: registerPerms.stocktakeCount
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: registerPerms.stocktakeClose
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
-  - eintrag: registerPerms.stockLocation
-    art: offen
-    issue: 85
-    grund: "Lager-Feature aus npm 1.2.0, im Dart-Zwilling noch nicht gebaut (Issue 85)."
 
 # Felder, die es hier gibt, deren Standardwert aber vom Vertrag abweicht.
 # Geprüft von test/kasse_einstellungen_test.dart; für jedes andere Feld gilt

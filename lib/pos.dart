@@ -41,6 +41,9 @@ export 'models/keck_payment.dart' show KeckPayment, KeckPaymentInput, paymentsEr
 // Die Storno-Regeln fragen nach der Reichweite eines Rechts; wer sie benutzt,
 // braucht den Typ.
 export 'src/register/pairing.dart' show RegisterScope;
+// Ob die Kasse Lager zeigt, entscheidet ein Recht mit eigener Regel (fehlt =
+// erteilt); wer die Lager-Aufrufe benutzt, braucht sie hier.
+export 'src/register/pairing.dart' show stockViewOf;
 export 'src/kasse/artikel.dart';
 export 'src/kasse/testkennzeichen.dart';
 export 'src/kasse/belege.dart';
@@ -54,6 +57,17 @@ export 'src/kasse/thema.dart';
 export 'src/kasse/einstellungen_client.dart';
 export 'src/kasse/kacheln.dart';
 export 'src/kasse/kassieren.dart';
+// Die Leser bleiben paketintern; sie gehoeren zu RegisterReceiptClient.
+export 'src/kasse/lager.dart'
+    show
+        CashregisterStockLocation,
+        StockLevel,
+        StockList,
+        StockLocation,
+        StockLocationAddress,
+        StockLocationType,
+        StockValue,
+        stockLocationTypes;
 export 'src/kasse/storno.dart';
 export 'src/kasse/texte.dart';
 export 'src/kasse/warenkorb.dart';

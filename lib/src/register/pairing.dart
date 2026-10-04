@@ -179,12 +179,16 @@ enum RegisterLoginMode { selectUser, pin }
 class RegisterCashregisterState {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'ready', 'reason'};
+  static const Set<String> fields = {'ready', 'reason', 'stockLocationId'};
 
-  const RegisterCashregisterState({required this.ready, this.reason});
+  const RegisterCashregisterState({required this.ready, this.reason, this.stockLocationId});
 
   final bool ready;
   final String? reason;
+
+  /// Lager-Standort der Kasse; `null` = Standard-Standort des Betriebs (der
+  /// Server laesst das Feld dann weg).
+  final String? stockLocationId;
 }
 
 /// Antwort von [RegisterClient.listRegisterUsersForDevice].
@@ -237,6 +241,8 @@ enum RegisterScope { none, own, all }
 ///
 /// **Ein fehlendes Recht gilt als nicht erteilt** — die Oberfläche soll im
 /// Zweifel weniger anbieten; die tatsächliche Grenze zieht ohnehin das Backend.
+/// Einzige Ausnahme ist [stockView] (fehlt = erteilt, wie im Backend); sie
+/// liest man ueber [stockViewOf].
 /// [cancelScope] und [receiptsScope] sind **keine** Schalter: wer sie als
 /// Ja/Nein liest, nimmt jedem Kassier die eigenen Belege und dem Chef das
 /// Stornieren.
@@ -251,6 +257,13 @@ class RegisterUserPerms {
     this.drawer = false,
     this.discount = false,
     this.tipAssign = false,
+    this.stockView,
+    this.stockCosts = false,
+    this.stockMove = false,
+    this.stockLoss = false,
+    this.stocktakeCount = false,
+    this.stocktakeClose = false,
+    this.stockLocation = false,
     this.cancelScope = RegisterScope.none,
     this.receiptsScope = RegisterScope.all,
     this.other = const {},
@@ -288,6 +301,31 @@ class RegisterUserPerms {
   /// Trinkgeld anderen zuweisen.
   final bool tipAssign;
 
+  /// Lager: Standorte und Mengen sehen. `null`, wenn der Schluessel fehlt —
+  /// das gilt hier, anders als bei allen anderen Rechten, als **erteilt**
+  /// (wie im Backend). Darum kein `bool`: die Entscheidung trifft
+  /// [stockViewOf], nicht dieses Feld.
+  final bool? stockView;
+
+  /// Lager: Einkaufswerte sehen (`values` in `listMyStock`); gibt nur der
+  /// Inhaber frei.
+  final bool stockCosts;
+
+  /// Lager: Wareneingang, Umbuchen.
+  final bool stockMove;
+
+  /// Lager: Abgang, Zustand, Gegenbuchung.
+  final bool stockLoss;
+
+  /// Inventur: zaehlen.
+  final bool stocktakeCount;
+
+  /// Inventur: abschliessen.
+  final bool stocktakeClose;
+
+  /// Standort der Kasse waehlen (`setMyCashregisterStockLocation`).
+  final bool stockLocation;
+
   /// Storno-Reichweite; fehlt sie (Altbestand), entscheidet [cancel].
   final RegisterScope cancelScope;
 
@@ -319,11 +357,33 @@ class RegisterUserPerms {
         return discount;
       case 'tipAssign':
         return tipAssign;
+      // Der Rohwert wie bis 10.1 aus dem Auffangbecken: fehlt = false. Ob die
+      // Kasse Lager zeigt, sagt [stockViewOf].
+      case 'stockView':
+        return stockView ?? false;
+      case 'stockCosts':
+        return stockCosts;
+      case 'stockMove':
+        return stockMove;
+      case 'stockLoss':
+        return stockLoss;
+      case 'stocktakeCount':
+        return stocktakeCount;
+      case 'stocktakeClose':
+        return stocktakeClose;
+      case 'stockLocation':
+        return stockLocation;
       default:
         return other[name] ?? false;
     }
   }
 }
+
+/// Darf der Benutzer Standorte und Mengen sehen? Wie im Backend (lager-core):
+/// ohne Schluessel gilt `stockView` als erteilt, nur ein ausdrueckliches
+/// `false` sperrt; alle anderen Lager-Rechte gelten ohne Schluessel als
+/// verweigert. Ohne Rechte ([perms] `null`) nichts.
+bool stockViewOf(RegisterUserPerms? perms) => perms != null && (perms.stockView ?? true);
 
 /// Der angemeldete Kassen-Benutzer.
 class RegisterUser {
@@ -529,6 +589,10 @@ class RegisterClient {
           ? RegisterCashregisterState(
               ready: kasse['ready'] as bool,
               reason: kasse['reason'] is String ? kasse['reason'] as String : null,
+              // Fehlt oder leer = Standard-Standort (wie npm: nur ein Text mit Inhalt).
+              stockLocationId: kasse['stockLocationId'] is String && (kasse['stockLocationId'] as String).isNotEmpty
+                  ? kasse['stockLocationId'] as String
+                  : null,
             )
           : null,
     );
@@ -757,6 +821,7 @@ RegisterUserPerms _rechte(Object? wert) {
   final bekannt = {
     'sell', 'cancel', 'articles', 'layout', 'reports', 'takeover',
     'drawer', 'discount', 'tipAssign', 'cancelScope', 'receiptsScope',
+    'stockView', 'stockCosts', 'stockMove', 'stockLoss', 'stocktakeCount', 'stocktakeClose', 'stockLocation',
   };
   final weitere = <String, bool>{};
   for (final eintrag in roh.entries) {
@@ -773,6 +838,15 @@ RegisterUserPerms _rechte(Object? wert) {
     drawer: roh['drawer'] == true,
     discount: roh['discount'] == true,
     tipAssign: roh['tipAssign'] == true,
+    // Wie im JS-Zwilling: ein vorhandener Schluessel zaehlt nur als `true`,
+    // ein fehlender bleibt offen (null) — die Regel steht in stockViewOf.
+    stockView: roh.containsKey('stockView') ? roh['stockView'] == true : null,
+    stockCosts: roh['stockCosts'] == true,
+    stockMove: roh['stockMove'] == true,
+    stockLoss: roh['stockLoss'] == true,
+    stocktakeCount: roh['stocktakeCount'] == true,
+    stocktakeClose: roh['stocktakeClose'] == true,
+    stockLocation: roh['stockLocation'] == true,
     // Altbestand ohne Reichweite: der Schalter entscheidet (so migriert es auch
     // das Backend, register-auth.js).
     cancelScope: roh.containsKey('cancelScope') ? _scope(roh['cancelScope']) : (cancel ? RegisterScope.all : RegisterScope.none),
