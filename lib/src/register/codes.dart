@@ -20,6 +20,7 @@ import 'fehler.dart';
 const List<String> registerErrorCodes = [
   'account_not_found',
   'admin_required',
+  'api_not_approved',
   'cashregister_in_use',
   'cashregister_not_assigned',
   'cashregister_not_found',

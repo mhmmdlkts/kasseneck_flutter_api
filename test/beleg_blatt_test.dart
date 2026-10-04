@@ -67,7 +67,7 @@ void main() {
   });
 
   test('qrBlattAnteil wie npm: 109 Byte -> 45 Module, 80 mm auto 6 Punkte (auto heisst in beiden Paketen dasselbe)', () {
-    const qr = '_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T00:30:00_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR';
+    const qr = '_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T00:30:00_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR';
     expect(qrModuleCount(qr), 45);
     expect(qrSheetWidthFraction(qr, KeckPaperSize.mm80), 53 * 6 / 576);
     expect(qrSheetWidthFraction(qr, KeckPaperSize.mm80, moduleSize: QrModuleSize.small), 53 * 4 / 576);

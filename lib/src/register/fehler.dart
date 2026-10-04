@@ -86,6 +86,7 @@ const Set<String> paymentCallRejectedCodes = {
   'mfa_required',
   'user_verification_failed',
   'admin_required',
+  'api_not_approved',
   'register_user_not_allowed',
   'register_user_no_business',
   'register_user_not_found',

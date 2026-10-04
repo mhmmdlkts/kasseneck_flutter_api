@@ -1,3 +1,42 @@
+## 10.1.2
+
+Twin of `@kreiseck/kasseneck-api` `1.2.2` (contract files pulled from that
+version). Patch: no change to what a receipt or a request looks like, and the
+stock feature of npm 1.2.0 is **not** part of this release (open in
+issue #85).
+
+- **Test fixtures carry a made-up signature card serial.** The serial of a real
+  signature card (signature card line, machine-readable code of the receipt
+  fixtures) is replaced by the made-up `5A1C3E07` (same length), as in npm
+  1.2.2. Reason: fixtures only carry made-up identifiers. Every changed
+  fixture differs from its predecessor by exactly that serial (checked file by
+  file, hex goldens on decoded bytes); the recorded hashes of the ESC/POS byte
+  streams (`zwilling_bytestrom_test`, `code_table_receipt_test`,
+  `stored_layout_test`) are recorded anew and equal the ones the npm twin
+  records. No code change in the printing path.
+- **En dash in the invoice texts.** npm 1.2.1 swapped the em dash for the
+  spaced en dash in five invoice texts per language
+  (`pdf.direct_debit.warning`, `pdf.footer.note`, `tax.reverse_charge.text`,
+  `einvoice.exemption.small_business`, `einvoice.exemption.outside_scope`).
+  Reason: German typography uses the en dash; the frozen 0.x catalog in
+  `test/fixtures/vor-1.0/` follows, so the rename check stays character-exact.
+  Anyone comparing these texts byte by byte updates the five sentences.
+  `texte_katalog.dart` is regenerated (version note only).
+- **Error codes of the contract caught up** (additive lists). `api_not_approved`
+  (the developer area has not approved the account for the live API) is in
+  `registerErrorCodes`, `posErrorCodes`, `invoiceRequestErrorCodes` and the
+  Auth/edge codes of the receipt lists; `posErrorCodes` also gains
+  `location_inactive`, `location_not_found` and `server_error`, and
+  `cancellationErrorCodes` gains `invalid_return_disposition`. Reason: the
+  lists are compared to the contract in both directions. **Behaviour change:**
+  `api_not_approved` is in `paymentCallRejectedCodes`, so a payment call
+  answered with it now has the outcome `rejected` instead of `unknown`:
+  nothing was charged, the approval gate runs before the handler.
+- **Not yet carried (issue #85):** the stock calls, the stock permissions,
+  `returnDisposition` and the stock fields of the invoice API. They are listed
+  as `offen` in `zwillinge.yaml`; the invoice examples that use them are
+  skipped in `rechnung_api_test` until then.
+
 ## 10.1.1
 
 Twin of `@kreiseck/kasseneck-api` `1.1.1` (contract files pulled from that

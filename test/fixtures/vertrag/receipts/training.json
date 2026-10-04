@@ -35,10 +35,10 @@
     "paymentMethod": "cash",
     "turnoverCounterAES256ICM": "UMSATZ",
     "signaturePreviousReceipt": "VORGAENGER",
-    "certificateSerialNumber": "6F0404F0",
+    "certificateSerialNumber": "5A1C3E07",
     "receiptType": "training",
     "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
-    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_6F0404F0_SIGNATUR",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
     "fullReceiptId": "VOLL",
     "customerDetails": [],
     "legalMessage": []

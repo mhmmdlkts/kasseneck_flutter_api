@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 2,
-  "package": "1.1.1",
+  "package": "1.2.2",
   "endpoints": {
     "createCustomer": {
       "request": {
@@ -461,6 +461,11 @@
                   "minimum": 0,
                   "maximum": 100,
                   "x-decimals": 2
+                },
+                "articleId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
                 }
               },
               "required": [
@@ -501,6 +506,11 @@
             ]
           },
           "brandId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "stockLocationId": {
             "type": "string",
             "minLength": 1,
             "maxLength": 128
@@ -579,6 +589,13 @@
           "note": {
             "type": "string",
             "maxLength": 2000
+          },
+          "returnDisposition": {
+            "enum": [
+              "restock",
+              "defective",
+              "disposed"
+            ]
           }
         },
         "required": [
@@ -720,6 +737,18 @@
                   "minimum": 0,
                   "maximum": 100,
                   "x-decimals": 2
+                },
+                "articleId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "returnDisposition": {
+                  "enum": [
+                    "restock",
+                    "defective",
+                    "disposed"
+                  ]
                 }
               },
               "required": [
@@ -741,6 +770,13 @@
               ],
               "additionalProperties": false
             }
+          },
+          "returnDisposition": {
+            "enum": [
+              "restock",
+              "defective",
+              "disposed"
+            ]
           }
         },
         "required": [

@@ -83,13 +83,16 @@ String _neuerAbschnitt(String alt) => ((_strukturKasse['file'] as Map)[alt] as S
 void main() {
   test('die eingefrorenen 0.x-Dateien sind die aus 0.31.0', () {
     // Aus dem Registry-Tarball @kreiseck/kasseneck-api@0.31.0 (npm pack),
-    // byteweise. NICHT aus npm test/fixtures/vor-1.0/ auffrischen: dort sind
+    // byteweise -- bis auf rechnung-texte.json: dort stehen seit npm 1.2.1 fuenf
+    // Texte je Sprache mit Halbgeviertstrich statt Geviertstrich (Typografie),
+    // wie im neuen Katalog; der Hash ist der des nachgezogenen Standes, sonst
+    // liefe der Zeichenvergleich alt/neu auseinander. NICHT aus npm test/fixtures/vor-1.0/ auffrischen: dort sind
     // die Storno-Zahlungscodes schon englisch, das wurde nie ausgeliefert.
     String sha(String pfad) => sha256.convert(File(pfad).readAsBytesSync()).toString();
     expect(sha('test/fixtures/vor-1.0/kasse-texte.json'),
         '9e14e8488be5803668fad94238bb1478615cf844388c7d4ef75bca0ae23d1b93');
     expect(sha('test/fixtures/vor-1.0/rechnung-texte.json'),
-        '6acf334aa64b169ff3ee2e5a338c7541df6ba159fcc85b50ee9fcbaf59bc0faf');
+        'd592073a227435078114a5b9bc20ea3fcd1b7ef211c0deb3fa0ccf4f0bba38bf');
     expect(_altKasse['version'], '0.31.0');
     expect(_altRechnung['version'], '0.31.0');
     expect(_neuKasse['version'], startsWith('1.'));

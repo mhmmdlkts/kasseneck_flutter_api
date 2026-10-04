@@ -1,0 +1,22 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Bestandsgefuehrter Artikel, abgebucht vom Lieferwagen",
+  "request": {
+    "idempotencyKey": "ex-13",
+    "priceMode": "gross",
+    "serviceStart": "2026-10-01",
+    "stockLocationId": "van-1",
+    "items": [
+      {
+        "description": "Roggenbrot",
+        "quantity": 2,
+        "unitPriceCents": 450,
+        "vatRate": 10,
+        "articleId": "rye-bread"
+      }
+    ]
+  },
+  "expected": {
+    "ok": true
+  }
+}

@@ -4,7 +4,7 @@
     "default": {
       "sha256": "993dc13a802ce4c2f795a20e7de2d6d0aad6e471e47b60762c32127046a46e95",
       "head": [],
-      "inputsSha256": "be31e4ca73dc3851a6b303da8aff60ba25842c6641fc24779051bb07a671b649",
+      "inputsSha256": "6aae196464196c3abcfb6afed5fb78a99d8c067c79247ca442badf2471e39ddc",
       "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "f73264871e0b41e2c1e32c020a97651a701b268815f3c58e19e015923a4fb239",
+      "sha256": "e62252f713159cc820a6c2122486808e877a7cd66c7c06f8c1e85f24a68c54e8",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "e76a8dd30e5411d23956f19ec239b06dafaf882515f79bc10c2be4e33838fd5f",
+      "inputsSha256": "b7483cf62e025b0c980b90d013c81c88a99f7acdeaf70f510a7554329ee19285",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -3453,6 +3453,61 @@
             "receiptId": "KASSE1-ID-7",
             "titel": "Beleg 7",
             "von": "ru_kellner"
+          }
+        }
+      }
+    },
+    "setMyCashregisterStockLocation": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "users/kw_betrieb1/cashregisters/KASSE1": {
+            "label": "Theke 1",
+            "token": "<geheim>",
+            "aes_key": "<geheim>",
+            "signature_id": "sig1",
+            "licenses": 5,
+            "create_time": "2026-01-02T08:00:00.000Z",
+            "onboarding": {
+              "cashbox_registered": true,
+              "startbeleg_created": true,
+              "startbeleg_transmitted": true
+            },
+            "monthlyReportJournal": true,
+            "lagerStandortId": "auto1",
+            "lagerStandortGesetzt": {
+              "at": 1790409600000,
+              "von": {
+                "art": "kassenbenutzer",
+                "id": "ru_chef",
+                "name": "Anna Chef"
+              }
+            }
+          }
+        },
+        "success_reset": {
+          "users/kw_betrieb1/cashregisters/KASSE1": {
+            "label": "Theke 1",
+            "token": "<geheim>",
+            "aes_key": "<geheim>",
+            "signature_id": "sig1",
+            "licenses": 5,
+            "create_time": "2026-01-02T08:00:00.000Z",
+            "onboarding": {
+              "cashbox_registered": true,
+              "startbeleg_created": true,
+              "startbeleg_transmitted": true
+            },
+            "monthlyReportJournal": true,
+            "lagerStandortId": null,
+            "lagerStandortGesetzt": {
+              "at": 1790409600000,
+              "von": {
+                "art": "inhaber",
+                "id": "kw_betrieb1",
+                "name": null
+              }
+            }
           }
         }
       }

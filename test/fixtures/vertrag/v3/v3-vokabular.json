@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "29994ca53adc96e7cb49b9e3688b102a69c126544ef092fc6579a2e1fcd0d555",
-    "inputsSha256": "eb87e762005b16d104ba737b7d2ba9108eaddf0ed4b6eea9d96817c261759758",
+    "sha256": "b1049e2f65e9261cf8f729481d9ce1e5afda2cf620333f38ae6bf1afb36c8712",
+    "inputsSha256": "62e0d9891baa5049aa7634f11fcfd9a44d80b2cb8da79da4fee13140ccd96c2a",
     "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -65,6 +65,8 @@
       "listCustomerCashregisters",
       "getCustomerCredentials",
       "reportCustomerVertrag",
+      "getPartnerBilling",
+      "getPartnerBillingMonth",
       "createCustomer",
       "getCustomer",
       "updateCustomer",
@@ -78,7 +80,14 @@
       "getInvoiceXml",
       "getInvoiceSetupStatus",
       "listBrands",
-      "recordInvoicePayment"
+      "recordInvoicePayment",
+      "createInvoiceItem",
+      "updateInvoiceItem",
+      "withdrawInvoiceItem",
+      "getInvoiceItem",
+      "listInvoiceItems",
+      "setCustomerMandate",
+      "revokeCustomerMandate"
     ],
     "v3Routed": [
       "createReceipt",
@@ -118,6 +127,8 @@
       "listCustomerCashregisters",
       "getCustomerCredentials",
       "reportCustomerVertrag",
+      "getPartnerBilling",
+      "getPartnerBillingMonth",
       "createCustomer",
       "getCustomer",
       "updateCustomer",
@@ -131,7 +142,14 @@
       "getInvoiceXml",
       "getInvoiceSetupStatus",
       "listBrands",
-      "recordInvoicePayment"
+      "recordInvoicePayment",
+      "createInvoiceItem",
+      "updateInvoiceItem",
+      "withdrawInvoiceItem",
+      "getInvoiceItem",
+      "listInvoiceItems",
+      "setCustomerMandate",
+      "revokeCustomerMandate"
     ],
     "register": [
       "pairRegisterDevice",
@@ -158,7 +176,10 @@
       "listMyPrinters",
       "createPrintJob",
       "getPrintJob",
-      "listMyTipRecipients"
+      "listMyTipRecipients",
+      "listMyStockLocations",
+      "listMyStock",
+      "setMyCashregisterStockLocation"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -179,7 +200,10 @@
       "setMyRegisterDeviceSettings",
       "listMyPrinters",
       "createPrintJob",
-      "getPrintJob"
+      "getPrintJob",
+      "listMyStockLocations",
+      "listMyStock",
+      "setMyCashregisterStockLocation"
     ],
     "withSchema": [
       "activateCashregister",
@@ -189,6 +213,7 @@
       "createCreditNote",
       "createCustomer",
       "createCustomerCashregister",
+      "createInvoiceItem",
       "createPartnerCustomer",
       "createPartnerWebhook",
       "createPaymentLinkStripe",
@@ -206,10 +231,13 @@
       "getCustomerSignatureStatus",
       "getFirstReceiptDate",
       "getInvoice",
+      "getInvoiceItem",
       "getInvoicePdf",
       "getInvoiceSetupStatus",
       "getInvoiceXml",
       "getKasseSettings",
+      "getPartnerBilling",
+      "getPartnerBillingMonth",
       "getPartnerCustomer",
       "getPartnerInfo",
       "getPrintJob",
@@ -221,12 +249,15 @@
       "issueInvoice",
       "listBrands",
       "listCustomerCashregisters",
+      "listInvoiceItems",
       "listInvoices",
       "listMyArticleGroups",
       "listMyArticles",
       "listMyCashregisters",
       "listMyPrinters",
       "listMyReceipts",
+      "listMyStock",
+      "listMyStockLocations",
       "listMyTipRecipients",
       "listPartnerCustomers",
       "listPartnerWebhookDeliveries",
@@ -240,18 +271,23 @@
       "renewRegisterSession",
       "reportCustomerVertrag",
       "requestCustomerSignature",
+      "revokeCustomerMandate",
       "rotatePartnerWebhookSecret",
       "searchCustomers",
       "sendPartnerCustomerFonLink",
       "sendPartnerWebhookTest",
       "sendReceiptEmail",
+      "setCustomerMandate",
+      "setMyCashregisterStockLocation",
       "setMyKasseLogo",
       "setMyKasseSettings",
       "setMyRegisterDeviceSettings",
       "stripeCaptureIntent",
       "unpairRegisterDevice",
       "updateCustomer",
-      "updatePartnerWebhook"
+      "updateInvoiceItem",
+      "updatePartnerWebhook",
+      "withdrawInvoiceItem"
     ],
     "base": "https://api.kasseneck.at/v3/"
   },
@@ -259,6 +295,29 @@
     "reportCustomerContract": "reportCustomerVertrag"
   },
   "catalogs": {
+    "ABRECHNUNG_BAUSTEIN": {
+      "paket": "package",
+      "fest": "flat",
+      "staffelStueck": "tiered_by_count",
+      "staffelLaufzeit": "tiered_by_term",
+      "freiEinheiten": "free_units",
+      "startrabatt": "starter_discount",
+      "mengenrabatt": "volume_discount",
+      "prozent": "percentage",
+      "fix": "fixed_adjustment",
+      "mindestbetrag": "minimum_amount",
+      "hoechstbetrag": "maximum_amount"
+    },
+    "ABRECHNUNG_HINWEIS": {
+      "keine_konditionen": "no_conditions",
+      "stats_nicht_final": "stats_not_final",
+      "konditionen_ab_monatsmitte": "conditions_from_mid_month",
+      "posten_unbewertet": "unpriced_item",
+      "konditionen_ungueltig": "conditions_invalid"
+    },
+    "ABRECHNUNG_HINWEIS_PRAEFIX": {
+      "position_nicht_berechnet": "position_not_billed"
+    },
     "ABSCHREIBUNG": {
       "uneinbringlich": "uncollectible",
       "verjaehrt": "time_barred",
@@ -477,6 +536,17 @@
       "technik": "technical",
       "kasse": "pos"
     },
+    "RUECKGABE": {
+      "lager": "restock",
+      "defekt": "defective",
+      "entsorgt": "disposed"
+    },
+    "STANDORT_TYP": {
+      "lager": "warehouse",
+      "geschaeft": "store",
+      "fahrzeug": "vehicle",
+      "sonstiges": "other"
+    },
     "STEUERFALL": {
       "normal": "normal",
       "smallBusiness": "smallBusiness",
@@ -519,6 +589,7 @@
       "already_accepted",
       "already_cancelled",
       "amount_too_large",
+      "api_not_approved",
       "app_not_accepted",
       "app_not_found",
       "brand_not_found",
@@ -563,6 +634,7 @@
       "invalid_address",
       "invalid_items",
       "invalid_line",
+      "invalid_return_disposition",
       "invoice_ambiguous",
       "invoice_api_not_enabled",
       "invoice_not_found",
@@ -573,6 +645,8 @@
       "licenses_exhausted",
       "live_not_allowed",
       "live_not_enabled",
+      "location_inactive",
+      "location_not_found",
       "location_outside",
       "location_required",
       "login_failed",
@@ -705,6 +779,7 @@
       "nur_eigene_belege": "own_receipts_only",
       "kasse_unvollstaendig": "cashregister_incomplete",
       "storno_fehlgeschlagen": "cancellation_failed",
+      "rueckgabe_ungueltig": "invalid_return_disposition",
       "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
       "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
       "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
@@ -747,6 +822,7 @@
       "cashregister_not_found",
       "account_not_found",
       "live_not_enabled",
+      "api_not_approved",
       "unauthorized",
       "mfa_required",
       "user_verification_failed",
@@ -805,7 +881,10 @@
       "invalid_address",
       "invalid_items",
       "invalid_line",
+      "invalid_return_disposition",
       "licenses_exhausted",
+      "location_inactive",
+      "location_not_found",
       "location_outside",
       "location_required",
       "login_failed",
@@ -876,7 +955,8 @@
       "cancellation_refund_exceeds_payment",
       "cancellation_refund_reference_required",
       "cancellation_refund_reference_unknown",
-      "cancellation_outcome_unknown"
+      "cancellation_outcome_unknown",
+      "invalid_return_disposition"
     ],
     "payments": [
       "payments_invalid",
@@ -989,6 +1069,8 @@
       "invalid_items",
       "licenses_exhausted",
       "live_not_enabled",
+      "location_inactive",
+      "location_not_found",
       "location_outside",
       "location_required",
       "login_failed",
@@ -1047,6 +1129,7 @@
       "own_receipts_only",
       "cashregister_incomplete",
       "cancellation_failed",
+      "invalid_return_disposition",
       "cancellation_payments_required",
       "cancellation_refund_exceeds_payment",
       "cancellation_refund_reference_required",
@@ -1202,6 +1285,7 @@
         "cashregister_not_assigned",
         "invalid_items",
         "invalid_line",
+        "invalid_return_disposition",
         "not_permitted",
         "note_too_long",
         "own_receipts_only",
@@ -1270,7 +1354,28 @@
       "getPrintJob": [
         "print_job_not_found"
       ],
-      "listMyTipRecipients": []
+      "listMyTipRecipients": [],
+      "listMyStockLocations": [
+        "cashregister_not_assigned",
+        "module_inactive",
+        "not_permitted",
+        "server_error"
+      ],
+      "listMyStock": [
+        "cashregister_not_assigned",
+        "module_inactive",
+        "not_permitted",
+        "server_error"
+      ],
+      "setMyCashregisterStockLocation": [
+        "cashregister_not_assigned",
+        "cashregister_not_found",
+        "location_inactive",
+        "location_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error"
+      ]
     }
   },
   "noticeCodes": [
@@ -1316,9 +1421,24 @@
       }
     },
     "cancelReceipt": {
+      "params": {
+        "returnDisposition": "rueckgabe",
+        "items": [
+          {
+            "__": "items",
+            "returnDisposition": "rueckgabe"
+          }
+        ]
+      },
       "paramWerte": {
         "reason": {
           "$catalog": "STORNO_GRUND"
+        },
+        "returnDisposition": {
+          "$catalog": "RUECKGABE"
+        },
+        "items[].returnDisposition": {
+          "$catalog": "RUECKGABE"
         }
       },
       "data": {
@@ -1354,7 +1474,10 @@
             "code": "validation",
             "feld": "paymentMethod"
           }
-        ]
+        ],
+        "nachrichtWoerter": {
+          "rueckgabe": "returnDisposition"
+        }
       }
     },
     "checkPartnerCustomerEmail": {},
@@ -1416,6 +1539,7 @@
             "nur_eigene_belege": "own_receipts_only",
             "kasse_unvollstaendig": "cashregister_incomplete",
             "storno_fehlgeschlagen": "cancellation_failed",
+            "rueckgabe_ungueltig": "invalid_return_disposition",
             "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
             "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
             "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
@@ -1446,6 +1570,7 @@
         }
       }
     },
+    "createInvoiceItem": {},
     "createPartnerCustomer": {
       "paramWerte": {
         "business.legalForm": {
@@ -1784,6 +1909,7 @@
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
           "storno_fehlgeschlagen": "cancellation_failed",
+          "rueckgabe_ungueltig": "invalid_return_disposition",
           "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
           "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
           "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
@@ -1835,6 +1961,7 @@
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
           "storno_fehlgeschlagen": "cancellation_failed",
+          "rueckgabe_ungueltig": "invalid_return_disposition",
           "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
           "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
           "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
@@ -1881,6 +2008,7 @@
         }
       }
     },
+    "getInvoiceItem": {},
     "getInvoicePdf": {},
     "getInvoiceSetupStatus": {},
     "getInvoiceXml": {
@@ -2047,6 +2175,32 @@
         "device.terminalType": {
           "$catalog": "KASSE_GERAET_WERTE.terminalType"
         }
+      }
+    },
+    "getPartnerBilling": {
+      "werte": {
+        "current.lines[].component": {
+          "$catalog": "ABRECHNUNG_BAUSTEIN"
+        },
+        "current.projection.lines[].component": {
+          "$catalog": "ABRECHNUNG_BAUSTEIN"
+        }
+      },
+      "ergaenze": {
+        "$function": "anonymous"
+      }
+    },
+    "getPartnerBillingMonth": {
+      "werte": {
+        "lines[].component": {
+          "$catalog": "ABRECHNUNG_BAUSTEIN"
+        },
+        "projection.lines[].component": {
+          "$catalog": "ABRECHNUNG_BAUSTEIN"
+        }
+      },
+      "ergaenze": {
+        "$function": "anonymous"
       }
     },
     "getPartnerCustomer": {
@@ -2279,6 +2433,7 @@
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
           "storno_fehlgeschlagen": "cancellation_failed",
+          "rueckgabe_ungueltig": "invalid_return_disposition",
           "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
           "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
           "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
@@ -2308,6 +2463,7 @@
         }
       }
     },
+    "listInvoiceItems": {},
     "listInvoices": {
       "paramWerte": {
         "docType": {
@@ -2357,7 +2513,8 @@
               "__": "kasse",
               "visible": "sichtbar",
               "sort": "sort"
-            }
+            },
+            "stockLocationIds": "standorte"
           }
         ]
       },
@@ -2384,7 +2541,8 @@
               "start_receipt_transmitted": "startbeleg_transmitted",
               "start_receipt_created_at": "startbeleg_created_at",
               "start_receipt_transmitted_at": "startbeleg_transmitted_at"
-            }
+            },
+            "stockLocationId": "lagerStandortId"
           }
         ]
       },
@@ -2460,6 +2618,58 @@
             "code": "server_error"
           }
         ]
+      }
+    },
+    "listMyStock": {
+      "params": {
+        "locationId": "standortId",
+        "belowMinimum": "unterMindest"
+      },
+      "data": {
+        "stock": [
+          {
+            "__": "bestand",
+            "locationId": "standortId",
+            "sellable": "verkaufbar",
+            "defective": "defekt",
+            "reserved": "reserviert",
+            "available": "verfuegbar"
+          }
+        ]
+      },
+      "ergaenze": {
+        "$function": "lagerwerteNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "standortId": "locationId",
+          "unterMindest": "belowMinimum"
+        }
+      }
+    },
+    "listMyStockLocations": {
+      "data": {
+        "locations": [
+          {
+            "__": "standorte",
+            "type": "typ",
+            "address": {
+              "__": "adresse",
+              "street": "strasse",
+              "zip": "plz",
+              "city": "ort",
+              "country": "land"
+            },
+            "licensePlate": "kennzeichen",
+            "active": "aktiv",
+            "virtual": "virtuell"
+          }
+        ]
+      },
+      "werte": {
+        "locations[].type": {
+          "$catalog": "STANDORT_TYP"
+        }
       }
     },
     "listMyTipRecipients": {},
@@ -2622,7 +2832,8 @@
         "cashregister": {
           "__": "kasse",
           "ready": "bereit",
-          "reason": "grund"
+          "reason": "grund",
+          "stockLocationId": "lagerStandortId"
         },
         "testEnvironment": "testUmgebung"
       },
@@ -2780,6 +2991,7 @@
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
           "storno_fehlgeschlagen": "cancellation_failed",
+          "rueckgabe_ungueltig": "invalid_return_disposition",
           "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
           "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
           "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
@@ -2814,6 +3026,7 @@
         }
       }
     },
+    "revokeCustomerMandate": {},
     "rotatePartnerWebhookSecret": {
       "werte": {
         "webhook.lastDelivery.status": {
@@ -2840,6 +3053,20 @@
       "werte": {
         "via": {
           "$catalog": "MAILWEG"
+        }
+      }
+    },
+    "setCustomerMandate": {},
+    "setMyCashregisterStockLocation": {
+      "params": {
+        "stockLocationId": "standortId"
+      },
+      "data": {
+        "stockLocationId": "lagerStandortId"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "standortId": "stockLocationId"
         }
       }
     },
@@ -3171,6 +3398,7 @@
     "stripeCaptureIntent": {},
     "unpairRegisterDevice": {},
     "updateCustomer": {},
+    "updateInvoiceItem": {},
     "updatePartnerWebhook": {
       "werte": {
         "webhook.lastDelivery.status": {
@@ -3180,7 +3408,8 @@
       "ergaenze": {
         "$function": "ergaenze"
       }
-    }
+    },
+    "withdrawInvoiceItem": {}
   },
   "events": {
     "cashregister.failed": {
@@ -3209,6 +3438,7 @@
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
           "storno_fehlgeschlagen": "cancellation_failed",
+          "rueckgabe_ungueltig": "invalid_return_disposition",
           "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
           "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
           "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
@@ -3284,6 +3514,7 @@
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
           "storno_fehlgeschlagen": "cancellation_failed",
+          "rueckgabe_ungueltig": "invalid_return_disposition",
           "STORNO_PAYMENTS_REQUIRED": "cancellation_payments_required",
           "STORNO_REFUND_EXCEEDS_PAYMENT": "cancellation_refund_exceeds_payment",
           "STORNO_REFUND_REFERENCE_REQUIRED": "cancellation_refund_reference_required",
@@ -3337,7 +3568,8 @@
       "revenueGroupId",
       "active",
       "groupId",
-      "tile"
+      "tile",
+      "stockLocationIds"
     ],
     "inner": [
       "id",
@@ -3361,7 +3593,8 @@
       "revenueGroupId",
       "active",
       "groupId",
-      "kasse"
+      "kasse",
+      "standorte"
     ]
   },
   "articleGroupFields": [
