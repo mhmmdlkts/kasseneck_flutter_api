@@ -87,11 +87,11 @@ void main() {
       'einvoiceMissingCodes': einvoiceMissingCodes,
       'writeOffReasonCodes': writeOffReasonCodes,
       'invoiceRequestErrorCodes': invoiceRequestErrorCodes,
+      'returnDispositions': returnDispositions,
     };
 
     test('jede Liste des Vertrags gibt es hier, und keine mehr', () {
-      // returnDispositions gehört zum Lager-Feature: Issue 85.
-      expect(hier.keys.toSet(), listen.keys.toSet()..remove('returnDispositions'));
+      expect(hier.keys.toSet(), listen.keys.toSet());
     });
 
     test('jede Liste stimmt Wert für Wert und in der Reihenfolge', () {

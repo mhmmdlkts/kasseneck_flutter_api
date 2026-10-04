@@ -30,6 +30,7 @@ import '../../models/registration_info.dart';
 import 'belegmail.dart';
 import 'lager.dart';
 import 'storno.dart' show assertCardRefunds, cancellationReasons;
+import 'storno_nutzlast.dart';
 
 /// Storno-Stand eines Belegs in der Liste (Drahtfeld `cancellationStatus`,
 /// Katalog `STORNO_STAND`): `none`, `partial`, `full`. Ein unbekannter
@@ -437,10 +438,21 @@ class RegisterReceiptClient {
   /// ueber einen Anbieter braucht einen Bezug: ihre eigene `providerPaymentId`
   /// oder, mit [original], die Kennung der erstatteten Kartenzahlung dort
   /// (`cardRefundReference`). Fehlt beides, wirft der Aufruf vor dem Senden.
+  ///
+  /// [returnDisposition] sagt, wohin die Ware der stornierten Artikelzeilen
+  /// geht (Lager): `restock`, `defective` oder `disposed` aus
+  /// `returnDispositions`, fuer alle Positionen. [itemReturnDispositions]
+  /// waehlt je Position abweichend (Schluessel = Index im Original, wie in
+  /// [items]; nur fuer Positionen in [items]). Fehlt beides, bucht der Server
+  /// `restock`; Zeilen ohne `articleId` bucht er nie. Ein unbekannter Wert
+  /// wirft, bevor etwas hinausgeht. Ohne Wahl ist die Nutzlast dieselbe wie
+  /// vor 10.2.
   Future<CancelReceiptResult> cancelReceipt({
     required String originalReceiptId,
     required String reason,
     List<CancellationItem>? items,
+    String? returnDisposition,
+    Map<int, String>? itemReturnDispositions,
     String? note,
     List<KeckPaymentInput>? payments,
     KasseneckReceipt? original,
@@ -460,6 +472,12 @@ class RegisterReceiptClient {
         throw const KasseneckValidationError(name, 'Storno-Menge muss eine ganze Zahl >= 1 sein', 'request');
       }
     }
+    final nutzlast = cancellationPayload(
+      name,
+      items: items,
+      returnDisposition: returnDisposition,
+      itemReturnDispositions: itemReturnDispositions,
+    );
     if (note != null && note.length > _anmerkungHoechstlaenge) {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
@@ -478,7 +496,8 @@ class RegisterReceiptClient {
       params: {
         'originalReceiptId': originalReceiptId,
         'reason': reason,
-        if (items != null) 'items': [for (final p in items) {'index': p.index, 'quantity': p.quantity}],
+        'items': ?nutzlast.items,
+        'returnDisposition': ?nutzlast.returnDisposition,
         if (note != null && note.isNotEmpty) 'note': note,
         if (payments != null) 'payments': [for (final z in payments) z.toJson()],
       },

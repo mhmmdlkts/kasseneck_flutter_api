@@ -140,6 +140,11 @@ void main() {
     test('die Höchstmenge des Artikels wandert mit', () {
       expect(draftFromArticle(artikel(maxMenge: 3))!.maxQuantity, 3);
     });
+
+    test('die Artikel-ID wandert mit; ein Artikel ohne ID ergibt keine', () {
+      expect(draftFromArticle(artikel())!.articleId, 'a1');
+      expect(draftFromArticle(artikel(id: ''))!.articleId, isNull);
+    });
   });
 
   group('Buchen', () {
@@ -185,6 +190,46 @@ void main() {
         korb = bookTile(korb, begrenzt, bundle: true).cart;
       }
       expect(korb.items.single.quantity, 2);
+    });
+
+    test('gleiche Bezeichnung, Preis und Satz, aber andere Artikel-ID: eigene Zeile', () {
+      var korb = const Cart.empty();
+      korb = bookTile(korb, draftFromArticle(artikel(id: 'a1'))!, bundle: true).cart;
+      korb = bookTile(korb, draftFromArticle(artikel(id: 'a2'))!, bundle: true).cart;
+      expect([for (final p in korb.items) p.articleId], ['a1', 'a2']);
+      // Dieselbe ID buendelt weiter.
+      korb = bookTile(korb, draftFromArticle(artikel(id: 'a2'))!, bundle: true).cart;
+      expect([for (final p in korb.items) (p.articleId, p.quantity)], [('a1', 1), ('a2', 2)]);
+    });
+
+    test('Artikelzeile und freie Position gleichen Aussehens bleiben getrennt', () {
+      var korb = const Cart.empty();
+      korb = bookTile(korb, draftFromArticle(artikel())!, bundle: true).cart;
+      korb = bookTile(korb, entwurf, bundle: true).cart;
+      expect([for (final p in korb.items) p.articleId], ['a1', null]);
+      korb = bookTile(korb, draftFromArticle(artikel())!, bundle: true).cart;
+      expect([for (final p in korb.items) p.quantity], [2, 1]);
+    });
+
+    test('die Artikel-ID reist in die Belegposition, Menge ändern und Abziehen behalten sie', () {
+      var korb = bookTile(const Cart.empty(), draftFromArticle(artikel())!, bundle: true).cart;
+      korb = bookTile(korb, entwurf, bundle: false).cart;
+      final artikelzeile = korb.items.first;
+      korb = korb.withQuantity(artikelzeile.id, 3);
+      expect(korb.items.first.articleId, 'a1');
+      expect(korb.subtracted(Cart(items: [korb.items.first.withQuantity(1)])).items.first.articleId, 'a1');
+      expect([for (final p in receiptItems(korb, 0)) p.toJson()], [
+        {'name': 'Kaffee', 'quantity': 3, 'unitPriceCents': 280, 'vatRate': 20, 'articleId': 'a1'},
+        // Eine freie Position (wie vor 10.2 ohne ID angelegt) bleibt byte-gleich.
+        {'name': 'Kaffee', 'quantity': 1, 'unitPriceCents': 280, 'vatRate': 20},
+      ]);
+    });
+
+    test('eine Position ohne Artikel-ID (alter Aufrufer) bleibt gültig und schlank', () {
+      const alt = Position(id: 'p1', name: 'Semmel', quantity: 2, priceCents: 79, vat: VatRate.vat10);
+      expect(alt.articleId, isNull);
+      expect(alt.toReceiptItem().toJson().keys, ['name', 'quantity', 'unitPriceCents', 'vatRate']);
+      expect(alt.withQuantity(3).articleId, isNull);
     });
   });
 

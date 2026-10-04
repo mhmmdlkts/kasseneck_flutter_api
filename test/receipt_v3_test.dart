@@ -206,11 +206,18 @@ void main() {
     Future<CancelReceiptResult> stornieren(Map<String, dynamic> fall, http.Client client) {
       final p = fall['params'] as Map<String, dynamic>;
       final positionen = (p['items'] as List?)?.cast<Map>().map((e) => (index: e['index'] as int, quantity: e['quantity'] as int)).toList();
+      // Rueckgabe-Wahl je Position, falls ein Vertragsfall sie zeigt.
+      final wahl = {
+        for (final e in (p['items'] as List? ?? const []).cast<Map>())
+          if (e['returnDisposition'] != null) e['index'] as int: e['returnDisposition'] as String,
+      };
       return fall['channel'] == 'app'
           ? _kasse(client).cancelReceipt(
               originalReceiptId: p['originalReceiptId'] as String,
               reason: p['reason'] as String,
               items: positionen,
+              returnDisposition: p['returnDisposition'] as String?,
+              itemReturnDispositions: wahl.isEmpty ? null : wahl,
               payments: zahlungen(p),
             )
           : _api(client).cancelReceipt(
@@ -218,6 +225,8 @@ void main() {
               originalReceiptId: p['originalReceiptId'] as String,
               reason: p['reason'] as String,
               items: positionen,
+              returnDisposition: p['returnDisposition'] as String?,
+              itemReturnDispositions: wahl.isEmpty ? null : wahl,
               payments: zahlungen(p),
             );
     }
@@ -289,6 +298,133 @@ void main() {
         ],
       );
       expect(m.log, hasLength(1));
+    });
+  });
+
+  group('Rueckgabe beim Storno (Lager, Issue 85)', () {
+    // Teilstorno einer Artikelzeile aus dem Vertrag, je Kanal.
+    Future<void> stornieren(
+      String channel,
+      http.Client client, {
+      String? returnDisposition,
+      Map<int, String>? itemReturnDispositions,
+      List<CancellationItem>? items = const [(index: 0, quantity: 1)],
+    }) {
+      const zahlung = [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -79, refundOf: 'p1')];
+      return channel == 'app'
+          ? _kasse(client).cancelReceipt(
+              originalReceiptId: 'KECK-1-ID-3',
+              reason: 'customer_cancelled',
+              items: items,
+              returnDisposition: returnDisposition,
+              itemReturnDispositions: itemReturnDispositions,
+              payments: zahlung,
+            )
+          : _api(client).cancelReceipt(
+              cashregisterId: 'KECK-1',
+              originalReceiptId: 'KECK-1-ID-3',
+              reason: 'customer_cancelled',
+              items: items,
+              returnDisposition: returnDisposition,
+              itemReturnDispositions: itemReturnDispositions,
+              payments: zahlung,
+            );
+    }
+
+    for (final channel in ['app', 'api']) {
+      final fall = _fall(_storno, 'cancel_partial_items', channel: channel);
+
+      test('$channel: ohne Wahl ist die Nutzlast byte-gleich zur bisherigen', () async {
+        expect((fall['params'] as Map)['payments'], [
+          {'method': 'cash', 'amountCents': -79, 'refundOf': 'p1'},
+        ], reason: 'der Vertragsfall ist der, den dieser Test nachbaut');
+        final m = _einmal(fall);
+        await stornieren(channel, m.client);
+        expect(jsonEncode(_params(m.log.single)), jsonEncode(fall['params']));
+        expect(m.log.single.body, isNot(contains('returnDisposition')));
+      });
+
+      test('$channel: Vorgabe hinter items, Wahl je Position hinter quantity', () async {
+        final m = _einmal(fall);
+        await stornieren(channel, m.client, returnDisposition: 'defective', itemReturnDispositions: {0: 'disposed'});
+        final erwartet = <String, dynamic>{};
+        for (final MapEntry(:key, :value) in (fall['params'] as Map<String, dynamic>).entries) {
+          if (key == 'items') {
+            erwartet['items'] = [
+              {'index': 0, 'quantity': 1, 'returnDisposition': 'disposed'},
+            ];
+            erwartet['returnDisposition'] = 'defective';
+          } else {
+            erwartet[key] = value;
+          }
+        }
+        expect(jsonEncode(_params(m.log.single)), jsonEncode(erwartet));
+      });
+
+      test('$channel: eine unbekannte Wahl geht nicht hinaus (auch nicht die innere deutsche)', () async {
+        final anfragefehler = throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request'));
+        for (final falsch in ['lager', 'broken', '', 'Restock']) {
+          final m = _einmal(fall);
+          await expectLater(stornieren(channel, m.client, returnDisposition: falsch), anfragefehler, reason: falsch);
+          await expectLater(stornieren(channel, m.client, itemReturnDispositions: {0: falsch}), anfragefehler,
+              reason: 'je Position: $falsch');
+          expect(m.log, isEmpty, reason: falsch);
+        }
+      });
+
+      test('$channel: eine Wahl je Position braucht die Position in items', () async {
+        final anfragefehler = throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request'));
+        final m = _einmal(fall);
+        await expectLater(stornieren(channel, m.client, itemReturnDispositions: {5: 'restock'}), anfragefehler);
+        await expectLater(stornieren(channel, m.client, items: null, itemReturnDispositions: {0: 'restock'}), anfragefehler);
+        expect(m.log, isEmpty);
+      });
+    }
+
+    test('Liste, Pruefung und Enum am Vertrag', () {
+      final vertrag = jsonDecode(File('test/fixtures/vertrag/surface.json').readAsStringSync()) as Map<String, dynamic>;
+      expect(returnDispositions, vertrag['pos']['returnDispositions']);
+      expect(ReturnDisposition.values.map((d) => d.name), returnDispositions);
+      expect(returnDispositions.every(isReturnDisposition), isTrue);
+      for (final kein in <Object?>['lager', 'defekt', 'entsorgt', '', null, 1, 'Restock']) {
+        expect(isReturnDisposition(kein), isFalse, reason: '$kein');
+      }
+    });
+
+    test('Stornozeile: originalIndex und returnDisposition gelesen, Unbekanntes faellt weg', () {
+      KasseneckItem zeile(Map<String, dynamic> extra) =>
+          KasseneckItem.fromJson({'name': 'Kaffee', 'quantity': -1, 'unitPriceCents': 280, 'vatRate': 20, 'articleId': 'a1', ...extra});
+      final gut = zeile({'originalIndex': 2, 'returnDisposition': 'defective'});
+      expect(gut.originalIndex, 2);
+      expect(gut.returnDisposition, 'defective');
+      for (final falsch in <Object?>[-1, 1.5, '2', null]) {
+        expect(zeile({'originalIndex': falsch}).originalIndex, isNull, reason: '$falsch');
+      }
+      for (final falsch in <Object?>['defekt', 'kaputt', '', 3, null]) {
+        expect(zeile({'returnDisposition': falsch}).returnDisposition, isNull, reason: '$falsch');
+      }
+      // Der Zwischenspeicher behaelt beides; eine Zeile ohne bleibt schlank.
+      final zurueck = KasseneckItem.fromJson(gut.toJson());
+      expect([zurueck.originalIndex, zurueck.returnDisposition], [2, 'defective']);
+      expect(zeile({}).toJson().keys, ['name', 'quantity', 'unitPriceCents', 'vatRate', 'articleId']);
+    });
+
+    test('cancellations[] am Original: returnDisposition je Position gelesen wie npm', () {
+      final daten = jsonDecode(jsonEncode((_fall(_kasseBelege, 'get_card_receipt_with_cancellation')['response'] as Map)['data']))
+          as Map<String, dynamic>;
+      final eintraege = (daten['receipt'] as Map)['cancellations'] as List;
+      expect(eintraege, isNotEmpty, reason: 'der Vertragsfall traegt einen Storno-Eintrag');
+      (eintraege.first as Map)['items'] = [
+        {'index': 0, 'quantity': 1, 'returnDisposition': 'defective'},
+        {'index': 1, 'quantity': 1, 'returnDisposition': 'kaputt'},
+        {'index': 2, 'quantity': 1},
+      ];
+      final beleg = KasseneckReceipt.fromJson(daten);
+      expect(beleg.cancellations.first['items'], [
+        {'index': 0, 'quantity': 1, 'returnDisposition': 'defective'},
+        {'index': 1, 'quantity': 1},
+        {'index': 2, 'quantity': 1},
+      ]);
     });
   });
 
@@ -377,5 +513,54 @@ void main() {
     final ohne = KasseneckReceipt.fromJson(kopie);
     expect(ohne.vatId, isNull);
     expect(ohne.testCashregister, isFalse);
+  });
+
+  test('migrateStoredReceiptJson: Lager-Standort faellt weg, rueckgabe wird returnDisposition (wie npm stored)', () {
+    final gespeichert = <String, dynamic>{
+      'receiptId': 'KECK-1-ID-9',
+      'receiptType': 'cancellation',
+      'lagerStandortId': 'auto1',
+      'items': [
+        {'name': 'Kaffee', 'quantity': -1, 'unitPriceCents': 280, 'vatRate': 20, 'articleId': 'a1', 'originalIndex': 0, 'rueckgabe': 'defekt'},
+        {'name': 'Tee', 'quantity': -1, 'unitPriceCents': 250, 'vatRate': 20, 'articleId': 'a2', 'rueckgabe': 'kaputt'},
+        {'name': 'Saft', 'quantity': -1, 'unitPriceCents': 300, 'vatRate': 20, 'rueckgabe': 'entsorgt', 'returnDisposition': 'restock'},
+      ],
+      'cancellations': [
+        {
+          'at': 1,
+          'items': [
+            {'index': 0, 'quantity': 1, 'rueckgabe': 'lager'},
+            {'index': 1, 'quantity': 1},
+          ],
+        },
+      ],
+    };
+    final kopie = jsonDecode(jsonEncode(gespeichert)) as Map<String, dynamic>;
+    final neu = migrateStoredReceiptJson(kopie);
+    expect(jsonEncode(kopie), jsonEncode(gespeichert), reason: 'die Eingabe bleibt unberuehrt, auch tief');
+    expect(neu.containsKey('lagerStandortId'), isFalse);
+    expect(neu['items'], [
+      {'name': 'Kaffee', 'quantity': -1, 'unitPriceCents': 280, 'vatRate': 20, 'articleId': 'a1', 'originalIndex': 0, 'returnDisposition': 'defective'},
+      // Ein Wert ausserhalb des Katalogs faellt weg (wie am Rand des Servers).
+      {'name': 'Tee', 'quantity': -1, 'unitPriceCents': 250, 'vatRate': 20, 'articleId': 'a2'},
+      // Der englische Schluessel gewinnt gegen seinen deutschen Vorgaenger.
+      {'name': 'Saft', 'quantity': -1, 'unitPriceCents': 300, 'vatRate': 20, 'returnDisposition': 'restock'},
+    ]);
+    expect((neu['cancellations'] as List).single['items'], [
+      {'index': 0, 'quantity': 1, 'returnDisposition': 'restock'},
+      {'index': 1, 'quantity': 1},
+    ]);
+    // Jeder Wert des Katalogs RUECKGABE wird so uebersetzt wie im Vertrag.
+    final katalog = (_vokabular['catalogs'] as Map)['RUECKGABE'] as Map;
+    for (final MapEntry(:key, :value) in katalog.entries) {
+      final zeile = (migrateStoredReceiptJson({
+        'items': [
+          {'rueckgabe': key},
+        ],
+      })['items'] as List).single as Map;
+      expect(zeile, {'returnDisposition': value}, reason: '$key');
+    }
+    // Ohne Lagerfelder bleibt alles, wie es war.
+    expect(migrateStoredReceiptJson({'items': [{'name': 'A'}]}), {'items': [{'name': 'A'}]});
   });
 }

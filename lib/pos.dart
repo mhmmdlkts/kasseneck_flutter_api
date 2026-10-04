@@ -68,6 +68,8 @@ export 'src/kasse/lager.dart'
         StockLocationType,
         StockValue,
         stockLocationTypes;
+// Rueckgabe-Wahl beim Storno (Lager).
+export 'src/kasse/rueckgabe.dart';
 export 'src/kasse/storno.dart';
 export 'src/kasse/texte.dart';
 export 'src/kasse/warenkorb.dart';

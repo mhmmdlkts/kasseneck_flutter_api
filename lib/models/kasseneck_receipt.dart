@@ -16,6 +16,7 @@ import '../enums/keck_payment_method.dart';
 import '../enums/qr_print_mode.dart';
 import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/qr_groesse.dart';
+import '../src/kasse/rueckgabe.dart';
 import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
@@ -323,7 +324,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       customProjectId: receipt['customProjectId'] is String ? receipt['customProjectId'] as String : null,
       cancellations: [
         for (final e in (receipt['cancellations'] as List?) ?? const [])
-          if (e is Map) Map<String, dynamic>.from(e),
+          if (e is Map) _stornoEintrag(e),
       ],
       showKreiseckLogo: showKreiseckLogo,
       logoScale: logoScale,
@@ -691,9 +692,59 @@ String _text(Object? wert) => wert is String ? wert : '';
 /// Ein Text, der nur zaehlt, wenn er nicht leer ist.
 String? _nichtLeer(Object? wert) => wert is String && wert.isNotEmpty ? wert : null;
 
+/// Ein Eintrag aus `cancellations[]`, roh wie vom Backend – nur die
+/// Rueckgabe-Wahl je Position wird gelesen wie im JS-Zwilling (`leseStorno`):
+/// ein Wert ausserhalb von `returnDispositions` faellt weg.
+Map<String, dynamic> _stornoEintrag(Map eintrag) {
+  final raus = Map<String, dynamic>.from(eintrag);
+  final positionen = raus['items'];
+  if (positionen is List) {
+    raus['items'] = [
+      for (final p in positionen)
+        if (p is Map && p.containsKey('returnDisposition') && !isReturnDisposition(p['returnDisposition']))
+          Map<String, dynamic>.from(p)..remove('returnDisposition')
+        else
+          p,
+    ];
+  }
+  return raus;
+}
+
+/// Rueckgabe-Wahl innen (gespeichert, deutsch) -> aussen; Zwilling von
+/// `_RUECKGABE_NACH_AUSSEN` in `stored/draht.ts` (Katalog `RUECKGABE`).
+const Map<Object?, String> _rueckgabeNachAussen = {'lager': 'restock', 'defekt': 'defective', 'entsorgt': 'disposed'};
+
+/// Interne Belegfelder, die keine Antwort traegt: der Lager-Standort der
+/// Kasse, den das Backend fuer die Lagerbuchung an den Beleg kopiert
+/// (Zwilling von `INTERNE_BELEG_FELDER` in `stored/draht.ts`).
+const List<String> _interneBelegFelder = ['lagerStandortId'];
+
+/// Positionen mit `rueckgabe` -> `returnDisposition` an derselben Stelle
+/// (Zwilling von `rueckgabeUmbenennen`): ein Wert ausserhalb des Katalogs
+/// faellt weg, ein schon englischer Schluessel gewinnt. Kopiert, veraendert
+/// die Eingabe nie.
+Object? _zeilenMitRueckgabe(Object? positionen) {
+  if (positionen is! List) return positionen;
+  return [
+    for (final p in positionen)
+      if (p is Map && p.containsKey('rueckgabe'))
+        {
+          for (final MapEntry(:key, :value) in p.entries)
+            if (key != 'rueckgabe')
+              '$key': value
+            else if (!p.containsKey('returnDisposition') && _rueckgabeNachAussen[value] != null)
+              'returnDisposition': _rueckgabeNachAussen[value],
+        }
+      else
+        p,
+  ];
+}
+
 /// Bringt einen Beleg in der gespeicherten Form von 9.x (`toJson` mit 0.x-
 /// Namen: `uid`, `taxnr`, `logo_skala`, `testCashregister`, `testSignatur`, `kopfId`,
-/// Layout mit `regelwerk`/`ton`) in die Form von `/v3`, die
+/// Layout mit `regelwerk`/`ton`; an Storno-Zeilen und in `cancellations[]`
+/// `rueckgabe` statt `returnDisposition`, dazu `lagerStandortId`, das wegfaellt)
+/// in die Form von `/v3`, die
 /// [KasseneckReceipt.fromJson] liest. Fuer lokale Ablagen, die das Update
 /// ueberleben muessen: gelesen wird migriert, verworfen wird nichts. Schon
 /// englische Schluessel bleiben, wie sie sind; ein englischer Schluessel
@@ -715,6 +766,19 @@ Map<String, dynamic> migrateStoredReceiptJson(Map<String, dynamic> stored) {
     if (!neu.containsKey(vorher)) continue;
     final wert = neu.remove(vorher);
     neu.putIfAbsent(nachher, () => wert);
+  }
+  // Lager (wie `./stored` im JS-Paket ab 1.2.0): der Standort der Kasse ist
+  // ein internes Feld, `rueckgabe` heisst aussen `returnDisposition` – an den
+  // Positionen und in `cancellations[]`.
+  for (final feld in _interneBelegFelder) {
+    neu.remove(feld);
+  }
+  if (neu['items'] is List) neu['items'] = _zeilenMitRueckgabe(neu['items']);
+  if (neu['cancellations'] is List) {
+    neu['cancellations'] = [
+      for (final c in neu['cancellations'] as List)
+        if (c is Map && c['items'] is List) {...c, 'items': _zeilenMitRueckgabe(c['items'])} else c,
+    ];
   }
   final pruef = neu.remove('pruefangaben');
   if (pruef is Map && !neu.containsKey('registrationInfo')) {

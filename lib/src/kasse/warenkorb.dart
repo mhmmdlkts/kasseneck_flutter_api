@@ -28,6 +28,7 @@ class Position {
     required this.priceCents,
     required this.vat,
     this.maxQuantity,
+    this.articleId,
   });
 
   /// Kennung nur fuer diesen Bildschirm: zwei gleich aussehende Positionen sind
@@ -44,6 +45,10 @@ class Position {
   /// Hoechstmenge je Beleg (vom Artikel); fehlt bei freien Positionen.
   final int? maxQuantity;
 
+  /// Artikel-Verweis (Kachel); fehlt bei freien Positionen. Reist in die
+  /// Belegposition (Erloesgruppen im Bericht, Lagerbuchung).
+  final String? articleId;
+
   /// Zeilensumme in ganzen Cent — beide Faktoren sind ganze Zahlen.
   int get lineTotalCents => priceCents * quantity;
 
@@ -54,11 +59,13 @@ class Position {
         priceCents: priceCents,
         vat: vat,
         maxQuantity: maxQuantity,
+        articleId: articleId,
       );
 
-  /// Als Belegposition — ohne die Kassen-Kennung, die das Backend nichts angeht.
+  /// Als Belegposition — ohne die Kassen-Kennung, die das Backend nichts
+  /// angeht; mit dem Artikel-Verweis, wenn es einen gibt.
   KasseneckItem toReceiptItem() =>
-      KasseneckItem(name: name, quantity: quantity, priceCents: priceCents, vat: vat);
+      KasseneckItem(name: name, quantity: quantity, priceCents: priceCents, vat: vat, articleId: articleId);
 }
 
 /// Was der Kassier eingegeben hat, bevor daraus eine Position wird.
@@ -68,6 +75,7 @@ class CartItemDraft {
     required this.unitPriceCents,
     required this.vatRate,
     this.maxQuantity,
+    this.articleId,
   });
 
   /// Pflicht. § 132a BAO verlangt die handelsuebliche Bezeichnung auf dem Beleg.
@@ -79,6 +87,10 @@ class CartItemDraft {
 
   /// Hoechstmenge je Beleg (Artikel); die Menge im Korb geht nie darueber.
   final int? maxQuantity;
+
+  /// Artikel-Verweis (Kachel); fehlt bei freien Positionen. Ein leerer Wert
+  /// gilt als keiner.
+  final String? articleId;
 }
 
 /// Eine Anzeigezeile des Korbs: gebuendelt (Menge × Preis) oder je Stueck einzeln.
@@ -126,6 +138,7 @@ class Cart {
         priceCents: draft.unitPriceCents,
         vat: draft.vatRate,
         maxQuantity: grenze,
+        articleId: draft.articleId == null || draft.articleId!.isEmpty ? null : draft.articleId,
       ),
     ]);
   }

@@ -959,7 +959,10 @@ void main() {
         'listMyArticleGroups.groups[]': (ArticleGroup.fields, const {'symbol', 'vatRate'}),
         'listMyArticles': (const {'articles'}, const {}),
         'listMyArticles.articles[]':
-            (PosArticle.fields, const {'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds'}),
+            (PosArticle.fields, const {
+              'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds',
+              'number', 'ean', 'internalCode', 'stockTracked',
+            }),
         'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),
         'setMyKasseLogo': (const {'logoImage'}, const {}),
         'listMyPrinters': (const {'printers'}, const {}),

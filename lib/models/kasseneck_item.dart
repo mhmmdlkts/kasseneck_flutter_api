@@ -1,4 +1,5 @@
 import '../enums/vat_rate.dart';
+import '../src/kasse/rueckgabe.dart';
 
 class KasseneckItem {
   /// Name des Artikels / der Dienstleistung
@@ -45,6 +46,15 @@ class KasseneckItem {
   /// im Bericht. Optional; Handeingaben haben keinen.
   final String? articleId;
 
+  /// Nur an Storno-Zeilen mit [articleId]: Index der Position im Original.
+  /// Setzt der Server; `null` an allen anderen Zeilen.
+  final int? originalIndex;
+
+  /// Nur an Storno-Zeilen mit [articleId]: wohin die Ware ging (Lager), ein
+  /// Wert aus `returnDispositions`. Setzt der Server; ein unbekannter Wert
+  /// faellt beim Lesen weg (`null`), wie am Rand des Servers.
+  final String? returnDisposition;
+
   KasseneckItem({
     required this.name,
     required this.quantity,
@@ -56,6 +66,8 @@ class KasseneckItem {
     this.articleId,
     this.receivedImmediately,
     this.lossyRead,
+    this.originalIndex,
+    this.returnDisposition,
   });
 
   /// Trinkgeld-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
@@ -145,6 +157,10 @@ class KasseneckItem {
       },
       if (kind == 'discount') 'kind': 'discount',
       if (articleId != null && articleId!.isNotEmpty) 'articleId': articleId,
+      // Nur an gelesenen Storno-Zeilen gesetzt (der Zwischenspeicher behaelt
+      // sie); eine Verkaufszeile traegt beides nie.
+      'originalIndex': ?originalIndex,
+      'returnDisposition': ?returnDisposition,
     };
   }
 
@@ -176,6 +192,10 @@ class KasseneckItem {
       articleId: json['articleId'] is String && (json['articleId'] as String).isNotEmpty ? json['articleId'] as String : null,
       receivedImmediately: kind == 'tip' && json['receivedImmediately'] is bool ? json['receivedImmediately'] as bool : null,
       lossyRead: ungenau,
+      // Lager: Bezug und Rueckgabe-Wahl einer Storno-Zeile (nur gelesen; ein
+      // unbekannter Wert faellt weg wie im JS-Zwilling).
+      originalIndex: json['originalIndex'] is int && (json['originalIndex'] as int) >= 0 ? json['originalIndex'] as int : null,
+      returnDisposition: isReturnDisposition(json['returnDisposition']) ? json['returnDisposition'] as String : null,
     );
   }
 

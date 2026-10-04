@@ -269,6 +269,36 @@ void main() {
       expect(PosArticle.fromJson(ohne.toJson()).stockLocationIds, isNull);
     });
 
+    test('PosArticle-Codes (npm 1.3.0): Text unveraendert, leer/Leerraum/falscher Typ = null; stockTracked nur bool',
+        () {
+      final mit = PosArticle.fromJson({
+        'id': 'a',
+        'name': 'Semmel',
+        'number': '00123',
+        'ean': '9001234567897',
+        'internalCode': ' K-7 ',
+        'stockTracked': true,
+      });
+      expect([mit.number, mit.ean, mit.internalCode, mit.stockTracked], ['00123', '9001234567897', ' K-7 ', true]);
+      // Der Zwischenspeicher behaelt alles.
+      final zurueck = PosArticle.fromJson(mit.toJson());
+      expect([zurueck.number, zurueck.ean, zurueck.internalCode, zurueck.stockTracked],
+          ['00123', '9001234567897', ' K-7 ', true]);
+      expect(PosArticle.fromJson({'id': 'a', 'stockTracked': false}).stockTracked, isFalse);
+
+      for (final falsch in <Object?>['', '   ', '\t', 123, true, null]) {
+        final a = PosArticle.fromJson({'id': 'a', 'number': falsch, 'ean': falsch, 'internalCode': falsch});
+        expect([a.number, a.ean, a.internalCode], [null, null, null], reason: '$falsch');
+      }
+      for (final falsch in <Object?>['true', 1, null]) {
+        expect(PosArticle.fromJson({'id': 'a', 'stockTracked': falsch}).stockTracked, isNull, reason: '$falsch');
+      }
+      final ohne = PosArticle.fromJson({'id': 'a', 'name': 'Kaffee'});
+      expect([ohne.number, ohne.ean, ohne.internalCode, ohne.stockTracked], [null, null, null, null]);
+      final leer = PosArticle.fromJson(ohne.toJson());
+      expect([leer.number, leer.ean, leer.internalCode, leer.stockTracked], [null, null, null, null]);
+    });
+
     test('CashregisterEntry.stockLocationId: fehlt oder leer = null (Standard-Standort)', () {
       Map<String, dynamic> kasse(Object? standort) => {'id': 'KASSE1', 'onboarding': {}, 'stockLocationId': standort};
       expect(CashregisterEntry.fromJson(kasse('auto1')).stockLocationId, 'auto1');

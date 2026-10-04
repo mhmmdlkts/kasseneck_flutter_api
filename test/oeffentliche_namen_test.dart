@@ -52,7 +52,7 @@ final Set<String> woerter = _liste('''
   declined decommissioned default defaults defective delta denied density depth
   description detail details device devices diagnosis differs digits
   dimensions direct directory disabled discount discover discovered discovery
-  dispose distance distribute divider documented done dots double download
+  dispose disposed disposition dispositions distance distribute divider documented done dots double download
   draft drawer dry due effect email emoji empty enable enabled encode encoded end
   enrollment entered entry enums envelope environment error errors euro event
   everywhere exact exceeded exception expected expired expires expiry external
@@ -86,8 +86,8 @@ final Set<String> woerter = _liste('''
   reason reasons receipt receipts received recipient recipients record redeem
   reference refresh refund refunds register registered registration rejected
   rejects related remaining remove removed render renew replacement replayed report
-  reports request required requirement requirements reservation reserved reset resolve
-  resolved resolving response result retries retry revenue reversal reverse
+  reports request required requirement requirements reservation reserved reset resolve restock
+  resolved resolving response result retries retry return revenue reversal reverse
   reversed right rotate row rows rule rules ruleset run safely sale saturation
   save scale scales scan scanned scheme schemes scope screen search seconds
   secret seen select selected selection sell sellable send sent september serial server
@@ -100,7 +100,7 @@ final Set<String> woerter = _liste('''
   success sum summary supported surface symbol table tables takeover tax technical
   tendered term terminal terminals test text texts thanks theme tile tiles
   time timeout timestamp tip title to today token tone top total totals touch
-  tracking training transaction transfer transmitted transport tries turn
+  tracked tracking training transaction transfer transmitted transport tries turn
   turnover twelfths type types unavailable uncertain underline ungrouped unit
   unexpected units unknown unpack unpaid unpair unresolved unsupported untangle until
   update updated usable user users valid validation value values vehicle verification

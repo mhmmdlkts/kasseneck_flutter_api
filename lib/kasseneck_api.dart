@@ -28,6 +28,7 @@ import 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
 import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
 import 'src/receipt/codes.dart' show receiptEmailErrorCodes;
 import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons;
+import 'src/kasse/storno_nutzlast.dart';
 import 'src/register/fehler.dart';
 import 'src/v3.dart';
 
@@ -65,6 +66,8 @@ export 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
 export 'src/kasse/belegmail.dart'
     show SendReceiptEmailResult, isReceiptEmailErrorCode;
 export 'src/kasse/storno.dart' show cancellationReasons, isCancellationErrorCode, cardRefundReference;
+// Rueckgabe-Wahl beim Storno (Lager): KasseneckApi.cancelReceipt nimmt sie.
+export 'src/kasse/rueckgabe.dart';
 // Mehrere Zahlungen je Beleg: `sellReceipt(payments:)` und
 // `cancel(zahlungen:)` nehmen KeckPaymentInput, der Beleg traegt
 // KeckPayment, Ablehnungen kommen mit einem Code aus paymentErrorCodes.
@@ -383,11 +386,22 @@ class KasseneckApi {
   /// `cancellationErrorCodes` – daran entscheiden, nie am Text. Ist der Storno
   /// gebucht, die Antwort aber unlesbar, kommt `response_unreadable` mit
   /// Ausgang unklar (`isOutcomeUnknown`): nachlesen, nie wiederholen.
+  ///
+  /// [returnDisposition] sagt, wohin die Ware der stornierten Artikelzeilen
+  /// geht (Lager): `restock`, `defective` oder `disposed` aus
+  /// `returnDispositions`, fuer alle Positionen. [itemReturnDispositions]
+  /// waehlt je Position abweichend (Schluessel = Index im Original, wie in
+  /// [items]; nur fuer Positionen in [items]). Fehlt beides, bucht der Server
+  /// `restock`; Zeilen ohne `articleId` bucht er nie. Ein unbekannter Wert
+  /// wirft, bevor etwas hinausgeht. Ohne Wahl ist die Nutzlast dieselbe wie
+  /// vor 10.2.
   Future<CancelReceiptResult> cancelReceipt({
     required String cashregisterId,
     required String originalReceiptId,
     required String reason,
     List<CancellationItem>? items,
+    String? returnDisposition,
+    Map<int, String>? itemReturnDispositions,
     String? note,
     List<KeckPaymentInput>? payments,
     KasseneckReceipt? original,
@@ -410,6 +424,12 @@ class KasseneckApi {
         throw const KasseneckValidationError(name, 'Storno-Menge muss eine ganze Zahl >= 1 sein', 'request');
       }
     }
+    final nutzlast = cancellationPayload(
+      name,
+      items: items,
+      returnDisposition: returnDisposition,
+      itemReturnDispositions: itemReturnDispositions,
+    );
     if (note != null && note.length > 200) {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
@@ -432,7 +452,8 @@ class KasseneckApi {
         'cashregisterId': cashregisterId,
         'originalReceiptId': originalReceiptId,
         'reason': reason,
-        if (items != null) 'items': [for (final p in items) {'index': p.index, 'quantity': p.quantity}],
+        'items': ?nutzlast.items,
+        'returnDisposition': ?nutzlast.returnDisposition,
         if (note != null && note.isNotEmpty) 'note': note,
         if (payments != null) 'payments': [for (final z in payments) z.toJson()],
       },

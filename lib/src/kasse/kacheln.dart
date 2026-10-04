@@ -111,6 +111,7 @@ CartItemDraft? draftFromArticle(PosArticle a) {
     unitPriceCents: preis,
     vatRate: satz,
     maxQuantity: a.maxQuantity?.toInt(),
+    articleId: a.id.isEmpty ? null : a.id,
   );
 }
 
@@ -137,15 +138,20 @@ class TileBooking {
 
 /// Kachel in den Korb.
 ///
-/// Mit [bundle] wird eine gleiche Zeile (Name, Preis, Satz) hochgezählt, ohne
-/// entsteht je Griff eine Zeile. Die Höchstmenge des Artikels hält auch hier —
+/// Mit [bundle] wird eine gleiche Zeile (Name, Preis, Satz **und**
+/// Artikel-ID) hochgezählt, ohne entsteht je Griff eine Zeile. Zwei Artikel
+/// gleichen Aussehens bleiben zwei Zeilen (jeder bucht sein eigenes Lager),
+/// ebenso ein Artikel und eine freie Position; freie Positionen ohne ID
+/// bündeln wie bisher. Die Höchstmenge des Artikels hält auch hier —
 /// [Cart.withQuantity] deckelt, egal woher der Griff kommt.
 TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   if (bundle) {
+    final artikel = draft.articleId == null || draft.articleId!.isEmpty ? null : draft.articleId;
     for (final p in cart.items) {
       if (p.name != draft.name.trim()) continue;
       if (p.priceCents != draft.unitPriceCents) continue;
       if (p.vat != draft.vatRate) continue;
+      if (p.articleId != artikel) continue;
       final neu = cart.withQuantity(p.id, p.quantity + 1);
       final zeile = neu.items.firstWhere((z) => z.id == p.id);
       return TileBooking(cart: neu, lineId: p.id, quantity: zeile.quantity);

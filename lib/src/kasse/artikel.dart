@@ -110,7 +110,7 @@ QuantityDefaults quantityDefaults(PosArticle a) {
 class PosArticle {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds'};
+  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked'};
 
   /// Die Felder von `tile`.
   static const Set<String> tileFields = {'visible', 'sort'};
@@ -130,6 +130,10 @@ class PosArticle {
     this.askQuantity,
     this.maxQuantity,
     this.stockLocationIds,
+    this.number,
+    this.ean,
+    this.internalCode,
+    this.stockTracked,
   });
 
   final String id;
@@ -166,8 +170,25 @@ class PosArticle {
   /// entscheidet die Oberflaeche.
   final List<String>? stockLocationIds;
 
+  /// Artikelnummer des Betriebs; `null` = keine. Diese und die beiden
+  /// folgenden Texte (Scanner-Suche) kommen unveraendert durch (fuehrende
+  /// Nullen, Schreibweise, Leerraum); nur ein leerer Text (auch reiner
+  /// Leerraum) oder ein anderer Typ wird `null`.
+  final String? number;
+
+  /// EAN/GTIN, wie gespeichert; `null` = keine.
+  final String? ean;
+
+  /// Interner Code des Betriebs (eigener Barcode/QR); `null` = keiner.
+  final String? internalCode;
+
+  /// Bestandsgefuehrt (Lager-Modul). `null`, wenn die Antwort keine Angabe
+  /// traegt (aeltere Backends) – dann nicht aus anderen Feldern ableiten.
+  final bool? stockTracked;
+
   /// Aus der Drahtform `/api/v3` (`tile {visible, sort}`, `quantityRule`,
-  /// `askQuantity`, `maxQuantity`, `revenueGroupId`, `stockLocationIds`).
+  /// `askQuantity`, `maxQuantity`, `revenueGroupId`, `stockLocationIds`,
+  /// `number`, `ean`, `internalCode`, `stockTracked`).
   ///
   /// Liest auch einen **Zwischenspeicher der Version 9.x** (`kasse
   /// {sichtbar, sort}`, `quantityRule stueck|dezimal`, `askQuantity`,
@@ -209,6 +230,10 @@ class PosArticle {
       // Leere und fremde Eintraege fallen heraus wie im JS-Zwilling; eine
       // leere Liste bleibt leer und wird nicht zu null.
       stockLocationIds: standorte is List ? [for (final s in standorte) if (s is String && s.isNotEmpty) s] : null,
+      number: _textOderNull(json['number']),
+      ean: _textOderNull(json['ean']),
+      internalCode: _textOderNull(json['internalCode']),
+      stockTracked: json['stockTracked'] is bool ? json['stockTracked'] as bool : null,
     );
   }
 
@@ -228,8 +253,16 @@ class PosArticle {
         'askQuantity': askQuantity,
         'maxQuantity': maxQuantity,
         'stockLocationIds': stockLocationIds,
+        'number': number,
+        'ean': ean,
+        'internalCode': internalCode,
+        'stockTracked': stockTracked,
       };
 }
+
+/// Ein Text mit Inhalt, unveraendert; leer, nur Leerraum oder kein Text -> `null`
+/// (Zwilling von `textOderNull` in `pos/artikel.ts`).
+String? _textOderNull(Object? wert) => wert is String && wert.trim().isNotEmpty ? wert : null;
 
 /// Deckelt eine gewünschte Menge an der Höchstmenge des Artikels.
 num allowedQuantity(PosArticle a, num wanted) {
