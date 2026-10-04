@@ -629,7 +629,7 @@ class RegisterReceiptClient {
   /// Ein leerer Filter gilt wie keiner; [belowMinimum] geht nur als `true`
   /// hinaus (`false` filtert am Server nicht). Eine fehlende oder gebrochene
   /// Menge wird nie zu 0, sondern endet mit [KasseneckValidationError]
-  /// (`kind: response`) — „Lager voruebergehend nicht verfuegbar", der Verkauf
+  /// (`kind: response`) — „Lager voruebergehend nicht verfuegbar“, der Verkauf
   /// laeuft weiter.
   Future<StockList> stock({String? locationId, String? articleId, bool? belowMinimum}) async {
     const name = Aufrufe.listMyStock;

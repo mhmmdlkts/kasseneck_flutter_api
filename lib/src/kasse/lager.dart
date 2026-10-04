@@ -11,8 +11,8 @@
 /// ist eine Aussage des Servers und bleibt negativ. Eine Zahl, die keine
 /// Ganzzahl ist, oder eine fehlende Menge wird **nie** zu `0`: der Aufruf
 /// endet mit [KasseneckValidationError] (`kind: response`), denn „kein
-/// Bestand" und „Antwort kaputt" sind verschiedene Aussagen. Die Kasse liest
-/// das als „Lager voruebergehend nicht verfuegbar" und verkauft weiter.
+/// Bestand" und „Antwort kaputt“ sind verschiedene Aussagen. Die Kasse liest
+/// das als „Lager voruebergehend nicht verfuegbar“ und verkauft weiter.
 library;
 
 import '../register/fehler.dart';
@@ -129,7 +129,7 @@ class StockList {
 
   /// `null`, wenn der Aufrufer das Recht `stockCosts` nicht hat (der Server
   /// laesst das Feld weg); leer, wenn er es hat und nichts bewertet ist. Eine
-  /// Oberflaeche zeigt bei `null` keinen Wert, nie „0,00 €".
+  /// Oberflaeche zeigt bei `null` keinen Wert, nie „0,00 €“.
   final List<StockValue>? values;
 }
 

@@ -51,7 +51,7 @@ new fields send the same bytes as in 10.1.2. One behaviour change in
   carry `KasseneckItem.originalIndex` and `.returnDisposition`; an unknown
   choice in `cancellations[]` is dropped when reading, as in npm.
 - **Article codes** on `PosArticle`: `number`, `ean`, `internalCode`
-  (unchanged text, empty or wrong type becomes `null`) and `stockTracked`
+  (unchanged text; empty, whitespace-only or wrong type becomes `null`) and `stockTracked`
   (`bool?`, `null` = the response says nothing).
 - **Article id in the cart.** `CartItemDraft.articleId` and
   `Position.articleId` (optional); `draftFromArticle` sets it, the cart keeps

@@ -13,6 +13,7 @@ library;
 
 import '../../enums/vat_rate.dart';
 import 'artikel.dart';
+import 'artikel_id.dart';
 import 'warenkorb.dart';
 
 const String ungroupedId = '__ohne__';
@@ -111,7 +112,7 @@ CartItemDraft? draftFromArticle(PosArticle a) {
     unitPriceCents: preis,
     vatRate: satz,
     maxQuantity: a.maxQuantity?.toInt(),
-    articleId: a.id.isEmpty ? null : a.id,
+    articleId: artikelIdOderNull(a.id),
   );
 }
 
@@ -148,12 +149,12 @@ class TileBooking {
 /// Griff kommt.
 TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   if (bundle) {
-    final artikel = _artikelId(draft.articleId);
+    final artikel = artikelIdOderNull(draft.articleId);
     for (final p in cart.items) {
       if (p.name != draft.name.trim()) continue;
       if (p.priceCents != draft.unitPriceCents) continue;
       if (p.vat != draft.vatRate) continue;
-      if (_artikelId(p.articleId) != artikel) continue;
+      if (artikelIdOderNull(p.articleId) != artikel) continue;
       final neu = cart.withQuantity(p.id, p.quantity + 1);
       final zeile = neu.items.firstWhere((z) => z.id == p.id);
       return TileBooking(cart: neu, lineId: p.id, quantity: zeile.quantity);
@@ -167,5 +168,3 @@ TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   return TileBooking(cart: neu, lineId: neu.items.last.id, quantity: 1);
 }
 
-/// Leere Artikel-ID → `null`, damit „leer" und „keine" gleich vergleichen.
-String? _artikelId(String? id) => id == null || id.isEmpty ? null : id;

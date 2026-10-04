@@ -17,6 +17,7 @@ library;
 
 import '../../enums/vat_rate.dart';
 import '../../models/kasseneck_item.dart';
+import 'artikel_id.dart';
 import 'einstellungen.dart';
 
 /// Eine Position des laufenden Verkaufs.
@@ -138,7 +139,7 @@ class Cart {
         priceCents: draft.unitPriceCents,
         vat: draft.vatRate,
         maxQuantity: grenze,
-        articleId: draft.articleId == null || draft.articleId!.isEmpty ? null : draft.articleId,
+        articleId: artikelIdOderNull(draft.articleId),
       ),
     ]);
   }
