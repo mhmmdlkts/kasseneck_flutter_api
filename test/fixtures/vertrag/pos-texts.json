@@ -1,5 +1,5 @@
 {
-  "version": "1.2.2",
+  "version": "1.3.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -332,6 +332,9 @@
     },
     "cancellation.cards_not_checked": {
       "text": "Noch ist nicht jede Karte abgehakt – bitte jede am Terminal gutschreiben. Ist das schon geschehen, zum Schließen noch einmal drücken."
+    },
+    "cancellation.input_rejected": {
+      "text": "Die Eingabe wurde abgelehnt – bitte das Storno neu beginnen."
     },
     "split.setting_hint": {
       "text": "Ein Tisch zahlt in Teilen: jede Zahlung bar oder mit Karte, mit eigenem Trinkgeld – am Ende ein Beleg für alles."
@@ -1076,6 +1079,38 @@
     },
     "codetable.other_row": {
       "text": "Andere Zeile"
+    },
+    "stock.all_articles": {
+      "text": "Alle Artikel"
+    },
+    "stock.location": {
+      "text": "Lager-Standort"
+    },
+    "stock.default_location": {
+      "text": "Standard-Standort"
+    },
+    "stock.resolved": {
+      "text": "aufgelöst"
+    },
+    "stock.where_to": {
+      "text": "Wohin mit der Ware?"
+    },
+    "stock.available": {
+      "text": "verfügbar"
+    },
+    "stock.return_restock": {
+      "text": "Zurück ins Lager"
+    },
+    "stock.return_defective": {
+      "text": "Defekt"
+    },
+    "stock.return_disposed": {
+      "text": "Entsorgt"
     }
+  },
+  "returnDispositionLabels": {
+    "restock": "stock.return_restock",
+    "defective": "stock.return_defective",
+    "disposed": "stock.return_disposed"
   }
 }

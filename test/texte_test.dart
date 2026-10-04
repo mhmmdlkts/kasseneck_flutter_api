@@ -180,4 +180,12 @@ void main() {
       expect(posMessages, contains(k));
     }
   });
+
+  test('Rueckgabe beim Storno: jede Wahl zeigt auf eine Beschriftung, die es gibt', () {
+    expect(returnDispositionLabels.keys, ['restock', 'defective', 'disposed']);
+    for (final k in returnDispositionLabels.values) {
+      expect(posLabels, contains(k));
+    }
+    expect(labelText(returnDispositionLabels['restock']!), 'Zurück ins Lager');
+  });
 }

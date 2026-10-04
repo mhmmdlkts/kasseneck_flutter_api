@@ -66,6 +66,7 @@ void main() {
     expect(callsWithEffect, _vertrag['callsWithEffect']);
     expect(receiptEmailErrorMessages, _vertrag['receiptEmailErrors']);
     expect(cancellationPaymentErrorMessages, _vertrag['cancellationPaymentErrors']);
+    expect(returnDispositionLabels, _vertrag['returnDispositionLabels']);
   });
 
   test('callsWithEffect steht gleich in surface.json (pos.callsWithEffect)', () {

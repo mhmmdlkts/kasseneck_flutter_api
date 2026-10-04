@@ -29,6 +29,7 @@ const List<String> _dateiSchluessel = [
   'receiptEmailErrors',
   'cancellationPaymentErrors',
   'labels',
+  'returnDispositionLabels',
 ];
 
 /// `plain_text` -> `plainText`: der Name des Enum-Werts zum Drahtwert.
@@ -136,6 +137,8 @@ String erzeugeKatalog(Map<String, dynamic> vertrag) {
   zuordnung('receiptEmailErrorMessages', 'receiptEmailErrors', 'Beleg per E-Mail: Code des Backends -> Schluessel des Satzes.');
   zuordnung('cancellationPaymentErrorMessages', 'cancellationPaymentErrors',
       'Storno mit mehreren Zahlungen: Code des Backends -> Schluessel des Satzes.');
+  zuordnung('returnDispositionLabels', 'returnDispositionLabels',
+      'Rueckgabe beim Storno: Wahl (`restock`, `defective`, `disposed`) -> Schluessel der Beschriftung.');
   return sb.toString().replaceFirst(RegExp(r'\n+$'), '\n');
 }
 
