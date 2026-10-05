@@ -41,6 +41,8 @@ abstract final class Aufrufe {
   static const listMyArticleGroups = 'listMyArticleGroups';
   static const listMyArticles = 'listMyArticles';
   static const listMyReceipts = 'listMyReceipts';
+  static const listMyStock = 'listMyStock';
+  static const listMyStockLocations = 'listMyStockLocations';
   static const listMyTipRecipients = 'listMyTipRecipients';
   static const listRegisterSessionsForDevice = 'listRegisterSessionsForDevice';
   static const listRegisterUsersForDevice = 'listRegisterUsersForDevice';
@@ -60,6 +62,7 @@ abstract final class Aufrufe {
   static const listMyCashregisters = 'listMyCashregisters';
   static const listMyPrinters = 'listMyPrinters';
   static const setMyKasseLogo = 'setMyKasseLogo';
+  static const setMyCashregisterStockLocation = 'setMyCashregisterStockLocation';
   static const updateCustomer = 'updateCustomer';
 
   /// Alle Namen, die dieses Paket kennt.
@@ -93,6 +96,8 @@ abstract final class Aufrufe {
     listMyArticleGroups,
     listMyArticles,
     listMyReceipts,
+    listMyStock,
+    listMyStockLocations,
     listMyTipRecipients,
     listRegisterSessionsForDevice,
     listRegisterUsersForDevice,
@@ -112,6 +117,7 @@ abstract final class Aufrufe {
     listMyCashregisters,
     listMyPrinters,
     setMyKasseLogo,
+    setMyCashregisterStockLocation,
     updateCustomer,
   };
 }

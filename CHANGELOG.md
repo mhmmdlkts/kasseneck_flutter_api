@@ -1,3 +1,91 @@
+## 10.2.0
+
+Twin of `@kreiseck/kasseneck-api` `1.3.0` (contract files pulled from that
+version): the stock feature of npm 1.2.0 and the article codes and stock
+labels of npm 1.3.0. Closes issue #85. Reason: since stage 2 of the stock
+module the backend books sales, cancellations and invoices against the stock
+of a location; the register app has to show locations and stock, choose its
+own location, say where returned goods go and tell the server which article a
+line is, and external invoicing systems have to name the article.
+
+Additive, no breaking change: receipts, cancellations and invoices without the
+new fields send the same bytes as in 10.1.2. One behaviour change in
+`bookTile`, see "Article id in the cart".
+
+- **Stock at the register** (`pos.dart`, register path `/api/v3` only):
+  `RegisterReceiptClient.stockLocations()` (`listMyStockLocations`),
+  `.stock({locationId, articleId, belowMinimum})` (`listMyStock`) and
+  `.setStockLocation({required stockLocationId, cashregisterId})`
+  (`setMyCashregisterStockLocation`; `stockLocationId: null` resets to the
+  default location, the parameter is required so a reset is never an
+  accident). Models `StockLocation`, `StockLocationAddress`,
+  `StockLocationType`, `StockLevel`, `StockValue`, `StockList`,
+  `CashregisterStockLocation` and the list `stockLocationTypes`. Quantities are
+  integer thousandths of the base unit and keep their sign; `values` is `null`
+  without the permission `stockCosts`. A missing or fractional quantity is
+  never read as `0`: it throws `KasseneckValidationError` (`response`), and a
+  register treats that as "stock temporarily unavailable" and keeps selling.
+  New fields `PosArticle.stockLocationIds`, `CashregisterEntry.stockLocationId`
+  and `RegisterCashregisterState.stockLocationId`.
+- **Stock permissions** on `RegisterUserPerms`: `stockView` (`bool?`),
+  `stockCosts`, `stockMove`, `stockLoss`, `stocktakeCount`, `stocktakeClose`,
+  `stockLocation`; they no longer land in `other`. New
+  `stockViewOf(perms)` (`pos.dart` and `register.dart`): a missing `stockView`
+  counts as granted, only an explicit `false` blocks it, as in the backend.
+  **Note:** `perms['stockView']` still returns the raw value and gives `false`
+  when the key is missing, while `stockViewOf` gives `true`. For the display
+  always use `stockViewOf`.
+- **Returns on cancellation.** Both `cancelReceipt` (`KasseneckApi` and
+  `RegisterReceiptClient`) take `returnDisposition` (default for the call) and
+  `itemReturnDispositions` (`Map<int, String>`, line index as in `items` to
+  the choice for that line). Values from the new `returnDispositions`
+  (`restock`, `defective`, `disposed`; also `ReturnDisposition` and
+  `isReturnDisposition`, exported from `pos.dart`, `kasseneck_api.dart` and
+  `invoice.dart`). Checked before sending: an unknown value, a per-line choice
+  without `items` or for an index not in `items` throws
+  `KasseneckValidationError` (`request`). Why a map and not a third field on
+  `CancellationItem`: `CancellationItem` is the record
+  `({int index, int quantity})`, and record literals `(index: 0, quantity: 1)`
+  are used in apps and examples; records have no optional fields, so a third
+  field would break every one of them. Cancellation lines read from the server
+  carry `KasseneckItem.originalIndex` and `.returnDisposition`; an unknown
+  choice in `cancellations[]` is dropped when reading, as in npm.
+- **Article codes** on `PosArticle`: `number`, `ean`, `internalCode`
+  (unchanged text; empty, whitespace-only or wrong type becomes `null`) and `stockTracked`
+  (`bool?`, `null` = the response says nothing).
+- **Article id in the cart.** `CartItemDraft.articleId` and
+  `Position.articleId` (optional); `draftFromArticle` sets it, the cart keeps
+  it through `withQuantity` and `subtracted`, and the receipt item sends it
+  as `articleId`. **Behaviour change:** `bookTile(bundle: true)` now bundles
+  only lines with the same article id. Two articles that look the same (name,
+  price, rate) stay two lines, as do an article and a free item, because each
+  books its own stock. Free items (no id, or an empty one, also on a
+  hand-built `Position(articleId: '')`) bundle as before and send the same
+  bytes as before.
+- **Stored form.** `migrateStoredReceiptJson` drops the internal
+  `lagerStandortId` and turns `rueckgabe` into `returnDisposition` on items and
+  in `cancellations[].items` (`lager`/`defekt`/`entsorgt` to
+  `restock`/`defective`/`disposed`, unknown values are dropped). Stored
+  articles (`PosArticle.toJson`) carry `stockLocationIds` and the codes.
+- **Invoice API** (`invoice.dart`, as npm 1.2.0):
+  `InvoiceItemInput.articleId` and `IssueInvoiceRequest.stockLocationId`;
+  `returnDisposition` on `cancelInvoice` and `CreditNoteRequest`, per line
+  through the new `CreditNoteItemInput` (a subclass of `InvoiceItemInput`, so
+  `CreditNoteRequest.items` keeps its type and existing callers stay valid).
+  Fields go out only when set and exactly as given. As in npm, the server
+  checks them: an unknown return choice, a choice on an invoice line or an
+  id of the wrong shape comes back as `validation` with the field path
+  (`invoiceFieldErrors`). The six stock examples of the
+  contract (`invoice-api-examples/`) now run in `rechnung_api_test`; the skip
+  is gone.
+- **Contract npm 1.3.0**: the `stock.*` labels (`stock.all_articles`,
+  `stock.location`, `stock.default_location`, `stock.resolved`,
+  `stock.where_to`, `stock.available`, `stock.return_restock`,
+  `stock.return_defective`, `stock.return_disposed`), the message
+  `cancellation.input_rejected` and `returnDispositionLabels` (each return
+  choice to its label key) in the generated catalogue. The `offen` lines of
+  issue #85 in `zwillinge.yaml` are gone.
+
 ## 10.1.2
 
 Twin of `@kreiseck/kasseneck-api` `1.2.2` (contract files pulled from that

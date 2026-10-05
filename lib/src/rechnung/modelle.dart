@@ -302,6 +302,7 @@ class InvoiceItemInput implements TotalsItem {
     this.unit,
     this.kind,
     this.discountPct,
+    this.articleId,
   }) : assert(
           (unitPriceCents == null) != (unitPriceMicros == null),
           'Genau eines von unitPriceCents und unitPriceMicros angeben (§ 9.1).',
@@ -317,6 +318,7 @@ class InvoiceItemInput implements TotalsItem {
         unit: _text(j, 'unit'),
         kind: _text(j, 'kind'),
         discountPct: j['discountPct'] is num ? j['discountPct'] as num : null,
+        articleId: _text(j, 'articleId'),
       );
 
   final String description;
@@ -360,6 +362,12 @@ class InvoiceItemInput implements TotalsItem {
   @override
   final num? discountPct;
 
+  /// Artikel aus dem Artikelstamm (Lager). Ist er bestandsgeführt und das
+  /// Modul Lager aktiv, bucht das Ausstellen ihn ab – danach; die Rechnung
+  /// scheitert nie am Lager. Die Form (kein `/`, nicht `.`/`..`) prüft der
+  /// Server (`validation` mit Feldpfad).
+  final String? articleId;
+
   @override
   num get priceInCents => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
 
@@ -376,6 +384,59 @@ class InvoiceItemInput implements TotalsItem {
     _setzen(j, 'unitPriceMicros', unitPriceMicros);
     j['vatRate'] = vatRate;
     _setzen(j, 'discountPct', discountPct);
+    _setzen(j, 'articleId', articleId);
+    return j;
+  }
+}
+
+/// Eine Gutschriftsposition: wie [InvoiceItemInput], dazu die Rückgabe-Wahl.
+///
+/// Geht in [CreditNoteRequest.items]. An einer Rechnung ([IssueInvoiceRequest])
+/// kennt der Server das Feld nicht und weist eine gesetzte [returnDisposition]
+/// als `validation` (`items[i].returnDisposition`) ab.
+class CreditNoteItemInput extends InvoiceItemInput {
+  const CreditNoteItemInput({
+    required super.description,
+    required super.quantity,
+    super.unitPriceCents,
+    super.unitPriceMicros,
+    required super.vatRate,
+    super.subtitle,
+    super.unit,
+    super.kind,
+    super.discountPct,
+    super.articleId,
+    this.returnDisposition,
+  });
+
+  factory CreditNoteItemInput.fromJson(Map<String, dynamic> j) {
+    final p = InvoiceItemInput.fromJson(j);
+    return CreditNoteItemInput(
+      description: p.description,
+      quantity: p.quantity,
+      unitPriceCents: p.unitPriceCents,
+      unitPriceMicros: p.unitPriceMicros,
+      vatRate: p.vatRate,
+      subtitle: p.subtitle,
+      unit: p.unit,
+      kind: p.kind,
+      discountPct: p.discountPct,
+      articleId: p.articleId,
+      returnDisposition: _text(j, 'returnDisposition'),
+    );
+  }
+
+  /// Wohin die Ware dieser Position geht, aus `returnDispositions`; fehlt =
+  /// die Vorgabe der Gutschrift ([CreditNoteRequest.returnDisposition]) bzw.
+  /// `restock`. Wirkt nur an Positionen mit [articleId]. Als `String`, damit
+  /// ein unbekannter Wert unverändert beim Server ankommt und als
+  /// `validation` mit Feldpfad zurückkommt.
+  final String? returnDisposition;
+
+  @override
+  Map<String, dynamic> toJson() {
+    final j = super.toJson();
+    _setzen(j, 'returnDisposition', returnDisposition);
     return j;
   }
 }
@@ -400,6 +461,7 @@ class IssueInvoiceRequest {
     this.metadata,
     this.language,
     this.brandId,
+    this.stockLocationId,
     this.payment,
     this.dryRun,
   });
@@ -423,6 +485,7 @@ class IssueInvoiceRequest {
         metadata: j['metadata'] is Map ? Map<String, String>.from(j['metadata'] as Map) : null,
         language: _text(j, 'language'),
         brandId: _text(j, 'brandId'),
+        stockLocationId: _text(j, 'stockLocationId'),
         payment: j['payment'] is Map ? PaymentInput.fromJson(Map<String, dynamic>.from(j['payment'] as Map)) : null,
         dryRun: j['dryRun'] is bool ? j['dryRun'] as bool : null,
       );
@@ -461,6 +524,12 @@ class IssueInvoiceRequest {
   /// Marke (Kennung aus `listBrands`); sonst die Standardmarke.
   final String? brandId;
 
+  /// Lager-Standort, von dem bestandsgeführte Positionen ([InvoiceItemInput.articleId])
+  /// abgebucht werden; sonst der Standard-Standort. Ein unbekannter oder
+  /// aufgelöster Standort bucht am Standard-Standort und meldet ein Ereignis
+  /// im Lager – die Rechnung scheitert nie daran.
+  final String? stockLocationId;
+
   /// Schon bezahlt: die Zahlung entsteht in derselben Transaktion wie das
   /// Festschreiben, das PDF trägt dann keine Zahlungsinformationen.
   final PaymentInput? payment;
@@ -490,6 +559,7 @@ class IssueInvoiceRequest {
     _setzen(j, 'metadata', metadata);
     _setzen(j, 'language', language);
     _setzen(j, 'brandId', brandId);
+    _setzen(j, 'stockLocationId', stockLocationId);
     _setzen(j, 'payment', payment?.toJson());
     _setzen(j, 'dryRun', dryRun);
     return j;
@@ -640,14 +710,16 @@ class CreditNoteRequest {
     required this.reason,
     required this.items,
     this.note,
+    this.returnDisposition,
   });
 
   factory CreditNoteRequest.fromJson(Map<String, dynamic> j) => CreditNoteRequest(
         idempotencyKey: _pflicht<String>(j, 'idempotencyKey'),
         invoiceId: _pflicht<String>(j, 'invoiceId'),
         reason: _pflicht<String>(j, 'reason'),
-        items: [for (final p in _liste(j, 'items')) InvoiceItemInput.fromJson(p)],
+        items: [for (final p in _liste(j, 'items')) CreditNoteItemInput.fromJson(p)],
         note: _text(j, 'note'),
+        returnDisposition: _text(j, 'returnDisposition'),
       );
 
   final String idempotencyKey;
@@ -656,12 +728,21 @@ class CreditNoteRequest {
   /// Einer von [creditNoteReasons].
   final String reason;
   final String? note;
+
+  /// Positionen; eine [CreditNoteItemInput] trägt zusätzlich ihre eigene
+  /// Rückgabe-Wahl. Eine schlichte [InvoiceItemInput] bleibt gültig.
   final List<InvoiceItemInput> items;
+
+  /// Vorgabe der Rückgabe-Wahl für alle bestandsgeführten Positionen, aus
+  /// `returnDispositions`; fehlt = `restock`. Je Position abweichend über
+  /// [CreditNoteItemInput.returnDisposition].
+  final String? returnDisposition;
 
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'idempotencyKey': idempotencyKey, 'invoiceId': invoiceId, 'reason': reason};
     _setzen(j, 'note', note);
     j['items'] = [for (final p in items) p.toJson()];
+    _setzen(j, 'returnDisposition', returnDisposition);
     return j;
   }
 }

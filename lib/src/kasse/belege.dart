@@ -28,7 +28,9 @@ import '../register/transport.dart';
 import 'artikel.dart';
 import '../../models/registration_info.dart';
 import 'belegmail.dart';
+import 'lager.dart';
 import 'storno.dart' show assertCardRefunds, cancellationReasons;
+import 'storno_nutzlast.dart';
 
 /// Storno-Stand eines Belegs in der Liste (Drahtfeld `cancellationStatus`,
 /// Katalog `STORNO_STAND`): `none`, `partial`, `full`. Ein unbekannter
@@ -214,7 +216,7 @@ const int _anmerkungHoechstlaenge = 200;
 class CashregisterEntry {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding'};
+  static const Set<String> fields = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding', 'stockLocationId'};
 
   const CashregisterEntry({
     required this.id,
@@ -228,6 +230,7 @@ class CashregisterEntry {
     this.decommissioned = false,
     this.licenses,
     this.monthlyReportJournal = false,
+    this.stockLocationId,
   });
 
   final String id;
@@ -246,6 +249,10 @@ class CashregisterEntry {
   final bool monthlyReportJournal;
   final CashregisterOnboarding onboarding;
 
+  /// Lager-Standort der Kasse; `null` = Standard-Standort des Betriebs (der
+  /// Server laesst das Feld dann weg).
+  final String? stockLocationId;
+
   factory CashregisterEntry.fromJson(Map<String, dynamic> j) {
     String? text(Object? v) => v is String && v.isNotEmpty ? v : null;
     final ob = j['onboarding'];
@@ -261,6 +268,7 @@ class CashregisterEntry {
       decommissioned: j['decommissioned'] == true,
       licenses: j['licenses'] is num ? (j['licenses'] as num).toInt() : null,
       monthlyReportJournal: j['monthly_report_journal'] == true,
+      stockLocationId: text(j['stockLocationId']),
       onboarding: CashregisterOnboarding(
         cashboxRegistered: o['cashbox_registered'] == true,
         startReceiptCreated: o['start_receipt_created'] == true,
@@ -430,10 +438,21 @@ class RegisterReceiptClient {
   /// ueber einen Anbieter braucht einen Bezug: ihre eigene `providerPaymentId`
   /// oder, mit [original], die Kennung der erstatteten Kartenzahlung dort
   /// (`cardRefundReference`). Fehlt beides, wirft der Aufruf vor dem Senden.
+  ///
+  /// [returnDisposition] sagt, wohin die Ware der stornierten Artikelzeilen
+  /// geht (Lager): `restock`, `defective` oder `disposed` aus
+  /// `returnDispositions`, fuer alle Positionen. [itemReturnDispositions]
+  /// waehlt je Position abweichend (Schluessel = Index im Original, wie in
+  /// [items]; nur fuer Positionen in [items]). Fehlt beides, bucht der Server
+  /// `restock`; Zeilen ohne `articleId` bucht er nie. Ein unbekannter Wert
+  /// wirft, bevor etwas hinausgeht. Ohne Wahl ist die Nutzlast dieselbe wie
+  /// vor 10.2.
   Future<CancelReceiptResult> cancelReceipt({
     required String originalReceiptId,
     required String reason,
     List<CancellationItem>? items,
+    String? returnDisposition,
+    Map<int, String>? itemReturnDispositions,
     String? note,
     List<KeckPaymentInput>? payments,
     KasseneckReceipt? original,
@@ -453,6 +472,12 @@ class RegisterReceiptClient {
         throw const KasseneckValidationError(name, 'Storno-Menge muss eine ganze Zahl >= 1 sein', 'request');
       }
     }
+    final nutzlast = cancellationPayload(
+      name,
+      items: items,
+      returnDisposition: returnDisposition,
+      itemReturnDispositions: itemReturnDispositions,
+    );
     if (note != null && note.length > _anmerkungHoechstlaenge) {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
@@ -471,7 +496,8 @@ class RegisterReceiptClient {
       params: {
         'originalReceiptId': originalReceiptId,
         'reason': reason,
-        if (items != null) 'items': [for (final p in items) {'index': p.index, 'quantity': p.quantity}],
+        'items': ?nutzlast.items,
+        'returnDisposition': ?nutzlast.returnDisposition,
         if (note != null && note.isNotEmpty) 'note': note,
         if (payments != null) 'payments': [for (final z in payments) z.toJson()],
       },
@@ -583,6 +609,71 @@ class RegisterReceiptClient {
   /// darin.
   Future<List<KeckTipPerson>> tipRecipients() async =>
       _liste(Aufrufe.listMyTipRecipients, 'recipients', KeckTipPerson.fromJson);
+
+  /// Standorte des Betriebs (`listMyStockLocations`), samt aufgeloester
+  /// (`active: false`) und dem Hauptstandort. Recht `stockView`.
+  ///
+  /// Eine Antwort, die sich nicht lesen laesst, endet mit
+  /// [KasseneckValidationError] (`kind: response`): die Kasse zeigt dann kein
+  /// Lager an und verkauft weiter.
+  Future<List<StockLocation>> stockLocations() async {
+    const name = Aufrufe.listMyStockLocations;
+    final daten = await transport.call(name);
+    return lagerListe(daten, 'locations', name, (e, i) => lagerStandortLesen(name, e, i));
+  }
+
+  /// Bestand je Artikel und Standort (`listMyStock`), Mengen in Tausendstel
+  /// der Basiseinheit. Recht `stockView`; [StockList.values] nur mit
+  /// `stockCosts`, sonst `null`.
+  ///
+  /// Ein leerer Filter gilt wie keiner; [belowMinimum] geht nur als `true`
+  /// hinaus (`false` filtert am Server nicht). Eine fehlende oder gebrochene
+  /// Menge wird nie zu 0, sondern endet mit [KasseneckValidationError]
+  /// (`kind: response`) – „Lager voruebergehend nicht verfuegbar“, der Verkauf
+  /// laeuft weiter.
+  Future<StockList> stock({String? locationId, String? articleId, bool? belowMinimum}) async {
+    const name = Aufrufe.listMyStock;
+    final daten = await transport.call(name, params: {
+      if (locationId != null && locationId.isNotEmpty) 'locationId': locationId,
+      if (articleId != null && articleId.isNotEmpty) 'articleId': articleId,
+      if (belowMinimum == true) 'belowMinimum': true,
+    });
+    return lagerBestandslisteLesen(name, daten);
+  }
+
+  /// Standort der Kasse setzen (`setMyCashregisterStockLocation`) – von dort
+  /// bucht der Server Verkauf und Storno ab. Recht `stockLocation`.
+  ///
+  /// `stockLocationId: null` setzt auf den Standard-Standort des Betriebs
+  /// zurueck (am Draht der leere Text). Nur Leerraum wuerde der Server kuerzen
+  /// und damit still zuruecksetzen; das ist kein Standort, sondern ein Fehler
+  /// vor dem Senden. Ohne [cashregisterId] gilt die Kasse der Anmeldung.
+  ///
+  /// Fehler am Code: `location_not_found`, `location_inactive`,
+  /// `cashregister_not_found`, `cashregister_not_assigned`, `not_permitted`,
+  /// `module_inactive`. Der Aufruf setzt einen Zustand und ist darum folgenlos
+  /// wiederholbar.
+  Future<CashregisterStockLocation> setStockLocation({
+    required String? stockLocationId,
+    String? cashregisterId,
+  }) async {
+    const name = Aufrufe.setMyCashregisterStockLocation;
+    final ziel = stockLocationId;
+    if (ziel != null && ziel.isNotEmpty && ziel.trim().isEmpty) {
+      throw const KasseneckValidationError(
+          name, 'stockLocationId ist nur Leerraum (Kennung angeben, oder null zum Zuruecksetzen)', 'request');
+    }
+    if (cashregisterId != null && cashregisterId.trim().isEmpty) {
+      throw const KasseneckValidationError(name, 'cashregisterId ist leer', 'request');
+    }
+    // Die Kasse der Anmeldung legt der Transport bei; eine ausdrueckliche
+    // ersetzt sie (Parameter gehen nach der Grundnutzlast hinein).
+    final daten = await transport.call(name, params: {
+      'stockLocationId': ziel ?? '',
+      'cashregisterId': ?cashregisterId,
+    });
+    return lagerKassenStandortLesen(name, daten);
+  }
 
   Future<List<T>> _liste<T>(String name, String feld, T Function(Map<String, dynamic>) lesen) async {
     final daten = await transport.call(name);

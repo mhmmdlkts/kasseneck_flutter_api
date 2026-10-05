@@ -11,6 +11,8 @@ export 'src/rechnung/modelle.dart';
 export 'src/rechnung/summen.dart';
 export 'src/rechnung/transport.dart' show InvoiceTransport, kInvoiceBaseUrl;
 export 'src/rechnung/vertrag.dart';
+// Rueckgabe-Wahl (Katalog RUECKGABE): dieselbe Liste wie beim Kassen-Storno.
+export 'src/kasse/rueckgabe.dart';
 // Die Fehler, die die Aufrufe werfen — ohne sie wären sie aus diesem Barrel
 // nicht zu fangen.
 export 'src/register/fehler.dart'

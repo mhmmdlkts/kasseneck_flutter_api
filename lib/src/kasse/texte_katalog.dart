@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.2.2). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.3.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.2.2';
+const String posTextsVersion = '1.3.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -90,6 +90,7 @@ const Map<String, PosText> posMessages = {
   'cancellation.refund_cards': PosText('Das Storno ist gebucht – bitte jede Karte unten am Terminal gutschreiben und abhaken.'),
   'cancellation.outcome_unknown_cards': PosText('Unklar, ob das Storno entstanden ist – es kann bereits signiert sein. Bitte nicht erneut stornieren und noch keine Karte gutschreiben, sondern die Belegliste in ein paar Minuten neu laden. Steht das Storno dort, die Karten laut Storno-Beleg am Terminal gutschreiben.'),
   'cancellation.cards_not_checked': PosText('Noch ist nicht jede Karte abgehakt – bitte jede am Terminal gutschreiben. Ist das schon geschehen, zum Schließen noch einmal drücken.'),
+  'cancellation.input_rejected': PosText('Die Eingabe wurde abgelehnt – bitte das Storno neu beginnen.'),
   'split.setting_hint': PosText('Ein Tisch zahlt in Teilen: jede Zahlung bar oder mit Karte, mit eigenem Trinkgeld – am Ende ein Beleg für alles.'),
   'split.amount_over_open': PosText('Der Betrag ist höher als offen – höchstens {amount}.', placeholders: ['amount']),
   'split.tip_over_amount': PosText('Das Trinkgeld ist höher als der Betrag dieser Zahlung.'),
@@ -252,6 +253,15 @@ const Map<String, PosText> posLabels = {
   'codetable.preview_title': PosText('So steht es dann am Bon:'),
   'codetable.apply': PosText('Übernehmen'),
   'codetable.other_row': PosText('Andere Zeile'),
+  'stock.all_articles': PosText('Alle Artikel'),
+  'stock.location': PosText('Lager-Standort'),
+  'stock.default_location': PosText('Standard-Standort'),
+  'stock.resolved': PosText('aufgelöst'),
+  'stock.where_to': PosText('Wohin mit der Ware?'),
+  'stock.available': PosText('verfügbar'),
+  'stock.return_restock': PosText('Zurück ins Lager'),
+  'stock.return_defective': PosText('Defekt'),
+  'stock.return_disposed': PosText('Entsorgt'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].
@@ -295,4 +305,11 @@ const Map<String, String> cancellationPaymentErrorMessages = {
   'cancellation_refund_reference_unknown': 'cancellation.refund_reference_unknown',
   'payments_sum_mismatch': 'cancellation.sum_mismatch',
   'cancellation_outcome_unknown': 'cancellation.outcome_unknown',
+};
+
+/// Rueckgabe beim Storno: Wahl (`restock`, `defective`, `disposed`) -> Schluessel der Beschriftung.
+const Map<String, String> returnDispositionLabels = {
+  'restock': 'stock.return_restock',
+  'defective': 'stock.return_defective',
+  'disposed': 'stock.return_disposed',
 };

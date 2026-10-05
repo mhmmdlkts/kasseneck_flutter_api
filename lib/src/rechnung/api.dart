@@ -5,7 +5,8 @@
 /// Backend, das sie gegen denselben Vertrag prüft und einen Formfehler als
 /// `validation` mit `details['errors']` zurückgibt — zwei Prüfungen hießen zwei
 /// Wahrheiten. Ausnahme sind Aufrufe mit „genau einer" Kennung: welche gemeint
-/// ist, lässt sich ohne Server entscheiden.
+/// ist, lässt sich ohne Server entscheiden. Auch die Lagerfelder (Rückgabe-Wahl,
+/// `articleId`, `stockLocationId`) prüft wie im JS-Zwilling nur der Server.
 ///
 /// **Vor dem ersten Ausstellen [getInvoiceSetupStatus] aufrufen.** Ohne Freigabe
 /// durch Kasseneck (live) oder mit unvollständiger Einrichtung antworten die
@@ -124,11 +125,16 @@ class InvoiceApi {
   }
 
   /// Vollstorno: Gutschrift über alle Positionen, das Original wird storniert.
+  ///
+  /// [returnDisposition] (aus `returnDispositions`) sagt, wohin die Ware der
+  /// bestandsgeführten Positionen geht; fehlt = `restock`. Geht nur mit, wenn
+  /// gesetzt; einen unbekannten Wert weist der Server als `validation` ab.
   Future<CancelResult> cancelInvoice({
     required String idempotencyKey,
     required String invoiceId,
     required String reason,
     String? note,
+    String? returnDisposition,
   }) async {
     const name = Aufrufe.cancelInvoice;
     final daten = await _transport.call(name, {
@@ -136,11 +142,16 @@ class InvoiceApi {
       'invoiceId': invoiceId,
       'reason': reason,
       'note': ?note,
+      'returnDisposition': ?returnDisposition,
     });
     return _lesen(name, () => CancelResult.fromJson(daten));
   }
 
   /// Teilgutschrift; höchstens bis zum Brutto des Originals je USt-Satz.
+  ///
+  /// Die Rückgabe-Wahl ([CreditNoteRequest.returnDisposition] als Vorgabe,
+  /// [CreditNoteItemInput.returnDisposition] je Position) geht unverändert
+  /// hinaus; geprüft wird sie vom Server.
   Future<CreditNoteResult> createCreditNote(CreditNoteRequest request) async {
     const name = Aufrufe.createCreditNote;
     final daten = await _transport.call(name, request.toJson());

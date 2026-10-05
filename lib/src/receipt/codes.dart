@@ -98,7 +98,7 @@ final List<String> cancellationErrorCodes = _mitRand(const [
   'cancellation_refund_reference_required', // Karten-Rueckzahlung ohne refundOf einer Kartenzahlung
   'cancellation_refund_reference_unknown', // refundOf nennt keine Zahlung des Originals
   'cancellation_outcome_unknown', // Ausgang unklar: nachlesen, nie wiederholen
-  'invalid_return_disposition', // returnDisposition unbekannt (Feld folgt im Lager-Zwilling, Issue 85)
+  'invalid_return_disposition', // returnDisposition nicht restock, defective oder disposed (Lager)
 ], _signierend);
 
 /// Codes rund um `payments` an `createReceipt` und `cancelReceipt`.

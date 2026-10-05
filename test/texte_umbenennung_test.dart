@@ -38,21 +38,25 @@ final _strukturKasse = ((_tabelle['structure'] as Map)['pos-texts.json'] as Map)
 /// Was nach 1.0 dazukam und darum keinen alten Namen hat (wie `NACH_1_0` in
 /// `umbenennung-1.0.test.ts` des npm-Pakets): drei Saetze und drei
 /// Beschriftungen aus 1.0.0-rc.5, die Texte des Zeichensatz-Tests aus 1.1.0
-/// und 1.1.1,
+/// und 1.1.1, aus 1.3.0 die Lager-Beschriftungen und der Satz zum abgelehnten
+/// Storno,
 /// dazu die Verfeinerungen der Fehlerregeln als eigene Dateischluessel neben
-/// `errorRules`.
+/// `errorRules` und seit 1.3.0 die Beschriftung je Rueckgabe-Wahl.
 const _nach10 = (
   messages: {
     'network.outcome_unknown', 'server.connection_disturbed', 'server.response_unreadable',
     'codetable.question', 'codetable.instruction', 'codetable.question_hint', 'codetable.instruction_none',
+    'cancellation.input_rejected',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
     'codetable.title', 'codetable.reference', 'codetable.replacement_note', 'codetable.missing',
     'codetable.print_again', 'codetable.not_checked', 'codetable.check', 'codetable.current',
     'codetable.instruction_title', 'codetable.preview_title', 'codetable.apply', 'codetable.other_row',
+    'stock.all_articles', 'stock.location', 'stock.default_location', 'stock.resolved', 'stock.where_to',
+    'stock.available', 'stock.return_restock', 'stock.return_defective', 'stock.return_disposed',
   },
-  fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect'],
+  fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {'cents', 'chars'},
 );
 

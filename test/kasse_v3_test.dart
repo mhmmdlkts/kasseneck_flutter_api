@@ -36,6 +36,7 @@ const _anmeldung = [
 const _kassenAufrufe = [
   'listMyArticleGroups', 'listMyArticles', 'getKasseSettings', 'setMyKasseSettings', 'setMyKasseLogo',
   'setMyRegisterDeviceSettings', 'listMyPrinters', 'createPrintJob', 'getPrintJob', 'listMyTipRecipients',
+  'listMyStockLocations', 'listMyStock', 'setMyCashregisterStockLocation',
 ];
 const _weitere = ['listMyCashregisters', 'generateFullReceiptId', 'createReceipt', 'cancelReceipt'];
 
@@ -50,6 +51,8 @@ const _nichtDieserWeg = {
   'cancelReceipt/payments_conflict': 'paymentMethod am Storno, sendet dieser Weg nie',
   'cancelReceipt/card_data_without_card': 'cardPaymentId am Storno, sendet dieser Weg nie',
   'cancelReceipt/items_no_array': 'items ist hier immer eine Liste (Stornoposition)',
+  'setMyCashregisterStockLocation/data_missing':
+      'ohne stockLocationId: null geht als leerer Text hinaus (Zuruecksetzen), weglassen kann dieser Weg nicht',
 };
 
 /// Fälle, deren Fehler die Kasse beim Verkauf im Alltag sieht (Anmeldung
@@ -232,6 +235,20 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.articles();
       case 'listMyTipRecipients':
         return belege.tipRecipients();
+      case 'listMyStockLocations':
+        return belege.stockLocations();
+      case 'listMyStock':
+        return belege.stock(
+          locationId: p['locationId'] as String?,
+          articleId: p['articleId'] as String?,
+          belowMinimum: p['belowMinimum'] as bool?,
+        );
+      case 'setMyCashregisterStockLocation':
+        final ziel = p['stockLocationId'] as String;
+        return belege.setStockLocation(
+          stockLocationId: ziel.isEmpty ? null : ziel,
+          cashregisterId: p['cashregisterId'] as String?,
+        );
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();
         return PosSettingsClient(transport, deviceId: _s(p['deviceId'])).load();
@@ -411,12 +428,10 @@ void main() {
       }
     });
 
-    test('alle 25 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+    test('alle 28 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
       final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere};
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
-      // Lager-Aufrufe aus npm 1.2.0: noch nicht gebaut, Issue 85 (zwillinge.yaml).
-      const lager = {'listMyStock', 'listMyStockLocations', 'setMyCashregisterStockLocation'};
-      expect({...hier, ...belegwelt, ...lager}, (_vertrag['calls']['pos'] as List).toSet());
+      expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });
   });
 
@@ -427,6 +442,8 @@ void main() {
       expect(printJobStatuses, _vertrag['pos']['printJobStatuses']);
       expect(printJobSources, _vertrag['pos']['printJobSources']);
       expect(quantityRules, _vertrag['pos']['quantityRules']);
+      expect(stockLocationTypes, _vertrag['pos']['stockLocationTypes']);
+      expect(StockLocationType.values.map((t) => t.name), stockLocationTypes);
     });
 
     test('am Code, nie am Text: derselbe Text mit anderem Code ist ein anderer Fehler', () {
@@ -570,6 +587,48 @@ void main() {
       expect(neu['tile'], {'visible': false, 'sort': 3});
       expect(neu['quantityRule'], 'decimal');
       expect(PosArticle.fromJson(neu).toJson(), neu);
+    });
+  });
+
+  group('Lager: gelesene Modelle (Vertragsfälle)', () {
+    test('Standorte: Hauptstandort virtuell, Fahrzeug ohne Adresse, aufgelöster Standort mit Adresse', () async {
+      for (final name in ['success_cashier', 'success_owner']) {
+        final lauf = await _rufe('listMyStockLocations', _fall('listMyStockLocations', name));
+        final orte = lauf!.ergebnis as List<StockLocation>;
+        expect(orte.map((o) => o.id), ['haupt', 'auto1', 'alt'], reason: name);
+        final [haupt, auto, alt] = orte;
+        expect([haupt.type, haupt.virtual, haupt.active, haupt.address], [StockLocationType.store, true, true, null]);
+        expect([auto.type, auto.licensePlate, auto.address, auto.virtual], [StockLocationType.vehicle, 'W-12345', null, false]);
+        expect([alt.type, alt.active, alt.licensePlate], [StockLocationType.warehouse, false, null]);
+        expect([alt.address?.street, alt.address?.zip, alt.address?.city, alt.address?.country],
+            ['Hauptplatz 1', '1010', 'Wien', 'AT']);
+      }
+    });
+
+    test('Bestand: Tausendstel unverändert, Werte nur mit Recht (sonst null, nie leer)', () async {
+      final kassier = (await _rufe('listMyStock', _fall('listMyStock', 'success_cashier')))!.ergebnis as StockList;
+      expect(kassier.values, isNull);
+      expect([for (final b in kassier.stock) [b.articleId, b.locationId, b.sellable, b.defective, b.reserved, b.available]], [
+        ['art_kaffee', 'haupt', 12000, 0, 2000, 10000],
+        ['art_kaffee', 'auto1', 3000, 1000, 0, 3000],
+      ]);
+      final inhaber = (await _rufe('listMyStock', _fall('listMyStock', 'success_owner')))!.ergebnis as StockList;
+      expect([for (final w in inhaber.values!) [w.articleId, w.stockValueCents, w.averageCostMicros]], [
+        ['art_kaffee', 4800, 3000000],
+      ]);
+      final ort = await _rufe('listMyStock', _fall('listMyStock', 'success_location'));
+      expect(ort!.params['locationId'], 'auto1');
+      expect((ort.ergebnis as StockList).stock.single.locationId, 'auto1');
+    });
+
+    test('Standort der Kasse: gesetzt und zurückgesetzt (null geht als leerer Text hinaus)', () async {
+      final gesetzt = await _rufe('setMyCashregisterStockLocation', _fall('setMyCashregisterStockLocation', 'success_manager'));
+      final g = gesetzt!.ergebnis as CashregisterStockLocation;
+      expect([g.cashregisterId, g.stockLocationId], ['KASSE1', 'auto1']);
+      final zurueck = await _rufe('setMyCashregisterStockLocation', _fall('setMyCashregisterStockLocation', 'success_reset'));
+      expect(zurueck!.params['stockLocationId'], '');
+      final z = zurueck.ergebnis as CashregisterStockLocation;
+      expect([z.cashregisterId, z.stockLocationId], ['KASSE1', null]);
     });
   });
 
@@ -884,7 +943,7 @@ void main() {
         'listRegisterUsersForDevice': (RegisterDeviceUsers.fields, const {}),
         'listRegisterUsersForDevice.users[]': (RegisterUserSummary.fields, const {}),
         'listRegisterUsersForDevice.policy': (RegisterPinPolicy.fields, const {}),
-        'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.fields, const {}),
+        'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.fields, const {'stockLocationId'}),
         'listRegisterSessionsForDevice': (RegisterSessionOverview.fields, const {}),
         'listRegisterSessionsForDevice.sessions[]': (RegisterSession.fields, const {}),
         'registerUserLogin': (RegisterUserSession.fields, const {}),
@@ -893,13 +952,17 @@ void main() {
         'registerPinLogin.user': (RegisterUser.fields, const {}),
         'renewRegisterSession': (const {'expiresAt'}, const {}),
         'listMyCashregisters': (const {'cashregisters'}, const {}),
-        'listMyCashregisters.cashregisters[]': (CashregisterEntry.fields, const {}),
+        'listMyCashregisters.cashregisters[]': (CashregisterEntry.fields, const {'stockLocationId'}),
         'listMyCashregisters.cashregisters[].onboarding': (CashregisterOnboarding.fields, const {}),
         'generateFullReceiptId': (const {'fullReceiptId'}, const {}),
         'listMyArticleGroups': (const {'groups'}, const {}),
         'listMyArticleGroups.groups[]': (ArticleGroup.fields, const {'symbol', 'vatRate'}),
         'listMyArticles': (const {'articles'}, const {}),
-        'listMyArticles.articles[]': (PosArticle.fields, const {'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity'}),
+        'listMyArticles.articles[]':
+            (PosArticle.fields, const {
+              'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds',
+              'number', 'ean', 'internalCode', 'stockTracked',
+            }),
         'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),
         'setMyKasseLogo': (const {'logoImage'}, const {}),
         'listMyPrinters': (const {'printers'}, const {}),
@@ -910,6 +973,13 @@ void main() {
         'getPrintJob.result': (PrintResult.fields, const {}),
         'listMyTipRecipients': (const {'recipients'}, const {}),
         'listMyTipRecipients.recipients[]': (KeckTipPerson.fields, const {}),
+        'listMyStockLocations': (const {'locations'}, const {}),
+        'listMyStockLocations.locations[]': (StockLocation.fields, const {}),
+        'listMyStockLocations.locations[].address': (StockLocationAddress.fields, const {}),
+        'listMyStock': (StockList.fields, const {}),
+        'listMyStock.stock[]': (StockLevel.fields, const {}),
+        'listMyStock.values[]': (StockValue.fields, const {}),
+        'setMyCashregisterStockLocation': (CashregisterStockLocation.fields, const {}),
       };
       // Ohne Nutzlast, die ein Modell liest: Bestätigungen (ok, id).
       const ohneModell = {'endRegisterSession', 'unpairRegisterDevice'};
