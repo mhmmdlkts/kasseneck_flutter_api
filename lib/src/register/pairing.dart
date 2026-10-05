@@ -301,7 +301,7 @@ class RegisterUserPerms {
   /// Trinkgeld anderen zuweisen.
   final bool tipAssign;
 
-  /// Lager: Standorte und Mengen sehen. `null`, wenn der Schluessel fehlt —
+  /// Lager: Standorte und Mengen sehen. `null`, wenn der Schluessel fehlt –
   /// das gilt hier, anders als bei allen anderen Rechten, als **erteilt**
   /// (wie im Backend). Darum kein `bool`: die Entscheidung trifft
   /// [stockViewOf], nicht dieses Feld.
@@ -839,7 +839,7 @@ RegisterUserPerms _rechte(Object? wert) {
     discount: roh['discount'] == true,
     tipAssign: roh['tipAssign'] == true,
     // Wie im JS-Zwilling: ein vorhandener Schluessel zaehlt nur als `true`,
-    // ein fehlender bleibt offen (null) — die Regel steht in stockViewOf.
+    // ein fehlender bleibt offen (null) – die Regel steht in stockViewOf.
     stockView: roh.containsKey('stockView') ? roh['stockView'] == true : null,
     stockCosts: roh['stockCosts'] == true,
     stockMove: roh['stockMove'] == true,

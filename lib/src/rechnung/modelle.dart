@@ -363,7 +363,7 @@ class InvoiceItemInput implements TotalsItem {
   final num? discountPct;
 
   /// Artikel aus dem Artikelstamm (Lager). Ist er bestandsgeführt und das
-  /// Modul Lager aktiv, bucht das Ausstellen ihn ab — danach; die Rechnung
+  /// Modul Lager aktiv, bucht das Ausstellen ihn ab – danach; die Rechnung
   /// scheitert nie am Lager. Die Form (kein `/`, nicht `.`/`..`) prüft der
   /// Server (`validation` mit Feldpfad).
   final String? articleId;
@@ -527,7 +527,7 @@ class IssueInvoiceRequest {
   /// Lager-Standort, von dem bestandsgeführte Positionen ([InvoiceItemInput.articleId])
   /// abgebucht werden; sonst der Standard-Standort. Ein unbekannter oder
   /// aufgelöster Standort bucht am Standard-Standort und meldet ein Ereignis
-  /// im Lager — die Rechnung scheitert nie daran.
+  /// im Lager – die Rechnung scheitert nie daran.
   final String? stockLocationId;
 
   /// Schon bezahlt: die Zahlung entsteht in derselben Transaktion wie das

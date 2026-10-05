@@ -1,4 +1,4 @@
-/// Lager an der Kasse: Standorte, Bestand und der Standort der Kasse —
+/// Lager an der Kasse: Standorte, Bestand und der Standort der Kasse –
 /// Zwilling von `pos/lager.ts` im JS-Paket (Backend: `lager-endpoints.js`).
 /// Die Aufrufe selbst stehen in [RegisterReceiptClient] (`stockLocations`,
 /// `stock`, `setStockLocation`); es gibt sie nur ueber den Kassenweg
@@ -7,7 +7,7 @@
 ///
 /// **Ganzzahlen:** Mengen sind Tausendstel der Basiseinheit (`1000` = 1 Stueck,
 /// `250` = 0,250 kg), Werte ganze Cent bzw. Mikro-Euro. Nichts wird geteilt,
-/// gerundet oder geklemmt — ein negativer Bestand (mehr verkauft als gebucht)
+/// gerundet oder geklemmt – ein negativer Bestand (mehr verkauft als gebucht)
 /// ist eine Aussage des Servers und bleibt negativ. Eine Zahl, die keine
 /// Ganzzahl ist, oder eine fehlende Menge wird **nie** zu `0`: der Aufruf
 /// endet mit [KasseneckValidationError] (`kind: response`), denn „kein
@@ -101,7 +101,7 @@ class StockLevel {
   final int available;
 }
 
-/// Lagerwert eines Artikels — nur mit dem Recht `stockCosts`.
+/// Lagerwert eines Artikels – nur mit dem Recht `stockCosts`.
 class StockValue {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
@@ -170,7 +170,7 @@ const int _sicherGanz = 9007199254740991;
 ///
 /// `12000.0` gilt als ganz: JavaScript kennt den Unterschied nicht, und der
 /// JS-Zwilling nimmt dieselbe Zahl an. Groesser als 2^53 nimmt er sie auch,
-/// hier waere `toInt` dort aber nicht mehr genau — darum gilt sie als kaputt.
+/// hier waere `toInt` dort aber nicht mehr genau – darum gilt sie als kaputt.
 int _ganzzahl(String name, String pfad, Object? w) {
   if (w is int) return w;
   if (w is double && w.isFinite && w == w.truncateToDouble() && w.abs() <= _sicherGanz) return w.toInt();
@@ -179,7 +179,7 @@ int _ganzzahl(String name, String pfad, Object? w) {
 
 /// Die Liste `data.<feld>`, jedes Element durch [lesen]. Ein Element, das kein
 /// Objekt ist, wird als leeres Objekt gelesen und scheitert dort an seiner
-/// Kennung — wie im JS-Zwilling, nie still uebersprungen: eine fehlende Zeile
+/// Kennung – wie im JS-Zwilling, nie still uebersprungen: eine fehlende Zeile
 /// saehe aus wie ein Artikel ohne Bestand.
 List<T> lagerListe<T>(Map<String, dynamic> daten, String feld, String name, T Function(Map<String, dynamic>, int) lesen) {
   final roh = daten[feld];
@@ -239,7 +239,7 @@ StockValue lagerWertLesen(String name, Map<String, dynamic> w, int i) {
   return StockValue(
     articleId: _kennung(name, '$pfad.articleId', w['articleId']),
     stockValueCents: _ganzzahl(name, '$pfad.stockValueCents', w['stockValueCents']),
-    // Fehlt der Durchschnitt oder ist er null, ist die Menge 0 — eine
+    // Fehlt der Durchschnitt oder ist er null, ist die Menge 0 – eine
     // vorhandene, aber unbrauchbare Zahl ist dagegen ein Antwortfehler.
     averageCostMicros: schnitt == null ? null : _ganzzahl(name, '$pfad.averageCostMicros', schnitt),
   );

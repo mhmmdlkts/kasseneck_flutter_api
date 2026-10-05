@@ -145,7 +145,7 @@ class TileBooking {
 /// ebenso ein Artikel und eine freie Position; freie Positionen ohne ID
 /// bündeln wie bisher. Eine leere Artikel-ID gilt auf beiden Seiten als
 /// keine (auch an einer von Hand gebauten [Position]). Die Höchstmenge des
-/// Artikels hält auch hier — [Cart.withQuantity] deckelt, egal woher der
+/// Artikels hält auch hier – [Cart.withQuantity] deckelt, egal woher der
 /// Griff kommt.
 TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   if (bundle) {

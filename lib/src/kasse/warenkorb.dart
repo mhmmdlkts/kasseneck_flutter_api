@@ -63,7 +63,7 @@ class Position {
         articleId: articleId,
       );
 
-  /// Als Belegposition — ohne die Kassen-Kennung, die das Backend nichts
+  /// Als Belegposition – ohne die Kassen-Kennung, die das Backend nichts
   /// angeht; mit dem Artikel-Verweis, wenn es einen gibt.
   KasseneckItem toReceiptItem() =>
       KasseneckItem(name: name, quantity: quantity, priceCents: priceCents, vat: vat, articleId: articleId);
