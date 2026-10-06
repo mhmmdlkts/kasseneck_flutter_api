@@ -1130,6 +1130,10 @@ module `lager`; purchase prices and stock values appear only when the account
 has the permission `costs` (otherwise the fields are absent, not `null`:
 `Article.hasPurchasePriceMicros`, `StockResult.values == null`).
 
+The package needs the Flutter SDK to resolve (it declares `flutter: sdk:
+flutter`), but `lib/inventory.dart` imports no Flutter code, so a server
+built on it runs without `dart:ui`; a test keeps it that way.
+
 **Integers with a fixed scale:** quantities in thousandths of the base unit
 (`1000` = 1 piece, `250` = 0.250 kg), money in cents, purchase prices in
 micro-euros. `available = onHand − reserved` and may be negative: the register

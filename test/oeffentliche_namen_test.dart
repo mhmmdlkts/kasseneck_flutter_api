@@ -35,7 +35,7 @@ final Set<String> woerter = _liste('''
   abort abortable aborted above account acquirer action actions active add
   added address affiliate after agent align all allowed allows always amount
   amounts and applies approval approved april area article articles as ask assert
-  assign at attempt attempts attributes endpoints  august auth authority authorization authorized auto available average background
+  assign at attempt attempts attributes august auth authority authorization authorized auto available average background
   backoff bad bank banner barcode base batch before behavior below between binary bit
   bits blank block blocked blocks body bold bolt book booking border both
   brand brands breakdown buckets budget build builder bundle business busy by
@@ -53,7 +53,7 @@ final Set<String> woerter = _liste('''
   description detail details device devices diagnosis differs digits
   dimensions direct directory disabled discount discover discovered discovery
   dispose disposed disposition dispositions distance distribute divider documented done dots double download
-  draft drawer dry due effect email emoji empty enable enabled encode encoded end
+  draft drawer dry due effect email emoji empty enable enabled encode encoded end endpoints
   enrollment entered entry enums envelope environment error errors euro event events
   everywhere exact exceeded exception expected expired expires expiry external
   extra failed failure failures fallback fast fault fax february feed field

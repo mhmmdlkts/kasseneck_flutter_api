@@ -27,6 +27,11 @@ bytes as in 10.2.0.
   1–200, `code` together with `externalSystem`/`externalId`, an empty
   `events` list, an update without a change. A partner key (`pk_…`) or a
   cashbox token (`cb_…`) throws when the client is created.
+- **No Flutter behind `inventory.dart`.** The package still needs the
+  Flutter SDK to resolve (`flutter: sdk: flutter` in `pubspec.yaml`), but
+  `lib/inventory.dart` imports no Flutter code, so a shop server runs it
+  without `dart:ui`. `test/lager_ohne_flutter_test.dart` follows every import
+  and export behind it and fails on `package:flutter` or `dart:ui`.
 - **Models**: `Article` (incl. `stockLocationIds`; `purchasePriceMicros` only
   with the account permission `costs`, `hasPurchasePriceMicros` says whether
   the field was sent), `ArticlePage`, `Location`, `LocationAddress`,
