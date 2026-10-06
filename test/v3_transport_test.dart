@@ -107,15 +107,15 @@ final _wege = <_Weg>[
     'createReceipt': (c) => _sitzung(c).call('createReceipt'),
     'cancelReceipt': (c) => _sitzung(c).call('cancelReceipt'),
     'listMyReceipts': (c) => _sitzung(c).call('listMyReceipts'),
+    'setMyKasseSettings': (c) => _sitzung(c).call('setMyKasseSettings'),
   }),
   _Weg('RechnungTransport', 'https://api.kasseneck.at/v3', {
     'getInvoice': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).call('getInvoice', {}),
+    'issueInvoice': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).call('issueInvoice', {}),
     'getInvoicePdf': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).callBinary('getInvoicePdf', {}),
   }),
 ];
 
-/// Aufrufe mit unklarem Ausgang nach dem Senden: signierend, FinanzOnline,
-/// und die Geldwege (Kartenbelastung, Erstattung, Stripe-Einzug).
 /// Derselbe Aufruf wie in [_wege], aber mit kurzer Frist.
 Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
   const f = Duration(milliseconds: 20);
@@ -151,13 +151,22 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
   }
 }
 
-const _signierend = {
+/// Die Aufrufe aus [_wege] mit Wirkung, hier von Hand und nicht aus
+/// `unknownOutcomeCalls`: sonst bestaetigte der Test nur die eigene Liste.
+/// Bis 10.4.0 nur die sechs, die signieren, FinanzOnline ansprechen oder Geld
+/// bewegen; seit 10.4.1 auch Belegmail, Kopplung, Einstellungen und
+/// `issueInvoice`.
+const _mitWirkung = {
   'createReceipt',
   'cancelReceipt',
   'financeWebService',
   'hobexPayApi',
   'hobexRefundApi',
   'stripeCaptureIntent',
+  'sendReceiptEmail',
+  'pairRegisterDevice',
+  'setMyKasseSettings',
+  'issueInvoice',
 };
 
 TypeMatcher<KasseneckApiError> _apiFehler(String code, ErrorOutcome ausgang) => isA<KasseneckApiError>()
@@ -320,11 +329,11 @@ void main() {
       }
     });
 
-    test('HTML mit Kennzeichen: signierend Ausgang unklar, sonst route_missing', () async {
+    test('HTML mit Kennzeichen: mit Wirkung Ausgang unklar, sonst route_missing', () async {
       for (final weg in _wege) {
         for (final MapEntry(key: name, value: los) in weg.aufrufe.entries) {
           final netz = _Netz((_) => _html(kennzeichen: true));
-          final erwartet = _signierend.contains(name)
+          final erwartet = _mitWirkung.contains(name)
               ? _httpFehler('not-json', ErrorOutcome.unknown)
               : _apiFehler('route_missing', ErrorOutcome.rejected);
           await expectLater(los(netz.client), throwsA(erwartet), reason: '${weg.name} $name');
@@ -332,7 +341,7 @@ void main() {
       }
     });
 
-    test('HTTP != 200 vor allem anderen; 5xx auf signierenden Aufrufen ist Ausgang unklar', () async {
+    test('HTTP != 200 vor allem anderen; 5xx auf Aufrufen mit Wirkung ist Ausgang unklar', () async {
       for (final status in [500, 502, 503, 401, 404]) {
         for (final kennzeichen in [true, false]) {
           for (final weg in _wege) {
@@ -340,7 +349,7 @@ void main() {
               final netz = _Netz((_) => _Antwort(
                   status, {'content-type': 'text/html', if (kennzeichen) ..._kennzeichen}, utf8.encode('<html/>')));
               final ausgang =
-                  status >= 500 && _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+                  status >= 500 && _mitWirkung.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
               await expectLater(
                   los(netz.client),
                   throwsA(_httpFehler('server-error', ausgang).having((e) => e.statusCode, 'statusCode', status)),
@@ -405,18 +414,18 @@ void main() {
           throwsA(_apiFehler('receipt_outcome_unknown', ErrorOutcome.unknown)));
     });
 
-    test('Netzfehler nach dem Senden: signierend unklar, sonst abgelehnt', () async {
+    test('Netzfehler nach dem Senden: mit Wirkung unklar, sonst abgelehnt', () async {
       for (final weg in _wege) {
         for (final MapEntry(key: name, value: los) in weg.aufrufe.entries) {
           final c = MockClient((_) async => throw const SocketException('weg'));
-          final ausgang = _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+          final ausgang = _mitWirkung.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
           await expectLater(los(c), throwsA(_httpFehler(KasseneckHttpError.reasonNetwork, ausgang)),
               reason: '${weg.name} $name');
         }
       }
     });
 
-    test('Zeitlimit: signierend unklar, sonst abgelehnt; die Frist steht am Fehler', () async {
+    test('Zeitlimit: mit Wirkung unklar, sonst abgelehnt; die Frist steht am Fehler', () async {
       const frist = Duration(milliseconds: 20);
       final haengt = MockClient((_) => Completer<http.Response>().future);
       final t = RegisterTransport(
@@ -436,7 +445,7 @@ void main() {
           throwsA(_httpFehler(KasseneckHttpError.reasonTimeout, ErrorOutcome.unknown)));
     });
 
-    test('unlesbare Erfolgsantwort: signierend unklar, sonst abgelehnt', () async {
+    test('unlesbare Erfolgsantwort: mit Wirkung unklar, sonst abgelehnt', () async {
       final faelle = {
         'empty-body': '',
         'not-json': 'kein json',
@@ -446,7 +455,7 @@ void main() {
         for (final weg in _wege) {
           for (final MapEntry(key: name, value: los) in weg.aufrufe.entries) {
             final netz = _Netz((_) => _Antwort(200, {..._json, ..._kennzeichen}, utf8.encode(rumpf)));
-            final ausgang = _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+            final ausgang = _mitWirkung.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
             await expectLater(los(netz.client), throwsA(_httpFehler(grund, ausgang)),
                 reason: '${weg.name} $name $grund');
           }
@@ -495,7 +504,7 @@ void main() {
         for (final MapEntry(key: name, value: los) in weg.aufrufe.entries) {
           final netz = _Netz((_) => _Antwort(200, {..._json, ..._kennzeichen},
               [...utf8.encode('{"status":"success","data":{"n":"'), 0xff, ...utf8.encode('"}}')]));
-          final ausgang = _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+          final ausgang = _mitWirkung.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
           await expectLater(los(netz.client), throwsA(_httpFehler('not-json', ausgang)), reason: '${weg.name} $name');
         }
       }
@@ -516,7 +525,7 @@ void main() {
             });
             return antwort.future;
           });
-          final ausgang = _signierend.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+          final ausgang = _mitWirkung.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
           await expectLater(_mitFrist(weg, name, c), throwsA(_httpFehler(KasseneckHttpError.reasonTimeout, ausgang)),
               reason: '${weg.name} $name');
           await pumpEventQueue();

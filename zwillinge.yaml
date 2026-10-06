@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.5.0
+npm_version: 1.5.1
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -28,6 +28,11 @@ npm_version: 1.5.0
 # zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.5.1: kein neuer Aufruf; surface.json führt neu unknownOutcomeCalls
+# (die 52 Aufrufe mit Wirkung, deren Ausgang nach dem Senden unklar ist).
+# lib/src/v3.dart führt dieselbe Liste, test/ausgang_einordnung_test.dart
+# vergleicht beide.
 #
 # Stand 1.5.0: die 13 Aufrufe der schreibenden Lager-API samt Reservierung
 # (InventoryClient, Dart 10.4.0) sind gedeckt, ohne neuen Eintrag hier.

@@ -12,7 +12,7 @@ Die vollständige Dokumentation steht im englischen README:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.4.0
+  kasseneck_api: ^10.4.1
 ```
 
 Voraussetzungen: Dart SDK `^3.12.1`, Flutter `>=3.44.0`, ein Kasseneck-API-Schlüssel
@@ -45,11 +45,24 @@ Stornos laufen über `kasseneck.cancelReceipt(...)` bzw.
 
 Jeder `KasseneckApiError` und `KasseneckHttpError` trägt ein `outcome`;
 `isOutcomeUnknown(fehler)` beantwortet es für jeden Fehler. `rejected` heißt:
-abgelehnt, nichts wurde signiert, belastet oder erstattet. `unknown` heißt: der
-Vorgang **kann gelaufen sein**. Dann das Ergebnis nachlesen (`getReceipt`,
-`hobexGetStatus`) statt den Aufruf zu wiederholen; ein wiederholter Verkauf ist
-ein zweiter signierter Beleg, ein wiederholter Kartenaufruf kann doppelt
-belasten oder erstatten.
+abgelehnt, nichts wurde signiert, belastet, gebucht oder erstattet. `unknown`
+heißt: der Vorgang **kann gelaufen sein**. Dann das Ergebnis nachlesen
+(`getReceipt`, `hobexGetStatus`) statt den Aufruf zu wiederholen; ein
+wiederholter Verkauf ist ein zweiter signierter Beleg, ein wiederholter
+Kartenaufruf kann doppelt belasten oder erstatten.
+
+Seit 10.4.1 meldet **jeder Aufruf mit Wirkung** nach Zeitlimit, Netzfehler,
+HTTP 5xx oder unlesbarer Antwort `unknown`, nicht nur Beleg, Storno,
+FinanzOnline und die Geldwege: auch Lager schreiben und reservieren,
+Webhooks, Rechnung ausstellen, stornieren, gutschreiben, Zahlung nachtragen,
+Kunden anlegen und ändern, Kassen-Einstellungen und Logo, Kopplung,
+Lagerstandort der Kasse, Druckjob und Belegmail (Liste
+`unknownOutcomeCalls` im Vertrag). Lesen, die Probeläufe
+(`previewGoodsReceipt`, `previewInvoice`), die Anmeldung an der Kasse und
+`createPaymentLinkStripe` bleiben `rejected`. Ein Aufruf mit
+`idempotencyKey` darf dann mit **demselben** Schlüssel erneut hinaus (er
+wirkt genau einmal, ein neuer Schlüssel buchte doppelt); ohne Schlüssel erst
+nachlesen.
 
 Auf den Geldwegen `hobexPay`, `hobexRefund` und `stripeCaptureIntent` ist
 **jede Fehlerhülle** Ausgang unklar, auch eine ohne Code, denn das Backend
@@ -66,7 +79,8 @@ vollständige Liste steht im englischen README unter „Unknown outcome“.
 Was der Kassier dazu liest, entscheidet `findErrorRule` aus `pos.dart`
 (Code-Regel, dann Ausgangs-Regel, dann die Regel der Art) mit dem Ausgang aus
 `messageOutcome`: eine Frist oder ein Netzfehler auf einem Aufruf mit Wirkung
-(`callsWithEffect`: Beleg, Storno, FinanzOnline, Geldwege, Druckjob, Belegmail)
+(`callsWithEffect`: Beleg, Storno, FinanzOnline, Geldwege, Druckjob, Belegmail,
+und seit 10.4.1 jeder Aufruf, den der Transport als `unknown` führt)
 bekommt den Satz „Der Server hat nicht geantwortet, der Vorgang kann trotzdem
 gebucht sein …“, nie „erneut versuchen“. Die Sätze sind dieselben wie in der
 Web-Kasse (`messageText`, `labelText`, erzeugt aus `pos-texts.json`).

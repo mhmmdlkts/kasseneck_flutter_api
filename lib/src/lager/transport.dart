@@ -8,7 +8,10 @@
 ///
 /// **Nichts wird wiederholt.** Lesen hat keine Wirkung und darf nach einem
 /// Zeitlimit erneut gerufen werden; bei `rate_limited` vorher
-/// `inventoryRetryAfterSec` warten.
+/// `inventoryRetryAfterSec` warten. Ein schreibender Aufruf meldet nach
+/// Zeitlimit, Netzfehler, HTTP 5xx oder unlesbarer Antwort Ausgang unklar:
+/// dann mit **demselben** `idempotencyKey` erneut senden, nie mit einem
+/// neuen.
 library;
 
 import 'dart:convert';
@@ -61,6 +64,10 @@ class InventoryTransport {
     // Vor dem Senden: ein nicht serialisierbarer Parameter ist ein
     // Programmierfehler und keine Netzstoerung.
     final rumpf = jsonEncode({'params': params});
+    // Ein Probelauf (`previewGoodsReceipt`) bleibt nach einem Zeitlimit
+    // `rejected`, jeder Aufruf mit Wirkung `unknown`; entschieden an genau
+    // den Parametern, die hinausgehen.
+    final probelauf = isDryRun(name, params);
     final antwort = await v3Post(
       _http,
       functionName: name,
@@ -70,9 +77,10 @@ class InventoryTransport {
       kasseneck: _kopf,
       body: rumpf,
       timeout: _timeout,
+      dryRun: probelauf,
     );
-    final huelle = readEnvelope(name, antwort);
-    if (huelle['status'] == 'success') return envelopeData(name, huelle, antwort.statusCode);
+    final huelle = readEnvelope(name, antwort, dryRun: probelauf);
+    if (huelle['status'] == 'success') return envelopeData(name, huelle, antwort.statusCode, dryRun: probelauf);
     throw envelopeError(name, huelle);
   }
 }
