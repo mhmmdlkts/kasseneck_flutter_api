@@ -1,3 +1,98 @@
+## 10.3.0
+
+Twin of `@kreiseck/kasseneck-api` `1.4.0` (contract files pulled from that
+version): the Inventory API, read side and account webhooks, as the new
+library `package:kasseneck_api/inventory.dart` (twin of `./inventory`).
+Reason: since stage 5a the backend offers articles, locations, stock and the
+stock ledger under `/v3` with the account's `api_key`, plus webhooks that
+report every stock change within seconds. A shop backend written in Dart
+needs a typed client and, above all, a signature check it cannot get wrong.
+
+Additive, no breaking change; every existing call sends and reads the same
+bytes as in 10.2.0.
+
+- **`InventoryClient(apiKey: …)`** (`inventory.dart`, server only, base
+  `https://api.kasseneck.at/v3`, `kInventoryBaseUrl`; `InventoryTransport` and
+  `InventoryClient.withTransport` as for the invoice API): `getArticle`,
+  `listArticles`, `lookupArticleByCode` (`code:`, or `externalSystem:` with
+  `externalId:`), `listLocations`, `getStock`, `listStock`,
+  `listStockMovements`, and the streams `iterateArticles`, `iterateStock`,
+  `iterateStockMovements` that follow `nextCursor` until `null` (the same
+  cursor twice, the start cursor included, ends the stream with a response
+  error instead of looping). Webhook management: `createWebhook`,
+  `updateWebhook` (`removeDescription: true` sends `description: null`),
+  `deleteWebhook` (record `({webhookId, deleted})`), `listWebhooks`,
+  `sendWebhookTest`, `rotateWebhookSecret`, `listWebhookDeliveries`. Checked
+  before sending, nothing goes out: an empty id or cursor, `limit` outside
+  1–200, `code` together with `externalSystem`/`externalId`, an empty
+  `events` list, an update without a change. A partner key (`pk_…`) or a
+  cashbox token (`cb_…`) throws when the client is created.
+- **Models**: `Article` (incl. `stockLocationIds`; `purchasePriceMicros` only
+  with the account permission `costs`, `hasPurchasePriceMicros` says whether
+  the field was sent), `ArticlePage`, `Location`, `LocationAddress`,
+  `StockLevel` (`onHand`, `reserved`, `available`, `defective`, `sequence`,
+  `updatedAt`), `StockResult`, `StockPage`, `StockMovement` (with
+  `StockAfter`, `StockMovementSourceRef`, `StockMovementLot`; value fields
+  with `has…`), `StockMovementPage`, `InventoryWebhook`
+  (`consecutiveFailures`, `InventoryWebhookLastDelivery`),
+  `InventoryWebhookWithSecret`, `InventoryWebhookList`,
+  `InventoryWebhookDelivery` (`deliveryId`, status `delivered`, `pending`,
+  `failed`, `dropped`), `InventoryWebhookTestResult`,
+  `InventoryWebhookTestDelivery`, `StockChangedEventData`,
+  `StockBelowMinimumEventData`. `StockValue` is the register's type, exported
+  again. Each model has `toJson()` in the wire form; optional fields the server
+  sent are kept, absent ones stay absent. Quantities are integer thousandths,
+  money integer cents, purchase prices integer micro-euros; `available` may be
+  negative. A fractional or missing quantity, amount or `sequence` throws
+  `KasseneckValidationError` (`response`), as for register stock since
+  10.2.0; `4000.0` counts as an integer, as in JavaScript. Catalogue values
+  (type, source, cause, status) stay `String`, so an unknown value arrives
+  unchanged; an unknown location type becomes `null`, as in npm.
+- **Incoming webhooks**: `verifyInventoryWebhookSignature(secret, header,
+  rawBody, {toleranceSec = 300, now})` returns `bool` and never throws:
+  HMAC-SHA256 over `"<t>.<raw body>"`, constant-time comparison, 300 seconds
+  in both directions, several `v1=` parts allowed, `t` only as 1 to 15 digits,
+  `secret` a `String` or a list of them, `rawBody` a `String` or bytes;
+  checked against the backend's test vector (t=1700000000). Synchronous,
+  unlike npm (which uses WebCrypto): `package:crypto` is pure Dart.
+  `parseInventoryWebhookEvent(rawBody)` returns the sealed
+  `InventoryWebhookEvent` (`InventoryStockChangedEvent`,
+  `InventoryStockBelowMinimumEvent`, `InventoryArticleEvent`) with
+  `accountId` in the envelope; an event type this version does not know
+  returns `null`, a body that is no envelope throws `KasseneckValidationError`
+  (`response`). Header names `webhookSignatureHeader`, `webhookEventHeader`,
+  `webhookDeliveryHeader`, window `webhookToleranceSec`.
+- **Errors** through the existing classes: `inventoryErrorCodes`
+  (`rate_limited` with `retryAfterSec`, `inventory_api_not_enabled`,
+  `module_inactive`, `article_not_found`, `invalid_cursor`, `webhook_limit`
+  and the other webhook codes), `inventoryRequestErrorCodes`,
+  `isInventoryErrorCode`, `inventoryErrorCode`, `isInventoryError`,
+  `inventoryFieldErrors`, `inventoryRetryAfterSec` (a fractional wait is
+  rounded up).
+- **Lists as data**: `inventoryEndpoints`, `inventoryWebhookEvents`,
+  `inventoryWebhookEnvelopeFields`, `locationTypes`, `stockMovementTypes`,
+  `stockMovementSources`, `stockConditions`, `stockChangeCauses`,
+  `webhookDeliveryStatuses`, `inventoryWebhookLimit`, `inventoryListLimitMax`,
+  each held against `surface.json` (key `inventory`) and the backend
+  catalogues. A goods receipt is `goods_receipt`, opening stock taken over is
+  `takeover`; `receipt` only ever means a sales receipt (`source.type`).
+- **Differences from npm, on purpose.** Time filters (`updatedSince`,
+  `changedSince`, `from`, `to`) take a `DateTime`, not a string: the server
+  accepts only full ISO 8601 timestamps, and a `DateTime` always produces one
+  (UTC, milliseconds, like `Date.toISOString()`). A bad key throws
+  `KasseneckValidationError` (`request`) as in `InvoiceApi`; Dart has no
+  `KasseneckAuthError`. `createdAt` of an event must be an integer.
+  `StockLevel` shares its name with the register's `StockLevel` in
+  `pos.dart`, as in npm; import one of the two libraries with a prefix if you
+  need both.
+- **Dependency**: `crypto` moves from `dev_dependencies` to `dependencies`
+  (dart-lang, pure Dart) for the HMAC.
+- **Contract**: `zwillinge.yaml` pins npm `1.4.0`; `test/fixtures/vertrag/`
+  pulled again (`v3/antworten/lager.json` with real responses and delivered
+  webhook events, the 14 new calls in `surface.json`, which the call list
+  `Aufrufe.alle` now knows); the text catalogue and the code table layout
+  regenerated from the same version (content unchanged).
+
 ## 10.2.0
 
 Twin of `@kreiseck/kasseneck-api` `1.3.0` (contract files pulled from that

@@ -1,6 +1,6 @@
 name: kasseneck_api
 description: "Austrian fiscal cash register (RKSV, Registrierkasse) for Flutter: signed receipts, cancellations, hobex and Stripe card payments, ESC/POS receipt printing."
-version: 10.2.0
+version: 10.3.0
 homepage: https://github.com/mhmmdlkts/kasseneck_flutter_api
 repository: https://github.com/mhmmdlkts/kasseneck_flutter_api
 issue_tracker: https://github.com/mhmmdlkts/kasseneck_flutter_api/issues
@@ -14,6 +14,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  crypto: ^3.0.3 # HMAC-SHA256 der Lager-Webhooks (verifyInventoryWebhookSignature), reines Dart
   http: ^1.6.0
   path_provider: ^2.1.5
   qr: ^3.0.2
@@ -30,6 +31,5 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   image: ^4.8.0
-  crypto: ^3.0.3
   yaml: ^3.1.2 # nur für die Zwillingsprüfung; nicht Teil der veröffentlichten Abhängigkeiten
   analyzer: ^12.1.0 # nur für den Namenswächter (test/oeffentliche_namen_test.dart)

@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "b1049e2f65e9261cf8f729481d9ce1e5afda2cf620333f38ae6bf1afb36c8712",
-    "inputsSha256": "62e0d9891baa5049aa7634f11fcfd9a44d80b2cb8da79da4fee13140ccd96c2a",
-    "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+    "sha256": "79931a40ccaea45777da4713bba475c2f74e1fe7d6264f294cecd321964f9ded",
+    "inputsSha256": "4fec6d58dd069e6d980bcab1d9883380d06e6fe8ba2a5e0f05d772b7720955c2",
+    "backendPackage": "@kreiseck/kasseneck-api@0.32.2",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -87,7 +87,21 @@
       "getInvoiceItem",
       "listInvoiceItems",
       "setCustomerMandate",
-      "revokeCustomerMandate"
+      "revokeCustomerMandate",
+      "getArticle",
+      "listArticles",
+      "lookupArticleByCode",
+      "listLocations",
+      "getStock",
+      "listStock",
+      "listStockMovements",
+      "createWebhook",
+      "updateWebhook",
+      "deleteWebhook",
+      "listWebhooks",
+      "sendWebhookTest",
+      "rotateWebhookSecret",
+      "listWebhookDeliveries"
     ],
     "v3Routed": [
       "createReceipt",
@@ -149,7 +163,21 @@
       "getInvoiceItem",
       "listInvoiceItems",
       "setCustomerMandate",
-      "revokeCustomerMandate"
+      "revokeCustomerMandate",
+      "getArticle",
+      "listArticles",
+      "lookupArticleByCode",
+      "listLocations",
+      "getStock",
+      "listStock",
+      "listStockMovements",
+      "createWebhook",
+      "updateWebhook",
+      "deleteWebhook",
+      "listWebhooks",
+      "sendWebhookTest",
+      "rotateWebhookSecret",
+      "listWebhookDeliveries"
     ],
     "register": [
       "pairRegisterDevice",
@@ -219,13 +247,16 @@
       "createPaymentLinkStripe",
       "createPrintJob",
       "createReceipt",
+      "createWebhook",
       "deletePartnerWebhook",
+      "deleteWebhook",
       "downloadDailyReport",
       "downloadReceipt",
       "downloadReport",
       "endRegisterSession",
       "financeWebService",
       "generateFullReceiptId",
+      "getArticle",
       "getCustomer",
       "getCustomerCredentials",
       "getCustomerSignatureStatus",
@@ -243,14 +274,17 @@
       "getPrintJob",
       "getReceipt",
       "getReportV2",
+      "getStock",
       "hobexGetStatus",
       "hobexPayApi",
       "hobexRefundApi",
       "issueInvoice",
+      "listArticles",
       "listBrands",
       "listCustomerCashregisters",
       "listInvoiceItems",
       "listInvoices",
+      "listLocations",
       "listMyArticleGroups",
       "listMyArticles",
       "listMyCashregisters",
@@ -264,6 +298,11 @@
       "listPartnerWebhooks",
       "listRegisterSessionsForDevice",
       "listRegisterUsersForDevice",
+      "listStock",
+      "listStockMovements",
+      "listWebhookDeliveries",
+      "listWebhooks",
+      "lookupArticleByCode",
       "pairRegisterDevice",
       "recordInvoicePayment",
       "registerPinLogin",
@@ -273,10 +312,12 @@
       "requestCustomerSignature",
       "revokeCustomerMandate",
       "rotatePartnerWebhookSecret",
+      "rotateWebhookSecret",
       "searchCustomers",
       "sendPartnerCustomerFonLink",
       "sendPartnerWebhookTest",
       "sendReceiptEmail",
+      "sendWebhookTest",
       "setCustomerMandate",
       "setMyCashregisterStockLocation",
       "setMyKasseLogo",
@@ -287,6 +328,7 @@
       "updateCustomer",
       "updateInvoiceItem",
       "updatePartnerWebhook",
+      "updateWebhook",
       "withdrawInvoiceItem"
     ],
     "base": "https://api.kasseneck.at/v3/"
@@ -334,6 +376,33 @@
       "direkt": "direct",
       "vollmacht": "power_of_attorney",
       "unterauftrag": "subprocessor"
+    },
+    "BEWEGUNG_ART": {
+      "verkauf": "sale",
+      "zugang": "goods_receipt",
+      "abgang": "loss",
+      "rueckgabe": "return",
+      "umbuchung_ab": "transfer_out",
+      "umbuchung_zu": "transfer_in",
+      "zustand_ab": "condition_out",
+      "zustand_zu": "condition_in",
+      "inventur": "stocktake",
+      "korrektur": "adjustment",
+      "uebernahme": "takeover",
+      "gegenbuchung": "reversal",
+      "nachbewertung": "revaluation",
+      "methodenwechsel": "method_change"
+    },
+    "BEWEGUNG_QUELLE": {
+      "beleg": "receipt",
+      "rechnung": "invoice",
+      "storno": "cancellation",
+      "gutschrift": "credit_note",
+      "panel": "panel",
+      "kasse": "register",
+      "api": "api",
+      "inventur": "stocktake",
+      "system": "system"
     },
     "BUNDESLAND": {
       "burgenland": "AT-1",
@@ -483,6 +552,25 @@
       "direkt": "direct",
       "connect": "connect"
     },
+    "LAGER_URSACHE": {
+      "verkauf": "sale",
+      "rechnung": "invoice",
+      "gutschrift": "credit_note",
+      "storno": "cancellation",
+      "zugang": "goods_receipt",
+      "umbuchung": "transfer",
+      "abgang": "loss",
+      "zustand": "condition",
+      "gegenbuchung": "reversal",
+      "reservierung": "reservation",
+      "inventur": "stocktake",
+      "uebernahme": "takeover",
+      "sonstiges": "other"
+    },
+    "LAGER_ZUSTAND": {
+      "verkaufbar": "sellable",
+      "defekt": "defective"
+    },
     "LAYOUT_TON": {
       "belegart": "receipt_type",
       "warnung": "warning"
@@ -592,6 +680,7 @@
       "api_not_approved",
       "app_not_accepted",
       "app_not_found",
+      "article_not_found",
       "brand_not_found",
       "cancellation_failed",
       "cancellation_outcome_unknown",
@@ -632,9 +721,12 @@
       "incomplete",
       "internal_translation_error",
       "invalid_address",
+      "invalid_cursor",
       "invalid_items",
       "invalid_line",
       "invalid_return_disposition",
+      "invalid_webhook_url",
+      "inventory_api_not_enabled",
       "invoice_ambiguous",
       "invoice_api_not_enabled",
       "invoice_not_found",
@@ -753,7 +845,8 @@
       "validation",
       "vat_rate_not_in_country",
       "webhook_inactive",
-      "webhook_limit"
+      "webhook_limit",
+      "webhook_not_found"
     ],
     "translation": {
       "zugang_nicht_erlaubt": "access_not_allowed",
@@ -1052,6 +1145,21 @@
       "webhook_limit",
       "webhook_inactive",
       "event_not_subscribed"
+    ],
+    "inventory": [
+      "validation",
+      "invalid_cursor",
+      "rate_limited",
+      "module_inactive",
+      "register_user_not_allowed",
+      "inventory_api_not_enabled",
+      "article_not_found",
+      "webhook_not_found",
+      "webhook_limit",
+      "invalid_webhook_url",
+      "event_not_subscribed",
+      "webhook_inactive",
+      "server_error"
     ],
     "registerCases": [
       "already_cancelled",
@@ -1863,7 +1971,29 @@
         }
       }
     },
+    "createWebhook": {
+      "data": {
+        "webhook": {
+          "__": "webhook",
+          "events": "ereignisse",
+          "active": "aktiv",
+          "description": "beschreibung",
+          "lastDelivery": "letzteZustellung",
+          "consecutiveFailures": "fehlerInFolge"
+        }
+      },
+      "werte": {
+        "webhook.lastDelivery.status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
     "deletePartnerWebhook": {
+      "data": {
+        "deleted": "geloescht"
+      }
+    },
+    "deleteWebhook": {
       "data": {
         "deleted": "geloescht"
       }
@@ -1878,6 +2008,15 @@
       }
     },
     "generateFullReceiptId": {},
+    "getArticle": {
+      "data": {
+        "article": {
+          "__": "artikel",
+          "stockLocationIds": "standorte",
+          "purchasePriceMicros": "einkaufMicros"
+        }
+      }
+    },
     "getCustomer": {},
     "getCustomerCredentials": {},
     "getCustomerSignatureStatus": {
@@ -2345,6 +2484,25 @@
         "$function": "ergaenze"
       }
     },
+    "getStock": {
+      "data": {
+        "stock": [
+          {
+            "__": "bestand",
+            "locationId": "standortId",
+            "onHand": "verkaufbar",
+            "reserved": "reserviert",
+            "available": "verfuegbar",
+            "defective": "defekt",
+            "sequence": "sequence",
+            "updatedAt": "geaendertAt"
+          }
+        ]
+      },
+      "ergaenze": {
+        "$function": "lagerwerteNachAussen"
+      }
+    },
     "hobexGetStatus": {},
     "hobexPayApi": {},
     "hobexRefundApi": {},
@@ -2404,6 +2562,18 @@
             "code": "validation"
           }
         ]
+      }
+    },
+    "listArticles": {
+      "data": {
+        "articles": [
+          {
+            "__": "artikel",
+            "stockLocationIds": "standorte",
+            "purchasePriceMicros": "einkaufMicros"
+          }
+        ],
+        "nextCursor": "weiter"
       }
     },
     "listBrands": {},
@@ -2494,6 +2664,31 @@
             "code": "validation"
           }
         ]
+      }
+    },
+    "listLocations": {
+      "data": {
+        "locations": [
+          {
+            "__": "standorte",
+            "type": "typ",
+            "address": {
+              "__": "adresse",
+              "street": "strasse",
+              "zip": "plz",
+              "city": "ort",
+              "country": "land"
+            },
+            "licensePlate": "kennzeichen",
+            "active": "aktiv",
+            "virtual": "virtuell"
+          }
+        ]
+      },
+      "werte": {
+        "locations[].type": {
+          "$catalog": "STANDORT_TYP"
+        }
       }
     },
     "listMyArticleGroups": {
@@ -2894,6 +3089,135 @@
         }
       }
     },
+    "listStock": {
+      "data": {
+        "stock": [
+          {
+            "__": "bestand",
+            "locationId": "standortId",
+            "onHand": "verkaufbar",
+            "reserved": "reserviert",
+            "available": "verfuegbar",
+            "defective": "defekt",
+            "sequence": "sequence",
+            "updatedAt": "geaendertAt"
+          }
+        ],
+        "nextCursor": "weiter"
+      },
+      "ergaenze": {
+        "$function": "lagerwerteNachAussen"
+      }
+    },
+    "listStockMovements": {
+      "paramWerte": {
+        "type": {
+          "$catalog": "BEWEGUNG_ART"
+        },
+        "source": {
+          "$catalog": "BEWEGUNG_QUELLE"
+        }
+      },
+      "data": {
+        "movements": [
+          {
+            "__": "bewegungen",
+            "type": "art",
+            "locationId": "standortId",
+            "condition": "zustand",
+            "quantityDelta": "mengeDelta",
+            "stockAfter": {
+              "__": "bestandNachher",
+              "sellable": "verkaufbar",
+              "defective": "defekt"
+            },
+            "operationId": "vorgangId",
+            "source": {
+              "__": "quelle",
+              "type": "art",
+              "register": "kasse"
+            },
+            "viennaDay": "wienerTag",
+            "time": "zeit",
+            "lots": [
+              {
+                "__": "lose",
+                "lotId": "losId",
+                "quantity": "menge",
+                "expiresOn": "ablaufAm",
+                "batch": "charge",
+                "serialNumber": "seriennummer",
+                "receivedAt": "zugangAt",
+                "valueCents": "wertCents"
+              }
+            ],
+            "valueDeltaCents": "wertDeltaCents",
+            "consumedValueCents": "verbrauchWertCents"
+          }
+        ],
+        "nextCursor": "weiter"
+      },
+      "werte": {
+        "movements[].type": {
+          "$catalog": "BEWEGUNG_ART"
+        },
+        "movements[].source.type": {
+          "$catalog": "BEWEGUNG_QUELLE"
+        },
+        "movements[].condition": {
+          "$catalog": "LAGER_ZUSTAND"
+        }
+      }
+    },
+    "listWebhookDeliveries": {
+      "data": {
+        "deliveries": [
+          {
+            "__": "zustellungen",
+            "event": "ereignis",
+            "attempts": "versuche",
+            "response": "antwort",
+            "error": "fehler",
+            "lastAttemptAt": "letzterVersuchAt",
+            "nextAttemptAt": "naechsterVersuchAt"
+          }
+        ]
+      },
+      "werte": {
+        "deliveries[].status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
+    "listWebhooks": {
+      "data": {
+        "webhooks": [
+          {
+            "__": "webhooks",
+            "events": "ereignisse",
+            "active": "aktiv",
+            "description": "beschreibung",
+            "lastDelivery": "letzteZustellung",
+            "consecutiveFailures": "fehlerInFolge"
+          }
+        ],
+        "events": "ereignisse"
+      },
+      "werte": {
+        "webhooks[].lastDelivery.status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
+    "lookupArticleByCode": {
+      "data": {
+        "article": {
+          "__": "artikel",
+          "stockLocationIds": "standorte",
+          "purchasePriceMicros": "einkaufMicros"
+        }
+      }
+    },
     "pairRegisterDevice": {
       "data": {
         "companyName": "betrieb",
@@ -3037,6 +3361,23 @@
         "$function": "ergaenze"
       }
     },
+    "rotateWebhookSecret": {
+      "data": {
+        "webhook": {
+          "__": "webhook",
+          "events": "ereignisse",
+          "active": "aktiv",
+          "description": "beschreibung",
+          "lastDelivery": "letzteZustellung",
+          "consecutiveFailures": "fehlerInFolge"
+        }
+      },
+      "werte": {
+        "webhook.lastDelivery.status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
     "searchCustomers": {},
     "sendPartnerCustomerFonLink": {},
     "sendPartnerWebhookTest": {
@@ -3053,6 +3394,17 @@
       "werte": {
         "via": {
           "$catalog": "MAILWEG"
+        }
+      }
+    },
+    "sendWebhookTest": {
+      "data": {
+        "event": "ereignis",
+        "deliveries": "zustellungen"
+      },
+      "werte": {
+        "deliveries[].status": {
+          "$catalog": "ZUSTELLUNG"
         }
       }
     },
@@ -3409,9 +3761,44 @@
         "$function": "ergaenze"
       }
     },
+    "updateWebhook": {
+      "data": {
+        "webhook": {
+          "__": "webhook",
+          "events": "ereignisse",
+          "active": "aktiv",
+          "description": "beschreibung",
+          "lastDelivery": "letzteZustellung",
+          "consecutiveFailures": "fehlerInFolge"
+        }
+      },
+      "werte": {
+        "webhook.lastDelivery.status": {
+          "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
     "withdrawInvoiceItem": {}
   },
   "events": {
+    "article.created": {
+      "data": {
+        "stockLocationIds": "standorte",
+        "purchasePriceMicros": "einkaufMicros"
+      }
+    },
+    "article.deactivated": {
+      "data": {
+        "stockLocationIds": "standorte",
+        "purchasePriceMicros": "einkaufMicros"
+      }
+    },
+    "article.updated": {
+      "data": {
+        "stockLocationIds": "standorte",
+        "purchasePriceMicros": "einkaufMicros"
+      }
+    },
     "cashregister.failed": {
       "werte": {
         "code": {
@@ -3541,6 +3928,36 @@
           "adresse_ungueltig": "invalid_address",
           "zu_oft": "too_many_requests",
           "versand_fehlgeschlagen": "send_failed"
+        }
+      }
+    },
+    "stock.below_minimum": {
+      "data": {
+        "locationId": "standortId",
+        "onHand": "verkaufbar",
+        "reserved": "reserviert",
+        "available": "verfuegbar",
+        "defective": "defekt",
+        "sequence": "sequence",
+        "updatedAt": "geaendertAt",
+        "minStock": "minStock"
+      }
+    },
+    "stock.changed": {
+      "data": {
+        "locationId": "standortId",
+        "onHand": "verkaufbar",
+        "reserved": "reserviert",
+        "available": "verfuegbar",
+        "defective": "defekt",
+        "sequence": "sequence",
+        "updatedAt": "geaendertAt",
+        "cause": "ursache",
+        "movementId": "bewegungId"
+      },
+      "werte": {
+        "cause": {
+          "$catalog": "LAGER_URSACHE"
         }
       }
     }

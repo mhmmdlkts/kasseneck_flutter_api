@@ -1,0 +1,1520 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "ca5579cac3997ad4ad7269d7645bb67aabdf29ab4fce4645592ea4c3c1d5c30b",
+    "inputsSha256": "f49e446a8b696f54ca18db0c83a35792294ce53e54b1be31fc1bd69dd8f99d13",
+    "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
+    "inputs": [
+      "functions-kasse/gemeinsam/api-rand.js",
+      "functions-kasse/gemeinsam/api-vokabular-v3.js",
+      "functions-kasse/gemeinsam/webhook-versand.js",
+      "functions-kasse/konto-webhook-core.js",
+      "functions-kasse/lager-api-core.js",
+      "functions-kasse/lager-api-endpoints.js",
+      "functions-kasse/lager-api-ereignisse.js",
+      "functions-kasse/lager-buchung.js",
+      "functions-kasse/lager-core.js",
+      "functions-kasse/lager-endpoints.js",
+      "functions-kasse/test/unit/fixtures/v3-waechter.js",
+      "functions-kasse/test/unit/v3-vertrag-export-lager.test.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js"
+    ]
+  },
+  "channel": "api",
+  "note": "Lager-API (Stufe 5a) unter /v3: Faelle in Ablaufreihenfolge (ein Konto, Standort haupt), dazu webhookEvents = zugestellte Konto-Webhooks (Huelle wie gesendet, ohne Probesendungen). Secrets als Platzhalter.",
+  "cases": [
+    {
+      "channel": "api",
+      "name": "create_webhook",
+      "endpoint": "createWebhook",
+      "path": "/v3/createWebhook",
+      "params": {
+        "url": "https://shop.baeckerei-kornblum.at/kasseneck-webhook",
+        "events": [
+          "stock.changed",
+          "stock.below_minimum",
+          "article.created",
+          "article.updated",
+          "article.deactivated"
+        ],
+        "description": "Webshop Kornblum"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "secret": "whsec_EXAMPLEDF1171A2AAAAAAAAAAAAAAAAA",
+          "webhook": {
+            "id": "3pJJwmZZjQTW",
+            "url": "https://shop.baeckerei-kornblum.at/kasseneck-webhook",
+            "createdAt": "2026-10-06T06:00:02.000Z",
+            "events": [
+              "stock.changed",
+              "stock.below_minimum",
+              "article.created",
+              "article.updated",
+              "article.deactivated"
+            ],
+            "active": true,
+            "description": "Webshop Kornblum",
+            "lastDelivery": null,
+            "consecutiveFailures": 0
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_locations",
+      "endpoint": "listLocations",
+      "path": "/v3/listLocations",
+      "params": {},
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "locations": [
+            {
+              "id": "lager1",
+              "name": "Lager Kornblum",
+              "type": "warehouse",
+              "address": {
+                "street": "Mühlgasse 4",
+                "zip": "5020",
+                "city": "Salzburg",
+                "country": "AT"
+              },
+              "licensePlate": null,
+              "active": true
+            },
+            {
+              "id": "lieferwagen",
+              "name": "Lieferwagen",
+              "type": "vehicle",
+              "address": null,
+              "licensePlate": "S-123AB",
+              "active": true
+            },
+            {
+              "id": "haupt",
+              "name": "Hauptstandort",
+              "type": "store",
+              "address": null,
+              "licensePlate": null,
+              "active": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_article",
+      "endpoint": "getArticle",
+      "path": "/v3/getArticle",
+      "params": {
+        "articleId": "roggenbrot"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "roggenbrot",
+            "name": "Roggenbrot 1 kg",
+            "unitPriceCents": 450,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": "A-100",
+            "ean": "9001234567896",
+            "internalCode": null,
+            "groupId": "brot",
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "minStock": 5000,
+            "active": true,
+            "createdAt": "2026-10-01T04:00:00.000Z",
+            "updatedAt": "2026-10-06T06:00:04.000Z",
+            "stockLocationIds": [
+              "haupt"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_get_article_not_found",
+      "endpoint": "getArticle",
+      "path": "/v3/getArticle",
+      "params": {
+        "articleId": "gibt_es_nicht"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Artikel nicht gefunden.",
+        "data": {
+          "code": "article_not_found"
+        },
+        "code": "article_not_found"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_articles_first_page",
+      "endpoint": "listArticles",
+      "path": "/v3/listArticles",
+      "params": {
+        "limit": 2
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "articles": [
+            {
+              "id": "kipferl",
+              "name": "Butterkipferl",
+              "unitPriceCents": 130,
+              "vatRate": 10,
+              "unit": "Stk",
+              "number": "A-200",
+              "ean": null,
+              "internalCode": "KB-200",
+              "groupId": "gebaeck",
+              "revenueGroupId": null,
+              "stockTracked": true,
+              "minStock": null,
+              "active": true,
+              "createdAt": "2026-10-01T04:30:00.000Z",
+              "updatedAt": "2026-10-06T06:00:04.000Z",
+              "stockLocationIds": [
+                "haupt",
+                "lieferwagen"
+              ]
+            },
+            {
+              "id": "roggenbrot",
+              "name": "Roggenbrot 1 kg",
+              "unitPriceCents": 450,
+              "vatRate": 10,
+              "unit": "Stk",
+              "number": "A-100",
+              "ean": "9001234567896",
+              "internalCode": null,
+              "groupId": "brot",
+              "revenueGroupId": null,
+              "stockTracked": true,
+              "minStock": 5000,
+              "active": true,
+              "createdAt": "2026-10-01T04:00:00.000Z",
+              "updatedAt": "2026-10-06T06:00:04.000Z",
+              "stockLocationIds": [
+                "haupt"
+              ]
+            }
+          ],
+          "nextCursor": "eyJ6ZWl0IjoxNzkxMjY2NDA0MDAwMDAwLCJpZCI6InJvZ2dlbmJyb3QifQ"
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_articles_next_page",
+      "endpoint": "listArticles",
+      "path": "/v3/listArticles",
+      "params": {
+        "limit": 2,
+        "cursor": "eyJ6ZWl0IjoxNzkxMjY2NDA0MDAwMDAwLCJpZCI6InJvZ2dlbmJyb3QifQ"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "articles": [
+            {
+              "id": "semmel",
+              "name": "Kaisersemmel",
+              "unitPriceCents": 120,
+              "vatRate": 10,
+              "unit": "Stk",
+              "number": "A-300",
+              "ean": null,
+              "internalCode": "KB-300",
+              "groupId": "gebaeck",
+              "revenueGroupId": null,
+              "stockTracked": true,
+              "minStock": null,
+              "active": false,
+              "createdAt": "2026-10-06T06:00:04.000Z",
+              "updatedAt": "2026-10-06T06:00:04.001Z",
+              "stockLocationIds": [
+                "haupt"
+              ]
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_articles_updated_since",
+      "endpoint": "listArticles",
+      "path": "/v3/listArticles",
+      "params": {
+        "updatedSince": "2026-10-05T04:15:00.000Z",
+        "active": true
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "articles": [
+            {
+              "id": "kipferl",
+              "name": "Butterkipferl",
+              "unitPriceCents": 130,
+              "vatRate": 10,
+              "unit": "Stk",
+              "number": "A-200",
+              "ean": null,
+              "internalCode": "KB-200",
+              "groupId": "gebaeck",
+              "revenueGroupId": null,
+              "stockTracked": true,
+              "minStock": null,
+              "active": true,
+              "createdAt": "2026-10-01T04:30:00.000Z",
+              "updatedAt": "2026-10-06T06:00:04.000Z",
+              "stockLocationIds": [
+                "haupt",
+                "lieferwagen"
+              ]
+            },
+            {
+              "id": "roggenbrot",
+              "name": "Roggenbrot 1 kg",
+              "unitPriceCents": 450,
+              "vatRate": 10,
+              "unit": "Stk",
+              "number": "A-100",
+              "ean": "9001234567896",
+              "internalCode": null,
+              "groupId": "brot",
+              "revenueGroupId": null,
+              "stockTracked": true,
+              "minStock": 5000,
+              "active": true,
+              "createdAt": "2026-10-01T04:00:00.000Z",
+              "updatedAt": "2026-10-06T06:00:04.000Z",
+              "stockLocationIds": [
+                "haupt"
+              ]
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_list_articles_invalid_cursor",
+      "endpoint": "listArticles",
+      "path": "/v3/listArticles",
+      "params": {
+        "cursor": "kaputt"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Der Blätter-Zeiger ist ungültig.",
+        "data": {
+          "code": "invalid_cursor"
+        },
+        "code": "invalid_cursor"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_list_articles_validation",
+      "endpoint": "listArticles",
+      "path": "/v3/listArticles",
+      "params": {
+        "limit": 500
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "limit",
+              "message": "Limit muss eine ganze Zahl von 1 bis 200 sein."
+            }
+          ]
+        },
+        "code": "validation"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "lookup_article_by_ean",
+      "endpoint": "lookupArticleByCode",
+      "path": "/v3/lookupArticleByCode",
+      "params": {
+        "code": "9001234567896"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "roggenbrot",
+            "name": "Roggenbrot 1 kg",
+            "unitPriceCents": 450,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": "A-100",
+            "ean": "9001234567896",
+            "internalCode": null,
+            "groupId": "brot",
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "minStock": 5000,
+            "active": true,
+            "createdAt": "2026-10-01T04:00:00.000Z",
+            "updatedAt": "2026-10-06T06:00:04.000Z",
+            "stockLocationIds": [
+              "haupt"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_lookup_article_unknown_code",
+      "endpoint": "lookupArticleByCode",
+      "path": "/v3/lookupArticleByCode",
+      "params": {
+        "code": "4006381333931"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Artikel nicht gefunden.",
+        "data": {
+          "code": "article_not_found"
+        },
+        "code": "article_not_found"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_stock",
+      "endpoint": "getStock",
+      "path": "/v3/getStock",
+      "params": {
+        "articleId": "roggenbrot"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stock": [
+            {
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "onHand": 4000,
+              "reserved": 0,
+              "available": 4000,
+              "defective": 0,
+              "sequence": 2,
+              "updatedAt": "2026-10-06T06:00:04.000Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock",
+      "endpoint": "listStock",
+      "path": "/v3/listStock",
+      "params": {
+        "locationId": "haupt"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stock": [
+            {
+              "articleId": "kipferl",
+              "locationId": "haupt",
+              "onHand": 40000,
+              "reserved": 0,
+              "available": 40000,
+              "defective": 0,
+              "sequence": 1,
+              "updatedAt": "2026-10-06T06:00:03.000Z"
+            },
+            {
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "onHand": 4000,
+              "reserved": 0,
+              "available": 4000,
+              "defective": 0,
+              "sequence": 2,
+              "updatedAt": "2026-10-06T06:00:04.000Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock_below_minimum",
+      "endpoint": "listStock",
+      "path": "/v3/listStock",
+      "params": {
+        "belowMinimum": true
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stock": [
+            {
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "onHand": 4000,
+              "reserved": 0,
+              "available": 4000,
+              "defective": 0,
+              "sequence": 2,
+              "updatedAt": "2026-10-06T06:00:04.000Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock_movements",
+      "endpoint": "listStockMovements",
+      "path": "/v3/listStockMovements",
+      "params": {
+        "articleId": "roggenbrot"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "movements": [
+            {
+              "id": "auto2_0",
+              "articleId": "roggenbrot",
+              "type": "loss",
+              "locationId": "haupt",
+              "condition": "sellable",
+              "quantityDelta": -8000,
+              "stockAfter": {
+                "sellable": 4000,
+                "defective": 0
+              },
+              "operationId": "auto2",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "panel",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:00:04.000Z",
+              "lots": [
+                {
+                  "lotId": "auto1_L0",
+                  "quantity": 8000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z"
+                }
+              ]
+            },
+            {
+              "id": "auto1_0",
+              "articleId": "roggenbrot",
+              "type": "goods_receipt",
+              "locationId": "haupt",
+              "condition": "sellable",
+              "quantityDelta": 12000,
+              "stockAfter": {
+                "sellable": 12000,
+                "defective": 0
+              },
+              "operationId": "auto1",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "panel",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:00:03.000Z",
+              "lots": [
+                {
+                  "lotId": "auto1_L0",
+                  "quantity": 12000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z"
+                }
+              ]
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock_movements_goods_receipt",
+      "endpoint": "listStockMovements",
+      "path": "/v3/listStockMovements",
+      "params": {
+        "locationId": "haupt",
+        "type": "goods_receipt",
+        "source": "panel"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "movements": [
+            {
+              "id": "auto1_1",
+              "articleId": "kipferl",
+              "type": "goods_receipt",
+              "locationId": "haupt",
+              "condition": "sellable",
+              "quantityDelta": 40000,
+              "stockAfter": {
+                "sellable": 40000,
+                "defective": 0
+              },
+              "operationId": "auto1",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "panel",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:00:03.000Z",
+              "lots": [
+                {
+                  "lotId": "auto1_L1",
+                  "quantity": 40000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z"
+                }
+              ]
+            },
+            {
+              "id": "auto1_0",
+              "articleId": "roggenbrot",
+              "type": "goods_receipt",
+              "locationId": "haupt",
+              "condition": "sellable",
+              "quantityDelta": 12000,
+              "stockAfter": {
+                "sellable": 12000,
+                "defective": 0
+              },
+              "operationId": "auto1",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "panel",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:00:03.000Z",
+              "lots": [
+                {
+                  "lotId": "auto1_L0",
+                  "quantity": 12000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z"
+                }
+              ]
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_list_stock_movements_validation",
+      "endpoint": "listStockMovements",
+      "path": "/v3/listStockMovements",
+      "params": {
+        "articleId": "roggenbrot",
+        "locationId": "haupt"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "locationId",
+              "message": "Bitte nur nach articleId ODER locationId filtern."
+            }
+          ]
+        },
+        "code": "validation"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_article_with_costs",
+      "endpoint": "getArticle",
+      "path": "/v3/getArticle",
+      "params": {
+        "articleId": "roggenbrot"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "roggenbrot",
+            "name": "Roggenbrot 1 kg",
+            "unitPriceCents": 450,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": "A-100",
+            "ean": "9001234567896",
+            "internalCode": null,
+            "groupId": "brot",
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "minStock": 5000,
+            "active": true,
+            "createdAt": "2026-10-01T04:00:00.000Z",
+            "updatedAt": "2026-10-06T06:00:04.000Z",
+            "stockLocationIds": [
+              "haupt"
+            ],
+            "purchasePriceMicros": 1200000
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock_with_costs",
+      "endpoint": "listStock",
+      "path": "/v3/listStock",
+      "params": {
+        "articleId": "roggenbrot"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stock": [
+            {
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "onHand": 4000,
+              "reserved": 0,
+              "available": 4000,
+              "defective": 0,
+              "sequence": 2,
+              "updatedAt": "2026-10-06T06:00:04.000Z"
+            }
+          ],
+          "nextCursor": null,
+          "values": [
+            {
+              "articleId": "roggenbrot",
+              "stockValueCents": 480,
+              "averageCostMicros": 1200000
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock_movements_with_costs",
+      "endpoint": "listStockMovements",
+      "path": "/v3/listStockMovements",
+      "params": {
+        "articleId": "roggenbrot",
+        "limit": 1
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "movements": [
+            {
+              "id": "auto2_0",
+              "articleId": "roggenbrot",
+              "type": "loss",
+              "locationId": "haupt",
+              "condition": "sellable",
+              "quantityDelta": -8000,
+              "stockAfter": {
+                "sellable": 4000,
+                "defective": 0
+              },
+              "operationId": "auto2",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "panel",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:00:04.000Z",
+              "lots": [
+                {
+                  "lotId": "auto1_L0",
+                  "quantity": 8000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z",
+                  "valueCents": 960
+                }
+              ],
+              "valueDeltaCents": -960,
+              "consumedValueCents": 960
+            }
+          ],
+          "nextCursor": "eyJ6ZWl0IjoxNzkxMjY2NDA0MDAwLCJpZCI6ImF1dG8yXzAifQ"
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_webhooks",
+      "endpoint": "listWebhooks",
+      "path": "/v3/listWebhooks",
+      "params": {},
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "webhooks": [
+            {
+              "id": "3pJJwmZZjQTW",
+              "url": "https://shop.baeckerei-kornblum.at/kasseneck-webhook",
+              "createdAt": "2026-10-06T06:00:02.000Z",
+              "events": [
+                "stock.changed",
+                "stock.below_minimum",
+                "article.created",
+                "article.updated",
+                "article.deactivated"
+              ],
+              "active": true,
+              "description": "Webshop Kornblum",
+              "lastDelivery": {
+                "at": "2026-10-06T06:00:04.000Z",
+                "status": "delivered",
+                "statusCode": 200
+              },
+              "consecutiveFailures": 0
+            }
+          ],
+          "events": [
+            "stock.changed",
+            "stock.below_minimum",
+            "article.created",
+            "article.updated",
+            "article.deactivated"
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "update_webhook",
+      "endpoint": "updateWebhook",
+      "path": "/v3/updateWebhook",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW",
+        "events": [
+          "stock.changed",
+          "stock.below_minimum"
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "webhook": {
+            "id": "3pJJwmZZjQTW",
+            "url": "https://shop.baeckerei-kornblum.at/kasseneck-webhook",
+            "createdAt": "2026-10-06T06:00:02.000Z",
+            "events": [
+              "stock.changed",
+              "stock.below_minimum"
+            ],
+            "active": true,
+            "description": "Webshop Kornblum",
+            "lastDelivery": {
+              "at": "2026-10-06T06:00:04.000Z",
+              "status": "delivered",
+              "statusCode": 200
+            },
+            "consecutiveFailures": 0
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_update_webhook_not_found",
+      "endpoint": "updateWebhook",
+      "path": "/v3/updateWebhook",
+      "params": {
+        "webhookId": "gibt_es_nicht",
+        "active": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Webhook nicht gefunden.",
+        "data": {
+          "code": "webhook_not_found"
+        },
+        "code": "webhook_not_found"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "send_webhook_test",
+      "endpoint": "sendWebhookTest",
+      "path": "/v3/sendWebhookTest",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW",
+        "event": "stock.below_minimum"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "eventId": "evt_Rq6FfqGQDbALsgsNFC86",
+          "event": "stock.below_minimum",
+          "deliveries": [
+            {
+              "deliveryId": "auto9",
+              "webhookId": "3pJJwmZZjQTW",
+              "status": "delivered",
+              "statusCode": 200
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_send_webhook_test_not_subscribed",
+      "endpoint": "sendWebhookTest",
+      "path": "/v3/sendWebhookTest",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW",
+        "event": "article.created"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Der Webhook abonniert das Ereignis article.created nicht.",
+        "data": {
+          "code": "event_not_subscribed"
+        },
+        "code": "event_not_subscribed"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_webhook_deliveries",
+      "endpoint": "listWebhookDeliveries",
+      "path": "/v3/listWebhookDeliveries",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW",
+        "limit": 3
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "deliveries": [
+            {
+              "deliveryId": "auto9",
+              "webhookId": "3pJJwmZZjQTW",
+              "eventId": "evt_Rq6FfqGQDbALsgsNFC86",
+              "status": "delivered",
+              "statusCode": 200,
+              "createdAt": "2026-10-06T06:00:29.000Z",
+              "test": true,
+              "event": "stock.below_minimum",
+              "attempts": 1,
+              "response": "ok",
+              "error": null,
+              "lastAttemptAt": "2026-10-06T06:00:29.000Z",
+              "nextAttemptAt": null
+            },
+            {
+              "deliveryId": "auto3",
+              "webhookId": "3pJJwmZZjQTW",
+              "eventId": "evt_wKLtZJFBjowUBsa875du",
+              "status": "delivered",
+              "statusCode": 200,
+              "createdAt": "2026-10-06T06:00:04.000Z",
+              "test": false,
+              "event": "stock.below_minimum",
+              "attempts": 1,
+              "response": "ok",
+              "error": null,
+              "lastAttemptAt": "2026-10-06T06:00:04.000Z",
+              "nextAttemptAt": null
+            },
+            {
+              "deliveryId": "auto4",
+              "webhookId": "3pJJwmZZjQTW",
+              "eventId": "evt_6SjOpc8E0wUJamYx4wDc",
+              "status": "delivered",
+              "statusCode": 200,
+              "createdAt": "2026-10-06T06:00:04.000Z",
+              "test": false,
+              "event": "stock.changed",
+              "attempts": 1,
+              "response": "ok",
+              "error": null,
+              "lastAttemptAt": "2026-10-06T06:00:04.000Z",
+              "nextAttemptAt": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "rotate_webhook_secret",
+      "endpoint": "rotateWebhookSecret",
+      "path": "/v3/rotateWebhookSecret",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "secret": "whsec_EXAMPLECD6279ACAAAAAAAAAAAAAAAAA",
+          "webhook": {
+            "id": "3pJJwmZZjQTW",
+            "url": "https://shop.baeckerei-kornblum.at/kasseneck-webhook",
+            "createdAt": "2026-10-06T06:00:02.000Z",
+            "events": [
+              "stock.changed",
+              "stock.below_minimum"
+            ],
+            "active": true,
+            "description": "Webshop Kornblum",
+            "lastDelivery": {
+              "at": "2026-10-06T06:00:29.000Z",
+              "status": "delivered",
+              "statusCode": 200
+            },
+            "consecutiveFailures": 0
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_webhook_invalid_url",
+      "endpoint": "createWebhook",
+      "path": "/v3/createWebhook",
+      "params": {
+        "url": "http://shop.baeckerei-kornblum.at/hook",
+        "events": [
+          "stock.changed"
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "data": {
+          "code": "invalid_webhook_url",
+          "errors": [
+            {
+              "field": "url",
+              "message": "Bitte die vollständige Adresse mit https:// angeben, z. B. https://api.firma.at/kasseneck-webhook"
+            }
+          ]
+        },
+        "code": "invalid_webhook_url"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_webhook_limit",
+      "endpoint": "createWebhook",
+      "path": "/v3/createWebhook",
+      "params": {
+        "url": "https://shop.baeckerei-kornblum.at/kasseneck-webhook-6",
+        "events": [
+          "stock.changed"
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Höchstens 5 Webhooks je Konto.",
+        "data": {
+          "code": "webhook_limit"
+        },
+        "code": "webhook_limit"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "update_webhook_inactive",
+      "endpoint": "updateWebhook",
+      "path": "/v3/updateWebhook",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW",
+        "active": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "webhook": {
+            "id": "3pJJwmZZjQTW",
+            "url": "https://shop.baeckerei-kornblum.at/kasseneck-webhook",
+            "createdAt": "2026-10-06T06:00:02.000Z",
+            "events": [
+              "stock.changed",
+              "stock.below_minimum"
+            ],
+            "active": false,
+            "description": "Webshop Kornblum",
+            "lastDelivery": {
+              "at": "2026-10-06T06:00:29.000Z",
+              "status": "delivered",
+              "statusCode": 200
+            },
+            "consecutiveFailures": 0
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_send_webhook_test_inactive",
+      "endpoint": "sendWebhookTest",
+      "path": "/v3/sendWebhookTest",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW",
+        "event": "stock.changed"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Dieser Webhook ist inaktiv – zum Testen zuerst aktivieren.",
+        "data": {
+          "code": "webhook_inactive"
+        },
+        "code": "webhook_inactive"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_send_webhook_test_daily_limit",
+      "endpoint": "sendWebhookTest",
+      "path": "/v3/sendWebhookTest",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW",
+        "event": "stock.changed"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version",
+        "Retry-After": "57511"
+      },
+      "response": {
+        "status": "error",
+        "message": "Höchstens 20 Probesendungen je Tag – morgen wieder.",
+        "data": {
+          "code": "rate_limited",
+          "retryAfterSec": 57511
+        },
+        "code": "rate_limited"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "delete_webhook",
+      "endpoint": "deleteWebhook",
+      "path": "/v3/deleteWebhook",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "webhookId": "3pJJwmZZjQTW",
+          "deleted": true
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_delete_webhook_not_found",
+      "endpoint": "deleteWebhook",
+      "path": "/v3/deleteWebhook",
+      "params": {
+        "webhookId": "3pJJwmZZjQTW"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Webhook nicht gefunden.",
+        "data": {
+          "code": "webhook_not_found"
+        },
+        "code": "webhook_not_found"
+      }
+    }
+  ],
+  "webhookEvents": [
+    {
+      "event": "stock.below_minimum",
+      "body": {
+        "id": "evt_wKLtZJFBjowUBsa875du",
+        "type": "stock.below_minimum",
+        "createdAt": 1791266404000,
+        "accountId": "kornblum",
+        "data": {
+          "articleId": "roggenbrot",
+          "locationId": "haupt",
+          "available": 4000,
+          "minStock": 5000
+        }
+      }
+    },
+    {
+      "event": "stock.changed",
+      "body": {
+        "id": "evt_6SjOpc8E0wUJamYx4wDc",
+        "type": "stock.changed",
+        "createdAt": 1791266404000,
+        "accountId": "kornblum",
+        "data": {
+          "articleId": "kipferl",
+          "locationId": "haupt",
+          "onHand": 40000,
+          "reserved": 0,
+          "available": 40000,
+          "defective": 0,
+          "sequence": 1,
+          "updatedAt": "2026-10-06T06:00:03.000Z",
+          "cause": "goods_receipt",
+          "movementId": "auto1_1"
+        }
+      }
+    },
+    {
+      "event": "stock.changed",
+      "body": {
+        "id": "evt_xF1Ox0CUvFfDWlmVM9xp",
+        "type": "stock.changed",
+        "createdAt": 1791266404000,
+        "accountId": "kornblum",
+        "data": {
+          "articleId": "roggenbrot",
+          "locationId": "haupt",
+          "onHand": 4000,
+          "reserved": 0,
+          "available": 4000,
+          "defective": 0,
+          "sequence": 2,
+          "updatedAt": "2026-10-06T06:00:04.000Z",
+          "cause": "loss",
+          "movementId": "auto2_0"
+        }
+      }
+    },
+    {
+      "event": "article.updated",
+      "body": {
+        "id": "evt_y3OmCZX2aGSmO51tvMVg",
+        "type": "article.updated",
+        "createdAt": 1791266404000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "kipferl",
+          "name": "Butterkipferl",
+          "unitPriceCents": 130,
+          "vatRate": 10,
+          "unit": "Stk",
+          "number": "A-200",
+          "ean": null,
+          "internalCode": "KB-200",
+          "groupId": "gebaeck",
+          "revenueGroupId": null,
+          "stockTracked": true,
+          "minStock": null,
+          "active": true,
+          "createdAt": "2026-10-01T04:30:00.000Z",
+          "updatedAt": "2026-10-06T06:00:04.000Z",
+          "stockLocationIds": [
+            "haupt",
+            "lieferwagen"
+          ]
+        }
+      }
+    },
+    {
+      "event": "article.created",
+      "body": {
+        "id": "evt_OBMDnXTaeE7t8CbeZjMY",
+        "type": "article.created",
+        "createdAt": 1791266404000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "semmel",
+          "name": "Kaisersemmel",
+          "unitPriceCents": 120,
+          "vatRate": 10,
+          "unit": "Stk",
+          "number": "A-300",
+          "ean": null,
+          "internalCode": "KB-300",
+          "groupId": "gebaeck",
+          "revenueGroupId": null,
+          "stockTracked": true,
+          "minStock": null,
+          "active": true,
+          "createdAt": "2026-10-06T06:00:04.000Z",
+          "updatedAt": "2026-10-06T06:00:04.000Z",
+          "stockLocationIds": [
+            "haupt"
+          ]
+        }
+      }
+    },
+    {
+      "event": "article.deactivated",
+      "body": {
+        "id": "evt_VKmC9XoEcVNwBCwlbdw7",
+        "type": "article.deactivated",
+        "createdAt": 1791266404000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "semmel",
+          "name": "Kaisersemmel",
+          "unitPriceCents": 120,
+          "vatRate": 10,
+          "unit": "Stk",
+          "number": "A-300",
+          "ean": null,
+          "internalCode": "KB-300",
+          "groupId": "gebaeck",
+          "revenueGroupId": null,
+          "stockTracked": true,
+          "minStock": null,
+          "active": false,
+          "createdAt": "2026-10-06T06:00:04.000Z",
+          "updatedAt": "2026-10-06T06:00:04.001Z",
+          "stockLocationIds": [
+            "haupt"
+          ]
+        }
+      }
+    }
+  ]
+}
