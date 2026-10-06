@@ -8,7 +8,10 @@
 ///
 /// **Nichts wird wiederholt.** Wer nach einem Zeitlimit erneut ausstellt, tut
 /// das mit **demselben** `idempotencyKey` — dann kommt die schon ausgestellte
-/// Rechnung zurück statt einer zweiten.
+/// Rechnung zurück statt einer zweiten. Jeder Aufruf mit Wirkung (ausstellen,
+/// stornieren, gutschreiben, Zahlung nachtragen, Kunde anlegen oder aendern)
+/// meldet nach Zeitlimit, Netzfehler, HTTP 5xx oder unlesbarer Antwort
+/// Ausgang unklar; Lesen und `previewInvoice` bleiben abgelehnt.
 library;
 
 import 'dart:convert';
@@ -62,16 +65,17 @@ class InvoiceTransport {
 
   /// Einen Aufruf mit JSON-Antwort absetzen; liefert `data` ohne Hülle.
   Future<Map<String, dynamic>> call(String name, Map<String, dynamic> params) async {
-    final antwort = await _senden(name, params);
-    final huelle = readEnvelope(name, antwort);
-    if (huelle['status'] == 'success') return envelopeData(name, huelle, antwort.statusCode);
+    final probelauf = isDryRun(name, params);
+    final antwort = await _senden(name, params, probelauf);
+    final huelle = readEnvelope(name, antwort, dryRun: probelauf);
+    if (huelle['status'] == 'success') return envelopeData(name, huelle, antwort.statusCode, dryRun: probelauf);
     throw envelopeError(name, huelle);
   }
 
   /// Einen Aufruf mit Binärantwort (PDF) absetzen. Im Fehlerfall antwortet der
   /// Server mit der gewohnten JSON-Hülle.
   Future<Uint8List> callBinary(String name, Map<String, dynamic> params) async {
-    final antwort = await _senden(name, params);
+    final antwort = await _senden(name, params, false);
     final bytes = antwort.bodyBytes;
     if (bytes.length >= 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) {
       return bytes; // %PDF
@@ -85,7 +89,9 @@ class InvoiceTransport {
 
   /// Ueber issueInvoice kann die Rechnung nach einem Zeitlimit laengst
   /// bestehen: mit demselben idempotencyKey wiederholen, nie mit einem neuen.
-  Future<http.Response> _senden(String name, Map<String, dynamic> params) {
+  /// [probelauf] kommt aus `isDryRun` ueber genau diese [params]: nur
+  /// `previewInvoice` (`dryRun: true`) bleibt nach dem Senden `rejected`.
+  Future<http.Response> _senden(String name, Map<String, dynamic> params, bool probelauf) {
     // Vor dem Senden: ein nicht serialisierbarer Parameter ist ein
     // Programmierfehler und keine Netzstörung.
     final rumpf = jsonEncode({'params': params});
@@ -98,6 +104,7 @@ class InvoiceTransport {
       kasseneck: _kopf,
       body: rumpf,
       timeout: _timeout,
+      dryRun: probelauf,
     );
   }
 }

@@ -36,7 +36,10 @@ class KasseneckValidationError implements Exception {
 
 /// Ausgang eines gescheiterten Aufrufs. [rejected]: nichts geschehen.
 /// [unknown]: der Vorgang kann ausgefuehrt sein (ein Beleg signiert, ein
-/// Storno gebucht); **nie wiederholen**, sondern das Ergebnis nachlesen.
+/// Storno gebucht, Ware gebucht, eine Rechnung ausgestellt); **nie blind
+/// wiederholen**. Belege, Stornos und Zahlungen nachlesen; ein Aufruf mit
+/// `idempotencyKey` nur mit **demselben** Schluessel erneut senden (wirkt
+/// genau einmal, ein neuer buchte doppelt); ohne Schluessel erst nachlesen.
 enum ErrorOutcome { unknown, rejected }
 
 /// Codes, deren Ausgang unklar ist. `response_translation_failed` nur, wenn
@@ -118,9 +121,12 @@ ErrorOutcome _ausgangAusCode(String functionName, String? code, Map<String, dyna
 /// Rand des Servers.
 const Set<String> clientErrorCodes = {'route_missing', 'response_unreadable'};
 
-/// Ist der Ausgang dieses Fehlers unklar? Dann den Aufruf **nicht
-/// wiederholen**, sondern das Ergebnis nachlesen. Gilt fuer jede Fehlerart;
-/// nur [KasseneckApiError] und [KasseneckHttpError] koennen unklar sein.
+/// Ist der Ausgang dieses Fehlers unklar? Dann den Aufruf **nicht blind
+/// wiederholen**: Belege, Stornos und Zahlungen nachlesen; einen Aufruf mit
+/// `idempotencyKey` nur mit **demselben** Schluessel erneut senden; ohne
+/// Schluessel erst nachlesen (siehe [ErrorOutcome]). Gilt fuer jede
+/// Fehlerart; nur [KasseneckApiError] und [KasseneckHttpError] koennen unklar
+/// sein.
 bool isOutcomeUnknown(Object? error) =>
     (error is KasseneckApiError && error.outcome == ErrorOutcome.unknown) ||
     (error is KasseneckHttpError && error.outcome == ErrorOutcome.unknown);
@@ -257,12 +263,13 @@ class KasseneckHttpError implements Exception {
   /// rekonstruieren.
   final String? causeType;
 
-  /// [ErrorOutcome.unknown] auf einem Aufruf mit Wirkung (`createReceipt`,
-  /// `cancelReceipt`, `financeWebService`, `hobexPayApi`, `hobexRefundApi`,
-  /// `stripeCaptureIntent`), wenn die Anfrage unterwegs war:
-  /// Netzfehler oder Zeitlimit nach dem Senden, HTTP 5xx, oder eine
-  /// unlesbare Antwort mit HTTP 200 und `/v3`-Kennzeichen (leer, kein JSON,
-  /// ohne Statusfeld, HTML). Sonst [ErrorOutcome.rejected].
+  /// [ErrorOutcome.unknown] auf einem Aufruf mit Wirkung (signieren, Geld
+  /// bewegen, buchen, ausstellen, anlegen, aendern, loeschen, senden; die
+  /// Liste `unknownOutcomeCalls` in `lib/src/v3.dart`), wenn die Anfrage
+  /// unterwegs war: Netzfehler oder Zeitlimit nach dem Senden, HTTP 5xx, oder
+  /// eine unlesbare Antwort mit HTTP 200 und `/v3`-Kennzeichen (leer, kein
+  /// JSON, ohne Statusfeld, HTML). Sonst [ErrorOutcome.rejected], auch 4xx,
+  /// Lesen und Probelauf (siehe [ErrorOutcome]).
   final ErrorOutcome outcome;
 
   /// Die abgelaufene Frist, wenn [reason] [reasonTimeout] ist.

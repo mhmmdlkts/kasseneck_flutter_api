@@ -126,7 +126,13 @@ Cent. Es darf nicht zwei Rechenwege für dieselbe Zahl geben.
   Vorgang ist passiert, das Ergebnis verworfen.
 - **Keine automatischen Wiederholungen** über verändernden Aufrufen.
 - Jeder Fehler trägt einen Ausgang (`ErrorOutcome`, `isOutcomeUnknown`). Bei
-  `unknown` wird nachgelesen, nicht wiederholt. Auf den Geldwegen `hobexPay`,
+  `unknown` wird nachgelesen, nicht blind wiederholt; nur ein Aufruf mit
+  `idempotencyKey` darf mit **demselben** Schlüssel erneut hinaus. Welcher
+  Aufruf nach dem Senden `unknown` meldet, sagt allein `unknownOutcomeCalls`
+  (`lib/src/v3.dart`, gleich der Liste im Vertrag); ein neuer Aufruf wird in
+  `test/ausgang_einordnung_test.dart` eingeordnet, sonst wird der rot. Einen
+  Probelauf erkennt der Transport nur an `dryRun == true` in den gesendeten
+  Parametern eines Aufrufs aus `dryRunCalls`. Auf den Geldwegen `hobexPay`,
   `hobexRefund` und `stripeCaptureIntent` ist nur ein Code aus
   `paymentCallRejectedCodes` (`lib/src/register/fehler.dart`) eine Ablehnung;
   jede andere Fehlerhülle, auch eine ohne Code, ist `unknown`. Wer dort einen

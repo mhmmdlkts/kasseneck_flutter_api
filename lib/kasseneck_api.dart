@@ -289,8 +289,9 @@ class KasseneckApi {
   ///
   /// Der Statuscode steht fest auf 200: was hier ankommt, hat
   /// [_kasseneckPostRequest] bereits als 200 mit Kennzeichen und nicht
-  /// leerem Rumpf durchgelassen, alles andere wirft dort. Bei einem
-  /// signierenden Aufruf ist eine unlesbare Antwort Ausgang unklar.
+  /// leerem Rumpf durchgelassen, alles andere wirft dort. Bei einem Aufruf
+  /// mit Wirkung (`unknownOutcomeCalls`) ist eine unlesbare Antwort Ausgang
+  /// unklar.
   static Map<String, dynamic> _huelle(String endpoint, dynamic rumpf) {
     final Object? roh;
     try {

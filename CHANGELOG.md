@@ -1,3 +1,70 @@
+## 10.4.1
+
+Twin of `@kreiseck/kasseneck-api` `1.5.1` (contract files pulled from that
+version): every call with an effect reports `ErrorOutcome.unknown` when it
+fails after the request went out: timeout, network error, HTTP 5xx, HTTP 200
+with the `/v3` marker but an empty, non-JSON, status-less or non-object body,
+and HTML with the marker. Reason: until 10.4.0 only the six signing and money
+calls did. A goods receipt, a reservation or `issueInvoice` came back as
+`rejected` („did not happen“) although the server may have booked it, and
+whoever believed that and sent again with a **new** `idempotencyKey` booked
+twice. The 10.4.0 note „a timeout on a write carries the outcome `rejected`“
+is withdrawn.
+
+A change to the safe side, no change on the wire: requests send the same body
+as in 10.4.0 (only `Kasseneck-Client` carries the new version). No public
+symbol is added, removed or changed; what changes is the `outcome` of the
+errors listed below.
+
+- **Which calls**: the list of the contract (`surface.json`,
+  `unknownOutcomeCalls`, 52 names). New among the calls this package makes:
+  inventory writes (`createArticle`, `updateArticle`, `deactivateArticle`,
+  `receiveGoods`, `transferStock`, `recordStockLoss`, `changeStockCondition`,
+  `reverseStockMovement`), reservations (`createReservation`,
+  `extendReservation`, `releaseReservation`), inventory webhooks (create,
+  update, delete, rotate the secret, test delivery), the invoice API
+  (`issueInvoice`, `cancelInvoice`, `createCreditNote`, `recordInvoicePayment`,
+  `createCustomer`, `updateCustomer`) and on the register
+  `pairRegisterDevice`, `unpairRegisterDevice`, `setMyKasseSettings`,
+  `setMyKasseLogo`, `setMyRegisterDeviceSettings`,
+  `setMyCashregisterStockLocation`, `createPrintJob`, `sendReceiptEmail`.
+- **Which stay `rejected`**: reading calls, the dry runs (`previewGoodsReceipt`,
+  `previewInvoice`), the register sign-in sessions (`registerUserLogin`,
+  `registerPinLogin`, `renewRegisterSession`, `endRegisterSession`) and
+  `createPaymentLinkStripe`: a repeat books nothing.
+- **Dry run only when it really is one.** A call is lowered to `rejected` only
+  if it is `receiveGoods` or `issueInvoice` **and** the parameters that go out
+  carry `dryRun` exactly `true`; both handlers check it that strictly.
+  `dryRun: false`, `'true'` or `1` stay `unknown`, and so does any other call
+  with `dryRun` in its parameters, because its handler does not know the field.
+  There is no switch a caller could set: the transports
+  (`InventoryTransport.call`, `InvoiceTransport.call`) decide from the
+  parameters they encode. This differs from npm on purpose: npm's open
+  transport takes `{ hasEffect }` and lowers only with `hasEffect: false` plus
+  `dryRun: true`; the wrappers behave the same on both sides.
+- **What to do**: with an `idempotencyKey`, send the same request with the
+  **same** key; it takes effect once and returns the stored answer
+  (`replayed: true` on invoices; inventory writes return the stored answer
+  unchanged). Never a new key. Without a key (receipts, cancellations, money
+  calls, settings, webhooks, `updateCustomer`, `createCustomer` without one)
+  read the state first. The rule for receipts and payments is unchanged: look
+  it up, never resend.
+- **Register texts**: `callsWithEffect` and `pos-texts.json` are unchanged.
+  `messageOutcome` follows the transport first, so a timeout or network error
+  on the settings, pairing, unpairing or stock location calls now shows
+  `network.outcome_unknown` instead of „try again“, the same sentence the web
+  register shows with npm 1.5.1.
+- **Guard**: `test/ausgang_einordnung_test.dart` compares the list in
+  `lib/src/v3.dart` with `unknownOutcomeCalls` of the contract (equal and
+  sorted), requires every name in `Aufrufe.alle` to be classified exactly once
+  (with effect, reading, or repeatable), and checks each failure kind through
+  the real `InventoryClient` and `InvoiceApi`: with effect `unknown`, reading
+  and dry runs `rejected`.
+- **Contract**: `zwillinge.yaml` pins npm `1.5.1`; `test/fixtures/vertrag/`
+  pulled again (`surface.json` gains `unknownOutcomeCalls`, the other files only
+  their version); the text catalogue and the code table layout regenerated
+  (version note only). No new entry in `ausnahmen`.
+
 ## 10.4.0
 
 Twin of `@kreiseck/kasseneck-api` `1.5.0` (contract files pulled from that

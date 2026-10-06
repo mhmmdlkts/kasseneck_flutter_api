@@ -13,8 +13,11 @@
 /// **Die beiden Kopfzeilen nur an Kasseneck-Basen.** Terminals, Drucker,
 /// Connect und Bildabrufe bekommen sie nie; sie binden diese Datei nicht ein.
 ///
-/// **Nichts wird wiederholt.** Bei Ausgang unklar nachlesen, nie ein zweites
-/// Mal senden: ein Beleg ist nicht folgenlos wiederholbar.
+/// **Nichts wird wiederholt.** Bei Ausgang unklar nie blind ein zweites Mal
+/// senden: ein Beleg ist nicht folgenlos wiederholbar. Belege, Stornos und
+/// Zahlungen nachlesen; ein Aufruf mit `idempotencyKey` darf mit **demselben**
+/// Schluessel erneut hinaus (wirkt genau einmal), ohne Schluessel erst
+/// nachlesen.
 library;
 
 import 'dart:async';
@@ -32,7 +35,7 @@ const String kPublicBaseUrl = 'https://api.kasseneck.at/v3';
 const String kPosBaseUrl = 'https://kasse.kasseneck.at/api/v3';
 
 /// Version dieses Pakets, wie in `pubspec.yaml` (ein Test haelt beide gleich).
-const String kPackageVersion = '10.4.0';
+const String kPackageVersion = '10.4.1';
 
 const String _versionKopf = 'Kasseneck-Api-Version';
 const String _clientKopf = 'Kasseneck-Client';
@@ -42,21 +45,91 @@ const String _versionWert = 'v3';
 /// Zugangsdaten. Proxys, Emulator und `127.0.0.1` bekommen keine Kopfzeilen.
 const Set<String> _kasseneckHosts = {'api.kasseneck.at', 'kasse.kasseneck.at'};
 
-/// Aufrufe mit Wirkung, die nie blind wiederholt werden duerfen: sie
-/// signieren (`createReceipt`, `cancelReceipt`), loesen bei FinanzOnline
-/// etwas aus (`financeWebService`) oder bewegen Geld (`hobexPayApi`
-/// belastet eine Karte, `hobexRefundApi` erstattet, `stripeCaptureIntent`
-/// zieht eine vorgemerkte Zahlung ein). Scheitert einer, nachdem die Anfrage
-/// unterwegs war (Netz, Zeitlimit, HTTP 5xx, unlesbare Erfolgsantwort), ist
-/// sein Ausgang offen.
+/// Aufrufe mit Wirkung: Scheitert einer, nachdem die Anfrage unterwegs war
+/// (Netz, Zeitlimit, HTTP 5xx, unlesbare Erfolgsantwort, HTML mit
+/// Kennzeichen), ist sein Ausgang offen. Bis 10.4.0 waren das nur die sechs,
+/// die signieren, FinanzOnline ansprechen oder Geld bewegen; ein Wareneingang,
+/// eine Reservierung oder `issueInvoice` kam nach einem Zeitlimit als
+/// `rejected` zurueck, obwohl der Server gebucht haben konnte, und wer dem
+/// glaubte und mit einem **neuen** `idempotencyKey` nachsandte, buchte doppelt.
+///
+/// Zwilling von `UNKNOWN_OUTCOME_CALLS` im npm-Paket (1.5.1), dort im Vertrag
+/// als `unknownOutcomeCalls` in `surface.json`; test/ausgang_einordnung_test.dart
+/// haelt beide gleich. Darum stehen hier auch Partner-Aufrufe, die dieses
+/// Paket nie absetzt: die Liste ist eine Einordnung, keine Aufrufliste.
+///
+/// Bewusst nicht darin (Ausgang bleibt `rejected`): Lesen, die Probelaeufe
+/// ([dryRunCalls]), die Sitzungsaufrufe der Kasse (`registerUserLogin`,
+/// `registerPinLogin`, `renewRegisterSession`, `endRegisterSession`: eine
+/// Wiederholung legt hoechstens eine weitere kurzlebige Sitzung an, und es
+/// gibt nichts nachzulesen) sowie `createPaymentLinkStripe` (der Link ist nur
+/// der verlorenen Antwort bekannt und wird nie bezahlt).
+///
+/// Die Liste sagt nur, ob der **Ausgang** offen ist, nicht dass ein Beleg
+/// entstanden sein kann: was der Kassier liest, waehlt `messageOutcome` in
+/// `kasse/texte.dart`, und der Satz dort spricht vom Vorgang, nicht vom Beleg.
 const Set<String> unknownOutcomeCalls = {
-  'createReceipt',
+  'activateCashregister',
+  'cancelInvoice',
   'cancelReceipt',
+  'changeStockCondition',
+  'createArticle',
+  'createCreditNote',
+  'createCustomer',
+  'createCustomerCashregister',
+  'createInvoiceItem',
+  'createPartnerCustomer',
+  'createPartnerWebhook',
+  'createPrintJob',
+  'createReceipt',
+  'createReservation',
+  'createWebhook',
+  'deactivateArticle',
+  'deletePartnerWebhook',
+  'deleteWebhook',
+  'extendReservation',
   'financeWebService',
   'hobexPayApi',
   'hobexRefundApi',
+  'issueInvoice',
+  'pairRegisterDevice',
+  'receiveGoods',
+  'recordInvoicePayment',
+  'recordStockLoss',
+  'releaseReservation',
+  'reportCustomerContract',
+  'requestCustomerSignature',
+  'reverseStockMovement',
+  'revokeCustomerMandate',
+  'rotatePartnerWebhookSecret',
+  'rotateWebhookSecret',
+  'sendPartnerCustomerFonLink',
+  'sendPartnerWebhookTest',
+  'sendReceiptEmail',
+  'sendWebhookTest',
+  'setCustomerMandate',
+  'setMyCashregisterStockLocation',
+  'setMyKasseLogo',
+  'setMyKasseSettings',
+  'setMyRegisterDeviceSettings',
   'stripeCaptureIntent',
+  'transferStock',
+  'unpairRegisterDevice',
+  'updateArticle',
+  'updateCustomer',
+  'updateInvoiceItem',
+  'updatePartnerWebhook',
+  'updateWebhook',
+  'withdrawInvoiceItem',
 };
+
+/// Aufrufe, die das Backend mit `dryRun: true` als Probelauf ausfuehrt, ohne
+/// etwas zu schreiben: `issueInvoice` (`previewInvoice`) und `receiveGoods`
+/// (`previewGoodsReceipt`). Beide Handler pruefen streng
+/// `p.dryRun === true`. Nur fuer sie senkt ein gesendetes `dryRun: true` den
+/// Ausgang auf `rejected`; bei jedem anderen Aufruf liefe das Feld am Handler
+/// vorbei, und der Vorgang waere echt.
+const Set<String> dryRunCalls = {'issueInvoice', 'receiveGoods'};
 
 /// Produkte, die das Backend in `Kasseneck-Client` zaehlt (Positivliste).
 const Set<String> _clientProdukte = {'kasse-web', 'kasse-app', 'kasseneck-api', 'kasseneck_api'};
@@ -65,13 +138,32 @@ const int _clientMax = 64;
 
 /// Ist [functionName] (auch mit Vorgang, `financeWebService/status_cashbox`)
 /// ein Aufruf aus [unknownOutcomeCalls]?
-bool isSigningCall(String functionName) => unknownOutcomeCalls.contains(functionName.split('/').first);
+bool isUnknownOutcomeCall(String functionName) => unknownOutcomeCalls.contains(functionName.split('/').first);
+
+/// Ist der Aufruf [functionName] mit diesen [params] ein Probelauf? Nur, wenn
+/// er in [dryRunCalls] steht **und** in den gesendeten Parametern `dryRun`
+/// genau `true` ist (`'true'` oder `1` sind es nicht, das Backend prueft
+/// ebenso streng). `identical` statt `==`: ein eigener Typ mit
+/// ueberschriebenem `==` kann sich nicht als `true` ausgeben. Der Ausgang haengt so allein an dem, was hinausgeht: es
+/// gibt keinen Schalter, mit dem ein Aufrufer einen echten Vorgang zum
+/// Probelauf erklaeren koennte.
+bool isDryRun(String functionName, Map<String, dynamic> params) =>
+    dryRunCalls.contains(functionName.split('/').first) && identical(params['dryRun'], true);
+
+/// Ausgang eines Scheiterns, nachdem die Anfrage unterwegs war: offen bei
+/// einem Aufruf mit Wirkung, ausser er ist ein Probelauf ([isDryRun]).
+/// [dryRun] kommt nur aus [isDryRun] und zaehlt ohnehin nur fuer
+/// [dryRunCalls].
+ErrorOutcome outcomeAfterSending(String functionName, {bool dryRun = false}) {
+  final probelauf = dryRun && dryRunCalls.contains(functionName.split('/').first);
+  return isUnknownOutcomeCall(functionName) && !probelauf ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+}
 
 /// Ausgang einer unlesbaren Antwort, die der `/v3`-Rand mit HTTP 200 und
-/// Kennzeichen geschickt hat: bei einem Aufruf aus [unknownOutcomeCalls] kann der Handler
+/// Kennzeichen geschickt hat: bei einem Aufruf mit Wirkung kann der Handler
 /// gelaufen sein.
-ErrorOutcome unreadableOutcome(String functionName) =>
-    isSigningCall(functionName) ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+ErrorOutcome unreadableOutcome(String functionName, {bool dryRun = false}) =>
+    outcomeAfterSending(functionName, dryRun: dryRun);
 
 /// Prueft eine eigene Basis beim Anlegen: sie muss nach Abschneiden
 /// abschliessender Schraegstriche auf `/v3` enden (`/api/v3` eingeschlossen).
@@ -138,16 +230,20 @@ bool _traegtKennzeichen(http.BaseResponse antwort) =>
 /// gelesene Antwort nur bei HTTP 200 mit Kennzeichen; sonst wirft er:
 ///
 /// 1. HTTP != 200: [KasseneckHttpError] `server-error` (5xx auf einem
-///    Aufruf aus [unknownOutcomeCalls] mit Ausgang unklar). Einzige Ausnahme ist die
-///    404-Huelle des Rands mit Kennzeichen und Code (`not_found`).
+///    Aufruf mit Wirkung mit Ausgang unklar, siehe [outcomeAfterSending]).
+///    Einzige Ausnahme ist die 404-Huelle des Rands mit Kennzeichen und Code
+///    (`not_found`).
 /// 2. HTTP 200 mit HTML ohne Kennzeichen: `route_missing`. Mit Kennzeichen
-///    bei einem Aufruf aus [unknownOutcomeCalls]: unlesbar, Ausgang unklar.
+///    bei einem Aufruf mit Wirkung: unlesbar, Ausgang unklar.
 /// 3. Kein Kennzeichen: `dialect_mismatch`, Ausgang unklar.
 ///
 /// In allen drei Faellen bleibt der Rumpf ungelesen (ausser der 404-Huelle).
 /// Netzfehler und Zeitlimit werden [KasseneckHttpError] mit
 /// [KasseneckHttpError.reasonNetwork] bzw. [KasseneckHttpError.reasonTimeout]; die Frist
 /// deckt Senden **und** Lesen des Rumpfs.
+///
+/// [dryRun] setzt der Transport allein aus [isDryRun] ueber genau die
+/// Parameter, die er in [body] schreibt; ein Probelauf bleibt `rejected`.
 Future<http.Response> v3Post(
   http.Client client, {
   required String functionName,
@@ -157,6 +253,7 @@ Future<http.Response> v3Post(
   required V3Headers kasseneck,
   required String body,
   required Duration timeout,
+  bool dryRun = false,
 }) async {
   // Laeuft die Frist ab, bricht der Abbruch die Anfrage wirklich ab (auch
   // einen noch nicht vollstaendig gesendeten Rumpf) und schliesst die
@@ -166,8 +263,9 @@ Future<http.Response> v3Post(
   request.headers.addAll(_ohneKasseneckKopfzeilen(headers));
   request.headers.addAll(kasseneck.fuer(basis));
   request.body = body;
-  final signierend = isSigningCall(functionName);
-  final ausgangNetz = signierend ? ErrorOutcome.unknown : ErrorOutcome.rejected;
+  // Einmal je Aufruf und fuer alle Wege nach dem Senden gleich: Netz,
+  // Zeitlimit, 5xx und HTML mit Kennzeichen.
+  final nachDemSenden = outcomeAfterSending(functionName, dryRun: dryRun);
 
   // Liest gerade die 404-Huelle des Rands? Laeuft dabei die Frist ab, bleibt
   // es wie in npm beim HTTP-Fehler (404, abgelehnt), nicht beim Zeitlimit.
@@ -189,10 +287,10 @@ Future<http.Response> v3Post(
         if (fehler != null) throw fehler;
       }
       throw KasseneckHttpError(functionName, antwort.statusCode, 'server-error',
-          outcome: antwort.statusCode >= 500 && signierend ? ErrorOutcome.unknown : ErrorOutcome.rejected);
+          outcome: antwort.statusCode >= 500 ? nachDemSenden : ErrorOutcome.rejected);
     }
     if (inhaltstyp != null && RegExp(r'^\s*text/html\b', caseSensitive: false).hasMatch(inhaltstyp)) {
-      if (signierend && _traegtKennzeichen(antwort)) {
+      if (nachDemSenden == ErrorOutcome.unknown && _traegtKennzeichen(antwort)) {
         throw KasseneckHttpError(functionName, 200, 'not-json', outcome: ErrorOutcome.unknown);
       }
       throw KasseneckApiError(functionName, 'Route fehlt: die Antwort ist eine HTML-Seite statt des Backends',
@@ -222,11 +320,11 @@ Future<http.Response> v3Post(
     // Die Anfrage war draussen; das Zeitlimit beendet nur das Warten, nicht
     // die Arbeit des Servers.
     throw KasseneckHttpError(functionName, 0, KasseneckHttpError.reasonTimeout,
-        causeType: '${e.runtimeType}', outcome: ausgangNetz, timeout: timeout);
+        causeType: '${e.runtimeType}', outcome: nachDemSenden, timeout: timeout);
   } on _Netzfehler catch (e) {
     // Nur der Typ, nie die Meldung: die kann Werte des Rumpfs tragen.
     throw KasseneckHttpError(functionName, 0, KasseneckHttpError.reasonNetwork,
-        causeType: '${e.ursache.runtimeType}', outcome: ausgangNetz);
+        causeType: '${e.ursache.runtimeType}', outcome: nachDemSenden);
   }
 }
 
@@ -262,9 +360,9 @@ Map<String, String> _ohneKasseneckKopfzeilen(Map<String, String> kopfzeilen) {
 /// Zeichensatz der Inhaltstyp nennt (ein kaputter Inhaltstyp darf nach der
 /// Signatur keine rohe Ausnahme werfen, ein falscher keinen Artikelnamen
 /// verstuemmeln). Leer -> `empty-body`, kein UTF-8 -> `not-json`; beides bei
-/// einem Aufruf aus [unknownOutcomeCalls] mit Ausgang unklar.
-String readBodyText(String functionName, http.Response antwort) {
-  final ausgang = unreadableOutcome(functionName);
+/// einem Aufruf mit Wirkung mit Ausgang unklar ([unreadableOutcome]).
+String readBodyText(String functionName, http.Response antwort, {bool dryRun = false}) {
+  final ausgang = unreadableOutcome(functionName, dryRun: dryRun);
   final String text;
   try {
     text = utf8.decode(antwort.bodyBytes);
@@ -279,10 +377,10 @@ String readBodyText(String functionName, http.Response antwort) {
 
 /// Die Huelle `{status, message, data, code}` einer gelesenen Antwort; wirft
 /// [KasseneckHttpError] `empty-body`, `not-json` bzw. `missing-status`, bei
-/// einem Aufruf aus [unknownOutcomeCalls] mit Ausgang unklar.
-Map<String, dynamic> readEnvelope(String functionName, http.Response antwort) {
-  final ausgang = unreadableOutcome(functionName);
-  final text = readBodyText(functionName, antwort);
+/// einem Aufruf mit Wirkung mit Ausgang unklar ([unreadableOutcome]).
+Map<String, dynamic> readEnvelope(String functionName, http.Response antwort, {bool dryRun = false}) {
+  final ausgang = unreadableOutcome(functionName, dryRun: dryRun);
+  final text = readBodyText(functionName, antwort, dryRun: dryRun);
   final Object? roh;
   try {
     roh = jsonDecode(text);
@@ -298,11 +396,13 @@ Map<String, dynamic> readEnvelope(String functionName, http.Response antwort) {
 
 /// Das `data`-Objekt einer Erfolgshuelle: fehlend ist leer, alles andere als
 /// ein Objekt ist kaputt (`data-not-object`).
-Map<String, dynamic> envelopeData(String functionName, Map<String, dynamic> huelle, int statusCode) {
+Map<String, dynamic> envelopeData(String functionName, Map<String, dynamic> huelle, int statusCode,
+    {bool dryRun = false}) {
   final daten = huelle['data'];
   if (daten == null) return <String, dynamic>{};
   if (daten is! Map) {
-    throw KasseneckHttpError(functionName, statusCode, 'data-not-object', outcome: unreadableOutcome(functionName));
+    throw KasseneckHttpError(functionName, statusCode, 'data-not-object',
+        outcome: unreadableOutcome(functionName, dryRun: dryRun));
   }
   return Map<String, dynamic>.from(daten);
 }

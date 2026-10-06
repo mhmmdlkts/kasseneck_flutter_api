@@ -132,13 +132,16 @@ ErrorRule findErrorRule(ErrorKind kind, {String? code, ErrorOutcome? outcome}) {
 /// Der Ausgang, nach dem der Satz gewaehlt wird:
 ///
 /// * [ErrorOutcome.unknown], wenn der Fehler ihn selbst so fuehrt
-///   ([isOutcomeUnknown]);
+///   ([isOutcomeUnknown]); seit 10.4.1 tut das der Transport fuer jeden
+///   Aufruf mit Wirkung (`unknownOutcomeCalls` in `lib/src/v3.dart`), auch
+///   fuer Druckjob, Belegmail, Einstellungen und Kopplung;
 /// * [ErrorOutcome.unknown] fuer jede Frist und jeden Netzfehler
 ///   ([KasseneckHttpError.reasonTimeout], [KasseneckHttpError.reasonNetwork])
-///   auf einem Aufruf aus [callsWithEffect], auch wenn der Transport ihn als
-///   abgelehnt fuehrt (Druckjob, Belegmail): ob die Anfrage vor dem Abriss
+///   auf einem Aufruf aus [callsWithEffect], auch wenn ein Fehler selbst
+///   `rejected` fuehrt (etwa von Hand gebaut): ob die Anfrage vor dem Abriss
 ///   schon draussen war, sieht das Paket nicht, und ein zweiter Versuch
-///   druckte oder mailte doppelt;
+///   druckte oder mailte doppelt. Die Liste ist eine Teilmenge der
+///   Transport-Liste und bleibt als Vertrag der Kassentexte;
 /// * sonst der Ausgang des Fehlers, `null` fuer fremde Fehler.
 ///
 /// Der Transport behaelt seinen Ausgang; nur die Wahl des Satzes ist vorsichtig.

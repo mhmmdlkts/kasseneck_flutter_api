@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.4.0
+  kasseneck_api: ^10.4.1
 ```
 
 ```bash
@@ -319,7 +319,7 @@ that lacks it:
 | HTTP 404 with marker and error envelope | `KasseneckApiError` with the envelope's code | rejected |
 | Other HTTP status, empty body, no JSON, invalid UTF-8 | `KasseneckHttpError` (`server-error`, `empty-body`, `not-json`) | see below |
 
-One exception: HTML with the marker on a call that signs or moves money is
+One exception: HTML with the marker on a call with an effect (see below) is
 `KasseneckHttpError` `not-json` with an unknown outcome, because the handler may
 have run. A test double or proxy in your own tests has to send the marker as
 well.
@@ -335,11 +335,21 @@ are:
   success, but the answer lacks the receipt, the reference or the payment;
   `details['receiptId']` carries the id when it was readable) and
   `response_translation_failed` (unless `details['handled'] == false`);
-- on the calls that sign or move money (`createReceipt`, i.e. `sellReceipt`,
-  `zeroReceipt` and `RegisterReceiptClient.sell`; `cancelReceipt`;
-  `financeWebService`; the card calls `hobexPay`, `hobexRefund` and
-  `stripeCaptureIntent`): a network error, a timeout or HTTP 5xx after the
-  request was sent, and an unreadable success body;
+- on every call with an effect (the list `unknownOutcomeCalls` of the
+  contract, `surface.json`): the calls that sign or move money
+  (`createReceipt`, i.e. `sellReceipt`, `zeroReceipt` and
+  `RegisterReceiptClient.sell`; `cancelReceipt`; `financeWebService`; the
+  card calls `hobexPay`, `hobexRefund` and `stripeCaptureIntent`) and, since
+  10.4.1, every other call that books, issues, creates, changes, deletes or
+  sends something: inventory writes and reservations, inventory webhooks,
+  invoices, credit notes, recorded payments, customers, register settings and
+  logo, pairing and unpairing, the stock location of a register, print jobs
+  and receipt emails. There it is a network error, a timeout or HTTP 5xx
+  after the request was sent, and an unreadable success body. Reading calls
+  and the dry runs (`previewGoodsReceipt`, `previewInvoice`) stay rejected,
+  and so do the register sign-in sessions and `createPaymentLinkStripe`: a
+  repeat books nothing. A dry run counts only when `dryRun` goes out exactly
+  as `true` on `receiveGoods` or `issueInvoice`;
 - on the money calls `hobexPay`, `hobexRefund` and `stripeCaptureIntent`:
   **every error envelope**, including one without a code, unless its code is
   one of the explicit rejections below. The backend answers from its catch-all
@@ -358,14 +368,24 @@ before the backend contacts the provider: the sign-in and request checks
 (`not_found`, `internal_translation_error`), the module and permission gates
 (`module_inactive`, `not_permitted`) and the package's own `route_missing`.
 
-**Never retry a call whose outcome is unknown.** Read the result back
+**Never resend a call whose outcome is unknown blindly.** Read the result back
 (`getReceipt`, `getReceipts`, the receipt list, `hobexGetStatus`) and act on
 what you find. A retried sale is a second signed receipt in the RKSV chain; a
 retried card call can charge or refund twice. For the same reason, do not pass
 a `RetryClient` (or any `http.Client` that resends by itself) as `httpClient`
-to `KasseneckApi`, `RegisterClient`, `RegisterTransport` or `InvoiceTransport`,
-and do not put a retrying proxy in between. A timeout aborts the request; it
-does not mean the call failed.
+to `KasseneckApi`, `RegisterClient`, `RegisterTransport`, `InvoiceTransport`
+or `InventoryTransport`, and do not put a retrying proxy in between. A timeout
+aborts the request; it does not mean the call failed.
+
+**With an `idempotencyKey`** (inventory writes and reservations,
+`issueInvoice`, `cancelInvoice`, `createCreditNote`, `recordInvoicePayment`,
+`createCustomer` with a key) the safe step after an unknown outcome is the
+same request with the **same** key: it takes effect exactly once and returns
+the stored answer (invoices mark it with `replayed: true`; inventory writes
+return the stored answer unchanged). Never a new key: that books a second
+time. Without a key (receipts, cancellations, money calls, settings, webhooks,
+`updateCustomer`, `createCustomer` without one) read the state first and only
+then decide.
 
 ## Selling: items, amounts, vouchers, tips
 
@@ -693,10 +713,13 @@ String sentence(Object e, String fallback) {
 `findErrorRule` applies a code rule (`errorCodeRules`: edge codes get a human
 sentence instead of the technical one), then an outcome rule
 (`errorOutcomeRules`), then the one rule of the kind (`errorRules`, unchanged
-since 10.0.0-rc.1). `messageOutcome` treats a timeout or network error on a call
-from `callsWithEffect` (receipt, cancellation, FinanzOnline, card payments,
-print job, receipt email) as outcome unknown: the sentence then says to check
-whether the last operation went through, never to try again.
+since 10.0.0-rc.1). `messageOutcome` follows the transport first, which marks
+every call with an effect as outcome unknown (see the /v3 wire above), and also
+treats a timeout or network error on a call from `callsWithEffect` (receipt,
+cancellation, FinanzOnline, card payments, print job, receipt email) as outcome
+unknown: the sentence then says to check whether the last operation went
+through, never to try again. Since 10.4.1 that includes the settings, pairing,
+unpairing and stock location calls, as in the web register.
 
 **Code catalogues per endpoint group**, each one the server's own codes, then
 the sign-in and edge codes that can reach it, then the codes the package sets
@@ -1016,7 +1039,12 @@ try {
 
 After a timeout (`KasseneckHttpError.reasonTimeout`), issue again **with the same
 `idempotencyKey`**: the answer then carries `replayed: true` and the same
-invoice. The same key with different data gives `idempotency_conflict`.
+invoice. The same key with different data gives `idempotency_conflict`. Since
+10.4.1 every invoice call with an effect (`issueInvoice`, `cancelInvoice`,
+`createCreditNote`, `recordInvoicePayment`, `createCustomer`,
+`updateCustomer`) reports `ErrorOutcome.unknown` after a timeout, a network
+error, HTTP 5xx or an unreadable answer (before: `rejected`);
+`previewInvoice` and the reading calls stay `rejected`.
 Cancel with `cancelInvoice`, partial credit with `createCreditNote`; all error
 codes are listed in `invoiceErrorCodes`.
 
@@ -1325,7 +1353,14 @@ other content gives `idempotency_conflict`. Fix the key before the first
 attempt and store it with your order: after a timeout or network error
 (`KasseneckHttpError`), send the **same** request with the **same** key again.
 The client never retries by itself and never trims or shortens a key; a new key
-would book a second time.
+would book a second time. Since 10.4.1 every write, reservation and webhook
+call reports `ErrorOutcome.unknown` in that case (also after HTTP 5xx or an
+unreadable answer; before: `rejected`). For writes and reservations,
+`isOutcomeUnknown(error)` is the signal to resend with the same key. The
+webhook calls (`createWebhook`, `updateWebhook`, `deleteWebhook`,
+`rotateWebhookSecret`, `sendWebhookTest`) take no key: read the state first
+(`listWebhooks`, for a test delivery `listWebhookDeliveries`) instead of
+sending again. `previewGoodsReceipt` and the reading calls stay `rejected`.
 
 ```dart
 final inventory = InventoryClient(apiKey: 'kr_live_…');
