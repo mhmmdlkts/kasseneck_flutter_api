@@ -60,6 +60,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 - [Printing and displaying receipts](#printing-and-displaying-receipts)
 - [Reports, receipt history, FinanzOnline status](#reports-receipt-history-finanzonline-status)
 - [Invoices (invoice API)](#invoices-invoice-api)
+- [Inventory API](#inventory-api)
 - [RKSV details](#rksv-details)
 - [Glossary](#glossary)
 
@@ -67,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.2.0
+  kasseneck_api: ^10.3.0
 ```
 
 ```bash
@@ -162,6 +163,7 @@ upgrade while the old routes are served.
 | `package:kasseneck_api/register.dart` | `RegisterClient` (pairing, sign-in, sessions), `RegisterTransport`, `registerErrorCodes`, error types |
 | `package:kasseneck_api/pos.dart` | the register (`RegisterReceiptClient`, `PosSettingsClient`, `PosPrinterClient`, articles, cart, tiles, themes, `posErrorCodes`) |
 | `package:kasseneck_api/invoice.dart` | `InvoiceApi`, invoice models and `computeInvoiceTotals`, error types |
+| `package:kasseneck_api/inventory.dart` | `InventoryClient` (articles, locations, stock, stock ledger, account webhooks), `verifyInventoryWebhookSignature`, `parseInventoryWebhookEvent`, error types. **Belongs on a server.** |
 | `package:kasseneck_api/printing.dart` | `KeckPrinter`, `KeckPrinterService`, ESC/POS builder |
 | `package:kasseneck_api/hobex_hps.dart` | `HpsClient`, `HpsPayments`, terminal discovery |
 | `package:kasseneck_api/models/…`, `enums/…`, `services/…`, `widgets/…` | single models, enums and services, one file each |
@@ -236,6 +238,8 @@ payments, you do not need to write any code:
   users (`register.dart`, `pos.dart`).
 - **Invoice API:** invoices under § 11 UStG (not receipts), customers,
   cancellation and credit notes, PDF and e-invoice XML (UBL or CII).
+- **Inventory API:** articles, stock per location and the stock ledger for an
+  online shop, plus webhooks with a signature check (`inventory.dart`).
 
 ## Requirements and platforms
 
@@ -1114,6 +1118,138 @@ if (issued.notice.any((n) => n.code == 'cash_receipt_required')) {
   // Cash sale: issue a receipt through the fiscal cash register
 }
 ```
+
+## Inventory API
+
+For online shops and other systems that show or mirror the stock of a
+Kasseneck account: read articles, locations, stock per location and the stock
+ledger, and get every stock change pushed by webhook within seconds, also the
+ones made at the register in the shop. Uses the `api_key` of the account and
+belongs on a **server**, never in an app customers install. Reading needs the
+module `lager`; purchase prices and stock values appear only when the account
+has the permission `costs` (otherwise the fields are absent, not `null`:
+`Article.hasPurchasePriceMicros`, `StockResult.values == null`).
+
+The package needs the Flutter SDK to resolve (it declares `flutter: sdk:
+flutter`), but `lib/inventory.dart` imports no Flutter code, so a server
+built on it runs without `dart:ui`; a test keeps it that way.
+
+**Integers with a fixed scale:** quantities in thousandths of the base unit
+(`1000` = 1 piece, `250` = 0.250 kg), money in cents, purchase prices in
+micro-euros. `available = onHand − reserved` and may be negative: the register
+never refuses a sale. A fractional or missing quantity in a response throws
+`KasseneckValidationError` with `kind: 'response'`; it is never read as `0`.
+
+```dart
+import 'package:kasseneck_api/inventory.dart';
+
+final inventory = InventoryClient(apiKey: 'kr_live_…');
+
+// 1. Read: an article by its EAN, then its stock per location.
+final article = await inventory.lookupArticleByCode(code: '9001234567896');
+final stock = await inventory.getStock(article.id);
+// stock.stock.first: locationId 'haupt', onHand 12000, reserved 2000, available 10000
+
+// 2. Initial sync, page by page over nextCursor.
+final mirror = <String, ({int available, int sequence})>{};
+await for (final row in inventory.iterateStock(locationId: 'haupt')) {
+  mirror['${row.articleId}/${row.locationId}'] = (available: row.available, sequence: row.sequence);
+}
+
+// 3. Subscribe once. The secret is shown only in this response.
+final created = await inventory.createWebhook(
+  url: 'https://shop.example.com/kasseneck-webhook',
+  events: ['stock.changed', 'stock.below_minimum'],
+  description: 'Bäckerei Kornblum online shop',
+);
+final secret = created.secret; // store it where the receiver reads it, never in a log
+
+// 4. Receive: the header X-Kasseneck-Signature and the raw body bytes, before
+// any JSON decoding. Answer within 10 s, work afterwards.
+final reorder = <String>[];
+int receive(String? signatureHeader, List<int> rawBody) {
+  if (!verifyInventoryWebhookSignature(secret, signatureHeader, rawBody)) return 400;
+  final InventoryWebhookEvent? event;
+  try {
+    event = parseInventoryWebhookEvent(rawBody); // throws on a malformed envelope
+  } on KasseneckValidationError {
+    return 400;
+  }
+  if (event == null || event.test) return 200; // unknown type of a later version, or a test delivery
+  switch (event) {
+    case InventoryStockChangedEvent(:final data):
+      // State, not delta: keep it only if sequence is higher than the stored one.
+      final key = '${data.articleId}/${data.locationId}';
+      if (data.sequence > (mirror[key]?.sequence ?? -1)) {
+        mirror[key] = (available: data.available, sequence: data.sequence);
+      }
+    case InventoryStockBelowMinimumEvent(:final data):
+      reorder.add(data.articleId);
+    case InventoryArticleEvent(:final data):
+      if (!data.active) mirror.removeWhere((key, _) => key.startsWith('${data.id}/'));
+  }
+  return 200;
+}
+```
+
+- **Signature.** `verifyInventoryWebhookSignature(secret, header, rawBody,
+  {toleranceSec = 300, now})` returns `true` or `false` and never throws. It
+  is the same procedure as for partner webhooks: `X-Kasseneck-Signature:
+  t=<unix seconds>,v1=<hex>` with HMAC-SHA256 over `"<t>.<raw body>"`,
+  compared in constant time, and a window of 300 seconds in both directions
+  against replays. Unlike the JavaScript twin it is synchronous (pure Dart,
+  `package:crypto`), so there is no `await` to forget. Pass the bytes as
+  received (`List<int>`) or the body as a `String`; decoding and re-encoding
+  the JSON changes the bytes and the signature no longer matches. After
+  `rotateWebhookSecret` only the new secret is valid; pass both during your own
+  switch-over (`secret` may be a list, one match is enough).
+- **Parsing.** `parseInventoryWebhookEvent(rawBody)` returns `null` for an
+  event type this version does not know (answer 2xx and skip it) and throws
+  `KasseneckValidationError` on a body that is no envelope or carries a
+  fractional quantity. The result is a sealed `InventoryWebhookEvent`:
+  `InventoryStockChangedEvent`, `InventoryStockBelowMinimumEvent` or
+  `InventoryArticleEvent` (`article.created`, `article.updated`,
+  `article.deactivated`), each with `id`, `createdAt`, `accountId` and `test`.
+- **Events.** `stock.changed` carries the current state of one article at one
+  location (`onHand`, `reserved`, `available`, `defective`, `sequence`,
+  `updatedAt`) plus `cause` (`sale`, `invoice`, `goods_receipt`, `transfer`,
+  `takeover` …, see `stockChangeCauses`) and `movementId`; changes within
+  10 seconds are combined into one delivery. `stock.below_minimum` fires once
+  when `onHand` drops below the minimum stock set for the location; `minStock`
+  in the payload is that threshold, the article's own `minStock` never
+  triggers it, and `listStock(belowMinimum: true)` follows the same rule. In
+  movements, `goods_receipt` is a goods receipt; `receipt` only ever means a
+  sales receipt (`source.type`). Deduplicate on `event.id`; deliveries are
+  retried after 1 min, 5 min, 30 min, 2 h and 12 h.
+- **Safety net without webhooks.** `listStock(changedSince: …)` and
+  `listArticles(updatedSince: …)` are sorted by `updatedAt` ascending and
+  include the boundary, so remembering the last `updatedAt`
+  (`DateTime.parse(article.updatedAt!)`) and asking again loses nothing. Times
+  go out as ISO 8601 UTC with milliseconds. Lists take `limit` (1–200, server
+  default 50) and `cursor`; `iterateArticles`, `iterateStock` and
+  `iterateStockMovements` follow `nextCursor` as a `Stream` and end with a
+  response error if the server names the same cursor twice.
+- **Checked before sending.** An empty id, a `limit` outside 1–200, a lookup by
+  `code` together with `externalSystem`/`externalId`, an empty `events` list or
+  an `updateWebhook` without a change throw `KasseneckValidationError` with
+  `kind: 'request'`; nothing goes out. Everything else the server checks and
+  answers with `validation` (`inventoryFieldErrors(error)`).
+- **Test deliveries.** `sendWebhookTest` sends an invented payload with
+  `test: true` in the envelope; at most 20 per account and calendar day in
+  Vienna, after that `rate_limited` with the wait until midnight in Vienna.
+  Deliveries carry `deliveryId` (the header `X-Kasseneck-Delivery`), webhooks
+  `consecutiveFailures`, the same names as for partner webhooks.
+- **Errors.** `rate_limited` (about 20 requests per second per account, or the
+  daily limit of `sendWebhookTest`) carries the wait in
+  `inventoryRetryAfterSec(error)`. `inventory_api_not_enabled`,
+  `module_inactive`, `article_not_found`, `invalid_cursor`,
+  `webhook_not_found`, `webhook_limit` (5 per account),
+  `invalid_webhook_url`, `event_not_subscribed` and `webhook_inactive` are
+  decided on the code with `isInventoryError(error, code)`.
+- **Names.** `StockLevel` here has `onHand` and `sequence`; the register's
+  `StockLevel` in `pos.dart` is a different type with `sellable`. If you import
+  both libraries, give one a prefix (`import '…/inventory.dart' as inv;`).
+  `StockValue` is the same type in both.
 
 ## RKSV details
 

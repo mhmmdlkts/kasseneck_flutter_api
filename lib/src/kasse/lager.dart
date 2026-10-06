@@ -101,7 +101,10 @@ class StockLevel {
   final int available;
 }
 
-/// Lagerwert eines Artikels – nur mit dem Recht `stockCosts`.
+/// Lagerwert eines Artikels. Derselbe Typ an der Kasse (`pos.dart`) und in der
+/// Lager-API (`inventory.dart`); er kommt nur, wenn Werte freigegeben sind: an
+/// der Kasse mit dem Recht `stockCosts` des Kassenbenutzers, in der Lager-API
+/// mit dem Konto-Schalter „Einkaufswerte per API“ (Recht `costs`).
 class StockValue {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).

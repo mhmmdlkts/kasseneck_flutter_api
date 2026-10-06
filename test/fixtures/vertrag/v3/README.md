@@ -17,6 +17,7 @@ Erzeugt von Jest-Tests in zwei Codebases (jede übersetzt mit ihrem eigenen Rand
 | `functions/test/unit/v3-vertrag-export.test.js` | `v3-vokabular.json`, `antworten/belege.json`, `antworten/kasse-belege.json`, `antworten/storno.json`, `antworten/belegmail.json`, `antworten/rechnungen.json`, `stored/belege.json`, `stored/rechnungen.json`, `zahlbetrag-faelle.json` |
 | `functions/test/unit/v3-vertrag-export-kassenweg.test.js` | Teil `default` von `antworten/kasse.json` und `stored/kasse.json` (6 Beleg-Endpunkte der Kasse) |
 | `functions-kasse/test/unit/v3-vertrag-export.test.js` | Teil `kasse` derselben zwei Dateien (die übrigen 19 Kassen-Endpunkte) |
+| `functions-kasse/test/unit/v3-vertrag-export-lager.test.js` | `antworten/lager.json` (Lager-API, Stufe 5a) |
 
 Fest injiziert, damit zwei Läufe dieselben Bytes liefern: eine Uhr für alle Welten
 (26.09.2026 08:00 UTC), `crypto.randomBytes`/`randomUUID`, fortlaufende Dokument-IDs
@@ -46,6 +47,7 @@ bleiben verschieden:
 | `fullReceiptId` (auch im Text) | `000…0.000…0<8 hex>` |
 | `statusPassword`, Token in `statusUrl` (gespeichert: `public_password`, `public_token`) | `EXAM-<4 hex>`, `000…0<8 hex>` |
 | Kopplungscode (`code` bei `pairRegisterDevice`, `register_pairings/<CODE>`) | `EXMP<4 Zeichen>` (Alphabet ohne 0/1/I/O) |
+| Webhook-Secret (`secret` bei `createWebhook`/`rotateWebhookSecret`, auch im Text) | `whsec_EXAMPLE<8 hex>AAAA…` (38 Zeichen) |
 | ungültige Eingaben dieser Felder | `INVALID_EXAMPLE_<8 hex>` |
 
 In `stored/` stehen Schlüssel, Hashes und Salze als `<geheim>`. Ein Test prüft jede Datei
@@ -90,7 +92,7 @@ Code-Änderung zusammen einchecken.
     äußere Codes) und je Quelle: Rand (`edge`), Anmeldung (`auth`),
     `receiptMessages`, Kassen-Handler (`registerHandlers`, je Endpunkt in
     `registerHandlersByEndpoint`), Fälle der Kassen-Welt (`registerCases`), Storno,
-    Zahlungen, Belegmail, Rechnung, Partner. Jeder Code, der irgendwo in `antworten/`
+    Zahlungen, Belegmail, Rechnung, Partner, Lager-API (`inventory`). Jeder Code, der irgendwo in `antworten/`
     vorkommt, steht in `all` (Test).
   - `noticeCodes`: Hinweis-Codes (`notice[].code` der Rechnungs-API), keine Fehler.
   - `schemas`: je Endpunkt der Eintrag des Vokabulars (Notation außen → innen);
@@ -109,6 +111,12 @@ Code-Änderung zusammen einchecken.
   Liste, Storno, Gutschrift, Zahlung, Fehler).
 - **`antworten/kasse.json`**: alle 25 Kassen-Endpunkte unter `/api/v3`, je Fall
   (englischer Name) Methode, Aufrufer, Parameter, HTTP-Status, Kopfzeilen und Antwort.
+- **`antworten/lager.json`**: Lager-API unter `/v3` (Kanal `api`) in Ablaufreihenfolge an
+  einem Konto (Bäckerei Kornblum, Standort `haupt`): Artikel, Standorte, Bestand, Bewegungen,
+  mit und ohne Schalter `lagerApi.kosten`, Konto-Webhooks verwalten samt Fehlern
+  (`webhook_limit`, `rate_limited` der Tagesgrenze für Probesendungen …). Dazu
+  `webhookEvents`: die zugestellten Konto-Webhooks (`stock.changed`, `stock.below_minimum`,
+  `article.*`), Hülle wie gesendet.
 - **`stored/`**: die inneren Firestore-Dokumente (deutsch, ohne Geheimnisse), aus denen
   die Antworten entstanden; für `./stored` (gespeicherte Form → englisches Modell).
 - **`zahlbetrag-faelle.json`**: Rechenfälle für `receiptDueCents(items, vouchers,

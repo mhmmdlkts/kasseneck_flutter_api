@@ -64,6 +64,21 @@ abstract final class Aufrufe {
   static const setMyKasseLogo = 'setMyKasseLogo';
   static const setMyCashregisterStockLocation = 'setMyCashregisterStockLocation';
   static const updateCustomer = 'updateCustomer';
+  // Lager-API (InventoryClient, package:kasseneck_api/inventory.dart).
+  static const getArticle = 'getArticle';
+  static const listArticles = 'listArticles';
+  static const lookupArticleByCode = 'lookupArticleByCode';
+  static const listLocations = 'listLocations';
+  static const getStock = 'getStock';
+  static const listStock = 'listStock';
+  static const listStockMovements = 'listStockMovements';
+  static const createWebhook = 'createWebhook';
+  static const updateWebhook = 'updateWebhook';
+  static const deleteWebhook = 'deleteWebhook';
+  static const listWebhooks = 'listWebhooks';
+  static const sendWebhookTest = 'sendWebhookTest';
+  static const rotateWebhookSecret = 'rotateWebhookSecret';
+  static const listWebhookDeliveries = 'listWebhookDeliveries';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -119,5 +134,19 @@ abstract final class Aufrufe {
     setMyKasseLogo,
     setMyCashregisterStockLocation,
     updateCustomer,
+    getArticle,
+    listArticles,
+    lookupArticleByCode,
+    listLocations,
+    getStock,
+    listStock,
+    listStockMovements,
+    createWebhook,
+    updateWebhook,
+    deleteWebhook,
+    listWebhooks,
+    sendWebhookTest,
+    rotateWebhookSecret,
+    listWebhookDeliveries,
   };
 }

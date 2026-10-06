@@ -654,7 +654,7 @@ void main() {
 
     test('nur die Kasseneck-Wege kennen die Kopfzeilen; Terminal- und Druckerwege kommen nicht heran', () {
       // Quelltext-Waechter: die beiden Kopfzeilen setzt allein lib/src/v3.dart,
-      // und nur die vier Kasseneck-Wege binden es ein. Drucker (Socket, BLE),
+      // und nur die Kasseneck-Wege binden es ein. Drucker (Socket, BLE),
       // SumUp (SDK), hobex HPS und der Logo-Abruf nicht.
       final dateien = Directory('lib').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart'));
       final mitKopf = <String>{};
@@ -673,6 +673,7 @@ void main() {
         'lib/src/register/pairing.dart',
         'lib/src/register/transport.dart',
         'lib/src/rechnung/transport.dart',
+        'lib/src/lager/transport.dart',
       });
     });
   });

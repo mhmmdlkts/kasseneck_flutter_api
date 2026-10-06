@@ -4,8 +4,8 @@
     "default": {
       "sha256": "993dc13a802ce4c2f795a20e7de2d6d0aad6e471e47b60762c32127046a46e95",
       "head": [],
-      "inputsSha256": "6aae196464196c3abcfb6afed5fb78a99d8c067c79247ca442badf2471e39ddc",
-      "backendPackage": "@kreiseck/kasseneck-api@0.31.0",
+      "inputsSha256": "91fa28cc05dd8f34575b8ea622bd7e3f145bbd25a8e97ad8ecf582b9df69078d",
+      "backendPackage": "@kreiseck/kasseneck-api@0.32.2",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
         "functions/gemeinsam/api-rand.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "e62252f713159cc820a6c2122486808e877a7cd66c7c06f8c1e85f24a68c54e8",
+      "sha256": "630041a67780785efc0f83a8cb7b3f37613b1c1c87e3f7764b535ae951bbf192",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "b7483cf62e025b0c980b90d013c81c88a99f7acdeaf70f510a7554329ee19285",
+      "inputsSha256": "f8c6cfbda74bdcd5f3cc9542009698699dec89175ea233f53ee0dea8f007e043",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -581,6 +581,50 @@
             "zuletztGenutztAm": 1790409600000
           },
           "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/kassen_protokoll/auto2": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "entfernt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Neues Tablet"
+            },
+            "geraetId": "dev_pin",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "dev_pin",
+              "name": "Tablet vorne"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto3": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "gekoppelt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Neues Tablet"
+            },
+            "geraetId": "auto1",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "auto1",
+              "name": "Neues Tablet"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
           "users/kw_betrieb1/register_devices/auto1": {
             "secretHash": "<geheim>",
             "label": "Neues Tablet",
@@ -655,6 +699,28 @@
             "expiresAt": 1790410200000,
             "usedAt": 1790409600000
           },
+          "users/kw_betrieb1/kassen_protokoll/auto2": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "gekoppelt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Tablet Bar"
+            },
+            "geraetId": "auto1",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "auto1",
+              "name": "Tablet Bar"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
           "users/kw_betrieb1/register_devices/auto1": {
             "secretHash": "<geheim>",
             "label": "Tablet Bar",
@@ -696,6 +762,28 @@
             "expiresAt": 1790410200000,
             "usedAt": 1790409600000
           },
+          "users/kw_betrieb1/kassen_protokoll/auto2": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "gekoppelt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Kasse"
+            },
+            "geraetId": "auto1",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "auto1",
+              "name": "Kasse"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
           "users/kw_betrieb1/register_devices/auto1": {
             "secretHash": "<geheim>",
             "label": "Kasse",
@@ -718,6 +806,28 @@
             "cashregisterId": "KASSE1",
             "expiresAt": 1790410200000,
             "usedAt": 1790409600000
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto2": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "gekoppelt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Kasse"
+            },
+            "geraetId": "auto1",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "auto1",
+              "name": "Kasse"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": null
+            }
           },
           "users/kw_betrieb1/register_devices/auto1": {
             "secretHash": "<geheim>",
@@ -742,6 +852,28 @@
             "expiresAt": 1790410200000,
             "usedAt": 1790409600000
           },
+          "users/test_kw_betrieb1/kassen_protokoll/auto2": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "gekoppelt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Kasse"
+            },
+            "geraetId": "auto1",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "auto1",
+              "name": "Kasse"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Test-Theke"
+            }
+          },
           "users/test_kw_betrieb1/register_devices/auto1": {
             "secretHash": "<geheim>",
             "label": "Kasse",
@@ -765,6 +897,28 @@
             "expiresAt": 1790410200000,
             "usedAt": 1790409600000
           },
+          "users/kw_betrieb1/kassen_protokoll/auto2": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "gekoppelt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Kasse"
+            },
+            "geraetId": "auto1",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "auto1",
+              "name": "Kasse"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
           "users/kw_betrieb1/register_devices/auto1": {
             "secretHash": "<geheim>",
             "label": "Kasse",
@@ -787,6 +941,28 @@
             "cashregisterId": "KASSE1",
             "expiresAt": 1790410200000,
             "usedAt": 1790409600000
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto2": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "gekoppelt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Kasse"
+            },
+            "geraetId": "auto1",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "auto1",
+              "name": "Kasse"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
           },
           "users/kw_betrieb1/register_devices/auto1": {
             "secretHash": "<geheim>",
@@ -2147,6 +2323,28 @@
       "cases": {
         "success": {
           "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_chef": null,
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "entfernt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Tablet vorne"
+            },
+            "geraetId": "dev_pin",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "dev_pin",
+              "name": "Tablet vorne"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
           "users/kw_betrieb1/register_devices/dev_pin": {
             "secretHash": "<geheim>",
             "label": "Tablet vorne",
@@ -2267,6 +2465,28 @@
         },
         "get_without_check": {
           "users/kw_betrieb1/cashregisters/KASSE1/sessions/sess_kellner": null,
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "entfernt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": "Tablet hinten"
+            },
+            "geraetId": "dev_auswahl",
+            "antragId": null,
+            "aenderungen": [],
+            "geraet": {
+              "id": "dev_auswahl",
+              "name": "Tablet hinten"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
           "users/kw_betrieb1/register_devices/dev_auswahl": {
             "secretHash": "<geheim>",
             "label": "Tablet hinten",
@@ -3259,6 +3479,31 @@
                 "uhr": false
               }
             }
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kasse",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "stil",
+                "alt": "nacht",
+                "neu": "klar"
+              },
+              {
+                "feld": "uhr",
+                "alt": true,
+                "neu": false
+              }
+            ]
           }
         },
         "success_owner": {
@@ -3287,6 +3532,31 @@
                 "schrift": "L"
               }
             }
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kasse",
+            "aktion": "geaendert",
+            "quelle": "panel",
+            "von": {
+              "uid": "kw_betrieb1",
+              "rolle": "kunde",
+              "name": null
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "farbe",
+                "alt": "#222222",
+                "neu": "#136B6B"
+              },
+              {
+                "feld": "schrift",
+                "alt": "M",
+                "neu": "L"
+              }
+            ]
           }
         }
       }
@@ -3346,6 +3616,26 @@
                 "logoBild": "https://firebasestorage.googleapis.com/v0/b/kasseneck.appspot.com/o/users%2Fkw_betrieb1%2Fkasse%2Flogo.png?alt=media&token=11111111-2222-4333-8444-555555555555"
               }
             }
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kasse",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "logoBild",
+                "alt": "",
+                "neu": "https://firebasestorage.googleapis.com/v0/b/kasseneck.appspot.com/o/users%2Fkw_betrieb1%2Fkasse%2Flogo.png?alt=media&token=11111111-2222-4333-8444-555555555555"
+              }
+            ]
           }
         },
         "success_svg_owner": {
@@ -3373,6 +3663,26 @@
                 "logoBild": "https://firebasestorage.googleapis.com/v0/b/kasseneck.appspot.com/o/users%2Fkw_betrieb1%2Fkasse%2Flogo.svg?alt=media&token=11111111-2222-4333-8444-555555555555"
               }
             }
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kasse",
+            "aktion": "geaendert",
+            "quelle": "panel",
+            "von": {
+              "uid": "kw_betrieb1",
+              "rolle": "kunde",
+              "name": null
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "logoBild",
+                "alt": "",
+                "neu": "https://firebasestorage.googleapis.com/v0/b/kasseneck.appspot.com/o/users%2Fkw_betrieb1%2Fkasse%2Flogo.svg?alt=media&token=11111111-2222-4333-8444-555555555555"
+              }
+            ]
           }
         }
       }
@@ -3381,6 +3691,44 @@
       "codebase": "kasse",
       "cases": {
         "success_manager": {
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": "dev_pin",
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "druckerAn",
+                "alt": false,
+                "neu": true
+              },
+              {
+                "feld": "layout",
+                "alt": "links",
+                "neu": "rechts"
+              },
+              {
+                "feld": "papier",
+                "alt": "mm58",
+                "neu": "mm80"
+              }
+            ],
+            "geraet": {
+              "id": "dev_pin",
+              "name": "Tablet vorne"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
           "users/kw_betrieb1/register_devices/dev_pin": {
             "secretHash": "<geheim>",
             "label": "Tablet vorne",
@@ -3400,6 +3748,34 @@
           }
         },
         "success_owner": {
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "geaendert",
+            "quelle": "panel",
+            "von": {
+              "uid": "kw_betrieb1",
+              "rolle": "kunde",
+              "name": null
+            },
+            "geraetId": "dev_kasse2",
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "hoehe",
+                "alt": "M",
+                "neu": "L"
+              }
+            ],
+            "geraet": {
+              "id": "dev_kasse2",
+              "name": "Tablet Keller"
+            },
+            "kasse": {
+              "id": "KASSE2",
+              "name": "Theke 2"
+            }
+          },
           "users/kw_betrieb1/register_devices/dev_kasse2": {
             "secretHash": "<geheim>",
             "label": "Tablet Keller",
@@ -3482,6 +3858,30 @@
                 "id": "ru_chef",
                 "name": "Anna Chef"
               }
+            }
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kasse",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "lagerStandort",
+                "alt": null,
+                "neu": "Lieferwagen W-12345"
+              }
+            ],
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
             }
           }
         },
