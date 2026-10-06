@@ -1355,9 +1355,12 @@ attempt and store it with your order: after a timeout or network error
 The client never retries by itself and never trims or shortens a key; a new key
 would book a second time. Since 10.4.1 every write, reservation and webhook
 call reports `ErrorOutcome.unknown` in that case (also after HTTP 5xx or an
-unreadable answer; before: `rejected`), so `isOutcomeUnknown(error)` is the
-signal to resend with the same key; `previewGoodsReceipt` and the reading calls
-stay `rejected`.
+unreadable answer; before: `rejected`). For writes and reservations,
+`isOutcomeUnknown(error)` is the signal to resend with the same key. The
+webhook calls (`createWebhook`, `updateWebhook`, `deleteWebhook`,
+`rotateWebhookSecret`, `sendWebhookTest`) take no key: read the state first
+(`listWebhooks`, for a test delivery `listWebhookDeliveries`) instead of
+sending again. `previewGoodsReceipt` and the reading calls stay `rejected`.
 
 ```dart
 final inventory = InventoryClient(apiKey: 'kr_live_…');

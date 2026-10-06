@@ -143,11 +143,12 @@ bool isUnknownOutcomeCall(String functionName) => unknownOutcomeCalls.contains(f
 /// Ist der Aufruf [functionName] mit diesen [params] ein Probelauf? Nur, wenn
 /// er in [dryRunCalls] steht **und** in den gesendeten Parametern `dryRun`
 /// genau `true` ist (`'true'` oder `1` sind es nicht, das Backend prueft
-/// ebenso streng). Der Ausgang haengt so allein an dem, was hinausgeht: es
+/// ebenso streng). `identical` statt `==`: ein eigener Typ mit
+/// ueberschriebenem `==` kann sich nicht als `true` ausgeben. Der Ausgang haengt so allein an dem, was hinausgeht: es
 /// gibt keinen Schalter, mit dem ein Aufrufer einen echten Vorgang zum
 /// Probelauf erklaeren koennte.
 bool isDryRun(String functionName, Map<String, dynamic> params) =>
-    dryRunCalls.contains(functionName.split('/').first) && params['dryRun'] == true;
+    dryRunCalls.contains(functionName.split('/').first) && identical(params['dryRun'], true);
 
 /// Ausgang eines Scheiterns, nachdem die Anfrage unterwegs war: offen bei
 /// einem Aufruf mit Wirkung, ausser er ist ein Probelauf ([isDryRun]).

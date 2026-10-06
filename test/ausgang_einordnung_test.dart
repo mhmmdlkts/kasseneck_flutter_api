@@ -217,6 +217,15 @@ Matcher _erwartet(_Art art, {required bool wirkung}) {
       .having((e) => e.outcome, 'outcome', ausgang);
 }
 
+/// Gibt sich bei `==` als jeder Wert aus; `isDryRun` darf darauf nicht hereinfallen.
+class _GleichAllem {
+  @override
+  bool operator ==(Object other) => true;
+
+  @override
+  int get hashCode => 0;
+}
+
 Map<String, dynamic> _gesendet(http.Request r) => (jsonDecode(r.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
 
 void main() {
@@ -313,6 +322,16 @@ void main() {
     expect(outcomeAfterSending('financeWebService/status_cashbox'), ErrorOutcome.unknown);
     expect(unreadableOutcome('issueInvoice', dryRun: true), ErrorOutcome.rejected);
     expect(unreadableOutcome('cancelInvoice', dryRun: true), ErrorOutcome.unknown);
+  });
+
+  test('isDryRun: nur genau true, nur fuer dryRunCalls', () {
+    expect(isDryRun('receiveGoods', {'dryRun': true}), isTrue);
+    expect(isDryRun('issueInvoice', {'dryRun': true}), isTrue);
+    for (final wert in <Object?>[false, 'true', 1, null, _GleichAllem()]) {
+      expect(isDryRun('receiveGoods', {'dryRun': wert}), isFalse, reason: '$wert');
+    }
+    expect(isDryRun('receiveGoods', {}), isFalse);
+    expect(isDryRun('createReceipt', {'dryRun': true}), isFalse);
   });
 
   test('issueInvoice mit dryRun: true geht gar nicht erst hinaus', () async {

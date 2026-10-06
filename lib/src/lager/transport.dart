@@ -8,10 +8,12 @@
 ///
 /// **Nichts wird wiederholt.** Lesen hat keine Wirkung und darf nach einem
 /// Zeitlimit erneut gerufen werden; bei `rate_limited` vorher
-/// `inventoryRetryAfterSec` warten. Ein schreibender Aufruf meldet nach
-/// Zeitlimit, Netzfehler, HTTP 5xx oder unlesbarer Antwort Ausgang unklar:
-/// dann mit **demselben** `idempotencyKey` erneut senden, nie mit einem
-/// neuen.
+/// `inventoryRetryAfterSec` warten. Jeder Aufruf mit Wirkung meldet nach
+/// Zeitlimit, Netzfehler, HTTP 5xx oder unlesbarer Antwort Ausgang unklar.
+/// Lager schreiben und Reservierungen tragen einen `idempotencyKey`: dann mit
+/// **demselben** Schluessel erneut senden, nie mit einem neuen. Die
+/// Webhook-Aufrufe haben keinen Schluessel: erst nachlesen (`listWebhooks`,
+/// bei der Probesendung `listWebhookDeliveries`), nicht erneut senden.
 library;
 
 import 'dart:convert';
