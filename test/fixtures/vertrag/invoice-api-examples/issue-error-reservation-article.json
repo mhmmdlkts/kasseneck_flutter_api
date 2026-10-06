@@ -1,0 +1,25 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Eine Reservierung gehoert zu einem Artikel: ohne articleId keine reservationId",
+  "request": {
+    "idempotencyKey": "ex-20",
+    "priceMode": "gross",
+    "serviceStart": "2026-10-06",
+    "items": [
+      {
+        "description": "Kaisersemmel",
+        "quantity": 6,
+        "unitPriceCents": 65,
+        "vatRate": 10,
+        "reservationId": "res_example"
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].articleId"
+    ]
+  }
+}

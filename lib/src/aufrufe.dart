@@ -79,6 +79,20 @@ abstract final class Aufrufe {
   static const sendWebhookTest = 'sendWebhookTest';
   static const rotateWebhookSecret = 'rotateWebhookSecret';
   static const listWebhookDeliveries = 'listWebhookDeliveries';
+  // Lager-API schreiben und reservieren (Stufe 5b, InventoryClient).
+  static const createArticle = 'createArticle';
+  static const updateArticle = 'updateArticle';
+  static const deactivateArticle = 'deactivateArticle';
+  static const receiveGoods = 'receiveGoods';
+  static const transferStock = 'transferStock';
+  static const recordStockLoss = 'recordStockLoss';
+  static const changeStockCondition = 'changeStockCondition';
+  static const reverseStockMovement = 'reverseStockMovement';
+  static const createReservation = 'createReservation';
+  static const extendReservation = 'extendReservation';
+  static const releaseReservation = 'releaseReservation';
+  static const getReservation = 'getReservation';
+  static const listReservations = 'listReservations';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -148,5 +162,18 @@ abstract final class Aufrufe {
     sendWebhookTest,
     rotateWebhookSecret,
     listWebhookDeliveries,
+    createArticle,
+    updateArticle,
+    deactivateArticle,
+    receiveGoods,
+    transferStock,
+    recordStockLoss,
+    changeStockCondition,
+    reverseStockMovement,
+    createReservation,
+    extendReservation,
+    releaseReservation,
+    getReservation,
+    listReservations,
   };
 }

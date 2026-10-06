@@ -25,6 +25,7 @@ class Article {
   Article({
     required this.id,
     this.name,
+    this.description,
     this.unitPriceCents,
     this.vatRate,
     this.unit,
@@ -34,8 +35,10 @@ class Article {
     this.groupId,
     this.revenueGroupId,
     this.stockTracked = false,
+    this.stockKind,
     this.stockLocationIds = const [],
     this.minStock,
+    this.minStockByLocation = const {},
     this.active = true,
     this.externalIds,
     this.metadata,
@@ -49,6 +52,9 @@ class Article {
 
   final String id;
   final String? name;
+
+  /// Beschreibung (bis 2000 Zeichen); `null` = keine. Seit 10.4.
+  final String? description;
   final int? unitPriceCents;
 
   /// USt-Satz in Prozent, z. B. `20`, `10`, `4.9`.
@@ -61,13 +67,25 @@ class Article {
   final String? revenueGroupId;
   final bool stockTracked;
 
+  /// Meist ein Wert aus `stockKinds`: `quantity` (Menge) oder `serial`
+  /// (Einzelstueck). `null`, wenn der Server das Feld nicht sendet (vor Stufe
+  /// 5b); ein Wert, den diese Paketversion nicht kennt, bleibt als Text stehen.
+  /// Seit 10.4.
+  final String? stockKind;
+
   /// Standorte, an denen der Artikel gefuehrt wird; leer = nur der Standard-Standort.
   final List<String> stockLocationIds;
 
-  /// Mindestbestand des Artikels in Tausendstel; `null` = keiner. Warnungen,
-  /// `belowMinimum` und `stock.below_minimum` richten sich nach dem
-  /// Mindestbestand je Standort, nicht nach diesem Wert.
+  /// **Altfeld.** Mindestbestand des Artikels in Tausendstel; `null` = keiner.
+  /// Er loest nichts aus: Warnungen, `belowMinimum` und `stock.below_minimum`
+  /// richten sich nach [minStockByLocation].
   final int? minStock;
+
+  /// Mindestbestand je Standort in Tausendstel (`{'haupt': 20000}`), die
+  /// Schwelle fuer `below_minimum`, gemessen am verfuegbaren Bestand
+  /// (`onHand - reserved`). Leer = keiner, auch wenn ein Server vor Stufe 5b
+  /// das Feld nicht sendet. Seit 10.4.
+  final Map<String, int> minStockByLocation;
   final bool active;
 
   /// Eigene Kennungen je Fremdsystem (`{'shop': '4711'}`); `null`, wenn der
@@ -91,6 +109,7 @@ class Article {
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
+        'description': description,
         'unitPriceCents': unitPriceCents,
         'vatRate': vatRate,
         'unit': unit,
@@ -100,8 +119,10 @@ class Article {
         'groupId': groupId,
         'revenueGroupId': revenueGroupId,
         'stockTracked': stockTracked,
+        'stockKind': stockKind,
         'stockLocationIds': [...stockLocationIds],
         'minStock': minStock,
+        'minStockByLocation': {...minStockByLocation},
         'active': active,
         if (externalIds != null) 'externalIds': {...externalIds!},
         if (metadata != null) 'metadata': {...metadata!},
@@ -280,12 +301,16 @@ class StockMovementLot {
 
 /// Bestand am Standort nach einer Bewegung, in Tausendstel.
 class StockAfter {
-  const StockAfter({required this.sellable, required this.defective});
+  const StockAfter({required this.sellable, required this.defective, this.reserved});
 
   final int sellable;
   final int defective;
 
-  Map<String, dynamic> toJson() => {'sellable': sellable, 'defective': defective};
+  /// Reserviert nach der Bewegung; steht nur an Reservierungsbewegungen,
+  /// sonst `null` (nicht erfasst, nicht „0“). Seit 10.4.
+  final int? reserved;
+
+  Map<String, dynamic> toJson() => {'sellable': sellable, 'defective': defective, 'reserved': reserved};
 }
 
 /// Woher eine Bewegung kommt.
@@ -316,6 +341,7 @@ class StockMovement {
     this.locationId,
     this.condition,
     required this.quantityDelta,
+    this.reservedDelta = 0,
     this.stockAfter,
     this.operationId,
     this.source,
@@ -339,8 +365,13 @@ class StockMovement {
   /// Meist ein Wert aus `stockConditions`.
   final String? condition;
 
-  /// Mengenaenderung in Tausendstel (Abgang negativ).
+  /// Mengenaenderung in Tausendstel (Abgang negativ); bei `reservation` immer 0.
   final int quantityDelta;
+
+  /// Aenderung von `reserved` in Tausendstel: positiv beim Reservieren, negativ
+  /// bei Freigabe, Ablauf und Einloesen; 0 bei allen anderen Bewegungen (auch
+  /// wenn ein Server vor Stufe 5b das Feld nicht sendet). Seit 10.4.
+  final int reservedDelta;
   final StockAfter? stockAfter;
   final String? operationId;
   final StockMovementSourceRef? source;
@@ -365,6 +396,7 @@ class StockMovement {
         'locationId': locationId,
         'condition': condition,
         'quantityDelta': quantityDelta,
+        'reservedDelta': reservedDelta,
         'stockAfter': stockAfter?.toJson(),
         'operationId': operationId,
         'source': source?.toJson(),
@@ -582,13 +614,240 @@ class StockBelowMinimumEventData {
 
   final String articleId;
   final String locationId;
+
+  /// Verfuegbarer Bestand (`onHand - reserved`); eine Reservierung allein kann
+  /// ausloesen.
   final int available;
 
-  /// Der Mindestbestand des Standorts in Tausendstel: die unterschrittene
-  /// Schwelle, gemessen am Bestand `onHand`. Der `minStock` des Artikels allein
-  /// loest nie aus.
+  /// Der Mindestbestand des Standorts in Tausendstel (`minStockByLocation`):
+  /// die unterschrittene Schwelle, gemessen an [available]. Der `minStock` des
+  /// Artikels allein loest nie aus.
   final int minStock;
 
   Map<String, dynamic> toJson() =>
       {'articleId': articleId, 'locationId': locationId, 'available': available, 'minStock': minStock};
+}
+
+// ---- Schreiben (Backend Stufe 5b, seit 10.4) ---------------------------------
+
+/// Ein Hinweis einer Buchung: sie hat gewirkt, es gibt nur etwas zu wissen.
+class InventoryWarning {
+  const InventoryWarning({required this.code, this.articleId, this.locationId, this.message = ''});
+
+  /// Meist ein Wert aus `inventoryWarningCodes`; ein unbekannter bleibt erhalten.
+  final String code;
+  final String? articleId;
+  final String? locationId;
+
+  /// Fuer Menschen, deutsch; nie darauf verzweigen.
+  final String message;
+
+  Map<String, dynamic> toJson() => {'code': code, 'articleId': articleId, 'locationId': locationId, 'message': message};
+}
+
+/// Antwort jeder Buchung (`receiveGoods`, `transferStock`, `recordStockLoss`,
+/// `changeStockCondition`, `reverseStockMovement`). Werte traegt sie nie. Eine
+/// Wiederholung mit demselben `idempotencyKey` liefert genau diese Antwort
+/// noch einmal.
+class StockOperation {
+  const StockOperation({
+    required this.operationId,
+    this.movementIds = const [],
+    this.lotIds = const [],
+    this.warnings = const [],
+  });
+
+  /// Kennung des Vorgangs; `reverseStockMovement` nimmt ihn zurueck.
+  final String operationId;
+  final List<String> movementIds;
+  final List<String> lotIds;
+  final List<InventoryWarning> warnings;
+
+  Map<String, dynamic> toJson() => {
+        'operationId': operationId,
+        'movementIds': [...movementIds],
+        'lotIds': [...lotIds],
+        'warnings': [for (final w in warnings) w.toJson()],
+      };
+}
+
+/// Eine Zeile der Wareneingangs-Vorschau (`previewGoodsReceipt`).
+class GoodsReceiptPreviewLine {
+  GoodsReceiptPreviewLine({
+    required this.articleId,
+    required this.quantity,
+    this.expiresOn,
+    this.batch,
+    this.serialNumbers = const [],
+    this.priceFromArticle = false,
+    this.baseCents,
+    this.landedCostCents,
+    this.valueCents,
+    this.unitCostMicros,
+    bool? hasValues,
+  }) : hasValues =
+            hasValues ?? (baseCents != null || landedCostCents != null || valueCents != null || unitCostMicros != null);
+
+  final String articleId;
+
+  /// Tausendstel.
+  final int quantity;
+  final String? expiresOn;
+  final String? batch;
+  final List<String> serialNumbers;
+
+  /// `true`: der Preis kam aus dem Artikel, nicht aus der Anfrage.
+  final bool priceFromArticle;
+
+  /// Warenwert ohne Nebenkosten in Cent; nur mit dem Recht `costs`, siehe [hasValues].
+  final int? baseCents;
+
+  /// Anteil der Nebenkosten in Cent.
+  final int? landedCostCents;
+
+  /// Wert der Zeile in Cent (`baseCents + landedCostCents`).
+  final int? valueCents;
+
+  /// Einstandspreis je Basiseinheit in Mikro-Euro.
+  final int? unitCostMicros;
+
+  /// Standen die vier Werte in der Antwort? Der Server sendet sie zusammen
+  /// und nur mit dem Recht `costs`; ohne fehlen sie ganz („kein Recht“, nicht
+  /// „0“).
+  final bool hasValues;
+
+  Map<String, dynamic> toJson() => {
+        'articleId': articleId,
+        'quantity': quantity,
+        'expiresOn': expiresOn,
+        'batch': batch,
+        'serialNumbers': [...serialNumbers],
+        'priceFromArticle': priceFromArticle,
+        if (hasValues) ...{
+          'baseCents': baseCents,
+          'landedCostCents': landedCostCents,
+          'valueCents': valueCents,
+          'unitCostMicros': unitCostMicros,
+        },
+      };
+}
+
+/// Antwort von `previewGoodsReceipt`: was der Wareneingang buchen wuerde.
+class GoodsReceiptPreview {
+  const GoodsReceiptPreview({required this.preview});
+
+  final List<GoodsReceiptPreviewLine> preview;
+
+  Map<String, dynamic> toJson() => {
+        'preview': [for (final z in preview) z.toJson()],
+      };
+}
+
+// ---- Reservierung ---------------------------------------------------------------
+
+/// Eine Position einer Reservierung, Mengen in Tausendstel. Offen ist
+/// `quantity - redeemed - released` ([open]).
+class ReservationItem {
+  const ReservationItem({
+    required this.articleId,
+    required this.locationId,
+    required this.quantity,
+    this.redeemed = 0,
+    this.released = 0,
+  });
+
+  final String articleId;
+  final String locationId;
+  final int quantity;
+
+  /// Ueber eine Rechnung eingeloest.
+  final int redeemed;
+
+  /// Freigegeben (von Hand oder durch Ablauf).
+  final int released;
+
+  /// Was diese Position noch zurueckhaelt.
+  int get open => quantity - redeemed - released;
+
+  Map<String, dynamic> toJson() => {
+        'articleId': articleId,
+        'locationId': locationId,
+        'quantity': quantity,
+        'redeemed': redeemed,
+        'released': released,
+      };
+}
+
+/// Eine Reservierung, wie `getReservation`, jede schreibende
+/// Reservierungs-Antwort und die Ereignisse `reservation.*` sie senden.
+class Reservation {
+  const Reservation({
+    required this.id,
+    this.status,
+    this.reference,
+    this.items = const [],
+    this.expiresAt,
+    this.createdAt,
+  });
+
+  final String id;
+
+  /// Meist ein Wert aus `reservationStatuses`; `null`, wenn keiner gesendet
+  /// wurde. Ein unbekannter bleibt erhalten.
+  final String? status;
+
+  /// Eigene Referenz (Bestellnummer); `null` = keine.
+  final String? reference;
+  final List<ReservationItem> items;
+
+  /// Ablauf, ISO 8601 UTC.
+  final String? expiresAt;
+  final String? createdAt;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'status': status,
+        'reference': reference,
+        'items': [for (final p in items) p.toJson()],
+        'expiresAt': expiresAt,
+        'createdAt': createdAt,
+      };
+}
+
+/// Eine Seite von `listReservations`, neueste zuerst.
+class ReservationPage {
+  const ReservationPage({required this.reservations, this.nextCursor});
+
+  final List<Reservation> reservations;
+
+  /// `null` = letzte Seite.
+  final String? nextCursor;
+
+  Map<String, dynamic> toJson() => {
+        'reservations': [for (final r in reservations) r.toJson()],
+        'nextCursor': nextCursor,
+      };
+}
+
+/// Eine Position, fuer die beim Reservieren der verfuegbare Bestand nicht
+/// reicht (`insufficient_available`, siehe `inventoryShortfalls`).
+class InventoryShortfall {
+  const InventoryShortfall({
+    required this.articleId,
+    required this.locationId,
+    required this.requested,
+    required this.available,
+  });
+
+  final String articleId;
+  final String locationId;
+
+  /// Angefragt, Tausendstel.
+  final int requested;
+
+  /// Verfuegbar (`onHand - reserved`), Tausendstel; darf negativ sein.
+  final int available;
+
+  Map<String, dynamic> toJson() =>
+      {'articleId': articleId, 'locationId': locationId, 'requested': requested, 'available': available};
 }

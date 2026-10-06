@@ -10,12 +10,15 @@ import 'package:kasseneck_api/inventory.dart';
 import 'package:kasseneck_api/src/aufrufe.dart';
 import 'package:kasseneck_api/src/receipt/codes.dart' show anmeldungUndRandCodes;
 
+import 'helpers/lager_anfragen.dart';
+
 /// Die Lager-API (`InventoryClient`, Zwilling von `./inventory` im npm-Paket
-/// 1.4.0) gegen den Vertrags-Export des Backends: `v3/antworten/lager.json`
-/// (echte Antworten der 14 Endpunkte samt zugestellter Webhook-Ereignisse,
+/// 1.5.0) gegen den Vertrags-Export des Backends: `v3/antworten/lager.json`
+/// (echte Antworten der 27 Endpunkte samt zugestellter Webhook-Ereignisse,
 /// erfundenes Konto Baeckerei Kornblum), `v3/v3-vokabular.json` (Kataloge,
 /// Schemata) und `surface.json` (Abschnitt `inventory`). Die Faelle folgen
-/// `test/inventory.test.ts` im JS-Paket.
+/// `test/inventory.test.ts` im JS-Paket; das Schreiben im Einzelnen steht in
+/// `lager_schreiben_test.dart`.
 
 const _apiKey = 'kr_test_Beispielschluessel0123456789';
 
@@ -108,14 +111,21 @@ void main() {
         'inventoryEndpoints': inventoryEndpoints,
         'inventoryErrorCodes': inventoryErrorCodes,
         'inventoryRequestErrorCodes': inventoryRequestErrorCodes,
+        'inventoryWarningCodes': inventoryWarningCodes,
         'inventoryWebhookEnvelopeFields': inventoryWebhookEnvelopeFields,
         'inventoryWebhookEvents': inventoryWebhookEvents,
+        'landedCostAllocations': landedCostAllocations,
+        'landedCostTypes': landedCostTypes,
         'locationTypes': locationTypes,
+        'reservationStatuses': reservationStatuses,
         'stockChangeCauses': stockChangeCauses,
         'stockConditions': stockConditions,
+        'stockKinds': stockKinds,
+        'stockLossReasons': stockLossReasons,
         'stockMovementSources': stockMovementSources,
         'stockMovementTypes': stockMovementTypes,
         'webhookDeliveryStatuses': webhookDeliveryStatuses,
+        'withdrawalTypes': withdrawalTypes,
       };
       expect(hier.keys.toSet(), listen.keys.toSet());
       for (final e in hier.entries) {
@@ -123,12 +133,14 @@ void main() {
       }
     });
 
-    test('inventoryEndpoints: die 14 Endpunkte in endpoints.public, in Vertragsreihenfolge, alle in Aufrufe.alle', () {
+    test('inventoryEndpoints: die 27 Endpunkte (5a und 5b) in endpoints.public, in Vertragsreihenfolge, alle in Aufrufe.alle', () {
       final namen = (_vokabular['names'] as Map).cast<String, String>();
       final oeffentlich = [for (final n in (_vokabular['endpoints'] as Map)['public'] as List) namen[n] ?? n as String];
       final start = oeffentlich.indexOf('getArticle');
       expect(start, greaterThan(0));
-      expect(inventoryEndpoints, oeffentlich.sublist(start, start + 14));
+      expect(inventoryEndpoints, oeffentlich.sublist(start, start + 27));
+      expect(inventoryEndpoints[13], 'listWebhookDeliveries');
+      expect(inventoryEndpoints.last, 'listReservations');
       for (final name in inventoryEndpoints) {
         expect(Aufrufe.alle, contains(name));
         expect((_vokabular['schemas'] as Map)[name], isNotNull, reason: '$name: kein Schema im Vertrag');
@@ -143,21 +155,72 @@ void main() {
       expect(stockConditions, werte('LAGER_ZUSTAND'));
       expect(stockChangeCauses, werte('LAGER_URSACHE'));
       expect(webhookDeliveryStatuses, werte('ZUSTELLUNG'));
+      expect(stockLossReasons, werte('LAGER_ABGANG_GRUND'));
+      expect(withdrawalTypes, werte('LAGER_ENTNAHME_ART'));
+      expect(landedCostTypes, werte('LAGER_NEBENKOSTEN_ART'));
+      expect(landedCostAllocations, werte('LAGER_VERTEILUNG'));
+      expect(reservationStatuses, werte('RESERVIERUNG_STATUS'));
+      expect(inventoryWarningCodes, (_vokabular['warningCodes'] as Map)['inventory']);
       expect(stockMovementTypes, containsAll(['goods_receipt', 'takeover']));
       expect(stockMovementTypes, isNot(contains('receipt')));
+      expect(stockMovementTypes.last, 'reservation', reason: 'neue Bewegungsart hinten (gespeicherte Reihenfolgen bleiben gueltig)');
+      // Die Schemata verweisen wirklich auf diese Kataloge.
+      final schemata = _vokabular['schemas'] as Map;
+      expect((schemata['recordStockLoss'] as Map)['paramWerte'], {
+        'reason': {r'$catalog': 'LAGER_ABGANG_GRUND'},
+        'withdrawalType': {r'$catalog': 'LAGER_ENTNAHME_ART'},
+        'condition': {r'$catalog': 'LAGER_ZUSTAND'},
+      });
+      expect((schemata['receiveGoods'] as Map)['paramWerte'], {
+        'allocation': {r'$catalog': 'LAGER_VERTEILUNG'},
+        'landedCosts[].type': {r'$catalog': 'LAGER_NEBENKOSTEN_ART'},
+      });
+      expect((schemata['listReservations'] as Map)['paramWerte'], {
+        'status': {r'$catalog': 'RESERVIERUNG_STATUS'},
+      });
+      // stockKind ist kein Katalog des Vokabulars: jeder Artikel im Vertrag traegt einen Wert aus stockKinds.
+      final arten = <Object?>{
+        for (final c in _faelle)
+          if ((c['response'] as Map)['data'] case final Map d)
+            for (final a in [d['article'], ...(d['articles'] as List? ?? const [])])
+              if (a is Map) a['stockKind'],
+      };
+      expect(arten, contains('quantity'));
+      expect(stockKinds, containsAll(arten));
     });
 
-    test('inventoryWebhookEvents sind genau die Konto-Ereignisse des Vertrags; die Huelle traegt accountId', () {
-      final imVertrag = (_vokabular['events'] as Map).keys.cast<String>().where((e) => e.startsWith('stock.') || e.startsWith('article.'));
+    test('inventoryWebhookEvents sind genau die Konto-Ereignisse des Vertrags, in der Reihenfolge von listWebhooks', () {
+      final imVertrag =
+          (_vokabular['events'] as Map).keys.cast<String>().where((e) => RegExp(r'^(stock|article|reservation)\.').hasMatch(e));
       expect(inventoryWebhookEvents.toSet(), imVertrag.toSet());
+      expect(inventoryWebhookEvents, _daten('list_webhooks')['events']);
+      expect(inventoryWebhookEvents.sublist(inventoryWebhookEvents.length - 3),
+          ['reservation.expired', 'reservation.released', 'reservation.redeemed']);
       expect(inventoryWebhookEnvelopeFields, ['id', 'type', 'createdAt', 'accountId', 'test', 'data']);
     });
 
-    test('inventoryErrorCodes: der Katalog errorCodes.inventory ohne Anmeldungscode, alle im Vertrag', () {
+    test('inventoryErrorCodes: der Katalog errorCodes.inventory ohne Anmeldungscode; 5a vorn, 5b hinten', () {
       final alle = ((_vokabular['errorCodes'] as Map)['all'] as List).cast<String>().toSet();
       expect(inventoryErrorCodes.where((c) => !alle.contains(c)), isEmpty);
       final katalog = ((_vokabular['errorCodes'] as Map)['inventory'] as List).cast<String>();
-      expect(inventoryErrorCodes.toSet(), katalog.where((c) => c != 'register_user_not_allowed').toSet());
+      final vertrag = katalog.where((c) => c != 'register_user_not_allowed').toList();
+      expect(inventoryErrorCodes.toSet(), vertrag.toSet());
+      // Angehaengt wird hinten: die 12 Codes aus 10.3 stehen unveraendert vorn.
+      expect(inventoryErrorCodes.sublist(0, 12), [
+        'validation', 'invalid_cursor', 'article_not_found', 'webhook_not_found', 'webhook_limit', 'invalid_webhook_url',
+        'event_not_subscribed', 'webhook_inactive', 'inventory_api_not_enabled', 'module_inactive', 'rate_limited',
+        'server_error',
+      ]);
+      expect(inventoryErrorCodes.sublist(12), vertrag.sublist(vertrag.indexOf('server_error') + 1));
+      // Hinweise sind nie Fehler.
+      for (final w in inventoryWarningCodes) {
+        expect(inventoryErrorCodes, isNot(contains(w)), reason: w);
+      }
+      // Jeder Fehlercode, den ein Vertragsfall zeigt, ist ein Lager-Code.
+      for (final c in _faelle) {
+        final r = c['response'] as Map;
+        if (r['status'] == 'error') expect(isInventoryErrorCode(r['code'] as String?), isTrue, reason: '${c['name']}');
+      }
     });
 
     test('inventoryRequestErrorCodes = Anmeldung und Rand ohne den Katalog, dahinter route_missing', () {
@@ -179,6 +242,9 @@ void main() {
       expect(webhookToleranceSec, 300);
       expect(inventoryWebhookLimit, 5);
       expect(inventoryListLimitMax, 200);
+      expect(inventoryIdempotencyKeyMax, 120);
+      expect(reservationMinutesMin, 5);
+      expect(reservationMinutesMax, 43200);
       expect(kInventoryBaseUrl, 'https://api.kasseneck.at/v3');
     });
   });
@@ -244,14 +310,39 @@ void main() {
           return l.rotateWebhookSecret(p['webhookId'] as String);
         case 'listWebhookDeliveries':
           return l.listWebhookDeliveries(webhookId: p['webhookId'] as String?, limit: p['limit'] as int?);
+        default:
+          // Die schreibenden Aufrufe baut die Drahtform-Bruecke aus
+          // helpers/lager_anfragen.dart (dieselbe, die lager_schreiben_test.dart nutzt).
+          return schreibAufruf(l, endpunkt, p);
       }
-      throw StateError('kein Aufruf fuer $endpunkt');
     }
+
+    /// Die Faelle, die der Client schon vor dem Senden abweist (sicher falsch
+    /// ohne Netz): genau diese, keiner mehr – wie `VOR_DEM_SENDEN` im JS-Paket.
+    const vorDemSenden = {
+      'error_list_articles_validation': 'limit 500 liegt ueber 200',
+      'error_create_article_idempotency_key_required': 'idempotencyKey fehlt',
+      'error_create_reservation_validation': 'expiresInMinutes 2 liegt unter 5',
+    };
+
+    /// Faelle, die sich in Dart gar nicht bauen lassen: der Typ `int` schliesst
+    /// die Bruchzahl schon beim Schreiben der Anfrage aus. Im JS-Paket weist
+    /// der Client sie vor dem Senden ab.
+    const nichtBaubar = {
+      'error_receive_goods_validation': 'quantity 1.5 ist keine Ganzzahl (Tausendstel)',
+    };
 
     test('jeder Endpunkt kommt vor, jeder Fall laeuft durch den Client', () async {
       expect(_faelle.map((c) => c['endpoint']).toSet(), inventoryEndpoints.toSet());
       var gesendet = 0;
+      final abgewiesen = <String>[];
       for (final c in _faelle) {
+        if (nichtBaubar.containsKey(c['name'])) {
+          // Belegt, dass der Fall wirklich eine Bruchzahl traegt (und nicht still mitlaeuft).
+          final mengen = [for (final p in (c['params'] as Map)['items'] as List) (p as Map)['quantity']];
+          expect(mengen.any((m) => m is double && m != m.truncateToDouble()), isTrue, reason: '${c['name']}');
+          continue;
+        }
         final kopf = (c['headers'] as Map).cast<String, String>();
         final antwort = http.Response.bytes(utf8.encode(jsonEncode(c['response'])), c['httpStatus'] as int,
             headers: {'content-type': 'application/json', for (final e in kopf.entries) e.key.toLowerCase(): e.value});
@@ -268,6 +359,7 @@ void main() {
           // Der Client hat die Anfrage selbst abgewiesen: nur bei Fehlerfaellen erlaubt.
           expect(antwortRumpf['status'], 'error', reason: '${c['name']}: Erfolgsfall nicht gesendet');
           expect(fehler, _anfragefehler, reason: c['name'] as String);
+          abgewiesen.add(c['name'] as String);
           continue;
         }
         gesendet += 1;
@@ -285,7 +377,8 @@ void main() {
           expect(ergebnis, isNotNull, reason: c['name'] as String);
         }
       }
-      expect(gesendet, greaterThanOrEqualTo(_faelle.length - 2));
+      expect(abgewiesen.toSet(), vorDemSenden.keys.toSet(), reason: 'vor dem Senden abgewiesen');
+      expect(gesendet, _faelle.length - abgewiesen.length - nichtBaubar.length);
     });
 
     test('Erfolgsantworten lesen sich verlustfrei: toJson ist der Draht', () async {
@@ -391,6 +484,12 @@ void main() {
     test('jedes zugestellte Ereignis liest sich typisiert, data verlustfrei', () {
       final ereignisse = (_lager['webhookEvents'] as List).cast<Map<String, dynamic>>();
       expect(ereignisse.map((e) => e['event']).toSet(), inventoryWebhookEvents.toSet());
+      for (final e in ereignisse.where((e) => (e['event'] as String).startsWith('reservation.'))) {
+        final body = e['body'] as Map;
+        for (final k in _schluessel(((_vokabular['events'] as Map)[e['event']] as Map)['data'])) {
+          expect((body['data'] as Map).containsKey(k), isTrue, reason: '${e['event']}.$k');
+        }
+      }
       for (final e in ereignisse) {
         final body = e['body'] as Map<String, dynamic>;
         final ereignis = parseInventoryWebhookEvent(jsonEncode(body));
@@ -404,6 +503,7 @@ void main() {
           InventoryStockChangedEvent(:final data) => data.toJson(),
           InventoryStockBelowMinimumEvent(:final data) => data.toJson(),
           InventoryArticleEvent(:final data) => data.toJson(),
+          InventoryReservationEvent(:final data) => data.toJson(),
         };
         expect(data, body['data'], reason: e['event'] as String);
         if (ereignis is InventoryStockChangedEvent) expect(stockChangeCauses, contains(ereignis.data.cause));
@@ -1061,7 +1161,7 @@ void main() {
     });
 
     test('unbekannter Typ ist null (2xx antworten und uebergehen), kaputter Rumpf wirft', () {
-      expect(parseInventoryWebhookEvent(_huelle('reservation.expired', {'reservationId': 'r1'})), isNull);
+      expect(parseInventoryWebhookEvent(_huelle('variant_group.updated', {'variantGroupId': 'vg1'})), isNull);
       final ohneSequence = Map.of(_stockChanged)..remove('sequence');
       for (final kaputt in <Object?>[
         '',

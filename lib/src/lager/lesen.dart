@@ -71,6 +71,25 @@ int? _ganzzahlOderNull(Ort ort, String feld, Object? w) => w == null ? null : _g
 /// Eine Ganzzahl, wo eine kaputte Angabe nichts verfaelscht (HTTP-Status, Position): sonst `null`.
 int? _ganzzahlNachsichtig(Object? w) => ganzzahlVon(w);
 
+/// Mengen je Standort (`minStockByLocation`): jeder Wert eine Ganzzahl. Fehlt
+/// das Feld (Server vor Stufe 5b), gilt „keiner“ (`{}`).
+Map<String, int> _mengenJeStandort(Ort ort, String feld, Object? w) {
+  if (w == null) return const {};
+  final o = objekt(w);
+  if (o == null) throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.$feld ist kein Objekt)');
+  return Map.unmodifiable({for (final e in o.entries) e.key: _ganzzahl(ort, '$feld.${e.key}', e.value)});
+}
+
+/// Eine Liste von Kennungen (`movementIds`, `lotIds`); fehlt sie, ist sie leer.
+List<String> _kennungsliste(Ort ort, String feld, Object? w) {
+  if (w == null) return const [];
+  if (w is! List || !w.every((x) => x is String)) {
+    final pfad = ort.pfad.isEmpty ? feld : '${ort.pfad}.$feld';
+    throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.$pfad ist keine Liste von Kennungen)');
+  }
+  return List.unmodifiable(w.cast<String>());
+}
+
 /// Eine Textabbildung (`externalIds`, `metadata`, `variantAttributes`): nur Texteintraege.
 Map<String, String>? _textAbbildung(Object? w) {
   if (w is! Map) return null;
@@ -101,6 +120,7 @@ Article artikel(Ort ort, Object? w) {
   return Article(
     id: _kennung(ort, 'id', a['id']),
     name: _text(a['name']),
+    description: _text(a['description']),
     unitPriceCents: _ganzzahlOderNull(ort, 'unitPriceCents', a['unitPriceCents']),
     vatRate: vatRate as num?,
     unit: _text(a['unit']),
@@ -110,8 +130,10 @@ Article artikel(Ort ort, Object? w) {
     groupId: _text(a['groupId']),
     revenueGroupId: _text(a['revenueGroupId']),
     stockTracked: a['stockTracked'] == true,
+    stockKind: _textOderNull(a['stockKind']),
     stockLocationIds: standorte,
     minStock: _ganzzahlOderNull(ort, 'minStock', a['minStock']),
+    minStockByLocation: _mengenJeStandort(ort, 'minStockByLocation', a['minStockByLocation']),
     active: a['active'] != false,
     externalIds: _textAbbildung(a['externalIds']),
     metadata: _textAbbildung(a['metadata']),
@@ -209,11 +231,14 @@ StockMovement bewegung(Ort ort, Object? w) {
     locationId: _text(b['locationId']),
     condition: _text(b['condition']),
     quantityDelta: _ganzzahl(ort, 'quantityDelta', b['quantityDelta']),
+    // Server vor Stufe 5b senden das Feld nicht: dort aenderte keine Bewegung `reserved`.
+    reservedDelta: !b.containsKey('reservedDelta') ? 0 : _ganzzahl(ort, 'reservedDelta', b['reservedDelta']),
     stockAfter: nachher == null
         ? null
         : StockAfter(
             sellable: _ganzzahl(nachherOrt, 'sellable', nachher['sellable']),
             defective: _ganzzahl(nachherOrt, 'defective', nachher['defective']),
+            reserved: _ganzzahlOderNull(nachherOrt, 'reserved', nachher['reserved']),
           ),
     operationId: _text(b['operationId']),
     source: quelle == null
@@ -314,6 +339,101 @@ StockBelowMinimumEventData unterMindestbestand(Ort ort, Object? w) {
     available: _ganzzahl(ort, 'available', d['available']),
     minStock: _ganzzahl(ort, 'minStock', d['minStock']),
   );
+}
+
+// ---- Schreiben (Stufe 5b) ------------------------------------------------------------
+
+InventoryWarning _warnung(Ort ort, Object? w) {
+  final h = _eintrag(ort, w);
+  final code = h['code'];
+  if (code is! String || code.isEmpty) throw antwortfehler(ort.name, 'Hinweis ohne Code (data.${ort.pfad}.code)');
+  return InventoryWarning(
+    code: code,
+    articleId: _textOderNull(h['articleId']),
+    locationId: _textOderNull(h['locationId']),
+    message: h['message'] is String ? h['message'] as String : '',
+  );
+}
+
+/// Antwort einer Buchung; ohne `operationId` ist nicht belegt, dass gebucht
+/// wurde. Das ist ein Antwortfehler und kein Ersatzwert: der Aufrufer
+/// wiederholt dann mit demselben Schluessel und bekommt die gespeicherte
+/// Antwort.
+StockOperation vorgang(String name, Map<String, dynamic> daten) {
+  final ort = Ort(name, '');
+  final id = daten['operationId'];
+  if (id is! String || id.isEmpty) throw antwortfehler(name, 'Antwort enthaelt keine Kennung (data.operationId fehlt)');
+  final hinweise = daten['warnings'] ?? const [];
+  if (hinweise is! List) throw antwortfehler(name, 'Antwort ist unbrauchbar (data.warnings ist keine Liste)');
+  return StockOperation(
+    operationId: id,
+    movementIds: _kennungsliste(ort, 'movementIds', daten['movementIds']),
+    lotIds: _kennungsliste(ort, 'lotIds', daten['lotIds']),
+    warnings: List.unmodifiable([for (final (i, h) in hinweise.indexed) _warnung(Ort(name, 'warnings[$i]'), h)]),
+  );
+}
+
+/// Eine Zeile der Wareneingangs-Vorschau; Werte nur, wenn der Server sie sendet (Recht `costs`).
+GoodsReceiptPreviewLine vorschauZeile(Ort ort, Object? w) {
+  final z = _eintrag(ort, w);
+  final serien = z['serialNumbers'] ?? const [];
+  if (serien is! List || !serien.every((x) => x is String)) {
+    throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.serialNumbers ist keine Liste)');
+  }
+  const werte = ['baseCents', 'landedCostCents', 'valueCents', 'unitCostMicros'];
+  return GoodsReceiptPreviewLine(
+    articleId: _kennung(ort, 'articleId', z['articleId']),
+    quantity: _ganzzahl(ort, 'quantity', z['quantity']),
+    expiresOn: _textOderNull(z['expiresOn']),
+    batch: _textOderNull(z['batch']),
+    serialNumbers: List.unmodifiable(serien.cast<String>()),
+    priceFromArticle: z['priceFromArticle'] == true,
+    baseCents: _ganzzahlOderNull(ort, 'baseCents', z['baseCents']),
+    landedCostCents: _ganzzahlOderNull(ort, 'landedCostCents', z['landedCostCents']),
+    valueCents: _ganzzahlOderNull(ort, 'valueCents', z['valueCents']),
+    unitCostMicros: _ganzzahlOderNull(ort, 'unitCostMicros', z['unitCostMicros']),
+    hasValues: werte.any(z.containsKey),
+  );
+}
+
+ReservationItem _reservierungsPosition(Ort ort, Object? w) {
+  final p = _eintrag(ort, w);
+  return ReservationItem(
+    articleId: _kennung(ort, 'articleId', p['articleId']),
+    locationId: _kennung(ort, 'locationId', p['locationId']),
+    quantity: _ganzzahl(ort, 'quantity', p['quantity']),
+    redeemed: _ganzzahl(ort, 'redeemed', p['redeemed']),
+    released: _ganzzahl(ort, 'released', p['released']),
+  );
+}
+
+Reservation reservierung(Ort ort, Object? w) {
+  final r = _eintrag(ort, w);
+  final positionen = r['items'];
+  if (positionen is! List) throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.items ist keine Liste)');
+  return Reservation(
+    id: _kennung(ort, 'id', r['id']),
+    status: _textOderNull(r['status']),
+    reference: _text(r['reference']),
+    items: List.unmodifiable(
+        [for (final (i, p) in positionen.indexed) _reservierungsPosition(Ort(ort.name, '${ort.pfad}.items[$i]'), p)]),
+    expiresAt: _text(r['expiresAt']),
+    createdAt: _text(r['createdAt']),
+  );
+}
+
+/// Die fehlenden Positionen aus `insufficient_available` (`data.details[]`).
+/// Ein kaputter Eintrag faellt weg: der Aufruf ist ohnehin gescheitert, und
+/// ein Wurf im Fehlerpfad verdeckte den eigentlichen Fehler.
+List<InventoryShortfall> fehlmengen(Object? roh) {
+  if (roh is! List) return const [];
+  return List.unmodifiable([
+    for (final e in roh)
+      if (objekt(e) case final o?)
+        if ((o['articleId'], o['locationId'], ganzzahlVon(o['requested']), ganzzahlVon(o['available']))
+            case (final String articleId, final String locationId, final int requested, final int available))
+          InventoryShortfall(articleId: articleId, locationId: locationId, requested: requested, available: available),
+  ]);
 }
 
 // ---- Listen ------------------------------------------------------------------

@@ -1,0 +1,26 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "acceptVatIdRisk ist ein Wahrheitswert, kein Text",
+  "request": {
+    "idempotencyKey": "ex-vat-id-2",
+    "customerId": "customer_example",
+    "priceMode": "net",
+    "serviceStart": "2026-10-06",
+    "acceptVatIdRisk": "yes",
+    "items": [
+      {
+        "description": "Beratung",
+        "quantity": 1,
+        "unitPriceCents": 1000,
+        "vatRate": 20
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "acceptVatIdRisk"
+    ]
+  }
+}

@@ -9,6 +9,8 @@
 library;
 
 import '../register/fehler.dart';
+import 'lesen.dart' show fehlmengen;
+import 'modelle.dart';
 import 'vertrag.dart';
 
 final Set<String> _bekannt = {...inventoryErrorCodes, ...inventoryRequestErrorCodes};
@@ -53,3 +55,19 @@ int? inventoryRetryAfterSec(Object? error) {
   if (wert is double && wert.isFinite && wert >= 0) return wert.ceil();
   return null;
 }
+
+/// Die Positionen, fuer die beim Reservieren der verfuegbare Bestand nicht
+/// reicht (`insufficient_available`, `details['details']`): je Artikel und
+/// Standort angefragt und verfuegbar, in Tausendstel. Leer, wenn der Fehler ein
+/// anderer ist. Es fehlen nur diese Positionen; reserviert wurde nichts (ganz
+/// oder gar nicht).
+List<InventoryShortfall> inventoryShortfalls(Object? error) {
+  if (inventoryErrorCode(error) != 'insufficient_available') return const [];
+  return fehlmengen((error as KasseneckApiError).details['details']);
+}
+
+final Set<String> _hinweise = {...inventoryWarningCodes};
+
+/// `true` fuer einen Hinweis-Code einer Buchung (`StockOperation.warnings[].code`).
+/// Hinweise sind nie Fehler: die Buchung hat gewirkt.
+bool isInventoryWarningCode(String? code) => code != null && _hinweise.contains(code);

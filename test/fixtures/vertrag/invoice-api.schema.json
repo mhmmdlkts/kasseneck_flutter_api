@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 2,
-  "package": "1.4.0",
+  "package": "1.5.0",
   "endpoints": {
     "createCustomer": {
       "request": {
@@ -466,6 +466,11 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 128
+                },
+                "reservationId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
                 }
               },
               "required": [
@@ -551,6 +556,9 @@
             "additionalProperties": false
           },
           "dryRun": {
+            "type": "boolean"
+          },
+          "acceptVatIdRisk": {
             "type": "boolean"
           }
         },
@@ -999,7 +1007,12 @@
     "mixed_supply_not_allowed",
     "oss_not_enabled",
     "einvoice_unavailable",
-    "amount_too_large"
+    "amount_too_large",
+    "vat_id_invalid",
+    "vat_id_check_pending",
+    "reservation_not_found",
+    "reservation_mismatch",
+    "reservation_not_active"
   ],
   "creditNoteReasons": [
     "cancellation",

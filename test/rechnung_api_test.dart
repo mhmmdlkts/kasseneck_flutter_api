@@ -188,6 +188,8 @@ void main() {
       expect(namen.where((n) => n.contains('"stockLocationId"')), isNotEmpty);
       expect(namen.where((n) => n.contains('"articleId"')).length, greaterThanOrEqualTo(2));
       expect(namen.where((n) => n.contains('"returnDisposition"')), isNotEmpty);
+      expect(namen.where((n) => n.contains('"reservationId"')), isNotEmpty);
+      expect(namen.where((n) => n.contains('"acceptVatIdRisk"')), isNotEmpty);
     });
 
     // Die ungueltigen Lager-Beispiele: wie im JS-Zwilling prueft das Paket die
@@ -197,16 +199,18 @@ void main() {
       for (final f in ordner.listSync().whereType<File>().where((f) => f.path.endsWith('.json')))
         if (jsonDecode(f.readAsStringSync()) case final Map<String, dynamic> b
             when (b['expected'] as Map)['ok'] == false &&
-                RegExp(r'"(articleId|stockLocationId|returnDisposition)"').hasMatch(jsonEncode(b['request'])))
+                RegExp(r'"(articleId|stockLocationId|returnDisposition|reservationId)"').hasMatch(jsonEncode(b['request'])))
           f.uri.pathSegments.last: b,
     };
 
-    test('die ungültigen Lager-Beispiele sind die erwarteten vier', () {
+    test('die ungültigen Lager-Beispiele sind die erwarteten sechs', () {
       expect(lagerFehler.keys.toSet(), {
         'cancel-error-return-disposition.json',
         'credit-error-return-disposition.json',
         'issue-error-return-disposition.json',
         'issue-error-stock-id.json',
+        'issue-error-reservation-article.json',
+        'credit-error-reservation.json',
       });
     });
 
@@ -227,6 +231,15 @@ void main() {
               note: anfrage['note'] as String?,
               returnDisposition: anfrage['returnDisposition'] as String?,
             ),
+          // Eine Reservierung an einer Gutschrift laesst sich nur mit einer
+          // Ausstellposition bauen; auch sie geht unveraendert hinaus, abweisen
+          // tut der Server.
+          'createCreditNote' when datei == 'credit-error-reservation.json' => api.createCreditNote(CreditNoteRequest(
+              idempotencyKey: anfrage['idempotencyKey'] as String,
+              invoiceId: anfrage['invoiceId'] as String,
+              reason: anfrage['reason'] as String,
+              items: [for (final p in anfrage['items'] as List) IssueInvoiceItemInput.fromJson(p as Map<String, dynamic>)],
+            )),
           'createCreditNote' => api.createCreditNote(CreditNoteRequest.fromJson(anfrage)),
           // Eine Rueckgabe-Wahl an einer Rechnungsposition laesst sich nur mit
           // einer Gutschriftsposition bauen; sie geht ebenso unveraendert hinaus.
@@ -1028,9 +1041,9 @@ void main() {
       Set<String> positionsFelder(String aufruf) =>
           felder(((anfrage(aufruf)['properties'] as Map)['items'] as Map)['items'] as Map<String, dynamic>);
 
-      const voll = InvoiceItemInput(
+      const voll = IssueInvoiceItemInput(
         description: 'a', subtitle: 'b', quantity: 1, unit: 'piece', kind: 'goods', unitPriceCents: 1, vatRate: 20,
-        discountPct: 1, articleId: 'x',
+        discountPct: 1, articleId: 'x', reservationId: 'r',
       );
       const micro = InvoiceItemInput(description: 'a', quantity: 1, unitPriceMicros: 1, vatRate: 20);
       const gutschriftVoll = CreditNoteItemInput(
@@ -1045,12 +1058,108 @@ void main() {
         serviceStart: '2026-10-01', serviceEnd: '2026-10-02', paymentTermDays: 14, orderReference: 'o', intro: 'i', note: 'n',
         paymentReference: 'p', girocode: true, tracking: true, items: const [voll], metadata: const {'a': 'b'}, language: 'de',
         brandId: 'b', stockLocationId: 's', payment: const PaymentInput(method: 'card'), dryRun: false,
+        acceptVatIdRisk: true,
       );
       expect(rechnung.toJson().keys.toSet(), felder(anfrage('issueInvoice')));
       const gutschrift = CreditNoteRequest(
           idempotencyKey: 'k', invoiceId: 'i', reason: 'return', note: 'n', returnDisposition: 'restock', items: [gutschriftVoll]);
       expect(gutschrift.toJson().keys.toSet(), felder(anfrage('createCreditNote')));
       expect(felder(anfrage('cancelInvoice')), {'idempotencyKey', 'invoiceId', 'reason', 'note', 'returnDisposition'});
+    });
+  });
+
+  group('Reservierung einlösen (Vertrag 1.5.0)', () {
+    test('items[].reservationId geht unverändert hinaus; Hinweis reservation_expired mit reservationId', () async {
+      final (:api, :log) = _apiMit([
+        _erfolg({
+          'invoice': _rechnung,
+          'replayed': false,
+          'notice': [
+            {'code': 'reservation_expired', 'reservationId': 'auto43', 'message': 'Die Reservierung war schon abgelaufen.'},
+          ],
+        }),
+        _fehler('Die Reservierung passt nicht zur Position.', 'reservation_mismatch',
+            {'field': 'items[0].reservationId', 'reservationId': 'auto43'}),
+      ]);
+      const anfrage = IssueInvoiceRequest(
+        idempotencyKey: 'shop-rechnung-1001',
+        priceMode: 'gross',
+        serviceStart: '2026-10-06',
+        stockLocationId: 'haupt',
+        items: [
+          IssueInvoiceItemInput(
+              description: 'Roggenbrot', quantity: 2, unitPriceCents: 450, vatRate: 10, articleId: 'roggenbrot', reservationId: 'auto43'),
+          InvoiceItemInput(description: 'Versand', quantity: 1, unitPriceCents: 490, vatRate: 20),
+        ],
+      );
+      final r = await api.issueInvoice(anfrage);
+      expect(_params(log[0]), {
+        'idempotencyKey': 'shop-rechnung-1001',
+        'priceMode': 'gross',
+        'serviceStart': '2026-10-06',
+        'stockLocationId': 'haupt',
+        'items': [
+          {
+            'description': 'Roggenbrot',
+            'quantity': 2,
+            'unitPriceCents': 450,
+            'vatRate': 10,
+            'articleId': 'roggenbrot',
+            'reservationId': 'auto43',
+          },
+          {'description': 'Versand', 'quantity': 1, 'unitPriceCents': 490, 'vatRate': 20},
+        ],
+      });
+      expect(r.notice.single.code, 'reservation_expired');
+      expect(r.notice.single.reservationId, 'auto43');
+      expect(invoiceNoticeCodes, contains(r.notice.single.code));
+      final e = await api.issueInvoice(anfrage).then<Object?>((_) => null, onError: (Object e) => e);
+      expect(invoiceErrorCode(e), 'reservation_mismatch');
+      expect((e! as KasseneckApiError).details['field'], 'items[0].reservationId');
+    });
+
+    test('ein Hinweis ohne reservationId liest sich wie bisher', () async {
+      final (:api, log: _) = _apiMit([
+        _erfolg({
+          'invoice': _rechnung,
+          'replayed': false,
+          'notice': [
+            {'code': 'place_of_supply_check', 'message': 'Leistungsort prüfen.'},
+          ],
+        }),
+      ]);
+      final r = await api.issueInvoice(
+          const IssueInvoiceRequest(idempotencyKey: 'k', priceMode: 'net', serviceStart: '2026-10-06', items: []));
+      expect(r.notice.single.reservationId, isNull);
+    });
+
+    test('fromJson liest reservationId nur an der Ausstellposition', () {
+      final roh = {'description': 'X', 'quantity': 1, 'unitPriceCents': 1, 'vatRate': 10, 'articleId': 'a1', 'reservationId': 'r1'};
+      final anfrage = IssueInvoiceRequest.fromJson({
+        'idempotencyKey': 'k',
+        'priceMode': 'net',
+        'serviceStart': '2026-10-06',
+        'items': [roh],
+      });
+      expect(anfrage.items.single, isA<IssueInvoiceItemInput>());
+      expect((anfrage.items.single as IssueInvoiceItemInput).reservationId, 'r1');
+      expect(anfrage.toJson()['items'], [roh]);
+      expect(InvoiceItemInput.fromJson(roh).toJson().containsKey('reservationId'), isFalse);
+      expect(CreditNoteItemInput.fromJson(roh).toJson().containsKey('reservationId'), isFalse,
+          reason: 'an der Gutschrift weist der Server reservationId ab');
+    });
+
+    test('neue Codes hinten, in der Reihenfolge des Backends', () {
+      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 7, invoiceErrorCodes.length - 5),
+          ['einvoice_unavailable', 'amount_too_large']);
+      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 5, invoiceErrorCodes.length - 3),
+          ['vat_id_invalid', 'vat_id_check_pending']);
+      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 3),
+          ['reservation_not_found', 'reservation_mismatch', 'reservation_not_active']);
+      expect(invoiceNoticeCodes.last, 'reservation_expired');
+      for (final code in invoiceNoticeCodes) {
+        expect(invoiceErrorCodes, isNot(contains(code)), reason: code);
+      }
     });
   });
 }

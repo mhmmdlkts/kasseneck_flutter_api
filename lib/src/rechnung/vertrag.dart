@@ -58,6 +58,18 @@ const List<String> invoiceErrorCodes = [
   'oss_not_enabled',
   'einvoice_unavailable',
   'amount_too_large',
+  // Seit 10.4: UID-Pruefung beim Ausstellen ohne Steuer (ig. Lieferung, Reverse
+  // Charge). `vat_id_invalid` sperrt auch mit `acceptVatIdRisk`;
+  // `vat_id_check_pending` traegt `details['retryAfter']` (Sekunden bis zum
+  // naechsten sinnvollen Versuch, mit demselben `idempotencyKey`).
+  'vat_id_invalid',
+  'vat_id_check_pending',
+  // Seit 10.4: Position mit `reservationId` (nur `issueInvoice`), geprueft
+  // beim Ausstellen. Unbekannt oder fremd; keine offene Position mit gleichem
+  // Artikel am Lagerstandort der Rechnung; schon eingeloest oder freigegeben.
+  'reservation_not_found',
+  'reservation_mismatch',
+  'reservation_not_active',
 ];
 
 /// Fehlercodes, die nicht die Rechnung, sondern die Anfrage betreffen:
@@ -187,10 +199,15 @@ const List<String> invoiceLanguages = ['de', 'en'];
 const List<String> invoicePaymentMethods = ['transfer', 'card', 'online', 'cash'];
 
 /// Hinweise an einer erfolgreichen Antwort — keine Fehler.
+///
+/// `reservation_expired` (seit 10.4): die Reservierung einer Position war beim
+/// Ausstellen schon abgelaufen. Die Rechnung entsteht trotzdem, verkauft wird
+/// ohne Reservierung; der Hinweis nennt `reservationId`, je Reservierung einmal.
 const List<String> invoiceNoticeCodes = [
   'cash_receipt_required',
   'recapitulative_statement_due',
   'place_of_supply_check',
+  'reservation_expired',
 ];
 
 /// Einheiten einer Position. Der Aufdruck folgt der Sprache der Rechnung

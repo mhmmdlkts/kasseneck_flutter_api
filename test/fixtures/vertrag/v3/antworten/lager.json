@@ -1,27 +1,37 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "ca5579cac3997ad4ad7269d7645bb67aabdf29ab4fce4645592ea4c3c1d5c30b",
-    "inputsSha256": "f49e446a8b696f54ca18db0c83a35792294ce53e54b1be31fc1bd69dd8f99d13",
+    "sha256": "bee3e2b26656925092ecdf894d7c85bfd8635bb1913db9d7784866da65b41013",
+    "inputsSha256": "e1a499894424aebac421c3c28e9cc866acb0daa16c27a75a8c2f69dc8d1166d5",
     "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
     "inputs": [
+      "functions-kasse/article-endpoints.js",
+      "functions-kasse/articles-core.js",
       "functions-kasse/gemeinsam/api-rand.js",
       "functions-kasse/gemeinsam/api-vokabular-v3.js",
       "functions-kasse/gemeinsam/webhook-versand.js",
       "functions-kasse/konto-webhook-core.js",
+      "functions-kasse/lager-api-artikel.js",
+      "functions-kasse/lager-api-buchen.js",
       "functions-kasse/lager-api-core.js",
       "functions-kasse/lager-api-endpoints.js",
       "functions-kasse/lager-api-ereignisse.js",
+      "functions-kasse/lager-api-reservierung.js",
       "functions-kasse/lager-buchung.js",
       "functions-kasse/lager-core.js",
       "functions-kasse/lager-endpoints.js",
+      "functions-kasse/lager-reservierung-core.js",
+      "functions-kasse/lager-reservierung.js",
+      "functions-kasse/lager-trigger.js",
+      "functions-kasse/lager-verkauf-core.js",
+      "functions-kasse/lager-vorgaenge.js",
       "functions-kasse/test/unit/fixtures/v3-waechter.js",
       "functions-kasse/test/unit/v3-vertrag-export-lager.test.js",
       "functions/test/unit/fixtures/vertrag-v3/ablage.js"
     ]
   },
   "channel": "api",
-  "note": "Lager-API (Stufe 5a) unter /v3: Faelle in Ablaufreihenfolge (ein Konto, Standort haupt), dazu webhookEvents = zugestellte Konto-Webhooks (Huelle wie gesendet, ohne Probesendungen). Secrets als Platzhalter.",
+  "note": "Lager-API (Stufe 5a, Artikel schreiben, Buchen und Reservierung 5b) unter /v3: Faelle in Ablaufreihenfolge (ein Konto, Standort haupt); Reservierungen antworten mit reservation (wie getReservation; Wiederholung = gespeicherte Antwort), laufen ueber einen Auftrag zum Ablaufzeitpunkt ab (Verlaengern ersetzt ihn), werden ueber issueInvoice (items[].reservationId) beim Buchen der Rechnung eingeloest und melden reservation.expired/released/redeemed; Buchungen antworten mit operationId, movementIds, lotIds und warnings[] (Hinweise aus warningCodes.inventory, kein Fehler); Preise duerfen ohne Schalter kosten gesendet werden, Werte kommen nur mit ihm zurueck; Mindestbestand je Standort = minStockByLocation (Tausendstel, Schwelle fuer below_minimum, gemessen an available = onHand − reserved), minStock ist ein Altfeld ohne Wirkung darauf; dazu webhookEvents = zugestellte Konto-Webhooks (Huelle wie gesendet, ohne Probesendungen). Secrets als Platzhalter.",
   "cases": [
     {
       "channel": "api",
@@ -137,6 +147,7 @@
           "article": {
             "id": "roggenbrot",
             "name": "Roggenbrot 1 kg",
+            "description": null,
             "unitPriceCents": 450,
             "vatRate": 10,
             "unit": "Stk",
@@ -146,13 +157,17 @@
             "groupId": "brot",
             "revenueGroupId": null,
             "stockTracked": true,
+            "stockKind": "quantity",
             "minStock": 5000,
             "active": true,
             "createdAt": "2026-10-01T04:00:00.000Z",
             "updatedAt": "2026-10-06T06:00:04.000Z",
             "stockLocationIds": [
               "haupt"
-            ]
+            ],
+            "minStockByLocation": {
+              "haupt": 5000
+            }
           }
         }
       }
@@ -200,6 +215,7 @@
             {
               "id": "kipferl",
               "name": "Butterkipferl",
+              "description": null,
               "unitPriceCents": 130,
               "vatRate": 10,
               "unit": "Stk",
@@ -209,6 +225,7 @@
               "groupId": "gebaeck",
               "revenueGroupId": null,
               "stockTracked": true,
+              "stockKind": "quantity",
               "minStock": null,
               "active": true,
               "createdAt": "2026-10-01T04:30:00.000Z",
@@ -216,11 +233,13 @@
               "stockLocationIds": [
                 "haupt",
                 "lieferwagen"
-              ]
+              ],
+              "minStockByLocation": {}
             },
             {
               "id": "roggenbrot",
               "name": "Roggenbrot 1 kg",
+              "description": null,
               "unitPriceCents": 450,
               "vatRate": 10,
               "unit": "Stk",
@@ -230,13 +249,17 @@
               "groupId": "brot",
               "revenueGroupId": null,
               "stockTracked": true,
+              "stockKind": "quantity",
               "minStock": 5000,
               "active": true,
               "createdAt": "2026-10-01T04:00:00.000Z",
               "updatedAt": "2026-10-06T06:00:04.000Z",
               "stockLocationIds": [
                 "haupt"
-              ]
+              ],
+              "minStockByLocation": {
+                "haupt": 5000
+              }
             }
           ],
           "nextCursor": "eyJ6ZWl0IjoxNzkxMjY2NDA0MDAwMDAwLCJpZCI6InJvZ2dlbmJyb3QifQ"
@@ -265,6 +288,7 @@
             {
               "id": "semmel",
               "name": "Kaisersemmel",
+              "description": null,
               "unitPriceCents": 120,
               "vatRate": 10,
               "unit": "Stk",
@@ -274,13 +298,15 @@
               "groupId": "gebaeck",
               "revenueGroupId": null,
               "stockTracked": true,
+              "stockKind": "quantity",
               "minStock": null,
               "active": false,
               "createdAt": "2026-10-06T06:00:04.000Z",
               "updatedAt": "2026-10-06T06:00:04.001Z",
               "stockLocationIds": [
                 "haupt"
-              ]
+              ],
+              "minStockByLocation": {}
             }
           ],
           "nextCursor": null
@@ -309,6 +335,7 @@
             {
               "id": "kipferl",
               "name": "Butterkipferl",
+              "description": null,
               "unitPriceCents": 130,
               "vatRate": 10,
               "unit": "Stk",
@@ -318,6 +345,7 @@
               "groupId": "gebaeck",
               "revenueGroupId": null,
               "stockTracked": true,
+              "stockKind": "quantity",
               "minStock": null,
               "active": true,
               "createdAt": "2026-10-01T04:30:00.000Z",
@@ -325,11 +353,13 @@
               "stockLocationIds": [
                 "haupt",
                 "lieferwagen"
-              ]
+              ],
+              "minStockByLocation": {}
             },
             {
               "id": "roggenbrot",
               "name": "Roggenbrot 1 kg",
+              "description": null,
               "unitPriceCents": 450,
               "vatRate": 10,
               "unit": "Stk",
@@ -339,13 +369,17 @@
               "groupId": "brot",
               "revenueGroupId": null,
               "stockTracked": true,
+              "stockKind": "quantity",
               "minStock": 5000,
               "active": true,
               "createdAt": "2026-10-01T04:00:00.000Z",
               "updatedAt": "2026-10-06T06:00:04.000Z",
               "stockLocationIds": [
                 "haupt"
-              ]
+              ],
+              "minStockByLocation": {
+                "haupt": 5000
+              }
             }
           ],
           "nextCursor": null
@@ -422,6 +456,7 @@
           "article": {
             "id": "roggenbrot",
             "name": "Roggenbrot 1 kg",
+            "description": null,
             "unitPriceCents": 450,
             "vatRate": 10,
             "unit": "Stk",
@@ -431,13 +466,17 @@
             "groupId": "brot",
             "revenueGroupId": null,
             "stockTracked": true,
+            "stockKind": "quantity",
             "minStock": 5000,
             "active": true,
             "createdAt": "2026-10-01T04:00:00.000Z",
             "updatedAt": "2026-10-06T06:00:04.000Z",
             "stockLocationIds": [
               "haupt"
-            ]
+            ],
+            "minStockByLocation": {
+              "haupt": 5000
+            }
           }
         }
       }
@@ -597,9 +636,11 @@
               "locationId": "haupt",
               "condition": "sellable",
               "quantityDelta": -8000,
+              "reservedDelta": 0,
               "stockAfter": {
                 "sellable": 4000,
-                "defective": 0
+                "defective": 0,
+                "reserved": null
               },
               "operationId": "auto2",
               "source": {
@@ -628,9 +669,11 @@
               "locationId": "haupt",
               "condition": "sellable",
               "quantityDelta": 12000,
+              "reservedDelta": 0,
               "stockAfter": {
                 "sellable": 12000,
-                "defective": 0
+                "defective": 0,
+                "reserved": null
               },
               "operationId": "auto1",
               "source": {
@@ -684,9 +727,11 @@
               "locationId": "haupt",
               "condition": "sellable",
               "quantityDelta": 40000,
+              "reservedDelta": 0,
               "stockAfter": {
                 "sellable": 40000,
-                "defective": 0
+                "defective": 0,
+                "reserved": null
               },
               "operationId": "auto1",
               "source": {
@@ -715,9 +760,11 @@
               "locationId": "haupt",
               "condition": "sellable",
               "quantityDelta": 12000,
+              "reservedDelta": 0,
               "stockAfter": {
                 "sellable": 12000,
-                "defective": 0
+                "defective": 0,
+                "reserved": null
               },
               "operationId": "auto1",
               "source": {
@@ -793,6 +840,7 @@
           "article": {
             "id": "roggenbrot",
             "name": "Roggenbrot 1 kg",
+            "description": null,
             "unitPriceCents": 450,
             "vatRate": 10,
             "unit": "Stk",
@@ -802,6 +850,7 @@
             "groupId": "brot",
             "revenueGroupId": null,
             "stockTracked": true,
+            "stockKind": "quantity",
             "minStock": 5000,
             "active": true,
             "createdAt": "2026-10-01T04:00:00.000Z",
@@ -809,6 +858,9 @@
             "stockLocationIds": [
               "haupt"
             ],
+            "minStockByLocation": {
+              "haupt": 5000
+            },
             "purchasePriceMicros": 1200000
           }
         }
@@ -880,9 +932,11 @@
               "locationId": "haupt",
               "condition": "sellable",
               "quantityDelta": -8000,
+              "reservedDelta": 0,
               "stockAfter": {
                 "sellable": 4000,
-                "defective": 0
+                "defective": 0,
+                "reserved": null
               },
               "operationId": "auto2",
               "source": {
@@ -954,7 +1008,10 @@
             "stock.below_minimum",
             "article.created",
             "article.updated",
-            "article.deactivated"
+            "article.deactivated",
+            "reservation.expired",
+            "reservation.released",
+            "reservation.redeemed"
           ]
         }
       }
@@ -1368,6 +1425,2187 @@
         },
         "code": "webhook_not_found"
       }
+    },
+    {
+      "channel": "api",
+      "name": "create_article",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "idempotencyKey": "shop-artikel-1001",
+        "name": "Kaisersemmel",
+        "description": "Handgeschlagen, mit Mohn bestreut",
+        "unitPriceCents": 65,
+        "vatRate": 10,
+        "stockTracked": true,
+        "stockLocationIds": [
+          "haupt"
+        ],
+        "minStockByLocation": {
+          "haupt": 20000
+        },
+        "externalIds": {
+          "shop": "1001"
+        },
+        "metadata": {
+          "seoSlug": "kaisersemmel-mohn"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto29",
+            "name": "Kaisersemmel",
+            "description": "Handgeschlagen, mit Mohn bestreut",
+            "unitPriceCents": 65,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": null,
+            "ean": null,
+            "internalCode": "1",
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": true,
+            "externalIds": {
+              "shop": "1001"
+            },
+            "metadata": {
+              "seoSlug": "kaisersemmel-mohn"
+            },
+            "createdAt": "2026-10-06T06:01:32.000Z",
+            "updatedAt": "2026-10-06T06:01:32.000Z",
+            "stockLocationIds": [
+              "haupt"
+            ],
+            "minStockByLocation": {
+              "haupt": 20000
+            }
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_article_replayed",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "idempotencyKey": "shop-artikel-1001",
+        "name": "Kaisersemmel",
+        "description": "Handgeschlagen, mit Mohn bestreut",
+        "unitPriceCents": 65,
+        "vatRate": 10,
+        "stockTracked": true,
+        "stockLocationIds": [
+          "haupt"
+        ],
+        "minStockByLocation": {
+          "haupt": 20000
+        },
+        "externalIds": {
+          "shop": "1001"
+        },
+        "metadata": {
+          "seoSlug": "kaisersemmel-mohn"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto29",
+            "name": "Kaisersemmel",
+            "description": "Handgeschlagen, mit Mohn bestreut",
+            "unitPriceCents": 65,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": null,
+            "ean": null,
+            "internalCode": "1",
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": true,
+            "externalIds": {
+              "shop": "1001"
+            },
+            "metadata": {
+              "seoSlug": "kaisersemmel-mohn"
+            },
+            "createdAt": "2026-10-06T06:01:32.000Z",
+            "updatedAt": "2026-10-06T06:01:32.000Z",
+            "stockLocationIds": [
+              "haupt"
+            ],
+            "minStockByLocation": {
+              "haupt": 20000
+            }
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_article_idempotency_conflict",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "idempotencyKey": "shop-artikel-1001",
+        "name": "Kaisersemmel",
+        "description": "Handgeschlagen, mit Mohn bestreut",
+        "unitPriceCents": 70,
+        "vatRate": 10,
+        "stockTracked": true,
+        "stockLocationIds": [
+          "haupt"
+        ],
+        "minStockByLocation": {
+          "haupt": 20000
+        },
+        "externalIds": {
+          "shop": "1001"
+        },
+        "metadata": {
+          "seoSlug": "kaisersemmel-mohn"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+        "data": {
+          "code": "idempotency_conflict"
+        },
+        "code": "idempotency_conflict"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_article_foreign",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "idempotencyKey": "shop-artikel-1002",
+        "name": "Bio-Hafermilch 1 l",
+        "ean": "9001234567810",
+        "unitPriceCents": 249,
+        "vatRate": 10,
+        "stockTracked": true,
+        "stockKind": "quantity"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto30",
+            "name": "Bio-Hafermilch 1 l",
+            "description": null,
+            "unitPriceCents": 249,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": null,
+            "ean": "9001234567810",
+            "internalCode": null,
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": true,
+            "createdAt": "2026-10-06T06:01:35.000Z",
+            "updatedAt": "2026-10-06T06:01:35.000Z",
+            "stockLocationIds": [],
+            "minStockByLocation": {}
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_article_code_taken",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "idempotencyKey": "shop-artikel-1003",
+        "name": "Roggenbrot",
+        "ean": "9001234567896"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Diese EAN gehört schon zu einem anderen Artikel.",
+        "data": {
+          "code": "code_taken",
+          "field": "ean",
+          "articleId": "roggenbrot"
+        },
+        "code": "code_taken"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_article_external_id_taken",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "idempotencyKey": "shop-artikel-1004",
+        "name": "Semmel",
+        "externalIds": {
+          "shop": "1001"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die Kennung shop gehört schon zu einem anderen Artikel.",
+        "data": {
+          "code": "external_id_taken",
+          "field": "externalIds.shop",
+          "articleId": "auto29"
+        },
+        "code": "external_id_taken"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_article_validation",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "idempotencyKey": "shop-artikel-1005",
+        "name": "Mohnweckerl",
+        "ean": "9001234567897",
+        "minStock": 1500
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "ean",
+              "message": "GTIN/EAN aus 8 bis 14 Ziffern mit gültiger Prüfziffer."
+            },
+            {
+              "field": "minStock",
+              "message": "Tausendstel ≥ 0 in ganzen Einheiten (Vielfaches von 1000) oder null."
+            }
+          ]
+        },
+        "code": "validation"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_article_idempotency_key_required",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "name": "Mohnweckerl"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "idempotencyKey fehlt.",
+        "data": {
+          "code": "idempotency_key_required"
+        },
+        "code": "idempotency_key_required"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_article_with_costs",
+      "endpoint": "createArticle",
+      "path": "/v3/createArticle",
+      "params": {
+        "idempotencyKey": "shop-artikel-1006",
+        "name": "Nussbeugel",
+        "unitPriceCents": 320,
+        "vatRate": 10,
+        "purchasePriceMicros": 1150000
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto33",
+            "name": "Nussbeugel",
+            "description": null,
+            "unitPriceCents": 320,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": null,
+            "ean": null,
+            "internalCode": "2",
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": false,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": true,
+            "createdAt": "2026-10-06T06:01:40.000Z",
+            "updatedAt": "2026-10-06T06:01:40.000Z",
+            "stockLocationIds": [],
+            "minStockByLocation": {},
+            "purchasePriceMicros": 1150000
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "update_article",
+      "endpoint": "updateArticle",
+      "path": "/v3/updateArticle",
+      "params": {
+        "idempotencyKey": "shop-update-1001-1",
+        "articleId": "auto29",
+        "unitPriceCents": 70,
+        "description": null,
+        "metadata": {
+          "seoSlug": "kaisersemmel"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto29",
+            "name": "Kaisersemmel",
+            "description": null,
+            "unitPriceCents": 70,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": null,
+            "ean": null,
+            "internalCode": "1",
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": true,
+            "externalIds": {
+              "shop": "1001"
+            },
+            "metadata": {
+              "seoSlug": "kaisersemmel"
+            },
+            "createdAt": "2026-10-06T06:01:32.000Z",
+            "updatedAt": "2026-10-06T06:01:41.000Z",
+            "stockLocationIds": [
+              "haupt"
+            ],
+            "minStockByLocation": {
+              "haupt": 20000
+            }
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "update_article_min_stock_by_location",
+      "endpoint": "updateArticle",
+      "path": "/v3/updateArticle",
+      "params": {
+        "idempotencyKey": "shop-update-1001-2",
+        "articleId": "auto29",
+        "minStockByLocation": {
+          "haupt": null,
+          "lieferwagen": 10000
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto29",
+            "name": "Kaisersemmel",
+            "description": null,
+            "unitPriceCents": 70,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": null,
+            "ean": null,
+            "internalCode": "1",
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": true,
+            "externalIds": {
+              "shop": "1001"
+            },
+            "metadata": {
+              "seoSlug": "kaisersemmel"
+            },
+            "createdAt": "2026-10-06T06:01:32.000Z",
+            "updatedAt": "2026-10-06T06:01:42.000Z",
+            "stockLocationIds": [
+              "haupt"
+            ],
+            "minStockByLocation": {
+              "lieferwagen": 10000
+            }
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_update_article_stock_kind_locked",
+      "endpoint": "updateArticle",
+      "path": "/v3/updateArticle",
+      "params": {
+        "idempotencyKey": "shop-update-rb-1",
+        "articleId": "roggenbrot",
+        "stockKind": "serial"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die Bestandsart ist nach der ersten Lagerbewegung fest.",
+        "data": {
+          "code": "stock_kind_locked"
+        },
+        "code": "stock_kind_locked"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_update_article_not_found",
+      "endpoint": "updateArticle",
+      "path": "/v3/updateArticle",
+      "params": {
+        "idempotencyKey": "shop-update-x-1",
+        "articleId": "gibt_es_nicht",
+        "name": "x"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Artikel nicht gefunden.",
+        "data": {
+          "code": "article_not_found"
+        },
+        "code": "article_not_found"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "deactivate_article",
+      "endpoint": "deactivateArticle",
+      "path": "/v3/deactivateArticle",
+      "params": {
+        "idempotencyKey": "shop-deactivate-1001",
+        "articleId": "auto29"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto29",
+            "name": "Kaisersemmel",
+            "description": null,
+            "unitPriceCents": 70,
+            "vatRate": 10,
+            "unit": "Stk",
+            "number": null,
+            "ean": null,
+            "internalCode": "1",
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": false,
+            "externalIds": {
+              "shop": "1001"
+            },
+            "metadata": {
+              "seoSlug": "kaisersemmel"
+            },
+            "createdAt": "2026-10-06T06:01:32.000Z",
+            "updatedAt": "2026-10-06T06:01:45.000Z",
+            "stockLocationIds": [
+              "haupt"
+            ],
+            "minStockByLocation": {
+              "lieferwagen": 10000
+            }
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_update_article_inactive",
+      "endpoint": "updateArticle",
+      "path": "/v3/updateArticle",
+      "params": {
+        "idempotencyKey": "shop-update-1001-3",
+        "articleId": "auto29",
+        "name": "Kaisersemmel neu"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Der Artikel ist stillgelegt und lässt sich nicht mehr ändern.",
+        "data": {
+          "code": "article_inactive"
+        },
+        "code": "article_inactive"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "receive_goods_dry_run",
+      "endpoint": "receiveGoods",
+      "path": "/v3/receiveGoods",
+      "params": {
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 20000,
+            "totalCents": 2400,
+            "expiresOn": "2026-10-12",
+            "batch": "C-41"
+          },
+          {
+            "articleId": "kipferl",
+            "quantity": 60000,
+            "unitPriceMicros": 380000
+          }
+        ],
+        "landedCosts": [
+          {
+            "type": "freight",
+            "amountCents": 450
+          },
+          {
+            "type": "cash_discount",
+            "amountCents": 50
+          }
+        ],
+        "allocation": "value",
+        "supplier": {
+          "name": "Mühle Hollerer",
+          "address": "Mühlgasse 4, 5020 Salzburg"
+        },
+        "reference": "LS-2026-118",
+        "note": "Frühlieferung",
+        "dryRun": true
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "preview": [
+            {
+              "articleId": "roggenbrot",
+              "quantity": 20000,
+              "expiresOn": "2026-10-12",
+              "batch": "C-41",
+              "serialNumbers": [],
+              "priceFromArticle": false
+            },
+            {
+              "articleId": "kipferl",
+              "quantity": 60000,
+              "expiresOn": null,
+              "batch": null,
+              "serialNumbers": [],
+              "priceFromArticle": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "receive_goods_dry_run_with_costs",
+      "endpoint": "receiveGoods",
+      "path": "/v3/receiveGoods",
+      "params": {
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 20000,
+            "totalCents": 2400,
+            "expiresOn": "2026-10-12",
+            "batch": "C-41"
+          },
+          {
+            "articleId": "kipferl",
+            "quantity": 60000,
+            "unitPriceMicros": 380000
+          }
+        ],
+        "landedCosts": [
+          {
+            "type": "freight",
+            "amountCents": 450
+          },
+          {
+            "type": "cash_discount",
+            "amountCents": 50
+          }
+        ],
+        "allocation": "value",
+        "supplier": {
+          "name": "Mühle Hollerer",
+          "address": "Mühlgasse 4, 5020 Salzburg"
+        },
+        "reference": "LS-2026-118",
+        "note": "Frühlieferung",
+        "dryRun": true
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "preview": [
+            {
+              "articleId": "roggenbrot",
+              "quantity": 20000,
+              "expiresOn": "2026-10-12",
+              "batch": "C-41",
+              "serialNumbers": [],
+              "priceFromArticle": false,
+              "baseCents": 2400,
+              "landedCostCents": 205,
+              "valueCents": 2605,
+              "unitCostMicros": 1302500
+            },
+            {
+              "articleId": "kipferl",
+              "quantity": 60000,
+              "expiresOn": null,
+              "batch": null,
+              "serialNumbers": [],
+              "priceFromArticle": false,
+              "baseCents": 2280,
+              "landedCostCents": 195,
+              "valueCents": 2475,
+              "unitCostMicros": 412500
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "receive_goods",
+      "endpoint": "receiveGoods",
+      "path": "/v3/receiveGoods",
+      "params": {
+        "idempotencyKey": "shop-we-118",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 20000,
+            "totalCents": 2400,
+            "expiresOn": "2026-10-12",
+            "batch": "C-41"
+          },
+          {
+            "articleId": "kipferl",
+            "quantity": 60000,
+            "unitPriceMicros": 380000
+          }
+        ],
+        "landedCosts": [
+          {
+            "type": "freight",
+            "amountCents": 450
+          },
+          {
+            "type": "cash_discount",
+            "amountCents": 50
+          }
+        ],
+        "allocation": "value",
+        "supplier": {
+          "name": "Mühle Hollerer",
+          "address": "Mühlgasse 4, 5020 Salzburg"
+        },
+        "reference": "LS-2026-118",
+        "note": "Frühlieferung"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "operationId": "auto34",
+          "movementIds": [
+            "auto34_0",
+            "auto34_1"
+          ],
+          "lotIds": [
+            "auto34_L0",
+            "auto34_L1"
+          ],
+          "warnings": []
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "receive_goods_replayed",
+      "endpoint": "receiveGoods",
+      "path": "/v3/receiveGoods",
+      "params": {
+        "idempotencyKey": "shop-we-118",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 20000,
+            "totalCents": 2400,
+            "expiresOn": "2026-10-12",
+            "batch": "C-41"
+          },
+          {
+            "articleId": "kipferl",
+            "quantity": 60000,
+            "unitPriceMicros": 380000
+          }
+        ],
+        "landedCosts": [
+          {
+            "type": "freight",
+            "amountCents": 450
+          },
+          {
+            "type": "cash_discount",
+            "amountCents": 50
+          }
+        ],
+        "allocation": "value",
+        "supplier": {
+          "name": "Mühle Hollerer",
+          "address": "Mühlgasse 4, 5020 Salzburg"
+        },
+        "reference": "LS-2026-118",
+        "note": "Frühlieferung"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "operationId": "auto34",
+          "movementIds": [
+            "auto34_0",
+            "auto34_1"
+          ],
+          "lotIds": [
+            "auto34_L0",
+            "auto34_L1"
+          ],
+          "warnings": []
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_receive_goods_idempotency_conflict",
+      "endpoint": "receiveGoods",
+      "path": "/v3/receiveGoods",
+      "params": {
+        "idempotencyKey": "shop-we-118",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 20000,
+            "totalCents": 2400,
+            "expiresOn": "2026-10-12",
+            "batch": "C-41"
+          },
+          {
+            "articleId": "kipferl",
+            "quantity": 60000,
+            "unitPriceMicros": 380000
+          }
+        ],
+        "landedCosts": [
+          {
+            "type": "freight",
+            "amountCents": 450
+          },
+          {
+            "type": "cash_discount",
+            "amountCents": 50
+          }
+        ],
+        "allocation": "value",
+        "supplier": {
+          "name": "Mühle Hollerer",
+          "address": "Mühlgasse 4, 5020 Salzburg"
+        },
+        "reference": "LS-2026-119",
+        "note": "Frühlieferung"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+        "data": {
+          "code": "idempotency_conflict"
+        },
+        "code": "idempotency_conflict"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_receive_goods_validation",
+      "endpoint": "receiveGoods",
+      "path": "/v3/receiveGoods",
+      "params": {
+        "idempotencyKey": "shop-we-120",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 1.5
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "items[0].quantity",
+              "message": "Ganze Zahl erwartet."
+            }
+          ]
+        },
+        "code": "validation"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "transfer_stock",
+      "endpoint": "transferStock",
+      "path": "/v3/transferStock",
+      "params": {
+        "idempotencyKey": "shop-um-1",
+        "fromLocationId": "haupt",
+        "toLocationId": "lieferwagen",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 24000
+          }
+        ],
+        "note": "Tour Nord"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "operationId": "auto35",
+          "movementIds": [
+            "auto35_0",
+            "auto35_1"
+          ],
+          "lotIds": [
+            "auto35_L0"
+          ],
+          "warnings": []
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_transfer_stock_exceeds_stock",
+      "endpoint": "transferStock",
+      "path": "/v3/transferStock",
+      "params": {
+        "idempotencyKey": "shop-um-2",
+        "fromLocationId": "lieferwagen",
+        "toLocationId": "haupt",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 30000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Mehr als am Standort vorhanden.",
+        "data": {
+          "code": "exceeds_stock"
+        },
+        "code": "exceeds_stock"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "record_stock_loss",
+      "endpoint": "recordStockLoss",
+      "path": "/v3/recordStockLoss",
+      "params": {
+        "idempotencyKey": "shop-ab-1",
+        "reason": "breakage",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 20000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "operationId": "auto37",
+          "movementIds": [
+            "auto37_0"
+          ],
+          "lotIds": [],
+          "warnings": [
+            {
+              "code": "below_minimum",
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "message": "Roggenbrot 1 kg: unter dem Mindestbestand."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "record_stock_loss_withdrawal",
+      "endpoint": "recordStockLoss",
+      "path": "/v3/recordStockLoss",
+      "params": {
+        "idempotencyKey": "shop-ab-2",
+        "reason": "withdrawal",
+        "withdrawalType": "staff",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 2000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "operationId": "auto38",
+          "movementIds": [
+            "auto38_0"
+          ],
+          "lotIds": [],
+          "warnings": []
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_record_stock_loss_invalid_reason",
+      "endpoint": "recordStockLoss",
+      "path": "/v3/recordStockLoss",
+      "params": {
+        "idempotencyKey": "shop-ab-3",
+        "reason": "lost",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 1000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Unbekannter Abgangsgrund.",
+        "data": {
+          "code": "invalid_reason"
+        },
+        "code": "invalid_reason"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_record_stock_loss_withdrawal_type_required",
+      "endpoint": "recordStockLoss",
+      "path": "/v3/recordStockLoss",
+      "params": {
+        "idempotencyKey": "shop-ab-4",
+        "reason": "withdrawal",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 1000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bei einer Entnahme ist die Art Pflicht (private, staff, gift, sample).",
+        "data": {
+          "code": "withdrawal_type_required"
+        },
+        "code": "withdrawal_type_required"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_record_stock_loss_exceeds_stock",
+      "endpoint": "recordStockLoss",
+      "path": "/v3/recordStockLoss",
+      "params": {
+        "idempotencyKey": "shop-ab-5",
+        "reason": "theft",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 6000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Mehr als am Standort vorhanden.",
+        "data": {
+          "code": "exceeds_stock"
+        },
+        "code": "exceeds_stock"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "change_stock_condition",
+      "endpoint": "changeStockCondition",
+      "path": "/v3/changeStockCondition",
+      "params": {
+        "idempotencyKey": "shop-zu-1",
+        "from": "sellable",
+        "to": "defective",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 3000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "operationId": "auto40",
+          "movementIds": [
+            "auto40_0",
+            "auto40_1"
+          ],
+          "lotIds": [
+            "auto40_L0"
+          ],
+          "warnings": []
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_change_stock_condition_invalid_condition",
+      "endpoint": "changeStockCondition",
+      "path": "/v3/changeStockCondition",
+      "params": {
+        "idempotencyKey": "shop-zu-2",
+        "from": "sellable",
+        "to": "broken",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 1000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Zustand muss sellable oder defective sein.",
+        "data": {
+          "code": "invalid_condition"
+        },
+        "code": "invalid_condition"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "reverse_stock_movement",
+      "endpoint": "reverseStockMovement",
+      "path": "/v3/reverseStockMovement",
+      "params": {
+        "idempotencyKey": "shop-gb-1",
+        "operationId": "auto40",
+        "reason": "Doch einwandfrei"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "operationId": "auto41",
+          "movementIds": [
+            "auto41_0",
+            "auto41_1"
+          ],
+          "lotIds": [
+            "auto41_L0"
+          ],
+          "warnings": []
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_reverse_stock_movement_already_reversed",
+      "endpoint": "reverseStockMovement",
+      "path": "/v3/reverseStockMovement",
+      "params": {
+        "idempotencyKey": "shop-gb-2",
+        "operationId": "auto40",
+        "reason": "Nochmal"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Dieser Vorgang wurde schon gegengebucht.",
+        "data": {
+          "code": "already_reversed"
+        },
+        "code": "already_reversed"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_reverse_stock_movement_operation_not_found",
+      "endpoint": "reverseStockMovement",
+      "path": "/v3/reverseStockMovement",
+      "params": {
+        "idempotencyKey": "shop-gb-3",
+        "operationId": "gibt_es_nicht",
+        "reason": "Irrtum"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Vorgang nicht gefunden.",
+        "data": {
+          "code": "operation_not_found"
+        },
+        "code": "operation_not_found"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock_movements_from_api",
+      "endpoint": "listStockMovements",
+      "path": "/v3/listStockMovements",
+      "params": {
+        "source": "api",
+        "limit": 3
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "movements": [
+            {
+              "id": "auto41_1",
+              "articleId": "kipferl",
+              "type": "condition_in",
+              "locationId": "haupt",
+              "condition": "sellable",
+              "quantityDelta": 3000,
+              "reservedDelta": 0,
+              "stockAfter": {
+                "sellable": 74000,
+                "defective": 0,
+                "reserved": null
+              },
+              "operationId": "auto41",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "api",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:02:10.000Z",
+              "lots": [
+                {
+                  "lotId": "auto41_L0",
+                  "quantity": 3000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z"
+                }
+              ]
+            },
+            {
+              "id": "auto41_0",
+              "articleId": "kipferl",
+              "type": "condition_out",
+              "locationId": "haupt",
+              "condition": "defective",
+              "quantityDelta": -3000,
+              "reservedDelta": 0,
+              "stockAfter": {
+                "sellable": 71000,
+                "defective": 0,
+                "reserved": null
+              },
+              "operationId": "auto41",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "api",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:02:10.000Z",
+              "lots": [
+                {
+                  "lotId": "auto40_L0",
+                  "quantity": 3000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z"
+                }
+              ]
+            },
+            {
+              "id": "auto40_1",
+              "articleId": "kipferl",
+              "type": "condition_in",
+              "locationId": "haupt",
+              "condition": "defective",
+              "quantityDelta": 3000,
+              "reservedDelta": 0,
+              "stockAfter": {
+                "sellable": 71000,
+                "defective": 3000,
+                "reserved": null
+              },
+              "operationId": "auto40",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "api",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:02:07.000Z",
+              "lots": [
+                {
+                  "lotId": "auto40_L0",
+                  "quantity": 3000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z"
+                }
+              ]
+            }
+          ],
+          "nextCursor": "eyJ6ZWl0IjoxNzkxMjY2NTI3MDAwLCJpZCI6ImF1dG80MF8xIn0"
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_reservation",
+      "endpoint": "createReservation",
+      "path": "/v3/createReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1001",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 2000
+          },
+          {
+            "articleId": "kipferl",
+            "quantity": 6000,
+            "locationId": "lieferwagen"
+          }
+        ],
+        "reference": "Bestellung 1001",
+        "expiresInMinutes": 30
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto43",
+            "status": "active",
+            "reference": "Bestellung 1001",
+            "items": [
+              {
+                "articleId": "roggenbrot",
+                "locationId": "haupt",
+                "quantity": 2000,
+                "redeemed": 0,
+                "released": 0
+              },
+              {
+                "articleId": "kipferl",
+                "locationId": "lieferwagen",
+                "quantity": 6000,
+                "redeemed": 0,
+                "released": 0
+              }
+            ],
+            "expiresAt": "2026-10-06T06:32:17.000Z",
+            "createdAt": "2026-10-06T06:02:17.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_reservation_replayed",
+      "endpoint": "createReservation",
+      "path": "/v3/createReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1001",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 2000
+          },
+          {
+            "articleId": "kipferl",
+            "quantity": 6000,
+            "locationId": "lieferwagen"
+          }
+        ],
+        "reference": "Bestellung 1001",
+        "expiresInMinutes": 30
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto43",
+            "status": "active",
+            "reference": "Bestellung 1001",
+            "items": [
+              {
+                "articleId": "roggenbrot",
+                "locationId": "haupt",
+                "quantity": 2000,
+                "redeemed": 0,
+                "released": 0
+              },
+              {
+                "articleId": "kipferl",
+                "locationId": "lieferwagen",
+                "quantity": 6000,
+                "redeemed": 0,
+                "released": 0
+              }
+            ],
+            "expiresAt": "2026-10-06T06:32:17.000Z",
+            "createdAt": "2026-10-06T06:02:17.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_reservation_insufficient_available",
+      "endpoint": "createReservation",
+      "path": "/v3/createReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1002",
+        "items": [
+          {
+            "articleId": "roggenbrot",
+            "quantity": 3000
+          },
+          {
+            "articleId": "kipferl",
+            "quantity": 1000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Nicht genug verfügbarer Bestand für die Reservierung.",
+        "data": {
+          "code": "insufficient_available",
+          "details": [
+            {
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "requested": 3000,
+              "available": 2000
+            }
+          ]
+        },
+        "code": "insufficient_available"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_reservation_validation",
+      "endpoint": "createReservation",
+      "path": "/v3/createReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1003",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 1000
+          }
+        ],
+        "expiresInMinutes": 2
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "expiresInMinutes",
+              "message": "Ganze Minuten von 5 bis 43200."
+            }
+          ]
+        },
+        "code": "validation"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_reservation",
+      "endpoint": "getReservation",
+      "path": "/v3/getReservation",
+      "params": {
+        "reservationId": "auto43"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto43",
+            "status": "active",
+            "reference": "Bestellung 1001",
+            "items": [
+              {
+                "articleId": "roggenbrot",
+                "locationId": "haupt",
+                "quantity": 2000,
+                "redeemed": 0,
+                "released": 0
+              },
+              {
+                "articleId": "kipferl",
+                "locationId": "lieferwagen",
+                "quantity": 6000,
+                "redeemed": 0,
+                "released": 0
+              }
+            ],
+            "expiresAt": "2026-10-06T06:32:17.000Z",
+            "createdAt": "2026-10-06T06:02:17.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_get_reservation_not_found",
+      "endpoint": "getReservation",
+      "path": "/v3/getReservation",
+      "params": {
+        "reservationId": "gibt_es_nicht"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Reservierung nicht gefunden.",
+        "data": {
+          "code": "reservation_not_found"
+        },
+        "code": "reservation_not_found"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "extend_reservation",
+      "endpoint": "extendReservation",
+      "path": "/v3/extendReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1001-verl",
+        "reservationId": "auto43",
+        "expiresInMinutes": 60
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto43",
+            "status": "active",
+            "reference": "Bestellung 1001",
+            "items": [
+              {
+                "articleId": "roggenbrot",
+                "locationId": "haupt",
+                "quantity": 2000,
+                "redeemed": 0,
+                "released": 0
+              },
+              {
+                "articleId": "kipferl",
+                "locationId": "lieferwagen",
+                "quantity": 6000,
+                "redeemed": 0,
+                "released": 0
+              }
+            ],
+            "expiresAt": "2026-10-06T07:02:23.000Z",
+            "createdAt": "2026-10-06T06:02:17.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "release_reservation_partial",
+      "endpoint": "releaseReservation",
+      "path": "/v3/releaseReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1001-frei",
+        "reservationId": "auto43",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 2000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto43",
+            "status": "active",
+            "reference": "Bestellung 1001",
+            "items": [
+              {
+                "articleId": "roggenbrot",
+                "locationId": "haupt",
+                "quantity": 2000,
+                "redeemed": 0,
+                "released": 0
+              },
+              {
+                "articleId": "kipferl",
+                "locationId": "lieferwagen",
+                "quantity": 6000,
+                "redeemed": 0,
+                "released": 2000
+              }
+            ],
+            "expiresAt": "2026-10-06T07:02:23.000Z",
+            "createdAt": "2026-10-06T06:02:17.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_reservation_default_duration",
+      "endpoint": "createReservation",
+      "path": "/v3/createReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1004",
+        "items": [
+          {
+            "articleId": "kipferl",
+            "quantity": 3000
+          }
+        ],
+        "reference": "Bestellung 1004"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto49",
+            "status": "active",
+            "reference": "Bestellung 1004",
+            "items": [
+              {
+                "articleId": "kipferl",
+                "locationId": "haupt",
+                "quantity": 3000,
+                "redeemed": 0,
+                "released": 0
+              }
+            ],
+            "expiresAt": "2026-10-13T06:02:27.000Z",
+            "createdAt": "2026-10-06T06:02:27.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "release_reservation",
+      "endpoint": "releaseReservation",
+      "path": "/v3/releaseReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1004-frei",
+        "reservationId": "auto49"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto49",
+            "status": "released",
+            "reference": "Bestellung 1004",
+            "items": [
+              {
+                "articleId": "kipferl",
+                "locationId": "haupt",
+                "quantity": 3000,
+                "redeemed": 0,
+                "released": 3000
+              }
+            ],
+            "expiresAt": "2026-10-13T06:02:27.000Z",
+            "createdAt": "2026-10-06T06:02:27.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_extend_reservation_not_active",
+      "endpoint": "extendReservation",
+      "path": "/v3/extendReservation",
+      "params": {
+        "idempotencyKey": "shop-res-1004-verl",
+        "reservationId": "auto49",
+        "expiresInMinutes": 30
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die Reservierung ist nicht mehr aktiv.",
+        "data": {
+          "code": "reservation_not_active"
+        },
+        "code": "reservation_not_active"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_reservations_active",
+      "endpoint": "listReservations",
+      "path": "/v3/listReservations",
+      "params": {
+        "status": "active"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservations": [
+            {
+              "id": "auto43",
+              "status": "active",
+              "reference": "Bestellung 1001",
+              "items": [
+                {
+                  "articleId": "roggenbrot",
+                  "locationId": "haupt",
+                  "quantity": 2000,
+                  "redeemed": 0,
+                  "released": 0
+                },
+                {
+                  "articleId": "kipferl",
+                  "locationId": "lieferwagen",
+                  "quantity": 6000,
+                  "redeemed": 0,
+                  "released": 2000
+                }
+              ],
+              "expiresAt": "2026-10-06T07:02:23.000Z",
+              "createdAt": "2026-10-06T06:02:17.000Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_reservations_by_reference",
+      "endpoint": "listReservations",
+      "path": "/v3/listReservations",
+      "params": {
+        "reference": "Bestellung 1004"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservations": [
+            {
+              "id": "auto49",
+              "status": "released",
+              "reference": "Bestellung 1004",
+              "items": [
+                {
+                  "articleId": "kipferl",
+                  "locationId": "haupt",
+                  "quantity": 3000,
+                  "redeemed": 0,
+                  "released": 3000
+                }
+              ],
+              "expiresAt": "2026-10-13T06:02:27.000Z",
+              "createdAt": "2026-10-06T06:02:27.000Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock_movements_reservation",
+      "endpoint": "listStockMovements",
+      "path": "/v3/listStockMovements",
+      "params": {
+        "articleId": "kipferl",
+        "type": "reservation",
+        "limit": 3
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "movements": [
+            {
+              "id": "auto51_0",
+              "articleId": "kipferl",
+              "type": "reservation",
+              "locationId": "haupt",
+              "condition": "sellable",
+              "quantityDelta": 0,
+              "reservedDelta": -3000,
+              "stockAfter": {
+                "sellable": 74000,
+                "defective": 0,
+                "reserved": 0
+              },
+              "operationId": "auto51",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "api",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:02:29.000Z",
+              "lots": []
+            },
+            {
+              "id": "auto50_0",
+              "articleId": "kipferl",
+              "type": "reservation",
+              "locationId": "haupt",
+              "condition": "sellable",
+              "quantityDelta": 0,
+              "reservedDelta": 3000,
+              "stockAfter": {
+                "sellable": 74000,
+                "defective": 0,
+                "reserved": 3000
+              },
+              "operationId": "auto50",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "api",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:02:27.000Z",
+              "lots": []
+            },
+            {
+              "id": "auto47_0",
+              "articleId": "kipferl",
+              "type": "reservation",
+              "locationId": "lieferwagen",
+              "condition": "sellable",
+              "quantityDelta": 0,
+              "reservedDelta": -2000,
+              "stockAfter": {
+                "sellable": 24000,
+                "defective": 0,
+                "reserved": 4000
+              },
+              "operationId": "auto47",
+              "source": {
+                "id": null,
+                "position": null,
+                "type": "api",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T06:02:25.000Z",
+              "lots": []
+            }
+          ],
+          "nextCursor": "eyJ6ZWl0IjoxNzkxMjY2NTQ1MDAwLCJpZCI6ImF1dG80N18wIn0"
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_reservation_redeemed",
+      "endpoint": "getReservation",
+      "path": "/v3/getReservation",
+      "params": {
+        "reservationId": "auto53"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto53",
+            "status": "redeemed",
+            "reference": "Bestellung 1005",
+            "items": [
+              {
+                "articleId": "roggenbrot",
+                "locationId": "haupt",
+                "quantity": 1000,
+                "redeemed": 1000,
+                "released": 0
+              }
+            ],
+            "expiresAt": "2026-10-13T06:02:35.000Z",
+            "createdAt": "2026-10-06T06:02:35.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_reservation_expired",
+      "endpoint": "getReservation",
+      "path": "/v3/getReservation",
+      "params": {
+        "reservationId": "auto43"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "reservation": {
+            "id": "auto43",
+            "status": "expired",
+            "reference": "Bestellung 1001",
+            "items": [
+              {
+                "articleId": "roggenbrot",
+                "locationId": "haupt",
+                "quantity": 2000,
+                "redeemed": 0,
+                "released": 2000
+              },
+              {
+                "articleId": "kipferl",
+                "locationId": "lieferwagen",
+                "quantity": 6000,
+                "redeemed": 0,
+                "released": 6000
+              }
+            ],
+            "expiresAt": "2026-10-06T07:02:23.000Z",
+            "createdAt": "2026-10-06T06:02:17.000Z"
+          }
+        }
+      }
     }
   ],
   "webhookEvents": [
@@ -1438,6 +3676,7 @@
         "data": {
           "id": "kipferl",
           "name": "Butterkipferl",
+          "description": null,
           "unitPriceCents": 130,
           "vatRate": 10,
           "unit": "Stk",
@@ -1447,6 +3686,7 @@
           "groupId": "gebaeck",
           "revenueGroupId": null,
           "stockTracked": true,
+          "stockKind": "quantity",
           "minStock": null,
           "active": true,
           "createdAt": "2026-10-01T04:30:00.000Z",
@@ -1454,7 +3694,8 @@
           "stockLocationIds": [
             "haupt",
             "lieferwagen"
-          ]
+          ],
+          "minStockByLocation": {}
         }
       }
     },
@@ -1468,6 +3709,7 @@
         "data": {
           "id": "semmel",
           "name": "Kaisersemmel",
+          "description": null,
           "unitPriceCents": 120,
           "vatRate": 10,
           "unit": "Stk",
@@ -1477,13 +3719,15 @@
           "groupId": "gebaeck",
           "revenueGroupId": null,
           "stockTracked": true,
+          "stockKind": "quantity",
           "minStock": null,
           "active": true,
           "createdAt": "2026-10-06T06:00:04.000Z",
           "updatedAt": "2026-10-06T06:00:04.000Z",
           "stockLocationIds": [
             "haupt"
-          ]
+          ],
+          "minStockByLocation": {}
         }
       }
     },
@@ -1497,6 +3741,7 @@
         "data": {
           "id": "semmel",
           "name": "Kaisersemmel",
+          "description": null,
           "unitPriceCents": 120,
           "vatRate": 10,
           "unit": "Stk",
@@ -1506,13 +3751,129 @@
           "groupId": "gebaeck",
           "revenueGroupId": null,
           "stockTracked": true,
+          "stockKind": "quantity",
           "minStock": null,
           "active": false,
           "createdAt": "2026-10-06T06:00:04.000Z",
           "updatedAt": "2026-10-06T06:00:04.001Z",
           "stockLocationIds": [
             "haupt"
-          ]
+          ],
+          "minStockByLocation": {}
+        }
+      }
+    },
+    {
+      "event": "reservation.released",
+      "body": {
+        "id": "evt_Dfmu8JDwcnPAV1FQs0I1",
+        "type": "reservation.released",
+        "createdAt": 1791266545000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto43",
+          "status": "active",
+          "reference": "Bestellung 1001",
+          "items": [
+            {
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "quantity": 2000,
+              "redeemed": 0,
+              "released": 0
+            },
+            {
+              "articleId": "kipferl",
+              "locationId": "lieferwagen",
+              "quantity": 6000,
+              "redeemed": 0,
+              "released": 2000
+            }
+          ],
+          "expiresAt": "2026-10-06T07:02:23.000Z",
+          "createdAt": "2026-10-06T06:02:17.000Z"
+        }
+      }
+    },
+    {
+      "event": "reservation.released",
+      "body": {
+        "id": "evt_rUOsoTiFTFFLwqzYMk0T",
+        "type": "reservation.released",
+        "createdAt": 1791266549000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto49",
+          "status": "released",
+          "reference": "Bestellung 1004",
+          "items": [
+            {
+              "articleId": "kipferl",
+              "locationId": "haupt",
+              "quantity": 3000,
+              "redeemed": 0,
+              "released": 3000
+            }
+          ],
+          "expiresAt": "2026-10-13T06:02:27.000Z",
+          "createdAt": "2026-10-06T06:02:27.000Z"
+        }
+      }
+    },
+    {
+      "event": "reservation.redeemed",
+      "body": {
+        "id": "evt_8OrjPFWWKMAG8SzUBqCW",
+        "type": "reservation.redeemed",
+        "createdAt": 1791266555000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto53",
+          "status": "redeemed",
+          "reference": "Bestellung 1005",
+          "items": [
+            {
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "quantity": 1000,
+              "redeemed": 1000,
+              "released": 0
+            }
+          ],
+          "expiresAt": "2026-10-13T06:02:35.000Z",
+          "createdAt": "2026-10-06T06:02:35.000Z"
+        }
+      }
+    },
+    {
+      "event": "reservation.expired",
+      "body": {
+        "id": "evt_yURAAwBJvs0LxnT5JTcl",
+        "type": "reservation.expired",
+        "createdAt": 1791273757000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto43",
+          "status": "expired",
+          "reference": "Bestellung 1001",
+          "items": [
+            {
+              "articleId": "roggenbrot",
+              "locationId": "haupt",
+              "quantity": 2000,
+              "redeemed": 0,
+              "released": 2000
+            },
+            {
+              "articleId": "kipferl",
+              "locationId": "lieferwagen",
+              "quantity": 6000,
+              "redeemed": 0,
+              "released": 6000
+            }
+          ],
+          "expiresAt": "2026-10-06T07:02:23.000Z",
+          "createdAt": "2026-10-06T06:02:17.000Z"
         }
       }
     }

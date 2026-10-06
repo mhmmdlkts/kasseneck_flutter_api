@@ -189,7 +189,8 @@ class _Spur extends MapBase<String, dynamic> {
 }
 
 /// Felder, die eine Sicht fuehrt, die aber in einer Antwort fehlen duerfen.
-const _optional = {'unitPriceMicros', 'notice'};
+/// `reservationId` steht nur am Hinweis `reservation_expired` (seit 10.4).
+const _optional = {'unitPriceMicros', 'notice', 'reservationId'};
 
 /// Prueft eine Sicht in drei Richtungen: jedes gesendete Feld steht in der
 /// Liste des Modells und in der Antwort fehlt keines der Liste (bis auf
@@ -216,6 +217,8 @@ void _rechnungssicht(Object? r, String pfad, {required bool detail}) {
   }
   _feldmenge(spur['einvoice'], EInvoiceStatus.fields, '$pfad.einvoice');
   _feldmenge(spur['brand'], Invoice.brandFields, '$pfad.brand');
+  _feldmenge(spur['vatIdProof'], InvoiceVatIdProof.fields, '$pfad.vatIdProof');
+  _feldmenge(spur['vatIdRisk'], InvoiceVatIdRisk.fields, '$pfad.vatIdRisk');
   if (!detail) return;
   for (final (i, p) in (spur['items'] as List).indexed) {
     _feldmenge(p, InvoiceItem.fields, '$pfad.items[$i]');
@@ -306,7 +309,7 @@ void _feldmengenDesFalls(Map<String, dynamic> fall) {
 void main() {
   test('der Export ist der oeffentliche Kanal und hat alle Faelle', () {
     expect(_export['channel'], 'api');
-    expect(_faelle.length, 23);
+    expect(_faelle.length, 25);
   });
 
   group('jeder Fall aus v3/antworten/rechnungen.json', () {
@@ -458,6 +461,68 @@ void main() {
       final d = _Spur({'code': 'cash_receipt_required', 'message': 'x', 'neu': 1});
       InvoiceNotice.fromJson(d);
       expect(() => _feldmenge(d, {...InvoiceNotice.fields, 'neu'}, 'probe'), throwsA(isA<TestFailure>()));
+    });
+  });
+
+  group('UID-Pruefung beim Ausstellen ohne Steuer (Vertrag 1.5.0)', () {
+    Map<String, dynamic> fall(String name) => _faelle.firstWhere((f) => f['name'] == name);
+
+    test('vat_id_check_pending traegt retryAfter; die Wiederholung mit demselben Schluessel und acceptVatIdRisk stellt aus',
+        () async {
+      final offen = fall('error_vat_id_check_pending');
+      final (:api, log: _) = _apiFuer(offen);
+      final fehler = await api
+          .issueInvoice(IssueInvoiceRequest.fromJson((offen['params'] as Map).cast<String, dynamic>()))
+          .then<Object?>((_) => null, onError: (Object e) => e);
+      expect(invoiceErrorCode(fehler), 'vat_id_check_pending');
+      final warten = (fehler! as KasseneckApiError).details['retryAfter'];
+      expect(warten, isA<int>().having((w) => w, 'Sekunden', greaterThan(0)));
+
+      final risiko = fall('issue_final_vat_id_risk');
+      expect((risiko['params'] as Map)['idempotencyKey'], (offen['params'] as Map)['idempotencyKey'],
+          reason: 'wiederholt wird mit demselben Schluessel, nur mit dem Feld');
+      final (api: api2, :log) = _apiFuer(risiko);
+      final anfrage = IssueInvoiceRequest.fromJson((risiko['params'] as Map).cast<String, dynamic>());
+      expect(anfrage.acceptVatIdRisk, isTrue);
+      final r = await api2.issueInvoice(anfrage);
+      expect((jsonDecode(log.single.body) as Map)['params']['acceptVatIdRisk'], true);
+      expect(r.invoice.vatIdProof, isNull);
+      expect(r.invoice.vatIdRisk!.acceptedOn, matches(RegExp(r'^\d{4}-\d{2}-\d{2}$')));
+    });
+
+    test('der eingefrorene Nachweis kommt mit Quelle, Stufe und Pruefcode an', () {
+      final mitNachweis = [
+        for (final f in _faelle)
+          if ((f['response'] as Map)['status'] == 'success')
+            if (((f['response'] as Map)['data'] as Map)['invoice'] case final Map i when i['vatIdProof'] != null) (f['name'], i),
+      ];
+      expect(mitNachweis, isNotEmpty);
+      for (final (name, roh) in mitNachweis) {
+        final r = Invoice.fromJson(roh.cast<String, dynamic>());
+        final n = r.vatIdProof!;
+        expect(['finanzonline', 'vies'], contains(n.source), reason: '$name');
+        expect([1, 2], contains(n.level), reason: '$name');
+        expect(n.checkedOn, matches(RegExp(r'^\d{4}-\d{2}-\d{2}$')));
+        expect(n.code, anyOf(isNull, isA<String>()));
+        expect(r.vatIdRisk, isNull, reason: '$name');
+      }
+    });
+
+    test('ein Nachweis ohne Pflichtfeld ist eine kaputte Antwort, nie still null', () {
+      final roh = ((fall('issue_final_intra_community')['response'] as Map)['data'] as Map)['invoice'] as Map<String, dynamic>;
+      final nachweis = Map.of(roh['vatIdProof'] as Map<String, dynamic>)..remove('level');
+      expect(() => Invoice.fromJson({...roh, 'vatIdProof': nachweis}), throwsFormatException);
+      expect(() => Invoice.fromJson({...roh, 'vatIdRisk': <String, dynamic>{}}), throwsFormatException);
+      expect(() => Invoice.fromJson({...roh, 'vatIdProof': 'vies'}), throwsFormatException);
+    });
+
+    test('vat_id_invalid ist ein Rechnungs-Fehler; acceptVatIdRisk geht nur gesetzt hinaus', () {
+      expect(invoiceErrorCode(const KasseneckApiError('issueInvoice', 'x', code: 'vat_id_invalid')), 'vat_id_invalid');
+      const ohne = IssueInvoiceRequest(idempotencyKey: 'k', priceMode: 'net', serviceStart: '2026-10-06', items: []);
+      expect(ohne.toJson().containsKey('acceptVatIdRisk'), isFalse);
+      const mitFalse =
+          IssueInvoiceRequest(idempotencyKey: 'k', priceMode: 'net', serviceStart: '2026-10-06', items: [], acceptVatIdRisk: false);
+      expect(mitFalse.toJson()['acceptVatIdRisk'], false);
     });
   });
 

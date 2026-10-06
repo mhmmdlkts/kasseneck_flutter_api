@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "79931a40ccaea45777da4713bba475c2f74e1fe7d6264f294cecd321964f9ded",
-    "inputsSha256": "4fec6d58dd069e6d980bcab1d9883380d06e6fe8ba2a5e0f05d772b7720955c2",
-    "backendPackage": "@kreiseck/kasseneck-api@0.32.2",
+    "sha256": "d351a778c02888291e325068f96156ad1346859f6ff97bae27f91089e9619e8c",
+    "inputsSha256": "b9dd3d819a4be22c35a201a788e7fcf947d90b6af7d9e41d3d74be3b48f8aa8e",
+    "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -101,7 +101,20 @@
       "listWebhooks",
       "sendWebhookTest",
       "rotateWebhookSecret",
-      "listWebhookDeliveries"
+      "listWebhookDeliveries",
+      "createArticle",
+      "updateArticle",
+      "deactivateArticle",
+      "receiveGoods",
+      "transferStock",
+      "recordStockLoss",
+      "changeStockCondition",
+      "reverseStockMovement",
+      "createReservation",
+      "extendReservation",
+      "releaseReservation",
+      "getReservation",
+      "listReservations"
     ],
     "v3Routed": [
       "createReceipt",
@@ -177,7 +190,20 @@
       "listWebhooks",
       "sendWebhookTest",
       "rotateWebhookSecret",
-      "listWebhookDeliveries"
+      "listWebhookDeliveries",
+      "createArticle",
+      "updateArticle",
+      "deactivateArticle",
+      "receiveGoods",
+      "transferStock",
+      "recordStockLoss",
+      "changeStockCondition",
+      "reverseStockMovement",
+      "createReservation",
+      "extendReservation",
+      "releaseReservation",
+      "getReservation",
+      "listReservations"
     ],
     "register": [
       "pairRegisterDevice",
@@ -237,7 +263,9 @@
       "activateCashregister",
       "cancelInvoice",
       "cancelReceipt",
+      "changeStockCondition",
       "checkPartnerCustomerEmail",
+      "createArticle",
       "createCreditNote",
       "createCustomer",
       "createCustomerCashregister",
@@ -247,13 +275,16 @@
       "createPaymentLinkStripe",
       "createPrintJob",
       "createReceipt",
+      "createReservation",
       "createWebhook",
+      "deactivateArticle",
       "deletePartnerWebhook",
       "deleteWebhook",
       "downloadDailyReport",
       "downloadReceipt",
       "downloadReport",
       "endRegisterSession",
+      "extendReservation",
       "financeWebService",
       "generateFullReceiptId",
       "getArticle",
@@ -274,6 +305,7 @@
       "getPrintJob",
       "getReceipt",
       "getReportV2",
+      "getReservation",
       "getStock",
       "hobexGetStatus",
       "hobexPayApi",
@@ -298,18 +330,23 @@
       "listPartnerWebhooks",
       "listRegisterSessionsForDevice",
       "listRegisterUsersForDevice",
+      "listReservations",
       "listStock",
       "listStockMovements",
       "listWebhookDeliveries",
       "listWebhooks",
       "lookupArticleByCode",
       "pairRegisterDevice",
+      "receiveGoods",
       "recordInvoicePayment",
+      "recordStockLoss",
       "registerPinLogin",
       "registerUserLogin",
+      "releaseReservation",
       "renewRegisterSession",
       "reportCustomerVertrag",
       "requestCustomerSignature",
+      "reverseStockMovement",
       "revokeCustomerMandate",
       "rotatePartnerWebhookSecret",
       "rotateWebhookSecret",
@@ -324,7 +361,9 @@
       "setMyKasseSettings",
       "setMyRegisterDeviceSettings",
       "stripeCaptureIntent",
+      "transferStock",
       "unpairRegisterDevice",
+      "updateArticle",
       "updateCustomer",
       "updateInvoiceItem",
       "updatePartnerWebhook",
@@ -391,7 +430,8 @@
       "uebernahme": "takeover",
       "gegenbuchung": "reversal",
       "nachbewertung": "revaluation",
-      "methodenwechsel": "method_change"
+      "methodenwechsel": "method_change",
+      "reservierung": "reservation"
     },
     "BEWEGUNG_QUELLE": {
       "beleg": "receipt",
@@ -552,6 +592,29 @@
       "direkt": "direct",
       "connect": "connect"
     },
+    "LAGER_ABGANG_GRUND": {
+      "bruch": "breakage",
+      "schwund": "shrinkage",
+      "diebstahl": "theft",
+      "abgelaufen": "expired",
+      "entnahme": "withdrawal",
+      "entsorgung": "disposal",
+      "sonstiges": "other"
+    },
+    "LAGER_ENTNAHME_ART": {
+      "privat": "private",
+      "personal": "staff",
+      "geschenk": "gift",
+      "muster": "sample"
+    },
+    "LAGER_NEBENKOSTEN_ART": {
+      "fracht": "freight",
+      "zoll": "customs",
+      "versicherung": "insurance",
+      "sonstiges": "other",
+      "rabatt": "discount",
+      "skonto": "cash_discount"
+    },
     "LAGER_URSACHE": {
       "verkauf": "sale",
       "rechnung": "invoice",
@@ -566,6 +629,12 @@
       "inventur": "stocktake",
       "uebernahme": "takeover",
       "sonstiges": "other"
+    },
+    "LAGER_VERTEILUNG": {
+      "wert": "value",
+      "menge": "quantity",
+      "gewicht": "weight",
+      "manuell": "manual"
     },
     "LAGER_ZUSTAND": {
       "verkaufbar": "sellable",
@@ -612,6 +681,12 @@
       "ag": "ag",
       "verein": "association",
       "sonstige": "other"
+    },
+    "RESERVIERUNG_STATUS": {
+      "aktiv": "active",
+      "eingeloest": "redeemed",
+      "freigegeben": "released",
+      "abgelaufen": "expired"
     },
     "RHYTHMUS": {
       "monat": "monthly",
@@ -676,10 +751,12 @@
       "admin_required",
       "already_accepted",
       "already_cancelled",
+      "already_reversed",
       "amount_too_large",
       "api_not_approved",
       "app_not_accepted",
       "app_not_found",
+      "article_inactive",
       "article_not_found",
       "brand_not_found",
       "cancellation_failed",
@@ -698,6 +775,7 @@
       "cashregister_not_found",
       "cashregister_token_invalid",
       "cashregister_token_missing",
+      "code_taken",
       "contracts_pending",
       "credit_exceeds_invoice",
       "customer_conflict",
@@ -713,18 +791,40 @@
       "einvoice_unavailable",
       "email_taken",
       "event_not_subscribed",
+      "exceeds_stock",
+      "external_id_taken",
       "final_receipt_expired",
       "final_receipt_not_allowed",
       "finanzonline_error",
       "fon_missing",
+      "group_not_found",
       "idempotency_conflict",
+      "idempotency_key_required",
       "incomplete",
+      "insufficient_available",
       "internal_translation_error",
       "invalid_address",
+      "invalid_amount",
+      "invalid_condition",
       "invalid_cursor",
+      "invalid_dimensions",
+      "invalid_distribution",
       "invalid_items",
+      "invalid_landed_cost",
       "invalid_line",
+      "invalid_location",
+      "invalid_locations",
+      "invalid_method",
+      "invalid_minimum",
+      "invalid_position",
+      "invalid_price",
+      "invalid_quantity",
+      "invalid_reason",
       "invalid_return_disposition",
+      "invalid_serial",
+      "invalid_step",
+      "invalid_stock_kind",
+      "invalid_transfer",
       "invalid_webhook_url",
       "inventory_api_not_enabled",
       "invoice_ambiguous",
@@ -733,6 +833,7 @@
       "invoice_requirements_missing",
       "invoice_setup_incomplete",
       "kind_not_allowed",
+      "landed_costs_mismatch",
       "language_not_allowed",
       "licenses_exhausted",
       "live_not_allowed",
@@ -747,19 +848,24 @@
       "logo_invalid",
       "logo_invalid_type",
       "logo_too_large",
+      "lot_not_found",
       "method_not_allowed",
       "mfa_required",
       "mixed_supply_not_allowed",
       "mode_not_allowed",
       "module_inactive",
+      "negative_value",
       "no_email",
+      "no_positions",
       "no_version",
       "not_a_partner",
       "not_cancellable",
       "not_found",
       "not_payable",
       "not_permitted",
+      "note_required",
       "note_too_long",
+      "operation_not_found",
       "oss_not_enabled",
       "own_receipts_only",
       "pairing_code_expired",
@@ -792,6 +898,7 @@
       "printer_not_found",
       "quantity_exceeds_remaining",
       "rate_limited",
+      "reason_required",
       "receipt_limit_exceeded",
       "receipt_not_found",
       "receipt_outcome_unknown",
@@ -802,11 +909,22 @@
       "register_user_not_allowed",
       "register_user_not_found",
       "register_user_only",
+      "reservation_mismatch",
+      "reservation_not_active",
+      "reservation_not_found",
       "response_translation_failed",
+      "return_totals_mismatch",
+      "revenue_group_not_found",
+      "reversal_not_possible",
+      "reversal_not_supported",
       "reverse_charge_reason_required",
       "reverse_charge_threshold",
       "scope_missing",
       "send_failed",
+      "serial_already_exists",
+      "serial_not_allowed",
+      "serial_not_in_stock",
+      "serial_required",
       "server_error",
       "session_ended",
       "session_expired",
@@ -824,6 +942,7 @@
       "signature_unknown",
       "signing_failed",
       "small_business_vat_not_allowed",
+      "stock_kind_locked",
       "tax_number_missing",
       "tax_scheme_mismatch",
       "text_changed",
@@ -835,6 +954,7 @@
       "tip_payment_method_required",
       "tip_recipient_unknown",
       "too_many_attempts",
+      "too_many_positions",
       "too_many_requests",
       "training_receipt",
       "unauthorized",
@@ -843,10 +963,14 @@
       "user_disabled",
       "user_verification_failed",
       "validation",
+      "vat_id_check_pending",
+      "vat_id_invalid",
       "vat_rate_not_in_country",
       "webhook_inactive",
       "webhook_limit",
-      "webhook_not_found"
+      "webhook_not_found",
+      "weight_missing",
+      "withdrawal_type_required"
     ],
     "translation": {
       "zugang_nicht_erlaubt": "access_not_allowed",
@@ -898,7 +1022,9 @@
       "TIP_CONFLICT": "tip_conflict",
       "adresse_ungueltig": "invalid_address",
       "zu_oft": "too_many_requests",
-      "versand_fehlgeschlagen": "send_failed"
+      "versand_fehlgeschlagen": "send_failed",
+      "uid_ungueltig": "vat_id_invalid",
+      "uid_pruefung_offen": "vat_id_check_pending"
     },
     "edge": [
       "validation",
@@ -1106,7 +1232,12 @@
       "mixed_supply_not_allowed",
       "oss_not_enabled",
       "einvoice_unavailable",
-      "amount_too_large"
+      "amount_too_large",
+      "vat_id_invalid",
+      "vat_id_check_pending",
+      "reservation_not_found",
+      "reservation_mismatch",
+      "reservation_not_active"
     ],
     "partner": [
       "validation",
@@ -1159,7 +1290,56 @@
       "invalid_webhook_url",
       "event_not_subscribed",
       "webhook_inactive",
-      "server_error"
+      "server_error",
+      "idempotency_key_required",
+      "idempotency_conflict",
+      "location_not_found",
+      "location_inactive",
+      "invalid_location",
+      "invalid_locations",
+      "invalid_transfer",
+      "operation_not_found",
+      "already_reversed",
+      "reversal_not_possible",
+      "reversal_not_supported",
+      "exceeds_stock",
+      "no_positions",
+      "too_many_positions",
+      "invalid_step",
+      "invalid_quantity",
+      "invalid_amount",
+      "invalid_price",
+      "negative_value",
+      "invalid_reason",
+      "note_required",
+      "withdrawal_type_required",
+      "invalid_method",
+      "invalid_stock_kind",
+      "invalid_minimum",
+      "invalid_dimensions",
+      "weight_missing",
+      "invalid_landed_cost",
+      "invalid_distribution",
+      "landed_costs_mismatch",
+      "return_totals_mismatch",
+      "lot_not_found",
+      "invalid_serial",
+      "serial_required",
+      "serial_not_allowed",
+      "serial_already_exists",
+      "serial_not_in_stock",
+      "code_taken",
+      "external_id_taken",
+      "group_not_found",
+      "revenue_group_not_found",
+      "stock_kind_locked",
+      "article_inactive",
+      "invalid_position",
+      "invalid_condition",
+      "reason_required",
+      "insufficient_available",
+      "reservation_not_found",
+      "reservation_not_active"
     ],
     "registerCases": [
       "already_cancelled",
@@ -1263,7 +1443,9 @@
       "tip_conflict",
       "invalid_address",
       "too_many_requests",
-      "send_failed"
+      "send_failed",
+      "vat_id_invalid",
+      "vat_id_check_pending"
     ],
     "receiptMessagesByEndpoint": {
       "createReceipt": [
@@ -1489,8 +1671,17 @@
   "noticeCodes": [
     "cash_receipt_required",
     "recapitulative_statement_due",
-    "place_of_supply_check"
+    "place_of_supply_check",
+    "reservation_expired"
   ],
+  "warningCodes": {
+    "inventory": [
+      "insufficient_stock",
+      "below_minimum",
+      "return_exceeds_sale",
+      "reservation_exceeded"
+    ]
+  },
   "schemas": {
     "activateCashregister": {
       "fehler": {
@@ -1588,7 +1779,50 @@
         }
       }
     },
+    "changeStockCondition": {
+      "paramWerte": {
+        "from": {
+          "$catalog": "LAGER_ZUSTAND"
+        },
+        "to": {
+          "$catalog": "LAGER_ZUSTAND"
+        }
+      },
+      "data": {
+        "operationId": "vorgangId",
+        "movementIds": "bewegungIds",
+        "lotIds": "losIds",
+        "warnings": [
+          {
+            "__": "warnungen",
+            "locationId": "standortId",
+            "message": "message"
+          }
+        ]
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "privat": "private",
+          "Personal": "staff",
+          "Geschenk": "gift",
+          "Muster": "sample",
+          "Sonstiges": "other",
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
     "checkPartnerCustomerEmail": {},
+    "createArticle": {
+      "data": {
+        "article": {
+          "__": "artikel",
+          "stockLocationIds": "standorte",
+          "minStockByLocation": "mindestJeStandort",
+          "purchasePriceMicros": "einkaufMicros"
+        }
+      }
+    },
     "createCreditNote": {
       "werte": {
         "creditNote.docType": {
@@ -1673,7 +1907,9 @@
             "TIP_CONFLICT": "tip_conflict",
             "adresse_ungueltig": "invalid_address",
             "zu_oft": "too_many_requests",
-            "versand_fehlgeschlagen": "send_failed"
+            "versand_fehlgeschlagen": "send_failed",
+            "uid_ungueltig": "vat_id_invalid",
+            "uid_pruefung_offen": "vat_id_check_pending"
           }
         }
       }
@@ -1971,6 +2207,30 @@
         }
       }
     },
+    "createReservation": {
+      "data": {
+        "reservation": {
+          "__": "reservierung",
+          "reference": "referenz",
+          "items": [
+            {
+              "__": "items",
+              "locationId": "standortId",
+              "quantity": "menge",
+              "redeemed": "eingeloest",
+              "released": "freigegeben"
+            }
+          ],
+          "expiresAt": "ablaufAt",
+          "createdAt": "erstelltAt"
+        }
+      },
+      "werte": {
+        "reservation.status": {
+          "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
     "createWebhook": {
       "data": {
         "webhook": {
@@ -1988,6 +2248,16 @@
         }
       }
     },
+    "deactivateArticle": {
+      "data": {
+        "article": {
+          "__": "artikel",
+          "stockLocationIds": "standorte",
+          "minStockByLocation": "mindestJeStandort",
+          "purchasePriceMicros": "einkaufMicros"
+        }
+      }
+    },
     "deletePartnerWebhook": {
       "data": {
         "deleted": "geloescht"
@@ -2002,6 +2272,30 @@
     "downloadReceipt": {},
     "downloadReport": {},
     "endRegisterSession": {},
+    "extendReservation": {
+      "data": {
+        "reservation": {
+          "__": "reservierung",
+          "reference": "referenz",
+          "items": [
+            {
+              "__": "items",
+              "locationId": "standortId",
+              "quantity": "menge",
+              "redeemed": "eingeloest",
+              "released": "freigegeben"
+            }
+          ],
+          "expiresAt": "ablaufAt",
+          "createdAt": "erstelltAt"
+        }
+      },
+      "werte": {
+        "reservation.status": {
+          "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
     "financeWebService": {
       "ergaenze": {
         "$function": "startbelegNachAussen"
@@ -2013,6 +2307,7 @@
         "article": {
           "__": "artikel",
           "stockLocationIds": "standorte",
+          "minStockByLocation": "mindestJeStandort",
           "purchasePriceMicros": "einkaufMicros"
         }
       }
@@ -2074,7 +2369,9 @@
           "TIP_CONFLICT": "tip_conflict",
           "adresse_ungueltig": "invalid_address",
           "zu_oft": "too_many_requests",
-          "versand_fehlgeschlagen": "send_failed"
+          "versand_fehlgeschlagen": "send_failed",
+          "uid_ungueltig": "vat_id_invalid",
+          "uid_pruefung_offen": "vat_id_check_pending"
         },
         "signatures[].error.code": {
           "zugang_nicht_erlaubt": "access_not_allowed",
@@ -2126,7 +2423,9 @@
           "TIP_CONFLICT": "tip_conflict",
           "adresse_ungueltig": "invalid_address",
           "zu_oft": "too_many_requests",
-          "versand_fehlgeschlagen": "send_failed"
+          "versand_fehlgeschlagen": "send_failed",
+          "uid_ungueltig": "vat_id_invalid",
+          "uid_pruefung_offen": "vat_id_check_pending"
         }
       }
     },
@@ -2484,6 +2783,30 @@
         "$function": "ergaenze"
       }
     },
+    "getReservation": {
+      "data": {
+        "reservation": {
+          "__": "reservierung",
+          "reference": "referenz",
+          "items": [
+            {
+              "__": "items",
+              "locationId": "standortId",
+              "quantity": "menge",
+              "redeemed": "eingeloest",
+              "released": "freigegeben"
+            }
+          ],
+          "expiresAt": "ablaufAt",
+          "createdAt": "erstelltAt"
+        }
+      },
+      "werte": {
+        "reservation.status": {
+          "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
     "getStock": {
       "data": {
         "stock": [
@@ -2570,6 +2893,7 @@
           {
             "__": "artikel",
             "stockLocationIds": "standorte",
+            "minStockByLocation": "mindestJeStandort",
             "purchasePriceMicros": "einkaufMicros"
           }
         ],
@@ -2629,7 +2953,9 @@
           "TIP_CONFLICT": "tip_conflict",
           "adresse_ungueltig": "invalid_address",
           "zu_oft": "too_many_requests",
-          "versand_fehlgeschlagen": "send_failed"
+          "versand_fehlgeschlagen": "send_failed",
+          "uid_ungueltig": "vat_id_invalid",
+          "uid_pruefung_offen": "vat_id_check_pending"
         }
       }
     },
@@ -2709,7 +3035,8 @@
               "visible": "sichtbar",
               "sort": "sort"
             },
-            "stockLocationIds": "standorte"
+            "stockLocationIds": "standorte",
+            "minStockByLocation": "mindestJeStandort"
           }
         ]
       },
@@ -3089,6 +3416,38 @@
         }
       }
     },
+    "listReservations": {
+      "paramWerte": {
+        "status": {
+          "$catalog": "RESERVIERUNG_STATUS"
+        }
+      },
+      "data": {
+        "reservations": [
+          {
+            "__": "reservierungen",
+            "reference": "referenz",
+            "items": [
+              {
+                "__": "items",
+                "locationId": "standortId",
+                "quantity": "menge",
+                "redeemed": "eingeloest",
+                "released": "freigegeben"
+              }
+            ],
+            "expiresAt": "ablaufAt",
+            "createdAt": "erstelltAt"
+          }
+        ],
+        "nextCursor": "weiter"
+      },
+      "werte": {
+        "reservations[].status": {
+          "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
     "listStock": {
       "data": {
         "stock": [
@@ -3126,10 +3485,12 @@
             "locationId": "standortId",
             "condition": "zustand",
             "quantityDelta": "mengeDelta",
+            "reservedDelta": "reserviertDelta",
             "stockAfter": {
               "__": "bestandNachher",
               "sellable": "verkaufbar",
-              "defective": "defekt"
+              "defective": "defekt",
+              "reserved": "reserviert"
             },
             "operationId": "vorgangId",
             "source": {
@@ -3214,6 +3575,7 @@
         "article": {
           "__": "artikel",
           "stockLocationIds": "standorte",
+          "minStockByLocation": "mindestJeStandort",
           "purchasePriceMicros": "einkaufMicros"
         }
       }
@@ -3223,6 +3585,42 @@
         "companyName": "betrieb",
         "cashregisterLabel": "kasse",
         "testEnvironment": "testUmgebung"
+      }
+    },
+    "receiveGoods": {
+      "paramWerte": {
+        "allocation": {
+          "$catalog": "LAGER_VERTEILUNG"
+        },
+        "landedCosts[].type": {
+          "$catalog": "LAGER_NEBENKOSTEN_ART"
+        }
+      },
+      "data": {
+        "operationId": "vorgangId",
+        "movementIds": "bewegungIds",
+        "lotIds": "losIds",
+        "warnings": [
+          {
+            "__": "warnungen",
+            "locationId": "standortId",
+            "message": "message"
+          }
+        ],
+        "preview": [
+          {
+            "__": "vorschau",
+            "quantity": "menge",
+            "expiresOn": "ablaufAm",
+            "batch": "charge",
+            "serialNumbers": "seriennummern",
+            "priceFromArticle": "preisAusStamm",
+            "baseCents": "basisCents",
+            "landedCostCents": "nebenkostenCents",
+            "valueCents": "wertCents",
+            "unitCostMicros": "preisMicros"
+          }
+        ]
       }
     },
     "recordInvoicePayment": {
@@ -3241,8 +3639,68 @@
         }
       }
     },
+    "recordStockLoss": {
+      "paramWerte": {
+        "reason": {
+          "$catalog": "LAGER_ABGANG_GRUND"
+        },
+        "withdrawalType": {
+          "$catalog": "LAGER_ENTNAHME_ART"
+        },
+        "condition": {
+          "$catalog": "LAGER_ZUSTAND"
+        }
+      },
+      "data": {
+        "operationId": "vorgangId",
+        "movementIds": "bewegungIds",
+        "lotIds": "losIds",
+        "warnings": [
+          {
+            "__": "warnungen",
+            "locationId": "standortId",
+            "message": "message"
+          }
+        ]
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "privat": "private",
+          "Personal": "staff",
+          "Geschenk": "gift",
+          "Muster": "sample",
+          "Sonstiges": "other",
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
     "registerPinLogin": {},
     "registerUserLogin": {},
+    "releaseReservation": {
+      "data": {
+        "reservation": {
+          "__": "reservierung",
+          "reference": "referenz",
+          "items": [
+            {
+              "__": "items",
+              "locationId": "standortId",
+              "quantity": "menge",
+              "redeemed": "eingeloest",
+              "released": "freigegeben"
+            }
+          ],
+          "expiresAt": "ablaufAt",
+          "createdAt": "erstelltAt"
+        }
+      },
+      "werte": {
+        "reservation.status": {
+          "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
     "renewRegisterSession": {},
     "reportCustomerVertrag": {
       "params": {
@@ -3341,13 +3799,29 @@
           "TIP_CONFLICT": "tip_conflict",
           "adresse_ungueltig": "invalid_address",
           "zu_oft": "too_many_requests",
-          "versand_fehlgeschlagen": "send_failed"
+          "versand_fehlgeschlagen": "send_failed",
+          "uid_ungueltig": "vat_id_invalid",
+          "uid_pruefung_offen": "vat_id_check_pending"
         }
       },
       "fehler": {
         "felder": {
           "art": "kind"
         }
+      }
+    },
+    "reverseStockMovement": {
+      "data": {
+        "operationId": "vorgangId",
+        "movementIds": "bewegungIds",
+        "lotIds": "losIds",
+        "warnings": [
+          {
+            "__": "warnungen",
+            "locationId": "standortId",
+            "message": "message"
+          }
+        ]
       }
     },
     "revokeCustomerMandate": {},
@@ -3748,7 +4222,31 @@
       }
     },
     "stripeCaptureIntent": {},
+    "transferStock": {
+      "data": {
+        "operationId": "vorgangId",
+        "movementIds": "bewegungIds",
+        "lotIds": "losIds",
+        "warnings": [
+          {
+            "__": "warnungen",
+            "locationId": "standortId",
+            "message": "message"
+          }
+        ]
+      }
+    },
     "unpairRegisterDevice": {},
+    "updateArticle": {
+      "data": {
+        "article": {
+          "__": "artikel",
+          "stockLocationIds": "standorte",
+          "minStockByLocation": "mindestJeStandort",
+          "purchasePriceMicros": "einkaufMicros"
+        }
+      }
+    },
     "updateCustomer": {},
     "updateInvoiceItem": {},
     "updatePartnerWebhook": {
@@ -3784,18 +4282,21 @@
     "article.created": {
       "data": {
         "stockLocationIds": "standorte",
+        "minStockByLocation": "mindestJeStandort",
         "purchasePriceMicros": "einkaufMicros"
       }
     },
     "article.deactivated": {
       "data": {
         "stockLocationIds": "standorte",
+        "minStockByLocation": "mindestJeStandort",
         "purchasePriceMicros": "einkaufMicros"
       }
     },
     "article.updated": {
       "data": {
         "stockLocationIds": "standorte",
+        "minStockByLocation": "mindestJeStandort",
         "purchasePriceMicros": "einkaufMicros"
       }
     },
@@ -3851,7 +4352,9 @@
           "TIP_CONFLICT": "tip_conflict",
           "adresse_ungueltig": "invalid_address",
           "zu_oft": "too_many_requests",
-          "versand_fehlgeschlagen": "send_failed"
+          "versand_fehlgeschlagen": "send_failed",
+          "uid_ungueltig": "vat_id_invalid",
+          "uid_pruefung_offen": "vat_id_check_pending"
         }
       }
     },
@@ -3872,6 +4375,69 @@
         },
         "source": {
           "$catalog": "QUELLE"
+        }
+      }
+    },
+    "reservation.expired": {
+      "data": {
+        "reference": "referenz",
+        "items": [
+          {
+            "__": "items",
+            "locationId": "standortId",
+            "quantity": "menge",
+            "redeemed": "eingeloest",
+            "released": "freigegeben"
+          }
+        ],
+        "expiresAt": "ablaufAt",
+        "createdAt": "erstelltAt"
+      },
+      "werte": {
+        "status": {
+          "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
+    "reservation.redeemed": {
+      "data": {
+        "reference": "referenz",
+        "items": [
+          {
+            "__": "items",
+            "locationId": "standortId",
+            "quantity": "menge",
+            "redeemed": "eingeloest",
+            "released": "freigegeben"
+          }
+        ],
+        "expiresAt": "ablaufAt",
+        "createdAt": "erstelltAt"
+      },
+      "werte": {
+        "status": {
+          "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
+    "reservation.released": {
+      "data": {
+        "reference": "referenz",
+        "items": [
+          {
+            "__": "items",
+            "locationId": "standortId",
+            "quantity": "menge",
+            "redeemed": "eingeloest",
+            "released": "freigegeben"
+          }
+        ],
+        "expiresAt": "ablaufAt",
+        "createdAt": "erstelltAt"
+      },
+      "werte": {
+        "status": {
+          "$catalog": "RESERVIERUNG_STATUS"
         }
       }
     },
@@ -3927,7 +4493,9 @@
           "TIP_CONFLICT": "tip_conflict",
           "adresse_ungueltig": "invalid_address",
           "zu_oft": "too_many_requests",
-          "versand_fehlgeschlagen": "send_failed"
+          "versand_fehlgeschlagen": "send_failed",
+          "uid_ungueltig": "vat_id_invalid",
+          "uid_pruefung_offen": "vat_id_check_pending"
         }
       }
     },
@@ -3986,7 +4554,8 @@
       "active",
       "groupId",
       "tile",
-      "stockLocationIds"
+      "stockLocationIds",
+      "minStockByLocation"
     ],
     "inner": [
       "id",
@@ -4011,7 +4580,8 @@
       "active",
       "groupId",
       "kasse",
-      "standorte"
+      "standorte",
+      "mindestJeStandort"
     ]
   },
   "articleGroupFields": [
