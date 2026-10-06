@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -68,7 +68,20 @@
       "listWebhooks",
       "sendWebhookTest",
       "rotateWebhookSecret",
-      "listWebhookDeliveries"
+      "listWebhookDeliveries",
+      "createArticle",
+      "updateArticle",
+      "deactivateArticle",
+      "receiveGoods",
+      "transferStock",
+      "recordStockLoss",
+      "changeStockCondition",
+      "reverseStockMovement",
+      "createReservation",
+      "extendReservation",
+      "releaseReservation",
+      "getReservation",
+      "listReservations"
     ],
     "pos": [
       "cancelReceipt",
@@ -176,7 +189,20 @@
       "listWebhooks",
       "sendWebhookTest",
       "rotateWebhookSecret",
-      "listWebhookDeliveries"
+      "listWebhookDeliveries",
+      "createArticle",
+      "updateArticle",
+      "deactivateArticle",
+      "receiveGoods",
+      "transferStock",
+      "recordStockLoss",
+      "changeStockCondition",
+      "reverseStockMovement",
+      "createReservation",
+      "extendReservation",
+      "releaseReservation",
+      "getReservation",
+      "listReservations"
     ],
     "pos": [
       "pairRegisterDevice",
@@ -800,7 +826,12 @@
       "mixed_supply_not_allowed",
       "oss_not_enabled",
       "einvoice_unavailable",
-      "amount_too_large"
+      "amount_too_large",
+      "vat_id_invalid",
+      "vat_id_check_pending",
+      "reservation_not_found",
+      "reservation_mismatch",
+      "reservation_not_active"
     ],
     "invoiceLanguages": [
       "de",
@@ -816,7 +847,8 @@
     "invoiceNoticeCodes": [
       "cash_receipt_required",
       "recapitulative_statement_due",
-      "place_of_supply_check"
+      "place_of_supply_check",
+      "reservation_expired"
     ],
     "invoicePaymentMethods": [
       "transfer",
@@ -971,7 +1003,20 @@
       "listWebhooks",
       "sendWebhookTest",
       "rotateWebhookSecret",
-      "listWebhookDeliveries"
+      "listWebhookDeliveries",
+      "createArticle",
+      "updateArticle",
+      "deactivateArticle",
+      "receiveGoods",
+      "transferStock",
+      "recordStockLoss",
+      "changeStockCondition",
+      "reverseStockMovement",
+      "createReservation",
+      "extendReservation",
+      "releaseReservation",
+      "getReservation",
+      "listReservations"
     ],
     "inventoryErrorCodes": [
       "validation",
@@ -985,7 +1030,56 @@
       "inventory_api_not_enabled",
       "module_inactive",
       "rate_limited",
-      "server_error"
+      "server_error",
+      "idempotency_key_required",
+      "idempotency_conflict",
+      "location_not_found",
+      "location_inactive",
+      "invalid_location",
+      "invalid_locations",
+      "invalid_transfer",
+      "operation_not_found",
+      "already_reversed",
+      "reversal_not_possible",
+      "reversal_not_supported",
+      "exceeds_stock",
+      "no_positions",
+      "too_many_positions",
+      "invalid_step",
+      "invalid_quantity",
+      "invalid_amount",
+      "invalid_price",
+      "negative_value",
+      "invalid_reason",
+      "note_required",
+      "withdrawal_type_required",
+      "invalid_method",
+      "invalid_stock_kind",
+      "invalid_minimum",
+      "invalid_dimensions",
+      "weight_missing",
+      "invalid_landed_cost",
+      "invalid_distribution",
+      "landed_costs_mismatch",
+      "return_totals_mismatch",
+      "lot_not_found",
+      "invalid_serial",
+      "serial_required",
+      "serial_not_allowed",
+      "serial_already_exists",
+      "serial_not_in_stock",
+      "code_taken",
+      "external_id_taken",
+      "group_not_found",
+      "revenue_group_not_found",
+      "stock_kind_locked",
+      "article_inactive",
+      "invalid_position",
+      "invalid_condition",
+      "reason_required",
+      "insufficient_available",
+      "reservation_not_found",
+      "reservation_not_active"
     ],
     "inventoryRequestErrorCodes": [
       "account_not_found",
@@ -1012,6 +1106,12 @@
       "user_verification_failed",
       "route_missing"
     ],
+    "inventoryWarningCodes": [
+      "insufficient_stock",
+      "below_minimum",
+      "return_exceeds_sale",
+      "reservation_exceeded"
+    ],
     "inventoryWebhookEnvelopeFields": [
       "id",
       "type",
@@ -1025,13 +1125,36 @@
       "stock.below_minimum",
       "article.created",
       "article.updated",
-      "article.deactivated"
+      "article.deactivated",
+      "reservation.expired",
+      "reservation.released",
+      "reservation.redeemed"
+    ],
+    "landedCostAllocations": [
+      "value",
+      "quantity",
+      "weight",
+      "manual"
+    ],
+    "landedCostTypes": [
+      "freight",
+      "customs",
+      "insurance",
+      "other",
+      "discount",
+      "cash_discount"
     ],
     "locationTypes": [
       "warehouse",
       "store",
       "vehicle",
       "other"
+    ],
+    "reservationStatuses": [
+      "active",
+      "redeemed",
+      "released",
+      "expired"
     ],
     "stockChangeCauses": [
       "sale",
@@ -1051,6 +1174,19 @@
     "stockConditions": [
       "sellable",
       "defective"
+    ],
+    "stockKinds": [
+      "quantity",
+      "serial"
+    ],
+    "stockLossReasons": [
+      "breakage",
+      "shrinkage",
+      "theft",
+      "expired",
+      "withdrawal",
+      "disposal",
+      "other"
     ],
     "stockMovementSources": [
       "receipt",
@@ -1077,13 +1213,20 @@
       "takeover",
       "reversal",
       "revaluation",
-      "method_change"
+      "method_change",
+      "reservation"
     ],
     "webhookDeliveryStatuses": [
       "delivered",
       "pending",
       "failed",
       "dropped"
+    ],
+    "withdrawalTypes": [
+      "private",
+      "staff",
+      "gift",
+      "sample"
     ]
   }
 }

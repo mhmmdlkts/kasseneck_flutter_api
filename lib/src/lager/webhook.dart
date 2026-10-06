@@ -148,8 +148,12 @@ bool _gleichZeitkonstant(List<int> a, List<int> b) {
 ///   case InventoryStockChangedEvent(:final data): ...
 ///   case InventoryStockBelowMinimumEvent(:final data): ...
 ///   case InventoryArticleEvent(:final data): ...
+///   case InventoryReservationEvent(:final data): ...
 /// }
 /// ```
+///
+/// Seit 10.4 gibt es [InventoryReservationEvent]. Ein `switch` ohne
+/// `default`, der alle Unterklassen aufzaehlt, braucht dafuer einen Zweig.
 sealed class InventoryWebhookEvent {
   const InventoryWebhookEvent({
     required this.id,
@@ -225,6 +229,25 @@ final class InventoryArticleEvent extends InventoryWebhookEvent {
   final Article data;
 }
 
+/// `reservation.expired`, `reservation.released` oder `reservation.redeemed`
+/// ([type]): die Reservierung wie `getReservation` sie liefert, mit dem Status
+/// nach dem Vorgang. `released` und `redeemed` kommen bei jeder wirksamen
+/// Freigabe bzw. Einloesung, auch einer teilweisen; dann bleibt der Status
+/// `active`. Seit 10.4.
+final class InventoryReservationEvent extends InventoryWebhookEvent {
+  const InventoryReservationEvent({
+    required super.id,
+    required super.type,
+    required super.createdAt,
+    required super.accountId,
+    required super.test,
+    required this.data,
+  });
+
+  @override
+  final Reservation data;
+}
+
 const String _parseName = 'parseInventoryWebhookEvent';
 
 KasseneckValidationError _kaputt(String grund) => KasseneckValidationError(_parseName, grund, 'response');
@@ -233,8 +256,10 @@ KasseneckValidationError _kaputt(String grund) => KasseneckValidationError(_pars
 /// ([verifyInventoryWebhookSignature]).
 ///
 /// - [rawBody]: der Rumpf als `String` oder als Bytes (`List<int>`).
-/// - Ein Ereignis, das diese Paketversion nicht kennt (etwa `reservation.*`
+/// - Ein Ereignis, das diese Paketversion nicht kennt (etwa `variant_group.*`
 ///   einer spaeteren Stufe), ergibt `null`: mit 2xx antworten und uebergehen.
+/// - `reservation.expired|released|redeemed` tragen die Reservierung wie
+///   `getReservation`, mit dem Status nach dem Vorgang (seit 10.4).
 /// - Ein Rumpf, der keine Huelle ist, oder eine Bruchzahl in einer Menge wirft
 ///   [KasseneckValidationError] (`kind: response`).
 ///
@@ -277,6 +302,8 @@ InventoryWebhookEvent? parseInventoryWebhookEvent(Object? rawBody) {
         id: id, createdAt: createdAt, accountId: accountId, test: test, data: bestandGeaendert(ort, data)),
     'stock.below_minimum' => InventoryStockBelowMinimumEvent(
         id: id, createdAt: createdAt, accountId: accountId, test: test, data: unterMindestbestand(ort, data)),
+    'reservation.expired' || 'reservation.released' || 'reservation.redeemed' => InventoryReservationEvent(
+        id: id, type: type, createdAt: createdAt, accountId: accountId, test: test, data: reservierung(ort, data)),
     _ => InventoryArticleEvent(
         id: id, type: type, createdAt: createdAt, accountId: accountId, test: test, data: artikel(ort, data)),
   };

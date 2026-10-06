@@ -389,6 +389,60 @@ class InvoiceItemInput implements TotalsItem {
   }
 }
 
+/// Eine Position beim Ausstellen (`issueInvoice`): wie [InvoiceItemInput],
+/// dazu optional die Reservierung aus der Lager-API, die diese Position
+/// einloest.
+///
+/// Gutschriften kennen das Feld nicht: an einer [CreditNoteRequest] weist der
+/// Server eine gesetzte [reservationId] als `validation` ab.
+class IssueInvoiceItemInput extends InvoiceItemInput {
+  const IssueInvoiceItemInput({
+    required super.description,
+    required super.quantity,
+    super.unitPriceCents,
+    super.unitPriceMicros,
+    required super.vatRate,
+    super.subtitle,
+    super.unit,
+    super.kind,
+    super.discountPct,
+    super.articleId,
+    this.reservationId,
+  });
+
+  factory IssueInvoiceItemInput.fromJson(Map<String, dynamic> j) {
+    final p = InvoiceItemInput.fromJson(j);
+    return IssueInvoiceItemInput(
+      description: p.description,
+      quantity: p.quantity,
+      unitPriceCents: p.unitPriceCents,
+      unitPriceMicros: p.unitPriceMicros,
+      vatRate: p.vatRate,
+      subtitle: p.subtitle,
+      unit: p.unit,
+      kind: p.kind,
+      discountPct: p.discountPct,
+      articleId: p.articleId,
+      reservationId: _text(j, 'reservationId'),
+    );
+  }
+
+  /// Kennung aus `InventoryClient.createReservation`; braucht [articleId].
+  /// Geprueft beim Ausstellen (`reservation_not_found`, `reservation_mismatch`,
+  /// `reservation_not_active`; abgelaufen ist kein Fehler, sondern der Hinweis
+  /// `reservation_expired`), eingeloest beim Buchen der Rechnung am
+  /// Lagerstandort der Rechnung ([IssueInvoiceRequest.stockLocationId], sonst
+  /// der Standard-Standort). Weniger verkauft als reserviert gibt den Rest frei.
+  final String? reservationId;
+
+  @override
+  Map<String, dynamic> toJson() {
+    final j = super.toJson();
+    _setzen(j, 'reservationId', reservationId);
+    return j;
+  }
+}
+
 /// Eine Gutschriftsposition: wie [InvoiceItemInput], dazu die Rückgabe-Wahl.
 ///
 /// Geht in [CreditNoteRequest.items]. An einer Rechnung ([IssueInvoiceRequest])
@@ -464,6 +518,7 @@ class IssueInvoiceRequest {
     this.stockLocationId,
     this.payment,
     this.dryRun,
+    this.acceptVatIdRisk,
   });
 
   factory IssueInvoiceRequest.fromJson(Map<String, dynamic> j) => IssueInvoiceRequest(
@@ -472,7 +527,7 @@ class IssueInvoiceRequest {
         reverseChargeReason: _text(j, 'reverseChargeReason'),
         priceMode: _pflicht<String>(j, 'priceMode'),
         serviceStart: _pflicht<String>(j, 'serviceStart'),
-        items: [for (final p in _liste(j, 'items')) InvoiceItemInput.fromJson(p)],
+        items: [for (final p in _liste(j, 'items')) IssueInvoiceItemInput.fromJson(p)],
         customerId: _text(j, 'customerId'),
         serviceEnd: _text(j, 'serviceEnd'),
         paymentTermDays: _ganz(j, 'paymentTermDays'),
@@ -488,6 +543,7 @@ class IssueInvoiceRequest {
         stockLocationId: _text(j, 'stockLocationId'),
         payment: j['payment'] is Map ? PaymentInput.fromJson(Map<String, dynamic>.from(j['payment'] as Map)) : null,
         dryRun: j['dryRun'] is bool ? j['dryRun'] as bool : null,
+        acceptVatIdRisk: j['acceptVatIdRisk'] is bool ? j['acceptVatIdRisk'] as bool : null,
       );
 
   /// Pflicht: dieselbe Anfrage mit demselben Schlüssel erzeugt nie eine zweite Rechnung.
@@ -513,6 +569,9 @@ class IssueInvoiceRequest {
   final String? paymentReference;
   final bool? girocode;
   final bool? tracking;
+
+  /// Die Positionen; [IssueInvoiceItemInput] traegt zusaetzlich die
+  /// Reservierung, die eine Position einloest.
   final List<InvoiceItemInput> items;
 
   /// Eigene Merkmale (höchstens 20), nie gedruckt.
@@ -540,6 +599,15 @@ class IssueInvoiceRequest {
   /// Probe-Absicht still zu verlieren.
   final bool? dryRun;
 
+  /// Nur fuer Rechnungen ohne Steuer, die die UID des Kunden verlangen (ig.
+  /// Lieferung, Reverse Charge): hat die UID-Pruefung noch kein Ergebnis
+  /// (`vat_id_check_pending`), stellt `true` trotzdem aus. Der Aussteller traegt
+  /// dann das Risiko, die Rechnung traegt [Invoice.vatIdRisk]. Eine ungueltige
+  /// UID (`vat_id_invalid`) sperrt auch damit. Gehoert nicht zur Anfrage im Sinn
+  /// der Idempotenz: dieselbe Anfrage mit und ohne das Feld ist dieselbe
+  /// Rechnung, wiederholt wird also mit demselben Schluessel.
+  final bool? acceptVatIdRisk;
+
   Map<String, dynamic> toJson() {
     final j = <String, dynamic>{'idempotencyKey': idempotencyKey};
     _setzen(j, 'customerId', customerId);
@@ -562,6 +630,7 @@ class IssueInvoiceRequest {
     _setzen(j, 'stockLocationId', stockLocationId);
     _setzen(j, 'payment', payment?.toJson());
     _setzen(j, 'dryRun', dryRun);
+    _setzen(j, 'acceptVatIdRisk', acceptVatIdRisk);
     return j;
   }
 }
@@ -667,17 +736,22 @@ class InvoicePayment {
 /// [InvoiceNotice.fromJson] wirft dann, und die Aufrufe von `InvoiceApi`
 /// übergehen den Eintrag (die Rechnung ist da schon ausgestellt).
 class InvoiceNotice {
-  const InvoiceNotice({required this.code, required this.message});
+  const InvoiceNotice({required this.code, required this.message, this.reservationId});
 
   factory InvoiceNotice.fromJson(Map<String, dynamic> j) => InvoiceNotice(
         code: _pflicht<String>(j, 'code'),
         message: _pflicht<String>(j, 'message'),
+        reservationId: _text(j, 'reservationId'),
       );
 
-  static const fields = {'code', 'message'};
+  /// `reservationId` steht nur an `reservation_expired`.
+  static const fields = {'code', 'message', 'reservationId'};
 
   final String code;
   final String message;
+
+  /// Bei `reservation_expired`: die abgelaufene Reservierung.
+  final String? reservationId;
 }
 
 /// Ergebnis von `recordInvoicePayment`.
@@ -979,10 +1053,14 @@ class Invoice {
     this.source,
     this.createdAt,
     this.finalizedAt,
+    this.vatIdProof,
+    this.vatIdRisk,
   });
 
   factory Invoice.fromJson(Map<String, dynamic> j) {
     final einvoice = _objektOderNull(j, 'einvoice');
+    final nachweis = _objektOderNull(j, 'vatIdProof');
+    final risiko = _objektOderNull(j, 'vatIdRisk');
     final metadaten = j['metadata'];
     final related = _objektOderNull(j, 'related');
     final brand = _objektOderNull(j, 'brand');
@@ -1028,13 +1106,15 @@ class Invoice {
       source: _text(j, 'source'),
       createdAt: _text(j, 'createdAt'),
       finalizedAt: _text(j, 'finalizedAt'),
+      vatIdProof: nachweis != null ? InvoiceVatIdProof.fromJson(nachweis) : null,
+      vatIdRisk: risiko != null ? InvoiceVatIdRisk.fromJson(risiko) : null,
     );
   }
 
   /// Die Felder in Listen und Ausstell-Antworten.
   static const fields = {
     'id', 'number', 'docType', 'status', 'invoiceDate', 'dueDate', 'customerId', 'totals', 'einvoice', 'statusUrl',
-    'statusPassword', 'metadata', 'language', 'brand', 'paidCents', 'openCents',
+    'statusPassword', 'metadata', 'language', 'brand', 'paidCents', 'openCents', 'vatIdProof', 'vatIdRisk',
   };
 
   /// Die Felder der Detailsicht (`getInvoice`).
@@ -1078,6 +1158,13 @@ class Invoice {
   final int? paidCents;
   final int? openCents;
 
+  /// Beim Festschreiben eingefrorener UID-Nachweis des Kunden; sonst `null`.
+  final InvoiceVatIdProof? vatIdProof;
+
+  /// Ohne Ergebnis der UID-Pruefung mit [IssueInvoiceRequest.acceptVatIdRisk]
+  /// ausgestellt; sonst `null`.
+  final InvoiceVatIdRisk? vatIdRisk;
+
   // Detail (nur `getInvoice`)
 
   final List<InvoiceItem>? items;
@@ -1119,6 +1206,47 @@ class Invoice {
   final String? source;
   final String? createdAt;
   final String? finalizedAt;
+}
+
+/// UID-Nachweis an einer Rechnung: gueltige Pruefung der Kunden-UID, hoechstens
+/// 30 Tage vor dem Festschreiben.
+class InvoiceVatIdProof {
+  const InvoiceVatIdProof({required this.checkedOn, required this.source, required this.level, this.code});
+
+  factory InvoiceVatIdProof.fromJson(Map<String, dynamic> j) => InvoiceVatIdProof(
+        checkedOn: _pflicht<String>(j, 'checkedOn'),
+        source: _pflicht<String>(j, 'source'),
+        level: _pflicht<int>(j, 'level'),
+        code: _text(j, 'code'),
+      );
+
+  static const fields = {'checkedOn', 'source', 'level', 'code'};
+
+  /// Wiener Tag der Pruefung (`YYYY-MM-DD`).
+  final String checkedOn;
+
+  /// Wer geprueft hat: `finanzonline` (Stufe 2 mit Name und Anschrift) oder `vies`.
+  final String source;
+
+  /// Stufe der Pruefung: 1 = nur UID, 2 = UID mit Name und Anschrift.
+  final int level;
+
+  /// Pruefcode fuer die oeffentliche Pruefseite (auf dem PDF als QR); `null`, wenn
+  /// keiner vergeben wurde.
+  final String? code;
+}
+
+/// Ausgestellt ohne Ergebnis der UID-Pruefung; das Risiko traegt der Aussteller.
+class InvoiceVatIdRisk {
+  const InvoiceVatIdRisk({required this.acceptedOn});
+
+  factory InvoiceVatIdRisk.fromJson(Map<String, dynamic> j) =>
+      InvoiceVatIdRisk(acceptedOn: _pflicht<String>(j, 'acceptedOn'));
+
+  static const fields = {'acceptedOn'};
+
+  /// Wiener Tag der Bestaetigung (`YYYY-MM-DD`).
+  final String acceptedOn;
 }
 
 /// Die E-Rechnung aus `getInvoiceXml`, wie der Server sie sendet.

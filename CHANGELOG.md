@@ -1,3 +1,111 @@
+## 10.4.0
+
+Twin of `@kreiseck/kasseneck-api` `1.5.0` (contract files pulled from that
+version): the Inventory API learns to write and to reserve, and the invoice API
+learns `reservationId` and the VAT ID check. Reason: a shop that only reads
+stock still oversells. It has to hold the goods at checkout, book what arrives
+and leaves, keep its articles in sync and turn the reservation into a sale when
+the order is invoiced, all with retries that never book twice. The invoice API
+catches up with the VAT ID check of the backend, because a caller has to
+decide by the code whether to retry later or not to issue at all.
+
+Additive; every existing call sends the same bytes as in 10.3.0. **One case
+breaks at compile time:** `InventoryWebhookEvent` is sealed and gains the
+subclass `InventoryReservationEvent`, so a `switch` without `default` that
+lists all subclasses needs a new case (the README example had one). Until 10.3
+`reservation.*` came back as `null`; now it is parsed.
+
+- **Writing** (`InventoryClient`, every write with `idempotencyKey`):
+  `createArticle(CreateArticleRequest)`, `updateArticle(UpdateArticleRequest)`,
+  `deactivateArticle(DeactivateArticleRequest)`, answering with the `Article`
+  as `getArticle` returns it; `receiveGoods(ReceiveGoodsRequest)`,
+  `transferStock(TransferStockRequest)`,
+  `recordStockLoss(RecordStockLossRequest)`,
+  `changeStockCondition(ChangeStockConditionRequest)`,
+  `reverseStockMovement(ReverseStockMovementRequest)`, answering with a
+  `StockOperation` (`operationId`, `movementIds`, `lotIds`, `warnings` of
+  `InventoryWarning`); `previewGoodsReceipt(GoodsReceiptPreviewRequest)` is
+  `receiveGoods` with `dryRun: true`, books nothing, needs no key and returns
+  `GoodsReceiptPreview` (`GoodsReceiptPreviewLine`, the four values only with
+  the permission `costs`, `hasValues`). Request parts: `ArticleInput`,
+  `GoodsReceiptItem`, `LandedCost`, `GoodsReceiptSupplier`, `StockItem`.
+- **Reservations**: `createReservation(CreateReservationRequest)` (all or
+  nothing against `available`; `ReservationItemInput`),
+  `extendReservation(ExtendReservationRequest)`,
+  `releaseReservation(ReleaseReservationRequest)` (all, or per
+  `ReleaseReservationItem`), `getReservation`, `listReservations` (named
+  `status`, `reference`, `limit`, `cursor`, `ReservationPage`) and the stream
+  `iterateReservations`. `Reservation` carries `status`, `reference`, `items`
+  (`ReservationItem` with `quantity`, `redeemed`, `released` and the getter
+  `open`) and `expiresAt`. `insufficient_available` lists the missing
+  positions in `inventoryShortfalls(error)` (`InventoryShortfall`).
+- **Idempotency key**: `idempotencyKey` is required on every write (1 to 120
+  characters, `inventoryIdempotencyKeyMax`). The client refuses to send an
+  empty, blank or too long key and never trims or shortens it. After a timeout
+  or network error, send the same request with the same key: it takes effect
+  once and returns the stored answer; the same key with other content gives
+  `idempotency_conflict`. Nothing is retried automatically.
+- **Checked before sending**, nothing else: the key, required ids (also
+  `items[].articleId`), integers beyond ±(2^53 − 1) anywhere in the request
+  (the server computes in JavaScript and would receive another number),
+  `expiresInMinutes` outside 5 to 43,200 (`reservationMinutesMin`,
+  `reservationMinutesMax`), an update without a field, an empty release list.
+  All throw `KasseneckValidationError` with `kind: 'request'`.
+- **Models**: `Article` gains `description`, `stockKind` and
+  `minStockByLocation` (missing on an older server: `null`, `null`, `{}`).
+  `StockMovement` gains `reservedDelta` (0 for every other movement and on an
+  older server) and `StockAfter.reserved` (only on reservation movements,
+  otherwise `null`). The minimum stock (`below_minimum`,
+  `listStock(belowMinimum: true)`, `stock.below_minimum`) is measured against
+  `available = onHand − reserved`. A fractional value in any of these throws
+  `KasseneckValidationError` with `kind: 'response'`.
+- **Events**: `reservation.expired`, `reservation.released` and
+  `reservation.redeemed` in `inventoryWebhookEvents`, parsed as
+  `InventoryReservationEvent` with the reservation and its status afterwards;
+  `released` and `redeemed` also fire for a partial release or redemption.
+- **Catalogues and errors**: `inventoryErrorCodes` keeps its 12 codes in front
+  and appends the codes of the write side in contract order
+  (`idempotency_key_required`, `idempotency_conflict`, `exceeds_stock`,
+  `code_taken`, `external_id_taken`, `stock_kind_locked`, `article_inactive`,
+  `insufficient_available`, `reservation_not_found`, `reservation_not_active`
+  …). New lists `inventoryWarningCodes` (with `isInventoryWarningCode`; a
+  warning is not an error, the booking took effect), `stockKinds`,
+  `stockLossReasons`, `withdrawalTypes`, `landedCostTypes`,
+  `landedCostAllocations`, `reservationStatuses`; `stockMovementTypes` gains
+  `reservation` at the end.
+- **Invoice API, reservations**: `IssueInvoiceItemInput` (an
+  `InvoiceItemInput` with `reservationId`, needs `articleId`) redeems a
+  reservation when the invoice is issued; `IssueInvoiceRequest.fromJson` reads
+  items as `IssueInvoiceItemInput`. New codes `reservation_not_found`,
+  `reservation_mismatch`, `reservation_not_active` at the end of
+  `invoiceErrorCodes`; new notice `reservation_expired` with
+  `InvoiceNotice.reservationId`: the invoice is issued and sells without the
+  reservation. Credit notes do not take the field (`validation`).
+- **Invoice API, VAT ID check**: codes `vat_id_invalid` and
+  `vat_id_check_pending` (with `details['retryAfter']` in seconds) after
+  `amount_too_large`, before the reservation codes, as in the backend.
+  `IssueInvoiceRequest.acceptVatIdRisk` issues despite a pending check, the
+  issuer bears the risk; an invalid VAT ID blocks even with it. It does not
+  count towards idempotency, so the retry keeps its key. `Invoice.vatIdProof`
+  (`InvoiceVatIdProof`: `checkedOn`, `source`, `level`, `code`) and
+  `Invoice.vatIdRisk` (`InvoiceVatIdRisk`: `acceptedOn`), otherwise `null`.
+- **Differences from npm, on purpose.** Requests are classes, so a fractional
+  quantity or a missing key cannot be written at all (npm checks both at run
+  time). `null` in a request means „not given“ and is not sent; clearing a
+  field in `updateArticle` goes through `UpdateArticleRequest.clear`, which
+  refuses a field that cannot be cleared or is set at the same time.
+  `receiveGoods` has no `dryRun`: the preview is its own call and type.
+  `listReservations` takes named parameters like the other lists here.
+  `ReservationItem.open` is a convenience npm does not have. As in npm, a
+  timeout on a write carries the outcome `rejected`; the key, not the outcome,
+  makes the retry safe.
+- **Contract**: `zwillinge.yaml` pins npm `1.5.0`; `test/fixtures/vertrag/`
+  pulled again (the 13 new calls, which `Aufrufe.alle` now knows, catalogues,
+  `warningCodes`, the 5b cases in `v3/antworten/lager.json`, the VAT ID cases
+  in `v3/antworten/rechnungen.json`, five new invoice examples); the text
+  catalogue and the code table layout regenerated from the same version
+  (content unchanged). No new entry in `ausnahmen`.
+
 ## 10.3.0
 
 Twin of `@kreiseck/kasseneck-api` `1.4.0` (contract files pulled from that

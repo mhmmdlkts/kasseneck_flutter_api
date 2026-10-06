@@ -1,0 +1,26 @@
+{
+  "endpoint": "createCreditNote",
+  "description": "Eine Reservierung wird nur beim Ausstellen eingeloest, nie an einer Gutschrift",
+  "request": {
+    "idempotencyKey": "ex-21",
+    "invoiceId": "invoice_example",
+    "reason": "return",
+    "items": [
+      {
+        "description": "Kaisersemmel",
+        "quantity": 1,
+        "unitPriceCents": 65,
+        "vatRate": 10,
+        "articleId": "kaisersemmel",
+        "reservationId": "res_example"
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[0].reservationId"
+    ]
+  }
+}

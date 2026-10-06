@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.3.0
+  kasseneck_api: ^10.4.0
 ```
 
 ```bash
@@ -163,7 +163,7 @@ upgrade while the old routes are served.
 | `package:kasseneck_api/register.dart` | `RegisterClient` (pairing, sign-in, sessions), `RegisterTransport`, `registerErrorCodes`, error types |
 | `package:kasseneck_api/pos.dart` | the register (`RegisterReceiptClient`, `PosSettingsClient`, `PosPrinterClient`, articles, cart, tiles, themes, `posErrorCodes`) |
 | `package:kasseneck_api/invoice.dart` | `InvoiceApi`, invoice models and `computeInvoiceTotals`, error types |
-| `package:kasseneck_api/inventory.dart` | `InventoryClient` (articles, locations, stock, stock ledger, account webhooks), `verifyInventoryWebhookSignature`, `parseInventoryWebhookEvent`, error types. **Belongs on a server.** |
+| `package:kasseneck_api/inventory.dart` | `InventoryClient` (articles, locations, stock, stock ledger, account webhooks; create and update articles, book stock, reservations), `verifyInventoryWebhookSignature`, `parseInventoryWebhookEvent`, error types. **Belongs on a server.** |
 | `package:kasseneck_api/printing.dart` | `KeckPrinter`, `KeckPrinterService`, ESC/POS builder |
 | `package:kasseneck_api/hobex_hps.dart` | `HpsClient`, `HpsPayments`, terminal discovery |
 | `package:kasseneck_api/models/…`, `enums/…`, `services/…`, `widgets/…` | single models, enums and services, one file each |
@@ -239,7 +239,9 @@ payments, you do not need to write any code:
 - **Invoice API:** invoices under § 11 UStG (not receipts), customers,
   cancellation and credit notes, PDF and e-invoice XML (UBL or CII).
 - **Inventory API:** articles, stock per location and the stock ledger for an
-  online shop, plus webhooks with a signature check (`inventory.dart`).
+  online shop, plus webhooks with a signature check; create articles, book goods
+  receipts, transfers and losses, and reserve stock at checkout, redeemed by
+  the invoice (`inventory.dart`).
 
 ## Requirements and platforms
 
@@ -1108,6 +1110,47 @@ await invoices.createCreditNote(const CreditNoteRequest(
 ));
 ```
 
+**Reservations.** An item of `issueInvoice` can redeem a reservation of the
+inventory API: use `IssueInvoiceItemInput` with `articleId` and
+`reservationId` (from `InventoryClient.createReservation`). The server checks it
+when issuing: `reservation_not_found`, `reservation_mismatch` (no open quantity
+of this article at the invoice's stock location) or `reservation_not_active`
+(already redeemed or released). An expired reservation is no error: the invoice
+is issued and sells without it, and `notice` carries `reservation_expired` with
+`reservationId`. Selling less than reserved releases the rest. Credit notes do
+not take the field (`validation`).
+
+**VAT ID check.** An invoice without VAT that relies on the customer's VAT ID
+(intra-Community supply, reverse charge) is only issued with a result of the
+VAT ID check (FinanzOnline, otherwise VIES) on the day of issue. Decide on the
+code: `vat_id_check_pending` means try again later with the same
+`idempotencyKey` (`e.details['retryAfter']` seconds), or issue anyway with
+`IssueInvoiceRequest(acceptVatIdRisk: true)`, in which case you bear the risk
+and the invoice carries `vatIdRisk`. `vat_id_invalid` blocks even with it. An
+issued invoice carries the frozen proof in `vatIdProof` (`checkedOn`, `source`
+`finanzonline` or `vies`, `level` 1 or 2, `code`).
+
+```dart
+try {
+  await invoices.issueInvoice(const IssueInvoiceRequest(
+    idempotencyKey: 'order-1001',
+    priceMode: 'gross',
+    serviceStart: '2026-10-06',
+    stockLocationId: 'haupt',
+    items: [
+      IssueInvoiceItemInput(description: 'Rye bread', quantity: 2, unitPriceCents: 450, vatRate: 10,
+          articleId: 'rye-bread', reservationId: 'res_…'),
+    ],
+  ));
+} on KasseneckApiError catch (e) {
+  if (invoiceErrorCode(e) == 'vat_id_check_pending') {
+    final retryAfter = e.details['retryAfter']; // seconds; then the same request, same key
+  } else {
+    rethrow;
+  }
+}
+```
+
 **Notices are always a list.** `notice` on `issueInvoice`, `previewInvoice` and
 `recordInvoicePayment` is a `List<InvoiceNotice>`, empty if there is nothing to
 say. An intra-EU supply carries `recapitulative_statement_due`, a cash-paid
@@ -1124,10 +1167,14 @@ if (issued.notice.any((n) => n.code == 'cash_receipt_required')) {
 For online shops and other systems that show or mirror the stock of a
 Kasseneck account: read articles, locations, stock per location and the stock
 ledger, and get every stock change pushed by webhook within seconds, also the
-ones made at the register in the shop. Uses the `api_key` of the account and
-belongs on a **server**, never in an app customers install. Reading needs the
-module `lager`; purchase prices and stock values appear only when the account
-has the permission `costs` (otherwise the fields are absent, not `null`:
+ones made at the register in the shop. Since 10.4 also write: create and update
+articles, book goods receipts, transfers, losses and condition changes, and
+reserve stock at checkout (see [Writing and reservations](#writing-and-reservations)).
+Uses the `api_key` of the account and belongs on a **server**, never in an app
+customers install. Reading needs the module `lager`, writing also the account
+switch „Lager-API schreiben“ (always on in the test environment, `kr_test_…`);
+purchase prices and stock values appear only when the account has the
+permission `costs` (otherwise the fields are absent, not `null`:
 `Article.hasPurchasePriceMicros`, `StockResult.values == null`).
 
 The package needs the Flutter SDK to resolve (it declares `flutter: sdk:
@@ -1167,6 +1214,7 @@ final secret = created.secret; // store it where the receiver reads it, never in
 // 4. Receive: the header X-Kasseneck-Signature and the raw body bytes, before
 // any JSON decoding. Answer within 10 s, work afterwards.
 final reorder = <String>[];
+final expiredOrders = <String>[];
 int receive(String? signatureHeader, List<int> rawBody) {
   if (!verifyInventoryWebhookSignature(secret, signatureHeader, rawBody)) return 400;
   final InventoryWebhookEvent? event;
@@ -1187,6 +1235,9 @@ int receive(String? signatureHeader, List<int> rawBody) {
       reorder.add(data.articleId);
     case InventoryArticleEvent(:final data):
       if (!data.active) mirror.removeWhere((key, _) => key.startsWith('${data.id}/'));
+    case InventoryReservationEvent(:final data):
+      // reservation.expired, .released or .redeemed: the status afterwards.
+      if (data.status == 'expired') expiredOrders.add(data.reference ?? data.id);
   }
   return 200;
 }
@@ -1207,17 +1258,25 @@ int receive(String? signatureHeader, List<int> rawBody) {
   event type this version does not know (answer 2xx and skip it) and throws
   `KasseneckValidationError` on a body that is no envelope or carries a
   fractional quantity. The result is a sealed `InventoryWebhookEvent`:
-  `InventoryStockChangedEvent`, `InventoryStockBelowMinimumEvent` or
+  `InventoryStockChangedEvent`, `InventoryStockBelowMinimumEvent`,
   `InventoryArticleEvent` (`article.created`, `article.updated`,
-  `article.deactivated`), each with `id`, `createdAt`, `accountId` and `test`.
+  `article.deactivated`) or, since 10.4, `InventoryReservationEvent`
+  (`reservation.expired`, `reservation.released`, `reservation.redeemed`),
+  each with `id`, `createdAt`, `accountId` and `test`. A `switch` without
+  `default` over all subclasses needs a case for the new one.
 - **Events.** `stock.changed` carries the current state of one article at one
   location (`onHand`, `reserved`, `available`, `defective`, `sequence`,
   `updatedAt`) plus `cause` (`sale`, `invoice`, `goods_receipt`, `transfer`,
   `takeover` …, see `stockChangeCauses`) and `movementId`; changes within
   10 seconds are combined into one delivery. `stock.below_minimum` fires once
-  when `onHand` drops below the minimum stock set for the location; `minStock`
-  in the payload is that threshold, the article's own `minStock` never
-  triggers it, and `listStock(belowMinimum: true)` follows the same rule. In
+  when `available` (`onHand − reserved`, so a reservation alone can trigger it)
+  drops below the minimum stock set for the location
+  (`Article.minStockByLocation`); `minStock` in the payload is that threshold,
+  the article's own `minStock` never triggers it, and
+  `listStock(belowMinimum: true)` follows the same rule. `reservation.*`
+  carries the reservation as `getReservation` returns it, with its status
+  afterwards; `released` and `redeemed` also fire for a partial release or
+  redemption (the status stays `active`). In
   movements, `goods_receipt` is a goods receipt; `receipt` only ever means a
   sales receipt (`source.type`). Deduplicate on `event.id`; deliveries are
   retried after 1 min, 5 min, 30 min, 2 h and 12 h.
@@ -1246,10 +1305,92 @@ int receive(String? signatureHeader, List<int> rawBody) {
   `webhook_not_found`, `webhook_limit` (5 per account),
   `invalid_webhook_url`, `event_not_subscribed` and `webhook_inactive` are
   decided on the code with `isInventoryError(error, code)`.
+- **Errors when writing.** `idempotency_conflict` (same key, other content),
+  `exceeds_stock` (transfers, losses and condition changes never overdraw),
+  `insufficient_available` (reservation; the missing positions in
+  `inventoryShortfalls(error)`), `code_taken` and `external_id_taken` (with
+  `details['field']` and the `articleId` that owns the code),
+  `stock_kind_locked`, `article_inactive`, `reservation_not_found`,
+  `reservation_not_active` and the rest of `inventoryErrorCodes`.
 - **Names.** `StockLevel` here has `onHand` and `sequence`; the register's
   `StockLevel` in `pos.dart` is a different type with `sellable`. If you import
   both libraries, give one a prefix (`import '…/inventory.dart' as inv;`).
   `StockValue` is the same type in both.
+
+### Writing and reservations
+
+Every write takes an `idempotencyKey` (1–120 characters). The same request with
+the same key takes effect once and returns the stored answer; the same key with
+other content gives `idempotency_conflict`. Fix the key before the first
+attempt and store it with your order: after a timeout or network error
+(`KasseneckHttpError`), send the **same** request with the **same** key again.
+The client never retries by itself and never trims or shortens a key; a new key
+would book a second time.
+
+```dart
+final inventory = InventoryClient(apiKey: 'kr_live_…');
+
+// An article with the shop's own id; without ean the server assigns the next own code.
+final article = await inventory.createArticle(const CreateArticleRequest(
+  idempotencyKey: 'shop-article-1001',
+  name: 'Kaiser roll',
+  unitPriceCents: 65,
+  vatRate: 10,
+  stockTracked: true,
+  minStockByLocation: {'haupt': 20000},
+  externalIds: {'shop': '1001'},
+));
+
+// Goods receipt: preview first (books nothing, values only with `costs`), then book.
+const items = [GoodsReceiptItem(articleId: 'rye-bread', quantity: 20000, totalCents: 2400, batch: 'C-41')];
+final preview = await inventory.previewGoodsReceipt(const GoodsReceiptPreviewRequest(items: items));
+final booked = await inventory.receiveGoods(const ReceiveGoodsRequest(idempotencyKey: 'shop-gr-118', items: items));
+for (final w in booked.warnings) {
+  print('${w.code}: ${w.message}'); // a warning, not an error: the booking took effect
+}
+
+// Checkout: reserve all or nothing, against available = onHand − reserved.
+try {
+  final reservation = await inventory.createReservation(const CreateReservationRequest(
+    idempotencyKey: 'shop-res-1001',
+    items: [ReservationItemInput(articleId: 'rye-bread', quantity: 2000)],
+    reference: 'Order 1001',
+    expiresInMinutes: 30,
+  ));
+  // Redeem it with the invoice: IssueInvoiceItemInput(reservationId: reservation.id, articleId: …)
+  // or give it back: releaseReservation(ReleaseReservationRequest(idempotencyKey: …, reservationId: reservation.id))
+} on KasseneckApiError catch (e) {
+  for (final s in inventoryShortfalls(e)) {
+    print('${s.articleId} at ${s.locationId}: ${s.available} of ${s.requested} available');
+  }
+}
+```
+
+- **Articles.** `createArticle`, `updateArticle` and `deactivateArticle`
+  answer with the article as `getArticle` returns it. In an update only the
+  named fields change; `UpdateArticleRequest(clear: {'description'})` clears a
+  field (`null` on the wire). `externalIds` and `metadata` are replaced,
+  `minStockByLocation` is merged per location (`{'haupt': null}` removes only
+  that location). `purchasePriceMicros` needs the permission `costs`.
+  `minStock` is a legacy field that triggers nothing.
+- **Booking.** `receiveGoods`, `transferStock`, `recordStockLoss`,
+  `changeStockCondition` and `reverseStockMovement` answer with a
+  `StockOperation` (`operationId`, `movementIds`, `lotIds`, `warnings`).
+  Warning codes are `inventoryWarningCodes` (`isInventoryWarningCode`).
+  Catalogs: `stockLossReasons`, `withdrawalTypes`, `landedCostTypes`,
+  `landedCostAllocations`, `stockConditions`.
+- **Reservations.** `createReservation`, `extendReservation`,
+  `releaseReservation` (all, or per position), `getReservation`,
+  `listReservations` and `iterateReservations`. A `Reservation` carries
+  `status` (`reservationStatuses`), `reference`, `items` with `quantity`,
+  `redeemed` and `released` (`ReservationItem.open` is the rest) and
+  `expiresAt`. `expiresInMinutes` is 5 to 43,200. Stock movements of type
+  `reservation` have `quantityDelta: 0` and the amount in `reservedDelta`.
+- **Checked before sending**, nothing else: an invalid key, a missing id, an
+  integer beyond ±(2^53 − 1) (the server computes in JavaScript), an
+  `expiresInMinutes` outside 5–43,200, an update without a field or with a
+  `clear` the server cannot apply, a release with an empty list. All of these
+  throw `KasseneckValidationError` with `kind: 'request'`.
 
 ## RKSV details
 

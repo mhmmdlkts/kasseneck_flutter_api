@@ -1,0 +1,28 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Innergemeinschaftliche Lieferung, Risiko einer noch offenen UID-Prüfung übernommen",
+  "request": {
+    "idempotencyKey": "ex-vat-id-1",
+    "customerId": "customer_example",
+    "taxScheme": "intraCommunitySupply",
+    "priceMode": "net",
+    "serviceStart": "2026-10-06",
+    "acceptVatIdRisk": true,
+    "items": [
+      {
+        "description": "Ware",
+        "quantity": 2,
+        "unitPriceCents": 5000,
+        "vatRate": 0
+      }
+    ]
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 10000,
+      "vatCents": 0,
+      "grossCents": 10000
+    }
+  }
+}

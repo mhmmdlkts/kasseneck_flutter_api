@@ -1,0 +1,24 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Shop-Bestellung: die Position loest eine Reservierung der Lager-API ein",
+  "request": {
+    "idempotencyKey": "ex-19",
+    "priceMode": "gross",
+    "serviceStart": "2026-10-06",
+    "orderReference": "Bestellung 1001",
+    "stockLocationId": "haupt",
+    "items": [
+      {
+        "description": "Kaisersemmel",
+        "quantity": 6,
+        "unitPriceCents": 65,
+        "vatRate": 10,
+        "articleId": "kaisersemmel",
+        "reservationId": "res_example"
+      }
+    ]
+  },
+  "expected": {
+    "ok": true
+  }
+}

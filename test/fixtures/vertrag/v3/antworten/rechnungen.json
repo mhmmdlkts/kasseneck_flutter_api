@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "238d2c4f15c8da89d9c2c47b15dadbbabb94e9e35217e913529317c794c8a247",
-    "inputsSha256": "4fec6d58dd069e6d980bcab1d9883380d06e6fe8ba2a5e0f05d772b7720955c2",
-    "backendPackage": "@kreiseck/kasseneck-api@0.32.2",
+    "sha256": "888d50e0ead14faedcfd6eb1673de3095155479c264a96d3dadbc8d870f4c497",
+    "inputsSha256": "b9dd3d819a4be22c35a201a788e7fcf947d90b6af7d9e41d3d74be3b48f8aa8e",
+    "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -291,7 +291,9 @@
               "name": "Standard"
             },
             "paidCents": 0,
-            "openCents": 12000
+            "openCents": 12000,
+            "vatIdProof": null,
+            "vatIdRisk": null
           },
           "replayed": false
         }
@@ -364,7 +366,9 @@
               "name": "Standard"
             },
             "paidCents": 0,
-            "openCents": 12000
+            "openCents": 12000,
+            "vatIdProof": null,
+            "vatIdRisk": null
           },
           "replayed": true
         }
@@ -438,7 +442,133 @@
               "name": "Standard"
             },
             "paidCents": 0,
-            "openCents": 10000
+            "openCents": 10000,
+            "vatIdProof": {
+              "checkedOn": "2026-09-26",
+              "source": "vies",
+              "level": 1,
+              "code": "248H248H"
+            },
+            "vatIdRisk": null
+          },
+          "replayed": false,
+          "notice": [
+            {
+              "code": "recapitulative_statement_due",
+              "message": "Für diesen Umsatz ist eine Zusammenfassende Meldung abzugeben (Art. 21 Abs. 3 UStG). Sie ist seit 2020 materielle Voraussetzung — ohne sie fällt die Steuerfreiheit der ig. Lieferung bzw. der Übergang der Steuerschuld nachträglich weg. Ob sie abgegeben wurde, sieht Kasseneck nicht."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "error_vat_id_check_pending",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "i-eu-offen",
+        "customerId": "k_eu_offen",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Ware",
+            "quantity": 1,
+            "unitPriceCents": 10000,
+            "vatRate": 0,
+            "kind": "goods"
+          }
+        ],
+        "dryRun": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die UID-Prüfung hat noch kein Ergebnis.",
+        "data": {
+          "code": "vat_id_check_pending",
+          "retryAfter": 600
+        },
+        "code": "vat_id_check_pending"
+      }
+    },
+    {
+      "name": "issue_final_vat_id_risk",
+      "endpoint": "issueInvoice",
+      "path": "/v3/issueInvoice",
+      "params": {
+        "idempotencyKey": "i-eu-offen",
+        "customerId": "k_eu_offen",
+        "priceMode": "net",
+        "serviceStart": "2026-09-26",
+        "items": [
+          {
+            "description": "Ware",
+            "quantity": 1,
+            "unitPriceCents": 10000,
+            "vatRate": 0,
+            "kind": "goods"
+          }
+        ],
+        "dryRun": false,
+        "acceptVatIdRisk": true
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto4",
+            "number": "0003",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_eu_offen",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 0,
+              "grossCents": 10000,
+              "byRate": [
+                {
+                  "rate": 0,
+                  "netCents": 10000,
+                  "vatCents": 0,
+                  "grossCents": 10000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 10000,
+            "vatIdProof": null,
+            "vatIdRisk": {
+              "acceptedOn": "2026-09-26"
+            }
           },
           "replayed": false,
           "notice": [
@@ -546,6 +676,8 @@
             },
             "paidCents": 0,
             "openCents": 12000,
+            "vatIdProof": null,
+            "vatIdRisk": null,
             "items": [
               {
                 "description": "Beratung",
@@ -648,6 +780,13 @@
             },
             "paidCents": 0,
             "openCents": 10000,
+            "vatIdProof": {
+              "checkedOn": "2026-09-26",
+              "source": "vies",
+              "level": 1,
+              "code": "248H248H"
+            },
+            "vatIdRisk": null,
             "items": [
               {
                 "description": "Ware",
@@ -723,8 +862,8 @@
         "message": "",
         "data": {
           "creditNote": {
-            "id": "auto4",
-            "number": "0003",
+            "id": "auto6",
+            "number": "0004",
             "docType": "credit_note",
             "status": "final",
             "invoiceDate": "2026-09-26",
@@ -760,7 +899,9 @@
               "name": "Standard"
             },
             "paidCents": 0,
-            "openCents": 1200
+            "openCents": 1200,
+            "vatIdProof": null,
+            "vatIdRisk": null
           },
           "remainingCents": 10800,
           "replayed": false
@@ -822,6 +963,8 @@
             },
             "paidCents": 0,
             "openCents": 12000,
+            "vatIdProof": null,
+            "vatIdRisk": null,
             "items": [
               {
                 "description": "Beratung",
@@ -863,8 +1006,8 @@
             "related": null,
             "creditNotes": [
               {
-                "id": "auto4",
-                "number": "0003",
+                "id": "auto6",
+                "number": "0004",
                 "grossCents": 1200
               }
             ],
@@ -905,8 +1048,8 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto5",
-            "number": "0004",
+            "id": "auto7",
+            "number": "0005",
             "docType": "invoice",
             "status": "final",
             "invoiceDate": "2026-09-26",
@@ -942,7 +1085,9 @@
               "name": "Standard"
             },
             "paidCents": 0,
-            "openCents": 12000
+            "openCents": 12000,
+            "vatIdProof": null,
+            "vatIdRisk": null
           },
           "replayed": false
         }
@@ -954,7 +1099,7 @@
       "path": "/v3/cancelInvoice",
       "params": {
         "idempotencyKey": "gu-2",
-        "invoiceId": "auto5",
+        "invoiceId": "auto7",
         "reason": "cancellation"
       },
       "httpStatus": 200,
@@ -967,8 +1112,8 @@
         "message": "",
         "data": {
           "creditNote": {
-            "id": "auto6",
-            "number": "0005",
+            "id": "auto8",
+            "number": "0006",
             "docType": "credit_note",
             "status": "final",
             "invoiceDate": "2026-09-26",
@@ -1004,10 +1149,12 @@
               "name": "Standard"
             },
             "paidCents": 0,
-            "openCents": 12000
+            "openCents": 12000,
+            "vatIdProof": null,
+            "vatIdRisk": null
           },
           "original": {
-            "id": "auto5",
+            "id": "auto7",
             "status": "cancelled"
           },
           "originalPaidCents": 0,
@@ -1072,7 +1219,14 @@
               "name": "Standard"
             },
             "paidCents": 5000,
-            "openCents": 5000
+            "openCents": 5000,
+            "vatIdProof": {
+              "checkedOn": "2026-09-26",
+              "source": "vies",
+              "level": 1,
+              "code": "248H248H"
+            },
+            "vatIdRisk": null
           },
           "payment": {
             "id": "1111111111111111",
@@ -1115,68 +1269,8 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto7",
-            "number": "0006",
-            "docType": "invoice",
-            "status": "final",
-            "invoiceDate": "2026-09-26",
-            "dueDate": "2026-10-10",
-            "customerId": "k_at",
-            "totals": {
-              "netCents": 10000,
-              "vatCents": 2000,
-              "grossCents": 12000,
-              "byRate": [
-                {
-                  "rate": 20,
-                  "netCents": 10000,
-                  "vatCents": 2000,
-                  "grossCents": 12000
-                }
-              ]
-            },
-            "einvoice": {
-              "level": "full",
-              "formats": [
-                "UBL",
-                "Factur-X"
-              ],
-              "missing": []
-            },
-            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
-            "statusPassword": "EXAM-5B1F",
-            "metadata": {},
-            "language": "de",
-            "brand": {
-              "id": null,
-              "name": "Standard"
-            },
-            "paidCents": 0,
-            "openCents": 12000
-          },
-          "replayed": false
-        }
-      }
-    },
-    {
-      "name": "get_invoice_written_off",
-      "endpoint": "getInvoice",
-      "path": "/v3/getInvoice",
-      "params": {
-        "invoiceId": "auto7"
-      },
-      "httpStatus": 200,
-      "headers": {
-        "Kasseneck-Api-Version": "v3",
-        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
-      },
-      "response": {
-        "status": "success",
-        "message": "",
-        "data": {
-          "invoice": {
-            "id": "auto7",
-            "number": "0006",
+            "id": "auto9",
+            "number": "0007",
             "docType": "invoice",
             "status": "final",
             "invoiceDate": "2026-09-26",
@@ -1213,6 +1307,70 @@
             },
             "paidCents": 0,
             "openCents": 12000,
+            "vatIdProof": null,
+            "vatIdRisk": null
+          },
+          "replayed": false
+        }
+      }
+    },
+    {
+      "name": "get_invoice_written_off",
+      "endpoint": "getInvoice",
+      "path": "/v3/getInvoice",
+      "params": {
+        "invoiceId": "auto9"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "invoice": {
+            "id": "auto9",
+            "number": "0007",
+            "docType": "invoice",
+            "status": "final",
+            "invoiceDate": "2026-09-26",
+            "dueDate": "2026-10-10",
+            "customerId": "k_at",
+            "totals": {
+              "netCents": 10000,
+              "vatCents": 2000,
+              "grossCents": 12000,
+              "byRate": [
+                {
+                  "rate": 20,
+                  "netCents": 10000,
+                  "vatCents": 2000,
+                  "grossCents": 12000
+                }
+              ]
+            },
+            "einvoice": {
+              "level": "full",
+              "formats": [
+                "UBL",
+                "Factur-X"
+              ],
+              "missing": []
+            },
+            "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+            "statusPassword": "EXAM-5B1F",
+            "metadata": {},
+            "language": "de",
+            "brand": {
+              "id": null,
+              "name": "Standard"
+            },
+            "paidCents": 0,
+            "openCents": 12000,
+            "vatIdProof": null,
+            "vatIdRisk": null,
             "items": [
               {
                 "description": "Beratung",
@@ -1313,7 +1471,9 @@
                 "name": "Standard"
               },
               "paidCents": 0,
-              "openCents": 12000
+              "openCents": 12000,
+              "vatIdProof": null,
+              "vatIdRisk": null
             },
             {
               "id": "auto2",
@@ -1353,11 +1513,62 @@
                 "name": "Standard"
               },
               "paidCents": 5000,
-              "openCents": 5000
+              "openCents": 5000,
+              "vatIdProof": {
+                "checkedOn": "2026-09-26",
+                "source": "vies",
+                "level": 1,
+                "code": "248H248H"
+              },
+              "vatIdRisk": null
             },
             {
               "id": "auto4",
               "number": "0003",
+              "docType": "invoice",
+              "status": "final",
+              "invoiceDate": "2026-09-26",
+              "dueDate": "2026-10-10",
+              "customerId": "k_eu_offen",
+              "totals": {
+                "netCents": 10000,
+                "vatCents": 0,
+                "grossCents": 10000,
+                "byRate": [
+                  {
+                    "rate": 0,
+                    "netCents": 10000,
+                    "vatCents": 0,
+                    "grossCents": 10000
+                  }
+                ]
+              },
+              "einvoice": {
+                "level": "full",
+                "formats": [
+                  "UBL",
+                  "Factur-X"
+                ],
+                "missing": []
+              },
+              "statusUrl": "https://mein.kasseneck.at/r/00000000000000000000000000000000000000002f7a9406",
+              "statusPassword": "EXAM-5B1F",
+              "metadata": {},
+              "language": "de",
+              "brand": {
+                "id": null,
+                "name": "Standard"
+              },
+              "paidCents": 0,
+              "openCents": 10000,
+              "vatIdProof": null,
+              "vatIdRisk": {
+                "acceptedOn": "2026-09-26"
+              }
+            },
+            {
+              "id": "auto6",
+              "number": "0004",
               "docType": "credit_note",
               "status": "final",
               "invoiceDate": "2026-09-26",
@@ -1393,11 +1604,13 @@
                 "name": "Standard"
               },
               "paidCents": 0,
-              "openCents": 1200
+              "openCents": 1200,
+              "vatIdProof": null,
+              "vatIdRisk": null
             },
             {
-              "id": "auto5",
-              "number": "0004",
+              "id": "auto7",
+              "number": "0005",
               "docType": "invoice",
               "status": "cancelled",
               "invoiceDate": "2026-09-26",
@@ -1433,11 +1646,13 @@
                 "name": "Standard"
               },
               "paidCents": 0,
-              "openCents": 12000
+              "openCents": 12000,
+              "vatIdProof": null,
+              "vatIdRisk": null
             },
             {
-              "id": "auto6",
-              "number": "0005",
+              "id": "auto8",
+              "number": "0006",
               "docType": "credit_note",
               "status": "final",
               "invoiceDate": "2026-09-26",
@@ -1473,11 +1688,13 @@
                 "name": "Standard"
               },
               "paidCents": 0,
-              "openCents": 12000
+              "openCents": 12000,
+              "vatIdProof": null,
+              "vatIdRisk": null
             },
             {
-              "id": "auto7",
-              "number": "0006",
+              "id": "auto9",
+              "number": "0007",
               "docType": "invoice",
               "status": "final",
               "invoiceDate": "2026-09-26",
@@ -1513,7 +1730,9 @@
                 "name": "Standard"
               },
               "paidCents": 0,
-              "openCents": 12000
+              "openCents": 12000,
+              "vatIdProof": null,
+              "vatIdRisk": null
             }
           ],
           "nextCursor": null
@@ -1538,8 +1757,8 @@
         "data": {
           "invoices": [
             {
-              "id": "auto4",
-              "number": "0003",
+              "id": "auto6",
+              "number": "0004",
               "docType": "credit_note",
               "status": "final",
               "invoiceDate": "2026-09-26",
@@ -1575,11 +1794,13 @@
                 "name": "Standard"
               },
               "paidCents": 0,
-              "openCents": 1200
+              "openCents": 1200,
+              "vatIdProof": null,
+              "vatIdRisk": null
             },
             {
-              "id": "auto6",
-              "number": "0005",
+              "id": "auto8",
+              "number": "0006",
               "docType": "credit_note",
               "status": "final",
               "invoiceDate": "2026-09-26",
@@ -1615,7 +1836,9 @@
                 "name": "Standard"
               },
               "paidCents": 0,
-              "openCents": 12000
+              "openCents": 12000,
+              "vatIdProof": null,
+              "vatIdRisk": null
             }
           ],
           "nextCursor": null

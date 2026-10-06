@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "0684ee4733a672313c1532837424978086b8da43b0b2cc64154d396ad0a047be",
-    "inputsSha256": "4fec6d58dd069e6d980bcab1d9883380d06e6fe8ba2a5e0f05d772b7720955c2",
-    "backendPackage": "@kreiseck/kasseneck-api@0.32.2",
+    "sha256": "364d5c9d290532b0a41d1077ee9fdd1b78f69a1372e98d8bad405e5893b0ad53",
+    "inputsSha256": "b9dd3d819a4be22c35a201a788e7fcf947d90b6af7d9e41d3d74be3b48f8aa8e",
+    "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -54,6 +54,35 @@
       "zip": "11000",
       "country": "CZ",
       "uid": "CZ12345678",
+      "isAuthority": false,
+      "language": null,
+      "letztePruefung": {
+        "pruefungId": "p_eu_heute",
+        "ergebnis": "gueltig",
+        "quelle": "vies",
+        "stufe": 1,
+        "wienerTag": "2026-09-26",
+        "fingerabdruck": "7a370b3dda7556c00e5a37b5a2951467739ecccaa4ef8a497beed58b91c911d0",
+        "zeitpunktMs": 1790406000000
+      },
+      "uidNachweis": {
+        "pruefungId": "p_eu_heute",
+        "ergebnis": "gueltig",
+        "quelle": "vies",
+        "stufe": 1,
+        "wienerTag": "2026-09-26",
+        "fingerabdruck": "7a370b3dda7556c00e5a37b5a2951467739ecccaa4ef8a497beed58b91c911d0",
+        "zeitpunktMs": 1790406000000
+      }
+    },
+    "users/test_welt1/customers/k_eu_offen": {
+      "type": "company",
+      "name": "Kleiderservice Nadler KG",
+      "street": "Musterweg 2",
+      "city": "Berlin",
+      "zip": "10115",
+      "country": "DE",
+      "uid": "DE314159262",
       "isAuthority": false,
       "language": null
     },
@@ -272,6 +301,20 @@
         "absenderName": "Bäckerei Welt",
         "fusszeile": []
       },
+      "uidNachweis": {
+        "pruefungId": "p_eu_heute",
+        "quelle": "vies",
+        "stufe": 1,
+        "ergebnis": "gueltig",
+        "zeitpunktMs": 1790406000000,
+        "wienerTag": "2026-09-26",
+        "konsultationsnummer": null,
+        "abgleich": {
+          "name": "unbekannt",
+          "adresse": "unbekannt"
+        },
+        "pruefcode": "248H248H"
+      },
       "created_at": "2026-09-26T08:00:00.000Z",
       "updated_at": "2026-09-26T08:00:00.000Z",
       "payments": [
@@ -291,6 +334,119 @@
       ]
     },
     "users/test_welt1/invoices/auto4": {
+      "docType": "RE",
+      "invoiceDate": "2026-09-26",
+      "serviceStart": "2026-09-26",
+      "serviceEnd": null,
+      "paymentTermDays": 14,
+      "customerId": "k_eu_offen",
+      "customer": {
+        "name": "Kleiderservice Nadler KG",
+        "type": "company",
+        "street": "Musterweg 2",
+        "houseNumber": null,
+        "zip": "10115",
+        "city": "Berlin",
+        "country": "DE",
+        "uid": "DE314159262",
+        "shortCode": null,
+        "email": null,
+        "isAuthority": false
+      },
+      "taxScheme": "igLieferung",
+      "reverseChargeReason": null,
+      "taxCountry": "AT",
+      "priceMode": "net",
+      "items": [
+        {
+          "id": "i1",
+          "description": "Ware",
+          "subtitle": "",
+          "quantity": 1,
+          "unit": "piece",
+          "kind": "goods",
+          "unitPrice": 100,
+          "vatRate": 0,
+          "discountPct": 0
+        }
+      ],
+      "intro": null,
+      "note": null,
+      "orderReference": null,
+      "verwendungszweck": null,
+      "girocode": false,
+      "tracking": false,
+      "relatedInvoiceId": null,
+      "relatedNumber": null,
+      "relatedDate": null,
+      "cancelsOriginal": false,
+      "metadata": {},
+      "source": "api",
+      "language": "de",
+      "markeId": null,
+      "idempotencyKey": "i-eu-offen",
+      "rechenweg": 2,
+      "status": "final",
+      "number": "0003",
+      "totals": {
+        "totalNet": 100,
+        "totalVat": 0,
+        "totalGross": 100
+      },
+      "totalsCents": {
+        "netCents": 10000,
+        "vatCents": 0,
+        "grossCents": 10000,
+        "byRate": [
+          {
+            "rateBp": 0,
+            "netCents": 10000,
+            "vatCents": 0,
+            "grossCents": 10000
+          }
+        ],
+        "lines": [
+          {
+            "netCents": 10000,
+            "grossCents": 10000,
+            "rateBp": 0
+          }
+        ],
+        "weg": "2",
+        "quelle": "festschreiben"
+      },
+      "internal_seq": 3,
+      "einvoice": {
+        "level": "full",
+        "formats": [
+          "UBL",
+          "Factur-X"
+        ],
+        "missing": []
+      },
+      "finalized_at": "2026-09-26T08:00:00.000Z",
+      "public_token": "00000000000000000000000000000000000000002f7a9406",
+      "public_password": "EXAM-5B1F",
+      "marke": {
+        "id": null,
+        "name": "Standard",
+        "logoUrl": null,
+        "logoAlt": "Bäckerei Welt",
+        "farbe": "#17150F",
+        "absenderName": "Bäckerei Welt",
+        "fusszeile": []
+      },
+      "uidRisiko": {
+        "bestaetigtVon": "test_welt1",
+        "bestaetigtAm": 1790409600000,
+        "text": "Ich habe die UID-Nummer selbst geprüft und trage das Risiko: Ist sie ungültig, schulde ich die Umsatzsteuer für diese Rechnung selbst.",
+        "weg": "api",
+        "nachpruefenBis": 1793005200000
+      },
+      "created_at": "2026-09-26T08:00:00.000Z",
+      "updated_at": "2026-09-26T08:00:00.000Z"
+    },
+    "users/test_welt1/invoices/auto6": {
       "docType": "GU",
       "invoiceDate": "2026-09-26",
       "serviceStart": "2026-09-26",
@@ -344,7 +500,7 @@
       "idempotencyKey": "gu-1",
       "rechenweg": 2,
       "status": "final",
-      "number": "0003",
+      "number": "0004",
       "totals": {
         "totalNet": 10,
         "totalVat": 2,
@@ -372,249 +528,7 @@
         "weg": "2",
         "quelle": "festschreiben"
       },
-      "internal_seq": 3,
-      "einvoice": {
-        "level": "full",
-        "formats": [
-          "UBL",
-          "Factur-X"
-        ],
-        "missing": []
-      },
-      "finalized_at": "2026-09-26T08:00:00.000Z",
-      "public_token": "00000000000000000000000000000000000000002f7a9406",
-      "public_password": "EXAM-5B1F",
-      "marke": {
-        "id": null,
-        "name": "Standard",
-        "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
-        "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
-        "fusszeile": []
-      },
-      "created_at": "2026-09-26T08:00:00.000Z",
-      "updated_at": "2026-09-26T08:00:00.000Z"
-    },
-    "users/test_welt1/invoices/auto5": {
-      "docType": "RE",
-      "invoiceDate": "2026-09-26",
-      "serviceStart": "2026-09-26",
-      "serviceEnd": null,
-      "paymentTermDays": 14,
-      "customerId": "k_at",
-      "customer": {
-        "name": "Baecker Wien GmbH",
-        "type": "company",
-        "street": "Hauptplatz 1",
-        "houseNumber": null,
-        "zip": "1010",
-        "city": "Wien",
-        "country": "AT",
-        "uid": "ATU87654321",
-        "shortCode": null,
-        "email": null,
-        "isAuthority": false
-      },
-      "taxScheme": "normal",
-      "reverseChargeReason": null,
-      "taxCountry": "AT",
-      "priceMode": "net",
-      "items": [
-        {
-          "id": "i1",
-          "description": "Beratung",
-          "subtitle": "",
-          "quantity": 2,
-          "unit": "piece",
-          "kind": "service",
-          "unitPrice": 50,
-          "vatRate": 20,
-          "discountPct": 0
-        }
-      ],
-      "intro": null,
-      "note": null,
-      "orderReference": null,
-      "verwendungszweck": null,
-      "girocode": false,
-      "tracking": false,
-      "relatedInvoiceId": null,
-      "relatedNumber": null,
-      "relatedDate": null,
-      "cancelsOriginal": false,
-      "metadata": {},
-      "source": "api",
-      "language": "de",
-      "markeId": null,
-      "idempotencyKey": "i-storno",
-      "rechenweg": 2,
-      "status": "cancelled",
-      "number": "0004",
-      "totals": {
-        "totalNet": 100,
-        "totalVat": 20,
-        "totalGross": 120
-      },
-      "totalsCents": {
-        "netCents": 10000,
-        "vatCents": 2000,
-        "grossCents": 12000,
-        "byRate": [
-          {
-            "rateBp": 2000,
-            "netCents": 10000,
-            "vatCents": 2000,
-            "grossCents": 12000
-          }
-        ],
-        "lines": [
-          {
-            "netCents": 10000,
-            "grossCents": 12000,
-            "rateBp": 2000
-          }
-        ],
-        "weg": "2",
-        "quelle": "festschreiben"
-      },
       "internal_seq": 4,
-      "einvoice": {
-        "level": "full",
-        "formats": [
-          "UBL",
-          "Factur-X"
-        ],
-        "missing": []
-      },
-      "finalized_at": "2026-09-26T08:00:00.000Z",
-      "public_token": "00000000000000000000000000000000000000002f7a9406",
-      "public_password": "EXAM-5B1F",
-      "marke": {
-        "id": null,
-        "name": "Standard",
-        "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
-        "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
-        "fusszeile": []
-      },
-      "created_at": "2026-09-26T08:00:00.000Z",
-      "updated_at": "2026-09-26T08:00:00.000Z",
-      "creditedCents": {
-        "total": 12000,
-        "byRate": {
-          "20": 12000
-        }
-      },
-      "cancelled_at": "2026-09-26T08:00:00.000Z",
-      "cancelled_by": "auto6"
-    },
-    "users/test_welt1/invoices/auto6": {
-      "docType": "GU",
-      "invoiceDate": "2026-09-26",
-      "serviceStart": "2026-09-26",
-      "serviceEnd": null,
-      "paymentTermDays": 0,
-      "customerId": "k_at",
-      "customer": {
-        "name": "Baecker Wien GmbH",
-        "type": "company",
-        "street": "Hauptplatz 1",
-        "houseNumber": null,
-        "zip": "1010",
-        "city": "Wien",
-        "country": "AT",
-        "uid": "ATU87654321",
-        "shortCode": null,
-        "email": null,
-        "isAuthority": false
-      },
-      "taxScheme": "normal",
-      "reverseChargeReason": null,
-      "taxCountry": "AT",
-      "priceMode": "net",
-      "items": [
-        {
-          "id": "i1",
-          "description": "Beratung",
-          "subtitle": "",
-          "quantity": 2,
-          "unit": "piece",
-          "kind": "service",
-          "unitPrice": 50,
-          "vatRate": 20,
-          "discountPct": 0
-        }
-      ],
-      "intro": "Grund: Stornierung",
-      "note": null,
-      "orderReference": null,
-      "verwendungszweck": null,
-      "girocode": false,
-      "tracking": false,
-      "relatedInvoiceId": "auto5",
-      "relatedNumber": "0004",
-      "relatedDate": "2026-09-26",
-      "cancelsOriginal": true,
-      "vollstorno": true,
-      "vollstornoVon": "auto5",
-      "totalsCentsKopie": {
-        "netCents": 10000,
-        "vatCents": 2000,
-        "grossCents": 12000,
-        "byRate": [
-          {
-            "rateBp": 2000,
-            "netCents": 10000,
-            "vatCents": 2000,
-            "grossCents": 12000
-          }
-        ],
-        "lines": [
-          {
-            "netCents": 10000,
-            "grossCents": 12000,
-            "rateBp": 2000
-          }
-        ]
-      },
-      "creditNoteReason": "cancellation",
-      "metadata": {},
-      "source": "api",
-      "language": "de",
-      "idempotencyKey": "gu-2",
-      "rechenweg": 2,
-      "status": "final",
-      "number": "0005",
-      "totals": {
-        "totalNet": 100,
-        "totalVat": 20,
-        "totalGross": 120
-      },
-      "totalsCents": {
-        "netCents": 10000,
-        "vatCents": 2000,
-        "grossCents": 12000,
-        "byRate": [
-          {
-            "rateBp": 2000,
-            "netCents": 10000,
-            "vatCents": 2000,
-            "grossCents": 12000
-          }
-        ],
-        "lines": [
-          {
-            "netCents": 10000,
-            "grossCents": 12000,
-            "rateBp": 2000
-          }
-        ],
-        "weg": "gespeichert",
-        "quelle": "festschreiben"
-      },
-      "internal_seq": 5,
       "einvoice": {
         "level": "full",
         "formats": [
@@ -689,10 +603,10 @@
       "source": "api",
       "language": "de",
       "markeId": null,
-      "idempotencyKey": "i-abschreibung",
+      "idempotencyKey": "i-storno",
       "rechenweg": 2,
-      "status": "final",
-      "number": "0006",
+      "status": "cancelled",
+      "number": "0005",
       "totals": {
         "totalNet": 100,
         "totalVat": 20,
@@ -720,7 +634,249 @@
         "weg": "2",
         "quelle": "festschreiben"
       },
+      "internal_seq": 5,
+      "einvoice": {
+        "level": "full",
+        "formats": [
+          "UBL",
+          "Factur-X"
+        ],
+        "missing": []
+      },
+      "finalized_at": "2026-09-26T08:00:00.000Z",
+      "public_token": "00000000000000000000000000000000000000002f7a9406",
+      "public_password": "EXAM-5B1F",
+      "marke": {
+        "id": null,
+        "name": "Standard",
+        "logoUrl": null,
+        "logoAlt": "Bäckerei Welt",
+        "farbe": "#17150F",
+        "absenderName": "Bäckerei Welt",
+        "fusszeile": []
+      },
+      "created_at": "2026-09-26T08:00:00.000Z",
+      "updated_at": "2026-09-26T08:00:00.000Z",
+      "creditedCents": {
+        "total": 12000,
+        "byRate": {
+          "20": 12000
+        }
+      },
+      "cancelled_at": "2026-09-26T08:00:00.000Z",
+      "cancelled_by": "auto8"
+    },
+    "users/test_welt1/invoices/auto8": {
+      "docType": "GU",
+      "invoiceDate": "2026-09-26",
+      "serviceStart": "2026-09-26",
+      "serviceEnd": null,
+      "paymentTermDays": 0,
+      "customerId": "k_at",
+      "customer": {
+        "name": "Baecker Wien GmbH",
+        "type": "company",
+        "street": "Hauptplatz 1",
+        "houseNumber": null,
+        "zip": "1010",
+        "city": "Wien",
+        "country": "AT",
+        "uid": "ATU87654321",
+        "shortCode": null,
+        "email": null,
+        "isAuthority": false
+      },
+      "taxScheme": "normal",
+      "reverseChargeReason": null,
+      "taxCountry": "AT",
+      "priceMode": "net",
+      "items": [
+        {
+          "id": "i1",
+          "description": "Beratung",
+          "subtitle": "",
+          "quantity": 2,
+          "unit": "piece",
+          "kind": "service",
+          "unitPrice": 50,
+          "vatRate": 20,
+          "discountPct": 0
+        }
+      ],
+      "intro": "Grund: Stornierung",
+      "note": null,
+      "orderReference": null,
+      "verwendungszweck": null,
+      "girocode": false,
+      "tracking": false,
+      "relatedInvoiceId": "auto7",
+      "relatedNumber": "0005",
+      "relatedDate": "2026-09-26",
+      "cancelsOriginal": true,
+      "vollstorno": true,
+      "vollstornoVon": "auto7",
+      "totalsCentsKopie": {
+        "netCents": 10000,
+        "vatCents": 2000,
+        "grossCents": 12000,
+        "byRate": [
+          {
+            "rateBp": 2000,
+            "netCents": 10000,
+            "vatCents": 2000,
+            "grossCents": 12000
+          }
+        ],
+        "lines": [
+          {
+            "netCents": 10000,
+            "grossCents": 12000,
+            "rateBp": 2000
+          }
+        ]
+      },
+      "creditNoteReason": "cancellation",
+      "metadata": {},
+      "source": "api",
+      "language": "de",
+      "idempotencyKey": "gu-2",
+      "rechenweg": 2,
+      "status": "final",
+      "number": "0006",
+      "totals": {
+        "totalNet": 100,
+        "totalVat": 20,
+        "totalGross": 120
+      },
+      "totalsCents": {
+        "netCents": 10000,
+        "vatCents": 2000,
+        "grossCents": 12000,
+        "byRate": [
+          {
+            "rateBp": 2000,
+            "netCents": 10000,
+            "vatCents": 2000,
+            "grossCents": 12000
+          }
+        ],
+        "lines": [
+          {
+            "netCents": 10000,
+            "grossCents": 12000,
+            "rateBp": 2000
+          }
+        ],
+        "weg": "gespeichert",
+        "quelle": "festschreiben"
+      },
       "internal_seq": 6,
+      "einvoice": {
+        "level": "full",
+        "formats": [
+          "UBL",
+          "Factur-X"
+        ],
+        "missing": []
+      },
+      "finalized_at": "2026-09-26T08:00:00.000Z",
+      "public_token": "00000000000000000000000000000000000000002f7a9406",
+      "public_password": "EXAM-5B1F",
+      "marke": {
+        "id": null,
+        "name": "Standard",
+        "logoUrl": null,
+        "logoAlt": "Bäckerei Welt",
+        "farbe": "#17150F",
+        "absenderName": "Bäckerei Welt",
+        "fusszeile": []
+      },
+      "created_at": "2026-09-26T08:00:00.000Z",
+      "updated_at": "2026-09-26T08:00:00.000Z"
+    },
+    "users/test_welt1/invoices/auto9": {
+      "docType": "RE",
+      "invoiceDate": "2026-09-26",
+      "serviceStart": "2026-09-26",
+      "serviceEnd": null,
+      "paymentTermDays": 14,
+      "customerId": "k_at",
+      "customer": {
+        "name": "Baecker Wien GmbH",
+        "type": "company",
+        "street": "Hauptplatz 1",
+        "houseNumber": null,
+        "zip": "1010",
+        "city": "Wien",
+        "country": "AT",
+        "uid": "ATU87654321",
+        "shortCode": null,
+        "email": null,
+        "isAuthority": false
+      },
+      "taxScheme": "normal",
+      "reverseChargeReason": null,
+      "taxCountry": "AT",
+      "priceMode": "net",
+      "items": [
+        {
+          "id": "i1",
+          "description": "Beratung",
+          "subtitle": "",
+          "quantity": 2,
+          "unit": "piece",
+          "kind": "service",
+          "unitPrice": 50,
+          "vatRate": 20,
+          "discountPct": 0
+        }
+      ],
+      "intro": null,
+      "note": null,
+      "orderReference": null,
+      "verwendungszweck": null,
+      "girocode": false,
+      "tracking": false,
+      "relatedInvoiceId": null,
+      "relatedNumber": null,
+      "relatedDate": null,
+      "cancelsOriginal": false,
+      "metadata": {},
+      "source": "api",
+      "language": "de",
+      "markeId": null,
+      "idempotencyKey": "i-abschreibung",
+      "rechenweg": 2,
+      "status": "final",
+      "number": "0007",
+      "totals": {
+        "totalNet": 100,
+        "totalVat": 20,
+        "totalGross": 120
+      },
+      "totalsCents": {
+        "netCents": 10000,
+        "vatCents": 2000,
+        "grossCents": 12000,
+        "byRate": [
+          {
+            "rateBp": 2000,
+            "netCents": 10000,
+            "vatCents": 2000,
+            "grossCents": 12000
+          }
+        ],
+        "lines": [
+          {
+            "netCents": 10000,
+            "grossCents": 12000,
+            "rateBp": 2000
+          }
+        ],
+        "weg": "2",
+        "quelle": "festschreiben"
+      },
+      "internal_seq": 7,
       "einvoice": {
         "level": "full",
         "formats": [

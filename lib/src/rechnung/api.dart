@@ -96,6 +96,17 @@ class InvoiceApi {
 
   // ---- Rechnungen ---------------------------------------------------------------
 
+  /// Stellt eine Rechnung aus. Positionen mit
+  /// [IssueInvoiceItemInput.reservationId] loesen eine Reservierung der
+  /// Lager-API ein.
+  ///
+  /// Eine Rechnung ohne Steuer, die auf der UID des Kunden beruht (ig.
+  /// Lieferung, Reverse Charge), entsteht nur mit einem Ergebnis der
+  /// UID-Pruefung (FinanzOnline, sonst VIES) am Tag des Ausstellens. Am Code
+  /// entscheiden: `vat_id_check_pending` heisst spaeter mit demselben
+  /// `idempotencyKey` wiederholen (`details['retryAfter']` Sekunden) oder mit
+  /// [IssueInvoiceRequest.acceptVatIdRisk] trotzdem ausstellen;
+  /// `vat_id_invalid` heisst so nicht ausstellen.
   Future<IssueResult> issueInvoice(IssueInvoiceRequest request) async {
     const name = Aufrufe.issueInvoice;
     if (request.dryRun == true) {

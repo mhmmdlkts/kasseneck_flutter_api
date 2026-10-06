@@ -1,16 +1,26 @@
 /// Die Aufrufe der Lager-API: Artikel, Standorte, Bestand und Bewegungen
-/// lesen, Konto-Webhooks verwalten (Backend Stufe 5a) – Zwilling von
+/// lesen, Konto-Webhooks verwalten (Backend Stufe 5a), Artikel anlegen und
+/// aendern, Bestand buchen und Ware reservieren (Stufe 5b) – Zwilling von
 /// `createInventoryClient` im JS-Paket `@kreiseck/kasseneck-api/inventory`.
 ///
 /// **Geprueft wird hier nur, was ohne Netz sicher falsch ist** (leere Kennung,
 /// `limit` ausserhalb 1–200, eine Aenderung ohne Feld, ein Code zugleich mit
-/// einer eigenen Kennung). Alles Fachliche prueft der Server und meldet es als
-/// `validation` mit `details['errors']`; zwei Pruefungen hiessen zwei
-/// Wahrheiten. Eine abgewiesene Anfrage geht nie hinaus.
+/// einer eigenen Kennung, ein ungueltiger `idempotencyKey`; mehr in
+/// `schreiben.dart`). Alles Fachliche prueft der Server und meldet es als
+/// `validation` mit `details['errors']` oder mit seinem Code; zwei Pruefungen
+/// hiessen zwei Wahrheiten. Eine abgewiesene Anfrage geht nie hinaus.
 ///
 /// Lesen hat keine Wirkung: nach einem Zeitlimit darf derselbe Aufruf
 /// wiederholt werden. Bei `rate_limited` vorher [inventoryRetryAfterSec]
 /// warten.
+///
+/// **Schreiben** wird nie von selbst wiederholt. Nach einem Zeitlimit oder
+/// Netzfehler (`KasseneckHttpError`, Grund `timeout` bzw. `network`) ist offen,
+/// ob der Aufruf beim Server gewirkt hat: dann denselben Aufruf mit
+/// **demselben** `idempotencyKey` noch einmal senden. Er wirkt genau einmal und
+/// liefert die gespeicherte Antwort; ein neuer Schluessel buchte ein zweites
+/// Mal. Wie im JS-Zwilling traegt ein solcher Fehler hier den Ausgang
+/// `rejected`; der Schluessel, nicht der Ausgang, macht die Wiederholung sicher.
 library;
 
 import 'package:http/http.dart' as http;
@@ -20,7 +30,9 @@ import '../kasse/lager.dart' show StockValue;
 import '../register/fehler.dart';
 import 'fehler.dart';
 import 'lesen.dart';
+import 'anfragen.dart';
 import 'modelle.dart';
+import 'schreiben.dart';
 import 'transport.dart';
 import 'vertrag.dart';
 
@@ -53,7 +65,7 @@ class InventoryClient {
 
   Future<Article> getArticle(String articleId) async {
     const name = Aufrufe.getArticle;
-    final daten = await _transport.call(name, {'articleId': _kennung(name, 'articleId', articleId)});
+    final daten = await _transport.call(name, {'articleId': kennung(name, 'articleId', articleId)});
     return artikel(const Ort(name, 'article'), daten['article']);
   }
 
@@ -124,10 +136,10 @@ class InventoryClient {
     }
     final params = extern
         ? {
-            'externalSystem': _kennung(name, 'externalSystem', externalSystem),
-            'externalId': _kennung(name, 'externalId', externalId),
+            'externalSystem': kennung(name, 'externalSystem', externalSystem),
+            'externalId': kennung(name, 'externalId', externalId),
           }
-        : {'code': _kennung(name, 'code', code)};
+        : {'code': kennung(name, 'code', code)};
     final daten = await _transport.call(name, params);
     return artikel(const Ort(name, 'article'), daten['article']);
   }
@@ -144,7 +156,7 @@ class InventoryClient {
   /// Bestand eines Artikels je Standort.
   Future<StockResult> getStock(String articleId) async {
     const name = Aufrufe.getStock;
-    final daten = await _transport.call(name, {'articleId': _kennung(name, 'articleId', articleId)});
+    final daten = await _transport.call(name, {'articleId': kennung(name, 'articleId', articleId)});
     return StockResult(stock: liste(name, daten, 'stock', bestand), values: _werte(name, daten));
   }
 
@@ -267,7 +279,7 @@ class InventoryClient {
     String? description,
   }) async {
     const name = Aufrufe.createWebhook;
-    final adresse = _kennung(name, 'url', url);
+    final adresse = kennung(name, 'url', url);
     if (events.isEmpty) {
       throw const KasseneckValidationError(name, 'events ist leer; ein Webhook ohne Ereignis bekaeme nie etwas', 'request');
     }
@@ -286,7 +298,7 @@ class InventoryClient {
     bool removeDescription = false,
   }) async {
     const name = Aufrufe.updateWebhook;
-    final id = _kennung(name, 'webhookId', webhookId);
+    final id = kennung(name, 'webhookId', webhookId);
     if (removeDescription && description != null) {
       throw const KasseneckValidationError(name, 'description und removeDescription zugleich', 'request');
     }
@@ -305,7 +317,7 @@ class InventoryClient {
 
   Future<({String webhookId, bool deleted})> deleteWebhook(String webhookId) async {
     const name = Aufrufe.deleteWebhook;
-    final id = _kennung(name, 'webhookId', webhookId);
+    final id = kennung(name, 'webhookId', webhookId);
     final daten = await _transport.call(name, {'webhookId': id});
     final gemeldet = daten['webhookId'];
     return (webhookId: gemeldet is String && gemeldet.isNotEmpty ? gemeldet : id, deleted: daten['deleted'] == true);
@@ -328,8 +340,8 @@ class InventoryClient {
   /// (`webhook_inactive`); hoechstens 20 je Konto und Wiener Kalendertag.
   Future<InventoryWebhookTestResult> sendWebhookTest(String webhookId, String event) async {
     const name = Aufrufe.sendWebhookTest;
-    final id = _kennung(name, 'webhookId', webhookId);
-    final ereignis = _kennung(name, 'event', event);
+    final id = kennung(name, 'webhookId', webhookId);
+    final ereignis = kennung(name, 'event', event);
     final daten = await _transport.call(name, {'webhookId': id, 'event': ereignis});
     final eventId = daten['eventId'];
     final gesendet = daten['event'];
@@ -344,7 +356,7 @@ class InventoryClient {
   /// neue (keine Uebergangsfrist): erst speichern, dann weiterarbeiten.
   Future<InventoryWebhookWithSecret> rotateWebhookSecret(String webhookId) async {
     const name = Aufrufe.rotateWebhookSecret;
-    return _mitSecret(name, await _transport.call(name, {'webhookId': _kennung(name, 'webhookId', webhookId)}));
+    return _mitSecret(name, await _transport.call(name, {'webhookId': kennung(name, 'webhookId', webhookId)}));
   }
 
   /// Die letzten Zustellungen, neueste zuerst; mit [webhookId] nur die eines
@@ -352,23 +364,198 @@ class InventoryClient {
   Future<List<InventoryWebhookDelivery>> listWebhookDeliveries({String? webhookId, int? limit}) async {
     const name = Aufrufe.listWebhookDeliveries;
     final params = {
-      if (webhookId != null) 'webhookId': _kennung(name, 'webhookId', webhookId),
+      if (webhookId != null) 'webhookId': kennung(name, 'webhookId', webhookId),
       ..._abfrage(name, {'limit': limit}),
     };
     return liste(name, await _transport.call(name, params), 'deliveries', zustellung);
   }
 
+  // ---- Artikel schreiben (Stufe 5b) -------------------------------------------------
+
+  /// Legt einen Artikel an. Mit `ean` ein Fremdartikel mit diesem Code
+  /// (gueltige Pruefziffer, frei im Konto), sonst vergibt der Server den
+  /// naechsten eigenen Code. Antwort: der Artikel wie [getArticle].
+  Future<Article> createArticle(CreateArticleRequest request) async {
+    const name = Aufrufe.createArticle;
+    final p = request.toJson();
+    _schreiben(name, p);
+    return _artikel(name, await _transport.call(name, p));
+  }
+
+  /// Aendert nur die genannten Felder eines Artikels; [UpdateArticleRequest.clear]
+  /// leert Felder.
+  Future<Article> updateArticle(UpdateArticleRequest request) async {
+    const name = Aufrufe.updateArticle;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'articleId', p['articleId']);
+    final fremd = request.clear.difference(leerbareArtikelfelder);
+    if (fremd.isNotEmpty) throw anfragefehler(name, 'clear nennt Felder, die sich nicht leeren lassen: ${fremd.join(', ')}');
+    final doppelt = request.clear.where((f) => p[f] != null).toList();
+    if (doppelt.isNotEmpty) throw anfragefehler(name, 'zugleich gesetzt und geleert: ${doppelt.join(', ')}');
+    if (p.keys.every((k) => k == 'idempotencyKey' || k == 'articleId')) {
+      throw anfragefehler(name, 'die Aenderung nennt kein Feld');
+    }
+    return _artikel(name, await _transport.call(name, p));
+  }
+
+  /// Legt einen Artikel still (`active: false`); Code und eigene Kennungen
+  /// werden frei.
+  Future<Article> deactivateArticle(DeactivateArticleRequest request) async {
+    const name = Aufrufe.deactivateArticle;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'articleId', p['articleId']);
+    return _artikel(name, await _transport.call(name, p));
+  }
+
+  // ---- Buchen (Stufe 5b) -----------------------------------------------------------
+
+  /// Bucht einen Wareneingang. Ohne `locationId` am Standard-Standort; die
+  /// Antwort traegt keine Werte, auch mit dem Recht `costs` nicht. Fuer die
+  /// Vorschau mit Werten: [previewGoodsReceipt].
+  Future<StockOperation> receiveGoods(ReceiveGoodsRequest request) async {
+    const name = Aufrufe.receiveGoods;
+    final p = request.toJson();
+    _schreiben(name, p);
+    pruefePositionen(name, p['items']);
+    return vorgang(name, await _transport.call(name, p));
+  }
+
+  /// Vorschau eines Wareneingangs (`receiveGoods` mit `dryRun: true`): prueft
+  /// Positionen, Artikel, Preise und Nebenkosten und rechnet die Verteilung,
+  /// schreibt aber nichts. Ein `idempotencyKey` ist freigestellt, wird nur auf
+  /// seine Form geprueft und nicht verbraucht. Werte (`baseCents` …) nur mit
+  /// dem Recht `costs`. Fehler tragen den Aufrufnamen `receiveGoods`.
+  Future<GoodsReceiptPreview> previewGoodsReceipt(GoodsReceiptPreviewRequest request) async {
+    const name = Aufrufe.receiveGoods;
+    final p = request.toJson();
+    _schreiben(name, p, schluesselPflicht: false);
+    pruefePositionen(name, p['items']);
+    final daten = await _transport.call(name, {...p, 'dryRun': true});
+    return GoodsReceiptPreview(preview: liste(name, daten, 'preview', vorschauZeile));
+  }
+
+  /// Bucht Ware von einem Standort an einen anderen; ueberzieht nie (`exceeds_stock`).
+  Future<StockOperation> transferStock(TransferStockRequest request) async {
+    const name = Aufrufe.transferStock;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'fromLocationId', p['fromLocationId']);
+    kennung(name, 'toLocationId', p['toLocationId']);
+    pruefePositionen(name, p['items']);
+    return vorgang(name, await _transport.call(name, p));
+  }
+
+  /// Bucht einen Abgang (Bruch, Schwund, Diebstahl, Entnahme …); ueberzieht
+  /// nie (`exceeds_stock`).
+  Future<StockOperation> recordStockLoss(RecordStockLossRequest request) async {
+    const name = Aufrufe.recordStockLoss;
+    final p = request.toJson();
+    _schreiben(name, p);
+    pruefePositionen(name, p['items']);
+    return vorgang(name, await _transport.call(name, p));
+  }
+
+  /// Bucht Ware zwischen `sellable` und `defective` um; ueberzieht nie (`exceeds_stock`).
+  Future<StockOperation> changeStockCondition(ChangeStockConditionRequest request) async {
+    const name = Aufrufe.changeStockCondition;
+    final p = request.toJson();
+    _schreiben(name, p);
+    pruefePositionen(name, p['items']);
+    return vorgang(name, await _transport.call(name, p));
+  }
+
+  /// Nimmt einen ganzen Vorgang (`operationId`) mit einer Gegenbuchung zurueck.
+  Future<StockOperation> reverseStockMovement(ReverseStockMovementRequest request) async {
+    const name = Aufrufe.reverseStockMovement;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'operationId', p['operationId']);
+    return vorgang(name, await _transport.call(name, p));
+  }
+
+  // ---- Reservierung (Stufe 5b) -------------------------------------------------------
+
+  /// Reserviert Ware (Checkout im Shop): ganz oder gar nicht, gemessen am
+  /// verfuegbaren Bestand (`onHand - reserved`). Fehlt etwas, entsteht nichts:
+  /// `insufficient_available`, die fehlenden Positionen in
+  /// [inventoryShortfalls]. Eingeloest wird ueber eine Rechnung
+  /// (`InvoiceApi.issueInvoice` mit `IssueInvoiceItemInput.reservationId`),
+  /// sonst laeuft die Reservierung ab und gibt die Ware wieder frei.
+  Future<Reservation> createReservation(CreateReservationRequest request) async {
+    const name = Aufrufe.createReservation;
+    final p = request.toJson();
+    _schreiben(name, p);
+    pruefePositionen(name, p['items']);
+    pruefeMinuten(name, request.expiresInMinutes, pflicht: false);
+    return _reservierung(name, await _transport.call(name, p));
+  }
+
+  /// Verlaengert eine aktive Reservierung: neuer Ablauf = jetzt + `expiresInMinutes`.
+  Future<Reservation> extendReservation(ExtendReservationRequest request) async {
+    const name = Aufrufe.extendReservation;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'reservationId', p['reservationId']);
+    pruefeMinuten(name, request.expiresInMinutes, pflicht: true);
+    return _reservierung(name, await _transport.call(name, p));
+  }
+
+  /// Gibt reservierte Ware frei: ohne `items` alles, sonst je Position (ohne
+  /// `quantity` der ganze offene Rest). Die Antwort traegt den Stand danach;
+  /// `released` wird der Status erst, wenn nichts mehr offen ist.
+  Future<Reservation> releaseReservation(ReleaseReservationRequest request) async {
+    const name = Aufrufe.releaseReservation;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'reservationId', p['reservationId']);
+    if (request.items case final positionen? when positionen.isEmpty) {
+      throw anfragefehler(name, 'items ist leer; um alles freizugeben, items ganz weglassen');
+    }
+    pruefePositionen(name, p['items']);
+    return _reservierung(name, await _transport.call(name, p));
+  }
+
+  /// Eine Reservierung mit ihrem aktuellen Stand.
+  Future<Reservation> getReservation(String reservationId) async {
+    const name = Aufrufe.getReservation;
+    final id = kennung(name, 'reservationId', reservationId);
+    return _reservierung(name, await _transport.call(name, {'reservationId': id}));
+  }
+
+  /// Eine Seite Reservierungen, neueste zuerst. [status] aus
+  /// `reservationStatuses`, [reference] genau diese Referenz.
+  Future<ReservationPage> listReservations({String? status, String? reference, int? limit, String? cursor}) async {
+    const name = Aufrufe.listReservations;
+    final daten = await _transport.call(
+        name, _abfrage(name, {'status': status, 'reference': reference, 'limit': limit, 'cursor': cursor}));
+    return ReservationPage(
+      reservations: liste(name, daten, 'reservations', reservierung),
+      nextCursor: naechsterCursor(name, daten),
+    );
+  }
+
+  /// Alle Reservierungen der Abfrage, Seite fuer Seite ueber `nextCursor`.
+  Stream<Reservation> iterateReservations({String? status, String? reference, int? limit, String? cursor}) =>
+      _seitenweise(Aufrufe.listReservations, cursor, (c) async {
+        final s = await listReservations(status: status, reference: reference, limit: limit, cursor: c);
+        return (eintraege: s.reservations, nextCursor: s.nextCursor);
+      });
+
   // ---- Hilfen -------------------------------------------------------------------
 
-  static KasseneckValidationError _anfragefehler(String name, String grund) =>
-      KasseneckValidationError(name, grund, 'request');
-
-  /// Eine Kennung, die gesendet werden muss: Text mit mindestens einem Zeichen
-  /// ausser Leerraum. Gesendet wird sie unveraendert.
-  static String _kennung(String name, String feld, String? wert) {
-    if (wert == null || wert.trim().isEmpty) throw _anfragefehler(name, '$feld fehlt');
-    return wert;
+  /// Was jede schreibende Anfrage vor dem Senden erfuellen muss: ein gueltiger
+  /// Schluessel und Ganzzahlen im sicheren Bereich.
+  static void _schreiben(String name, Map<String, dynamic> p, {bool schluesselPflicht = true}) {
+    pruefeSchluessel(name, p, pflicht: schluesselPflicht);
+    pruefeGanzzahlen(name, p);
   }
+
+  static Article _artikel(String name, Map<String, dynamic> daten) => artikel(Ort(name, 'article'), daten['article']);
+
+  static Reservation _reservierung(String name, Map<String, dynamic> daten) =>
+      reservierung(Ort(name, 'reservation'), daten['reservation']);
 
   /// Ein Zeitpunkt wie `Date.toISOString()` im JS-Zwilling: UTC, Millisekunden,
   /// `Z`. Der Server nimmt nur ISO 8601; Mikrosekunden fallen weg.
@@ -384,10 +571,10 @@ class InventoryClient {
     };
     final limit = raus['limit'];
     if (limit is int && (limit < 1 || limit > inventoryListLimitMax)) {
-      throw _anfragefehler(name, 'limit muss eine ganze Zahl von 1 bis $inventoryListLimitMax sein');
+      throw anfragefehler(name, 'limit muss eine ganze Zahl von 1 bis $inventoryListLimitMax sein');
     }
     final cursor = raus['cursor'];
-    if (cursor is String) _kennung(name, 'cursor', cursor);
+    if (cursor is String) kennung(name, 'cursor', cursor);
     return raus;
   }
 
