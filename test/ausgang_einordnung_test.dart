@@ -14,7 +14,7 @@ import 'package:kasseneck_api/src/v3.dart';
 import 'helpers/lager_anfragen.dart';
 
 /// Welcher Aufruf meldet nach dem Senden Ausgang unklar? Zwilling von
-/// `test/ausgang-einordnung.test.ts` im npm-Paket 1.5.1.
+/// `test/ausgang-einordnung.test.ts` im npm-Paket (seit 1.5.1, Varianten 1.6.0).
 ///
 /// Bis 10.4.0 nur die sechs, die signieren, FinanzOnline ansprechen oder Geld
 /// bewegen. Ein Wareneingang, eine Reservierung oder `issueInvoice` kam nach
@@ -59,6 +59,7 @@ const Set<String> _lesen = {
   'getReportV2',
   'getReservation',
   'getStock',
+  'getVariantGroup',
   'hobexGetStatus',
   'listArticles',
   'listBrands',
@@ -77,6 +78,7 @@ const Set<String> _lesen = {
   'listReservations',
   'listStock',
   'listStockMovements',
+  'listVariantGroups',
   'listWebhookDeliveries',
   'listWebhooks',
   'lookupArticleByCode',
@@ -161,7 +163,7 @@ const _ausstellen = IssueInvoiceRequest(
 );
 
 final List<_Fall> _faelle = [
-  // Lager schreiben, Webhooks und Reservierung: mit Wirkung.
+  // Lager schreiben, Webhooks, Reservierung und Varianten: mit Wirkung.
   for (final (aufruf, fall) in [
     ('receiveGoods', 'receive_goods'),
     ('createArticle', 'create_article'),
@@ -170,6 +172,9 @@ final List<_Fall> _faelle = [
     ('createReservation', 'create_reservation'),
     ('extendReservation', 'extend_reservation'),
     ('releaseReservation', 'release_reservation'),
+    ('createVariantGroup', 'create_variant_group_matrix'),
+    ('updateVariantGroup', 'update_variant_group_deactivate'),
+    ('addVariant', 'add_variant'),
   ])
     _Fall(aufruf, aufruf, (c) => schreibAufruf(_lager(c), aufruf, _params(fall)), wirkung: true),
   _Fall('createWebhook', 'createWebhook', (c) {
@@ -193,6 +198,8 @@ final List<_Fall> _faelle = [
   // Lesen: abgelehnt.
   _Fall('getStock', 'getStock', (c) => _lager(c).getStock('roggenbrot'), wirkung: false),
   _Fall('getReservation', 'getReservation', (c) => _lager(c).getReservation('auto43'), wirkung: false),
+  _Fall('getVariantGroup', 'getVariantGroup', (c) => _lager(c).getVariantGroup('auto61'), wirkung: false),
+  _Fall('listVariantGroups', 'listVariantGroups', (c) => _lager(c).listVariantGroups(active: true), wirkung: false),
   _Fall('getInvoice', 'getInvoice', (c) => _rechnung(c).getInvoice(invoiceId: 'inv1'), wirkung: false),
   _Fall('listInvoices', 'listInvoices', (c) => _rechnung(c).listInvoices(limit: 2), wirkung: false),
   // Probelauf unter dem Namen des echten Aufrufs: abgelehnt.

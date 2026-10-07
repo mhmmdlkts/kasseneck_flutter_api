@@ -12,7 +12,7 @@ Die vollständige Dokumentation steht im englischen README:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.4.1
+  kasseneck_api: ^10.5.0
 ```
 
 Voraussetzungen: Dart SDK `^3.12.1`, Flutter `>=3.44.0`, ein Kasseneck-API-Schlüssel
@@ -54,7 +54,7 @@ Kartenaufruf kann doppelt belasten oder erstatten.
 Seit 10.4.1 meldet **jeder Aufruf mit Wirkung** nach Zeitlimit, Netzfehler,
 HTTP 5xx oder unlesbarer Antwort `unknown`, nicht nur Beleg, Storno,
 FinanzOnline und die Geldwege: auch Lager schreiben und reservieren,
-Webhooks, Rechnung ausstellen, stornieren, gutschreiben, Zahlung nachtragen,
+Variantengruppen anlegen und ändern (seit 10.5), Webhooks, Rechnung ausstellen, stornieren, gutschreiben, Zahlung nachtragen,
 Kunden anlegen und ändern, Kassen-Einstellungen und Logo, Kopplung,
 Lagerstandort der Kasse, Druckjob und Belegmail (Liste
 `unknownOutcomeCalls` im Vertrag). Lesen, die Probeläufe

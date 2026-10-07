@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.4.1
+  kasseneck_api: ^10.5.0
 ```
 
 ```bash
@@ -1197,7 +1197,8 @@ Kasseneck account: read articles, locations, stock per location and the stock
 ledger, and get every stock change pushed by webhook within seconds, also the
 ones made at the register in the shop. Since 10.4 also write: create and update
 articles, book goods receipts, transfers, losses and condition changes, and
-reserve stock at checkout (see [Writing and reservations](#writing-and-reservations)).
+reserve stock at checkout (see [Writing and reservations](#writing-and-reservations));
+since 10.5 variant groups (sizes, colours, see [Variants](#variants)).
 Uses the `api_key` of the account and belongs on a **server**, never in an app
 customers install. Reading needs the module `lager`, writing also the account
 switch „Lager-API schreiben“ (always on in the test environment, `kr_test_…`);
@@ -1243,6 +1244,7 @@ final secret = created.secret; // store it where the receiver reads it, never in
 // any JSON decoding. Answer within 10 s, work afterwards.
 final reorder = <String>[];
 final expiredOrders = <String>[];
+final variantGroups = <String, VariantGroup>{};
 int receive(String? signatureHeader, List<int> rawBody) {
   if (!verifyInventoryWebhookSignature(secret, signatureHeader, rawBody)) return 400;
   final InventoryWebhookEvent? event;
@@ -1266,6 +1268,10 @@ int receive(String? signatureHeader, List<int> rawBody) {
     case InventoryReservationEvent(:final data):
       // reservation.expired, .released or .redeemed: the status afterwards.
       if (data.status == 'expired') expiredOrders.add(data.reference ?? data.id);
+    case InventoryVariantGroupEvent(:final data):
+      // variant_group.created or .updated: keep it only if updatedAt is later.
+      final stored = variantGroups[data.id];
+      if (stored == null || (data.updatedAt ?? '').compareTo(stored.updatedAt ?? '') > 0) variantGroups[data.id] = data;
   }
   return 200;
 }
@@ -1288,10 +1294,12 @@ int receive(String? signatureHeader, List<int> rawBody) {
   fractional quantity. The result is a sealed `InventoryWebhookEvent`:
   `InventoryStockChangedEvent`, `InventoryStockBelowMinimumEvent`,
   `InventoryArticleEvent` (`article.created`, `article.updated`,
-  `article.deactivated`) or, since 10.4, `InventoryReservationEvent`
-  (`reservation.expired`, `reservation.released`, `reservation.redeemed`),
-  each with `id`, `createdAt`, `accountId` and `test`. A `switch` without
-  `default` over all subclasses needs a case for the new one.
+  `article.deactivated`), since 10.4 `InventoryReservationEvent`
+  (`reservation.expired`, `reservation.released`, `reservation.redeemed`)
+  and since 10.5 `InventoryVariantGroupEvent` (`variant_group.created`,
+  `variant_group.updated`), each with `id`, `createdAt`, `accountId` and
+  `test`. A `switch` without `default` over all subclasses needs a case for
+  each new one.
 - **Events.** `stock.changed` carries the current state of one article at one
   location (`onHand`, `reserved`, `available`, `defective`, `sequence`,
   `updatedAt`) plus `cause` (`sale`, `invoice`, `goods_receipt`, `transfer`,
@@ -1304,7 +1312,8 @@ int receive(String? signatureHeader, List<int> rawBody) {
   `listStock(belowMinimum: true)` follows the same rule. `reservation.*`
   carries the reservation as `getReservation` returns it, with its status
   afterwards; `released` and `redeemed` also fire for a partial release or
-  redemption (the status stays `active`). In
+  redemption (the status stays `active`). `variant_group.*` carries the
+  group as `getVariantGroup` returns it (see [Variants](#variants)). In
   movements, `goods_receipt` is a goods receipt; `receipt` only ever means a
   sales receipt (`source.type`). Deduplicate on `event.id`; deliveries are
   retried after 1 min, 5 min, 30 min, 2 h and 12 h.
@@ -1339,7 +1348,10 @@ int receive(String? signatureHeader, List<int> rawBody) {
   `inventoryShortfalls(error)`), `code_taken` and `external_id_taken` (with
   `details['field']` and the `articleId` that owns the code),
   `stock_kind_locked`, `article_inactive`, `reservation_not_found`,
-  `reservation_not_active` and the rest of `inventoryErrorCodes`.
+  `reservation_not_active`, since 10.5 `variant_group_not_found`,
+  `variant_already_exists`, `invalid_variant_attributes`,
+  `variant_group_inactive` and `variant_limit` (see [Variants](#variants)),
+  and the rest of `inventoryErrorCodes`.
 - **Names.** `StockLevel` here has `onHand` and `sequence`; the register's
   `StockLevel` in `pos.dart` is a different type with `sellable`. If you import
   both libraries, give one a prefix (`import '…/inventory.dart' as inv;`).
@@ -1426,6 +1438,123 @@ try {
   `expiresInMinutes` outside 5–43,200, an update without a field or with a
   `clear` the server cannot apply, a release with an empty list. All of these
   throw `KasseneckValidationError` with `kind: 'request'`.
+
+### Variants
+
+A variant is an ordinary article with `variantGroupId` and
+`variantAttributes`: its own id, code, stock and tile at the register; it is
+read, booked, reserved and invoiced like any other article. The variant group
+holds what the variants share (name, attributes with their values, defaults
+for new variants) and guarantees that each combination exists only once. The
+writes take an `idempotencyKey` and the account switch „Lager-API
+schreiben“, like every other write.
+
+```dart
+final inventory = InventoryClient(apiKey: 'kr_live_…');
+
+// 1. Create the group with every combination (3 sizes × 2 colours = 6 variants).
+final apron = await inventory.createVariantGroup(const CreateVariantGroupRequest(
+  idempotencyKey: 'shop-group-3001',
+  name: 'Schürze',
+  attributes: [
+    VariantAttribute(key: 'size', label: 'Größe', values: ['S', 'M', 'L']),
+    VariantAttribute(key: 'colour', label: 'Farbe', values: ['rot', 'blau']),
+  ],
+  defaults: VariantGroupDefaultsInput(unitPriceCents: 2490, vatRate: 20, stockTracked: true),
+  createMatrix: true,
+));
+// apron.variants: articleId and variantAttributes {'colour': 'rot', 'size': 'S'} per variant
+
+// 2. The answer carries ids only. Read the articles of the group (names
+//    "Schürze S rot" …, own codes) and map them to the shop's products.
+final articleIdByCombination = <String, String>{};
+await for (final article in inventory.iterateArticles(variantGroupId: apron.id)) {
+  final attributes = article.variantAttributes!;
+  articleIdByCombination['${attributes['size']}/${attributes['colour']}'] = article.id;
+}
+
+// 3. A new size later: add the value, then the variants you want.
+await inventory.updateVariantGroup(UpdateVariantGroupRequest(
+  idempotencyKey: 'shop-group-3001-xl',
+  variantGroupId: apron.id,
+  addAttributeValues: const {'size': ['S', 'M', 'L', 'XL']}, // known values are skipped
+));
+try {
+  await inventory.addVariant(AddVariantRequest(
+    idempotencyKey: 'shop-variant-3001-xl-rot',
+    variantGroupId: apron.id,
+    variantAttributes: const {'size': 'XL', 'colour': 'rot'},
+    ean: '9001234567834', // optional: a foreign article with this code
+  ));
+} on KasseneckApiError catch (e) {
+  if (!isInventoryError(e, 'variant_already_exists')) rethrow;
+  // Exists already: link e.details['articleId'] instead.
+}
+```
+
+- **Limits.** At most 3 attributes per group (keys `^[a-z0-9_]{1,32}$`,
+  `__…__` is reserved), at most 30 values per attribute (1 to 30 characters,
+  unique ignoring case), at most 100 combinations with `createMatrix` and at
+  most 100 entries in `variants` per request, at most 250 active variants per
+  group (`variant_limit`). The client does not check these before sending
+  (the server may raise them); they are exported as `variantAttributesMax`,
+  `variantValuesMax`, `variantMatrixMax` and `variantGroupActiveMax`. A
+  request that would need more writes than fit into one operation (about 187
+  external ids with 100 variants) is refused as a whole with
+  `too_many_positions` and `details['field']` (`variants`, `createMatrix`, or
+  `externalIds` for `addVariant`); nothing is written. Send fewer variants and
+  add the rest with `addVariant`.
+- **Order.** `attributes` keeps the order of the group: it decides the default
+  name "group value1 value2" and the matrix (the first attribute runs
+  outermost). `variantAttributes` on articles, in `VariantGroup.variants` and
+  in webhooks comes with its keys **sorted by code point**, not in attribute
+  order; compare by key, never by position. Values are stored trimmed and in
+  Unicode NFC; a variant's value must match a listed value exactly (case and
+  spaces are not adjusted), otherwise `invalid_variant_attributes` names the
+  `field` (`inventoryFieldErrors(error)`).
+- **Variants are articles.** `addVariant` answers with the `Article` as
+  `createArticle` does. A `VariantInput` takes the fields of
+  `CreateArticleRequest` (the name is optional); fields it does not name are
+  filled from the group defaults **at creation only**: changing the group name
+  or defaults later changes no existing variant (use `updateArticle`). A
+  variant is never moved to another group, and an existing article never
+  becomes a variant.
+- **Changing a group.** `updateVariantGroup` changes only the named fields:
+  `name`, `defaults` as a partial update (`VariantGroupDefaultsInput(clear:
+  {'unitPriceCents'})` clears one default, `clearDefaults: true` all of them),
+  `addAttributeValues`. `active: false` deactivates the group and every
+  variant (codes and external ids become free), stands alone and is final; a
+  deactivated group answers every other change and `addVariant` with
+  `variant_group_inactive`. After `ErrorOutcome.unknown` simply repeat it,
+  also with a new key; it completes an interrupted run. `deactivateArticle` on
+  one variant of an active group takes it out of `variants` and frees its
+  combination.
+- **After `unknown`.** As with every write: resend with the **same**
+  `idempotencyKey`. A new key would create the group a second time (the
+  combination check is per group). `variant_already_exists` on `addVariant`
+  carries `details['articleId']` of the existing variant.
+- **Reading.** `getVariantGroup`, `listVariantGroups(active:, updatedSince:,
+  limit:, cursor:)` and `iterateVariantGroups`. A `VariantGroup` carries
+  `attributes` (`VariantAttribute`: `key`, `label`, `values`), `defaults`
+  (`VariantGroupDefaults`, only the fields with a default), `active`,
+  `variants` (`VariantGroupMember`: `articleId`, `variantAttributes`) and the
+  times; the articles themselves come from
+  `listArticles(variantGroupId: …)`.
+- **Events.** `InventoryVariantGroupEvent` (`variant_group.created`,
+  `variant_group.updated`) carries the group as `getVariantGroup` returns it.
+  `updated` fires only on a visible change; creating a variant also sends
+  `article.created`, deactivating the group one `variant_group.updated` and
+  one `article.deactivated` per variant. Deliveries can overtake each other:
+  keep a group state only if its `updatedAt` is later than the stored one.
+  Without webhooks, `listVariantGroups(updatedSince: …)` and
+  `listArticles(variantGroupId: …, updatedSince: …)` are sorted by
+  `updatedAt` ascending and include the boundary.
+- **Checked before sending**, nothing else: an invalid key, an empty
+  `variantGroupId`, `createMatrix: true` together with `variants`, an update
+  without a field, `active` other than `false` or not alone, `defaults`
+  together with `clearDefaults`, a `clear` naming another field or a field
+  that is also set, and integers beyond ±(2^53 − 1). Fractions and a missing
+  `variantAttributes` are ruled out by the types.
 
 ## RKSV details
 

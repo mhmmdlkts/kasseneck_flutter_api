@@ -1,5 +1,5 @@
 /// Der Vertrag der Lager-API (Backend Stufe 5a lesen, 5b schreiben und
-/// reservieren) als Listen – Zwilling von `src/inventory/vertrag.ts` im
+/// reservieren, 5c Varianten) als Listen – Zwilling von `src/inventory/vertrag.ts` im
 /// JS-Paket `@kreiseck/kasseneck-api`.
 ///
 /// `test/lager_api_test.dart` vergleicht jede Liste in beide Richtungen mit
@@ -8,7 +8,7 @@
 /// `tool/zwillinge.sh`). Wer hier etwas aendert, aendert zuerst das JS-Paket.
 library;
 
-/// Die 27 Endpunkte (14 aus 5a, 13 aus 5b), in der Reihenfolge von
+/// Die 32 Endpunkte (14 aus 5a, 13 aus 5b, 5 aus 5c), in der Reihenfolge von
 /// `endpoints.public`.
 const List<String> inventoryEndpoints = [
   'getArticle',
@@ -38,6 +38,11 @@ const List<String> inventoryEndpoints = [
   'releaseReservation',
   'getReservation',
   'listReservations',
+  'createVariantGroup',
+  'updateVariantGroup',
+  'getVariantGroup',
+  'listVariantGroups',
+  'addVariant',
 ];
 
 /// Art eines Standorts (Katalog `STANDORT_TYP`).
@@ -113,8 +118,10 @@ const List<String> webhookDeliveryStatuses = ['delivered', 'pending', 'failed', 
 /// Reservierung wie `getReservation`, mit dem Status danach:
 /// `reservation.released` und `reservation.redeemed` kommen bei jeder
 /// wirksamen Freigabe bzw. Einloesung, auch einer teilweisen (dann bleibt der
-/// Status `active`). Eine spaetere Stufe ergaenzt `variant_group.*`;
-/// `parseInventoryWebhookEvent` liefert dafuer `null`.
+/// Status `active`). `variant_group.created` und `variant_group.updated`
+/// (seit 10.5) tragen die Variantengruppe wie `getVariantGroup`; `updated`
+/// kommt nur bei einer aussen sichtbaren Aenderung (neuer Wert, neue oder
+/// stillgelegte Variante, Name, Vorgaben, Stilllegen der Gruppe).
 const List<String> inventoryWebhookEvents = [
   'stock.changed',
   'stock.below_minimum',
@@ -124,6 +131,8 @@ const List<String> inventoryWebhookEvents = [
   'reservation.expired',
   'reservation.released',
   'reservation.redeemed',
+  'variant_group.created',
+  'variant_group.updated',
 ];
 
 /// Die Felder der Huelle jeder Zustellung, in der Reihenfolge am Draht. Statt
@@ -152,6 +161,19 @@ const int inventoryListLimitMax = 200;
 /// `inventoryShortfalls`), `code_taken` und `external_id_taken` (mit `field`
 /// und `articleId` des Artikels, dem der Code gehoert), `stock_kind_locked`,
 /// `reservation_not_found`, `reservation_not_active` …
+///
+/// Seit 10.5 dahinter die Codes der Variantengruppen: `variant_group_not_found`
+/// (unbekannte Kennung), `variant_already_exists` (die Kombination gibt es in
+/// der Gruppe schon, dann mit `articleId` der bestehenden Variante, oder sie
+/// steht zweimal in `variants`; jeweils mit `field`),
+/// `invalid_variant_attributes` (ein Merkmal fehlt, ist unbekannt oder sein
+/// Wert steht nicht in der Werteliste; `field` und `errors`),
+/// `variant_group_inactive` (stillgelegte Gruppe: kein `addVariant`, keine
+/// Aenderung ausser erneutem Stilllegen) und `variant_limit` (mehr als
+/// [variantGroupActiveMax] aktive Varianten je Gruppe). Wiederverwendet:
+/// `too_many_positions` traegt bei Varianten `field` (`variants`,
+/// `createMatrix` bzw. `externalIds` bei `addVariant`): die Anfrage braeuchte
+/// mehr Schreibvorgaenge, als in einen Vorgang passen; geschrieben wurde nichts.
 const List<String> inventoryErrorCodes = [
   'validation',
   'invalid_cursor',
@@ -214,6 +236,11 @@ const List<String> inventoryErrorCodes = [
   'insufficient_available',
   'reservation_not_found',
   'reservation_not_active',
+  'variant_group_not_found',
+  'variant_already_exists',
+  'invalid_variant_attributes',
+  'variant_group_inactive',
+  'variant_limit',
 ];
 
 /// Codes, die Anmeldung und Rand auf jedem Lager-Aufruf erzeugen koennen,
@@ -298,3 +325,24 @@ const int reservationMinutesMin = 5;
 
 /// Laengste Haltedauer einer Reservierung in Minuten (30 Tage).
 const int reservationMinutesMax = 43200;
+
+// ---- Varianten (Backend Stufe 5c, seit 10.5) ---------------------------------
+
+// Grenzen einer Variantengruppe, wie das Backend sie prueft. Das Paket prueft
+// sie **nicht** vor dem Senden: der Server darf sie anheben, ohne dass eine
+// aeltere Paketversion dann faelschlich abweist. Wer darueber liegt, bekommt
+// `validation` (Merkmale, Werte, Matrix, `variants`) bzw. `variant_limit`.
+
+/// Merkmale je Gruppe (Schluessel `^[a-z0-9_]{1,32}$`, eindeutig; `__…__` ist
+/// reserviert).
+const int variantAttributesMax = 3;
+
+/// Werte je Merkmal (je 1–30 Zeichen, eindeutig ohne Gross/Klein).
+const int variantValuesMax = 30;
+
+/// Kombinationen bei `createMatrix: true` und hoechstens so viele Eintraege in
+/// `variants` je Anfrage.
+const int variantMatrixMax = 100;
+
+/// Aktive Varianten je Gruppe (`variant_limit`).
+const int variantGroupActiveMax = 250;

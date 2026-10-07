@@ -35,7 +35,7 @@ final Set<String> woerter = _liste('''
   abort abortable aborted above accept accepted account acquirer action actions active add
   added address affiliate after agent align all allocation allocations allowed allows always amount
   amounts and applies approval approved april area article articles as ask assert
-  assign at attempt attempts attributes august auth authority authorization authorized auto available average background
+  assign at attempt attempts attribute attributes august auth authority authorization authorized auto available average background
   backoff bad bank banner barcode base batch before behavior below between binary bit
   bits blank block blocked blocks body bold bolt book booking border both
   brand brands breakdown buckets budget build builder bundle business busy by
@@ -69,7 +69,7 @@ final Set<String> woerter = _liste('''
   large last layout lead left legacy legal length level license licenses light limit line
   lines link list load loader local location locations lock login logo logout lookup loss
   lossy lot lots luminance mandate mandatory map march mark matrix may meaning measured
-  media medium merchant merge message metadata method methods metrics migrate
+  media medium member merchant merge message metadata method methods metrics migrate
   minimum minutes mismatch missing mixed mode model models modes module
   modules month monthly move movement movements muted my name names native need needs negative net
   network never new next night no none normal normalize not note notes notice
@@ -103,7 +103,7 @@ final Set<String> woerter = _liste('''
   tracked tracking training transaction transfer transmitted transport tries turn
   turnover twelfths type types unavailable uncertain underline ungrouped unit
   unexpected units unknown unpack unpaid unpair unresolved unsupported untangle until
-  update updated usable user users valid validation value values variant vehicle verification
+  update updated usable user users valid validation value values variant variants vehicle verification
   verify version vertical via vias vienna view virtual visible voided voucher vouchers wall
   wanted warehouse warm warning warnings watermark web webhook webhooks webservice widget widgets width widths
   wire with withdrawal words wrap write written wrong year yesterday zero zone

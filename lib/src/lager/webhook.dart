@@ -149,11 +149,13 @@ bool _gleichZeitkonstant(List<int> a, List<int> b) {
 ///   case InventoryStockBelowMinimumEvent(:final data): ...
 ///   case InventoryArticleEvent(:final data): ...
 ///   case InventoryReservationEvent(:final data): ...
+///   case InventoryVariantGroupEvent(:final data): ...
 /// }
 /// ```
 ///
-/// Seit 10.4 gibt es [InventoryReservationEvent]. Ein `switch` ohne
-/// `default`, der alle Unterklassen aufzaehlt, braucht dafuer einen Zweig.
+/// Seit 10.4 gibt es [InventoryReservationEvent], seit 10.5
+/// [InventoryVariantGroupEvent]. Ein `switch` ohne `default`, der alle
+/// Unterklassen aufzaehlt, braucht fuer jede einen Zweig.
 sealed class InventoryWebhookEvent {
   const InventoryWebhookEvent({
     required this.id,
@@ -248,6 +250,26 @@ final class InventoryReservationEvent extends InventoryWebhookEvent {
   final Reservation data;
 }
 
+/// `variant_group.created` oder `variant_group.updated` ([type]): die
+/// Variantengruppe wie `getVariantGroup` sie liefert. `updated` kommt nur bei
+/// einer aussen sichtbaren Aenderung (neuer Wert, neue oder stillgelegte
+/// Variante, Name, Vorgaben, Stilllegen der Gruppe). Zwei Zustellungen koennen
+/// sich ueberholen: den Stand nur uebernehmen, wenn `data.updatedAt` neuer ist
+/// als der gespeicherte. Seit 10.5.
+final class InventoryVariantGroupEvent extends InventoryWebhookEvent {
+  const InventoryVariantGroupEvent({
+    required super.id,
+    required super.type,
+    required super.createdAt,
+    required super.accountId,
+    required super.test,
+    required this.data,
+  });
+
+  @override
+  final VariantGroup data;
+}
+
 const String _parseName = 'parseInventoryWebhookEvent';
 
 KasseneckValidationError _kaputt(String grund) => KasseneckValidationError(_parseName, grund, 'response');
@@ -256,10 +278,12 @@ KasseneckValidationError _kaputt(String grund) => KasseneckValidationError(_pars
 /// ([verifyInventoryWebhookSignature]).
 ///
 /// - [rawBody]: der Rumpf als `String` oder als Bytes (`List<int>`).
-/// - Ein Ereignis, das diese Paketversion nicht kennt (etwa `variant_group.*`
-///   einer spaeteren Stufe), ergibt `null`: mit 2xx antworten und uebergehen.
+/// - Ein Ereignis, das diese Paketversion nicht kennt (eines einer spaeteren
+///   Stufe), ergibt `null`: mit 2xx antworten und uebergehen.
 /// - `reservation.expired|released|redeemed` tragen die Reservierung wie
 ///   `getReservation`, mit dem Status nach dem Vorgang (seit 10.4).
+/// - `variant_group.created|updated` tragen die Gruppe wie `getVariantGroup`
+///   (seit 10.5); den Stand nur uebernehmen, wenn `data.updatedAt` neuer ist.
 /// - Ein Rumpf, der keine Huelle ist, oder eine Bruchzahl in einer Menge wirft
 ///   [KasseneckValidationError] (`kind: response`).
 ///
@@ -304,6 +328,8 @@ InventoryWebhookEvent? parseInventoryWebhookEvent(Object? rawBody) {
         id: id, createdAt: createdAt, accountId: accountId, test: test, data: unterMindestbestand(ort, data)),
     'reservation.expired' || 'reservation.released' || 'reservation.redeemed' => InventoryReservationEvent(
         id: id, type: type, createdAt: createdAt, accountId: accountId, test: test, data: reservierung(ort, data)),
+    'variant_group.created' || 'variant_group.updated' => InventoryVariantGroupEvent(
+        id: id, type: type, createdAt: createdAt, accountId: accountId, test: test, data: variantengruppe(ort, data)),
     _ => InventoryArticleEvent(
         id: id, type: type, createdAt: createdAt, accountId: accountId, test: test, data: artikel(ort, data)),
   };

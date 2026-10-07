@@ -35,7 +35,7 @@ const String kPublicBaseUrl = 'https://api.kasseneck.at/v3';
 const String kPosBaseUrl = 'https://kasse.kasseneck.at/api/v3';
 
 /// Version dieses Pakets, wie in `pubspec.yaml` (ein Test haelt beide gleich).
-const String kPackageVersion = '10.4.1';
+const String kPackageVersion = '10.5.0';
 
 const String _versionKopf = 'Kasseneck-Api-Version';
 const String _clientKopf = 'Kasseneck-Client';
@@ -53,7 +53,7 @@ const Set<String> _kasseneckHosts = {'api.kasseneck.at', 'kasse.kasseneck.at'};
 /// `rejected` zurueck, obwohl der Server gebucht haben konnte, und wer dem
 /// glaubte und mit einem **neuen** `idempotencyKey` nachsandte, buchte doppelt.
 ///
-/// Zwilling von `UNKNOWN_OUTCOME_CALLS` im npm-Paket (1.5.1), dort im Vertrag
+/// Zwilling von `UNKNOWN_OUTCOME_CALLS` im npm-Paket (seit 1.5.1), dort im Vertrag
 /// als `unknownOutcomeCalls` in `surface.json`; test/ausgang_einordnung_test.dart
 /// haelt beide gleich. Darum stehen hier auch Partner-Aufrufe, die dieses
 /// Paket nie absetzt: die Liste ist eine Einordnung, keine Aufrufliste.
@@ -70,6 +70,7 @@ const Set<String> _kasseneckHosts = {'api.kasseneck.at', 'kasse.kasseneck.at'};
 /// `kasse/texte.dart`, und der Satz dort spricht vom Vorgang, nicht vom Beleg.
 const Set<String> unknownOutcomeCalls = {
   'activateCashregister',
+  'addVariant',
   'cancelInvoice',
   'cancelReceipt',
   'changeStockCondition',
@@ -83,6 +84,7 @@ const Set<String> unknownOutcomeCalls = {
   'createPrintJob',
   'createReceipt',
   'createReservation',
+  'createVariantGroup',
   'createWebhook',
   'deactivateArticle',
   'deletePartnerWebhook',
@@ -119,6 +121,7 @@ const Set<String> unknownOutcomeCalls = {
   'updateCustomer',
   'updateInvoiceItem',
   'updatePartnerWebhook',
+  'updateVariantGroup',
   'updateWebhook',
   'withdrawInvoiceItem',
 };

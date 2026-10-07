@@ -13,12 +13,13 @@ import 'package:kasseneck_api/src/receipt/codes.dart' show anmeldungUndRandCodes
 import 'helpers/lager_anfragen.dart';
 
 /// Die Lager-API (`InventoryClient`, Zwilling von `./inventory` im npm-Paket
-/// 1.5.0) gegen den Vertrags-Export des Backends: `v3/antworten/lager.json`
-/// (echte Antworten der 27 Endpunkte samt zugestellter Webhook-Ereignisse,
+/// 1.6.0) gegen den Vertrags-Export des Backends: `v3/antworten/lager.json`
+/// (echte Antworten der 32 Endpunkte samt zugestellter Webhook-Ereignisse,
 /// erfundenes Konto Baeckerei Kornblum), `v3/v3-vokabular.json` (Kataloge,
 /// Schemata) und `surface.json` (Abschnitt `inventory`). Die Faelle folgen
 /// `test/inventory.test.ts` im JS-Paket; das Schreiben im Einzelnen steht in
-/// `lager_schreiben_test.dart`.
+/// `lager_schreiben_test.dart`, die Variantengruppen in
+/// `lager_varianten_test.dart`.
 
 const _apiKey = 'kr_test_Beispielschluessel0123456789';
 
@@ -133,14 +134,16 @@ void main() {
       }
     });
 
-    test('inventoryEndpoints: die 27 Endpunkte (5a und 5b) in endpoints.public, in Vertragsreihenfolge, alle in Aufrufe.alle', () {
+    test('inventoryEndpoints: die 32 Endpunkte (5a, 5b und 5c) in endpoints.public, in Vertragsreihenfolge, alle in Aufrufe.alle', () {
       final namen = (_vokabular['names'] as Map).cast<String, String>();
       final oeffentlich = [for (final n in (_vokabular['endpoints'] as Map)['public'] as List) namen[n] ?? n as String];
       final start = oeffentlich.indexOf('getArticle');
       expect(start, greaterThan(0));
-      expect(inventoryEndpoints, oeffentlich.sublist(start, start + 27));
+      expect(inventoryEndpoints, oeffentlich.sublist(start, start + 32));
+      expect(inventoryEndpoints, hasLength(32));
       expect(inventoryEndpoints[13], 'listWebhookDeliveries');
-      expect(inventoryEndpoints.last, 'listReservations');
+      expect(inventoryEndpoints[26], 'listReservations');
+      expect(inventoryEndpoints.last, 'addVariant');
       for (final name in inventoryEndpoints) {
         expect(Aufrufe.alle, contains(name));
         expect((_vokabular['schemas'] as Map)[name], isNotNull, reason: '$name: kein Schema im Vertrag');
@@ -191,15 +194,17 @@ void main() {
 
     test('inventoryWebhookEvents sind genau die Konto-Ereignisse des Vertrags, in der Reihenfolge von listWebhooks', () {
       final imVertrag =
-          (_vokabular['events'] as Map).keys.cast<String>().where((e) => RegExp(r'^(stock|article|reservation)\.').hasMatch(e));
+          (_vokabular['events'] as Map).keys.cast<String>().where((e) => RegExp(r'^(stock|article|reservation|variant_group)\.').hasMatch(e));
       expect(inventoryWebhookEvents.toSet(), imVertrag.toSet());
       expect(inventoryWebhookEvents, _daten('list_webhooks')['events']);
-      expect(inventoryWebhookEvents.sublist(inventoryWebhookEvents.length - 3),
-          ['reservation.expired', 'reservation.released', 'reservation.redeemed']);
+      // Angehaengt wird hinten: 5b die Reservierung, 5c die Variantengruppen.
+      expect(inventoryWebhookEvents.sublist(5, 8), ['reservation.expired', 'reservation.released', 'reservation.redeemed']);
+      expect(inventoryWebhookEvents.sublist(inventoryWebhookEvents.length - 2),
+          ['variant_group.created', 'variant_group.updated']);
       expect(inventoryWebhookEnvelopeFields, ['id', 'type', 'createdAt', 'accountId', 'test', 'data']);
     });
 
-    test('inventoryErrorCodes: der Katalog errorCodes.inventory ohne Anmeldungscode; 5a vorn, 5b hinten', () {
+    test('inventoryErrorCodes: der Katalog errorCodes.inventory ohne Anmeldungscode; 5a vorn, 5b und 5c hinten', () {
       final alle = ((_vokabular['errorCodes'] as Map)['all'] as List).cast<String>().toSet();
       expect(inventoryErrorCodes.where((c) => !alle.contains(c)), isEmpty);
       final katalog = ((_vokabular['errorCodes'] as Map)['inventory'] as List).cast<String>();
@@ -212,6 +217,11 @@ void main() {
         'server_error',
       ]);
       expect(inventoryErrorCodes.sublist(12), vertrag.sublist(vertrag.indexOf('server_error') + 1));
+      // 5c haengt hinter 5b an (die Reihenfolge der Codes aus 10.4 bleibt).
+      expect(inventoryErrorCodes.sublist(inventoryErrorCodes.length - 6), [
+        'reservation_not_active', 'variant_group_not_found', 'variant_already_exists', 'invalid_variant_attributes',
+        'variant_group_inactive', 'variant_limit',
+      ]);
       // Hinweise sind nie Fehler.
       for (final w in inventoryWarningCodes) {
         expect(inventoryErrorCodes, isNot(contains(w)), reason: w);
@@ -245,6 +255,10 @@ void main() {
       expect(inventoryIdempotencyKeyMax, 120);
       expect(reservationMinutesMin, 5);
       expect(reservationMinutesMax, 43200);
+      expect(variantAttributesMax, 3);
+      expect(variantValuesMax, 30);
+      expect(variantMatrixMax, 100);
+      expect(variantGroupActiveMax, 250);
       expect(kInventoryBaseUrl, 'https://api.kasseneck.at/v3');
     });
   });
@@ -323,6 +337,7 @@ void main() {
       'error_list_articles_validation': 'limit 500 liegt ueber 200',
       'error_create_article_idempotency_key_required': 'idempotencyKey fehlt',
       'error_create_reservation_validation': 'expiresInMinutes 2 liegt unter 5',
+      'error_create_variant_group_validation': 'createMatrix true zusammen mit variants',
     };
 
     /// Faelle, die sich in Dart gar nicht bauen lassen: der Typ `int` schliesst
@@ -484,7 +499,7 @@ void main() {
     test('jedes zugestellte Ereignis liest sich typisiert, data verlustfrei', () {
       final ereignisse = (_lager['webhookEvents'] as List).cast<Map<String, dynamic>>();
       expect(ereignisse.map((e) => e['event']).toSet(), inventoryWebhookEvents.toSet());
-      for (final e in ereignisse.where((e) => (e['event'] as String).startsWith('reservation.'))) {
+      for (final e in ereignisse.where((e) => RegExp(r'^(reservation|variant_group)\.').hasMatch(e['event'] as String))) {
         final body = e['body'] as Map;
         for (final k in _schluessel(((_vokabular['events'] as Map)[e['event']] as Map)['data'])) {
           expect((body['data'] as Map).containsKey(k), isTrue, reason: '${e['event']}.$k');
@@ -504,6 +519,7 @@ void main() {
           InventoryStockBelowMinimumEvent(:final data) => data.toJson(),
           InventoryArticleEvent(:final data) => data.toJson(),
           InventoryReservationEvent(:final data) => data.toJson(),
+          InventoryVariantGroupEvent(:final data) => data.toJson(),
         };
         expect(data, body['data'], reason: e['event'] as String);
         if (ereignis is InventoryStockChangedEvent) expect(stockChangeCauses, contains(ereignis.data.cause));
@@ -1161,7 +1177,8 @@ void main() {
     });
 
     test('unbekannter Typ ist null (2xx antworten und uebergehen), kaputter Rumpf wirft', () {
-      expect(parseInventoryWebhookEvent(_huelle('variant_group.updated', {'variantGroupId': 'vg1'})), isNull);
+      // Seit 10.5 kennt das Paket variant_group.*; ein Ereignis einer spaeteren Stufe bleibt null.
+      expect(parseInventoryWebhookEvent(_huelle('price_list.updated', {'priceListId': 'pl1'})), isNull);
       final ohneSequence = Map.of(_stockChanged)..remove('sequence');
       for (final kaputt in <Object?>[
         '',

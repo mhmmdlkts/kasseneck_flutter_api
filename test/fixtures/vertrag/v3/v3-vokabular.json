@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "d351a778c02888291e325068f96156ad1346859f6ff97bae27f91089e9619e8c",
-    "inputsSha256": "b9dd3d819a4be22c35a201a788e7fcf947d90b6af7d9e41d3d74be3b48f8aa8e",
+    "sha256": "6e6eae018f1e84116d3942cbfd35bc2d5d6f5c5e5551823c7ed88f15ed407744",
+    "inputsSha256": "8490315ac4059c3b26274649b8c3323295b26a6422a02da3a3cc241338cc797b",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -114,7 +114,12 @@
       "extendReservation",
       "releaseReservation",
       "getReservation",
-      "listReservations"
+      "listReservations",
+      "createVariantGroup",
+      "updateVariantGroup",
+      "getVariantGroup",
+      "listVariantGroups",
+      "addVariant"
     ],
     "v3Routed": [
       "createReceipt",
@@ -203,7 +208,12 @@
       "extendReservation",
       "releaseReservation",
       "getReservation",
-      "listReservations"
+      "listReservations",
+      "createVariantGroup",
+      "updateVariantGroup",
+      "getVariantGroup",
+      "listVariantGroups",
+      "addVariant"
     ],
     "register": [
       "pairRegisterDevice",
@@ -261,6 +271,7 @@
     ],
     "withSchema": [
       "activateCashregister",
+      "addVariant",
       "cancelInvoice",
       "cancelReceipt",
       "changeStockCondition",
@@ -276,6 +287,7 @@
       "createPrintJob",
       "createReceipt",
       "createReservation",
+      "createVariantGroup",
       "createWebhook",
       "deactivateArticle",
       "deletePartnerWebhook",
@@ -307,6 +319,7 @@
       "getReportV2",
       "getReservation",
       "getStock",
+      "getVariantGroup",
       "hobexGetStatus",
       "hobexPayApi",
       "hobexRefundApi",
@@ -333,6 +346,7 @@
       "listReservations",
       "listStock",
       "listStockMovements",
+      "listVariantGroups",
       "listWebhookDeliveries",
       "listWebhooks",
       "lookupArticleByCode",
@@ -367,6 +381,7 @@
       "updateCustomer",
       "updateInvoiceItem",
       "updatePartnerWebhook",
+      "updateVariantGroup",
       "updateWebhook",
       "withdrawInvoiceItem"
     ],
@@ -825,6 +840,7 @@
       "invalid_step",
       "invalid_stock_kind",
       "invalid_transfer",
+      "invalid_variant_attributes",
       "invalid_webhook_url",
       "inventory_api_not_enabled",
       "invoice_ambiguous",
@@ -963,6 +979,10 @@
       "user_disabled",
       "user_verification_failed",
       "validation",
+      "variant_already_exists",
+      "variant_group_inactive",
+      "variant_group_not_found",
+      "variant_limit",
       "vat_id_check_pending",
       "vat_id_invalid",
       "vat_rate_not_in_country",
@@ -1339,7 +1359,12 @@
       "reason_required",
       "insufficient_available",
       "reservation_not_found",
-      "reservation_not_active"
+      "reservation_not_active",
+      "variant_group_not_found",
+      "variant_already_exists",
+      "invalid_variant_attributes",
+      "variant_group_inactive",
+      "variant_limit"
     ],
     "registerCases": [
       "already_cancelled",
@@ -1693,6 +1718,16 @@
           "module": {
             "$catalog": "MODUL"
           }
+        }
+      }
+    },
+    "addVariant": {
+      "data": {
+        "article": {
+          "__": "artikel",
+          "stockLocationIds": "standorte",
+          "minStockByLocation": "mindestJeStandort",
+          "purchasePriceMicros": "einkaufMicros"
         }
       }
     },
@@ -2228,6 +2263,24 @@
       "werte": {
         "reservation.status": {
           "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
+    "createVariantGroup": {
+      "data": {
+        "variantGroup": {
+          "__": "variantengruppe",
+          "attributes": [
+            {
+              "__": "merkmale",
+              "values": "werte"
+            }
+          ],
+          "defaults": "vorgaben",
+          "active": "aktiv",
+          "variants": "varianten",
+          "createdAt": "erstelltAt",
+          "updatedAt": "geaendertAt"
         }
       }
     },
@@ -2826,6 +2879,24 @@
         "$function": "lagerwerteNachAussen"
       }
     },
+    "getVariantGroup": {
+      "data": {
+        "variantGroup": {
+          "__": "variantengruppe",
+          "attributes": [
+            {
+              "__": "merkmale",
+              "values": "werte"
+            }
+          ],
+          "defaults": "vorgaben",
+          "active": "aktiv",
+          "variants": "varianten",
+          "createdAt": "erstelltAt",
+          "updatedAt": "geaendertAt"
+        }
+      }
+    },
     "hobexGetStatus": {},
     "hobexPayApi": {},
     "hobexRefundApi": {},
@@ -3064,7 +3135,12 @@
               "start_receipt_created_at": "startbeleg_created_at",
               "start_receipt_transmitted_at": "startbeleg_transmitted_at"
             },
-            "stockLocationId": "lagerStandortId"
+            "stockLocationId": "lagerStandortId",
+            "autoLogout": {
+              "__": "autoAbmelden",
+              "autoLogoutMinutes": "autoAbMin",
+              "logoutAfterSale": "abNachVerkauf"
+            }
           }
         ]
       },
@@ -3528,6 +3604,27 @@
         "movements[].condition": {
           "$catalog": "LAGER_ZUSTAND"
         }
+      }
+    },
+    "listVariantGroups": {
+      "data": {
+        "variantGroups": [
+          {
+            "__": "variantengruppen",
+            "attributes": [
+              {
+                "__": "merkmale",
+                "values": "werte"
+              }
+            ],
+            "defaults": "vorgaben",
+            "active": "aktiv",
+            "variants": "varianten",
+            "createdAt": "erstelltAt",
+            "updatedAt": "geaendertAt"
+          }
+        ],
+        "nextCursor": "weiter"
       }
     },
     "listWebhookDeliveries": {
@@ -4259,6 +4356,24 @@
         "$function": "ergaenze"
       }
     },
+    "updateVariantGroup": {
+      "data": {
+        "variantGroup": {
+          "__": "variantengruppe",
+          "attributes": [
+            {
+              "__": "merkmale",
+              "values": "werte"
+            }
+          ],
+          "defaults": "vorgaben",
+          "active": "aktiv",
+          "variants": "varianten",
+          "createdAt": "erstelltAt",
+          "updatedAt": "geaendertAt"
+        }
+      }
+    },
     "updateWebhook": {
       "data": {
         "webhook": {
@@ -4527,6 +4642,36 @@
         "cause": {
           "$catalog": "LAGER_URSACHE"
         }
+      }
+    },
+    "variant_group.created": {
+      "data": {
+        "attributes": [
+          {
+            "__": "merkmale",
+            "values": "werte"
+          }
+        ],
+        "defaults": "vorgaben",
+        "active": "aktiv",
+        "variants": "varianten",
+        "createdAt": "erstelltAt",
+        "updatedAt": "geaendertAt"
+      }
+    },
+    "variant_group.updated": {
+      "data": {
+        "attributes": [
+          {
+            "__": "merkmale",
+            "values": "werte"
+          }
+        ],
+        "defaults": "vorgaben",
+        "active": "aktiv",
+        "variants": "varianten",
+        "createdAt": "erstelltAt",
+        "updatedAt": "geaendertAt"
       }
     }
   },

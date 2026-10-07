@@ -436,6 +436,88 @@ List<InventoryShortfall> fehlmengen(Object? roh) {
   ]);
 }
 
+// ---- Varianten (Stufe 5c) ------------------------------------------------------------
+
+/// Eine Liste von Texten (Werte eines Merkmals); etwas anderes ist kaputt.
+List<String> _textliste(Ort ort, String feld, Object? w) {
+  if (w is! List || !w.every((x) => x is String)) {
+    throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.$feld ist keine Liste von Texten)');
+  }
+  return List.unmodifiable(w.cast<String>());
+}
+
+VariantAttribute _merkmal(Ort ort, Object? w) {
+  final m = _eintrag(ort, w);
+  return VariantAttribute(
+    key: _kennung(ort, 'key', m['key']),
+    label: m['label'] is String ? m['label'] as String : '',
+    values: _textliste(ort, 'values', m['values']),
+  );
+}
+
+/// Vorgaben einer Gruppe: nur die Felder, die der Server sendet. Ein Preis als
+/// Bruchzahl ist kaputt (er fuellte sonst jede neue Variante falsch), ein Feld
+/// mit fremdem Typ ebenso. `null` gilt als nicht gesendet.
+VariantGroupDefaults _vorgaben(Ort ort, Object? w) {
+  if (w == null) return const VariantGroupDefaults();
+  final v = objekt(w);
+  final vOrt = ort.unter('defaults');
+  if (v == null) throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${vOrt.pfad} ist kein Objekt)');
+  final vatRate = v['vatRate'];
+  if (vatRate != null && (vatRate is! num || !vatRate.isFinite)) {
+    throw antwortfehler(ort.name, 'Antwort enthaelt keinen USt-Satz (data.${vOrt.pfad}.vatRate)');
+  }
+  String? text(String feld) {
+    final t = v[feld];
+    if (t == null || t is String) return t as String?;
+    throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${vOrt.pfad}.$feld ist kein Text)');
+  }
+
+  final gefuehrt = v['stockTracked'];
+  if (gefuehrt != null && gefuehrt is! bool) {
+    throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${vOrt.pfad}.stockTracked ist kein Wahrheitswert)');
+  }
+  return VariantGroupDefaults(
+    unitPriceCents: _ganzzahlOderNull(vOrt, 'unitPriceCents', v['unitPriceCents']),
+    vatRate: vatRate as num?,
+    unit: text('unit'),
+    groupId: text('groupId'),
+    stockTracked: gefuehrt as bool?,
+  );
+}
+
+VariantGroupMember _mitglied(Ort ort, Object? w) {
+  final x = _eintrag(ort, w);
+  return VariantGroupMember(
+    articleId: _kennung(ort, 'articleId', x['articleId']),
+    variantAttributes: Map.unmodifiable(_textAbbildung(x['variantAttributes']) ?? const <String, String>{}),
+  );
+}
+
+/// Eine Variantengruppe. `attributes` und `variants` sind zugesagte Listen:
+/// fehlen sie, ist die Antwort kaputt (eine leere Liste hiesse „keine Merkmale“
+/// bzw. „keine Varianten“).
+VariantGroup variantengruppe(Ort ort, Object? w) {
+  final g = _eintrag(ort, w);
+  final merkmale = g['attributes'];
+  final varianten = g['variants'];
+  for (final (feld, liste) in [('attributes', merkmale), ('variants', varianten)]) {
+    if (liste is! List) throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.$feld ist keine Liste)');
+  }
+  return VariantGroup(
+    id: _kennung(ort, 'id', g['id']),
+    name: _text(g['name']),
+    attributes: List.unmodifiable(
+        [for (final (i, m) in (merkmale as List).indexed) _merkmal(ort.unter('attributes[$i]'), m)]),
+    defaults: _vorgaben(ort, g['defaults']),
+    active: g['active'] != false,
+    variants: List.unmodifiable(
+        [for (final (i, v) in (varianten as List).indexed) _mitglied(ort.unter('variants[$i]'), v)]),
+    createdAt: _text(g['createdAt']),
+    updatedAt: _text(g['updatedAt']),
+  );
+}
+
 // ---- Listen ------------------------------------------------------------------
 
 /// Eine zugesagte Liste `data.<feld>`, Eintrag fuer Eintrag gelesen.

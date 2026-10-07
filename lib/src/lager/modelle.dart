@@ -92,7 +92,15 @@ class Article {
   /// Artikel keine traegt.
   final Map<String, String>? externalIds;
   final Map<String, String>? metadata;
+
+  /// Nur an einer Variante: die Variantengruppe. Gesetzt nur ueber
+  /// `createVariantGroup`/`addVariant`, nie umgehaengt.
   final String? variantGroupId;
+
+  /// Nur an einer Variante: je Merkmal der Gruppe genau ein Wert
+  /// (`{'farbe': 'rot', 'groesse': 'S'}`). Die Schluessel kommen nach Codepunkt
+  /// sortiert, nicht in der Merkmalsreihenfolge der Gruppe; die steht in
+  /// [VariantGroup.attributes].
   final Map<String, String>? variantAttributes;
   final String? createdAt;
   final String? updatedAt;
@@ -850,4 +858,131 @@ class InventoryShortfall {
 
   Map<String, dynamic> toJson() =>
       {'articleId': articleId, 'locationId': locationId, 'requested': requested, 'available': available};
+}
+
+// ---- Varianten (Backend Stufe 5c, seit 10.5) ---------------------------------
+//
+// Eine Variante ist ein gewoehnlicher Artikel mit `variantGroupId` und
+// `variantAttributes`: eigene Kennung, eigener Code, eigener Bestand, eigene
+// Kachel an der Kasse. Die Gruppe haelt nur, was alle teilen (Name, Merkmale
+// mit ihren Werten, Vorgaben fuer neue Varianten) und die Liste ihrer aktiven
+// Varianten. Jede Kombination gibt es je Gruppe hoechstens einmal.
+
+/// Ein Merkmal einer Variantengruppe mit seinen Werten, in der Reihenfolge der
+/// Gruppe. Dieselbe Form in der Anfrage (`CreateVariantGroupRequest.attributes`)
+/// und in der Antwort.
+class VariantAttribute {
+  const VariantAttribute({required this.key, required this.label, required this.values});
+
+  /// `^[a-z0-9_]{1,32}$`, eindeutig in der Gruppe; Schluessel in `variantAttributes`.
+  final String key;
+
+  /// Beschriftung, 1–40 Zeichen, z. B. „Größe“.
+  final String label;
+
+  /// 1–30 Werte zu je 1–30 Zeichen, eindeutig ohne Gross/Klein, getrimmt und in
+  /// Unicode-NFC gespeichert. Werte kommen nur dazu (`addAttributeValues`), nie weg.
+  final List<String> values;
+
+  Map<String, dynamic> toJson() => {'key': key, 'label': label, 'values': [...values]};
+}
+
+/// Vorgaben einer Gruppe: sie fuellen bei der **Anlage** einer Variante die
+/// Felder, die die Variante nicht selbst nennt. Ein spaeteres Aendern der
+/// Vorgaben aendert keine bestehende Variante (dafuer `updateArticle`). Ein
+/// Feld ohne Vorgabe ist `null` und fehlt in [toJson].
+class VariantGroupDefaults {
+  const VariantGroupDefaults({this.unitPriceCents, this.vatRate, this.unit, this.groupId, this.stockTracked});
+
+  final int? unitPriceCents;
+
+  /// USt-Satz in Prozent.
+  final num? vatRate;
+  final String? unit;
+  final String? groupId;
+
+  /// Ohne Vorgabe gilt wie bei `createArticle` `false` (dann nicht reservierbar).
+  final bool? stockTracked;
+
+  Map<String, dynamic> toJson() => {
+        'unitPriceCents': ?unitPriceCents,
+        'vatRate': ?vatRate,
+        'unit': ?unit,
+        'groupId': ?groupId,
+        'stockTracked': ?stockTracked,
+      };
+}
+
+/// Eine Variante in der Liste ihrer Gruppe.
+class VariantGroupMember {
+  const VariantGroupMember({required this.articleId, this.variantAttributes = const {}});
+
+  final String articleId;
+
+  /// Je Merkmal ein Wert, Schluessel nach Codepunkt sortiert.
+  final Map<String, String> variantAttributes;
+
+  Map<String, dynamic> toJson() => {'articleId': articleId, 'variantAttributes': {...variantAttributes}};
+}
+
+/// Eine Variantengruppe, wie `getVariantGroup`, `listVariantGroups`, die
+/// schreibenden Gruppenaufrufe und die Ereignisse `variant_group.*` sie
+/// senden. Die Artikel selbst traegt sie nicht: die liest
+/// `listArticles(variantGroupId: …)`.
+class VariantGroup {
+  const VariantGroup({
+    required this.id,
+    this.name,
+    this.attributes = const [],
+    this.defaults = const VariantGroupDefaults(),
+    this.active = true,
+    this.variants = const [],
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  final String id;
+
+  /// 1–100 Zeichen; Standardname einer Variante: „`<Gruppe> <Wert1> <Wert2>`“.
+  final String? name;
+
+  /// 1–3 Merkmale in der Reihenfolge der Gruppe (sie bestimmt den Standardnamen).
+  final List<VariantAttribute> attributes;
+  final VariantGroupDefaults defaults;
+
+  /// `false` = stillgelegt: alle Varianten stillgelegt, kein `addVariant`, endgueltig.
+  final bool active;
+
+  /// Die aktiven Varianten einer aktiven Gruppe; eine einzeln stillgelegte
+  /// Variante faellt heraus (ihre Kombination ist dann wieder frei). Beim
+  /// Stilllegen der Gruppe wird die Liste eingefroren.
+  final List<VariantGroupMember> variants;
+  final String? createdAt;
+  final String? updatedAt;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'attributes': [for (final m in attributes) m.toJson()],
+        'defaults': defaults.toJson(),
+        'active': active,
+        'variants': [for (final v in variants) v.toJson()],
+        'createdAt': createdAt,
+        'updatedAt': updatedAt,
+      };
+}
+
+/// Eine Seite von `listVariantGroups`, nach `updatedAt` aufsteigend.
+class VariantGroupPage {
+  const VariantGroupPage({required this.variantGroups, this.nextCursor});
+
+  final List<VariantGroup> variantGroups;
+
+  /// `null` = letzte Seite.
+  final String? nextCursor;
+
+  Map<String, dynamic> toJson() => {
+        'variantGroups': [for (final g in variantGroups) g.toJson()],
+        'nextCursor': nextCursor,
+      };
 }
