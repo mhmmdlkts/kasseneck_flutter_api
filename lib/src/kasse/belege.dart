@@ -309,11 +309,11 @@ class CashregisterAutoLogout {
 
   /// `null`, wenn die Antwort nichts Lesbares enthaelt. Eine Minutenzahl ausser
   /// [allowedMinutes] wird verworfen statt durchgereicht.
-  static CashregisterAutoLogout? fromJson(Object? roh) {
-    if (roh is! Map) return null;
-    final m = roh['autoLogoutMinutes'];
+  static CashregisterAutoLogout? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final m = json['autoLogoutMinutes'];
     final minuten = m is num && allowedMinutes.contains(m.toInt()) ? m.toInt() : null;
-    final b = roh['logoutAfterSale'];
+    final b = json['logoutAfterSale'];
     final nachVerkauf = b is bool ? b : null;
     if (minuten == null && nachVerkauf == null) return null;
     return CashregisterAutoLogout(autoLogoutMinutes: minuten, logoutAfterSale: nachVerkauf);
