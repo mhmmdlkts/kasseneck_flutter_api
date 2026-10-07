@@ -216,7 +216,7 @@ const int _anmerkungHoechstlaenge = 200;
 class CashregisterEntry {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding', 'stockLocationId'};
+  static const Set<String> fields = {'id', 'label', 'description', 'create_time', 'signature_id', 'token', 'final_receipt_id', 'decommissioned', 'licenses', 'monthly_report_journal', 'onboarding', 'stockLocationId', 'autoLogout'};
 
   const CashregisterEntry({
     required this.id,
@@ -231,6 +231,7 @@ class CashregisterEntry {
     this.licenses,
     this.monthlyReportJournal = false,
     this.stockLocationId,
+    this.autoLogout,
   });
 
   final String id;
@@ -253,6 +254,10 @@ class CashregisterEntry {
   /// Server laesst das Feld dann weg).
   final String? stockLocationId;
 
+  /// Eigene Abmelde-Werte der Kasse; `null`, wenn die Kasse keine eigenen hat
+  /// (der Server laesst das Feld dann weg, es gelten die Werte des Betriebs).
+  final CashregisterAutoLogout? autoLogout;
+
   factory CashregisterEntry.fromJson(Map<String, dynamic> j) {
     String? text(Object? v) => v is String && v.isNotEmpty ? v : null;
     final ob = j['onboarding'];
@@ -269,6 +274,7 @@ class CashregisterEntry {
       licenses: j['licenses'] is num ? (j['licenses'] as num).toInt() : null,
       monthlyReportJournal: j['monthly_report_journal'] == true,
       stockLocationId: text(j['stockLocationId']),
+      autoLogout: CashregisterAutoLogout.fromJson(j['autoLogout']),
       onboarding: CashregisterOnboarding(
         cashboxRegistered: o['cashbox_registered'] == true,
         startReceiptCreated: o['start_receipt_created'] == true,
@@ -278,6 +284,39 @@ class CashregisterEntry {
         startReceiptTransmittedAt: text(o['start_receipt_transmitted_at']),
       ),
     );
+  }
+}
+
+/// Automatisches Abmelden an der Kasse (`autoLogout` in `listMyCashregisters`).
+/// Beide Werte sind einzeln optional: der Server sendet nur, was die Kasse selbst
+/// gesetzt hat.
+class CashregisterAutoLogout {
+  /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
+  /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
+  static const Set<String> fields = {'autoLogoutMinutes', 'logoutAfterSale'};
+
+  /// Erlaubte Minutenwerte; `0` = aus.
+  static const List<int> allowedMinutes = [0, 1, 5, 15, 30];
+
+  const CashregisterAutoLogout({this.autoLogoutMinutes, this.logoutAfterSale});
+
+  /// Abmeldung nach Leerlauf in Minuten (0, 1, 5, 15 oder 30); `null`, wenn die
+  /// Kasse keinen eigenen Wert hat.
+  final int? autoLogoutMinutes;
+
+  /// Nach jedem Verkauf abmelden; `null`, wenn die Kasse keinen eigenen Wert hat.
+  final bool? logoutAfterSale;
+
+  /// `null`, wenn die Antwort nichts Lesbares enthaelt. Eine Minutenzahl ausser
+  /// [allowedMinutes] wird verworfen statt durchgereicht.
+  static CashregisterAutoLogout? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final m = json['autoLogoutMinutes'];
+    final minuten = m is num && allowedMinutes.contains(m.toInt()) ? m.toInt() : null;
+    final b = json['logoutAfterSale'];
+    final nachVerkauf = b is bool ? b : null;
+    if (minuten == null && nachVerkauf == null) return null;
+    return CashregisterAutoLogout(autoLogoutMinutes: minuten, logoutAfterSale: nachVerkauf);
   }
 }
 
