@@ -106,3 +106,7 @@ const Set<String> leerbareArtikelfelder = {
   'minStockByLocation',
   'purchasePriceMicros',
 };
+
+/// Die Vorgaben einer Variantengruppe, die eine Aenderung leeren darf
+/// (`VariantGroupDefaultsInput.clear`): alle fuenf.
+const Set<String> leerbareVorgaben = {'unitPriceCents', 'vatRate', 'unit', 'groupId', 'stockTracked'};

@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "bee3e2b26656925092ecdf894d7c85bfd8635bb1913db9d7784866da65b41013",
-    "inputsSha256": "e1a499894424aebac421c3c28e9cc866acb0daa16c27a75a8c2f69dc8d1166d5",
+    "sha256": "30e5f918ffb3159f5e61c1d9e59ec63a40638a3199d39ad7aef25679bc56acda",
+    "inputsSha256": "20183eb847a12a9a3187e7c03945bb4e99e88086837c4ebf45f98624f81392f4",
     "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
     "inputs": [
       "functions-kasse/article-endpoints.js",
@@ -16,7 +16,9 @@
       "functions-kasse/lager-api-core.js",
       "functions-kasse/lager-api-endpoints.js",
       "functions-kasse/lager-api-ereignisse.js",
+      "functions-kasse/lager-api-idempotenz.js",
       "functions-kasse/lager-api-reservierung.js",
+      "functions-kasse/lager-api-varianten.js",
       "functions-kasse/lager-buchung.js",
       "functions-kasse/lager-core.js",
       "functions-kasse/lager-endpoints.js",
@@ -27,11 +29,12 @@
       "functions-kasse/lager-vorgaenge.js",
       "functions-kasse/test/unit/fixtures/v3-waechter.js",
       "functions-kasse/test/unit/v3-vertrag-export-lager.test.js",
+      "functions-kasse/varianten-core.js",
       "functions/test/unit/fixtures/vertrag-v3/ablage.js"
     ]
   },
   "channel": "api",
-  "note": "Lager-API (Stufe 5a, Artikel schreiben, Buchen und Reservierung 5b) unter /v3: Faelle in Ablaufreihenfolge (ein Konto, Standort haupt); Reservierungen antworten mit reservation (wie getReservation; Wiederholung = gespeicherte Antwort), laufen ueber einen Auftrag zum Ablaufzeitpunkt ab (Verlaengern ersetzt ihn), werden ueber issueInvoice (items[].reservationId) beim Buchen der Rechnung eingeloest und melden reservation.expired/released/redeemed; Buchungen antworten mit operationId, movementIds, lotIds und warnings[] (Hinweise aus warningCodes.inventory, kein Fehler); Preise duerfen ohne Schalter kosten gesendet werden, Werte kommen nur mit ihm zurueck; Mindestbestand je Standort = minStockByLocation (Tausendstel, Schwelle fuer below_minimum, gemessen an available = onHand − reserved), minStock ist ein Altfeld ohne Wirkung darauf; dazu webhookEvents = zugestellte Konto-Webhooks (Huelle wie gesendet, ohne Probesendungen). Secrets als Platzhalter.",
+  "note": "Lager-API (Stufe 5a, Artikel schreiben, Buchen und Reservierung 5b, Variantengruppen 5c) unter /v3: Faelle in Ablaufreihenfolge (ein Konto, Standort haupt); Variantengruppen antworten mit variantGroup (Merkmale, Vorgaben, Varianten mit articleId und variantAttributes; Wiederholung = gespeicherte Antwort), jede Variante ist ein Artikel (addVariant antwortet wie createArticle, listArticles { variantGroupId } liest sie), Stilllegen der Gruppe legt alle Varianten still und meldet variant_group.updated; Reservierungen antworten mit reservation (wie getReservation; Wiederholung = gespeicherte Antwort), laufen ueber einen Auftrag zum Ablaufzeitpunkt ab (Verlaengern ersetzt ihn), werden ueber issueInvoice (items[].reservationId) beim Buchen der Rechnung eingeloest und melden reservation.expired/released/redeemed; Buchungen antworten mit operationId, movementIds, lotIds und warnings[] (Hinweise aus warningCodes.inventory, kein Fehler); Preise duerfen ohne Schalter kosten gesendet werden, Werte kommen nur mit ihm zurueck; Mindestbestand je Standort = minStockByLocation (Tausendstel, Schwelle fuer below_minimum, gemessen an available = onHand − reserved), minStock ist ein Altfeld ohne Wirkung darauf; dazu webhookEvents = zugestellte Konto-Webhooks (Huelle wie gesendet, ohne Probesendungen). Secrets als Platzhalter.",
   "cases": [
     {
       "channel": "api",
@@ -1011,7 +1014,9 @@
             "article.deactivated",
             "reservation.expired",
             "reservation.released",
-            "reservation.redeemed"
+            "reservation.redeemed",
+            "variant_group.created",
+            "variant_group.updated"
           ]
         }
       }
@@ -3606,6 +3611,2074 @@
           }
         }
       }
+    },
+    {
+      "channel": "api",
+      "name": "create_variant_group_matrix",
+      "endpoint": "createVariantGroup",
+      "path": "/v3/createVariantGroup",
+      "params": {
+        "idempotencyKey": "shop-gruppe-3001",
+        "name": "Schürze",
+        "attributes": [
+          {
+            "key": "groesse",
+            "label": "Größe",
+            "values": [
+              "S",
+              "M",
+              "L"
+            ]
+          },
+          {
+            "key": "farbe",
+            "label": "Farbe",
+            "values": [
+              "rot",
+              "blau"
+            ]
+          }
+        ],
+        "defaults": {
+          "unitPriceCents": 2490,
+          "vatRate": 20,
+          "stockTracked": true
+        },
+        "createMatrix": true
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "variantGroup": {
+            "id": "auto61",
+            "name": "Schürze",
+            "attributes": [
+              {
+                "key": "groesse",
+                "label": "Größe",
+                "values": [
+                  "S",
+                  "M",
+                  "L"
+                ]
+              },
+              {
+                "key": "farbe",
+                "label": "Farbe",
+                "values": [
+                  "rot",
+                  "blau"
+                ]
+              }
+            ],
+            "defaults": {
+              "unitPriceCents": 2490,
+              "vatRate": 20,
+              "stockTracked": true
+            },
+            "active": true,
+            "variants": [
+              {
+                "articleId": "auto62",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "S"
+                }
+              },
+              {
+                "articleId": "auto63",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "S"
+                }
+              },
+              {
+                "articleId": "auto64",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "M"
+                }
+              },
+              {
+                "articleId": "auto65",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "M"
+                }
+              },
+              {
+                "articleId": "auto66",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "L"
+                }
+              },
+              {
+                "articleId": "auto67",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "L"
+                }
+              }
+            ],
+            "createdAt": "2026-10-06T08:02:41.000Z",
+            "updatedAt": "2026-10-06T08:02:41.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_variant_group_variants",
+      "endpoint": "createVariantGroup",
+      "path": "/v3/createVariantGroup",
+      "params": {
+        "idempotencyKey": "shop-gruppe-3002",
+        "name": "Geschirrtuch",
+        "attributes": [
+          {
+            "key": "farbe",
+            "label": "Farbe",
+            "values": [
+              "rot",
+              "blau",
+              "grün"
+            ]
+          }
+        ],
+        "defaults": {
+          "unitPriceCents": 590,
+          "vatRate": 20,
+          "stockTracked": true
+        },
+        "variants": [
+          {
+            "variantAttributes": {
+              "farbe": "rot"
+            },
+            "ean": "9001234567827",
+            "externalIds": {
+              "shop": "3002-rot"
+            }
+          },
+          {
+            "variantAttributes": {
+              "farbe": "blau"
+            },
+            "name": "Geschirrtuch Leinen blau",
+            "unitPriceCents": 690,
+            "externalIds": {
+              "shop": "3002-blau"
+            }
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "variantGroup": {
+            "id": "auto69",
+            "name": "Geschirrtuch",
+            "attributes": [
+              {
+                "key": "farbe",
+                "label": "Farbe",
+                "values": [
+                  "rot",
+                  "blau",
+                  "grün"
+                ]
+              }
+            ],
+            "defaults": {
+              "unitPriceCents": 590,
+              "vatRate": 20,
+              "stockTracked": true
+            },
+            "active": true,
+            "variants": [
+              {
+                "articleId": "auto70",
+                "variantAttributes": {
+                  "farbe": "rot"
+                }
+              },
+              {
+                "articleId": "auto71",
+                "variantAttributes": {
+                  "farbe": "blau"
+                }
+              }
+            ],
+            "createdAt": "2026-10-06T08:02:42.000Z",
+            "updatedAt": "2026-10-06T08:02:42.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_variant_group_validation",
+      "endpoint": "createVariantGroup",
+      "path": "/v3/createVariantGroup",
+      "params": {
+        "idempotencyKey": "shop-gruppe-3003",
+        "name": "Geschirrtuch",
+        "attributes": [
+          {
+            "key": "farbe",
+            "label": "Farbe",
+            "values": [
+              "rot",
+              "blau",
+              "grün"
+            ]
+          }
+        ],
+        "defaults": {
+          "unitPriceCents": 590,
+          "vatRate": 20,
+          "stockTracked": true
+        },
+        "variants": [
+          {
+            "variantAttributes": {
+              "farbe": "rot"
+            },
+            "ean": "9001234567827",
+            "externalIds": {
+              "shop": "3002-rot"
+            }
+          },
+          {
+            "variantAttributes": {
+              "farbe": "blau"
+            },
+            "name": "Geschirrtuch Leinen blau",
+            "unitPriceCents": 690,
+            "externalIds": {
+              "shop": "3002-blau"
+            }
+          }
+        ],
+        "createMatrix": true
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Bitte Eingaben prüfen.",
+        "data": {
+          "code": "validation",
+          "errors": [
+            {
+              "field": "variants",
+              "message": "createMatrix und variants schließen sich aus."
+            }
+          ]
+        },
+        "code": "validation"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_variant_group_too_many_positions",
+      "endpoint": "createVariantGroup",
+      "path": "/v3/createVariantGroup",
+      "params": {
+        "idempotencyKey": "shop-gruppe-3004",
+        "name": "Servietten",
+        "attributes": [
+          {
+            "key": "reihe",
+            "label": "Reihe",
+            "values": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10"
+            ]
+          },
+          {
+            "key": "platz",
+            "label": "Platz",
+            "values": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10"
+            ]
+          }
+        ],
+        "variants": [
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-1-1",
+              "erp": "S-1-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-1-2",
+              "erp": "S-1-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-1-3",
+              "erp": "S-1-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-1-4",
+              "erp": "S-1-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-1-5",
+              "erp": "S-1-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-1-6",
+              "erp": "S-1-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-1-7",
+              "erp": "S-1-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-1-8",
+              "erp": "S-1-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-1-9",
+              "erp": "S-1-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "1",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-1-10",
+              "erp": "S-1-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-2-1",
+              "erp": "S-2-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-2-2",
+              "erp": "S-2-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-2-3",
+              "erp": "S-2-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-2-4",
+              "erp": "S-2-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-2-5",
+              "erp": "S-2-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-2-6",
+              "erp": "S-2-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-2-7",
+              "erp": "S-2-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-2-8",
+              "erp": "S-2-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-2-9",
+              "erp": "S-2-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "2",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-2-10",
+              "erp": "S-2-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-3-1",
+              "erp": "S-3-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-3-2",
+              "erp": "S-3-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-3-3",
+              "erp": "S-3-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-3-4",
+              "erp": "S-3-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-3-5",
+              "erp": "S-3-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-3-6",
+              "erp": "S-3-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-3-7",
+              "erp": "S-3-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-3-8",
+              "erp": "S-3-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-3-9",
+              "erp": "S-3-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "3",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-3-10",
+              "erp": "S-3-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-4-1",
+              "erp": "S-4-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-4-2",
+              "erp": "S-4-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-4-3",
+              "erp": "S-4-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-4-4",
+              "erp": "S-4-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-4-5",
+              "erp": "S-4-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-4-6",
+              "erp": "S-4-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-4-7",
+              "erp": "S-4-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-4-8",
+              "erp": "S-4-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-4-9",
+              "erp": "S-4-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "4",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-4-10",
+              "erp": "S-4-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-5-1",
+              "erp": "S-5-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-5-2",
+              "erp": "S-5-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-5-3",
+              "erp": "S-5-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-5-4",
+              "erp": "S-5-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-5-5",
+              "erp": "S-5-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-5-6",
+              "erp": "S-5-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-5-7",
+              "erp": "S-5-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-5-8",
+              "erp": "S-5-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-5-9",
+              "erp": "S-5-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "5",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-5-10",
+              "erp": "S-5-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-6-1",
+              "erp": "S-6-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-6-2",
+              "erp": "S-6-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-6-3",
+              "erp": "S-6-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-6-4",
+              "erp": "S-6-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-6-5",
+              "erp": "S-6-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-6-6",
+              "erp": "S-6-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-6-7",
+              "erp": "S-6-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-6-8",
+              "erp": "S-6-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-6-9",
+              "erp": "S-6-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "6",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-6-10",
+              "erp": "S-6-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-7-1",
+              "erp": "S-7-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-7-2",
+              "erp": "S-7-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-7-3",
+              "erp": "S-7-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-7-4",
+              "erp": "S-7-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-7-5",
+              "erp": "S-7-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-7-6",
+              "erp": "S-7-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-7-7",
+              "erp": "S-7-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-7-8",
+              "erp": "S-7-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-7-9",
+              "erp": "S-7-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "7",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-7-10",
+              "erp": "S-7-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-8-1",
+              "erp": "S-8-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-8-2",
+              "erp": "S-8-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-8-3",
+              "erp": "S-8-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-8-4",
+              "erp": "S-8-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-8-5",
+              "erp": "S-8-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-8-6",
+              "erp": "S-8-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-8-7",
+              "erp": "S-8-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-8-8",
+              "erp": "S-8-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-8-9",
+              "erp": "S-8-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "8",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-8-10",
+              "erp": "S-8-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-9-1",
+              "erp": "S-9-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-9-2",
+              "erp": "S-9-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-9-3",
+              "erp": "S-9-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-9-4",
+              "erp": "S-9-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-9-5",
+              "erp": "S-9-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-9-6",
+              "erp": "S-9-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-9-7",
+              "erp": "S-9-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-9-8",
+              "erp": "S-9-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-9-9",
+              "erp": "S-9-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "9",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-9-10",
+              "erp": "S-9-10"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "1"
+            },
+            "externalIds": {
+              "shop": "3004-10-1",
+              "erp": "S-10-1"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "2"
+            },
+            "externalIds": {
+              "shop": "3004-10-2",
+              "erp": "S-10-2"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "3"
+            },
+            "externalIds": {
+              "shop": "3004-10-3",
+              "erp": "S-10-3"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "4"
+            },
+            "externalIds": {
+              "shop": "3004-10-4",
+              "erp": "S-10-4"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "5"
+            },
+            "externalIds": {
+              "shop": "3004-10-5",
+              "erp": "S-10-5"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "6"
+            },
+            "externalIds": {
+              "shop": "3004-10-6",
+              "erp": "S-10-6"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "7"
+            },
+            "externalIds": {
+              "shop": "3004-10-7",
+              "erp": "S-10-7"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "8"
+            },
+            "externalIds": {
+              "shop": "3004-10-8",
+              "erp": "S-10-8"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "9"
+            },
+            "externalIds": {
+              "shop": "3004-10-9",
+              "erp": "S-10-9"
+            }
+          },
+          {
+            "variantAttributes": {
+              "reihe": "10",
+              "platz": "10"
+            },
+            "externalIds": {
+              "shop": "3004-10-10",
+              "erp": "S-10-10"
+            }
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die Anfrage bräuchte 503 Schreibvorgänge, höchstens 490 passen in einen Vorgang. Bitte weniger Varianten anlegen und den Rest mit addVariant ergänzen.",
+        "data": {
+          "code": "too_many_positions",
+          "field": "variants"
+        },
+        "code": "too_many_positions"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "add_variant",
+      "endpoint": "addVariant",
+      "path": "/v3/addVariant",
+      "params": {
+        "idempotencyKey": "shop-variante-3002-gruen",
+        "variantGroupId": "auto69",
+        "variantAttributes": {
+          "farbe": "grün"
+        },
+        "externalIds": {
+          "shop": "3002-gruen"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto73",
+            "name": "Geschirrtuch grün",
+            "description": null,
+            "unitPriceCents": 590,
+            "vatRate": 20,
+            "unit": "Stk",
+            "number": null,
+            "ean": null,
+            "internalCode": "10",
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": true,
+            "externalIds": {
+              "shop": "3002-gruen"
+            },
+            "variantGroupId": "auto69",
+            "variantAttributes": {
+              "farbe": "grün"
+            },
+            "createdAt": "2026-10-06T08:02:45.000Z",
+            "updatedAt": "2026-10-06T08:02:45.000Z",
+            "stockLocationIds": [],
+            "minStockByLocation": {}
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "add_variant_replayed",
+      "endpoint": "addVariant",
+      "path": "/v3/addVariant",
+      "params": {
+        "idempotencyKey": "shop-variante-3002-gruen",
+        "variantGroupId": "auto69",
+        "variantAttributes": {
+          "farbe": "grün"
+        },
+        "externalIds": {
+          "shop": "3002-gruen"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "article": {
+            "id": "auto73",
+            "name": "Geschirrtuch grün",
+            "description": null,
+            "unitPriceCents": 590,
+            "vatRate": 20,
+            "unit": "Stk",
+            "number": null,
+            "ean": null,
+            "internalCode": "10",
+            "groupId": null,
+            "revenueGroupId": null,
+            "stockTracked": true,
+            "stockKind": "quantity",
+            "minStock": null,
+            "active": true,
+            "externalIds": {
+              "shop": "3002-gruen"
+            },
+            "variantGroupId": "auto69",
+            "variantAttributes": {
+              "farbe": "grün"
+            },
+            "createdAt": "2026-10-06T08:02:45.000Z",
+            "updatedAt": "2026-10-06T08:02:45.000Z",
+            "stockLocationIds": [],
+            "minStockByLocation": {}
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_add_variant_exists",
+      "endpoint": "addVariant",
+      "path": "/v3/addVariant",
+      "params": {
+        "idempotencyKey": "shop-variante-3002-rot",
+        "variantGroupId": "auto69",
+        "variantAttributes": {
+          "farbe": "rot"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Diese Kombination gibt es in der Variantengruppe schon.",
+        "data": {
+          "code": "variant_already_exists",
+          "field": "variantAttributes",
+          "articleId": "auto70"
+        },
+        "code": "variant_already_exists"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_add_variant_invalid_attributes",
+      "endpoint": "addVariant",
+      "path": "/v3/addVariant",
+      "params": {
+        "idempotencyKey": "shop-variante-3002-gelb",
+        "variantGroupId": "auto69",
+        "variantAttributes": {
+          "farbe": "gelb"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die Merkmale passen nicht zur Variantengruppe.",
+        "data": {
+          "code": "invalid_variant_attributes",
+          "field": "variantAttributes.farbe",
+          "errors": [
+            {
+              "field": "variantAttributes.farbe",
+              "message": "Wert steht nicht in der Werteliste. Erlaubt: rot, blau, grün."
+            }
+          ]
+        },
+        "code": "invalid_variant_attributes"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "update_variant_group_values",
+      "endpoint": "updateVariantGroup",
+      "path": "/v3/updateVariantGroup",
+      "params": {
+        "idempotencyKey": "shop-gruppe-3001-xl",
+        "variantGroupId": "auto61",
+        "addAttributeValues": {
+          "groesse": [
+            "M",
+            "XL"
+          ]
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "variantGroup": {
+            "id": "auto61",
+            "name": "Schürze",
+            "attributes": [
+              {
+                "key": "groesse",
+                "label": "Größe",
+                "values": [
+                  "S",
+                  "M",
+                  "L",
+                  "XL"
+                ]
+              },
+              {
+                "key": "farbe",
+                "label": "Farbe",
+                "values": [
+                  "rot",
+                  "blau"
+                ]
+              }
+            ],
+            "defaults": {
+              "unitPriceCents": 2490,
+              "vatRate": 20,
+              "stockTracked": true
+            },
+            "active": true,
+            "variants": [
+              {
+                "articleId": "auto62",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "S"
+                }
+              },
+              {
+                "articleId": "auto63",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "S"
+                }
+              },
+              {
+                "articleId": "auto64",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "M"
+                }
+              },
+              {
+                "articleId": "auto65",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "M"
+                }
+              },
+              {
+                "articleId": "auto66",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "L"
+                }
+              },
+              {
+                "articleId": "auto67",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "L"
+                }
+              }
+            ],
+            "createdAt": "2026-10-06T08:02:41.000Z",
+            "updatedAt": "2026-10-06T08:02:49.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "update_variant_group_deactivate",
+      "endpoint": "updateVariantGroup",
+      "path": "/v3/updateVariantGroup",
+      "params": {
+        "idempotencyKey": "shop-gruppe-3002-aus",
+        "variantGroupId": "auto69",
+        "active": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "variantGroup": {
+            "id": "auto69",
+            "name": "Geschirrtuch",
+            "attributes": [
+              {
+                "key": "farbe",
+                "label": "Farbe",
+                "values": [
+                  "rot",
+                  "blau",
+                  "grün"
+                ]
+              }
+            ],
+            "defaults": {
+              "unitPriceCents": 590,
+              "vatRate": 20,
+              "stockTracked": true
+            },
+            "active": false,
+            "variants": [
+              {
+                "articleId": "auto70",
+                "variantAttributes": {
+                  "farbe": "rot"
+                }
+              },
+              {
+                "articleId": "auto71",
+                "variantAttributes": {
+                  "farbe": "blau"
+                }
+              },
+              {
+                "articleId": "auto73",
+                "variantAttributes": {
+                  "farbe": "grün"
+                }
+              }
+            ],
+            "createdAt": "2026-10-06T08:02:42.000Z",
+            "updatedAt": "2026-10-06T08:02:50.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_add_variant_group_inactive",
+      "endpoint": "addVariant",
+      "path": "/v3/addVariant",
+      "params": {
+        "idempotencyKey": "shop-variante-3002-blau-2",
+        "variantGroupId": "auto69",
+        "variantAttributes": {
+          "farbe": "blau"
+        }
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die Variantengruppe ist stillgelegt und lässt sich nicht mehr ändern.",
+        "data": {
+          "code": "variant_group_inactive"
+        },
+        "code": "variant_group_inactive"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_variant_group",
+      "endpoint": "getVariantGroup",
+      "path": "/v3/getVariantGroup",
+      "params": {
+        "variantGroupId": "auto61"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "variantGroup": {
+            "id": "auto61",
+            "name": "Schürze",
+            "attributes": [
+              {
+                "key": "groesse",
+                "label": "Größe",
+                "values": [
+                  "S",
+                  "M",
+                  "L",
+                  "XL"
+                ]
+              },
+              {
+                "key": "farbe",
+                "label": "Farbe",
+                "values": [
+                  "rot",
+                  "blau"
+                ]
+              }
+            ],
+            "defaults": {
+              "unitPriceCents": 2490,
+              "vatRate": 20,
+              "stockTracked": true
+            },
+            "active": true,
+            "variants": [
+              {
+                "articleId": "auto62",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "S"
+                }
+              },
+              {
+                "articleId": "auto63",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "S"
+                }
+              },
+              {
+                "articleId": "auto64",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "M"
+                }
+              },
+              {
+                "articleId": "auto65",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "M"
+                }
+              },
+              {
+                "articleId": "auto66",
+                "variantAttributes": {
+                  "farbe": "rot",
+                  "groesse": "L"
+                }
+              },
+              {
+                "articleId": "auto67",
+                "variantAttributes": {
+                  "farbe": "blau",
+                  "groesse": "L"
+                }
+              }
+            ],
+            "createdAt": "2026-10-06T08:02:41.000Z",
+            "updatedAt": "2026-10-06T08:02:49.000Z"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_get_variant_group_not_found",
+      "endpoint": "getVariantGroup",
+      "path": "/v3/getVariantGroup",
+      "params": {
+        "variantGroupId": "gibt_es_nicht"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Variantengruppe nicht gefunden.",
+        "data": {
+          "code": "variant_group_not_found"
+        },
+        "code": "variant_group_not_found"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_variant_groups",
+      "endpoint": "listVariantGroups",
+      "path": "/v3/listVariantGroups",
+      "params": {},
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "variantGroups": [
+            {
+              "id": "auto61",
+              "name": "Schürze",
+              "attributes": [
+                {
+                  "key": "groesse",
+                  "label": "Größe",
+                  "values": [
+                    "S",
+                    "M",
+                    "L",
+                    "XL"
+                  ]
+                },
+                {
+                  "key": "farbe",
+                  "label": "Farbe",
+                  "values": [
+                    "rot",
+                    "blau"
+                  ]
+                }
+              ],
+              "defaults": {
+                "unitPriceCents": 2490,
+                "vatRate": 20,
+                "stockTracked": true
+              },
+              "active": true,
+              "variants": [
+                {
+                  "articleId": "auto62",
+                  "variantAttributes": {
+                    "farbe": "rot",
+                    "groesse": "S"
+                  }
+                },
+                {
+                  "articleId": "auto63",
+                  "variantAttributes": {
+                    "farbe": "blau",
+                    "groesse": "S"
+                  }
+                },
+                {
+                  "articleId": "auto64",
+                  "variantAttributes": {
+                    "farbe": "rot",
+                    "groesse": "M"
+                  }
+                },
+                {
+                  "articleId": "auto65",
+                  "variantAttributes": {
+                    "farbe": "blau",
+                    "groesse": "M"
+                  }
+                },
+                {
+                  "articleId": "auto66",
+                  "variantAttributes": {
+                    "farbe": "rot",
+                    "groesse": "L"
+                  }
+                },
+                {
+                  "articleId": "auto67",
+                  "variantAttributes": {
+                    "farbe": "blau",
+                    "groesse": "L"
+                  }
+                }
+              ],
+              "createdAt": "2026-10-06T08:02:41.000Z",
+              "updatedAt": "2026-10-06T08:02:49.000Z"
+            },
+            {
+              "id": "auto69",
+              "name": "Geschirrtuch",
+              "attributes": [
+                {
+                  "key": "farbe",
+                  "label": "Farbe",
+                  "values": [
+                    "rot",
+                    "blau",
+                    "grün"
+                  ]
+                }
+              ],
+              "defaults": {
+                "unitPriceCents": 590,
+                "vatRate": 20,
+                "stockTracked": true
+              },
+              "active": false,
+              "variants": [
+                {
+                  "articleId": "auto70",
+                  "variantAttributes": {
+                    "farbe": "rot"
+                  }
+                },
+                {
+                  "articleId": "auto71",
+                  "variantAttributes": {
+                    "farbe": "blau"
+                  }
+                },
+                {
+                  "articleId": "auto73",
+                  "variantAttributes": {
+                    "farbe": "grün"
+                  }
+                }
+              ],
+              "createdAt": "2026-10-06T08:02:42.000Z",
+              "updatedAt": "2026-10-06T08:02:50.000Z"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_articles_by_variant_group",
+      "endpoint": "listArticles",
+      "path": "/v3/listArticles",
+      "params": {
+        "variantGroupId": "auto61",
+        "limit": 3
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "articles": [
+            {
+              "id": "auto62",
+              "name": "Schürze S rot",
+              "description": null,
+              "unitPriceCents": 2490,
+              "vatRate": 20,
+              "unit": "Stk",
+              "number": null,
+              "ean": null,
+              "internalCode": "3",
+              "groupId": null,
+              "revenueGroupId": null,
+              "stockTracked": true,
+              "stockKind": "quantity",
+              "minStock": null,
+              "active": true,
+              "variantGroupId": "auto61",
+              "variantAttributes": {
+                "farbe": "rot",
+                "groesse": "S"
+              },
+              "createdAt": "2026-10-06T08:02:41.000Z",
+              "updatedAt": "2026-10-06T08:02:41.000Z",
+              "stockLocationIds": [],
+              "minStockByLocation": {}
+            },
+            {
+              "id": "auto63",
+              "name": "Schürze S blau",
+              "description": null,
+              "unitPriceCents": 2490,
+              "vatRate": 20,
+              "unit": "Stk",
+              "number": null,
+              "ean": null,
+              "internalCode": "4",
+              "groupId": null,
+              "revenueGroupId": null,
+              "stockTracked": true,
+              "stockKind": "quantity",
+              "minStock": null,
+              "active": true,
+              "variantGroupId": "auto61",
+              "variantAttributes": {
+                "farbe": "blau",
+                "groesse": "S"
+              },
+              "createdAt": "2026-10-06T08:02:41.000Z",
+              "updatedAt": "2026-10-06T08:02:41.000Z",
+              "stockLocationIds": [],
+              "minStockByLocation": {}
+            },
+            {
+              "id": "auto64",
+              "name": "Schürze M rot",
+              "description": null,
+              "unitPriceCents": 2490,
+              "vatRate": 20,
+              "unit": "Stk",
+              "number": null,
+              "ean": null,
+              "internalCode": "5",
+              "groupId": null,
+              "revenueGroupId": null,
+              "stockTracked": true,
+              "stockKind": "quantity",
+              "minStock": null,
+              "active": true,
+              "variantGroupId": "auto61",
+              "variantAttributes": {
+                "farbe": "rot",
+                "groesse": "M"
+              },
+              "createdAt": "2026-10-06T08:02:41.000Z",
+              "updatedAt": "2026-10-06T08:02:41.000Z",
+              "stockLocationIds": [],
+              "minStockByLocation": {}
+            }
+          ],
+          "nextCursor": "eyJ6ZWl0IjoxNzkxMjczNzYxMDAwMDAwLCJpZCI6ImF1dG82NCJ9"
+        }
+      }
     }
   ],
   "webhookEvents": [
@@ -3874,6 +5947,325 @@
           ],
           "expiresAt": "2026-10-06T07:02:23.000Z",
           "createdAt": "2026-10-06T06:02:17.000Z"
+        }
+      }
+    },
+    {
+      "event": "variant_group.created",
+      "body": {
+        "id": "evt_IAR3WQVOsAFKylh1U2BQ",
+        "type": "variant_group.created",
+        "createdAt": 1791273761000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto61",
+          "name": "Schürze",
+          "attributes": [
+            {
+              "key": "groesse",
+              "label": "Größe",
+              "values": [
+                "S",
+                "M",
+                "L"
+              ]
+            },
+            {
+              "key": "farbe",
+              "label": "Farbe",
+              "values": [
+                "rot",
+                "blau"
+              ]
+            }
+          ],
+          "defaults": {
+            "unitPriceCents": 2490,
+            "vatRate": 20,
+            "stockTracked": true
+          },
+          "active": true,
+          "variants": [
+            {
+              "articleId": "auto62",
+              "variantAttributes": {
+                "farbe": "rot",
+                "groesse": "S"
+              }
+            },
+            {
+              "articleId": "auto63",
+              "variantAttributes": {
+                "farbe": "blau",
+                "groesse": "S"
+              }
+            },
+            {
+              "articleId": "auto64",
+              "variantAttributes": {
+                "farbe": "rot",
+                "groesse": "M"
+              }
+            },
+            {
+              "articleId": "auto65",
+              "variantAttributes": {
+                "farbe": "blau",
+                "groesse": "M"
+              }
+            },
+            {
+              "articleId": "auto66",
+              "variantAttributes": {
+                "farbe": "rot",
+                "groesse": "L"
+              }
+            },
+            {
+              "articleId": "auto67",
+              "variantAttributes": {
+                "farbe": "blau",
+                "groesse": "L"
+              }
+            }
+          ],
+          "createdAt": "2026-10-06T08:02:41.000Z",
+          "updatedAt": "2026-10-06T08:02:41.000Z"
+        }
+      }
+    },
+    {
+      "event": "variant_group.created",
+      "body": {
+        "id": "evt_40NGWtM80JBIe8b5ZUUm",
+        "type": "variant_group.created",
+        "createdAt": 1791273762000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto69",
+          "name": "Geschirrtuch",
+          "attributes": [
+            {
+              "key": "farbe",
+              "label": "Farbe",
+              "values": [
+                "rot",
+                "blau",
+                "grün"
+              ]
+            }
+          ],
+          "defaults": {
+            "unitPriceCents": 590,
+            "vatRate": 20,
+            "stockTracked": true
+          },
+          "active": true,
+          "variants": [
+            {
+              "articleId": "auto70",
+              "variantAttributes": {
+                "farbe": "rot"
+              }
+            },
+            {
+              "articleId": "auto71",
+              "variantAttributes": {
+                "farbe": "blau"
+              }
+            }
+          ],
+          "createdAt": "2026-10-06T08:02:42.000Z",
+          "updatedAt": "2026-10-06T08:02:42.000Z"
+        }
+      }
+    },
+    {
+      "event": "variant_group.updated",
+      "body": {
+        "id": "evt_aJdQAftj5BgdB2iC99rF",
+        "type": "variant_group.updated",
+        "createdAt": 1791273765000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto69",
+          "name": "Geschirrtuch",
+          "attributes": [
+            {
+              "key": "farbe",
+              "label": "Farbe",
+              "values": [
+                "rot",
+                "blau",
+                "grün"
+              ]
+            }
+          ],
+          "defaults": {
+            "unitPriceCents": 590,
+            "vatRate": 20,
+            "stockTracked": true
+          },
+          "active": true,
+          "variants": [
+            {
+              "articleId": "auto70",
+              "variantAttributes": {
+                "farbe": "rot"
+              }
+            },
+            {
+              "articleId": "auto71",
+              "variantAttributes": {
+                "farbe": "blau"
+              }
+            },
+            {
+              "articleId": "auto73",
+              "variantAttributes": {
+                "farbe": "grün"
+              }
+            }
+          ],
+          "createdAt": "2026-10-06T08:02:42.000Z",
+          "updatedAt": "2026-10-06T08:02:45.000Z"
+        }
+      }
+    },
+    {
+      "event": "variant_group.updated",
+      "body": {
+        "id": "evt_x3IKfltELZrP4BBfQ1GO",
+        "type": "variant_group.updated",
+        "createdAt": 1791273769000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto61",
+          "name": "Schürze",
+          "attributes": [
+            {
+              "key": "groesse",
+              "label": "Größe",
+              "values": [
+                "S",
+                "M",
+                "L",
+                "XL"
+              ]
+            },
+            {
+              "key": "farbe",
+              "label": "Farbe",
+              "values": [
+                "rot",
+                "blau"
+              ]
+            }
+          ],
+          "defaults": {
+            "unitPriceCents": 2490,
+            "vatRate": 20,
+            "stockTracked": true
+          },
+          "active": true,
+          "variants": [
+            {
+              "articleId": "auto62",
+              "variantAttributes": {
+                "farbe": "rot",
+                "groesse": "S"
+              }
+            },
+            {
+              "articleId": "auto63",
+              "variantAttributes": {
+                "farbe": "blau",
+                "groesse": "S"
+              }
+            },
+            {
+              "articleId": "auto64",
+              "variantAttributes": {
+                "farbe": "rot",
+                "groesse": "M"
+              }
+            },
+            {
+              "articleId": "auto65",
+              "variantAttributes": {
+                "farbe": "blau",
+                "groesse": "M"
+              }
+            },
+            {
+              "articleId": "auto66",
+              "variantAttributes": {
+                "farbe": "rot",
+                "groesse": "L"
+              }
+            },
+            {
+              "articleId": "auto67",
+              "variantAttributes": {
+                "farbe": "blau",
+                "groesse": "L"
+              }
+            }
+          ],
+          "createdAt": "2026-10-06T08:02:41.000Z",
+          "updatedAt": "2026-10-06T08:02:49.000Z"
+        }
+      }
+    },
+    {
+      "event": "variant_group.updated",
+      "body": {
+        "id": "evt_a573FtSb4SwirpUo683R",
+        "type": "variant_group.updated",
+        "createdAt": 1791273770000,
+        "accountId": "kornblum",
+        "data": {
+          "id": "auto69",
+          "name": "Geschirrtuch",
+          "attributes": [
+            {
+              "key": "farbe",
+              "label": "Farbe",
+              "values": [
+                "rot",
+                "blau",
+                "grün"
+              ]
+            }
+          ],
+          "defaults": {
+            "unitPriceCents": 590,
+            "vatRate": 20,
+            "stockTracked": true
+          },
+          "active": false,
+          "variants": [
+            {
+              "articleId": "auto70",
+              "variantAttributes": {
+                "farbe": "rot"
+              }
+            },
+            {
+              "articleId": "auto71",
+              "variantAttributes": {
+                "farbe": "blau"
+              }
+            },
+            {
+              "articleId": "auto73",
+              "variantAttributes": {
+                "farbe": "grün"
+              }
+            }
+          ],
+          "createdAt": "2026-10-06T08:02:42.000Z",
+          "updatedAt": "2026-10-06T08:02:50.000Z"
         }
       }
     }

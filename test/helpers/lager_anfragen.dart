@@ -173,6 +173,93 @@ ReleaseReservationRequest freigeben(Map<String, dynamic> p) => ReleaseReservatio
             ],
     );
 
+List<VariantAttribute> _merkmale(Object? w) => [
+      for (final m in _liste(w))
+        VariantAttribute(key: m['key'] as String, label: m['label'] as String, values: (m['values'] as List).cast<String>()),
+    ];
+
+/// `null` je Feld heisst „leeren“ (bei der Anlage „nicht angegeben“): ein Eintrag in `clear`.
+VariantGroupDefaultsInput? vorgaben(Object? w) {
+  if (w == null) return null;
+  final d = (w as Map).cast<String, dynamic>();
+  return VariantGroupDefaultsInput(
+    unitPriceCents: d['unitPriceCents'] as int?,
+    vatRate: d['vatRate'] as num?,
+    unit: d['unit'] as String?,
+    groupId: d['groupId'] as String?,
+    stockTracked: d['stockTracked'] as bool?,
+    clear: {for (final e in d.entries) if (e.value == null) e.key},
+  );
+}
+
+VariantInput variante(Map<String, dynamic> p) => VariantInput(
+      variantAttributes: _texte(p['variantAttributes'])!,
+      name: p['name'] as String?,
+      description: p['description'] as String?,
+      unitPriceCents: p['unitPriceCents'] as int?,
+      vatRate: p['vatRate'] as num?,
+      unit: p['unit'] as String?,
+      number: p['number'] as String?,
+      ean: p['ean'] as String?,
+      groupId: p['groupId'] as String?,
+      revenueGroupId: p['revenueGroupId'] as String?,
+      stockTracked: p['stockTracked'] as bool?,
+      stockLocationIds: (p['stockLocationIds'] as List?)?.cast<String>(),
+      minStock: p['minStock'] as int?,
+      minStockByLocation: (p['minStockByLocation'] as Map?)?.cast<String, int>(),
+      stockKind: p['stockKind'] as String?,
+      purchasePriceMicros: p['purchasePriceMicros'] as int?,
+      externalIds: _texte(p['externalIds']),
+      metadata: _texte(p['metadata']),
+    );
+
+CreateVariantGroupRequest gruppeAnlegen(Map<String, dynamic> p) => CreateVariantGroupRequest(
+      idempotencyKey: _schluessel(p),
+      name: p['name'] as String,
+      attributes: _merkmale(p['attributes']),
+      defaults: vorgaben(p['defaults']),
+      createMatrix: p['createMatrix'] as bool?,
+      variants: p['variants'] == null ? null : [for (final v in _liste(p['variants'])) variante(v)],
+    );
+
+/// `defaults: null` am Draht heisst „alle Vorgaben leeren“: [UpdateVariantGroupRequest.clearDefaults].
+UpdateVariantGroupRequest gruppeAendern(Map<String, dynamic> p) => UpdateVariantGroupRequest(
+      idempotencyKey: _schluessel(p),
+      variantGroupId: p['variantGroupId'] as String,
+      name: p['name'] as String?,
+      defaults: vorgaben(p['defaults']),
+      clearDefaults: p.containsKey('defaults') && p['defaults'] == null,
+      addAttributeValues: (p['addAttributeValues'] as Map?)
+          ?.map((k, v) => MapEntry(k as String, (v as List).cast<String>())),
+      active: p['active'] as bool?,
+    );
+
+AddVariantRequest varianteErgaenzen(Map<String, dynamic> p) {
+  final v = variante(p);
+  return AddVariantRequest(
+    idempotencyKey: _schluessel(p),
+    variantGroupId: p['variantGroupId'] as String,
+    variantAttributes: v.variantAttributes,
+    name: v.name,
+    description: v.description,
+    unitPriceCents: v.unitPriceCents,
+    vatRate: v.vatRate,
+    unit: v.unit,
+    number: v.number,
+    ean: v.ean,
+    groupId: v.groupId,
+    revenueGroupId: v.revenueGroupId,
+    stockTracked: v.stockTracked,
+    stockLocationIds: v.stockLocationIds,
+    minStock: v.minStock,
+    minStockByLocation: v.minStockByLocation,
+    stockKind: v.stockKind,
+    purchasePriceMicros: v.purchasePriceMicros,
+    externalIds: v.externalIds,
+    metadata: v.metadata,
+  );
+}
+
 /// Ruft den schreibenden Aufruf [endpunkt] mit den Drahtparametern [p] auf.
 /// `receiveGoods` mit `dryRun: true` ist die Vorschau: ein eigener Aufruf,
 /// `dryRun` gehoert nicht in die Buchung.
@@ -207,6 +294,21 @@ Future<Object?> schreibAufruf(InventoryClient l, String endpunkt, Map<String, dy
       return l.listReservations(
         status: p['status'] as String?,
         reference: p['reference'] as String?,
+        limit: p['limit'] as int?,
+        cursor: p['cursor'] as String?,
+      );
+    case 'createVariantGroup':
+      return l.createVariantGroup(gruppeAnlegen(p));
+    case 'updateVariantGroup':
+      return l.updateVariantGroup(gruppeAendern(p));
+    case 'addVariant':
+      return l.addVariant(varianteErgaenzen(p));
+    case 'getVariantGroup':
+      return l.getVariantGroup(p['variantGroupId'] as String);
+    case 'listVariantGroups':
+      return l.listVariantGroups(
+        active: p['active'] as bool?,
+        updatedSince: p['updatedSince'] == null ? null : DateTime.parse(p['updatedSince'] as String),
         limit: p['limit'] as int?,
         cursor: p['cursor'] as String?,
       );

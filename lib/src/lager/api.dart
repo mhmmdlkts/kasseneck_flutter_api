@@ -1,6 +1,7 @@
 /// Die Aufrufe der Lager-API: Artikel, Standorte, Bestand und Bewegungen
 /// lesen, Konto-Webhooks verwalten (Backend Stufe 5a), Artikel anlegen und
-/// aendern, Bestand buchen und Ware reservieren (Stufe 5b) – Zwilling von
+/// aendern, Bestand buchen und Ware reservieren (Stufe 5b), Variantengruppen
+/// (Stufe 5c, seit 10.5) – Zwilling von
 /// `createInventoryClient` im JS-Paket `@kreiseck/kasseneck-api/inventory`.
 ///
 /// **Geprueft wird hier nur, was ohne Netz sicher falsch ist** (leere Kennung,
@@ -16,11 +17,10 @@
 ///
 /// **Schreiben** wird nie von selbst wiederholt. Nach einem Zeitlimit oder
 /// Netzfehler (`KasseneckHttpError`, Grund `timeout` bzw. `network`) ist offen,
-/// ob der Aufruf beim Server gewirkt hat: dann denselben Aufruf mit
-/// **demselben** `idempotencyKey` noch einmal senden. Er wirkt genau einmal und
-/// liefert die gespeicherte Antwort; ein neuer Schluessel buchte ein zweites
-/// Mal. Wie im JS-Zwilling traegt ein solcher Fehler hier den Ausgang
-/// `rejected`; der Schluessel, nicht der Ausgang, macht die Wiederholung sicher.
+/// ob der Aufruf beim Server gewirkt hat (seit 10.4.1 Ausgang `unknown`, Liste
+/// `unknownOutcomeCalls`): dann denselben Aufruf mit **demselben**
+/// `idempotencyKey` noch einmal senden. Er wirkt genau einmal und liefert die
+/// gespeicherte Antwort; ein neuer Schluessel buchte ein zweites Mal.
 library;
 
 import 'package:http/http.dart' as http;
@@ -543,6 +543,113 @@ class InventoryClient {
         return (eintraege: s.reservations, nextCursor: s.nextCursor);
       });
 
+  // ---- Varianten (Stufe 5c) -----------------------------------------------------------
+  //
+  // Eine Variante ist ein gewoehnlicher Artikel mit `variantGroupId` und
+  // `variantAttributes`; gelesen, gebucht und reserviert wird sie wie jeder
+  // Artikel. Die Gruppenantworten tragen nur die Kennungen der Varianten, die
+  // Artikel selbst liefert `listArticles(variantGroupId: …)`.
+  //
+  // Vor dem Senden geprueft wird wie im JS-Zwilling nur, was ohne Netz sicher
+  // falsch ist: der Schluessel, `variantGroupId`, `createMatrix: true` zusammen
+  // mit `variants`, eine Aenderung ohne Feld, `active` anders als `false` oder
+  // nicht allein, und wie ueberall der sichere Ganzzahlbereich. Die Grenzen
+  // (Merkmale, Werte, Matrix, aktive Varianten) prueft der Server: er darf sie
+  // anheben, ohne dass diese Paketversion dann falsch abweist. Bruchzahlen,
+  // eine fehlende Merkmalsabbildung oder `variants`, die keine Liste ist,
+  // schliesst hier schon der Typ aus.
+  //
+  // Wiederholen wie bei jedem Schreiben: nach Ausgang unklar denselben Aufruf
+  // mit **demselben** `idempotencyKey`; ein neuer Schluessel legte die Gruppe
+  // ein zweites Mal an. Ein abgebrochenes Stilllegen vollendet jede
+  // Wiederholung von `updateVariantGroup(active: false)`, auch mit neuem
+  // Schluessel.
+
+  /// Legt eine Variantengruppe an: mit `createMatrix: true` alle Kombinationen
+  /// der Werte (hoechstens 100), sonst die genannten `variants` (hoechstens
+  /// 100), ohne beides nur die Gruppe. Jede Variante entsteht als Artikel mit
+  /// den Feldern wie bei [createArticle]; was sie nicht nennt, fuellen die
+  /// Vorgaben. Antwort: die Gruppe mit `variants` (Kennung und Merkmale je
+  /// Variante).
+  ///
+  /// Braucht die Anlage mehr Schreibvorgaenge, als in einen Vorgang passen,
+  /// kommt `too_many_positions` mit `field` (`variants` bzw. `createMatrix`)
+  /// und nichts ist geschrieben: weniger Varianten senden, den Rest per
+  /// [addVariant].
+  Future<VariantGroup> createVariantGroup(CreateVariantGroupRequest request) async {
+    const name = Aufrufe.createVariantGroup;
+    final p = request.toJson();
+    _schreiben(name, p);
+    if (request.createMatrix == true && request.variants != null) {
+      throw anfragefehler(
+          name, 'createMatrix und variants schliessen sich aus: entweder alle Kombinationen oder die genannten Varianten');
+    }
+    _vorgabenLeeren(name, request.defaults);
+    return _gruppe(name, await _transport.call(name, p));
+  }
+
+  /// Aendert eine aktive Gruppe (Name, Vorgaben, neue Werte) oder legt sie mit
+  /// `active: false` still: die Gruppe und alle ihre Varianten, endgueltig. Die
+  /// Antwort kommt erst, wenn alle Varianten stillgelegt sind. Bestehende
+  /// Varianten aendern Name und Vorgaben nicht (dafuer [updateArticle]).
+  Future<VariantGroup> updateVariantGroup(UpdateVariantGroupRequest request) async {
+    const name = Aufrufe.updateVariantGroup;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'variantGroupId', p['variantGroupId']);
+    if (request.clearDefaults && request.defaults != null) {
+      throw anfragefehler(name, 'defaults und clearDefaults zugleich');
+    }
+    final aenderungen = ['name', 'defaults', 'addAttributeValues'].where(p.containsKey);
+    if (request.active case final aktiv?) {
+      if (aktiv) throw anfragefehler(name, 'active kennt nur false (stilllegen); eine stillgelegte Gruppe bleibt stillgelegt');
+      if (aenderungen.isNotEmpty) throw anfragefehler(name, 'active: false steht allein, ohne weitere Aenderung');
+    } else if (aenderungen.isEmpty) {
+      throw anfragefehler(name, 'die Aenderung nennt kein Feld');
+    }
+    _vorgabenLeeren(name, request.defaults);
+    return _gruppe(name, await _transport.call(name, p));
+  }
+
+  /// Legt eine Variante in einer aktiven Gruppe an. Antwort: der Artikel wie
+  /// [createArticle]. Gibt es die Kombination schon, kommt
+  /// `variant_already_exists` mit `articleId` der bestehenden Variante; nach
+  /// dem Stilllegen einer Variante ist ihre Kombination wieder frei.
+  Future<Article> addVariant(AddVariantRequest request) async {
+    const name = Aufrufe.addVariant;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'variantGroupId', p['variantGroupId']);
+    return _artikel(name, await _transport.call(name, p));
+  }
+
+  /// Eine Variantengruppe mit ihren aktiven Varianten (eingefroren, wenn stillgelegt).
+  Future<VariantGroup> getVariantGroup(String variantGroupId) async {
+    const name = Aufrufe.getVariantGroup;
+    final id = kennung(name, 'variantGroupId', variantGroupId);
+    return _gruppe(name, await _transport.call(name, {'variantGroupId': id}));
+  }
+
+  /// Eine Seite Variantengruppen, nach `updatedAt` aufsteigend (gleiche Zeit
+  /// nach Kennung). [updatedSince] inklusive; [limit] 1–200, Vorgabe des
+  /// Servers 50.
+  Future<VariantGroupPage> listVariantGroups({bool? active, DateTime? updatedSince, int? limit, String? cursor}) async {
+    const name = Aufrufe.listVariantGroups;
+    final daten = await _transport.call(
+        name, _abfrage(name, {'active': active, 'updatedSince': _zeit(updatedSince), 'limit': limit, 'cursor': cursor}));
+    return VariantGroupPage(
+      variantGroups: liste(name, daten, 'variantGroups', variantengruppe),
+      nextCursor: naechsterCursor(name, daten),
+    );
+  }
+
+  /// Alle Variantengruppen der Abfrage, Seite fuer Seite ueber `nextCursor`.
+  Stream<VariantGroup> iterateVariantGroups({bool? active, DateTime? updatedSince, int? limit, String? cursor}) =>
+      _seitenweise(Aufrufe.listVariantGroups, cursor, (c) async {
+        final s = await listVariantGroups(active: active, updatedSince: updatedSince, limit: limit, cursor: c);
+        return (eintraege: s.variantGroups, nextCursor: s.nextCursor);
+      });
+
   // ---- Hilfen -------------------------------------------------------------------
 
   /// Was jede schreibende Anfrage vor dem Senden erfuellen muss: ein gueltiger
@@ -553,6 +660,20 @@ class InventoryClient {
   }
 
   static Article _artikel(String name, Map<String, dynamic> daten) => artikel(Ort(name, 'article'), daten['article']);
+
+  static VariantGroup _gruppe(String name, Map<String, dynamic> daten) =>
+      variantengruppe(Ort(name, 'variantGroup'), daten['variantGroup']);
+
+  /// [VariantGroupDefaultsInput.clear]: nur die fuenf Vorgaben, keine zugleich
+  /// gesetzt und geleert.
+  static void _vorgabenLeeren(String name, VariantGroupDefaultsInput? vorgaben) {
+    if (vorgaben == null) return;
+    final fremd = vorgaben.clear.difference(leerbareVorgaben);
+    if (fremd.isNotEmpty) throw anfragefehler(name, 'defaults.clear nennt fremde Felder: ${fremd.join(', ')}');
+    final gesetzt = vorgaben.toJson();
+    final doppelt = vorgaben.clear.where((f) => gesetzt[f] != null).toList();
+    if (doppelt.isNotEmpty) throw anfragefehler(name, 'defaults zugleich gesetzt und geleert: ${doppelt.join(', ')}');
+  }
 
   static Reservation _reservierung(String name, Map<String, dynamic> daten) =>
       reservierung(Ort(name, 'reservation'), daten['reservation']);

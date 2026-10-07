@@ -1,5 +1,5 @@
 {
-  "version": "1.5.1",
+  "version": "1.6.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -81,7 +81,12 @@
       "extendReservation",
       "releaseReservation",
       "getReservation",
-      "listReservations"
+      "listReservations",
+      "createVariantGroup",
+      "updateVariantGroup",
+      "getVariantGroup",
+      "listVariantGroups",
+      "addVariant"
     ],
     "pos": [
       "cancelReceipt",
@@ -202,7 +207,12 @@
       "extendReservation",
       "releaseReservation",
       "getReservation",
-      "listReservations"
+      "listReservations",
+      "createVariantGroup",
+      "updateVariantGroup",
+      "getVariantGroup",
+      "listVariantGroups",
+      "addVariant"
     ],
     "pos": [
       "pairRegisterDevice",
@@ -237,6 +247,7 @@
   },
   "unknownOutcomeCalls": [
     "activateCashregister",
+    "addVariant",
     "cancelInvoice",
     "cancelReceipt",
     "changeStockCondition",
@@ -250,6 +261,7 @@
     "createPrintJob",
     "createReceipt",
     "createReservation",
+    "createVariantGroup",
     "createWebhook",
     "deactivateArticle",
     "deletePartnerWebhook",
@@ -286,6 +298,7 @@
     "updateCustomer",
     "updateInvoiceItem",
     "updatePartnerWebhook",
+    "updateVariantGroup",
     "updateWebhook",
     "withdrawInvoiceItem"
   ],
@@ -1070,7 +1083,12 @@
       "extendReservation",
       "releaseReservation",
       "getReservation",
-      "listReservations"
+      "listReservations",
+      "createVariantGroup",
+      "updateVariantGroup",
+      "getVariantGroup",
+      "listVariantGroups",
+      "addVariant"
     ],
     "inventoryErrorCodes": [
       "validation",
@@ -1133,7 +1151,12 @@
       "reason_required",
       "insufficient_available",
       "reservation_not_found",
-      "reservation_not_active"
+      "reservation_not_active",
+      "variant_group_not_found",
+      "variant_already_exists",
+      "invalid_variant_attributes",
+      "variant_group_inactive",
+      "variant_limit"
     ],
     "inventoryRequestErrorCodes": [
       "account_not_found",
@@ -1182,7 +1205,9 @@
       "article.deactivated",
       "reservation.expired",
       "reservation.released",
-      "reservation.redeemed"
+      "reservation.redeemed",
+      "variant_group.created",
+      "variant_group.updated"
     ],
     "landedCostAllocations": [
       "value",

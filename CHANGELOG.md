@@ -1,3 +1,93 @@
+## 10.5.0
+
+Twin of `@kreiseck/kasseneck-api` `1.6.0` (contract files pulled from that
+version): the Inventory API learns variant groups (backend stage 5c). Reason: a
+shop sells the same apron in three sizes and two colours. Until now it had to
+create six unrelated articles and keep their names, prices and codes in step by
+hand; nothing told the shop or the register that they belong together, and
+nothing stopped a second "M red". A variant group holds what they share and
+guarantees that each combination exists once.
+
+Additive; every existing call sends the same bytes as in 10.4.1. **One case
+breaks at compile time:** `InventoryWebhookEvent` is sealed and gains the
+subclass `InventoryVariantGroupEvent`, so a `switch` without `default` that
+lists all subclasses needs a new case (the README example had one). Until
+10.4.1 `variant_group.*` came back as `null`; now it is parsed. The lists
+`inventoryEndpoints`, `inventoryErrorCodes`, `inventoryWebhookEvents` and
+`Aufrufe.alle` gain entries at the end; code that compares them with a fixed
+length or a fixed last entry needs the new ones.
+
+- **Variant groups** (`InventoryClient`):
+  `createVariantGroup(CreateVariantGroupRequest)` (with `createMatrix: true`
+  every combination of the values, at most 100, or the listed `variants`
+  of `VariantInput`, at most 100; never both),
+  `updateVariantGroup(UpdateVariantGroupRequest)` (`name`, `defaults` as a
+  partial update, `addAttributeValues`, or `active: false` to deactivate the
+  group and all its variants for good), `getVariantGroup`,
+  `listVariantGroups` (named `active`, `updatedSince`, `limit`, `cursor`,
+  `VariantGroupPage`, sorted by `updatedAt` ascending) and the stream
+  `iterateVariantGroups`. `VariantGroup` carries `attributes`
+  (`VariantAttribute`: `key`, `label`, 1 to 30 `values`, in group order),
+  `defaults` (`VariantGroupDefaults`: `unitPriceCents`, `vatRate`, `unit`,
+  `groupId`, `stockTracked`, only those with a default), `active`,
+  `variants` (`VariantGroupMember`: `articleId` and `variantAttributes` of
+  every active variant) and the times. The group answers carry no articles:
+  read them with `listArticles(variantGroupId: …)`.
+- **Variants are articles**: `addVariant(AddVariantRequest)` creates one more
+  variant and answers with the `Article` as `createArticle` does. A variant
+  takes the article fields of `createArticle` (the name is optional); fields
+  it does not name are filled from the group defaults at creation, the name
+  defaults to "group value1 value2" in attribute order.
+  `Article.variantGroupId` and `Article.variantAttributes` (already read since
+  10.3) are set only on variants; the keys of `variantAttributes` come sorted
+  by code point, the attribute order is in `VariantGroup.attributes`.
+- **Clearing defaults**: in `updateVariantGroup`,
+  `VariantGroupDefaultsInput(clear: {...})` clears single defaults (`null` on
+  the wire), `clearDefaults: true` all of them (`defaults: null`), the same
+  pattern as `UpdateArticleRequest.clear`.
+- **Idempotency**: the three writes take `idempotencyKey` (required, 1 to 120
+  characters, refused before sending when empty, blank or too long) and are in
+  `unknownOutcomeCalls`: after `ErrorOutcome.unknown` resend with the same key.
+  An interrupted `updateVariantGroup(active: false)` is completed by any
+  repeat, also with a new key. `getVariantGroup` and `listVariantGroups` are
+  reads and stay `rejected`.
+- **Checked before sending**, nothing else (as npm): the key, an empty
+  `variantGroupId`, `createMatrix: true` together with `variants` (also an
+  empty list), an update without a change, `active` other than `false` or not
+  alone, `defaults` together with `clearDefaults`, a `clear` that names
+  another field or a field that is also set, and integers beyond
+  ±(2^53 − 1), also in `defaults` and in every variant (the message names the
+  place, `variants[1].unitPriceCents`). Fractions, a `variants` that is no
+  list and a missing `variantAttributes`, which npm checks at run time, are
+  ruled out here by the types. The limits (3 attributes, 30 values, matrix
+  100, 250 active variants per group) are left to the server, so it can raise
+  them; they are exported as `variantAttributesMax`, `variantValuesMax`,
+  `variantMatrixMax`, `variantGroupActiveMax`.
+- **Events**: `variant_group.created` and `variant_group.updated` in
+  `inventoryWebhookEvents`, parsed as `InventoryVariantGroupEvent` with the
+  group as `getVariantGroup` returns it. `updated` fires only on a visible
+  change (new value, new or deactivated variant, name, defaults, deactivating
+  the group). Two deliveries may overtake each other: keep the one with the
+  later `updatedAt`.
+- **Errors**: `inventoryErrorCodes` appends `variant_group_not_found`,
+  `variant_already_exists` (with `field`, and `articleId` of the existing
+  variant), `invalid_variant_attributes` (with `field` and `errors`, see
+  `inventoryFieldErrors`), `variant_group_inactive` and `variant_limit`.
+  `too_many_positions` now also answers a variant request that would need more
+  writes than fit into one operation, with `field` (`variants`,
+  `createMatrix`, or `externalIds` for `addVariant`); nothing is written then.
+- **Reading a group**: `attributes` and `variants` are promised lists; a
+  response without them, a fractional default price, a default of the wrong
+  type, a variant without `articleId` or values that are not text throw
+  `KasseneckValidationError` with `kind: 'response'`, never a substitute.
+  A default sent as `null` counts as not sent.
+- **Contract**: `zwillinge.yaml` pins npm `1.6.0`; `test/fixtures/vertrag/`
+  pulled again (`surface.json` gains the five calls and the three writes in
+  `unknownOutcomeCalls`, `v3/antworten/lager.json` the variant cases and
+  events, the other files only their version); the text catalogue and the code
+  table layout regenerated (version note only). No new entry in `ausnahmen`.
+  New tests in `test/lager_varianten_test.dart`.
+
 ## 10.4.1
 
 Twin of `@kreiseck/kasseneck-api` `1.5.1` (contract files pulled from that

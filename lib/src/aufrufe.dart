@@ -93,6 +93,12 @@ abstract final class Aufrufe {
   static const releaseReservation = 'releaseReservation';
   static const getReservation = 'getReservation';
   static const listReservations = 'listReservations';
+  // Lager-API Varianten (Stufe 5c, InventoryClient).
+  static const createVariantGroup = 'createVariantGroup';
+  static const updateVariantGroup = 'updateVariantGroup';
+  static const getVariantGroup = 'getVariantGroup';
+  static const listVariantGroups = 'listVariantGroups';
+  static const addVariant = 'addVariant';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -175,5 +181,10 @@ abstract final class Aufrufe {
     releaseReservation,
     getReservation,
     listReservations,
+    createVariantGroup,
+    updateVariantGroup,
+    getVariantGroup,
+    listVariantGroups,
+    addVariant,
   };
 }

@@ -1,8 +1,8 @@
 /// Die Lager-API: Artikel, Standorte, Bestand und Lagerprotokoll lesen,
 /// Konto-Webhooks verwalten und eingehende Zustellungen pruefen (Backend
 /// Stufe 5a); Artikel anlegen und aendern, Bestand buchen und Ware
-/// reservieren (Stufe 5b, seit 10.4) – Zwilling von
-/// `@kreiseck/kasseneck-api/inventory` im JS-Paket.
+/// reservieren (Stufe 5b, seit 10.4); Variantengruppen (Stufe 5c, seit 10.5) –
+/// Zwilling von `@kreiseck/kasseneck-api/inventory` im JS-Paket.
 ///
 /// Der Schluessel ist der `api_key` des Kontos, **ohne** Kassen-Token. Er
 /// gehoert auf einen **Server** (etwa das Backend eines Online-Shops), nie in

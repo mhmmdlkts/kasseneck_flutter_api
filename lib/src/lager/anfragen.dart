@@ -1,5 +1,6 @@
 /// Die Anfragen der schreibenden Lager-API (Backend Stufe 5b): Artikel
-/// anlegen, aendern und stilllegen, Bestand buchen und Ware reservieren –
+/// anlegen, aendern und stilllegen, Bestand buchen und Ware reservieren;
+/// Variantengruppen (Stufe 5c, seit 10.5) –
 /// Zwilling der Anfragetypen in `src/inventory/typen.ts` im JS-Paket.
 ///
 /// **Jede schreibende Anfrage traegt `idempotencyKey`** (1–120 Zeichen,
@@ -18,12 +19,15 @@
 ///
 /// `toJson()` ist die Drahtform; ein Feld, das `null` ist, geht nicht hinaus.
 /// Leeren (am Draht `null`) laesst sich ein Feld nur ueber
-/// [UpdateArticleRequest.clear].
+/// [UpdateArticleRequest.clear], [VariantGroupDefaultsInput.clear] und
+/// [UpdateVariantGroupRequest.clearDefaults].
 ///
 /// Schreiben braucht den Konto-Schalter „Lager-API schreiben“ (sonst
 /// `inventory_api_not_enabled`); in der Test-Umgebung (`kr_test_…`) ist er
 /// immer an.
 library;
+
+import 'modelle.dart' show VariantAttribute;
 
 // ---- Artikel ------------------------------------------------------------------
 
@@ -663,4 +667,251 @@ class ReleaseReservationRequest {
     'reservationId': reservationId,
     if (items != null) 'items': [for (final p in items!) p.toJson()],
   };
+}
+
+// ---- Varianten (Stufe 5c, seit 10.5) ---------------------------------------------
+
+/// Vorgaben einer Gruppe in einer Anfrage. Bei der Anlage fehlt ein Feld ohne
+/// Wert; bei einer Aenderung (`updateVariantGroup`) ist es ein Teil-Update: nur
+/// die genannten Felder, [clear] leert einzelne (am Draht `null`).
+class VariantGroupDefaultsInput {
+  const VariantGroupDefaultsInput({
+    this.unitPriceCents,
+    this.vatRate,
+    this.unit,
+    this.groupId,
+    this.stockTracked,
+    this.clear = const {},
+  });
+
+  final int? unitPriceCents;
+
+  /// USt-Satz in Prozent.
+  final num? vatRate;
+  final String? unit;
+
+  /// Artikelgruppe; unbekannt = `group_not_found` (bei einer Variante mit
+  /// `field: 'defaults.groupId'`).
+  final String? groupId;
+  final bool? stockTracked;
+
+  /// Felder, die eine Aenderung leert (am Draht `null`): jedes der fuenf
+  /// (`unitPriceCents`, `vatRate`, `unit`, `groupId`, `stockTracked`). Ein
+  /// Feld zugleich setzen und leeren oder ein fremder Name gehen nicht hinaus
+  /// (`KasseneckValidationError`). Bei der Anlage heisst `null` am Draht
+  /// „nicht angegeben“.
+  final Set<String> clear;
+
+  /// Wie bei [UpdateArticleRequest] behaelt ein Feld, das zugleich gesetzt und
+  /// in [clear] steht, hier seinen Wert; der Aufruf weist die Anfrage ab.
+  Map<String, dynamic> toJson() {
+    final werte = <String, dynamic>{
+      'unitPriceCents': ?unitPriceCents,
+      'vatRate': ?vatRate,
+      'unit': ?unit,
+      'groupId': ?groupId,
+      'stockTracked': ?stockTracked,
+    };
+    return {
+      ...werte,
+      for (final feld in clear)
+        if (!werte.containsKey(feld)) feld: null,
+    };
+  }
+}
+
+/// Eine neue Variante: ihre Merkmalswerte und die Felder eines Artikels wie
+/// bei [CreateArticleRequest]. Was fehlt, fuellen die Vorgaben der Gruppe; ohne
+/// [name] heisst sie „`<Gruppe> <Wert1> <Wert2>`“ in Merkmalsreihenfolge. Mit
+/// [ean] wird sie ein Fremdartikel, sonst vergibt der Server den naechsten
+/// eigenen Code.
+class VariantInput {
+  const VariantInput({
+    required this.variantAttributes,
+    this.name,
+    this.description,
+    this.unitPriceCents,
+    this.vatRate,
+    this.unit,
+    this.number,
+    this.ean,
+    this.groupId,
+    this.revenueGroupId,
+    this.stockTracked,
+    this.stockLocationIds,
+    this.minStock,
+    this.minStockByLocation,
+    this.stockKind,
+    this.purchasePriceMicros,
+    this.externalIds,
+    this.metadata,
+  });
+
+  /// Jedes Merkmal der Gruppe genau einmal, Wert exakt aus der Werteliste
+  /// (Gross/Klein und Leerraum werden nicht angeglichen), sonst
+  /// `invalid_variant_attributes` mit `field`.
+  final Map<String, String> variantAttributes;
+
+  /// 1–200 Zeichen; ohne Angabe der Standardname.
+  final String? name;
+  final String? description;
+  final int? unitPriceCents;
+  final num? vatRate;
+  final String? unit;
+  final String? number;
+
+  /// GTIN/EAN mit gueltiger Pruefziffer, frei im Konto (`code_taken`).
+  final String? ean;
+  final String? groupId;
+  final String? revenueGroupId;
+  final bool? stockTracked;
+  final List<String>? stockLocationIds;
+  final int? minStock;
+  final Map<String, int>? minStockByLocation;
+  final String? stockKind;
+  final int? purchasePriceMicros;
+  final Map<String, String>? externalIds;
+  final Map<String, String>? metadata;
+
+  Map<String, dynamic> toJson() => {
+    'variantAttributes': {...variantAttributes},
+    'name': ?name,
+    'description': ?description,
+    'unitPriceCents': ?unitPriceCents,
+    'vatRate': ?vatRate,
+    'unit': ?unit,
+    'number': ?number,
+    'ean': ?ean,
+    'groupId': ?groupId,
+    'revenueGroupId': ?revenueGroupId,
+    'stockTracked': ?stockTracked,
+    if (stockLocationIds != null) 'stockLocationIds': [...stockLocationIds!],
+    'minStock': ?minStock,
+    if (minStockByLocation != null) 'minStockByLocation': {...minStockByLocation!},
+    'stockKind': ?stockKind,
+    'purchasePriceMicros': ?purchasePriceMicros,
+    if (externalIds != null) 'externalIds': {...externalIds!},
+    if (metadata != null) 'metadata': {...metadata!},
+  };
+}
+
+/// Legt eine Variantengruppe an (`createVariantGroup`): mit
+/// `createMatrix: true` samt allen Kombinationen (hoechstens 100) oder mit den
+/// genannten [variants] (hoechstens 100), nie beides. Ohne beides entsteht die
+/// Gruppe ohne Variante. Die Antwort traegt die Gruppe mit `variants`
+/// (Kennungen und Merkmale), nicht die Artikel.
+class CreateVariantGroupRequest {
+  const CreateVariantGroupRequest({
+    required this.idempotencyKey,
+    required this.name,
+    required this.attributes,
+    this.defaults,
+    this.createMatrix,
+    this.variants,
+  });
+
+  final String idempotencyKey;
+
+  /// 1–100 Zeichen.
+  final String name;
+
+  /// 1–3 Merkmale; ihre Reihenfolge bestimmt Standardnamen und Matrix (das
+  /// erste laeuft aussen).
+  final List<VariantAttribute> attributes;
+  final VariantGroupDefaultsInput? defaults;
+
+  /// `true`: alle Kombinationen der Werte als Varianten. Schliesst [variants] aus.
+  final bool? createMatrix;
+  final List<VariantInput>? variants;
+
+  Map<String, dynamic> toJson() => {
+    'idempotencyKey': idempotencyKey,
+    'name': name,
+    'attributes': [for (final m in attributes) m.toJson()],
+    'defaults': ?defaults?.toJson(),
+    'createMatrix': ?createMatrix,
+    if (variants != null) 'variants': [for (final v in variants!) v.toJson()],
+  };
+}
+
+/// Aendert eine aktive Gruppe (`updateVariantGroup`): nur die genannten Felder,
+/// mindestens eines. [defaults] ist ein Teil-Update
+/// ([VariantGroupDefaultsInput.clear] leert einzelne Felder, [clearDefaults]
+/// alle). [addAttributeValues] haengt Werte an bestehende Merkmale an und
+/// uebergeht still, was es schon gibt (auch in anderer Gross-/Kleinschreibung):
+/// der Shop darf immer alle seine Werte senden. Werte entfernen und Merkmale
+/// ergaenzen gibt es nicht.
+///
+/// `active: false` legt die Gruppe und alle ihre Varianten still, steht allein
+/// und ist endgueltig (`true` gibt es nicht). Eine stillgelegte Gruppe ergibt
+/// bei jeder anderen Aenderung `variant_group_inactive`.
+class UpdateVariantGroupRequest {
+  const UpdateVariantGroupRequest({
+    required this.idempotencyKey,
+    required this.variantGroupId,
+    this.name,
+    this.defaults,
+    this.clearDefaults = false,
+    this.addAttributeValues,
+    this.active,
+  });
+
+  final String idempotencyKey;
+  final String variantGroupId;
+  final String? name;
+  final VariantGroupDefaultsInput? defaults;
+
+  /// Leert alle Vorgaben (am Draht `defaults: null`); schliesst [defaults] aus.
+  final bool clearDefaults;
+
+  /// `{'groesse': ['XL']}`: hoechstens 30 Werte je Merkmal danach.
+  final Map<String, List<String>>? addAttributeValues;
+
+  /// Nur `false` (stilllegen); `true` geht nicht hinaus.
+  final bool? active;
+
+  /// [defaults] zugleich mit [clearDefaults] behaelt hier die Vorgaben;
+  /// `updateVariantGroup` weist die Anfrage dann ab.
+  Map<String, dynamic> toJson() => {
+    'idempotencyKey': idempotencyKey,
+    'variantGroupId': variantGroupId,
+    'name': ?name,
+    if (defaults != null) 'defaults': defaults!.toJson() else if (clearDefaults) 'defaults': null,
+    if (addAttributeValues != null)
+      'addAttributeValues': {for (final e in addAttributeValues!.entries) e.key: [...e.value]},
+    'active': ?active,
+  };
+}
+
+/// Legt eine Variante in einer aktiven Gruppe an (`addVariant`). Antwort: der
+/// Artikel wie `createArticle`.
+class AddVariantRequest extends VariantInput {
+  const AddVariantRequest({
+    required this.idempotencyKey,
+    required this.variantGroupId,
+    required super.variantAttributes,
+    super.name,
+    super.description,
+    super.unitPriceCents,
+    super.vatRate,
+    super.unit,
+    super.number,
+    super.ean,
+    super.groupId,
+    super.revenueGroupId,
+    super.stockTracked,
+    super.stockLocationIds,
+    super.minStock,
+    super.minStockByLocation,
+    super.stockKind,
+    super.purchasePriceMicros,
+    super.externalIds,
+    super.metadata,
+  });
+
+  final String idempotencyKey;
+  final String variantGroupId;
+
+  @override
+  Map<String, dynamic> toJson() => {'idempotencyKey': idempotencyKey, 'variantGroupId': variantGroupId, ...super.toJson()};
 }
