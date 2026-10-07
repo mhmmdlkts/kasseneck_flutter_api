@@ -1,3 +1,16 @@
+## 10.6.0
+
+Twin of `@kreiseck/kasseneck-api` `1.7.0` (contract files pulled from that
+version): `CashregisterEntry` gains the optional `autoLogout`
+(`CashregisterAutoLogout` with `autoLogoutMinutes` 0/1/5/15/30 and
+`logoutAfterSale`, each `null` when absent). Reason: the backend now reports a
+register's own sign-out settings in `listMyCashregisters`; a client that
+ignored them showed the operator's defaults on a register that had its own.
+`autoLogout` is `null` when the register has no values of its own; a minutes
+value outside 0/1/5/15/30 is dropped instead of passed on.
+
+Additive; nothing that compiled before stops compiling.
+
 ## 10.5.0
 
 Twin of `@kreiseck/kasseneck-api` `1.6.0` (contract files pulled from that

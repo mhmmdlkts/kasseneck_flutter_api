@@ -727,6 +727,22 @@ void main() {
       expect(isPrintJobFinished(fremd.status), isTrue, reason: 'nie bis zum Zeitlimit abfragen');
     });
 
+    test('Kasse: autoLogout wird gelesen, fehlt es, ist es null', () {
+      final mit = CashregisterEntry.fromJson({
+        'id': 'THEKE-1',
+        'label': 'THEKE-1',
+        'autoLogout': {'autoLogoutMinutes': 5, 'logoutAfterSale': true},
+      });
+      expect(mit.autoLogout, isNotNull);
+      expect(mit.autoLogout!.autoLogoutMinutes, 5);
+      expect(mit.autoLogout!.logoutAfterSale, isTrue);
+      final teil = CashregisterEntry.fromJson({'id': 'THEKE-1', 'autoLogout': {'autoLogoutMinutes': 0}});
+      expect(teil.autoLogout!.autoLogoutMinutes, 0);
+      expect(teil.autoLogout!.logoutAfterSale, isNull);
+      expect(CashregisterEntry.fromJson({'id': 'THEKE-1'}).autoLogout, isNull);
+      expect(CashregisterEntry.fromJson({'id': 'THEKE-1', 'autoLogout': null}).autoLogout, isNull);
+    });
+
     test('Kassenliste und Volltext-Belegnummer', () async {
       final kassen = (await _rufe('listMyCashregisters', _fall('listMyCashregisters', 'manager')))!.ergebnis
           as List<CashregisterEntry>;
@@ -952,7 +968,7 @@ void main() {
         'registerPinLogin.user': (RegisterUser.fields, const {}),
         'renewRegisterSession': (const {'expiresAt'}, const {}),
         'listMyCashregisters': (const {'cashregisters'}, const {}),
-        'listMyCashregisters.cashregisters[]': (CashregisterEntry.fields, const {'stockLocationId'}),
+        'listMyCashregisters.cashregisters[]': (CashregisterEntry.fields, const {'stockLocationId', 'autoLogout'}),
         'listMyCashregisters.cashregisters[].onboarding': (CashregisterOnboarding.fields, const {}),
         'generateFullReceiptId': (const {'fullReceiptId'}, const {}),
         'listMyArticleGroups': (const {'groups'}, const {}),
