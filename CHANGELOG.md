@@ -1,3 +1,13 @@
+## 10.7.2
+
+The pub.dev homepage now points to <https://kasseneck.at/api-doku> instead of
+the GitHub repository. Reason: the repository is already linked as
+`repository`, so both links led to the same place, and nobody coming from
+pub.dev found the API documentation, the sandbox access or a contact. The
+issue tracker stays on GitHub.
+
+No code changes; nothing else moves.
+
 ## 10.7.1
 
 The dependency on `kreiseck_design` now allows `>=0.7.0 <0.9.0` instead of
