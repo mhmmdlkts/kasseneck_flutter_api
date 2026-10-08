@@ -23,6 +23,9 @@ import '../../models/kasseneck_receipt.dart';
 import '../../models/keck_payment.dart';
 import '../../models/keck_tip_person.dart';
 import '../aufrufe.dart';
+import '../lager/lesen.dart' show inventur, inventurPosition, inventurZaehlung, liste, naechsterCursor, zaehlungMitPosition;
+import '../lager/modelle.dart' show Stocktake, StocktakeCountPage, StocktakeCountResult, StocktakeItemPage;
+import '../lager/schreiben.dart' show kennung, pruefeSchluessel, stornoPruefen, zaehlungPruefen;
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'artikel.dart';
@@ -712,6 +715,130 @@ class RegisterReceiptClient {
       'cashregisterId': ?cashregisterId,
     });
     return lagerKassenStandortLesen(name, daten);
+  }
+
+  // ---- Inventur zaehlen (Lager-Kern Stufe 3, seit 10.7) ---------------------
+  //
+  // Offene Inventuren des Standorts, ihre Positionen und Zaehlungen lesen,
+  // zaehlen und eine Zaehlung stornieren; Zwilling von `pos/inventur.ts` im
+  // JS-Paket, gleiche Namen. Es gibt die fuenf Aufrufe nur ueber den Kassenweg.
+  // Rechte am Server: `stocktakeCount` (zaehlen, eigene Zaehlungen stornieren,
+  // lesen) bzw. `stocktakeClose` (auch fremde Zaehlungen stornieren und ab der
+  // Pruefung das Soll sehen). Anlegen, Pruefen und Abschliessen gibt es an der
+  // Kasse nicht.
+  //
+  // Gezaehlt wird nur online: die Serverzeit ist die Referenzzeit. Bei
+  // unklarem Ausgang (`isOutcomeUnknown`) dieselbe Zaehlung mit **demselben**
+  // `idempotencyKey` erneut senden („Erneut senden“); sie wirkt genau einmal.
+  // Die Modelle sind dieselben wie in `inventory.dart`; Mengen in Tausendstel.
+
+  /// Offene Inventuren (`listMyStocktakes`); fuer Kassen-Benutzer nur
+  /// `counting` und `review` mit offenem Nachzaehlen. Ein leerer [locationId]
+  /// gilt wie keiner; [status] aus `stocktakeStatuses`.
+  Future<List<Stocktake>> listMyStocktakes({String? locationId, String? status}) async {
+    const name = Aufrufe.listMyStocktakes;
+    final daten = await transport.call(name, params: {
+      if (locationId != null && locationId.isNotEmpty) 'locationId': locationId,
+      'status': ?status,
+    });
+    return liste(name, daten, 'stocktakes', inventur);
+  }
+
+  /// Positionen einer Inventur (`listMyStocktakeItems`); [openOnly] nur
+  /// ungezaehlte (in der Pruefung: die zum Nachzaehlen). Ab der Pruefung mit
+  /// Soll nur mit dem Recht `stocktakeClose`.
+  Future<StocktakeItemPage> listMyStocktakeItems({
+    required String stocktakeId,
+    bool? openOnly,
+    int? limit,
+    String? cursor,
+  }) async {
+    const name = Aufrufe.listMyStocktakeItems;
+    final daten = await transport.call(name, params: {
+      'stocktakeId': kennung(name, 'stocktakeId', stocktakeId),
+      'openOnly': ?openOnly,
+      'limit': ?limit,
+      'cursor': ?cursor,
+    });
+    return StocktakeItemPage(items: liste(name, daten, 'items', inventurPosition), nextCursor: naechsterCursor(name, daten));
+  }
+
+  /// Zaehlungen einer Inventur (`listMyStocktakeCounts`), neueste zuerst;
+  /// [ownOnly] nur die eigenen.
+  Future<StocktakeCountPage> listMyStocktakeCounts({
+    required String stocktakeId,
+    String? articleId,
+    bool? ownOnly,
+    int? limit,
+    String? cursor,
+  }) async {
+    const name = Aufrufe.listMyStocktakeCounts;
+    final daten = await transport.call(name, params: {
+      'stocktakeId': kennung(name, 'stocktakeId', stocktakeId),
+      'articleId': ?articleId,
+      'ownOnly': ?ownOnly,
+      'limit': ?limit,
+      'cursor': ?cursor,
+    });
+    return StocktakeCountPage(counts: liste(name, daten, 'counts', inventurZaehlung), nextCursor: naechsterCursor(name, daten));
+  }
+
+  /// Eine Zaehlung (`recordMyStocktakeCount`). Antwort: die Zaehlung und die
+  /// Position danach (Ist-Summe, kein Soll).
+  ///
+  /// [quantity] in Tausendstel, aus der Eingabe mit [parseQuantityMilli]; `0`
+  /// = leer gezaehlt. [condition] Vorgabe `sellable`. Einzelstueck: je Stueck
+  /// genau eine Seriennummer in [serialNumbers]. Ohne [cashregisterId] gilt die
+  /// Kasse der Anmeldung.
+  Future<StocktakeCountResult> recordMyStocktakeCount({
+    required String idempotencyKey,
+    required String stocktakeId,
+    required String articleId,
+    required int quantity,
+    String? condition,
+    List<String>? serialNumbers,
+    String? note,
+    String? cashregisterId,
+  }) async {
+    const name = Aufrufe.recordMyStocktakeCount;
+    final p = <String, dynamic>{
+      'idempotencyKey': idempotencyKey,
+      'stocktakeId': stocktakeId,
+      'articleId': articleId,
+      'condition': ?condition,
+      'quantity': quantity,
+      if (serialNumbers != null) 'serialNumbers': [...serialNumbers],
+      'note': ?note,
+      'cashregisterId': ?cashregisterId,
+    };
+    kennung(name, 'stocktakeId', stocktakeId);
+    pruefeSchluessel(name, p);
+    zaehlungPruefen(name, p);
+    if (cashregisterId != null) kennung(name, 'cashregisterId', cashregisterId);
+    // Die Kasse der Anmeldung legt der Transport bei; eine ausdrueckliche
+    // ersetzt sie (Parameter gehen nach der Grundnutzlast hinein).
+    return zaehlungMitPosition(name, await transport.call(name, params: p));
+  }
+
+  /// Storniert eine Zaehlung mit Grund (`voidMyStocktakeCount`; fremde nur
+  /// mit dem Recht `stocktakeClose`).
+  Future<StocktakeCountResult> voidMyStocktakeCount({
+    required String idempotencyKey,
+    required String stocktakeId,
+    required String countId,
+    required String reason,
+  }) async {
+    const name = Aufrufe.voidMyStocktakeCount;
+    final p = <String, dynamic>{
+      'idempotencyKey': idempotencyKey,
+      'stocktakeId': stocktakeId,
+      'countId': countId,
+      'reason': reason,
+    };
+    kennung(name, 'stocktakeId', stocktakeId);
+    pruefeSchluessel(name, p);
+    stornoPruefen(name, p);
+    return zaehlungMitPosition(name, await transport.call(name, params: p));
   }
 
   Future<List<T>> _liste<T>(String name, String feld, T Function(Map<String, dynamic>) lesen) async {

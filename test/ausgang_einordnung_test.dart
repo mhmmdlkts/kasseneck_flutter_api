@@ -14,7 +14,8 @@ import 'package:kasseneck_api/src/v3.dart';
 import 'helpers/lager_anfragen.dart';
 
 /// Welcher Aufruf meldet nach dem Senden Ausgang unklar? Zwilling von
-/// `test/ausgang-einordnung.test.ts` im npm-Paket (seit 1.5.1, Varianten 1.6.0).
+/// `test/ausgang-einordnung.test.ts` im npm-Paket (seit 1.5.1, Varianten 1.6.0,
+/// Inventur 1.8.0).
 ///
 /// Bis 10.4.0 nur die sechs, die signieren, FinanzOnline ansprechen oder Geld
 /// bewegen. Ein Wareneingang, eine Reservierung oder `issueInvoice` kam nach
@@ -59,6 +60,8 @@ const Set<String> _lesen = {
   'getReportV2',
   'getReservation',
   'getStock',
+  'getStocktake',
+  'getStocktakePdf',
   'getVariantGroup',
   'hobexGetStatus',
   'listArticles',
@@ -72,12 +75,18 @@ const Set<String> _lesen = {
   'listMyReceipts',
   'listMyStock',
   'listMyStockLocations',
+  'listMyStocktakeCounts',
+  'listMyStocktakeItems',
+  'listMyStocktakes',
   'listMyTipRecipients',
   'listRegisterSessionsForDevice',
   'listRegisterUsersForDevice',
   'listReservations',
   'listStock',
   'listStockMovements',
+  'listStocktakeCounts',
+  'listStocktakeItems',
+  'listStocktakes',
   'listVariantGroups',
   'listWebhookDeliveries',
   'listWebhooks',
@@ -175,6 +184,13 @@ final List<_Fall> _faelle = [
     ('createVariantGroup', 'create_variant_group_matrix'),
     ('updateVariantGroup', 'update_variant_group_deactivate'),
     ('addVariant', 'add_variant'),
+    ('createStocktake', 'create_stocktake'),
+    ('recordStocktakeCount', 'record_stocktake_count'),
+    ('voidStocktakeCount', 'void_stocktake_count'),
+    ('reviewStocktake', 'review_stocktake'),
+    ('recountStocktake', 'recount_stocktake'),
+    ('closeStocktake', 'close_stocktake'),
+    ('cancelStocktake', 'cancel_stocktake'),
   ])
     _Fall(aufruf, aufruf, (c) => schreibAufruf(_lager(c), aufruf, _params(fall)), wirkung: true),
   _Fall('createWebhook', 'createWebhook', (c) {
@@ -200,6 +216,12 @@ final List<_Fall> _faelle = [
   _Fall('getReservation', 'getReservation', (c) => _lager(c).getReservation('auto43'), wirkung: false),
   _Fall('getVariantGroup', 'getVariantGroup', (c) => _lager(c).getVariantGroup('auto61'), wirkung: false),
   _Fall('listVariantGroups', 'listVariantGroups', (c) => _lager(c).listVariantGroups(active: true), wirkung: false),
+  _Fall('getStocktake', 'getStocktake', (c) => _lager(c).getStocktake('auto78'), wirkung: false),
+  _Fall('listStocktakes', 'listStocktakes', (c) => _lager(c).listStocktakes(status: 'counting'), wirkung: false),
+  _Fall('listStocktakeItems', 'listStocktakeItems', (c) => _lager(c).listStocktakeItems(stocktakeId: 'auto78'),
+      wirkung: false),
+  // Das Protokoll ueber den Datei-oder-Nutzlast-Weg: dieselbe Einordnung.
+  _Fall('getStocktakePdf', 'getStocktakePdf', (c) => _lager(c).getStocktakePdf('auto78'), wirkung: false),
   _Fall('getInvoice', 'getInvoice', (c) => _rechnung(c).getInvoice(invoiceId: 'inv1'), wirkung: false),
   _Fall('listInvoices', 'listInvoices', (c) => _rechnung(c).listInvoices(limit: 2), wirkung: false),
   // Probelauf unter dem Namen des echten Aufrufs: abgelehnt.

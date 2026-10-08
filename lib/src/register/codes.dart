@@ -21,6 +21,8 @@ const List<String> registerErrorCodes = [
   'account_not_found',
   'admin_required',
   'api_not_approved',
+  'app_check_invalid',
+  'app_check_missing',
   'cashregister_in_use',
   'cashregister_not_assigned',
   'cashregister_not_found',

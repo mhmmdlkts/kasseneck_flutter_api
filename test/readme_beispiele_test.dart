@@ -53,6 +53,9 @@ late Customer customer;
 late Map<String, dynamic> storedMap;
 late KeckPrinter printer;
 late IssueResult issued;
+late PosArticle article;
+void showHint(String text) {}
+Future<void> fetchAndCheck(String url, String sha256) async {}
 ''';
 
 /// Befunde, die an einem Ausschnitt nichts bedeuten (ein Beispiel legt

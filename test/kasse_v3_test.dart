@@ -40,6 +40,13 @@ const _kassenAufrufe = [
 ];
 const _weitere = ['listMyCashregisters', 'generateFullReceiptId', 'createReceipt', 'cancelReceipt'];
 
+/// Inventur zaehlen (seit 10.7). Die Modelle sind die der Lager-API; ihre
+/// Feldmengen prueft `kasse_inventur_test.dart` (verlustfrei ueber `toJson`)
+/// statt F8 hier.
+const _inventur = [
+  'listMyStocktakes', 'listMyStocktakeItems', 'listMyStocktakeCounts', 'recordMyStocktakeCount', 'voidMyStocktakeCount',
+];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
   'createReceipt/start_receipt': 'Startbeleg: Panel bzw. API-Schlüssel, nicht der Verkauf der Kasse',
@@ -249,6 +256,41 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
           stockLocationId: ziel.isEmpty ? null : ziel,
           cashregisterId: p['cashregisterId'] as String?,
         );
+      case 'listMyStocktakes':
+        return belege.listMyStocktakes(locationId: p['locationId'] as String?, status: p['status'] as String?);
+      case 'listMyStocktakeItems':
+        return belege.listMyStocktakeItems(
+          stocktakeId: _s(p['stocktakeId']),
+          openOnly: p['openOnly'] as bool?,
+          limit: p['limit'] as int?,
+          cursor: p['cursor'] as String?,
+        );
+      case 'listMyStocktakeCounts':
+        return belege.listMyStocktakeCounts(
+          stocktakeId: _s(p['stocktakeId']),
+          articleId: p['articleId'] as String?,
+          ownOnly: p['ownOnly'] as bool?,
+          limit: p['limit'] as int?,
+          cursor: p['cursor'] as String?,
+        );
+      case 'recordMyStocktakeCount':
+        return belege.recordMyStocktakeCount(
+          idempotencyKey: _s(p['idempotencyKey']),
+          stocktakeId: _s(p['stocktakeId']),
+          articleId: _s(p['articleId']),
+          quantity: p['quantity'] as int,
+          condition: p['condition'] as String?,
+          serialNumbers: (p['serialNumbers'] as List?)?.cast<String>(),
+          note: p['note'] as String?,
+          cashregisterId: p['cashregisterId'] as String?,
+        );
+      case 'voidMyStocktakeCount':
+        return belege.voidMyStocktakeCount(
+          idempotencyKey: _s(p['idempotencyKey']),
+          stocktakeId: _s(p['stocktakeId']),
+          countId: _s(p['countId']),
+          reason: _s(p['reason']),
+        );
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();
         return PosSettingsClient(transport, deviceId: _s(p['deviceId'])).load();
@@ -396,14 +438,14 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   if (_anmeldung.contains(endpunkt)) {
     expect(isRegisterError(lauf.fehler, code as String), isTrue, reason: '$name: $code in registerErrorCodes');
   }
-  if (_kassenAufrufe.contains(endpunkt)) {
+  if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt)) {
     expect(isPosError(lauf.fehler, code as String), isTrue, reason: '$name: $code in posErrorCodes');
   }
 }
 
 void main() {
   group('jeder Fall des Kassenwegs', () {
-    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere]) {
+    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur]) {
       test(endpunkt, () async {
         var gelaufen = 0;
         for (final fall in _faelle(endpunkt)) {
@@ -428,8 +470,8 @@ void main() {
       }
     });
 
-    test('alle 28 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
-      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere};
+    test('alle 33 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur};
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });

@@ -1,6 +1,6 @@
 /// Die Anfragen der schreibenden Lager-API (Backend Stufe 5b): Artikel
 /// anlegen, aendern und stilllegen, Bestand buchen und Ware reservieren;
-/// Variantengruppen (Stufe 5c, seit 10.5) –
+/// Variantengruppen (Stufe 5c, seit 10.5); Inventur (Lager-Kern Stufe 3, seit 10.7) –
 /// Zwilling der Anfragetypen in `src/inventory/typen.ts` im JS-Paket.
 ///
 /// **Jede schreibende Anfrage traegt `idempotencyKey`** (1–120 Zeichen,
@@ -914,4 +914,213 @@ class AddVariantRequest extends VariantInput {
 
   @override
   Map<String, dynamic> toJson() => {'idempotencyKey': idempotencyKey, 'variantGroupId': variantGroupId, ...super.toJson()};
+}
+
+// ---- Inventur (Lager-Kern Stufe 3, seit 10.7) --------------------------------
+//
+// Jede schreibende Anfrage der Inventur traegt einen `idempotencyKey`, auch
+// das Zaehlen: nach Ausgang unklar dieselbe Zaehlung mit **demselben**
+// Schluessel erneut senden, sie wirkt genau einmal. Ein neuer Schluessel
+// zaehlte die Ware ein zweites Mal.
+
+/// Umfang einer neuen Inventur.
+class StocktakeScopeInput {
+  const StocktakeScopeInput({required this.type, this.groupIds, this.articleIds});
+
+  /// Ein Wert aus `stocktakeScopeTypes`: `all`, `groups` oder `articles`.
+  final String type;
+
+  /// Bei `groups`: 1–50 Gruppen.
+  final List<String>? groupIds;
+
+  /// Bei `articles`: 1–5000 bestandsgefuehrte Artikel.
+  final List<String>? articleIds;
+
+  Map<String, dynamic> toJson() => {
+        'type': type,
+        if (groupIds != null) 'groupIds': [...groupIds!],
+        if (articleIds != null) 'articleIds': [...articleIds!],
+      };
+}
+
+/// Legt eine Inventur an (`createStocktake`). Je Standort hoechstens eine
+/// offene (`stocktake_location_busy`, `inventoryBusyStocktakeId` nennt sie);
+/// hoechstens `stocktakeItemsMax` Positionen.
+class CreateStocktakeRequest {
+  const CreateStocktakeRequest({
+    required this.idempotencyKey,
+    required this.locationId,
+    required this.scope,
+    required this.type,
+    this.keyDate,
+    this.blind,
+    this.name,
+  });
+
+  final String idempotencyKey;
+  final String locationId;
+  final StocktakeScopeInput scope;
+
+  /// Ein Wert aus `stocktakeTypes`: `key_date` oder `perpetual`.
+  final String type;
+
+  /// Pflicht bei `key_date` (`YYYY-MM-DD`), sonst weglassen.
+  final String? keyDate;
+
+  /// Vorgabe `true`: niemand sieht vor der Pruefung ein Soll.
+  final bool? blind;
+
+  /// 1–100 Zeichen; ohne Angabe „`Inventur <Standort> <Tag>`“.
+  final String? name;
+
+  Map<String, dynamic> toJson() => {
+        'idempotencyKey': idempotencyKey,
+        'name': ?name,
+        'locationId': locationId,
+        'scope': scope.toJson(),
+        'type': type,
+        'keyDate': ?keyDate,
+        'blind': ?blind,
+      };
+}
+
+/// Eine Zaehlung (`recordStocktakeCount`). Menge in Tausendstel (`0` = leer
+/// gezaehlt; Stueckartikel und Einzelstuecke nur ganze Stueck), Einzelstueck
+/// mit je Stueck genau einer Seriennummer. Mehrere Zaehlungen derselben
+/// Position werden addiert.
+class RecordStocktakeCountRequest {
+  const RecordStocktakeCountRequest({
+    required this.idempotencyKey,
+    required this.stocktakeId,
+    required this.articleId,
+    required this.quantity,
+    this.condition,
+    this.serialNumbers,
+    this.note,
+  });
+
+  final String idempotencyKey;
+  final String stocktakeId;
+  final String articleId;
+
+  /// Tausendstel; eine eingetippte Menge liest `parseQuantityMilli` (pos.dart).
+  final int quantity;
+
+  /// Vorgabe `sellable`; sonst ein Wert aus `stockConditions`.
+  final String? condition;
+
+  /// Einzelstueck: je Stueck genau eine Seriennummer.
+  final List<String>? serialNumbers;
+
+  /// Hoechstens 200 Zeichen.
+  final String? note;
+
+  Map<String, dynamic> toJson() => {
+        'idempotencyKey': idempotencyKey,
+        'stocktakeId': stocktakeId,
+        'articleId': articleId,
+        'condition': ?condition,
+        'quantity': quantity,
+        if (serialNumbers != null) 'serialNumbers': [...serialNumbers!],
+        'note': ?note,
+      };
+}
+
+/// Storniert eine Zaehlung (`voidStocktakeCount`); die Position wird aus den
+/// uebrigen Zaehlungen neu summiert.
+class VoidStocktakeCountRequest {
+  const VoidStocktakeCountRequest({
+    required this.idempotencyKey,
+    required this.stocktakeId,
+    required this.countId,
+    required this.reason,
+  });
+
+  final String idempotencyKey;
+  final String stocktakeId;
+  final String countId;
+
+  /// 1–500 Zeichen.
+  final String reason;
+
+  Map<String, dynamic> toJson() =>
+      {'idempotencyKey': idempotencyKey, 'stocktakeId': stocktakeId, 'countId': countId, 'reason': reason};
+}
+
+/// Pruefen (`reviewStocktake`): `counting` → `review`, in `review` neu rechnen
+/// (etwa nach dem Nachzaehlen).
+class ReviewStocktakeRequest {
+  const ReviewStocktakeRequest({required this.idempotencyKey, required this.stocktakeId});
+
+  final String idempotencyKey;
+  final String stocktakeId;
+
+  Map<String, dynamic> toJson() => {'idempotencyKey': idempotencyKey, 'stocktakeId': stocktakeId};
+}
+
+/// Eine Position zum Nachzaehlen.
+class StocktakeRecountItem {
+  const StocktakeRecountItem({required this.articleId, this.condition});
+
+  final String articleId;
+
+  /// Vorgabe `sellable`.
+  final String? condition;
+
+  Map<String, dynamic> toJson() => {'articleId': articleId, 'condition': ?condition};
+}
+
+/// Nachzaehlen (`recountStocktake`, nur in `review`): je Position eine neue
+/// Runde; danach zaehlen und erneut pruefen.
+class RecountStocktakeRequest {
+  const RecountStocktakeRequest({
+    required this.idempotencyKey,
+    required this.stocktakeId,
+    required this.items,
+    required this.reason,
+  });
+
+  final String idempotencyKey;
+  final String stocktakeId;
+
+  /// 1–200 Positionen (`stocktakeRecountItemsMax`).
+  final List<StocktakeRecountItem> items;
+
+  /// 1–500 Zeichen.
+  final String reason;
+
+  Map<String, dynamic> toJson() => {
+        'idempotencyKey': idempotencyKey,
+        'stocktakeId': stocktakeId,
+        'items': [for (final p in items) p.toJson()],
+        'reason': reason,
+      };
+}
+
+/// Abschliessen (`closeStocktake`, nur aus `review`).
+class CloseStocktakeRequest {
+  const CloseStocktakeRequest({required this.idempotencyKey, required this.stocktakeId, this.uncountedAsZero});
+
+  final String idempotencyKey;
+  final String stocktakeId;
+
+  /// Vorgabe `false`: Ungezaehltes wird nicht gebucht.
+  final bool? uncountedAsZero;
+
+  Map<String, dynamic> toJson() =>
+      {'idempotencyKey': idempotencyKey, 'stocktakeId': stocktakeId, 'uncountedAsZero': ?uncountedAsZero};
+}
+
+/// Abbrechen (`cancelStocktake`, aus `counting` oder `review`); der Standort
+/// ist danach wieder frei.
+class CancelStocktakeRequest {
+  const CancelStocktakeRequest({required this.idempotencyKey, required this.stocktakeId, required this.reason});
+
+  final String idempotencyKey;
+  final String stocktakeId;
+
+  /// 1–500 Zeichen.
+  final String reason;
+
+  Map<String, dynamic> toJson() => {'idempotencyKey': idempotencyKey, 'stocktakeId': stocktakeId, 'reason': reason};
 }

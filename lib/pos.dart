@@ -67,7 +67,33 @@ export 'src/kasse/lager.dart'
         StockLocationAddress,
         StockLocationType,
         StockValue,
+        parseQuantityMilli,
         stockLocationTypes;
+// Inventur zaehlen: die Modelle sind dieselben wie in inventory.dart (wer
+// beide Bibliotheken einbindet, bekommt denselben Typ, keinen Konflikt).
+export 'src/lager/modelle.dart'
+    show
+        Stocktake,
+        StocktakeActor,
+        StocktakeCancellation,
+        StocktakeClosing,
+        StocktakeCount,
+        StocktakeCountPage,
+        StocktakeCountResult,
+        StocktakeCountVoided,
+        StocktakeInventoryLine,
+        StocktakeItem,
+        StocktakeItemPage,
+        StocktakeNotBooked,
+        StocktakePdfInfo,
+        StocktakeProgress,
+        StocktakeRecount,
+        StocktakeReview,
+        StocktakeScope,
+        StocktakeSeal,
+        StocktakeTotals,
+        StocktakeWarning;
+export 'src/lager/vertrag.dart' show stocktakeStatuses;
 // Rueckgabe-Wahl beim Storno (Lager).
 export 'src/kasse/rueckgabe.dart';
 export 'src/kasse/storno.dart';

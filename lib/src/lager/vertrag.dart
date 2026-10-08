@@ -1,5 +1,5 @@
 /// Der Vertrag der Lager-API (Backend Stufe 5a lesen, 5b schreiben und
-/// reservieren, 5c Varianten) als Listen – Zwilling von `src/inventory/vertrag.ts` im
+/// reservieren, 5c Varianten, Lager-Kern Stufe 3 Inventur) als Listen – Zwilling von `src/inventory/vertrag.ts` im
 /// JS-Paket `@kreiseck/kasseneck-api`.
 ///
 /// `test/lager_api_test.dart` vergleicht jede Liste in beide Richtungen mit
@@ -8,8 +8,8 @@
 /// `tool/zwillinge.sh`). Wer hier etwas aendert, aendert zuerst das JS-Paket.
 library;
 
-/// Die 32 Endpunkte (14 aus 5a, 13 aus 5b, 5 aus 5c), in der Reihenfolge von
-/// `endpoints.public`.
+/// Die 44 Endpunkte (14 aus 5a, 13 aus 5b, 5 aus 5c, 12 der Inventur), in der
+/// Reihenfolge von `endpoints.public`.
 const List<String> inventoryEndpoints = [
   'getArticle',
   'listArticles',
@@ -43,6 +43,18 @@ const List<String> inventoryEndpoints = [
   'getVariantGroup',
   'listVariantGroups',
   'addVariant',
+  'createStocktake',
+  'listStocktakes',
+  'getStocktake',
+  'listStocktakeItems',
+  'recordStocktakeCount',
+  'voidStocktakeCount',
+  'listStocktakeCounts',
+  'reviewStocktake',
+  'recountStocktake',
+  'closeStocktake',
+  'cancelStocktake',
+  'getStocktakePdf',
 ];
 
 /// Art eines Standorts (Katalog `STANDORT_TYP`).
@@ -174,6 +186,22 @@ const int inventoryListLimitMax = 200;
 /// `too_many_positions` traegt bei Varianten `field` (`variants`,
 /// `createMatrix` bzw. `externalIds` bei `addVariant`): die Anfrage braeuchte
 /// mehr Schreibvorgaenge, als in einen Vorgang passen; geschrieben wurde nichts.
+///
+/// Seit 10.7 dahinter die Codes der Inventur: `stocktake_not_found`,
+/// `stocktake_not_open` (Zaehlen oder Stornieren ausserhalb der Zaehlung bzw.
+/// an einer Position, die nicht zum Nachzaehlen frei ist), `stocktake_closed`
+/// (abgeschlossen oder abgebrochen: nichts mehr schreibbar),
+/// `stocktake_not_in_review` (Nachzaehlen und Abschluss nur in `review`),
+/// `stocktake_closing` (der Abschluss bucht gerade), `stocktake_location_busy`
+/// (am Standort laeuft schon eine Inventur; [inventoryBusyStocktakeId] nennt
+/// sie), `stocktake_review_running` (die Pruefung rechnet noch),
+/// `stocktake_recount_open` (Abschluss, solange Positionen zum Nachzaehlen
+/// offen sind: erst nachzaehlen, dann erneut pruefen), `article_not_in_scope`,
+/// `article_not_tracked`, `count_not_found`, `count_already_voided`,
+/// `serial_already_counted` (dieselbe Seriennummer zweimal in einer Runde),
+/// `too_many_counts` (mehr als [stocktakeCountsPerItemMax] Zaehlungen je
+/// Position und Runde) und `stocktake_not_closed` (das Protokoll gibt es erst
+/// nach dem Abschluss, auch nicht fuer eine abgebrochene Inventur).
 const List<String> inventoryErrorCodes = [
   'validation',
   'invalid_cursor',
@@ -241,6 +269,21 @@ const List<String> inventoryErrorCodes = [
   'invalid_variant_attributes',
   'variant_group_inactive',
   'variant_limit',
+  'stocktake_not_found',
+  'stocktake_not_open',
+  'stocktake_closed',
+  'stocktake_not_in_review',
+  'stocktake_closing',
+  'stocktake_location_busy',
+  'stocktake_review_running',
+  'stocktake_recount_open',
+  'article_not_in_scope',
+  'article_not_tracked',
+  'count_not_found',
+  'count_already_voided',
+  'serial_already_counted',
+  'too_many_counts',
+  'stocktake_not_closed',
 ];
 
 /// Codes, die Anmeldung und Rand auf jedem Lager-Aufruf erzeugen koennen,
@@ -251,6 +294,8 @@ const List<String> inventoryRequestErrorCodes = [
   'account_not_found',
   'admin_required',
   'api_not_approved',
+  'app_check_invalid',
+  'app_check_missing',
   'cashregister_not_assigned',
   'cashregister_not_found',
   'cashregister_token_invalid',
@@ -282,11 +327,23 @@ const List<String> inventoryRequestErrorCodes = [
 /// (`onHand - reserved`) gegen den Mindestbestand des Standorts,
 /// `reservation_exceeded` meldet eine Rechnung, die mehr verkauft als
 /// reserviert war.
+///
+/// Seit 10.7 die Hinweise der Inventur, je mit der Zahl der Positionen
+/// (`items`): `defect_capped` (eine Fehlmenge im Zustand `defective` reichte
+/// ueber den Defektbestand, der Rest blieb ungebucht), `uncounted_items` (nicht
+/// gezaehlt und darum nicht gebucht), `not_booked` (nicht oder nicht ganz
+/// gebucht, Grund an der Position, `notBooked`) und `recount_uncounted`
+/// (Positionen zum Nachzaehlen blieben ungezaehlt; die Antwort von
+/// `closeStocktake` traegt ihn).
 const List<String> inventoryWarningCodes = [
   'insufficient_stock',
   'below_minimum',
   'return_exceeds_sale',
   'reservation_exceeded',
+  'defect_capped',
+  'uncounted_items',
+  'not_booked',
+  'recount_uncounted',
 ];
 
 /// Bestandsart eines Artikels (`stockKind`): `quantity` = Menge, `serial` =
@@ -346,3 +403,59 @@ const int variantMatrixMax = 100;
 
 /// Aktive Varianten je Gruppe (`variant_limit`).
 const int variantGroupActiveMax = 250;
+
+// ---- Inventur (Lager-Kern Stufe 3, seit 10.7) --------------------------------
+
+/// Stand einer Inventur (Katalog `INVENTUR_STATUS`). Gezaehlt wird in
+/// `counting`; `review` rechnet Soll und Differenz (erst ab hier sichtbar,
+/// blind); `closing` bucht den Abschluss in Teilen; `closed` und `cancelled`
+/// sind endgueltig. `creating` steht nur, solange eine grosse Anlage ihre
+/// Positionen schreibt.
+const List<String> stocktakeStatuses = ['creating', 'counting', 'review', 'closing', 'closed', 'cancelled'];
+
+/// Art einer Inventur (Katalog `INVENTUR_ART`): `key_date` zu einem Stichtag
+/// (`keyDate`), `perpetual` (permanente Inventur, ohne Stichtag).
+const List<String> stocktakeTypes = ['key_date', 'perpetual'];
+
+/// Umfang einer Inventur (Katalog `INVENTUR_UMFANG`): alle bestandsgefuehrten
+/// Artikel des Standorts, Artikelgruppen oder genannte Artikel.
+const List<String> stocktakeScopeTypes = ['all', 'groups', 'articles'];
+
+/// Warum eine Position in der Pruefung „pruefen“ traegt (Katalog
+/// `INVENTUR_PRUEFGRUND`): Bewegung zwischen der ersten und letzten Zaehlung,
+/// Zaehlung mehr als 10 Tage vom Stichtag, Seriennummern weichen ab, nicht
+/// gezaehlt.
+const List<String> stocktakeCheckReasons = ['movements_between_counts', 'far_from_key_date', 'serial_mismatch', 'not_counted'];
+
+/// Warum eine Position nicht oder nicht ganz gebucht wurde (`notBooked.code`,
+/// Katalog `INVENTUR_NICHT_GEBUCHT`). Dazu kommen Codes, die schon englisch
+/// sind (`serial_not_in_stock`, `serial_already_exists`, `article_not_found`);
+/// das Modell laesst darum jeden Text stehen.
+const List<String> stocktakeNotBookedReasons = ['serial_mismatch', 'recount_open', 'defect_capped'];
+
+/// Woher eine Zaehlung bzw. Inventur kam (Katalog `INVENTUR_QUELLE`).
+const List<String> stocktakeSources = ['register', 'panel', 'api'];
+
+/// Wer handelte (Katalog `INVENTUR_AKTEUR`): Inhaber, Kasseneck-Admin,
+/// Kassen-Benutzer, API-Schluessel.
+const List<String> stocktakeActorTypes = ['owner', 'admin', 'register_user', 'api'];
+
+/// Zu welchem Zeitpunkt das Inventar im Protokoll steht (Katalog
+/// `INVENTUR_INVENTAR_ZUM`): `key_date` (auf das Ende des Stichtags
+/// fortgeschrieben, Abschluss nach dem Stichtag) oder `count_date` (Menge zur
+/// Aufnahme: permanente Inventur oder Abschluss vor dem Stichtag).
+const List<String> stocktakeInventoryAsOf = ['key_date', 'count_date'];
+
+// Grenzen einer Inventur, wie das Backend sie prueft. Wie bei den Varianten
+// prueft das Paket sie **nicht** vor dem Senden.
+
+/// Positionen je Inventur (`too_many_positions`; groessere Bestaende in
+/// mehreren Inventuren nacheinander).
+const int stocktakeItemsMax = 5000;
+
+/// Positionen je `recountStocktake`.
+const int stocktakeRecountItemsMax = 200;
+
+/// Zaehlungen je Position und Runde (`too_many_counts`), hoechstens so viele
+/// Seriennummern je Zaehlung.
+const int stocktakeCountsPerItemMax = 200;

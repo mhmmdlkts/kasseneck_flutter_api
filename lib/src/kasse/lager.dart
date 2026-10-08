@@ -1,5 +1,7 @@
 /// Lager an der Kasse: Standorte, Bestand und der Standort der Kasse –
-/// Zwilling von `pos/lager.ts` im JS-Paket (Backend: `lager-endpoints.js`).
+/// Zwilling von `pos/lager.ts` im JS-Paket (Backend: `lager-endpoints.js`);
+/// dazu [parseQuantityMilli] fuer das Zaehlen einer Inventur (seit 10.7, die
+/// fuenf Inventur-Aufrufe stehen ebenfalls in [RegisterReceiptClient]).
 /// Die Aufrufe selbst stehen in [RegisterReceiptClient] (`stockLocations`,
 /// `stock`, `setStockLocation`); es gibt sie nur ueber den Kassenweg
 /// `/api/v3`. Rechte am Server: `stockView` (lesen), `stockCosts` (Werte),
@@ -16,6 +18,7 @@
 library;
 
 import '../register/fehler.dart';
+import 'artikel.dart' show QuantityRule, quantityRuleForUnit;
 
 /// Standort-Typen (Katalog `STANDORT_TYP`), englisch wie am Draht.
 const List<String> stockLocationTypes = ['warehouse', 'store', 'vehicle', 'other'];
@@ -148,6 +151,87 @@ class CashregisterStockLocation {
 
   /// `null` = Standard-Standort des Betriebs.
   final String? stockLocationId;
+}
+
+/// Tausendstel je Einheit: drei Nachkommastellen, wie die Mengen am Draht.
+const int _stellen = 3;
+
+final RegExp _mengenMuster = RegExp(r'^(\d*)(?:([.,])(\d*))?$');
+final RegExp _ziffernOhneNull = RegExp('[1-9]');
+final BigInt _groessteSichereGross = BigInt.from(9007199254740991);
+
+/// Leerraum nach `String.prototype.trim` in JavaScript (WhiteSpace und
+/// LineTerminator der ECMAScript-Spezifikation). Dart-`trim` entfernt dazu
+/// U+0085 (NEL); damit laese `'\u00851'` hier als 1000, im JS-Zwilling als
+/// `null`. Zwei Kassen mit derselben Eingabe sollen dieselbe Menge buchen.
+bool _jsLeerraum(int c) =>
+    c == 0x09 ||
+    c == 0x0A ||
+    c == 0x0B ||
+    c == 0x0C ||
+    c == 0x0D ||
+    c == 0x20 ||
+    c == 0xA0 ||
+    c == 0x1680 ||
+    (c >= 0x2000 && c <= 0x200A) ||
+    c == 0x2028 ||
+    c == 0x2029 ||
+    c == 0x202F ||
+    c == 0x205F ||
+    c == 0x3000 ||
+    c == 0xFEFF;
+
+String _jsTrim(String text) {
+  var anfang = 0;
+  var ende = text.length;
+  while (anfang < ende && _jsLeerraum(text.codeUnitAt(anfang))) {
+    anfang++;
+  }
+  while (ende > anfang && _jsLeerraum(text.codeUnitAt(ende - 1))) {
+    ende--;
+  }
+  return text.substring(anfang, ende);
+}
+
+/// Eine eingetippte Menge in Tausendstel der Basiseinheit, **ohne
+/// Gleitkomma**: `'12'` → `12000`, `'0,25'` → `250`, `'1.5'` → `1500`.
+/// Zwilling von `parseQuantityMilli` im JS-Paket; gemeinsame Prueffaelle in
+/// `stocktake-quantity-cases.json` des Vertrags.
+///
+/// - Dezimaltrenner Komma oder Punkt, hoechstens drei Nachkommastellen;
+///   weitere Nullen am Ende zaehlen nicht (`'1,2340'` → `1234`). `'0'` ist eine
+///   gueltige Menge (leer gezaehlt).
+/// - **Punkt mit genau drei Ziffern danach und einem Ganzteil ungleich 0**
+///   (`'1.000'`, `'12.500'`) ist bei jeder Einheit `null`: in oesterreichischer
+///   Schreibweise ist das ein Tausenderpunkt („tausend“), am Ziffernblock ein
+///   Dezimalpunkt („eins“); einen Faktor 1000 buchte der Abschluss als
+///   Differenz. Mit Komma ist es eindeutig (`'1,000'` → `1000`), ebenso
+///   `'0.500'`, `'1.5'`, `'1.25'`.
+/// - **Stueckware** nur als ganze Zahl ohne Trenner. Stueckware ist, was
+///   [rule] sagt (die gespeicherte Mengenregel des Artikels,
+///   `PosArticle.quantityRule`), ohne [rule] die Vorgabe der Einheit
+///   ([quantityRuleForUnit]: Stk, g, ml …, auch ohne Einheit). Einzelstuecke
+///   (Seriennummer) sind immer Stueckware: dann [QuantityRule.piece] uebergeben.
+///
+/// `null` auch fuer: leer, Vorzeichen, Tausenderleerzeichen, Exponent, mehr als
+/// drei Nachkommastellen, groesser als die groesste sichere Ganzzahl von
+/// JavaScript. Die Kasse zeigt dann ihren Satz (`stocktake.quantity_invalid`),
+/// statt still zu runden.
+int? parseQuantityMilli(String text, String? unit, {QuantityRule? rule}) {
+  final m = _mengenMuster.firstMatch(_jsTrim(text));
+  if (m == null) return null;
+  final ganz = m[1] ?? '';
+  final trenner = m[2];
+  final roh = m[3] ?? '';
+  if (ganz.isEmpty && roh.isEmpty) return null;
+  final stueck = (rule ?? quantityRuleForUnit(unit).rule) == QuantityRule.piece;
+  if (trenner != null && stueck) return null;
+  if (trenner == '.' && roh.length == 3 && _ziffernOhneNull.hasMatch(ganz)) return null;
+  final nachkomma = roh.replaceFirst(RegExp(r'0+$'), '');
+  if (nachkomma.length > _stellen) return null;
+  // BigInt: eine lange Ziffernfolge laeuft sonst ueber, statt `null` zu werden.
+  final milli = BigInt.parse(ganz.isEmpty ? '0' : ganz) * BigInt.from(1000) + BigInt.parse(nachkomma.padRight(_stellen, '0'));
+  return milli <= _groessteSichereGross ? milli.toInt() : null;
 }
 
 // ---------------------------------------------------------------------------

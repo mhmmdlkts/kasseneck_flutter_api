@@ -249,6 +249,13 @@ void main() {
         expect(erlaubt, contains(code), reason: '$code entsteht nicht sicher vor dem Anbieter');
       }
       expect(paymentCallRejectedCodes, isNot(contains('response_unreadable')));
+      // Und keiner fehlt: festgeschrieben wie PAYMENT_CALL_REJECTED_CODES im
+      // npm-Paket (26 seit 1.8.0 bzw. 10.7 mit app_check_missing und
+      // app_check_invalid). Fehlt hier ein Code, der vor dem Anbieter
+      // abweist, meldete der Geldweg ihn als unklar.
+      expect(paymentCallRejectedCodes, erlaubt);
+      expect(paymentCallRejectedCodes, hasLength(26));
+      expect(paymentCallRejectedCodes, containsAll(['app_check_missing', 'app_check_invalid']));
     });
   });
 

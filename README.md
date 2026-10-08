@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.6.1
+  kasseneck_api: ^10.7.0
 ```
 
 ```bash
@@ -341,7 +341,8 @@ are:
   `RegisterReceiptClient.sell`; `cancelReceipt`; `financeWebService`; the
   card calls `hobexPay`, `hobexRefund` and `stripeCaptureIntent`) and, since
   10.4.1, every other call that books, issues, creates, changes, deletes or
-  sends something: inventory writes and reservations, inventory webhooks,
+  sends something: inventory writes and reservations, stocktakes (counting at
+  the register included, since 10.7), inventory webhooks,
   invoices, credit notes, recorded payments, customers, register settings and
   logo, pairing and unpairing, the stock location of a register, print jobs
   and receipt emails. There it is a network error, a timeout or HTTP 5xx
@@ -361,7 +362,9 @@ before the backend contacts the provider: the sign-in and request checks
 (`method_not_allowed`, `validation`, `cashregister_token_missing`,
 `cashregister_token_invalid`, `cashregister_not_found`, `account_not_found`,
 `live_not_enabled`, `unauthorized`, `mfa_required`,
-`user_verification_failed`, `admin_required`, `register_user_not_allowed`,
+`user_verification_failed`, `admin_required`, `api_not_approved`,
+`app_check_missing`, `app_check_invalid` (since 10.7; sent only to the admin
+app), `register_user_not_allowed`,
 `register_user_no_business`, `register_user_not_found`, `user_disabled`,
 `session_expired`, `cashregister_not_assigned`,
 `session_other_cashregister`), the `/v3` edge before the handler
@@ -539,6 +542,57 @@ await client.setStockLocation(stockLocationId: 'van-1'); // null resets to the d
   `internalCode` plus `stockTracked`; registers `stockLocationId`
   (`CashregisterEntry`, `RegisterCashregisterState`). The stock words of the
   register are `stock.*` labels (`labelText('stock.where_to')`).
+
+**Counting a stocktake at the register** (since 10.7). Five calls on the
+register path, permissions `stocktakeCount` (count, void own counts) and
+`stocktakeClose` (also void other people's counts; the expected quantity from
+`review` on). Creating, reviewing and closing happen in the panel or through
+the inventory API, not at the register.
+
+```dart
+final open = await client.listMyStocktakes(locationId: 'haupt'); // List<Stocktake>
+if (open.isEmpty) showHint(messageText('stocktake.none_open'));
+final page = await client.listMyStocktakeItems(stocktakeId: open.first.id, openOnly: true);
+final quantity = parseQuantityMilli('0,25', 'kg', rule: article.quantityRule); // 250; null for invalid input
+if (quantity == null) showHint(messageText('stocktake.quantity_invalid'));
+// Fixed before the first send and kept for „Erneut senden“.
+final key = 'count-${DateTime.now().microsecondsSinceEpoch}';
+final result = await client.recordMyStocktakeCount(
+  idempotencyKey: key,
+  stocktakeId: open.first.id,
+  articleId: page.items.first.articleId,
+  quantity: quantity!,
+);
+await client.voidMyStocktakeCount(
+  idempotencyKey: '$key-void',
+  stocktakeId: open.first.id,
+  countId: result.count.id,
+  reason: 'Doppelt gezählt',
+);
+```
+
+`parseQuantityMilli(text, unit, rule: …)` turns the typed text into
+thousandths without floating point: comma or point as decimal separator, at
+most three decimals (trailing zeros do not count). A point followed by exactly
+three digits after a non-zero whole part (`'1.000'`, `'12.500'`) is `null` for
+every unit: in Austrian notation it is a thousands separator, on a keypad a
+decimal point, and a factor of 1000 would be booked as a difference; with a
+comma it is unambiguous (`'1,000'` is 1000, i.e. one unit). Pieces take whole
+numbers without any separator only. Whether an article is counted in pieces
+comes from `rule`, the stored quantity rule of the article
+(`PosArticle.quantityRule`), without it from the default of the unit
+(`quantityRuleForUnit`: `Stk`, `g`, `ml` …, also when the unit is missing);
+pass `QuantityRule.piece` for a serial-number article. Anything else is
+`null`. Its 50 cases are shared with the npm twin
+(`stocktake-quantity-cases.json` in the contract). Counting works online only;
+after `isOutcomeUnknown(error)` resend the **same** count with the **same** key
+(`labelText('stocktake.resend')`), it is counted exactly once. The texts of the
+counting screen are in the catalogue as `stocktake.*`
+(`messageText('stocktake.counted', {'name': …, 'quantity': …})`,
+`labelText('stocktake.progress', {'counted': …, 'total': …})`); the error codes
+(`stocktake_not_open`, `article_not_in_scope`, `count_already_voided` …) are in
+`posErrorCodes`. The models (`Stocktake`, `StocktakeItem`, `StocktakeCount`)
+are the ones of the inventory API, exported from `pos.dart` as well.
 
 **Article id in the cart.** `draftFromArticle` puts the article id on the
 draft, the cart keeps it on its `Position`, and the receipt item sends it as
@@ -1198,7 +1252,8 @@ ledger, and get every stock change pushed by webhook within seconds, also the
 ones made at the register in the shop. Since 10.4 also write: create and update
 articles, book goods receipts, transfers, losses and condition changes, and
 reserve stock at checkout (see [Writing and reservations](#writing-and-reservations));
-since 10.5 variant groups (sizes, colours, see [Variants](#variants)).
+since 10.5 variant groups (sizes, colours, see [Variants](#variants)); since
+10.7 stocktakes (see [Stocktake](#stocktake)).
 Uses the `api_key` of the account and belongs on a **server**, never in an app
 customers install. Reading needs the module `lager`, writing also the account
 switch „Lager-API schreiben“ (always on in the test environment, `kr_test_…`);
@@ -1351,7 +1406,8 @@ int receive(String? signatureHeader, List<int> rawBody) {
   `reservation_not_active`, since 10.5 `variant_group_not_found`,
   `variant_already_exists`, `invalid_variant_attributes`,
   `variant_group_inactive` and `variant_limit` (see [Variants](#variants)),
-  and the rest of `inventoryErrorCodes`.
+  since 10.7 the stocktake codes (see [Stocktake](#stocktake)), and the rest
+  of `inventoryErrorCodes`.
 - **Names.** `StockLevel` here has `onHand` and `sequence`; the register's
   `StockLevel` in `pos.dart` is a different type with `sellable`. If you import
   both libraries, give one a prefix (`import '…/inventory.dart' as inv;`).
@@ -1555,6 +1611,148 @@ try {
   together with `clearDefaults`, a `clear` naming another field or a field
   that is also set, and integers beyond ±(2^53 − 1). Fractions and a missing
   `variantAttributes` are ruled out by the types.
+
+### Stocktake
+
+A stocktake counts the stock of one location: create it (scope, key date or
+perpetual, blind by default), count (several counts of the same article are
+added up, a wrong one is voided with a reason), review (only now the expected
+quantity and the difference appear), recount single items, close (books one
+movement `stocktake` per item and stores the stocktake record as PDF) or
+cancel. The same flow runs in the panel and, for counting, at the register
+(see [Stock at the register](#stock-at-the-register)). All writes, counting
+included, take an `idempotencyKey` and the account switch „Lager-API
+schreiben“; values (`…Cents`, `…Micros`) and the PDF with values need `costs`.
+
+Example: Bäckerei Kornblum has 40 Kornspitz at the location `haupt`. At
+10:00:00 the register sells 3, the stock movement is booked a few seconds late
+at 10:00:03. At 10:00:02 Livia Lindmayr counts 37 on the shelf.
+
+```dart
+import 'dart:io';
+
+import 'package:kasseneck_api/inventory.dart';
+import 'package:kasseneck_api/pos.dart' show parseQuantityMilli;
+
+final inventory = InventoryClient(apiKey: Platform.environment['KASSENECK_API_KEY']!);
+
+// 1. One open stocktake per location; reuse it if there is one.
+String stocktakeId;
+try {
+  final created = await inventory.createStocktake(const CreateStocktakeRequest(
+    idempotencyKey: 'shop-stocktake-haupt-2026-12',
+    locationId: 'haupt',
+    scope: StocktakeScopeInput(type: 'groups', groupIds: ['gebaeck']),
+    type: 'key_date',
+    keyDate: '2026-12-31', // blind is the default
+  ));
+  stocktakeId = created.id; // status: 'counting'
+} on KasseneckApiError catch (e) {
+  stocktakeId = inventoryBusyStocktakeId(e) ?? (throw e);
+}
+
+// 2. Count. Quantities in thousandths: "37" pieces -> 37000, "0,25" kg -> 250.
+final kornspitz = await inventory.lookupArticleByCode(code: '9001234567896');
+final counted = await inventory.recordStocktakeCount(RecordStocktakeCountRequest(
+  idempotencyKey: 'shelf-a-kornspitz-1', // after an unknown outcome: resend with the SAME key
+  stocktakeId: stocktakeId,
+  articleId: kornspitz.id,
+  quantity: parseQuantityMilli('37', kornspitz.unit)!,
+));
+// counted.item.quantity: 37000 (sum of the round), no expectedQuantity while counting
+
+// 3. Review: computed in the background, poll until complete.
+await inventory.reviewStocktake(ReviewStocktakeRequest(idempotencyKey: 'review-1', stocktakeId: stocktakeId));
+var stocktake = await inventory.getStocktake(stocktakeId);
+while (stocktake.review?.complete != true) {
+  await Future<void>.delayed(const Duration(seconds: 2));
+  stocktake = await inventory.getStocktake(stocktakeId);
+}
+await for (final item in inventory.iterateStocktakeItems(stocktakeId: stocktakeId)) {
+  // Kornspitz: expectedQuantity 37000, differenceQuantity 0 (the sale at
+  // 10:00:00 was booked after the count, but it happened before it)
+  if (item.needsCheck == true) print('${item.articleId} ${item.checkReasons}');
+}
+
+// 4. Close (books in parts in the background), then fetch the record.
+final closed = await inventory.closeStocktake(CloseStocktakeRequest(idempotencyKey: 'close-1', stocktakeId: stocktakeId));
+// closed.warnings, then poll getStocktake until status == 'closed'
+switch (await inventory.getStocktakePdf(stocktakeId)) {
+  case StocktakePdfFile(:final pdf):
+    await File('stocktake.pdf').writeAsBytes(pdf);
+  case StocktakePdfLink(:final download): // over 9 MiB: signed link, 15 minutes
+    await fetchAndCheck(download.url, download.sha256); // your download, checked against sha256
+}
+```
+
+- **Reference time.** The expected quantity of an item is the stock at the
+  time of its last count (server time; the device clock never counts), taken
+  from the stock ledger, including sales that happened before the count but
+  were booked after it (within 3 days). In the example the expected quantity
+  is 37, the difference 0, and closing changes nothing. Had the 3 Kornspitz
+  been sold at 10:00:05, after the count, the expected quantity would be 40
+  and the difference −3: closing books −3 on today's stock (37 after the
+  sale), which leaves 34. Each piece is deducted exactly once.
+- **Blind.** Before `review` no response carries an expected quantity, a
+  difference or `needsCheck`; the fields are absent on the wire and `null` in
+  the model. With `blind: false` the items carry `bookStockNow` while
+  counting: today's book stock, never the expected quantity at the reference
+  time.
+- **Counting.** `quantity` in thousandths, `0` means counted empty. Pieces
+  and serial-number articles take whole pieces only, serial-number articles
+  exactly one serial number per piece (`serial_required`,
+  `serial_already_counted`). Scope `all` adds a tracked article that was not
+  listed (`addedLater`); scopes `groups` and `articles` answer
+  `article_not_in_scope`. While counting or recounting, `voidStocktakeCount`
+  with a reason takes a count back; the item is summed up again. The answer
+  of counting and voiding carries the item without `serialNumbers` (`null`,
+  not an empty list); the lists carry them.
+- **Recount.** In `review`, `recountStocktake` with `items` and a `reason`
+  starts a new round for the named items (old counts stay, but no longer
+  count); count them, then call `reviewStocktake` again. `closeStocktake`
+  refuses with `stocktake_recount_open` while recounts are open.
+- **Closing.** Only from `review` (`stocktake_not_in_review`) and only once the
+  review has finished computing: while `review.complete` is `false`,
+  `closeStocktake` and `recountStocktake` answer `stocktake_review_running`
+  (poll `getStocktake` and try again). Uncounted items are not booked and
+  appear as "not counted" in the record; with `uncountedAsZero: true` they are
+  booked as 0. The answer usually has `status: 'closing'` with
+  `closing.parts` and `closing.bookedParts`; calling `closeStocktake` again
+  while it is closing resumes it. After `closed`, the head carries `totals`,
+  `warnings` (`uncounted_items`, `not_booked`, `defect_capped`), `seal` (the
+  state of the stock ledger seal), `checksum` and `pdf`;
+  `CloseStocktakeResult.warnings` may carry `recount_uncounted`. Each booking
+  reaches webhooks as `stock.changed` with `cause: 'stocktake'`; there is no
+  `stocktake.*` event.
+- **Lists.** `listStocktakes()` without `updatedSince` returns the most
+  recently changed first (an open stocktake is not necessarily on top; filter
+  with `status`). With `updatedSince` it is sorted by `updatedAt` ascending
+  and includes the boundary, like `listArticles`: remember the largest
+  `updatedAt` and ask again. `listStocktakeItems(stocktakeId:, openOnly:)` and
+  `listStocktakeCounts(stocktakeId:, articleId:)` page with `cursor`; the
+  `iterate…` variants follow `nextCursor` in the same order.
+- **The record.** `getStocktakePdf` exists only after closing
+  (`stocktake_not_closed`, also for a cancelled stocktake). With `costs` it is
+  the version with values, otherwise the one with quantities only. Up to
+  9 MiB the file comes in the answer (`StocktakePdfFile`), above that as a
+  signed link for 15 minutes (`StocktakePdfLink`, with `sizeBytes` and
+  `sha256`; check the downloaded file against `sha256`). Your own
+  `InventoryTransport` serves it through `callPdfOrData`, the counterpart of
+  `InvoiceTransport.callBinary`.
+- **Errors.** `stocktake_location_busy` names the open stocktake
+  (`inventoryBusyStocktakeId(error)`); further `stocktake_not_found`,
+  `stocktake_not_open`, `stocktake_closed`, `stocktake_closing`,
+  `article_not_tracked`, `count_not_found`, `count_already_voided`,
+  `too_many_counts`, all in `inventoryErrorCodes`.
+- **Checked before sending**, nothing else: an invalid key, an empty
+  `stocktakeId`, `locationId`, `articleId` or `countId`, an empty reason, an
+  empty recount list and integers beyond ±(2^53 − 1). A negative quantity goes
+  out; the server answers `invalid_quantity`.
+- **Limits.** At most `stocktakeItemsMax` (5000) items per stocktake
+  (`too_many_positions`; count larger stocks in several stocktakes one after
+  another), `stocktakeRecountItemsMax` (200) items per recount and
+  `stocktakeCountsPerItemMax` (200) counts per item and round
+  (`too_many_counts`). The server checks them, not the client.
 
 ## RKSV details
 

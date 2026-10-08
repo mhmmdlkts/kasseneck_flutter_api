@@ -518,6 +518,313 @@ VariantGroup variantengruppe(Ort ort, Object? w) {
   );
 }
 
+// ---- Inventur (Lager-Kern Stufe 3, seit 10.7) --------------------------------
+//
+// Gleiche Regeln wie im JS-Zwilling (`inventur`, `inventurPosition`,
+// `inventurZaehlung` in `src/inventory/lesen.ts`): Pflichtzahlen (Runde,
+// Zaehlungen, Positionen, Zaehlmenge, Groesse) sind Ganzzahlen oder ein
+// Antwortfehler; was der Server nur in einem Stand oder nur mit einem Recht
+// sendet, ist `null`, wenn es fehlt.
+
+/// Ein Unterobjekt, das `null` sein darf (`review`, `closing` …); etwas anderes
+/// als Objekt oder `null` ist kaputt.
+Map<String, dynamic>? _objektOderNull(Ort ort, String feld, Object? w) {
+  if (w == null) return null;
+  return objekt(w) ?? (throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.$feld ist kein Objekt)'));
+}
+
+/// Ein Wahrheitswert, der da sein muss: ein fehlendes „gezaehlt“ ist nicht „ungezaehlt“.
+bool _wahrheitswert(Ort ort, String feld, Object? w) {
+  if (w is! bool) throw antwortfehler(ort.name, 'Antwort enthaelt keinen Wahrheitswert (data.${ort.pfad}.$feld)');
+  return w;
+}
+
+/// Eine Liste von Texten, die fehlen darf (dann leer); etwas anderes ist kaputt.
+List<String> _textlisteOderLeer(Ort ort, String feld, Object? w) => w == null ? const [] : _textliste(ort, feld, w);
+
+/// Wer etwas tat; fehlt die Angabe, `null`. Etwas anderes als ein Objekt ist
+/// kaputt, nie still „niemand“.
+StocktakeActor? _akteur(Ort ort, String feld, Object? w) {
+  if (w == null) return null;
+  final a = objekt(w);
+  if (a == null) throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.$feld ist kein Objekt)');
+  return StocktakeActor(type: _textOderNull(a['type']), id: _textOderNull(a['id']), name: _textOderNull(a['name']));
+}
+
+StocktakeWarning _inventurWarnung(Ort ort, Object? w) {
+  final h = _eintrag(ort, w);
+  final code = h['code'];
+  if (code is! String || code.isEmpty) throw antwortfehler(ort.name, 'Hinweis ohne Code (data.${ort.pfad}.code)');
+  return StocktakeWarning(code: code, items: _ganzzahl(ort, 'items', h['items']), message: _text(h['message']));
+}
+
+/// Hinweise einer Inventur; fehlt die Liste, gibt es keine.
+List<StocktakeWarning> inventurWarnungen(Ort ort, Object? w) {
+  if (w == null) return const [];
+  if (w is! List) throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad} ist keine Liste)');
+  return List.unmodifiable([for (final (i, h) in w.indexed) _inventurWarnung(Ort(ort.name, '${ort.pfad}[$i]'), h)]);
+}
+
+StocktakeSeal _siegel(Ort ort, Object? w) {
+  final s = _eintrag(ort, w);
+  return StocktakeSeal(
+    fromDay: _textOderNull(s['fromDay']),
+    toDay: _textOderNull(s['toDay']),
+    daysChecked: _ganzzahlOderNull(ort, 'daysChecked', s['daysChecked']),
+    verified: s['verified'] is bool ? s['verified'] as bool : null,
+    firstBreak: _textOderNull(s['firstBreak']),
+    gaps: _textlisteOderLeer(ort, 'gaps', s['gaps']),
+    gapCount: _ganzzahlOderNull(ort, 'gapCount', s['gapCount']),
+    notChecked: s['notChecked'] is String ? s['notChecked'] as String : null,
+    checkedUntil: _textOderNull(s['checkedUntil']),
+  );
+}
+
+/// Kopf einer Inventur. Was erst nach dem Abschluss kommt (Summen, Hinweise,
+/// Siegel, Pruefsumme, Protokoll), steht im Modell nur, wenn der Server es
+/// sendet; Werte nur mit dem Recht `costs`.
+Stocktake inventur(Ort ort, Object? w) {
+  final k = _eintrag(ort, w);
+  final umfang = _objektOderNull(ort, 'scope', k['scope']);
+  final fortschritt = _objektOderNull(ort, 'progress', k['progress']);
+  final pruefung = _objektOderNull(ort, 'review', k['review']);
+  final abschluss = _objektOderNull(ort, 'closing', k['closing']);
+  final abbruch = _objektOderNull(ort, 'cancellation', k['cancellation']);
+  final summen = _objektOderNull(ort, 'totals', k['totals']);
+  final pdf = _objektOderNull(ort, 'pdf', k['pdf']);
+  final uOrt = ort.unter('scope');
+  final fOrt = ort.unter('progress');
+  final pOrt = ort.unter('review');
+  final aOrt = ort.unter('closing');
+  final sOrt = ort.unter('totals');
+  return Stocktake(
+    id: _kennung(ort, 'id', k['id']),
+    name: _text(k['name']),
+    locationId: _textOderNull(k['locationId']),
+    scope: umfang == null
+        ? null
+        : StocktakeScope(
+            type: _textOderNull(umfang['type']),
+            groupIds: _textlisteOderLeer(uOrt, 'groupIds', umfang['groupIds']),
+            articleIds: _textlisteOderLeer(uOrt, 'articleIds', umfang['articleIds']),
+          ),
+    type: _textOderNull(k['type']),
+    keyDate: _textOderNull(k['keyDate']),
+    // Blind ist die sichere Vorgabe: nur ein ausdrueckliches false zeigt Bestand.
+    blind: k['blind'] != false,
+    status: _textOderNull(k['status']),
+    progress: fortschritt == null
+        ? null
+        : StocktakeProgress(
+            items: _ganzzahl(fOrt, 'items', fortschritt['items']),
+            counted: _ganzzahlOderNull(fOrt, 'counted', fortschritt['counted']),
+            recountOpen: fortschritt['recountOpen'] == true,
+          ),
+    createdAt: _text(k['createdAt']),
+    createdBy: _akteur(ort, 'createdBy', k['createdBy']),
+    source: _textOderNull(k['source']),
+    updatedAt: _text(k['updatedAt']),
+    review: pruefung == null
+        ? null
+        : StocktakeReview(
+            startedAt: _text(pruefung['startedAt']),
+            startedBy: _akteur(pOrt, 'startedBy', pruefung['startedBy']),
+            complete: pruefung['complete'] == true,
+            expectedAsOf: _text(pruefung['expectedAsOf']),
+            recountUncounted: _ganzzahlOderNull(pOrt, 'recountUncounted', pruefung['recountUncounted']),
+          ),
+    closing: abschluss == null
+        ? null
+        : StocktakeClosing(
+            startedAt: _text(abschluss['startedAt']),
+            startedBy: _akteur(aOrt, 'startedBy', abschluss['startedBy']),
+            uncountedAsZero: abschluss['uncountedAsZero'] == true,
+            parts: _ganzzahlOderNull(aOrt, 'parts', abschluss['parts']),
+            bookedParts: _ganzzahlOderNull(aOrt, 'bookedParts', abschluss['bookedParts']),
+            completedAt: _text(abschluss['completedAt']),
+          ),
+    cancellation: abbruch == null
+        ? null
+        : StocktakeCancellation(
+            reason: _text(abbruch['reason']),
+            cancelledAt: _text(abbruch['cancelledAt']),
+            cancelledBy: _akteur(ort.unter('cancellation'), 'cancelledBy', abbruch['cancelledBy']),
+          ),
+    totals: summen == null
+        ? null
+        : StocktakeTotals(
+            items: _ganzzahl(sOrt, 'items', summen['items']),
+            counted: _ganzzahl(sOrt, 'counted', summen['counted']),
+            uncounted: _ganzzahl(sOrt, 'uncounted', summen['uncounted']),
+            recounted: _ganzzahl(sOrt, 'recounted', summen['recounted']),
+            withDifference: _ganzzahl(sOrt, 'withDifference', summen['withDifference']),
+            needsCheck: _ganzzahl(sOrt, 'needsCheck', summen['needsCheck']),
+            notBooked: _ganzzahl(sOrt, 'notBooked', summen['notBooked']),
+            differenceValueCents: _ganzzahlOderNull(sOrt, 'differenceValueCents', summen['differenceValueCents']),
+            inventoryValueCents: _ganzzahlOderNull(sOrt, 'inventoryValueCents', summen['inventoryValueCents']),
+          ),
+    warnings: k.containsKey('warnings') ? inventurWarnungen(ort.unter('warnings'), k['warnings']) : null,
+    seal: k['seal'] == null ? null : _siegel(ort.unter('seal'), k['seal']),
+    checksum: _textOderNull(k['checksum']),
+    inventoryAsOf: _textOderNull(k['inventoryAsOf']),
+    pdf: pdf == null
+        ? null
+        : StocktakePdfInfo(
+            available: pdf['available'] == true,
+            valuesSha256: pdf['valuesSha256'] is String ? pdf['valuesSha256'] as String : null,
+            quantitiesSha256: pdf['quantitiesSha256'] is String ? pdf['quantitiesSha256'] as String : null,
+          ),
+  );
+}
+
+StocktakeNotBooked _nichtGebucht(Ort ort, Object? w) {
+  final n = _eintrag(ort, w);
+  final code = n['code'];
+  if (code is! String || code.isEmpty) throw antwortfehler(ort.name, 'Antwort enthaelt keinen Grund (data.${ort.pfad}.code)');
+  final gruende = n['reasons'];
+  if (gruende != null && gruende is! List) {
+    throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.reasons ist keine Liste)');
+  }
+  return StocktakeNotBooked(
+    code: code,
+    quantity: _ganzzahlOderNull(ort, 'quantity', n['quantity']),
+    reasons: gruende == null
+        ? null
+        : List.unmodifiable([
+            for (final (i, g) in (gruende as List).indexed)
+              () {
+                final gOrt = ort.unter('reasons[$i]');
+                final r = _eintrag(gOrt, g);
+                final c = r['code'];
+                if (c is! String || c.isEmpty) {
+                  throw antwortfehler(ort.name, 'Antwort enthaelt keinen Grund (data.${gOrt.pfad}.code)');
+                }
+                return (code: c, quantity: _ganzzahlOderNull(gOrt, 'quantity', r['quantity']));
+              }(),
+          ]),
+  );
+}
+
+/// Eine Liste von Texten, die nur steht, wenn der Server sie sendet.
+List<String>? _textlisteWennDa(Ort ort, String feld, Map<String, dynamic> o) =>
+    o.containsKey(feld) ? _textlisteOderLeer(ort, feld, o[feld]) : null;
+
+/// Eine Position. Soll, Differenz und alles aus Pruefung und Abschluss stehen
+/// im Modell nur, wenn der Server sie sendet (blind: vor `review` nie).
+StocktakeItem inventurPosition(Ort ort, Object? w) {
+  final p = _eintrag(ort, w);
+  // Wer gezaehlt hat, ist zugesagt: fehlt die Liste, ist die Antwort kaputt (nie „niemand“).
+  final zaehler = p['countedBy'];
+  if (zaehler is! List) throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.countedBy ist keine Liste)');
+  final nachzaehlen = _objektOderNull(ort, 'recount', p['recount']);
+  final nOrt = ort.unter('recount');
+  final inventar = _objektOderNull(ort, 'inventory', p['inventory']);
+  final iOrt = ort.unter('inventory');
+  final counted = _wahrheitswert(ort, 'counted', p['counted']);
+  final menge = _ganzzahlOderNull(ort, 'quantity', p['quantity']);
+  // Gezaehlt heisst: es gibt eine Menge. Beides zusammen kaputt waere „0“ oder „nichts“ geraten.
+  if (counted && menge == null) {
+    throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.quantity fehlt bei counted: true)');
+  }
+  return StocktakeItem(
+    articleId: _kennung(ort, 'articleId', p['articleId']),
+    condition: _kennung(ort, 'condition', p['condition']),
+    name: _text(p['name']),
+    number: _text(p['number']),
+    unit: _text(p['unit']),
+    round: _ganzzahl(ort, 'round', p['round']),
+    counted: counted,
+    quantity: menge,
+    counts: _ganzzahl(ort, 'counts', p['counts']),
+    firstCountedAt: _text(p['firstCountedAt']),
+    referenceTime: _text(p['referenceTime']),
+    countedBy: List.unmodifiable([
+      for (final (i, a) in zaehler.indexed)
+        _akteur(ort, 'countedBy[$i]', a) ??
+            (throw antwortfehler(ort.name, 'Antwort ist unbrauchbar (data.${ort.pfad}.countedBy[$i] ist kein Objekt)')),
+    ]),
+    // Die Zaehl- und Storno-Antwort sendet die Position ohne Seriennummern: dann `null`, nie [].
+    serialNumbers: _textlisteWennDa(ort, 'serialNumbers', p),
+    recountRequested: p['recountRequested'] == true,
+    recount: nachzaehlen == null
+        ? null
+        : StocktakeRecount(
+            reason: _text(nachzaehlen['reason']),
+            requestedAt: _text(nachzaehlen['requestedAt']),
+            requestedBy: _akteur(nOrt, 'requestedBy', nachzaehlen['requestedBy']),
+            round: _ganzzahlOderNull(nOrt, 'round', nachzaehlen['round']),
+          ),
+    addedLater: p['addedLater'] == true,
+    bookStockNow: _ganzzahlOderNull(ort, 'bookStockNow', p['bookStockNow']),
+    expectedQuantity: _ganzzahlOderNull(ort, 'expectedQuantity', p['expectedQuantity']),
+    differenceQuantity: _ganzzahlOderNull(ort, 'differenceQuantity', p['differenceQuantity']),
+    needsCheck: p.containsKey('needsCheck') ? p['needsCheck'] == true : null,
+    checkReasons: _textlisteWennDa(ort, 'checkReasons', p),
+    expectedAsOf: _text(p['expectedAsOf']),
+    differenceValueCents: _ganzzahlOderNull(ort, 'differenceValueCents', p['differenceValueCents']),
+    missingSerialNumbers: _textlisteWennDa(ort, 'missingSerialNumbers', p),
+    extraSerialNumbers: _textlisteWennDa(ort, 'extraSerialNumbers', p),
+    bookedQuantity: _ganzzahlOderNull(ort, 'bookedQuantity', p['bookedQuantity']),
+    notBooked: p['notBooked'] == null ? null : _nichtGebucht(ort.unter('notBooked'), p['notBooked']),
+    inventory: inventar == null
+        ? null
+        : StocktakeInventoryLine(
+            quantity: _ganzzahl(iOrt, 'quantity', inventar['quantity']),
+            countedOn: _textOderNull(inventar['countedOn']),
+            unitValueMicros: _ganzzahlOderNull(iOrt, 'unitValueMicros', inventar['unitValueMicros']),
+            valueCents: _ganzzahlOderNull(iOrt, 'valueCents', inventar['valueCents']),
+          ),
+  );
+}
+
+/// Eine Zaehlung: Menge, Runde und Kennungen muessen da sein.
+StocktakeCount inventurZaehlung(Ort ort, Object? w) {
+  final z = _eintrag(ort, w);
+  final storno = _objektOderNull(ort, 'voided', z['voided']);
+  return StocktakeCount(
+    id: _kennung(ort, 'id', z['id']),
+    articleId: _kennung(ort, 'articleId', z['articleId']),
+    condition: _kennung(ort, 'condition', z['condition']),
+    quantity: _ganzzahl(ort, 'quantity', z['quantity']),
+    // Die Zaehlung traegt ihre Seriennummern immer (leer bei Mengenartikeln); fehlt die Liste, ist sie kaputt.
+    serialNumbers: _textliste(ort, 'serialNumbers', z['serialNumbers']),
+    round: _ganzzahl(ort, 'round', z['round']),
+    countedBy: _akteur(ort, 'countedBy', z['countedBy']),
+    source: _textOderNull(z['source']),
+    cashregisterId: _textOderNull(z['cashregisterId']),
+    countedAt: _text(z['countedAt']),
+    note: _text(z['note']),
+    voided: storno == null
+        ? null
+        : StocktakeCountVoided(
+            reason: _text(storno['reason']),
+            voidedAt: _text(storno['voidedAt']),
+            voidedBy: _akteur(ort.unter('voided'), 'voidedBy', storno['voidedBy']),
+          ),
+  );
+}
+
+/// Antwort von Zaehlen und Stornieren: beide Teile sind zugesagt.
+StocktakeCountResult zaehlungMitPosition(String name, Map<String, dynamic> daten) => StocktakeCountResult(
+      count: inventurZaehlung(Ort(name, 'count'), daten['count']),
+      item: inventurPosition(Ort(name, 'item'), daten['item']),
+    );
+
+/// Lese-Link auf ein grosses Inventurprotokoll; ohne Adresse, Ablauf, Groesse
+/// oder Pruefsumme ist er unbrauchbar.
+StocktakePdfDownload protokollLink(String name, Object? w) {
+  final ort = Ort(name, 'download');
+  final d = _eintrag(ort, w);
+  return StocktakePdfDownload(
+    url: _kennung(ort, 'url', d['url']),
+    expiresAt: _kennung(ort, 'expiresAt', d['expiresAt']),
+    sizeBytes: _ganzzahl(ort, 'sizeBytes', d['sizeBytes']),
+    sha256: _kennung(ort, 'sha256', d['sha256']),
+    fileName: _textOderNull(d['fileName']),
+    contentType: _textOderNull(d['contentType']),
+  );
+}
+
 // ---- Listen ------------------------------------------------------------------
 
 /// Eine zugesagte Liste `data.<feld>`, Eintrag fuer Eintrag gelesen.

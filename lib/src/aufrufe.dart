@@ -99,6 +99,25 @@ abstract final class Aufrufe {
   static const getVariantGroup = 'getVariantGroup';
   static const listVariantGroups = 'listVariantGroups';
   static const addVariant = 'addVariant';
+  // Lager-API Inventur (Lager-Kern Stufe 3, InventoryClient).
+  static const createStocktake = 'createStocktake';
+  static const listStocktakes = 'listStocktakes';
+  static const getStocktake = 'getStocktake';
+  static const listStocktakeItems = 'listStocktakeItems';
+  static const recordStocktakeCount = 'recordStocktakeCount';
+  static const voidStocktakeCount = 'voidStocktakeCount';
+  static const listStocktakeCounts = 'listStocktakeCounts';
+  static const reviewStocktake = 'reviewStocktake';
+  static const recountStocktake = 'recountStocktake';
+  static const closeStocktake = 'closeStocktake';
+  static const cancelStocktake = 'cancelStocktake';
+  static const getStocktakePdf = 'getStocktakePdf';
+  // Inventur zaehlen an der Kasse (Lager-Kern Stufe 3, pos.dart).
+  static const listMyStocktakes = 'listMyStocktakes';
+  static const listMyStocktakeItems = 'listMyStocktakeItems';
+  static const listMyStocktakeCounts = 'listMyStocktakeCounts';
+  static const recordMyStocktakeCount = 'recordMyStocktakeCount';
+  static const voidMyStocktakeCount = 'voidMyStocktakeCount';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -186,5 +205,22 @@ abstract final class Aufrufe {
     getVariantGroup,
     listVariantGroups,
     addVariant,
+    createStocktake,
+    listStocktakes,
+    getStocktake,
+    listStocktakeItems,
+    recordStocktakeCount,
+    voidStocktakeCount,
+    listStocktakeCounts,
+    reviewStocktake,
+    recountStocktake,
+    closeStocktake,
+    cancelStocktake,
+    getStocktakePdf,
+    listMyStocktakes,
+    listMyStocktakeItems,
+    listMyStocktakeCounts,
+    recordMyStocktakeCount,
+    voidMyStocktakeCount,
   };
 }

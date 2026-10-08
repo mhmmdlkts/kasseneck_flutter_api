@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.7.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.8.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.7.0';
+const String posTextsVersion = '1.8.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -163,6 +163,17 @@ const Map<String, PosText> posMessages = {
   'unpairing.failed': PosText('Entkoppeln fehlgeschlagen.'),
   'logo.upload_failed': PosText('Hochladen fehlgeschlagen.'),
   'logo.remove_failed': PosText('Entfernen fehlgeschlagen.'),
+  'stocktake.none_open': PosText('An diesem Standort läuft gerade keine Inventur. Eine Inventur legt der Inhaber im Panel an.'),
+  'stocktake.scan_or_search': PosText('Artikel scannen oder suchen.'),
+  'stocktake.counted': PosText('{name}: {quantity} gezählt.', placeholders: ['name', 'quantity']),
+  'stocktake.blind_hint': PosText('Blind zählen – die Kasse zeigt keinen Buchbestand. Bitte zählen, was wirklich da ist.'),
+  'stocktake.recount_hint': PosText('Bitte die markierten Positionen nachzählen.'),
+  'stocktake.unknown_code': PosText('Zu „{code}“ gibt es keinen Artikel. Bitte den Code prüfen oder den Artikel suchen.', placeholders: ['code']),
+  'stocktake.quantity_invalid': PosText('Bitte eine gültige Menge eingeben – höchstens drei Nachkommastellen, bei Stückware nur ganze Zahlen.'),
+  'stocktake.serials_capture': PosText('Bitte für jedes Stück die Seriennummer scannen.'),
+  'stocktake.serials_mismatch': PosText('Je Stück genau eine Seriennummer: {count} erfasst, {quantity} gezählt.', placeholders: ['count', 'quantity']),
+  'stocktake.reason_missing': PosText('Bitte einen Grund für das Stornieren eingeben.'),
+  'stocktake.outcome_unknown': PosText('Unklar, ob die Zählung angekommen ist. „Erneut senden“ schickt dieselbe Zählung – sie zählt auch dann nur einmal.'),
   'app.not_in_browser': PosText('Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.', only: [PosSurface.app]),
   'app.open_in_browser': PosText('Bitte im Browser öffnen: {target}', placeholders: ['target'], only: [PosSurface.app]),
 };
@@ -262,6 +273,21 @@ const Map<String, PosText> posLabels = {
   'stock.return_restock': PosText('Zurück ins Lager'),
   'stock.return_defective': PosText('Defekt'),
   'stock.return_disposed': PosText('Entsorgt'),
+  'stocktake.title': PosText('Inventur zählen'),
+  'stocktake.quantity': PosText('Menge'),
+  'stocktake.defective': PosText('Defekt'),
+  'stocktake.count_zero': PosText('0 zählen'),
+  'stocktake.next': PosText('Weiter'),
+  'stocktake.void': PosText('Stornieren'),
+  'stocktake.reason': PosText('Grund'),
+  'stocktake.progress': PosText('{counted} von {total} gezählt', placeholders: ['counted', 'total']),
+  'stocktake.serial_numbers': PosText('Seriennummern erfassen'),
+  'stocktake.recount': PosText('Nachzählen'),
+  'stocktake.resend': PosText('Erneut senden'),
+  'stocktake.my_counts': PosText('Meine Zählungen'),
+  'stocktake.sent': PosText('gesendet'),
+  'stocktake.unconfirmed': PosText('unbestätigt'),
+  'stocktake.voided': PosText('storniert'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].

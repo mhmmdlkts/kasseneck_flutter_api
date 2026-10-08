@@ -39,7 +39,7 @@ final _strukturKasse = ((_tabelle['structure'] as Map)['pos-texts.json'] as Map)
 /// `umbenennung-1.0.test.ts` des npm-Pakets): drei Saetze und drei
 /// Beschriftungen aus 1.0.0-rc.5, die Texte des Zeichensatz-Tests aus 1.1.0
 /// und 1.1.1, aus 1.3.0 die Lager-Beschriftungen und der Satz zum abgelehnten
-/// Storno,
+/// Storno, aus 1.8.0 die Saetze und Beschriftungen der Inventur (`stocktake.*`),
 /// dazu die Verfeinerungen der Fehlerregeln als eigene Dateischluessel neben
 /// `errorRules` und seit 1.3.0 die Beschriftung je Rueckgabe-Wahl.
 const _nach10 = (
@@ -47,6 +47,9 @@ const _nach10 = (
     'network.outcome_unknown', 'server.connection_disturbed', 'server.response_unreadable',
     'codetable.question', 'codetable.instruction', 'codetable.question_hint', 'codetable.instruction_none',
     'cancellation.input_rejected',
+    'stocktake.none_open', 'stocktake.scan_or_search', 'stocktake.counted', 'stocktake.blind_hint',
+    'stocktake.recount_hint', 'stocktake.unknown_code', 'stocktake.quantity_invalid', 'stocktake.serials_capture',
+    'stocktake.serials_mismatch', 'stocktake.reason_missing', 'stocktake.outcome_unknown',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -55,9 +58,12 @@ const _nach10 = (
     'codetable.instruction_title', 'codetable.preview_title', 'codetable.apply', 'codetable.other_row',
     'stock.all_articles', 'stock.location', 'stock.default_location', 'stock.resolved', 'stock.where_to',
     'stock.available', 'stock.return_restock', 'stock.return_defective', 'stock.return_disposed',
+    'stocktake.title', 'stocktake.quantity', 'stocktake.defective', 'stocktake.count_zero', 'stocktake.next',
+    'stocktake.void', 'stocktake.reason', 'stocktake.progress', 'stocktake.serial_numbers', 'stocktake.recount',
+    'stocktake.resend', 'stocktake.my_counts', 'stocktake.sent', 'stocktake.unconfirmed', 'stocktake.voided',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
-  placeholders: {'cents', 'chars'},
+  placeholders: {'cents', 'chars', 'quantity', 'count', 'counted'},
 );
 
 Set<String> _nach10In(String abschnitt) => abschnitt == 'messages' ? _nach10.messages : _nach10.labels;
@@ -277,8 +283,9 @@ void main() {
           sammle(t as String, _rechnungsMuster);
         }
       }
-      // Neu nach 1.0 sind nur `{cents}` (split.remaining_with_rounding) und
-      // `{chars}` (codetable.missing); sie haben keinen alten Namen.
+      // Neu nach 1.0 sind `{cents}` (split.remaining_with_rounding), `{chars}`
+      // (codetable.missing) und seit 1.8.0 `{quantity}`, `{count}`,
+      // `{counted}` (stocktake.*); sie haben keinen alten Namen.
       expect(gefunden, {..._platzhalter.values, ..._nach10.placeholders}, reason: 'jeder neue Name kommt in den 1.0-Texten vor');
       expect(_platzhalter.keys.toSet().intersection(_nach10.placeholders), isEmpty);
       for (final abschnitt in ['messages', 'labels']) {

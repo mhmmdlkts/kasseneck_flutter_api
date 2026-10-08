@@ -1,5 +1,6 @@
 /// Fehler der Kassen-Aufrufe um den Verkauf herum (Einstellungen, Logo,
-/// Artikel, Drucker, Trinkgeld-Empfänger) auswerten: am `code`, nie am Text.
+/// Artikel, Drucker, Trinkgeld-Empfänger, Lager, Inventur zaehlen) auswerten:
+/// am `code`, nie am Text.
 /// Zwilling von `pos/errors.ts` im JS-Paket. Belege, Storno und Belegmail
 /// haben eigene Listen (`receiptErrorCodes` …), die Anmeldung
 /// [registerErrorCodes].
@@ -11,20 +12,33 @@ import '../register/fehler.dart';
 export '../register/codes.dart' show FieldError;
 
 /// Gleich `pos.posErrorCodes` im Vertrag (`surface.json`): Fehlerfälle der
-/// zehn Endpunkte und ihre Handler-Codes, dazu Anmelde- und Randcodes (ohne
-/// den Partner-Zugang) und der Paketcode `route_missing`. `validation` trägt
+/// Endpunkte (seit 10.7 auch die fuenf der Inventur) und ihre Handler-Codes,
+/// dazu Anmelde- und Randcodes (ohne den Partner-Zugang) und der Paketcode
+/// `route_missing`. `validation` trägt
 /// `details.errors[]` mit dem äußeren Feldpfad ([posFieldErrors]).
 const List<String> posErrorCodes = [
   'account_not_found',
   'admin_required',
   'api_not_approved',
+  'app_check_invalid',
+  'app_check_missing',
+  'article_not_found',
+  'article_not_in_scope',
+  'article_not_tracked',
   'cashregister_not_assigned',
   'cashregister_not_found',
   'cashregister_token_invalid',
   'cashregister_token_missing',
+  'count_already_voided',
+  'count_not_found',
   'device_not_found',
   'dialect_mismatch',
+  'idempotency_conflict',
+  'idempotency_key_required',
   'internal_translation_error',
+  'invalid_cursor',
+  'invalid_quantity',
+  'invalid_serial',
   'live_not_enabled',
   'location_inactive',
   'location_not_found',
@@ -43,9 +57,17 @@ const List<String> posErrorCodes = [
   'register_user_not_allowed',
   'register_user_not_found',
   'response_translation_failed',
+  'serial_already_counted',
+  'serial_not_allowed',
+  'serial_required',
   'server_error',
   'session_expired',
   'session_other_cashregister',
+  'stocktake_closed',
+  'stocktake_closing',
+  'stocktake_not_found',
+  'stocktake_not_open',
+  'too_many_counts',
   'unauthorized',
   'user_disabled',
   'user_verification_failed',
