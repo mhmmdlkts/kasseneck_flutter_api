@@ -17,6 +17,8 @@
 /// waren („fehlt“ heisst „kein Recht“, nicht „leer“).
 library;
 
+import 'dart:typed_data';
+
 import '../kasse/lager.dart' show StockValue;
 
 /// Ein Artikel, wie `getArticle`, `listArticles`, `lookupArticleByCode` und die
@@ -985,4 +987,762 @@ class VariantGroupPage {
         'variantGroups': [for (final g in variantGroups) g.toJson()],
         'nextCursor': nextCursor,
       };
+}
+
+// ---- Inventur (Lager-Kern Stufe 3, seit 10.7) --------------------------------
+//
+// Eine Inventur zaehlt den Bestand eines Standorts: anlegen (Umfang, Stichtag
+// oder permanent, blind als Standard), zaehlen (mehrere Zaehlungen je Artikel
+// werden addiert, eine falsche wird mit Grund storniert), pruefen (erst jetzt
+// Soll und Differenz), einzelne Positionen nachzaehlen, abschliessen (bucht je
+// Position eine Bewegung `stocktake`, legt das Inventurprotokoll ab) oder
+// abbrechen. Dieselben Modelle liest der Kassenweg (`pos.dart`).
+//
+// **Blind:** vor `review` traegt keine Antwort ein Soll, eine Differenz oder
+// „pruefen“; die Felder fehlen dann ganz und sind hier `null`. Werte
+// (`…Cents`, `…Micros`) kommen nur mit dem Recht `costs` und fehlen sonst
+// ebenso. Katalogwerte (Stand, Art, Quelle, Akteur, Gruende) bleiben Text.
+//
+// `toJson()` ist die Drahtform; ein Feld, das der Server nur in einem Stand
+// oder nur mit einem Recht sendet, fehlt dort, wenn es `null` ist.
+
+/// Wer etwas tat: Inhaber, Kasseneck-Admin, Kassen-Benutzer oder ein
+/// API-Schluessel.
+class StocktakeActor {
+  const StocktakeActor({this.type, this.id, this.name});
+
+  /// Meist ein Wert aus `stocktakeActorTypes`; ein unbekannter bleibt erhalten.
+  final String? type;
+  final String? id;
+
+  /// Anzeigename (Kassen-Benutzer); `null` beim Inhaber und bei der API.
+  final String? name;
+
+  Map<String, dynamic> toJson() => {'type': type, 'id': id, 'name': name};
+}
+
+/// Umfang einer Inventur, bei der Anlage eingefroren.
+class StocktakeScope {
+  const StocktakeScope({this.type, this.groupIds = const [], this.articleIds = const []});
+
+  /// Meist ein Wert aus `stocktakeScopeTypes`.
+  final String? type;
+
+  /// Nur bei `groups`, sonst leer.
+  final List<String> groupIds;
+
+  /// Nur bei `articles`, sonst leer.
+  final List<String> articleIds;
+
+  Map<String, dynamic> toJson() => {'type': type, 'groupIds': [...groupIds], 'articleIds': [...articleIds]};
+}
+
+/// Fortschritt: Zahl der Positionen und ob Positionen zum Nachzaehlen offen sind.
+class StocktakeProgress {
+  const StocktakeProgress({required this.items, this.counted, this.recountOpen = false});
+
+  final int items;
+
+  /// Gezaehlte Positionen; nur `getStocktake` zaehlt sie (sonst `null`, nie 0:
+  /// „unbekannt“ ist nicht „keine“).
+  final int? counted;
+  final bool recountOpen;
+
+  Map<String, dynamic> toJson() => {'items': items, 'counted': ?counted, 'recountOpen': recountOpen};
+}
+
+/// Die Pruefung: wann und von wem angestossen, ob Soll und Differenz schon
+/// gerechnet sind.
+class StocktakeReview {
+  const StocktakeReview({this.startedAt, this.startedBy, this.complete = false, this.expectedAsOf, this.recountUncounted});
+
+  final String? startedAt;
+  final StocktakeActor? startedBy;
+
+  /// `false`: der Server rechnet noch; danach erneut `getStocktake`.
+  final bool complete;
+
+  /// Stand der Soll-Rechnung; `null`, solange sie nicht fertig ist.
+  final String? expectedAsOf;
+
+  /// Positionen, die zum Nachzaehlen offen und noch ungezaehlt sind; `null`,
+  /// wenn der Server es nicht nennt.
+  final int? recountUncounted;
+
+  Map<String, dynamic> toJson() => {
+        'startedAt': startedAt,
+        'startedBy': startedBy?.toJson(),
+        'complete': complete,
+        'expectedAsOf': expectedAsOf,
+        'recountUncounted': recountUncounted,
+      };
+}
+
+/// Der Abschluss: er bucht in Teilen und laesst sich wieder aufnehmen.
+class StocktakeClosing {
+  const StocktakeClosing({
+    this.startedAt,
+    this.startedBy,
+    this.uncountedAsZero = false,
+    this.parts,
+    this.bookedParts,
+    this.completedAt,
+  });
+
+  final String? startedAt;
+  final StocktakeActor? startedBy;
+
+  /// Ungezaehlte Positionen als 0 gebucht (sonst nicht gebucht, im Protokoll
+  /// „nicht gezaehlt“).
+  final bool uncountedAsZero;
+
+  /// Zahl der Teile; `null`, solange der Plan noch nicht steht.
+  final int? parts;
+
+  /// Gebuchte Teile; `null`, wenn der Server es nicht nennt.
+  final int? bookedParts;
+
+  /// `null`, solange der Abschluss noch bucht.
+  final String? completedAt;
+
+  Map<String, dynamic> toJson() => {
+        'startedAt': startedAt,
+        'startedBy': startedBy?.toJson(),
+        'uncountedAsZero': uncountedAsZero,
+        'parts': parts,
+        'bookedParts': bookedParts,
+        'completedAt': ?completedAt,
+      };
+}
+
+/// Der Abbruch einer Inventur.
+class StocktakeCancellation {
+  const StocktakeCancellation({this.reason, this.cancelledAt, this.cancelledBy});
+
+  final String? reason;
+  final String? cancelledAt;
+  final StocktakeActor? cancelledBy;
+
+  Map<String, dynamic> toJson() => {'reason': reason, 'cancelledAt': cancelledAt, 'cancelledBy': cancelledBy?.toJson()};
+}
+
+/// Summen des Abschlusses (Anzahlen von Positionen; Werte nur mit dem Recht
+/// `costs`).
+class StocktakeTotals {
+  const StocktakeTotals({
+    required this.items,
+    required this.counted,
+    required this.uncounted,
+    required this.recounted,
+    required this.withDifference,
+    required this.needsCheck,
+    required this.notBooked,
+    this.differenceValueCents,
+    this.inventoryValueCents,
+  });
+
+  final int items;
+  final int counted;
+  final int uncounted;
+  final int recounted;
+  final int withDifference;
+  final int needsCheck;
+  final int notBooked;
+
+  /// Summe der gebuchten Differenzwerte in Cent; nur mit dem Recht `costs`.
+  final int? differenceValueCents;
+
+  /// Inventarwert in Cent; nur mit dem Recht `costs`.
+  final int? inventoryValueCents;
+
+  Map<String, dynamic> toJson() => {
+        'items': items,
+        'counted': counted,
+        'uncounted': uncounted,
+        'recounted': recounted,
+        'withDifference': withDifference,
+        'needsCheck': needsCheck,
+        'notBooked': notBooked,
+        'differenceValueCents': ?differenceValueCents,
+        'inventoryValueCents': ?inventoryValueCents,
+      };
+}
+
+/// Ein Hinweis zur Inventur, mit der Zahl der betroffenen Positionen. Er ist
+/// kein Fehler: der Vorgang hat gewirkt.
+class StocktakeWarning {
+  const StocktakeWarning({required this.code, required this.items, this.message});
+
+  /// Meist ein Wert aus `inventoryWarningCodes` (`uncounted_items`,
+  /// `not_booked`, `defect_capped`, `recount_uncounted`); ein unbekannter
+  /// bleibt erhalten.
+  final String code;
+  final int items;
+
+  /// Menschentext (deutsch); `null` am Kopf, der nur Codes fuehrt. Nie darauf
+  /// verzweigen.
+  final String? message;
+
+  Map<String, dynamic> toJson() => {'code': code, 'items': items, 'message': ?message};
+}
+
+/// Siegelstand des Lagerprotokolls beim Abschluss: Wiener Tage `YYYY-MM-DD`.
+/// `verified: null` heisst „nicht fertig geprueft“, nie Bruch.
+class StocktakeSeal {
+  const StocktakeSeal({
+    this.fromDay,
+    this.toDay,
+    this.daysChecked,
+    this.verified,
+    this.firstBreak,
+    this.gaps = const [],
+    this.gapCount,
+    this.notChecked,
+    this.checkedUntil,
+  });
+
+  final String? fromDay;
+  final String? toDay;
+  final int? daysChecked;
+  final bool? verified;
+
+  /// Erster Tag mit gebrochenem Siegel; `null` = keiner.
+  final String? firstBreak;
+
+  /// Tage ohne Siegel.
+  final List<String> gaps;
+  final int? gapCount;
+
+  /// `time_limit` (Frist des Laufs) oder `unavailable`; `null`, wenn ganz
+  /// geprueft.
+  final String? notChecked;
+
+  /// Bis wohin geprueft wurde, wenn die Pruefung nicht fertig wurde.
+  final String? checkedUntil;
+
+  Map<String, dynamic> toJson() => {
+        'fromDay': fromDay,
+        'toDay': toDay,
+        'daysChecked': daysChecked,
+        'verified': verified,
+        'firstBreak': firstBreak,
+        'gaps': [...gaps],
+        'gapCount': gapCount,
+        'notChecked': ?notChecked,
+        'checkedUntil': ?checkedUntil,
+      };
+}
+
+/// Das Inventurprotokoll: ob es da ist, und die Pruefsummen der Fassungen, die
+/// der Aufrufer sehen darf.
+class StocktakePdfInfo {
+  const StocktakePdfInfo({this.available = false, this.valuesSha256, this.quantitiesSha256});
+
+  final bool available;
+
+  /// SHA-256 der Fassung mit Werten; nur mit dem Recht `costs`.
+  final String? valuesSha256;
+
+  /// SHA-256 der Fassung nur mit Mengen.
+  final String? quantitiesSha256;
+
+  Map<String, dynamic> toJson() =>
+      {'available': available, 'valuesSha256': ?valuesSha256, 'quantitiesSha256': ?quantitiesSha256};
+}
+
+/// Eine Inventur (Kopf), wie jeder Inventur-Aufruf ausser den Listen der
+/// Positionen und Zaehlungen sie sendet.
+///
+/// Die Felder des Ergebnisses ([totals], [warnings], [seal], [checksum],
+/// [inventoryAsOf], [pdf]) gibt es erst nach dem Abschluss und nur fuer den,
+/// der das Soll sehen darf; vorher sind sie `null`.
+class Stocktake {
+  const Stocktake({
+    required this.id,
+    this.name,
+    this.locationId,
+    this.scope,
+    this.type,
+    this.keyDate,
+    this.blind = true,
+    this.status,
+    this.progress,
+    this.createdAt,
+    this.createdBy,
+    this.source,
+    this.updatedAt,
+    this.review,
+    this.closing,
+    this.cancellation,
+    this.totals,
+    this.warnings,
+    this.seal,
+    this.checksum,
+    this.inventoryAsOf,
+    this.pdf,
+  });
+
+  final String id;
+
+  /// 1–100 Zeichen, Vorgabe „`Inventur <Standort> <Tag>`“.
+  final String? name;
+  final String? locationId;
+  final StocktakeScope? scope;
+
+  /// Meist ein Wert aus `stocktakeTypes`.
+  final String? type;
+
+  /// `YYYY-MM-DD` bei `key_date`, sonst `null`.
+  final String? keyDate;
+
+  /// Blind zaehlen (Vorgabe): niemand sieht vor der Pruefung ein Soll. Nur ein
+  /// ausdrueckliches `false` am Draht zeigt Bestand.
+  final bool blind;
+
+  /// Meist ein Wert aus `stocktakeStatuses`.
+  final String? status;
+  final StocktakeProgress? progress;
+  final String? createdAt;
+  final StocktakeActor? createdBy;
+
+  /// Meist ein Wert aus `stocktakeSources`.
+  final String? source;
+
+  /// Letzte Aenderung des Kopfs; Grundlage von `listStocktakes(updatedSince: …)`.
+  final String? updatedAt;
+  final StocktakeReview? review;
+  final StocktakeClosing? closing;
+  final StocktakeCancellation? cancellation;
+  final StocktakeTotals? totals;
+
+  /// Hinweise des Abschlusses (`uncounted_items`, `not_booked`,
+  /// `defect_capped`); `null`, wenn der Kopf keine Liste traegt (vor dem
+  /// Abschluss), leer, wenn es keinen Hinweis gibt.
+  final List<StocktakeWarning>? warnings;
+  final StocktakeSeal? seal;
+
+  /// SHA-256 ueber Kopf, Positionen und Zaehlungen (kanonisches JSON), steht
+  /// auch im Protokoll.
+  final String? checksum;
+
+  /// Meist ein Wert aus `stocktakeInventoryAsOf`.
+  final String? inventoryAsOf;
+  final StocktakePdfInfo? pdf;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'locationId': locationId,
+        'scope': scope?.toJson(),
+        'type': type,
+        'keyDate': keyDate,
+        'blind': blind,
+        'status': status,
+        'progress': progress?.toJson(),
+        'createdAt': createdAt,
+        'createdBy': createdBy?.toJson(),
+        'source': source,
+        'updatedAt': updatedAt,
+        'review': review?.toJson(),
+        'closing': closing?.toJson(),
+        'cancellation': cancellation?.toJson(),
+        'totals': ?totals?.toJson(),
+        if (warnings != null) 'warnings': [for (final w in warnings!) w.toJson()],
+        'seal': ?seal?.toJson(),
+        'checksum': ?checksum,
+        'inventoryAsOf': ?inventoryAsOf,
+        'pdf': ?pdf?.toJson(),
+      };
+}
+
+/// Ein Nachzaehlen-Auftrag an einer Position.
+class StocktakeRecount {
+  const StocktakeRecount({this.reason, this.requestedAt, this.requestedBy, this.round});
+
+  final String? reason;
+  final String? requestedAt;
+  final StocktakeActor? requestedBy;
+
+  /// Die Runde, die das Nachzaehlen begann.
+  final int? round;
+
+  Map<String, dynamic> toJson() =>
+      {'reason': reason, 'requestedAt': requestedAt, 'requestedBy': requestedBy?.toJson(), 'round': round};
+}
+
+/// Was von einer Position nicht gebucht wurde, und warum.
+class StocktakeNotBooked {
+  const StocktakeNotBooked({required this.code, this.quantity, this.reasons});
+
+  /// Meist ein Wert aus `stocktakeNotBookedReasons`; dazu kommen Codes wie
+  /// `serial_not_in_stock`. Jeder Text bleibt stehen.
+  final String code;
+
+  /// Nicht gebuchte Menge in Tausendstel; `null`, wenn der Server keine nennt.
+  final int? quantity;
+
+  /// Bei mehreren Gruenden je Grund ein Eintrag; sonst `null`.
+  final List<({String code, int? quantity})>? reasons;
+
+  Map<String, dynamic> toJson() => {
+        'code': code,
+        'quantity': quantity,
+        if (reasons != null) 'reasons': [for (final g in reasons!) {'code': g.code, 'quantity': g.quantity}],
+      };
+}
+
+/// Eine Zeile des Inventars (nach dem Abschluss).
+class StocktakeInventoryLine {
+  const StocktakeInventoryLine({required this.quantity, this.countedOn, this.unitValueMicros, this.valueCents});
+
+  /// Tausendstel.
+  final int quantity;
+
+  /// Aufnahmetag (Wiener Tag der Referenzzeit), `YYYY-MM-DD`.
+  final String? countedOn;
+
+  /// Einzelwert je Basiseinheit in Mikro-Euro; nur mit dem Recht `costs`.
+  final int? unitValueMicros;
+
+  /// Gesamtwert in Cent; nur mit dem Recht `costs`.
+  final int? valueCents;
+
+  Map<String, dynamic> toJson() => {
+        'quantity': quantity,
+        'unitValueMicros': ?unitValueMicros,
+        'valueCents': ?valueCents,
+        'countedOn': countedOn,
+      };
+}
+
+/// Eine Position: ein Artikel in einem Zustand (`sellable` bzw. `defective`).
+///
+/// Ab `review` (und nur fuer den, der das Soll sehen darf) kommen Soll,
+/// Differenz und „pruefen“ dazu ([expectedQuantity] …), nach dem Abschluss die
+/// Buchung und das Inventar. Vorher sind diese Felder `null`.
+class StocktakeItem {
+  const StocktakeItem({
+    required this.articleId,
+    required this.condition,
+    this.name,
+    this.number,
+    this.unit,
+    required this.round,
+    required this.counted,
+    this.quantity,
+    required this.counts,
+    this.firstCountedAt,
+    this.referenceTime,
+    this.countedBy = const [],
+    this.serialNumbers,
+    this.recountRequested = false,
+    this.recount,
+    this.addedLater = false,
+    this.bookStockNow,
+    this.expectedQuantity,
+    this.differenceQuantity,
+    this.needsCheck,
+    this.checkReasons,
+    this.expectedAsOf,
+    this.differenceValueCents,
+    this.missingSerialNumbers,
+    this.extraSerialNumbers,
+    this.bookedQuantity,
+    this.notBooked,
+    this.inventory,
+  });
+
+  final String articleId;
+
+  /// Meist ein Wert aus `stockConditions`.
+  final String condition;
+
+  /// Name, Nummer und Einheit, wie sie bei der Anlage galten.
+  final String? name;
+  final String? number;
+  final String? unit;
+
+  /// Zaehlrunde ab 1; jedes Nachzaehlen beginnt eine neue.
+  final int round;
+
+  /// Gezaehlt (auch „0 gezaehlt“); `false` heisst ungezaehlt, nicht leer.
+  final bool counted;
+
+  /// Summe der aktiven Zaehlungen der Runde in Tausendstel; `null` = nicht
+  /// gezaehlt. Bei [counted] `true` ist sie immer gesetzt.
+  final int? quantity;
+
+  /// Zahl der aktiven Zaehlungen der Runde.
+  final int counts;
+  final String? firstCountedAt;
+
+  /// Referenzzeit: Serverzeit der letzten aktiven Zaehlung der Runde.
+  final String? referenceTime;
+  final List<StocktakeActor> countedBy;
+
+  /// Gezaehlte Seriennummern der Runde (Einzelstuecke). Nur in den Listen;
+  /// die Antwort von Zaehlen und Stornieren sendet die Position ohne sie, dann
+  /// ist das Feld `null` (nicht „keine Seriennummern“).
+  final List<String>? serialNumbers;
+  final bool recountRequested;
+  final StocktakeRecount? recount;
+
+  /// Erst beim Zaehlen aufgenommen (Umfang `all`).
+  final bool addedLater;
+
+  /// Heutiger Buchbestand in Tausendstel, nur bei `blind: false` waehrend der
+  /// Zaehlung. Nie das Soll zur Referenzzeit.
+  final int? bookStockNow;
+  final int? expectedQuantity;
+
+  /// `quantity - expectedQuantity`; `null`, wenn ungezaehlt oder vor der Pruefung.
+  final int? differenceQuantity;
+
+  /// `null` vor der Pruefung.
+  final bool? needsCheck;
+
+  /// Meist Werte aus `stocktakeCheckReasons`; `null` vor der Pruefung.
+  final List<String>? checkReasons;
+  final String? expectedAsOf;
+
+  /// Voraussichtlicher (in `review`) bzw. gebuchter Differenzwert in Cent; nur
+  /// mit dem Recht `costs`.
+  final int? differenceValueCents;
+
+  /// Einzelstueck: Soll-Nummern ohne Zaehlung.
+  final List<String>? missingSerialNumbers;
+
+  /// Einzelstueck: gezaehlte Nummern, die nicht im Soll stehen.
+  final List<String>? extraSerialNumbers;
+
+  /// Gebuchte Menge in Tausendstel (nach dem Abschluss).
+  final int? bookedQuantity;
+  final StocktakeNotBooked? notBooked;
+  final StocktakeInventoryLine? inventory;
+
+  Map<String, dynamic> toJson() => {
+        'articleId': articleId,
+        'condition': condition,
+        'name': name,
+        'number': number,
+        'unit': unit,
+        'round': round,
+        'counted': counted,
+        'quantity': quantity,
+        'counts': counts,
+        'firstCountedAt': firstCountedAt,
+        'referenceTime': referenceTime,
+        'countedBy': [for (final a in countedBy) a.toJson()],
+        if (serialNumbers != null) 'serialNumbers': [...serialNumbers!],
+        'recountRequested': recountRequested,
+        'recount': ?recount?.toJson(),
+        'addedLater': addedLater,
+        'bookStockNow': ?bookStockNow,
+        'expectedQuantity': ?expectedQuantity,
+        'differenceQuantity': ?differenceQuantity,
+        'needsCheck': ?needsCheck,
+        if (checkReasons != null) 'checkReasons': [...checkReasons!],
+        'expectedAsOf': ?expectedAsOf,
+        'differenceValueCents': ?differenceValueCents,
+        if (missingSerialNumbers != null) 'missingSerialNumbers': [...missingSerialNumbers!],
+        if (extraSerialNumbers != null) 'extraSerialNumbers': [...extraSerialNumbers!],
+        'bookedQuantity': ?bookedQuantity,
+        'notBooked': ?notBooked?.toJson(),
+        'inventory': ?inventory?.toJson(),
+      };
+}
+
+/// Das Storno einer Zaehlung.
+class StocktakeCountVoided {
+  const StocktakeCountVoided({this.reason, this.voidedAt, this.voidedBy});
+
+  final String? reason;
+  final String? voidedAt;
+  final StocktakeActor? voidedBy;
+
+  Map<String, dynamic> toJson() => {'reason': reason, 'voidedAt': voidedAt, 'voidedBy': voidedBy?.toJson()};
+}
+
+/// Eine Zaehlung.
+class StocktakeCount {
+  const StocktakeCount({
+    required this.id,
+    required this.articleId,
+    required this.condition,
+    required this.quantity,
+    this.serialNumbers = const [],
+    required this.round,
+    this.countedBy,
+    this.source,
+    this.cashregisterId,
+    this.countedAt,
+    this.note,
+    this.voided,
+  });
+
+  final String id;
+  final String articleId;
+  final String condition;
+
+  /// Tausendstel; `0` heisst „leer gezaehlt“.
+  final int quantity;
+
+  /// Leer bei Mengenartikeln; die Antwort traegt die Liste immer.
+  final List<String> serialNumbers;
+  final int round;
+  final StocktakeActor? countedBy;
+
+  /// Meist ein Wert aus `stocktakeSources`.
+  final String? source;
+
+  /// Kasse, an der gezaehlt wurde; `null` im Panel und ueber die API.
+  final String? cashregisterId;
+
+  /// Serverzeit der Zaehlung (die Geraetezeit zaehlt nie).
+  final String? countedAt;
+  final String? note;
+
+  /// `null` = aktiv.
+  final StocktakeCountVoided? voided;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'articleId': articleId,
+        'condition': condition,
+        'quantity': quantity,
+        'serialNumbers': [...serialNumbers],
+        'round': round,
+        'countedBy': countedBy?.toJson(),
+        'source': source,
+        'cashregisterId': cashregisterId,
+        'countedAt': countedAt,
+        'note': note,
+        'voided': voided?.toJson(),
+      };
+}
+
+/// Antwort von Zaehlen und Stornieren: die Zaehlung und ihre Position danach
+/// (Summe der Runde in [StocktakeItem.quantity], kein Soll).
+class StocktakeCountResult {
+  const StocktakeCountResult({required this.count, required this.item});
+
+  final StocktakeCount count;
+  final StocktakeItem item;
+
+  Map<String, dynamic> toJson() => {'count': count.toJson(), 'item': item.toJson()};
+}
+
+/// Eine Seite von `listStocktakes`.
+class StocktakePage {
+  const StocktakePage({required this.stocktakes, this.nextCursor});
+
+  final List<Stocktake> stocktakes;
+
+  /// `null` = letzte Seite.
+  final String? nextCursor;
+
+  Map<String, dynamic> toJson() => {'stocktakes': [for (final s in stocktakes) s.toJson()], 'nextCursor': nextCursor};
+}
+
+/// Eine Seite von `listStocktakeItems` bzw. `listMyStocktakeItems`, nach Kennung.
+class StocktakeItemPage {
+  const StocktakeItemPage({required this.items, this.nextCursor});
+
+  final List<StocktakeItem> items;
+
+  /// `null` = letzte Seite.
+  final String? nextCursor;
+
+  Map<String, dynamic> toJson() => {'items': [for (final p in items) p.toJson()], 'nextCursor': nextCursor};
+}
+
+/// Eine Seite von `listStocktakeCounts` bzw. `listMyStocktakeCounts`, neueste zuerst.
+class StocktakeCountPage {
+  const StocktakeCountPage({required this.counts, this.nextCursor});
+
+  final List<StocktakeCount> counts;
+
+  /// `null` = letzte Seite.
+  final String? nextCursor;
+
+  Map<String, dynamic> toJson() => {'counts': [for (final z in counts) z.toJson()], 'nextCursor': nextCursor};
+}
+
+/// Antwort von `closeStocktake`: der Kopf (meist `closing`, der Server bucht
+/// im Hintergrund weiter) und Hinweise wie `recount_uncounted`.
+class CloseStocktakeResult {
+  const CloseStocktakeResult({required this.stocktake, this.warnings = const []});
+
+  final Stocktake stocktake;
+
+  /// Leer, wenn es keinen Hinweis gibt.
+  final List<StocktakeWarning> warnings;
+
+  Map<String, dynamic> toJson() =>
+      {'stocktake': stocktake.toJson(), 'warnings': [for (final w in warnings) w.toJson()]};
+}
+
+/// Lese-Link auf das Inventurprotokoll, wenn es zu gross fuer die Antwort ist
+/// (ueber 9 MiB). Signiert und 15 Minuten gueltig; die geladene Datei an
+/// [sha256] pruefen.
+class StocktakePdfDownload {
+  const StocktakePdfDownload({
+    required this.url,
+    required this.expiresAt,
+    required this.sizeBytes,
+    required this.sha256,
+    this.fileName,
+    this.contentType,
+  });
+
+  final String url;
+  final String expiresAt;
+  final int sizeBytes;
+
+  /// SHA-256 der Datei, hexadezimal (dieselbe wie `pdf.valuesSha256` bzw.
+  /// `pdf.quantitiesSha256` am Kopf).
+  final String sha256;
+  final String? fileName;
+  final String? contentType;
+
+  Map<String, dynamic> toJson() => {
+        'url': url,
+        'expiresAt': expiresAt,
+        'sizeBytes': sizeBytes,
+        'sha256': sha256,
+        'fileName': fileName,
+        'contentType': contentType,
+      };
+}
+
+/// Das Inventurprotokoll: als Datei ([StocktakePdfFile]) oder, ueber 9 MiB,
+/// als Lese-Link ([StocktakePdfLink]). Mit dem Recht `costs` die Fassung mit
+/// Werten, sonst die nur mit Mengen.
+///
+/// Ein `switch` ohne `default` deckt beide Faelle; [kind] ist der Name des
+/// Falls wie im JS-Zwilling (`pdf` bzw. `download`).
+sealed class StocktakePdf {
+  const StocktakePdf();
+
+  String get kind;
+}
+
+/// Das Inventurprotokoll als Datei (beginnt mit `%PDF`).
+final class StocktakePdfFile extends StocktakePdf {
+  const StocktakePdfFile(this.pdf);
+
+  final Uint8List pdf;
+
+  @override
+  String get kind => 'pdf';
+}
+
+/// Das Inventurprotokoll als Lese-Link: die Datei war zu gross fuer die Antwort.
+final class StocktakePdfLink extends StocktakePdf {
+  const StocktakePdfLink(this.download);
+
+  final StocktakePdfDownload download;
+
+  @override
+  String get kind => 'download';
 }

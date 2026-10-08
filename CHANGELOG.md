@@ -1,3 +1,126 @@
+## 10.7.0
+
+Twin of `@kreiseck/kasseneck-api` `1.8.0` (contract files pulled from that
+version): stocktakes in the Inventory API and counting at the register
+(backend „Lager-Kern Stufe 3“). Reason: until now a business could only fix its
+stock by hand with losses and receipts; a real count with an expected quantity
+at the time of counting, a review, recounts and a stored stocktake record was
+only possible in the panel. A shop system and the register app can now take
+part: the shop creates, reviews and closes, the register counts blind.
+
+Additive; every existing call sends the same bytes as in 10.6.1. The lists
+`inventoryEndpoints` (32 → 44), `inventoryErrorCodes`, `inventoryWarningCodes`,
+`posErrorCodes`, `unknownOutcomeCalls` and `Aufrufe.alle` gain entries; code
+that compares them with a fixed length or a fixed last entry needs the new
+ones.
+
+- **Stocktakes** (`InventoryClient`): `createStocktake(CreateStocktakeRequest)`
+  (`StocktakeScopeInput`, `type` `key_date` or `perpetual`, blind by default),
+  `listStocktakes` (named `status`, `locationId`, `updatedSince`, `limit`,
+  `cursor`; without `updatedSince` most recently changed first, with it
+  ascending and inclusive) and `iterateStocktakes`, `getStocktake`,
+  `listStocktakeItems`/`iterateStocktakeItems` (`stocktakeId`, `openOnly`),
+  `listStocktakeCounts`/`iterateStocktakeCounts` (`stocktakeId`, `articleId`),
+  `recordStocktakeCount(RecordStocktakeCountRequest)`,
+  `voidStocktakeCount(VoidStocktakeCountRequest)` (both answer
+  `StocktakeCountResult` with the count and the item after it),
+  `reviewStocktake(ReviewStocktakeRequest)`,
+  `recountStocktake(RecountStocktakeRequest)` with `StocktakeRecountItem`,
+  `closeStocktake(CloseStocktakeRequest)` (answers `CloseStocktakeResult` with
+  the head and `warnings`), `cancelStocktake(CancelStocktakeRequest)` and
+  `getStocktakePdf`.
+- **The stocktake record as file or link.** `getStocktakePdf` answers the
+  sealed `StocktakePdf`: `StocktakePdfFile` (`pdf`, the bytes, up to 9 MiB) or
+  `StocktakePdfLink` (`download`: `StocktakePdfDownload` with `url`,
+  `expiresAt`, `sizeBytes`, `sha256`, `fileName`, `contentType`; signed, 15
+  minutes). `kind` is `pdf` or `download` as in the JS twin. Reason: a large
+  record does not fit into a function answer. The transport serves it through
+  the new `InventoryTransport.callPdfOrData`, which returns the sealed
+  `PdfOrData` (`PdfOrDataFile` or `PdfOrDataPayload`): the counterpart of
+  `createPdfOrDataTransport` in npm, as a method like
+  `InvoiceTransport.callBinary`. An error envelope is the same domain error as
+  on the JSON path, an empty or unreadable body the same `KasseneckHttpError`.
+- **Models:** `Stocktake`, `StocktakeScope`, `StocktakeProgress`,
+  `StocktakeReview`, `StocktakeClosing`, `StocktakeCancellation`,
+  `StocktakeTotals`, `StocktakeWarning`, `StocktakeSeal`, `StocktakePdfInfo`,
+  `StocktakeActor`, `StocktakeItem`, `StocktakeRecount`, `StocktakeNotBooked`,
+  `StocktakeInventoryLine`, `StocktakeCount`, `StocktakeCountVoided`,
+  `StocktakeCountResult`, `StocktakePage`, `StocktakeItemPage`,
+  `StocktakeCountPage`, `CloseStocktakeResult`, each with `toJson()` in wire
+  form. Blind: before `review` the expected quantity, the difference and
+  `needsCheck` are absent and therefore `null`; values (`…Cents`, `…Micros`)
+  only with `costs`. Required numbers (round, counts, items, the counted
+  quantity, `sizeBytes`) are integers or a response error; `counted: true`
+  without a quantity, a missing `countedBy`, an actor that is not an object
+  (also inside `countedBy`) and a count without `serialNumbers` are response
+  errors, never a guessed value. `StocktakeItem.serialNumbers` is `null` when
+  the server does not send it (the answer of counting and voiding), never an
+  invented empty list. `progress.counted` is `null` outside `getStocktake`,
+  never 0.
+- **Catalogues and limits:** `stocktakeStatuses`, `stocktakeTypes`,
+  `stocktakeScopeTypes`, `stocktakeCheckReasons`, `stocktakeNotBookedReasons`,
+  `stocktakeSources`, `stocktakeActorTypes`, `stocktakeInventoryAsOf`;
+  `stocktakeItemsMax` (5000), `stocktakeRecountItemsMax` (200),
+  `stocktakeCountsPerItemMax` (200). The client does not check the limits.
+- **Error and warning codes:** `inventoryErrorCodes` gains
+  `stocktake_not_found`, `stocktake_not_open`, `stocktake_closed`,
+  `stocktake_not_in_review`, `stocktake_closing`, `stocktake_location_busy`,
+  `stocktake_review_running`, `stocktake_recount_open`,
+  `article_not_in_scope`, `article_not_tracked`, `count_not_found`,
+  `count_already_voided`, `serial_already_counted`, `too_many_counts` and
+  `stocktake_not_closed` (contract order); `inventoryWarningCodes` gains
+  `defect_capped`, `uncounted_items`, `not_booked` and `recount_uncounted`.
+  New `inventoryBusyStocktakeId(error)` returns the open stocktake of
+  `stocktake_location_busy` (`details['stocktakeId']`), otherwise `null`.
+- **Counting at the register** (`RegisterReceiptClient`, same names as the JS
+  twin): `listMyStocktakes` (`locationId`, `status`; an empty location counts
+  as none), `listMyStocktakeItems` (`stocktakeId`, `openOnly`, `limit`,
+  `cursor`), `listMyStocktakeCounts` (`ownOnly`, `articleId`),
+  `recordMyStocktakeCount` (`cashregisterId` defaults to the register of the
+  session) and `voidMyStocktakeCount`. `pos.dart` exports the stocktake
+  models and `stocktakeStatuses`; `posErrorCodes` gains the 18 codes of the
+  five endpoints.
+- **`parseQuantityMilli(text, unit, {rule})`** (`pos.dart`) turns typed text
+  into thousandths without floating point (BigInt inside): comma or point, at
+  most three decimals, trailing zeros do not count. A point with exactly three
+  digits after a non-zero whole part (`'1.000'`, `'12.500'`) is `null` for
+  every unit and rule: in Austrian notation it is a thousands separator, on a
+  keypad a decimal point, and a factor of 1000 would be booked as a
+  difference; `'1,000'`, `'0.500'`, `'1.5'` stay valid. Pieces take whole
+  numbers without separator only; `rule` (the stored `PosArticle.quantityRule`)
+  wins over the default of the unit (`quantityRuleForUnit`), pass
+  `QuantityRule.piece` for a serial-number article. The 50 shared cases of
+  `stocktake-quantity-cases.json` run 1:1 as a test.
+- **Texts:** the catalogue (generated from `pos-texts.json` 1.8.0) gains the
+  messages `stocktake.none_open`, `scan_or_search`, `counted`, `blind_hint`,
+  `recount_hint`, `unknown_code`, `quantity_invalid`, `serials_capture`,
+  `serials_mismatch`, `reason_missing`, `outcome_unknown` and the labels
+  `stocktake.title`, `quantity`, `defective`, `count_zero`, `next`, `void`,
+  `reason`, `progress`, `serial_numbers`, `recount`, `resend`, `my_counts`,
+  `sent`, `unconfirmed`, `voided`.
+- **Unknown outcome:** `createStocktake`, `recordStocktakeCount`,
+  `voidStocktakeCount`, `reviewStocktake`, `recountStocktake`,
+  `closeStocktake`, `cancelStocktake`, `recordMyStocktakeCount` and
+  `voidMyStocktakeCount` are in `unknownOutcomeCalls` (now 64, the list of the
+  contract). All of them take a required `idempotencyKey`: after
+  `ErrorOutcome.unknown` resend with the **same** key, a count is then counted
+  exactly once; a new key would count the goods a second time. The eight
+  reading calls stay `rejected`.
+- **Checked before sending**, as in npm, only what is surely wrong without the
+  network: the key, empty `stocktakeId`, `locationId`, `articleId`, `countId`
+  or `cashregisterId`, an empty reason, an empty recount list or an item
+  without `articleId`, `limit` outside 1–200 and integers beyond ±(2^53 − 1). A
+  negative quantity goes out (the server answers `invalid_quantity`).
+- **Sign-in codes `app_check_missing` and `app_check_invalid`** from the
+  contract (`errorCodes.auth`) are in `registerErrorCodes`, `posErrorCodes`,
+  `receiptErrorCodes`, `cancellationErrorCodes`, `paymentErrorCodes`,
+  `receiptEmailErrorCodes`, `invoiceRequestErrorCodes`,
+  `inventoryRequestErrorCodes` and in `paymentCallRejectedCodes` (24 → 26):
+  they are raised before the handler, so on the money calls they mean
+  `rejected`. The backend sends them only to three endpoints of the admin app;
+  no call of this package can receive them today, the lists only follow the
+  contract.
+
 ## 10.6.1
 
 `KeckReceiptSheetWidget` no longer loses the last character of a full line.

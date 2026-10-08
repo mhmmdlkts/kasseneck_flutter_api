@@ -1,7 +1,7 @@
 /// Die Aufrufe der Lager-API: Artikel, Standorte, Bestand und Bewegungen
 /// lesen, Konto-Webhooks verwalten (Backend Stufe 5a), Artikel anlegen und
 /// aendern, Bestand buchen und Ware reservieren (Stufe 5b), Variantengruppen
-/// (Stufe 5c, seit 10.5) – Zwilling von
+/// (Stufe 5c, seit 10.5), Inventur (Lager-Kern Stufe 3, seit 10.7) – Zwilling von
 /// `createInventoryClient` im JS-Paket `@kreiseck/kasseneck-api/inventory`.
 ///
 /// **Geprueft wird hier nur, was ohne Netz sicher falsch ist** (leere Kennung,
@@ -650,6 +650,255 @@ class InventoryClient {
         return (eintraege: s.variantGroups, nextCursor: s.nextCursor);
       });
 
+  // ---- Inventur (Lager-Kern Stufe 3, seit 10.7) --------------------------------
+  //
+  // Ablauf: [createStocktake] → [recordStocktakeCount] (beliebig oft, auch von
+  // mehreren Geraeten; je Position addiert) → [reviewStocktake] (erst jetzt
+  // Soll und Differenz) → bei Bedarf [recountStocktake] und erneut
+  // [reviewStocktake] → [closeStocktake] → [getStocktakePdf]. Pruefen und
+  // Abschliessen rechnet der Server im Hintergrund: die Antwort traegt den
+  // Zwischenstand (`review.complete: false` bzw. `status: 'closing'`),
+  // [getStocktake] den Fortgang.
+  //
+  // **Blind:** vor `review` traegt keine Antwort ein Soll; `blind: false` zeigt
+  // beim Zaehlen nur den heutigen Buchbestand (`bookStockNow`), nie das Soll
+  // zur Referenzzeit.
+  //
+  // Rechte wie beim Schreiben: Lesen mit jedem Schluessel, alles Schreibende
+  // (auch Zaehlen) mit dem Konto-Schalter „Lager-API schreiben“ (Test-Schluessel
+  // immer), sonst `inventory_api_not_enabled`; Werte und das Protokoll mit
+  // Werten nur mit dem Recht `costs`.
+  //
+  // Vor dem Senden geprueft wird wie im JS-Zwilling nur, was ohne Netz sicher
+  // falsch ist: der Schluessel, fehlende Kennungen (`stocktakeId`,
+  // `locationId`, `articleId`, `countId`), ein leerer Grund, eine leere
+  // Nachzaehlen-Liste und der sichere Ganzzahlbereich. Eine negative Menge
+  // geht hinaus (der Server meldet `invalid_quantity`); Umfang, Stichtag,
+  // Seriennummern und Zustand prueft der Server.
+  //
+  // Wiederholen wie bei jedem Schreiben: nach Ausgang unklar denselben Aufruf
+  // mit **demselben** `idempotencyKey`. Eine Zaehlung wirkt dann genau einmal
+  // (das Zaehldokument ist selbst der Nachweis); ein neuer Schluessel zaehlte
+  // die Ware ein zweites Mal.
+
+  /// Legt eine Inventur an. Je Standort hoechstens eine offene
+  /// (`stocktake_location_busy`, [inventoryBusyStocktakeId] nennt sie); Umfang
+  /// `groups` bzw. `articles` nur mit bestandsgefuehrten Artikeln
+  /// (`article_not_tracked`). Jede Inventur beginnt in `counting`.
+  Future<Stocktake> createStocktake(CreateStocktakeRequest request) async {
+    const name = Aufrufe.createStocktake;
+    final p = request.toJson();
+    _schreiben(name, p);
+    kennung(name, 'locationId', p['locationId']);
+    return _inventur(name, await _transport.call(name, p));
+  }
+
+  /// Eine Seite Inventuren des Kontos. Ohne [updatedSince] zuletzt geaenderte
+  /// zuerst (`updatedAt` absteigend; offene stehen dabei nicht zwingend oben,
+  /// dafuer gibt es [status]). Mit [updatedSince] aufsteigend und inklusive:
+  /// ein Abgleich mit dem groessten gesehenen `updatedAt` als naechstem
+  /// [updatedSince] ist lueckenlos (der Eintrag an der Grenze kommt noch einmal).
+  Future<StocktakePage> listStocktakes({
+    String? status,
+    String? locationId,
+    DateTime? updatedSince,
+    int? limit,
+    String? cursor,
+  }) async {
+    const name = Aufrufe.listStocktakes;
+    final daten = await _transport.call(
+        name,
+        _abfrage(name, {
+          'status': status,
+          'locationId': locationId,
+          'updatedSince': _zeit(updatedSince),
+          'limit': limit,
+          'cursor': cursor,
+        }));
+    return StocktakePage(stocktakes: liste(name, daten, 'stocktakes', inventur), nextCursor: naechsterCursor(name, daten));
+  }
+
+  /// Alle Inventuren der Abfrage, Seite fuer Seite, in der Reihenfolge von
+  /// [listStocktakes].
+  Stream<Stocktake> iterateStocktakes({
+    String? status,
+    String? locationId,
+    DateTime? updatedSince,
+    int? limit,
+    String? cursor,
+  }) =>
+      _seitenweise(Aufrufe.listStocktakes, cursor, (c) async {
+        final s = await listStocktakes(
+            status: status, locationId: locationId, updatedSince: updatedSince, limit: limit, cursor: c);
+        return (eintraege: s.stocktakes, nextCursor: s.nextCursor);
+      });
+
+  /// Eine Inventur samt `progress.counted` (gezaehlte Positionen).
+  Future<Stocktake> getStocktake(String stocktakeId) async {
+    const name = Aufrufe.getStocktake;
+    final id = kennung(name, 'stocktakeId', stocktakeId);
+    return _inventur(name, await _transport.call(name, {'stocktakeId': id}));
+  }
+
+  /// Positionen einer Inventur nach Kennung; [openOnly] = ungezaehlt bzw. in
+  /// `review` zum Nachzaehlen offen.
+  Future<StocktakeItemPage> listStocktakeItems({
+    required String stocktakeId,
+    bool? openOnly,
+    int? limit,
+    String? cursor,
+  }) async {
+    const name = Aufrufe.listStocktakeItems;
+    final daten = await _transport.call(
+        name,
+        _abfrage(name, {
+          'stocktakeId': kennung(name, 'stocktakeId', stocktakeId),
+          'openOnly': openOnly,
+          'limit': limit,
+          'cursor': cursor,
+        }));
+    return StocktakeItemPage(items: liste(name, daten, 'items', inventurPosition), nextCursor: naechsterCursor(name, daten));
+  }
+
+  /// Alle Positionen der Abfrage, Seite fuer Seite.
+  Stream<StocktakeItem> iterateStocktakeItems({
+    required String stocktakeId,
+    bool? openOnly,
+    int? limit,
+    String? cursor,
+  }) =>
+      _seitenweise(Aufrufe.listStocktakeItems, cursor, (c) async {
+        final s = await listStocktakeItems(stocktakeId: stocktakeId, openOnly: openOnly, limit: limit, cursor: c);
+        return (eintraege: s.items, nextCursor: s.nextCursor);
+      });
+
+  /// Zaehlungen einer Inventur, neueste zuerst, auch stornierte; mit
+  /// [articleId] nur die des Artikels.
+  Future<StocktakeCountPage> listStocktakeCounts({
+    required String stocktakeId,
+    String? articleId,
+    int? limit,
+    String? cursor,
+  }) async {
+    const name = Aufrufe.listStocktakeCounts;
+    final daten = await _transport.call(
+        name,
+        _abfrage(name, {
+          'stocktakeId': kennung(name, 'stocktakeId', stocktakeId),
+          'articleId': articleId,
+          'limit': limit,
+          'cursor': cursor,
+        }));
+    return StocktakeCountPage(counts: liste(name, daten, 'counts', inventurZaehlung), nextCursor: naechsterCursor(name, daten));
+  }
+
+  /// Alle Zaehlungen der Abfrage, Seite fuer Seite.
+  Stream<StocktakeCount> iterateStocktakeCounts({
+    required String stocktakeId,
+    String? articleId,
+    int? limit,
+    String? cursor,
+  }) =>
+      _seitenweise(Aufrufe.listStocktakeCounts, cursor, (c) async {
+        final s = await listStocktakeCounts(stocktakeId: stocktakeId, articleId: articleId, limit: limit, cursor: c);
+        return (eintraege: s.counts, nextCursor: s.nextCursor);
+      });
+
+  /// Eine Zaehlung. Antwort: die Zaehlung und ihre Position danach (Summe der
+  /// Runde in `item.quantity`, ohne Seriennummern). Gezaehlt wird in
+  /// `counting`, in `review` nur an Positionen, die zum Nachzaehlen frei sind
+  /// (sonst `stocktake_not_open`).
+  Future<StocktakeCountResult> recordStocktakeCount(RecordStocktakeCountRequest request) async {
+    const name = Aufrufe.recordStocktakeCount;
+    final p = request.toJson();
+    _inventurSchreiben(name, p);
+    zaehlungPruefen(name, p);
+    return zaehlungMitPosition(name, await _transport.call(name, p));
+  }
+
+  /// Storniert eine Zaehlung mit Grund; die Position wird aus den uebrigen
+  /// Zaehlungen neu summiert.
+  Future<StocktakeCountResult> voidStocktakeCount(VoidStocktakeCountRequest request) async {
+    const name = Aufrufe.voidStocktakeCount;
+    final p = request.toJson();
+    _inventurSchreiben(name, p);
+    stornoPruefen(name, p);
+    return zaehlungMitPosition(name, await _transport.call(name, p));
+  }
+
+  /// Pruefen: `counting` → `review`, in `review` neu rechnen (nach dem
+  /// Nachzaehlen). Die Antwort kommt sofort mit `review.complete: false`; Soll
+  /// und Differenz stehen an den Positionen, sobald `complete` `true` ist.
+  Future<Stocktake> reviewStocktake(ReviewStocktakeRequest request) async {
+    const name = Aufrufe.reviewStocktake;
+    final p = request.toJson();
+    _inventurSchreiben(name, p);
+    return _inventur(name, await _transport.call(name, p));
+  }
+
+  /// Nachzaehlen: je genannter Position eine neue Runde; danach zaehlen und
+  /// erneut [reviewStocktake]. Solange die Pruefung noch rechnet
+  /// (`review.complete: false`), kommt `stocktake_review_running`.
+  Future<Stocktake> recountStocktake(RecountStocktakeRequest request) async {
+    const name = Aufrufe.recountStocktake;
+    final p = request.toJson();
+    _inventurSchreiben(name, p);
+    if (request.items.isEmpty) throw anfragefehler(name, 'items fehlt oder ist leer');
+    for (final (i, x) in request.items.indexed) {
+      kennung(name, 'items[$i].articleId', x.articleId);
+    }
+    grundPruefen(name, request.reason);
+    return _inventur(name, await _transport.call(name, p));
+  }
+
+  /// Abschliessen (nur aus `review`, sonst `stocktake_not_in_review`; offene
+  /// Nachzaehlungen ergeben `stocktake_recount_open`, eine noch rechnende
+  /// Pruefung `stocktake_review_running`). Der Server bucht in Teilen weiter;
+  /// die Antwort traegt meist `status: 'closing'`. Ein erneuter Aufruf waehrend
+  /// `closing` stoesst den Abschluss wieder an.
+  Future<CloseStocktakeResult> closeStocktake(CloseStocktakeRequest request) async {
+    const name = Aufrufe.closeStocktake;
+    final p = request.toJson();
+    _inventurSchreiben(name, p);
+    final daten = await _transport.call(name, p);
+    return CloseStocktakeResult(
+      stocktake: _inventur(name, daten),
+      warnings: inventurWarnungen(Ort(name, 'warnings'), daten['warnings']),
+    );
+  }
+
+  /// Abbrechen mit Grund (aus `counting` oder `review`); der Standort ist
+  /// danach frei.
+  Future<Stocktake> cancelStocktake(CancelStocktakeRequest request) async {
+    const name = Aufrufe.cancelStocktake;
+    final p = request.toJson();
+    _inventurSchreiben(name, p);
+    grundPruefen(name, request.reason);
+    return _inventur(name, await _transport.call(name, p));
+  }
+
+  /// Das Inventurprotokoll (PDF), erst nach dem Abschluss
+  /// (`stocktake_not_closed`, auch fuer eine abgebrochene Inventur). Mit dem
+  /// Recht `costs` die Fassung mit Werten, sonst die nur mit Mengen. Bis 9 MiB
+  /// kommt die Datei selbst ([StocktakePdfFile]), darueber ein signierter
+  /// Lese-Link fuer 15 Minuten ([StocktakePdfLink]); die geladene Datei an
+  /// `download.sha256` pruefen. Lesen: nach einem Zeitlimit darf der Aufruf
+  /// wiederholt werden.
+  Future<StocktakePdf> getStocktakePdf(String stocktakeId) async {
+    const name = Aufrufe.getStocktakePdf;
+    final id = kennung(name, 'stocktakeId', stocktakeId);
+    switch (await _transport.callPdfOrData(name, {'stocktakeId': id})) {
+      case PdfOrDataFile(:final pdf):
+        return StocktakePdfFile(pdf);
+      case PdfOrDataPayload(:final data):
+        final link = data['download'];
+        if (link == null) {
+          throw antwortfehler(name, 'Antwort ist weder ein PDF noch ein Lese-Link (data.download fehlt)');
+        }
+        return StocktakePdfLink(protokollLink(name, link));
+    }
+  }
+
   // ---- Hilfen -------------------------------------------------------------------
 
   /// Was jede schreibende Anfrage vor dem Senden erfuellen muss: ein gueltiger
@@ -674,6 +923,15 @@ class InventoryClient {
     final doppelt = vorgaben.clear.where((f) => gesetzt[f] != null).toList();
     if (doppelt.isNotEmpty) throw anfragefehler(name, 'defaults zugleich gesetzt und geleert: ${doppelt.join(', ')}');
   }
+
+  /// Schreibende Inventur-Anfrage: Schluessel, Ganzzahlen und `stocktakeId`
+  /// (ausser beim Anlegen).
+  static void _inventurSchreiben(String name, Map<String, dynamic> p) {
+    _schreiben(name, p);
+    kennung(name, 'stocktakeId', p['stocktakeId']);
+  }
+
+  static Stocktake _inventur(String name, Map<String, dynamic> daten) => inventur(Ort(name, 'stocktake'), daten['stocktake']);
 
   static Reservation _reservierung(String name, Map<String, dynamic> daten) =>
       reservierung(Ort(name, 'reservation'), daten['reservation']);

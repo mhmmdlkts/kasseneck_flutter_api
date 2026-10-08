@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -666,6 +666,50 @@
     "logo.remove_failed": {
       "text": "Entfernen fehlgeschlagen."
     },
+    "stocktake.none_open": {
+      "text": "An diesem Standort läuft gerade keine Inventur. Eine Inventur legt der Inhaber im Panel an."
+    },
+    "stocktake.scan_or_search": {
+      "text": "Artikel scannen oder suchen."
+    },
+    "stocktake.counted": {
+      "text": "{name}: {quantity} gezählt.",
+      "placeholders": [
+        "name",
+        "quantity"
+      ]
+    },
+    "stocktake.blind_hint": {
+      "text": "Blind zählen – die Kasse zeigt keinen Buchbestand. Bitte zählen, was wirklich da ist."
+    },
+    "stocktake.recount_hint": {
+      "text": "Bitte die markierten Positionen nachzählen."
+    },
+    "stocktake.unknown_code": {
+      "text": "Zu „{code}“ gibt es keinen Artikel. Bitte den Code prüfen oder den Artikel suchen.",
+      "placeholders": [
+        "code"
+      ]
+    },
+    "stocktake.quantity_invalid": {
+      "text": "Bitte eine gültige Menge eingeben – höchstens drei Nachkommastellen, bei Stückware nur ganze Zahlen."
+    },
+    "stocktake.serials_capture": {
+      "text": "Bitte für jedes Stück die Seriennummer scannen."
+    },
+    "stocktake.serials_mismatch": {
+      "text": "Je Stück genau eine Seriennummer: {count} erfasst, {quantity} gezählt.",
+      "placeholders": [
+        "count",
+        "quantity"
+      ]
+    },
+    "stocktake.reason_missing": {
+      "text": "Bitte einen Grund für das Stornieren eingeben."
+    },
+    "stocktake.outcome_unknown": {
+      "text": "Unklar, ob die Zählung angekommen ist. „Erneut senden“ schickt dieselbe Zählung – sie zählt auch dann nur einmal."
+    },
     "app.not_in_browser": {
       "text": "Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.",
       "only": [
@@ -1106,6 +1150,55 @@
     },
     "stock.return_disposed": {
       "text": "Entsorgt"
+    },
+    "stocktake.title": {
+      "text": "Inventur zählen"
+    },
+    "stocktake.quantity": {
+      "text": "Menge"
+    },
+    "stocktake.defective": {
+      "text": "Defekt"
+    },
+    "stocktake.count_zero": {
+      "text": "0 zählen"
+    },
+    "stocktake.next": {
+      "text": "Weiter"
+    },
+    "stocktake.void": {
+      "text": "Stornieren"
+    },
+    "stocktake.reason": {
+      "text": "Grund"
+    },
+    "stocktake.progress": {
+      "text": "{counted} von {total} gezählt",
+      "placeholders": [
+        "counted",
+        "total"
+      ]
+    },
+    "stocktake.serial_numbers": {
+      "text": "Seriennummern erfassen"
+    },
+    "stocktake.recount": {
+      "text": "Nachzählen"
+    },
+    "stocktake.resend": {
+      "text": "Erneut senden"
+    },
+    "stocktake.my_counts": {
+      "text": "Meine Zählungen"
+    },
+    "stocktake.sent": {
+      "text": "gesendet"
+    },
+    "stocktake.unconfirmed": {
+      "text": "unbestätigt"
+    },
+    "stocktake.voided": {
+      "text": "storniert"
     }
   },
   "returnDispositionLabels": {

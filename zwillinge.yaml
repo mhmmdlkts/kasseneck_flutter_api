@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.7.0
+npm_version: 1.8.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -28,6 +28,11 @@ npm_version: 1.7.0
 # zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.8.0: die 12 Aufrufe der Inventur (InventoryClient) und die 5 des
+# Kassenwegs (RegisterReceiptClient, Dart 10.7.0) sind gedeckt, ohne neuen
+# Eintrag hier; die neun schreibenden stehen in unknownOutcomeCalls. Der
+# Vertrag bringt dazu app_check_missing/app_check_invalid (errorCodes.auth).
 #
 # Stand 1.6.0: die 5 Aufrufe der Variantengruppen (InventoryClient, Dart
 # 10.5.0) sind gedeckt, ohne neuen Eintrag hier; die drei schreibenden stehen

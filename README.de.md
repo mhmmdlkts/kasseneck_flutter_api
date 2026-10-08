@@ -12,7 +12,7 @@ Die vollständige Dokumentation steht im englischen README:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.6.1
+  kasseneck_api: ^10.7.0
 ```
 
 Voraussetzungen: Dart SDK `^3.12.1`, Flutter `>=3.44.0`, ein Kasseneck-API-Schlüssel
@@ -54,7 +54,10 @@ Kartenaufruf kann doppelt belasten oder erstatten.
 Seit 10.4.1 meldet **jeder Aufruf mit Wirkung** nach Zeitlimit, Netzfehler,
 HTTP 5xx oder unlesbarer Antwort `unknown`, nicht nur Beleg, Storno,
 FinanzOnline und die Geldwege: auch Lager schreiben und reservieren,
-Variantengruppen anlegen und ändern (seit 10.5), Webhooks, Rechnung ausstellen, stornieren, gutschreiben, Zahlung nachtragen,
+Variantengruppen anlegen und ändern (seit 10.5), Inventur anlegen, zählen,
+Zählung stornieren, prüfen, nachzählen, abschließen und abbrechen (seit 10.7,
+auch das Zählen an der Kasse), Webhooks, Rechnung ausstellen, stornieren,
+gutschreiben, Zahlung nachtragen,
 Kunden anlegen und ändern, Kassen-Einstellungen und Logo, Kopplung,
 Lagerstandort der Kasse, Druckjob und Belegmail (Liste
 `unknownOutcomeCalls` im Vertrag). Lesen, die Probeläufe
@@ -70,8 +73,9 @@ antwortet aus seinem Sammelfang ohne Code auch dann, wenn hobex oder Stripe
 schon angenommen hat. Abgelehnt sind dort nur die Codes, die vor dem Anbieter
 entstehen: Anmeldung und Prüfung (`method_not_allowed`, `validation`, die
 Kassen-Token-Codes, `account_not_found`, `live_not_enabled`, `unauthorized`,
-`mfa_required`, `user_verification_failed`, `admin_required`, die Codes der
-Kassen-Benutzer und ihrer Sitzung), der `/v3`-Rand vor dem Handler
+`mfa_required`, `user_verification_failed`, `admin_required`,
+`api_not_approved`, seit 10.7 `app_check_missing` und `app_check_invalid`, die
+Codes der Kassen-Benutzer und ihrer Sitzung), der `/v3`-Rand vor dem Handler
 (`not_found`, `internal_translation_error`), das Modul- und Rechte-Tor
 (`module_inactive`, `not_permitted`) und das paketeigene `route_missing`. Die
 vollständige Liste steht im englischen README unter „Unknown outcome“.

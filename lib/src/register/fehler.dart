@@ -65,7 +65,8 @@ const Set<String> _geldwege = {'hobexPayApi', 'hobexRefundApi', 'stripeCaptureIn
 ///   `validation` (Pflichtfeld fehlt oder falscher Typ), die
 ///   Kassen-Token-Codes, `account_not_found`, `live_not_enabled`,
 ///   `unauthorized`, `mfa_required`, `user_verification_failed`,
-///   `admin_required` sowie die Codes der Kassen-Benutzer und ihrer Sitzung.
+///   `admin_required`, `api_not_approved`, `app_check_missing`,
+///   `app_check_invalid` sowie die Codes der Kassen-Benutzer und ihrer Sitzung.
 /// * Der `/v3`-Rand vor dem Handler (`errorCodes.edge`): `not_found`
 ///   (unbekannter Endpunkt) und `internal_translation_error` (die Anfrage
 ///   liess sich nicht uebersetzen, es wurde nichts ausgefuehrt).
@@ -90,6 +91,10 @@ const Set<String> paymentCallRejectedCodes = {
   'user_verification_failed',
   'admin_required',
   'api_not_approved',
+  // Admin-App ohne bzw. mit ungueltigem App Check (seit 10.7, Vertrag npm 1.8.0):
+  // vor dem Handler abgewiesen. Kein Aufruf dieses Pakets bekommt sie heute.
+  'app_check_missing',
+  'app_check_invalid',
   'register_user_not_allowed',
   'register_user_no_business',
   'register_user_not_found',

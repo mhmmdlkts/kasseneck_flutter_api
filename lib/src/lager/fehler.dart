@@ -71,3 +71,12 @@ final Set<String> _hinweise = {...inventoryWarningCodes};
 /// `true` fuer einen Hinweis-Code einer Buchung (`StockOperation.warnings[].code`).
 /// Hinweise sind nie Fehler: die Buchung hat gewirkt.
 bool isInventoryWarningCode(String? code) => code != null && _hinweise.contains(code);
+
+/// Die Inventur, die einen Standort belegt (`stocktake_location_busy`,
+/// `details['stocktakeId']`): weiterzaehlen statt neu anlegen. `null`, wenn
+/// der Fehler ein anderer ist oder der Server keine Kennung nennt.
+String? inventoryBusyStocktakeId(Object? error) {
+  if (inventoryErrorCode(error) != 'stocktake_location_busy') return null;
+  final wert = (error as KasseneckApiError).details['stocktakeId'];
+  return wert is String && wert.isNotEmpty ? wert : null;
+}

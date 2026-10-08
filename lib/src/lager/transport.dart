@@ -17,6 +17,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -63,14 +64,44 @@ class InventoryTransport {
 
   /// Einen Aufruf absetzen; liefert `data` ohne Huelle.
   Future<Map<String, dynamic>> call(String name, Map<String, dynamic> params) async {
-    // Vor dem Senden: ein nicht serialisierbarer Parameter ist ein
-    // Programmierfehler und keine Netzstoerung.
-    final rumpf = jsonEncode({'params': params});
     // Ein Probelauf (`previewGoodsReceipt`) bleibt nach einem Zeitlimit
     // `rejected`, jeder Aufruf mit Wirkung `unknown`; entschieden an genau
     // den Parametern, die hinausgehen.
     final probelauf = isDryRun(name, params);
-    final antwort = await v3Post(
+    final antwort = await _senden(name, params, probelauf);
+    final huelle = readEnvelope(name, antwort, dryRun: probelauf);
+    if (huelle['status'] == 'success') return envelopeData(name, huelle, antwort.statusCode, dryRun: probelauf);
+    throw envelopeError(name, huelle);
+  }
+
+  /// Einen Aufruf absetzen, der eine Datei **oder** eine Nutzlast liefert
+  /// (Inventurprotokoll `getStocktakePdf`: die Datei bis 9 MiB, darueber ein
+  /// Lese-Link). Zwilling von `createPdfOrDataTransport` im JS-Paket, wie
+  /// `InvoiceTransport.callBinary` als Methode des Transports.
+  ///
+  /// Die ersten Bytes entscheiden: `%PDF` ergibt [PdfOrDataFile], eine
+  /// Erfolgshuelle [PdfOrDataPayload] mit ihrer `data`, eine Fehlerhuelle
+  /// denselben fachlichen Fehler wie [call]. Leer, kein JSON oder ohne
+  /// Statusfeld ist unlesbar mit denselben Gruenden wie dort.
+  Future<PdfOrData> callPdfOrData(String name, Map<String, dynamic> params) async {
+    final probelauf = isDryRun(name, params);
+    final antwort = await _senden(name, params, probelauf);
+    final bytes = antwort.bodyBytes;
+    if (bytes.length >= 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) {
+      return PdfOrDataFile(bytes); // %PDF
+    }
+    final huelle = readEnvelope(name, antwort, dryRun: probelauf);
+    if (huelle['status'] == 'success') {
+      return PdfOrDataPayload(envelopeData(name, huelle, antwort.statusCode, dryRun: probelauf));
+    }
+    throw envelopeError(name, huelle);
+  }
+
+  Future<http.Response> _senden(String name, Map<String, dynamic> params, bool probelauf) {
+    // Vor dem Senden: ein nicht serialisierbarer Parameter ist ein
+    // Programmierfehler und keine Netzstoerung.
+    final rumpf = jsonEncode({'params': params});
+    return v3Post(
       _http,
       functionName: name,
       basis: baseUrl,
@@ -81,8 +112,26 @@ class InventoryTransport {
       timeout: _timeout,
       dryRun: probelauf,
     );
-    final huelle = readEnvelope(name, antwort, dryRun: probelauf);
-    if (huelle['status'] == 'success') return envelopeData(name, huelle, antwort.statusCode, dryRun: probelauf);
-    throw envelopeError(name, huelle);
   }
+}
+
+/// Ergebnis von [InventoryTransport.callPdfOrData]: die Datei als Bytes oder
+/// die `data` einer Erfolgshuelle (etwa ein Lese-Link, wenn die Datei zu gross
+/// fuer die Antwort ist). Zwilling von `PdfOrData` im JS-Paket.
+sealed class PdfOrData {
+  const PdfOrData();
+}
+
+/// Die Antwort war eine Datei (`%PDF`).
+final class PdfOrDataFile extends PdfOrData {
+  const PdfOrDataFile(this.pdf);
+
+  final Uint8List pdf;
+}
+
+/// Die Antwort war eine Erfolgshuelle; [data] ohne Huelle.
+final class PdfOrDataPayload extends PdfOrData {
+  const PdfOrDataPayload(this.data);
+
+  final Map<String, dynamic> data;
 }

@@ -4,7 +4,7 @@
     "default": {
       "sha256": "bf1e7c100e328517c72d5badf31904183efe22d1fddec308e2fe2722068854bc",
       "head": [],
-      "inputsSha256": "10b8007647d9d9ba2a1c904b320f1ad5a97f66ab2ae3f4511ba18bfcbd616dea",
+      "inputsSha256": "9c4add97fe3a9d18691f91e9176108b595037684e76f2a573c4d4c970e4ab884",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "eefa51fff36bc4fccd530c9f2693c66f0aec1aadfef9756014ca150954e8eace",
+      "sha256": "ed6ffc06c1ea7f29a4dacfdf1732057aea3fb2c4a4d3d066eefdca7c20752cf6",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "35cb1bb7c33a3eb238dd7a4a38ef604df1170e108afb3a8800fbf17ea6d3a3cb",
+      "inputsSha256": "77a128d593f133cc6d3244757f64b39bb471ebda729101bbe00c0fef835c463f",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -13346,6 +13346,2961 @@
               "cashregisterId": "KASSE1",
               "stockLocationId": null
             }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "listMyStocktakes": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "session_wrong",
+          "method": "POST",
+          "caller": "register_user_wrong_session",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "data": {
+              "code": "session_expired"
+            },
+            "code": "session_expired"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "owner",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Lager\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Lagervorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stocktakes": [
+                {
+                  "id": "inv_wagen",
+                  "name": "Inventur auto1 26.09.2026",
+                  "locationId": "auto1",
+                  "scope": {
+                    "type": "articles",
+                    "groupIds": [],
+                    "articleIds": [
+                      "art_kaffee"
+                    ]
+                  },
+                  "type": "perpetual",
+                  "keyDate": null,
+                  "blind": false,
+                  "status": "counting",
+                  "progress": {
+                    "items": 1,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-26T06:00:01.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-26T06:00:00.000Z",
+                  "review": null,
+                  "closing": null,
+                  "cancellation": null
+                },
+                {
+                  "id": "inv_laden",
+                  "name": "Inventur haupt 26.09.2026",
+                  "locationId": "haupt",
+                  "scope": {
+                    "type": "all",
+                    "groupIds": [],
+                    "articleIds": []
+                  },
+                  "type": "key_date",
+                  "keyDate": "2026-09-30",
+                  "blind": true,
+                  "status": "counting",
+                  "progress": {
+                    "items": 2,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-26T06:00:00.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-26T06:00:00.000Z",
+                  "review": null,
+                  "closing": null,
+                  "cancellation": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stocktakes": [
+                {
+                  "id": "inv_wagen",
+                  "name": "Inventur auto1 26.09.2026",
+                  "locationId": "auto1",
+                  "scope": {
+                    "type": "articles",
+                    "groupIds": [],
+                    "articleIds": [
+                      "art_kaffee"
+                    ]
+                  },
+                  "type": "perpetual",
+                  "keyDate": null,
+                  "blind": false,
+                  "status": "counting",
+                  "progress": {
+                    "items": 1,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-26T06:00:01.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-26T06:00:00.000Z",
+                  "review": null,
+                  "closing": null,
+                  "cancellation": null
+                },
+                {
+                  "id": "inv_laden",
+                  "name": "Inventur haupt 26.09.2026",
+                  "locationId": "haupt",
+                  "scope": {
+                    "type": "all",
+                    "groupIds": [],
+                    "articleIds": []
+                  },
+                  "type": "key_date",
+                  "keyDate": "2026-09-30",
+                  "blind": true,
+                  "status": "counting",
+                  "progress": {
+                    "items": 2,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-26T06:00:00.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-26T06:00:00.000Z",
+                  "review": null,
+                  "closing": null,
+                  "cancellation": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_owner",
+          "method": "POST",
+          "caller": "owner",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stocktakes": [
+                {
+                  "id": "inv_keller",
+                  "name": "Inventur keller 26.09.2026",
+                  "locationId": "keller",
+                  "scope": {
+                    "type": "all",
+                    "groupIds": [],
+                    "articleIds": []
+                  },
+                  "type": "perpetual",
+                  "keyDate": null,
+                  "blind": true,
+                  "status": "review",
+                  "progress": {
+                    "items": 2,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-26T06:00:02.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-26T07:59:00.000Z",
+                  "review": {
+                    "startedAt": "2026-09-26T07:58:00.000Z",
+                    "startedBy": {
+                      "type": "owner",
+                      "id": "kw_betrieb1",
+                      "name": null
+                    },
+                    "complete": true,
+                    "expectedAsOf": "2026-09-26T07:58:00.000Z",
+                    "recountUncounted": 1
+                  },
+                  "closing": null,
+                  "cancellation": null
+                },
+                {
+                  "id": "inv_wagen",
+                  "name": "Inventur auto1 26.09.2026",
+                  "locationId": "auto1",
+                  "scope": {
+                    "type": "articles",
+                    "groupIds": [],
+                    "articleIds": [
+                      "art_kaffee"
+                    ]
+                  },
+                  "type": "perpetual",
+                  "keyDate": null,
+                  "blind": false,
+                  "status": "counting",
+                  "progress": {
+                    "items": 1,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-26T06:00:01.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-26T06:00:00.000Z",
+                  "review": null,
+                  "closing": null,
+                  "cancellation": null
+                },
+                {
+                  "id": "inv_laden",
+                  "name": "Inventur haupt 26.09.2026",
+                  "locationId": "haupt",
+                  "scope": {
+                    "type": "all",
+                    "groupIds": [],
+                    "articleIds": []
+                  },
+                  "type": "key_date",
+                  "keyDate": "2026-09-30",
+                  "blind": true,
+                  "status": "counting",
+                  "progress": {
+                    "items": 2,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-26T06:00:00.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-26T06:00:00.000Z",
+                  "review": null,
+                  "closing": null,
+                  "cancellation": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_location",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "locationId": "auto1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stocktakes": [
+                {
+                  "id": "inv_wagen",
+                  "name": "Inventur auto1 26.09.2026",
+                  "locationId": "auto1",
+                  "scope": {
+                    "type": "articles",
+                    "groupIds": [],
+                    "articleIds": [
+                      "art_kaffee"
+                    ]
+                  },
+                  "type": "perpetual",
+                  "keyDate": null,
+                  "blind": false,
+                  "status": "counting",
+                  "progress": {
+                    "items": 1,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-26T06:00:01.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-26T06:00:00.000Z",
+                  "review": null,
+                  "closing": null,
+                  "cancellation": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_owner_closed",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "status": "closed"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stocktakes": [
+                {
+                  "id": "inv_alt",
+                  "name": "Inventur alt 26.09.2026",
+                  "locationId": "alt",
+                  "scope": {
+                    "type": "all",
+                    "groupIds": [],
+                    "articleIds": []
+                  },
+                  "type": "perpetual",
+                  "keyDate": null,
+                  "blind": true,
+                  "status": "closed",
+                  "progress": {
+                    "items": 2,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-25T06:00:00.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-25T08:00:00.000Z",
+                  "review": {
+                    "startedAt": "2026-09-25T07:00:00.000Z",
+                    "startedBy": {
+                      "type": "owner",
+                      "id": "kw_betrieb1",
+                      "name": null
+                    },
+                    "complete": true,
+                    "expectedAsOf": "2026-09-25T07:00:00.000Z",
+                    "recountUncounted": 0
+                  },
+                  "closing": {
+                    "startedAt": "2026-09-25T07:33:20.000Z",
+                    "startedBy": {
+                      "type": "owner",
+                      "id": "kw_betrieb1",
+                      "name": null
+                    },
+                    "uncountedAsZero": false,
+                    "parts": 1,
+                    "bookedParts": 1,
+                    "completedAt": "2026-09-25T08:00:00.000Z"
+                  },
+                  "totals": {
+                    "items": 2,
+                    "counted": 1,
+                    "uncounted": 1,
+                    "recounted": 0,
+                    "withDifference": 1,
+                    "needsCheck": 0,
+                    "notBooked": 0,
+                    "differenceValueCents": -640,
+                    "inventoryValueCents": 2560
+                  },
+                  "warnings": [
+                    {
+                      "code": "uncounted_items",
+                      "items": 1
+                    }
+                  ],
+                  "seal": {
+                    "fromDay": "2026-09-01",
+                    "toDay": "2026-09-24",
+                    "daysChecked": 24,
+                    "verified": true,
+                    "firstBreak": null,
+                    "gaps": [],
+                    "gapCount": 0
+                  },
+                  "checksum": "5f0c2b0a0e1d9c8b7a6958473625140312f0e1d2c3b4a5968778695a4b3c2d1e",
+                  "inventoryAsOf": "count_date",
+                  "pdf": {
+                    "available": true,
+                    "valuesSha256": "0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+                    "quantitiesSha256": "9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706f5e4d3c2b1a0"
+                  },
+                  "cancellation": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_owner_cancelled",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "status": "cancelled"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "stocktakes": [
+                {
+                  "id": "inv_abbruch",
+                  "name": "Inventur keller 26.09.2026",
+                  "locationId": "keller",
+                  "scope": {
+                    "type": "all",
+                    "groupIds": [],
+                    "articleIds": []
+                  },
+                  "type": "perpetual",
+                  "keyDate": null,
+                  "blind": true,
+                  "status": "cancelled",
+                  "progress": {
+                    "items": 2,
+                    "recountOpen": false
+                  },
+                  "createdAt": "2026-09-24T06:00:00.000Z",
+                  "createdBy": {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  },
+                  "source": "panel",
+                  "updatedAt": "2026-09-24T08:13:20.000Z",
+                  "review": null,
+                  "closing": null,
+                  "cancellation": {
+                    "reason": "Falscher Standort gewählt",
+                    "cancelledAt": "2026-09-24T08:13:20.000Z",
+                    "cancelledBy": {
+                      "type": "owner",
+                      "id": "kw_betrieb1",
+                      "name": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "status_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "status": "gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "status",
+                  "message": "Unbekannter Status."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "listMyStocktakeItems": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: stocktakeId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "stocktakeId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Lager\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Lagervorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "stocktake_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Inventur nicht gefunden.",
+            "data": {
+              "code": "stocktake_not_found"
+            },
+            "code": "stocktake_not_found"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "name": "Kaffee",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": true,
+                  "quantity": 12000,
+                  "counts": 2,
+                  "firstCountedAt": "2026-09-26T07:50:00.000Z",
+                  "referenceTime": "2026-09-26T07:55:00.000Z",
+                  "countedBy": [
+                    {
+                      "type": "register_user",
+                      "id": "ru_kellner",
+                      "name": "Ben Kellner"
+                    },
+                    {
+                      "type": "register_user",
+                      "id": "ru_chef",
+                      "name": "Anna Chef"
+                    }
+                  ],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false
+                },
+                {
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "name": "Kuchen",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": false,
+                  "quantity": null,
+                  "counts": 0,
+                  "firstCountedAt": null,
+                  "referenceTime": null,
+                  "countedBy": [],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_cashier_check",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_keller"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "name": "Kaffee",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": true,
+                  "quantity": 9000,
+                  "counts": 1,
+                  "firstCountedAt": "2026-09-26T07:45:00.000Z",
+                  "referenceTime": "2026-09-26T07:45:00.000Z",
+                  "countedBy": [
+                    {
+                      "type": "register_user",
+                      "id": "ru_chef",
+                      "name": "Anna Chef"
+                    }
+                  ],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false
+                },
+                {
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "name": "Kuchen",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 2,
+                  "counted": false,
+                  "quantity": null,
+                  "counts": 0,
+                  "firstCountedAt": null,
+                  "referenceTime": null,
+                  "countedBy": [],
+                  "serialNumbers": [],
+                  "recountRequested": true,
+                  "recount": {
+                    "reason": "Kiste hinten nachzählen",
+                    "requestedAt": "2026-09-26T07:58:20.000Z",
+                    "requestedBy": {
+                      "type": "owner",
+                      "id": "kw_betrieb1",
+                      "name": null
+                    },
+                    "round": 2
+                  },
+                  "addedLater": false
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_manager_check",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_keller"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "name": "Kaffee",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": true,
+                  "quantity": 9000,
+                  "counts": 1,
+                  "firstCountedAt": "2026-09-26T07:45:00.000Z",
+                  "referenceTime": "2026-09-26T07:45:00.000Z",
+                  "countedBy": [
+                    {
+                      "type": "register_user",
+                      "id": "ru_chef",
+                      "name": "Anna Chef"
+                    }
+                  ],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false,
+                  "expectedQuantity": 10000,
+                  "differenceQuantity": -1000,
+                  "needsCheck": true,
+                  "checkReasons": [
+                    "movements_between_counts"
+                  ],
+                  "expectedAsOf": "2026-09-26T07:58:00.000Z",
+                  "missingSerialNumbers": [],
+                  "extraSerialNumbers": []
+                },
+                {
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "name": "Kuchen",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 2,
+                  "counted": false,
+                  "quantity": null,
+                  "counts": 0,
+                  "firstCountedAt": null,
+                  "referenceTime": null,
+                  "countedBy": [],
+                  "serialNumbers": [],
+                  "recountRequested": true,
+                  "recount": {
+                    "reason": "Kiste hinten nachzählen",
+                    "requestedAt": "2026-09-26T07:58:20.000Z",
+                    "requestedBy": {
+                      "type": "owner",
+                      "id": "kw_betrieb1",
+                      "name": null
+                    },
+                    "round": 2
+                  },
+                  "addedLater": false,
+                  "expectedQuantity": null,
+                  "differenceQuantity": null,
+                  "needsCheck": false,
+                  "checkReasons": [],
+                  "expectedAsOf": null
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_owner_check",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "stocktakeId": "inv_keller"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "name": "Kaffee",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": true,
+                  "quantity": 9000,
+                  "counts": 1,
+                  "firstCountedAt": "2026-09-26T07:45:00.000Z",
+                  "referenceTime": "2026-09-26T07:45:00.000Z",
+                  "countedBy": [
+                    {
+                      "type": "register_user",
+                      "id": "ru_chef",
+                      "name": "Anna Chef"
+                    }
+                  ],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false,
+                  "expectedQuantity": 10000,
+                  "differenceQuantity": -1000,
+                  "needsCheck": true,
+                  "checkReasons": [
+                    "movements_between_counts"
+                  ],
+                  "expectedAsOf": "2026-09-26T07:58:00.000Z",
+                  "differenceValueCents": -320,
+                  "missingSerialNumbers": [],
+                  "extraSerialNumbers": []
+                },
+                {
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "name": "Kuchen",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 2,
+                  "counted": false,
+                  "quantity": null,
+                  "counts": 0,
+                  "firstCountedAt": null,
+                  "referenceTime": null,
+                  "countedBy": [],
+                  "serialNumbers": [],
+                  "recountRequested": true,
+                  "recount": {
+                    "reason": "Kiste hinten nachzählen",
+                    "requestedAt": "2026-09-26T07:58:20.000Z",
+                    "requestedBy": {
+                      "type": "owner",
+                      "id": "kw_betrieb1",
+                      "name": null
+                    },
+                    "round": 2
+                  },
+                  "addedLater": false,
+                  "expectedQuantity": null,
+                  "differenceQuantity": null,
+                  "needsCheck": false,
+                  "checkReasons": [],
+                  "expectedAsOf": null,
+                  "differenceValueCents": null
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_owner_closed",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "stocktakeId": "inv_alt"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "name": "Kaffee",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": true,
+                  "quantity": 8000,
+                  "counts": 1,
+                  "firstCountedAt": "2026-09-25T07:16:40.000Z",
+                  "referenceTime": "2026-09-25T07:16:40.000Z",
+                  "countedBy": [
+                    {
+                      "type": "owner",
+                      "id": "kw_betrieb1",
+                      "name": null
+                    }
+                  ],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false,
+                  "expectedQuantity": 10000,
+                  "differenceQuantity": -2000,
+                  "needsCheck": false,
+                  "checkReasons": [],
+                  "expectedAsOf": "2026-09-25T07:00:00.000Z",
+                  "differenceValueCents": -640,
+                  "missingSerialNumbers": [],
+                  "extraSerialNumbers": [],
+                  "bookedQuantity": -2000,
+                  "notBooked": null,
+                  "inventory": {
+                    "quantity": 8000,
+                    "unitValueMicros": 3200000,
+                    "valueCents": 2560,
+                    "countedOn": "2026-09-24"
+                  }
+                },
+                {
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "name": "Kuchen",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": false,
+                  "quantity": null,
+                  "counts": 0,
+                  "firstCountedAt": null,
+                  "referenceTime": null,
+                  "countedBy": [],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false,
+                  "expectedQuantity": 4000,
+                  "differenceQuantity": null,
+                  "needsCheck": true,
+                  "checkReasons": [
+                    "not_counted"
+                  ],
+                  "expectedAsOf": "2026-09-25T07:00:00.000Z",
+                  "differenceValueCents": null,
+                  "missingSerialNumbers": [],
+                  "extraSerialNumbers": [],
+                  "bookedQuantity": null,
+                  "notBooked": null,
+                  "inventory": null
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_stock",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_wagen"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "name": "Kaffee",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": false,
+                  "quantity": null,
+                  "counts": 0,
+                  "firstCountedAt": null,
+                  "referenceTime": null,
+                  "countedBy": [],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false,
+                  "bookStockNow": 3000
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_open",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "openOnly": true
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "name": "Kuchen",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": false,
+                  "quantity": null,
+                  "counts": 0,
+                  "firstCountedAt": null,
+                  "referenceTime": null,
+                  "countedBy": [],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_page",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "limit": 1
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "name": "Kaffee",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": true,
+                  "quantity": 12000,
+                  "counts": 2,
+                  "firstCountedAt": "2026-09-26T07:50:00.000Z",
+                  "referenceTime": "2026-09-26T07:55:00.000Z",
+                  "countedBy": [
+                    {
+                      "type": "register_user",
+                      "id": "ru_kellner",
+                      "name": "Ben Kellner"
+                    },
+                    {
+                      "type": "register_user",
+                      "id": "ru_chef",
+                      "name": "Anna Chef"
+                    }
+                  ],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false
+                }
+              ],
+              "nextCursor": "eyJpZCI6ImFydF9rYWZmZWVfX3ZlcmthdWZiYXIifQ"
+            }
+          }
+        },
+        {
+          "case": "success_next_page",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "limit": 1,
+            "cursor": "eyJpZCI6ImFydF9rYWZmZWVfX3ZlcmthdWZiYXIifQ"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "items": [
+                {
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "name": "Kuchen",
+                  "number": null,
+                  "unit": "Stk",
+                  "round": 1,
+                  "counted": false,
+                  "quantity": null,
+                  "counts": 0,
+                  "firstCountedAt": null,
+                  "referenceTime": null,
+                  "countedBy": [],
+                  "serialNumbers": [],
+                  "recountRequested": false,
+                  "addedLater": false
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "cursor_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "cursor": "gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Blätter-Zeiger ist ungültig oder abgelaufen.",
+            "data": {
+              "code": "invalid_cursor"
+            },
+            "code": "invalid_cursor"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "listMyStocktakeCounts": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: stocktakeId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "stocktakeId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Lager\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Lagervorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "stocktake_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Inventur nicht gefunden.",
+            "data": {
+              "code": "stocktake_not_found"
+            },
+            "code": "stocktake_not_found"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "counts": [
+                {
+                  "id": "zk1",
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "quantity": 5000,
+                  "serialNumbers": [],
+                  "round": 1,
+                  "countedBy": {
+                    "type": "register_user",
+                    "id": "ru_kellner",
+                    "name": "Ben Kellner"
+                  },
+                  "source": "register",
+                  "cashregisterId": "KASSE1",
+                  "countedAt": "2026-09-26T07:50:00.000Z",
+                  "note": "Regal oben",
+                  "voided": null
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "counts": [
+                {
+                  "id": "zc1",
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "quantity": 7000,
+                  "serialNumbers": [],
+                  "round": 1,
+                  "countedBy": {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  },
+                  "source": "register",
+                  "cashregisterId": "KASSE1",
+                  "countedAt": "2026-09-26T07:55:00.000Z",
+                  "note": null,
+                  "voided": null
+                },
+                {
+                  "id": "zc0",
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "quantity": 3000,
+                  "serialNumbers": [],
+                  "round": 1,
+                  "countedBy": {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  },
+                  "source": "register",
+                  "cashregisterId": "KASSE1",
+                  "countedAt": "2026-09-26T07:53:20.000Z",
+                  "note": null,
+                  "voided": {
+                    "reason": "Falsches Regal",
+                    "voidedAt": "2026-09-26T07:54:10.000Z",
+                    "voidedBy": {
+                      "type": "register_user",
+                      "id": "ru_chef",
+                      "name": "Anna Chef"
+                    }
+                  }
+                },
+                {
+                  "id": "zk1",
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "quantity": 5000,
+                  "serialNumbers": [],
+                  "round": 1,
+                  "countedBy": {
+                    "type": "register_user",
+                    "id": "ru_kellner",
+                    "name": "Ben Kellner"
+                  },
+                  "source": "register",
+                  "cashregisterId": "KASSE1",
+                  "countedAt": "2026-09-26T07:50:00.000Z",
+                  "note": "Regal oben",
+                  "voided": null
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_manager_only_own",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "ownOnly": true
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "counts": [
+                {
+                  "id": "zc1",
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "quantity": 7000,
+                  "serialNumbers": [],
+                  "round": 1,
+                  "countedBy": {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  },
+                  "source": "register",
+                  "cashregisterId": "KASSE1",
+                  "countedAt": "2026-09-26T07:55:00.000Z",
+                  "note": null,
+                  "voided": null
+                },
+                {
+                  "id": "zc0",
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "quantity": 3000,
+                  "serialNumbers": [],
+                  "round": 1,
+                  "countedBy": {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  },
+                  "source": "register",
+                  "cashregisterId": "KASSE1",
+                  "countedAt": "2026-09-26T07:53:20.000Z",
+                  "note": null,
+                  "voided": {
+                    "reason": "Falsches Regal",
+                    "voidedAt": "2026-09-26T07:54:10.000Z",
+                    "voidedBy": {
+                      "type": "register_user",
+                      "id": "ru_chef",
+                      "name": "Anna Chef"
+                    }
+                  }
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_article",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "counts": [
+                {
+                  "id": "zc0",
+                  "articleId": "art_kuchen",
+                  "condition": "sellable",
+                  "quantity": 3000,
+                  "serialNumbers": [],
+                  "round": 1,
+                  "countedBy": {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  },
+                  "source": "register",
+                  "cashregisterId": "KASSE1",
+                  "countedAt": "2026-09-26T07:53:20.000Z",
+                  "note": null,
+                  "voided": {
+                    "reason": "Falsches Regal",
+                    "voidedAt": "2026-09-26T07:54:10.000Z",
+                    "voidedBy": {
+                      "type": "register_user",
+                      "id": "ru_chef",
+                      "name": "Anna Chef"
+                    }
+                  }
+                }
+              ],
+              "nextCursor": null
+            }
+          }
+        },
+        {
+          "case": "success_page",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "limit": 1
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "counts": [
+                {
+                  "id": "zc1",
+                  "articleId": "art_kaffee",
+                  "condition": "sellable",
+                  "quantity": 7000,
+                  "serialNumbers": [],
+                  "round": 1,
+                  "countedBy": {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  },
+                  "source": "register",
+                  "cashregisterId": "KASSE1",
+                  "countedAt": "2026-09-26T07:55:00.000Z",
+                  "note": null,
+                  "voided": null
+                }
+              ],
+              "nextCursor": "eyJpZCI6InpjMSJ9"
+            }
+          }
+        },
+        {
+          "case": "cursor_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "cursor": "zc1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Blätter-Zeiger ist ungültig oder abgelaufen.",
+            "data": {
+              "code": "invalid_cursor"
+            },
+            "code": "invalid_cursor"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "recordMyStocktakeCount": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: stocktakeId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "stocktakeId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Lager\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Lagervorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1",
+            "cashregisterId": "KASSE2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "stocktake_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "gibtsnicht",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Inventur nicht gefunden.",
+            "data": {
+              "code": "stocktake_not_found"
+            },
+            "code": "stocktake_not_found"
+          }
+        },
+        {
+          "case": "key_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 3000
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "idempotencyKey fehlt.",
+            "data": {
+              "code": "idempotency_key_required"
+            },
+            "code": "idempotency_key_required"
+          }
+        },
+        {
+          "case": "quantity_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": -1000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Menge muss eine ganze Zahl ≥ 0 sein.",
+            "data": {
+              "code": "invalid_quantity"
+            },
+            "code": "invalid_quantity"
+          }
+        },
+        {
+          "case": "condition_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1",
+            "condition": "broken"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "condition",
+                  "message": "Zustand: sellable oder defective."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "article_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_gibtsnicht",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Artikel nicht gefunden.",
+            "data": {
+              "code": "article_not_found"
+            },
+            "code": "article_not_found"
+          }
+        },
+        {
+          "case": "not_in_scope",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_wagen",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Artikel gehört nicht zu dieser Inventur.",
+            "data": {
+              "code": "article_not_in_scope"
+            },
+            "code": "article_not_in_scope"
+          }
+        },
+        {
+          "case": "not_open",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_keller",
+            "articleId": "art_kaffee",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Hier wird gerade nicht gezählt.",
+            "data": {
+              "code": "stocktake_not_open"
+            },
+            "code": "stocktake_not_open"
+          }
+        },
+        {
+          "case": "closed",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_alt",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Inventur ist abgeschlossen oder abgebrochen.",
+            "data": {
+              "code": "stocktake_closed"
+            },
+            "code": "stocktake_closed"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1",
+            "cashregisterId": "KASSE1",
+            "note": "Regal 3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "id": "e4594b57b42d4757228bc6466f2f07a157cf9e04c99b5c7dfff4db933003ea1b",
+                "articleId": "art_kuchen",
+                "condition": "sellable",
+                "quantity": 3000,
+                "serialNumbers": [],
+                "round": 1,
+                "countedBy": {
+                  "type": "register_user",
+                  "id": "ru_chef",
+                  "name": "Anna Chef"
+                },
+                "source": "register",
+                "cashregisterId": "KASSE1",
+                "countedAt": "2026-09-26T08:00:00.000Z",
+                "note": "Regal 3",
+                "voided": null
+              },
+              "item": {
+                "articleId": "art_kuchen",
+                "condition": "sellable",
+                "name": "Kuchen",
+                "number": null,
+                "unit": "Stk",
+                "round": 1,
+                "counted": true,
+                "quantity": 3000,
+                "counts": 1,
+                "firstCountedAt": "2026-09-26T08:00:00.000Z",
+                "referenceTime": "2026-09-26T08:00:00.000Z",
+                "countedBy": [
+                  {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  }
+                ],
+                "recountRequested": false,
+                "addedLater": false
+              }
+            }
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kaffee",
+            "quantity": 1000,
+            "idempotencyKey": "k-kuchen-1",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "id": "e4594b57b42d4757228bc6466f2f07a157cf9e04c99b5c7dfff4db933003ea1b",
+                "articleId": "art_kaffee",
+                "condition": "sellable",
+                "quantity": 1000,
+                "serialNumbers": [],
+                "round": 1,
+                "countedBy": {
+                  "type": "register_user",
+                  "id": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "source": "register",
+                "cashregisterId": "KASSE1",
+                "countedAt": "2026-09-26T08:00:00.000Z",
+                "note": null,
+                "voided": null
+              },
+              "item": {
+                "articleId": "art_kaffee",
+                "condition": "sellable",
+                "name": "Kaffee",
+                "number": null,
+                "unit": "Stk",
+                "round": 1,
+                "counted": true,
+                "quantity": 13000,
+                "counts": 3,
+                "firstCountedAt": "2026-09-26T07:50:00.000Z",
+                "referenceTime": "2026-09-26T08:00:00.000Z",
+                "countedBy": [
+                  {
+                    "type": "register_user",
+                    "id": "ru_kellner",
+                    "name": "Ben Kellner"
+                  },
+                  {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  }
+                ],
+                "recountRequested": false,
+                "addedLater": false
+              }
+            }
+          }
+        },
+        {
+          "case": "success_owner_defective",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 1000,
+            "idempotencyKey": "k-kuchen-1",
+            "condition": "defective"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "id": "e4594b57b42d4757228bc6466f2f07a157cf9e04c99b5c7dfff4db933003ea1b",
+                "articleId": "art_kuchen",
+                "condition": "defective",
+                "quantity": 1000,
+                "serialNumbers": [],
+                "round": 1,
+                "countedBy": {
+                  "type": "owner",
+                  "id": "kw_betrieb1",
+                  "name": null
+                },
+                "source": "panel",
+                "cashregisterId": null,
+                "countedAt": "2026-09-26T08:00:00.000Z",
+                "note": null,
+                "voided": null
+              },
+              "item": {
+                "articleId": "art_kuchen",
+                "condition": "defective",
+                "name": "Kuchen",
+                "number": null,
+                "unit": "Stk",
+                "round": 1,
+                "counted": true,
+                "quantity": 1000,
+                "counts": 1,
+                "firstCountedAt": "2026-09-26T08:00:00.000Z",
+                "referenceTime": "2026-09-26T08:00:00.000Z",
+                "countedBy": [
+                  {
+                    "type": "owner",
+                    "id": "kw_betrieb1",
+                    "name": null
+                  }
+                ],
+                "recountRequested": false,
+                "addedLater": true
+              }
+            }
+          }
+        },
+        {
+          "case": "success_same_key",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 3000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "id": "e4594b57b42d4757228bc6466f2f07a157cf9e04c99b5c7dfff4db933003ea1b",
+                "articleId": "art_kuchen",
+                "condition": "sellable",
+                "quantity": 3000,
+                "serialNumbers": [],
+                "round": 1,
+                "countedBy": {
+                  "type": "register_user",
+                  "id": "ru_chef",
+                  "name": "Anna Chef"
+                },
+                "source": "register",
+                "cashregisterId": null,
+                "countedAt": "2026-09-26T07:59:00.000Z",
+                "note": null,
+                "voided": null
+              },
+              "item": {
+                "articleId": "art_kuchen",
+                "condition": "sellable",
+                "name": "Kuchen",
+                "number": null,
+                "unit": "Stk",
+                "round": 1,
+                "counted": true,
+                "quantity": 3000,
+                "counts": 1,
+                "firstCountedAt": "2026-09-26T07:59:00.000Z",
+                "referenceTime": "2026-09-26T07:59:00.000Z",
+                "countedBy": [
+                  {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  }
+                ],
+                "recountRequested": false,
+                "addedLater": false
+              }
+            }
+          }
+        },
+        {
+          "case": "key_conflict",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "articleId": "art_kuchen",
+            "quantity": 4000,
+            "idempotencyKey": "k-kuchen-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+            "data": {
+              "code": "idempotency_conflict"
+            },
+            "code": "idempotency_conflict"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "voidMyStocktakeCount": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zk1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "reason": "x",
+            "idempotencyKey": "k"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: stocktakeId, countId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "countId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zk1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Lager\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zk1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Lagervorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "stocktake_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "gibtsnicht",
+            "countId": "zk1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Inventur nicht gefunden.",
+            "data": {
+              "code": "stocktake_not_found"
+            },
+            "code": "stocktake_not_found"
+          }
+        },
+        {
+          "case": "count_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "gibtsnicht",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Zählung nicht gefunden.",
+            "data": {
+              "code": "count_not_found"
+            },
+            "code": "count_not_found"
+          }
+        },
+        {
+          "case": "reason_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zk1",
+            "reason": "",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "reason",
+                  "message": "Grund mit 1 bis 500 Zeichen."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "key_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zk1",
+            "reason": "Doppelt gezählt"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "idempotencyKey fehlt.",
+            "data": {
+              "code": "idempotency_key_required"
+            },
+            "code": "idempotency_key_required"
+          }
+        },
+        {
+          "case": "foreign_count",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zc1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Fremde Zählungen storniert nur, wer Inventuren prüfen und abschließen darf.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "already_cancelled",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zc0",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Zählung ist schon storniert.",
+            "data": {
+              "code": "count_already_voided"
+            },
+            "code": "count_already_voided"
+          }
+        },
+        {
+          "case": "not_open",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_keller",
+            "countId": "zp1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Hier wird gerade nicht gezählt.",
+            "data": {
+              "code": "stocktake_not_open"
+            },
+            "code": "stocktake_not_open"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zk1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "id": "zk1",
+                "articleId": "art_kaffee",
+                "condition": "sellable",
+                "quantity": 5000,
+                "serialNumbers": [],
+                "round": 1,
+                "countedBy": {
+                  "type": "register_user",
+                  "id": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "source": "register",
+                "cashregisterId": "KASSE1",
+                "countedAt": "2026-09-26T07:50:00.000Z",
+                "note": "Regal oben",
+                "voided": {
+                  "reason": "Doppelt gezählt",
+                  "voidedAt": "2026-09-26T08:00:00.000Z",
+                  "voidedBy": {
+                    "type": "register_user",
+                    "id": "ru_kellner",
+                    "name": "Ben Kellner"
+                  }
+                }
+              },
+              "item": {
+                "articleId": "art_kaffee",
+                "condition": "sellable",
+                "name": "Kaffee",
+                "number": null,
+                "unit": "Stk",
+                "round": 1,
+                "counted": true,
+                "quantity": 7000,
+                "counts": 1,
+                "firstCountedAt": "2026-09-26T07:55:00.000Z",
+                "referenceTime": "2026-09-26T07:55:00.000Z",
+                "countedBy": [
+                  {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  }
+                ],
+                "recountRequested": false,
+                "addedLater": false
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zk1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "id": "zk1",
+                "articleId": "art_kaffee",
+                "condition": "sellable",
+                "quantity": 5000,
+                "serialNumbers": [],
+                "round": 1,
+                "countedBy": {
+                  "type": "register_user",
+                  "id": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "source": "register",
+                "cashregisterId": "KASSE1",
+                "countedAt": "2026-09-26T07:50:00.000Z",
+                "note": "Regal oben",
+                "voided": {
+                  "reason": "Doppelt gezählt",
+                  "voidedAt": "2026-09-26T08:00:00.000Z",
+                  "voidedBy": {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  }
+                }
+              },
+              "item": {
+                "articleId": "art_kaffee",
+                "condition": "sellable",
+                "name": "Kaffee",
+                "number": null,
+                "unit": "Stk",
+                "round": 1,
+                "counted": true,
+                "quantity": 7000,
+                "counts": 1,
+                "firstCountedAt": "2026-09-26T07:55:00.000Z",
+                "referenceTime": "2026-09-26T07:55:00.000Z",
+                "countedBy": [
+                  {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  }
+                ],
+                "recountRequested": false,
+                "addedLater": false
+              }
+            }
+          }
+        },
+        {
+          "case": "success_same_key",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zk1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "id": "zk1",
+                "articleId": "art_kaffee",
+                "condition": "sellable",
+                "quantity": 5000,
+                "serialNumbers": [],
+                "round": 1,
+                "countedBy": {
+                  "type": "register_user",
+                  "id": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "source": "register",
+                "cashregisterId": "KASSE1",
+                "countedAt": "2026-09-26T07:50:00.000Z",
+                "note": "Regal oben",
+                "voided": {
+                  "reason": "Doppelt gezählt",
+                  "voidedAt": "2026-09-26T07:59:00.000Z",
+                  "voidedBy": {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  }
+                }
+              },
+              "item": {
+                "articleId": "art_kaffee",
+                "condition": "sellable",
+                "name": "Kaffee",
+                "number": null,
+                "unit": "Stk",
+                "round": 1,
+                "counted": true,
+                "quantity": 7000,
+                "counts": 1,
+                "firstCountedAt": "2026-09-26T07:55:00.000Z",
+                "referenceTime": "2026-09-26T07:55:00.000Z",
+                "countedBy": [
+                  {
+                    "type": "register_user",
+                    "id": "ru_chef",
+                    "name": "Anna Chef"
+                  }
+                ],
+                "recountRequested": false,
+                "addedLater": false
+              }
+            }
+          }
+        },
+        {
+          "case": "key_conflict",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "stocktakeId": "inv_laden",
+            "countId": "zc1",
+            "reason": "Doppelt gezählt",
+            "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+            "data": {
+              "code": "idempotency_conflict"
+            },
+            "code": "idempotency_conflict"
           }
         },
         {

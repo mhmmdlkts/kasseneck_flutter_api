@@ -110,3 +110,24 @@ const Set<String> leerbareArtikelfelder = {
 /// Die Vorgaben einer Variantengruppe, die eine Aenderung leeren darf
 /// (`VariantGroupDefaultsInput.clear`): alle fuenf.
 const Set<String> leerbareVorgaben = {'unitPriceCents', 'vatRate', 'unit', 'groupId', 'stockTracked'};
+
+// ---- Inventur (seit 10.7) ------------------------------------------------------
+
+/// Ein Grund (Storno, Nachzaehlen, Abbruch): nicht leer. Die Laenge prueft der Server.
+void grundPruefen(String name, String grund) {
+  if (grund.trim().isEmpty) throw anfragefehler(name, 'reason fehlt (Grund mit 1 bis 500 Zeichen)');
+}
+
+/// Pruefung einer Zaehlung vor dem Senden, geteilt mit dem Kassenweg: die
+/// Kennung des Artikels und eine Menge im sicheren Ganzzahlbereich. Die Menge
+/// selbst (auch negativ) und die Seriennummern prueft der Server.
+void zaehlungPruefen(String name, Map<String, dynamic> p) {
+  kennung(name, 'articleId', p['articleId']);
+  pruefeGanzzahlen(name, p['quantity'], 'quantity');
+}
+
+/// Pruefung eines Stornos vor dem Senden, geteilt mit dem Kassenweg.
+void stornoPruefen(String name, Map<String, dynamic> p) {
+  kennung(name, 'countId', p['countId']);
+  grundPruefen(name, p['reason'] as String);
+}

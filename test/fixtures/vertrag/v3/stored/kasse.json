@@ -4,7 +4,7 @@
     "default": {
       "sha256": "993dc13a802ce4c2f795a20e7de2d6d0aad6e471e47b60762c32127046a46e95",
       "head": [],
-      "inputsSha256": "10b8007647d9d9ba2a1c904b320f1ad5a97f66ab2ae3f4511ba18bfcbd616dea",
+      "inputsSha256": "9c4add97fe3a9d18691f91e9176108b595037684e76f2a573c4d4c970e4ab884",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "630041a67780785efc0f83a8cb7b3f37613b1c1c87e3f7764b535ae951bbf192",
+      "sha256": "877cb1e6d02b7efd81b9b7c0b0daaecbefedf49408bf9e8b3023977297eba13a",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "35cb1bb7c33a3eb238dd7a4a38ef604df1170e108afb3a8800fbf17ea6d3a3cb",
+      "inputsSha256": "77a128d593f133cc6d3244757f64b39bb471ebda729101bbe00c0fef835c463f",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -3907,6 +3907,417 @@
                 "id": "kw_betrieb1",
                 "name": null
               }
+            }
+          }
+        }
+      }
+    },
+    "recordMyStocktakeCount": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "users/kw_betrieb1/lager_inventuren/inv_laden/positionen/art_kuchen__verkaufbar": {
+            "articleId": "art_kuchen",
+            "zustand": "verkaufbar",
+            "name": "Kuchen",
+            "nummer": null,
+            "einheit": "Stk",
+            "runde": 1,
+            "ist": 3000,
+            "gezaehlt": true,
+            "anzahl": 1,
+            "zaehlungenRunde": 2,
+            "ersteMs": 1790409600000,
+            "letzteMs": 1790409600000,
+            "zaehler": [
+              {
+                "art": "kassenbenutzer",
+                "id": "ru_chef",
+                "name": "Anna Chef"
+              }
+            ],
+            "seriennummern": [],
+            "nachzaehlen": false,
+            "nachtraeglich": false
+          },
+          "users/kw_betrieb1/lager_inventuren/inv_laden/zaehlungen/e4594b57b42d4757228bc6466f2f07a157cf9e04c99b5c7dfff4db933003ea1b": {
+            "positionId": "art_kuchen__verkaufbar",
+            "articleId": "art_kuchen",
+            "zustand": "verkaufbar",
+            "menge": 3000,
+            "seriennummern": [],
+            "runde": 1,
+            "zaehler": {
+              "art": "kassenbenutzer",
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "geraet": {
+              "quelle": "kasse",
+              "kasseId": "KASSE1"
+            },
+            "zeitMs": 1790409600000,
+            "notiz": "Regal 3",
+            "storniert": null,
+            "anfrageHash": "8c2dd8ea85de0d572f18723d816f74034c6522f632a116184a78af2b3c5fb55f",
+            "positionNachher": {
+              "id": "art_kuchen__verkaufbar",
+              "articleId": "art_kuchen",
+              "zustand": "verkaufbar",
+              "name": "Kuchen",
+              "nummer": null,
+              "einheit": "Stk",
+              "runde": 1,
+              "ist": 3000,
+              "gezaehlt": true,
+              "anzahl": 1,
+              "zaehlungenRunde": 2,
+              "ersteMs": 1790409600000,
+              "letzteMs": 1790409600000,
+              "zaehler": [
+                {
+                  "art": "kassenbenutzer",
+                  "id": "ru_chef",
+                  "name": "Anna Chef"
+                }
+              ],
+              "nachzaehlen": false,
+              "nachtraeglich": false
+            }
+          }
+        },
+        "success_cashier": {
+          "users/kw_betrieb1/lager_inventuren/inv_laden/positionen/art_kaffee__verkaufbar": {
+            "articleId": "art_kaffee",
+            "zustand": "verkaufbar",
+            "name": "Kaffee",
+            "nummer": null,
+            "einheit": "Stk",
+            "runde": 1,
+            "ist": 13000,
+            "gezaehlt": true,
+            "anzahl": 3,
+            "zaehlungenRunde": 3,
+            "ersteMs": 1790409000000,
+            "letzteMs": 1790409600000,
+            "zaehler": [
+              {
+                "art": "kassenbenutzer",
+                "id": "ru_kellner",
+                "name": "Ben Kellner"
+              },
+              {
+                "art": "kassenbenutzer",
+                "id": "ru_chef",
+                "name": "Anna Chef"
+              }
+            ],
+            "seriennummern": [],
+            "nachzaehlen": false,
+            "nachtraeglich": false
+          },
+          "users/kw_betrieb1/lager_inventuren/inv_laden/zaehlungen/e4594b57b42d4757228bc6466f2f07a157cf9e04c99b5c7dfff4db933003ea1b": {
+            "positionId": "art_kaffee__verkaufbar",
+            "articleId": "art_kaffee",
+            "zustand": "verkaufbar",
+            "menge": 1000,
+            "seriennummern": [],
+            "runde": 1,
+            "zaehler": {
+              "art": "kassenbenutzer",
+              "id": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "geraet": {
+              "quelle": "kasse",
+              "kasseId": "KASSE1"
+            },
+            "zeitMs": 1790409600000,
+            "notiz": null,
+            "storniert": null,
+            "anfrageHash": "e60a068acb8e3b38806248b840e57d9b0607c8c291f440de5d41b93316bf2309",
+            "positionNachher": {
+              "id": "art_kaffee__verkaufbar",
+              "articleId": "art_kaffee",
+              "zustand": "verkaufbar",
+              "name": "Kaffee",
+              "nummer": null,
+              "einheit": "Stk",
+              "runde": 1,
+              "ist": 13000,
+              "gezaehlt": true,
+              "anzahl": 3,
+              "zaehlungenRunde": 3,
+              "ersteMs": 1790409000000,
+              "letzteMs": 1790409600000,
+              "zaehler": [
+                {
+                  "art": "kassenbenutzer",
+                  "id": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                {
+                  "art": "kassenbenutzer",
+                  "id": "ru_chef",
+                  "name": "Anna Chef"
+                }
+              ],
+              "nachzaehlen": false,
+              "nachtraeglich": false
+            }
+          }
+        },
+        "success_owner_defective": {
+          "users/kw_betrieb1/lager_inventuren/inv_laden/positionen/art_kuchen__defekt": {
+            "articleId": "art_kuchen",
+            "zustand": "defekt",
+            "name": "Kuchen",
+            "nummer": null,
+            "einheit": "Stk",
+            "runde": 1,
+            "ist": 1000,
+            "gezaehlt": true,
+            "anzahl": 1,
+            "zaehlungenRunde": 1,
+            "ersteMs": 1790409600000,
+            "letzteMs": 1790409600000,
+            "zaehler": [
+              {
+                "art": "inhaber",
+                "id": "kw_betrieb1",
+                "name": null
+              }
+            ],
+            "seriennummern": [],
+            "nachzaehlen": false,
+            "nachtraeglich": true
+          },
+          "users/kw_betrieb1/lager_inventuren/inv_laden/zaehlungen/e4594b57b42d4757228bc6466f2f07a157cf9e04c99b5c7dfff4db933003ea1b": {
+            "positionId": "art_kuchen__defekt",
+            "articleId": "art_kuchen",
+            "zustand": "defekt",
+            "menge": 1000,
+            "seriennummern": [],
+            "runde": 1,
+            "zaehler": {
+              "art": "inhaber",
+              "id": "kw_betrieb1",
+              "name": null
+            },
+            "geraet": {
+              "quelle": "panel",
+              "kasseId": null
+            },
+            "zeitMs": 1790409600000,
+            "notiz": null,
+            "storniert": null,
+            "anfrageHash": "c5254d07dacde3ea078af7147e0220727796093ef3104080e36821458f3ea420",
+            "positionNachher": {
+              "id": "art_kuchen__defekt",
+              "articleId": "art_kuchen",
+              "zustand": "defekt",
+              "name": "Kuchen",
+              "nummer": null,
+              "einheit": "Stk",
+              "runde": 1,
+              "ist": 1000,
+              "gezaehlt": true,
+              "anzahl": 1,
+              "zaehlungenRunde": 1,
+              "ersteMs": 1790409600000,
+              "letzteMs": 1790409600000,
+              "zaehler": [
+                {
+                  "art": "inhaber",
+                  "id": "kw_betrieb1",
+                  "name": null
+                }
+              ],
+              "nachzaehlen": false,
+              "nachtraeglich": true
+            }
+          }
+        }
+      }
+    },
+    "voidMyStocktakeCount": {
+      "codebase": "kasse",
+      "cases": {
+        "success_cashier": {
+          "users/kw_betrieb1/lager_idempotenz/01d1059fc0e4e0eacf843e647e04a6357b0b081015ee9c290de9b0dc35796413": {
+            "anfrageHash": "33b4ca66b84279c843dc6aec0cf0edd4392304c4f9bd331a6a0c199f34579f4a",
+            "antwort": {
+              "inventurId": "inv_laden",
+              "zaehlungId": "zk1"
+            },
+            "zeitMs": 1790409600000,
+            "loeschenAb": 1793001600000,
+            "geschriebenAt": 1790409600000
+          },
+          "users/kw_betrieb1/lager_inventuren/inv_laden/positionen/art_kaffee__verkaufbar": {
+            "articleId": "art_kaffee",
+            "zustand": "verkaufbar",
+            "name": "Kaffee",
+            "nummer": null,
+            "einheit": "Stk",
+            "runde": 1,
+            "ist": 7000,
+            "gezaehlt": true,
+            "anzahl": 1,
+            "zaehlungenRunde": 2,
+            "ersteMs": 1790409300000,
+            "letzteMs": 1790409300000,
+            "zaehler": [
+              {
+                "art": "kassenbenutzer",
+                "id": "ru_chef",
+                "name": "Anna Chef"
+              }
+            ],
+            "seriennummern": [],
+            "nachzaehlen": false,
+            "nachtraeglich": false
+          },
+          "users/kw_betrieb1/lager_inventuren/inv_laden/zaehlungen/zk1": {
+            "positionId": "art_kaffee__verkaufbar",
+            "articleId": "art_kaffee",
+            "zustand": "verkaufbar",
+            "menge": 5000,
+            "seriennummern": [],
+            "runde": 1,
+            "zaehler": {
+              "art": "kassenbenutzer",
+              "id": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "geraet": {
+              "quelle": "kasse",
+              "kasseId": "KASSE1"
+            },
+            "zeitMs": 1790409000000,
+            "notiz": "Regal oben",
+            "storniert": {
+              "grund": "Doppelt gezählt",
+              "at": 1790409600000,
+              "von": {
+                "art": "kassenbenutzer",
+                "id": "ru_kellner",
+                "name": "Ben Kellner"
+              }
+            },
+            "anfrageHash": "vorbestand",
+            "positionNachStorno": {
+              "id": "art_kaffee__verkaufbar",
+              "articleId": "art_kaffee",
+              "zustand": "verkaufbar",
+              "name": "Kaffee",
+              "nummer": null,
+              "einheit": "Stk",
+              "runde": 1,
+              "ist": 7000,
+              "gezaehlt": true,
+              "anzahl": 1,
+              "zaehlungenRunde": 2,
+              "ersteMs": 1790409300000,
+              "letzteMs": 1790409300000,
+              "zaehler": [
+                {
+                  "art": "kassenbenutzer",
+                  "id": "ru_chef",
+                  "name": "Anna Chef"
+                }
+              ],
+              "nachzaehlen": false,
+              "nachtraeglich": false
+            }
+          }
+        },
+        "success_manager": {
+          "users/kw_betrieb1/lager_idempotenz/01d1059fc0e4e0eacf843e647e04a6357b0b081015ee9c290de9b0dc35796413": {
+            "anfrageHash": "85719736f88c63bb76308f44830c8708599e70f1181e69649c328a72a8e30d35",
+            "antwort": {
+              "inventurId": "inv_laden",
+              "zaehlungId": "zk1"
+            },
+            "zeitMs": 1790409600000,
+            "loeschenAb": 1793001600000,
+            "geschriebenAt": 1790409600000
+          },
+          "users/kw_betrieb1/lager_inventuren/inv_laden/positionen/art_kaffee__verkaufbar": {
+            "articleId": "art_kaffee",
+            "zustand": "verkaufbar",
+            "name": "Kaffee",
+            "nummer": null,
+            "einheit": "Stk",
+            "runde": 1,
+            "ist": 7000,
+            "gezaehlt": true,
+            "anzahl": 1,
+            "zaehlungenRunde": 2,
+            "ersteMs": 1790409300000,
+            "letzteMs": 1790409300000,
+            "zaehler": [
+              {
+                "art": "kassenbenutzer",
+                "id": "ru_chef",
+                "name": "Anna Chef"
+              }
+            ],
+            "seriennummern": [],
+            "nachzaehlen": false,
+            "nachtraeglich": false
+          },
+          "users/kw_betrieb1/lager_inventuren/inv_laden/zaehlungen/zk1": {
+            "positionId": "art_kaffee__verkaufbar",
+            "articleId": "art_kaffee",
+            "zustand": "verkaufbar",
+            "menge": 5000,
+            "seriennummern": [],
+            "runde": 1,
+            "zaehler": {
+              "art": "kassenbenutzer",
+              "id": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "geraet": {
+              "quelle": "kasse",
+              "kasseId": "KASSE1"
+            },
+            "zeitMs": 1790409000000,
+            "notiz": "Regal oben",
+            "storniert": {
+              "grund": "Doppelt gezählt",
+              "at": 1790409600000,
+              "von": {
+                "art": "kassenbenutzer",
+                "id": "ru_chef",
+                "name": "Anna Chef"
+              }
+            },
+            "anfrageHash": "vorbestand",
+            "positionNachStorno": {
+              "id": "art_kaffee__verkaufbar",
+              "articleId": "art_kaffee",
+              "zustand": "verkaufbar",
+              "name": "Kaffee",
+              "nummer": null,
+              "einheit": "Stk",
+              "runde": 1,
+              "ist": 7000,
+              "gezaehlt": true,
+              "anzahl": 1,
+              "zaehlungenRunde": 2,
+              "ersteMs": 1790409300000,
+              "letzteMs": 1790409300000,
+              "zaehler": [
+                {
+                  "art": "kassenbenutzer",
+                  "id": "ru_chef",
+                  "name": "Anna Chef"
+                }
+              ],
+              "nachzaehlen": false,
+              "nachtraeglich": false
             }
           }
         }

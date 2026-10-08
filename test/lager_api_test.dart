@@ -13,13 +13,13 @@ import 'package:kasseneck_api/src/receipt/codes.dart' show anmeldungUndRandCodes
 import 'helpers/lager_anfragen.dart';
 
 /// Die Lager-API (`InventoryClient`, Zwilling von `./inventory` im npm-Paket
-/// 1.6.0) gegen den Vertrags-Export des Backends: `v3/antworten/lager.json`
-/// (echte Antworten der 32 Endpunkte samt zugestellter Webhook-Ereignisse,
+/// 1.8.0) gegen den Vertrags-Export des Backends: `v3/antworten/lager.json`
+/// (echte Antworten der 44 Endpunkte samt zugestellter Webhook-Ereignisse,
 /// erfundenes Konto Baeckerei Kornblum), `v3/v3-vokabular.json` (Kataloge,
 /// Schemata) und `surface.json` (Abschnitt `inventory`). Die Faelle folgen
 /// `test/inventory.test.ts` im JS-Paket; das Schreiben im Einzelnen steht in
 /// `lager_schreiben_test.dart`, die Variantengruppen in
-/// `lager_varianten_test.dart`.
+/// `lager_varianten_test.dart`, die Inventur in `lager_inventur_test.dart`.
 
 const _apiKey = 'kr_test_Beispielschluessel0123456789';
 
@@ -127,6 +127,14 @@ void main() {
         'stockMovementTypes': stockMovementTypes,
         'webhookDeliveryStatuses': webhookDeliveryStatuses,
         'withdrawalTypes': withdrawalTypes,
+        'stocktakeActorTypes': stocktakeActorTypes,
+        'stocktakeCheckReasons': stocktakeCheckReasons,
+        'stocktakeInventoryAsOf': stocktakeInventoryAsOf,
+        'stocktakeNotBookedReasons': stocktakeNotBookedReasons,
+        'stocktakeScopeTypes': stocktakeScopeTypes,
+        'stocktakeSources': stocktakeSources,
+        'stocktakeStatuses': stocktakeStatuses,
+        'stocktakeTypes': stocktakeTypes,
       };
       expect(hier.keys.toSet(), listen.keys.toSet());
       for (final e in hier.entries) {
@@ -134,16 +142,18 @@ void main() {
       }
     });
 
-    test('inventoryEndpoints: die 32 Endpunkte (5a, 5b und 5c) in endpoints.public, in Vertragsreihenfolge, alle in Aufrufe.alle', () {
+    test('inventoryEndpoints: die 44 Endpunkte (5a, 5b, 5c, Inventur) in endpoints.public, in Vertragsreihenfolge, alle in Aufrufe.alle', () {
       final namen = (_vokabular['names'] as Map).cast<String, String>();
       final oeffentlich = [for (final n in (_vokabular['endpoints'] as Map)['public'] as List) namen[n] ?? n as String];
       final start = oeffentlich.indexOf('getArticle');
       expect(start, greaterThan(0));
-      expect(inventoryEndpoints, oeffentlich.sublist(start, start + 32));
-      expect(inventoryEndpoints, hasLength(32));
+      expect(inventoryEndpoints, oeffentlich.sublist(start, start + 44));
+      expect(inventoryEndpoints, hasLength(44));
       expect(inventoryEndpoints[13], 'listWebhookDeliveries');
       expect(inventoryEndpoints[26], 'listReservations');
-      expect(inventoryEndpoints.last, 'addVariant');
+      expect(inventoryEndpoints[31], 'addVariant');
+      expect(inventoryEndpoints.sublist(32).first, 'createStocktake');
+      expect(inventoryEndpoints.last, 'getStocktakePdf');
       for (final name in inventoryEndpoints) {
         expect(Aufrufe.alle, contains(name));
         expect((_vokabular['schemas'] as Map)[name], isNotNull, reason: '$name: kein Schema im Vertrag');
@@ -163,6 +173,14 @@ void main() {
       expect(landedCostTypes, werte('LAGER_NEBENKOSTEN_ART'));
       expect(landedCostAllocations, werte('LAGER_VERTEILUNG'));
       expect(reservationStatuses, werte('RESERVIERUNG_STATUS'));
+      expect(stocktakeStatuses, werte('INVENTUR_STATUS'));
+      expect(stocktakeTypes, werte('INVENTUR_ART'));
+      expect(stocktakeScopeTypes, werte('INVENTUR_UMFANG'));
+      expect(stocktakeCheckReasons, werte('INVENTUR_PRUEFGRUND'));
+      expect(stocktakeNotBookedReasons, werte('INVENTUR_NICHT_GEBUCHT'));
+      expect(stocktakeSources, werte('INVENTUR_QUELLE'));
+      expect(stocktakeActorTypes, werte('INVENTUR_AKTEUR'));
+      expect(stocktakeInventoryAsOf, werte('INVENTUR_INVENTAR_ZUM'));
       expect(inventoryWarningCodes, (_vokabular['warningCodes'] as Map)['inventory']);
       expect(stockMovementTypes, containsAll(['goods_receipt', 'takeover']));
       expect(stockMovementTypes, isNot(contains('receipt')));
@@ -217,10 +235,18 @@ void main() {
         'server_error',
       ]);
       expect(inventoryErrorCodes.sublist(12), vertrag.sublist(vertrag.indexOf('server_error') + 1));
-      // 5c haengt hinter 5b an (die Reihenfolge der Codes aus 10.4 bleibt).
-      expect(inventoryErrorCodes.sublist(inventoryErrorCodes.length - 6), [
+      // 5c haengt hinter 5b an, die Inventur hinter 5c (die Reihenfolge der
+      // Codes aus 10.4 und 10.5 bleibt).
+      final variante = inventoryErrorCodes.indexOf('variant_limit');
+      expect(inventoryErrorCodes.sublist(variante - 5, variante + 1), [
         'reservation_not_active', 'variant_group_not_found', 'variant_already_exists', 'invalid_variant_attributes',
         'variant_group_inactive', 'variant_limit',
+      ]);
+      expect(inventoryErrorCodes.sublist(variante + 1), [
+        'stocktake_not_found', 'stocktake_not_open', 'stocktake_closed', 'stocktake_not_in_review', 'stocktake_closing',
+        'stocktake_location_busy', 'stocktake_review_running', 'stocktake_recount_open', 'article_not_in_scope',
+        'article_not_tracked', 'count_not_found', 'count_already_voided', 'serial_already_counted', 'too_many_counts',
+        'stocktake_not_closed',
       ]);
       // Hinweise sind nie Fehler.
       for (final w in inventoryWarningCodes) {

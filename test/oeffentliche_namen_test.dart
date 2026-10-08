@@ -107,6 +107,8 @@ final Set<String> woerter = _liste('''
   verify version vertical via vias vienna view virtual visible voided voucher vouchers wall
   wanted warehouse warm warning warnings watermark web webhook webhooks webservice widget widgets width widths
   wire with withdrawal words wrap write written wrong year yesterday zero zone
+  actor blind booked break cancelled checksum closing completed content counted counts difference
+  gaps later milli parts recount recounted review round seal stocktakes uncounted verified void
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,
@@ -119,6 +121,7 @@ final Set<String> kuerzel = _liste('''
   micros millis min mm ms n ok params pc pct pdf perms pin pos pre pro q qr
   qrcode r ref res rgb rgba s scep sdk sdp sec sepa sig sms src sub t tcp tid
   tids ttl tx tz uid uint upc url usb vat vu w wifi wpc x xl xml y zip
+  sha
 ''');
 
 /// Produkt- und Firmennamen.

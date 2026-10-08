@@ -312,6 +312,95 @@ Future<Object?> schreibAufruf(InventoryClient l, String endpunkt, Map<String, dy
         limit: p['limit'] as int?,
         cursor: p['cursor'] as String?,
       );
+    case 'createStocktake':
+      return l.createStocktake(inventurAnlegen(p));
+    case 'listStocktakes':
+      return l.listStocktakes(
+        status: p['status'] as String?,
+        locationId: p['locationId'] as String?,
+        updatedSince: p['updatedSince'] == null ? null : DateTime.parse(p['updatedSince'] as String),
+        limit: p['limit'] as int?,
+        cursor: p['cursor'] as String?,
+      );
+    case 'getStocktake':
+      return l.getStocktake(p['stocktakeId'] as String? ?? '');
+    case 'listStocktakeItems':
+      return l.listStocktakeItems(
+        stocktakeId: p['stocktakeId'] as String? ?? '',
+        openOnly: p['openOnly'] as bool?,
+        limit: p['limit'] as int?,
+        cursor: p['cursor'] as String?,
+      );
+    case 'listStocktakeCounts':
+      return l.listStocktakeCounts(
+        stocktakeId: p['stocktakeId'] as String? ?? '',
+        articleId: p['articleId'] as String?,
+        limit: p['limit'] as int?,
+        cursor: p['cursor'] as String?,
+      );
+    case 'recordStocktakeCount':
+      return l.recordStocktakeCount(zaehlung(p));
+    case 'voidStocktakeCount':
+      return l.voidStocktakeCount(VoidStocktakeCountRequest(
+        idempotencyKey: _schluessel(p),
+        stocktakeId: p['stocktakeId'] as String? ?? '',
+        countId: p['countId'] as String? ?? '',
+        reason: p['reason'] as String? ?? '',
+      ));
+    case 'reviewStocktake':
+      return l.reviewStocktake(
+          ReviewStocktakeRequest(idempotencyKey: _schluessel(p), stocktakeId: p['stocktakeId'] as String? ?? ''));
+    case 'recountStocktake':
+      return l.recountStocktake(RecountStocktakeRequest(
+        idempotencyKey: _schluessel(p),
+        stocktakeId: p['stocktakeId'] as String? ?? '',
+        items: [
+          for (final x in _liste(p['items']))
+            StocktakeRecountItem(articleId: x['articleId'] as String, condition: x['condition'] as String?),
+        ],
+        reason: p['reason'] as String? ?? '',
+      ));
+    case 'closeStocktake':
+      return l.closeStocktake(CloseStocktakeRequest(
+        idempotencyKey: _schluessel(p),
+        stocktakeId: p['stocktakeId'] as String? ?? '',
+        uncountedAsZero: p['uncountedAsZero'] as bool?,
+      ));
+    case 'cancelStocktake':
+      return l.cancelStocktake(CancelStocktakeRequest(
+        idempotencyKey: _schluessel(p),
+        stocktakeId: p['stocktakeId'] as String? ?? '',
+        reason: p['reason'] as String? ?? '',
+      ));
+    case 'getStocktakePdf':
+      return l.getStocktakePdf(p['stocktakeId'] as String? ?? '');
   }
   throw StateError('kein Aufruf fuer $endpunkt');
 }
+
+CreateStocktakeRequest inventurAnlegen(Map<String, dynamic> p) {
+  final umfang = (p['scope'] as Map).cast<String, dynamic>();
+  return CreateStocktakeRequest(
+    idempotencyKey: _schluessel(p),
+    locationId: p['locationId'] as String? ?? '',
+    scope: StocktakeScopeInput(
+      type: umfang['type'] as String,
+      groupIds: (umfang['groupIds'] as List?)?.cast<String>(),
+      articleIds: (umfang['articleIds'] as List?)?.cast<String>(),
+    ),
+    type: p['type'] as String,
+    keyDate: p['keyDate'] as String?,
+    blind: p['blind'] as bool?,
+    name: p['name'] as String?,
+  );
+}
+
+RecordStocktakeCountRequest zaehlung(Map<String, dynamic> p) => RecordStocktakeCountRequest(
+      idempotencyKey: _schluessel(p),
+      stocktakeId: p['stocktakeId'] as String? ?? '',
+      articleId: p['articleId'] as String? ?? '',
+      quantity: p['quantity'] as int,
+      condition: p['condition'] as String?,
+      serialNumbers: (p['serialNumbers'] as List?)?.cast<String>(),
+      note: p['note'] as String?,
+    );

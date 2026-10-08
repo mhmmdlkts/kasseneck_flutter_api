@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "6e6eae018f1e84116d3942cbfd35bc2d5d6f5c5e5551823c7ed88f15ed407744",
-    "inputsSha256": "8490315ac4059c3b26274649b8c3323295b26a6422a02da3a3cc241338cc797b",
+    "sha256": "0f78308720a3098401867185fdceea2aadf292158d719c0f9dc0306826959a27",
+    "inputsSha256": "6a5553a580d259c0c9bd38fc7ab314b185c583ac65104a2dcbc13c70314b808d",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -119,7 +119,19 @@
       "updateVariantGroup",
       "getVariantGroup",
       "listVariantGroups",
-      "addVariant"
+      "addVariant",
+      "createStocktake",
+      "listStocktakes",
+      "getStocktake",
+      "listStocktakeItems",
+      "recordStocktakeCount",
+      "voidStocktakeCount",
+      "listStocktakeCounts",
+      "reviewStocktake",
+      "recountStocktake",
+      "closeStocktake",
+      "cancelStocktake",
+      "getStocktakePdf"
     ],
     "v3Routed": [
       "createReceipt",
@@ -213,7 +225,19 @@
       "updateVariantGroup",
       "getVariantGroup",
       "listVariantGroups",
-      "addVariant"
+      "addVariant",
+      "createStocktake",
+      "listStocktakes",
+      "getStocktake",
+      "listStocktakeItems",
+      "recordStocktakeCount",
+      "voidStocktakeCount",
+      "listStocktakeCounts",
+      "reviewStocktake",
+      "recountStocktake",
+      "closeStocktake",
+      "cancelStocktake",
+      "getStocktakePdf"
     ],
     "register": [
       "pairRegisterDevice",
@@ -243,7 +267,12 @@
       "listMyTipRecipients",
       "listMyStockLocations",
       "listMyStock",
-      "setMyCashregisterStockLocation"
+      "setMyCashregisterStockLocation",
+      "listMyStocktakes",
+      "listMyStocktakeItems",
+      "listMyStocktakeCounts",
+      "recordMyStocktakeCount",
+      "voidMyStocktakeCount"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -267,15 +296,22 @@
       "getPrintJob",
       "listMyStockLocations",
       "listMyStock",
-      "setMyCashregisterStockLocation"
+      "setMyCashregisterStockLocation",
+      "listMyStocktakes",
+      "listMyStocktakeItems",
+      "listMyStocktakeCounts",
+      "recordMyStocktakeCount",
+      "voidMyStocktakeCount"
     ],
     "withSchema": [
       "activateCashregister",
       "addVariant",
       "cancelInvoice",
       "cancelReceipt",
+      "cancelStocktake",
       "changeStockCondition",
       "checkPartnerCustomerEmail",
+      "closeStocktake",
       "createArticle",
       "createCreditNote",
       "createCustomer",
@@ -287,6 +323,7 @@
       "createPrintJob",
       "createReceipt",
       "createReservation",
+      "createStocktake",
       "createVariantGroup",
       "createWebhook",
       "deactivateArticle",
@@ -319,6 +356,8 @@
       "getReportV2",
       "getReservation",
       "getStock",
+      "getStocktake",
+      "getStocktakePdf",
       "getVariantGroup",
       "hobexGetStatus",
       "hobexPayApi",
@@ -337,6 +376,9 @@
       "listMyReceipts",
       "listMyStock",
       "listMyStockLocations",
+      "listMyStocktakeCounts",
+      "listMyStocktakeItems",
+      "listMyStocktakes",
       "listMyTipRecipients",
       "listPartnerCustomers",
       "listPartnerWebhookDeliveries",
@@ -346,6 +388,9 @@
       "listReservations",
       "listStock",
       "listStockMovements",
+      "listStocktakeCounts",
+      "listStocktakeItems",
+      "listStocktakes",
       "listVariantGroups",
       "listWebhookDeliveries",
       "listWebhooks",
@@ -353,7 +398,10 @@
       "pairRegisterDevice",
       "receiveGoods",
       "recordInvoicePayment",
+      "recordMyStocktakeCount",
       "recordStockLoss",
+      "recordStocktakeCount",
+      "recountStocktake",
       "registerPinLogin",
       "registerUserLogin",
       "releaseReservation",
@@ -361,6 +409,7 @@
       "reportCustomerVertrag",
       "requestCustomerSignature",
       "reverseStockMovement",
+      "reviewStocktake",
       "revokeCustomerMandate",
       "rotatePartnerWebhookSecret",
       "rotateWebhookSecret",
@@ -383,6 +432,8 @@
       "updatePartnerWebhook",
       "updateVariantGroup",
       "updateWebhook",
+      "voidMyStocktakeCount",
+      "voidStocktakeCount",
       "withdrawInvoiceItem"
     ],
     "base": "https://api.kasseneck.at/v3/"
@@ -524,6 +575,49 @@
     "GRUND_V3": {
       "karte_eingetragen": "card_entered",
       "fon": "finanzonline"
+    },
+    "INVENTUR_AKTEUR": {
+      "inhaber": "owner",
+      "admin": "admin",
+      "kassenbenutzer": "register_user",
+      "api": "api"
+    },
+    "INVENTUR_ART": {
+      "stichtag": "key_date",
+      "permanent": "perpetual"
+    },
+    "INVENTUR_INVENTAR_ZUM": {
+      "stichtag": "key_date",
+      "aufnahme": "count_date"
+    },
+    "INVENTUR_NICHT_GEBUCHT": {
+      "seriennummer_abweichung": "serial_mismatch",
+      "nachzaehlung_offen": "recount_open",
+      "defekt_gekappt": "defect_capped"
+    },
+    "INVENTUR_PRUEFGRUND": {
+      "bewegung_zwischen_zaehlungen": "movements_between_counts",
+      "stichtag_abstand": "far_from_key_date",
+      "seriennummer_abweichung": "serial_mismatch",
+      "nicht_gezaehlt": "not_counted"
+    },
+    "INVENTUR_QUELLE": {
+      "kasse": "register",
+      "panel": "panel",
+      "api": "api"
+    },
+    "INVENTUR_STATUS": {
+      "anlage": "creating",
+      "zaehlung": "counting",
+      "pruefung": "review",
+      "abschluss": "closing",
+      "abgeschlossen": "closed",
+      "abgebrochen": "cancelled"
+    },
+    "INVENTUR_UMFANG": {
+      "alle": "all",
+      "gruppen": "groups",
+      "artikel": "articles"
     },
     "KASSE_BETRIEB_WERTE.cardProvider": {
       "keiner": "none",
@@ -769,10 +863,14 @@
       "already_reversed",
       "amount_too_large",
       "api_not_approved",
+      "app_check_invalid",
+      "app_check_missing",
       "app_not_accepted",
       "app_not_found",
       "article_inactive",
       "article_not_found",
+      "article_not_in_scope",
+      "article_not_tracked",
       "brand_not_found",
       "cancellation_failed",
       "cancellation_outcome_unknown",
@@ -792,6 +890,8 @@
       "cashregister_token_missing",
       "code_taken",
       "contracts_pending",
+      "count_already_voided",
+      "count_not_found",
       "credit_exceeds_invoice",
       "customer_conflict",
       "customer_exists",
@@ -937,6 +1037,7 @@
       "reverse_charge_threshold",
       "scope_missing",
       "send_failed",
+      "serial_already_counted",
       "serial_already_exists",
       "serial_not_allowed",
       "serial_not_in_stock",
@@ -959,6 +1060,15 @@
       "signing_failed",
       "small_business_vat_not_allowed",
       "stock_kind_locked",
+      "stocktake_closed",
+      "stocktake_closing",
+      "stocktake_location_busy",
+      "stocktake_not_closed",
+      "stocktake_not_found",
+      "stocktake_not_in_review",
+      "stocktake_not_open",
+      "stocktake_recount_open",
+      "stocktake_review_running",
       "tax_number_missing",
       "tax_scheme_mismatch",
       "text_changed",
@@ -970,6 +1080,7 @@
       "tip_payment_method_required",
       "tip_recipient_unknown",
       "too_many_attempts",
+      "too_many_counts",
       "too_many_positions",
       "too_many_requests",
       "training_receipt",
@@ -1066,6 +1177,8 @@
       "mfa_required",
       "user_verification_failed",
       "admin_required",
+      "app_check_missing",
+      "app_check_invalid",
       "register_user_not_allowed",
       "register_user_no_business",
       "register_user_not_found",
@@ -1105,6 +1218,9 @@
     ],
     "registerHandlers": [
       "already_cancelled",
+      "article_not_found",
+      "article_not_in_scope",
+      "article_not_tracked",
       "cancellation_failed",
       "cancellation_outcome_unknown",
       "cancellation_refund_exceeds_payment",
@@ -1113,14 +1229,21 @@
       "cashregister_incomplete",
       "cashregister_not_assigned",
       "cashregister_not_found",
+      "count_already_voided",
+      "count_not_found",
       "device_bound_elsewhere",
       "device_not_found",
       "device_not_paired",
       "device_takeover_required",
+      "idempotency_conflict",
+      "idempotency_key_required",
       "invalid_address",
+      "invalid_cursor",
       "invalid_items",
       "invalid_line",
+      "invalid_quantity",
       "invalid_return_disposition",
+      "invalid_serial",
       "licenses_exhausted",
       "location_inactive",
       "location_not_found",
@@ -1162,13 +1285,21 @@
       "receipt_type_not_cancellable",
       "register_user_only",
       "send_failed",
+      "serial_already_counted",
+      "serial_not_allowed",
+      "serial_required",
       "server_error",
       "session_ended",
+      "stocktake_closed",
+      "stocktake_closing",
+      "stocktake_not_found",
+      "stocktake_not_open",
       "tip_conflict",
       "tip_exceeds_payment",
       "tip_payment_method_invalid",
       "tip_payment_method_required",
       "too_many_attempts",
+      "too_many_counts",
       "too_many_requests",
       "training_receipt",
       "unknown_reason",
@@ -1364,10 +1495,27 @@
       "variant_already_exists",
       "invalid_variant_attributes",
       "variant_group_inactive",
-      "variant_limit"
+      "variant_limit",
+      "stocktake_not_found",
+      "stocktake_not_open",
+      "stocktake_closed",
+      "stocktake_not_in_review",
+      "stocktake_closing",
+      "stocktake_location_busy",
+      "stocktake_review_running",
+      "stocktake_recount_open",
+      "article_not_in_scope",
+      "article_not_tracked",
+      "count_not_found",
+      "count_already_voided",
+      "serial_already_counted",
+      "too_many_counts",
+      "stocktake_not_closed"
     ],
     "registerCases": [
       "already_cancelled",
+      "article_not_found",
+      "article_not_in_scope",
       "cancellation_failed",
       "cancellation_outcome_unknown",
       "cashregister_in_use",
@@ -1375,11 +1523,17 @@
       "cashregister_not_assigned",
       "cashregister_not_found",
       "cashregister_token_missing",
+      "count_already_voided",
+      "count_not_found",
       "device_bound_elsewhere",
       "device_not_found",
       "device_not_paired",
       "device_takeover_required",
+      "idempotency_conflict",
+      "idempotency_key_required",
+      "invalid_cursor",
       "invalid_items",
+      "invalid_quantity",
       "licenses_exhausted",
       "live_not_enabled",
       "location_inactive",
@@ -1411,6 +1565,9 @@
       "session_expired",
       "session_not_running",
       "session_other_cashregister",
+      "stocktake_closed",
+      "stocktake_not_found",
+      "stocktake_not_open",
       "too_many_attempts",
       "training_receipt",
       "unauthorized",
@@ -1690,6 +1847,67 @@
         "module_inactive",
         "not_permitted",
         "server_error"
+      ],
+      "listMyStocktakes": [
+        "cashregister_not_assigned",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "validation"
+      ],
+      "listMyStocktakeItems": [
+        "cashregister_not_assigned",
+        "invalid_cursor",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "stocktake_not_found"
+      ],
+      "listMyStocktakeCounts": [
+        "cashregister_not_assigned",
+        "invalid_cursor",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "stocktake_not_found"
+      ],
+      "recordMyStocktakeCount": [
+        "article_not_found",
+        "article_not_in_scope",
+        "article_not_tracked",
+        "cashregister_not_assigned",
+        "idempotency_conflict",
+        "idempotency_key_required",
+        "invalid_quantity",
+        "invalid_serial",
+        "module_inactive",
+        "not_permitted",
+        "serial_already_counted",
+        "serial_not_allowed",
+        "serial_required",
+        "server_error",
+        "stocktake_closed",
+        "stocktake_closing",
+        "stocktake_not_found",
+        "stocktake_not_open",
+        "too_many_counts",
+        "validation"
+      ],
+      "voidMyStocktakeCount": [
+        "cashregister_not_assigned",
+        "count_already_voided",
+        "count_not_found",
+        "idempotency_conflict",
+        "idempotency_key_required",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "stocktake_closed",
+        "stocktake_closing",
+        "stocktake_not_found",
+        "stocktake_not_open",
+        "too_many_counts",
+        "validation"
       ]
     }
   },
@@ -1704,7 +1922,11 @@
       "insufficient_stock",
       "below_minimum",
       "return_exceeds_sale",
-      "reservation_exceeded"
+      "reservation_exceeded",
+      "defect_capped",
+      "uncounted_items",
+      "not_booked",
+      "recount_uncounted"
     ]
   },
   "schemas": {
@@ -1814,6 +2036,17 @@
         }
       }
     },
+    "cancelStocktake": {
+      "ergaenze": {
+        "$function": "inventurEinzelnNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
     "changeStockCondition": {
       "paramWerte": {
         "from": {
@@ -1848,6 +2081,17 @@
       }
     },
     "checkPartnerCustomerEmail": {},
+    "closeStocktake": {
+      "ergaenze": {
+        "$function": "inventurEinzelnNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
     "createArticle": {
       "data": {
         "article": {
@@ -2263,6 +2507,25 @@
       "werte": {
         "reservation.status": {
           "$catalog": "RESERVIERUNG_STATUS"
+        }
+      }
+    },
+    "createStocktake": {
+      "paramWerte": {
+        "scope.type": {
+          "$catalog": "INVENTUR_UMFANG"
+        },
+        "type": {
+          "$catalog": "INVENTUR_ART"
+        }
+      },
+      "ergaenze": {
+        "$function": "inventurEinzelnNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
         }
       }
     },
@@ -2879,6 +3142,28 @@
         "$function": "lagerwerteNachAussen"
       }
     },
+    "getStocktake": {
+      "ergaenze": {
+        "$function": "inventurEinzelnNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
+    "getStocktakePdf": {
+      "ergaenze": {
+        "$function": "inventurPdfLinkNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
     "getVariantGroup": {
       "data": {
         "variantGroup": {
@@ -3270,6 +3555,57 @@
         }
       }
     },
+    "listMyStocktakeCounts": {
+      "params": {
+        "stocktakeId": "inventurId",
+        "ownOnly": "nurEigene",
+        "cursor": "nach"
+      },
+      "ergaenze": {
+        "$function": "inventurZaehlungenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
+    "listMyStocktakeItems": {
+      "params": {
+        "stocktakeId": "inventurId",
+        "openOnly": "offen",
+        "cursor": "nach"
+      },
+      "ergaenze": {
+        "$function": "inventurPositionenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
+    "listMyStocktakes": {
+      "params": {
+        "locationId": "standortId"
+      },
+      "paramWerte": {
+        "status": {
+          "$catalog": "INVENTUR_STATUS"
+        }
+      },
+      "ergaenze": {
+        "$function": "inventurenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
     "listMyTipRecipients": {},
     "listPartnerCustomers": {
       "werte": {
@@ -3606,6 +3942,44 @@
         }
       }
     },
+    "listStocktakeCounts": {
+      "ergaenze": {
+        "$function": "inventurZaehlungenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
+    "listStocktakeItems": {
+      "ergaenze": {
+        "$function": "inventurPositionenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
+    "listStocktakes": {
+      "paramWerte": {
+        "status": {
+          "$catalog": "INVENTUR_STATUS"
+        }
+      },
+      "ergaenze": {
+        "$function": "inventurSeiteNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
     "listVariantGroups": {
       "data": {
         "variantGroups": [
@@ -3736,6 +4110,29 @@
         }
       }
     },
+    "recordMyStocktakeCount": {
+      "params": {
+        "stocktakeId": "inventurId",
+        "condition": "zustand",
+        "quantity": "menge",
+        "serialNumbers": "seriennummern",
+        "note": "notiz"
+      },
+      "paramWerte": {
+        "condition": {
+          "$catalog": "LAGER_ZUSTAND"
+        }
+      },
+      "ergaenze": {
+        "$function": "inventurZaehlenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
     "recordStockLoss": {
       "paramWerte": {
         "reason": {
@@ -3767,6 +4164,38 @@
           "Geschenk": "gift",
           "Muster": "sample",
           "Sonstiges": "other",
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
+    "recordStocktakeCount": {
+      "paramWerte": {
+        "condition": {
+          "$catalog": "LAGER_ZUSTAND"
+        }
+      },
+      "ergaenze": {
+        "$function": "inventurZaehlenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
+    "recountStocktake": {
+      "paramWerte": {
+        "items[].condition": {
+          "$catalog": "LAGER_ZUSTAND"
+        }
+      },
+      "ergaenze": {
+        "$function": "inventurEinzelnNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
           "verkaufbar": "sellable",
           "defekt": "defective"
         }
@@ -3919,6 +4348,17 @@
             "message": "message"
           }
         ]
+      }
+    },
+    "reviewStocktake": {
+      "ergaenze": {
+        "$function": "inventurEinzelnNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
       }
     },
     "revokeCustomerMandate": {},
@@ -4388,6 +4828,33 @@
       "werte": {
         "webhook.lastDelivery.status": {
           "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
+    "voidMyStocktakeCount": {
+      "params": {
+        "stocktakeId": "inventurId",
+        "countId": "zaehlungId",
+        "reason": "grund"
+      },
+      "ergaenze": {
+        "$function": "inventurZaehlenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
+        }
+      }
+    },
+    "voidStocktakeCount": {
+      "ergaenze": {
+        "$function": "inventurZaehlenNachAussen"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "verkaufbar": "sellable",
+          "defekt": "defective"
         }
       }
     },

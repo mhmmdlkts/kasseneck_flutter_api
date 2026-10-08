@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "30e5f918ffb3159f5e61c1d9e59ec63a40638a3199d39ad7aef25679bc56acda",
-    "inputsSha256": "20183eb847a12a9a3187e7c03945bb4e99e88086837c4ebf45f98624f81392f4",
+    "sha256": "6d19c6313438a44d5f522bcaf248de293c6e285dd891185a773e05e9eef6f45b",
+    "inputsSha256": "f6dd257643c081fd17a613b3ca2ef1b2963c73ac3e2c07d6c2e9d71259576e68",
     "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
     "inputs": [
       "functions-kasse/article-endpoints.js",
@@ -10,6 +10,10 @@
       "functions-kasse/gemeinsam/api-rand.js",
       "functions-kasse/gemeinsam/api-vokabular-v3.js",
       "functions-kasse/gemeinsam/webhook-versand.js",
+      "functions-kasse/inventur-core.js",
+      "functions-kasse/inventur-daten.js",
+      "functions-kasse/inventur-endpoints.js",
+      "functions-kasse/inventur-lauf.js",
       "functions-kasse/konto-webhook-core.js",
       "functions-kasse/lager-api-artikel.js",
       "functions-kasse/lager-api-buchen.js",
@@ -17,11 +21,13 @@
       "functions-kasse/lager-api-endpoints.js",
       "functions-kasse/lager-api-ereignisse.js",
       "functions-kasse/lager-api-idempotenz.js",
+      "functions-kasse/lager-api-inventur.js",
       "functions-kasse/lager-api-reservierung.js",
       "functions-kasse/lager-api-varianten.js",
       "functions-kasse/lager-buchung.js",
       "functions-kasse/lager-core.js",
       "functions-kasse/lager-endpoints.js",
+      "functions-kasse/lager-laeufe.js",
       "functions-kasse/lager-reservierung-core.js",
       "functions-kasse/lager-reservierung.js",
       "functions-kasse/lager-trigger.js",
@@ -34,7 +40,7 @@
     ]
   },
   "channel": "api",
-  "note": "Lager-API (Stufe 5a, Artikel schreiben, Buchen und Reservierung 5b, Variantengruppen 5c) unter /v3: Faelle in Ablaufreihenfolge (ein Konto, Standort haupt); Variantengruppen antworten mit variantGroup (Merkmale, Vorgaben, Varianten mit articleId und variantAttributes; Wiederholung = gespeicherte Antwort), jede Variante ist ein Artikel (addVariant antwortet wie createArticle, listArticles { variantGroupId } liest sie), Stilllegen der Gruppe legt alle Varianten still und meldet variant_group.updated; Reservierungen antworten mit reservation (wie getReservation; Wiederholung = gespeicherte Antwort), laufen ueber einen Auftrag zum Ablaufzeitpunkt ab (Verlaengern ersetzt ihn), werden ueber issueInvoice (items[].reservationId) beim Buchen der Rechnung eingeloest und melden reservation.expired/released/redeemed; Buchungen antworten mit operationId, movementIds, lotIds und warnings[] (Hinweise aus warningCodes.inventory, kein Fehler); Preise duerfen ohne Schalter kosten gesendet werden, Werte kommen nur mit ihm zurueck; Mindestbestand je Standort = minStockByLocation (Tausendstel, Schwelle fuer below_minimum, gemessen an available = onHand − reserved), minStock ist ein Altfeld ohne Wirkung darauf; dazu webhookEvents = zugestellte Konto-Webhooks (Huelle wie gesendet, ohne Probesendungen). Secrets als Platzhalter.",
+  "note": "Lager-API (Stufe 5a, Artikel schreiben, Buchen und Reservierung 5b, Variantengruppen 5c, Inventur Lager-Kern Stufe 3) unter /v3: Faelle in Ablaufreihenfolge (ein Konto, Standort haupt); Inventuren antworten mit stocktake (Kopf), item (Position) und count (Zaehlung): blind, solange counting (kein expected*/difference*), Soll, Differenz und notBooked ab review, Werte nur mit Schalter kosten, Wiederholung = gespeicherte erste Antwort (Zaehlen: Schluessel je Inventur), Pruefen und Abschliessen laufen im Hintergrund (review.complete, closing.parts/bookedParts), der Abschluss bucht Bewegungen type stocktake (stock.changed mit cause stocktake), getStocktakePdf liefert application/pdf, ueber 9 MB JSON download mit signiertem Link (15 Minuten; im Export mit kleiner Grenze, PDF als Platzhalter); Variantengruppen antworten mit variantGroup (Merkmale, Vorgaben, Varianten mit articleId und variantAttributes; Wiederholung = gespeicherte Antwort), jede Variante ist ein Artikel (addVariant antwortet wie createArticle, listArticles { variantGroupId } liest sie), Stilllegen der Gruppe legt alle Varianten still und meldet variant_group.updated; Reservierungen antworten mit reservation (wie getReservation; Wiederholung = gespeicherte Antwort), laufen ueber einen Auftrag zum Ablaufzeitpunkt ab (Verlaengern ersetzt ihn), werden ueber issueInvoice (items[].reservationId) beim Buchen der Rechnung eingeloest und melden reservation.expired/released/redeemed; Buchungen antworten mit operationId, movementIds, lotIds und warnings[] (Hinweise aus warningCodes.inventory, kein Fehler); Preise duerfen ohne Schalter kosten gesendet werden, Werte kommen nur mit ihm zurueck; Mindestbestand je Standort = minStockByLocation (Tausendstel, Schwelle fuer below_minimum, gemessen an available = onHand − reserved), minStock ist ein Altfeld ohne Wirkung darauf; dazu webhookEvents = zugestellte Konto-Webhooks (Huelle wie gesendet, ohne Probesendungen). Secrets als Platzhalter.",
   "cases": [
     {
       "channel": "api",
@@ -5679,6 +5685,1703 @@
           "nextCursor": "eyJ6ZWl0IjoxNzkxMjczNzYxMDAwMDAwLCJpZCI6ImF1dG82NCJ9"
         }
       }
+    },
+    {
+      "channel": "api",
+      "name": "create_stocktake",
+      "endpoint": "createStocktake",
+      "path": "/v3/createStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-lw-1",
+        "name": "Inventur Lieferwagen Oktober",
+        "locationId": "lieferwagen",
+        "scope": {
+          "type": "groups",
+          "groupIds": [
+            "gebaeck"
+          ]
+        },
+        "type": "key_date",
+        "keyDate": "2026-10-31"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto78",
+            "name": "Inventur Lieferwagen Oktober",
+            "locationId": "lieferwagen",
+            "scope": {
+              "type": "groups",
+              "groupIds": [
+                "gebaeck"
+              ],
+              "articleIds": []
+            },
+            "type": "key_date",
+            "keyDate": "2026-10-31",
+            "blind": true,
+            "status": "counting",
+            "progress": {
+              "items": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:03:04.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:03:06.000Z",
+            "review": null,
+            "closing": null,
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_stocktake_replayed",
+      "endpoint": "createStocktake",
+      "path": "/v3/createStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-lw-1",
+        "name": "Inventur Lieferwagen Oktober",
+        "locationId": "lieferwagen",
+        "scope": {
+          "type": "groups",
+          "groupIds": [
+            "gebaeck"
+          ]
+        },
+        "type": "key_date",
+        "keyDate": "2026-10-31"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto78",
+            "name": "Inventur Lieferwagen Oktober",
+            "locationId": "lieferwagen",
+            "scope": {
+              "type": "groups",
+              "groupIds": [
+                "gebaeck"
+              ],
+              "articleIds": []
+            },
+            "type": "key_date",
+            "keyDate": "2026-10-31",
+            "blind": true,
+            "status": "counting",
+            "progress": {
+              "items": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:03:04.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:03:06.000Z",
+            "review": null,
+            "closing": null,
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_create_stocktake_location_busy",
+      "endpoint": "createStocktake",
+      "path": "/v3/createStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-lw-2",
+        "name": "Inventur Lieferwagen Oktober",
+        "locationId": "lieferwagen",
+        "scope": {
+          "type": "groups",
+          "groupIds": [
+            "gebaeck"
+          ]
+        },
+        "type": "key_date",
+        "keyDate": "2026-10-31"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "An diesem Standort läuft schon eine Inventur.",
+        "data": {
+          "code": "stocktake_location_busy",
+          "stocktakeId": "auto78"
+        },
+        "code": "stocktake_location_busy"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "record_stocktake_count",
+      "endpoint": "recordStocktakeCount",
+      "path": "/v3/recordStocktakeCount",
+      "params": {
+        "idempotencyKey": "shop-zaehlung-1",
+        "stocktakeId": "auto78",
+        "articleId": "kipferl",
+        "quantity": 12000,
+        "note": "Kiste vorne"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "count": {
+            "id": "1e4df2db3f4543a42e292a75f390f7b4d6936099a7240184846a6b032a3e6b98",
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "quantity": 12000,
+            "serialNumbers": [],
+            "round": 1,
+            "countedBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "cashregisterId": null,
+            "countedAt": "2026-10-06T08:03:11.000Z",
+            "note": "Kiste vorne",
+            "voided": null
+          },
+          "item": {
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "name": "Butterkipferl",
+            "number": "A-200",
+            "unit": "Stk",
+            "round": 1,
+            "counted": true,
+            "quantity": 12000,
+            "counts": 1,
+            "firstCountedAt": "2026-10-06T08:03:11.000Z",
+            "referenceTime": "2026-10-06T08:03:11.000Z",
+            "countedBy": [
+              {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              }
+            ],
+            "recountRequested": false,
+            "addedLater": false
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "record_stocktake_count_replayed",
+      "endpoint": "recordStocktakeCount",
+      "path": "/v3/recordStocktakeCount",
+      "params": {
+        "idempotencyKey": "shop-zaehlung-1",
+        "stocktakeId": "auto78",
+        "articleId": "kipferl",
+        "quantity": 12000,
+        "note": "Kiste vorne"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "count": {
+            "id": "1e4df2db3f4543a42e292a75f390f7b4d6936099a7240184846a6b032a3e6b98",
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "quantity": 12000,
+            "serialNumbers": [],
+            "round": 1,
+            "countedBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "cashregisterId": null,
+            "countedAt": "2026-10-06T08:03:11.000Z",
+            "note": "Kiste vorne",
+            "voided": null
+          },
+          "item": {
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "name": "Butterkipferl",
+            "number": "A-200",
+            "unit": "Stk",
+            "round": 1,
+            "counted": true,
+            "quantity": 12000,
+            "counts": 1,
+            "firstCountedAt": "2026-10-06T08:03:11.000Z",
+            "referenceTime": "2026-10-06T08:03:11.000Z",
+            "countedBy": [
+              {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              }
+            ],
+            "recountRequested": false,
+            "addedLater": false
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "record_stocktake_count_second",
+      "endpoint": "recordStocktakeCount",
+      "path": "/v3/recordStocktakeCount",
+      "params": {
+        "idempotencyKey": "shop-zaehlung-2",
+        "stocktakeId": "auto78",
+        "articleId": "kipferl",
+        "quantity": 9000,
+        "note": "Kiste hinten"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "count": {
+            "id": "c4bcbef939611668aec06aeda0ccb5ffec860093571702e7f569aa9a26f49b8d",
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "quantity": 9000,
+            "serialNumbers": [],
+            "round": 1,
+            "countedBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "cashregisterId": null,
+            "countedAt": "2026-10-06T08:03:14.000Z",
+            "note": "Kiste hinten",
+            "voided": null
+          },
+          "item": {
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "name": "Butterkipferl",
+            "number": "A-200",
+            "unit": "Stk",
+            "round": 1,
+            "counted": true,
+            "quantity": 21000,
+            "counts": 2,
+            "firstCountedAt": "2026-10-06T08:03:11.000Z",
+            "referenceTime": "2026-10-06T08:03:14.000Z",
+            "countedBy": [
+              {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              }
+            ],
+            "recountRequested": false,
+            "addedLater": false
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "void_stocktake_count",
+      "endpoint": "voidStocktakeCount",
+      "path": "/v3/voidStocktakeCount",
+      "params": {
+        "idempotencyKey": "shop-zaehlung-2-storno",
+        "stocktakeId": "auto78",
+        "countId": "c4bcbef939611668aec06aeda0ccb5ffec860093571702e7f569aa9a26f49b8d",
+        "reason": "Kiste doppelt gezählt"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "count": {
+            "id": "c4bcbef939611668aec06aeda0ccb5ffec860093571702e7f569aa9a26f49b8d",
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "quantity": 9000,
+            "serialNumbers": [],
+            "round": 1,
+            "countedBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "cashregisterId": null,
+            "countedAt": "2026-10-06T08:03:14.000Z",
+            "note": "Kiste hinten",
+            "voided": {
+              "reason": "Kiste doppelt gezählt",
+              "voidedAt": "2026-10-06T08:03:16.000Z",
+              "voidedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              }
+            }
+          },
+          "item": {
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "name": "Butterkipferl",
+            "number": "A-200",
+            "unit": "Stk",
+            "round": 1,
+            "counted": true,
+            "quantity": 12000,
+            "counts": 1,
+            "firstCountedAt": "2026-10-06T08:03:11.000Z",
+            "referenceTime": "2026-10-06T08:03:11.000Z",
+            "countedBy": [
+              {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              }
+            ],
+            "recountRequested": false,
+            "addedLater": false
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_record_stocktake_count_not_in_scope",
+      "endpoint": "recordStocktakeCount",
+      "path": "/v3/recordStocktakeCount",
+      "params": {
+        "idempotencyKey": "shop-zaehlung-3",
+        "stocktakeId": "auto78",
+        "articleId": "roggenbrot",
+        "quantity": 1000
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Der Artikel gehört nicht zu dieser Inventur.",
+        "data": {
+          "code": "article_not_in_scope"
+        },
+        "code": "article_not_in_scope"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_stocktake_counting",
+      "endpoint": "getStocktake",
+      "path": "/v3/getStocktake",
+      "params": {
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto78",
+            "name": "Inventur Lieferwagen Oktober",
+            "locationId": "lieferwagen",
+            "scope": {
+              "type": "groups",
+              "groupIds": [
+                "gebaeck"
+              ],
+              "articleIds": []
+            },
+            "type": "key_date",
+            "keyDate": "2026-10-31",
+            "blind": true,
+            "status": "counting",
+            "progress": {
+              "items": 1,
+              "counted": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:03:04.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:03:06.000Z",
+            "review": null,
+            "closing": null,
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stocktakes",
+      "endpoint": "listStocktakes",
+      "path": "/v3/listStocktakes",
+      "params": {},
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktakes": [
+            {
+              "id": "auto78",
+              "name": "Inventur Lieferwagen Oktober",
+              "locationId": "lieferwagen",
+              "scope": {
+                "type": "groups",
+                "groupIds": [
+                  "gebaeck"
+                ],
+                "articleIds": []
+              },
+              "type": "key_date",
+              "keyDate": "2026-10-31",
+              "blind": true,
+              "status": "counting",
+              "progress": {
+                "items": 1,
+                "recountOpen": false
+              },
+              "createdAt": "2026-10-06T08:03:04.000Z",
+              "createdBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "source": "api",
+              "updatedAt": "2026-10-06T08:03:06.000Z",
+              "review": null,
+              "closing": null,
+              "cancellation": null
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stocktake_items_counting",
+      "endpoint": "listStocktakeItems",
+      "path": "/v3/listStocktakeItems",
+      "params": {
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "items": [
+            {
+              "articleId": "kipferl",
+              "condition": "sellable",
+              "name": "Butterkipferl",
+              "number": "A-200",
+              "unit": "Stk",
+              "round": 1,
+              "counted": true,
+              "quantity": 12000,
+              "counts": 1,
+              "firstCountedAt": "2026-10-06T08:03:11.000Z",
+              "referenceTime": "2026-10-06T08:03:11.000Z",
+              "countedBy": [
+                {
+                  "type": "api",
+                  "id": "kornblum",
+                  "name": null
+                }
+              ],
+              "serialNumbers": [],
+              "recountRequested": false,
+              "addedLater": false
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stocktake_counts",
+      "endpoint": "listStocktakeCounts",
+      "path": "/v3/listStocktakeCounts",
+      "params": {
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "counts": [
+            {
+              "id": "c4bcbef939611668aec06aeda0ccb5ffec860093571702e7f569aa9a26f49b8d",
+              "articleId": "kipferl",
+              "condition": "sellable",
+              "quantity": 9000,
+              "serialNumbers": [],
+              "round": 1,
+              "countedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "source": "api",
+              "cashregisterId": null,
+              "countedAt": "2026-10-06T08:03:14.000Z",
+              "note": "Kiste hinten",
+              "voided": {
+                "reason": "Kiste doppelt gezählt",
+                "voidedAt": "2026-10-06T08:03:16.000Z",
+                "voidedBy": {
+                  "type": "api",
+                  "id": "kornblum",
+                  "name": null
+                }
+              }
+            },
+            {
+              "id": "1e4df2db3f4543a42e292a75f390f7b4d6936099a7240184846a6b032a3e6b98",
+              "articleId": "kipferl",
+              "condition": "sellable",
+              "quantity": 12000,
+              "serialNumbers": [],
+              "round": 1,
+              "countedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "source": "api",
+              "cashregisterId": null,
+              "countedAt": "2026-10-06T08:03:11.000Z",
+              "note": "Kiste vorne",
+              "voided": null
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "review_stocktake",
+      "endpoint": "reviewStocktake",
+      "path": "/v3/reviewStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-lw-pruefen-1",
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto78",
+            "name": "Inventur Lieferwagen Oktober",
+            "locationId": "lieferwagen",
+            "scope": {
+              "type": "groups",
+              "groupIds": [
+                "gebaeck"
+              ],
+              "articleIds": []
+            },
+            "type": "key_date",
+            "keyDate": "2026-10-31",
+            "blind": true,
+            "status": "review",
+            "progress": {
+              "items": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:03:04.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:03:24.000Z",
+            "review": {
+              "startedAt": "2026-10-06T08:03:24.000Z",
+              "startedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "complete": false
+            },
+            "closing": null,
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_record_stocktake_count_not_open",
+      "endpoint": "recordStocktakeCount",
+      "path": "/v3/recordStocktakeCount",
+      "params": {
+        "idempotencyKey": "shop-zaehlung-4",
+        "stocktakeId": "auto78",
+        "articleId": "kipferl",
+        "quantity": 1000
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Hier wird gerade nicht gezählt.",
+        "data": {
+          "code": "stocktake_not_open"
+        },
+        "code": "stocktake_not_open"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stocktake_items_review",
+      "endpoint": "listStocktakeItems",
+      "path": "/v3/listStocktakeItems",
+      "params": {
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "items": [
+            {
+              "articleId": "kipferl",
+              "condition": "sellable",
+              "name": "Butterkipferl",
+              "number": "A-200",
+              "unit": "Stk",
+              "round": 1,
+              "counted": true,
+              "quantity": 12000,
+              "counts": 1,
+              "firstCountedAt": "2026-10-06T08:03:11.000Z",
+              "referenceTime": "2026-10-06T08:03:11.000Z",
+              "countedBy": [
+                {
+                  "type": "api",
+                  "id": "kornblum",
+                  "name": null
+                }
+              ],
+              "serialNumbers": [],
+              "recountRequested": false,
+              "addedLater": false,
+              "expectedQuantity": 24000,
+              "differenceQuantity": -12000,
+              "needsCheck": true,
+              "checkReasons": [
+                "far_from_key_date"
+              ],
+              "expectedAsOf": "2026-10-06T08:03:11.000Z",
+              "missingSerialNumbers": [],
+              "extraSerialNumbers": []
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "recount_stocktake",
+      "endpoint": "recountStocktake",
+      "path": "/v3/recountStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-lw-nachzaehlen-1",
+        "stocktakeId": "auto78",
+        "items": [
+          {
+            "articleId": "kipferl"
+          }
+        ],
+        "reason": "Kiste hinten fehlt"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto78",
+            "name": "Inventur Lieferwagen Oktober",
+            "locationId": "lieferwagen",
+            "scope": {
+              "type": "groups",
+              "groupIds": [
+                "gebaeck"
+              ],
+              "articleIds": []
+            },
+            "type": "key_date",
+            "keyDate": "2026-10-31",
+            "blind": true,
+            "status": "review",
+            "progress": {
+              "items": 1,
+              "recountOpen": true
+            },
+            "createdAt": "2026-10-06T08:03:04.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:03:30.000Z",
+            "review": {
+              "startedAt": "2026-10-06T08:03:24.000Z",
+              "startedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "complete": true,
+              "expectedAsOf": "2026-10-06T08:03:26.000Z",
+              "recountUncounted": 0
+            },
+            "closing": null,
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "record_stocktake_count_recount",
+      "endpoint": "recordStocktakeCount",
+      "path": "/v3/recordStocktakeCount",
+      "params": {
+        "idempotencyKey": "shop-zaehlung-5",
+        "stocktakeId": "auto78",
+        "articleId": "kipferl",
+        "quantity": 21000
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "count": {
+            "id": "b2510ac53ae295926f547a77bb49cb27f257bd0ffb73f7b97dac69c9b1182937",
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "quantity": 21000,
+            "serialNumbers": [],
+            "round": 2,
+            "countedBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "cashregisterId": null,
+            "countedAt": "2026-10-06T08:03:33.000Z",
+            "note": null,
+            "voided": null
+          },
+          "item": {
+            "articleId": "kipferl",
+            "condition": "sellable",
+            "name": "Butterkipferl",
+            "number": "A-200",
+            "unit": "Stk",
+            "round": 2,
+            "counted": true,
+            "quantity": 21000,
+            "counts": 1,
+            "firstCountedAt": "2026-10-06T08:03:33.000Z",
+            "referenceTime": "2026-10-06T08:03:33.000Z",
+            "countedBy": [
+              {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              }
+            ],
+            "recountRequested": true,
+            "recount": {
+              "reason": "Kiste hinten fehlt",
+              "requestedAt": "2026-10-06T08:03:30.000Z",
+              "requestedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "round": 2
+            },
+            "addedLater": false
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_close_stocktake_recount_open",
+      "endpoint": "closeStocktake",
+      "path": "/v3/closeStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-lw-schluss-0",
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Es sind noch Positionen zum Nachzählen offen. Bitte nachzählen und erneut prüfen.",
+        "data": {
+          "code": "stocktake_recount_open"
+        },
+        "code": "stocktake_recount_open"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "close_stocktake",
+      "endpoint": "closeStocktake",
+      "path": "/v3/closeStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-lw-schluss-1",
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto78",
+            "name": "Inventur Lieferwagen Oktober",
+            "locationId": "lieferwagen",
+            "scope": {
+              "type": "groups",
+              "groupIds": [
+                "gebaeck"
+              ],
+              "articleIds": []
+            },
+            "type": "key_date",
+            "keyDate": "2026-10-31",
+            "blind": true,
+            "status": "closing",
+            "progress": {
+              "items": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:03:04.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:03:40.000Z",
+            "review": {
+              "startedAt": "2026-10-06T08:03:36.000Z",
+              "startedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "complete": true,
+              "expectedAsOf": "2026-10-06T08:03:38.000Z",
+              "recountUncounted": 0
+            },
+            "closing": {
+              "startedAt": "2026-10-06T08:03:40.000Z",
+              "startedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "uncountedAsZero": false,
+              "parts": null,
+              "bookedParts": 0
+            },
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_stocktake_closed",
+      "endpoint": "getStocktake",
+      "path": "/v3/getStocktake",
+      "params": {
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto78",
+            "name": "Inventur Lieferwagen Oktober",
+            "locationId": "lieferwagen",
+            "scope": {
+              "type": "groups",
+              "groupIds": [
+                "gebaeck"
+              ],
+              "articleIds": []
+            },
+            "type": "key_date",
+            "keyDate": "2026-10-31",
+            "blind": true,
+            "status": "closed",
+            "progress": {
+              "items": 1,
+              "counted": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:03:04.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:06:12.000Z",
+            "review": {
+              "startedAt": "2026-10-06T08:03:36.000Z",
+              "startedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "complete": true,
+              "expectedAsOf": "2026-10-06T08:03:38.000Z",
+              "recountUncounted": 0
+            },
+            "closing": {
+              "startedAt": "2026-10-06T08:03:40.000Z",
+              "startedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "uncountedAsZero": false,
+              "parts": 1,
+              "bookedParts": 1,
+              "completedAt": "2026-10-06T08:06:12.000Z"
+            },
+            "totals": {
+              "items": 1,
+              "counted": 1,
+              "uncounted": 0,
+              "recounted": 1,
+              "withDifference": 1,
+              "needsCheck": 1,
+              "notBooked": 0
+            },
+            "warnings": [],
+            "seal": {
+              "fromDay": null,
+              "toDay": "2026-10-05",
+              "daysChecked": 0,
+              "verified": true,
+              "firstBreak": null,
+              "gaps": [],
+              "gapCount": 0
+            },
+            "checksum": "5ad6dc60c7f1b9a4062a35c4f70897be77212607c2fea776ec9ad9740dd8c9c6",
+            "inventoryAsOf": "count_date",
+            "pdf": {
+              "available": true,
+              "quantitiesSha256": "a271816287c89e663f21ba4afbf51c3ae8a68175ef4558c54ec07636b873f7dc"
+            },
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stocktake_items_closed",
+      "endpoint": "listStocktakeItems",
+      "path": "/v3/listStocktakeItems",
+      "params": {
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "items": [
+            {
+              "articleId": "kipferl",
+              "condition": "sellable",
+              "name": "Butterkipferl",
+              "number": "A-200",
+              "unit": "Stk",
+              "round": 2,
+              "counted": true,
+              "quantity": 21000,
+              "counts": 1,
+              "firstCountedAt": "2026-10-06T08:03:33.000Z",
+              "referenceTime": "2026-10-06T08:03:33.000Z",
+              "countedBy": [
+                {
+                  "type": "api",
+                  "id": "kornblum",
+                  "name": null
+                }
+              ],
+              "serialNumbers": [],
+              "recountRequested": true,
+              "recount": {
+                "reason": "Kiste hinten fehlt",
+                "requestedAt": "2026-10-06T08:03:30.000Z",
+                "requestedBy": {
+                  "type": "api",
+                  "id": "kornblum",
+                  "name": null
+                },
+                "round": 2
+              },
+              "addedLater": false,
+              "expectedQuantity": 24000,
+              "differenceQuantity": -3000,
+              "needsCheck": true,
+              "checkReasons": [
+                "far_from_key_date"
+              ],
+              "expectedAsOf": "2026-10-06T08:03:33.000Z",
+              "missingSerialNumbers": [],
+              "extraSerialNumbers": [],
+              "bookedQuantity": -3000,
+              "notBooked": null,
+              "inventory": {
+                "quantity": 21000,
+                "countedOn": "2026-10-06"
+              }
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_stocktake_closed_with_costs",
+      "endpoint": "getStocktake",
+      "path": "/v3/getStocktake",
+      "params": {
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto78",
+            "name": "Inventur Lieferwagen Oktober",
+            "locationId": "lieferwagen",
+            "scope": {
+              "type": "groups",
+              "groupIds": [
+                "gebaeck"
+              ],
+              "articleIds": []
+            },
+            "type": "key_date",
+            "keyDate": "2026-10-31",
+            "blind": true,
+            "status": "closed",
+            "progress": {
+              "items": 1,
+              "counted": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:03:04.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:06:12.000Z",
+            "review": {
+              "startedAt": "2026-10-06T08:03:36.000Z",
+              "startedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "complete": true,
+              "expectedAsOf": "2026-10-06T08:03:38.000Z",
+              "recountUncounted": 0
+            },
+            "closing": {
+              "startedAt": "2026-10-06T08:03:40.000Z",
+              "startedBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              },
+              "uncountedAsZero": false,
+              "parts": 1,
+              "bookedParts": 1,
+              "completedAt": "2026-10-06T08:06:12.000Z"
+            },
+            "totals": {
+              "items": 1,
+              "counted": 1,
+              "uncounted": 0,
+              "recounted": 1,
+              "withDifference": 1,
+              "needsCheck": 1,
+              "notBooked": 0,
+              "differenceValueCents": -122,
+              "inventoryValueCents": 856
+            },
+            "warnings": [],
+            "seal": {
+              "fromDay": null,
+              "toDay": "2026-10-05",
+              "daysChecked": 0,
+              "verified": true,
+              "firstBreak": null,
+              "gaps": [],
+              "gapCount": 0
+            },
+            "checksum": "5ad6dc60c7f1b9a4062a35c4f70897be77212607c2fea776ec9ad9740dd8c9c6",
+            "inventoryAsOf": "count_date",
+            "pdf": {
+              "available": true,
+              "valuesSha256": "952eda0669f9b416e1653ba140a1c014db29fa058fb0ef553ba96023bb9627d9",
+              "quantitiesSha256": "a271816287c89e663f21ba4afbf51c3ae8a68175ef4558c54ec07636b873f7dc"
+            },
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stocktake_items_closed_with_costs",
+      "endpoint": "listStocktakeItems",
+      "path": "/v3/listStocktakeItems",
+      "params": {
+        "stocktakeId": "auto78",
+        "limit": 1
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "items": [
+            {
+              "articleId": "kipferl",
+              "condition": "sellable",
+              "name": "Butterkipferl",
+              "number": "A-200",
+              "unit": "Stk",
+              "round": 2,
+              "counted": true,
+              "quantity": 21000,
+              "counts": 1,
+              "firstCountedAt": "2026-10-06T08:03:33.000Z",
+              "referenceTime": "2026-10-06T08:03:33.000Z",
+              "countedBy": [
+                {
+                  "type": "api",
+                  "id": "kornblum",
+                  "name": null
+                }
+              ],
+              "serialNumbers": [],
+              "recountRequested": true,
+              "recount": {
+                "reason": "Kiste hinten fehlt",
+                "requestedAt": "2026-10-06T08:03:30.000Z",
+                "requestedBy": {
+                  "type": "api",
+                  "id": "kornblum",
+                  "name": null
+                },
+                "round": 2
+              },
+              "addedLater": false,
+              "expectedQuantity": 24000,
+              "differenceQuantity": -3000,
+              "needsCheck": true,
+              "checkReasons": [
+                "far_from_key_date"
+              ],
+              "expectedAsOf": "2026-10-06T08:03:33.000Z",
+              "differenceValueCents": -122,
+              "missingSerialNumbers": [],
+              "extraSerialNumbers": [],
+              "bookedQuantity": -3000,
+              "notBooked": null,
+              "inventory": {
+                "quantity": 21000,
+                "unitValueMicros": 407474,
+                "valueCents": 856,
+                "countedOn": "2026-10-06"
+              }
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "get_stocktake_pdf_download",
+      "endpoint": "getStocktakePdf",
+      "path": "/v3/getStocktakePdf",
+      "params": {
+        "stocktakeId": "auto78"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "download": {
+            "url": "https://storage.googleapis.com/kasseneck.appspot.com/users/kornblum/lager_inventuren/auto78/inventurprotokoll-mengen.pdf?X-Goog-Expires=900&X-Goog-Signature=EXAMPLE1791274887000",
+            "expiresAt": "2026-10-06T08:21:27.000Z",
+            "sizeBytes": 44,
+            "sha256": "a271816287c89e663f21ba4afbf51c3ae8a68175ef4558c54ec07636b873f7dc",
+            "fileName": "stocktake-auto78-quantities.pdf",
+            "contentType": "application/pdf"
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_record_stocktake_count_closed",
+      "endpoint": "recordStocktakeCount",
+      "path": "/v3/recordStocktakeCount",
+      "params": {
+        "idempotencyKey": "shop-zaehlung-6",
+        "stocktakeId": "auto78",
+        "articleId": "kipferl",
+        "quantity": 1000
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Die Inventur ist abgeschlossen oder abgebrochen.",
+        "data": {
+          "code": "stocktake_closed"
+        },
+        "code": "stocktake_closed"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stock_movements_stocktake",
+      "endpoint": "listStockMovements",
+      "path": "/v3/listStockMovements",
+      "params": {
+        "type": "stocktake",
+        "limit": 3
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "movements": [
+            {
+              "id": "inventur_auto78_1_0",
+              "articleId": "kipferl",
+              "type": "stocktake",
+              "locationId": "lieferwagen",
+              "condition": "sellable",
+              "quantityDelta": -3000,
+              "reservedDelta": 0,
+              "stockAfter": {
+                "sellable": 21000,
+                "defective": 0,
+                "reserved": null
+              },
+              "operationId": "inventur_auto78_1",
+              "source": {
+                "id": "auto78",
+                "position": null,
+                "type": "stocktake",
+                "register": null
+              },
+              "viennaDay": "2026-10-06",
+              "time": "2026-10-06T08:03:42.000Z",
+              "lots": [
+                {
+                  "lotId": "auto35_L0",
+                  "quantity": 3000,
+                  "expiresOn": null,
+                  "batch": null,
+                  "serialNumber": null,
+                  "receivedAt": "2026-10-06T06:00:03.000Z"
+                }
+              ]
+            }
+          ],
+          "nextCursor": "eyJ6ZWl0IjoxNzkxMjY2NTEwMDAwLCJpZCI6ImF1dG8zNF8xIn0"
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "create_stocktake_perpetual",
+      "endpoint": "createStocktake",
+      "path": "/v3/createStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-haupt-1",
+        "locationId": "haupt",
+        "scope": {
+          "type": "articles",
+          "articleIds": [
+            "roggenbrot"
+          ]
+        },
+        "type": "perpetual",
+        "blind": false
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto81",
+            "name": "Inventur Hauptstandort 06.10.2026",
+            "locationId": "haupt",
+            "scope": {
+              "type": "articles",
+              "groupIds": [],
+              "articleIds": [
+                "roggenbrot"
+              ]
+            },
+            "type": "perpetual",
+            "keyDate": null,
+            "blind": false,
+            "status": "counting",
+            "progress": {
+              "items": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:06:31.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:06:33.000Z",
+            "review": null,
+            "closing": null,
+            "cancellation": null
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "list_stocktake_items_not_blind",
+      "endpoint": "listStocktakeItems",
+      "path": "/v3/listStocktakeItems",
+      "params": {
+        "stocktakeId": "auto81"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "items": [
+            {
+              "articleId": "roggenbrot",
+              "condition": "sellable",
+              "name": "Roggenbrot 1 kg",
+              "number": "A-100",
+              "unit": "Stk",
+              "round": 1,
+              "counted": false,
+              "quantity": null,
+              "counts": 0,
+              "firstCountedAt": null,
+              "referenceTime": null,
+              "countedBy": [],
+              "serialNumbers": [],
+              "recountRequested": false,
+              "addedLater": false,
+              "bookStockNow": 3000
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "cancel_stocktake",
+      "endpoint": "cancelStocktake",
+      "path": "/v3/cancelStocktake",
+      "params": {
+        "idempotencyKey": "shop-inventur-haupt-abbruch",
+        "stocktakeId": "auto81",
+        "reason": "Falscher Standort"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "stocktake": {
+            "id": "auto81",
+            "name": "Inventur Hauptstandort 06.10.2026",
+            "locationId": "haupt",
+            "scope": {
+              "type": "articles",
+              "groupIds": [],
+              "articleIds": [
+                "roggenbrot"
+              ]
+            },
+            "type": "perpetual",
+            "keyDate": null,
+            "blind": false,
+            "status": "cancelled",
+            "progress": {
+              "items": 1,
+              "recountOpen": false
+            },
+            "createdAt": "2026-10-06T08:06:31.000Z",
+            "createdBy": {
+              "type": "api",
+              "id": "kornblum",
+              "name": null
+            },
+            "source": "api",
+            "updatedAt": "2026-10-06T08:06:36.000Z",
+            "review": null,
+            "closing": null,
+            "cancellation": {
+              "reason": "Falscher Standort",
+              "cancelledAt": "2026-10-06T08:06:36.000Z",
+              "cancelledBy": {
+                "type": "api",
+                "id": "kornblum",
+                "name": null
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_get_stocktake_pdf_not_closed",
+      "endpoint": "getStocktakePdf",
+      "path": "/v3/getStocktakePdf",
+      "params": {
+        "stocktakeId": "auto81"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Das Inventurprotokoll gibt es erst nach dem Abschluss.",
+        "data": {
+          "code": "stocktake_not_closed"
+        },
+        "code": "stocktake_not_closed"
+      }
+    },
+    {
+      "channel": "api",
+      "name": "error_get_stocktake_not_found",
+      "endpoint": "getStocktake",
+      "path": "/v3/getStocktake",
+      "params": {
+        "stocktakeId": "gibt_es_nicht"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Inventur nicht gefunden.",
+        "data": {
+          "code": "stocktake_not_found"
+        },
+        "code": "stocktake_not_found"
+      }
     }
   ],
   "webhookEvents": [
@@ -6266,6 +7969,27 @@
           ],
           "createdAt": "2026-10-06T08:02:42.000Z",
           "updatedAt": "2026-10-06T08:02:50.000Z"
+        }
+      }
+    },
+    {
+      "event": "stock.changed",
+      "body": {
+        "id": "evt_jZnZoygxYWe7NEyLxhmn",
+        "type": "stock.changed",
+        "createdAt": 1791273982000,
+        "accountId": "kornblum",
+        "data": {
+          "articleId": "kipferl",
+          "locationId": "lieferwagen",
+          "onHand": 21000,
+          "reserved": 0,
+          "available": 21000,
+          "defective": 0,
+          "sequence": 5,
+          "updatedAt": "2026-10-06T08:03:42.000Z",
+          "cause": "stocktake",
+          "movementId": "inventur_auto78_1_0"
         }
       }
     }
