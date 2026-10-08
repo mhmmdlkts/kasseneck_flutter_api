@@ -1,7 +1,7 @@
 name: kasseneck_api
 description: "Austrian fiscal cash register (RKSV, Registrierkasse) for Flutter: signed receipts, cancellations, hobex and Stripe card payments, ESC/POS receipt printing."
-version: 10.7.1
-homepage: https://github.com/mhmmdlkts/kasseneck_flutter_api
+version: 10.7.2
+homepage: https://kasseneck.at/api-doku
 repository: https://github.com/mhmmdlkts/kasseneck_flutter_api
 issue_tracker: https://github.com/mhmmdlkts/kasseneck_flutter_api/issues
 
