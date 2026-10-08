@@ -138,6 +138,11 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
       package: 'kreiseck_design',
       fontSize: widget.fontSize,
       height: 1.0,
+      // Ausdruecklich 0: sonst erbt jede Zeile den Abstand aus DefaultTextStyle
+      // (Material 3: 0,25 je Zeichen), den die Messung unten nicht kennt -- eine
+      // volle Zeile wird breiter als das Blatt und verliert ihr letztes Zeichen.
+      letterSpacing: 0,
+      wordSpacing: 0,
       color: widget.textColor,
       fontFeatures: const [ui.FontFeature.disable('liga'), ui.FontFeature.disable('calt')],
     );
@@ -159,7 +164,12 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
     // Align loest eine straffe Breite von aussen (die App setzt den Beleg in
     // `SizedBox(width: 280/380)`): das Papier bleibt `charsPerLine x cw` breit und
     // steht oben mittig, statt auf die Huelle gezogen zu werden.
-    return Align(
+    // Das Blatt ist ein Abbild des Papiers mit fester Zeichenzahl: ohne die
+    // Textgroesse des Geraets und ohne iOS-"Fettschrift". Beides wirkt sonst
+    // nur beim Zeichnen, nicht in der Messung (`cw`), und schiebt Zeichen
+    // ueber den Rand. Groesser zeigen geht ueber [fontSize].
+    final umgebung = MediaQuery.maybeOf(context);
+    final papier = Align(
       alignment: Alignment.topCenter,
       child: Container(
         color: widget.paperColor,
@@ -229,6 +239,11 @@ class _KeckBelegBlattWidgetState extends State<KeckReceiptSheetWidget> {
           ),
         ),
       ),
+    );
+    if (umgebung == null) return papier;
+    return MediaQuery(
+      data: umgebung.copyWith(textScaler: TextScaler.noScaling, boldText: false),
+      child: papier,
     );
   }
 

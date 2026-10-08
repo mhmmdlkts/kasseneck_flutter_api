@@ -1,3 +1,22 @@
+## 10.6.1
+
+`KeckReceiptSheetWidget` no longer loses the last character of a full line.
+Reason: the widget measures one character of DM Mono and sizes the sheet to
+`charsPerLine` of them, but drew its lines with whatever they inherited — the
+app theme's letter spacing (Material 3 puts 0.25 on every character), the
+device text size and iOS "Bold Text". None of that was in the measurement, so a
+full line came out wider than the sheet and was clipped (in karteck a 32-char
+payment line read "Kartenzahlun"). Even a plain `MaterialApp` with the default
+theme made a 48-char line 12 px too wide.
+
+The sheet now pins `letterSpacing`/`wordSpacing` to 0 and draws without device
+text scaling and without "Bold Text": it is a facsimile of the paper with a
+fixed number of characters. To show it larger, pass a larger `fontSize`.
+Apps that wrapped the widget to work around this (neutral `DefaultTextStyle`,
+`MediaQuery.withNoTextScaling`, `boldText: false`) can drop the wrapper.
+
+No public symbol changes; the printed bytes are unchanged.
+
 ## 10.6.0
 
 Twin of `@kreiseck/kasseneck-api` `1.7.0` (contract files pulled from that
