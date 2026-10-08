@@ -1,3 +1,15 @@
+## 10.7.1
+
+The dependency on `kreiseck_design` now allows `>=0.7.0 <0.9.0` instead of
+`^0.7.0`. Reason: `kreiseck_design` 0.8.0 adds role overrides to `kdTheme`
+(a product of the family keeps the forms in its own colour — karteck uses it
+for graphite). On 0.x `^0.7.0` excludes 0.8.0, so an app that needs 0.8.0
+could not resolve together with this package. 0.8.0 is additive; this package
+uses only the logo, the fonts and `kdTheme` without overrides. Tested against
+both 0.7.0 and 0.8.0.
+
+No code changes; nothing else moves.
+
 ## 10.7.0
 
 Twin of `@kreiseck/kasseneck-api` `1.8.0` (contract files pulled from that
