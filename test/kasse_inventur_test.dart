@@ -167,6 +167,35 @@ void main() {
       expect(parseQuantityMilli(' 12 ', 'Stk'), 12000, reason: 'Leerraum aussen wie String.trim in JS');
       expect(parseQuantityMilli('１２', 'Stk'), isNull, reason: 'nur ASCII-Ziffern');
     });
+
+    test('Leerraum genau wie String.prototype.trim in JS (eigener Fall, nicht in der gemeinsamen Datei)', () {
+      // U+0085 (NEL) entfernt Dart-trim, JS-trim nicht: im JS-Zwilling ist das null.
+      expect(parseQuantityMilli('\u00851', 'Stk'), isNull);
+      expect(parseQuantityMilli('1\u0085', 'Stk'), isNull);
+      // Was JS-trim entfernt, entfernt auch dieser Weg.
+      for (final z in [
+        '\t',
+        '\n',
+        '\v',
+        '\f',
+        '\r',
+        ' ',
+        '\u00a0',
+        '\u1680',
+        '\u2000',
+        '\u200a',
+        '\u2028',
+        '\u2029',
+        '\u202f',
+        '\u205f',
+        '\u3000',
+        '\ufeff',
+      ]) {
+        expect(parseQuantityMilli('${z}12$z', 'Stk'), 12000, reason: 'U+${z.codeUnitAt(0).toRadixString(16)}');
+      }
+      // Kein Leerraum fuer JS: U+200B (Zero Width Space) bleibt stehen.
+      expect(parseQuantityMilli('\u200b12', 'Stk'), isNull);
+    });
   });
 
   group('Vertrag kasse.json', () {

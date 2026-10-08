@@ -1535,7 +1535,7 @@ class StocktakeItem {
         'countedBy': [for (final a in countedBy) a.toJson()],
         if (serialNumbers != null) 'serialNumbers': [...serialNumbers!],
         'recountRequested': recountRequested,
-        'recount': ?recount?.toJson(),
+        'recount': recount?.toJson(),
         'addedLater': addedLater,
         'bookStockNow': ?bookStockNow,
         'expectedQuantity': ?expectedQuantity,

@@ -160,6 +160,39 @@ final RegExp _mengenMuster = RegExp(r'^(\d*)(?:([.,])(\d*))?$');
 final RegExp _ziffernOhneNull = RegExp('[1-9]');
 final BigInt _groessteSichereGross = BigInt.from(9007199254740991);
 
+/// Leerraum nach `String.prototype.trim` in JavaScript (WhiteSpace und
+/// LineTerminator der ECMAScript-Spezifikation). Dart-`trim` entfernt dazu
+/// U+0085 (NEL); damit laese `'\u00851'` hier als 1000, im JS-Zwilling als
+/// `null`. Zwei Kassen mit derselben Eingabe sollen dieselbe Menge buchen.
+bool _jsLeerraum(int c) =>
+    c == 0x09 ||
+    c == 0x0A ||
+    c == 0x0B ||
+    c == 0x0C ||
+    c == 0x0D ||
+    c == 0x20 ||
+    c == 0xA0 ||
+    c == 0x1680 ||
+    (c >= 0x2000 && c <= 0x200A) ||
+    c == 0x2028 ||
+    c == 0x2029 ||
+    c == 0x202F ||
+    c == 0x205F ||
+    c == 0x3000 ||
+    c == 0xFEFF;
+
+String _jsTrim(String text) {
+  var anfang = 0;
+  var ende = text.length;
+  while (anfang < ende && _jsLeerraum(text.codeUnitAt(anfang))) {
+    anfang++;
+  }
+  while (ende > anfang && _jsLeerraum(text.codeUnitAt(ende - 1))) {
+    ende--;
+  }
+  return text.substring(anfang, ende);
+}
+
 /// Eine eingetippte Menge in Tausendstel der Basiseinheit, **ohne
 /// Gleitkomma**: `'12'` → `12000`, `'0,25'` → `250`, `'1.5'` → `1500`.
 /// Zwilling von `parseQuantityMilli` im JS-Paket; gemeinsame Prueffaelle in
@@ -185,7 +218,7 @@ final BigInt _groessteSichereGross = BigInt.from(9007199254740991);
 /// JavaScript. Die Kasse zeigt dann ihren Satz (`stocktake.quantity_invalid`),
 /// statt still zu runden.
 int? parseQuantityMilli(String text, String? unit, {QuantityRule? rule}) {
-  final m = _mengenMuster.firstMatch(text.trim());
+  final m = _mengenMuster.firstMatch(_jsTrim(text));
   if (m == null) return null;
   final ganz = m[1] ?? '';
   final trenner = m[2];

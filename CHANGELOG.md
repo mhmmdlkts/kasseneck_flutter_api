@@ -40,6 +40,9 @@ ones.
   `createPdfOrDataTransport` in npm, as a method like
   `InvoiceTransport.callBinary`. An error envelope is the same domain error as
   on the JSON path, an empty or unreadable body the same `KasseneckHttpError`.
+  `InventoryTransport` thereby gains the method `callPdfOrData`: a test double
+  of your own that `implements InventoryTransport` (instead of extending it or
+  passing a mock `httpClient`) no longer compiles until it adds the method.
 - **Models:** `Stocktake`, `StocktakeScope`, `StocktakeProgress`,
   `StocktakeReview`, `StocktakeClosing`, `StocktakeCancellation`,
   `StocktakeTotals`, `StocktakeWarning`, `StocktakeSeal`, `StocktakePdfInfo`,
@@ -89,8 +92,11 @@ ones.
   difference; `'1,000'`, `'0.500'`, `'1.5'` stay valid. Pieces take whole
   numbers without separator only; `rule` (the stored `PosArticle.quantityRule`)
   wins over the default of the unit (`quantityRuleForUnit`), pass
-  `QuantityRule.piece` for a serial-number article. The 50 shared cases of
-  `stocktake-quantity-cases.json` run 1:1 as a test.
+  `QuantityRule.piece` for a serial-number article. Surrounding whitespace is
+  removed by the rules of JavaScript's `String.prototype.trim`, not Dart's
+  `trim` (which also drops U+0085), so `'\u00851'` is `null` here as in the JS
+  twin. The 50 shared cases of `stocktake-quantity-cases.json` run 1:1 as a
+  test.
 - **Texts:** the catalogue (generated from `pos-texts.json` 1.8.0) gains the
   messages `stocktake.none_open`, `scan_or_search`, `counted`, `blind_hint`,
   `recount_hint`, `unknown_code`, `quantity_invalid`, `serials_capture`,
