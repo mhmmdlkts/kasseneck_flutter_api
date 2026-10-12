@@ -592,11 +592,6 @@ class KasseneckApi {
     );
   }
 
-  Future<bool> checkSumup({required String affiliateKey}) async {
-    return false;
-    // return await SumupService.init(affiliateKey); TODO
-  }
-
   String? checkVoucherCombinationError(List<KeckVoucher> vouchers, List<KasseneckItem> items) {
     int countRedeemValueVoucher = 0;
     int countSellValueVoucher = 0;

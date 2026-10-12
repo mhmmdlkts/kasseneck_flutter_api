@@ -1,3 +1,19 @@
+## 11.0.0
+
+**Breaking:** the package no longer depends on the `sumup` plugin.
+`SumupService` (`services/sumup_service.dart`), `SumupCheckoutResponse.fromSumup`
+and the unused `KasseneckApi.checkSumup` are gone. Reason: every app that used
+this package inherited the SumUp SDK and its minimum iOS version, even without
+SumUp; and the app could not choose its own `sumup` version (0.14.2+ builds
+without the gated Tap-to-Pay repository).
+
+What stays: `CreditCardProvider.sumup`, `SumupCheckoutResponse` as a plain data
+model (`fromMap`, `toJson`) and the SumUp block on receipt, preview and paper.
+
+Migration: add `sumup` to your app, call `Sumup.init`/`Sumup.checkout`
+yourself and build the result with the `SumupCheckoutResponse` constructor;
+pass `toJson()` as `providerData` of the card payment like before.
+
 ## 10.7.2
 
 The pub.dev homepage now points to <https://kasseneck.at/api-doku> instead of
