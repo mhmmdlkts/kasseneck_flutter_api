@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.10.1). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.11.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.10.1';
+const String posTextsVersion = '1.11.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -174,6 +174,26 @@ const Map<String, PosText> posMessages = {
   'stocktake.serials_mismatch': PosText('Je Stück genau eine Seriennummer: {count} erfasst, {quantity} gezählt.', placeholders: ['count', 'quantity']),
   'stocktake.reason_missing': PosText('Bitte einen Grund für das Stornieren eingeben.'),
   'stocktake.outcome_unknown': PosText('Unklar, ob die Zählung angekommen ist. „Erneut senden“ schickt dieselbe Zählung – sie zählt auch dann nur einmal.'),
+  'shift.required': PosText('Bitte zuerst die Schicht öffnen.'),
+  'shift.required_other': PosText('Die Schicht muss ein berechtigter Mitarbeiter öffnen.'),
+  'shift.recount': PosText('Bitte noch einmal zählen.'),
+  'shift.comment_required': PosText('Die Abweichung ist größer als erlaubt – bitte kurz begründen.'),
+  'shift.closed': PosText('Schicht {number} geschlossen.', placeholders: ['number']),
+  'shift.long_open': PosText('Die Schicht läuft seit {since}.', placeholders: ['since']),
+  'shift.already_open': PosText('An dieser Lade läuft schon eine Schicht.'),
+  'shift.already_closed': PosText('Diese Schicht ist schon geschlossen.'),
+  'shift.recount_exhausted': PosText('Es wurde schon zweimal gezählt. Bitte denselben Betrag mit Begründung senden oder den Chef rufen.'),
+  'shift.outcome_unknown': PosText('Unklar, ob das angekommen ist. „Erneut senden“ schickt denselben Vorgang – er zählt nur einmal.'),
+  'cash_movement.exceeds_balance': PosText('So viel Bargeld ist laut Kassenstand nicht in der Lade.'),
+  'cash_movement.note_required': PosText('Bitte einen Grund eingeben.'),
+  'cash_movement.booked': PosText('{type} über {amount} gebucht.', placeholders: ['type', 'amount']),
+  'cash_movement.type_invalid': PosText('Diese Art der Kassenbewegung ist hier nicht möglich.'),
+  'cash_movement.same_drawer': PosText('Eine Umbuchung in dieselbe Lade geht nicht. Bitte eine andere Lade wählen.'),
+  'tip_payout.exceeds_claim': PosText('Mehr als der offene Anspruch kann nicht ausgezahlt werden.'),
+  'denominations.invalid': PosText('Scheine und Münzen ergeben nicht den Betrag.'),
+  'amount.invalid': PosText('Bitte einen gültigen Betrag eingeben.'),
+  'drawer.not_found': PosText('Diese Lade gibt es nicht mehr. Bitte im Panel die Lade dieses Geräts prüfen.'),
+  'drawer.inactive': PosText('Diese Lade ist stillgelegt. Bitte im Panel eine andere Lade zuordnen.'),
   'app.not_in_browser': PosText('Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.', only: [PosSurface.app]),
   'app.open_in_browser': PosText('Bitte im Browser öffnen: {target}', placeholders: ['target'], only: [PosSurface.app]),
 };
@@ -288,6 +308,70 @@ const Map<String, PosText> posLabels = {
   'stocktake.sent': PosText('gesendet'),
   'stocktake.unconfirmed': PosText('unbestätigt'),
   'stocktake.voided': PosText('storniert'),
+  'shift.open_title': PosText('Schicht öffnen'),
+  'shift.take_over': PosText('Bestand übernehmen'),
+  'shift.count': PosText('Zählen'),
+  'shift.by_denomination': PosText('Nach Scheinen und Münzen'),
+  'shift.close_title': PosText('Schicht schließen'),
+  'shift.cash_title': PosText('Kassenstand'),
+  'shift.x_report': PosText('Zwischenbericht'),
+  'shift.pay_out_tips': PosText('Trinkgeld auszahlen'),
+  'shift.not_a_receipt': PosText('Kein Registrierkassenbeleg'),
+  'drawer.reason_title': PosText('Warum öffnen Sie die Lade?'),
+  'drawer.reason_change': PosText('Wechselgeld'),
+  'drawer.reason_check': PosText('Kontrolle'),
+  'drawer.reason_misoperation': PosText('Fehlbedienung'),
+  'drawer.reason_other': PosText('Sonstiges'),
+  'cash_movement.type_change_in': PosText('Wechselgeld von Bank/Tresor'),
+  'cash_movement.type_cash_drop': PosText('Abschöpfung'),
+  'cash_movement.type_owner_deposit': PosText('Privateinlage'),
+  'cash_movement.type_owner_withdrawal': PosText('Privatentnahme'),
+  'cash_movement.type_tip_payout': PosText('Trinkgeld-Auszahlung'),
+  'cash_movement.type_other_in': PosText('Sonstige Einzahlung'),
+  'cash_movement.type_other_out': PosText('Sonstige Auszahlung'),
+  'cash_movement.type_transfer_out': PosText('Umbuchung'),
+  'cash_movement.type_transfer_in': PosText('Umbuchung (Eingang)'),
+  'cash_movement.type_expense': PosText('Barausgabe'),
+  'cash_movement.type_count_difference': PosText('Zähldifferenz'),
+  'cash_movement.type_handover_difference': PosText('Übergabedifferenz'),
+  'shift_receipt.title_close': PosText('Schichtabschluss'),
+  'shift_receipt.title_interim': PosText('Zwischenbericht'),
+  'shift_receipt.title_movement': PosText('Kassenbewegung'),
+  'shift_receipt.cashregister': PosText('Kasse'),
+  'shift_receipt.drawer': PosText('Lade'),
+  'shift_receipt.shift': PosText('Schicht'),
+  'shift_receipt.number': PosText('Nr. {number}', placeholders: ['number']),
+  'shift_receipt.opened': PosText('Geöffnet'),
+  'shift_receipt.closed': PosText('Geschlossen'),
+  'shift_receipt.by': PosText('von'),
+  'shift_receipt.opening_float': PosText('Startgeld'),
+  'shift_receipt.opening_float_taken_over': PosText('Startgeld übernommen'),
+  'shift_receipt.cash_sales': PosText('Bar aus Verkäufen'),
+  'shift_receipt.cash_cancellations': PosText('Bar aus Storno'),
+  'shift_receipt.movements': PosText('Bewegungen'),
+  'shift_receipt.expected': PosText('Soll'),
+  'shift_receipt.counted': PosText('Ist'),
+  'shift_receipt.difference': PosText('Differenz'),
+  'shift_receipt.comment': PosText('Kommentar'),
+  'shift_receipt.non_cash': PosText('Unbar (nur Information)'),
+  'shift_receipt.receipts': PosText('Belege'),
+  'shift_receipt.cancellations': PosText('Stornos'),
+  'shift_receipt.openings_without_sale': PosText('Öffnungen ohne Verkauf'),
+  'shift_receipt.tips': PosText('Trinkgeld'),
+  'shift_receipt.tip_immediately': PosText('sofort'),
+  'shift_receipt.tip_retained': PosText('über Lohn'),
+  'shift_receipt.tip_paid_out': PosText('ausgezahlt'),
+  'shift_receipt.movement_number': PosText('Nr.'),
+  'shift_receipt.type': PosText('Art'),
+  'shift_receipt.amount': PosText('Betrag'),
+  'shift_receipt.location': PosText('Ort'),
+  'shift_receipt.location_bank': PosText('Bank'),
+  'shift_receipt.location_safe': PosText('Tresor'),
+  'shift_receipt.recipient': PosText('Empfänger'),
+  'shift_receipt.target_drawer': PosText('Ziel-Lade'),
+  'shift_receipt.note': PosText('Grund'),
+  'shift_receipt.operator': PosText('Bediener'),
+  'shift_receipt.time': PosText('Zeit'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].
@@ -304,6 +388,20 @@ const List<ErrorRule> errorRules = [
 const List<ErrorRule> errorCodeRules = [
   ErrorRule(kind: ErrorKind.api, codes: ['dialect_mismatch', 'response_translation_failed', 'response_unreadable'], key: 'server.response_unreadable'),
   ErrorRule(kind: ErrorKind.api, codes: ['route_missing', 'not_found', 'internal_translation_error'], key: 'server.connection_disturbed'),
+  ErrorRule(kind: ErrorKind.api, codes: ['shift_not_open'], key: 'shift.required'),
+  ErrorRule(kind: ErrorKind.api, codes: ['shift_already_open'], key: 'shift.already_open'),
+  ErrorRule(kind: ErrorKind.api, codes: ['shift_closed'], key: 'shift.already_closed'),
+  ErrorRule(kind: ErrorKind.api, codes: ['comment_required'], key: 'shift.comment_required'),
+  ErrorRule(kind: ErrorKind.api, codes: ['recount_exhausted'], key: 'shift.recount_exhausted'),
+  ErrorRule(kind: ErrorKind.api, codes: ['cash_movement_exceeds_balance'], key: 'cash_movement.exceeds_balance'),
+  ErrorRule(kind: ErrorKind.api, codes: ['note_required'], key: 'cash_movement.note_required'),
+  ErrorRule(kind: ErrorKind.api, codes: ['invalid_movement_type'], key: 'cash_movement.type_invalid'),
+  ErrorRule(kind: ErrorKind.api, codes: ['transfer_same_drawer'], key: 'cash_movement.same_drawer'),
+  ErrorRule(kind: ErrorKind.api, codes: ['tip_payout_exceeds_claim'], key: 'tip_payout.exceeds_claim'),
+  ErrorRule(kind: ErrorKind.api, codes: ['invalid_denominations'], key: 'denominations.invalid'),
+  ErrorRule(kind: ErrorKind.api, codes: ['invalid_amount'], key: 'amount.invalid'),
+  ErrorRule(kind: ErrorKind.api, codes: ['drawer_not_found'], key: 'drawer.not_found'),
+  ErrorRule(kind: ErrorKind.api, codes: ['drawer_inactive'], key: 'drawer.inactive'),
 ];
 
 /// Regeln je Ausgang, nach den Code-Regeln; siehe [findErrorRule] und [messageOutcome].

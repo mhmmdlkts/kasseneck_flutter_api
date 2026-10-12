@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "4b0152e546f6320ecc6dad18156ac91cc176426c71c57ecbf21c1192a714ecda",
-    "inputsSha256": "055d351ec81c75c91de099983372701eda34a9b8f53487ea30a21bca2a5d465f",
+    "sha256": "41a8c2ad28c5d431debe4ca16305deab5971320e3b38d9b692ac3e7ce36ebccf",
+    "inputsSha256": "a8b999ec7c4d7dd6f1c5df5bba325087a129684cf7b26a6ca56be8bb3305b577",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -274,7 +274,13 @@
       "listMyStocktakeItems",
       "listMyStocktakeCounts",
       "recordMyStocktakeCount",
-      "voidMyStocktakeCount"
+      "voidMyStocktakeCount",
+      "getMyDrawerState",
+      "openMyShift",
+      "recordMyCashMovement",
+      "logMyDrawerOpenings",
+      "getMyShiftReport",
+      "closeMyShift"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -303,7 +309,13 @@
       "listMyStocktakeItems",
       "listMyStocktakeCounts",
       "recordMyStocktakeCount",
-      "voidMyStocktakeCount"
+      "voidMyStocktakeCount",
+      "getMyDrawerState",
+      "openMyShift",
+      "recordMyCashMovement",
+      "logMyDrawerOpenings",
+      "getMyShiftReport",
+      "closeMyShift"
     ],
     "withSchema": [
       "activateCashregister",
@@ -313,6 +325,7 @@
       "cancelStocktake",
       "changeStockCondition",
       "checkPartnerCustomerEmail",
+      "closeMyShift",
       "closeStocktake",
       "createArticle",
       "createCreditNote",
@@ -350,6 +363,8 @@
       "getInvoiceSetupStatus",
       "getInvoiceXml",
       "getKasseSettings",
+      "getMyDrawerState",
+      "getMyShiftReport",
       "getPartnerBilling",
       "getPartnerBillingMonth",
       "getPartnerCustomer",
@@ -397,10 +412,13 @@
       "listVariantGroups",
       "listWebhookDeliveries",
       "listWebhooks",
+      "logMyDrawerOpenings",
       "lookupArticleByCode",
+      "openMyShift",
       "pairRegisterDevice",
       "receiveGoods",
       "recordInvoicePayment",
+      "recordMyCashMovement",
       "recordMyStocktakeCount",
       "recordStockLoss",
       "recordStocktakeCount",
@@ -704,6 +722,34 @@
       "direkt": "direct",
       "connect": "connect"
     },
+    "KASSEN_BEWEGUNG_ART": {
+      "wechselgeld_ein": "change_in",
+      "abschoepfung": "cash_drop",
+      "privateinlage": "owner_deposit",
+      "privatentnahme": "owner_withdrawal",
+      "trinkgeld_auszahlung": "tip_payout",
+      "sonstige_einzahlung": "other_in",
+      "sonstige_auszahlung": "other_out",
+      "umbuchung_aus": "transfer_out",
+      "umbuchung_ein": "transfer_in",
+      "barausgabe": "expense",
+      "differenz": "count_difference",
+      "uebergabedifferenz": "handover_difference"
+    },
+    "KASSEN_ORT": {
+      "bank": "bank",
+      "tresor": "safe"
+    },
+    "LADE_OEFFNUNG_GRUND": {
+      "verkauf": "sale",
+      "bewegung": "cash_movement",
+      "schichtbeginn": "shift_open",
+      "schichtabschluss": "shift_close",
+      "wechselgeld": "change",
+      "kontrolle": "check",
+      "fehlbedienung": "misoperation",
+      "sonstiges": "other"
+    },
     "LAGER_ABGANG_GRUND": {
       "bruch": "breakage",
       "schwund": "shrinkage",
@@ -816,6 +862,24 @@
       "defekt": "defective",
       "entsorgt": "disposed"
     },
+    "SCHICHT_ABSCHLUSS": {
+      "nachzaehlen": "recount",
+      "geschlossen": "closed"
+    },
+    "SCHICHT_AKTEUR": {
+      "kassenbenutzer": "register_user",
+      "inhaber": "owner",
+      "admin": "admin"
+    },
+    "SCHICHT_BON_ART": {
+      "schichtabschluss": "shift_close",
+      "zwischenbericht": "shift_interim",
+      "kassenbewegung": "cash_movement"
+    },
+    "SCHICHT_STATUS": {
+      "offen": "open",
+      "geschlossen": "closed"
+    },
     "STANDORT_TYP": {
       "lager": "warehouse",
       "geschaeft": "store",
@@ -882,6 +946,7 @@
       "cancellation_refund_exceeds_payment",
       "cancellation_refund_reference_required",
       "cancellation_refund_reference_unknown",
+      "cash_movement_exceeds_balance",
       "cashregister_closed",
       "cashregister_decommissioned",
       "cashregister_in_use",
@@ -892,6 +957,7 @@
       "cashregister_token_invalid",
       "cashregister_token_missing",
       "code_taken",
+      "comment_required",
       "contracts_pending",
       "count_already_voided",
       "count_not_found",
@@ -905,6 +971,8 @@
       "device_not_paired",
       "device_takeover_required",
       "dialect_mismatch",
+      "drawer_inactive",
+      "drawer_not_found",
       "einvoice_incomplete",
       "einvoice_unavailable",
       "email_taken",
@@ -925,6 +993,7 @@
       "invalid_amount",
       "invalid_condition",
       "invalid_cursor",
+      "invalid_denominations",
       "invalid_dimensions",
       "invalid_distribution",
       "invalid_items",
@@ -934,6 +1003,7 @@
       "invalid_locations",
       "invalid_method",
       "invalid_minimum",
+      "invalid_movement_type",
       "invalid_period",
       "invalid_position",
       "invalid_price",
@@ -1028,6 +1098,7 @@
       "receipt_type_invalid",
       "receipt_type_not_cancellable",
       "recipient_required",
+      "recount_exhausted",
       "register_user_no_business",
       "register_user_not_allowed",
       "register_user_not_found",
@@ -1055,6 +1126,9 @@
       "session_expired",
       "session_not_running",
       "session_other_cashregister",
+      "shift_already_open",
+      "shift_closed",
+      "shift_not_open",
       "short_code_immutable",
       "short_code_taken",
       "signature_ambiguous",
@@ -1086,12 +1160,14 @@
       "tip_not_allowed",
       "tip_payment_method_invalid",
       "tip_payment_method_required",
+      "tip_payout_exceeds_claim",
       "tip_recipient_unknown",
       "too_many_attempts",
       "too_many_counts",
       "too_many_positions",
       "too_many_requests",
       "training_receipt",
+      "transfer_same_drawer",
       "unauthorized",
       "unknown_reason",
       "unknown_version",
@@ -1240,21 +1316,28 @@
       "cancellation_refund_exceeds_payment",
       "cancellation_refund_reference_required",
       "cancellation_refund_reference_unknown",
+      "cash_movement_exceeds_balance",
       "cashregister_incomplete",
       "cashregister_not_assigned",
       "cashregister_not_found",
+      "comment_required",
       "count_already_voided",
       "count_not_found",
       "device_bound_elsewhere",
       "device_not_found",
       "device_not_paired",
       "device_takeover_required",
+      "drawer_inactive",
+      "drawer_not_found",
       "idempotency_conflict",
       "idempotency_key_required",
       "invalid_address",
+      "invalid_amount",
       "invalid_cursor",
+      "invalid_denominations",
       "invalid_items",
       "invalid_line",
+      "invalid_movement_type",
       "invalid_quantity",
       "invalid_return_disposition",
       "invalid_serial",
@@ -1271,6 +1354,7 @@
       "method_not_allowed",
       "module_inactive",
       "not_permitted",
+      "note_required",
       "note_too_long",
       "own_receipts_only",
       "pairing_code_expired",
@@ -1297,6 +1381,7 @@
       "quantity_exceeds_remaining",
       "receipt_not_found",
       "receipt_type_not_cancellable",
+      "recount_exhausted",
       "register_user_only",
       "send_failed",
       "serial_already_counted",
@@ -1304,6 +1389,9 @@
       "serial_required",
       "server_error",
       "session_ended",
+      "shift_already_open",
+      "shift_closed",
+      "shift_not_open",
       "stocktake_closed",
       "stocktake_closing",
       "stocktake_not_found",
@@ -1312,10 +1400,12 @@
       "tip_exceeds_payment",
       "tip_payment_method_invalid",
       "tip_payment_method_required",
+      "tip_payout_exceeds_claim",
       "too_many_attempts",
       "too_many_counts",
       "too_many_requests",
       "training_receipt",
+      "transfer_same_drawer",
       "unknown_reason",
       "user_disabled",
       "validation"
@@ -1526,27 +1616,57 @@
       "too_many_counts",
       "stocktake_not_closed"
     ],
+    "shift": [
+      "validation",
+      "not_permitted",
+      "module_inactive",
+      "drawer_not_found",
+      "drawer_inactive",
+      "cashregister_not_assigned",
+      "shift_already_open",
+      "shift_not_open",
+      "shift_closed",
+      "comment_required",
+      "recount_exhausted",
+      "cash_movement_exceeds_balance",
+      "tip_payout_exceeds_claim",
+      "invalid_amount",
+      "invalid_denominations",
+      "invalid_movement_type",
+      "transfer_same_drawer",
+      "note_required",
+      "idempotency_key_required",
+      "idempotency_conflict",
+      "server_error"
+    ],
     "registerCases": [
       "already_cancelled",
       "article_not_found",
       "article_not_in_scope",
       "cancellation_failed",
       "cancellation_outcome_unknown",
+      "cash_movement_exceeds_balance",
       "cashregister_in_use",
       "cashregister_incomplete",
       "cashregister_not_assigned",
       "cashregister_not_found",
       "cashregister_token_missing",
+      "comment_required",
       "count_already_voided",
       "count_not_found",
       "device_bound_elsewhere",
       "device_not_found",
       "device_not_paired",
       "device_takeover_required",
+      "drawer_inactive",
+      "drawer_not_found",
       "idempotency_conflict",
       "idempotency_key_required",
+      "invalid_amount",
       "invalid_cursor",
+      "invalid_denominations",
       "invalid_items",
+      "invalid_movement_type",
       "invalid_quantity",
       "licenses_exhausted",
       "live_not_enabled",
@@ -1563,6 +1683,7 @@
       "method_not_allowed",
       "module_inactive",
       "not_permitted",
+      "note_required",
       "note_too_long",
       "own_receipts_only",
       "pairing_code_expired",
@@ -1575,15 +1696,21 @@
       "quantity_exceeds_remaining",
       "receipt_not_found",
       "receipt_type_not_cancellable",
+      "recount_exhausted",
       "register_user_only",
       "session_expired",
       "session_not_running",
       "session_other_cashregister",
+      "shift_already_open",
+      "shift_closed",
+      "shift_not_open",
       "stocktake_closed",
       "stocktake_not_found",
       "stocktake_not_open",
+      "tip_payout_exceeds_claim",
       "too_many_attempts",
       "training_receipt",
+      "transfer_same_drawer",
       "unauthorized",
       "unknown_reason",
       "user_disabled",
@@ -1927,6 +2054,78 @@
         "stocktake_not_open",
         "too_many_counts",
         "validation"
+      ],
+      "getMyDrawerState": [
+        "cashregister_not_assigned",
+        "drawer_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "validation"
+      ],
+      "openMyShift": [
+        "cashregister_not_assigned",
+        "drawer_inactive",
+        "drawer_not_found",
+        "idempotency_conflict",
+        "idempotency_key_required",
+        "invalid_amount",
+        "invalid_denominations",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "shift_already_open",
+        "validation"
+      ],
+      "recordMyCashMovement": [
+        "cash_movement_exceeds_balance",
+        "cashregister_not_assigned",
+        "drawer_inactive",
+        "drawer_not_found",
+        "idempotency_conflict",
+        "idempotency_key_required",
+        "invalid_amount",
+        "invalid_movement_type",
+        "module_inactive",
+        "not_permitted",
+        "note_required",
+        "server_error",
+        "tip_payout_exceeds_claim",
+        "transfer_same_drawer"
+      ],
+      "logMyDrawerOpenings": [
+        "cashregister_not_assigned",
+        "drawer_not_found",
+        "idempotency_key_required",
+        "module_inactive",
+        "not_permitted",
+        "note_required",
+        "server_error",
+        "validation"
+      ],
+      "getMyShiftReport": [
+        "cashregister_not_assigned",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "shift_not_open"
+      ],
+      "closeMyShift": [
+        "cash_movement_exceeds_balance",
+        "cashregister_not_assigned",
+        "comment_required",
+        "idempotency_conflict",
+        "idempotency_key_required",
+        "invalid_amount",
+        "invalid_denominations",
+        "module_inactive",
+        "not_permitted",
+        "recount_exhausted",
+        "server_error",
+        "shift_closed",
+        "shift_not_open",
+        "tip_payout_exceeds_claim",
+        "validation"
       ]
     }
   },
@@ -2003,7 +2202,8 @@
             "__": "items",
             "returnDisposition": "rueckgabe"
           }
-        ]
+        ],
+        "drawerId": "ladeId"
       },
       "paramWerte": {
         "reason": {
@@ -2100,6 +2300,41 @@
       }
     },
     "checkPartnerCustomerEmail": {},
+    "closeMyShift": {
+      "params": {
+        "shiftId": "schichtId",
+        "countedCents": "istCents",
+        "denominations": "stueckelung",
+        "attempt": "versuch",
+        "comment": "kommentar",
+        "tipPayouts": [
+          {
+            "__": "auszahlungen"
+          }
+        ]
+      },
+      "ergaenze": {
+        "$function": "schichtSchliessenNachAussen"
+      },
+      "fehler": {
+        "data": {
+          "shiftId": "schichtId"
+        },
+        "felder": {
+          "ladeId": "drawerId",
+          "stueckelung": "denominations",
+          "auszahlungen": "tipPayouts",
+          "eintraege": "entries",
+          "grund": "reason",
+          "zeitGeraet": "deviceTime",
+          "text": "note",
+          "fehler": "error"
+        },
+        "nachrichtWoerter": {
+          "ladeId": "drawerId"
+        }
+      }
+    },
     "closeStocktake": {
       "ergaenze": {
         "$function": "inventurEinzelnNachAussen"
@@ -2315,7 +2550,8 @@
             "__": "items",
             "receivedImmediately": "sofortErhalten"
           }
-        ]
+        ],
+        "drawerId": "ladeId"
       },
       "data": {
         "receipt": {
@@ -2907,6 +3143,7 @@
           "qrMode": "qrModus",
           "drawerEnabled": "ladeAn",
           "drawerAutoOpen": "ladeAuto",
+          "drawerId": "ladeId",
           "terminalIp": "terminalIp",
           "terminalPort": "terminalPort",
           "terminalTid": "terminalTid",
@@ -2963,6 +3200,58 @@
         },
         "device.terminalType": {
           "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        }
+      }
+    },
+    "getMyDrawerState": {
+      "params": {
+        "drawerId": "ladeId"
+      },
+      "ergaenze": {
+        "$function": "ladeStandNachAussen"
+      },
+      "fehler": {
+        "data": {
+          "shiftId": "schichtId"
+        },
+        "felder": {
+          "ladeId": "drawerId",
+          "stueckelung": "denominations",
+          "auszahlungen": "tipPayouts",
+          "eintraege": "entries",
+          "grund": "reason",
+          "zeitGeraet": "deviceTime",
+          "text": "note",
+          "fehler": "error"
+        },
+        "nachrichtWoerter": {
+          "ladeId": "drawerId"
+        }
+      }
+    },
+    "getMyShiftReport": {
+      "params": {
+        "shiftId": "schichtId"
+      },
+      "ergaenze": {
+        "$function": "schichtBerichtNachAussen"
+      },
+      "fehler": {
+        "data": {
+          "shiftId": "schichtId"
+        },
+        "felder": {
+          "ladeId": "drawerId",
+          "stueckelung": "denominations",
+          "auszahlungen": "tipPayouts",
+          "eintraege": "entries",
+          "grund": "reason",
+          "zeitGeraet": "deviceTime",
+          "text": "note",
+          "fehler": "error"
+        },
+        "nachrichtWoerter": {
+          "ladeId": "drawerId"
         }
       }
     },
@@ -3789,6 +4078,7 @@
             "qrMode": "qrModus",
             "drawerEnabled": "ladeAn",
             "drawerAutoOpen": "ladeAuto",
+            "drawerId": "ladeId",
             "terminalIp": "terminalIp",
             "terminalPort": "terminalPort",
             "terminalTid": "terminalTid",
@@ -4081,6 +4371,46 @@
         }
       }
     },
+    "logMyDrawerOpenings": {
+      "params": {
+        "drawerId": "ladeId",
+        "entries": [
+          {
+            "__": "eintraege",
+            "reason": "grund",
+            "note": "text",
+            "error": "fehler",
+            "deviceTime": "zeitGeraet"
+          }
+        ]
+      },
+      "paramWerte": {
+        "entries[].reason": {
+          "$catalog": "LADE_OEFFNUNG_GRUND"
+        }
+      },
+      "ergaenze": {
+        "$function": "ladeOeffnungenNachAussen"
+      },
+      "fehler": {
+        "data": {
+          "shiftId": "schichtId"
+        },
+        "felder": {
+          "ladeId": "drawerId",
+          "stueckelung": "denominations",
+          "auszahlungen": "tipPayouts",
+          "eintraege": "entries",
+          "grund": "reason",
+          "zeitGeraet": "deviceTime",
+          "text": "note",
+          "fehler": "error"
+        },
+        "nachrichtWoerter": {
+          "ladeId": "drawerId"
+        }
+      }
+    },
     "lookupArticleByCode": {
       "data": {
         "article": {
@@ -4088,6 +4418,35 @@
           "stockLocationIds": "standorte",
           "minStockByLocation": "mindestJeStandort",
           "purchasePriceMicros": "einkaufMicros"
+        }
+      }
+    },
+    "openMyShift": {
+      "params": {
+        "drawerId": "ladeId",
+        "openingFloatCents": "startCents",
+        "denominations": "stueckelung",
+        "takeOver": "uebernehmen"
+      },
+      "ergaenze": {
+        "$function": "schichtOeffnenNachAussen"
+      },
+      "fehler": {
+        "data": {
+          "shiftId": "schichtId"
+        },
+        "felder": {
+          "ladeId": "drawerId",
+          "stueckelung": "denominations",
+          "auszahlungen": "tipPayouts",
+          "eintraege": "entries",
+          "grund": "reason",
+          "zeitGeraet": "deviceTime",
+          "text": "note",
+          "fehler": "error"
+        },
+        "nachrichtWoerter": {
+          "ladeId": "drawerId"
         }
       }
     },
@@ -4147,6 +4506,46 @@
         },
         "invoice.einvoice.missing[]": {
           "$catalog": "EINVOICE_FEHLT"
+        }
+      }
+    },
+    "recordMyCashMovement": {
+      "params": {
+        "drawerId": "ladeId",
+        "type": "art",
+        "amountCents": "cents",
+        "location": "ort",
+        "note": "text",
+        "recipientId": "empfaengerId",
+        "targetDrawerId": "zielLadeId"
+      },
+      "paramWerte": {
+        "type": {
+          "$catalog": "KASSEN_BEWEGUNG_ART"
+        },
+        "location": {
+          "$catalog": "KASSEN_ORT"
+        }
+      },
+      "ergaenze": {
+        "$function": "kassenBewegungBuchenNachAussen"
+      },
+      "fehler": {
+        "data": {
+          "shiftId": "schichtId"
+        },
+        "felder": {
+          "ladeId": "drawerId",
+          "stueckelung": "denominations",
+          "auszahlungen": "tipPayouts",
+          "eintraege": "entries",
+          "grund": "reason",
+          "zeitGeraet": "deviceTime",
+          "text": "note",
+          "fehler": "error"
+        },
+        "nachrichtWoerter": {
+          "ladeId": "drawerId"
         }
       }
     },
@@ -4704,6 +5103,7 @@
           "qrMode": "qrModus",
           "drawerEnabled": "ladeAn",
           "drawerAutoOpen": "ladeAuto",
+          "drawerId": "ladeId",
           "terminalIp": "terminalIp",
           "terminalPort": "terminalPort",
           "terminalTid": "terminalTid",
@@ -4774,6 +5174,7 @@
           "qrMode": "qrModus",
           "drawerEnabled": "ladeAn",
           "drawerAutoOpen": "ladeAuto",
+          "drawerId": "ladeId",
           "terminalIp": "terminalIp",
           "terminalPort": "terminalPort",
           "terminalTid": "terminalTid",

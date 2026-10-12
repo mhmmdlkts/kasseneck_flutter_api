@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "829b877ae07ecccd85a6780a6fdb0855ec50d87f7de49c891788fc65ca339b40",
-    "inputsSha256": "055d351ec81c75c91de099983372701eda34a9b8f53487ea30a21bca2a5d465f",
+    "sha256": "2781c0716b6ba63ef2c14eb5a3e6abab37adf42af72c9aee60bbbb1ebd716cf1",
+    "inputsSha256": "a8b999ec7c4d7dd6f1c5df5bba325087a129684cf7b26a6ca56be8bb3305b577",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -126,6 +126,8 @@
       "signatureSuccess": true,
       "qr": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_6,00_0,00_0,00_1,00_0,00_girlnmCV_ABC123_6Mn4bx4N/M8=_8VaXQwBb/1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg==",
       "tipCents": 100,
+      "ladeId": "haupt_KECK-1",
+      "schichtId": null,
       "cancellations": [
         {
           "receiptId": "KECK-1-ID-7",
@@ -195,6 +197,8 @@
       "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtM18yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMywxNl8wLDAwXzAsMDBfMCwwMF9penNuUWNOdV9BQkMxMjNfSGhPUEpUUlJhbGM9.yWN78jiyeGFxKsTzPGv0CyrzcHFwW_Zmc5Sl3r7FyllBXKRXQf_qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw",
       "signatureSuccess": true,
       "qr": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_3,16_0,00_0,00_0,00_izsnQcNu_ABC123_HhOPJTRRalc=_yWN78jiyeGFxKsTzPGv0CyrzcHFwW/Zmc5Sl3r7FyllBXKRXQf/qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw==",
+      "ladeId": "haupt_KECK-1",
+      "schichtId": null,
       "cancellations": [
         {
           "receiptId": "KECK-1-ID-8",
@@ -268,7 +272,9 @@
       ],
       "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfNywwMF8wLDAwXzAsMDBfMCwwMF9WMmVrYXYyMF9BQkMxMjNfTk1PQW9qckhRbWM9.-OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA-ewViGfUdVOhpPn0tpqzrp30x4B1j_yNJ3gBjVOeSNDJolfdVw",
       "signatureSuccess": true,
-      "qr": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_0,00_7,00_0,00_0,00_0,00_V2ekav20_ABC123_NMOAojrHQmc=_+OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA+ewViGfUdVOhpPn0tpqzrp30x4B1j/yNJ3gBjVOeSNDJolfdVw=="
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_0,00_7,00_0,00_0,00_0,00_V2ekav20_ABC123_NMOAojrHQmc=_+OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA+ewViGfUdVOhpPn0tpqzrp30x4B1j/yNJ3gBjVOeSNDJolfdVw==",
+      "ladeId": "haupt_KECK-1",
+      "schichtId": null
     },
     "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-5": {
       "counter": 5,
@@ -326,7 +332,9 @@
       ],
       "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNV8yMDI2LTA5LTI2VDEwOjAwOjAwXzgsNzBfMCwwMF8wLDAwXzAsMDBfMCwwMF9YMVJPWmJ1V19BQkMxMjNfM2dZUTR4QVh3T009.LbacnDlwUMarI6Qc5N82XpI0zEvGbwD_LdtZxta-Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM_j9p7GtfljsTw",
       "signatureSuccess": true,
-      "qr": "_R1-AT100_KECK-1_KECK-1-ID-5_2026-09-26T10:00:00_8,70_0,00_0,00_0,00_0,00_X1ROZbuW_ABC123_3gYQ4xAXwOM=_LbacnDlwUMarI6Qc5N82XpI0zEvGbwD/LdtZxta+Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM/j9p7GtfljsTw=="
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-5_2026-09-26T10:00:00_8,70_0,00_0,00_0,00_0,00_X1ROZbuW_ABC123_3gYQ4xAXwOM=_LbacnDlwUMarI6Qc5N82XpI0zEvGbwD/LdtZxta+Rec1hvVktipdgcKQwGWziFVNPGHDBVOwM/j9p7GtfljsTw==",
+      "ladeId": "haupt_KECK-1",
+      "schichtId": null
     },
     "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-6": {
       "counter": 6,
@@ -439,7 +447,9 @@
       },
       "stornoMarke": "mui3ncw0-1111111111",
       "cancellationReason": "fehleingabe",
-      "tipCents": -100
+      "tipCents": -100,
+      "ladeId": "haupt_KECK-1",
+      "schichtId": null
     },
     "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-8": {
       "counter": 8,
@@ -496,7 +506,9 @@
         "timeStamp": "2026-09-26T10:00:00"
       },
       "stornoMarke": "mui3ncw0-1111111111",
-      "cancellationReason": "kunde_storniert"
+      "cancellationReason": "kunde_storniert",
+      "ladeId": "haupt_KECK-1",
+      "schichtId": null
     }
   }
 }

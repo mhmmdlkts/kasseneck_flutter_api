@@ -1,13 +1,13 @@
 ## 11.2.0
 
-Twin of `@kreiseck/kasseneck-api` `1.9.0` (contract files pulled from that
+Twin of `@kreiseck/kasseneck-api` `1.11.0` (contract files pulled from that
 version): shifts, cash balance and the drawer log at the register (backend
 „Schicht und Kassenstand“). Reason: a business with several staff or drawers
 could not tell who held how much cash; sales, cash movements and counts now
 belong to a shift in a drawer, and the register can open and close the shift,
 book deposits and withdrawals and print the bons itself.
 
-Additive; every existing call sends the same bytes as in 11.0.0 unless you
+Additive; every existing call sends the same bytes as in 11.1.1 unless you
 pass the new `drawerId`. The lists `posErrorCodes` (14 new codes),
 `unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code
 that compares them with a fixed length needs the new ones.
@@ -49,7 +49,8 @@ that compares them with a fixed length needs the new ones.
   drawer of the register): read only as a valid id, written as an id or `null`
   to remove it (`posDeviceOptionalFields`).
 - **Texts and errors.** Catalogue entries `shift.*`, `cash_movement.*`,
-  `drawer.*`, `shift_receipt.*` and rules for the 14 new codes.
+  `drawer.*`, `shift_receipt.*` and rules for the 14 new codes;
+  `shift.required_other` for a user without the `shift` right when no shift is open.
 
 ## 11.1.1
 

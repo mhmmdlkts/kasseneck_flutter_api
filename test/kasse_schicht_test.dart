@@ -468,6 +468,7 @@ void main() {
 
   test('Texte der Schicht aus dem Katalog', () {
     expect(messageText('shift.required'), 'Bitte zuerst die Schicht öffnen.');
+    expect(messageText('shift.required_other'), 'Die Schicht muss ein berechtigter Mitarbeiter öffnen.');
     expect(messageText('shift.closed', {'number': 7}), 'Schicht 7 geschlossen.');
     expect(labelText('shift.not_a_receipt'), 'Kein Registrierkassenbeleg');
   });
