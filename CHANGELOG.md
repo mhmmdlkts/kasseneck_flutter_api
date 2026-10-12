@@ -16,7 +16,7 @@
   `supplyDateProof` (new `InvoiceSupplyDateProof` or `null`, always present).
   Reason: the backend now reports whether the VAT ID was checked on or before
   the supply date or only afterwards.
-- Contract pinned to npm 1.9.0.
+- Contract pinned to npm 1.10.0.
 
 ## 11.0.0
 
