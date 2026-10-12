@@ -44,8 +44,12 @@ LayoutColumnsLine _anzahl(String links, int n) => _paar(links, '$n', 8);
 
 LayoutLine _regel() => const LayoutRuleLine(char: '-');
 
-/// `1234` -> `12,34` (wie `formatCents` im JS-Paket und `formatCents` im Druckmodell).
-String _formatCents(int cents) => (cents / 100).toStringAsFixed(2).replaceAll('.', ',');
+/// `1234` -> `12,34`, `-5` -> `-0,05`: dieselbe Schreibweise wie `formatCents` im
+/// JS-Paket, aber rein ganzzahlig (Geld wird nie ueber Gleitkomma geformt).
+String _formatCents(int cents) {
+  final betrag = cents.abs();
+  return '${cents < 0 ? '-' : ''}${betrag ~/ 100},${(betrag % 100).toString().padLeft(2, '0')}';
+}
 
 /// Zeit in Wien als `DD.MM.YYYY HH:mm`; unlesbar -> `null` (die Zeile faellt
 /// weg, der Bon bleibt).

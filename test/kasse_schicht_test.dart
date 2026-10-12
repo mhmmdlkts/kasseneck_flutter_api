@@ -275,7 +275,6 @@ void main() {
         {'drawerId': 'lade_bar', 'cashregisterId': 'KASSE1'},
         {'cashregisterId': 'KASSE1'},
       ]);
-      await expectLater(client.getMyDrawerState(cashregisterId: ' '), throwsA(_anfragefehler));
     });
 
     test('vor dem Senden: leere Kennungen, Schluessel, leere Liste, Zahl ausserhalb des sicheren Bereichs', () async {

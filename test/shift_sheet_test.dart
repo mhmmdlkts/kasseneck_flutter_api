@@ -142,6 +142,25 @@ void main() {
       expect(text.join('\n'), isNot(contains('Kasse |')));
     });
 
+    test('Betraege rein ganzzahlig: Cent, Vorzeichen, grosse Werte ohne Gleitkomma', () {
+      String betrag(int cents) {
+        const bon = CashMovementReceipt(blind: false, number: 1, type: 'cash_drop', amountCents: 0);
+        final b = CashMovementReceipt(blind: false, number: 1, type: 'cash_drop', amountCents: cents);
+        expect(bon.amountCents, 0);
+        final spalten = cashMovementLayout(b).lines.whereType<LayoutColumnsLine>().firstWhere((z) => z.columns.first.text == 'Betrag');
+        return spalten.columns.last.text;
+      }
+
+      expect(betrag(0), '0,00');
+      expect(betrag(5), '0,05');
+      expect(betrag(1234), '12,34');
+      expect(betrag(100000), '1000,00');
+      expect(betrag(-5), '-0,05');
+      expect(betrag(-1234), '-12,34');
+      expect(betrag(9007199254740991), '90071992547409,91');
+      expect(betrag(-9007199254740991), '-90071992547409,91');
+    });
+
     test('Papierbreite: Vorgabe mm58, mm80 wird uebernommen', () async {
       final bon = await _bon('cash-movement');
       expect(_layout(bon).paperSize, 'mm58');

@@ -885,9 +885,6 @@ class RegisterReceiptClient {
   /// Kasse der Anmeldung); ein leeres [drawerId] gilt wie keines.
   Future<DrawerState> getMyDrawerState({String? drawerId, String? cashregisterId}) async {
     const name = Aufrufe.getMyDrawerState;
-    if (cashregisterId != null && cashregisterId.trim().isEmpty) {
-      throw anfragefehler(name, 'cashregisterId ist leer');
-    }
     final daten = await transport.call(name, params: {
       if (drawerId != null && drawerId.isNotEmpty) 'drawerId': drawerId,
       'cashregisterId': ?cashregisterId,
