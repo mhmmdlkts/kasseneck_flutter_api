@@ -1,0 +1,17 @@
+================================================
+                 Kassenbewegung                 
+================================================
+                   Café Welt                    
+Kasse                                    Theke 1
+Lade                                   Hauptlade
+Schicht                                    Nr. 2
+------------------------------------------------
+Nr.                                            4
+Art                                  Abschöpfung
+Betrag                                   -200,00
+Ort                                       Tresor
+Grund                                      Abend
+Bediener                               Anna Chef
+Zeit                            26.09.2026 10:00
+------------------------------------------------
+           Kein Registrierkassenbeleg           

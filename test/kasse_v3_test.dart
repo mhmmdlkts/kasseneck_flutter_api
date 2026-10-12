@@ -47,8 +47,17 @@ const _inventur = [
   'listMyStocktakes', 'listMyStocktakeItems', 'listMyStocktakeCounts', 'recordMyStocktakeCount', 'voidMyStocktakeCount',
 ];
 
+/// Schicht, Kassenstand und Lade-Protokoll (seit 11.1). Die Modelle prueft
+/// `kasse_schicht_test.dart` verlustfrei ueber `toJson`.
+const _schicht = [
+  'getMyDrawerState', 'openMyShift', 'recordMyCashMovement', 'logMyDrawerOpenings', 'getMyShiftReport', 'closeMyShift',
+];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
+  'openMyShift/key_conflict':
+      'denominations: null am Draht; ein Dart-Parameter ohne Wert geht nie als null hinaus (der Code kommt in kasse_schicht_test.dart an)',
+  'closeMyShift/payouts_invalid': 'Auszahlung ohne registerUserId; TipPayout verlangt die Kennung schon im Typ',
   'createReceipt/start_receipt': 'Startbeleg: Panel bzw. API-Schlüssel, nicht der Verkauf der Kasse',
   'createReceipt/receipt_type_unknown': 'receiptType ist hier fest standard',
   'createReceipt/tip_on_start': 'Startbeleg mit Trinkgeld: Weg des API-Schlüssels',
@@ -291,6 +300,59 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
           countId: _s(p['countId']),
           reason: _s(p['reason']),
         );
+      case 'getMyDrawerState':
+        return belege.getMyDrawerState(
+            drawerId: p['drawerId'] as String?, cashregisterId: p['cashregisterId'] as String?);
+      case 'openMyShift':
+        return belege.openMyShift(
+          idempotencyKey: _s(p['idempotencyKey']),
+          drawerId: _s(p['drawerId']),
+          openingFloatCents: p['openingFloatCents'] as int?,
+          denominations: (p['denominations'] as Map?)?.cast<String, int>(),
+          takeOver: p['takeOver'] as bool?,
+        );
+      case 'recordMyCashMovement':
+        return belege.recordMyCashMovement(
+          idempotencyKey: _s(p['idempotencyKey']),
+          drawerId: _s(p['drawerId']),
+          type: _s(p['type']),
+          amountCents: p['amountCents'] as int,
+          location: p['location'] as String?,
+          note: p['note'] as String?,
+          recipientId: p['recipientId'] as String?,
+          targetDrawerId: p['targetDrawerId'] as String?,
+        );
+      case 'logMyDrawerOpenings':
+        return belege.logMyDrawerOpenings(
+          drawerId: _s(p['drawerId']),
+          entries: [
+            for (final e in (p['entries'] as List? ?? const []).cast<Map<String, dynamic>>())
+              DrawerOpeningEntry(
+                idempotencyKey: _s(e['idempotencyKey']),
+                reason: _s(e['reason']),
+                ok: e['ok'] == true,
+                deviceTime: e['deviceTime'] as Object,
+                note: e['note'] as String?,
+                receiptId: e['receiptId'] as String?,
+                error: e['error'] as String?,
+              ),
+          ],
+        );
+      case 'getMyShiftReport':
+        return belege.getMyShiftReport(shiftId: _s(p['shiftId']));
+      case 'closeMyShift':
+        return belege.closeMyShift(
+          idempotencyKey: _s(p['idempotencyKey']),
+          shiftId: _s(p['shiftId']),
+          countedCents: p['countedCents'] as int,
+          denominations: (p['denominations'] as Map?)?.cast<String, int>(),
+          attempt: p['attempt'] as int?,
+          comment: p['comment'] as String?,
+          tipPayouts: (p['tipPayouts'] as List?)
+              ?.cast<Map<String, dynamic>>()
+              .map((a) => TipPayout(registerUserId: _s(a['registerUserId']), cents: a['cents'] as int))
+              .toList(),
+        );
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();
         return PosSettingsClient(transport, deviceId: _s(p['deviceId'])).load();
@@ -438,14 +500,14 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   if (_anmeldung.contains(endpunkt)) {
     expect(isRegisterError(lauf.fehler, code as String), isTrue, reason: '$name: $code in registerErrorCodes');
   }
-  if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt)) {
+  if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt) || _schicht.contains(endpunkt)) {
     expect(isPosError(lauf.fehler, code as String), isTrue, reason: '$name: $code in posErrorCodes');
   }
 }
 
 void main() {
   group('jeder Fall des Kassenwegs', () {
-    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur]) {
+    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht]) {
       test(endpunkt, () async {
         var gelaufen = 0;
         for (final fall in _faelle(endpunkt)) {
@@ -470,8 +532,8 @@ void main() {
       }
     });
 
-    test('alle 33 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
-      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur};
+    test('alle 39 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht};
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });

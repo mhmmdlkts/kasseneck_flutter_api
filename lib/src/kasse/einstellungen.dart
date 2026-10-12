@@ -706,6 +706,7 @@ class PosDeviceSettings {
     this.qrMode = PosQrMode.auto,
     this.drawerEnabled = false,
     this.drawerAutoOpen = PosDrawerAutoOpen.cash,
+    this.drawerId,
     this.terminalIp = '',
     this.terminalPort = 8080,
     this.terminalTid = '',
@@ -755,6 +756,12 @@ class PosDeviceSettings {
   final PosQrMode qrMode;
   final bool drawerEnabled;
   final PosDrawerAutoOpen drawerAutoOpen;
+
+  /// Lade dieses Geraets (Schichtbetrieb). Optional und ohne Standardwert: der
+  /// Server sendet das Feld nur, wenn eine Lade zugeordnet ist; `null` = keine,
+  /// dann gilt die Hauptlade der Kasse. Gelesen wird nur eine gueltige Kennung
+  /// ([posDeviceOptionalFields]); beim Schreiben entfernt `null` die Zuordnung.
+  final String? drawerId;
   final String terminalIp;
   final int terminalPort;
 
@@ -773,8 +780,15 @@ class PosDeviceSettings {
 
   /// Siehe [PosBusinessSettings.merge]; `shortcuts` wird je Aktion gemischt.
   PosDeviceSettings merge(Map<String, dynamic> patch) {
-    _pruefeAenderung('device', patch, _geraetSchluessel, legacyDeviceKeys);
-    return PosDeviceSettings.fromJson(_mische(toJson(), patch));
+    _pruefeAenderung('device', patch, {..._geraetSchluessel, ...posDeviceOptionalFields}, legacyDeviceKeys);
+    // Die optionale Lade hat keinen Standardwert, den `_mische` fortschreiben
+    // koennte: sie wird getrennt gefuehrt, `null` entfernt die Zuordnung.
+    final lade = patch.containsKey('drawerId') ? patch['drawerId'] : drawerId;
+    if (lade != null && !isPosOptionalId(lade)) {
+      throw ArgumentError('device.drawerId: keine Kennung (1-64 Zeichen aus A-Z a-z 0-9 _ -)');
+    }
+    final json = _mische(toJson()..remove('drawerId'), {...patch}..remove('drawerId'));
+    return PosDeviceSettings.fromJson({...json, 'drawerId': lade});
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
@@ -804,6 +818,9 @@ class PosDeviceSettings {
       qrMode: _wahl(g, 'qrMode', PosQrMode.values, s.qrMode, fremd),
       drawerEnabled: _bool(g['drawerEnabled'], s.drawerEnabled),
       drawerAutoOpen: _wahl(g, 'drawerAutoOpen', PosDrawerAutoOpen.values, s.drawerAutoOpen, fremd),
+      // Ohne Standardwert, darum nicht in `g`: nur eine gueltige Kennung zaehlt,
+      // alles andere fehlt still (der Server sendet es so nie).
+      drawerId: isPosOptionalId(raw['drawerId']) ? raw['drawerId'] as String : null,
       terminalIp: _text(g['terminalIp'], s.terminalIp),
       terminalPort: _ganz(g, 'terminalPort', 1, 65535, s.terminalPort, fremd),
       terminalTid: _text(g['terminalTid'], s.terminalTid),
@@ -836,6 +853,7 @@ class PosDeviceSettings {
         'qrMode': qrMode.value,
         'drawerEnabled': drawerEnabled,
         'drawerAutoOpen': drawerAutoOpen.value,
+        'drawerId': ?drawerId,
         'terminalIp': terminalIp,
         'terminalPort': terminalPort,
         'terminalTid': terminalTid,
@@ -1130,6 +1148,17 @@ Map<String, Object?> untangleShortcuts(Map<String, Object?> mixed, Map<String, O
 
 final Set<String> _betriebSchluessel = const PosBusinessSettings().toJson().keys.toSet();
 final Set<String> _geraetSchluessel = const PosDeviceSettings().toJson().keys.toSet();
+
+/// Optionale Geraete-Einstellungen: ohne Standardwert, der Server sendet sie
+/// nur, wenn sie gesetzt sind (Zwilling von `POS_DEVICE_OPTIONAL_FIELDS`).
+/// Sie fehlen darum in den Standardwerten; gelesen werden sie nur als gueltige
+/// Kennung, der Schreibweg nimmt Kennung oder `null` (Zuordnung entfernen).
+const List<String> posDeviceOptionalFields = ['drawerId'];
+
+final RegExp _optionaleKennung = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+
+/// Ist [value] eine gueltige optionale Kennung (Backend `ladeKennung`)?
+bool isPosOptionalId(Object? value) => value is String && _optionaleKennung.hasMatch(value);
 
 void _pruefeAenderung(String teil, Map<String, dynamic> aenderung, Set<String> bekannt, Map<String, String> altform) {
   for (final e in aenderung.entries) {

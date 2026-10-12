@@ -109,6 +109,9 @@ final Set<String> woerter = _liste('''
   wire with withdrawal words wrap write written wrong year yesterday zero zone
   actor blind booked break cancelled checksum closing completed content counted counts difference
   gaps later milli parts recount recounted review round seal stocktakes uncounted verified void
+  allow claim claims closed comment counterpart denominations deviations duplicates entries eur handover
+  log long manual matches non opened opening openings optional payout payouts recent recomputed
+  reconciliation retained rights role running sales shift suggested take target tips float over without taken
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,

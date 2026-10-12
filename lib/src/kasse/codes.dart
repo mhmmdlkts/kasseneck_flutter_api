@@ -12,7 +12,8 @@ import '../register/fehler.dart';
 export '../register/codes.dart' show FieldError;
 
 /// Gleich `pos.posErrorCodes` im Vertrag (`surface.json`): Fehlerfälle der
-/// Endpunkte (seit 10.7 auch die fuenf der Inventur) und ihre Handler-Codes,
+/// Endpunkte (seit 10.7 auch die fuenf der Inventur, seit 11.1 die sechs der Schicht) und ihre
+/// Handler-Codes,
 /// dazu Anmelde- und Randcodes (ohne den Partner-Zugang) und der Paketcode
 /// `route_missing`. `validation` trägt
 /// `details.errors[]` mit dem äußeren Feldpfad ([posFieldErrors]).
@@ -25,18 +26,25 @@ const List<String> posErrorCodes = [
   'article_not_found',
   'article_not_in_scope',
   'article_not_tracked',
+  'cash_movement_exceeds_balance',
   'cashregister_not_assigned',
   'cashregister_not_found',
   'cashregister_token_invalid',
   'cashregister_token_missing',
+  'comment_required',
   'count_already_voided',
   'count_not_found',
   'device_not_found',
   'dialect_mismatch',
+  'drawer_inactive',
+  'drawer_not_found',
   'idempotency_conflict',
   'idempotency_key_required',
   'internal_translation_error',
+  'invalid_amount',
   'invalid_cursor',
+  'invalid_denominations',
+  'invalid_movement_type',
   'invalid_quantity',
   'invalid_serial',
   'live_not_enabled',
@@ -50,10 +58,12 @@ const List<String> posErrorCodes = [
   'module_inactive',
   'not_found',
   'not_permitted',
+  'note_required',
   'password_change_required',
   'print_job_not_found',
   'print_layout_failed',
   'printer_not_found',
+  'recount_exhausted',
   'register_user_no_business',
   'register_user_not_allowed',
   'register_user_not_found',
@@ -64,16 +74,20 @@ const List<String> posErrorCodes = [
   'server_error',
   'session_expired',
   'session_other_cashregister',
+  'shift_already_open',
+  'shift_closed',
+  'shift_not_open',
   'stocktake_closed',
   'stocktake_closing',
   'stocktake_not_found',
   'stocktake_not_open',
+  'tip_payout_exceeds_claim',
   'too_many_counts',
+  'transfer_same_drawer',
   'unauthorized',
   'user_disabled',
   'user_verification_failed',
   'validation',
-  // Code des Pakets: HTML statt Backend, der Aufruf kam nie an.
   'route_missing',
 ];
 

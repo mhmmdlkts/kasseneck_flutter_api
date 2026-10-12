@@ -15,7 +15,7 @@ import 'helpers/lager_anfragen.dart';
 
 /// Welcher Aufruf meldet nach dem Senden Ausgang unklar? Zwilling von
 /// `test/ausgang-einordnung.test.ts` im npm-Paket (seit 1.5.1, Varianten 1.6.0,
-/// Inventur 1.8.0).
+/// Inventur 1.8.0, Schicht 1.9.0).
 ///
 /// Bis 10.4.0 nur die sechs, die signieren, FinanzOnline ansprechen oder Geld
 /// bewegen. Ein Wareneingang, eine Reservierung oder `issueInvoice` kam nach
@@ -56,6 +56,8 @@ const Set<String> _lesen = {
   'getInvoiceSetupStatus',
   'getInvoiceXml',
   'getKasseSettings',
+  'getMyDrawerState',
+  'getMyShiftReport',
   'getPrintJob',
   'getReceipt',
   'getReportV2',

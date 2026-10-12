@@ -181,7 +181,7 @@ bool _jsLeerraum(int c) =>
     c == 0x3000 ||
     c == 0xFEFF;
 
-String _jsTrim(String text) {
+String jsTrim(String text) {
   var anfang = 0;
   var ende = text.length;
   while (anfang < ende && _jsLeerraum(text.codeUnitAt(anfang))) {
@@ -218,7 +218,7 @@ String _jsTrim(String text) {
 /// JavaScript. Die Kasse zeigt dann ihren Satz (`stocktake.quantity_invalid`),
 /// statt still zu runden.
 int? parseQuantityMilli(String text, String? unit, {QuantityRule? rule}) {
-  final m = _mengenMuster.firstMatch(_jsTrim(text));
+  final m = _mengenMuster.firstMatch(jsTrim(text));
   if (m == null) return null;
   final ganz = m[1] ?? '';
   final trenner = m[2];

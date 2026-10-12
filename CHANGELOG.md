@@ -1,3 +1,56 @@
+## 11.2.0
+
+Twin of `@kreiseck/kasseneck-api` `1.9.0` (contract files pulled from that
+version): shifts, cash balance and the drawer log at the register (backend
+„Schicht und Kassenstand“). Reason: a business with several staff or drawers
+could not tell who held how much cash; sales, cash movements and counts now
+belong to a shift in a drawer, and the register can open and close the shift,
+book deposits and withdrawals and print the bons itself.
+
+Additive; every existing call sends the same bytes as in 11.0.0 unless you
+pass the new `drawerId`. The lists `posErrorCodes` (14 new codes),
+`unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code
+that compares them with a fixed length needs the new ones.
+
+- **Six calls** on `RegisterReceiptClient`: `getMyDrawerState`, `openMyShift`,
+  `recordMyCashMovement`, `logMyDrawerOpenings`, `getMyShiftReport`,
+  `closeMyShift`, same names and parameters as in npm. The four that write
+  require an `idempotencyKey` (each entry of `logMyDrawerOpenings` its own) and
+  end with an unknown outcome after a timeout (`isOutcomeUnknown`): send the
+  same operation again with the **same** key, it takes effect once. Checked
+  before sending: missing ids, missing key, empty list, a number beyond 2^53 - 1.
+  Everything factual (catalogue, required fields per type, balance, claim) is the
+  server's call.
+- **Blind counting.** Without the right `cashView` the server sends no expected
+  amount, no counted amount, no running totals and no suggestion; the model has
+  `null` there, never `0`. `closeMyShift` returns a `ShiftCloseResult`:
+  `recount` (count once more, not an error) or closed with the Z bon.
+- **Models** (`pos.dart`): `DrawerState`, `Shift`, `CashMovement`,
+  `ShiftSummaryReceipt` (also `ShiftReceiptData`), `CashMovementReceipt`,
+  `OpenShiftResult`, `CashMovementResult`, `DrawerOpeningsResult`, `ShiftReport`,
+  `ShiftCloseResult`, `DrawerOpeningEntry`, `TipPayout` and their parts, each
+  with `toJson()` in the wire form. Catalogues `eurDenominations`,
+  `movementTypes`, `manualMovementTypes`, `cashLocations`, `openingReasons`,
+  `manualOpeningReasons`, `shiftReceiptKinds`.
+- **Helpers** with shared cases (`shift-cases.json`): `sumDenominations`,
+  `parseCentsAllowZero` (0 is valid: an empty drawer, no float; no floating
+  point), `newIdempotencyKey` (`kasse-` and 32 hex characters, like the
+  stocktake key).
+- **Bons.** `shiftReceiptLayout` (Z bon „Schichtabschluss“, X bon
+  „Zwischenbericht“) and `cashMovementLayout` („Kassenbewegung“) build a
+  `ReceiptLayout` from the bon data of the response; the same goldens as npm,
+  character by character. Blind values (`null`) leave their lines out, a real
+  `0` is printed. Every bon ends with „Kein Registrierkassenbeleg“ (no signature,
+  no QR, no DEP). Print it like any other layout.
+- **Drawer on the receipt.** `sell` and `cancelReceipt` take an optional
+  `drawerId` (the drawer whose cash balance the receipt counts in); empty or
+  only whitespace throws before sending. The device setting `drawerId` is
+  optional without a default (`PosDeviceSettings.drawerId`, `null` = the main
+  drawer of the register): read only as a valid id, written as an id or `null`
+  to remove it (`posDeviceOptionalFields`).
+- **Texts and errors.** Catalogue entries `shift.*`, `cash_movement.*`,
+  `drawer.*`, `shift_receipt.*` and rules for the 14 new codes.
+
 ## 11.1.1
 
 - Documentation of `getCashregisterReport`: the daily report is only

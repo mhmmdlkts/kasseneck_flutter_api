@@ -39,7 +39,8 @@ final _strukturKasse = ((_tabelle['structure'] as Map)['pos-texts.json'] as Map)
 /// `umbenennung-1.0.test.ts` des npm-Pakets): drei Saetze und drei
 /// Beschriftungen aus 1.0.0-rc.5, die Texte des Zeichensatz-Tests aus 1.1.0
 /// und 1.1.1, aus 1.3.0 die Lager-Beschriftungen und der Satz zum abgelehnten
-/// Storno, aus 1.8.0 die Saetze und Beschriftungen der Inventur (`stocktake.*`),
+/// Storno, aus 1.8.0 die Saetze und Beschriftungen der Inventur (`stocktake.*`), aus 1.9.0
+/// die der Schicht (`shift.*`, `cash_movement.*`, `drawer.*`, `shift_receipt.*`),
 /// dazu die Verfeinerungen der Fehlerregeln als eigene Dateischluessel neben
 /// `errorRules` und seit 1.3.0 die Beschriftung je Rueckgabe-Wahl.
 const _nach10 = (
@@ -50,6 +51,12 @@ const _nach10 = (
     'stocktake.none_open', 'stocktake.scan_or_search', 'stocktake.counted', 'stocktake.blind_hint',
     'stocktake.recount_hint', 'stocktake.unknown_code', 'stocktake.quantity_invalid', 'stocktake.serials_capture',
     'stocktake.serials_mismatch', 'stocktake.reason_missing', 'stocktake.outcome_unknown',
+    // Schicht und Kassenstand (1.9.0)
+    'shift.required', 'shift.recount', 'shift.comment_required', 'shift.closed', 'shift.long_open',
+    'shift.already_open', 'shift.already_closed', 'shift.recount_exhausted', 'shift.outcome_unknown',
+    'cash_movement.exceeds_balance', 'cash_movement.note_required', 'cash_movement.booked',
+    'cash_movement.type_invalid', 'cash_movement.same_drawer', 'tip_payout.exceeds_claim',
+    'denominations.invalid', 'amount.invalid', 'drawer.not_found', 'drawer.inactive',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -61,9 +68,29 @@ const _nach10 = (
     'stocktake.title', 'stocktake.quantity', 'stocktake.defective', 'stocktake.count_zero', 'stocktake.next',
     'stocktake.void', 'stocktake.reason', 'stocktake.progress', 'stocktake.serial_numbers', 'stocktake.recount',
     'stocktake.resend', 'stocktake.my_counts', 'stocktake.sent', 'stocktake.unconfirmed', 'stocktake.voided',
+    // Schicht und Kassenstand (1.9.0)
+    'shift.open_title', 'shift.take_over', 'shift.count', 'shift.by_denomination', 'shift.close_title',
+    'shift.cash_title', 'shift.x_report', 'shift.pay_out_tips', 'shift.not_a_receipt', 'drawer.reason_title',
+    'drawer.reason_change', 'drawer.reason_check', 'drawer.reason_misoperation', 'drawer.reason_other',
+    'cash_movement.type_change_in', 'cash_movement.type_cash_drop', 'cash_movement.type_owner_deposit',
+    'cash_movement.type_owner_withdrawal', 'cash_movement.type_tip_payout', 'cash_movement.type_other_in',
+    'cash_movement.type_other_out', 'cash_movement.type_transfer_out', 'cash_movement.type_transfer_in',
+    'cash_movement.type_expense', 'cash_movement.type_count_difference',
+    'cash_movement.type_handover_difference', 'shift_receipt.title_close', 'shift_receipt.title_interim',
+    'shift_receipt.title_movement', 'shift_receipt.cashregister', 'shift_receipt.drawer',
+    'shift_receipt.shift', 'shift_receipt.number', 'shift_receipt.opened', 'shift_receipt.closed',
+    'shift_receipt.by', 'shift_receipt.opening_float', 'shift_receipt.opening_float_taken_over',
+    'shift_receipt.cash_sales', 'shift_receipt.cash_cancellations', 'shift_receipt.movements',
+    'shift_receipt.expected', 'shift_receipt.counted', 'shift_receipt.difference', 'shift_receipt.comment',
+    'shift_receipt.non_cash', 'shift_receipt.receipts', 'shift_receipt.cancellations',
+    'shift_receipt.openings_without_sale', 'shift_receipt.tips', 'shift_receipt.tip_immediately',
+    'shift_receipt.tip_retained', 'shift_receipt.tip_paid_out', 'shift_receipt.movement_number',
+    'shift_receipt.type', 'shift_receipt.amount', 'shift_receipt.location', 'shift_receipt.location_bank',
+    'shift_receipt.location_safe', 'shift_receipt.recipient', 'shift_receipt.target_drawer',
+    'shift_receipt.note', 'shift_receipt.operator', 'shift_receipt.time',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
-  placeholders: {'cents', 'chars', 'quantity', 'count', 'counted'},
+  placeholders: {'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type'},
 );
 
 Set<String> _nach10In(String abschnitt) => abschnitt == 'messages' ? _nach10.messages : _nach10.labels;
