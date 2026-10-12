@@ -22,6 +22,7 @@ abstract final class Aufrufe {
   static const downloadReport = 'downloadReport';
   static const endRegisterSession = 'endRegisterSession';
   static const financeWebService = 'financeWebService';
+  static const getCashregisterReport = 'getCashregisterReport';
   static const getCustomer = 'getCustomer';
   static const getFirstReceiptDate = 'getFirstReceiptDate';
   static const getInvoice = 'getInvoice';
@@ -131,6 +132,7 @@ abstract final class Aufrufe {
     downloadReport,
     endRegisterSession,
     financeWebService,
+    getCashregisterReport,
     getCustomer,
     getFirstReceiptDate,
     getInvoice,

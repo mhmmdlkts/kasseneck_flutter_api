@@ -46,6 +46,7 @@ Map<String, dynamic> _params(String fall) =>
 const Set<String> _lesen = {
   'downloadDailyReport',
   'downloadReport',
+  'getCashregisterReport',
   'generateFullReceiptId', // leitet nur einen Link-Schluessel ab, schreibt nichts
   'getArticle',
   'getCustomer',

@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.0.0
+  kasseneck_api: ^11.1.0
 ```
 
 ```bash
@@ -1029,10 +1029,9 @@ NULLBELEG, ...) itself.
 ## Reports, receipt history, FinanzOnline status
 
 ```dart
-import 'package:kasseneck_api/models/report_month.dart';
-
-final monthly = await kasseneck.downloadMonthlyReport(ReportMonth.now()); // PDF bytes, Vienna month
-final daily   = await kasseneck.downloadDailyReport(DateTime.now());       // PDF bytes
+final monthly = await kasseneck.getCashregisterReport(year: 2026, month: 9);                 // PDF bytes, closed month
+final daily   = await kasseneck.getCashregisterReport(year: 2026, month: 10, day: 11);        // PDF bytes, one day
+final range   = await kasseneck.getCashregisterReport(start: '2026-09-01', end: '2026-09-15'); // PDF bytes, end exclusive
 final history = await kasseneck.getReceipts(start, end);                   // List<KasseneckReceipt>
 final one     = await kasseneck.getReceipt(receiptId);
 final status  = await kasseneck.getCashboxStatus();                        // register status at FinanzOnline

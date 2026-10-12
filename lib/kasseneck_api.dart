@@ -328,6 +328,7 @@ class KasseneckApi {
   }
 
   /// Downloads the daily report PDF for [dateTime] as raw bytes.
+  @Deprecated('Use getCashregisterReport(...). Deprecated since 11.1.0; the endpoint keeps working until it is switched off.')
   Future<Uint8List?> downloadDailyReport(DateTime dateTime) async => _bytes(Aufrufe.downloadDailyReport, {
         'year': dateTime.year,
         'month': dateTime.month,
@@ -335,10 +336,48 @@ class KasseneckApi {
       });
 
   /// Downloads the monthly report PDF for [reportMonth] as raw bytes.
+  @Deprecated('Use getCashregisterReport(...). Deprecated since 11.1.0; the endpoint keeps working until it is switched off.')
   Future<Uint8List?> downloadMonthlyReport(ReportMonth reportMonth) async => _bytes(Aufrufe.downloadReport, {
         'month': reportMonth.month.id,
         'year': reportMonth.year
       });
+
+  /// Cash register report PDF (v2) for a closed month (`year` + `month`), a
+  /// day up to today (`year` + `month` + `day`) or a date range (`start` and
+  /// `end` as YYYY-MM-DD, `end` exclusive, at most 366 days). The current month
+  /// and the future are rejected by the server (`period_not_closed`,
+  /// `period_in_future`). Successor of [downloadMonthlyReport] and
+  /// [downloadDailyReport].
+  ///
+  /// Exactly one form: a mixed or partial input throws an [ArgumentError]
+  /// before anything is sent.
+  Future<Uint8List> getCashregisterReport({int? year, int? month, int? day, String? start, String? end}) async {
+    final Map<String, dynamic> params;
+    if (start != null || end != null) {
+      if (start == null || end == null || year != null || month != null || day != null) {
+        throw ArgumentError('getCashregisterReport: use either start and end, or year and month (and day), not a mix');
+      }
+      final datum = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+      for (final (feld, wert) in [('start', start), ('end', end)]) {
+        if (!datum.hasMatch(wert)) {
+          throw ArgumentError('getCashregisterReport: $feld must be YYYY-MM-DD, was "$wert"');
+        }
+      }
+      params = {'start': start, 'end': end};
+    } else {
+      if (year == null || month == null) {
+        throw ArgumentError('getCashregisterReport: year and month (or start and end) are required');
+      }
+      if (month < 1 || month > 12) {
+        throw ArgumentError('getCashregisterReport: month must be 1-12, was "$month"');
+      }
+      if (day != null && (day < 1 || day > 31)) {
+        throw ArgumentError('getCashregisterReport: day must be 1-31, was "$day"');
+      }
+      params = {'year': year, 'month': month, 'day': ?day};
+    }
+    return _bytes(Aufrufe.getCashregisterReport, params);
+  }
 
   Future<ReportMonth?> getFirstReceiptDate() async {
     final resJson = await _kasseneckJson(endpoint: Aufrufe.getFirstReceiptDate);
