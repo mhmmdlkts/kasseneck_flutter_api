@@ -1,5 +1,8 @@
-import 'package:sumup/models/sumup_plugin_checkout_response.dart';
-
+/// Ergebnis einer SumUp-Kartenzahlung, wie es an der Zahlung des Belegs
+/// (`providerData`) gespeichert und auf Bon und Vorschau gezeigt wird.
+///
+/// Reines Datenmodell: Das SumUp-Plugin bindet die App selbst ein und
+/// übersetzt dessen Antwort mit dem Konstruktor hierher.
 class SumupCheckoutResponse {
   final bool success;
   final String? transactionCode;
@@ -26,22 +29,6 @@ class SumupCheckoutResponse {
     this.cardType,
     this.cardLastDigits,
   });
-
-  factory SumupCheckoutResponse.fromSumup(SumupPluginCheckoutResponse response) {
-    return SumupCheckoutResponse(
-      success: response.success ?? false,
-      transactionCode: response.transactionCode,
-      amount: response.amount,
-      currency: response.currency,
-      vatAmount: response.vatAmount,
-      tipAmount: response.tipAmount,
-      paymentType: response.paymentType,
-      entryMode: response.entryMode,
-      installments: response.installments,
-      cardType: response.cardType,
-      cardLastDigits: response.cardLastDigits,
-    );
-  }
 
   factory SumupCheckoutResponse.fromMap(Map<String, dynamic> response) {
     return SumupCheckoutResponse(

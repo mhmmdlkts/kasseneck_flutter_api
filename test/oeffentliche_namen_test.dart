@@ -33,7 +33,7 @@ import 'helpers/oeffentliche_api.dart';
 /// Englische Woerter, die in oeffentlichen Namen vorkommen.
 final Set<String> woerter = _liste('''
   abort abortable aborted above accept accepted account acquirer action actions active add
-  added address affiliate after agent align all allocation allocations allowed allows always amount
+  added address after agent align all allocation allocations allowed allows always amount
   amounts and applies approval approved april area article articles as ask assert
   assign at attempt attempts attribute attributes august auth authority authorization authorized auto available average background
   backoff bad bank banner barcode base batch before behavior below between binary bit
@@ -58,7 +58,7 @@ final Set<String> woerter = _liste('''
   everywhere exact exceeded exception expected expired expires expiry extend external
   extra failed failure failures fallback fast fault fax february feed field
   fields file filename files filled filter final finalized find finished firmware
-  first fits flip flow font footer for force foreign form format formats found
+  first fits flip flow font footer for force form format formats found
   fraction free from full fullscreen function funds gap gateway generator
   german get glass global goods graphics grid gross ground group groups hand hardware has
   hash header headers headings height heights held high hint hints horizontal
@@ -82,7 +82,7 @@ final Set<String> woerter = _liste('''
   platform policy port position present pressed preview previous price prices
   print printer printers printing probe production profile progress project
   promo proof provider public purchase quantities quantity quick quiet radius raised random
-  range raster rasters rate rated rates ratio raw read readable reader ready
+  range raster rasters rate rated rates ratio raw read readable ready
   reason reasons receipt receipts receive received recipient recipients record redeem
   redeemed reference refresh refund refunds register registered registration rejected
   rejects related release released remaining remove removed render renew replacement replayed report
@@ -93,7 +93,7 @@ final Set<String> woerter = _liste('''
   secret seen select selected selection sell sellable send sent september sequence serial server
   service services session sessions set setting settings setup shadow share
   shared sheet short shortcut shortcuts shorten shortfall shortfalls show side signature signed
-  signing since single site size sizing skip sleep small software sold sort
+  signing since single site size sizing sleep small software sold sort
   source sources space split staff stamp standard start started state
   statement status statuses step steps stock stocktake stop storage store stored street strength
   strengths string style styles subnet subtitle subtotal subtracted succeeded

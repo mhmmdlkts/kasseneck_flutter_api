@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^10.7.2
+  kasseneck_api: ^11.0.0
 ```
 
 ```bash
@@ -395,7 +395,7 @@ then decide.
 **Amounts are integer cents.** `KasseneckItem.priceCents` is the gross unit
 price in cents, `quantity` a whole number. `KasseneckItem.euro(singlePrice: …)`
 converts a euro double once. Euro doubles appear only where a terminal API
-requires them (hobex HPS, `HobexCloudPayments.pay`, SumUp); the raw cloud calls
+requires them (hobex HPS, `HobexCloudPayments.pay`); the raw cloud calls
 `hobexPay` and `hobexRefund` take `amountCents` and `tipCents` like the npm
 package.
 
@@ -801,7 +801,7 @@ ID instead of starting a new charge. A lost answer ends in
 | **hobex HPS** (terminal in the local network) | `HpsPayments`: `pay`, `refund`, `cancel` with a resolved three-valued outcome; `discoverHpsTerminals` finds terminals in the LAN |
 | **hobex Cloud** (via the Kasseneck backend) | `HobexCloudPayments.pay` with the same outcome; refunds via `kasseneck.hobexRefund(...)` |
 | **Stripe** | payment links for remote and online payments: `createStripeLink`, `stripeCaptureIntent` |
-| **SumUp** | thin wrapper around the `sumup` plugin: `SumupService` in `services/sumup_service.dart` |
+| **SumUp** | the app binds the `sumup` plugin itself and stores the result as `SumupCheckoutResponse` (`toJson`) in `providerData`; receipt and preview print the SumUp block from it |
 | **any other terminal** (for example GP Tom or myPOS) | pass your terminal's result on the card payment as `KeckPaymentInput(provider: …, providerPaymentId: …, providerData: …)`; it is stored and printed on the receipt |
 
 `HpsPayments` and `HobexCloudPayments.pay` take euros (`amount: 12.50`), as
