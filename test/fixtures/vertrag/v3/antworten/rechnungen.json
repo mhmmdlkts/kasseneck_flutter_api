@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "888d50e0ead14faedcfd6eb1673de3095155479c264a96d3dadbc8d870f4c497",
-    "inputsSha256": "6a5553a580d259c0c9bd38fc7ab314b185c583ac65104a2dcbc13c70314b808d",
+    "sha256": "9d0f4b0fa978c67a77ae7a29d26fed60ae294fc597f9c23a7a27b8fcba4a8f0d",
+    "inputsSha256": "055d351ec81c75c91de099983372701eda34a9b8f53487ea30a21bca2a5d465f",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -447,7 +447,9 @@
               "checkedOn": "2026-09-26",
               "source": "vies",
               "level": 1,
-              "code": "248H248H"
+              "code": "248H248H",
+              "afterSupplyDate": false,
+              "supplyDateProof": null
             },
             "vatIdRisk": null
           },
@@ -784,7 +786,9 @@
               "checkedOn": "2026-09-26",
               "source": "vies",
               "level": 1,
-              "code": "248H248H"
+              "code": "248H248H",
+              "afterSupplyDate": false,
+              "supplyDateProof": null
             },
             "vatIdRisk": null,
             "items": [
@@ -1224,7 +1228,9 @@
               "checkedOn": "2026-09-26",
               "source": "vies",
               "level": 1,
-              "code": "248H248H"
+              "code": "248H248H",
+              "afterSupplyDate": false,
+              "supplyDateProof": null
             },
             "vatIdRisk": null
           },
@@ -1518,7 +1524,9 @@
                 "checkedOn": "2026-09-26",
                 "source": "vies",
                 "level": 1,
-                "code": "248H248H"
+                "code": "248H248H",
+                "afterSupplyDate": false,
+                "supplyDateProof": null
               },
               "vatIdRisk": null
             },

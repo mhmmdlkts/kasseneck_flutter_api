@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "0f78308720a3098401867185fdceea2aadf292158d719c0f9dc0306826959a27",
-    "inputsSha256": "6a5553a580d259c0c9bd38fc7ab314b185c583ac65104a2dcbc13c70314b808d",
+    "sha256": "4b0152e546f6320ecc6dad18156ac91cc176426c71c57ecbf21c1192a714ecda",
+    "inputsSha256": "055d351ec81c75c91de099983372701eda34a9b8f53487ea30a21bca2a5d465f",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -38,6 +38,7 @@
       "getReportV2",
       "downloadReport",
       "downloadDailyReport",
+      "getCashregisterReport",
       "createPaymentLinkStripe",
       "stripeCaptureIntent",
       "hobexPayApi",
@@ -144,6 +145,7 @@
       "getReportV2",
       "downloadReport",
       "downloadDailyReport",
+      "getCashregisterReport",
       "createPaymentLinkStripe",
       "stripeCaptureIntent",
       "hobexPayApi",
@@ -337,6 +339,7 @@
       "financeWebService",
       "generateFullReceiptId",
       "getArticle",
+      "getCashregisterReport",
       "getCustomer",
       "getCustomerCredentials",
       "getCustomerSignatureStatus",
@@ -931,6 +934,7 @@
       "invalid_locations",
       "invalid_method",
       "invalid_minimum",
+      "invalid_period",
       "invalid_position",
       "invalid_price",
       "invalid_quantity",
@@ -993,6 +997,7 @@
       "partner_locked",
       "partner_membership_missing",
       "partner_owner_only",
+      "password_change_required",
       "payment_amount_invalid",
       "payment_exceeds_invoice",
       "payment_method_invalid",
@@ -1008,6 +1013,8 @@
       "payments_not_allowed",
       "payments_required",
       "payments_sum_mismatch",
+      "period_in_future",
+      "period_not_closed",
       "power_of_attorney_missing",
       "print_job_not_found",
       "print_layout_failed",
@@ -1025,6 +1032,7 @@
       "register_user_not_allowed",
       "register_user_not_found",
       "register_user_only",
+      "report_generating",
       "reservation_mismatch",
       "reservation_not_active",
       "reservation_not_found",
@@ -1104,6 +1112,11 @@
       "withdrawal_type_required"
     ],
     "translation": {
+      "zeitraum_offen": "period_not_closed",
+      "zeitraum_zukunft": "period_in_future",
+      "zeitraum_ungueltig": "invalid_period",
+      "bericht_entsteht": "report_generating",
+      "kasse_unbekannt": "cashregister_not_found",
       "zugang_nicht_erlaubt": "access_not_allowed",
       "kennung_fehlt": "tax_number_missing",
       "vertrag_offen": "contracts_pending",
@@ -1174,6 +1187,7 @@
       "live_not_enabled",
       "api_not_approved",
       "unauthorized",
+      "password_change_required",
       "mfa_required",
       "user_verification_failed",
       "admin_required",
@@ -1576,6 +1590,11 @@
       "validation"
     ],
     "translatedValues": [
+      "period_not_closed",
+      "period_in_future",
+      "invalid_period",
+      "report_generating",
+      "cashregister_not_found",
       "access_not_allowed",
       "tax_number_missing",
       "contracts_pending",
@@ -2137,6 +2156,11 @@
             "$catalog": "MODUL"
           },
           "signatures[].error.code": {
+            "zeitraum_offen": "period_not_closed",
+            "zeitraum_zukunft": "period_in_future",
+            "zeitraum_ungueltig": "invalid_period",
+            "bericht_entsteht": "report_generating",
+            "kasse_unbekannt": "cashregister_not_found",
             "zugang_nicht_erlaubt": "access_not_allowed",
             "kennung_fehlt": "tax_number_missing",
             "vertrag_offen": "contracts_pending",
@@ -2628,6 +2652,7 @@
         }
       }
     },
+    "getCashregisterReport": {},
     "getCustomer": {},
     "getCustomerCredentials": {},
     "getCustomerSignatureStatus": {
@@ -2636,6 +2661,11 @@
           "$catalog": "GRUND_V3"
         },
         "requests[].error.code": {
+          "zeitraum_offen": "period_not_closed",
+          "zeitraum_zukunft": "period_in_future",
+          "zeitraum_ungueltig": "invalid_period",
+          "bericht_entsteht": "report_generating",
+          "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
           "kennung_fehlt": "tax_number_missing",
           "vertrag_offen": "contracts_pending",
@@ -2690,6 +2720,11 @@
           "uid_pruefung_offen": "vat_id_check_pending"
         },
         "signatures[].error.code": {
+          "zeitraum_offen": "period_not_closed",
+          "zeitraum_zukunft": "period_in_future",
+          "zeitraum_ungueltig": "invalid_period",
+          "bericht_entsteht": "report_generating",
+          "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
           "kennung_fehlt": "tax_number_missing",
           "vertrag_offen": "contracts_pending",
@@ -3260,6 +3295,11 @@
     "listCustomerCashregisters": {
       "werte": {
         "signatures[].error.code": {
+          "zeitraum_offen": "period_not_closed",
+          "zeitraum_zukunft": "period_in_future",
+          "zeitraum_ungueltig": "invalid_period",
+          "bericht_entsteht": "report_generating",
+          "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
           "kennung_fehlt": "tax_number_missing",
           "vertrag_offen": "contracts_pending",
@@ -4276,6 +4316,11 @@
           "$catalog": "GRUND_V3"
         },
         "request.error.code": {
+          "zeitraum_offen": "period_not_closed",
+          "zeitraum_zukunft": "period_in_future",
+          "zeitraum_ungueltig": "invalid_period",
+          "bericht_entsteht": "report_generating",
+          "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
           "kennung_fehlt": "tax_number_missing",
           "vertrag_offen": "contracts_pending",
@@ -4885,6 +4930,11 @@
     "cashregister.failed": {
       "werte": {
         "code": {
+          "zeitraum_offen": "period_not_closed",
+          "zeitraum_zukunft": "period_in_future",
+          "zeitraum_ungueltig": "invalid_period",
+          "bericht_entsteht": "report_generating",
+          "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
           "kennung_fehlt": "tax_number_missing",
           "vertrag_offen": "contracts_pending",
@@ -5026,6 +5076,11 @@
     "signature.failed": {
       "werte": {
         "code": {
+          "zeitraum_offen": "period_not_closed",
+          "zeitraum_zukunft": "period_in_future",
+          "zeitraum_ungueltig": "invalid_period",
+          "bericht_entsteht": "report_generating",
+          "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
           "kennung_fehlt": "tax_number_missing",
           "vertrag_offen": "contracts_pending",

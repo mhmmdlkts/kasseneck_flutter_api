@@ -1,3 +1,23 @@
+## 11.1.0
+
+- New `getCashregisterReport({year, month, day, start, end})` for the report
+  PDF (v2): a closed month, a day up to today or a date range. Exactly one
+  form; a mixed or partial input throws an `ArgumentError` before anything is
+  sent. Reason: one successor for the report downloads, same rules as the
+  customer panel.
+- Deprecated `downloadMonthlyReport` and `downloadDailyReport`. Reason: the
+  endpoints are deprecated; closed periods now return the v2 report. They keep
+  working until they are switched off.
+- Error code `password_change_required` added to all error-code lists and to
+  `paymentCallRejectedCodes`. Reason: the backend rejects calls while a
+  mandatory password change is open (before the handler ran), so a payment call
+  with this code is `rejected`, not `unknown`.
+- `InvoiceVatIdProof` gains `afterSupplyDate` (always present) and
+  `supplyDateProof` (new `InvoiceSupplyDateProof` or `null`, always present).
+  Reason: the backend now reports whether the VAT ID was checked on or before
+  the supply date or only afterwards.
+- Contract pinned to npm 1.10.0.
+
 ## 11.0.0
 
 **Breaking:** the package no longer depends on the `sumup` plugin.

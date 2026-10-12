@@ -97,7 +97,7 @@ final Set<String> woerter = _liste('''
   source sources space split staff stamp standard start started state
   statement status statuses step steps stock stocktake stop storage store stored street strength
   strengths string style styles subnet subtitle subtotal subtracted succeeded
-  success sum summary supplier supported surface symbol system table tables takeover tax technical
+  success sum summary supplier supply supported surface symbol system table tables takeover tax technical
   tendered term terminal terminals test text texts thanks theme tile tiles
   time timeout timestamp tip title to today token tolerance tone top total totals touch
   tracked tracking training transaction transfer transmitted transport tries turn
