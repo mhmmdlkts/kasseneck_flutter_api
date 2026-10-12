@@ -395,7 +395,7 @@ then decide.
 **Amounts are integer cents.** `KasseneckItem.priceCents` is the gross unit
 price in cents, `quantity` a whole number. `KasseneckItem.euro(singlePrice: …)`
 converts a euro double once. Euro doubles appear only where a terminal API
-requires them (hobex HPS, `HobexCloudPayments.pay`, SumUp); the raw cloud calls
+requires them (hobex HPS, `HobexCloudPayments.pay`); the raw cloud calls
 `hobexPay` and `hobexRefund` take `amountCents` and `tipCents` like the npm
 package.
 

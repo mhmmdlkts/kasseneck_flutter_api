@@ -96,7 +96,7 @@ später wieder auf alle Codes ausdehnt.
 
 Beträge sind **ganze Zahlen in Cent**. Euro als `double` gibt es nur an
 Außengrenzen, die es so verlangen (hobex-Terminal `HpsPayments`,
-`HobexCloudPayments.pay`, SumUp), und dort an genau **einer**
+`HobexCloudPayments.pay`), und dort an genau **einer**
 Umrechnungsstelle je Modul, nicht verstreut. Die rohen Cloud-Aufrufe
 `hobexPay` und `hobexRefund` nehmen Cent wie der JS-Zwilling und rechnen erst
 an der Hobex-Grenze in Euro um.
