@@ -306,6 +306,7 @@ const List<String> inventoryRequestErrorCodes = [
   'method_not_allowed',
   'mfa_required',
   'not_found',
+  'password_change_required',
   'register_user_no_business',
   'register_user_not_allowed',
   'register_user_not_found',

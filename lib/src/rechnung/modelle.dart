@@ -1211,16 +1211,30 @@ class Invoice {
 /// UID-Nachweis an einer Rechnung: gueltige Pruefung der Kunden-UID, hoechstens
 /// 30 Tage vor dem Festschreiben.
 class InvoiceVatIdProof {
-  const InvoiceVatIdProof({required this.checkedOn, required this.source, required this.level, this.code});
+  const InvoiceVatIdProof({
+    required this.checkedOn,
+    required this.source,
+    required this.level,
+    this.code,
+    this.afterSupplyDate = false,
+    this.supplyDateProof,
+  });
 
   factory InvoiceVatIdProof.fromJson(Map<String, dynamic> j) => InvoiceVatIdProof(
         checkedOn: _pflicht<String>(j, 'checkedOn'),
         source: _pflicht<String>(j, 'source'),
         level: _pflicht<int>(j, 'level'),
         code: _text(j, 'code'),
+        afterSupplyDate: _pflicht<bool>(j, 'afterSupplyDate'),
+        supplyDateProof: _belegtesObjekt(j, 'supplyDateProof'),
       );
 
-  static const fields = {'checkedOn', 'source', 'level', 'code'};
+  static InvoiceSupplyDateProof? _belegtesObjekt(Map<String, dynamic> j, String feld) {
+    final p = _objektOderNull(j, feld);
+    return p == null ? null : InvoiceSupplyDateProof.fromJson(p);
+  }
+
+  static const fields = {'checkedOn', 'source', 'level', 'code', 'afterSupplyDate', 'supplyDateProof'};
 
   /// Wiener Tag der Pruefung (`YYYY-MM-DD`).
   final String checkedOn;
@@ -1234,6 +1248,36 @@ class InvoiceVatIdProof {
   /// Pruefcode fuer die oeffentliche Pruefseite (auf dem PDF als QR); `null`, wenn
   /// keiner vergeben wurde.
   final String? code;
+
+  /// `true`, wenn erst nach dem Leistungstag geprueft wurde (kein Nachweis am
+  /// oder vor dem Leistungstag).
+  final bool afterSupplyDate;
+
+  /// Pruefung am oder vor dem Leistungstag (ohne Pruefcode); `null`, wenn es
+  /// keine gibt.
+  final InvoiceSupplyDateProof? supplyDateProof;
+}
+
+/// Nachweis am oder vor dem Leistungstag: wann, wer, welche Stufe.
+class InvoiceSupplyDateProof {
+  const InvoiceSupplyDateProof({required this.checkedOn, required this.source, required this.level});
+
+  factory InvoiceSupplyDateProof.fromJson(Map<String, dynamic> j) => InvoiceSupplyDateProof(
+        checkedOn: _pflicht<String>(j, 'checkedOn'),
+        source: _pflicht<String>(j, 'source'),
+        level: _pflicht<int>(j, 'level'),
+      );
+
+  static const fields = {'checkedOn', 'source', 'level'};
+
+  /// Wiener Tag der Pruefung (`YYYY-MM-DD`).
+  final String checkedOn;
+
+  /// `finanzonline` oder `vies`.
+  final String source;
+
+  /// Stufe der Pruefung: 1 = nur UID, 2 = UID mit Name und Anschrift.
+  final int level;
 }
 
 /// Ausgestellt ohne Ergebnis der UID-Pruefung; das Risiko traegt der Aussteller.

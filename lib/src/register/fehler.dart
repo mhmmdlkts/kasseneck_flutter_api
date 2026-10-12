@@ -66,7 +66,7 @@ const Set<String> _geldwege = {'hobexPayApi', 'hobexRefundApi', 'stripeCaptureIn
 ///   Kassen-Token-Codes, `account_not_found`, `live_not_enabled`,
 ///   `unauthorized`, `mfa_required`, `user_verification_failed`,
 ///   `admin_required`, `api_not_approved`, `app_check_missing`,
-///   `app_check_invalid` sowie die Codes der Kassen-Benutzer und ihrer Sitzung.
+///   `app_check_invalid`, `password_change_required` sowie die Codes der Kassen-Benutzer und ihrer Sitzung.
 /// * Der `/v3`-Rand vor dem Handler (`errorCodes.edge`): `not_found`
 ///   (unbekannter Endpunkt) und `internal_translation_error` (die Anfrage
 ///   liess sich nicht uebersetzen, es wurde nichts ausgefuehrt).
@@ -87,6 +87,8 @@ const Set<String> paymentCallRejectedCodes = {
   'account_not_found',
   'live_not_enabled',
   'unauthorized',
+  // Pflichtwechsel des Passworts offen (seit 10.8, Vertrag npm 1.9.0): vor dem Handler abgewiesen.
+  'password_change_required',
   'mfa_required',
   'user_verification_failed',
   'admin_required',

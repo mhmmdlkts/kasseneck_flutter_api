@@ -218,6 +218,7 @@ void _rechnungssicht(Object? r, String pfad, {required bool detail}) {
   _feldmenge(spur['einvoice'], EInvoiceStatus.fields, '$pfad.einvoice');
   _feldmenge(spur['brand'], Invoice.brandFields, '$pfad.brand');
   _feldmenge(spur['vatIdProof'], InvoiceVatIdProof.fields, '$pfad.vatIdProof');
+  _feldmenge((spur['vatIdProof'] as _Spur?)?['supplyDateProof'], InvoiceSupplyDateProof.fields, '$pfad.vatIdProof.supplyDateProof');
   _feldmenge(spur['vatIdRisk'], InvoiceVatIdRisk.fields, '$pfad.vatIdRisk');
   if (!detail) return;
   for (final (i, p) in (spur['items'] as List).indexed) {
@@ -504,6 +505,11 @@ void main() {
         expect([1, 2], contains(n.level), reason: '$name');
         expect(n.checkedOn, matches(RegExp(r'^\d{4}-\d{2}-\d{2}$')));
         expect(n.code, anyOf(isNull, isA<String>()));
+        expect(n.afterSupplyDate, isA<bool>(), reason: '$name');
+        if (n.supplyDateProof case final p?) {
+          expect(['finanzonline', 'vies'], contains(p.source), reason: '$name');
+          expect([1, 2], contains(p.level), reason: '$name');
+        }
         expect(r.vatIdRisk, isNull, reason: '$name');
       }
     });
@@ -514,6 +520,8 @@ void main() {
       expect(() => Invoice.fromJson({...roh, 'vatIdProof': nachweis}), throwsFormatException);
       expect(() => Invoice.fromJson({...roh, 'vatIdRisk': <String, dynamic>{}}), throwsFormatException);
       expect(() => Invoice.fromJson({...roh, 'vatIdProof': 'vies'}), throwsFormatException);
+      final ohneFlag = Map.of(roh['vatIdProof'] as Map<String, dynamic>)..remove('afterSupplyDate');
+      expect(() => Invoice.fromJson({...roh, 'vatIdProof': ohneFlag}), throwsFormatException);
     });
 
     test('vat_id_invalid ist ein Rechnungs-Fehler; acceptVatIdRisk geht nur gesetzt hinaus', () {
