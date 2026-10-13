@@ -8,7 +8,7 @@ belong to a shift in a drawer, and the register can open and close the shift,
 book deposits and withdrawals and print the bons itself.
 
 Additive; every existing call sends the same bytes as in 11.1.1 unless you
-pass the new `drawerId`. The lists `posErrorCodes` (14 new codes),
+pass the new `drawerId`. The lists `posErrorCodes` (17 new codes),
 `unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code
 that compares them with a fixed length needs the new ones.
 
@@ -25,6 +25,16 @@ that compares them with a fixed length needs the new ones.
   amount, no counted amount, no running totals and no suggestion; the model has
   `null` there, never `0`. `closeMyShift` returns a `ShiftCloseResult`:
   `recount` (count once more, not an error) or closed with the Z bon.
+- **Without the right `shift`** `getMyDrawerState` still returns the open
+  shift with its basic data only (`id`, `drawerId`, `cashregisterId`, `number`,
+  `status`, `openedAt`, `openedBy`); every other field is `null`, so
+  `Shift.openingFloatTakenOver` is a `bool?`. Reason: a user without the right
+  saw no shift and the register blocked the sale although one was open.
+- **Buffered drawer openings.** `DrawerOpeningEntry` takes `drawerId` and an
+  `operator` (`DrawerOpeningOperator`: who opened the drawer while the entry was
+  buffered; the server takes it only for a user of the business assigned to the
+  register, otherwise the sending user). `DrawerOpeningsResult.drawerId` names
+  the drawer that was logged into (the main drawer for a decommissioned one).
 - **Models** (`pos.dart`): `DrawerState`, `Shift`, `CashMovement`,
   `ShiftSummaryReceipt` (also `ShiftReceiptData`), `CashMovementReceipt`,
   `OpenShiftResult`, `CashMovementResult`, `DrawerOpeningsResult`, `ShiftReport`,
@@ -49,8 +59,15 @@ that compares them with a fixed length needs the new ones.
   drawer of the register): read only as a valid id, written as an id or `null`
   to remove it (`posDeviceOptionalFields`).
 - **Texts and errors.** Catalogue entries `shift.*`, `cash_movement.*`,
-  `drawer.*`, `shift_receipt.*` and rules for the 14 new codes;
-  `shift.required_other` for a user without the `shift` right when no shift is open.
+  `drawer.*`, `shift_receipt.*` and rules for the 15 new codes (with
+  `shift_mode_off`: `openMyShift` on a drawer without shift mode, text
+  `shift.mode_off`); `shift.required_other` for a user without the `shift`
+  right when no shift is open. `shift.recount_exhausted` asks for the amount of
+  the second count (a comment only above the threshold, `comment_required`).
+- **Confirmation in the Kasseneck app.** The error code lists and
+  `paymentCallRejectedCodes` gain `second_factor_required` and
+  `action_confirmation_required`. Reason: the backend /v3 contract contains them
+  since keck#657 (rejected before the handler), like npm 1.11.0.
   15 more labels and 2 more messages (`cash_movement.pay_*`, `drawer.recent_openings`,
   `drawer.reason_*`, `shift.resend/next/print_*/later`, `time.yesterday`,
   `tip_payout.recipient_required`, `shift.pending_hint`) so the registers take every text from the package.

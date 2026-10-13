@@ -19,6 +19,7 @@ export '../register/codes.dart' show FieldError;
 /// `details.errors[]` mit dem äußeren Feldpfad ([posFieldErrors]).
 const List<String> posErrorCodes = [
   'account_not_found',
+  'action_confirmation_required',
   'admin_required',
   'api_not_approved',
   'app_check_invalid',
@@ -68,6 +69,7 @@ const List<String> posErrorCodes = [
   'register_user_not_allowed',
   'register_user_not_found',
   'response_translation_failed',
+  'second_factor_required',
   'serial_already_counted',
   'serial_not_allowed',
   'serial_required',
@@ -76,6 +78,7 @@ const List<String> posErrorCodes = [
   'session_other_cashregister',
   'shift_already_open',
   'shift_closed',
+  'shift_mode_off',
   'shift_not_open',
   'stocktake_closed',
   'stocktake_closing',

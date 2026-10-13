@@ -57,7 +57,7 @@ const _nach10 = (
     'cash_movement.exceeds_balance', 'cash_movement.note_required', 'cash_movement.booked',
     'cash_movement.type_invalid', 'cash_movement.same_drawer', 'tip_payout.exceeds_claim',
     'denominations.invalid', 'amount.invalid', 'drawer.not_found', 'drawer.inactive',
-    'tip_payout.recipient_required', 'shift.pending_hint',
+    'tip_payout.recipient_required', 'shift.pending_hint', 'shift.mode_off',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',

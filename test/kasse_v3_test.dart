@@ -335,6 +335,13 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
                 note: e['note'] as String?,
                 receiptId: e['receiptId'] as String?,
                 error: e['error'] as String?,
+                drawerId: e['drawerId'] as String?,
+                operator: e['operator'] == null
+                    ? null
+                    : DrawerOpeningOperator(
+                        registerUserId: _s((e['operator'] as Map)['registerUserId']),
+                        name: (e['operator'] as Map)['name'] as String?,
+                      ),
               ),
           ],
         );

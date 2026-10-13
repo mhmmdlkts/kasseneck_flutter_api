@@ -89,6 +89,9 @@ const Set<String> paymentCallRejectedCodes = {
   'unauthorized',
   // Pflichtwechsel des Passworts offen (seit 10.8, Vertrag npm 1.9.0): vor dem Handler abgewiesen.
   'password_change_required',
+  // Bestaetigung in der Kasseneck-App offen (seit 11.2, Vertrag npm 1.11.0): vor dem Handler abgewiesen.
+  'second_factor_required',
+  'action_confirmation_required',
   'mfa_required',
   'user_verification_failed',
   'admin_required',

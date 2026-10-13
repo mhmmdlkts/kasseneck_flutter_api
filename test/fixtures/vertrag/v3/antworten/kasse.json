@@ -4,7 +4,7 @@
     "default": {
       "sha256": "bf1e7c100e328517c72d5badf31904183efe22d1fddec308e2fe2722068854bc",
       "head": [],
-      "inputsSha256": "13b9833e0044613945afdbb58a333fe212274f41c1558e5c15bd059ae8d80da7",
+      "inputsSha256": "a23cdfc2de21818f1d97fce40dc80dcc2b1e7edac93edd85045d132dc74c50c0",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "9fab24bc3a52a0b7e759b0d1abb527645c1d3a94ebb483b71fc5cbcc81a63141",
+      "sha256": "df8f80b6ed116f60286b8c2e8188bb27b6d9bef2074651f9af50c01b5a5717d8",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "9c03433b6eea9cd81dcfd89ceae23204644655c80d0460307e5ad83fa74238cc",
+      "inputsSha256": "b210d471f06659de01ea7c4cd832bd7b2bf97d2098dc69d54f2f5de00001e202",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -16500,6 +16500,119 @@
           }
         },
         {
+          "case": "success_cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": false,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                }
+              },
+              "longOpenWarning": false,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_drawer_decommissioned",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_alt"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 400
+                }
+              ]
+            }
+          }
+        },
+        {
           "case": "success_manager",
           "method": "POST",
           "caller": "register_user_manager",
@@ -16629,7 +16742,7 @@
               "drawer": {
                 "id": "lade_bar",
                 "name": "Bar",
-                "shiftMode": false,
+                "shiftMode": true,
                 "cashregisterId": "KASSE1"
               },
               "rights": {
@@ -16940,6 +17053,35 @@
               "shiftId": "haupt_KASSE1_s2"
             },
             "code": "shift_already_open"
+          }
+        },
+        {
+          "case": "shift_mode_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Für diese Lade ist der Schichtbetrieb ausgeschaltet.",
+            "data": {
+              "code": "shift_mode_off"
+            },
+            "code": "shift_mode_off"
           }
         },
         {
@@ -18471,7 +18613,8 @@
             "message": "",
             "data": {
               "accepted": 3,
-              "duplicates": 0
+              "duplicates": 0,
+              "drawerId": "haupt_KASSE1"
             }
           }
         },
@@ -18515,7 +18658,122 @@
             "message": "",
             "data": {
               "accepted": 0,
-              "duplicates": 3
+              "duplicates": 3,
+              "drawerId": "haupt_KASSE1"
+            }
+          }
+        },
+        {
+          "case": "success_operator_reported_late",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": 1790344800000,
+                "idempotencyKey": "l-20",
+                "drawerId": "haupt_KASSE1",
+                "operator": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                }
+              },
+              {
+                "reason": "sale",
+                "receiptId": "KASSE1-ID-8",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": "l-21",
+                "drawerId": "haupt_KASSE1",
+                "operator": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                }
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "accepted": 2,
+              "duplicates": 0,
+              "drawerId": "haupt_KASSE1"
+            }
+          }
+        },
+        {
+          "case": "entry_other_drawer",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": "l-9",
+                "drawerId": "lade_bar"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "entries[0].drawerId",
+                  "message": "Der Eintrag gehört zu einer anderen Lade."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "success_drawer_decommissioned",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_alt",
+            "entries": [
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": "l-30",
+                "drawerId": "lade_alt"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "accepted": 1,
+              "duplicates": 0,
+              "drawerId": "haupt_KASSE1"
             }
           }
         },
@@ -19650,7 +19908,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Es wurde bereits zweimal gezählt. Abschließen nur mit der zweiten Zählung und einem Kommentar.",
+            "message": "Es wurde bereits zweimal gezählt. Abschließen nur mit dem Betrag der zweiten Zählung.",
             "data": {
               "code": "recount_exhausted"
             },

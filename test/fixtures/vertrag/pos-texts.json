@@ -741,7 +741,10 @@
       "text": "Diese Schicht ist schon geschlossen."
     },
     "shift.recount_exhausted": {
-      "text": "Es wurde schon zweimal gezählt. Bitte denselben Betrag mit Begründung senden oder den Chef rufen."
+      "text": "Es wurde schon zweimal gezählt. Bitte den Betrag der zweiten Zählung senden oder den Chef rufen."
+    },
+    "shift.mode_off": {
+      "text": "An dieser Lade ist der Schichtbetrieb aus. Bitte im Panel einschalten."
     },
     "shift.outcome_unknown": {
       "text": "Unklar, ob das angekommen ist. „Erneut senden“ schickt denselben Vorgang – er zählt nur einmal."
@@ -881,6 +884,13 @@
         "recount_exhausted"
       ],
       "key": "shift.recount_exhausted"
+    },
+    {
+      "kind": "api",
+      "codes": [
+        "shift_mode_off"
+      ],
+      "key": "shift.mode_off"
     },
     {
       "kind": "api",

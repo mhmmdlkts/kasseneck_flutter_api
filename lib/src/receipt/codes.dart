@@ -15,6 +15,7 @@ library;
 /// Anmeldung und Rand, sortiert: auf jedem Endpunkt des Kassenwegs moeglich.
 const List<String> anmeldungUndRandCodes = [
   'account_not_found',
+  'action_confirmation_required',
   'admin_required',
   'api_not_approved',
   'app_check_invalid',
@@ -34,6 +35,7 @@ const List<String> anmeldungUndRandCodes = [
   'register_user_not_allowed',
   'register_user_not_found',
   'response_translation_failed',
+  'second_factor_required',
   'session_expired',
   'session_other_cashregister',
   'unauthorized',

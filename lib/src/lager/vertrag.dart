@@ -292,6 +292,7 @@ const List<String> inventoryErrorCodes = [
 /// Rechnungs-API.
 const List<String> inventoryRequestErrorCodes = [
   'account_not_found',
+  'action_confirmation_required',
   'admin_required',
   'api_not_approved',
   'app_check_invalid',
@@ -311,6 +312,7 @@ const List<String> inventoryRequestErrorCodes = [
   'register_user_not_allowed',
   'register_user_not_found',
   'response_translation_failed',
+  'second_factor_required',
   'session_expired',
   'session_other_cashregister',
   'unauthorized',

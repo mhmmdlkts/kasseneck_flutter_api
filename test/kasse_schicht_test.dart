@@ -105,6 +105,13 @@ Future<Object?> _rufe(RegisterReceiptClient c, String endpunkt, Map<String, dyna
           note: e['note'] as String?,
           receiptId: e['receiptId'] as String?,
           error: e['error'] as String?,
+          drawerId: e['drawerId'] as String?,
+          operator: e['operator'] == null
+              ? null
+              : DrawerOpeningOperator(
+                  registerUserId: _s((e['operator'] as Map)['registerUserId']),
+                  name: (e['operator'] as Map)['name'] as String?,
+                ),
         ),
     ],
   ),
@@ -159,6 +166,43 @@ void main() {
         }
       }
       expect(gelesen, greaterThanOrEqualTo(18));
+    });
+
+    test('ohne Recht shift: die offene Schicht nur mit Grunddaten, ohne Betrag (wie im npm-Paket)', () async {
+      final fall = _fall('getMyDrawerState', 'success_cashier_without_permission');
+      final (:client, anfragen: _) = _kasse((_) async => _antwort(fall));
+      final stand = await client.getMyDrawerState(drawerId: 'haupt_KASSE1');
+      expect(stand.rights.shift, isFalse);
+      final s = stand.shift!;
+      expect((s.id, s.drawerId, s.number, s.status, s.openedBy?.name), ('haupt_KASSE1_s2', 'haupt_KASSE1', 2, 'open', 'Anna Chef'));
+      expect(s.openingFloatTakenOver, isNull);
+      expect(s.openingFloatCents, isNull);
+      expect(s.runningTotals, isNull);
+      expect(s.expectedCents, isNull);
+      expect(s.toJson().keys, unorderedEquals(['id', 'drawerId', 'cashregisterId', 'number', 'status', 'openedAt', 'openedBy', 'openedDeviceId',
+        'closedAt', 'closedBy', 'closedDeviceId', 'openingFloatCents', 'openingDenominations', 'comment', 'blind']));
+    });
+
+    test('logMyDrawerOpenings: gepufferte Eintraege senden Bediener und Lade; die Antwort nennt die wirksame Lade', () async {
+      final fall = _fall('logMyDrawerOpenings', 'success_operator_reported_late');
+      final (:client, :anfragen) = _kasse((_) async => _antwort(fall));
+      final r = await client.logMyDrawerOpenings(
+        drawerId: 'haupt_KASSE1',
+        entries: [
+          const DrawerOpeningEntry(
+            idempotencyKey: 'l-20',
+            reason: 'check',
+            ok: true,
+            deviceTime: 1,
+            drawerId: 'haupt_KASSE1',
+            operator: DrawerOpeningOperator(registerUserId: 'ru_kellner', name: 'Ben Kellner'),
+          ),
+        ],
+      );
+      final e = (_params(anfragen.single)['entries'] as List).cast<Map<String, dynamic>>().single;
+      expect(e['drawerId'], 'haupt_KASSE1');
+      expect(e['operator'], {'registerUserId': 'ru_kellner', 'name': 'Ben Kellner'});
+      expect((r.accepted, r.duplicates, r.drawerId), (2, 0, 'haupt_KASSE1'));
     });
 
     test('vor dem Senden abgewiesen werden genau diese Faelle (wie im npm-Paket)', () async {

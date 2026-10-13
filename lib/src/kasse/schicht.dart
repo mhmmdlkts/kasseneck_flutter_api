@@ -294,7 +294,10 @@ class ShiftReconciliation {
 
 /// Eine Schicht. Die Felder nach „Nur mit `cashView`“ sind `null`, wenn der
 /// Server sie nicht sendet (kein Recht); `null` heisst dort „nicht gesendet“
-/// oder „es gibt (noch) keinen Wert“ – nie `0`.
+/// oder „es gibt (noch) keinen Wert“ – nie `0`. Ohne das Recht `shift` sendet
+/// der Server von einer offenen Schicht nur die Grunddaten ([id], [drawerId],
+/// [cashregisterId], [number], [status], [openedAt], [openedBy]); alles
+/// andere ist dann `null`, auch [openingFloatTakenOver].
 class Shift {
   const Shift({
     required this.id,
@@ -310,7 +313,7 @@ class Shift {
     this.closedDeviceId,
     this.openingFloatCents,
     this.openingDenominations,
-    required this.openingFloatTakenOver,
+    this.openingFloatTakenOver,
     this.comment,
     this.blind,
     this.countedCents,
@@ -338,7 +341,9 @@ class Shift {
   /// Startgeld; blind `null`, wenn es uebernommen wurde.
   final int? openingFloatCents;
   final Map<String, int>? openingDenominations;
-  final bool openingFloatTakenOver;
+
+  /// Wurde das Startgeld uebernommen; `null` in den Grunddaten ohne Recht `shift`.
+  final bool? openingFloatTakenOver;
   final String? comment;
 
   /// Wurde blind gezaehlt (nach dem Abschluss); offen `null`.
@@ -367,7 +372,7 @@ class Shift {
         'closedDeviceId': closedDeviceId,
         'openingFloatCents': openingFloatCents,
         'openingDenominations': openingDenominations == null ? null : {...openingDenominations!},
-        'openingFloatTakenOver': openingFloatTakenOver,
+        if (openingFloatTakenOver != null) 'openingFloatTakenOver': openingFloatTakenOver,
         'comment': comment,
         'blind': blind,
         if (countedCents != null) 'countedCents': countedCents,
@@ -765,14 +770,17 @@ class CashMovementResult {
 
 /// Antwort von `logMyDrawerOpenings`.
 class DrawerOpeningsResult {
-  const DrawerOpeningsResult({required this.accepted, required this.duplicates});
+  const DrawerOpeningsResult({required this.accepted, required this.duplicates, this.drawerId});
 
   final int accepted;
 
   /// Schon gemeldet (gleicher Schluessel): zaehlt nicht doppelt.
   final int duplicates;
 
-  Map<String, dynamic> toJson() => {'accepted': accepted, 'duplicates': duplicates};
+  /// Die Lade, in die gemeldet wurde: eine stillgelegte meldet in die Hauptlade.
+  final String? drawerId;
+
+  Map<String, dynamic> toJson() => {'accepted': accepted, 'duplicates': duplicates, 'drawerId': drawerId};
 }
 
 /// Antwort von `getMyShiftReport`.
@@ -827,6 +835,18 @@ class ShiftCloseResult {
 
 // ---- Optionen ------------------------------------------------------------------
 
+/// Wer die Lade oeffnete (gepufferte Oeffnung): der damals angemeldete
+/// Mitarbeiter. Der Server nimmt ihn nur, wenn er zum Betrieb gehoert und der
+/// Kasse zugewiesen ist, den Namen aus dem Konto; sonst gilt der sendende Benutzer.
+class DrawerOpeningOperator {
+  const DrawerOpeningOperator({required this.registerUserId, this.name});
+
+  final String registerUserId;
+  final String? name;
+
+  Map<String, dynamic> toJson() => {'registerUserId': registerUserId, 'name': ?name};
+}
+
 /// Eine Oeffnung der Lade, wie die Kasse sie puffert und meldet.
 class DrawerOpeningEntry {
   const DrawerOpeningEntry({
@@ -837,6 +857,8 @@ class DrawerOpeningEntry {
     this.note,
     this.receiptId,
     this.error,
+    this.drawerId,
+    this.operator,
   });
 
   /// Je Eintrag ein eigener Schluessel: ein zweites Melden zaehlt nicht doppelt.
@@ -861,6 +883,12 @@ class DrawerOpeningEntry {
   /// Fehlertext eines fehlgeschlagenen Impulses.
   final String? error;
 
+  /// Lade der Oeffnung (gepuffert); muss `drawerId` der Anfrage sein, sonst `validation`.
+  final String? drawerId;
+
+  /// Wer oeffnete (gepuffert), siehe [DrawerOpeningOperator].
+  final DrawerOpeningOperator? operator;
+
   Map<String, dynamic> toJson() => {
         'idempotencyKey': idempotencyKey,
         'reason': reason,
@@ -869,6 +897,8 @@ class DrawerOpeningEntry {
         'note': ?note,
         'receiptId': ?receiptId,
         'error': ?error,
+        'drawerId': ?drawerId,
+        if (operator != null) 'operator': operator!.toJson(),
       };
 }
 
@@ -1012,7 +1042,7 @@ Shift _schicht(_Ort ort, Object? w) {
     closedDeviceId: _text(o['closedDeviceId']),
     openingFloatCents: _ganzzahlOderNull(ort, o, 'openingFloatCents'),
     openingDenominations: _stueckelung(ort, o, 'openingDenominations'),
-    openingFloatTakenOver: _wahr(ort, o, 'openingFloatTakenOver'),
+    openingFloatTakenOver: _wahrOderNull(ort, o, 'openingFloatTakenOver'),
     comment: _text(o['comment']),
     blind: _wahrOderNull(ort, o, 'blind'),
     countedCents: _ganzzahlOderNull(ort, o, 'countedCents'),
@@ -1220,7 +1250,11 @@ CashMovementResult gebuchtLesen(String name, Map<String, dynamic> daten) {
 /// `logMyDrawerOpenings` -> [DrawerOpeningsResult].
 DrawerOpeningsResult gemeldetLesen(String name, Map<String, dynamic> daten) {
   final ort = _Ort(name, '');
-  return DrawerOpeningsResult(accepted: _ganzzahl(ort, daten, 'accepted'), duplicates: _ganzzahl(ort, daten, 'duplicates'));
+  return DrawerOpeningsResult(
+    accepted: _ganzzahl(ort, daten, 'accepted'),
+    duplicates: _ganzzahl(ort, daten, 'duplicates'),
+    drawerId: _text(daten['drawerId']),
+  );
 }
 
 /// `getMyShiftReport` -> [ShiftReport].
