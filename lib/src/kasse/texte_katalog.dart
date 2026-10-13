@@ -194,6 +194,8 @@ const Map<String, PosText> posMessages = {
   'amount.invalid': PosText('Bitte einen gültigen Betrag eingeben.'),
   'drawer.not_found': PosText('Diese Lade gibt es nicht mehr. Bitte im Panel die Lade dieses Geräts prüfen.'),
   'drawer.inactive': PosText('Diese Lade ist stillgelegt. Bitte im Panel eine andere Lade zuordnen.'),
+  'tip_payout.recipient_required': PosText('Bitte einen Mitarbeiter wählen.'),
+  'shift.pending_hint': PosText('Noch nicht bestätigt. „Erneut senden“ schickt denselben Vorgang – er zählt nur einmal.'),
   'app.not_in_browser': PosText('Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.', only: [PosSurface.app]),
   'app.open_in_browser': PosText('Bitte im Browser öffnen: {target}', placeholders: ['target'], only: [PosSurface.app]),
 };
@@ -372,6 +374,21 @@ const Map<String, PosText> posLabels = {
   'shift_receipt.note': PosText('Grund'),
   'shift_receipt.operator': PosText('Bediener'),
   'shift_receipt.time': PosText('Zeit'),
+  'cash_movement.pay_in': PosText('Einzahlung'),
+  'cash_movement.pay_out': PosText('Auszahlung'),
+  'cash_movement.print': PosText('Beleg drucken'),
+  'drawer.recent_openings': PosText('Letzte Öffnungen'),
+  'drawer.reason_sale': PosText('Verkauf'),
+  'drawer.reason_cash_movement': PosText('Kassenbewegung'),
+  'drawer.reason_shift_open': PosText('Schichtbeginn'),
+  'drawer.reason_shift_close': PosText('Schichtabschluss'),
+  'shift.resend': PosText('Erneut senden'),
+  'shift.next': PosText('Weiter'),
+  'shift.print_close': PosText('Schichtabschluss drucken'),
+  'shift.print_again': PosText('Nochmals drucken'),
+  'shift.back_to_register': PosText('Zur Kasse'),
+  'shift.later': PosText('Später senden'),
+  'time.yesterday': PosText('gestern'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].

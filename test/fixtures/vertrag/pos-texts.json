@@ -780,6 +780,12 @@
     "drawer.inactive": {
       "text": "Diese Lade ist stillgelegt. Bitte im Panel eine andere Lade zuordnen."
     },
+    "tip_payout.recipient_required": {
+      "text": "Bitte einen Mitarbeiter wählen."
+    },
+    "shift.pending_hint": {
+      "text": "Noch nicht bestätigt. „Erneut senden“ schickt denselben Vorgang – er zählt nur einmal."
+    },
     "app.not_in_browser": {
       "text": "Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.",
       "only": [
@@ -1562,6 +1568,51 @@
     },
     "shift_receipt.time": {
       "text": "Zeit"
+    },
+    "cash_movement.pay_in": {
+      "text": "Einzahlung"
+    },
+    "cash_movement.pay_out": {
+      "text": "Auszahlung"
+    },
+    "cash_movement.print": {
+      "text": "Beleg drucken"
+    },
+    "drawer.recent_openings": {
+      "text": "Letzte Öffnungen"
+    },
+    "drawer.reason_sale": {
+      "text": "Verkauf"
+    },
+    "drawer.reason_cash_movement": {
+      "text": "Kassenbewegung"
+    },
+    "drawer.reason_shift_open": {
+      "text": "Schichtbeginn"
+    },
+    "drawer.reason_shift_close": {
+      "text": "Schichtabschluss"
+    },
+    "shift.resend": {
+      "text": "Erneut senden"
+    },
+    "shift.next": {
+      "text": "Weiter"
+    },
+    "shift.print_close": {
+      "text": "Schichtabschluss drucken"
+    },
+    "shift.print_again": {
+      "text": "Nochmals drucken"
+    },
+    "shift.back_to_register": {
+      "text": "Zur Kasse"
+    },
+    "shift.later": {
+      "text": "Später senden"
+    },
+    "time.yesterday": {
+      "text": "gestern"
     }
   },
   "returnDispositionLabels": {

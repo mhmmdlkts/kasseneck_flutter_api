@@ -57,6 +57,7 @@ const _nach10 = (
     'cash_movement.exceeds_balance', 'cash_movement.note_required', 'cash_movement.booked',
     'cash_movement.type_invalid', 'cash_movement.same_drawer', 'tip_payout.exceeds_claim',
     'denominations.invalid', 'amount.invalid', 'drawer.not_found', 'drawer.inactive',
+    'tip_payout.recipient_required', 'shift.pending_hint',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -88,6 +89,10 @@ const _nach10 = (
     'shift_receipt.type', 'shift_receipt.amount', 'shift_receipt.location', 'shift_receipt.location_bank',
     'shift_receipt.location_safe', 'shift_receipt.recipient', 'shift_receipt.target_drawer',
     'shift_receipt.note', 'shift_receipt.operator', 'shift_receipt.time',
+    'cash_movement.pay_in', 'cash_movement.pay_out', 'cash_movement.print', 'drawer.recent_openings',
+    'drawer.reason_sale', 'drawer.reason_cash_movement', 'drawer.reason_shift_open', 'drawer.reason_shift_close',
+    'shift.resend', 'shift.next', 'shift.print_close', 'shift.print_again', 'shift.back_to_register',
+    'shift.later', 'time.yesterday',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type'},

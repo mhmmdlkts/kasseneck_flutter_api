@@ -51,6 +51,9 @@ that compares them with a fixed length needs the new ones.
 - **Texts and errors.** Catalogue entries `shift.*`, `cash_movement.*`,
   `drawer.*`, `shift_receipt.*` and rules for the 14 new codes;
   `shift.required_other` for a user without the `shift` right when no shift is open.
+  15 more labels and 2 more messages (`cash_movement.pay_*`, `drawer.recent_openings`,
+  `drawer.reason_*`, `shift.resend/next/print_*/later`, `time.yesterday`,
+  `tip_payout.recipient_required`, `shift.pending_hint`) so the registers take every text from the package.
 
 ## 11.1.1
 
