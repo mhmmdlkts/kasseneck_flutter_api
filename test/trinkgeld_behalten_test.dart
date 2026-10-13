@@ -76,6 +76,6 @@ void main() {
   test('Texte: Schalter und Einstellung (Beschriftung + Hinweis)', () {
     expect(labelText('checkout.tip_kept'), 'gleich behalten');
     expect(labelText('tip.kept_setting'), 'Bar-Trinkgeld behält der Mitarbeiter gleich');
-    expect(messageText('tip.kept_setting_hint'), contains('Kassenstand'));
+    expect(messageText('tip.kept_setting_hint'), contains('zählt nicht ins Soll der Lade'));
   });
 }

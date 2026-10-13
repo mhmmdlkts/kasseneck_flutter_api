@@ -88,6 +88,25 @@ that compares them with a fixed length needs the new ones.
   behalten“ and `tip.kept_setting`, message `tip.kept_setting_hint`, like npm
   1.11.0. Reason: a waitress who keeps 2 € of a 22 € cash payment left 20 € in
   the drawer while the expected cash said 22 € — a difference that was none.
+  The hint now says „zählt nicht ins Soll der Lade“.
+- **Cancelling with or without the tip.** `cancelReceipt` (register path and
+  `KasseneckApi`) takes `refundTip` (answer to „Trinkgeld auch zurückgeben?“;
+  `false` leaves the staff tip on the receipt, without `items` = every
+  remaining quantity except the tip; `true` with `items` adds the open tip)
+  and `tipRefundSource` (`drawer` | `employee`, `tipRefundSources`, only for a
+  cash refund). Without both the payload stays byte for byte as before; a
+  source outside the list or together with `refundTip: false` throws before
+  sending. The rules both registers ask by, twins of npm 1.11.0 against the
+  shared cases `cancellation-tip-cases.json`: `openStaffTipCents`,
+  `cancellationItemsForTip` (positions only; the return choice still goes as
+  `itemReturnDispositions`), `cancellationCashRefundCents` and
+  `asksTipRefundSource`. `cancellationErrorCodes` gains `tip_refund_conflict`,
+  `invalid_tip_refund_source` and `tip_refund_source_requires_cash`. Labels
+  `cancellation.tip_refund_question/yes/no`,
+  `cancellation.tip_source_question/drawer/employee`, messages
+  `cancellation.tip_refund_missing` and `cancellation.tip_source_missing`.
+  Reason: whether a tip goes back with a cancelled sale, and from whose
+  pocket, is a decision at the register; drawer and tip figures follow it.
 - **Drawer on the receipt.** `sell` and `cancelReceipt` take an optional
   `drawerId` (the drawer whose cash balance the receipt counts in); empty or
   only whitespace throws before sending. The device setting `drawerId` is

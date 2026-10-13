@@ -67,6 +67,7 @@ const _nichtDieserWeg = {
   'cancelReceipt/payments_conflict': 'paymentMethod am Storno, sendet dieser Weg nie',
   'cancelReceipt/card_data_without_card': 'cardPaymentId am Storno, sendet dieser Weg nie',
   'cancelReceipt/items_no_array': 'items ist hier immer eine Liste (Stornoposition)',
+  'cancelReceipt/tip_source_invalid': 'eine Quelle ausserhalb von tipRefundSources wirft vor dem Senden (storno_trinkgeld_test.dart)',
   'setMyCashregisterStockLocation/data_missing':
       'ohne stockLocationId: null geht als leerer Text hinaus (Zuruecksetzen), weglassen kann dieser Weg nicht',
 };
@@ -411,6 +412,8 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
               ? null
               : [for (final i in p['items'] as List) (index: (i as Map)['index'] as int, quantity: i['quantity'] as int)],
           payments: p['payments'] == null ? null : [for (final z in p['payments'] as List) _zahlung(z as Map)],
+          refundTip: p['refundTip'] as bool?,
+          tipRefundSource: p['tipRefundSource'] as String?,
         );
     }
     throw StateError('Endpunkt $endpunkt ohne Aufruf');

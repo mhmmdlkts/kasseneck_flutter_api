@@ -34,7 +34,7 @@ import 'helpers/oeffentliche_api.dart';
 final Set<String> woerter = _liste('''
   abort abortable aborted above accept accepted account acquirer action actions active add
   added address after agent align all allocation allocations allowed allows always amount
-  amounts and applies approval approved april area article articles as ask assert
+  amounts and applies approval approved april area article articles as ask asks assert
   assign at attempt attempts attribute attributes august auth authority authorization authorized auto available average background
   backoff bad bank banner barcode base batch before behavior below between binary bit
   bits blank block blocked blocks body bold bolt book booking border both

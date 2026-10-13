@@ -4,7 +4,7 @@
     "default": {
       "sha256": "4174e678405f3ba01c9df3aba68ecd59153abf5ec2927c657b29237011cb9275",
       "head": [],
-      "inputsSha256": "41d2ffd0fa4a05df501b8258f3fc26b163ea94d3be4b734a24519395ec5db52a",
+      "inputsSha256": "975fbef73d03af479510a0db6d259683e6bc4fe0a80e3d55faa6084aee33cef6",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "8573b13760b7ca761f9a950d9f5a454e7f69788c7e3ec5c66bcee10c2ffdc729",
+      "sha256": "7e7aa55c83e42603fd91af9f4d94d72a882ec0d90136b02eae9c51d605bdbf3c",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "81a93a40ff05d5f386532ea7d52d04b4c7e24e2f1e00eb1f11efc5873723d076",
+      "inputsSha256": "30f050b440442004e70153ca71e4c836847d6e6a115f9418d4563a249c2b2548",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -3571,6 +3571,130 @@
                   },
                   {
                     "index": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "success_without_tip": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7": {
+            "receiptId": "KASSE1-ID-7",
+            "cashregisterId": "KASSE1",
+            "receiptType": "standard",
+            "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+            "timeStamp": "2026-09-26T09:30:00",
+            "paymentMethod": "cash",
+            "counter": 7,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              },
+              {
+                "name": "Kuchen",
+                "amount": 1,
+                "priceOneCents": 450,
+                "vat": 10
+              },
+              {
+                "kind": "tip",
+                "name": "Trinkgeld Personal",
+                "amount": 1,
+                "priceOneCents": 150,
+                "vat": 0,
+                "paymentMethod": "cash",
+                "recipient": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "sofortErhalten": true
+              }
+            ],
+            "operator": {
+              "uid": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "cancellations": [
+              {
+                "receiptId": "KASSE1-ID-8",
+                "at": 1790409600000,
+                "by": "ru_chef",
+                "note": null,
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 2
+                  },
+                  {
+                    "index": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "success_tip_employee": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7": {
+            "receiptId": "KASSE1-ID-7",
+            "cashregisterId": "KASSE1",
+            "receiptType": "standard",
+            "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+            "timeStamp": "2026-09-26T09:30:00",
+            "paymentMethod": "cash",
+            "counter": 7,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              },
+              {
+                "name": "Kuchen",
+                "amount": 1,
+                "priceOneCents": 450,
+                "vat": 10
+              },
+              {
+                "kind": "tip",
+                "name": "Trinkgeld Personal",
+                "amount": 1,
+                "priceOneCents": 150,
+                "vat": 0,
+                "paymentMethod": "cash",
+                "recipient": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "sofortErhalten": true
+              }
+            ],
+            "operator": {
+              "uid": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "cancellations": [
+              {
+                "receiptId": "KASSE1-ID-8",
+                "at": 1790409600000,
+                "by": "ru_chef",
+                "note": null,
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 2
+                  },
+                  {
+                    "index": 1,
+                    "quantity": 1
+                  },
+                  {
+                    "index": 2,
                     "quantity": 1
                   }
                 ]

@@ -508,6 +508,14 @@ class RegisterReceiptClient {
   /// vor 10.2.
   ///
   /// [drawerId]: Lade, in deren Kassenstand der Storno zaehlt; wie bei [sell].
+  ///
+  /// [refundTip] ist die Antwort auf „Trinkgeld auch zurueckgeben?"
+  /// (Schichten-Spec, Nachtrag 5): `false` ohne das Mitarbeiter-Trinkgeld
+  /// (ohne [items] = alle Restmengen ausser dem Trinkgeld), `true` mit [items]
+  /// nimmt das offene Trinkgeld dazu; fehlt = wie bisher. [tipRefundSource]
+  /// (`drawer` | `employee`, aus `tipRefundSources`) nur bei Barrueckgabe
+  /// (`asksTipRefundSource`), nie zusammen mit `refundTip: false`. Die
+  /// Positionen dazu rechnet `cancellationItemsForTip`.
   Future<CancelReceiptResult> cancelReceipt({
     required String originalReceiptId,
     required String reason,
@@ -518,6 +526,8 @@ class RegisterReceiptClient {
     List<KeckPaymentInput>? payments,
     KasseneckReceipt? original,
     String? drawerId,
+    bool? refundTip,
+    String? tipRefundSource,
   }) async {
     const name = Aufrufe.cancelReceipt;
     if (originalReceiptId.trim().isEmpty) {
@@ -553,6 +563,7 @@ class RegisterReceiptClient {
     }
     if (payments != null) assertCardRefunds(payments, original);
     if (drawerId != null) _ladeKennung(name, drawerId);
+    final trinkgeld = tipChoicePayload(name, refundTip: refundTip, tipRefundSource: tipRefundSource);
 
     final daten = await _signiertRufen(
       name,
@@ -564,6 +575,7 @@ class RegisterReceiptClient {
         if (note != null && note.isNotEmpty) 'note': note,
         if (payments != null) 'payments': [for (final z in payments) z.toJson()],
         'drawerId': ?drawerId,
+        ...trinkgeld,
       },
     );
 

@@ -116,7 +116,7 @@
       "text": "Über 50 % Trinkgeld – wirklich? Steuerfrei ist nur ortsübliches Trinkgeld."
     },
     "tip.kept_setting_hint": {
-      "text": "Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht in den Kassenstand und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen."
+      "text": "Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen."
     },
     "completion.failed": {
       "text": "Der Abschluss ist fehlgeschlagen."
@@ -338,6 +338,12 @@
     },
     "cancellation.input_rejected": {
       "text": "Die Eingabe wurde abgelehnt – bitte das Storno neu beginnen."
+    },
+    "cancellation.tip_refund_missing": {
+      "text": "Bitte wählen: Trinkgeld auch zurückgeben?"
+    },
+    "cancellation.tip_source_missing": {
+      "text": "Bitte wählen: Woher kommt das Trinkgeld zurück?"
     },
     "split.setting_hint": {
       "text": "Ein Tisch zahlt in Teilen: jede Zahlung bar oder mit Karte, mit eigenem Trinkgeld – am Ende ein Beleg für alles."
@@ -1274,6 +1280,24 @@
     },
     "cancellation.difference": {
       "text": "Differenz"
+    },
+    "cancellation.tip_refund_question": {
+      "text": "Trinkgeld auch zurückgeben?"
+    },
+    "cancellation.tip_refund_yes": {
+      "text": "Ja"
+    },
+    "cancellation.tip_refund_no": {
+      "text": "Nein"
+    },
+    "cancellation.tip_source_question": {
+      "text": "Woher kommt das Trinkgeld zurück?"
+    },
+    "cancellation.tip_source_drawer": {
+      "text": "Aus der Lade"
+    },
+    "cancellation.tip_source_employee": {
+      "text": "Gibt die Mitarbeiterin direkt"
     },
     "codetable.title": {
       "text": "ZEICHENSATZ-TEST"

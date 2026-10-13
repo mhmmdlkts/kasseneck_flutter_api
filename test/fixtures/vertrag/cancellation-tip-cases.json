@@ -1,0 +1,547 @@
+{
+  "_note": "Shared cases for cancelling a receipt with or without the tip (npm @kreiseck/kasseneck-api and Dart kasseneck_api): openStaffTipCents (staff tip not yet cancelled; > 0 = ask 'refund the tip too?'), cancellationItemsForTip (items sent after the answer; null = whole receipt), asksTipRefundSource (ask 'where does the tip come back from?' only when the cash refund covers it and the employee already had it) and cancellationCashRefundCents (cash part of the refund). Receipts in the /v3 form (the receipt part of the response, without signature fields); the tests add the required fields.",
+  "receipts": {
+    "cash_with_tip": {
+      "paymentMethod": "cash",
+      "payments": [
+        {
+          "id": "p1",
+          "method": "cash",
+          "amountCents": 1180
+        }
+      ],
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Kuchen",
+          "quantity": 1,
+          "unitPriceCents": 420,
+          "vatRate": 10
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 200,
+          "vatRate": 0,
+          "kind": "tip",
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "receivedImmediately": true
+        }
+      ]
+    },
+    "tip_already_cancelled": {
+      "paymentMethod": "cash",
+      "payments": [
+        {
+          "id": "p1",
+          "method": "cash",
+          "amountCents": 1180
+        }
+      ],
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Kuchen",
+          "quantity": 1,
+          "unitPriceCents": 420,
+          "vatRate": 10
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 200,
+          "vatRate": 0,
+          "kind": "tip",
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "receivedImmediately": true
+        }
+      ],
+      "cancellations": [
+        {
+          "receiptId": "S1",
+          "at": 1,
+          "by": null,
+          "note": null,
+          "items": [
+            {
+              "index": 2,
+              "quantity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "only_tip_open": {
+      "paymentMethod": "cash",
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 200,
+          "vatRate": 0,
+          "kind": "tip",
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "receivedImmediately": true
+        }
+      ],
+      "cancellations": [
+        {
+          "receiptId": "S1",
+          "at": 1,
+          "by": null,
+          "note": null,
+          "items": [
+            {
+              "index": 0,
+              "quantity": 2
+            }
+          ]
+        }
+      ]
+    },
+    "tip_retained": {
+      "paymentMethod": "creditCard",
+      "payments": [
+        {
+          "id": "p1",
+          "method": "creditCard",
+          "amountCents": 1180,
+          "provider": "sumup"
+        }
+      ],
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Kuchen",
+          "quantity": 1,
+          "unitPriceCents": 420,
+          "vatRate": 10
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 200,
+          "vatRate": 0,
+          "kind": "tip",
+          "paymentMethod": "creditCard",
+          "recipient": {
+            "registerUserId": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "receivedImmediately": false
+        }
+      ]
+    },
+    "legacy_without_flag": {
+      "paymentMethod": "cash",
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 1,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 150,
+          "vatRate": 0,
+          "kind": "tip",
+          "recipient": {
+            "registerUserId": "ru_ben",
+            "name": "Ben"
+          }
+        }
+      ]
+    },
+    "without_recipient": {
+      "paymentMethod": "cash",
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 1,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 150,
+          "vatRate": 0,
+          "kind": "tip",
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
+    },
+    "owner_tip": {
+      "paymentMethod": "cash",
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 1,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Trinkgeld",
+          "quantity": 1,
+          "unitPriceCents": 100,
+          "vatRate": 20,
+          "kind": "tip",
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_owner",
+            "name": "Owner",
+            "owner": true
+          }
+        }
+      ]
+    },
+    "without_tip": {
+      "paymentMethod": "cash",
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        }
+      ]
+    },
+    "mixed_payments": {
+      "paymentMethod": "mixed",
+      "payments": [
+        {
+          "id": "p1",
+          "method": "creditCard",
+          "amountCents": 980,
+          "provider": "sumup"
+        },
+        {
+          "id": "p2",
+          "method": "cash",
+          "amountCents": 200
+        }
+      ],
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Kuchen",
+          "quantity": 1,
+          "unitPriceCents": 420,
+          "vatRate": 10
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 200,
+          "vatRate": 0,
+          "kind": "tip",
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "receivedImmediately": true
+        }
+      ]
+    }
+  },
+  "openStaffTipCents": [
+    {
+      "receipt": "cash_with_tip",
+      "expected": 200
+    },
+    {
+      "receipt": "tip_already_cancelled",
+      "expected": 0
+    },
+    {
+      "receipt": "only_tip_open",
+      "expected": 200
+    },
+    {
+      "receipt": "tip_retained",
+      "expected": 200
+    },
+    {
+      "receipt": "owner_tip",
+      "expected": 0
+    },
+    {
+      "receipt": "without_tip",
+      "expected": 0
+    }
+  ],
+  "cancellationItemsForTip": [
+    {
+      "receipt": "cash_with_tip",
+      "items": null,
+      "refundTip": true,
+      "expected": null
+    },
+    {
+      "receipt": "cash_with_tip",
+      "items": null,
+      "refundTip": false,
+      "expected": [
+        {
+          "index": 0,
+          "quantity": 2
+        },
+        {
+          "index": 1,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "receipt": "cash_with_tip",
+      "items": [
+        {
+          "index": 1,
+          "quantity": 1,
+          "returnDisposition": "defective"
+        }
+      ],
+      "refundTip": true,
+      "expected": [
+        {
+          "index": 1,
+          "quantity": 1,
+          "returnDisposition": "defective"
+        },
+        {
+          "index": 2,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "receipt": "cash_with_tip",
+      "items": [
+        {
+          "index": 1,
+          "quantity": 1
+        }
+      ],
+      "refundTip": false,
+      "expected": [
+        {
+          "index": 1,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "receipt": "cash_with_tip",
+      "items": [],
+      "refundTip": true,
+      "expected": [
+        {
+          "index": 2,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "receipt": "cash_with_tip",
+      "items": [],
+      "refundTip": false,
+      "expected": []
+    },
+    {
+      "receipt": "cash_with_tip",
+      "items": [
+        {
+          "index": 2,
+          "quantity": 1
+        }
+      ],
+      "refundTip": false,
+      "expected": []
+    },
+    {
+      "receipt": "only_tip_open",
+      "items": null,
+      "refundTip": false,
+      "expected": []
+    },
+    {
+      "receipt": "tip_already_cancelled",
+      "items": [
+        {
+          "index": 0,
+          "quantity": 1
+        }
+      ],
+      "refundTip": true,
+      "expected": [
+        {
+          "index": 0,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "receipt": "without_tip",
+      "items": null,
+      "refundTip": false,
+      "expected": null
+    },
+    {
+      "receipt": "owner_tip",
+      "items": null,
+      "refundTip": false,
+      "expected": null
+    }
+  ],
+  "asksTipRefundSource": [
+    {
+      "receipt": "cash_with_tip",
+      "cashRefundCents": 1180,
+      "expected": true
+    },
+    {
+      "receipt": "cash_with_tip",
+      "cashRefundCents": 200,
+      "expected": true
+    },
+    {
+      "receipt": "cash_with_tip",
+      "cashRefundCents": 199,
+      "expected": false
+    },
+    {
+      "receipt": "cash_with_tip",
+      "cashRefundCents": 0,
+      "expected": false
+    },
+    {
+      "receipt": "tip_retained",
+      "cashRefundCents": 1180,
+      "expected": false
+    },
+    {
+      "receipt": "legacy_without_flag",
+      "cashRefundCents": 430,
+      "expected": true
+    },
+    {
+      "receipt": "without_recipient",
+      "cashRefundCents": 430,
+      "expected": false
+    },
+    {
+      "receipt": "tip_already_cancelled",
+      "cashRefundCents": 980,
+      "expected": false
+    },
+    {
+      "receipt": "without_tip",
+      "cashRefundCents": 560,
+      "expected": false
+    }
+  ],
+  "cancellationCashRefundCents": [
+    {
+      "receipt": "cash_with_tip",
+      "payments": null,
+      "dueCents": 1180,
+      "expected": 1180
+    },
+    {
+      "receipt": "tip_retained",
+      "payments": null,
+      "dueCents": 1180,
+      "expected": 0
+    },
+    {
+      "receipt": "legacy_without_flag",
+      "payments": null,
+      "dueCents": 430,
+      "expected": 430
+    },
+    {
+      "receipt": "mixed_payments",
+      "payments": null,
+      "dueCents": 1180,
+      "expected": 0
+    },
+    {
+      "receipt": "mixed_payments",
+      "payments": [
+        {
+          "method": "creditCard",
+          "amountCents": -980,
+          "refundOf": "p1",
+          "provider": "sumup"
+        },
+        {
+          "method": "cash",
+          "amountCents": -200,
+          "refundOf": "p2"
+        }
+      ],
+      "dueCents": 1180,
+      "expected": 200
+    },
+    {
+      "receipt": "mixed_payments",
+      "payments": [
+        {
+          "method": "cash",
+          "amountCents": -980,
+          "refundOf": "p1"
+        },
+        {
+          "method": "cash",
+          "amountCents": -200,
+          "refundOf": "p2"
+        }
+      ],
+      "dueCents": 1180,
+      "expected": 1180
+    }
+  ]
+}

@@ -445,6 +445,8 @@ class KasseneckApi {
     String? note,
     List<KeckPaymentInput>? payments,
     KasseneckReceipt? original,
+    bool? refundTip,
+    String? tipRefundSource,
   }) async {
     const name = Aufrufe.cancelReceipt;
     if (cashregisterId.trim().isEmpty) {
@@ -485,6 +487,7 @@ class KasseneckApi {
           'request');
     }
     if (payments != null) assertCardRefunds(payments, original);
+    final trinkgeld = tipChoicePayload(name, refundTip: refundTip, tipRefundSource: tipRefundSource);
 
     final resJson = await _kasseneckJson(
       endpoint: name,
@@ -496,6 +499,7 @@ class KasseneckApi {
         'returnDisposition': ?nutzlast.returnDisposition,
         if (note != null && note.isNotEmpty) 'note': note,
         if (payments != null) 'payments': [for (final z in payments) z.toJson()],
+        ...trinkgeld,
       },
       deadline: signatureTimeout,
     );

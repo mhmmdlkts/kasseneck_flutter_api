@@ -104,6 +104,10 @@ final List<String> cancellationErrorCodes = _mitRand(const [
   'cancellation_refund_reference_unknown', // refundOf nennt keine Zahlung des Originals
   'cancellation_outcome_unknown', // Ausgang unklar: nachlesen, nie wiederholen
   'invalid_return_disposition', // returnDisposition nicht restock, defective oder disposed (Lager)
+  // Trinkgeld beim Storno (refundTip/tipRefundSource, Schichten-Spec Nachtrag 5)
+  'tip_refund_conflict', // Wahl passt nicht zum Storno (Trinkgeld trotz Nein, Quelle ohne Trinkgeld)
+  'invalid_tip_refund_source', // tipRefundSource nicht drawer oder employee
+  'tip_refund_source_requires_cash', // eine Quelle nur, wenn das Bargeld des Stornos das Trinkgeld deckt
 ], _signierend);
 
 /// Codes rund um `payments` an `createReceipt` und `cancelReceipt`.

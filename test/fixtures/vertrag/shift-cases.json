@@ -58,6 +58,7 @@
     { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 0, "retainedCents": 250, "paidOutCents": 0, "openCents": 0 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 250 }, { "key": "shift_receipt.tip_retained", "cents": 250 }] },
     { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 0, "retainedCents": 0, "paidOutCents": 0, "openCents": 0 }, "expected": [] },
     { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": -200, "retainedCents": 0, "paidOutCents": 0, "openCents": 0 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": -200 }] },
-    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 200, "retainedCents": -200, "paidOutCents": 0, "openCents": 0 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 0 }, { "key": "shift_receipt.tip_retained", "cents": -200 }] }
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 200, "retainedCents": -200, "paidOutCents": 0, "openCents": 0 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 0 }, { "key": "shift_receipt.tip_retained", "cents": -200 }] },
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 0, "retainedCents": 0, "paidOutCents": 150, "openCents": -150 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 0 }, { "key": "shift_receipt.tip_paid_out", "cents": 150 }, { "key": "shift_receipt.tip_open", "cents": -150 }] }
   ]
 }
