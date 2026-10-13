@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "bede47ca4e19f8aabd16c37c73008d5997def2b73604058aae36d361360b0192",
-    "inputsSha256": "be5c4fb8a13765e1a8c4f051fb663973853ac99dac486644935ea348da891ec9",
+    "sha256": "e21935b2df4789c6148bd803225b7fd6bfb942d849fc9fb11cedfcea19f25cf0",
+    "inputsSha256": "a9ad0964f6b04e32ed666e805f64f761bc8727a357f6198ccdf46f7e37d58d58",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -2365,7 +2365,8 @@
           "items": [
             {
               "__": "items",
-              "receivedImmediately": "sofortErhalten"
+              "receivedImmediately": "sofortErhalten",
+              "keptByEmployee": "direkt"
             }
           ]
         }
@@ -2687,12 +2688,14 @@
       "params": {
         "tip": {
           "__": "tip",
-          "receivedImmediately": "sofortErhalten"
+          "receivedImmediately": "sofortErhalten",
+          "keptByEmployee": "direkt"
         },
         "items": [
           {
             "__": "items",
-            "receivedImmediately": "sofortErhalten"
+            "receivedImmediately": "sofortErhalten",
+            "keptByEmployee": "direkt"
           }
         ],
         "drawerId": "ladeId"
@@ -2710,7 +2713,8 @@
           "items": [
             {
               "__": "items",
-              "receivedImmediately": "sofortErhalten"
+              "receivedImmediately": "sofortErhalten",
+              "keptByEmployee": "direkt"
             }
           ]
         },
@@ -2833,7 +2837,7 @@
           },
           {
             "muster": {
-              "$pattern": "^Trinkgeld: (sofortErhalten|recipients(?:\\[\\d+\\]\\.(?:registerUserId|cents))?) "
+              "$pattern": "^Trinkgeld: (sofortErhalten|direkt|recipients(?:\\[\\d+\\]\\.(?:registerUserId|cents))?) "
             },
             "code": "tip_invalid",
             "feld": {
@@ -2886,7 +2890,8 @@
           }
         ],
         "nachrichtWoerter": {
-          "sofortErhalten": "receivedImmediately"
+          "sofortErhalten": "receivedImmediately",
+          "direkt": "keptByEmployee"
         }
       }
     },
@@ -3248,6 +3253,7 @@
           "change": "rueckgeld",
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
+          "tipKeptByDefault": "tgDirekt",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",
@@ -3502,7 +3508,8 @@
           "items": [
             {
               "__": "items",
-              "receivedImmediately": "sofortErhalten"
+              "receivedImmediately": "sofortErhalten",
+              "keptByEmployee": "direkt"
             }
           ]
         },
@@ -3563,7 +3570,8 @@
             "items": [
               {
                 "__": "items",
-                "receivedImmediately": "sofortErhalten"
+                "receivedImmediately": "sofortErhalten",
+                "keptByEmployee": "direkt"
               }
             ]
           }
@@ -4191,6 +4199,7 @@
             "change": "rueckgeld",
             "tipChips": "tgChips",
             "exactCash": "schnellbar",
+            "tipKeptByDefault": "tgDirekt",
             "checkoutMode": "kassierenModus",
             "receiptOutput": "belegAusgabe",
             "doneScreenSeconds": "fertigSekunden",
@@ -5106,6 +5115,7 @@
           "change": "rueckgeld",
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
+          "tipKeptByDefault": "tgDirekt",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",
@@ -5192,6 +5202,7 @@
           "change": "rueckgeld",
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
+          "tipKeptByDefault": "tgDirekt",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",

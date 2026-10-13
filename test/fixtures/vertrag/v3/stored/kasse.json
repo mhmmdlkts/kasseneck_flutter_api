@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "c698117aac597ad866c12a1876ab7d69de07d2f48a734a6d5eb9bfb8123cd413",
+      "sha256": "4174e678405f3ba01c9df3aba68ecd59153abf5ec2927c657b29237011cb9275",
       "head": [],
-      "inputsSha256": "c8064743ed0718a0b891545fba59c24c95e8bfb3da713efea87d643f2b711e49",
+      "inputsSha256": "41d2ffd0fa4a05df501b8258f3fc26b163ea94d3be4b734a24519395ec5db52a",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -24,7 +24,7 @@
         "note",
         "baseline"
       ],
-      "inputsSha256": "705fb03bbdee0d607a45472409d95d314b567b32d3b6c4f591eb69641d83e92a",
+      "inputsSha256": "81a93a40ff05d5f386532ea7d52d04b4c7e24e2f1e00eb1f11efc5873723d076",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -3157,6 +3157,224 @@
                 "__increment": 64000
               }
             }
+          },
+          "users/kw_betrieb1/laden/haupt_KASSE1": {
+            "name": "Hauptlade",
+            "cashregisterId": "KASSE1",
+            "haupt": true,
+            "aktiv": true,
+            "schichtbetrieb": false,
+            "differenzSchwelleCents": 500,
+            "offeneSchichtId": null,
+            "bewegungZaehler": 0,
+            "schichtZaehler": 0,
+            "angelegtAt": "2026-09-26T08:00:00.000Z"
+          }
+        },
+        "sale_tip_kept": {
+          "users/kw_betrieb1/cashregisters/KASSE1/metadata/lastReceipt": {
+            "id": "KASSE1-ID-2"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2": {
+            "counter": 2,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KASSE1-ID-2",
+            "cashregisterId": "KASSE1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20,
+                "priceOne": 3.2
+              },
+              {
+                "kind": "tip",
+                "name": "Trinkgeld Personal",
+                "amount": 1,
+                "quantity": 1,
+                "priceOne": 1.6,
+                "priceOneCents": 160,
+                "unitPriceCents": 160,
+                "vat": 0,
+                "vatRate": 0,
+                "paymentMethod": "cash",
+                "recipient": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "sofortErhalten": true,
+                "direkt": true
+              }
+            ],
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 6.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 1.6,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "XVyQJUiWDiM4NjAKsiguYw==",
+            "signaturePreviousReceipt": "<signatur>",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000019d51dc2",
+            "kopfId": "auto1",
+            "layoutRegeln": 2,
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 800
+              }
+            ],
+            "sig": "<signatur>",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_1,60_0,00_XVyQJUiW_ABC123_<verkettung>_<signatur>",
+            "operator": {
+              "uid": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "tipCents": 160,
+            "ladeId": "haupt_KASSE1",
+            "schichtId": null
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/d_2026-09-26": {
+            "scope": "day",
+            "key": "2026-09-26",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            },
+            "tipByPayment": {
+              "cash": {
+                "__increment": 16000
+              }
+            },
+            "tipByRecipient": {
+              "ru_kellner": {
+                "__increment": 16000
+              }
+            },
+            "tipStaff": 16000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
+            "scope": "month",
+            "key": "2026-09",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            },
+            "tipByPayment": {
+              "cash": {
+                "__increment": 16000
+              }
+            },
+            "tipByRecipient": {
+              "ru_kellner": {
+                "__increment": 16000
+              }
+            },
+            "grossByDay": {
+              "2026-09-26": {
+                "__increment": 64000
+              }
+            },
+            "tipStaff": 16000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
+            "scope": "year",
+            "key": "2026",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "standard": {
+                "__increment": 1
+              }
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000,
+            "grossByRate": {
+              "20": {
+                "__increment": 64000
+              }
+            },
+            "grossByPayment": {
+              "cash": {
+                "__increment": 64000
+              }
+            },
+            "countByPayment": {
+              "cash": {
+                "__increment": 1
+              }
+            },
+            "tipByPayment": {
+              "cash": {
+                "__increment": 16000
+              }
+            },
+            "tipByRecipient": {
+              "ru_kellner": {
+                "__increment": 16000
+              }
+            },
+            "grossByMonth": {
+              "2026-09": {
+                "__increment": 64000
+              }
+            },
+            "tipStaff": 16000
           },
           "users/kw_betrieb1/laden/haupt_KASSE1": {
             "name": "Hauptlade",

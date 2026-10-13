@@ -74,6 +74,20 @@ that compares them with a fixed length needs the new ones.
   `shift_receipt.tip_immediately` is gone, like npm 1.11.0. Reason: staff take
   their tips at any time, not only at the end of the shift, and the slip showed
   lines with 0,00 nobody needed.
+- **Cash tip kept right away.** `sell(tipKeptByEmployee: true)` sends
+  `tip: {cents, keptByEmployee: true}` (without it the payload stays byte for
+  byte as before); `KeckTip.keptByEmployee` (sent only when `true`) and
+  `KasseneckItem.keptByEmployee` (read, written, kept by `negative` for a
+  cancellation). The receipt stays as it was (signed, in the DEP); in the cash
+  position the amount is not part of the expected cash and counts as „schon
+  genommen“ at once, the open claim does not grow. The server takes it only for
+  staff tips paid in cash and received immediately. New optional business
+  setting `PosBusinessSettings.tipKeptByDefault` (`posBusinessOptionalFields`,
+  sent by the server only when stored, `null` = off; `posTipKeptByDefault`)
+  presets the switch at the register. Labels `checkout.tip_kept` „gleich
+  behalten“ and `tip.kept_setting`, message `tip.kept_setting_hint`, like npm
+  1.11.0. Reason: a waitress who keeps 2 € of a 22 € cash payment left 20 € in
+  the drawer while the expected cash said 22 € — a difference that was none.
 - **Drawer on the receipt.** `sell` and `cancelReceipt` take an optional
   `drawerId` (the drawer whose cash balance the receipt counts in); empty or
   only whitespace throws before sending. The device setting `drawerId` is

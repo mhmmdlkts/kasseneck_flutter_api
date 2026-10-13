@@ -115,6 +115,9 @@
     "tip.over_half": {
       "text": "Über 50 % Trinkgeld – wirklich? Steuerfrei ist nur ortsübliches Trinkgeld."
     },
+    "tip.kept_setting_hint": {
+      "text": "Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht in den Kassenstand und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen."
+    },
     "completion.failed": {
       "text": "Der Abschluss ist fehlgeschlagen."
     },
@@ -1055,6 +1058,12 @@
     },
     "checkout.change": {
       "text": "Rückgeld"
+    },
+    "checkout.tip_kept": {
+      "text": "gleich behalten"
+    },
+    "tip.kept_setting": {
+      "text": "Bar-Trinkgeld behält der Mitarbeiter gleich"
     },
     "card_payment.amount_on_terminal": {
       "text": "Betrag steht am Terminal"

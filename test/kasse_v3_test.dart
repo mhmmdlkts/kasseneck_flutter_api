@@ -399,7 +399,8 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.sell(
           items: [for (final i in (p['items'] as List? ?? const [])) KasseneckItem.fromJson((i as Map).cast())],
           payments: [for (final z in (p['payments'] as List? ?? const [])) _zahlung(z as Map)],
-          tipCents: p['tip'] as int?,
+          tipCents: p['tip'] is Map ? (p['tip'] as Map)['cents'] as int : p['tip'] as int?,
+          tipKeptByEmployee: p['tip'] is Map && (p['tip'] as Map)['keptByEmployee'] == true,
         );
       case 'cancelReceipt':
         return belege.cancelReceipt(

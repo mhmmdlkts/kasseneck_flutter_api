@@ -378,10 +378,19 @@ class RegisterReceiptClient {
   /// wird nie gesendet. Den Zahlbetrag rechnet der Server; weicht die Summe
   /// ab, kommt `payments_sum_mismatch` mit `expectedCents`
   /// ([paymentsExpectedCents]), und es wurde nichts signiert.
+  ///
+  /// [tipKeptByEmployee]: Bar-Trinkgeld „gleich behalten“ -- die
+  /// Mitarbeiterin steckt das Trinkgeld beim Verkauf gleich ein. Der Beleg
+  /// bleibt, wie er ist; im Kassenstand zaehlt der Betrag nicht ins Bar-Soll
+  /// und gilt sofort als „schon genommen“. Nur mit Trinkgeld; dann geht
+  /// `tip: {cents, keptByEmployee: true}` hinaus, sonst bleibt die Nutzlast
+  /// Byte fuer Byte wie bisher. Der Server nimmt es nur bei Mitarbeiter-
+  /// Trinkgeld, bar und sofort erhalten. Vorbelegung: [posTipKeptByDefault].
   Future<KasseneckReceipt> sell({
     required List<KasseneckItem> items,
     required List<KeckPaymentInput> payments,
     int? tipCents,
+    bool tipKeptByEmployee = false,
     List<String>? customerLines,
     List<String>? legalNotices,
     String? drawerId,
@@ -408,7 +417,7 @@ class RegisterReceiptClient {
         'receiptType': 'standard',
         'items': items.map((p) => p.toJson()).toList(),
         'payments': [for (final z in payments) z.toJson()],
-        if (tipCents != null && tipCents > 0) 'tip': tipCents,
+        if (tipCents != null && tipCents > 0) 'tip': tipKeptByEmployee ? {'cents': tipCents, 'keptByEmployee': true} : tipCents,
         if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
         if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
         'drawerId': ?drawerId,

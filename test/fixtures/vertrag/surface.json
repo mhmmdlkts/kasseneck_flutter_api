@@ -680,6 +680,9 @@
       "misoperation",
       "other"
     ],
+    "posBusinessOptionalFields": [
+      "tipKeptByDefault"
+    ],
     "posDeviceOptionalFields": [
       "drawerId"
     ],

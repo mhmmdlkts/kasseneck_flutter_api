@@ -57,7 +57,7 @@ const _nach10 = (
     'cash_movement.exceeds_balance', 'cash_movement.note_required', 'cash_movement.booked',
     'cash_movement.type_invalid', 'cash_movement.same_drawer', 'tip_payout.exceeds_claim',
     'denominations.invalid', 'amount.invalid', 'drawer.not_found', 'drawer.inactive',
-    'tip_payout.recipient_required', 'shift.pending_hint', 'shift.mode_off',
+    'tip_payout.recipient_required', 'shift.pending_hint', 'shift.mode_off', 'tip.kept_setting_hint',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -93,6 +93,8 @@ const _nach10 = (
     'drawer.reason_sale', 'drawer.reason_cash_movement', 'drawer.reason_shift_open', 'drawer.reason_shift_close',
     'shift.resend', 'shift.next', 'shift.print_close', 'shift.print_again', 'shift.back_to_register',
     'shift.later', 'time.yesterday',
+    // Bar-Trinkgeld „gleich behalten“ (11.2.0)
+    'checkout.tip_kept', 'tip.kept_setting',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type'},

@@ -448,6 +448,7 @@ class PosBusinessSettings {
     this.glass = true,
     this.hints = true,
     this.discountChips = const [5, 10, 15, 20],
+    this.tipKeptByDefault,
     this.unknownValues = const {},
   });
 
@@ -539,6 +540,12 @@ class PosBusinessSettings {
   /// Rabatt-Chips in Prozent, dieselben Regeln wie [tipChips].
   final List<double> discountChips;
 
+  /// Bar-Trinkgeld behaelt der Mitarbeiter gleich: Vorbelegung des Schalters
+  /// „gleich behalten“ beim Kassieren (je Verkauf aenderbar). Optional wie
+  /// `device.drawerId`: der Server sendet das Feld nur, wenn es gespeichert
+  /// ist; `null` heisst aus. Lesen ueber [posTipKeptByDefault].
+  final bool? tipKeptByDefault;
+
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
@@ -563,8 +570,15 @@ class PosBusinessSettings {
   /// 0.x (`'nacht'`): eine Änderung, die still nichts bewirkt, fiele am Tresen
   /// niemandem auf.
   PosBusinessSettings merge(Map<String, dynamic> patch) {
-    _pruefeAenderung('business', patch, _betriebSchluessel, legacyBusinessKeys);
-    return PosBusinessSettings.fromJson(_mische(toJson(), patch));
+    _pruefeAenderung('business', patch, {..._betriebSchluessel, ...posBusinessOptionalFields}, legacyBusinessKeys);
+    // Der optionale Schalter hat keinen Standardwert, den `_mische` fortschreiben
+    // koennte: er wird getrennt gefuehrt und nur als Wahrheitswert genommen.
+    final behalten = patch.containsKey('tipKeptByDefault') ? patch['tipKeptByDefault'] : tipKeptByDefault;
+    if (behalten != null && behalten is! bool) {
+      throw ArgumentError('business.tipKeptByDefault: true oder false erwartet');
+    }
+    final json = _mische(toJson()..remove('tipKeptByDefault'), {...patch}..remove('tipKeptByDefault'));
+    return PosBusinessSettings.fromJson({...json, 'tipKeptByDefault': ?behalten});
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
@@ -622,6 +636,8 @@ class PosBusinessSettings {
       glass: _bool(g['glass'], s.glass),
       hints: _bool(g['hints'], s.hints),
       discountChips: _zahlenliste(g, 'discountChips', s.discountChips, fremd),
+      // Ohne Standardwert, darum nicht in `g`: nur ein Wahrheitswert zaehlt.
+      tipKeptByDefault: raw['tipKeptByDefault'] is bool ? raw['tipKeptByDefault'] as bool : null,
       unknownValues: Map.unmodifiable(fremd),
     );
   }
@@ -676,6 +692,7 @@ class PosBusinessSettings {
         'glass': glass,
         'hints': hints,
         'discountChips': [...discountChips],
+        'tipKeptByDefault': ?tipKeptByDefault,
         ...unknownValues,
       };
 }
@@ -1154,6 +1171,15 @@ final Set<String> _geraetSchluessel = const PosDeviceSettings().toJson().keys.to
 /// Sie fehlen darum in den Standardwerten; gelesen werden sie nur als gueltige
 /// Kennung, der Schreibweg nimmt Kennung oder `null` (Zuordnung entfernen).
 const List<String> posDeviceOptionalFields = ['drawerId'];
+
+/// Optionale Betriebs-Schalter: ohne Standardwert, der Server sendet sie nur,
+/// wenn sie gespeichert sind (Zwilling von `POS_BUSINESS_OPTIONAL_FIELDS`).
+/// Gelesen nur als Wahrheitswert; fehlt einer, gilt aus.
+const List<String> posBusinessOptionalFields = ['tipKeptByDefault'];
+
+/// Bar-Trinkgeld „gleich behalten“ vorbelegt? Fehlt die Einstellung, gilt aus
+/// (Zwilling von `posTipKeptByDefault`).
+bool posTipKeptByDefault(PosBusinessSettings? business) => business?.tipKeptByDefault == true;
 
 final RegExp _optionaleKennung = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 

@@ -36,6 +36,12 @@ class KasseneckItem {
   /// `null`, wenn der Beleg es nicht nennt.
   final bool? receivedImmediately;
 
+  /// Nur an Trinkgeld-Positionen: Bar-Trinkgeld „gleich behalten“ -- die
+  /// Mitarbeiterin hat es beim Verkauf gleich eingesteckt. Drahtfeld
+  /// `keptByEmployee`, nur `true`; sonst `false`. Ein Merkmal fuer den
+  /// Kassenstand, kein Betrag.
+  final bool keptByEmployee;
+
   /// Was [KasseneckItem.fromJson] beim Lesen nicht exakt uebernehmen konnte
   /// (Bruchmenge abgeschnitten, unbekannter Steuersatz als 0 %); `null`, wenn
   /// alles passt. Wer mit so einer Position rechnet (`receiptDueCents`),
@@ -65,6 +71,7 @@ class KasseneckItem {
     this.paymentMethod,
     this.articleId,
     this.receivedImmediately,
+    this.keptByEmployee = false,
     this.lossyRead,
     this.originalIndex,
     this.returnDisposition,
@@ -154,6 +161,7 @@ class KasseneckItem {
         'recipient': recipient,
         if (paymentMethod != null) 'paymentMethod': paymentMethod,
         'receivedImmediately': ?receivedImmediately,
+        if (keptByEmployee) 'keptByEmployee': true,
       },
       if (kind == 'discount') 'kind': 'discount',
       if (articleId != null && articleId!.isNotEmpty) 'articleId': articleId,
@@ -191,6 +199,7 @@ class KasseneckItem {
       paymentMethod: json['paymentMethod'] as String?,
       articleId: json['articleId'] is String && (json['articleId'] as String).isNotEmpty ? json['articleId'] as String : null,
       receivedImmediately: kind == 'tip' && json['receivedImmediately'] is bool ? json['receivedImmediately'] as bool : null,
+      keptByEmployee: kind == 'tip' && json['keptByEmployee'] == true,
       lossyRead: ungenau,
       // Lager: Bezug und Rueckgabe-Wahl einer Storno-Zeile (nur gelesen; ein
       // unbekannter Wert faellt weg wie im JS-Zwilling).
@@ -214,6 +223,7 @@ class KasseneckItem {
       paymentMethod: paymentMethod,
       articleId: articleId,
       receivedImmediately: receivedImmediately,
+      keptByEmployee: keptByEmployee,
       lossyRead: lossyRead,
     );
   }

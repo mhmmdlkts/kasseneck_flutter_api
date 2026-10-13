@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "bf1e7c100e328517c72d5badf31904183efe22d1fddec308e2fe2722068854bc",
+      "sha256": "439a8bfac209333ab769a4c7133507a1730267eff4021cc9bdcf39d25805b94d",
       "head": [],
-      "inputsSha256": "c8064743ed0718a0b891545fba59c24c95e8bfb3da713efea87d643f2b711e49",
+      "inputsSha256": "41d2ffd0fa4a05df501b8258f3fc26b163ea94d3be4b734a24519395ec5db52a",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -24,7 +24,7 @@
         "channel",
         "note"
       ],
-      "inputsSha256": "705fb03bbdee0d607a45472409d95d314b567b32d3b6c4f591eb69641d83e92a",
+      "inputsSha256": "81a93a40ff05d5f386532ea7d52d04b4c7e24e2f1e00eb1f11efc5873723d076",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -7982,6 +7982,407 @@
                   {
                     "kind": "qr",
                     "data": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_0,00_0,00_XVyQJUk2_ABC123_<verkettung>_<signatur>"
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Bis bald",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Danke für Ihren Besuch",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "banner",
+                    "text": "TESTSIGNATUR — kein gültiger Beleg",
+                    "tone": "warning"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "case": "sale_tip_kept",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "receiptType": "standard",
+            "cashregisterId": "KASSE1",
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              }
+            ],
+            "payments": [
+              {
+                "method": "cash",
+                "amountCents": 800
+              }
+            ],
+            "tip": {
+              "cents": 160,
+              "keptByEmployee": true
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "is_small_business": false,
+              "company": "Café Welt",
+              "phone": "+43 1 234 56",
+              "street": "Hauptplatz 1",
+              "zip": "1010",
+              "city": "Wien",
+              "footer1": "Danke für Ihren Besuch",
+              "footer2": null,
+              "footer3": null,
+              "footer4": null,
+              "logo_url": "https://example.invalid/logo.png",
+              "kreiseck_logo": false,
+              "thanks_message": "Bis bald",
+              "receipt": {
+                "counter": 2,
+                "receiptType": "standard",
+                "zeroKind": null,
+                "receiptId": "KASSE1-ID-2",
+                "cashregisterId": "KASSE1",
+                "timeStamp": "2026-09-26T10:00:00",
+                "vouchers": [],
+                "paymentMethod": "cash",
+                "customerDetails": null,
+                "legalMessage": null,
+                "customProjectId": null,
+                "creditCardProvider": null,
+                "cardPaymentId": null,
+                "cardPaymentData": null,
+                "amountRateStandard": 6.4,
+                "amountRateReduced1": 0,
+                "amountRateReduced2": 0,
+                "amountRateZero": 1.6,
+                "amountRateSpecial": 0,
+                "turnoverCounterAES256ICM": "XVyQJUiWDiM4NjAKsiguYw==",
+                "signaturePreviousReceipt": "<signatur>",
+                "certificateSerialNumber": "ABC123",
+                "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000019d51dc2",
+                "payments": [
+                  {
+                    "id": "p1",
+                    "method": "cash",
+                    "amountCents": 800
+                  }
+                ],
+                "sig": "<signatur>",
+                "signatureSuccess": true,
+                "qr": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_1,60_0,00_XVyQJUiW_ABC123_<verkettung>_<signatur>",
+                "operator": {
+                  "uid": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "tipCents": 160,
+                "headerVersionId": "auto1",
+                "layoutRuleset": 2,
+                "items": [
+                  {
+                    "name": "Kaffee",
+                    "amount": 2,
+                    "priceOneCents": 320,
+                    "vat": 20,
+                    "priceOne": 3.2
+                  },
+                  {
+                    "kind": "tip",
+                    "name": "Trinkgeld Personal",
+                    "amount": 1,
+                    "quantity": 1,
+                    "priceOne": 1.6,
+                    "priceOneCents": 160,
+                    "unitPriceCents": 160,
+                    "vat": 0,
+                    "vatRate": 0,
+                    "paymentMethod": "cash",
+                    "recipient": {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner"
+                    },
+                    "receivedImmediately": true,
+                    "keptByEmployee": true
+                  }
+                ]
+              },
+              "taxNumber": "12-345/6789",
+              "vatId": "ATU12345678",
+              "headerVersionId": "auto1",
+              "registrationInfo": null,
+              "testCashregister": false,
+              "testSignature": true,
+              "logo_scale": "M",
+              "layout": {
+                "paperSize": "mm80",
+                "ruleset": 2,
+                "lines": [
+                  {
+                    "kind": "banner",
+                    "text": "TESTSIGNATUR — kein gültiger Beleg",
+                    "tone": "warning"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Café Welt",
+                    "align": "center",
+                    "bold": true
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Hauptplatz 1",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "1010 Wien",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "ATU12345678",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "+43 1 234 56",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Datum:",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "26.09.2026 10:00:00",
+                        "width": 8,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Kassen-ID:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "KASSE1",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Beleg-ID:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "KASSE1-ID-2",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "2  x Kaffee je 3,20",
+                        "width": 7,
+                        "align": "left"
+                      },
+                      {
+                        "text": "6,40 A",
+                        "width": 5,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Trinkgeld Personal",
+                        "width": 8,
+                        "align": "left"
+                      },
+                      {
+                        "text": "1,60 D",
+                        "width": 4,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "MwSt%",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "MwSt",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "Netto",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "Brutto",
+                        "width": 2,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "A 20%",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "1,07",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "5,33",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "6,40",
+                        "width": 2,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "D 0%",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "0,00",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "1,60",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "1,60",
+                        "width": 2,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "rule",
+                    "char": "-"
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Gesamt:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "8,00 €",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Zahlungsart:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "Barzahlung",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "qr",
+                    "data": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_1,60_0,00_XVyQJUiW_ABC123_<verkettung>_<signatur>"
                   },
                   {
                     "kind": "space",
