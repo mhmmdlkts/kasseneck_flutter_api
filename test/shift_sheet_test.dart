@@ -149,6 +149,36 @@ void main() {
       expect(text.join('\n'), isNot(contains('Kasse |')));
     });
 
+    test('Trinkgeld: verdient immer, ueber Lohn, schon genommen und offen nur ungleich 0 (Nachtrag 3, R51, wie im npm-Paket)', () async {
+      String block(String text) {
+        final i = text.indexOf(RegExp(r'^Trinkgeld +$', multiLine: true));
+        return i < 0 ? '' : text.substring(i);
+      }
+
+      final z = block(ReceiptGrid.render(_layout(await _bon('shift-close')), charsPerLine: 48).toText());
+      expect(z, matches(RegExp(r'^Ben Kellner +$', multiLine: true)));
+      expect(z, matches(RegExp(r'^ {2}verdient +4,00$', multiLine: true)));
+      expect(z, matches(RegExp(r'^ {2}schon genommen +4,00$', multiLine: true)));
+      expect(z, isNot(matches(RegExp('über Lohn|offen|sofort|0,00'))));
+      final x = block(ReceiptGrid.render(_layout(await _bon('shift-interim')), charsPerLine: 48).toText());
+      expect(x, matches(RegExp(r'^ {2}offen +4,00$', multiLine: true)));
+      expect(x, isNot(matches(RegExp('schon genommen|über Lohn|0,00'))));
+      // Wer ueberall 0 hat, entfaellt ganz -- ohne Mitarbeiter auch keine Ueberschrift.
+      const leer = ShiftSummaryReceipt(
+        kind: 'shift_interim',
+        blind: false,
+        number: 3,
+        openingFloatTakenOver: false,
+        receiptCount: 0,
+        cancellationCount: 0,
+        openingsWithoutSale: 0,
+        tips: [ShiftTip(registerUserId: 'ru_kellner', name: 'Ben Kellner', receivedImmediatelyCents: 0, retainedCents: 0, paidOutCents: 0, openCents: 0)],
+      );
+      final t = ReceiptGrid.render(shiftReceiptLayout(leer), charsPerLine: 48).toText();
+      expect(block(t), '');
+      expect(t, isNot(contains('Ben Kellner')));
+    });
+
     test('Betraege rein ganzzahlig: Cent, Vorzeichen, grosse Werte ohne Gleitkomma', () {
       String betrag(int cents) {
         const bon = CashMovementReceipt(blind: false, number: 1, type: 'cash_drop', amountCents: 0);

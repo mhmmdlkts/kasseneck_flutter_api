@@ -1,5 +1,5 @@
 {
-  "_note": "Shared cases for the shift helpers (npm @kreiseck/kasseneck-api and Dart kasseneck_api): sumDenominations (cents value as key, count as value; null = not a valid count) and parseCentsAllowZero (typed amount -> cents; null = invalid input). Never round, never guess.",
+  "_note": "Shared cases for the shift helpers (npm @kreiseck/kasseneck-api and Dart kasseneck_api): sumDenominations (cents value as key, count as value; null = not a valid count) and parseCentsAllowZero (typed amount -> cents; null = invalid input) and shiftTipLines (tips of one employee -> lines; earned = received immediately + retained, always shown; retained, paid out and open only when not 0; everything 0 -> no lines). Never round, never guess.",
   "sumDenominations": [
     { "denominations": {}, "expected": 0 },
     { "denominations": { "100": 1, "200": 1, "500": 1, "2000": 1 }, "expected": 2800 },
@@ -49,5 +49,15 @@
     { "text": "€ 12", "expected": null },
     { "text": "abc", "expected": null },
     { "text": "99999999999999999999", "expected": null }
+  ],
+  "shiftTipLines": [
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 400, "retainedCents": 0, "paidOutCents": 0, "openCents": 400 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 400 }, { "key": "shift_receipt.tip_open", "cents": 400 }] },
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 400, "retainedCents": 150, "paidOutCents": 250, "openCents": 150 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 550 }, { "key": "shift_receipt.tip_retained", "cents": 150 }, { "key": "shift_receipt.tip_paid_out", "cents": 250 }, { "key": "shift_receipt.tip_open", "cents": 150 }] },
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 400, "retainedCents": 0, "paidOutCents": 400, "openCents": 0 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 400 }, { "key": "shift_receipt.tip_paid_out", "cents": 400 }] },
+    { "tip": { "registerUserId": "ru_kellner", "name": "Anna Chef", "receivedImmediatelyCents": 0, "retainedCents": 0, "paidOutCents": 0, "openCents": 300 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 0 }, { "key": "shift_receipt.tip_open", "cents": 300 }] },
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 0, "retainedCents": 250, "paidOutCents": 0, "openCents": 0 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 250 }, { "key": "shift_receipt.tip_retained", "cents": 250 }] },
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 0, "retainedCents": 0, "paidOutCents": 0, "openCents": 0 }, "expected": [] },
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": -200, "retainedCents": 0, "paidOutCents": 0, "openCents": 0 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": -200 }] },
+    { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "receivedImmediatelyCents": 200, "retainedCents": -200, "paidOutCents": 0, "openCents": 0 }, "expected": [{ "key": "shift_receipt.tip_earned", "cents": 0 }, { "key": "shift_receipt.tip_retained", "cents": -200 }] }
   ]
 }

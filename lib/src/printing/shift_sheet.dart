@@ -156,15 +156,20 @@ ReceiptLayout shiftReceiptLayout(ShiftSummaryReceipt receipt, {PosPaperSize pape
   zeilen.add(_anzahl(labelText('shift_receipt.cancellations'), bon.cancellationCount));
   zeilen.add(_anzahl(labelText('shift_receipt.openings_without_sale'), bon.openingsWithoutSale));
 
-  // Trinkgeld je Mitarbeiter: sofort erhalten, ueber Lohn, ausgezahlt.
-  if (bon.tips.isNotEmpty) {
+  // Trinkgeld je Mitarbeiter (shiftTipLines): verdient immer, ueber Lohn, schon genommen und offen
+  // nur ungleich 0; wer ueberall 0 hat, entfaellt, ohne Mitarbeiter auch die Ueberschrift.
+  final trinkgeld = [
+    for (final t in bon.tips)
+      if (shiftTipLines(t) case final z when z.isNotEmpty) (t, z),
+  ];
+  if (trinkgeld.isNotEmpty) {
     zeilen.add(_regel());
     zeilen.add(_text(labelText('shift_receipt.tips'), bold: true));
-    for (final t in bon.tips) {
+    for (final (t, z) in trinkgeld) {
       zeilen.add(_text(t.name ?? t.registerUserId));
-      zeilen.add(_betrag('  ${labelText('shift_receipt.tip_immediately')}', t.receivedImmediatelyCents));
-      zeilen.add(_betrag('  ${labelText('shift_receipt.tip_retained')}', t.retainedCents));
-      zeilen.add(_betrag('  ${labelText('shift_receipt.tip_paid_out')}', t.paidOutCents));
+      for (final zeile in z) {
+        zeilen.add(_betrag('  ${zeile.text}', zeile.cents));
+      }
     }
   }
   return ReceiptLayout(lines: zeilen, paperSize: paperSize.value, ruleset: _regelwerk);

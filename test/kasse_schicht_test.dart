@@ -183,6 +183,35 @@ void main() {
         'closedAt', 'closedBy', 'closedDeviceId', 'openingFloatCents', 'openingDenominations', 'comment', 'blind']));
     });
 
+    test('getMyDrawerState: Trinkgeld je Mitarbeiter (sofort, ueber Lohn, genommen, offen), auch blind (Nachtrag 3, wie im npm-Paket)', () async {
+      final (:client, anfragen: _) = _kasse((_) async => _antwort(_fall('getMyDrawerState', 'success_cashier_tip_taken')));
+      final stand = await client.getMyDrawerState(drawerId: 'haupt_KASSE1');
+      expect(stand.rights.cashView, isFalse);
+      expect(stand.expectedCents, isNull);
+      expect([for (final t in stand.tips) (t.registerUserId, t.name, t.receivedImmediatelyCents, t.retainedCents, t.paidOutCents, t.openCents)], [
+        ('ru_chef', 'Anna Chef', 0, 0, 0, 300),
+        ('ru_kellner', 'Ben Kellner', 400, 150, 250, 150),
+      ]);
+      final (client: inhaber, anfragen: _) = _kasse((_) async => _antwort(_fall('getMyDrawerState', 'success_owner_new_main_drawer')));
+      expect((await inhaber.getMyDrawerState(cashregisterId: 'KASSE1')).tips, isEmpty);
+    });
+
+    test('recordMyCashMovement: Trinkgeld an sich selbst (tip_payout + recipientId); fremd ohne cashMove ist not_permitted', () async {
+      final eigen = _fall('recordMyCashMovement', 'success_cashier_tip_own');
+      final (:client, :anfragen) = _kasse((_) async => _antwort(eigen));
+      final r = await client.recordMyCashMovement(
+          idempotencyKey: 'b-6', drawerId: 'haupt_KASSE1', type: 'tip_payout', amountCents: 250, recipientId: 'ru_kellner');
+      // Die Kasse der Anmeldung legt der Transport bei.
+      expect({..._params(anfragen.single)}..remove('cashregisterId'), eigen['params']);
+      expect((r.movement.type, r.receipt.recipientName), ('tip_payout', 'Ben Kellner'));
+      final fremd = _fall('recordMyCashMovement', 'cashier_tip_foreign');
+      final (client: c2, anfragen: _) = _kasse((_) async => _antwort(fremd));
+      await expectLater(
+        c2.recordMyCashMovement(idempotencyKey: 'b-7', drawerId: 'haupt_KASSE1', type: 'tip_payout', amountCents: 100, recipientId: 'ru_chef'),
+        throwsA(predicate((e) => isPosError(e, 'not_permitted'))),
+      );
+    });
+
     test('logMyDrawerOpenings: gepufferte Eintraege senden Bediener und Lade; die Antwort nennt die wirksame Lade', () async {
       final fall = _fall('logMyDrawerOpenings', 'success_operator_reported_late');
       final (:client, :anfragen) = _kasse((_) async => _antwort(fall));
@@ -533,6 +562,14 @@ void main() {
     expect(messageText('shift.required_other'), 'Die Schicht muss ein berechtigter Mitarbeiter öffnen.');
     expect(messageText('shift.closed', {'number': 7}), 'Schicht 7 geschlossen.');
     expect(labelText('cash_movement.type_change_in'), 'Wechselgeld');
+    // Trinkgeld je Mitarbeiter (Nachtrag 3): verdient, ueber Lohn, schon genommen, offen; „sofort“ ist weg.
+    expect(labelText('shift_receipt.tips'), 'Trinkgeld');
+    expect(labelText('shift_receipt.tip_earned'), 'verdient');
+    expect(labelText('shift_receipt.tip_retained'), 'über Lohn');
+    expect(labelText('shift_receipt.tip_paid_out'), 'schon genommen');
+    expect(labelText('shift_receipt.tip_open'), 'offen');
+    expect(labelText('shift.pay_out_tips'), 'Trinkgeld auszahlen');
+    expect(posLabels.containsKey('shift_receipt.tip_immediately'), isFalse);
     // Die Bons tragen keinen Hinweis „Kein Registrierkassenbeleg“ mehr; der Text ist weg.
     expect(posLabels.containsKey('shift.not_a_receipt'), isFalse);
     expect(posLabels.values.where((t) => t.text.contains('Registrierkassenbeleg')), isEmpty);

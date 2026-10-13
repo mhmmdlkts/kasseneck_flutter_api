@@ -261,7 +261,7 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "  sofort",
+          "text": "  verdient",
           "width": 8,
           "align": "left"
         },
@@ -276,27 +276,12 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "  über Lohn",
+          "text": "  offen",
           "width": 8,
           "align": "left"
         },
         {
-          "text": "0,00",
-          "width": 4,
-          "align": "right"
-        }
-      ]
-    },
-    {
-      "kind": "columns",
-      "columns": [
-        {
-          "text": "  ausgezahlt",
-          "width": 8,
-          "align": "left"
-        },
-        {
-          "text": "0,00",
+          "text": "4,00",
           "width": 4,
           "align": "right"
         }

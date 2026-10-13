@@ -58,6 +58,22 @@ that compares them with a fixed length needs the new ones.
   `shift.not_a_receipt` is gone), like npm 1.11.0. Reason: the register no
   longer asks where the change came from or the drop went, and the note at the
   foot was not wanted on the slips.
+- **Tips during the shift.** `DrawerState.tips` lists per employee what the
+  running shift earned (`receivedImmediatelyCents`, `retainedCents`), what was
+  already paid out from the drawer in this shift (`paidOutCents`) and the open
+  claim against the drawer (`openCents`), for every session, also without
+  `cashView`. `ShiftTipTotals` gains `paidOutCents`, the new `ShiftTip` adds
+  `openCents` (`ShiftReceiptTip` is now a typedef of it). The server lets a
+  user with only the right `shift` pay out the own claim with
+  `recordMyCashMovement(type: 'tip_payout', recipientId: …)`. New helper
+  `shiftTipLines(tip)` with `ShiftTipLine`: „verdient“ (immediate + retained)
+  always, „über Lohn“, „schon genommen“ and „offen“ only when not 0, no line
+  when everything is 0 (shared cases in `shift-cases.json`); the shift bons use
+  it. Labels `shift_receipt.tip_earned` and `shift_receipt.tip_open` are new,
+  `shift_receipt.tip_paid_out` reads „schon genommen“,
+  `shift_receipt.tip_immediately` is gone, like npm 1.11.0. Reason: staff take
+  their tips at any time, not only at the end of the shift, and the slip showed
+  lines with 0,00 nobody needed.
 - **Drawer on the receipt.** `sell` and `cancelReceipt` take an optional
   `drawerId` (the drawer whose cash balance the receipt counts in); empty or
   only whitespace throws before sending. The device setting `drawerId` is

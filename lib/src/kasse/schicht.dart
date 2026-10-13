@@ -25,6 +25,7 @@ import 'dart:math';
 import '../lager/lesen.dart' show ganzzahlVon, objekt;
 import '../register/fehler.dart';
 import 'lager.dart' show jsTrim;
+import 'texte.dart' show labelText;
 
 // ---- Kataloge -----------------------------------------------------------------
 
@@ -213,23 +214,82 @@ class ShiftTipTotals {
     this.name,
     required this.receivedImmediatelyCents,
     required this.retainedCents,
+    required this.paidOutCents,
   });
 
   final String registerUserId;
   final String? name;
 
-  /// Schon erhalten (bar mitgenommen).
+  /// Steht dem Mitarbeiter aus der Lade zu (bar oder Karte am Terminal des Betriebs).
   final int receivedImmediatelyCents;
 
-  /// Behaelt der Betrieb und schuldet es.
+  /// Behaelt der Betrieb und zahlt es ueber den Lohn („über Lohn“).
   final int retainedCents;
+
+  /// In dieser Schicht aus der Lade ausgezahlt („schon genommen“).
+  final int paidOutCents;
 
   Map<String, dynamic> toJson() => {
         'registerUserId': registerUserId,
         'name': name,
         'receivedImmediatelyCents': receivedImmediatelyCents,
         'retainedCents': retainedCents,
+        'paidOutCents': paidOutCents,
       };
+}
+
+/// Trinkgeld eines Mitarbeiters mit seinem offenen Anspruch an die Lade
+/// ([openCents], „offen“): im Kassenstand ([DrawerState.tips]) und auf dem Z-
+/// und X-Bon. Was davon gezeigt wird, sagt [shiftTipLines].
+class ShiftTip extends ShiftTipTotals {
+  const ShiftTip({
+    required super.registerUserId,
+    super.name,
+    required super.receivedImmediatelyCents,
+    required super.retainedCents,
+    required super.paidOutCents,
+    required this.openCents,
+  });
+
+  final int openCents;
+
+  @override
+  Map<String, dynamic> toJson() => {...super.toJson(), 'openCents': openCents};
+}
+
+/// Trinkgeld auf dem Z- und X-Bon: offen = Anspruch beim Abschluss bzw. jetzt.
+typedef ShiftReceiptTip = ShiftTip;
+
+/// Eine Zeile des Trinkgelds eines Mitarbeiters (siehe [shiftTipLines]).
+class ShiftTipLine {
+  const ShiftTipLine({required this.key, required this.text, required this.cents});
+
+  /// `shift_receipt.tip_earned`, `tip_retained`, `tip_paid_out` oder `tip_open`.
+  final String key;
+
+  /// Das Wort aus dem Katalog ([labelText]).
+  final String text;
+  final int cents;
+}
+
+/// Was vom Trinkgeld eines Mitarbeiters dasteht, auf dem Bon, im Kassenstand
+/// und beim Abschluss gleich (Rulings R50/R51): „verdient“ (sofort + ueber
+/// Lohn) immer, „über Lohn“, „schon genommen“ und „offen“ nur, wenn nicht 0.
+/// Ist alles 0, gibt es keine Zeile, und der Mitarbeiter entfaellt ganz. Ohne
+/// `openCents` (Laufstand, [ShiftTipTotals]) zaehlt offen als 0. Gemeinsame
+/// Faelle mit dem JS-Zwilling: `shift-cases.json`.
+List<ShiftTipLine> shiftTipLines(ShiftTipTotals tip) {
+  final verdient = tip.receivedImmediatelyCents + tip.retainedCents;
+  final rest = <(String, int)>[
+    ('shift_receipt.tip_retained', tip.retainedCents),
+    ('shift_receipt.tip_paid_out', tip.paidOutCents),
+    ('shift_receipt.tip_open', tip is ShiftTip ? tip.openCents : 0),
+  ].where((z) => z.$2 != 0).toList();
+  if (verdient == 0 && rest.isEmpty) return const [];
+  return [
+    for (final (key, cents) in [('shift_receipt.tip_earned', verdient), ...rest])
+      ShiftTipLine(key: key, text: labelText(key), cents: cents),
+  ];
 }
 
 /// Laufstand der Schicht (nur mit `cashView`).
@@ -433,6 +493,7 @@ class DrawerState {
     this.shift,
     this.longOpenWarning,
     this.tipClaims = const [],
+    this.tips = const [],
     this.suggestedFloatCents,
     this.expectedCents,
     this.recentOpenings,
@@ -447,6 +508,11 @@ class DrawerState {
   /// Schicht seit mindestens 16 Stunden offen; `null` ohne Recht `shift`.
   final bool? longOpenWarning;
   final List<TipClaim> tipClaims;
+
+  /// Trinkgeld je Mitarbeiter in der laufenden Schicht und offene Ansprueche
+  /// (auch aus frueheren Schichten), nach Name; fuer jede Sitzung, auch ohne
+  /// `cashView` (Trinkgeld ist kein Bar-Soll). Wer ueberall 0 hat, fehlt.
+  final List<ShiftTip> tips;
 
   /// Vorschlag fuer das Startgeld (letzter Stand); bei offener Schicht `null`.
   /// Nur mit `shift` und `cashView`.
@@ -464,6 +530,7 @@ class DrawerState {
         if (shift != null) 'shift': shift!.toJson(),
         if (longOpenWarning != null) 'longOpenWarning': longOpenWarning,
         'tipClaims': [for (final t in tipClaims) t.toJson()],
+        'tips': [for (final t in tips) t.toJson()],
         if (suggestedFloatCents != null) 'suggestedFloatCents': suggestedFloatCents,
         if (expectedCents != null) 'expectedCents': expectedCents,
         if (recentOpenings != null) 'recentOpenings': [for (final o in recentOpenings!) o.toJson()],
@@ -541,30 +608,6 @@ class ShiftReceiptMovement {
 
   Map<String, dynamic> toJson() =>
       {'number': number, 'type': type, 'amountCents': amountCents, 'note': note, 'byName': byName, 'at': at};
-}
-
-class ShiftReceiptTip {
-  const ShiftReceiptTip({
-    required this.registerUserId,
-    this.name,
-    required this.receivedImmediatelyCents,
-    required this.retainedCents,
-    required this.paidOutCents,
-  });
-
-  final String registerUserId;
-  final String? name;
-  final int receivedImmediatelyCents;
-  final int retainedCents;
-  final int paidOutCents;
-
-  Map<String, dynamic> toJson() => {
-        'registerUserId': registerUserId,
-        'name': name,
-        'receivedImmediatelyCents': receivedImmediatelyCents,
-        'retainedCents': retainedCents,
-        'paidOutCents': paidOutCents,
-      };
 }
 
 /// Kopf der Bon-Daten der Schicht (gemeinsam fuer Z-, X-Bon und Kassenbewegung).
@@ -988,6 +1031,21 @@ ShiftTipTotals _trinkgeld(_Ort ort, Object? w) {
     name: _text(o['name']),
     receivedImmediatelyCents: _ganzzahl(ort, o, 'receivedImmediatelyCents'),
     retainedCents: _ganzzahl(ort, o, 'retainedCents'),
+    paidOutCents: _ganzzahl(ort, o, 'paidOutCents'),
+  );
+}
+
+/// Trinkgeld mit offenem Anspruch (Kassenstand, Bon).
+ShiftTip _trinkgeldMitOffen(_Ort ort, Object? w) {
+  final o = _pflichtObjekt(ort, w);
+  final t = _trinkgeld(ort, o);
+  return ShiftTip(
+    registerUserId: t.registerUserId,
+    name: t.name,
+    receivedImmediatelyCents: t.receivedImmediatelyCents,
+    retainedCents: t.retainedCents,
+    paidOutCents: t.paidOutCents,
+    openCents: _ganzzahl(ort, o, 'openCents'),
   );
 }
 
@@ -1093,6 +1151,7 @@ DrawerState ladeStand(String name, Map<String, dynamic> daten) {
       drawer: _wahr(rechteOrt, rechte, 'drawer'),
     ),
     tipClaims: _liste(ort, daten, 'tipClaims', _anspruch),
+    tips: _liste(ort, daten, 'tips', _trinkgeldMitOffen),
     shift: daten['shift'] == null ? null : _schicht(ort.unter('shift'), daten['shift']),
     longOpenWarning: _wahrOderNull(ort, daten, 'longOpenWarning'),
     suggestedFloatCents: _ganzzahlOderNull(ort, daten, 'suggestedFloatCents'),
@@ -1126,18 +1185,6 @@ void _kopfPruefen(_Ort ort, Map<String, dynamic> o, Set<String> erlaubt, String 
   final art = o['kind'];
   if (art is! String || !shiftReceiptKinds.contains(art)) throw _fehler(ort, '${ort.pfad}.kind ist unbekannt');
   if (!erlaubt.contains(art)) throw _fehler(ort, '${ort.pfad}.kind ist $art, erwartet $erwartet');
-}
-
-ShiftReceiptTip _bonTrinkgeld(_Ort ort, Object? w) {
-  final o = _pflichtObjekt(ort, w);
-  final t = _trinkgeld(ort, o);
-  return ShiftReceiptTip(
-    registerUserId: t.registerUserId,
-    name: t.name,
-    receivedImmediatelyCents: t.receivedImmediatelyCents,
-    retainedCents: t.retainedCents,
-    paidOutCents: _ganzzahl(ort, o, 'paidOutCents'),
-  );
 }
 
 ShiftSummaryReceipt _schichtBon(_Ort ort, Object? w) {
@@ -1179,7 +1226,7 @@ ShiftSummaryReceipt _schichtBon(_Ort ort, Object? w) {
         at: _text(m['at']),
       );
     }),
-    tips: _liste(ort, o, 'tips', _bonTrinkgeld),
+    tips: _liste(ort, o, 'tips', _trinkgeldMitOffen),
     expectedCents: _ganzzahlOderNull(ort, o, 'expectedCents'),
     countedCents: _ganzzahlOderNull(ort, o, 'countedCents'),
     countedDenominations: _stueckelung(ort, o, 'countedDenominations'),

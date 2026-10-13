@@ -38,6 +38,34 @@ void main() {
     expect(parseCentsAllowZero('90071992547409,92'), isNull);
   });
 
+  test('shiftTipLines: alle Faelle des Vertrags (Nachtrag 3, R50/R51)', () {
+    final liste = (_faelle['shiftTipLines'] as List).cast<Map<String, dynamic>>();
+    expect(liste.length, greaterThanOrEqualTo(8));
+    for (final f in liste) {
+      final t = f['tip'] as Map<String, dynamic>;
+      final tip = ShiftTip(
+        registerUserId: t['registerUserId'] as String,
+        name: t['name'] as String?,
+        receivedImmediatelyCents: t['receivedImmediatelyCents'] as int,
+        retainedCents: t['retainedCents'] as int,
+        paidOutCents: t['paidOutCents'] as int,
+        openCents: t['openCents'] as int,
+      );
+      final zeilen = shiftTipLines(tip);
+      expect([for (final z in zeilen) {'key': z.key, 'cents': z.cents}], f['expected'], reason: jsonEncode(t));
+      for (final z in zeilen) {
+        expect(z.text, labelText(z.key));
+      }
+    }
+  });
+
+  test('shiftTipLines: Laufstand ohne openCents zaehlt offen als 0; Woerter fuer Menschen', () {
+    const laufstand = ShiftTipTotals(registerUserId: 'ru_kellner', receivedImmediatelyCents: 400, retainedCents: 150, paidOutCents: 250);
+    expect([for (final z in shiftTipLines(laufstand)) z.text], ['verdient', 'über Lohn', 'schon genommen']);
+    const voll = ShiftTip(registerUserId: 'ru_kellner', receivedImmediatelyCents: 400, retainedCents: 150, paidOutCents: 250, openCents: 150);
+    expect([for (final z in shiftTipLines(voll)) z.text], ['verdient', 'über Lohn', 'schon genommen', 'offen']);
+  });
+
   test('newIdempotencyKey: kasse- und 32 Hex, jedes Mal neu', () {
     final schluessel = {for (var i = 0; i < 200; i++) newIdempotencyKey()};
     expect(schluessel, hasLength(200));

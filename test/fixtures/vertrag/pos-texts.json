@@ -1534,14 +1534,17 @@
     "shift_receipt.tips": {
       "text": "Trinkgeld"
     },
-    "shift_receipt.tip_immediately": {
-      "text": "sofort"
+    "shift_receipt.tip_earned": {
+      "text": "verdient"
     },
     "shift_receipt.tip_retained": {
       "text": "über Lohn"
     },
     "shift_receipt.tip_paid_out": {
-      "text": "ausgezahlt"
+      "text": "schon genommen"
+    },
+    "shift_receipt.tip_open": {
+      "text": "offen"
     },
     "shift_receipt.movement_number": {
       "text": "Nr."

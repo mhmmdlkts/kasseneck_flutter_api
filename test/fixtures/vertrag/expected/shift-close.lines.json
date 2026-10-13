@@ -381,7 +381,7 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "  sofort",
+          "text": "  verdient",
           "width": 8,
           "align": "left"
         },
@@ -396,22 +396,7 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "  über Lohn",
-          "width": 8,
-          "align": "left"
-        },
-        {
-          "text": "0,00",
-          "width": 4,
-          "align": "right"
-        }
-      ]
-    },
-    {
-      "kind": "columns",
-      "columns": [
-        {
-          "text": "  ausgezahlt",
+          "text": "  schon genommen",
           "width": 8,
           "align": "left"
         },

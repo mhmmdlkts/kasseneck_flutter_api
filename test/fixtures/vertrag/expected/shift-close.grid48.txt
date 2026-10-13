@@ -31,6 +31,5 @@ Stornos                                        0
 ------------------------------------------------
 Trinkgeld                                       
 Ben Kellner                                     
-  sofort                                    4,00
-  über Lohn                                 0,00
-  ausgezahlt                                4,00
+  verdient                                  4,00
+  schon genommen                            4,00

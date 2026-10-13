@@ -3,21 +3,21 @@
   "receipts": {
     "shift-close": {
       "source": "closeMyShift/success_manager",
-      "expected": "28c44af6162815fee37a542a2fcd35155d09df0b58f4adc98e005894a805e13b",
-      "grid32": "8dad910f118f722402e38048c58e5bd9753567cd8d477de24586327052b5a67e",
-      "grid48": "190c1829864e31c361b46c0cbdafd935ea61c1b94102ea6a6acdb9ccef338810"
+      "expected": "b12b8f83a3c5031480446ff0ce75aa8f9c413771a6f8a958a98217c59b7c0143",
+      "grid32": "5eff96c8e2f555add929d0575a17f8e13bcb1eb726a8d1f2341c0b8a69df4527",
+      "grid48": "fde16a05fa94b285db310247b7898d011c6ffa0cbacdde9cc516e75303cfddb5"
     },
     "shift-close-blind": {
       "source": "closeMyShift/success_cashier_blind",
-      "expected": "2d230a937179c775fee8196caf074d738a5e633549fff96b5d57f9c2e2c79f39",
-      "grid32": "6e2da9e19524fd3b4bb3cd619d8ca6d3c4dea850d698cce40ef02c8a7a87154b",
-      "grid48": "9b323baacef621197fea6eaa12680fe07e759f13d304fe1f78f2316c381ff8d0"
+      "expected": "d11ea9f23752b764e37a136f19b92f93df3e1c67c36d9097c0c47ecfa394a9f8",
+      "grid32": "9f638ea9429289670e7b8e741318d8207fdb0588b6fd2e0f641cd6ce60771e30",
+      "grid48": "333485ed87cd9570655372fc1bfceb576871fe844e981f3803de80e74979ed1a"
     },
     "shift-interim": {
       "source": "getMyShiftReport/success_manager",
-      "expected": "bdcc4c626b47527ee416d84fe413088038955de3532b80c6a1fb5b11198bf785",
-      "grid32": "759831a4f10a0ab4cd7978a79f1436dc36e456cbaee05a49691e6432200cad6c",
-      "grid48": "02163744a0fffe8da683c00d0cc1adb4172094ddc00ed22e9109085cc14992ed"
+      "expected": "9d8f2868d4c2d46f7f3be823873a7744e5e4d217b51cbd2d02cbc43842af6103",
+      "grid32": "263aa7140ac646d783ba6d68993fac323b801344b6980ea54e5c2df2debc144a",
+      "grid48": "75c1983043ed746c6e9576a726f1db963f37c1c83c08d6e3dc6b726d62f0f27e"
     },
     "cash-movement": {
       "source": "recordMyCashMovement/success_manager_cash_drop",

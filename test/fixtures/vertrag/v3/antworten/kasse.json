@@ -4,7 +4,7 @@
     "default": {
       "sha256": "bf1e7c100e328517c72d5badf31904183efe22d1fddec308e2fe2722068854bc",
       "head": [],
-      "inputsSha256": "2157ecb05c4643ea3ad4d9152885d34eefe6024b1cd22c4e41880eaedcfe9a71",
+      "inputsSha256": "c8064743ed0718a0b891545fba59c24c95e8bfb3da713efea87d643f2b711e49",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "a91c23d0859bbecf449f19ef0218c57e0c7f7eb651936f9545095a1cc33761f8",
+      "sha256": "a6fa3dcf78576d78f55ebee5dc301863b87a410ad240bc8eea2f144967bbab79",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "c8f1e0255f618cb34562386d9bc74e4653b9c575e06e25be852fe9b6add04b1e",
+      "inputsSha256": "705fb03bbdee0d607a45472409d95d314b567b32d3b6c4f591eb69641d83e92a",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -16495,6 +16495,16 @@
                   "name": "Ben Kellner",
                   "cents": 400
                 }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "openCents": 400
+                }
               ]
             }
           }
@@ -16546,6 +16556,16 @@
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
                   "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "openCents": 400
                 }
               ]
             }
@@ -16607,6 +16627,16 @@
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
                   "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "openCents": 400
                 }
               ]
             }
@@ -16681,7 +16711,8 @@
                       "registerUserId": "ru_kellner",
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 400,
-                      "retainedCents": 0
+                      "retainedCents": 0,
+                      "paidOutCents": 0
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -16696,6 +16727,16 @@
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
                   "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "openCents": 400
                 }
               ],
               "suggestedFloatCents": null,
@@ -16718,6 +16759,212 @@
                     "name": "Ben Kellner"
                   },
                   "ok": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_manager_tip_only_immediate",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": true,
+                "cashView": true,
+                "drawer": true
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": 15000,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "countedCents": null,
+                "comment": null,
+                "blind": null,
+                "suggestedFloatCents": 15000,
+                "runningTotals": {
+                  "cashSalesCents": 9400,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 3200
+                    }
+                  ],
+                  "receiptCount": 3,
+                  "cancellationCount": 0,
+                  "cashInCents": 5000,
+                  "cashOutCents": 0,
+                  "tips": [
+                    {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner",
+                      "receivedImmediatelyCents": 213,
+                      "retainedCents": 0,
+                      "paidOutCents": 0
+                    }
+                  ],
+                  "openingsWithoutSale": 1
+                },
+                "expectedCents": 29400,
+                "differenceCents": null,
+                "reconciliation": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 213,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "openCents": 400
+                }
+              ],
+              "suggestedFloatCents": null,
+              "expectedCents": 29400,
+              "recentOpenings": [
+                {
+                  "at": "2026-09-26T07:50:00.000Z",
+                  "deviceTime": "2026-09-26T07:49:50.000Z",
+                  "reason": "change",
+                  "by": {
+                    "name": "Anna Chef"
+                  },
+                  "ok": true
+                },
+                {
+                  "at": "2026-09-26T07:40:00.000Z",
+                  "deviceTime": "2026-09-26T07:40:00.000Z",
+                  "reason": "sale",
+                  "by": {
+                    "name": "Ben Kellner"
+                  },
+                  "ok": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_cashier_tip_taken",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "cents": 300
+                },
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 150
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "receivedImmediatelyCents": 0,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "openCents": 300
+                },
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 150,
+                  "paidOutCents": 250,
+                  "openCents": 150
                 }
               ]
             }
@@ -16754,6 +17001,7 @@
               "shift": null,
               "longOpenWarning": false,
               "tipClaims": [],
+              "tips": [],
               "suggestedFloatCents": 3000,
               "expectedCents": null,
               "recentOpenings": []
@@ -16791,6 +17039,7 @@
               "shift": null,
               "longOpenWarning": false,
               "tipClaims": [],
+              "tips": [],
               "suggestedFloatCents": 0,
               "expectedCents": null,
               "recentOpenings": []
@@ -18094,6 +18343,102 @@
           }
         },
         {
+          "case": "success_cashier_tip_own",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "tip_payout",
+            "amountCents": 250,
+            "recipientId": "ru_kellner",
+            "idempotencyKey": "b-6"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000004",
+                "number": 4,
+                "shiftId": "haupt_KASSE1_s2",
+                "type": "tip_payout",
+                "amountCents": -250,
+                "location": null,
+                "note": null,
+                "by": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "role": "register_user"
+                },
+                "at": "2026-09-26T08:00:00.000Z",
+                "recipient": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "counterpart": null
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 4,
+                  "type": "tip_payout",
+                  "amountCents": -250,
+                  "note": null,
+                  "location": null,
+                  "recipientName": "Ben Kellner",
+                  "targetDrawerName": null,
+                  "byName": "Ben Kellner",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "cashier_tip_foreign",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "tip_payout",
+            "amountCents": 100,
+            "recipientId": "ru_chef",
+            "idempotencyKey": "b-7"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Vorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
           "case": "success_owner_without_shift",
           "method": "POST",
           "caller": "owner",
@@ -19106,7 +19451,8 @@
                     "name": "Ben Kellner",
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
-                    "paidOutCents": 0
+                    "paidOutCents": 0,
+                    "openCents": 400
                   }
                 ],
                 "expectedCents": null,
@@ -19176,7 +19522,8 @@
                       "registerUserId": "ru_kellner",
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 400,
-                      "retainedCents": 0
+                      "retainedCents": 0,
+                      "paidOutCents": 0
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -19253,7 +19600,8 @@
                     "name": "Ben Kellner",
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
-                    "paidOutCents": 0
+                    "paidOutCents": 0,
+                    "openCents": 400
                   }
                 ],
                 "expectedCents": 29400,
@@ -20081,7 +20429,8 @@
                     "name": "Ben Kellner",
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
-                    "paidOutCents": 0
+                    "paidOutCents": 0,
+                    "openCents": 400
                   }
                 ],
                 "expectedCents": null,
@@ -20170,7 +20519,8 @@
                       "registerUserId": "ru_kellner",
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 400,
-                      "retainedCents": 0
+                      "retainedCents": 0,
+                      "paidOutCents": 400
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -20268,7 +20618,8 @@
                     "name": "Ben Kellner",
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
-                    "paidOutCents": 400
+                    "paidOutCents": 400,
+                    "openCents": 0
                   }
                 ],
                 "expectedCents": 29000,
@@ -20356,7 +20707,8 @@
                       "registerUserId": "ru_kellner",
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 400,
-                      "retainedCents": 0
+                      "retainedCents": 0,
+                      "paidOutCents": 400
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -20454,7 +20806,8 @@
                     "name": "Ben Kellner",
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
-                    "paidOutCents": 400
+                    "paidOutCents": 400,
+                    "openCents": 0
                   }
                 ],
                 "expectedCents": 29000,
