@@ -14,8 +14,7 @@ Startgeld übernommen                      150,00
 Bar aus Verkäufen                          94,00
 Bar aus Storno                              0,00
 Bewegungen                                      
-Nr. 3 Wechselgeld von                      50,00
-Bank/Tresor                                     
+Nr. 3 Wechselgeld                          50,00
 Nr. 4 Trinkgeld-Auszahlung                 -4,00
 Soll                                      290,00
 Ist                                       290,00
@@ -35,5 +34,3 @@ Ben Kellner
   sofort                                    4,00
   über Lohn                                 0,00
   ausgezahlt                                4,00
-------------------------------------------------
-           Kein Registrierkassenbeleg           

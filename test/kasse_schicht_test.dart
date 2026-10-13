@@ -346,7 +346,25 @@ void main() {
         ),
         throwsA(_anfragefehler),
       );
+      for (final ort in ['cellar', '']) {
+        await expectLater(
+          client.recordMyCashMovement(idempotencyKey: 'k', drawerId: 'lade', type: 'cash_drop', amountCents: 100, location: ort),
+          throwsA(_anfragefehler),
+          reason: ort,
+        );
+      }
       expect(anfragen, isEmpty);
+    });
+
+    test('Ort ist freiwillig: Wechselgeld ohne location geht hinaus, wie der Vertragsfall (wie im npm-Paket)', () async {
+      final fall = _fall('recordMyCashMovement', 'success_manager_change_in_without_location');
+      expect((fall['params'] as Map).containsKey('location'), isFalse);
+      final (:client, :anfragen) = _kasse((_) async => _antwort(fall));
+      final r = await client.recordMyCashMovement(idempotencyKey: 'b-5', drawerId: 'haupt_KASSE1', type: 'change_in', amountCents: 3000);
+      expect(_params(anfragen.single).containsKey('location'), isFalse);
+      expect(r.movement.type, 'change_in');
+      expect(r.movement.location, isNull);
+      expect(r.receipt.location, isNull);
     });
 
     test('0 als Startgeld geht hinaus (leere Lade), takeOver nur wenn gesetzt', () async {
@@ -514,6 +532,9 @@ void main() {
     expect(messageText('shift.required'), 'Bitte zuerst die Schicht öffnen.');
     expect(messageText('shift.required_other'), 'Die Schicht muss ein berechtigter Mitarbeiter öffnen.');
     expect(messageText('shift.closed', {'number': 7}), 'Schicht 7 geschlossen.');
-    expect(labelText('shift.not_a_receipt'), 'Kein Registrierkassenbeleg');
+    expect(labelText('cash_movement.type_change_in'), 'Wechselgeld');
+    // Die Bons tragen keinen Hinweis „Kein Registrierkassenbeleg“ mehr; der Text ist weg.
+    expect(posLabels.containsKey('shift.not_a_receipt'), isFalse);
+    expect(posLabels.values.where((t) => t.text.contains('Registrierkassenbeleg')), isEmpty);
   });
 }

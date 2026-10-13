@@ -3,27 +3,27 @@
   "receipts": {
     "shift-close": {
       "source": "closeMyShift/success_manager",
-      "expected": "e711ad8ed106066c5ce84583359e7d0d4acf2f6f420444dad396cf5a13f54df0",
-      "grid32": "24cdb8cef72b80df8b47acf6fe882756579d148138561872ea8b76556ecc2356",
-      "grid48": "36391be022c4a763b2435bc410093628759718a9ed0a05b1e3309229adfe42be"
+      "expected": "28c44af6162815fee37a542a2fcd35155d09df0b58f4adc98e005894a805e13b",
+      "grid32": "8dad910f118f722402e38048c58e5bd9753567cd8d477de24586327052b5a67e",
+      "grid48": "190c1829864e31c361b46c0cbdafd935ea61c1b94102ea6a6acdb9ccef338810"
     },
     "shift-close-blind": {
       "source": "closeMyShift/success_cashier_blind",
-      "expected": "ed02608df45edb829e2a7eb161c318f39050ed59c2d6d10cc0dd25f11ec480eb",
-      "grid32": "da644ac82c80f76f7528d2b4c5fa514e0806193a85a4140370537f41399fcaf5",
-      "grid48": "521799d7311bcbcbf2571fb24e63d5aec681cdb88be27d45b871d189df98d4fb"
+      "expected": "2d230a937179c775fee8196caf074d738a5e633549fff96b5d57f9c2e2c79f39",
+      "grid32": "6e2da9e19524fd3b4bb3cd619d8ca6d3c4dea850d698cce40ef02c8a7a87154b",
+      "grid48": "9b323baacef621197fea6eaa12680fe07e759f13d304fe1f78f2316c381ff8d0"
     },
     "shift-interim": {
       "source": "getMyShiftReport/success_manager",
-      "expected": "72cc96b6a76139b448fa4d17b7d17a339f49b3cdd0a12841920cfa3a335e84d0",
-      "grid32": "09a65887abdc5df947899baff41c2e6487164f9a8a7808649fbfbee7146325fa",
-      "grid48": "e6b37bb502df9587bdca443c6b6d2521972d879aa1b76c139743c9b5a2680a8a"
+      "expected": "bdcc4c626b47527ee416d84fe413088038955de3532b80c6a1fb5b11198bf785",
+      "grid32": "759831a4f10a0ab4cd7978a79f1436dc36e456cbaee05a49691e6432200cad6c",
+      "grid48": "02163744a0fffe8da683c00d0cc1adb4172094ddc00ed22e9109085cc14992ed"
     },
     "cash-movement": {
       "source": "recordMyCashMovement/success_manager_cash_drop",
-      "expected": "da19031a1bcc7044f245eb4aceeedb3d0b65c9f459357772003bd891d3dcbbd6",
-      "grid32": "5e2b18c75a5570d2994c48f90bf9ceac6734a5104767f7c48b988137e0677808",
-      "grid48": "f49712a635541fe53abf002486156cde0d9fe447e1983accf9716bfca2f8a989"
+      "expected": "4a0bbafd9e56cc05189dab609fcf9afde3d782527281295b7259d49c18fcdd2f",
+      "grid32": "7e93c4f3901c322200b5ce76edf049e1e75f91a038f54270a40e36d9b0b52283",
+      "grid48": "37a345abff84ae4ee1207d2c8f3bb0fa785bcd070edc9e194810721aa6e125c9"
     }
   }
 }

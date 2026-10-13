@@ -164,16 +164,6 @@
           "align": "right"
         }
       ]
-    },
-    {
-      "kind": "rule",
-      "char": "-"
-    },
-    {
-      "kind": "text",
-      "text": "Kein Registrierkassenbeleg",
-      "align": "center",
-      "bold": true
     }
   ],
   "paperSize": "mm58",

@@ -90,15 +90,22 @@ void main() {
   });
 
   group('Regeln', () {
-    test('jeder Bon endet mit „Kein Registrierkassenbeleg“, kein QR, keine Signatur', () async {
+    test('kein Bon traegt „Kein Registrierkassenbeleg“ (Nachtrag 1), kein QR, keine Signatur', () async {
       for (final name in _bons.keys) {
         final l = _layout(await _bon(name));
-        final letzte = l.lines.last as LayoutTextLine;
-        expect(letzte.text, 'Kein Registrierkassenbeleg');
-        expect(letzte.align, LayoutAlign.center);
-        expect(letzte.bold, isTrue);
+        expect(_texte(l).join('\n'), isNot(contains('Registrierkassenbeleg')), reason: name);
+        expect(l.lines.last, isNot(isA<LayoutRuleLine>()), reason: '$name: keine Linie ohne Fuss');
         expect(l.lines.whereType<LayoutQrLine>(), isEmpty);
       }
+    });
+
+    test('Kassenbewegung ohne Ort: keine Zeile „Ort“, Art „Wechselgeld“ (wie im npm-Paket)', () async {
+      final fall = _fall('recordMyCashMovement/success_manager_change_in_without_location');
+      final bon = (await _client(fall).recordMyCashMovement(idempotencyKey: 'k', drawerId: 'd', type: 'change_in', amountCents: 1)).receipt;
+      final text = ReceiptGrid.render(_layout(bon), charsPerLine: 48).toText();
+      expect(text, matches(RegExp(r'^Art +Wechselgeld$', multiLine: true)));
+      expect(text, matches(RegExp(r'Betrag +30,00')));
+      expect(text, isNot(matches(RegExp('Ort|Bank|Tresor'))));
     });
 
     test('Titel nach Art: Schichtabschluss, Zwischenbericht, Kassenbewegung', () async {

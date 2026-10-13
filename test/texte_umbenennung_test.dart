@@ -71,7 +71,7 @@ const _nach10 = (
     'stocktake.resend', 'stocktake.my_counts', 'stocktake.sent', 'stocktake.unconfirmed', 'stocktake.voided',
     // Schicht und Kassenstand (1.9.0)
     'shift.open_title', 'shift.take_over', 'shift.count', 'shift.by_denomination', 'shift.close_title',
-    'shift.cash_title', 'shift.x_report', 'shift.pay_out_tips', 'shift.not_a_receipt', 'drawer.reason_title',
+    'shift.cash_title', 'shift.x_report', 'shift.pay_out_tips', 'drawer.reason_title',
     'drawer.reason_change', 'drawer.reason_check', 'drawer.reason_misoperation', 'drawer.reason_other',
     'cash_movement.type_change_in', 'cash_movement.type_cash_drop', 'cash_movement.type_owner_deposit',
     'cash_movement.type_owner_withdrawal', 'cash_movement.type_tip_payout', 'cash_movement.type_other_in',

@@ -1408,9 +1408,6 @@
     "shift.pay_out_tips": {
       "text": "Trinkgeld auszahlen"
     },
-    "shift.not_a_receipt": {
-      "text": "Kein Registrierkassenbeleg"
-    },
     "drawer.reason_title": {
       "text": "Warum öffnen Sie die Lade?"
     },
@@ -1427,7 +1424,7 @@
       "text": "Sonstiges"
     },
     "cash_movement.type_change_in": {
-      "text": "Wechselgeld von Bank/Tresor"
+      "text": "Wechselgeld"
     },
     "cash_movement.type_cash_drop": {
       "text": "Abschöpfung"

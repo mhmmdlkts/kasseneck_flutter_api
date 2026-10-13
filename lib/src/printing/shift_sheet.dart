@@ -88,8 +88,6 @@ void _wennText(List<LayoutLine> zeilen, String links, String? wert) {
   if (wert != null && wert.isNotEmpty) zeilen.add(_kopf(links, wert));
 }
 
-List<LayoutLine> _fuss() => [_regel(), _text(labelText('shift.not_a_receipt'), align: LayoutAlign.center, bold: true)];
-
 void _kopfblock(List<LayoutLine> zeilen, ShiftReceiptHeader bon, String titel) {
   zeilen.add(LayoutBannerLine(text: labelText(titel), tone: LayoutBannerTone.receiptType));
   final betrieb = bon.businessName;
@@ -169,7 +167,6 @@ ReceiptLayout shiftReceiptLayout(ShiftSummaryReceipt receipt, {PosPaperSize pape
       zeilen.add(_betrag('  ${labelText('shift_receipt.tip_paid_out')}', t.paidOutCents));
     }
   }
-  zeilen.addAll(_fuss());
   return ReceiptLayout(lines: zeilen, paperSize: paperSize.value, ruleset: _regelwerk);
 }
 
@@ -194,6 +191,5 @@ ReceiptLayout cashMovementLayout(CashMovementReceipt receipt, {PosPaperSize pape
   _wennText(zeilen, labelText('shift_receipt.note'), bon.note);
   _wennText(zeilen, labelText('shift_receipt.operator'), bon.byName);
   _wennText(zeilen, labelText('shift_receipt.time'), _zeit(bon.at));
-  zeilen.addAll(_fuss());
   return ReceiptLayout(lines: zeilen, paperSize: paperSize.value, ruleset: _regelwerk);
 }

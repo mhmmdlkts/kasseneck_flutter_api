@@ -4,7 +4,7 @@
     "default": {
       "sha256": "bf1e7c100e328517c72d5badf31904183efe22d1fddec308e2fe2722068854bc",
       "head": [],
-      "inputsSha256": "a23cdfc2de21818f1d97fce40dc80dcc2b1e7edac93edd85045d132dc74c50c0",
+      "inputsSha256": "2157ecb05c4643ea3ad4d9152885d34eefe6024b1cd22c4e41880eaedcfe9a71",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "df8f80b6ed116f60286b8c2e8188bb27b6d9bef2074651f9af50c01b5a5717d8",
+      "sha256": "a91c23d0859bbecf449f19ef0218c57e0c7f7eb651936f9545095a1cc33761f8",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "b210d471f06659de01ea7c4cd832bd7b2bf97d2098dc69d54f2f5de00001e202",
+      "inputsSha256": "c8f1e0255f618cb34562386d9bc74e4653b9c575e06e25be852fe9b6add04b1e",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -17874,6 +17874,73 @@
                   "amountCents": -20000,
                   "note": "Abend",
                   "location": "safe",
+                  "recipientName": null,
+                  "targetDrawerName": null,
+                  "byName": "Anna Chef",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager_change_in_without_location",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "change_in",
+            "amountCents": 3000,
+            "idempotencyKey": "b-5"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000004",
+                "number": 4,
+                "shiftId": "haupt_KASSE1_s2",
+                "type": "change_in",
+                "amountCents": 3000,
+                "location": null,
+                "note": null,
+                "by": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "at": "2026-09-26T08:00:00.000Z",
+                "recipient": null,
+                "counterpart": null
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 4,
+                  "type": "change_in",
+                  "amountCents": 3000,
+                  "note": null,
+                  "location": null,
                   "recipientName": null,
                   "targetDrawerName": null,
                   "byName": "Anna Chef",

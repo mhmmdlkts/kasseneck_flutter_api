@@ -52,9 +52,9 @@ const List<String> movementTypes = [
 ];
 
 /// Was die Kasse von Hand buchen darf. Pflichtangaben je Art (sonst lehnt der
-/// Server ab): `location` bei `change_in`/`cash_drop`, `note` bei
-/// `other_in`/`other_out`, `recipientId` bei `tip_payout`, `targetDrawerId`
-/// bei `transfer_out`.
+/// Server ab): `note` bei `other_in`/`other_out`, `recipientId` bei
+/// `tip_payout`, `targetDrawerId` bei `transfer_out`. `location` bei
+/// `change_in`/`cash_drop` ist freiwillig.
 const List<String> manualMovementTypes = [
   'change_in',
   'cash_drop',

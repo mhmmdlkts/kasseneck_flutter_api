@@ -13,5 +13,3 @@ Ort                                       Tresor
 Grund                                      Abend
 Bediener                               Anna Chef
 Zeit                            26.09.2026 10:00
-------------------------------------------------
-           Kein Registrierkassenbeleg           

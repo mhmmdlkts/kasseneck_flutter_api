@@ -50,8 +50,14 @@ that compares them with a fixed length needs the new ones.
   „Zwischenbericht“) and `cashMovementLayout` („Kassenbewegung“) build a
   `ReceiptLayout` from the bon data of the response; the same goldens as npm,
   character by character. Blind values (`null`) leave their lines out, a real
-  `0` is printed. Every bon ends with „Kein Registrierkassenbeleg“ (no signature,
-  no QR, no DEP). Print it like any other layout.
+  `0` is printed. No signature, no QR, no DEP. Print it like any other layout.
+- **Bank or safe is optional.** `recordMyCashMovement` checks `location` only
+  when given (from `cashLocations`, otherwise it throws before sending); the
+  movement bon prints „Ort“ only when it is set, the label of `change_in` is
+  „Wechselgeld“, and no shift bon prints „Kein Registrierkassenbeleg“ (the text
+  `shift.not_a_receipt` is gone), like npm 1.11.0. Reason: the register no
+  longer asks where the change came from or the drop went, and the note at the
+  foot was not wanted on the slips.
 - **Drawer on the receipt.** `sell` and `cancelReceipt` take an optional
   `drawerId` (the drawer whose cash balance the receipt counts in); empty or
   only whitespace throws before sending. The device setting `drawerId` is

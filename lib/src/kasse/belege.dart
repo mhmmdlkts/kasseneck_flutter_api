@@ -920,10 +920,10 @@ class RegisterReceiptClient {
   /// Ein- oder Auszahlung buchen (`recordMyCashMovement`, Recht `cashMove`);
   /// die Antwort traegt die Bon-Daten „Kassenbewegung“. [type] aus
   /// [manualMovementTypes]; [amountCents] positiv, das Vorzeichen setzt der
-  /// Server nach der Art. Pflichtangaben je Art: [location] bei `change_in` und
-  /// `cash_drop`, [note] bei `other_in` und `other_out` (hoechstens 200
-  /// Zeichen), [recipientId] bei `tip_payout`, [targetDrawerId] bei
-  /// `transfer_out`.
+  /// Server nach der Art. Pflichtangaben je Art: [note] bei `other_in` und
+  /// `other_out` (hoechstens 200 Zeichen), [recipientId] bei `tip_payout`,
+  /// [targetDrawerId] bei `transfer_out`. [location] bei `change_in` und
+  /// `cash_drop` ist freiwillig (aus [cashLocations]).
   Future<CashMovementResult> recordMyCashMovement({
     required String idempotencyKey,
     required String drawerId,
@@ -946,6 +946,10 @@ class RegisterReceiptClient {
       'targetDrawerId': ?targetDrawerId,
     };
     kennung(name, 'drawerId', drawerId);
+    // Nur pruefen, wenn gesetzt: Bank/Tresor fragt die Kasse nicht mehr ab.
+    if (location != null && !cashLocations.contains(location)) {
+      throw anfragefehler(name, 'location muss ${cashLocations.join(' oder ')} sein');
+    }
     pruefeSchluessel(name, p);
     pruefeGanzzahlen(name, p);
     return gebuchtLesen(name, await transport.call(name, params: p));

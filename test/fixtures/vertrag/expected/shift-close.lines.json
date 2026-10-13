@@ -175,7 +175,7 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "Nr. 3 Wechselgeld von Bank/Tresor",
+          "text": "Nr. 3 Wechselgeld",
           "width": 8,
           "align": "left"
         },
@@ -421,16 +421,6 @@
           "align": "right"
         }
       ]
-    },
-    {
-      "kind": "rule",
-      "char": "-"
-    },
-    {
-      "kind": "text",
-      "text": "Kein Registrierkassenbeleg",
-      "align": "center",
-      "bold": true
     }
   ],
   "paperSize": "mm58",
