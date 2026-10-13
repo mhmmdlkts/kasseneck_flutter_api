@@ -1,3 +1,10 @@
+## 11.1.1
+
+- Documentation of `getCashregisterReport`: the daily report is only
+  available for a closed day (yesterday or earlier); today returns
+  `period_not_closed` like the current month. Reason: the backend accepts only
+  closed days. No code change; npm twin 1.10.1.
+
 ## 11.1.0
 
 - New `getCashregisterReport({year, month, day, start, end})` for the report
