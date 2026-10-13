@@ -343,10 +343,10 @@ class KasseneckApi {
       });
 
   /// Cash register report PDF (v2) for a closed month (`year` + `month`), a
-  /// day up to today (`year` + `month` + `day`) or a date range (`start` and
-  /// `end` as YYYY-MM-DD, `end` exclusive, at most 366 days). The current month
-  /// and the future are rejected by the server (`period_not_closed`,
-  /// `period_in_future`). Successor of [downloadMonthlyReport] and
+  /// closed day (yesterday or earlier; `year` + `month` + `day`) or a date
+  /// range (`start` and `end` as YYYY-MM-DD, `end` exclusive, at most 366
+  /// days). The current month and today are rejected by the server
+  /// (`period_not_closed`), the future too (`period_in_future`). Successor of [downloadMonthlyReport] and
   /// [downloadDailyReport].
   ///
   /// Exactly one form: a mixed or partial input throws an [ArgumentError]
