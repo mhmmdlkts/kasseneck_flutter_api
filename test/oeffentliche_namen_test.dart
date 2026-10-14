@@ -84,7 +84,7 @@ final Set<String> woerter = _liste('''
   promo proof provider public purchase quantities quantity quick quiet radius raised random
   range raster rasters rate rated rates ratio raw read readable ready
   reason reasons receipt receipts receive received recipient recipients record redeem
-  redeemed reference refresh refund refunds register registered registration rejected
+  redeemed reference refresh refund refunded refunds register registered registration rejected
   rejects related release released remaining remove removed render renew replacement replayed report
   reports request requested required requirement requirements reservation reservations reserved reset resolve restock
   resolved resolving response result retries retry return revenue reversal reverse

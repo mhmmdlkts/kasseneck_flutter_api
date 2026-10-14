@@ -89,6 +89,14 @@ void main() {
     }
   });
 
+  test('asksRefundTip: alle Faelle des Vertrags (mit Wertgutschein keine Frage, R59)', () {
+    final liste = (_faelle['asksRefundTip'] as List).cast<Map<String, dynamic>>();
+    expect(liste.length, greaterThanOrEqualTo(7));
+    for (final f in liste) {
+      expect(asksRefundTip(_beleg(f['receipt'] as String), nowMs: _jetzt), f['expected'], reason: f['receipt'] as String);
+    }
+  });
+
   test('cancellationItemsForTip: alle Faelle des Vertrags (Rueckgabe-Wahl geht in Dart getrennt hinaus)', () {
     final liste = (_faelle['cancellationItemsForTip'] as List).cast<Map<String, dynamic>>();
     expect(liste.length, greaterThanOrEqualTo(10));
@@ -120,11 +128,15 @@ void main() {
     expect(isTipRefundSource('employee'), isTrue);
     expect(isTipRefundSource('mitarbeiter'), isFalse);
     final ab = cancellationErrorCodes.indexOf('invalid_return_disposition');
-    expect(cancellationErrorCodes.sublist(ab + 1, ab + 4), ['tip_refund_conflict', 'invalid_tip_refund_source', 'tip_refund_source_requires_cash']);
+    expect(cancellationErrorCodes.sublist(ab + 1, ab + 5),
+        ['tip_refund_conflict', 'invalid_tip_refund_source', 'tip_refund_source_requires_cash', 'tip_keep_not_possible_with_voucher']);
     expect(labelText('cancellation.tip_refund_question'), 'Trinkgeld auch zurückgeben?');
     expect(labelText('cancellation.tip_source_employee'), 'Gibt die Mitarbeiterin direkt');
     expect(messageText('cancellation.tip_source_missing'), 'Bitte wählen: Woher kommt das Trinkgeld zurück?');
     expect(messageText('tip.kept_setting_hint'), contains('zählt nicht ins Soll der Lade'));
+    expect(messageText('cancellation.tip_refunded_with_voucher'), 'Beleg mit Gutschein: Das Trinkgeld wird mitstorniert.');
+    expect(labelText('cancellation.tip_stays'), 'bleibt');
+    expect(labelText('shift_receipt.tip_refunded_by_employee'), 'selbst zurückgegeben');
   });
 
   group('cancelReceipt: refundTip und tipRefundSource', () {

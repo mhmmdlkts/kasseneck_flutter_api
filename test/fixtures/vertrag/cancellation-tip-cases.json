@@ -1,5 +1,5 @@
 {
-  "_note": "Shared cases for cancelling a receipt with or without the tip (npm @kreiseck/kasseneck-api and Dart kasseneck_api): openStaffTipCents (staff tip not yet cancelled; > 0 = ask 'refund the tip too?'), cancellationItemsForTip (items sent after the answer; null = whole receipt), asksTipRefundSource (ask 'where does the tip come back from?' only when the cash refund covers it and the employee already had it) and cancellationCashRefundCents (cash part of the refund). Receipts in the /v3 form (the receipt part of the response, without signature fields); the tests add the required fields.",
+  "_note": "Shared cases for cancelling a receipt with or without the tip (npm @kreiseck/kasseneck-api and Dart kasseneck_api): openStaffTipCents (staff tip not yet cancelled), asksRefundTip (ask 'refund the tip too?': open staff tip and no value voucher on the receipt; with a value voucher the tip is always refunded), cancellationItemsForTip (items sent after the answer; null = whole receipt), asksTipRefundSource (ask 'where does the tip come back from?' only when the cash refund covers it and the employee already had it) and cancellationCashRefundCents (cash part of the refund). Receipts in the /v3 form (the receipt part of the response, without signature fields); the tests add the required fields.",
   "receipts": {
     "cash_with_tip": {
       "paymentMethod": "cash",
@@ -285,6 +285,91 @@
           "receivedImmediately": true
         }
       ]
+    },
+    "with_value_voucher": {
+      "paymentMethod": "cash",
+      "payments": [
+        {
+          "id": "p1",
+          "method": "cash",
+          "amountCents": 980
+        }
+      ],
+      "vouchers": [
+        {
+          "action": "redeem",
+          "type": "value",
+          "code": "WG-1",
+          "name": "Wertgutschein",
+          "value": 2
+        }
+      ],
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Kuchen",
+          "quantity": 1,
+          "unitPriceCents": 420,
+          "vatRate": 10
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 200,
+          "vatRate": 0,
+          "kind": "tip",
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "receivedImmediately": true
+        }
+      ]
+    },
+    "with_promo_voucher": {
+      "paymentMethod": "cash",
+      "vouchers": [
+        {
+          "action": "redeem",
+          "type": "promo",
+          "code": "RABATT",
+          "name": "Rabatt",
+          "value": 1
+        }
+      ],
+      "items": [
+        {
+          "name": "Kaffee",
+          "quantity": 2,
+          "unitPriceCents": 280,
+          "vatRate": 20
+        },
+        {
+          "name": "Kuchen",
+          "quantity": 1,
+          "unitPriceCents": 420,
+          "vatRate": 10
+        },
+        {
+          "name": "Trinkgeld Personal",
+          "quantity": 1,
+          "unitPriceCents": 200,
+          "vatRate": 0,
+          "kind": "tip",
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "receivedImmediately": true
+        }
+      ]
     }
   },
   "openStaffTipCents": [
@@ -311,6 +396,36 @@
     {
       "receipt": "without_tip",
       "expected": 0
+    }
+  ],
+  "asksRefundTip": [
+    {
+      "receipt": "cash_with_tip",
+      "expected": true
+    },
+    {
+      "receipt": "tip_already_cancelled",
+      "expected": false
+    },
+    {
+      "receipt": "only_tip_open",
+      "expected": true
+    },
+    {
+      "receipt": "owner_tip",
+      "expected": false
+    },
+    {
+      "receipt": "without_tip",
+      "expected": false
+    },
+    {
+      "receipt": "with_value_voucher",
+      "expected": false
+    },
+    {
+      "receipt": "with_promo_voucher",
+      "expected": true
     }
   ],
   "cancellationItemsForTip": [
@@ -434,6 +549,12 @@
       "items": null,
       "refundTip": false,
       "expected": null
+    },
+    {
+      "receipt": "tip_already_cancelled",
+      "items": null,
+      "refundTip": false,
+      "expected": null
     }
   ],
   "asksTipRefundSource": [
@@ -481,6 +602,11 @@
       "receipt": "without_tip",
       "cashRefundCents": 560,
       "expected": false
+    },
+    {
+      "receipt": "with_value_voucher",
+      "cashRefundCents": 980,
+      "expected": true
     }
   ],
   "cancellationCashRefundCents": [
@@ -542,6 +668,12 @@
       ],
       "dueCents": 1180,
       "expected": 1180
+    },
+    {
+      "receipt": "with_value_voucher",
+      "payments": null,
+      "dueCents": 980,
+      "expected": 980
     }
   ]
 }

@@ -107,6 +107,15 @@ that compares them with a fixed length needs the new ones.
   `cancellation.tip_refund_missing` and `cancellation.tip_source_missing`.
   Reason: whether a tip goes back with a cancelled sale, and from whose
   pocket, is a decision at the register; drawer and tip figures follow it.
+  With a value voucher on the receipt there is no „Nein“ (`asksRefundTip`
+  false, hint `cancellation.tip_refunded_with_voucher`, send `refundTip: true`;
+  the server refuses `false` with `tip_keep_not_possible_with_voucher`).
+  `refundTip: true` without `tipRefundSource` on a cash refund means: from the
+  drawer. After „Nein“ the tip line reads `cancellation.tip_stays` „bleibt“.
+- **Tip handed back by the employee.** `ShiftTipTotals.refundedByEmployeeCents`
+  („selbst zurückgegeben“, default 0, read as 0 when missing) and the line
+  `shift_receipt.tip_refunded_by_employee` in `shiftTipLines` (only when not 0),
+  like npm 1.11.0. Reason: „schon genommen -2,00“ was correct but read wrong.
 - **Drawer on the receipt.** `sell` and `cancelReceipt` take an optional
   `drawerId` (the drawer whose cash balance the receipt counts in); empty or
   only whitespace throws before sending. The device setting `drawerId` is

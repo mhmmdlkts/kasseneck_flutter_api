@@ -514,8 +514,11 @@ class RegisterReceiptClient {
   /// (ohne [items] = alle Restmengen ausser dem Trinkgeld), `true` mit [items]
   /// nimmt das offene Trinkgeld dazu; fehlt = wie bisher. [tipRefundSource]
   /// (`drawer` | `employee`, aus `tipRefundSources`) nur bei Barrueckgabe
-  /// (`asksTipRefundSource`), nie zusammen mit `refundTip: false`. Die
-  /// Positionen dazu rechnet `cancellationItemsForTip`.
+  /// (`asksTipRefundSource`), nie zusammen mit `refundTip: false`; `refundTip:
+  /// true` ohne Quelle heisst bei Barrueckgabe: aus der Lade. Die Positionen
+  /// dazu rechnet `cancellationItemsForTip`. An einem Beleg mit Wertgutschein
+  /// gibt es `false` nicht (`tip_keep_not_possible_with_voucher`,
+  /// `asksRefundTip`).
   Future<CancelReceiptResult> cancelReceipt({
     required String originalReceiptId,
     required String reason,

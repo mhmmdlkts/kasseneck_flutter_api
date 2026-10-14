@@ -49,6 +49,7 @@ void main() {
         receivedImmediatelyCents: t['receivedImmediatelyCents'] as int,
         retainedCents: t['retainedCents'] as int,
         paidOutCents: t['paidOutCents'] as int,
+        refundedByEmployeeCents: (t['refundedByEmployeeCents'] as int?) ?? 0,
         openCents: t['openCents'] as int,
       );
       final zeilen = shiftTipLines(tip);
@@ -64,6 +65,12 @@ void main() {
     expect([for (final z in shiftTipLines(laufstand)) z.text], ['verdient', 'über Lohn', 'schon genommen']);
     const voll = ShiftTip(registerUserId: 'ru_kellner', receivedImmediatelyCents: 400, retainedCents: 150, paidOutCents: 250, openCents: 150);
     expect([for (final z in shiftTipLines(voll)) z.text], ['verdient', 'über Lohn', 'schon genommen', 'offen']);
+  });
+
+  test('shiftTipLines: selbst zurueckgegeben als eigene Zeile (Fix-Runde 1, R62)', () {
+    const tip = ShiftTip(registerUserId: 'ru_kellner', receivedImmediatelyCents: 400, retainedCents: 0, paidOutCents: 0, refundedByEmployeeCents: 200, openCents: 600);
+    expect([for (final z in shiftTipLines(tip)) z.text], ['verdient', 'selbst zurückgegeben', 'offen']);
+    expect(tip.toJson()['refundedByEmployeeCents'], 200);
   });
 
   test('newIdempotencyKey: kasse- und 32 Hex, jedes Mal neu', () {

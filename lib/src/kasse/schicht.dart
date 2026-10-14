@@ -215,6 +215,7 @@ class ShiftTipTotals {
     required this.receivedImmediatelyCents,
     required this.retainedCents,
     required this.paidOutCents,
+    this.refundedByEmployeeCents = 0,
   });
 
   final String registerUserId;
@@ -229,12 +230,19 @@ class ShiftTipTotals {
   /// In dieser Schicht aus der Lade ausgezahlt („schon genommen“).
   final int paidOutCents;
 
+  /// Beim Storno selbst zurueckgegeben („selbst zurückgegeben“, Fix-Runde 1,
+  /// R62). Eigene Zahl, damit „schon genommen“ nie negativ wird: offen =
+  /// verdient − genommen + selbst zurueckgegeben. Fehlt es in der Antwort
+  /// (Backend vor dieser Regel), gilt 0.
+  final int refundedByEmployeeCents;
+
   Map<String, dynamic> toJson() => {
         'registerUserId': registerUserId,
         'name': name,
         'receivedImmediatelyCents': receivedImmediatelyCents,
         'retainedCents': retainedCents,
         'paidOutCents': paidOutCents,
+        'refundedByEmployeeCents': refundedByEmployeeCents,
       };
 }
 
@@ -248,6 +256,7 @@ class ShiftTip extends ShiftTipTotals {
     required super.receivedImmediatelyCents,
     required super.retainedCents,
     required super.paidOutCents,
+    super.refundedByEmployeeCents,
     required this.openCents,
   });
 
@@ -274,7 +283,8 @@ class ShiftTipLine {
 
 /// Was vom Trinkgeld eines Mitarbeiters dasteht, auf dem Bon, im Kassenstand
 /// und beim Abschluss gleich (Rulings R50/R51): „verdient“ (sofort + ueber
-/// Lohn) immer, „über Lohn“, „schon genommen“ und „offen“ nur, wenn nicht 0.
+/// Lohn) immer, „über Lohn“, „schon genommen“, „selbst zurückgegeben“ (R62)
+/// und „offen“ nur, wenn nicht 0.
 /// Ist alles 0, gibt es keine Zeile, und der Mitarbeiter entfaellt ganz. Ohne
 /// `openCents` (Laufstand, [ShiftTipTotals]) zaehlt offen als 0. Gemeinsame
 /// Faelle mit dem JS-Zwilling: `shift-cases.json`.
@@ -283,6 +293,7 @@ List<ShiftTipLine> shiftTipLines(ShiftTipTotals tip) {
   final rest = <(String, int)>[
     ('shift_receipt.tip_retained', tip.retainedCents),
     ('shift_receipt.tip_paid_out', tip.paidOutCents),
+    ('shift_receipt.tip_refunded_by_employee', tip.refundedByEmployeeCents),
     ('shift_receipt.tip_open', tip is ShiftTip ? tip.openCents : 0),
   ].where((z) => z.$2 != 0).toList();
   if (verdient == 0 && rest.isEmpty) return const [];
@@ -1032,6 +1043,8 @@ ShiftTipTotals _trinkgeld(_Ort ort, Object? w) {
     receivedImmediatelyCents: _ganzzahl(ort, o, 'receivedImmediatelyCents'),
     retainedCents: _ganzzahl(ort, o, 'retainedCents'),
     paidOutCents: _ganzzahl(ort, o, 'paidOutCents'),
+    // Fehlt bei einem Backend vor der Regel R62: dann 0, statt die ganze Antwort zu verwerfen.
+    refundedByEmployeeCents: o['refundedByEmployeeCents'] == null ? 0 : _ganzzahl(ort, o, 'refundedByEmployeeCents'),
   );
 }
 
@@ -1045,6 +1058,7 @@ ShiftTip _trinkgeldMitOffen(_Ort ort, Object? w) {
     receivedImmediatelyCents: t.receivedImmediatelyCents,
     retainedCents: t.retainedCents,
     paidOutCents: t.paidOutCents,
+    refundedByEmployeeCents: t.refundedByEmployeeCents,
     openCents: _ganzzahl(ort, o, 'openCents'),
   );
 }

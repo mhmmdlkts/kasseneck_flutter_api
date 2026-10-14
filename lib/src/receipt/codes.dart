@@ -108,6 +108,7 @@ final List<String> cancellationErrorCodes = _mitRand(const [
   'tip_refund_conflict', // Wahl passt nicht zum Storno (Trinkgeld trotz Nein, Quelle ohne Trinkgeld)
   'invalid_tip_refund_source', // tipRefundSource nicht drawer oder employee
   'tip_refund_source_requires_cash', // eine Quelle nur, wenn das Bargeld des Stornos das Trinkgeld deckt
+  'tip_keep_not_possible_with_voucher', // refundTip false an einem Beleg mit Wertgutschein (das Trinkgeld geht mit)
 ], _signierend);
 
 /// Codes rund um `payments` an `createReceipt` und `cancelReceipt`.

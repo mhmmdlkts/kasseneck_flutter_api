@@ -345,6 +345,9 @@
     "cancellation.tip_source_missing": {
       "text": "Bitte wählen: Woher kommt das Trinkgeld zurück?"
     },
+    "cancellation.tip_refunded_with_voucher": {
+      "text": "Beleg mit Gutschein: Das Trinkgeld wird mitstorniert."
+    },
     "split.setting_hint": {
       "text": "Ein Tisch zahlt in Teilen: jede Zahlung bar oder mit Karte, mit eigenem Trinkgeld – am Ende ein Beleg für alles."
     },
@@ -1299,6 +1302,9 @@
     "cancellation.tip_source_employee": {
       "text": "Gibt die Mitarbeiterin direkt"
     },
+    "cancellation.tip_stays": {
+      "text": "bleibt"
+    },
     "codetable.title": {
       "text": "ZEICHENSATZ-TEST"
     },
@@ -1575,6 +1581,9 @@
     },
     "shift_receipt.tip_paid_out": {
       "text": "schon genommen"
+    },
+    "shift_receipt.tip_refunded_by_employee": {
+      "text": "selbst zurückgegeben"
     },
     "shift_receipt.tip_open": {
       "text": "offen"

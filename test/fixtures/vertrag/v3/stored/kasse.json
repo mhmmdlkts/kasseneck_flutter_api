@@ -4,7 +4,7 @@
     "default": {
       "sha256": "4174e678405f3ba01c9df3aba68ecd59153abf5ec2927c657b29237011cb9275",
       "head": [],
-      "inputsSha256": "975fbef73d03af479510a0db6d259683e6bc4fe0a80e3d55faa6084aee33cef6",
+      "inputsSha256": "ffa35696f3ebdec5efa717cd8b746ca3c63c1dc6f986f60db7bfc8acad4c36c0",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "7e7aa55c83e42603fd91af9f4d94d72a882ec0d90136b02eae9c51d605bdbf3c",
+      "sha256": "ee1d4468056124af78426509aa4b3f888ce51e8d4d1645fd12c9ce2df281a11e",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "30f050b440442004e70153ca71e4c836847d6e6a115f9418d4563a249c2b2548",
+      "inputsSha256": "a28b9abe287f9d27889ee31a6c5ee81ff668e55bce99247c9da8a0cff2b2397b",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -6772,7 +6772,8 @@
                       "name": "Ben Kellner",
                       "sofortCents": 400,
                       "einbehaltenCents": 0,
-                      "ausgezahltCents": 0
+                      "ausgezahltCents": 0,
+                      "selbstZurueckCents": 0
                     }
                   },
                   "oeffnungenOhneVerkauf": 1
@@ -6856,6 +6857,7 @@
                     "sofortCents": 400,
                     "einbehaltenCents": 0,
                     "ausgezahltCents": 0,
+                    "selbstZurueckCents": 0,
                     "offenCents": 400
                   }
                 ],
@@ -7117,7 +7119,8 @@
                       "name": "Ben Kellner",
                       "sofortCents": 400,
                       "einbehaltenCents": 0,
-                      "ausgezahltCents": 400
+                      "ausgezahltCents": 400,
+                      "selbstZurueckCents": 0
                     }
                   },
                   "oeffnungenOhneVerkauf": 1
@@ -7209,6 +7212,7 @@
                     "sofortCents": 400,
                     "einbehaltenCents": 0,
                     "ausgezahltCents": 400,
+                    "selbstZurueckCents": 0,
                     "offenCents": 0
                   }
                 ],

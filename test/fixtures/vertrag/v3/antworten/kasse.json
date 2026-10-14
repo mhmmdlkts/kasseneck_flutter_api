@@ -4,7 +4,7 @@
     "default": {
       "sha256": "439a8bfac209333ab769a4c7133507a1730267eff4021cc9bdcf39d25805b94d",
       "head": [],
-      "inputsSha256": "975fbef73d03af479510a0db6d259683e6bc4fe0a80e3d55faa6084aee33cef6",
+      "inputsSha256": "ffa35696f3ebdec5efa717cd8b746ca3c63c1dc6f986f60db7bfc8acad4c36c0",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "4ee1f388e91b3acc60f81e01c96ba11db7a47210b0a97cb86c3420eba0d02432",
+      "sha256": "21f06a4e71f12664887cc212baa498762e4c11c53408b211f2f732ac694aae4c",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "30f050b440442004e70153ca71e4c836847d6e6a115f9418d4563a249c2b2548",
+      "inputsSha256": "a28b9abe287f9d27889ee31a6c5ee81ff668e55bce99247c9da8a0cff2b2397b",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -9383,6 +9383,30 @@
           }
         },
         {
+          "case": "tip_voucher",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "originalReceiptId": "KASSE1-ID-7",
+            "reason": "input_error",
+            "refundTip": false
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Beleg mit Wertgutschein: das Trinkgeld lässt sich nicht zurückbehalten – es wird mitstorniert.",
+            "data": {
+              "code": "tip_keep_not_possible_with_voucher"
+            },
+            "code": "tip_keep_not_possible_with_voucher"
+          }
+        },
+        {
           "case": "tip_source_invalid",
           "method": "POST",
           "caller": "register_user_manager",
@@ -17105,6 +17129,7 @@
                   "receivedImmediatelyCents": 400,
                   "retainedCents": 0,
                   "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
                   "openCents": 400
                 }
               ]
@@ -17167,6 +17192,7 @@
                   "receivedImmediatelyCents": 400,
                   "retainedCents": 0,
                   "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
                   "openCents": 400
                 }
               ]
@@ -17238,6 +17264,7 @@
                   "receivedImmediatelyCents": 400,
                   "retainedCents": 0,
                   "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
                   "openCents": 400
                 }
               ]
@@ -17314,7 +17341,8 @@
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 400,
                       "retainedCents": 0,
-                      "paidOutCents": 0
+                      "paidOutCents": 0,
+                      "refundedByEmployeeCents": 0
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -17338,6 +17366,7 @@
                   "receivedImmediatelyCents": 400,
                   "retainedCents": 0,
                   "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
                   "openCents": 400
                 }
               ],
@@ -17436,7 +17465,8 @@
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 213,
                       "retainedCents": 0,
-                      "paidOutCents": 0
+                      "paidOutCents": 0,
+                      "refundedByEmployeeCents": 0
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -17460,6 +17490,7 @@
                   "receivedImmediatelyCents": 213,
                   "retainedCents": 0,
                   "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
                   "openCents": 400
                 }
               ],
@@ -17558,6 +17589,7 @@
                   "receivedImmediatelyCents": 0,
                   "retainedCents": 0,
                   "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
                   "openCents": 300
                 },
                 {
@@ -17566,7 +17598,80 @@
                   "receivedImmediatelyCents": 400,
                   "retainedCents": 150,
                   "paidOutCents": 250,
+                  "refundedByEmployeeCents": 0,
                   "openCents": 150
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_cashier_tip_self_refunded",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 600
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 200,
+                  "openCents": 600
                 }
               ]
             }
@@ -20054,6 +20159,7 @@
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
                     "paidOutCents": 0,
+                    "refundedByEmployeeCents": 0,
                     "openCents": 400
                   }
                 ],
@@ -20125,7 +20231,8 @@
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 400,
                       "retainedCents": 0,
-                      "paidOutCents": 0
+                      "paidOutCents": 0,
+                      "refundedByEmployeeCents": 0
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -20203,6 +20310,7 @@
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
                     "paidOutCents": 0,
+                    "refundedByEmployeeCents": 0,
                     "openCents": 400
                   }
                 ],
@@ -21032,6 +21140,7 @@
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
                     "paidOutCents": 0,
+                    "refundedByEmployeeCents": 0,
                     "openCents": 400
                   }
                 ],
@@ -21122,7 +21231,8 @@
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 400,
                       "retainedCents": 0,
-                      "paidOutCents": 400
+                      "paidOutCents": 400,
+                      "refundedByEmployeeCents": 0
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -21221,6 +21331,7 @@
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
                     "paidOutCents": 400,
+                    "refundedByEmployeeCents": 0,
                     "openCents": 0
                   }
                 ],
@@ -21310,7 +21421,8 @@
                       "name": "Ben Kellner",
                       "receivedImmediatelyCents": 400,
                       "retainedCents": 0,
-                      "paidOutCents": 400
+                      "paidOutCents": 400,
+                      "refundedByEmployeeCents": 0
                     }
                   ],
                   "openingsWithoutSale": 1
@@ -21409,6 +21521,7 @@
                     "receivedImmediatelyCents": 400,
                     "retainedCents": 0,
                     "paidOutCents": 400,
+                    "refundedByEmployeeCents": 0,
                     "openCents": 0
                   }
                 ],

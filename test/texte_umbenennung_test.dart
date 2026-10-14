@@ -59,7 +59,7 @@ const _nach10 = (
     'denominations.invalid', 'amount.invalid', 'drawer.not_found', 'drawer.inactive',
     'tip_payout.recipient_required', 'shift.pending_hint', 'shift.mode_off', 'tip.kept_setting_hint',
     // Storno mit oder ohne Trinkgeld (11.2.0)
-    'cancellation.tip_refund_missing', 'cancellation.tip_source_missing',
+    'cancellation.tip_refund_missing', 'cancellation.tip_source_missing', 'cancellation.tip_refunded_with_voucher',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -100,6 +100,7 @@ const _nach10 = (
     // Storno mit oder ohne Trinkgeld (11.2.0)
     'cancellation.tip_refund_question', 'cancellation.tip_refund_yes', 'cancellation.tip_refund_no',
     'cancellation.tip_source_question', 'cancellation.tip_source_drawer', 'cancellation.tip_source_employee',
+    'cancellation.tip_stays', 'shift_receipt.tip_refunded_by_employee',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type'},
