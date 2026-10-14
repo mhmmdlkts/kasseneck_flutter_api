@@ -377,6 +377,7 @@ const Map<String, PosText> posLabels = {
   'shift_receipt.tip_retained': PosText('über Lohn'),
   'shift_receipt.tip_paid_out': PosText('schon genommen'),
   'shift_receipt.tip_refunded_by_employee': PosText('selbst zurückgegeben'),
+  'shift_receipt.tip_carried_over': PosText('aus früheren Schichten'),
   'shift_receipt.tip_open': PosText('offen'),
   'shift_receipt.movement_number': PosText('Nr.'),
   'shift_receipt.type': PosText('Art'),

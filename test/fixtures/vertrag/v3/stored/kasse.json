@@ -4,7 +4,7 @@
     "default": {
       "sha256": "4174e678405f3ba01c9df3aba68ecd59153abf5ec2927c657b29237011cb9275",
       "head": [],
-      "inputsSha256": "ffa35696f3ebdec5efa717cd8b746ca3c63c1dc6f986f60db7bfc8acad4c36c0",
+      "inputsSha256": "17bf42720af60489612486c33bfcb6db4ea76601a798a23ec56df6c30fb15528",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "ee1d4468056124af78426509aa4b3f888ce51e8d4d1645fd12c9ce2df281a11e",
+      "sha256": "dbc18bd9a1d9792543e6533a0dd3917fd4d9ead17cc99a6161bb89326af3ad96",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "a28b9abe287f9d27889ee31a6c5ee81ff668e55bce99247c9da8a0cff2b2397b",
+      "inputsSha256": "99c41f93ee7aa1bb4df4fc319c3b1125b3e0ae7e8480ef0ff55395e2127c7cde",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -4873,7 +4873,8 @@
             "abgleich": null,
             "geprueft": null,
             "pdf": null,
-            "tagesabschlussId": null
+            "tagesabschlussId": null,
+            "trinkgeldVortrag": {}
           }
         },
         "success_cashier_taken_over": {
@@ -4991,7 +4992,8 @@
             "abgleich": null,
             "geprueft": null,
             "pdf": null,
-            "tagesabschlussId": null
+            "tagesabschlussId": null,
+            "trinkgeldVortrag": {}
           }
         }
       }
@@ -6858,6 +6860,7 @@
                     "einbehaltenCents": 0,
                     "ausgezahltCents": 0,
                     "selbstZurueckCents": 0,
+                    "vortragCents": 0,
                     "offenCents": 400
                   }
                 ],
@@ -7213,6 +7216,7 @@
                     "einbehaltenCents": 0,
                     "ausgezahltCents": 400,
                     "selbstZurueckCents": 0,
+                    "vortragCents": 0,
                     "offenCents": 0
                   }
                 ],

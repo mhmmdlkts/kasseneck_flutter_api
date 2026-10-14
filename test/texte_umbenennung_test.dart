@@ -100,7 +100,7 @@ const _nach10 = (
     // Storno mit oder ohne Trinkgeld (11.2.0)
     'cancellation.tip_refund_question', 'cancellation.tip_refund_yes', 'cancellation.tip_refund_no',
     'cancellation.tip_source_question', 'cancellation.tip_source_drawer', 'cancellation.tip_source_employee',
-    'cancellation.tip_stays', 'shift_receipt.tip_refunded_by_employee',
+    'cancellation.tip_stays', 'shift_receipt.tip_refunded_by_employee', 'shift_receipt.tip_carried_over',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type'},

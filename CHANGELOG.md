@@ -116,6 +116,10 @@ that compares them with a fixed length needs the new ones.
   („selbst zurückgegeben“, default 0, read as 0 when missing) and the line
   `shift_receipt.tip_refunded_by_employee` in `shiftTipLines` (only when not 0),
   like npm 1.11.0. Reason: „schon genommen -2,00“ was correct but read wrong.
+- **Tip carried over from earlier shifts.** `ShiftTip.carriedOverCents` („aus
+  früheren Schichten“, default 0, read as 0 when missing) and the line
+  `shift_receipt.tip_carried_over` first in `shiftTipLines` (only when not 0),
+  like npm 1.11.0. Reason: „verdient 9,00 · offen 15,00“ left 6,00 unexplained.
 - **Drawer on the receipt.** `sell` and `cancelReceipt` take an optional
   `drawerId` (the drawer whose cash balance the receipt counts in); empty or
   only whitespace throws before sending. The device setting `drawerId` is

@@ -257,13 +257,20 @@ class ShiftTip extends ShiftTipTotals {
     required super.retainedCents,
     required super.paidOutCents,
     super.refundedByEmployeeCents,
+    this.carriedOverCents = 0,
     required this.openCents,
   });
+
+  /// Offene Forderung an die Lade beim Oeffnen der Schicht („aus früheren
+  /// Schichten“, Fix-Runde 2, R64); ohne offene Schicht der ganze Anspruch.
+  /// Fehlt es, 0. Fuer den Leser geht auf: offen = aus frueheren Schichten +
+  /// verdient − ueber Lohn − schon genommen + selbst zurueckgegeben.
+  final int carriedOverCents;
 
   final int openCents;
 
   @override
-  Map<String, dynamic> toJson() => {...super.toJson(), 'openCents': openCents};
+  Map<String, dynamic> toJson() => {...super.toJson(), 'carriedOverCents': carriedOverCents, 'openCents': openCents};
 }
 
 /// Trinkgeld auf dem Z- und X-Bon: offen = Anspruch beim Abschluss bzw. jetzt.
@@ -284,7 +291,8 @@ class ShiftTipLine {
 /// Was vom Trinkgeld eines Mitarbeiters dasteht, auf dem Bon, im Kassenstand
 /// und beim Abschluss gleich (Rulings R50/R51): „verdient“ (sofort + ueber
 /// Lohn) immer, „über Lohn“, „schon genommen“, „selbst zurückgegeben“ (R62)
-/// und „offen“ nur, wenn nicht 0.
+/// und „offen“ nur, wenn nicht 0. Davor „aus früheren Schichten“ (R64, nur
+/// wenn nicht 0).
 /// Ist alles 0, gibt es keine Zeile, und der Mitarbeiter entfaellt ganz. Ohne
 /// `openCents` (Laufstand, [ShiftTipTotals]) zaehlt offen als 0. Gemeinsame
 /// Faelle mit dem JS-Zwilling: `shift-cases.json`.
@@ -296,9 +304,14 @@ List<ShiftTipLine> shiftTipLines(ShiftTipTotals tip) {
     ('shift_receipt.tip_refunded_by_employee', tip.refundedByEmployeeCents),
     ('shift_receipt.tip_open', tip is ShiftTip ? tip.openCents : 0),
   ].where((z) => z.$2 != 0).toList();
-  if (verdient == 0 && rest.isEmpty) return const [];
+  final vortrag = tip is ShiftTip ? tip.carriedOverCents : 0;
+  if (verdient == 0 && rest.isEmpty && vortrag == 0) return const [];
   return [
-    for (final (key, cents) in [('shift_receipt.tip_earned', verdient), ...rest])
+    for (final (key, cents) in [
+      if (vortrag != 0) ('shift_receipt.tip_carried_over', vortrag),
+      ('shift_receipt.tip_earned', verdient),
+      ...rest,
+    ])
       ShiftTipLine(key: key, text: labelText(key), cents: cents),
   ];
 }
@@ -1059,6 +1072,8 @@ ShiftTip _trinkgeldMitOffen(_Ort ort, Object? w) {
     retainedCents: t.retainedCents,
     paidOutCents: t.paidOutCents,
     refundedByEmployeeCents: t.refundedByEmployeeCents,
+    // Fehlt bei einem Backend vor der Regel R64: dann 0.
+    carriedOverCents: o['carriedOverCents'] == null ? 0 : _ganzzahl(ort, o, 'carriedOverCents'),
     openCents: _ganzzahl(ort, o, 'openCents'),
   );
 }

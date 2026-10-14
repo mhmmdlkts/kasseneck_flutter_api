@@ -1585,6 +1585,9 @@
     "shift_receipt.tip_refunded_by_employee": {
       "text": "selbst zurückgegeben"
     },
+    "shift_receipt.tip_carried_over": {
+      "text": "aus früheren Schichten"
+    },
     "shift_receipt.tip_open": {
       "text": "offen"
     },
