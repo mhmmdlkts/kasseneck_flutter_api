@@ -12,6 +12,10 @@ Cash position and tip list at the register: `ShiftRunningTotals.voucherRedeemedC
 `shift-cases.json`) and the texts for the cash position card and the tip payout
 list (`shift.*`, `duration.*`, `tip_payout.*`).
 
+Printer warning: four short labels for the quiet warning line at the print
+buttons (`printer.warn_unreachable`, `printer.warn_none`, `printer.check`,
+`printer.set_up`).
+
 Additive; every existing call sends the same bytes as in 11.1.1 unless you
 pass the new `drawerId`. The lists `posErrorCodes` (17 new codes),
 `unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code

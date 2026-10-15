@@ -112,6 +112,8 @@ const _nach10 = (
     'tip_payout.open_amount', 'tip_payout.done', 'tip_payout.earned_paid', 'tip_payout.for_all',
     'tip_payout.nothing', 'tip_payout.all_open', 'tip_payout.title', 'tip_payout.persons_one',
     'tip_payout.persons_other', 'tip_payout.pay_amount', 'tip_payout.pay_out',
+    // Druckwarnung an der Kasse (11.2.0)
+    'printer.warn_unreachable', 'printer.warn_none', 'printer.check', 'printer.set_up',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {

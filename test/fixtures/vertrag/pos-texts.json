@@ -1729,6 +1729,18 @@
     "drawer.recent_openings_full": {
       "text": "Letzte Öffnungen der Kassenlade"
     },
+    "printer.warn_unreachable": {
+      "text": "Drucker nicht erreichbar"
+    },
+    "printer.warn_none": {
+      "text": "Kein Drucker eingerichtet"
+    },
+    "printer.check": {
+      "text": "Prüfen"
+    },
+    "printer.set_up": {
+      "text": "Einrichten"
+    },
     "duration.days_one": {
       "text": "{days} Tag",
       "placeholders": [
