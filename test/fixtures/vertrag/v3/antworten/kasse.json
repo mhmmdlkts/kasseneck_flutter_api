@@ -4,7 +4,7 @@
     "default": {
       "sha256": "439a8bfac209333ab769a4c7133507a1730267eff4021cc9bdcf39d25805b94d",
       "head": [],
-      "inputsSha256": "17bf42720af60489612486c33bfcb6db4ea76601a798a23ec56df6c30fb15528",
+      "inputsSha256": "6dc195112cfd3b675abeaecfa161e2732028722ef32e95d9e6a3a1acc3625ed3",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "c5f56bb633fc4009fd74d2b0304592732f50fb9f75382bb6c4a9f979a57c58ec",
+      "sha256": "de0f06917ea9cf05eb7f846904393cf94d1b7e5f4c12a853085fb2c75943c628",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "99c41f93ee7aa1bb4df4fc319c3b1125b3e0ae7e8480ef0ff55395e2127c7cde",
+      "inputsSha256": "2ecbe006c90e0db91afd3791960a546855e7851b5041e6a3c5700723723c7ba3",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -17334,6 +17334,7 @@
                       "cents": 3200
                     }
                   ],
+                  "voucherRedeemedCents": 0,
                   "receiptCount": 3,
                   "cancellationCount": 0,
                   "cashInCents": 5000,
@@ -17459,6 +17460,7 @@
                       "cents": 3200
                     }
                   ],
+                  "voucherRedeemedCents": 0,
                   "receiptCount": 3,
                   "cancellationCount": 0,
                   "cashInCents": 5000,
@@ -18287,6 +18289,7 @@
                   "cashSalesCents": 0,
                   "cashCancellationsCents": 0,
                   "nonCashByMethod": [],
+                  "voucherRedeemedCents": 0,
                   "receiptCount": 0,
                   "cancellationCount": 0,
                   "cashInCents": 0,
@@ -18401,6 +18404,7 @@
                   "cashSalesCents": 0,
                   "cashCancellationsCents": 0,
                   "nonCashByMethod": [],
+                  "voucherRedeemedCents": 0,
                   "receiptCount": 0,
                   "cancellationCount": 0,
                   "cashInCents": 0,
@@ -20303,6 +20307,7 @@
                       "cents": 3200
                     }
                   ],
+                  "voucherRedeemedCents": 0,
                   "receiptCount": 3,
                   "cancellationCount": 0,
                   "cashInCents": 5000,
@@ -20461,6 +20466,7 @@
                       "cents": 4500
                     }
                   ],
+                  "voucherRedeemedCents": 0,
                   "receiptCount": 4,
                   "cancellationCount": 0,
                   "cashInCents": 0,
@@ -21305,6 +21311,7 @@
                       "cents": 3200
                     }
                   ],
+                  "voucherRedeemedCents": 0,
                   "receiptCount": 3,
                   "cancellationCount": 0,
                   "cashInCents": 5000,
@@ -21496,6 +21503,7 @@
                       "cents": 3200
                     }
                   ],
+                  "voucherRedeemedCents": 0,
                   "receiptCount": 3,
                   "cancellationCount": 0,
                   "cashInCents": 5000,

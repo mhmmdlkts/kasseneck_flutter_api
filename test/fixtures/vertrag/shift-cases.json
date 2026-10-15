@@ -65,5 +65,23 @@
     { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "carriedOverCents": 600, "receivedImmediatelyCents": 900, "retainedCents": 0, "paidOutCents": 0, "refundedByEmployeeCents": 0, "openCents": 1500 }, "expected": [{ "key": "shift_receipt.tip_carried_over", "cents": 600 }, { "key": "shift_receipt.tip_earned", "cents": 900 }, { "key": "shift_receipt.tip_open", "cents": 1500 }] },
     { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "carriedOverCents": 600, "receivedImmediatelyCents": 900, "retainedCents": 0, "paidOutCents": 1000, "refundedByEmployeeCents": 0, "openCents": 500 }, "expected": [{ "key": "shift_receipt.tip_carried_over", "cents": 600 }, { "key": "shift_receipt.tip_earned", "cents": 900 }, { "key": "shift_receipt.tip_paid_out", "cents": 1000 }, { "key": "shift_receipt.tip_open", "cents": 500 }] },
     { "tip": { "registerUserId": "ru_kellner", "name": "Ben Kellner", "carriedOverCents": 600, "receivedImmediatelyCents": 700, "retainedCents": 0, "paidOutCents": 1000, "refundedByEmployeeCents": 200, "openCents": 500 }, "expected": [{ "key": "shift_receipt.tip_carried_over", "cents": 600 }, { "key": "shift_receipt.tip_earned", "cents": 700 }, { "key": "shift_receipt.tip_paid_out", "cents": 1000 }, { "key": "shift_receipt.tip_refunded_by_employee", "cents": 200 }, { "key": "shift_receipt.tip_open", "cents": 500 }] }
+  ],
+  "durationText": [
+    { "minutes": 0, "expected": "0 Min." },
+    { "minutes": 1, "expected": "1 Min." },
+    { "minutes": 59, "expected": "59 Min." },
+    { "minutes": 60, "expected": "1 Std." },
+    { "minutes": 61, "expected": "1 Std. 1 Min." },
+    { "minutes": 512, "expected": "8 Std. 32 Min." },
+    { "minutes": 480, "expected": "8 Std." },
+    { "minutes": 1439, "expected": "23 Std. 59 Min." },
+    { "minutes": 1440, "expected": "1 Tag" },
+    { "minutes": 1500, "expected": "1 Tag 1 Std." },
+    { "minutes": 1620, "expected": "1 Tag 3 Std." },
+    { "minutes": 2880, "expected": "2 Tage" },
+    { "minutes": 2940, "expected": "2 Tage 1 Std." },
+    { "minutes": 10080, "expected": "7 Tage" },
+    { "minutes": -5, "expected": "0 Min." },
+    { "minutes": 90.9, "expected": "1 Std. 30 Min." }
   ]
 }

@@ -7,6 +7,11 @@ could not tell who held how much cash; sales, cash movements and counts now
 belong to a shift in a drawer, and the register can open and close the shift,
 book deposits and withdrawals and print the bons itself.
 
+Cash position and tip list at the register: `ShiftRunningTotals.voucherRedeemedCents`
+(0 when an older server omits it), `durationText(minutes)` (shared cases in
+`shift-cases.json`) and the texts for the cash position card and the tip payout
+list (`shift.*`, `duration.*`, `tip_payout.*`).
+
 Additive; every existing call sends the same bytes as in 11.1.1 unless you
 pass the new `drawerId`. The lists `posErrorCodes` (17 new codes),
 `unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code

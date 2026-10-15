@@ -61,6 +61,15 @@ void main() {
     }
   });
 
+  test('durationText: alle Faelle des Vertrags', () {
+    final liste = (_faelle['durationText'] as List).cast<Map<String, dynamic>>();
+    expect(liste.length, greaterThanOrEqualTo(12));
+    for (final f in liste) {
+      expect(durationText(f['minutes'] as num), f['expected'], reason: '${f['minutes']}');
+    }
+    expect(durationText(double.nan), '0 Min.');
+  });
+
   test('shiftTipLines: Laufstand ohne openCents zaehlt offen als 0; Woerter fuer Menschen', () {
     const laufstand = ShiftTipTotals(registerUserId: 'ru_kellner', receivedImmediatelyCents: 400, retainedCents: 150, paidOutCents: 250);
     expect([for (final z in shiftTipLines(laufstand)) z.text], ['verdient', 'über Lohn', 'schon genommen']);

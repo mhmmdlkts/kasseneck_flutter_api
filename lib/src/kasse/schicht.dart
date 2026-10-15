@@ -316,12 +316,34 @@ List<ShiftTipLine> shiftTipLines(ShiftTipTotals tip) {
   ];
 }
 
+/// Dauer für Menschen aus ganzen Minuten: unter 1 Std. „45 Min.“, unter 1 Tag
+/// „8 Std. 32 Min.“ (bei 0 Minuten nur „8 Std.“), ab 1 Tag „1 Tag 3 Std.“ bzw.
+/// „2 Tage“ (bei 0 Stunden ohne Stunden). Negatives und Unsinn zählt als 0;
+/// Bruchteile werden abgeschnitten. Gemeinsame Fälle mit dem JS-Zwilling:
+/// `shift-cases.json` (`durationText`).
+String durationText(num minutes) {
+  final gesamt = minutes.isFinite && minutes > 0 ? minutes.floor() : 0;
+  final tage = gesamt ~/ 1440;
+  final stunden = (gesamt % 1440) ~/ 60;
+  final rest = gesamt % 60;
+  final teile = <String>[];
+  if (tage > 0) {
+    teile.add(labelText(tage == 1 ? 'duration.days_one' : 'duration.days_other', {'days': tage}));
+    if (stunden > 0) teile.add(labelText('duration.hours', {'hours': stunden}));
+  } else {
+    if (stunden > 0) teile.add(labelText('duration.hours', {'hours': stunden}));
+    if (rest > 0 || stunden == 0) teile.add(labelText('duration.minutes', {'minutes': rest}));
+  }
+  return teile.join(' ');
+}
+
 /// Laufstand der Schicht (nur mit `cashView`).
 class ShiftRunningTotals {
   const ShiftRunningTotals({
     required this.cashSalesCents,
     required this.cashCancellationsCents,
     required this.nonCashByMethod,
+    this.voucherRedeemedCents = 0,
     required this.receiptCount,
     required this.cancellationCount,
     required this.cashInCents,
@@ -335,6 +357,10 @@ class ShiftRunningTotals {
 
   /// Nach Zahlart sortiert.
   final List<NonCashAmount> nonCashByMethod;
+
+  /// Eingelöste Gutscheine in Cent (kein Bargeld, nicht in der Lade); fehlt bei
+  /// älteren Servern, dann 0.
+  final int voucherRedeemedCents;
   final int receiptCount;
   final int cancellationCount;
   final int cashInCents;
@@ -348,6 +374,7 @@ class ShiftRunningTotals {
         'cashSalesCents': cashSalesCents,
         'cashCancellationsCents': cashCancellationsCents,
         'nonCashByMethod': [for (final u in nonCashByMethod) u.toJson()],
+        'voucherRedeemedCents': voucherRedeemedCents,
         'receiptCount': receiptCount,
         'cancellationCount': cancellationCount,
         'cashInCents': cashInCents,
@@ -1084,6 +1111,8 @@ ShiftRunningTotals _laufstand(_Ort ort, Object? w) {
     cashSalesCents: _ganzzahl(ort, o, 'cashSalesCents'),
     cashCancellationsCents: _ganzzahl(ort, o, 'cashCancellationsCents'),
     nonCashByMethod: _liste(ort, o, 'nonCashByMethod', _unbar),
+    // Fehlt bei einem Server vor dem Gutschein-Feld: dann 0.
+    voucherRedeemedCents: o['voucherRedeemedCents'] == null ? 0 : _ganzzahl(ort, o, 'voucherRedeemedCents'),
     receiptCount: _ganzzahl(ort, o, 'receiptCount'),
     cancellationCount: _ganzzahl(ort, o, 'cancellationCount'),
     cashInCents: _ganzzahl(ort, o, 'cashInCents'),

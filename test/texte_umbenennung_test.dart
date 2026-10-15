@@ -60,6 +60,8 @@ const _nach10 = (
     'tip_payout.recipient_required', 'shift.pending_hint', 'shift.mode_off', 'tip.kept_setting_hint',
     // Storno mit oder ohne Trinkgeld (11.2.0)
     'cancellation.tip_refund_missing', 'cancellation.tip_source_missing', 'cancellation.tip_refunded_with_voucher',
+    // Kassenstand und Trinkgeld-Liste an der Kasse (11.2.0)
+    'tip_payout.none_open',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -101,9 +103,22 @@ const _nach10 = (
     'cancellation.tip_refund_question', 'cancellation.tip_refund_yes', 'cancellation.tip_refund_no',
     'cancellation.tip_source_question', 'cancellation.tip_source_drawer', 'cancellation.tip_source_employee',
     'cancellation.tip_stays', 'shift_receipt.tip_refunded_by_employee', 'shift_receipt.tip_carried_over',
+    // Kassenstand und Trinkgeld-Liste an der Kasse (11.2.0)
+    'shift.drawer_should_have', 'shift.drawer_named', 'shift.running_since', 'shift.since',
+    'shift.collected_outside_drawer', 'shift.non_cash_short', 'shift.voucher_redeemed', 'shift.all_payments',
+    'shift.receipt_count_one', 'shift.receipt_count_other', 'shift.openings_without_sale_count',
+    'cash_movement.pay_in_short', 'cash_movement.pay_out_short', 'drawer.recent_openings_full',
+    'duration.days_one', 'duration.days_other', 'duration.hours', 'duration.minutes',
+    'tip_payout.open_amount', 'tip_payout.done', 'tip_payout.earned_paid', 'tip_payout.for_all',
+    'tip_payout.nothing', 'tip_payout.all_open', 'tip_payout.title', 'tip_payout.persons_one',
+    'tip_payout.persons_other', 'tip_payout.pay_amount', 'tip_payout.pay_out',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
-  placeholders: {'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type'},
+  placeholders: {
+    'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type',
+    // Kassenstand und Trinkgeld-Liste (11.2.0)
+    'duration', 'days', 'hours', 'minutes', 'earned', 'paid',
+  },
 );
 
 Set<String> _nach10In(String abschnitt) => abschnitt == 'messages' ? _nach10.messages : _nach10.labels;
