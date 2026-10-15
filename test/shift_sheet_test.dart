@@ -126,10 +126,11 @@ void main() {
       expect(grid.lines.where((z) => z.bold && z.kind == GridLineKind.columns).map((z) => z.text.replaceAll(RegExp(' +'), ' ').trim()),
           ['Bleibt in der Kassenlade 150,00']);
       final text = grid.toText();
-      expect(text, matches(RegExp(r'^Differenz +0,00\nEntnommen +-140,00\nBleibt in der Kassenlade +150,00\n-+$', multiLine: true)));
+      // Unter Differenz, durch eine Linie getrennt (wie die Vorschau), dann die Linie zum Unbar-Block.
+      expect(text, matches(RegExp(r'^Differenz +0,00\n-+\nEntnommen +-140,00\nBleibt in der Kassenlade +150,00\n-+$', multiLine: true)));
       expect(text, isNot(contains('Abschöpfung')));
       final einlage = ReceiptGrid.render(_layout(await _bon('shift-close-put-in')), charsPerLine: 48).toText();
-      expect(einlage, matches(RegExp(r'^Eingelegt +10,00\nBleibt in der Kassenlade +300,00$', multiLine: true)));
+      expect(einlage, matches(RegExp(r'^Differenz +0,00\n-+\nEingelegt +10,00\nBleibt in der Kassenlade +300,00$', multiLine: true)));
       expect(einlage, isNot(contains('Entnommen')));
       // Ohne afterCount: keine der Zeilen, keine fette Spaltenzeile (der Bon bleibt wie bisher).
       final ohne = _layout(await _bon('shift-close'));

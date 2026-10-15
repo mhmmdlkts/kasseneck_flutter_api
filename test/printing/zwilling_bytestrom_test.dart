@@ -74,4 +74,24 @@ void main() {
     expect(await digest(KeckPaperSize.mm80, marke: true),
         'b40133de3fc03e9a3884123ebc16a5dc8bf97b089e7609952590dfb119203ace');
   });
+
+  // Bon der Schicht mit fetter Spaltenzeile („Bleibt in der Kassenlade“, Wechselgeld 11.2.0):
+  // der einzige Weg, auf dem eine Spaltenzeile fett gedruckt wird. Ohne Marke;
+  // dieselben Digests stehen im npm-Paket.
+  final ReceiptLayout schichtBon = ReceiptLayout.fromJson(jsonDecode(
+      File('test/fixtures/vertrag/expected/shift-close-take-out.lines.json').readAsStringSync()))!;
+
+  Future<String> schichtDigest(KeckPaperSize size) async {
+    final PrintPaper paper = PrintPaper(paperSize: size, profile: CapabilityProfile());
+    await paper.setReceiptSheet(schichtBon, brandMark: false, qrMode: QrPrintMode.native);
+    return sha256.convert(paper.bytes.expand((e) => e).toList()).toString();
+  }
+
+  test('Z-Bon mit Entnahme, 58 mm: Byte fuer Byte wie das npm-Paket', () async {
+    expect(await schichtDigest(KeckPaperSize.mm58), '289d0ec5dbdd72fdb0a4b93b316b6909a985e625c7c8845dc23f18a7a7baa9ca');
+  });
+
+  test('Z-Bon mit Entnahme, 80 mm: Byte fuer Byte wie das npm-Paket', () async {
+    expect(await schichtDigest(KeckPaperSize.mm80), 'c0bb40b6c93e0f105d704283f6c997c5bba9878c03f94ea14eebab2d98e1e3ee');
+  });
 }

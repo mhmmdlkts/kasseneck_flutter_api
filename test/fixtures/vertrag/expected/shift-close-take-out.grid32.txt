@@ -20,6 +20,7 @@ Trinkgeld-Auszahlung
 Soll                      290,00
 Ist                       290,00
 Differenz                   0,00
+--------------------------------
 Entnommen                -140,00
 Bleibt in der             150,00
 Kassenlade                      

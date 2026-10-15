@@ -123,12 +123,15 @@ const _nach10 = (
     'shift.take_out_at_most', 'shift.put_in_hint', 'shift.after_count_tap_hint', 'shift.take_out_amount',
     'shift.put_in_amount', 'shift.continue_without_take_out', 'shift.print_envelope_receipt',
     'shift.toggle_take_out_put_in', 'shift.put_in_change_float', 'shift.taken_over_from_shift',
+    'shift.counted', 'shift.back', 'shift.done', 'shift.edit_amount',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {
     'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type',
     // Kassenstand und Trinkgeld-Liste (11.2.0)
     'duration', 'days', 'hours', 'minutes', 'earned', 'paid',
+    // Wechselgeld je Kassenlade (11.2.0)
+    'title',
   },
 );
 

@@ -20,6 +20,7 @@ Trinkgeld-Auszahlung
 Soll                      290,00
 Ist                       290,00
 Differenz                   0,00
+--------------------------------
 Eingelegt                  10,00
 Bleibt in der             300,00
 Kassenlade                      

@@ -24,14 +24,16 @@ unless sent), `closeMyShift(afterCount: AfterCount(type: 'cash_drop' |
 by the server), `Shift.afterCount`/`leftInDrawerCents`,
 `ShiftSummaryReceipt.afterCount`/`leftInDrawerCents` (blind null) and
 `ShiftCloseResult.afterCountReceipt` (the envelope receipt). New code
-`after_count_not_permitted` in `posErrorCodes`. `shiftReceiptLayout` prints
-„Entnommen“ (negative) or „Eingelegt“ and „Bleibt in der Kassenlade“ (bold)
-after the count; without `afterCount` the Z report is unchanged. For the bold
+`after_count_not_permitted` in `posErrorCodes`. `shiftReceiptLayout` prints, after a
+rule below the count, „Entnommen“ (negative) or „Eingelegt“ and „Bleibt in der
+Kassenlade“ (bold); without `afterCount` the Z report is unchanged. For the bold
 line `LayoutColumnsLine` gains `bold` (default false, written to JSON only when
 true; grid, widget and printing follow it). Goldens `shift-close-take-out`,
 `shift-close-put-in` from the contract; texts `drawer.change_float*`, `shift.*`
 for the step „Geld entnehmen“, `shift_receipt.taken_out|put_in|left_in_drawer`,
-message `shift.change_float_missing`. Reason: the drawer kept everything after a
+`shift.counted|back|done|edit_amount` (row „Gezählt“, „Zurück“, step „Fertig“,
+accessibility label „{title} ändern“), message `shift.change_float_missing`;
+the bold column line is pinned in the byte twin test. Reason: the drawer kept everything after a
 shift, so the next shift started with the whole day's cash.
 
 Additive; every existing call sends the same bytes as in 11.1.1 unless you

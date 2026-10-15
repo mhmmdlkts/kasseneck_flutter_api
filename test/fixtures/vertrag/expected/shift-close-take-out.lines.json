@@ -247,6 +247,10 @@
       ]
     },
     {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
       "kind": "columns",
       "columns": [
         {

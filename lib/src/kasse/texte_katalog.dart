@@ -461,6 +461,10 @@ const Map<String, PosText> posLabels = {
   'shift.toggle_take_out_put_in': PosText('Entnehmen oder Einlegen umschalten'),
   'shift.put_in_change_float': PosText('Wechselgeld einlegen'),
   'shift.taken_over_from_shift': PosText('von Schicht {number} übernommen', placeholders: ['number']),
+  'shift.counted': PosText('Gezählt'),
+  'shift.back': PosText('Zurück'),
+  'shift.done': PosText('Fertig'),
+  'shift.edit_amount': PosText('{title} ändern', placeholders: ['title']),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].

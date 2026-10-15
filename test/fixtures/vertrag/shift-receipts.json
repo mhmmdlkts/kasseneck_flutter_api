@@ -15,15 +15,15 @@
     },
     "shift-close-take-out": {
       "source": "closeMyShift/success_manager_take_out",
-      "expected": "881db0dbc8241a91320c75a413bedd1f81b7e73b228ed7275a0a8c1c524ccc2d",
-      "grid32": "13d21d73170ac2023599e0dad12d9b5f6685df442d8dfe536695621ca0f90ea6",
-      "grid48": "dffc75f3c48cb3817b06e6f8a791985b22daeac6b93d639a92bb29d8470022c7"
+      "expected": "1d5b06a8df55ea620ea7c97ecefb050b61c08c76e9b7af263951ef454ef848d9",
+      "grid32": "a219bd3816c36359909ee7bc09897849107ae9f33b0aaf4b90d1e38caef2919a",
+      "grid48": "e2ccec9e7d0e21535f43f7ca8d46f0a750fe176ec22afa7e20fa314e0de7a7d3"
     },
     "shift-close-put-in": {
       "source": "closeMyShift/success_manager_put_in",
-      "expected": "9002d21b5255c19c01d3adaa702c7aeee5e5a4be90db2afb6066238ebff5111c",
-      "grid32": "6c3f63bca17effd9f6b656edede446ec9e7a260cb80f880e4a4019b202d96841",
-      "grid48": "a252a1c18d2c23c9f4898594a0c44a1fd2d922f75a852504a6fba4f6aadf4fbc"
+      "expected": "f08d7a9dff4dafd87412dc57fa92a876e76ba3a8612bf89ad44cca12481d6282",
+      "grid32": "e77cbbc07a20fb560fcc2dcdcb93179bc70f5fbf543016db55fc2ec83e8a36ed",
+      "grid48": "e76bad8f7b6ac9b02a1818fc669e5a751a2dc7f205018b202317b772540cff05"
     },
     "shift-interim": {
       "source": "getMyShiftReport/success_manager",

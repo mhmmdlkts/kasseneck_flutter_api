@@ -1892,6 +1892,21 @@
       "placeholders": [
         "number"
       ]
+    },
+    "shift.counted": {
+      "text": "Gezählt"
+    },
+    "shift.back": {
+      "text": "Zurück"
+    },
+    "shift.done": {
+      "text": "Fertig"
+    },
+    "shift.edit_amount": {
+      "text": "{title} ändern",
+      "placeholders": [
+        "title"
+      ]
     }
   },
   "returnDispositionLabels": {
