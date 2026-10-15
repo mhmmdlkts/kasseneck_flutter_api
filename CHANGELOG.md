@@ -16,8 +16,26 @@ Printer warning: four short labels for the quiet warning line at the print
 buttons (`printer.warn_unreachable`, `printer.warn_none`, `printer.check`,
 `printer.set_up`).
 
+Change float and take out / put in at shift close: a drawer can keep a fixed
+change float; after counting, the register takes out the rest or puts money in.
+`DrawerInfo.changeFloatCents` and `DrawerState.suggestedFromShiftNumber` (null
+unless sent), `closeMyShift(afterCount: AfterCount(type: 'cash_drop' |
+'change_in', amountCents: …))` (catalogue `afterCountTypes`; the type is checked
+by the server), `Shift.afterCount`/`leftInDrawerCents`,
+`ShiftSummaryReceipt.afterCount`/`leftInDrawerCents` (blind null) and
+`ShiftCloseResult.afterCountReceipt` (the envelope receipt). New code
+`after_count_not_permitted` in `posErrorCodes`. `shiftReceiptLayout` prints
+„Entnommen“ (negative) or „Eingelegt“ and „Bleibt in der Kassenlade“ (bold)
+after the count; without `afterCount` the Z report is unchanged. For the bold
+line `LayoutColumnsLine` gains `bold` (default false, written to JSON only when
+true; grid, widget and printing follow it). Goldens `shift-close-take-out`,
+`shift-close-put-in` from the contract; texts `drawer.change_float*`, `shift.*`
+for the step „Geld entnehmen“, `shift_receipt.taken_out|put_in|left_in_drawer`,
+message `shift.change_float_missing`. Reason: the drawer kept everything after a
+shift, so the next shift started with the whole day's cash.
+
 Additive; every existing call sends the same bytes as in 11.1.1 unless you
-pass the new `drawerId`. The lists `posErrorCodes` (17 new codes),
+pass the new `drawerId`. The lists `posErrorCodes` (18 new codes),
 `unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code
 that compares them with a fixed length needs the new ones.
 

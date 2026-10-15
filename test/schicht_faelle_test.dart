@@ -105,6 +105,7 @@ void main() {
     expect(cashLocations, pos['cashLocations']);
     expect(openingReasons, pos['openingReasons']);
     expect(manualOpeningReasons, pos['manualOpeningReasons']);
+    expect(afterCountTypes, pos['afterCountTypes']);
     expect(shiftReceiptKinds, ['shift_close', 'shift_interim', 'cash_movement']);
     expect(posDeviceOptionalFields, pos['posDeviceOptionalFields']);
     expect(manualMovementTypes, movementTypes.take(8));

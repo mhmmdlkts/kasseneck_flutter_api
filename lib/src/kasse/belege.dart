@@ -1013,7 +1013,14 @@ class RegisterReceiptClient {
   /// zweiten Zaehlen schliesst der Server, bei grosser Abweichung nur mit
   /// [comment] (`comment_required`). [attempt] wird angenommen, wirkt aber nicht:
   /// den Versuch zaehlt der Server (hoechstens zwei). [tipPayouts]: hoechstens
-  /// der offene Anspruch ([DrawerState.tipClaims]).
+  /// der offene Anspruch ([DrawerState.tipClaims]). [afterCount]: nach dem
+  /// Zaehlen Geld entnehmen (`cash_drop`) oder einlegen (`change_in`),
+  /// Betrag positiv; entnehmen hoechstens den gezaehlten Betrag
+  /// (`cash_movement_exceeds_balance`), ein Betrag ueber 0 braucht das Recht
+  /// `cashMove` (`after_count_not_permitted`). Gebucht wird nur beim
+  /// tatsaechlichen Schliessen; die Antwort traegt dann
+  /// [ShiftCloseResult.afterCountReceipt] („Bon fürs Kuvert“). Die Art prueft
+  /// der Server.
   Future<ShiftCloseResult> closeMyShift({
     required String idempotencyKey,
     required String shiftId,
@@ -1022,6 +1029,7 @@ class RegisterReceiptClient {
     int? attempt,
     String? comment,
     List<TipPayout>? tipPayouts,
+    AfterCount? afterCount,
   }) async {
     const name = Aufrufe.closeMyShift;
     final p = <String, dynamic>{
@@ -1032,6 +1040,7 @@ class RegisterReceiptClient {
       'attempt': ?attempt,
       'comment': ?comment,
       if (tipPayouts != null) 'tipPayouts': [for (final a in tipPayouts) a.toJson()],
+      if (afterCount != null) 'afterCount': afterCount.toJson(),
     };
     kennung(name, 'shiftId', shiftId);
     pruefeSchluessel(name, p);

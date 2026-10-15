@@ -13,6 +13,18 @@
       "grid32": "9f638ea9429289670e7b8e741318d8207fdb0588b6fd2e0f641cd6ce60771e30",
       "grid48": "333485ed87cd9570655372fc1bfceb576871fe844e981f3803de80e74979ed1a"
     },
+    "shift-close-take-out": {
+      "source": "closeMyShift/success_manager_take_out",
+      "expected": "881db0dbc8241a91320c75a413bedd1f81b7e73b228ed7275a0a8c1c524ccc2d",
+      "grid32": "13d21d73170ac2023599e0dad12d9b5f6685df442d8dfe536695621ca0f90ea6",
+      "grid48": "dffc75f3c48cb3817b06e6f8a791985b22daeac6b93d639a92bb29d8470022c7"
+    },
+    "shift-close-put-in": {
+      "source": "closeMyShift/success_manager_put_in",
+      "expected": "9002d21b5255c19c01d3adaa702c7aeee5e5a4be90db2afb6066238ebff5111c",
+      "grid32": "6c3f63bca17effd9f6b656edede446ec9e7a260cb80f880e4a4019b202d96841",
+      "grid48": "a252a1c18d2c23c9f4898594a0c44a1fd2d922f75a852504a6fba4f6aadf4fbc"
+    },
     "shift-interim": {
       "source": "getMyShiftReport/success_manager",
       "expected": "9d8f2868d4c2d46f7f3be823873a7744e5e4d217b51cbd2d02cbc43842af6103",

@@ -74,7 +74,10 @@ List<String> _texte(ReceiptLayout l) => [
 
 void main() {
   group('Goldens des Vertrags', () {
-    for (final name in ['shift-close', 'shift-close-blind', 'shift-interim', 'cash-movement']) {
+    test('alle Bons des Vertrags sind dabei (auch Entnehmen und Einlegen, wie im npm-Paket)', () {
+      expect(_bons.keys.toSet(), {'shift-close', 'shift-close-blind', 'shift-close-take-out', 'shift-close-put-in', 'shift-interim', 'cash-movement'});
+    });
+    for (final name in _bons.keys) {
       test(name, () async {
         final layout = _layout(await _bon(name));
         final soll = _json('${_wurzel.path}/expected/$name.lines.json');
@@ -106,6 +109,58 @@ void main() {
       expect(text, matches(RegExp(r'^Art +Wechselgeld$', multiLine: true)));
       expect(text, matches(RegExp(r'Betrag +30,00')));
       expect(text, isNot(matches(RegExp('Ort|Bank|Tresor'))));
+    });
+
+    test('nach der Zaehlung: „Entnommen“ negativ bzw. „Eingelegt“, dann „Bleibt in der Kassenlade“ fett (wie im npm-Paket)', () async {
+      final entnahme = _layout(await _bon('shift-close-take-out'));
+      final bleibt = entnahme.lines.whereType<LayoutColumnsLine>().where((z) => z.columns.first.text == 'Bleibt in der Kassenlade').single;
+      expect(bleibt.toJson(), {
+        'kind': 'columns',
+        'columns': [
+          {'text': 'Bleibt in der Kassenlade', 'width': 8, 'align': 'left'},
+          {'text': '150,00', 'width': 4, 'align': 'right'},
+        ],
+        'bold': true,
+      });
+      final grid = ReceiptGrid.render(entnahme, charsPerLine: 48);
+      expect(grid.lines.where((z) => z.bold && z.kind == GridLineKind.columns).map((z) => z.text.replaceAll(RegExp(' +'), ' ').trim()),
+          ['Bleibt in der Kassenlade 150,00']);
+      final text = grid.toText();
+      expect(text, matches(RegExp(r'^Differenz +0,00\nEntnommen +-140,00\nBleibt in der Kassenlade +150,00\n-+$', multiLine: true)));
+      expect(text, isNot(contains('Abschöpfung')));
+      final einlage = ReceiptGrid.render(_layout(await _bon('shift-close-put-in')), charsPerLine: 48).toText();
+      expect(einlage, matches(RegExp(r'^Eingelegt +10,00\nBleibt in der Kassenlade +300,00$', multiLine: true)));
+      expect(einlage, isNot(contains('Entnommen')));
+      // Ohne afterCount: keine der Zeilen, keine fette Spaltenzeile (der Bon bleibt wie bisher).
+      final ohne = _layout(await _bon('shift-close'));
+      expect(ohne.lines.whereType<LayoutColumnsLine>().where((z) => z.bold), isEmpty);
+      expect(_texte(ohne).join('\n'), isNot(matches(RegExp('Entnommen|Eingelegt|Bleibt'))));
+    });
+
+    test('nach der Zaehlung blind bzw. mit kuenftiger Art (wie im npm-Paket)', () async {
+      Future<ShiftSummaryReceipt> abgewandelt(void Function(Map<String, dynamic> bon) aendere) async {
+        final fall = jsonDecode(jsonEncode(_fall('closeMyShift/success_manager_take_out'))) as Map<String, dynamic>;
+        aendere(((fall['response'] as Map)['data'] as Map)['receipt'] as Map<String, dynamic>);
+        return (await _client(fall).closeMyShift(idempotencyKey: 'k', shiftId: 's', countedCents: 0)).receipt!;
+      }
+
+      // Blind: „Bleibt“ ist null, die Entnahme bleibt sichtbar.
+      final blind = await abgewandelt((b) => b
+        ..['blind'] = true
+        ..['expectedCents'] = null
+        ..['countedCents'] = null
+        ..['differenceCents'] = null
+        ..['cashSalesCents'] = null
+        ..['cashCancellationsCents'] = null
+        ..['leftInDrawerCents'] = null);
+      final blindText = ReceiptGrid.render(_layout(blind), charsPerLine: 48).toText();
+      expect(blindText, matches(RegExp(r'^Entnommen +-140,00$', multiLine: true)));
+      expect(blindText, isNot(contains('Bleibt')));
+      // Eine kuenftige Art druckt keine Betragszeile, „Bleibt“ steht trotzdem.
+      final fremd = await abgewandelt((b) => b['afterCount'] = {'type': 'gibtsnicht', 'amountCents': 5});
+      final fremdText = ReceiptGrid.render(_layout(fremd), charsPerLine: 48).toText();
+      expect(fremdText, isNot(matches(RegExp('Entnommen|Eingelegt'))));
+      expect(fremdText, matches(RegExp(r'^Bleibt in der Kassenlade +150,00$', multiLine: true)));
     });
 
     test('Titel nach Art: Schichtabschluss, Zwischenbericht, Kassenbewegung', () async {

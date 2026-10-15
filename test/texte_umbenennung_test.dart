@@ -62,6 +62,8 @@ const _nach10 = (
     'cancellation.tip_refund_missing', 'cancellation.tip_source_missing', 'cancellation.tip_refunded_with_voucher',
     // Kassenstand und Trinkgeld-Liste an der Kasse (11.2.0)
     'tip_payout.none_open',
+    // Wechselgeld je Kassenlade und Entnehmen/Einlegen beim Abschluss (11.2.0)
+    'shift.change_float_missing',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -114,6 +116,13 @@ const _nach10 = (
     'tip_payout.persons_other', 'tip_payout.pay_amount', 'tip_payout.pay_out',
     // Druckwarnung an der Kasse (11.2.0)
     'printer.warn_unreachable', 'printer.warn_none', 'printer.check', 'printer.set_up',
+    // Wechselgeld je Kassenlade und Entnehmen/Einlegen beim Abschluss (11.2.0)
+    'shift_receipt.taken_out', 'shift_receipt.put_in', 'shift_receipt.left_in_drawer',
+    'drawer.change_float', 'drawer.change_float_hint', 'drawer.change_float_empty_hint', 'shift.step_take_out',
+    'shift.left_in_drawer', 'shift.change_float_next_shift', 'shift.take_out', 'shift.put_in',
+    'shift.take_out_at_most', 'shift.put_in_hint', 'shift.after_count_tap_hint', 'shift.take_out_amount',
+    'shift.put_in_amount', 'shift.continue_without_take_out', 'shift.print_envelope_receipt',
+    'shift.toggle_take_out_put_in', 'shift.put_in_change_float', 'shift.taken_over_from_shift',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {

@@ -4,7 +4,7 @@
     "default": {
       "sha256": "7a9ab24d57ab048d549628bd7e64e5e8b723b25bfbee035d883c9d6f9bafef3b",
       "head": [],
-      "inputsSha256": "6dc195112cfd3b675abeaecfa161e2732028722ef32e95d9e6a3a1acc3625ed3",
+      "inputsSha256": "389d420e83e18316ddac12edce789ecc8bc359ab5b09ec25058c6fb3dee73e5b",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "dcd3a90c871ce84e6f72137060ea39144ccf6f090a9fa47646635eda5a109758",
+      "sha256": "d52b39b968264c43aa8b8e22ddebb5509b00dc4e5f7db05a02564f8b84522a80",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "2ecbe006c90e0db91afd3791960a546855e7851b5041e6a3c5700723723c7ba3",
+      "inputsSha256": "6588f4ef0ca3aaf4fc3eb3b42bdf697d5188cb7603291a52d38e07a9a5aecb16",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -7078,7 +7078,9 @@
             "offenSeit": null,
             "letzteSchicht": {
               "id": "haupt_KASSE1_s2",
+              "nummer": 2,
               "istCents": 20000,
+              "bleibtCents": 20000,
               "geschlossenAm": "2026-09-26T08:00:00.000Z"
             },
             "ausserhalb": {
@@ -7411,7 +7413,9 @@
                 "name": "Ben Kellner",
                 "cents": 400
               }
-            }
+            },
+            "nachZaehlung": null,
+            "bleibtCents": 20000
           }
         },
         "success_manager": {
@@ -7443,7 +7447,9 @@
             "offenSeit": null,
             "letzteSchicht": {
               "id": "haupt_KASSE1_s2",
+              "nummer": 2,
               "istCents": 29000,
+              "bleibtCents": 29000,
               "geschlossenAm": "2026-09-26T08:00:00.000Z"
             },
             "ausserhalb": {
@@ -7782,7 +7788,867 @@
                 "name": "Ben Kellner",
                 "cents": 0
               }
-            }
+            },
+            "nachZaehlung": null,
+            "bleibtCents": 29000
+          }
+        },
+        "success_manager_take_out": {
+          "users/kw_betrieb1/lade_tage/2026-09-26_haupt_KASSE1": {
+            "tag": "2026-09-26",
+            "ladeId": "haupt_KASSE1",
+            "cashregisterId": "KASSE1",
+            "trinkgeld": {
+              "ru_kellner": {
+                "name": "Ben Kellner",
+                "ausgezahltCents": {
+                  "__increment": 400
+                }
+              }
+            },
+            "geaendertAt": "2026-09-26T08:00:00.000Z"
+          },
+          "users/kw_betrieb1/laden/haupt_KASSE1": {
+            "name": "Hauptlade",
+            "cashregisterId": "KASSE1",
+            "haupt": true,
+            "aktiv": true,
+            "schichtbetrieb": true,
+            "differenzSchwelleCents": 500,
+            "offeneSchichtId": null,
+            "bewegungZaehler": 5,
+            "schichtZaehler": 2,
+            "angelegtAt": "2026-08-27T08:00:00.000Z",
+            "offenSeit": null,
+            "letzteSchicht": {
+              "id": "haupt_KASSE1_s2",
+              "nummer": 2,
+              "istCents": 29000,
+              "bleibtCents": 15000,
+              "geschlossenAm": "2026-09-26T08:00:00.000Z"
+            },
+            "ausserhalb": {
+              "barCents": 0,
+              "anzahl": 0,
+              "seit": null,
+              "bewegungCents": 0
+            },
+            "trinkgeldOffen": {
+              "ru_kellner": {
+                "name": "Ben Kellner",
+                "cents": 0
+              }
+            },
+            "letzteOeffnungen": [
+              {
+                "am": "2026-09-26T07:50:00.000Z",
+                "zeitGeraet": "2026-09-26T07:49:50.000Z",
+                "grund": "wechselgeld",
+                "von": {
+                  "name": "Anna Chef"
+                },
+                "ok": true
+              },
+              {
+                "am": "2026-09-26T07:40:00.000Z",
+                "zeitGeraet": "2026-09-26T07:40:00.000Z",
+                "grund": "verkauf",
+                "von": {
+                  "name": "Ben Kellner"
+                },
+                "ok": true
+              }
+            ],
+            "geaendertAt": "2026-09-26T08:00:00.000Z"
+          },
+          "users/kw_betrieb1/laden/haupt_KASSE1/bewegungen/b0000004": {
+            "nummer": 4,
+            "schichtId": "haupt_KASSE1_s2",
+            "art": "trinkgeld_auszahlung",
+            "cents": -400,
+            "ort": null,
+            "text": null,
+            "von": {
+              "registerUserId": "ru_chef",
+              "name": "Anna Chef",
+              "rolle": "kassenbenutzer"
+            },
+            "geraetId": "dev_pin",
+            "am": "2026-09-26T08:00:00.000Z",
+            "empfaenger": {
+              "registerUserId": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "paar": null,
+            "ledgerEntryId": null,
+            "idempotenzKey": "z-3"
+          },
+          "users/kw_betrieb1/laden/haupt_KASSE1/bewegungen/b0000005": {
+            "nummer": 5,
+            "schichtId": "haupt_KASSE1_s2",
+            "art": "abschoepfung",
+            "cents": -14000,
+            "ort": null,
+            "text": null,
+            "von": {
+              "registerUserId": "ru_chef",
+              "name": "Anna Chef",
+              "rolle": "kassenbenutzer"
+            },
+            "geraetId": "dev_pin",
+            "am": "2026-09-26T08:00:00.000Z",
+            "empfaenger": null,
+            "paar": null,
+            "ledgerEntryId": null,
+            "idempotenzKey": "z-3",
+            "nachZaehlung": true
+          },
+          "users/kw_betrieb1/schicht_idempotenz/7a7f90941ae73b3080718bbdf027096d80eef4352d72a5157dfe0c456acddd87": {
+            "anfrageHash": "9b5b58c5ce9f1d93363468f66984f4b6604d4e93a92811a97e2a744b06a30dbd",
+            "antwort": {
+              "status": "geschlossen",
+              "schicht": {
+                "id": "haupt_KASSE1_s2",
+                "ladeId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "nummer": 2,
+                "status": "geschlossen",
+                "geoeffnet": {
+                  "am": 1790348400000,
+                  "von": {
+                    "registerUserId": "ru_chef",
+                    "name": "Anna Chef",
+                    "rolle": "kassenbenutzer"
+                  },
+                  "geraetId": "dev_pin"
+                },
+                "geschlossen": {
+                  "am": 1790409600000,
+                  "von": {
+                    "registerUserId": "ru_chef",
+                    "name": "Anna Chef",
+                    "rolle": "kassenbenutzer"
+                  },
+                  "geraetId": "dev_pin"
+                },
+                "startCents": 15000,
+                "stueckelungStart": null,
+                "uebernommen": true,
+                "istCents": 29000,
+                "kommentar": null,
+                "blind": false,
+                "vorschlagCents": 15000,
+                "laufstand": {
+                  "barVerkaufCents": 9400,
+                  "barStornoCents": 0,
+                  "unbarJeZahlart": {
+                    "card": 3200
+                  },
+                  "gutscheinEingeloestCents": 0,
+                  "belegAnzahl": 3,
+                  "stornoAnzahl": 0,
+                  "einCents": 5000,
+                  "ausCents": 400,
+                  "trinkgeld": {
+                    "ru_kellner": {
+                      "name": "Ben Kellner",
+                      "sofortCents": 400,
+                      "einbehaltenCents": 0,
+                      "ausgezahltCents": 400,
+                      "selbstZurueckCents": 0
+                    }
+                  },
+                  "oeffnungenOhneVerkauf": 1
+                },
+                "sollCents": 29000,
+                "differenzCents": 0,
+                "abgleich": {
+                  "stimmt": false,
+                  "abweichung": {
+                    "barVerkaufCents": {
+                      "gespeichert": 9400,
+                      "nachgerechnet": 0
+                    },
+                    "belegAnzahl": {
+                      "gespeichert": 3,
+                      "nachgerechnet": 0
+                    },
+                    "unbarJeZahlart": {
+                      "gespeichert": {
+                        "card": 3200
+                      },
+                      "nachgerechnet": {}
+                    },
+                    "trinkgeld": {
+                      "gespeichert": {
+                        "ru_kellner": {
+                          "name": "Ben Kellner",
+                          "sofortCents": 400,
+                          "einbehaltenCents": 0
+                        }
+                      },
+                      "nachgerechnet": {}
+                    }
+                  }
+                },
+                "nachZaehlung": {
+                  "art": "entnehmen",
+                  "cents": 14000
+                },
+                "bleibtCents": 15000
+              },
+              "bon": {
+                "art": "schichtabschluss",
+                "blind": false,
+                "betrieb": {
+                  "name": "Café Welt"
+                },
+                "kasse": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "lade": {
+                  "name": "Hauptlade"
+                },
+                "schicht": {
+                  "nummer": 2,
+                  "von": 1790348400000,
+                  "bis": 1790409600000,
+                  "geoeffnetVon": "Anna Chef",
+                  "geschlossenVon": "Anna Chef"
+                },
+                "startCents": 15000,
+                "startUebernommen": true,
+                "stueckelungStart": null,
+                "barVerkaufCents": 9400,
+                "barStornoCents": 0,
+                "belegAnzahl": 3,
+                "stornoAnzahl": 0,
+                "unbarJeZahlart": {
+                  "card": 3200
+                },
+                "bewegungen": [
+                  {
+                    "nummer": 3,
+                    "art": "wechselgeld_ein",
+                    "cents": 5000,
+                    "text": null,
+                    "von": "Anna Chef",
+                    "am": 1790348580000
+                  },
+                  {
+                    "nummer": 4,
+                    "art": "trinkgeld_auszahlung",
+                    "cents": -400,
+                    "text": null,
+                    "von": "Anna Chef",
+                    "am": 1790409600000
+                  }
+                ],
+                "trinkgeld": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "sofortCents": 400,
+                    "einbehaltenCents": 0,
+                    "ausgezahltCents": 400,
+                    "selbstZurueckCents": 0,
+                    "vortragCents": 0,
+                    "offenCents": 0
+                  }
+                ],
+                "sollCents": 29000,
+                "istCents": 29000,
+                "stueckelungIst": null,
+                "differenzCents": 0,
+                "kommentar": null,
+                "oeffnungenOhneVerkauf": 1,
+                "nachZaehlung": {
+                  "art": "entnehmen",
+                  "cents": 14000
+                },
+                "bleibtCents": 15000
+              },
+              "nachZaehlungBon": {
+                "art": "kassenbewegung",
+                "blind": false,
+                "betrieb": {
+                  "name": "Café Welt"
+                },
+                "kasse": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "lade": {
+                  "name": "Hauptlade"
+                },
+                "schicht": {
+                  "nummer": 2
+                },
+                "bewegung": {
+                  "nummer": 5,
+                  "art": "abschoepfung",
+                  "cents": -14000,
+                  "text": null,
+                  "ort": null,
+                  "empfaenger": null,
+                  "zielLade": null,
+                  "von": "Anna Chef",
+                  "am": 1790409600000
+                }
+              }
+            },
+            "zeitMs": 1790409600000,
+            "loeschenAb": 1793001600000,
+            "geschriebenAt": 1790409600000
+          },
+          "users/kw_betrieb1/schichten/haupt_KASSE1_s2": {
+            "ladeId": "haupt_KASSE1",
+            "cashregisterId": "KASSE1",
+            "nummer": 2,
+            "status": "geschlossen",
+            "geoeffnet": {
+              "am": "2026-09-25T15:00:00.000Z",
+              "von": {
+                "registerUserId": "ru_chef",
+                "name": "Anna Chef",
+                "rolle": "kassenbenutzer"
+              },
+              "geraetId": "dev_pin"
+            },
+            "startgeld": {
+              "cents": 15000,
+              "stueckelung": null,
+              "vorschlagCents": 15000,
+              "uebernommen": true,
+              "uebernommenVon": "haupt_KASSE1_s1"
+            },
+            "laufstand": {
+              "barVerkaufCents": 9400,
+              "barStornoCents": 0,
+              "unbarJeZahlart": {
+                "card": 3200
+              },
+              "gutscheinEingeloestCents": 0,
+              "belegAnzahl": 3,
+              "stornoAnzahl": 0,
+              "trinkgeld": {
+                "ru_kellner": {
+                  "name": "Ben Kellner",
+                  "sofortCents": 400,
+                  "einbehaltenCents": 0,
+                  "ausgezahltCents": 400
+                }
+              },
+              "oeffnungenOhneVerkauf": 1,
+              "einCents": 5000,
+              "ausCents": 400
+            },
+            "zaehlungen": [
+              {
+                "versuch": 1,
+                "istCents": 29000,
+                "stueckelung": null,
+                "am": "2026-09-26T08:00:00.000Z",
+                "von": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "rolle": "kassenbenutzer"
+                }
+              }
+            ],
+            "geschlossen": {
+              "am": "2026-09-26T08:00:00.000Z",
+              "von": {
+                "registerUserId": "ru_chef",
+                "name": "Anna Chef",
+                "rolle": "kassenbenutzer"
+              },
+              "geraetId": "dev_pin"
+            },
+            "sollCents": 29000,
+            "istCents": 29000,
+            "differenzCents": 0,
+            "kommentar": null,
+            "blind": false,
+            "abgleich": {
+              "stimmt": false,
+              "abweichung": {
+                "barVerkaufCents": {
+                  "gespeichert": 9400,
+                  "nachgerechnet": 0
+                },
+                "belegAnzahl": {
+                  "gespeichert": 3,
+                  "nachgerechnet": 0
+                },
+                "unbarJeZahlart": {
+                  "gespeichert": {
+                    "card": 3200
+                  },
+                  "nachgerechnet": {}
+                },
+                "trinkgeld": {
+                  "gespeichert": {
+                    "ru_kellner": {
+                      "name": "Ben Kellner",
+                      "sofortCents": 400,
+                      "einbehaltenCents": 0
+                    }
+                  },
+                  "nachgerechnet": {}
+                }
+              }
+            },
+            "geprueft": null,
+            "pdf": null,
+            "tagesabschlussId": null,
+            "kennzahlenAbOeffnung": true,
+            "kennzahlenAbgleich": {
+              "stimmt": true,
+              "abweichung": null
+            },
+            "trinkgeldOffenAbschluss": {
+              "ru_kellner": {
+                "name": "Ben Kellner",
+                "cents": 0
+              }
+            },
+            "nachZaehlung": {
+              "art": "entnehmen",
+              "cents": 14000,
+              "bewegungId": "b0000005"
+            },
+            "bleibtCents": 15000
+          }
+        },
+        "success_manager_put_in": {
+          "users/kw_betrieb1/lade_tage/2026-09-26_haupt_KASSE1": {
+            "tag": "2026-09-26",
+            "ladeId": "haupt_KASSE1",
+            "cashregisterId": "KASSE1",
+            "trinkgeld": {
+              "ru_kellner": {
+                "name": "Ben Kellner",
+                "ausgezahltCents": {
+                  "__increment": 400
+                }
+              }
+            },
+            "geaendertAt": "2026-09-26T08:00:00.000Z"
+          },
+          "users/kw_betrieb1/laden/haupt_KASSE1": {
+            "name": "Hauptlade",
+            "cashregisterId": "KASSE1",
+            "haupt": true,
+            "aktiv": true,
+            "schichtbetrieb": true,
+            "differenzSchwelleCents": 500,
+            "offeneSchichtId": null,
+            "bewegungZaehler": 5,
+            "schichtZaehler": 2,
+            "angelegtAt": "2026-08-27T08:00:00.000Z",
+            "offenSeit": null,
+            "letzteSchicht": {
+              "id": "haupt_KASSE1_s2",
+              "nummer": 2,
+              "istCents": 29000,
+              "bleibtCents": 30000,
+              "geschlossenAm": "2026-09-26T08:00:00.000Z"
+            },
+            "ausserhalb": {
+              "barCents": 0,
+              "anzahl": 0,
+              "seit": null,
+              "bewegungCents": 0
+            },
+            "trinkgeldOffen": {
+              "ru_kellner": {
+                "name": "Ben Kellner",
+                "cents": 0
+              }
+            },
+            "letzteOeffnungen": [
+              {
+                "am": "2026-09-26T07:50:00.000Z",
+                "zeitGeraet": "2026-09-26T07:49:50.000Z",
+                "grund": "wechselgeld",
+                "von": {
+                  "name": "Anna Chef"
+                },
+                "ok": true
+              },
+              {
+                "am": "2026-09-26T07:40:00.000Z",
+                "zeitGeraet": "2026-09-26T07:40:00.000Z",
+                "grund": "verkauf",
+                "von": {
+                  "name": "Ben Kellner"
+                },
+                "ok": true
+              }
+            ],
+            "geaendertAt": "2026-09-26T08:00:00.000Z"
+          },
+          "users/kw_betrieb1/laden/haupt_KASSE1/bewegungen/b0000004": {
+            "nummer": 4,
+            "schichtId": "haupt_KASSE1_s2",
+            "art": "trinkgeld_auszahlung",
+            "cents": -400,
+            "ort": null,
+            "text": null,
+            "von": {
+              "registerUserId": "ru_chef",
+              "name": "Anna Chef",
+              "rolle": "kassenbenutzer"
+            },
+            "geraetId": "dev_pin",
+            "am": "2026-09-26T08:00:00.000Z",
+            "empfaenger": {
+              "registerUserId": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "paar": null,
+            "ledgerEntryId": null,
+            "idempotenzKey": "z-4"
+          },
+          "users/kw_betrieb1/laden/haupt_KASSE1/bewegungen/b0000005": {
+            "nummer": 5,
+            "schichtId": "haupt_KASSE1_s2",
+            "art": "wechselgeld_ein",
+            "cents": 1000,
+            "ort": null,
+            "text": null,
+            "von": {
+              "registerUserId": "ru_chef",
+              "name": "Anna Chef",
+              "rolle": "kassenbenutzer"
+            },
+            "geraetId": "dev_pin",
+            "am": "2026-09-26T08:00:00.000Z",
+            "empfaenger": null,
+            "paar": null,
+            "ledgerEntryId": null,
+            "idempotenzKey": "z-4",
+            "nachZaehlung": true
+          },
+          "users/kw_betrieb1/schicht_idempotenz/9b331f52211ff2faae6bd2baa3f360c53b71120d17fd81bfe7b9991e919158a4": {
+            "anfrageHash": "c66d77264fce9efbbfc8d71c937b9bf4f6601be6c91a6e87d333db81df2aba8f",
+            "antwort": {
+              "status": "geschlossen",
+              "schicht": {
+                "id": "haupt_KASSE1_s2",
+                "ladeId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "nummer": 2,
+                "status": "geschlossen",
+                "geoeffnet": {
+                  "am": 1790348400000,
+                  "von": {
+                    "registerUserId": "ru_chef",
+                    "name": "Anna Chef",
+                    "rolle": "kassenbenutzer"
+                  },
+                  "geraetId": "dev_pin"
+                },
+                "geschlossen": {
+                  "am": 1790409600000,
+                  "von": {
+                    "registerUserId": "ru_chef",
+                    "name": "Anna Chef",
+                    "rolle": "kassenbenutzer"
+                  },
+                  "geraetId": "dev_pin"
+                },
+                "startCents": 15000,
+                "stueckelungStart": null,
+                "uebernommen": true,
+                "istCents": 29000,
+                "kommentar": null,
+                "blind": false,
+                "vorschlagCents": 15000,
+                "laufstand": {
+                  "barVerkaufCents": 9400,
+                  "barStornoCents": 0,
+                  "unbarJeZahlart": {
+                    "card": 3200
+                  },
+                  "gutscheinEingeloestCents": 0,
+                  "belegAnzahl": 3,
+                  "stornoAnzahl": 0,
+                  "einCents": 5000,
+                  "ausCents": 400,
+                  "trinkgeld": {
+                    "ru_kellner": {
+                      "name": "Ben Kellner",
+                      "sofortCents": 400,
+                      "einbehaltenCents": 0,
+                      "ausgezahltCents": 400,
+                      "selbstZurueckCents": 0
+                    }
+                  },
+                  "oeffnungenOhneVerkauf": 1
+                },
+                "sollCents": 29000,
+                "differenzCents": 0,
+                "abgleich": {
+                  "stimmt": false,
+                  "abweichung": {
+                    "barVerkaufCents": {
+                      "gespeichert": 9400,
+                      "nachgerechnet": 0
+                    },
+                    "belegAnzahl": {
+                      "gespeichert": 3,
+                      "nachgerechnet": 0
+                    },
+                    "unbarJeZahlart": {
+                      "gespeichert": {
+                        "card": 3200
+                      },
+                      "nachgerechnet": {}
+                    },
+                    "trinkgeld": {
+                      "gespeichert": {
+                        "ru_kellner": {
+                          "name": "Ben Kellner",
+                          "sofortCents": 400,
+                          "einbehaltenCents": 0
+                        }
+                      },
+                      "nachgerechnet": {}
+                    }
+                  }
+                },
+                "nachZaehlung": {
+                  "art": "einlegen",
+                  "cents": 1000
+                },
+                "bleibtCents": 30000
+              },
+              "bon": {
+                "art": "schichtabschluss",
+                "blind": false,
+                "betrieb": {
+                  "name": "Café Welt"
+                },
+                "kasse": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "lade": {
+                  "name": "Hauptlade"
+                },
+                "schicht": {
+                  "nummer": 2,
+                  "von": 1790348400000,
+                  "bis": 1790409600000,
+                  "geoeffnetVon": "Anna Chef",
+                  "geschlossenVon": "Anna Chef"
+                },
+                "startCents": 15000,
+                "startUebernommen": true,
+                "stueckelungStart": null,
+                "barVerkaufCents": 9400,
+                "barStornoCents": 0,
+                "belegAnzahl": 3,
+                "stornoAnzahl": 0,
+                "unbarJeZahlart": {
+                  "card": 3200
+                },
+                "bewegungen": [
+                  {
+                    "nummer": 3,
+                    "art": "wechselgeld_ein",
+                    "cents": 5000,
+                    "text": null,
+                    "von": "Anna Chef",
+                    "am": 1790348580000
+                  },
+                  {
+                    "nummer": 4,
+                    "art": "trinkgeld_auszahlung",
+                    "cents": -400,
+                    "text": null,
+                    "von": "Anna Chef",
+                    "am": 1790409600000
+                  }
+                ],
+                "trinkgeld": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "sofortCents": 400,
+                    "einbehaltenCents": 0,
+                    "ausgezahltCents": 400,
+                    "selbstZurueckCents": 0,
+                    "vortragCents": 0,
+                    "offenCents": 0
+                  }
+                ],
+                "sollCents": 29000,
+                "istCents": 29000,
+                "stueckelungIst": null,
+                "differenzCents": 0,
+                "kommentar": null,
+                "oeffnungenOhneVerkauf": 1,
+                "nachZaehlung": {
+                  "art": "einlegen",
+                  "cents": 1000
+                },
+                "bleibtCents": 30000
+              },
+              "nachZaehlungBon": {
+                "art": "kassenbewegung",
+                "blind": false,
+                "betrieb": {
+                  "name": "Café Welt"
+                },
+                "kasse": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "lade": {
+                  "name": "Hauptlade"
+                },
+                "schicht": {
+                  "nummer": 2
+                },
+                "bewegung": {
+                  "nummer": 5,
+                  "art": "wechselgeld_ein",
+                  "cents": 1000,
+                  "text": null,
+                  "ort": null,
+                  "empfaenger": null,
+                  "zielLade": null,
+                  "von": "Anna Chef",
+                  "am": 1790409600000
+                }
+              }
+            },
+            "zeitMs": 1790409600000,
+            "loeschenAb": 1793001600000,
+            "geschriebenAt": 1790409600000
+          },
+          "users/kw_betrieb1/schichten/haupt_KASSE1_s2": {
+            "ladeId": "haupt_KASSE1",
+            "cashregisterId": "KASSE1",
+            "nummer": 2,
+            "status": "geschlossen",
+            "geoeffnet": {
+              "am": "2026-09-25T15:00:00.000Z",
+              "von": {
+                "registerUserId": "ru_chef",
+                "name": "Anna Chef",
+                "rolle": "kassenbenutzer"
+              },
+              "geraetId": "dev_pin"
+            },
+            "startgeld": {
+              "cents": 15000,
+              "stueckelung": null,
+              "vorschlagCents": 15000,
+              "uebernommen": true,
+              "uebernommenVon": "haupt_KASSE1_s1"
+            },
+            "laufstand": {
+              "barVerkaufCents": 9400,
+              "barStornoCents": 0,
+              "unbarJeZahlart": {
+                "card": 3200
+              },
+              "gutscheinEingeloestCents": 0,
+              "belegAnzahl": 3,
+              "stornoAnzahl": 0,
+              "trinkgeld": {
+                "ru_kellner": {
+                  "name": "Ben Kellner",
+                  "sofortCents": 400,
+                  "einbehaltenCents": 0,
+                  "ausgezahltCents": 400
+                }
+              },
+              "oeffnungenOhneVerkauf": 1,
+              "einCents": 5000,
+              "ausCents": 400
+            },
+            "zaehlungen": [
+              {
+                "versuch": 1,
+                "istCents": 29000,
+                "stueckelung": null,
+                "am": "2026-09-26T08:00:00.000Z",
+                "von": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "rolle": "kassenbenutzer"
+                }
+              }
+            ],
+            "geschlossen": {
+              "am": "2026-09-26T08:00:00.000Z",
+              "von": {
+                "registerUserId": "ru_chef",
+                "name": "Anna Chef",
+                "rolle": "kassenbenutzer"
+              },
+              "geraetId": "dev_pin"
+            },
+            "sollCents": 29000,
+            "istCents": 29000,
+            "differenzCents": 0,
+            "kommentar": null,
+            "blind": false,
+            "abgleich": {
+              "stimmt": false,
+              "abweichung": {
+                "barVerkaufCents": {
+                  "gespeichert": 9400,
+                  "nachgerechnet": 0
+                },
+                "belegAnzahl": {
+                  "gespeichert": 3,
+                  "nachgerechnet": 0
+                },
+                "unbarJeZahlart": {
+                  "gespeichert": {
+                    "card": 3200
+                  },
+                  "nachgerechnet": {}
+                },
+                "trinkgeld": {
+                  "gespeichert": {
+                    "ru_kellner": {
+                      "name": "Ben Kellner",
+                      "sofortCents": 400,
+                      "einbehaltenCents": 0
+                    }
+                  },
+                  "nachgerechnet": {}
+                }
+              }
+            },
+            "geprueft": null,
+            "pdf": null,
+            "tagesabschlussId": null,
+            "kennzahlenAbOeffnung": true,
+            "kennzahlenAbgleich": {
+              "stimmt": true,
+              "abweichung": null
+            },
+            "trinkgeldOffenAbschluss": {
+              "ru_kellner": {
+                "name": "Ben Kellner",
+                "cents": 0
+              }
+            },
+            "nachZaehlung": {
+              "art": "einlegen",
+              "cents": 1000,
+              "bewegungId": "b0000005"
+            },
+            "bleibtCents": 30000
           }
         }
       }

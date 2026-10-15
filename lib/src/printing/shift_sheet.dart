@@ -40,6 +40,9 @@ LayoutColumnsLine _kopf(String links, String rechts) => _paar(links, rechts, 5);
 /// Betragszeilen: breiter Name, schmaler Betrag.
 LayoutColumnsLine _betrag(String links, int cents) => _paar(links, _formatCents(cents), 8);
 
+/// Betragszeile fett (Ergebnis, z. B. „Bleibt in der Kassenlade“).
+LayoutColumnsLine _betragFett(String links, int cents) => LayoutColumnsLine(_betrag(links, cents).columns, bold: true);
+
 LayoutColumnsLine _anzahl(String links, int n) => _paar(links, '$n', 8);
 
 LayoutLine _regel() => const LayoutRuleLine(char: '-');
@@ -96,6 +99,25 @@ void _kopfblock(List<LayoutLine> zeilen, ShiftReceiptHeader bon, String titel) {
   _wennText(zeilen, labelText('shift_receipt.drawer'), bon.drawerName);
 }
 
+/// Nach der Zaehlung beim Abschluss: „Entnommen“ (negativ) bzw. „Eingelegt“,
+/// dann „Bleibt in der Kassenlade“ (fett). Nur wenn Geld bewegt wurde
+/// (`afterCount`); sonst keine Zeile, der Bon bleibt wie bisher. Blind fehlt
+/// „Bleibt“ (`null`), die Entnahme selbst bleibt sichtbar. Eine unbekannte Art
+/// (kuenftiger Katalogwert) druckt keine Betragszeile.
+List<LayoutLine> _nachZaehlungZeilen(ShiftSummaryReceipt bon) {
+  final n = bon.afterCount;
+  if (n == null) return const [];
+  final zeilen = <LayoutLine>[];
+  if (n.type == 'cash_drop') {
+    zeilen.add(_betrag(labelText('shift_receipt.taken_out'), -n.amountCents));
+  } else if (n.type == 'change_in') {
+    zeilen.add(_betrag(labelText('shift_receipt.put_in'), n.amountCents));
+  }
+  final bleibt = bon.leftInDrawerCents;
+  if (bleibt != null) zeilen.add(_betragFett(labelText('shift_receipt.left_in_drawer'), bleibt));
+  return zeilen;
+}
+
 // ---- Bons ----------------------------------------------------------------------
 
 /// Z-Bon bzw. X-Bon der Schicht. Titel nach `kind`: „Schichtabschluss“ oder
@@ -143,6 +165,7 @@ ReceiptLayout shiftReceiptLayout(ShiftSummaryReceipt receipt, {PosPaperSize pape
   if (bon.differenceCents != null) zeilen.add(_betrag(labelText('shift_receipt.difference'), bon.differenceCents!));
   final kommentar = bon.comment;
   if (kommentar != null && kommentar.isNotEmpty) zeilen.add(_text('${labelText('shift_receipt.comment')}: $kommentar'));
+  zeilen.addAll(_nachZaehlungZeilen(bon));
 
   // Zur Information: unbar, Zaehler.
   zeilen.add(_regel());

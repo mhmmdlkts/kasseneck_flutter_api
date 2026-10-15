@@ -28,9 +28,10 @@ sealed class LayoutLine {
   /// Die Zeile in der Form des Vertrags (`expected/*.lines.json`).
   Map<String, Object> toJson() => switch (this) {
         LayoutTextLine(:final text, :final align, :final bold) => {'kind': 'text', 'text': text, 'align': align.name, 'bold': bold},
-        LayoutColumnsLine(:final columns) => {
+        LayoutColumnsLine(:final columns, :final bold) => {
             'kind': 'columns',
             'columns': [for (final c in columns) {'text': c.text, 'width': c.width, 'align': c.align.name}],
+            if (bold) 'bold': true,
           },
         LayoutRuleLine(:final char) => {'kind': 'rule', 'char': char},
         LayoutSpaceLine(:final lines) => {'kind': 'space', 'lines': lines},
@@ -51,7 +52,7 @@ sealed class LayoutLine {
                   align: _align(c['align']),
                 ))
             .toList();
-        return LayoutColumnsLine(spalten);
+        return LayoutColumnsLine(spalten, bold: j['bold'] == true);
       case 'rule':
         return LayoutRuleLine(char: (j['char'] ?? '-').toString());
       case 'space':
@@ -83,7 +84,11 @@ class LayoutColumn {
 
 class LayoutColumnsLine extends LayoutLine {
   final List<LayoutColumn> columns;
-  const LayoutColumnsLine(this.columns);
+
+  /// Die ganze Zeile fett (z. B. „Bleibt in der Kassenlade“ auf dem Z-Bon); im
+  /// Bauplan (`toJson`) steht `bold` nur, wenn `true` – wie im JS-Paket.
+  final bool bold;
+  const LayoutColumnsLine(this.columns, {this.bold = false});
 }
 
 class LayoutRuleLine extends LayoutLine {

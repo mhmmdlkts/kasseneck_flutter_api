@@ -360,6 +360,9 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
               ?.cast<Map<String, dynamic>>()
               .map((a) => TipPayout(registerUserId: _s(a['registerUserId']), cents: a['cents'] as int))
               .toList(),
+          afterCount: p['afterCount'] == null
+              ? null
+              : AfterCount(type: _s((p['afterCount'] as Map)['type']), amountCents: (p['afterCount'] as Map)['amountCents'] as int),
         );
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();

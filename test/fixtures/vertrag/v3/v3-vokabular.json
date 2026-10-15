@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "b0641e4341fa0adc79e2c05264eea2382d5017c5c9c8820da8379bdc9fd8b285",
-    "inputsSha256": "5b8b63b6db785b6dc93dcd3bb107a4546923c903c75e9929997440a213d7045b",
+    "sha256": "8864b5d182f416eb36f6671526f02720d9e55c8a09b72c987074620a1b7b625f",
+    "inputsSha256": "b74e71c2b3a1355c705357d47c37646c1f9f65554d8e9a555c461a8c9d294aed",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -921,6 +921,10 @@
       "lohn": "payroll",
       "lager": "inventory"
     },
+    "NACH_ZAEHLUNG_ART": {
+      "entnehmen": "cash_drop",
+      "einlegen": "change_in"
+    },
     "PIN_ZEICHEN": {
       "ziffern": "digits",
       "zeichen": "alphanumeric"
@@ -1030,6 +1034,7 @@
       "activation_failed",
       "admin_only",
       "admin_required",
+      "after_count_not_permitted",
       "already_accepted",
       "already_cancelled",
       "already_reversed",
@@ -1439,6 +1444,7 @@
       "validation"
     ],
     "registerHandlers": [
+      "after_count_not_permitted",
       "already_cancelled",
       "article_not_found",
       "article_not_in_scope",
@@ -1779,9 +1785,11 @@
       "idempotency_key_required",
       "idempotency_conflict",
       "shift_mode_off",
+      "after_count_not_permitted",
       "server_error"
     ],
     "registerCases": [
+      "after_count_not_permitted",
       "already_cancelled",
       "article_not_found",
       "article_not_in_scope",
@@ -2274,6 +2282,7 @@
         "shift_not_open"
       ],
       "closeMyShift": [
+        "after_count_not_permitted",
         "cash_movement_exceeds_balance",
         "cashregister_not_assigned",
         "comment_required",
@@ -2481,7 +2490,17 @@
           {
             "__": "auszahlungen"
           }
-        ]
+        ],
+        "afterCount": {
+          "__": "nachZaehlung",
+          "type": "art",
+          "amountCents": "cents"
+        }
+      },
+      "paramWerte": {
+        "afterCount.type": {
+          "$catalog": "NACH_ZAEHLUNG_ART"
+        }
       },
       "ergaenze": {
         "$function": "schichtSchliessenNachAussen"
@@ -2498,7 +2517,9 @@
           "grund": "reason",
           "zeitGeraet": "deviceTime",
           "text": "note",
-          "fehler": "error"
+          "fehler": "error",
+          "nachZaehlung": "afterCount",
+          "art": "type"
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"
@@ -3438,7 +3459,9 @@
           "grund": "reason",
           "zeitGeraet": "deviceTime",
           "text": "note",
-          "fehler": "error"
+          "fehler": "error",
+          "nachZaehlung": "afterCount",
+          "art": "type"
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"
@@ -3464,7 +3487,9 @@
           "grund": "reason",
           "zeitGeraet": "deviceTime",
           "text": "note",
-          "fehler": "error"
+          "fehler": "error",
+          "nachZaehlung": "afterCount",
+          "art": "type"
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"
@@ -4639,7 +4664,9 @@
           "grund": "reason",
           "zeitGeraet": "deviceTime",
           "text": "note",
-          "fehler": "error"
+          "fehler": "error",
+          "nachZaehlung": "afterCount",
+          "art": "type"
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"
@@ -4678,7 +4705,9 @@
           "grund": "reason",
           "zeitGeraet": "deviceTime",
           "text": "note",
-          "fehler": "error"
+          "fehler": "error",
+          "nachZaehlung": "afterCount",
+          "art": "type"
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"
@@ -4777,7 +4806,9 @@
           "grund": "reason",
           "zeitGeraet": "deviceTime",
           "text": "note",
-          "fehler": "error"
+          "fehler": "error",
+          "nachZaehlung": "afterCount",
+          "art": "type"
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"

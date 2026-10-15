@@ -129,6 +129,9 @@ Future<Object?> _rufe(RegisterReceiptClient c, String endpunkt, Map<String, dyna
             for (final a in (p['tipPayouts'] as List).cast<Map<String, dynamic>>())
               TipPayout(registerUserId: _s(a['registerUserId']), cents: a['cents'] as int),
           ],
+    afterCount: p['afterCount'] == null
+        ? null
+        : AfterCount(type: _s((p['afterCount'] as Map)['type']), amountCents: (p['afterCount'] as Map)['amountCents'] as int),
   ),
   _ => throw StateError(endpunkt),
 };
@@ -324,6 +327,43 @@ void main() {
       expect(r.receipt!.countedCents, isNull);
       expect(r.receipt!.differenceCents, isNull);
       expect(r.receipt!.cashSalesCents, isNull);
+    });
+
+    test('Entnehmen/Einlegen nach dem Zaehlen geht hinaus; Schicht, Z-Bon und Bon fuers Kuvert kommen zurueck (wie im npm-Paket)', () async {
+      final (:client, :anfragen) = _kasse((_) async => _antwort(_fall('closeMyShift', 'success_manager_take_out')));
+      final r = await client.closeMyShift(
+        idempotencyKey: 'z-3',
+        shiftId: 'haupt_KASSE1_s2',
+        countedCents: 29000,
+        afterCount: const AfterCount(type: 'cash_drop', amountCents: 14000),
+      );
+      expect(_params(anfragen.single)['afterCount'], {'type': 'cash_drop', 'amountCents': 14000});
+      expect(r.shift!.afterCount!.toJson(), {'type': 'cash_drop', 'amountCents': 14000});
+      expect(r.shift!.leftInDrawerCents, 15000);
+      expect(r.receipt!.afterCount!.type, 'cash_drop');
+      expect(r.receipt!.leftInDrawerCents, 15000);
+      expect(r.afterCountReceipt!.type, 'cash_drop');
+      expect(r.afterCountReceipt!.amountCents, -14000);
+      // Ohne Geldbewegung bleibt alles wie bisher.
+      final (client: c2, anfragen: a2) = _kasse((_) async => _antwort(_fall('closeMyShift', 'success_manager')));
+      final ohne = await c2.closeMyShift(idempotencyKey: 'z', shiftId: 'haupt_KASSE1_s2', countedCents: 29000);
+      expect(_params(a2.single).containsKey('afterCount'), isFalse);
+      expect(ohne.shift!.afterCount, isNull);
+      expect(ohne.receipt!.toJson().containsKey('afterCount'), isFalse);
+      expect(ohne.receipt!.toJson().containsKey('leftInDrawerCents'), isFalse);
+      expect(ohne.afterCountReceipt, isNull);
+    });
+
+    test('Wechselgeld der Lade und „von Schicht N übernommen“ nur, wenn gesendet', () async {
+      final (:client, anfragen: _) = _kasse((_) async => _antwort(_fall('getMyDrawerState', 'success_manager_change_in')));
+      final mit = await client.getMyDrawerState(drawerId: 'lade_bar');
+      expect(mit.drawer.changeFloatCents, 15000);
+      expect(mit.suggestedFromShiftNumber, isA<int>());
+      final (client: c2, anfragen: _) = _kasse((_) async => _antwort(_fall('getMyDrawerState', 'success_manager')));
+      final ohne = await c2.getMyDrawerState();
+      expect(ohne.drawer.changeFloatCents, isNull);
+      expect(ohne.toJson()['drawer'], isNot(contains('changeFloatCents')));
+      expect(ohne.suggestedFromShiftNumber, isNull);
     });
 
     test('recount ist kein Fehler', () async {

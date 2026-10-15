@@ -769,7 +769,8 @@ class PrintPaper {
       lines: layout.lines.map((z) => switch (z) {
         LayoutTextLine() => LayoutTextLine(text: _printable(z.text), align: z.align, bold: z.bold),
         LayoutBannerLine() => LayoutBannerLine(text: _printable(z.text), tone: z.tone),
-        LayoutColumnsLine() => LayoutColumnsLine(z.columns.map((c) => LayoutColumn(text: _printable(c.text), width: c.width, align: c.align)).toList()),
+        LayoutColumnsLine() =>
+          LayoutColumnsLine(z.columns.map((c) => LayoutColumn(text: _printable(c.text), width: c.width, align: c.align)).toList(), bold: z.bold),
         LayoutRuleLine() => LayoutRuleLine(char: _printable(z.char).isEmpty ? '-' : _printable(z.char)),
         // BelegQr bleibt bewusst unangetastet: die QR-Nutzlast ist Datum,
         // nicht Schrift — ein Ersatzzeichen ergaebe einen lesbaren QR mit

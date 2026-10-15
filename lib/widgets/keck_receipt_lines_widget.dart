@@ -93,7 +93,9 @@ class _KeckReceiptLinesWidgetState extends State<KeckReceiptLinesWidget> {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: z.columns
-              .map((c) => Expanded(flex: c.width, child: Text(c.text, textAlign: _ta(c.align), style: _mono, softWrap: true)))
+              .map((c) => Expanded(
+                  flex: c.width,
+                  child: Text(c.text, textAlign: _ta(c.align), style: z.bold ? _mono.copyWith(fontWeight: FontWeight.bold) : _mono, softWrap: true)))
               .toList(),
         );
       case LayoutRuleLine():

@@ -1,0 +1,399 @@
+{
+  "lines": [
+    {
+      "kind": "banner",
+      "text": "Schichtabschluss",
+      "tone": "receipt_type"
+    },
+    {
+      "kind": "text",
+      "text": "Café Welt",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kasse",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Theke 1",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Lade",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Hauptlade",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Schicht",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Nr. 2",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Geöffnet",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "25.09.2026 17:00",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "von",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Anna Chef",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Geschlossen",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "26.09.2026 10:00",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "von",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Anna Chef",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Startgeld übernommen",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "150,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Bar aus Verkäufen",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "94,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Bar aus Storno",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "0,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "text",
+      "text": "Bewegungen",
+      "align": "left",
+      "bold": true
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Nr. 3 Wechselgeld",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "50,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Nr. 4 Trinkgeld-Auszahlung",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "-4,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Soll",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "290,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Ist",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "290,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Differenz",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "0,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Eingelegt",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "10,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Bleibt in der Kassenlade",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "300,00",
+          "width": 4,
+          "align": "right"
+        }
+      ],
+      "bold": true
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "text",
+      "text": "Unbar (nur Information)",
+      "align": "left",
+      "bold": true
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kartenzahlung",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "32,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Belege",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "3",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Stornos",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "0",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Öffnungen ohne Verkauf",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "1",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "text",
+      "text": "Trinkgeld",
+      "align": "left",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Ben Kellner",
+      "align": "left",
+      "bold": false
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  verdient",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "4,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  schon genommen",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "4,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    }
+  ],
+  "paperSize": "mm58",
+  "ruleset": 2
+}

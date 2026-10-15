@@ -87,6 +87,11 @@ const List<String> openingReasons = [
 /// Die Gruende des Knopfs „Lade“; `other` braucht einen Text (`note`).
 const List<String> manualOpeningReasons = ['change', 'check', 'misoperation', 'other'];
 
+/// Was nach dem Zaehlen beim Schicht-Abschluss mit dem Geld geschieht (Katalog
+/// `NACH_ZAEHLUNG_ART`): `cash_drop` = entnehmen (gebucht als Abschoepfung),
+/// `change_in` = einlegen (gebucht als Wechselgeld). Beides Geldtransit, kein Umsatz.
+const List<String> afterCountTypes = ['cash_drop', 'change_in'];
+
 /// Arten der Bon-Daten (Katalog `SCHICHT_BON_ART`): Z-Bon, X-Bon, Kassenbewegung.
 const List<String> shiftReceiptKinds = ['shift_close', 'shift_interim', 'cash_movement'];
 
@@ -167,7 +172,7 @@ class ShiftActor {
 }
 
 class DrawerInfo {
-  const DrawerInfo({required this.id, this.name, required this.shiftMode, this.cashregisterId});
+  const DrawerInfo({required this.id, this.name, required this.shiftMode, this.cashregisterId, this.changeFloatCents});
 
   final String id;
   final String? name;
@@ -176,7 +181,32 @@ class DrawerInfo {
   final bool shiftMode;
   final String? cashregisterId;
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'shiftMode': shiftMode, 'cashregisterId': cashregisterId};
+  /// Wechselgeld der Lade in Cent („Wechselgeld in der Lade“): bleibt nach
+  /// jedem Schicht-Abschluss drin, mehr wird beim Schliessen entnommen. `null`,
+  /// wenn nicht eingestellt (dann bleibt alles in der Lade, wie bisher).
+  final int? changeFloatCents;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'shiftMode': shiftMode,
+        'cashregisterId': cashregisterId,
+        if (changeFloatCents != null) 'changeFloatCents': changeFloatCents,
+      };
+}
+
+/// Entnehmen oder Einlegen nach dem Zaehlen: [amountCents] immer positiv, die
+/// Richtung sagt [type] (aus [afterCountTypes]). Gezaehlt wird immer die ganze
+/// Lade; was danach bleibt, steht in `leftInDrawerCents` (Schicht, Z-Bon).
+/// Dient auch als Parameter von `closeMyShift`.
+class AfterCount {
+  const AfterCount({required this.type, required this.amountCents});
+
+  /// `cash_drop` (entnehmen) oder `change_in` (einlegen); gelesen auch ein kuenftiger Wert.
+  final String type;
+  final int amountCents;
+
+  Map<String, dynamic> toJson() => {'type': type, 'amountCents': amountCents};
 }
 
 /// Die vier Rechte des angemeldeten Benutzers an der Lade.
@@ -433,6 +463,8 @@ class Shift {
     this.expectedCents,
     this.differenceCents,
     this.reconciliation,
+    this.afterCount,
+    this.leftInDrawerCents,
   });
 
   final String id;
@@ -468,6 +500,13 @@ class Shift {
   final int? differenceCents;
   final ShiftReconciliation? reconciliation;
 
+  /// Entnommen bzw. eingelegt nach dem Zaehlen; `null`, wenn beim Abschluss
+  /// kein Geld bewegt wurde.
+  final AfterCount? afterCount;
+
+  /// Was danach in der Lade bleibt; nur mit [afterCount], blind `null`.
+  final int? leftInDrawerCents;
+
   /// Die Drahtform; Felder, die fehlen (kein Recht), fehlen auch hier.
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -492,6 +531,8 @@ class Shift {
         if (expectedCents != null) 'expectedCents': expectedCents,
         if (differenceCents != null) 'differenceCents': differenceCents,
         if (reconciliation != null) 'reconciliation': reconciliation!.toJson(),
+        if (afterCount != null) 'afterCount': afterCount!.toJson(),
+        if (leftInDrawerCents != null) 'leftInDrawerCents': leftInDrawerCents,
       };
 }
 
@@ -548,6 +589,7 @@ class DrawerState {
     this.suggestedFloatCents,
     this.expectedCents,
     this.recentOpenings,
+    this.suggestedFromShiftNumber,
   });
 
   final DrawerInfo drawer;
@@ -575,6 +617,11 @@ class DrawerState {
   /// Die letzten Oeffnungen, neueste zuerst; nur mit `cashView`, sonst `null`.
   final List<DrawerOpening>? recentOpenings;
 
+  /// Nummer der Schicht, aus der der Vorschlag stammt („von Schicht {number}
+  /// übernommen“). Nur ohne offene Schicht und nur, wenn die letzte Schicht
+  /// mit einem Betrag „Bleibt in der Kassenlade“ schloss; sonst `null`.
+  final int? suggestedFromShiftNumber;
+
   Map<String, dynamic> toJson() => {
         'drawer': drawer.toJson(),
         'rights': rights.toJson(),
@@ -585,6 +632,7 @@ class DrawerState {
         if (suggestedFloatCents != null) 'suggestedFloatCents': suggestedFloatCents,
         if (expectedCents != null) 'expectedCents': expectedCents,
         if (recentOpenings != null) 'recentOpenings': [for (final o in recentOpenings!) o.toJson()],
+        if (suggestedFromShiftNumber != null) 'suggestedFromShiftNumber': suggestedFromShiftNumber,
       };
 }
 
@@ -722,6 +770,8 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
     this.differenceCents,
     this.comment,
     required this.openingsWithoutSale,
+    this.afterCount,
+    this.leftInDrawerCents,
   });
 
   /// Nummer der Schicht (Draht: `shift.number`).
@@ -753,6 +803,13 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
   final String? comment;
   final int openingsWithoutSale;
 
+  /// Entnommen bzw. eingelegt nach dem Zaehlen; `null`, wenn kein Geld bewegt wurde.
+  final AfterCount? afterCount;
+
+  /// „Bleibt in der Kassenlade“; nur mit [afterCount], blind `null` (mit
+  /// „Entnommen“ ergaebe es sonst das Ist).
+  final int? leftInDrawerCents;
+
   Map<String, dynamic> toJson() => {
         ..._kopfJson(),
         'shift': {
@@ -778,6 +835,8 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
         'differenceCents': differenceCents,
         'comment': comment,
         'openingsWithoutSale': openingsWithoutSale,
+        if (afterCount != null) 'afterCount': afterCount!.toJson(),
+        if (afterCount != null) 'leftInDrawerCents': leftInDrawerCents,
       };
 }
 
@@ -900,10 +959,15 @@ class ShiftCloseResult {
       : recount = true,
         shift = null,
         receipt = null,
+        afterCountReceipt = null,
         lastShiftOfRegister = false;
 
-  const ShiftCloseResult.closed({required Shift this.shift, required ShiftSummaryReceipt this.receipt, required this.lastShiftOfRegister})
-      : recount = false;
+  const ShiftCloseResult.closed({
+    required Shift this.shift,
+    required ShiftSummaryReceipt this.receipt,
+    this.afterCountReceipt,
+    required this.lastShiftOfRegister,
+  }) : recount = false;
 
   /// Bitte noch einmal zaehlen und mit demselben Betrag oder neu erneut senden.
   final bool recount;
@@ -914,6 +978,10 @@ class ShiftCloseResult {
   /// Z-Bon; `null` bei [recount].
   final ShiftSummaryReceipt? receipt;
 
+  /// Bon „Kassenbewegung“ der Entnahme bzw. Einlage („Bon fürs Kuvert“); nur
+  /// wenn beim Abschluss Geld bewegt wurde, sonst `null`.
+  final CashMovementReceipt? afterCountReceipt;
+
   /// Es war die letzte offene Schicht der Kasse.
   final bool lastShiftOfRegister;
 
@@ -923,6 +991,7 @@ class ShiftCloseResult {
           'status': 'closed',
           'shift': shift!.toJson(),
           'receipt': receipt!.toJson(),
+          if (afterCountReceipt != null) 'afterCountReceipt': afterCountReceipt!.toJson(),
           'lastShiftOfRegister': lastShiftOfRegister,
         };
 }
@@ -1122,6 +1191,13 @@ ShiftRunningTotals _laufstand(_Ort ort, Object? w) {
   );
 }
 
+/// Entnehmen oder Einlegen nach dem Zaehlen; `null` gilt wie fehlend.
+AfterCount? _nachZaehlung(_Ort ort, Object? w) {
+  if (w == null) return null;
+  final o = _pflichtObjekt(ort, w);
+  return AfterCount(type: _kennung(ort, o, 'type'), amountCents: _ganzzahl(ort, o, 'amountCents'));
+}
+
 ShiftReconciliation? _abgleich(_Ort ort, Object? w) {
   if (w == null) return null;
   final o = _pflichtObjekt(ort, w);
@@ -1167,6 +1243,8 @@ Shift _schicht(_Ort ort, Object? w) {
     expectedCents: _ganzzahlOderNull(ort, o, 'expectedCents'),
     differenceCents: _ganzzahlOderNull(ort, o, 'differenceCents'),
     reconciliation: _abgleich(ort.unter('reconciliation'), o['reconciliation']),
+    afterCount: _nachZaehlung(ort.unter('afterCount'), o['afterCount']),
+    leftInDrawerCents: _ganzzahlOderNull(ort, o, 'leftInDrawerCents'),
   );
 }
 
@@ -1201,6 +1279,7 @@ DrawerState ladeStand(String name, Map<String, dynamic> daten) {
       name: _text(lade['name']),
       shiftMode: _wahr(ladeOrt, lade, 'shiftMode'),
       cashregisterId: _text(lade['cashregisterId']),
+      changeFloatCents: _ganzzahlOderNull(ladeOrt, lade, 'changeFloatCents'),
     ),
     rights: DrawerRights(
       shift: _wahr(rechteOrt, rechte, 'shift'),
@@ -1215,6 +1294,7 @@ DrawerState ladeStand(String name, Map<String, dynamic> daten) {
     suggestedFloatCents: _ganzzahlOderNull(ort, daten, 'suggestedFloatCents'),
     expectedCents: _ganzzahlOderNull(ort, daten, 'expectedCents'),
     recentOpenings: daten['recentOpenings'] == null ? null : _liste(ort, daten, 'recentOpenings', _oeffnung),
+    suggestedFromShiftNumber: _ganzzahlOderNull(ort, daten, 'suggestedFromShiftNumber'),
   );
 }
 
@@ -1291,6 +1371,8 @@ ShiftSummaryReceipt _schichtBon(_Ort ort, Object? w) {
     differenceCents: _ganzzahlOderNull(ort, o, 'differenceCents'),
     comment: _text(o['comment']),
     openingsWithoutSale: _ganzzahl(ort, o, 'openingsWithoutSale'),
+    afterCount: _nachZaehlung(ort.unter('afterCount'), o['afterCount']),
+    leftInDrawerCents: _ganzzahlOderNull(ort, o, 'leftInDrawerCents'),
   );
 }
 
@@ -1330,6 +1412,8 @@ ShiftCloseResult abschlussLesen(String name, Map<String, dynamic> daten) {
   return ShiftCloseResult.closed(
     shift: _schicht(ort.unter('shift'), daten['shift']),
     receipt: _schichtBon(ort.unter('receipt'), daten['receipt']),
+    // Bon „Kassenbewegung“ der Entnahme bzw. Einlage, nur wenn Geld bewegt wurde.
+    afterCountReceipt: daten['afterCountReceipt'] == null ? null : _bewegungsBon(ort.unter('afterCountReceipt'), daten['afterCountReceipt']),
     lastShiftOfRegister: _wahr(ort, daten, 'lastShiftOfRegister'),
   );
 }
