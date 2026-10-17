@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "8864b5d182f416eb36f6671526f02720d9e55c8a09b72c987074620a1b7b625f",
-    "inputsSha256": "b74e71c2b3a1355c705357d47c37646c1f9f65554d8e9a555c461a8c9d294aed",
+    "sha256": "e061453f62c8f4af21528eb51a677d6f947553f5b78621d64497f45833dd8b09",
+    "inputsSha256": "95fd7b1f3704811d3a3f79b1dbb6aea668e8c0e3a663e5b0ca9c07f2e11e37b5",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -971,6 +971,7 @@
     },
     "SCHICHT_ABSCHLUSS": {
       "nachzaehlen": "recount",
+      "bereit": "ready",
       "geschlossen": "closed"
     },
     "SCHICHT_AKTEUR": {
@@ -2495,7 +2496,8 @@
           "__": "nachZaehlung",
           "type": "art",
           "amountCents": "cents"
-        }
+        },
+        "checkOnly": "nurPruefen"
       },
       "paramWerte": {
         "afterCount.type": {

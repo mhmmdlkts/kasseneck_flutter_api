@@ -363,6 +363,7 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
           afterCount: p['afterCount'] == null
               ? null
               : AfterCount(type: _s((p['afterCount'] as Map)['type']), amountCents: (p['afterCount'] as Map)['amountCents'] as int),
+          checkOnly: p['checkOnly'] as bool? ?? false,
         );
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();

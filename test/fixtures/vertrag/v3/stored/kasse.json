@@ -4,7 +4,7 @@
     "default": {
       "sha256": "7a9ab24d57ab048d549628bd7e64e5e8b723b25bfbee035d883c9d6f9bafef3b",
       "head": [],
-      "inputsSha256": "389d420e83e18316ddac12edce789ecc8bc359ab5b09ec25058c6fb3dee73e5b",
+      "inputsSha256": "3b6c5c73af674b969019c273f50068879923cee243dafa490e0c7335107c4e79",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "d52b39b968264c43aa8b8e22ddebb5509b00dc4e5f7db05a02564f8b84522a80",
+      "sha256": "9fe8af1be0eb68c393b9ec35f27ecd055dee206fd43f579449a7d8e8f75ac82c",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "6588f4ef0ca3aaf4fc3eb3b42bdf697d5188cb7603291a52d38e07a9a5aecb16",
+      "inputsSha256": "88ae97429f7c74025f6549ac46a0db291a0407bd070e875cc93c2fc3d3f1d6d3",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -8649,6 +8649,160 @@
               "bewegungId": "b0000005"
             },
             "bleibtCents": 30000
+          }
+        },
+        "success_manager_check_ready": {
+          "users/kw_betrieb1/schicht_idempotenz/c5fddb86a31ddfb8a8527cc37c76fde69a81e10c0c93b2390cc2527542e5b33d": {
+            "anfrageHash": "6e3709d694137cdfeb4b881ec2ae57dcd35a8140c807deb4b50a41f379a36c19",
+            "antwort": {
+              "status": "bereit"
+            },
+            "zeitMs": 1790409600000,
+            "loeschenAb": 1793001600000,
+            "geschriebenAt": 1790409600000
+          },
+          "users/kw_betrieb1/schichten/haupt_KASSE1_s2": {
+            "ladeId": "haupt_KASSE1",
+            "cashregisterId": "KASSE1",
+            "nummer": 2,
+            "status": "offen",
+            "geoeffnet": {
+              "am": "2026-09-25T15:00:00.000Z",
+              "von": {
+                "registerUserId": "ru_chef",
+                "name": "Anna Chef",
+                "rolle": "kassenbenutzer"
+              },
+              "geraetId": "dev_pin"
+            },
+            "startgeld": {
+              "cents": 15000,
+              "stueckelung": null,
+              "vorschlagCents": 15000,
+              "uebernommen": true,
+              "uebernommenVon": "haupt_KASSE1_s1"
+            },
+            "laufstand": {
+              "barVerkaufCents": 9400,
+              "barStornoCents": 0,
+              "unbarJeZahlart": {
+                "card": 3200
+              },
+              "belegAnzahl": 3,
+              "stornoAnzahl": 0,
+              "trinkgeld": {
+                "ru_kellner": {
+                  "name": "Ben Kellner",
+                  "sofortCents": 400,
+                  "einbehaltenCents": 0
+                }
+              },
+              "oeffnungenOhneVerkauf": 1,
+              "einCents": 5000,
+              "ausCents": 0
+            },
+            "zaehlungen": [
+              {
+                "versuch": 1,
+                "istCents": 29000,
+                "stueckelung": null,
+                "am": "2026-09-26T08:00:00.000Z",
+                "von": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "rolle": "kassenbenutzer"
+                },
+                "vorab": true
+              }
+            ],
+            "geschlossen": null,
+            "sollCents": null,
+            "istCents": null,
+            "differenzCents": null,
+            "kommentar": null,
+            "blind": null,
+            "abgleich": null,
+            "geprueft": null,
+            "pdf": null,
+            "tagesabschlussId": null,
+            "kennzahlenAbOeffnung": true
+          }
+        },
+        "success_cashier_check_recount": {
+          "users/kw_betrieb1/schicht_idempotenz/e2a4f5e6c037667c17fd64a5d8512507b5a9fefd4a6a8dd6d636a63321a64049": {
+            "anfrageHash": "4811cf37df35b70ecfbe5833f1ffd3b1c168177e0bb5d6dbe1fbc28b7256c702",
+            "antwort": {
+              "status": "nachzaehlen"
+            },
+            "zeitMs": 1790409600000,
+            "loeschenAb": 1793001600000,
+            "geschriebenAt": 1790409600000
+          },
+          "users/kw_betrieb1/schichten/haupt_KASSE1_s2": {
+            "ladeId": "haupt_KASSE1",
+            "cashregisterId": "KASSE1",
+            "nummer": 2,
+            "status": "offen",
+            "geoeffnet": {
+              "am": "2026-09-25T15:00:00.000Z",
+              "von": {
+                "registerUserId": "ru_chef",
+                "name": "Anna Chef",
+                "rolle": "kassenbenutzer"
+              },
+              "geraetId": "dev_pin"
+            },
+            "startgeld": {
+              "cents": 15000,
+              "stueckelung": null,
+              "vorschlagCents": 15000,
+              "uebernommen": true,
+              "uebernommenVon": "haupt_KASSE1_s1"
+            },
+            "laufstand": {
+              "barVerkaufCents": 9400,
+              "barStornoCents": 0,
+              "unbarJeZahlart": {
+                "card": 3200
+              },
+              "belegAnzahl": 3,
+              "stornoAnzahl": 0,
+              "trinkgeld": {
+                "ru_kellner": {
+                  "name": "Ben Kellner",
+                  "sofortCents": 400,
+                  "einbehaltenCents": 0
+                }
+              },
+              "oeffnungenOhneVerkauf": 1,
+              "einCents": 5000,
+              "ausCents": 0
+            },
+            "zaehlungen": [
+              {
+                "versuch": 1,
+                "istCents": 20000,
+                "stueckelung": null,
+                "am": "2026-09-26T08:00:00.000Z",
+                "von": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "rolle": "kassenbenutzer"
+                },
+                "vorab": true
+              }
+            ],
+            "geschlossen": null,
+            "sollCents": null,
+            "istCents": null,
+            "differenzCents": null,
+            "kommentar": null,
+            "blind": null,
+            "abgleich": null,
+            "geprueft": null,
+            "pdf": null,
+            "tagesabschlussId": null,
+            "kennzahlenAbOeffnung": true
           }
         }
       }

@@ -43,6 +43,17 @@ button with the amount) and message `logout.cart_cleared` (second press logs
 out and clears the cart). `shift.recount` now names the reason: „Der gezählte
 Betrag weicht ab – bitte noch einmal zählen.“
 
+Check before taking out: `closeMyShift(checkOnly: true)` runs the same check as
+closing but closes nothing and books nothing (no `afterCount` either); the
+result is `ShiftCloseResult.ready()` (`ready`, status `ready`) when closing with
+this amount would go through, otherwise `recount` or the error
+`comment_required` as before. Only `true` is sent; without it the call sends
+the same bytes as before. The count still uses one of the two attempts; closing
+afterwards with the same amount counts as the same attempt. Contract cases
+`success_manager_check_ready` and `success_cashier_check_recount`. Reason: the
+register asked for money to be taken out before it knew whether the count had
+to be repeated or explained.
+
 Additive; every existing call sends the same bytes as in 11.1.1 unless you
 pass the new `drawerId`. The lists `posErrorCodes` (18 new codes),
 `unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code

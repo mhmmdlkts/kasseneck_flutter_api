@@ -953,10 +953,22 @@ class ShiftReport {
 }
 
 /// Ergebnis von `closeMyShift`: [recount] = bitte noch einmal zaehlen (kein
-/// Fehler), sonst geschlossen mit Z-Bon in [receipt].
+/// Fehler), [ready] = nur geprueft (`checkOnly`), Schliessen mit diesem Betrag
+/// ginge, sonst geschlossen mit Z-Bon in [receipt].
 class ShiftCloseResult {
   const ShiftCloseResult.recount()
       : recount = true,
+        ready = false,
+        shift = null,
+        receipt = null,
+        afterCountReceipt = null,
+        lastShiftOfRegister = false;
+
+  /// Nur geprueft (`checkOnly`): Schliessen mit diesem Betrag ginge, gebucht
+  /// ist nichts.
+  const ShiftCloseResult.ready()
+      : recount = false,
+        ready = true,
         shift = null,
         receipt = null,
         afterCountReceipt = null,
@@ -967,15 +979,21 @@ class ShiftCloseResult {
     required ShiftSummaryReceipt this.receipt,
     this.afterCountReceipt,
     required this.lastShiftOfRegister,
-  }) : recount = false;
+  }) : recount = false,
+       ready = false;
 
   /// Bitte noch einmal zaehlen und mit demselben Betrag oder neu erneut senden.
   final bool recount;
 
-  /// Die geschlossene Schicht; `null` bei [recount].
+  /// Nur geprueft (`checkOnly`): Schliessen mit diesem Betrag ginge. Die
+  /// Zaehlung zaehlt als Versuch; schliesst danach derselbe Betrag, gilt er als
+  /// dieselbe Zaehlung.
+  final bool ready;
+
+  /// Die geschlossene Schicht; `null` bei [recount] und [ready].
   final Shift? shift;
 
-  /// Z-Bon; `null` bei [recount].
+  /// Z-Bon; `null` bei [recount] und [ready].
   final ShiftSummaryReceipt? receipt;
 
   /// Bon „Kassenbewegung“ der Entnahme bzw. Einlage („Bon fürs Kuvert“); nur
@@ -987,6 +1005,8 @@ class ShiftCloseResult {
 
   Map<String, dynamic> toJson() => recount
       ? {'status': 'recount'}
+      : ready
+      ? {'status': 'ready'}
       : {
           'status': 'closed',
           'shift': shift!.toJson(),
@@ -1408,6 +1428,7 @@ CashMovementReceipt _bewegungsBon(_Ort ort, Object? w) {
 ShiftCloseResult abschlussLesen(String name, Map<String, dynamic> daten) {
   final ort = _Ort(name, '');
   if (daten['status'] == 'recount') return const ShiftCloseResult.recount();
+  if (daten['status'] == 'ready') return const ShiftCloseResult.ready();
   if (daten['status'] != 'closed') throw _fehler(ort, 'data.status ist unbekannt');
   return ShiftCloseResult.closed(
     shift: _schicht(ort.unter('shift'), daten['shift']),

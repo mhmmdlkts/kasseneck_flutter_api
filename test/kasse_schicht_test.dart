@@ -132,6 +132,7 @@ Future<Object?> _rufe(RegisterReceiptClient c, String endpunkt, Map<String, dyna
     afterCount: p['afterCount'] == null
         ? null
         : AfterCount(type: _s((p['afterCount'] as Map)['type']), amountCents: (p['afterCount'] as Map)['amountCents'] as int),
+    checkOnly: p['checkOnly'] as bool? ?? false,
   ),
   _ => throw StateError(endpunkt),
 };
@@ -364,6 +365,33 @@ void main() {
       expect(ohne.drawer.changeFloatCents, isNull);
       expect(ohne.toJson()['drawer'], isNot(contains('changeFloatCents')));
       expect(ohne.suggestedFromShiftNumber, isNull);
+    });
+
+    test('checkOnly: ready bzw. recount, checkOnly geht hinaus (wie im npm-Paket)', () async {
+      final (:client, :anfragen) = _kasse((_) async => _antwort(_fall('closeMyShift', 'success_manager_check_ready')));
+      final bereit = await client.closeMyShift(
+        idempotencyKey: 'z-7',
+        shiftId: 'haupt_KASSE1_s2',
+        countedCents: 29000,
+        tipPayouts: const [TipPayout(registerUserId: 'ru_kellner', cents: 400)],
+        checkOnly: true,
+      );
+      expect(bereit.ready, isTrue);
+      expect(bereit.recount, isFalse);
+      expect(bereit.shift, isNull);
+      expect(bereit.receipt, isNull);
+      expect(bereit.toJson(), {'status': 'ready'});
+      expect(_params(anfragen.single)['checkOnly'], isTrue);
+      final (client: c2, anfragen: a2) = _kasse((_) async => _antwort(_fall('closeMyShift', 'success_cashier_check_recount')));
+      final nach = await c2.closeMyShift(idempotencyKey: 'z-8', shiftId: 'haupt_KASSE1_s2', countedCents: 20000, attempt: 1, checkOnly: true);
+      expect(nach.recount, isTrue);
+      expect(nach.ready, isFalse);
+      expect(_params(a2.single)['checkOnly'], isTrue);
+      // Ohne checkOnly geht das Feld nicht hinaus (gleiche Bytes wie bisher).
+      final (client: c3, anfragen: a3) = _kasse((_) async => _antwort(_fall('closeMyShift', 'success_manager')));
+      final zu = await c3.closeMyShift(idempotencyKey: 'z', shiftId: 'haupt_KASSE1_s2', countedCents: 29000);
+      expect(_params(a3.single).containsKey('checkOnly'), isFalse);
+      expect(zu.ready, isFalse);
     });
 
     test('recount ist kein Fehler', () async {

@@ -1020,7 +1020,13 @@ class RegisterReceiptClient {
   /// `cashMove` (`after_count_not_permitted`). Gebucht wird nur beim
   /// tatsaechlichen Schliessen; die Antwort traegt dann
   /// [ShiftCloseResult.afterCountReceipt] („Bon fürs Kuvert“). Die Art prueft
-  /// der Server.
+  /// der Server. [checkOnly]: nur pruefen, nicht schliessen – dieselbe Pruefung
+  /// wie beim Schliessen, damit die Kasse vor „Geld entnehmen“ weiss, ob
+  /// nachgezaehlt (`recount`) oder begruendet (`comment_required`) werden muss;
+  /// [ShiftCloseResult.ready], wenn das Schliessen mit diesem Betrag ginge.
+  /// Gebucht wird nichts (auch kein [afterCount]). Die Zaehlung zaehlt als einer
+  /// der zwei Versuche; schliesst danach derselbe Betrag, gilt er als dieselbe
+  /// Zaehlung. Nur `true` geht hinaus.
   Future<ShiftCloseResult> closeMyShift({
     required String idempotencyKey,
     required String shiftId,
@@ -1030,6 +1036,7 @@ class RegisterReceiptClient {
     String? comment,
     List<TipPayout>? tipPayouts,
     AfterCount? afterCount,
+    bool checkOnly = false,
   }) async {
     const name = Aufrufe.closeMyShift;
     final p = <String, dynamic>{
@@ -1041,6 +1048,7 @@ class RegisterReceiptClient {
       'comment': ?comment,
       if (tipPayouts != null) 'tipPayouts': [for (final a in tipPayouts) a.toJson()],
       if (afterCount != null) 'afterCount': afterCount.toJson(),
+      if (checkOnly) 'checkOnly': true,
     };
     kennung(name, 'shiftId', shiftId);
     pruefeSchluessel(name, p);

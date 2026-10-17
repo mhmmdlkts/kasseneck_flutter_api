@@ -4,7 +4,7 @@
     "default": {
       "sha256": "439a8bfac209333ab769a4c7133507a1730267eff4021cc9bdcf39d25805b94d",
       "head": [],
-      "inputsSha256": "389d420e83e18316ddac12edce789ecc8bc359ab5b09ec25058c6fb3dee73e5b",
+      "inputsSha256": "3b6c5c73af674b969019c273f50068879923cee243dafa490e0c7335107c4e79",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "ed2f606e162b9f8ffa379323c9213903fe007c021a3b43f79b5b3735116cc6b7",
+      "sha256": "6732e8ca04bca3d4bc7574bb382613f966053e239e0c2c53126d99613d79dd18",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "6588f4ef0ca3aaf4fc3eb3b42bdf697d5188cb7603291a52d38e07a9a5aecb16",
+      "inputsSha256": "88ae97429f7c74025f6549ac46a0db291a0407bd070e875cc93c2fc3d3f1d6d3",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -22040,6 +22040,59 @@
               "code": "validation"
             },
             "code": "validation"
+          }
+        },
+        {
+          "case": "success_manager_check_ready",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-7",
+            "checkOnly": true
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "ready"
+            }
+          }
+        },
+        {
+          "case": "success_cashier_check_recount",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 20000,
+            "attempt": 1,
+            "idempotencyKey": "z-8",
+            "checkOnly": true
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "recount"
+            }
           }
         },
         {
