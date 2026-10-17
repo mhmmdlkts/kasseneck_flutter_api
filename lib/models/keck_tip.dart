@@ -78,11 +78,19 @@ class KeckTip {
   /// (ohne angemeldeten Kassen-Benutzer) gilt die Einschränkung nicht.
   final bool? receivedImmediately;
 
+  /// Bar-Trinkgeld „gleich behalten“: die Mitarbeiterin steckt es beim
+  /// Verkauf gleich ein. Nur ein Merkmal fuer den Kassenstand (nicht ins
+  /// Bar-Soll, sofort „schon genommen“); der Beleg bleibt, wie er ist. Geht
+  /// nur als `true` hinaus; der Server nimmt es nur bei Mitarbeiter-
+  /// Trinkgeld, bar und sofort erhalten.
+  final bool keptByEmployee;
+
   const KeckTip({
     required this.cents,
     this.paymentMethod,
     this.recipients,
     this.receivedImmediately,
+    this.keptByEmployee = false,
   });
 
   /// Komfort-Konstruktor mit Betrag in **Euro** (einmalige Rundung auf Cent).
@@ -172,5 +180,6 @@ class KeckTip {
         // Voreinstellung des Betriebs. Ein `false` wäre dort eine Aussage,
         // kein Weglassen.
         if (receivedImmediately != null) 'receivedImmediately': receivedImmediately,
+        if (keptByEmployee) 'keptByEmployee': true,
       };
 }

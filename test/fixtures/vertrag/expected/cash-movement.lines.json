@@ -1,0 +1,171 @@
+{
+  "lines": [
+    {
+      "kind": "banner",
+      "text": "Kassenbewegung",
+      "tone": "receipt_type"
+    },
+    {
+      "kind": "text",
+      "text": "Café Welt",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kasse",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Theke 1",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Lade",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Hauptlade",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Schicht",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Nr. 2",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Nr.",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "4",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Art",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Abschöpfung",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Betrag",
+          "width": 8,
+          "align": "left"
+        },
+        {
+          "text": "-200,00",
+          "width": 4,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Ort",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Tresor",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Grund",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Abend",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Bediener",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "Anna Chef",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Zeit",
+          "width": 5,
+          "align": "left"
+        },
+        {
+          "text": "26.09.2026 10:00",
+          "width": 7,
+          "align": "right"
+        }
+      ]
+    }
+  ],
+  "paperSize": "mm58",
+  "ruleset": 2
+}

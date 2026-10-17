@@ -1,0 +1,38 @@
+================================
+        Schichtabschluss        
+================================
+           Café Welt            
+Kasse                    Theke 1
+Lade                   Hauptlade
+Schicht                    Nr. 2
+Geöffnet        25.09.2026 17:00
+von                    Anna Chef
+Geschlossen     26.09.2026 10:00
+von                    Anna Chef
+--------------------------------
+Startgeld übernommen      150,00
+Bar aus Verkäufen          94,00
+Bar aus Storno              0,00
+Bewegungen                      
+Nr. 3 Wechselgeld          50,00
+Nr. 4                      -4,00
+Trinkgeld-Auszahlung            
+Soll                      290,00
+Ist                       290,00
+Differenz                   0,00
+--------------------------------
+Eingelegt                  10,00
+Bleibt in der             300,00
+Kassenlade                      
+--------------------------------
+Unbar (nur Information)         
+Kartenzahlung              32,00
+Belege                         3
+Stornos                        0
+Öffnungen ohne                 1
+Verkauf                         
+--------------------------------
+Trinkgeld                       
+Ben Kellner                     
+  verdient                  4,00
+  schon genommen            4,00

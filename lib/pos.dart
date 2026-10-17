@@ -94,6 +94,21 @@ export 'src/lager/modelle.dart'
         StocktakeTotals,
         StocktakeWarning;
 export 'src/lager/vertrag.dart' show stocktakeStatuses;
+// Schicht, Kassenstand und Lade-Protokoll (seit 11.1): Kataloge, Modelle und
+// Helfer; die Leser bleiben paketintern, die sechs Aufrufe stehen an
+// RegisterReceiptClient.
+export 'src/kasse/schicht.dart'
+    hide
+        abschlussLesen,
+        berichtLesen,
+        bewegungsBonPruefen,
+        gebuchtLesen,
+        gemeldetLesen,
+        geoeffnetLesen,
+        ladeStand,
+        zBonPruefen;
+// Die Bons der Schicht als Zeilenmodell (Z-Bon, X-Bon, Kassenbewegung).
+export 'src/printing/shift_sheet.dart';
 // Rueckgabe-Wahl beim Storno (Lager).
 export 'src/kasse/rueckgabe.dart';
 export 'src/kasse/storno.dart';

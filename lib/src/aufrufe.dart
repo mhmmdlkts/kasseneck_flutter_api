@@ -119,6 +119,13 @@ abstract final class Aufrufe {
   static const listMyStocktakeCounts = 'listMyStocktakeCounts';
   static const recordMyStocktakeCount = 'recordMyStocktakeCount';
   static const voidMyStocktakeCount = 'voidMyStocktakeCount';
+  // Schicht, Kassenstand und Lade-Protokoll an der Kasse (pos.dart).
+  static const getMyDrawerState = 'getMyDrawerState';
+  static const openMyShift = 'openMyShift';
+  static const recordMyCashMovement = 'recordMyCashMovement';
+  static const logMyDrawerOpenings = 'logMyDrawerOpenings';
+  static const getMyShiftReport = 'getMyShiftReport';
+  static const closeMyShift = 'closeMyShift';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -224,5 +231,11 @@ abstract final class Aufrufe {
     listMyStocktakeCounts,
     recordMyStocktakeCount,
     voidMyStocktakeCount,
+    getMyDrawerState,
+    openMyShift,
+    recordMyCashMovement,
+    logMyDrawerOpenings,
+    getMyShiftReport,
+    closeMyShift,
   };
 }

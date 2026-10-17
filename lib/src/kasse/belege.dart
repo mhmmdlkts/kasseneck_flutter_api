@@ -25,13 +25,14 @@ import '../../models/keck_tip_person.dart';
 import '../aufrufe.dart';
 import '../lager/lesen.dart' show inventur, inventurPosition, inventurZaehlung, liste, naechsterCursor, zaehlungMitPosition;
 import '../lager/modelle.dart' show Stocktake, StocktakeCountPage, StocktakeCountResult, StocktakeItemPage;
-import '../lager/schreiben.dart' show kennung, pruefeSchluessel, stornoPruefen, zaehlungPruefen;
+import '../lager/schreiben.dart' show anfragefehler, kennung, pruefeGanzzahlen, pruefeSchluessel, stornoPruefen, zaehlungPruefen;
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'artikel.dart';
 import '../../models/registration_info.dart';
 import 'belegmail.dart';
 import 'lager.dart';
+import 'schicht.dart';
 import 'storno.dart' show assertCardRefunds, cancellationReasons;
 import 'storno_nutzlast.dart';
 
@@ -366,6 +367,10 @@ class RegisterReceiptClient {
 
   /// Normalbeleg (Verkauf): der signierte Beleg samt Belegkopf.
   ///
+  /// [drawerId]: Lade, in deren Kassenstand der Beleg zaehlt (Schichtbetrieb,
+  /// Geraete-Einstellung `drawerId`). Ohne Angabe gilt die Lade des Geraets
+  /// bzw. die Hauptlade der Kasse. Leer oder nur Leerraum wirft vor dem Senden.
+  ///
   /// Unter `/v3` gehen die Zahlungen **immer** als [payments] hinaus (siehe
   /// [KeckPaymentInput]: Karte mit Anbieter und Kennung, Bar mit
   /// `tenderedCents`), nie die Einzelfelder `paymentMethod`,
@@ -373,12 +378,22 @@ class RegisterReceiptClient {
   /// wird nie gesendet. Den Zahlbetrag rechnet der Server; weicht die Summe
   /// ab, kommt `payments_sum_mismatch` mit `expectedCents`
   /// ([paymentsExpectedCents]), und es wurde nichts signiert.
+  ///
+  /// [tipKeptByEmployee]: Bar-Trinkgeld „gleich behalten“ -- die
+  /// Mitarbeiterin steckt das Trinkgeld beim Verkauf gleich ein. Der Beleg
+  /// bleibt, wie er ist; im Kassenstand zaehlt der Betrag nicht ins Bar-Soll
+  /// und gilt sofort als „schon genommen“. Nur mit Trinkgeld; dann geht
+  /// `tip: {cents, keptByEmployee: true}` hinaus, sonst bleibt die Nutzlast
+  /// Byte fuer Byte wie bisher. Der Server nimmt es nur bei Mitarbeiter-
+  /// Trinkgeld, bar und sofort erhalten. Vorbelegung: [posTipKeptByDefault].
   Future<KasseneckReceipt> sell({
     required List<KasseneckItem> items,
     required List<KeckPaymentInput> payments,
     int? tipCents,
+    bool tipKeptByEmployee = false,
     List<String>? customerLines,
     List<String>? legalNotices,
+    String? drawerId,
   }) async {
     const name = Aufrufe.createReceipt;
     if (items.isEmpty) {
@@ -394,6 +409,7 @@ class RegisterReceiptClient {
     }
     final fehler = paymentsError(payments, cancellation: false);
     if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
+    if (drawerId != null) _ladeKennung(name, drawerId);
 
     final daten = await _signiertRufen(
       name,
@@ -401,9 +417,10 @@ class RegisterReceiptClient {
         'receiptType': 'standard',
         'items': items.map((p) => p.toJson()).toList(),
         'payments': [for (final z in payments) z.toJson()],
-        if (tipCents != null && tipCents > 0) 'tip': tipCents,
+        if (tipCents != null && tipCents > 0) 'tip': tipKeptByEmployee ? {'cents': tipCents, 'keptByEmployee': true} : tipCents,
         if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
         if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
+        'drawerId': ?drawerId,
       },
     );
     // Ab hier ist der Beleg signiert: wer ihn nicht lesen kann, bekommt
@@ -489,6 +506,19 @@ class RegisterReceiptClient {
   /// `restock`; Zeilen ohne `articleId` bucht er nie. Ein unbekannter Wert
   /// wirft, bevor etwas hinausgeht. Ohne Wahl ist die Nutzlast dieselbe wie
   /// vor 10.2.
+  ///
+  /// [drawerId]: Lade, in deren Kassenstand der Storno zaehlt; wie bei [sell].
+  ///
+  /// [refundTip] ist die Antwort auf „Trinkgeld auch zurueckgeben?"
+  /// (Schichten-Spec, Nachtrag 5): `false` ohne das Mitarbeiter-Trinkgeld
+  /// (ohne [items] = alle Restmengen ausser dem Trinkgeld), `true` mit [items]
+  /// nimmt das offene Trinkgeld dazu; fehlt = wie bisher. [tipRefundSource]
+  /// (`drawer` | `employee`, aus `tipRefundSources`) nur bei Barrueckgabe
+  /// (`asksTipRefundSource`), nie zusammen mit `refundTip: false`; `refundTip:
+  /// true` ohne Quelle heisst bei Barrueckgabe: aus der Lade. Die Positionen
+  /// dazu rechnet `cancellationItemsForTip`. An einem Beleg mit Wertgutschein
+  /// gibt es `false` nicht (`tip_keep_not_possible_with_voucher`,
+  /// `asksRefundTip`).
   Future<CancelReceiptResult> cancelReceipt({
     required String originalReceiptId,
     required String reason,
@@ -498,6 +528,9 @@ class RegisterReceiptClient {
     String? note,
     List<KeckPaymentInput>? payments,
     KasseneckReceipt? original,
+    String? drawerId,
+    bool? refundTip,
+    String? tipRefundSource,
   }) async {
     const name = Aufrufe.cancelReceipt;
     if (originalReceiptId.trim().isEmpty) {
@@ -532,6 +565,8 @@ class RegisterReceiptClient {
           name, 'original (${original.receiptId}) ist nicht der Beleg originalReceiptId ($originalReceiptId)', 'request');
     }
     if (payments != null) assertCardRefunds(payments, original);
+    if (drawerId != null) _ladeKennung(name, drawerId);
+    final trinkgeld = tipChoicePayload(name, refundTip: refundTip, tipRefundSource: tipRefundSource);
 
     final daten = await _signiertRufen(
       name,
@@ -542,6 +577,8 @@ class RegisterReceiptClient {
         'returnDisposition': ?nutzlast.returnDisposition,
         if (note != null && note.isNotEmpty) 'note': note,
         if (payments != null) 'payments': [for (final z in payments) z.toJson()],
+        'drawerId': ?drawerId,
+        ...trinkgeld,
       },
     );
 
@@ -839,6 +876,191 @@ class RegisterReceiptClient {
     pruefeSchluessel(name, p);
     stornoPruefen(name, p);
     return zaehlungMitPosition(name, await transport.call(name, params: p));
+  }
+
+  // ---- Schicht, Kassenstand und Lade-Protokoll (seit 11.1) ------------------
+  //
+  // Zwilling von `pos/schicht.ts` im JS-Paket (npm 1.9.0), gleiche Namen. Die
+  // sechs Aufrufe gibt es nur ueber den Kassenweg. Rechte am Server: `shift`
+  // (Schicht oeffnen und schliessen, Bericht), `cashMove` (Ein- und
+  // Auszahlungen), `cashView` (Soll, Ist und Differenz sehen; ohne dieses
+  // Recht wird blind gezaehlt), `drawer` (Lade von Hand oeffnen).
+  // [getMyDrawerState] braucht kein Recht und nennt alle vier.
+  //
+  // **Schreiben mit Idempotenzschluessel:** [openMyShift], [recordMyCashMovement]
+  // und [closeMyShift] verlangen `idempotencyKey`, jeder Eintrag von
+  // [logMyDrawerOpenings] ebenso. Bei unklarem Ausgang (`isOutcomeUnknown`)
+  // denselben Vorgang mit **demselben** Schluessel noch einmal senden; er wirkt
+  // genau einmal. Ein neuer Schluessel ([newIdempotencyKey]) gehoert nur zu
+  // einem neuen Vorgang.
+  //
+  // Vor dem Senden geprueft wird nur, was ohne Netz sicher falsch ist: fehlende
+  // Kennungen, ein fehlender Schluessel, eine leere Liste, eine Zahl ausserhalb
+  // des sicheren Ganzzahlbereichs. Alles Fachliche (Katalog, Pflichtangaben je
+  // Art, Kassenstand, Anspruch) prueft der Server und meldet es mit seinem Code.
+  //
+  // Bon drucken: die Bon-Daten der Antwort (`receipt` von [closeMyShift],
+  // [getMyShiftReport], [recordMyCashMovement]) in `shiftReceiptLayout` bzw.
+  // `cashMovementLayout` geben und das `ReceiptLayout` wie jeden Beleg setzen.
+
+  /// Stand der Lade (`getMyDrawerState`): Rechte, offene Schicht,
+  /// Trinkgeld-Ansprueche und (mit `cashView`) Soll und letzte Oeffnungen.
+  /// Ohne [drawerId] gilt die Hauptlade der Kasse ([cashregisterId], sonst die
+  /// Kasse der Anmeldung); ein leeres [drawerId] gilt wie keines.
+  Future<DrawerState> getMyDrawerState({String? drawerId, String? cashregisterId}) async {
+    const name = Aufrufe.getMyDrawerState;
+    final daten = await transport.call(name, params: {
+      if (drawerId != null && drawerId.isNotEmpty) 'drawerId': drawerId,
+      'cashregisterId': ?cashregisterId,
+    });
+    return ladeStand(name, daten);
+  }
+
+  /// Schicht oeffnen (`openMyShift`, Recht `shift`): gezaehltes Startgeld
+  /// ([openingFloatCents], `0` erlaubt, mit [denominations] dazu) **oder** den
+  /// Bestand der Vorschicht ungezaehlt uebernehmen ([takeOver]). Die Summe der
+  /// Stueckelung prueft [sumDenominations].
+  Future<OpenShiftResult> openMyShift({
+    required String idempotencyKey,
+    required String drawerId,
+    int? openingFloatCents,
+    Map<String, int>? denominations,
+    bool? takeOver,
+  }) async {
+    const name = Aufrufe.openMyShift;
+    final p = <String, dynamic>{
+      'idempotencyKey': idempotencyKey,
+      'drawerId': drawerId,
+      'openingFloatCents': ?openingFloatCents,
+      'denominations': ?denominations,
+      'takeOver': ?takeOver,
+    };
+    kennung(name, 'drawerId', drawerId);
+    pruefeSchluessel(name, p);
+    pruefeGanzzahlen(name, p);
+    return geoeffnetLesen(name, await transport.call(name, params: p));
+  }
+
+  /// Ein- oder Auszahlung buchen (`recordMyCashMovement`, Recht `cashMove`);
+  /// die Antwort traegt die Bon-Daten „Kassenbewegung“. [type] aus
+  /// [manualMovementTypes]; [amountCents] positiv, das Vorzeichen setzt der
+  /// Server nach der Art. Pflichtangaben je Art: [note] bei `other_in` und
+  /// `other_out` (hoechstens 200 Zeichen), [recipientId] bei `tip_payout`,
+  /// [targetDrawerId] bei `transfer_out`. [location] bei `change_in` und
+  /// `cash_drop` ist freiwillig (aus [cashLocations]).
+  Future<CashMovementResult> recordMyCashMovement({
+    required String idempotencyKey,
+    required String drawerId,
+    required String type,
+    required int amountCents,
+    String? location,
+    String? note,
+    String? recipientId,
+    String? targetDrawerId,
+  }) async {
+    const name = Aufrufe.recordMyCashMovement;
+    final p = <String, dynamic>{
+      'idempotencyKey': idempotencyKey,
+      'drawerId': drawerId,
+      'type': type,
+      'amountCents': amountCents,
+      'location': ?location,
+      'note': ?note,
+      'recipientId': ?recipientId,
+      'targetDrawerId': ?targetDrawerId,
+    };
+    kennung(name, 'drawerId', drawerId);
+    // Nur pruefen, wenn gesetzt: Bank/Tresor fragt die Kasse nicht mehr ab.
+    if (location != null && !cashLocations.contains(location)) {
+      throw anfragefehler(name, 'location muss ${cashLocations.join(' oder ')} sein');
+    }
+    pruefeSchluessel(name, p);
+    pruefeGanzzahlen(name, p);
+    return gebuchtLesen(name, await transport.call(name, params: p));
+  }
+
+  /// Oeffnungen der Lade melden (`logMyDrawerOpenings`), auch nachgesendete;
+  /// doppelt gemeldete zaehlen einmal. 1 bis 50 [entries], jeder mit eigenem
+  /// Schluessel.
+  Future<DrawerOpeningsResult> logMyDrawerOpenings({
+    required String drawerId,
+    required List<DrawerOpeningEntry> entries,
+  }) async {
+    const name = Aufrufe.logMyDrawerOpenings;
+    kennung(name, 'drawerId', drawerId);
+    if (entries.isEmpty) throw anfragefehler(name, 'entries muss 1-50 Eintraege haben');
+    for (final (i, e) in entries.indexed) {
+      if (e.idempotencyKey.trim().isEmpty) throw anfragefehler(name, 'entries[$i].idempotencyKey fehlt');
+    }
+    final p = <String, dynamic>{
+      'drawerId': drawerId,
+      'entries': [for (final e in entries) e.toJson()],
+    };
+    pruefeGanzzahlen(name, p);
+    return gemeldetLesen(name, await transport.call(name, params: p));
+  }
+
+  /// Bericht der Schicht (`getMyShiftReport`): Schicht, Bewegungen und
+  /// Bon-Daten (X-Bon, bei geschlossener Schicht der Z-Bon).
+  Future<ShiftReport> getMyShiftReport({required String shiftId}) async {
+    const name = Aufrufe.getMyShiftReport;
+    kennung(name, 'shiftId', shiftId);
+    return berichtLesen(name, await transport.call(name, params: {'shiftId': shiftId}));
+  }
+
+  /// Schicht schliessen (`closeMyShift`, Recht `shift`). [ShiftCloseResult.recount]
+  /// heisst: bitte noch einmal zaehlen und erneut senden (kein Fehler); nach dem
+  /// zweiten Zaehlen schliesst der Server, bei grosser Abweichung nur mit
+  /// [comment] (`comment_required`). [attempt] wird angenommen, wirkt aber nicht:
+  /// den Versuch zaehlt der Server (hoechstens zwei). [tipPayouts]: hoechstens
+  /// der offene Anspruch ([DrawerState.tipClaims]). [afterCount]: nach dem
+  /// Zaehlen Geld entnehmen (`cash_drop`) oder einlegen (`change_in`),
+  /// Betrag positiv; entnehmen hoechstens den gezaehlten Betrag
+  /// (`cash_movement_exceeds_balance`), ein Betrag ueber 0 braucht das Recht
+  /// `cashMove` (`after_count_not_permitted`). Gebucht wird nur beim
+  /// tatsaechlichen Schliessen; die Antwort traegt dann
+  /// [ShiftCloseResult.afterCountReceipt] („Bon fürs Kuvert“). Die Art prueft
+  /// der Server. [checkOnly]: nur pruefen, nicht schliessen – dieselbe Pruefung
+  /// wie beim Schliessen, damit die Kasse vor „Geld entnehmen“ weiss, ob
+  /// nachgezaehlt (`recount`) oder begruendet (`comment_required`) werden muss;
+  /// [ShiftCloseResult.ready], wenn das Schliessen mit diesem Betrag ginge.
+  /// Gebucht wird nichts (auch kein [afterCount]). Die Zaehlung zaehlt als einer
+  /// der zwei Versuche; schliesst danach derselbe Betrag, gilt er als dieselbe
+  /// Zaehlung. Nur `true` geht hinaus.
+  Future<ShiftCloseResult> closeMyShift({
+    required String idempotencyKey,
+    required String shiftId,
+    required int countedCents,
+    Map<String, int>? denominations,
+    int? attempt,
+    String? comment,
+    List<TipPayout>? tipPayouts,
+    AfterCount? afterCount,
+    bool checkOnly = false,
+  }) async {
+    const name = Aufrufe.closeMyShift;
+    final p = <String, dynamic>{
+      'idempotencyKey': idempotencyKey,
+      'shiftId': shiftId,
+      'countedCents': countedCents,
+      'denominations': ?denominations,
+      'attempt': ?attempt,
+      'comment': ?comment,
+      if (tipPayouts != null) 'tipPayouts': [for (final a in tipPayouts) a.toJson()],
+      if (afterCount != null) 'afterCount': afterCount.toJson(),
+      if (checkOnly) 'checkOnly': true,
+    };
+    kennung(name, 'shiftId', shiftId);
+    pruefeSchluessel(name, p);
+    pruefeGanzzahlen(name, p);
+    return abschlussLesen(name, await transport.call(name, params: p));
+  }
+
+  /// Die Lade eines Belegs: ein nicht leerer Text, sonst wirft der Aufruf vor
+  /// dem Senden (der Beleg zaehlte sonst in der falschen Lade).
+  static String _ladeKennung(String name, String wert) {
+    if (wert.trim().isEmpty) throw anfragefehler(name, 'drawerId muss eine Kennung sein (oder weglassen)');
+    return wert;
   }
 
   Future<List<T>> _liste<T>(String name, String feld, T Function(Map<String, dynamic>) lesen) async {

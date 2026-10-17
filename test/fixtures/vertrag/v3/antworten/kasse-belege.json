@@ -2,7 +2,7 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "sha256": "aad7147db385e4a6d88ba5fb59d24c04e7e1f01195778aa70ccdc68fb90adcd7",
-    "inputsSha256": "055d351ec81c75c91de099983372701eda34a9b8f53487ea30a21bca2a5d465f",
+    "inputsSha256": "95fd7b1f3704811d3a3f79b1dbb6aea668e8c0e3a663e5b0ca9c07f2e11e37b5",
     "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
     "inputs": [
       "docs/api/fehlercodes.json",

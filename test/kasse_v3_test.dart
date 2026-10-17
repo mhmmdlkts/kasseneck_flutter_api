@@ -47,8 +47,17 @@ const _inventur = [
   'listMyStocktakes', 'listMyStocktakeItems', 'listMyStocktakeCounts', 'recordMyStocktakeCount', 'voidMyStocktakeCount',
 ];
 
+/// Schicht, Kassenstand und Lade-Protokoll (seit 11.1). Die Modelle prueft
+/// `kasse_schicht_test.dart` verlustfrei ueber `toJson`.
+const _schicht = [
+  'getMyDrawerState', 'openMyShift', 'recordMyCashMovement', 'logMyDrawerOpenings', 'getMyShiftReport', 'closeMyShift',
+];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
+  'openMyShift/key_conflict':
+      'denominations: null am Draht; ein Dart-Parameter ohne Wert geht nie als null hinaus (der Code kommt in kasse_schicht_test.dart an)',
+  'closeMyShift/payouts_invalid': 'Auszahlung ohne registerUserId; TipPayout verlangt die Kennung schon im Typ',
   'createReceipt/start_receipt': 'Startbeleg: Panel bzw. API-Schlüssel, nicht der Verkauf der Kasse',
   'createReceipt/receipt_type_unknown': 'receiptType ist hier fest standard',
   'createReceipt/tip_on_start': 'Startbeleg mit Trinkgeld: Weg des API-Schlüssels',
@@ -58,6 +67,7 @@ const _nichtDieserWeg = {
   'cancelReceipt/payments_conflict': 'paymentMethod am Storno, sendet dieser Weg nie',
   'cancelReceipt/card_data_without_card': 'cardPaymentId am Storno, sendet dieser Weg nie',
   'cancelReceipt/items_no_array': 'items ist hier immer eine Liste (Stornoposition)',
+  'cancelReceipt/tip_source_invalid': 'eine Quelle ausserhalb von tipRefundSources wirft vor dem Senden (storno_trinkgeld_test.dart)',
   'setMyCashregisterStockLocation/data_missing':
       'ohne stockLocationId: null geht als leerer Text hinaus (Zuruecksetzen), weglassen kann dieser Weg nicht',
 };
@@ -291,6 +301,70 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
           countId: _s(p['countId']),
           reason: _s(p['reason']),
         );
+      case 'getMyDrawerState':
+        return belege.getMyDrawerState(
+            drawerId: p['drawerId'] as String?, cashregisterId: p['cashregisterId'] as String?);
+      case 'openMyShift':
+        return belege.openMyShift(
+          idempotencyKey: _s(p['idempotencyKey']),
+          drawerId: _s(p['drawerId']),
+          openingFloatCents: p['openingFloatCents'] as int?,
+          denominations: (p['denominations'] as Map?)?.cast<String, int>(),
+          takeOver: p['takeOver'] as bool?,
+        );
+      case 'recordMyCashMovement':
+        return belege.recordMyCashMovement(
+          idempotencyKey: _s(p['idempotencyKey']),
+          drawerId: _s(p['drawerId']),
+          type: _s(p['type']),
+          amountCents: p['amountCents'] as int,
+          location: p['location'] as String?,
+          note: p['note'] as String?,
+          recipientId: p['recipientId'] as String?,
+          targetDrawerId: p['targetDrawerId'] as String?,
+        );
+      case 'logMyDrawerOpenings':
+        return belege.logMyDrawerOpenings(
+          drawerId: _s(p['drawerId']),
+          entries: [
+            for (final e in (p['entries'] as List? ?? const []).cast<Map<String, dynamic>>())
+              DrawerOpeningEntry(
+                idempotencyKey: _s(e['idempotencyKey']),
+                reason: _s(e['reason']),
+                ok: e['ok'] == true,
+                deviceTime: e['deviceTime'] as Object,
+                note: e['note'] as String?,
+                receiptId: e['receiptId'] as String?,
+                error: e['error'] as String?,
+                drawerId: e['drawerId'] as String?,
+                operator: e['operator'] == null
+                    ? null
+                    : DrawerOpeningOperator(
+                        registerUserId: _s((e['operator'] as Map)['registerUserId']),
+                        name: (e['operator'] as Map)['name'] as String?,
+                      ),
+              ),
+          ],
+        );
+      case 'getMyShiftReport':
+        return belege.getMyShiftReport(shiftId: _s(p['shiftId']));
+      case 'closeMyShift':
+        return belege.closeMyShift(
+          idempotencyKey: _s(p['idempotencyKey']),
+          shiftId: _s(p['shiftId']),
+          countedCents: p['countedCents'] as int,
+          denominations: (p['denominations'] as Map?)?.cast<String, int>(),
+          attempt: p['attempt'] as int?,
+          comment: p['comment'] as String?,
+          tipPayouts: (p['tipPayouts'] as List?)
+              ?.cast<Map<String, dynamic>>()
+              .map((a) => TipPayout(registerUserId: _s(a['registerUserId']), cents: a['cents'] as int))
+              .toList(),
+          afterCount: p['afterCount'] == null
+              ? null
+              : AfterCount(type: _s((p['afterCount'] as Map)['type']), amountCents: (p['afterCount'] as Map)['amountCents'] as int),
+          checkOnly: p['checkOnly'] as bool? ?? false,
+        );
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();
         return PosSettingsClient(transport, deviceId: _s(p['deviceId'])).load();
@@ -330,7 +404,8 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.sell(
           items: [for (final i in (p['items'] as List? ?? const [])) KasseneckItem.fromJson((i as Map).cast())],
           payments: [for (final z in (p['payments'] as List? ?? const [])) _zahlung(z as Map)],
-          tipCents: p['tip'] as int?,
+          tipCents: p['tip'] is Map ? (p['tip'] as Map)['cents'] as int : p['tip'] as int?,
+          tipKeptByEmployee: p['tip'] is Map && (p['tip'] as Map)['keptByEmployee'] == true,
         );
       case 'cancelReceipt':
         return belege.cancelReceipt(
@@ -341,6 +416,8 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
               ? null
               : [for (final i in p['items'] as List) (index: (i as Map)['index'] as int, quantity: i['quantity'] as int)],
           payments: p['payments'] == null ? null : [for (final z in p['payments'] as List) _zahlung(z as Map)],
+          refundTip: p['refundTip'] as bool?,
+          tipRefundSource: p['tipRefundSource'] as String?,
         );
     }
     throw StateError('Endpunkt $endpunkt ohne Aufruf');
@@ -438,14 +515,14 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   if (_anmeldung.contains(endpunkt)) {
     expect(isRegisterError(lauf.fehler, code as String), isTrue, reason: '$name: $code in registerErrorCodes');
   }
-  if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt)) {
+  if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt) || _schicht.contains(endpunkt)) {
     expect(isPosError(lauf.fehler, code as String), isTrue, reason: '$name: $code in posErrorCodes');
   }
 }
 
 void main() {
   group('jeder Fall des Kassenwegs', () {
-    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur]) {
+    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht]) {
       test(endpunkt, () async {
         var gelaufen = 0;
         for (final fall in _faelle(endpunkt)) {
@@ -470,8 +547,8 @@ void main() {
       }
     });
 
-    test('alle 33 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
-      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur};
+    test('alle 39 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht};
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });

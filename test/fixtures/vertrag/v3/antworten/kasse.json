@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "bf1e7c100e328517c72d5badf31904183efe22d1fddec308e2fe2722068854bc",
+      "sha256": "439a8bfac209333ab769a4c7133507a1730267eff4021cc9bdcf39d25805b94d",
       "head": [],
-      "inputsSha256": "35ddd752c630d21f6c0927294d7436d3b9e5ae280f489016201355ebb914c155",
+      "inputsSha256": "3b6c5c73af674b969019c273f50068879923cee243dafa490e0c7335107c4e79",
       "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "ed6ffc06c1ea7f29a4dacfdf1732057aea3fb2c4a4d3d066eefdca7c20752cf6",
+      "sha256": "6732e8ca04bca3d4bc7574bb382613f966053e239e0c2c53126d99613d79dd18",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "2de02d55d43a8d4c691137ebc6a5b41dee4cc5141d1b45f3aa886fdcf69a0862",
+      "inputsSha256": "88ae97429f7c74025f6549ac46a0db291a0407bd070e875cc93c2fc3d3f1d6d3",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -8018,6 +8018,407 @@
           }
         },
         {
+          "case": "sale_tip_kept",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "receiptType": "standard",
+            "cashregisterId": "KASSE1",
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20
+              }
+            ],
+            "payments": [
+              {
+                "method": "cash",
+                "amountCents": 800
+              }
+            ],
+            "tip": {
+              "cents": 160,
+              "keptByEmployee": true
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "is_small_business": false,
+              "company": "Café Welt",
+              "phone": "+43 1 234 56",
+              "street": "Hauptplatz 1",
+              "zip": "1010",
+              "city": "Wien",
+              "footer1": "Danke für Ihren Besuch",
+              "footer2": null,
+              "footer3": null,
+              "footer4": null,
+              "logo_url": "https://example.invalid/logo.png",
+              "kreiseck_logo": false,
+              "thanks_message": "Bis bald",
+              "receipt": {
+                "counter": 2,
+                "receiptType": "standard",
+                "zeroKind": null,
+                "receiptId": "KASSE1-ID-2",
+                "cashregisterId": "KASSE1",
+                "timeStamp": "2026-09-26T10:00:00",
+                "vouchers": [],
+                "paymentMethod": "cash",
+                "customerDetails": null,
+                "legalMessage": null,
+                "customProjectId": null,
+                "creditCardProvider": null,
+                "cardPaymentId": null,
+                "cardPaymentData": null,
+                "amountRateStandard": 6.4,
+                "amountRateReduced1": 0,
+                "amountRateReduced2": 0,
+                "amountRateZero": 1.6,
+                "amountRateSpecial": 0,
+                "turnoverCounterAES256ICM": "XVyQJUiWDiM4NjAKsiguYw==",
+                "signaturePreviousReceipt": "<signatur>",
+                "certificateSerialNumber": "ABC123",
+                "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000019d51dc2",
+                "payments": [
+                  {
+                    "id": "p1",
+                    "method": "cash",
+                    "amountCents": 800
+                  }
+                ],
+                "sig": "<signatur>",
+                "signatureSuccess": true,
+                "qr": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_1,60_0,00_XVyQJUiW_ABC123_<verkettung>_<signatur>",
+                "operator": {
+                  "uid": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "tipCents": 160,
+                "headerVersionId": "auto1",
+                "layoutRuleset": 2,
+                "items": [
+                  {
+                    "name": "Kaffee",
+                    "amount": 2,
+                    "priceOneCents": 320,
+                    "vat": 20,
+                    "priceOne": 3.2
+                  },
+                  {
+                    "kind": "tip",
+                    "name": "Trinkgeld Personal",
+                    "amount": 1,
+                    "quantity": 1,
+                    "priceOne": 1.6,
+                    "priceOneCents": 160,
+                    "unitPriceCents": 160,
+                    "vat": 0,
+                    "vatRate": 0,
+                    "paymentMethod": "cash",
+                    "recipient": {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner"
+                    },
+                    "receivedImmediately": true,
+                    "keptByEmployee": true
+                  }
+                ]
+              },
+              "taxNumber": "12-345/6789",
+              "vatId": "ATU12345678",
+              "headerVersionId": "auto1",
+              "registrationInfo": null,
+              "testCashregister": false,
+              "testSignature": true,
+              "logo_scale": "M",
+              "layout": {
+                "paperSize": "mm80",
+                "ruleset": 2,
+                "lines": [
+                  {
+                    "kind": "banner",
+                    "text": "TESTSIGNATUR — kein gültiger Beleg",
+                    "tone": "warning"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Café Welt",
+                    "align": "center",
+                    "bold": true
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Hauptplatz 1",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "1010 Wien",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "ATU12345678",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "+43 1 234 56",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Datum:",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "26.09.2026 10:00:00",
+                        "width": 8,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Kassen-ID:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "KASSE1",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Beleg-ID:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "KASSE1-ID-2",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "2  x Kaffee je 3,20",
+                        "width": 7,
+                        "align": "left"
+                      },
+                      {
+                        "text": "6,40 A",
+                        "width": 5,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Trinkgeld Personal",
+                        "width": 8,
+                        "align": "left"
+                      },
+                      {
+                        "text": "1,60 D",
+                        "width": 4,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "MwSt%",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "MwSt",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "Netto",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "Brutto",
+                        "width": 2,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "A 20%",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "1,07",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "5,33",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "6,40",
+                        "width": 2,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "D 0%",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "0,00",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "1,60",
+                        "width": 3,
+                        "align": "left"
+                      },
+                      {
+                        "text": "1,60",
+                        "width": 2,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "rule",
+                    "char": "-"
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Gesamt:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "8,00 €",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Zahlungsart:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "Barzahlung",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "qr",
+                    "data": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_6,40_0,00_0,00_1,60_0,00_XVyQJUiW_ABC123_<verkettung>_<signatur>"
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Bis bald",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Danke für Ihren Besuch",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "banner",
+                    "text": "TESTSIGNATUR — kein gültiger Beleg",
+                    "tone": "warning"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
           "case": "preflight_options",
           "method": "OPTIONS",
           "caller": "other",
@@ -8802,6 +9203,231 @@
                 ]
               }
             }
+          }
+        },
+        {
+          "case": "success_without_tip",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "originalReceiptId": "KASSE1-ID-7",
+            "reason": "input_error",
+            "refundTip": false
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cancellationOf": {
+                "receiptId": "KASSE1-ID-7",
+                "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+                "timeStamp": "2026-09-26T09:30:00"
+              },
+              "remaining": [
+                0,
+                0,
+                1
+              ],
+              "receipt": {
+                "receiptId": "KASSE1-ID-8",
+                "cashregisterId": "KASSE1",
+                "receiptType": "cancellation",
+                "counter": 8,
+                "timeStamp": "2026-09-26T10:00:00",
+                "legalMessage": "STORNO zu KASSE1-ID-7 – Fehleingabe",
+                "paymentMethod": "cash",
+                "cancellationOf": {
+                  "receiptId": "KASSE1-ID-7",
+                  "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+                  "timeStamp": "2026-09-26T09:30:00"
+                },
+                "cancellationReason": "input_error",
+                "operator": {
+                  "uid": "ru_chef",
+                  "name": "Anna Chef"
+                },
+                "qr": "_R1-AT0_KASSE1_KASSE1-ID-8_...",
+                "items": [
+                  {
+                    "name": "Kaffee",
+                    "quantity": 2,
+                    "unitPriceCents": -320,
+                    "vatRate": 20
+                  },
+                  {
+                    "name": "Kuchen",
+                    "quantity": 1,
+                    "unitPriceCents": -450,
+                    "vatRate": 10
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "case": "success_tip_employee",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "originalReceiptId": "KASSE1-ID-7",
+            "reason": "input_error",
+            "refundTip": true,
+            "tipRefundSource": "employee"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cancellationOf": {
+                "receiptId": "KASSE1-ID-7",
+                "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+                "timeStamp": "2026-09-26T09:30:00"
+              },
+              "remaining": [
+                0,
+                0,
+                0
+              ],
+              "receipt": {
+                "receiptId": "KASSE1-ID-8",
+                "cashregisterId": "KASSE1",
+                "receiptType": "cancellation",
+                "counter": 8,
+                "timeStamp": "2026-09-26T10:00:00",
+                "legalMessage": "STORNO zu KASSE1-ID-7 – Fehleingabe",
+                "paymentMethod": "cash",
+                "cancellationOf": {
+                  "receiptId": "KASSE1-ID-7",
+                  "fullReceiptId": "INVALID_EXAMPLE_A18474AB",
+                  "timeStamp": "2026-09-26T09:30:00"
+                },
+                "cancellationReason": "input_error",
+                "operator": {
+                  "uid": "ru_chef",
+                  "name": "Anna Chef"
+                },
+                "qr": "_R1-AT0_KASSE1_KASSE1-ID-8_...",
+                "items": [
+                  {
+                    "name": "Kaffee",
+                    "quantity": 2,
+                    "unitPriceCents": -320,
+                    "vatRate": 20
+                  },
+                  {
+                    "name": "Kuchen",
+                    "quantity": 1,
+                    "unitPriceCents": -450,
+                    "vatRate": 10
+                  },
+                  {
+                    "name": "Trinkgeld Personal",
+                    "quantity": 1,
+                    "unitPriceCents": -150,
+                    "vatRate": 0,
+                    "kind": "tip",
+                    "recipient": {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner"
+                    },
+                    "paymentMethod": "cash",
+                    "receivedImmediately": true,
+                    "keptByEmployee": true
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "case": "tip_conflict",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "originalReceiptId": "KASSE1-ID-7",
+            "reason": "input_error",
+            "items": [
+              {
+                "index": 2,
+                "quantity": 1
+              }
+            ],
+            "refundTip": false
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Trinkgeld soll nicht zurück, steht aber im Storno.",
+            "data": {
+              "code": "tip_refund_conflict"
+            },
+            "code": "tip_refund_conflict"
+          }
+        },
+        {
+          "case": "tip_voucher",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "originalReceiptId": "KASSE1-ID-7",
+            "reason": "input_error",
+            "refundTip": false
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Beleg mit Wertgutschein: das Trinkgeld lässt sich nicht zurückbehalten – es wird mitstorniert.",
+            "data": {
+              "code": "tip_keep_not_possible_with_voucher"
+            },
+            "code": "tip_keep_not_possible_with_voucher"
+          }
+        },
+        {
+          "case": "tip_source_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "originalReceiptId": "KASSE1-ID-7",
+            "reason": "input_error",
+            "tipRefundSource": "tasche"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Trinkgeld-Quelle ist ungültig (lade oder mitarbeiter).",
+            "data": {
+              "code": "invalid_tip_refund_source"
+            },
+            "code": "invalid_tip_refund_source"
           }
         },
         {
@@ -16288,6 +16914,5389 @@
             "countId": "zc1",
             "reason": "Doppelt gezählt",
             "idempotencyKey": "s-zk1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+            "data": {
+              "code": "idempotency_conflict"
+            },
+            "code": "idempotency_conflict"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getMyDrawerState": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "drawerId",
+                  "message": "drawerId oder cashregisterId angeben."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "drawer_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Lade nicht gefunden.",
+            "data": {
+              "code": "drawer_not_found"
+            },
+            "code": "drawer_not_found"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
+                  "carriedOverCents": 0,
+                  "openCents": 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": false,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                }
+              },
+              "longOpenWarning": false,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
+                  "carriedOverCents": 0,
+                  "openCents": 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_drawer_decommissioned",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_alt"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
+                  "carriedOverCents": 0,
+                  "openCents": 400
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": true,
+                "cashView": true,
+                "drawer": true
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": 15000,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "countedCents": null,
+                "comment": null,
+                "blind": null,
+                "suggestedFloatCents": 15000,
+                "runningTotals": {
+                  "cashSalesCents": 9400,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 3200
+                    }
+                  ],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 3,
+                  "cancellationCount": 0,
+                  "cashInCents": 5000,
+                  "cashOutCents": 0,
+                  "tips": [
+                    {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner",
+                      "receivedImmediatelyCents": 400,
+                      "retainedCents": 0,
+                      "paidOutCents": 0,
+                      "refundedByEmployeeCents": 0
+                    }
+                  ],
+                  "openingsWithoutSale": 1
+                },
+                "expectedCents": 29400,
+                "differenceCents": null,
+                "reconciliation": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
+                  "carriedOverCents": 0,
+                  "openCents": 400
+                }
+              ],
+              "suggestedFloatCents": null,
+              "expectedCents": 29400,
+              "recentOpenings": [
+                {
+                  "at": "2026-09-26T07:50:00.000Z",
+                  "deviceTime": "2026-09-26T07:49:50.000Z",
+                  "reason": "change",
+                  "by": {
+                    "name": "Anna Chef"
+                  },
+                  "ok": true
+                },
+                {
+                  "at": "2026-09-26T07:40:00.000Z",
+                  "deviceTime": "2026-09-26T07:40:00.000Z",
+                  "reason": "sale",
+                  "by": {
+                    "name": "Ben Kellner"
+                  },
+                  "ok": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_manager_tip_only_immediate",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": true,
+                "cashView": true,
+                "drawer": true
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": 15000,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "countedCents": null,
+                "comment": null,
+                "blind": null,
+                "suggestedFloatCents": 15000,
+                "runningTotals": {
+                  "cashSalesCents": 9400,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 3200
+                    }
+                  ],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 3,
+                  "cancellationCount": 0,
+                  "cashInCents": 5000,
+                  "cashOutCents": 0,
+                  "tips": [
+                    {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner",
+                      "receivedImmediatelyCents": 213,
+                      "retainedCents": 0,
+                      "paidOutCents": 0,
+                      "refundedByEmployeeCents": 0
+                    }
+                  ],
+                  "openingsWithoutSale": 1
+                },
+                "expectedCents": 29400,
+                "differenceCents": null,
+                "reconciliation": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 400
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 213,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
+                  "carriedOverCents": 0,
+                  "openCents": 400
+                }
+              ],
+              "suggestedFloatCents": null,
+              "expectedCents": 29400,
+              "recentOpenings": [
+                {
+                  "at": "2026-09-26T07:50:00.000Z",
+                  "deviceTime": "2026-09-26T07:49:50.000Z",
+                  "reason": "change",
+                  "by": {
+                    "name": "Anna Chef"
+                  },
+                  "ok": true
+                },
+                {
+                  "at": "2026-09-26T07:40:00.000Z",
+                  "deviceTime": "2026-09-26T07:40:00.000Z",
+                  "reason": "sale",
+                  "by": {
+                    "name": "Ben Kellner"
+                  },
+                  "ok": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_cashier_tip_taken",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "cents": 300
+                },
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 150
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "receivedImmediatelyCents": 0,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
+                  "carriedOverCents": 0,
+                  "openCents": 300
+                },
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 150,
+                  "paidOutCents": 250,
+                  "refundedByEmployeeCents": 0,
+                  "carriedOverCents": 0,
+                  "openCents": 150
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_cashier_tip_carried_over",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 1500
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 900,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 0,
+                  "carriedOverCents": 600,
+                  "openCents": 1500
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_cashier_tip_self_refunded",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": false,
+                "cashView": false,
+                "drawer": false
+              },
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "longOpenWarning": true,
+              "tipClaims": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "cents": 600
+                }
+              ],
+              "tips": [
+                {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "receivedImmediatelyCents": 400,
+                  "retainedCents": 0,
+                  "paidOutCents": 0,
+                  "refundedByEmployeeCents": 200,
+                  "carriedOverCents": 0,
+                  "openCents": 600
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_manager_without_shift",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "lade_bar",
+                "name": "Bar",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": true,
+                "cashView": true,
+                "drawer": true
+              },
+              "shift": null,
+              "longOpenWarning": false,
+              "tipClaims": [],
+              "tips": [],
+              "suggestedFloatCents": 3000,
+              "expectedCents": null,
+              "recentOpenings": []
+            }
+          }
+        },
+        {
+          "case": "success_manager_change_in",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "lade_bar",
+                "name": "Bar",
+                "shiftMode": true,
+                "cashregisterId": "KASSE1",
+                "changeFloatCents": 15000
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": true,
+                "cashView": true,
+                "drawer": true
+              },
+              "shift": null,
+              "longOpenWarning": false,
+              "tipClaims": [],
+              "tips": [],
+              "suggestedFloatCents": 15000,
+              "suggestedFromShiftNumber": 1,
+              "expectedCents": null,
+              "recentOpenings": []
+            }
+          }
+        },
+        {
+          "case": "success_owner_new_main_drawer",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawer": {
+                "id": "haupt_KASSE1",
+                "name": "Hauptlade",
+                "shiftMode": false,
+                "cashregisterId": "KASSE1"
+              },
+              "rights": {
+                "shift": true,
+                "cashMove": true,
+                "cashView": true,
+                "drawer": true
+              },
+              "shift": null,
+              "longOpenWarning": false,
+              "tipClaims": [],
+              "tips": [],
+              "suggestedFloatCents": 0,
+              "expectedCents": null,
+              "recentOpenings": []
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "openMyShift": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Vorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "openingFloatCents": 2800,
+            "idempotencyKey": "o"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: drawerId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "drawerId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "drawer_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_gibtsnicht",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Lade nicht gefunden.",
+            "data": {
+              "code": "drawer_not_found"
+            },
+            "code": "drawer_not_found"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_terrasse",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "drawer_decommissioned",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_alt",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Lade ist stillgelegt.",
+            "data": {
+              "code": "drawer_inactive"
+            },
+            "code": "drawer_inactive"
+          }
+        },
+        {
+          "case": "shift_open",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Für diese Lade ist bereits eine Schicht offen.",
+            "data": {
+              "code": "shift_already_open",
+              "shiftId": "haupt_KASSE1_s2"
+            },
+            "code": "shift_already_open"
+          }
+        },
+        {
+          "case": "shift_mode_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Für diese Lade ist der Schichtbetrieb ausgeschaltet.",
+            "data": {
+              "code": "shift_mode_off"
+            },
+            "code": "shift_mode_off"
+          }
+        },
+        {
+          "case": "amount_and_take_over",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1",
+            "takeOver": true
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Betrag ist ungültig.",
+            "data": {
+              "code": "invalid_amount"
+            },
+            "code": "invalid_amount"
+          }
+        },
+        {
+          "case": "take_over_with_denominations",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "takeOver": true,
+            "denominations": {
+              "1000": 3
+            },
+            "idempotencyKey": "o"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "denominations",
+                  "message": "Beim Übernehmen keine Stückelung angeben."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "denominations_wrong",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Stückelung passt nicht zum Betrag.",
+            "data": {
+              "code": "invalid_denominations"
+            },
+            "code": "invalid_denominations"
+          }
+        },
+        {
+          "case": "key_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "idempotencyKey fehlt.",
+            "data": {
+              "code": "idempotency_key_required"
+            },
+            "code": "idempotency_key_required"
+          }
+        },
+        {
+          "case": "success_manager_counted",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "shift": {
+                "id": "lade_bar_s2",
+                "drawerId": "lade_bar",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-26T08:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": 2800,
+                "openingDenominations": {
+                  "100": 1,
+                  "200": 1,
+                  "500": 1,
+                  "2000": 1
+                },
+                "openingFloatTakenOver": false,
+                "countedCents": null,
+                "comment": null,
+                "blind": null,
+                "suggestedFloatCents": 3000,
+                "runningTotals": {
+                  "cashSalesCents": 0,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 0,
+                  "cancellationCount": 0,
+                  "cashInCents": 0,
+                  "cashOutCents": 0,
+                  "tips": [],
+                  "openingsWithoutSale": 0
+                },
+                "expectedCents": 2800,
+                "differenceCents": null,
+                "reconciliation": null
+              },
+              "handoverDifferenceCents": -200
+            }
+          }
+        },
+        {
+          "case": "success_cashier_taken_over",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_bar",
+            "takeOver": true,
+            "idempotencyKey": "o-bar-2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "shift": {
+                "id": "lade_bar_s2",
+                "drawerId": "lade_bar",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-26T08:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_auswahl",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              }
+            }
+          }
+        },
+        {
+          "case": "success_same_key",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 2800,
+            "denominations": {
+              "100": 1,
+              "200": 1,
+              "500": 1,
+              "2000": 1
+            },
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "shift": {
+                "id": "lade_bar_s2",
+                "drawerId": "lade_bar",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-26T07:59:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": 2800,
+                "openingDenominations": {
+                  "100": 1,
+                  "200": 1,
+                  "500": 1,
+                  "2000": 1
+                },
+                "openingFloatTakenOver": false,
+                "countedCents": null,
+                "comment": null,
+                "blind": null,
+                "suggestedFloatCents": 3000,
+                "runningTotals": {
+                  "cashSalesCents": 0,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 0,
+                  "cancellationCount": 0,
+                  "cashInCents": 0,
+                  "cashOutCents": 0,
+                  "tips": [],
+                  "openingsWithoutSale": 0
+                },
+                "expectedCents": 2800,
+                "differenceCents": null,
+                "reconciliation": null
+              },
+              "handoverDifferenceCents": -200
+            }
+          }
+        },
+        {
+          "case": "key_conflict",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_bar",
+            "openingFloatCents": 3000,
+            "denominations": null,
+            "idempotencyKey": "o-bar-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+            "data": {
+              "code": "idempotency_conflict"
+            },
+            "code": "idempotency_conflict"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "recordMyCashMovement": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "cash_drop",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "cash_drop",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "cash_drop",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Vorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "amountCents": 100,
+            "idempotencyKey": "b"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: drawerId, type",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "drawerId",
+                  "message": "Pflichtfeld fehlt."
+                },
+                {
+                  "field": "type",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "drawer_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_gibtsnicht",
+            "type": "cash_drop",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Lade nicht gefunden.",
+            "data": {
+              "code": "drawer_not_found"
+            },
+            "code": "drawer_not_found"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_terrasse",
+            "type": "cash_drop",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "drawer_decommissioned",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_alt",
+            "type": "owner_deposit",
+            "amountCents": 1000,
+            "idempotencyKey": "b"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Lade ist stillgelegt.",
+            "data": {
+              "code": "drawer_inactive"
+            },
+            "code": "drawer_inactive"
+          }
+        },
+        {
+          "case": "kind_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "gibtsnicht",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Art der Kassenbewegung ist hier nicht möglich.",
+            "data": {
+              "code": "invalid_movement_type"
+            },
+            "code": "invalid_movement_type"
+          }
+        },
+        {
+          "case": "kind_only_server",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "count_difference",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Art der Kassenbewegung ist hier nicht möglich.",
+            "data": {
+              "code": "invalid_movement_type"
+            },
+            "code": "invalid_movement_type"
+          }
+        },
+        {
+          "case": "amount_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "cash_drop",
+            "amountCents": 0,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Betrag ist ungültig.",
+            "data": {
+              "code": "invalid_amount"
+            },
+            "code": "invalid_amount"
+          }
+        },
+        {
+          "case": "text_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "other_in",
+            "amountCents": 500,
+            "idempotencyKey": "b"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte einen Text angeben.",
+            "data": {
+              "code": "note_required"
+            },
+            "code": "note_required"
+          }
+        },
+        {
+          "case": "same_drawer",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "transfer_out",
+            "amountCents": 500,
+            "targetDrawerId": "haupt_KASSE1",
+            "idempotencyKey": "b"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Eine Umbuchung in dieselbe Lade ist nicht möglich.",
+            "data": {
+              "code": "transfer_same_drawer"
+            },
+            "code": "transfer_same_drawer"
+          }
+        },
+        {
+          "case": "tip_over_claim",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "tip_payout",
+            "amountCents": 900,
+            "recipientId": "ru_kellner",
+            "idempotencyKey": "b"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Trinkgeld-Auszahlung ist höher als der offene Anspruch.",
+            "data": {
+              "code": "tip_payout_exceeds_claim"
+            },
+            "code": "tip_payout_exceeds_claim"
+          }
+        },
+        {
+          "case": "over_balance",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "owner_withdrawal",
+            "amountCents": 50000,
+            "idempotencyKey": "b"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Auszahlung ist höher als der Kassenstand.",
+            "data": {
+              "code": "cash_movement_exceeds_balance"
+            },
+            "code": "cash_movement_exceeds_balance"
+          }
+        },
+        {
+          "case": "key_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "owner_deposit",
+            "amountCents": 500
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "idempotencyKey fehlt.",
+            "data": {
+              "code": "idempotency_key_required"
+            },
+            "code": "idempotency_key_required"
+          }
+        },
+        {
+          "case": "success_manager_cash_drop",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "cash_drop",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000004",
+                "number": 4,
+                "shiftId": "haupt_KASSE1_s2",
+                "type": "cash_drop",
+                "amountCents": -20000,
+                "location": "safe",
+                "note": "Abend",
+                "by": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "at": "2026-09-26T08:00:00.000Z",
+                "recipient": null,
+                "counterpart": null
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 4,
+                  "type": "cash_drop",
+                  "amountCents": -20000,
+                  "note": "Abend",
+                  "location": "safe",
+                  "recipientName": null,
+                  "targetDrawerName": null,
+                  "byName": "Anna Chef",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager_change_in_without_location",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "change_in",
+            "amountCents": 3000,
+            "idempotencyKey": "b-5"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000004",
+                "number": 4,
+                "shiftId": "haupt_KASSE1_s2",
+                "type": "change_in",
+                "amountCents": 3000,
+                "location": null,
+                "note": null,
+                "by": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "at": "2026-09-26T08:00:00.000Z",
+                "recipient": null,
+                "counterpart": null
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 4,
+                  "type": "change_in",
+                  "amountCents": 3000,
+                  "note": null,
+                  "location": null,
+                  "recipientName": null,
+                  "targetDrawerName": null,
+                  "byName": "Anna Chef",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager_transfer",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "transfer_out",
+            "amountCents": 5000,
+            "note": "Wechselgeld Bar",
+            "targetDrawerId": "lade_bar",
+            "idempotencyKey": "b-2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000004",
+                "number": 4,
+                "shiftId": "haupt_KASSE1_s2",
+                "type": "transfer_out",
+                "amountCents": -5000,
+                "location": null,
+                "note": "Wechselgeld Bar",
+                "by": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "at": "2026-09-26T08:00:00.000Z",
+                "recipient": null,
+                "counterpart": {
+                  "drawerId": "lade_bar",
+                  "movementId": "b0000001"
+                }
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 4,
+                  "type": "transfer_out",
+                  "amountCents": -5000,
+                  "note": "Wechselgeld Bar",
+                  "location": null,
+                  "recipientName": null,
+                  "targetDrawerName": "Bar",
+                  "byName": "Anna Chef",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager_tip",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "tip_payout",
+            "amountCents": 400,
+            "recipientId": "ru_kellner",
+            "idempotencyKey": "b-3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000004",
+                "number": 4,
+                "shiftId": "haupt_KASSE1_s2",
+                "type": "tip_payout",
+                "amountCents": -400,
+                "location": null,
+                "note": null,
+                "by": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "at": "2026-09-26T08:00:00.000Z",
+                "recipient": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "counterpart": null
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 4,
+                  "type": "tip_payout",
+                  "amountCents": -400,
+                  "note": null,
+                  "location": null,
+                  "recipientName": "Ben Kellner",
+                  "targetDrawerName": null,
+                  "byName": "Anna Chef",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "success_cashier_tip_own",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "tip_payout",
+            "amountCents": 250,
+            "recipientId": "ru_kellner",
+            "idempotencyKey": "b-6"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000004",
+                "number": 4,
+                "shiftId": "haupt_KASSE1_s2",
+                "type": "tip_payout",
+                "amountCents": -250,
+                "location": null,
+                "note": null,
+                "by": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "role": "register_user"
+                },
+                "at": "2026-09-26T08:00:00.000Z",
+                "recipient": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "counterpart": null
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 4,
+                  "type": "tip_payout",
+                  "amountCents": -250,
+                  "note": null,
+                  "location": null,
+                  "recipientName": "Ben Kellner",
+                  "targetDrawerName": null,
+                  "byName": "Ben Kellner",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "cashier_tip_foreign",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "tip_payout",
+            "amountCents": 100,
+            "recipientId": "ru_chef",
+            "idempotencyKey": "b-7"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Vorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "success_owner_without_shift",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "drawerId": "lade_bar",
+            "type": "owner_deposit",
+            "amountCents": 1000,
+            "idempotencyKey": "b-4"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000001",
+                "number": 1,
+                "shiftId": null,
+                "type": "owner_deposit",
+                "amountCents": 1000,
+                "location": null,
+                "note": null,
+                "by": {
+                  "registerUserId": null,
+                  "name": null,
+                  "role": "owner"
+                },
+                "at": "2026-09-26T08:00:00.000Z",
+                "recipient": null,
+                "counterpart": null
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Bar"
+                },
+                "shift": null,
+                "movement": {
+                  "number": 1,
+                  "type": "owner_deposit",
+                  "amountCents": 1000,
+                  "note": null,
+                  "location": null,
+                  "recipientName": null,
+                  "targetDrawerName": null,
+                  "byName": null,
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "success_same_key",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "cash_drop",
+            "amountCents": 20000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "movement": {
+                "id": "b0000004",
+                "number": 4,
+                "shiftId": "haupt_KASSE1_s2",
+                "type": "cash_drop",
+                "amountCents": -20000,
+                "location": "safe",
+                "note": "Abend",
+                "by": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "at": "2026-09-26T07:59:00.000Z",
+                "recipient": null,
+                "counterpart": null
+              },
+              "receipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 4,
+                  "type": "cash_drop",
+                  "amountCents": -20000,
+                  "note": "Abend",
+                  "location": "safe",
+                  "recipientName": null,
+                  "targetDrawerName": null,
+                  "byName": "Anna Chef",
+                  "at": "2026-09-26T07:59:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "key_conflict",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "type": "cash_drop",
+            "amountCents": 10000,
+            "location": "safe",
+            "note": "Abend",
+            "idempotencyKey": "b-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+            "data": {
+              "code": "idempotency_conflict"
+            },
+            "code": "idempotency_conflict"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "logMyDrawerOpenings": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "sale",
+                "receiptId": "KASSE1-ID-7",
+                "ok": true,
+                "deviceTime": 1790409480000,
+                "idempotencyKey": "l-1"
+              },
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": "2026-09-26T07:59:00.000Z",
+                "idempotencyKey": "l-2"
+              },
+              {
+                "reason": "other",
+                "note": "Bonrolle gewechselt",
+                "ok": false,
+                "error": "Kein Impuls",
+                "deviceTime": 1790409570000,
+                "idempotencyKey": "l-3"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "sale",
+                "receiptId": "KASSE1-ID-7",
+                "ok": true,
+                "deviceTime": 1790409480000,
+                "idempotencyKey": "l-1"
+              },
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": "2026-09-26T07:59:00.000Z",
+                "idempotencyKey": "l-2"
+              },
+              {
+                "reason": "other",
+                "note": "Bonrolle gewechselt",
+                "ok": false,
+                "error": "Kein Impuls",
+                "deviceTime": 1790409570000,
+                "idempotencyKey": "l-3"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: drawerId, entries",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "drawerId",
+                  "message": "Pflichtfeld fehlt."
+                },
+                {
+                  "field": "entries",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "entries_empty",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": []
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "entries",
+                  "message": "Ein bis 50 Einträge angeben."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "reason_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "gibtsnicht",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": "l-9"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "entries[0].reason",
+                  "message": "Unbekannter Grund."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "time_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": "gestern",
+                "idempotencyKey": "l-9"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "entries[0].deviceTime",
+                  "message": "Zeitpunkt des Geräts fehlt oder ist ungültig."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "text_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "other",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": "l-9"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte einen Text angeben.",
+            "data": {
+              "code": "note_required"
+            },
+            "code": "note_required"
+          }
+        },
+        {
+          "case": "key_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": ""
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "idempotencyKey fehlt.",
+            "data": {
+              "code": "idempotency_key_required"
+            },
+            "code": "idempotency_key_required"
+          }
+        },
+        {
+          "case": "drawer_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "lade_gibtsnicht",
+            "entries": [
+              {
+                "reason": "sale",
+                "receiptId": "KASSE1-ID-7",
+                "ok": true,
+                "deviceTime": 1790409480000,
+                "idempotencyKey": "l-1"
+              },
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": "2026-09-26T07:59:00.000Z",
+                "idempotencyKey": "l-2"
+              },
+              {
+                "reason": "other",
+                "note": "Bonrolle gewechselt",
+                "ok": false,
+                "error": "Kein Impuls",
+                "deviceTime": 1790409570000,
+                "idempotencyKey": "l-3"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Lade nicht gefunden.",
+            "data": {
+              "code": "drawer_not_found"
+            },
+            "code": "drawer_not_found"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_terrasse",
+            "entries": [
+              {
+                "reason": "sale",
+                "receiptId": "KASSE1-ID-7",
+                "ok": true,
+                "deviceTime": 1790409480000,
+                "idempotencyKey": "l-1"
+              },
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": "2026-09-26T07:59:00.000Z",
+                "idempotencyKey": "l-2"
+              },
+              {
+                "reason": "other",
+                "note": "Bonrolle gewechselt",
+                "ok": false,
+                "error": "Kein Impuls",
+                "deviceTime": 1790409570000,
+                "idempotencyKey": "l-3"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "sale",
+                "receiptId": "KASSE1-ID-7",
+                "ok": true,
+                "deviceTime": 1790409480000,
+                "idempotencyKey": "l-1"
+              },
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": "2026-09-26T07:59:00.000Z",
+                "idempotencyKey": "l-2"
+              },
+              {
+                "reason": "other",
+                "note": "Bonrolle gewechselt",
+                "ok": false,
+                "error": "Kein Impuls",
+                "deviceTime": 1790409570000,
+                "idempotencyKey": "l-3"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "accepted": 3,
+              "duplicates": 0,
+              "drawerId": "haupt_KASSE1"
+            }
+          }
+        },
+        {
+          "case": "success_duplicate",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "sale",
+                "receiptId": "KASSE1-ID-7",
+                "ok": true,
+                "deviceTime": 1790409480000,
+                "idempotencyKey": "l-1"
+              },
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": "2026-09-26T07:59:00.000Z",
+                "idempotencyKey": "l-2"
+              },
+              {
+                "reason": "other",
+                "note": "Bonrolle gewechselt",
+                "ok": false,
+                "error": "Kein Impuls",
+                "deviceTime": 1790409570000,
+                "idempotencyKey": "l-3"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "accepted": 0,
+              "duplicates": 3,
+              "drawerId": "haupt_KASSE1"
+            }
+          }
+        },
+        {
+          "case": "success_operator_reported_late",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": 1790344800000,
+                "idempotencyKey": "l-20",
+                "drawerId": "haupt_KASSE1",
+                "operator": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                }
+              },
+              {
+                "reason": "sale",
+                "receiptId": "KASSE1-ID-8",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": "l-21",
+                "drawerId": "haupt_KASSE1",
+                "operator": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner"
+                }
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "accepted": 2,
+              "duplicates": 0,
+              "drawerId": "haupt_KASSE1"
+            }
+          }
+        },
+        {
+          "case": "entry_other_drawer",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "drawerId": "haupt_KASSE1",
+            "entries": [
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": "l-9",
+                "drawerId": "lade_bar"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "entries[0].drawerId",
+                  "message": "Der Eintrag gehört zu einer anderen Lade."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "success_drawer_decommissioned",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_alt",
+            "entries": [
+              {
+                "reason": "check",
+                "ok": true,
+                "deviceTime": 1790409540000,
+                "idempotencyKey": "l-30",
+                "drawerId": "lade_alt"
+              }
+            ]
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "accepted": 1,
+              "duplicates": 0,
+              "drawerId": "haupt_KASSE1"
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getMyShiftReport": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Vorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: shiftId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "shiftId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "shift_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s9"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine offene Schicht gefunden.",
+            "data": {
+              "code": "shift_not_open"
+            },
+            "code": "shift_not_open"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "lade_terrasse_s1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": null,
+                "blind": null
+              },
+              "movements": [
+                {
+                  "id": "b0000003",
+                  "number": 3,
+                  "shiftId": "haupt_KASSE1_s2",
+                  "type": "change_in",
+                  "amountCents": 5000,
+                  "location": "bank",
+                  "note": null,
+                  "by": {
+                    "registerUserId": "ru_chef",
+                    "name": "Anna Chef",
+                    "role": "register_user"
+                  },
+                  "at": "2026-09-25T15:03:00.000Z",
+                  "recipient": null,
+                  "counterpart": null
+                }
+              ],
+              "receipt": {
+                "kind": "shift_interim",
+                "blind": true,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2,
+                  "openedAt": "2026-09-25T15:00:00.000Z",
+                  "closedAt": null,
+                  "openedByName": "Anna Chef",
+                  "closedByName": null
+                },
+                "openingFloatCents": null,
+                "openingFloatTakenOver": true,
+                "openingDenominations": null,
+                "cashSalesCents": null,
+                "cashCancellationsCents": null,
+                "receiptCount": 3,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 3200
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 3,
+                    "type": "change_in",
+                    "amountCents": 5000,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-25T15:03:00.000Z"
+                  }
+                ],
+                "tips": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "receivedImmediatelyCents": 400,
+                    "retainedCents": 0,
+                    "paidOutCents": 0,
+                    "refundedByEmployeeCents": 0,
+                    "carriedOverCents": 0,
+                    "openCents": 400
+                  }
+                ],
+                "expectedCents": null,
+                "countedCents": null,
+                "countedDenominations": null,
+                "differenceCents": null,
+                "comment": null,
+                "openingsWithoutSale": 1
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "open",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": null,
+                "closedBy": null,
+                "closedDeviceId": null,
+                "openingFloatCents": 15000,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "countedCents": null,
+                "comment": null,
+                "blind": null,
+                "suggestedFloatCents": 15000,
+                "runningTotals": {
+                  "cashSalesCents": 9400,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 3200
+                    }
+                  ],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 3,
+                  "cancellationCount": 0,
+                  "cashInCents": 5000,
+                  "cashOutCents": 0,
+                  "tips": [
+                    {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner",
+                      "receivedImmediatelyCents": 400,
+                      "retainedCents": 0,
+                      "paidOutCents": 0,
+                      "refundedByEmployeeCents": 0
+                    }
+                  ],
+                  "openingsWithoutSale": 1
+                },
+                "expectedCents": 29400,
+                "differenceCents": null,
+                "reconciliation": null
+              },
+              "movements": [
+                {
+                  "id": "b0000003",
+                  "number": 3,
+                  "shiftId": "haupt_KASSE1_s2",
+                  "type": "change_in",
+                  "amountCents": 5000,
+                  "location": "bank",
+                  "note": null,
+                  "by": {
+                    "registerUserId": "ru_chef",
+                    "name": "Anna Chef",
+                    "role": "register_user"
+                  },
+                  "at": "2026-09-25T15:03:00.000Z",
+                  "recipient": null,
+                  "counterpart": null
+                }
+              ],
+              "receipt": {
+                "kind": "shift_interim",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2,
+                  "openedAt": "2026-09-25T15:00:00.000Z",
+                  "closedAt": null,
+                  "openedByName": "Anna Chef",
+                  "closedByName": null
+                },
+                "openingFloatCents": 15000,
+                "openingFloatTakenOver": true,
+                "openingDenominations": null,
+                "cashSalesCents": 9400,
+                "cashCancellationsCents": 0,
+                "receiptCount": 3,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 3200
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 3,
+                    "type": "change_in",
+                    "amountCents": 5000,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-25T15:03:00.000Z"
+                  }
+                ],
+                "tips": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "receivedImmediatelyCents": 400,
+                    "retainedCents": 0,
+                    "paidOutCents": 0,
+                    "refundedByEmployeeCents": 0,
+                    "carriedOverCents": 0,
+                    "openCents": 400
+                  }
+                ],
+                "expectedCents": 29400,
+                "countedCents": null,
+                "countedDenominations": null,
+                "differenceCents": null,
+                "comment": null,
+                "openingsWithoutSale": 1
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager_closed",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "shift": {
+                "id": "haupt_KASSE1_s1",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 1,
+                "status": "closed",
+                "openedAt": "2026-09-25T06:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_auswahl",
+                "closedAt": "2026-09-25T14:50:00.000Z",
+                "closedBy": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "role": "register_user"
+                },
+                "closedDeviceId": "dev_auswahl",
+                "openingFloatCents": 10000,
+                "openingDenominations": {
+                  "5000": 2
+                },
+                "openingFloatTakenOver": false,
+                "countedCents": 15000,
+                "comment": null,
+                "blind": true,
+                "suggestedFloatCents": 10000,
+                "runningTotals": {
+                  "cashSalesCents": 10200,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 4500
+                    }
+                  ],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 4,
+                  "cancellationCount": 0,
+                  "cashInCents": 0,
+                  "cashOutCents": 5000,
+                  "tips": [],
+                  "openingsWithoutSale": 0
+                },
+                "expectedCents": 15200,
+                "differenceCents": -200,
+                "reconciliation": {
+                  "matches": true,
+                  "deviations": null
+                }
+              },
+              "movements": [
+                {
+                  "id": "b0000001",
+                  "number": 1,
+                  "shiftId": "haupt_KASSE1_s1",
+                  "type": "cash_drop",
+                  "amountCents": -5000,
+                  "location": "safe",
+                  "note": "Mittag",
+                  "by": {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "role": "register_user"
+                  },
+                  "at": "2026-09-25T15:01:00.000Z",
+                  "recipient": null,
+                  "counterpart": null
+                },
+                {
+                  "id": "b0000002",
+                  "number": 2,
+                  "shiftId": "haupt_KASSE1_s1",
+                  "type": "count_difference",
+                  "amountCents": -200,
+                  "location": null,
+                  "note": null,
+                  "by": {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "role": "register_user"
+                  },
+                  "at": "2026-09-25T15:02:00.000Z",
+                  "recipient": null,
+                  "counterpart": null
+                }
+              ],
+              "receipt": {
+                "kind": "shift_close",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 1,
+                  "openedAt": "2026-09-25T06:00:00.000Z",
+                  "closedAt": "2026-09-25T14:50:00.000Z",
+                  "openedByName": "Ben Kellner",
+                  "closedByName": "Ben Kellner"
+                },
+                "openingFloatCents": 10000,
+                "openingFloatTakenOver": false,
+                "openingDenominations": {
+                  "5000": 2
+                },
+                "cashSalesCents": 10200,
+                "cashCancellationsCents": 0,
+                "receiptCount": 4,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 4500
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 1,
+                    "type": "cash_drop",
+                    "amountCents": -5000,
+                    "note": "Mittag",
+                    "byName": "Ben Kellner",
+                    "at": "2026-09-25T15:01:00.000Z"
+                  }
+                ],
+                "tips": [],
+                "expectedCents": 15200,
+                "countedCents": 15000,
+                "countedDenominations": {
+                  "5000": 3
+                },
+                "differenceCents": -200,
+                "comment": null,
+                "openingsWithoutSale": 0
+              }
+            }
+          }
+        },
+        {
+          "case": "success_cashier_closed",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "shift": {
+                "id": "haupt_KASSE1_s1",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 1,
+                "status": "closed",
+                "openedAt": "2026-09-25T06:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_auswahl",
+                "closedAt": "2026-09-25T14:50:00.000Z",
+                "closedBy": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "role": "register_user"
+                },
+                "closedDeviceId": "dev_auswahl",
+                "openingFloatCents": 10000,
+                "openingDenominations": {
+                  "5000": 2
+                },
+                "openingFloatTakenOver": false,
+                "comment": null,
+                "blind": true
+              },
+              "movements": [
+                {
+                  "id": "b0000001",
+                  "number": 1,
+                  "shiftId": "haupt_KASSE1_s1",
+                  "type": "cash_drop",
+                  "amountCents": -5000,
+                  "location": "safe",
+                  "note": "Mittag",
+                  "by": {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "role": "register_user"
+                  },
+                  "at": "2026-09-25T15:01:00.000Z",
+                  "recipient": null,
+                  "counterpart": null
+                }
+              ],
+              "receipt": {
+                "kind": "shift_close",
+                "blind": true,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 1,
+                  "openedAt": "2026-09-25T06:00:00.000Z",
+                  "closedAt": "2026-09-25T14:50:00.000Z",
+                  "openedByName": "Ben Kellner",
+                  "closedByName": "Ben Kellner"
+                },
+                "openingFloatCents": 10000,
+                "openingFloatTakenOver": false,
+                "openingDenominations": {
+                  "5000": 2
+                },
+                "cashSalesCents": null,
+                "cashCancellationsCents": null,
+                "receiptCount": 4,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 4500
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 1,
+                    "type": "cash_drop",
+                    "amountCents": -5000,
+                    "note": "Mittag",
+                    "byName": "Ben Kellner",
+                    "at": "2026-09-25T15:01:00.000Z"
+                  }
+                ],
+                "tips": [],
+                "expectedCents": null,
+                "countedCents": null,
+                "countedDenominations": null,
+                "differenceCents": null,
+                "comment": null,
+                "openingsWithoutSale": 0
+              }
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "closeMyShift": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Vorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "countedCents": 29000,
+            "idempotencyKey": "z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: shiftId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "shiftId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "shift_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s9",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine offene Schicht gefunden.",
+            "data": {
+              "code": "shift_not_open"
+            },
+            "code": "shift_not_open"
+          }
+        },
+        {
+          "case": "shift_closed",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s1",
+            "countedCents": 29000,
+            "tipPayouts": [],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Schicht ist bereits geschlossen.",
+            "data": {
+              "code": "shift_closed"
+            },
+            "code": "shift_closed"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "lade_terrasse_s1",
+            "countedCents": 29000,
+            "tipPayouts": [],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "counted_amount_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": -100,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Betrag ist ungültig.",
+            "data": {
+              "code": "invalid_amount"
+            },
+            "code": "invalid_amount"
+          }
+        },
+        {
+          "case": "denominations_wrong",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1",
+            "denominations": {
+              "20000": 1
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Stückelung passt nicht zum Betrag.",
+            "data": {
+              "code": "invalid_denominations"
+            },
+            "code": "invalid_denominations"
+          }
+        },
+        {
+          "case": "payouts_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "tipPayouts",
+                  "message": "Mitarbeiter fehlt."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "tip_over_claim",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 900
+              }
+            ],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Trinkgeld-Auszahlung ist höher als der offene Anspruch.",
+            "data": {
+              "code": "tip_payout_exceeds_claim"
+            },
+            "code": "tip_payout_exceeds_claim"
+          }
+        },
+        {
+          "case": "key_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29400
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "idempotencyKey fehlt.",
+            "data": {
+              "code": "idempotency_key_required"
+            },
+            "code": "idempotency_key_required"
+          }
+        },
+        {
+          "case": "success_cashier_recount",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 20000,
+            "attempt": 1,
+            "idempotencyKey": "z-2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "recount"
+            }
+          }
+        },
+        {
+          "case": "comment_required",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 20000,
+            "attempt": 2,
+            "idempotencyKey": "z-2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Differenz ist größer als die Schwelle. Bitte einen Kommentar angeben.",
+            "data": {
+              "code": "comment_required"
+            },
+            "code": "comment_required"
+          }
+        },
+        {
+          "case": "counted_exhausted",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 22000,
+            "attempt": 2,
+            "idempotencyKey": "z-2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Es wurde bereits zweimal gezählt. Abschließen nur mit dem Betrag der zweiten Zählung.",
+            "data": {
+              "code": "recount_exhausted"
+            },
+            "code": "recount_exhausted"
+          }
+        },
+        {
+          "case": "success_cashier_blind",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 20000,
+            "attempt": 2,
+            "idempotencyKey": "z-2",
+            "comment": "Kassensturz am Abend",
+            "denominations": {
+              "10000": 2
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "closed",
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "closed",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": "2026-09-26T08:00:00.000Z",
+                "closedBy": {
+                  "registerUserId": "ru_kellner",
+                  "name": "Ben Kellner",
+                  "role": "register_user"
+                },
+                "closedDeviceId": "dev_auswahl",
+                "openingFloatCents": null,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "comment": "Kassensturz am Abend",
+                "blind": true
+              },
+              "receipt": {
+                "kind": "shift_close",
+                "blind": true,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2,
+                  "openedAt": "2026-09-25T15:00:00.000Z",
+                  "closedAt": "2026-09-26T08:00:00.000Z",
+                  "openedByName": "Anna Chef",
+                  "closedByName": "Ben Kellner"
+                },
+                "openingFloatCents": null,
+                "openingFloatTakenOver": true,
+                "openingDenominations": null,
+                "cashSalesCents": null,
+                "cashCancellationsCents": null,
+                "receiptCount": 3,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 3200
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 3,
+                    "type": "change_in",
+                    "amountCents": 5000,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-25T15:03:00.000Z"
+                  }
+                ],
+                "tips": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "receivedImmediatelyCents": 400,
+                    "retainedCents": 0,
+                    "paidOutCents": 0,
+                    "refundedByEmployeeCents": 0,
+                    "carriedOverCents": 0,
+                    "openCents": 400
+                  }
+                ],
+                "expectedCents": null,
+                "countedCents": null,
+                "countedDenominations": null,
+                "differenceCents": null,
+                "comment": "Kassensturz am Abend",
+                "openingsWithoutSale": 1
+              },
+              "lastShiftOfRegister": true
+            }
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1",
+            "denominations": {
+              "2000": 2,
+              "5000": 1,
+              "20000": 1
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "closed",
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "closed",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": "2026-09-26T08:00:00.000Z",
+                "closedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "closedDeviceId": "dev_pin",
+                "openingFloatCents": 15000,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "countedCents": 29000,
+                "comment": null,
+                "blind": false,
+                "suggestedFloatCents": 15000,
+                "runningTotals": {
+                  "cashSalesCents": 9400,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 3200
+                    }
+                  ],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 3,
+                  "cancellationCount": 0,
+                  "cashInCents": 5000,
+                  "cashOutCents": 400,
+                  "tips": [
+                    {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner",
+                      "receivedImmediatelyCents": 400,
+                      "retainedCents": 0,
+                      "paidOutCents": 400,
+                      "refundedByEmployeeCents": 0
+                    }
+                  ],
+                  "openingsWithoutSale": 1
+                },
+                "expectedCents": 29000,
+                "differenceCents": 0,
+                "reconciliation": {
+                  "matches": false,
+                  "deviations": {
+                    "cashSalesCents": {
+                      "stored": 9400,
+                      "recomputed": 0
+                    },
+                    "receiptCount": {
+                      "stored": 3,
+                      "recomputed": 0
+                    },
+                    "nonCashByMethod": {
+                      "stored": [
+                        {
+                          "method": "card",
+                          "cents": 3200
+                        }
+                      ],
+                      "recomputed": []
+                    },
+                    "tips": {
+                      "stored": [
+                        {
+                          "registerUserId": "ru_kellner",
+                          "name": "Ben Kellner",
+                          "receivedImmediatelyCents": 400,
+                          "retainedCents": 0
+                        }
+                      ],
+                      "recomputed": []
+                    }
+                  }
+                }
+              },
+              "receipt": {
+                "kind": "shift_close",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2,
+                  "openedAt": "2026-09-25T15:00:00.000Z",
+                  "closedAt": "2026-09-26T08:00:00.000Z",
+                  "openedByName": "Anna Chef",
+                  "closedByName": "Anna Chef"
+                },
+                "openingFloatCents": 15000,
+                "openingFloatTakenOver": true,
+                "openingDenominations": null,
+                "cashSalesCents": 9400,
+                "cashCancellationsCents": 0,
+                "receiptCount": 3,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 3200
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 3,
+                    "type": "change_in",
+                    "amountCents": 5000,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-25T15:03:00.000Z"
+                  },
+                  {
+                    "number": 4,
+                    "type": "tip_payout",
+                    "amountCents": -400,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-26T08:00:00.000Z"
+                  }
+                ],
+                "tips": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "receivedImmediatelyCents": 400,
+                    "retainedCents": 0,
+                    "paidOutCents": 400,
+                    "refundedByEmployeeCents": 0,
+                    "carriedOverCents": 0,
+                    "openCents": 0
+                  }
+                ],
+                "expectedCents": 29000,
+                "countedCents": 29000,
+                "countedDenominations": {
+                  "2000": 2,
+                  "5000": 1,
+                  "20000": 1
+                },
+                "differenceCents": 0,
+                "comment": null,
+                "openingsWithoutSale": 1
+              },
+              "lastShiftOfRegister": true
+            }
+          }
+        },
+        {
+          "case": "success_manager_take_out",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-3",
+            "afterCount": {
+              "type": "cash_drop",
+              "amountCents": 14000
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "closed",
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "closed",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": "2026-09-26T08:00:00.000Z",
+                "closedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "closedDeviceId": "dev_pin",
+                "openingFloatCents": 15000,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "countedCents": 29000,
+                "comment": null,
+                "blind": false,
+                "suggestedFloatCents": 15000,
+                "runningTotals": {
+                  "cashSalesCents": 9400,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 3200
+                    }
+                  ],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 3,
+                  "cancellationCount": 0,
+                  "cashInCents": 5000,
+                  "cashOutCents": 400,
+                  "tips": [
+                    {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner",
+                      "receivedImmediatelyCents": 400,
+                      "retainedCents": 0,
+                      "paidOutCents": 400,
+                      "refundedByEmployeeCents": 0
+                    }
+                  ],
+                  "openingsWithoutSale": 1
+                },
+                "expectedCents": 29000,
+                "differenceCents": 0,
+                "reconciliation": {
+                  "matches": false,
+                  "deviations": {
+                    "cashSalesCents": {
+                      "stored": 9400,
+                      "recomputed": 0
+                    },
+                    "receiptCount": {
+                      "stored": 3,
+                      "recomputed": 0
+                    },
+                    "nonCashByMethod": {
+                      "stored": [
+                        {
+                          "method": "card",
+                          "cents": 3200
+                        }
+                      ],
+                      "recomputed": []
+                    },
+                    "tips": {
+                      "stored": [
+                        {
+                          "registerUserId": "ru_kellner",
+                          "name": "Ben Kellner",
+                          "receivedImmediatelyCents": 400,
+                          "retainedCents": 0
+                        }
+                      ],
+                      "recomputed": []
+                    }
+                  }
+                },
+                "afterCount": {
+                  "type": "cash_drop",
+                  "amountCents": 14000
+                },
+                "leftInDrawerCents": 15000
+              },
+              "receipt": {
+                "kind": "shift_close",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2,
+                  "openedAt": "2026-09-25T15:00:00.000Z",
+                  "closedAt": "2026-09-26T08:00:00.000Z",
+                  "openedByName": "Anna Chef",
+                  "closedByName": "Anna Chef"
+                },
+                "openingFloatCents": 15000,
+                "openingFloatTakenOver": true,
+                "openingDenominations": null,
+                "cashSalesCents": 9400,
+                "cashCancellationsCents": 0,
+                "receiptCount": 3,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 3200
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 3,
+                    "type": "change_in",
+                    "amountCents": 5000,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-25T15:03:00.000Z"
+                  },
+                  {
+                    "number": 4,
+                    "type": "tip_payout",
+                    "amountCents": -400,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-26T08:00:00.000Z"
+                  }
+                ],
+                "tips": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "receivedImmediatelyCents": 400,
+                    "retainedCents": 0,
+                    "paidOutCents": 400,
+                    "refundedByEmployeeCents": 0,
+                    "carriedOverCents": 0,
+                    "openCents": 0
+                  }
+                ],
+                "expectedCents": 29000,
+                "countedCents": 29000,
+                "countedDenominations": null,
+                "differenceCents": 0,
+                "comment": null,
+                "openingsWithoutSale": 1,
+                "afterCount": {
+                  "type": "cash_drop",
+                  "amountCents": 14000
+                },
+                "leftInDrawerCents": 15000
+              },
+              "afterCountReceipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 5,
+                  "type": "cash_drop",
+                  "amountCents": -14000,
+                  "note": null,
+                  "location": null,
+                  "recipientName": null,
+                  "targetDrawerName": null,
+                  "byName": "Anna Chef",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              },
+              "lastShiftOfRegister": true
+            }
+          }
+        },
+        {
+          "case": "success_manager_put_in",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-4",
+            "afterCount": {
+              "type": "change_in",
+              "amountCents": 1000
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "closed",
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "closed",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": "2026-09-26T08:00:00.000Z",
+                "closedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "closedDeviceId": "dev_pin",
+                "openingFloatCents": 15000,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "countedCents": 29000,
+                "comment": null,
+                "blind": false,
+                "suggestedFloatCents": 15000,
+                "runningTotals": {
+                  "cashSalesCents": 9400,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 3200
+                    }
+                  ],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 3,
+                  "cancellationCount": 0,
+                  "cashInCents": 5000,
+                  "cashOutCents": 400,
+                  "tips": [
+                    {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner",
+                      "receivedImmediatelyCents": 400,
+                      "retainedCents": 0,
+                      "paidOutCents": 400,
+                      "refundedByEmployeeCents": 0
+                    }
+                  ],
+                  "openingsWithoutSale": 1
+                },
+                "expectedCents": 29000,
+                "differenceCents": 0,
+                "reconciliation": {
+                  "matches": false,
+                  "deviations": {
+                    "cashSalesCents": {
+                      "stored": 9400,
+                      "recomputed": 0
+                    },
+                    "receiptCount": {
+                      "stored": 3,
+                      "recomputed": 0
+                    },
+                    "nonCashByMethod": {
+                      "stored": [
+                        {
+                          "method": "card",
+                          "cents": 3200
+                        }
+                      ],
+                      "recomputed": []
+                    },
+                    "tips": {
+                      "stored": [
+                        {
+                          "registerUserId": "ru_kellner",
+                          "name": "Ben Kellner",
+                          "receivedImmediatelyCents": 400,
+                          "retainedCents": 0
+                        }
+                      ],
+                      "recomputed": []
+                    }
+                  }
+                },
+                "afterCount": {
+                  "type": "change_in",
+                  "amountCents": 1000
+                },
+                "leftInDrawerCents": 30000
+              },
+              "receipt": {
+                "kind": "shift_close",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2,
+                  "openedAt": "2026-09-25T15:00:00.000Z",
+                  "closedAt": "2026-09-26T08:00:00.000Z",
+                  "openedByName": "Anna Chef",
+                  "closedByName": "Anna Chef"
+                },
+                "openingFloatCents": 15000,
+                "openingFloatTakenOver": true,
+                "openingDenominations": null,
+                "cashSalesCents": 9400,
+                "cashCancellationsCents": 0,
+                "receiptCount": 3,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 3200
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 3,
+                    "type": "change_in",
+                    "amountCents": 5000,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-25T15:03:00.000Z"
+                  },
+                  {
+                    "number": 4,
+                    "type": "tip_payout",
+                    "amountCents": -400,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-26T08:00:00.000Z"
+                  }
+                ],
+                "tips": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "receivedImmediatelyCents": 400,
+                    "retainedCents": 0,
+                    "paidOutCents": 400,
+                    "refundedByEmployeeCents": 0,
+                    "carriedOverCents": 0,
+                    "openCents": 0
+                  }
+                ],
+                "expectedCents": 29000,
+                "countedCents": 29000,
+                "countedDenominations": null,
+                "differenceCents": 0,
+                "comment": null,
+                "openingsWithoutSale": 1,
+                "afterCount": {
+                  "type": "change_in",
+                  "amountCents": 1000
+                },
+                "leftInDrawerCents": 30000
+              },
+              "afterCountReceipt": {
+                "kind": "cash_movement",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2
+                },
+                "movement": {
+                  "number": 5,
+                  "type": "change_in",
+                  "amountCents": 1000,
+                  "note": null,
+                  "location": null,
+                  "recipientName": null,
+                  "targetDrawerName": null,
+                  "byName": "Anna Chef",
+                  "at": "2026-09-26T08:00:00.000Z"
+                }
+              },
+              "lastShiftOfRegister": true
+            }
+          }
+        },
+        {
+          "case": "take_out_over_counted",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-5",
+            "afterCount": {
+              "type": "cash_drop",
+              "amountCents": 29001
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Auszahlung ist höher als der Kassenstand.",
+            "data": {
+              "code": "cash_movement_exceeds_balance"
+            },
+            "code": "cash_movement_exceeds_balance"
+          }
+        },
+        {
+          "case": "cashier_after_count_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 20000,
+            "attempt": 1,
+            "idempotencyKey": "z-2",
+            "afterCount": {
+              "type": "cash_drop",
+              "amountCents": 5000
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Geld entnehmen oder einlegen ist ohne die Berechtigung für Kassenbewegungen nicht möglich.",
+            "data": {
+              "code": "after_count_not_permitted"
+            },
+            "code": "after_count_not_permitted"
+          }
+        },
+        {
+          "case": "after_count_kind_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-6",
+            "afterCount": {
+              "type": "gibtsnicht",
+              "amountCents": 100
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "afterCount.type",
+                  "message": "Unbekannte Art."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "success_manager_check_ready",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-7",
+            "checkOnly": true
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "ready"
+            }
+          }
+        },
+        {
+          "case": "success_cashier_check_recount",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 20000,
+            "attempt": 1,
+            "idempotencyKey": "z-8",
+            "checkOnly": true
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "recount"
+            }
+          }
+        },
+        {
+          "case": "success_same_key",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "status": "closed",
+              "shift": {
+                "id": "haupt_KASSE1_s2",
+                "drawerId": "haupt_KASSE1",
+                "cashregisterId": "KASSE1",
+                "number": 2,
+                "status": "closed",
+                "openedAt": "2026-09-25T15:00:00.000Z",
+                "openedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "openedDeviceId": "dev_pin",
+                "closedAt": "2026-09-26T07:59:00.000Z",
+                "closedBy": {
+                  "registerUserId": "ru_chef",
+                  "name": "Anna Chef",
+                  "role": "register_user"
+                },
+                "closedDeviceId": "dev_pin",
+                "openingFloatCents": 15000,
+                "openingDenominations": null,
+                "openingFloatTakenOver": true,
+                "countedCents": 29000,
+                "comment": null,
+                "blind": false,
+                "suggestedFloatCents": 15000,
+                "runningTotals": {
+                  "cashSalesCents": 9400,
+                  "cashCancellationsCents": 0,
+                  "nonCashByMethod": [
+                    {
+                      "method": "card",
+                      "cents": 3200
+                    }
+                  ],
+                  "voucherRedeemedCents": 0,
+                  "receiptCount": 3,
+                  "cancellationCount": 0,
+                  "cashInCents": 5000,
+                  "cashOutCents": 400,
+                  "tips": [
+                    {
+                      "registerUserId": "ru_kellner",
+                      "name": "Ben Kellner",
+                      "receivedImmediatelyCents": 400,
+                      "retainedCents": 0,
+                      "paidOutCents": 400,
+                      "refundedByEmployeeCents": 0
+                    }
+                  ],
+                  "openingsWithoutSale": 1
+                },
+                "expectedCents": 29000,
+                "differenceCents": 0,
+                "reconciliation": {
+                  "matches": false,
+                  "deviations": {
+                    "cashSalesCents": {
+                      "stored": 9400,
+                      "recomputed": 0
+                    },
+                    "receiptCount": {
+                      "stored": 3,
+                      "recomputed": 0
+                    },
+                    "nonCashByMethod": {
+                      "stored": [
+                        {
+                          "method": "card",
+                          "cents": 3200
+                        }
+                      ],
+                      "recomputed": []
+                    },
+                    "tips": {
+                      "stored": [
+                        {
+                          "registerUserId": "ru_kellner",
+                          "name": "Ben Kellner",
+                          "receivedImmediatelyCents": 400,
+                          "retainedCents": 0
+                        }
+                      ],
+                      "recomputed": []
+                    }
+                  }
+                }
+              },
+              "receipt": {
+                "kind": "shift_close",
+                "blind": false,
+                "business": {
+                  "name": "Café Welt"
+                },
+                "cashregister": {
+                  "id": "KASSE1",
+                  "name": "Theke 1"
+                },
+                "drawer": {
+                  "name": "Hauptlade"
+                },
+                "shift": {
+                  "number": 2,
+                  "openedAt": "2026-09-25T15:00:00.000Z",
+                  "closedAt": "2026-09-26T07:59:00.000Z",
+                  "openedByName": "Anna Chef",
+                  "closedByName": "Anna Chef"
+                },
+                "openingFloatCents": 15000,
+                "openingFloatTakenOver": true,
+                "openingDenominations": null,
+                "cashSalesCents": 9400,
+                "cashCancellationsCents": 0,
+                "receiptCount": 3,
+                "cancellationCount": 0,
+                "nonCashByMethod": [
+                  {
+                    "method": "card",
+                    "cents": 3200
+                  }
+                ],
+                "movements": [
+                  {
+                    "number": 3,
+                    "type": "change_in",
+                    "amountCents": 5000,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-25T15:03:00.000Z"
+                  },
+                  {
+                    "number": 4,
+                    "type": "tip_payout",
+                    "amountCents": -400,
+                    "note": null,
+                    "byName": "Anna Chef",
+                    "at": "2026-09-26T07:59:00.000Z"
+                  }
+                ],
+                "tips": [
+                  {
+                    "registerUserId": "ru_kellner",
+                    "name": "Ben Kellner",
+                    "receivedImmediatelyCents": 400,
+                    "retainedCents": 0,
+                    "paidOutCents": 400,
+                    "refundedByEmployeeCents": 0,
+                    "carriedOverCents": 0,
+                    "openCents": 0
+                  }
+                ],
+                "expectedCents": 29000,
+                "countedCents": 29000,
+                "countedDenominations": null,
+                "differenceCents": 0,
+                "comment": null,
+                "openingsWithoutSale": 1
+              },
+              "lastShiftOfRegister": true
+            }
+          }
+        },
+        {
+          "case": "key_conflict",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29100,
+            "tipPayouts": [
+              {
+                "registerUserId": "ru_kellner",
+                "cents": 400
+              }
+            ],
+            "idempotencyKey": "z-1"
           },
           "httpStatus": 200,
           "headers": {

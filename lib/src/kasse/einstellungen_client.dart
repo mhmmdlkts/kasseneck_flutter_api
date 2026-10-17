@@ -50,7 +50,16 @@ class PosSettingsClient {
   /// immer als ganze Karte.
   Future<PosBusinessSettings> saveBusiness(Map<String, dynamic> patch) async {
     const name = Aufrufe.setMyKasseSettings;
-    final gesendet = _pruefeTeil(name, 'business', patch, const PosBusinessSettings().toJson(), posBusinessValues);
+    // Der optionale Schalter getrennt: er steht nicht in den Standardwerten,
+    // gegen die `_pruefeTeil` die Schluessel prueft.
+    final behalten = patch['tipKeptByDefault'];
+    if (patch.containsKey('tipKeptByDefault') && behalten is! bool) {
+      throw const KasseneckValidationError(name, 'business.tipKeptByDefault: true oder false erwartet', 'request');
+    }
+    final gesendet = patch.containsKey('tipKeptByDefault') && patch.length == 1
+        ? <String, dynamic>{}
+        : _pruefeTeil(name, 'business', {...patch}..remove('tipKeptByDefault'), const PosBusinessSettings().toJson(), posBusinessValues);
+    if (patch.containsKey('tipKeptByDefault')) gesendet['tipKeptByDefault'] = behalten;
     if (gesendet.containsKey('vatRates')) {
       final karte = gesendet['vatRates'];
       // Unter /v3 prüft der Server die übergebene Karte für sich: ein
@@ -72,7 +81,18 @@ class PosSettingsClient {
     if (deviceId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'deviceId fehlt', 'request');
     }
-    final gesendet = _pruefeTeil(name, 'device', patch, const PosDeviceSettings().toJson(), posDeviceValues);
+    // Die optionale Lade getrennt: `null` heisst hier „Zuordnung entfernen“ und
+    // geht hinaus, waehrend `_pruefeTeil` Nullwerte als „nicht geaendert“ faellt.
+    final mitLade = patch.containsKey('drawerId');
+    final lade = patch['drawerId'];
+    if (mitLade && lade != null && !isPosOptionalId(lade)) {
+      throw const KasseneckValidationError(
+          name, 'device.drawerId: keine Kennung (1-64 Zeichen aus A-Z a-z 0-9 _ -, oder null zum Entfernen)', 'request');
+    }
+    final gesendet = mitLade && patch.length == 1
+        ? <String, dynamic>{}
+        : _pruefeTeil(name, 'device', {...patch}..remove('drawerId'), const PosDeviceSettings().toJson(), posDeviceValues);
+    if (mitLade) gesendet['drawerId'] = lade;
     if (gesendet.containsKey('shortcuts')) {
       final karte = gesendet['shortcuts'];
       if (karte is! Map) {

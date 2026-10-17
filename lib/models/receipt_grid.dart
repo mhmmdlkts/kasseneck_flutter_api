@@ -163,13 +163,13 @@ class ReceiptGrid {
               sb.write(i < breiten.length - 1 ? zelle + ' ' * (breiten[i] - inhalt[i]) : zelle);
             }
             final text = sb.toString();
-            out.add(GridLine(text: text.length == n ? text : _ausrichten(text, n, LayoutAlign.left), kind: GridLineKind.columns));
+            out.add(GridLine(text: text.length == n ? text : _ausrichten(text, n, LayoutAlign.left), kind: GridLineKind.columns, bold: z.bold));
           }
           if (fliesst) {
             final i = weiterlaufend.first;
             final rest = _restNach(z.columns[i].text, teile[i].first);
             for (final t in wrapWords(rest, n)) {
-              out.add(GridLine(text: _ausrichten(t, n, z.columns[i].align), kind: GridLineKind.columns));
+              out.add(GridLine(text: _ausrichten(t, n, z.columns[i].align), kind: GridLineKind.columns, bold: z.bold));
             }
           }
       }

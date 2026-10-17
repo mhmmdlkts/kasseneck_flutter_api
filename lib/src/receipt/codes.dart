@@ -15,6 +15,7 @@ library;
 /// Anmeldung und Rand, sortiert: auf jedem Endpunkt des Kassenwegs moeglich.
 const List<String> anmeldungUndRandCodes = [
   'account_not_found',
+  'action_confirmation_required',
   'admin_required',
   'api_not_approved',
   'app_check_invalid',
@@ -34,6 +35,7 @@ const List<String> anmeldungUndRandCodes = [
   'register_user_not_allowed',
   'register_user_not_found',
   'response_translation_failed',
+  'second_factor_required',
   'session_expired',
   'session_other_cashregister',
   'unauthorized',
@@ -102,6 +104,11 @@ final List<String> cancellationErrorCodes = _mitRand(const [
   'cancellation_refund_reference_unknown', // refundOf nennt keine Zahlung des Originals
   'cancellation_outcome_unknown', // Ausgang unklar: nachlesen, nie wiederholen
   'invalid_return_disposition', // returnDisposition nicht restock, defective oder disposed (Lager)
+  // Trinkgeld beim Storno (refundTip/tipRefundSource, Schichten-Spec Nachtrag 5)
+  'tip_refund_conflict', // Wahl passt nicht zum Storno (Trinkgeld trotz Nein, Quelle ohne Trinkgeld)
+  'invalid_tip_refund_source', // tipRefundSource nicht drawer oder employee
+  'tip_refund_source_requires_cash', // eine Quelle nur, wenn das Bargeld des Stornos das Trinkgeld deckt
+  'tip_keep_not_possible_with_voucher', // refundTip false an einem Beleg mit Wertgutschein (das Trinkgeld geht mit)
 ], _signierend);
 
 /// Codes rund um `payments` an `createReceipt` und `cancelReceipt`.

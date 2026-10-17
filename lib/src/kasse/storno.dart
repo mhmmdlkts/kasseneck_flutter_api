@@ -12,6 +12,9 @@
 library;
 
 import '../../enums/credit_card_provider.dart';
+import '../../enums/keck_payment_method.dart';
+import '../../enums/voucher_type.dart';
+import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
 import '../../models/keck_payment.dart';
 import '../aufrufe.dart';
@@ -170,4 +173,118 @@ void assertCardRefunds(List<KeckPaymentInput> payments, KasseneckReceipt? origin
       'request',
     );
   }
+}
+
+// --- Trinkgeld beim Storno (Schichten-Spec, Nachtrag 5) ----------------------
+//
+// Enthaelt ein Beleg noch nicht storniertes Mitarbeiter-Trinkgeld, fragt die
+// Kasse „Trinkgeld auch zurueckgeben?" (`refundTip`) und bei Barrueckgabe
+// „Woher kommt das Trinkgeld zurueck?" (`tipRefundSource`). Zwilling der
+// gleichnamigen Funktionen in `models/cancellation.ts`; gemeinsame Faelle in
+// `cancellation-tip-cases.json` des Vertrags.
+
+/// Woher das Trinkgeld beim Storno zurueckkommt: `drawer` – die Lade zahlt es
+/// aus; `employee` – die Mitarbeiterin gibt es selbst. Nur bei Barrueckgabe.
+const List<String> tipRefundSources = ['drawer', 'employee'];
+
+/// Ist [value] ein Wert aus [tipRefundSources]?
+bool isTipRefundSource(Object? value) => value is String && tipRefundSources.contains(value);
+
+/// Barzahlarten – Zwilling von `BAR_ZAHLARTEN` (functions/gemeinsam/tip-core.js).
+const List<String> _barZahlarten = ['cash', 'uberCash', 'boltCash'];
+
+bool _mitarbeiterTrinkgeld(KasseneckItem item) => item.kind == 'tip' && item.recipient?['owner'] != true;
+
+/// Hatte die Mitarbeiterin dieses Trinkgeld schon (sofort erhalten, mit
+/// Empfaenger)? Ohne Merkmal (Altbestand) gilt wie im Backend: bar = erhalten.
+bool _hatteSie(KasseneckItem item, KasseneckReceipt receipt) {
+  final id = item.recipient?['registerUserId'];
+  if (id is! String || id.isEmpty) return false;
+  final sofort = item.receivedImmediately;
+  if (sofort != null) return sofort;
+  return _barZahlarten.contains(item.paymentMethod ?? receipt.paymentMethod.name);
+}
+
+List<CancellationItem> _offenesTrinkgeld(KasseneckReceipt receipt, int? nowMs) {
+  final rest = remainingQuantities(receipt, nowMs: nowMs);
+  return [
+    for (final (i, item) in receipt.items.indexed)
+      if (rest[i] > 0 && _mitarbeiterTrinkgeld(item)) (index: i, quantity: rest[i]),
+  ];
+}
+
+/// Noch nicht storniertes Mitarbeiter-Trinkgeld in Cent. Groesser 0 heisst: das
+/// Storno fragt „Trinkgeld auch zurueckgeben?" (auch beim Teilstorno).
+/// Inhaber-Trinkgeld ist Umsatz und folgt der Ware.
+int openStaffTipCents(KasseneckReceipt receipt, {int? nowMs}) => _offenesTrinkgeld(receipt, nowMs)
+    .fold(0, (s, p) => s + p.quantity * receipt.items[p.index].priceCents);
+
+/// Fragt das Storno „Trinkgeld auch zurueckgeben?" – nur bei offenem
+/// Mitarbeiter-Trinkgeld und ohne Wertgutschein am Beleg (Ruling R59). Einen
+/// Wertgutschein spiegelt nur ein Storno, der alles nimmt; dort geht das
+/// Trinkgeld immer mit (der Server weist `refundTip: false` mit
+/// `tip_keep_not_possible_with_voucher` ab), die Kasse zeigt
+/// `cancellation.tip_refunded_with_voucher` und sendet `refundTip: true`. Die
+/// Frage nach der Quelle bleibt ([asksTipRefundSource]). Zwilling von
+/// `asksRefundTip` im npm-Paket.
+bool asksRefundTip(KasseneckReceipt receipt, {int? nowMs}) =>
+    openStaffTipCents(receipt, nowMs: nowMs) > 0 && !(receipt.vouchers ?? const []).any((v) => v.type == VoucherType.value);
+
+/// Die Positionen, die nach der Antwort auf „Trinkgeld auch zurueckgeben?"
+/// hinausgehen – dieselbe Regel wie im Backend. [items] `null` = ganzer Beleg.
+/// Ja: zum Teilstorno kommt das offene Trinkgeld dazu, der ganze Beleg bleibt
+/// `null`. Nein: ohne das Mitarbeiter-Trinkgeld; der ganze Beleg wird zur Liste
+/// aller Restmengen ausser dem Trinkgeld (leer = nichts mehr zu stornieren).
+/// Ist kein Mitarbeiter-Trinkgeld mehr offen (keines oder schon storniert),
+/// bleibt der Wunsch, wie er ist – „Nein" wirkt dann wie keine Wahl (R61).
+List<CancellationItem>? cancellationItemsForTip(
+  KasseneckReceipt receipt,
+  List<CancellationItem>? items, {
+  required bool refundTip,
+  int? nowMs,
+}) {
+  final trinkgeld = {for (final (i, item) in receipt.items.indexed) if (_mitarbeiterTrinkgeld(item)) i};
+  if (trinkgeld.isEmpty) return items == null ? null : [...items];
+  if (refundTip) {
+    if (items == null) return null;
+    final genannt = {for (final p in items) p.index};
+    return [...items, ..._offenesTrinkgeld(receipt, nowMs).where((p) => !genannt.contains(p.index))];
+  }
+  if (items != null) return [for (final p in items) if (!trinkgeld.contains(p.index)) p];
+  if (_offenesTrinkgeld(receipt, nowMs).isEmpty) return null;
+  final rest = remainingQuantities(receipt, nowMs: nowMs);
+  return [
+    for (final (i, menge) in rest.indexed)
+      if (menge > 0 && !trinkgeld.contains(i)) (index: i, quantity: menge),
+  ];
+}
+
+/// Was dieses Storno bar zurueckgibt (positiv, Cent): mit Rueckzahlungen deren
+/// Barteil; ohne (der Server spiegelt die eine Zahlung des Originals) alles,
+/// wenn das Original bar bezahlt war. Bei mehr als einer Zahlung ohne Angabe 0:
+/// welcher Teil bar zurueckgeht, ist dann offen (ein Teilstorno verlangt
+/// ohnehin `payments`). Beide Kassen schicken bei mehr als einer Zahlung darum
+/// immer die Rueckzahlungen mit und rechnen hier mit ihnen.
+int cancellationCashRefundCents(KasseneckReceipt receipt, List<KeckPaymentInput>? payments, int dueCents) {
+  if (payments != null) {
+    return payments.fold(0, (s, z) => z.method == KeckPaymentMethod.cash ? s - z.amountCents : s);
+  }
+  final zahlungen = receipt.payments ?? const <KeckPayment>[];
+  if (zahlungen.length > 1) return 0;
+  final methode = zahlungen.length == 1 ? zahlungen.single.methodValue : receipt.paymentMethod.name;
+  return methode == 'cash' ? dueCents : 0;
+}
+
+/// Fragt das Storno nach „Ja" auch „Woher kommt das Trinkgeld zurueck?" – nur,
+/// wenn das Bargeld des Stornos ([cashRefundCents], siehe
+/// [cancellationCashRefundCents]) das offene Mitarbeiter-Trinkgeld deckt und die
+/// Mitarbeiterin wenigstens eines davon schon hatte. Bei Kartenrueckgabe geht
+/// es auf die Karte zurueck; ueber Lohn behaltenes Trinkgeld kommt immer aus
+/// der Lade. Ohne diese Frage gilt beim Server fuer `refundTip: true`: aus der
+/// Lade, kein „gibt die Mitarbeiterin direkt".
+bool asksTipRefundSource(KasseneckReceipt receipt, int cashRefundCents, {int? nowMs}) {
+  final offen = _offenesTrinkgeld(receipt, nowMs);
+  if (offen.isEmpty) return false;
+  if (!offen.any((p) => _hatteSie(receipt.items[p.index], receipt))) return false;
+  return cashRefundCents >= openStaffTipCents(receipt, nowMs: nowMs);
 }

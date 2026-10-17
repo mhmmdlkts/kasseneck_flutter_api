@@ -7,6 +7,7 @@ library;
 import '../register/fehler.dart' show KasseneckValidationError;
 import 'belege.dart' show CancellationItem;
 import 'rueckgabe.dart';
+import 'storno.dart' show isTipRefundSource, tipRefundSources;
 
 /// `items` und `returnDisposition` der Storno-Nutzlast, geprueft **bevor**
 /// etwas hinausgeht.
@@ -55,4 +56,19 @@ String _gueltig(String name, String wert, String pfad) {
     throw KasseneckValidationError(name, '$pfad: erlaubt sind ${returnDispositions.join(', ')}', 'request');
   }
   return wert;
+}
+
+/// `refundTip` und `tipRefundSource` der Storno-Nutzlast (Schichten-Spec,
+/// Nachtrag 5), geprueft **bevor** etwas hinausgeht: eine Quelle nur aus
+/// `tipRefundSources` und nicht zusammen mit `refundTip: false`. Ohne beides
+/// bleibt die Nutzlast die von bisher. Zwilling der Pruefung in
+/// `cancelReceipt` des JS-Pakets. Paketintern.
+Map<String, Object> tipChoicePayload(String name, {bool? refundTip, String? tipRefundSource}) {
+  if (tipRefundSource != null && !isTipRefundSource(tipRefundSource)) {
+    throw KasseneckValidationError(name, 'tipRefundSource: erlaubt sind ${tipRefundSources.join(', ')}', 'request');
+  }
+  if (tipRefundSource != null && refundTip == false) {
+    throw KasseneckValidationError(name, 'tipRefundSource nur, wenn das Trinkgeld zurueckgeht (refundTip nicht false)', 'request');
+  }
+  return {'refundTip': ?refundTip, 'tipRefundSource': ?tipRefundSource};
 }

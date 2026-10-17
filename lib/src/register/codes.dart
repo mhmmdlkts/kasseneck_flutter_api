@@ -19,6 +19,7 @@ import 'fehler.dart';
 /// Rückfallzweig.
 const List<String> registerErrorCodes = [
   'account_not_found',
+  'action_confirmation_required',
   'admin_required',
   'api_not_approved',
   'app_check_invalid',
@@ -54,6 +55,7 @@ const List<String> registerErrorCodes = [
   'register_user_not_found',
   'register_user_only',
   'response_translation_failed',
+  'second_factor_required',
   'session_ended',
   'session_expired',
   'session_not_running',

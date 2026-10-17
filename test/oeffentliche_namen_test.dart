@@ -34,13 +34,13 @@ import 'helpers/oeffentliche_api.dart';
 final Set<String> woerter = _liste('''
   abort abortable aborted above accept accepted account acquirer action actions active add
   added address after agent align all allocation allocations allowed allows always amount
-  amounts and applies approval approved april area article articles as ask assert
+  amounts and applies approval approved april area article articles as ask asks assert
   assign at attempt attempts attribute attributes august auth authority authorization authorized auto available average background
   backoff bad bank banner barcode base batch before behavior below between binary bit
   bits blank block blocked blocks body bold bolt book booking border both
   brand brands breakdown buckets budget build builder bundle business busy by
   byte bytes cache call calls can cancel canceled cancellation cancellations
-  cap capability capture card cart cash cashbox cashregister cashregisters
+  cap capability capture card carried cart cash cashbox cashregister cashregisters
   categories category cause causes cent center cents certificate change changed changes char
   charge chars charset check checked checker checkout chinese chip chips choices city
   clear cleared client clock clone close cloud code codes color colors column
@@ -53,7 +53,7 @@ final Set<String> woerter = _liste('''
   description detail details device devices diagnosis differs digits
   dimensions direct directory disabled discount discover discovered discovery
   dispose disposed disposition dispositions distance distribute divider documented done dots double download
-  draft drawer dry due effect email emoji empty enable enabled encode encoded end endpoints
+  draft drawer dry due duration effect email emoji employee empty enable enabled encode encoded end endpoints
   enrollment entered entry enums envelope environment error errors euro event events
   everywhere exact exceeded exception expected expired expires expiry extend external
   extra failed failure failures fallback fast fault fax february feed field
@@ -65,7 +65,7 @@ final Set<String> woerter = _liste('''
   host hosts house hue huge idempotency ids image immediately in included index
   info input installments instant insufficient intent interface interfaces
   internal intro invalid inventory invert invoice invoices is issue issuer item items iterate
-  january job journal july june key keys kind kinds label landed language languages
+  january job journal july june kept key keys kind kinds label landed language languages
   large last layout lead left legacy legal length level license licenses light limit line
   lines link list load loader local location locations lock login logo logout lookup loss
   lossy lot lots luminance mandate mandatory map march mark matrix may meaning measured
@@ -84,7 +84,7 @@ final Set<String> woerter = _liste('''
   promo proof provider public purchase quantities quantity quick quiet radius raised random
   range raster rasters rate rated rates ratio raw read readable ready
   reason reasons receipt receipts receive received recipient recipients record redeem
-  redeemed reference refresh refund refunds register registered registration rejected
+  redeemed reference refresh refund refunded refunds register registered registration rejected
   rejects related release released remaining remove removed render renew replacement replayed report
   reports request requested required requirement requirements reservation reservations reserved reset resolve restock
   resolved resolving response result retries retry return revenue reversal reverse
@@ -109,6 +109,9 @@ final Set<String> woerter = _liste('''
   wire with withdrawal words wrap write written wrong year yesterday zero zone
   actor blind booked break cancelled checksum closing completed content counted counts difference
   gaps later milli parts recount recounted review round seal stocktakes uncounted verified void
+  allow claim claims closed comment counterpart denominations deviations duplicates entries eur handover
+  log long manual matches non opened opening openings optional payout payouts recent recomputed
+  reconciliation retained rights role running sales shift suggested take target tips float over without taken
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,

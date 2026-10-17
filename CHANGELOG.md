@@ -1,3 +1,192 @@
+## 11.2.0
+
+Twin of `@kreiseck/kasseneck-api` `1.11.0` (contract files pulled from that
+version): shifts, cash balance and the drawer log at the register (backend
+„Schicht und Kassenstand“). Reason: a business with several staff or drawers
+could not tell who held how much cash; sales, cash movements and counts now
+belong to a shift in a drawer, and the register can open and close the shift,
+book deposits and withdrawals and print the bons itself.
+
+Cash position and tip list at the register: `ShiftRunningTotals.voucherRedeemedCents`
+(0 when an older server omits it), `durationText(minutes)` (shared cases in
+`shift-cases.json`) and the texts for the cash position card and the tip payout
+list (`shift.*`, `duration.*`, `tip_payout.*`).
+
+Printer warning: four short labels for the quiet warning line at the print
+buttons (`printer.warn_unreachable`, `printer.warn_none`, `printer.check`,
+`printer.set_up`).
+
+Change float and take out / put in at shift close: a drawer can keep a fixed
+change float; after counting, the register takes out the rest or puts money in.
+`DrawerInfo.changeFloatCents` and `DrawerState.suggestedFromShiftNumber` (null
+unless sent), `closeMyShift(afterCount: AfterCount(type: 'cash_drop' |
+'change_in', amountCents: …))` (catalogue `afterCountTypes`; the type is checked
+by the server), `Shift.afterCount`/`leftInDrawerCents`,
+`ShiftSummaryReceipt.afterCount`/`leftInDrawerCents` (blind null) and
+`ShiftCloseResult.afterCountReceipt` (the envelope receipt). New code
+`after_count_not_permitted` in `posErrorCodes`. `shiftReceiptLayout` prints, after a
+rule below the count, „Entnommen“ (negative) or „Eingelegt“ and „Bleibt in der
+Kassenlade“ (bold); without `afterCount` the Z report is unchanged. For the bold
+line `LayoutColumnsLine` gains `bold` (default false, written to JSON only when
+true; grid, widget and printing follow it). Goldens `shift-close-take-out`,
+`shift-close-put-in` from the contract; texts `drawer.change_float*`, `shift.*`
+for the step „Geld entnehmen“, `shift_receipt.taken_out|put_in|left_in_drawer`,
+`shift.counted|back|done|edit_amount` (row „Gezählt“, „Zurück“, step „Fertig“,
+accessibility label „{title} ändern“), message `shift.change_float_missing`;
+the bold column line is pinned in the byte twin test. Reason: the drawer kept everything after a
+shift, so the next shift started with the whole day's cash.
+
+Register polish: `shift.pay_ins`/`shift.pay_outs` (deposits and withdrawals as
+two rows of the cash position instead of one net row),
+`cash_movement.pay_in_amount`/`pay_out_amount` („{amount} einzahlen“, the book
+button with the amount) and message `logout.cart_cleared` (second press logs
+out and clears the cart). `shift.recount` now names the reason: „Der gezählte
+Betrag weicht ab – bitte noch einmal zählen.“
+
+Check before taking out: `closeMyShift(checkOnly: true)` runs the same check as
+closing but closes nothing and books nothing (no `afterCount` either); the
+result is `ShiftCloseResult.ready()` (`ready`, status `ready`) when closing with
+this amount would go through, otherwise `recount` or the error
+`comment_required` as before. Only `true` is sent; without it the call sends
+the same bytes as before. The count still uses one of the two attempts; closing
+afterwards with the same amount counts as the same attempt. Contract cases
+`success_manager_check_ready` and `success_cashier_check_recount`. Reason: the
+register asked for money to be taken out before it knew whether the count had
+to be repeated or explained.
+
+Additive; every existing call sends the same bytes as in 11.1.1 unless you
+pass the new `drawerId`. The lists `posErrorCodes` (18 new codes),
+`unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code
+that compares them with a fixed length needs the new ones.
+
+- **Six calls** on `RegisterReceiptClient`: `getMyDrawerState`, `openMyShift`,
+  `recordMyCashMovement`, `logMyDrawerOpenings`, `getMyShiftReport`,
+  `closeMyShift`, same names and parameters as in npm. The four that write
+  require an `idempotencyKey` (each entry of `logMyDrawerOpenings` its own) and
+  end with an unknown outcome after a timeout (`isOutcomeUnknown`): send the
+  same operation again with the **same** key, it takes effect once. Checked
+  before sending: missing ids, missing key, empty list, a number beyond 2^53 - 1.
+  Everything factual (catalogue, required fields per type, balance, claim) is the
+  server's call.
+- **Blind counting.** Without the right `cashView` the server sends no expected
+  amount, no counted amount, no running totals and no suggestion; the model has
+  `null` there, never `0`. `closeMyShift` returns a `ShiftCloseResult`:
+  `recount` (count once more, not an error) or closed with the Z bon.
+- **Without the right `shift`** `getMyDrawerState` still returns the open
+  shift with its basic data only (`id`, `drawerId`, `cashregisterId`, `number`,
+  `status`, `openedAt`, `openedBy`); every other field is `null`, so
+  `Shift.openingFloatTakenOver` is a `bool?`. Reason: a user without the right
+  saw no shift and the register blocked the sale although one was open.
+- **Buffered drawer openings.** `DrawerOpeningEntry` takes `drawerId` and an
+  `operator` (`DrawerOpeningOperator`: who opened the drawer while the entry was
+  buffered; the server takes it only for a user of the business assigned to the
+  register, otherwise the sending user). `DrawerOpeningsResult.drawerId` names
+  the drawer that was logged into (the main drawer for a decommissioned one).
+- **Models** (`pos.dart`): `DrawerState`, `Shift`, `CashMovement`,
+  `ShiftSummaryReceipt` (also `ShiftReceiptData`), `CashMovementReceipt`,
+  `OpenShiftResult`, `CashMovementResult`, `DrawerOpeningsResult`, `ShiftReport`,
+  `ShiftCloseResult`, `DrawerOpeningEntry`, `TipPayout` and their parts, each
+  with `toJson()` in the wire form. Catalogues `eurDenominations`,
+  `movementTypes`, `manualMovementTypes`, `cashLocations`, `openingReasons`,
+  `manualOpeningReasons`, `shiftReceiptKinds`.
+- **Helpers** with shared cases (`shift-cases.json`): `sumDenominations`,
+  `parseCentsAllowZero` (0 is valid: an empty drawer, no float; no floating
+  point), `newIdempotencyKey` (`kasse-` and 32 hex characters, like the
+  stocktake key).
+- **Bons.** `shiftReceiptLayout` (Z bon „Schichtabschluss“, X bon
+  „Zwischenbericht“) and `cashMovementLayout` („Kassenbewegung“) build a
+  `ReceiptLayout` from the bon data of the response; the same goldens as npm,
+  character by character. Blind values (`null`) leave their lines out, a real
+  `0` is printed. No signature, no QR, no DEP. Print it like any other layout.
+- **Bank or safe is optional.** `recordMyCashMovement` checks `location` only
+  when given (from `cashLocations`, otherwise it throws before sending); the
+  movement bon prints „Ort“ only when it is set, the label of `change_in` is
+  „Wechselgeld“, and no shift bon prints „Kein Registrierkassenbeleg“ (the text
+  `shift.not_a_receipt` is gone), like npm 1.11.0. Reason: the register no
+  longer asks where the change came from or the drop went, and the note at the
+  foot was not wanted on the slips.
+- **Tips during the shift.** `DrawerState.tips` lists per employee what the
+  running shift earned (`receivedImmediatelyCents`, `retainedCents`), what was
+  already paid out from the drawer in this shift (`paidOutCents`) and the open
+  claim against the drawer (`openCents`), for every session, also without
+  `cashView`. `ShiftTipTotals` gains `paidOutCents`, the new `ShiftTip` adds
+  `openCents` (`ShiftReceiptTip` is now a typedef of it). The server lets a
+  user with only the right `shift` pay out the own claim with
+  `recordMyCashMovement(type: 'tip_payout', recipientId: …)`. New helper
+  `shiftTipLines(tip)` with `ShiftTipLine`: „verdient“ (immediate + retained)
+  always, „über Lohn“, „schon genommen“ and „offen“ only when not 0, no line
+  when everything is 0 (shared cases in `shift-cases.json`); the shift bons use
+  it. Labels `shift_receipt.tip_earned` and `shift_receipt.tip_open` are new,
+  `shift_receipt.tip_paid_out` reads „schon genommen“,
+  `shift_receipt.tip_immediately` is gone, like npm 1.11.0. Reason: staff take
+  their tips at any time, not only at the end of the shift, and the slip showed
+  lines with 0,00 nobody needed.
+- **Cash tip kept right away.** `sell(tipKeptByEmployee: true)` sends
+  `tip: {cents, keptByEmployee: true}` (without it the payload stays byte for
+  byte as before); `KeckTip.keptByEmployee` (sent only when `true`) and
+  `KasseneckItem.keptByEmployee` (read, written, kept by `negative` for a
+  cancellation). The receipt stays as it was (signed, in the DEP); in the cash
+  position the amount is not part of the expected cash and counts as „schon
+  genommen“ at once, the open claim does not grow. The server takes it only for
+  staff tips paid in cash and received immediately. New optional business
+  setting `PosBusinessSettings.tipKeptByDefault` (`posBusinessOptionalFields`,
+  sent by the server only when stored, `null` = off; `posTipKeptByDefault`)
+  presets the switch at the register. Labels `checkout.tip_kept` „gleich
+  behalten“ and `tip.kept_setting`, message `tip.kept_setting_hint`, like npm
+  1.11.0. Reason: a waitress who keeps 2 € of a 22 € cash payment left 20 € in
+  the drawer while the expected cash said 22 € — a difference that was none.
+  The hint now says „zählt nicht ins Soll der Lade“.
+- **Cancelling with or without the tip.** `cancelReceipt` (register path and
+  `KasseneckApi`) takes `refundTip` (answer to „Trinkgeld auch zurückgeben?“;
+  `false` leaves the staff tip on the receipt, without `items` = every
+  remaining quantity except the tip; `true` with `items` adds the open tip)
+  and `tipRefundSource` (`drawer` | `employee`, `tipRefundSources`, only for a
+  cash refund). Without both the payload stays byte for byte as before; a
+  source outside the list or together with `refundTip: false` throws before
+  sending. The rules both registers ask by, twins of npm 1.11.0 against the
+  shared cases `cancellation-tip-cases.json`: `openStaffTipCents`,
+  `cancellationItemsForTip` (positions only; the return choice still goes as
+  `itemReturnDispositions`), `cancellationCashRefundCents` and
+  `asksTipRefundSource`. `cancellationErrorCodes` gains `tip_refund_conflict`,
+  `invalid_tip_refund_source` and `tip_refund_source_requires_cash`. Labels
+  `cancellation.tip_refund_question/yes/no`,
+  `cancellation.tip_source_question/drawer/employee`, messages
+  `cancellation.tip_refund_missing` and `cancellation.tip_source_missing`.
+  Reason: whether a tip goes back with a cancelled sale, and from whose
+  pocket, is a decision at the register; drawer and tip figures follow it.
+  With a value voucher on the receipt there is no „Nein“ (`asksRefundTip`
+  false, hint `cancellation.tip_refunded_with_voucher`, send `refundTip: true`;
+  the server refuses `false` with `tip_keep_not_possible_with_voucher`).
+  `refundTip: true` without `tipRefundSource` on a cash refund means: from the
+  drawer. After „Nein“ the tip line reads `cancellation.tip_stays` „bleibt“.
+- **Tip handed back by the employee.** `ShiftTipTotals.refundedByEmployeeCents`
+  („selbst zurückgegeben“, default 0, read as 0 when missing) and the line
+  `shift_receipt.tip_refunded_by_employee` in `shiftTipLines` (only when not 0),
+  like npm 1.11.0. Reason: „schon genommen -2,00“ was correct but read wrong.
+- **Tip carried over from earlier shifts.** `ShiftTip.carriedOverCents` („aus
+  früheren Schichten“, default 0, read as 0 when missing) and the line
+  `shift_receipt.tip_carried_over` first in `shiftTipLines` (only when not 0),
+  like npm 1.11.0. Reason: „verdient 9,00 · offen 15,00“ left 6,00 unexplained.
+- **Drawer on the receipt.** `sell` and `cancelReceipt` take an optional
+  `drawerId` (the drawer whose cash balance the receipt counts in); empty or
+  only whitespace throws before sending. The device setting `drawerId` is
+  optional without a default (`PosDeviceSettings.drawerId`, `null` = the main
+  drawer of the register): read only as a valid id, written as an id or `null`
+  to remove it (`posDeviceOptionalFields`).
+- **Texts and errors.** Catalogue entries `shift.*`, `cash_movement.*`,
+  `drawer.*`, `shift_receipt.*` and rules for the 15 new codes (with
+  `shift_mode_off`: `openMyShift` on a drawer without shift mode, text
+  `shift.mode_off`); `shift.required_other` for a user without the `shift`
+  right when no shift is open. `shift.recount_exhausted` asks for the amount of
+  the second count (a comment only above the threshold, `comment_required`).
+- **Confirmation in the Kasseneck app.** The error code lists and
+  `paymentCallRejectedCodes` gain `second_factor_required` and
+  `action_confirmation_required`. Reason: the backend /v3 contract contains them
+  since keck#657 (rejected before the handler), like npm 1.11.0.
+  15 more labels and 2 more messages (`cash_movement.pay_*`, `drawer.recent_openings`,
+  `drawer.reason_*`, `shift.resend/next/print_*/later`, `time.yesterday`,
+  `tip_payout.recipient_required`, `shift.pending_hint`) so the registers take every text from the package.
+
 ## 11.1.1
 
 - Documentation of `getCashregisterReport`: the daily report is only

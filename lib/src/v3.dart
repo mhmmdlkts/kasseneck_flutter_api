@@ -35,7 +35,7 @@ const String kPublicBaseUrl = 'https://api.kasseneck.at/v3';
 const String kPosBaseUrl = 'https://kasse.kasseneck.at/api/v3';
 
 /// Version dieses Pakets, wie in `pubspec.yaml` (ein Test haelt beide gleich).
-const String kPackageVersion = '11.1.1';
+const String kPackageVersion = '11.2.0';
 
 const String _versionKopf = 'Kasseneck-Api-Version';
 const String _clientKopf = 'Kasseneck-Client';
@@ -75,6 +75,7 @@ const Set<String> unknownOutcomeCalls = {
   'cancelReceipt',
   'cancelStocktake',
   'changeStockCondition',
+  'closeMyShift',
   'closeStocktake',
   'createArticle',
   'createCreditNote',
@@ -97,9 +98,12 @@ const Set<String> unknownOutcomeCalls = {
   'hobexPayApi',
   'hobexRefundApi',
   'issueInvoice',
+  'logMyDrawerOpenings',
+  'openMyShift',
   'pairRegisterDevice',
   'receiveGoods',
   'recordInvoicePayment',
+  'recordMyCashMovement',
   'recordMyStocktakeCount',
   'recordStockLoss',
   'recordStocktakeCount',
