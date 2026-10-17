@@ -67,6 +67,9 @@
     "logout.press_again": {
       "text": "Noch einmal drücken beendet die Schicht an dieser Kasse."
     },
+    "logout.cart_cleared": {
+      "text": "Noch einmal drücken meldet dich ab – der Warenkorb wird geleert."
+    },
     "permissions.not_changeable": {
       "text": "Das darfst du nicht ändern – das Recht dafür vergibt der Inhaber im Panel."
     },
@@ -729,7 +732,7 @@
       "text": "Die Schicht muss ein berechtigter Mitarbeiter öffnen."
     },
     "shift.recount": {
-      "text": "Bitte noch einmal zählen."
+      "text": "Der gezählte Betrag weicht ab – bitte noch einmal zählen."
     },
     "shift.comment_required": {
       "text": "Die Abweichung ist größer als erlaubt – bitte kurz begründen."
@@ -1906,6 +1909,24 @@
       "text": "{title} ändern",
       "placeholders": [
         "title"
+      ]
+    },
+    "shift.pay_ins": {
+      "text": "Einzahlungen"
+    },
+    "shift.pay_outs": {
+      "text": "Auszahlungen"
+    },
+    "cash_movement.pay_in_amount": {
+      "text": "{amount} einzahlen",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "cash_movement.pay_out_amount": {
+      "text": "{amount} auszahlen",
+      "placeholders": [
+        "amount"
       ]
     }
   },

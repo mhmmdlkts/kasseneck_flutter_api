@@ -29,6 +29,7 @@ const Map<String, PosText> posMessages = {
   'session.none': PosText('Keine Sitzung.'),
   'session.logging_out': PosText('Kasse meldet in {seconds} s ab – Bildschirm berühren, um weiterzuarbeiten.', placeholders: ['seconds']),
   'logout.press_again': PosText('Noch einmal drücken beendet die Schicht an dieser Kasse.'),
+  'logout.cart_cleared': PosText('Noch einmal drücken meldet dich ab – der Warenkorb wird geleert.'),
   'permissions.not_changeable': PosText('Das darfst du nicht ändern – das Recht dafür vergibt der Inhaber im Panel.'),
   'cashregister.load_failed': PosText('Die Kasse konnte nicht geladen werden.'),
   'articles.load_failed': PosText('Die Artikel konnten nicht geladen werden.'),
@@ -180,7 +181,7 @@ const Map<String, PosText> posMessages = {
   'stocktake.outcome_unknown': PosText('Unklar, ob die Zählung angekommen ist. „Erneut senden“ schickt dieselbe Zählung – sie zählt auch dann nur einmal.'),
   'shift.required': PosText('Bitte zuerst die Schicht öffnen.'),
   'shift.required_other': PosText('Die Schicht muss ein berechtigter Mitarbeiter öffnen.'),
-  'shift.recount': PosText('Bitte noch einmal zählen.'),
+  'shift.recount': PosText('Der gezählte Betrag weicht ab – bitte noch einmal zählen.'),
   'shift.comment_required': PosText('Die Abweichung ist größer als erlaubt – bitte kurz begründen.'),
   'shift.closed': PosText('Schicht {number} geschlossen.', placeholders: ['number']),
   'shift.long_open': PosText('Die Schicht läuft seit {since}.', placeholders: ['since']),
@@ -465,6 +466,10 @@ const Map<String, PosText> posLabels = {
   'shift.back': PosText('Zurück'),
   'shift.done': PosText('Fertig'),
   'shift.edit_amount': PosText('{title} ändern', placeholders: ['title']),
+  'shift.pay_ins': PosText('Einzahlungen'),
+  'shift.pay_outs': PosText('Auszahlungen'),
+  'cash_movement.pay_in_amount': PosText('{amount} einzahlen', placeholders: ['amount']),
+  'cash_movement.pay_out_amount': PosText('{amount} auszahlen', placeholders: ['amount']),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].

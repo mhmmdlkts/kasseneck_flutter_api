@@ -36,6 +36,13 @@ accessibility label „{title} ändern“), message `shift.change_float_missing`
 the bold column line is pinned in the byte twin test. Reason: the drawer kept everything after a
 shift, so the next shift started with the whole day's cash.
 
+Register polish: `shift.pay_ins`/`shift.pay_outs` (deposits and withdrawals as
+two rows of the cash position instead of one net row),
+`cash_movement.pay_in_amount`/`pay_out_amount` („{amount} einzahlen“, the book
+button with the amount) and message `logout.cart_cleared` (second press logs
+out and clears the cart). `shift.recount` now names the reason: „Der gezählte
+Betrag weicht ab – bitte noch einmal zählen.“
+
 Additive; every existing call sends the same bytes as in 11.1.1 unless you
 pass the new `drawerId`. The lists `posErrorCodes` (18 new codes),
 `unknownOutcomeCalls` (4 more) and `Aufrufe.alle` (6 more) gain entries; code

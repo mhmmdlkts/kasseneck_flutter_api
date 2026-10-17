@@ -64,6 +64,8 @@ const _nach10 = (
     'tip_payout.none_open',
     // Wechselgeld je Kassenlade und Entnehmen/Einlegen beim Abschluss (11.2.0)
     'shift.change_float_missing',
+    // Abmelden mit vollem Warenkorb (11.2.0)
+    'logout.cart_cleared',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -124,6 +126,8 @@ const _nach10 = (
     'shift.put_in_amount', 'shift.continue_without_take_out', 'shift.print_envelope_receipt',
     'shift.toggle_take_out_put_in', 'shift.put_in_change_float', 'shift.taken_over_from_shift',
     'shift.counted', 'shift.back', 'shift.done', 'shift.edit_amount',
+    // Ein- und Auszahlungen getrennt im Kassenstand, Betrag im Buchungsknopf (11.2.0)
+    'shift.pay_ins', 'shift.pay_outs', 'cash_movement.pay_in_amount', 'cash_movement.pay_out_amount',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
   placeholders: {
