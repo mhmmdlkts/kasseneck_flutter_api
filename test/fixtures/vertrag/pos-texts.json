@@ -1793,13 +1793,6 @@
     "tip_payout.done": {
       "text": "erledigt"
     },
-    "tip_payout.earned_paid": {
-      "text": "verdient {earned} · ausgezahlt {paid}",
-      "placeholders": [
-        "earned",
-        "paid"
-      ]
-    },
     "tip_payout.for_all": {
       "text": "Für alle"
     },

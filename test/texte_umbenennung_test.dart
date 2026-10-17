@@ -113,7 +113,7 @@ const _nach10 = (
     'shift.receipt_count_one', 'shift.receipt_count_other', 'shift.openings_without_sale_count',
     'cash_movement.pay_in_short', 'cash_movement.pay_out_short', 'drawer.recent_openings_full',
     'duration.days_one', 'duration.days_other', 'duration.hours', 'duration.minutes',
-    'tip_payout.open_amount', 'tip_payout.done', 'tip_payout.earned_paid', 'tip_payout.for_all',
+    'tip_payout.open_amount', 'tip_payout.done', 'tip_payout.for_all',
     'tip_payout.nothing', 'tip_payout.all_open', 'tip_payout.title', 'tip_payout.persons_one',
     'tip_payout.persons_other', 'tip_payout.pay_amount', 'tip_payout.pay_out',
     // Druckwarnung an der Kasse (11.2.0)
@@ -133,7 +133,7 @@ const _nach10 = (
   placeholders: {
     'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type',
     // Kassenstand und Trinkgeld-Liste (11.2.0)
-    'duration', 'days', 'hours', 'minutes', 'earned', 'paid',
+    'duration', 'days', 'hours', 'minutes',
     // Wechselgeld je Kassenlade (11.2.0)
     'title',
   },

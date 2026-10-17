@@ -435,7 +435,6 @@ const Map<String, PosText> posLabels = {
   'duration.minutes': PosText('{minutes} Min.', placeholders: ['minutes']),
   'tip_payout.open_amount': PosText('offen {amount}', placeholders: ['amount']),
   'tip_payout.done': PosText('erledigt'),
-  'tip_payout.earned_paid': PosText('verdient {earned} · ausgezahlt {paid}', placeholders: ['earned', 'paid']),
   'tip_payout.for_all': PosText('Für alle'),
   'tip_payout.nothing': PosText('Nichts'),
   'tip_payout.all_open': PosText('Alles Offene'),
