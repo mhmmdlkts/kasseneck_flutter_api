@@ -14,6 +14,8 @@ import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/src/receipt/due.dart';
 import 'package:kasseneck_api/src/register/fehler.dart' show ErrorOutcome, isOutcomeUnknown;
 
+import 'helpers/gutschein_setup.dart';
+
 /// Zahlbetrag als Zwilling des Backends (npm `test/due.test.ts`): jeder Fall
 /// aus `v3/zahlbetrag-faelle.json` (20, gegen den echten Handler geprueft) und
 /// aus `receipt-due-generated.json` (1206, mit dem echten Backend-Code
@@ -33,14 +35,13 @@ ReceiptDueLine _zeile(Map<String, dynamic> p) {
     priceCents: (p['priceCents'] ?? p['unitPriceCents'] ?? p['priceOneCents']) as int,
     vatRate: (p['vatRate'] ?? p['vat']) as num,
     tip: p['kind'] == 'tip' ? (owner ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff) : null,
+    kind: p['kind'] as String?,
+    articleId: p['articleId'] as String?,
   );
 }
 
-KeckVoucher _gutschein(Map<String, dynamic> v) => KeckVoucher(
-      action: VoucherAction.values.byName(v['action'] as String),
-      type: VoucherType.values.byName(v['type'] as String),
-      valueCents: v['valueCents'] as int,
-    );
+/// Ein Gutschein des Vertrags, Altform wie neue Form (gelesen wie ein Beleg).
+KeckVoucher _gutschein(Map<String, dynamic> v) => KeckVoucher.fromJson(v);
 
 Map<String, Object?> _alsMap(ReceiptDueBreakdown e) => {
       'dueCents': e.dueCents,
@@ -104,6 +105,8 @@ void main() {
       test('${fall['name']} stimmt exakt (${fall['verifiedBy']})', () {
         final input = fall['input'] as Map<String, dynamic>;
         final tip = input['tip'] as Map<String, dynamic>?;
+        // Gutscheine der neuen Form: die Welt des Falls (Pruefung, Einstellung, Artikel).
+        final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
         final e = receiptDueBreakdownForLines(
           [for (final p in (input['items'] as List).cast<Map<String, dynamic>>()) _zeile(p)],
           [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) _gutschein(v)],
@@ -111,6 +114,9 @@ void main() {
           // Der Vertrag rechnet Personal-Trinkgeld ohne Empfaenger, Inhaber-Trinkgeld mit dem Inhaber.
           tip: tip == null ? null : ReceiptDueTip(tip['cents'] as int),
           tipRecipient: tip == null ? null : (tip['owner'] == true ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff),
+          voucherInfo: welt.info,
+          voucherSettings: welt.settings,
+          voucherArticles: welt.articles,
         );
         expect(_alsMap(e), fall['expected']);
       });
@@ -124,12 +130,16 @@ void main() {
       final roh = (input['items'] as List).cast<Map<String, dynamic>>();
       if (roh.any((p) => (p['quantity'] ?? p['amount']) is! int)) continue;
       final tip = input['tip'] as Map<String, dynamic>?;
+      final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
       final cents = receiptDueCents(
         [for (final p in roh) KasseneckItem.fromJson(p)],
         [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) _gutschein(v)],
         _typ(input['receiptType'] as String),
         tip: tip == null ? null : ReceiptDueTip(tip['cents'] as int),
         tipRecipient: tip == null ? null : (tip['owner'] == true ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff),
+        voucherInfo: welt.info,
+        voucherSettings: welt.settings,
+        voucherArticles: welt.articles,
       );
       expect(cents, (fall['expected'] as Map)['dueCents'], reason: fall['name'] as String);
       geprueft++;

@@ -1,16 +1,18 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "b49a1f665005b1f3b286d2c02268373f84dfb40638177ceba15dd3cda8a7da62",
-    "inputsSha256": "95fd7b1f3704811d3a3f79b1dbb6aea668e8c0e3a663e5b0ca9c07f2e11e37b5",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
+    "sha256": "0e36b49865452cd813feea1f6cdd6cd533d22e00b60263ff558c3fee3b9ed5ba",
+    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
+    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/aktivierung-api-core.js",
       "functions/beleg-mail-core.js",
       "functions/gemeinsam/api-rand.js",
       "functions/gemeinsam/api-vokabular-v3.js",
       "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/gutschein-beleg.js",
       "functions/gemeinsam/storno-core.js",
       "functions/gemeinsam/tip-core.js",
       "functions/gemeinsam/vat-buckets.js",
@@ -20,6 +22,7 @@
       "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
       "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
       "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/gutschein-belege.js",
       "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
       "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
       "functions/test/unit/helpers/kassen-fehlerstellen.js",
@@ -788,6 +791,293 @@
         "counterDeltaCents": 0,
         "valueVoucherFlowCents": 0,
         "bucketsCents": null
+      }
+    },
+    {
+      "name": "single_purpose_voucher_sell",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [],
+        "vouchers": [
+          {
+            "action": "sell",
+            "type": "single_purpose",
+            "amountCents": 5000
+          }
+        ]
+      },
+      "setup": {
+        "einstellung": {
+          "wertArt": "einzweck",
+          "satzBp": 2000,
+          "gueltigkeit": "1+3",
+          "bestaetigtAt": 1
+        }
+      },
+      "expected": {
+        "dueCents": 5000,
+        "counterDeltaCents": 5000,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 5000,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "single_purpose_voucher_redeem",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "single_purpose",
+            "code": "T25M-J17D-5THH",
+            "amountCents": 300
+          }
+        ]
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gez1",
+            "code": "T25MJ17D5THH",
+            "daten": {
+              "art": "einzweck",
+              "status": "aktiv",
+              "codeEnde": "5THH",
+              "nennwertCents": 5000,
+              "saldoCents": 2000,
+              "satzBp": 2000,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r1",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 340,
+        "counterDeltaCents": 340,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 340,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "service_voucher_sell",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [],
+        "vouchers": [
+          {
+            "action": "sell",
+            "type": "service",
+            "articleId": "art_mani",
+            "quantity": 2
+          }
+        ]
+      },
+      "setup": {
+        "artikel": [
+          {
+            "id": "art_mani",
+            "name": "Maniküre",
+            "unitPriceCents": 3500,
+            "vatRate": 20,
+            "active": true
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 7000,
+        "counterDeltaCents": 7000,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 7000,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "service_voucher_redeem",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Maniküre",
+            "amount": 1,
+            "priceOneCents": 3500,
+            "vat": 20,
+            "articleId": "art_mani"
+          },
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "service",
+            "code": "T25MJ17DCKHJ",
+            "positions": [
+              0
+            ]
+          }
+        ]
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gls1",
+            "code": "T25MJ17DCKHJ",
+            "daten": {
+              "art": "leistung",
+              "status": "aktiv",
+              "codeEnde": "CKHJ",
+              "nennwertCents": 10500,
+              "stueck": 3,
+              "stueckOffen": 3,
+              "satzBp": 2000,
+              "artikel": {
+                "id": "art_mani",
+                "name": "Maniküre",
+                "satzBp": 2000,
+                "preisCents": 3500
+              },
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r2",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 640,
+        "counterDeltaCents": 640,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      }
+    },
+    {
+      "name": "promotion_voucher_redeem",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "promotion",
+            "code": "T25MJ17D1BHT"
+          }
+        ]
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gak1",
+            "code": "T25MJ17D1BHT",
+            "daten": {
+              "art": "aktion",
+              "status": "aktiv",
+              "codeEnde": "1BHT",
+              "rabattCents": 200,
+              "rabattProzentBp": null,
+              "eingeloest": false,
+              "gueltigkeit": {
+                "muster": "frei",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": "2026-12-31"
+              },
+              "ausgabe": {
+                "panel": true,
+                "anlass": "aktion"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 756,
+        "counterDeltaCents": 756,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 506,
+          "amountRateReduced1": 250,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
       }
     }
   ]

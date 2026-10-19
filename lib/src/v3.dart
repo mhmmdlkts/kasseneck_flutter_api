@@ -100,6 +100,7 @@ const Set<String> unknownOutcomeCalls = {
   'issueInvoice',
   'logMyDrawerOpenings',
   'openMyShift',
+  'orderSignatureCard',
   'pairRegisterDevice',
   'receiveGoods',
   'recordInvoicePayment',

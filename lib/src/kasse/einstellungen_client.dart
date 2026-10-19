@@ -42,7 +42,7 @@ class PosSettingsClient {
       Aufrufe.getKasseSettings,
       params: {if (deviceId.trim().isNotEmpty) 'deviceId': deviceId},
     );
-    return PosSettings.fromJson({'business': daten['business'], 'device': daten['device']});
+    return PosSettings.fromJson({'business': daten['business'], 'device': daten['device'], 'vouchers': daten['vouchers']});
   }
 
   /// Betriebsweite Einstellungen schreiben (Recht `layout`). [patch] mit

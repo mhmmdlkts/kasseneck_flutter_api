@@ -112,6 +112,8 @@ final Set<String> woerter = _liste('''
   allow claim claims closed comment counterpart denominations deviations duplicates entries eur handover
   log long manual matches non opened opening openings optional payout payouts recent recomputed
   reconciliation retained rights role running sales shift suggested take target tips float over without taken
+  balance bucket exempt face manage multi pattern positions promotion purpose redeemable refundable reprint
+  suffix taxed up used validity patterns
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,
@@ -124,7 +126,7 @@ final Set<String> kuerzel = _liste('''
   micros millis min mm ms n ok params pc pct pdf perms pin pos pre pro q qr
   qrcode r ref res rgb rgba s scep sdk sdp sec sepa sig sms src sub t tcp tid
   tids ttl tx tz uid uint upc url usb vat vu w wifi wpc x xl xml y zip
-  sha
+  sha bp
 ''');
 
 /// Produkt- und Firmennamen.

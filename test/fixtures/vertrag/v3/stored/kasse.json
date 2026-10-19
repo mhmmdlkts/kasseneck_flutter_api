@@ -2,10 +2,10 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "7a9ab24d57ab048d549628bd7e64e5e8b723b25bfbee035d883c9d6f9bafef3b",
+      "sha256": "2cc77736cae05b3d7c2e67d59bd6bd7cfb9f5484eed54cf236e3a412ab9e78f9",
       "head": [],
-      "inputsSha256": "3b6c5c73af674b969019c273f50068879923cee243dafa490e0c7335107c4e79",
-      "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
+      "inputsSha256": "684e236f4e84e7befba5ebda44021eefc4de50a6f2507cf4de5b456e9a2ed790",
+      "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
         "functions/gemeinsam/api-rand.js",
@@ -24,7 +24,7 @@
         "note",
         "baseline"
       ],
-      "inputsSha256": "88ae97429f7c74025f6549ac46a0db291a0407bd070e875cc93c2fc3d3f1d6d3",
+      "inputsSha256": "1efd9f548d9b578193c3dbf4aae041f4ffaa1adcaba01a7c5e2df7ba882efa94",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -4928,6 +4928,227 @@
               ],
               "nachzaehlen": false,
               "nachtraeglich": false
+            }
+          }
+        }
+      }
+    },
+    "checkVoucher": {
+      "codebase": "default",
+      "cases": {
+        "unknown": {
+          "rate_limits/gutscheinpruef_kasse_87c57ff9e564bac5e069fdb2b4a812c9_2026092610": {
+            "fehl": 1,
+            "loeschenAb": "2026-09-26T10:00:00.000Z"
+          },
+          "rate_limits/gutscheinpruef_konto_88ddbabbd47036960630df27c625f9c1": {
+            "count": 1,
+            "windowStart": 1790409600000
+          }
+        },
+        "success_cashier": {
+          "rate_limits/gutscheinpruef_konto_88ddbabbd47036960630df27c625f9c1": {
+            "count": 1,
+            "windowStart": 1790409600000
+          }
+        },
+        "success_service": {
+          "rate_limits/gutscheinpruef_konto_88ddbabbd47036960630df27c625f9c1": {
+            "count": 1,
+            "windowStart": 1790409600000
+          }
+        },
+        "success_exempt": {
+          "rate_limits/gutscheinpruef_konto_88ddbabbd47036960630df27c625f9c1": {
+            "count": 1,
+            "windowStart": 1790409600000
+          }
+        },
+        "success_device": {
+          "rate_limits/gutscheinpruef_konto_88ddbabbd47036960630df27c625f9c1": {
+            "count": 1,
+            "windowStart": 1790409600000
+          }
+        }
+      }
+    },
+    "reprintVoucherLabel": {
+      "codebase": "default",
+      "cases": {
+        "success_manager": {
+          "users/kw_betrieb1/gutscheine/gmz1": {
+            "art": "mehrzweck",
+            "status": "aktiv",
+            "nennwertCents": 5000,
+            "saldoCents": 3200,
+            "satzBp": null,
+            "artikel": null,
+            "kleinunternehmer": false,
+            "zahlartVerkauf": "cash",
+            "gueltigkeit": {
+              "muster": "1+3",
+              "einloesbarBis": "2027-09-20",
+              "rueckzahlbarBis": "2030-09-20",
+              "gueltigBis": null
+            },
+            "ausgabe": {
+              "receiptId": "KASSE1-ID-9",
+              "fullReceiptId": null,
+              "cashregisterId": "KASSE1",
+              "at": 1790323200000,
+              "tag": "2026-09-20"
+            },
+            "codeHash": "95b7fb7dace205b0dc7d7cd461413e182bde6dae82a8855371b3c89e03c706e7",
+            "codeEnde": "7DHP",
+            "druck": {
+              "anzahl": 1,
+              "zuletztAt": 1790409600000
+            },
+            "angelegtAt": 1790323200000,
+            "geaendertAt": 1790409600000
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "gutschein",
+            "aktion": "nachgedruckt",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "druck.anzahl",
+                "alt": 0,
+                "neu": 1
+              }
+            ],
+            "gutschein": {
+              "id": "gmz1",
+              "name": "····-····-7DHP"
+            }
+          }
+        },
+        "success_service": {
+          "users/kw_betrieb1/gutscheine/gls1": {
+            "art": "leistung",
+            "status": "aktiv",
+            "nennwertCents": 10500,
+            "stueck": 3,
+            "stueckOffen": 2,
+            "satzBp": 2000,
+            "artikel": {
+              "id": "art_mani",
+              "name": "Manikuere",
+              "satzBp": 2000,
+              "preisCents": 3500
+            },
+            "kleinunternehmer": false,
+            "zahlartVerkauf": "cash",
+            "gueltigkeit": {
+              "muster": "unbefristet",
+              "einloesbarBis": null,
+              "rueckzahlbarBis": null,
+              "gueltigBis": null
+            },
+            "ausgabe": {
+              "receiptId": "KASSE1-ID-8",
+              "fullReceiptId": null,
+              "cashregisterId": "KASSE1",
+              "at": 1790323200000,
+              "tag": "2026-09-20"
+            },
+            "codeHash": "159c6aeccb504ccc9b0a113f3ebbb011b8902f5282b76099433468aa60e983c7",
+            "codeEnde": "7DJG",
+            "druck": {
+              "anzahl": 1,
+              "zuletztAt": 1790409600000
+            },
+            "angelegtAt": 1790323200000,
+            "geaendertAt": 1790409600000
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "gutschein",
+            "aktion": "nachgedruckt",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "druck.anzahl",
+                "alt": 0,
+                "neu": 1
+              }
+            ],
+            "gutschein": {
+              "id": "gls1",
+              "name": "····-····-7DJG"
+            }
+          }
+        },
+        "success_device": {
+          "users/kw_betrieb1/gutscheine/gmz1": {
+            "art": "mehrzweck",
+            "status": "aktiv",
+            "nennwertCents": 5000,
+            "saldoCents": 3200,
+            "satzBp": null,
+            "artikel": null,
+            "kleinunternehmer": false,
+            "zahlartVerkauf": "cash",
+            "gueltigkeit": {
+              "muster": "1+3",
+              "einloesbarBis": "2027-09-20",
+              "rueckzahlbarBis": "2030-09-20",
+              "gueltigBis": null
+            },
+            "ausgabe": {
+              "receiptId": "KASSE1-ID-9",
+              "fullReceiptId": null,
+              "cashregisterId": "KASSE1",
+              "at": 1790323200000,
+              "tag": "2026-09-20"
+            },
+            "codeHash": "95b7fb7dace205b0dc7d7cd461413e182bde6dae82a8855371b3c89e03c706e7",
+            "codeEnde": "7DHP",
+            "druck": {
+              "anzahl": 1,
+              "zuletztAt": 1790409600000
+            },
+            "angelegtAt": 1790323200000,
+            "geaendertAt": 1790409600000
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "gutschein",
+            "aktion": "nachgedruckt",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "geraet",
+              "name": null
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "druck.anzahl",
+                "alt": 0,
+                "neu": 1
+              }
+            ],
+            "gutschein": {
+              "id": "gmz1",
+              "name": "····-····-7DHP"
             }
           }
         }

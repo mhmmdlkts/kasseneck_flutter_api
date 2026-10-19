@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.11.0
+npm_version: 1.12.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -28,6 +28,12 @@ npm_version: 1.11.0
 # zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.12.0: die beiden Gutschein-Aufrufe der Kasse (checkVoucher,
+# reprintVoucherLabel, pos.dart) und die drei Gutschein-Rechte sind gedeckt.
+# Die Signaturkarten-Bestellung (orderSignatureCard, getSignatureCardOrder)
+# ist ein Konto-Vorgang und steht unten als nicht zutreffend; orderSignatureCard
+# steht trotzdem in unknownOutcomeCalls (Einordnung, keine Aufrufliste).
 #
 # Stand 1.8.0: die 12 Aufrufe der Inventur (InventoryClient) und die 5 des
 # Kassenwegs (RegisterReceiptClient, Dart 10.7.0) sind gedeckt, ohne neuen
@@ -68,6 +74,13 @@ npm_version: 1.11.0
 # ohne die Lücke zu schließen, wird rot, und wer die Lücke schließt, ohne die
 # Zeile zu streichen, ebenfalls: sonst sänke die Zahl in der CI nie.
 ausnahmen:
+  # ---- Signaturkarte bestellen: Konto-Vorgang, kein Kassenvorgang ----
+  - eintrag: calls.orderSignatureCard
+    art: nicht_zutreffend
+    grund: "Signaturkarte fuer das eigene Konto bestellen (Kartenvorrat, Spec 2026-10-14): ein Konto-Vorgang mit API-Schluessel, den keine Kasse ausloest. Auch npm fuehrt nur den Namen, ohne typisierte Funktion."
+  - eintrag: calls.getSignatureCardOrder
+    art: nicht_zutreffend
+    grund: "Stand der Signaturkarten-Bestellung lesen: gehoert zu orderSignatureCard (Konto-Vorgang, kein Kassenvorgang). Auch npm fuehrt nur den Namen, ohne typisierte Funktion."
   # ---- Partner-API: kein Kassen-Thema, dauerhaft nicht zutreffend ----
   - eintrag: calls.activateCashregister
     art: nicht_zutreffend

@@ -44,6 +44,13 @@ export 'src/register/pairing.dart' show RegisterScope;
 // Ob die Kasse Lager zeigt, entscheidet ein Recht mit eigener Regel (fehlt =
 // erteilt); wer die Lager-Aufrufe benutzt, braucht sie hier.
 export 'src/register/pairing.dart' show stockViewOf;
+// Gutscheine der neuen Form (seit 11.3): pruefen, Etikett, Einstellung,
+// Rechte und das Modell, das ein Verkauf mitgibt.
+export 'src/register/pairing.dart' show VoucherPerms, voucherPermsOf;
+export 'src/kasse/gutschein.dart';
+export 'enums/voucher_type.dart';
+export 'enums/voucher_action.dart';
+export 'models/keck_voucher.dart';
 export 'src/kasse/artikel.dart';
 export 'src/kasse/testkennzeichen.dart';
 export 'src/kasse/belege.dart';

@@ -22,9 +22,24 @@
 /// Richtung plus unendlich), nicht wie Darts `round()` (von null weg): am
 /// Storno sind die Betraege negativ, und dort unterscheiden sich die beiden.
 ///
-/// Geprueft gegen die 20 Vertragsfaelle aus `v3/zahlbetrag-faelle.json` und
-/// gegen die 1206 mit dem echten Backend-Code erzeugten Faelle aus
-/// `receipt-due-generated.json`.
+/// Geprueft gegen die Vertragsfaelle aus `v3/zahlbetrag-faelle.json`, gegen
+/// die 1206 mit dem echten Backend-Code erzeugten Faelle aus
+/// `receipt-due-generated.json` und gegen die 480 Gutscheinfaelle aus
+/// `receipt-due-voucher-generated.json` (ebenfalls echter Backend-Code).
+///
+/// **Gutscheine der neuen Form** (Mehrzweck, Einzweck, Leistung, Aktion,
+/// Auszahlung): der Server macht daraus Positionen und Eintraege
+/// (`gutschein-beleg.plane`, Zwilling in `gutschein_plan.dart`). Was er dafuer
+/// aus seinen Daten liest, gibt die Kasse mit: je Einloesung/Auszahlung die
+/// Pruefung aus `checkVoucher` (`voucherInfo`, ueber den Code zugeordnet), fuer
+/// einen Verkauf die Gutschein-Einstellung der Kasse (`voucherSettings`), fuer
+/// einen Leistungsgutschein-Verkauf den Artikel (`voucherArticles`) und
+/// `smallBusiness` fuer ein Kleinunternehmer-Konto. Was fehlt oder was der
+/// Server abwiese, wirft `invalid_voucher` mit dem erwarteten Server-Code in
+/// [ReceiptDueError.voucherErrorCode]. Ein Beleg nur aus Auszahlungen hat
+/// einen negativen Zahlbetrag (genau eine Barzahlung ueber diesen Betrag);
+/// deckt ein Gutschein alles, ist der Zahlbetrag 0 (keine Zahlung, kein
+/// Kartenterminal).
 ///
 /// **Trinkgeld-Empfaenger:** Ohne `recipients` bucht der Server das Trinkgeld
 /// auf den angemeldeten Kassen-Benutzer, und dessen Inhaber-Kennzeichen
@@ -43,7 +58,11 @@ import '../../models/kasseneck_item.dart';
 import '../../models/keck_payment.dart';
 import '../../models/keck_tip.dart';
 import '../../models/keck_voucher.dart';
+import '../../services/vienna_time.dart';
+import 'package:kreiseck_validator/kreiseck_validator.dart' show VoucherCode;
+import '../kasse/gutschein.dart';
 import '../register/fehler.dart' show ErrorOutcome;
+import 'gutschein_plan.dart';
 
 /// Stabiler Code von [ReceiptDueError], gleich fuer jede Ursache.
 const String receiptDueErrorCode = 'receipt_due_unavailable';
@@ -79,13 +98,19 @@ const List<String> receiptDueErrorReasons = [
 ///
 /// Bis 10.0.0-rc.1 warf die Rechnung hier einen `ArgumentError` ohne Code.
 class ReceiptDueError implements Exception {
-  const ReceiptDueError(this.reason, this.message);
+  const ReceiptDueError(this.reason, this.message, [this.voucherErrorCode]);
 
   /// Die Ursache im Einzelnen, ein Wert aus [receiptDueErrorReasons].
   final String reason;
 
-  /// Fuers Protokoll, nie zum Entscheiden.
+  /// Fuers Protokoll, nie zum Entscheiden. Nennt nie einen Gutscheincode.
   final String message;
+
+  /// Nur bei `invalid_voucher`: der Gutschein-Code, mit dem der Server
+  /// denselben Beleg abwiese (`voucher_rate_mismatch`, `voucher_exceeds_total`,
+  /// `voucher_not_found` …), fuer die Meldung an der Kasse. Zwilling von
+  /// `ReceiptDueError.voucherErrorCode` im npm-Paket.
+  final String? voucherErrorCode;
 
   /// Immer [receiptDueErrorCode].
   String get code => receiptDueErrorCode;
@@ -144,7 +169,14 @@ class ReceiptDueTip {
 /// hier ein Bruch sein (0,375 kg) und der Steuersatz jeder Wert, den ein
 /// Beleg tragen kann; [ReceiptDueLine.of] macht aus einer Position eine Zeile.
 class ReceiptDueLine {
-  const ReceiptDueLine({required this.quantity, required this.priceCents, required this.vatRate, this.tip});
+  const ReceiptDueLine({
+    required this.quantity,
+    required this.priceCents,
+    required this.vatRate,
+    this.tip,
+    this.kind,
+    this.articleId,
+  });
 
   /// Die Zeile einer Position; eine Trinkgeld-Position (`kind: 'tip'`) behaelt
   /// ihre Art (Inhaber, wenn `recipient.owner == true`, sonst Personal).
@@ -165,6 +197,8 @@ class ReceiptDueLine {
         priceCents: item.priceCents,
         vatRate: item.vat.rate,
         tip: item.isTip ? (item.isOwnerTip ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff) : null,
+        kind: item.kind,
+        articleId: item.articleId,
       );
   }
 
@@ -185,6 +219,8 @@ class ReceiptDueLine {
       priceCents: cents.toInt(),
       vatRate: satz,
       tip: json['kind'] == 'tip' ? (owner ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff) : null,
+      kind: json['kind'] is String ? json['kind'] as String : null,
+      articleId: json['articleId'] is String ? json['articleId'] as String : null,
     );
   }
 
@@ -194,7 +230,46 @@ class ReceiptDueLine {
 
   /// `null` fuer Ware; sonst die Art der Trinkgeld-Position.
   final ReceiptDueTipRecipient? tip;
+
+  /// Kennzeichnung der Position (`tip`, `discount`, `voucher`,
+  /// `voucher_float`); Ware hat keine. Ein Gutschein deckt nie eine
+  /// Trinkgeld- oder Gutscheinzeile, ein Leistungsgutschein nur Ware.
+  final String? kind;
+
+  /// Artikel der Position: ein Leistungsgutschein deckt nur Positionen seines
+  /// Artikels.
+  final String? articleId;
 }
+
+/// Je Einloesung bzw. Auszahlung der neuen Form die gepruefte Sicht des
+/// Gutscheins (aus `checkVoucher`), zugeordnet ueber den Code. Zwilling von
+/// `VoucherDueInfo` im npm-Paket.
+class VoucherDueInfo {
+  const VoucherDueInfo({required this.code, required this.check});
+
+  /// Der Code, wie er gesendet wird (tolerant: Gross/klein, Bindestriche,
+  /// `O`/`0`, `I`/`L`/`1`). Lebt nur im Speicher; die Rechnung nennt ihn nie.
+  final String code;
+  final VoucherCheck check;
+}
+
+/// Artikel fuer den Verkauf eines Leistungsgutscheins: Preis und Satz wie im
+/// Artikelstamm der Kasse.
+class VoucherDueArticle {
+  const VoucherDueArticle({required this.id, required this.priceCents, required this.vatRateBp});
+
+  final String id;
+  final int priceCents;
+
+  /// Steuersatz in Basispunkten.
+  final int vatRateBp;
+}
+
+/// Stichtag des 0-%-Topfs fuer Mehrzweck-Verkaeufe (Backend
+/// `gutschein-core.NULLTOPF_AB`). Solange er in der Zukunft liegt, zaehlt ein
+/// Mehrzweck-Verkauf als Fluss; ab dem Tag als Position im 0-%-Satz. Der
+/// Zahlbetrag bleibt gleich, Toepfe und Fluss verschieben sich.
+const String voucherZeroRateBucketFrom = nullTopfAb;
 
 /// Ergebnis von [receiptDueBreakdown].
 class ReceiptDueBreakdown {
@@ -221,6 +296,20 @@ class ReceiptDueBreakdown {
 }
 
 /// Zahlbetrag in Cent, siehe Bibliothekskommentar.
+///
+/// Gutscheine der neuen Form: [voucherInfo] je Einloesung/Auszahlung die
+/// Pruefung aus `checkVoucher` (fehlt sie fuer einen Code:
+/// `voucher_not_found`); [voucherSettings] die Gutschein-Einstellung der
+/// Kasse, Pflicht fuer jeden Mehrzweck- und Einzweck-Verkauf (fehlt sie oder
+/// ist keine Art gewaehlt: `voucher_settings_missing`, eine andere Art:
+/// `voucher_invalid`); [voucherArticles] Preis und Satz fuer einen
+/// Leistungsgutschein-Verkauf (fehlt der Artikel: `voucher_item_mismatch`);
+/// [smallBusiness] fuer ein Kleinunternehmer-Konto (Verkauf zu 0 %, eine
+/// Einzweck-Einloesung anteilig auf alle Saetze des Korbs, ebenso fuer einen
+/// befreit verkauften Gutschein, [VoucherCheck.exempt]);
+/// [zeroRateBucketFrom] der Stichtag des 0-%-Topfs (Vorgabe
+/// [voucherZeroRateBucketFrom], nur fuer eine Test-Umgebung aendern) und
+/// [today] der Wiener Tag des Belegs (`YYYY-MM-DD`, Vorgabe: heute).
 int receiptDueCents(
   List<KasseneckItem> items,
   List<KeckVoucher> vouchers,
@@ -228,8 +317,24 @@ int receiptDueCents(
   ReceiptDueTip? tip,
   List<KeckPaymentInput>? payments,
   ReceiptDueTipRecipient? tipRecipient,
+  List<VoucherDueInfo>? voucherInfo,
+  PosVoucherSettings? voucherSettings,
+  List<VoucherDueArticle>? voucherArticles,
+  bool smallBusiness = false,
+  String? zeroRateBucketFrom,
+  String? today,
 }) =>
-    receiptDueBreakdown(items, vouchers, receiptType, tip: tip, payments: payments, tipRecipient: tipRecipient).dueCents;
+    receiptDueBreakdown(items, vouchers, receiptType,
+            tip: tip,
+            payments: payments,
+            tipRecipient: tipRecipient,
+            voucherInfo: voucherInfo,
+            voucherSettings: voucherSettings,
+            voucherArticles: voucherArticles,
+            smallBusiness: smallBusiness,
+            zeroRateBucketFrom: zeroRateBucketFrom,
+            today: today)
+        .dueCents;
 
 /// Wie [receiptDueCents], dazu Zaehler-Delta, Wertgutschein-Anteil und Toepfe.
 ReceiptDueBreakdown receiptDueBreakdown(
@@ -239,9 +344,23 @@ ReceiptDueBreakdown receiptDueBreakdown(
   ReceiptDueTip? tip,
   List<KeckPaymentInput>? payments,
   ReceiptDueTipRecipient? tipRecipient,
+  List<VoucherDueInfo>? voucherInfo,
+  PosVoucherSettings? voucherSettings,
+  List<VoucherDueArticle>? voucherArticles,
+  bool smallBusiness = false,
+  String? zeroRateBucketFrom,
+  String? today,
 }) =>
     receiptDueBreakdownForLines([for (final i in items) ReceiptDueLine.of(i)], vouchers, receiptType,
-        tip: tip, payments: payments, tipRecipient: tipRecipient);
+        tip: tip,
+        payments: payments,
+        tipRecipient: tipRecipient,
+        voucherInfo: voucherInfo,
+        voucherSettings: voucherSettings,
+        voucherArticles: voucherArticles,
+        smallBusiness: smallBusiness,
+        zeroRateBucketFrom: zeroRateBucketFrom,
+        today: today);
 
 /// Wie [receiptDueBreakdown], mit Zeilen statt Positionen (Bruchmengen).
 ///
@@ -256,30 +375,266 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
   ReceiptDueTip? tip,
   List<KeckPaymentInput>? payments,
   ReceiptDueTipRecipient? tipRecipient,
+  List<VoucherDueInfo>? voucherInfo,
+  PosVoucherSettings? voucherSettings,
+  List<VoucherDueArticle>? voucherArticles,
+  bool smallBusiness = false,
+  String? zeroRateBucketFrom,
+  String? today,
+}) =>
+    _rechne(
+      lines,
+      vouchers,
+      receiptType,
+      _Optionen(
+        tip: tip,
+        payments: payments,
+        tipRecipient: tipRecipient,
+        voucherInfo: voucherInfo,
+        voucherSettings: voucherSettings,
+        voucherArticles: voucherArticles,
+        smallBusiness: smallBusiness,
+        zeroRateBucketFrom: zeroRateBucketFrom,
+        today: today,
+      ),
+    ).ergebnis;
+
+/// Hoechstbetrag zum Vorbelegen einer Einloesung an der Kasse, in Cent, nie
+/// negativ: der groesste Betrag, den der Server fuer diesen Gutschein annimmt.
+/// Gesucht wird unter einer festen Obergrenze (Saldo, offener Betrag, bei
+/// Einzweck die deckbaren Positionen im Topf seines Satzes abzueglich schon
+/// gewaehlter Einloesungen dort, befreit bzw. als Kleinunternehmer die Summe
+/// je Satz ueber den ganzen Korb); jeder Kandidat wird mit genau der Rechnung
+/// von [receiptDueCents] geprueft und bei Ablehnung um einen Cent gesenkt.
+/// So zaehlen auch die Rundungen halber Cent in den Toepfen, an denen der
+/// Server `voucher_exceeds_total` bzw. `voucher_rate_mismatch` meldet.
+/// Leistung (wird ueber Positionen eingeloest), Aktion (Rabatt rechnet der
+/// Server) und jeder nicht aktive Gutschein: 0.
+///
+/// [vouchers] sind die schon gewaehlten Gutscheine des Belegs; die uebrigen
+/// Angaben wie bei [receiptDueCents]. Zwilling von `voucherRedeemMaxCents` im
+/// npm-Paket.
+int voucherRedeemMaxCents(
+  List<KasseneckItem> items,
+  VoucherCheck voucher, {
+  List<KeckVoucher> vouchers = const [],
+  ReceiptDueTip? tip,
+  List<KeckPaymentInput>? payments,
+  ReceiptDueTipRecipient? tipRecipient,
+  List<VoucherDueInfo>? voucherInfo,
+  PosVoucherSettings? voucherSettings,
+  List<VoucherDueArticle>? voucherArticles,
+  bool smallBusiness = false,
+  String? zeroRateBucketFrom,
+  String? today,
+}) =>
+    voucherRedeemMaxCentsForLines([for (final i in items) ReceiptDueLine.of(i)], voucher,
+        vouchers: vouchers,
+        tip: tip,
+        payments: payments,
+        tipRecipient: tipRecipient,
+        voucherInfo: voucherInfo,
+        voucherSettings: voucherSettings,
+        voucherArticles: voucherArticles,
+        smallBusiness: smallBusiness,
+        zeroRateBucketFrom: zeroRateBucketFrom,
+        today: today);
+
+/// Wie [voucherRedeemMaxCents], mit Zeilen statt Positionen (Bruchmengen).
+int voucherRedeemMaxCentsForLines(
+  List<ReceiptDueLine> lines,
+  VoucherCheck voucher, {
+  List<KeckVoucher> vouchers = const [],
+  ReceiptDueTip? tip,
+  List<KeckPaymentInput>? payments,
+  ReceiptDueTipRecipient? tipRecipient,
+  List<VoucherDueInfo>? voucherInfo,
+  PosVoucherSettings? voucherSettings,
+  List<VoucherDueArticle>? voucherArticles,
+  bool smallBusiness = false,
+  String? zeroRateBucketFrom,
+  String? today,
 }) {
-  final trinkgelder = _trinkgeldAuftraege(tip, payments);
+  if (voucher.status != VoucherStatus.active) return 0;
+  if (voucher.type != VoucherType.multiPurpose && voucher.type != VoucherType.singlePurpose) return 0;
+  final saldo = voucher.balanceCents ?? 0;
+  final o = _Optionen(
+    tip: tip,
+    payments: payments,
+    tipRecipient: tipRecipient,
+    voucherInfo: voucherInfo,
+    voucherSettings: voucherSettings,
+    voucherArticles: voucherArticles,
+    smallBusiness: smallBusiness,
+    zeroRateBucketFrom: zeroRateBucketFrom,
+    today: today,
+  );
+  final r = _rechne(lines, vouchers, ReceiptType.standard, o);
+  // Rundung je Topf: hoechstens ein halber Cent je Topf ueber dem offenen Betrag.
+  var oben = _min(_min(saldo, r.ergebnis.dueCents + r.auszahlungCents + 6), _hoechstbetragCents);
+  if (voucher.type == VoucherType.singlePurpose) {
+    if (voucher.exempt == true || smallBusiness) {
+      // kuTeile verteilt hoechstens die Summe der Saetze; je Topf prueft der Server danach die Deckung.
+      oben = _min(oben, kuBasisCents(r.kunde));
+    } else {
+      final satz = voucher.vatRateBp;
+      if (satz == null) return 0;
+      final topf = topfFuerSatz(satz / 100);
+      final basis = centSumme(r.kunde.where((it) => istDeckbar(it) && topfFuerSatz(it.vat) == topf));
+      oben = _min(oben, basis - (r.minusJeTopf[topf] ?? 0));
+    }
+  }
+  final code = _probeCode(vouchers);
+  final probe = o.mit(voucherInfo: [...?voucherInfo, VoucherDueInfo(code: code, check: voucher)]);
+  bool passt(int cents) {
+    try {
+      _rechne(lines, [...vouchers, KeckVoucher(action: VoucherAction.redeem, type: voucher.type, code: code, amountCents: cents)],
+          ReceiptType.standard, probe);
+      return true;
+    } on ReceiptDueError {
+      return false;
+    }
+  }
+
+  for (var cents = oben, schritte = 0; cents > 0 && schritte < 64; cents--, schritte++) {
+    if (passt(cents)) return cents;
+  }
+  return 0;
+}
+
+const _hoechstbetragCents = 1000000;
+
+int _min(int a, int b) => a < b ? a : b;
+
+/// Ein gueltiger Code, der unter den schon gewaehlten Gutscheinen nicht
+/// vorkommt (nur fuer die Probe-Rechnung; geht nie hinaus).
+String _probeCode(List<KeckVoucher> vorher) {
+  final belegt = {for (final v in vorher) normalerCode(v.code)};
+  for (var i = 0;; i++) {
+    final code = VoucherCode.generate([for (var k = 0; k < 11; k++) (i + k * 7) & 31]);
+    if (!belegt.contains(code)) return code;
+  }
+}
+
+/// Die Angaben einer Rechnung (alle benannten Parameter von [receiptDueCents]).
+class _Optionen {
+  const _Optionen({
+    this.tip,
+    this.payments,
+    this.tipRecipient,
+    this.voucherInfo,
+    this.voucherSettings,
+    this.voucherArticles,
+    this.smallBusiness = false,
+    this.zeroRateBucketFrom,
+    this.today,
+  });
+
+  final ReceiptDueTip? tip;
+  final List<KeckPaymentInput>? payments;
+  final ReceiptDueTipRecipient? tipRecipient;
+  final List<VoucherDueInfo>? voucherInfo;
+  final PosVoucherSettings? voucherSettings;
+  final List<VoucherDueArticle>? voucherArticles;
+  final bool smallBusiness;
+  final String? zeroRateBucketFrom;
+  final String? today;
+
+  _Optionen mit({required List<VoucherDueInfo> voucherInfo}) => _Optionen(
+        tip: tip,
+        payments: payments,
+        tipRecipient: tipRecipient,
+        voucherInfo: voucherInfo,
+        voucherSettings: voucherSettings,
+        voucherArticles: voucherArticles,
+        smallBusiness: smallBusiness,
+        zeroRateBucketFrom: zeroRateBucketFrom,
+        today: today,
+      );
+}
+
+class _Rechnung {
+  const _Rechnung(this.ergebnis, this.kunde, this.minusJeTopf, this.auszahlungCents);
+  final ReceiptDueBreakdown ergebnis;
+
+  /// Ware und Trinkgeld in innerer Form (ohne Gutscheinzeilen).
+  final List<Innen> kunde;
+
+  /// Summe der Einloese-Minuszeilen je Topf.
+  final Map<String, int> minusJeTopf;
+
+  /// Summe der Auszahlungen in Cent.
+  final int auszahlungCents;
+}
+
+_Rechnung _rechne(List<ReceiptDueLine> lines, List<KeckVoucher> vouchers, ReceiptType receiptType, _Optionen o) {
+  final trinkgelder = _trinkgeldAuftraege(o.tip, o.payments);
   if (trinkgelder.isNotEmpty && !_trinkgeldErlaubt.contains(receiptType)) {
     throw ReceiptDueError('tip_not_allowed', 'Trinkgeld gibt es nur bei standard und training, nicht bei "${receiptType.name}".');
   }
   if (!_umsatz.contains(receiptType)) {
-    return const ReceiptDueBreakdown(dueCents: 0, counterDeltaCents: 0, valueVoucherFlowCents: 0, bucketsCents: null);
+    return const _Rechnung(
+      ReceiptDueBreakdown(dueCents: 0, counterDeltaCents: 0, valueVoucherFlowCents: 0, bucketsCents: null),
+      [],
+      {},
+      0,
+    );
   }
 
   final positionen = [for (final (i, z) in lines.indexed) _innen(z, i)];
-  final gutscheine = [for (final (i, v) in vouchers.indexed) _gutscheinInnen(v, i)];
   // index.js createReceipt: erst `tip`, dann je Zahlart aus payments[].tipCents;
   // jede Runde haengt ihre Positionen hinten an (die Basis bleibt die Ware).
   for (final auftrag in trinkgelder) {
-    positionen.addAll(_trinkgeldPositionen(auftrag, positionen, tipRecipient));
+    positionen.addAll(_trinkgeldPositionen(auftrag, positionen, o.tipRecipient));
   }
+
+  // Danach der Gutschein-Plan (gutschein-beleg.plane): seine Positionen stehen hinter Ware und Trinkgeld.
+  final Plan plan;
+  try {
+    plan = planeGutscheine(
+      positionen,
+      vouchers,
+      storno: receiptType == ReceiptType.cancellation,
+      training: receiptType == ReceiptType.training,
+      o: PlanOptionen(
+        voucherInfo: o.voucherInfo == null ? null : [for (final i in o.voucherInfo!) (code: i.code, check: i.check)],
+        voucherSettings: o.voucherSettings,
+        voucherArticles: o.voucherArticles == null
+            ? null
+            : [for (final a in o.voucherArticles!) (id: a.id, priceCents: a.priceCents, vatRateBp: a.vatRateBp)],
+        smallBusiness: o.smallBusiness,
+        zeroRateBucketFrom: o.zeroRateBucketFrom,
+        today: o.today ?? ViennaTime.dayKey(DateTime.now()),
+      ),
+    );
+  } on PlanFehler catch (f) {
+    throw ReceiptDueError('invalid_voucher', f.text, f.fehler);
+  }
+  final kunde = List<Innen>.unmodifiable(positionen);
+  positionen.addAll(plan.zusatz);
+  // gutschein-beleg.zahlbetrag: nur Wert und Rabatt, ohne Mehrzweck-Verkaeufe im 0-%-Topf.
+  final gutscheine = [
+    for (final g in plan.gutscheine)
+      if (!(g.action == VoucherAction.sell && g.imNullTopf)) g,
+  ];
 
   final t = _belegToepfe(positionen, gutscheine);
   final fluss = _wertgutscheinFlussCents(gutscheine, receiptType);
-  return ReceiptDueBreakdown(
-    dueCents: t.zaehlerDeltaCents + fluss,
-    counterDeltaCents: t.zaehlerDeltaCents,
-    valueVoucherFlowCents: fluss,
-    bucketsCents: {for (final n in _alleToepfe) n: _euroToCent(t.toepfe[n]!)},
+  final dueCents = t.zaehlerDeltaCents + fluss;
+  // Ohne Auszahlungen darf der Zahlbetrag nicht negativ werden (Einloesung hoeher als die Summe).
+  if (plan.mitPlan && dueCents + plan.auszahlungCents < 0) {
+    throw const ReceiptDueError('invalid_voucher', 'die Gutscheine uebersteigen die Summe des Belegs.', 'voucher_exceeds_total');
+  }
+  return _Rechnung(
+    ReceiptDueBreakdown(
+      dueCents: dueCents,
+      counterDeltaCents: t.zaehlerDeltaCents,
+      valueVoucherFlowCents: fluss,
+      bucketsCents: {for (final n in topfReihenfolge) n: _euroToCent(t.toepfe[n]!)},
+    ),
+    kunde,
+    plan.minusJeTopf,
+    plan.auszahlungCents,
   );
 }
 
@@ -297,47 +652,23 @@ const _zahlarten = {
   KeckPaymentMethod.boltCash,
 };
 
-/// `Math.round` aus JavaScript: naechste ganze Zahl, halbe Werte Richtung plus
-/// unendlich. Der Nachkommaanteil `x - floor(x)` ist bei Doubles exakt.
-double _jsRound(double x) {
-  if (!x.isFinite) return x;
-  final unten = x.floorToDouble();
-  return x - unten >= 0.5 ? unten + 1 : unten;
-}
-
 /// `receipt-toepfe.euroToCent`.
-int _euroToCent(double euro) => _jsRound(euro * 100).toInt();
+int _euroToCent(double euro) => jsRound(euro * 100).toInt();
 
-/// Position in der inneren Form des Backends (`receipt-toepfe.interneForm`).
-class _Innen {
-  const _Innen(this.amount, this.priceOne, this.vat, this.tip);
-  final double amount;
-  final double priceOne;
-  final double vat;
-  final ReceiptDueTipRecipient? tip;
-}
-
-class _Gutschein {
-  const _Gutschein(this.action, this.type, this.value);
-  final VoucherAction action;
-  final VoucherType type;
-  final double value;
-}
+TrinkgeldArt? _art(ReceiptDueTipRecipient? r) => switch (r) {
+      ReceiptDueTipRecipient.owner => TrinkgeldArt.owner,
+      ReceiptDueTipRecipient.staff => TrinkgeldArt.staff,
+      null => null,
+    };
 
 /// Einzelpreis `Math.round(cents) / 100` wie `interneForm`; `-0` wird `0`
 /// (in JavaScript fallen beide Saetze als Schluessel `"0"` zusammen).
-_Innen _innen(ReceiptDueLine z, int i) {
+Innen _innen(ReceiptDueLine z, int i) {
   final satz = z.vatRate.toDouble();
   if (!satz.isFinite) throw ReceiptDueError('invalid_item', 'Position ${i + 1} ohne Steuersatz.');
   final menge = z.quantity.toDouble();
   if (!menge.isFinite) throw ReceiptDueError('invalid_item', 'Position ${i + 1} hat keine gueltige Menge.');
-  return _Innen(menge, z.priceCents / 100, satz == 0 ? 0.0 : satz, z.tip);
-}
-
-_Gutschein _gutscheinInnen(KeckVoucher v, int i) {
-  final cents = v.valueCents;
-  if (cents == null) throw ReceiptDueError('invalid_voucher', 'Gutschein ${i + 1} hat keinen ganzen Cent-Wert.');
-  return _Gutschein(v.action, v.type, cents / 100);
+  return Innen(menge, z.priceCents / 100, satz == 0 ? 0.0 : satz, _art(z.tip), kind: z.kind, articleId: z.articleId);
 }
 
 /// Empfaenger eines Trinkgeld-Auftrags; `owner == null` heisst: wie der angemeldete Benutzer.
@@ -386,11 +717,11 @@ void _pruefeCent(int wert, String was) {
 }
 
 /// `tip-core.buildTipItems`: Personal in den Null-%-Satz, Inhaber anteilig auf die Saetze der Ware.
-List<_Innen> _trinkgeldPositionen(_Auftrag auftrag, List<_Innen> positionen, ReceiptDueTipRecipient? standard) {
+List<Innen> _trinkgeldPositionen(_Auftrag auftrag, List<Innen> positionen, ReceiptDueTipRecipient? standard) {
   final basis = _warenCentsJeSatz(positionen);
   final summe = basis.values.fold<int>(0, (s, c) => s + c);
   if (summe <= 0) throw const ReceiptDueError('tip_without_goods', 'Trinkgeld braucht mindestens eine Position mit Betrag.');
-  final raus = <_Innen>[];
+  final raus = <Innen>[];
   for (final e in auftrag) {
     var owner = e.owner;
     if (owner == null) {
@@ -401,20 +732,20 @@ List<_Innen> _trinkgeldPositionen(_Auftrag auftrag, List<_Innen> positionen, Rec
       owner = standard == ReceiptDueTipRecipient.owner;
     }
     if (!owner) {
-      raus.add(_Innen(1, e.cents / 100, 0, ReceiptDueTipRecipient.staff));
+      raus.add(Innen(1, e.cents / 100, 0, TrinkgeldArt.staff));
       continue;
     }
     final teile = _splitOwnerTip(e.cents, basis);
     if (teile.isEmpty) throw const ReceiptDueError('tip_without_goods', 'Inhaber-Trinkgeld braucht mindestens eine Position mit Betrag.');
     for (final teil in teile) {
-      if (teil.cents != 0) raus.add(_Innen(1, teil.cents / 100, teil.vat, ReceiptDueTipRecipient.owner));
+      if (teil.cents != 0) raus.add(Innen(1, teil.cents / 100, teil.vat, TrinkgeldArt.owner));
     }
   }
   return raus;
 }
 
 /// `tip-core.warenCentsJeSatz`: Summe je Satz in Euro, dann einmal runden.
-Map<double, int> _warenCentsJeSatz(List<_Innen> positionen) {
+Map<double, int> _warenCentsJeSatz(List<Innen> positionen) {
   final roh = <double, double>{};
   for (final p in positionen) {
     if (p.tip != null) continue;
@@ -453,38 +784,21 @@ List<({double vat, int cents})> _splitOwnerTip(int cents, Map<double, int> jeSat
   return [for (final e in verteilt) (vat: e.vat, cents: e.cents)];
 }
 
-const _standard = 'amountRateStandard';
-const _reduced1 = 'amountRateReduced1';
-const _reduced2 = 'amountRateReduced2';
-const _zero = 'amountRateZero';
-const _special = 'amountRateSpecial';
-const _others = 'amountRatOthers';
-const _fuenf = [_standard, _reduced1, _reduced2, _zero, _special];
-const _alleToepfe = [..._fuenf, _others];
-
-/// `vat-buckets.bucketFuerSatz`.
-String _topfFuerSatz(double vat) {
-  if (vat == 20) return _standard;
-  if (vat == 10) return _reduced1;
-  if (vat == 13) return _reduced2;
-  if (vat == 0) return _zero;
-  if (vat == 19 || vat == 4.9) return _special;
-  return _others;
-}
+const _fuenf = [topfStandard, topfReduced1, topfReduced2, topfZero, topfSpecial];
 
 /// `receipt-toepfe.belegToepfe`, Schritt fuer Schritt.
-({Map<String, double> toepfe, int zaehlerDeltaCents}) _belegToepfe(List<_Innen> positionen, List<_Gutschein> gutscheine) {
-  final t = {for (final n in _alleToepfe) n: 0.0};
+({Map<String, double> toepfe, int zaehlerDeltaCents}) _belegToepfe(List<Innen> positionen, List<PlanGutschein> gutscheine) {
+  final t = {for (final n in topfReihenfolge) n: 0.0};
   var personal = 0.0;
   for (final p in positionen) {
-    if (p.tip == ReceiptDueTipRecipient.staff) {
+    if (p.tip == TrinkgeldArt.staff) {
       personal += p.amount * p.priceOne;
     } else {
-      final n = _topfFuerSatz(p.vat);
+      final n = topfFuerSatz(p.vat);
       t[n] = t[n]! + p.priceOne * p.amount;
     }
   }
-  final gesamt = t[_standard]! + t[_reduced1]! + t[_reduced2]! + t[_zero]! + t[_special]!;
+  final gesamt = t[topfStandard]! + t[topfReduced1]! + t[topfReduced2]! + t[topfZero]! + t[topfSpecial]!;
 
   if (gutscheine.isNotEmpty) {
     var rabatt = 0.0;
@@ -513,24 +827,26 @@ String _topfFuerSatz(double vat) {
       t[_fuenf[i]] = (cents[i] - anteil[i]) / 100;
     }
   }
-  t[_zero] = t[_zero]! + personal;
+  t[topfZero] = t[topfZero]! + personal;
   var delta = 0;
-  for (final n in _alleToepfe) {
+  for (final n in topfReihenfolge) {
     delta += _euroToCent(t[n]!);
   }
   return (toepfe: t, zaehlerDeltaCents: delta);
 }
 
-/// `payments-core.wertgutscheinFlussCents`.
-int _wertgutscheinFlussCents(List<_Gutschein> gutscheine, ReceiptType art) {
+/// `zahlungen-core.wertgutscheinFlussCents`: Eintraege im 0-%-Topf
+/// (`imNullTopf`) stehen schon als Position; eine Auszahlung ohne
+/// Topf-Position mindert den Zahlbetrag.
+int _wertgutscheinFlussCents(List<PlanGutschein> gutscheine, ReceiptType art) {
   final vz = art == ReceiptType.cancellation ? -1 : 1;
   var cents = 0;
   for (final v in gutscheine) {
-    if (v.type != VoucherType.value || !v.value.isFinite) continue;
+    if (v.type != VoucherType.value || v.imNullTopf || !v.value.isFinite) continue;
     final c = _euroToCent(v.value);
     if (v.action == VoucherAction.sell) {
       cents += c;
-    } else if (v.action == VoucherAction.redeem) {
+    } else if (v.action == VoucherAction.redeem || v.action == VoucherAction.payout) {
       cents -= c;
     }
   }

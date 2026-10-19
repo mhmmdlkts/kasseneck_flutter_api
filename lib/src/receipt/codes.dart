@@ -68,6 +68,7 @@ final List<String> receiptErrorCodes = _mitRand(const [
   'receipt_not_found',
   'receipt_outcome_unknown',
   'receipt_type_invalid',
+  'server_error',
   'signature_incomplete',
   'signature_missing',
   'signing_failed',
@@ -76,6 +77,7 @@ final List<String> receiptErrorCodes = _mitRand(const [
   'tip_not_allowed',
   'tip_recipient_unknown',
   'validation',
+  'voucher_balance_changed',
 ], _signierend);
 
 /// Ist [value] ein Code aus [receiptErrorCodes]?

@@ -1,16 +1,18 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "e061453f62c8f4af21528eb51a677d6f947553f5b78621d64497f45833dd8b09",
-    "inputsSha256": "95fd7b1f3704811d3a3f79b1dbb6aea668e8c0e3a663e5b0ca9c07f2e11e37b5",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
+    "sha256": "733e4385baf4b2aa50605e2ebe5903948ce77b3346aa3bb65c5fd0d450a6898f",
+    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
+    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/aktivierung-api-core.js",
       "functions/beleg-mail-core.js",
       "functions/gemeinsam/api-rand.js",
       "functions/gemeinsam/api-vokabular-v3.js",
       "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/gutschein-beleg.js",
       "functions/gemeinsam/storno-core.js",
       "functions/gemeinsam/tip-core.js",
       "functions/gemeinsam/vat-buckets.js",
@@ -20,6 +22,7 @@
       "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
       "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
       "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/gutschein-belege.js",
       "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
       "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
       "functions/test/unit/helpers/kassen-fehlerstellen.js",
@@ -132,7 +135,9 @@
       "recountStocktake",
       "closeStocktake",
       "cancelStocktake",
-      "getStocktakePdf"
+      "getStocktakePdf",
+      "orderSignatureCard",
+      "getSignatureCardOrder"
     ],
     "v3Routed": [
       "createReceipt",
@@ -239,7 +244,9 @@
       "recountStocktake",
       "closeStocktake",
       "cancelStocktake",
-      "getStocktakePdf"
+      "getStocktakePdf",
+      "orderSignatureCard",
+      "getSignatureCardOrder"
     ],
     "register": [
       "pairRegisterDevice",
@@ -275,6 +282,8 @@
       "listMyStocktakeCounts",
       "recordMyStocktakeCount",
       "voidMyStocktakeCount",
+      "checkVoucher",
+      "reprintVoucherLabel",
       "getMyDrawerState",
       "openMyShift",
       "recordMyCashMovement",
@@ -310,6 +319,8 @@
       "listMyStocktakeCounts",
       "recordMyStocktakeCount",
       "voidMyStocktakeCount",
+      "checkVoucher",
+      "reprintVoucherLabel",
       "getMyDrawerState",
       "openMyShift",
       "recordMyCashMovement",
@@ -320,18 +331,22 @@
     "withSchema": [
       "activateCashregister",
       "addVariant",
+      "blockMyVoucher",
       "cancelInvoice",
       "cancelReceipt",
       "cancelStocktake",
       "changeStockCondition",
       "checkPartnerCustomerEmail",
+      "checkVoucher",
       "closeMyShift",
       "closeStocktake",
+      "correctMyVoucher",
       "createArticle",
       "createCreditNote",
       "createCustomer",
       "createCustomerCashregister",
       "createInvoiceItem",
+      "createMyPromoVouchers",
       "createPartnerCustomer",
       "createPartnerWebhook",
       "createPaymentLinkStripe",
@@ -364,7 +379,10 @@
       "getInvoiceXml",
       "getKasseSettings",
       "getMyDrawerState",
+      "getMyOpenVouchers",
       "getMyShiftReport",
+      "getMyVoucher",
+      "getMyVoucherSettings",
       "getPartnerBilling",
       "getPartnerBillingMonth",
       "getPartnerCustomer",
@@ -373,6 +391,7 @@
       "getReceipt",
       "getReportV2",
       "getReservation",
+      "getSignatureCardOrder",
       "getStock",
       "getStocktake",
       "getStocktakePdf",
@@ -398,6 +417,7 @@
       "listMyStocktakeItems",
       "listMyStocktakes",
       "listMyTipRecipients",
+      "listMyVouchers",
       "listPartnerCustomers",
       "listPartnerWebhookDeliveries",
       "listPartnerWebhooks",
@@ -410,11 +430,13 @@
       "listStocktakeItems",
       "listStocktakes",
       "listVariantGroups",
+      "listVouchersAdmin",
       "listWebhookDeliveries",
       "listWebhooks",
       "logMyDrawerOpenings",
       "lookupArticleByCode",
       "openMyShift",
+      "orderSignatureCard",
       "pairRegisterDevice",
       "receiveGoods",
       "recordInvoicePayment",
@@ -428,6 +450,8 @@
       "releaseReservation",
       "renewRegisterSession",
       "reportCustomerVertrag",
+      "reprintMyVoucherLabel",
+      "reprintVoucherLabel",
       "requestCustomerSignature",
       "reverseStockMovement",
       "reviewStocktake",
@@ -444,8 +468,10 @@
       "setMyKasseLogo",
       "setMyKasseSettings",
       "setMyRegisterDeviceSettings",
+      "setMyVoucherSettings",
       "stripeCaptureIntent",
       "transferStock",
+      "unblockMyVoucher",
       "unpairRegisterDevice",
       "updateArticle",
       "updateCustomer",
@@ -502,6 +528,23 @@
       "direkt": "direct",
       "vollmacht": "power_of_attorney",
       "unterauftrag": "subprocessor"
+    },
+    "BELEG_GUTSCHEIN": {
+      "voucherType": "art",
+      "voucherId": "gutscheinId",
+      "codeSuffix": "codeEnde",
+      "amountCents": "betragCents",
+      "vatRateBp": "satzBp",
+      "article": "artikel",
+      "articleId": "artikelId",
+      "quantity": "stueck",
+      "positions": "positionen",
+      "balanceAfterCents": "saldoNachCents",
+      "remainingQuantityAfter": "stueckOffenNach",
+      "taxedWith": "versteuertMit",
+      "exempt": "befreit",
+      "reason": "grund",
+      "zeroRateBucket": "imNullTopf"
     },
     "BEWEGUNG_ART": {
       "verkauf": "sale",
@@ -591,6 +634,7 @@
       "afa_gebaeude": "building_depreciation",
       "anlagenabgang": "asset_disposal_book_value",
       "instandhaltung_gebaeude": "building_maintenance",
+      "bauarbeiten": "construction_work",
       "reise": "travel_expenses",
       "fahrkarten": "travel_tickets",
       "naechtigung_beleg": "lodging_invoice",
@@ -625,6 +669,8 @@
       "geschenke_geschaeftsfreunde": "business_gifts",
       "bewirtung": "hospitality",
       "bewirtung_werbung": "hospitality_advertising",
+      "kundschaft_aufmerksamkeit": "customer_courtesy",
+      "lebensmittel": "groceries",
       "bewirtung_voll": "hospitality_full",
       "bewirtung_repraesentation": "hospitality_representation",
       "sponsoring": "sponsorship",
@@ -655,6 +701,7 @@
       "arbeitslosen_optin": "voluntary_unemployment_insurance",
       "uebrige_ausgaben": "other_expenses",
       "telefon_internet": "phone_internet",
+      "energie": "energy_utilities",
       "buero": "office_supplies",
       "software": "software_subscriptions",
       "fachliteratur": "professional_literature",
@@ -698,7 +745,61 @@
     },
     "GRUND_V3": {
       "karte_eingetragen": "card_entered",
-      "fon": "finanzonline"
+      "fon": "finanzonline",
+      "vorrat_aktiviert": "card_pool_activated",
+      "aktivierungslauf": "activation_run",
+      "fon_nachgeholt": "finanzonline_completed"
+    },
+    "GUTSCHEIN_AKTION": {
+      "sell": "sell",
+      "redeem": "redeem",
+      "payout": "payout"
+    },
+    "GUTSCHEIN_ANLASS": {
+      "aktion": "promotion",
+      "treue": "loyalty",
+      "bonus": "bonus",
+      "kulanz": "goodwill"
+    },
+    "GUTSCHEIN_ART": {
+      "mehrzweck": "multi_purpose",
+      "einzweck": "single_purpose",
+      "leistung": "service",
+      "aktion": "promotion"
+    },
+    "GUTSCHEIN_BUCHUNG": {
+      "verkauf": "sale",
+      "einloesung": "redemption",
+      "storno_gutschrift": "cancellation_credit",
+      "storno_verkauf": "sale_cancelled",
+      "auszahlung": "payout",
+      "korrektur": "correction",
+      "sperre": "blocked",
+      "entsperrt": "unblocked"
+    },
+    "GUTSCHEIN_HINWEIS": {
+      "befristung_pruefen": "check_validity_period"
+    },
+    "GUTSCHEIN_MUSTER": {
+      "unbefristet": "unlimited",
+      "1+3": "1+3",
+      "frei": "custom"
+    },
+    "GUTSCHEIN_STATUS": {
+      "aktiv": "active",
+      "aufgebraucht": "used_up",
+      "abgelaufen": "expired",
+      "ausgezahlt": "paid_out",
+      "storniert": "cancelled",
+      "gesperrt": "blocked"
+    },
+    "GUTSCHEIN_VORSCHLAG_GRUND": {
+      "keine_artikel": "no_articles",
+      "ein_satz": "single_rate",
+      "mehrere_saetze": "multiple_rates"
+    },
+    "GUTSCHEIN_VORSCHLAG_HINWEIS": {
+      "kleinunternehmer": "small_business"
     },
     "INVENTUR_AKTEUR": {
       "inhaber": "owner",
@@ -1033,6 +1134,7 @@
       "account_not_found",
       "action_confirmation_required",
       "activation_failed",
+      "activation_in_progress",
       "admin_only",
       "admin_required",
       "after_count_not_permitted",
@@ -1049,7 +1151,13 @@
       "article_not_found",
       "article_not_in_scope",
       "article_not_tracked",
+      "asset_in_use",
+      "asset_not_found",
+      "asset_record_disposed",
+      "asset_record_in_use",
+      "asset_record_not_found",
       "brand_not_found",
+      "business_profile_missing",
       "cancellation_failed",
       "cancellation_outcome_unknown",
       "cancellation_payments_required",
@@ -1057,6 +1165,9 @@
       "cancellation_refund_exceeds_payment",
       "cancellation_refund_reference_required",
       "cancellation_refund_reference_unknown",
+      "car_useful_life_too_short",
+      "card_pool_empty",
+      "card_pool_unavailable",
       "cash_movement_exceeds_balance",
       "cashregister_closed",
       "cashregister_decommissioned",
@@ -1067,6 +1178,8 @@
       "cashregister_not_found",
       "cashregister_token_invalid",
       "cashregister_token_missing",
+      "clarification_rounds_exhausted",
+      "clarification_unavailable",
       "code_taken",
       "comment_required",
       "contracts_pending",
@@ -1082,6 +1195,7 @@
       "device_not_paired",
       "device_takeover_required",
       "dialect_mismatch",
+      "document_not_found",
       "drawer_inactive",
       "drawer_not_found",
       "einvoice_incomplete",
@@ -1105,11 +1219,17 @@
       "internal_translation_error",
       "invalid_address",
       "invalid_amount",
+      "invalid_asset_record",
+      "invalid_asset_type",
+      "invalid_business_profile",
+      "invalid_clarification",
       "invalid_condition",
+      "invalid_connection",
       "invalid_cursor",
       "invalid_denominations",
       "invalid_dimensions",
       "invalid_distribution",
+      "invalid_document",
       "invalid_e1a_group",
       "invalid_items",
       "invalid_landed_cost",
@@ -1125,6 +1245,8 @@
       "invalid_quantity",
       "invalid_reason",
       "invalid_return_disposition",
+      "invalid_room",
+      "invalid_selection",
       "invalid_serial",
       "invalid_step",
       "invalid_stock_kind",
@@ -1132,6 +1254,7 @@
       "invalid_tip_refund_source",
       "invalid_transfer",
       "invalid_variant_attributes",
+      "invalid_vehicle",
       "invalid_webhook_url",
       "invalid_year",
       "inventory_api_not_enabled",
@@ -1157,6 +1280,8 @@
       "logo_invalid_type",
       "logo_too_large",
       "lot_not_found",
+      "low_value_limit_exceeded",
+      "memory_entry_not_found",
       "method_not_allowed",
       "mfa_required",
       "mixed_supply_not_allowed",
@@ -1174,6 +1299,8 @@
       "note_required",
       "note_too_long",
       "operation_not_found",
+      "order_not_found",
+      "order_open",
       "oss_not_enabled",
       "own_receipts_only",
       "pairing_code_expired",
@@ -1273,6 +1400,7 @@
       "stocktake_review_running",
       "tax_number_missing",
       "tax_scheme_mismatch",
+      "test_environment",
       "text_changed",
       "tip_conflict",
       "tip_exceeds_payment",
@@ -1285,11 +1413,17 @@
       "tip_recipient_unknown",
       "tip_refund_conflict",
       "tip_refund_source_requires_cash",
+      "too_many_asset_records",
+      "too_many_assets",
       "too_many_attempts",
       "too_many_counts",
+      "too_many_documents",
       "too_many_entries",
+      "too_many_orders",
       "too_many_positions",
       "too_many_requests",
+      "too_many_vehicles",
+      "too_many_voucher_checks",
       "training_receipt",
       "transfer_same_drawer",
       "unauthorized",
@@ -1305,6 +1439,23 @@
       "vat_id_check_pending",
       "vat_id_invalid",
       "vat_rate_not_in_country",
+      "vehicle_in_use",
+      "vehicle_not_found",
+      "voucher_already_used",
+      "voucher_balance_changed",
+      "voucher_blocked",
+      "voucher_cancelled",
+      "voucher_exceeds_total",
+      "voucher_expired",
+      "voucher_insufficient_balance",
+      "voucher_invalid",
+      "voucher_invalid_code",
+      "voucher_item_mismatch",
+      "voucher_not_found",
+      "voucher_partial_cancel",
+      "voucher_rate_mismatch",
+      "voucher_settings_missing",
+      "voucher_used_up",
       "webhook_inactive",
       "webhook_limit",
       "webhook_not_found",
@@ -1374,13 +1525,39 @@
       "uid_ungueltig": "vat_id_invalid",
       "uid_pruefung_offen": "vat_id_check_pending",
       "e1a_ungueltig": "invalid_e1a_group",
+      "betriebsprofil_fehlt": "business_profile_missing",
+      "betriebsprofil_ungueltig": "invalid_business_profile",
+      "klaerung_ungueltig": "invalid_clarification",
+      "klaerung_zu_viele_runden": "clarification_rounds_exhausted",
+      "klaerung_nicht_verfuegbar": "clarification_unavailable",
       "e1a_nicht_waehlbar": "group_not_selectable",
       "e1a_nur_abschluss": "group_year_end_only",
       "e1a_nur_bilanz": "group_balance_sheet_only",
       "jahr_ungueltig": "invalid_year",
       "too_many_entries": "too_many_entries",
       "steuerprofil_ungueltig": "invalid_tax_profile",
-      "nur_admin": "admin_only"
+      "nur_admin": "admin_only",
+      "fahrzeug_ungueltig": "invalid_vehicle",
+      "fahrzeug_unbekannt": "vehicle_not_found",
+      "fahrzeug_in_verwendung": "vehicle_in_use",
+      "zu_viele_fahrzeuge": "too_many_vehicles",
+      "raum_ungueltig": "invalid_room",
+      "anschluss_ungueltig": "invalid_connection",
+      "betriebsmittel_unbekannt": "asset_not_found",
+      "gedaechtnis_unbekannt": "memory_entry_not_found",
+      "betriebsmittel_in_verwendung": "asset_in_use",
+      "zu_viele_betriebsmittel": "too_many_assets",
+      "betriebsmittel_typ_ungueltig": "invalid_asset_type",
+      "dokument_ungueltig": "invalid_document",
+      "dokument_unbekannt": "document_not_found",
+      "zu_viele_dokumente": "too_many_documents",
+      "anlage_ungueltig": "invalid_asset_record",
+      "anlage_unbekannt": "asset_record_not_found",
+      "anlage_in_verwendung": "asset_record_in_use",
+      "anlage_abgegangen": "asset_record_disposed",
+      "zu_viele_anlagen": "too_many_asset_records",
+      "gwg_ueber_grenze": "low_value_limit_exceeded",
+      "nutzungsdauer_pkw": "car_useful_life_too_short"
     },
     "edge": [
       "validation",
@@ -1442,7 +1619,8 @@
       "tip_invalid",
       "tip_not_allowed",
       "tip_recipient_unknown",
-      "validation"
+      "validation",
+      "voucher_balance_changed"
     ],
     "registerHandlers": [
       "after_count_not_permitted",
@@ -1548,11 +1726,27 @@
       "too_many_attempts",
       "too_many_counts",
       "too_many_requests",
+      "too_many_voucher_checks",
       "training_receipt",
       "transfer_same_drawer",
       "unknown_reason",
       "user_disabled",
-      "validation"
+      "validation",
+      "voucher_already_used",
+      "voucher_balance_changed",
+      "voucher_blocked",
+      "voucher_cancelled",
+      "voucher_exceeds_total",
+      "voucher_expired",
+      "voucher_insufficient_balance",
+      "voucher_invalid",
+      "voucher_invalid_code",
+      "voucher_item_mismatch",
+      "voucher_not_found",
+      "voucher_partial_cancel",
+      "voucher_rate_mismatch",
+      "voucher_settings_missing",
+      "voucher_used_up"
     ],
     "cancellation": [
       "receipt_not_found",
@@ -1676,6 +1870,7 @@
       "text_changed",
       "already_accepted",
       "activation_failed",
+      "activation_in_progress",
       "webhook_limit",
       "webhook_inactive",
       "event_not_subscribed"
@@ -1787,6 +1982,20 @@
       "idempotency_conflict",
       "shift_mode_off",
       "after_count_not_permitted",
+      "server_error"
+    ],
+    "cardOrder": [
+      "validation",
+      "not_permitted",
+      "order_open",
+      "card_pool_empty",
+      "card_pool_unavailable",
+      "tax_number_missing",
+      "test_environment",
+      "invalid_selection",
+      "order_not_found",
+      "too_many_orders",
+      "activation_failed",
       "server_error"
     ],
     "registerCases": [
@@ -1934,13 +2143,39 @@
       "vat_id_invalid",
       "vat_id_check_pending",
       "invalid_e1a_group",
+      "business_profile_missing",
+      "invalid_business_profile",
+      "invalid_clarification",
+      "clarification_rounds_exhausted",
+      "clarification_unavailable",
       "group_not_selectable",
       "group_year_end_only",
       "group_balance_sheet_only",
       "invalid_year",
       "too_many_entries",
       "invalid_tax_profile",
-      "admin_only"
+      "admin_only",
+      "invalid_vehicle",
+      "vehicle_not_found",
+      "vehicle_in_use",
+      "too_many_vehicles",
+      "invalid_room",
+      "invalid_connection",
+      "asset_not_found",
+      "memory_entry_not_found",
+      "asset_in_use",
+      "too_many_assets",
+      "invalid_asset_type",
+      "invalid_document",
+      "document_not_found",
+      "too_many_documents",
+      "invalid_asset_record",
+      "asset_record_not_found",
+      "asset_record_in_use",
+      "asset_record_disposed",
+      "too_many_asset_records",
+      "low_value_limit_exceeded",
+      "car_useful_life_too_short"
     ],
     "receiptMessagesByEndpoint": {
       "createReceipt": [
@@ -1954,6 +2189,7 @@
         "receipt_limit_exceeded",
         "receipt_outcome_unknown",
         "receipt_type_invalid",
+        "server_error",
         "signature_incomplete",
         "signature_missing",
         "signing_failed",
@@ -1961,7 +2197,8 @@
         "tip_invalid",
         "tip_not_allowed",
         "tip_recipient_unknown",
-        "validation"
+        "validation",
+        "voucher_balance_changed"
       ],
       "getReceipt": [
         "receipt_not_found"
@@ -2039,6 +2276,7 @@
       ],
       "getReceipt": [],
       "createReceipt": [
+        "not_permitted",
         "payment_amount_invalid",
         "payment_method_invalid",
         "payment_method_not_supported",
@@ -2053,10 +2291,25 @@
         "payments_not_allowed",
         "payments_required",
         "payments_sum_mismatch",
+        "server_error",
         "tip_conflict",
         "tip_exceeds_payment",
         "tip_payment_method_invalid",
-        "tip_payment_method_required"
+        "tip_payment_method_required",
+        "voucher_already_used",
+        "voucher_balance_changed",
+        "voucher_blocked",
+        "voucher_cancelled",
+        "voucher_exceeds_total",
+        "voucher_expired",
+        "voucher_insufficient_balance",
+        "voucher_invalid",
+        "voucher_invalid_code",
+        "voucher_item_mismatch",
+        "voucher_not_found",
+        "voucher_rate_mismatch",
+        "voucher_settings_missing",
+        "voucher_used_up"
       ],
       "generateFullReceiptId": [],
       "cancelReceipt": [
@@ -2101,7 +2354,10 @@
         "tip_refund_conflict",
         "tip_refund_source_requires_cash",
         "training_receipt",
-        "unknown_reason"
+        "unknown_reason",
+        "voucher_already_used",
+        "voucher_balance_changed",
+        "voucher_partial_cancel"
       ],
       "sendReceiptEmail": [
         "invalid_address",
@@ -2226,6 +2482,19 @@
         "too_many_counts",
         "validation"
       ],
+      "checkVoucher": [
+        "not_permitted",
+        "server_error",
+        "too_many_voucher_checks",
+        "voucher_invalid_code",
+        "voucher_not_found"
+      ],
+      "reprintVoucherLabel": [
+        "not_permitted",
+        "server_error",
+        "voucher_cancelled",
+        "voucher_not_found"
+      ],
       "getMyDrawerState": [
         "cashregister_not_assigned",
         "drawer_not_found",
@@ -2341,6 +2610,67 @@
           "stockLocationIds": "standorte",
           "minStockByLocation": "mindestJeStandort",
           "purchasePriceMicros": "einkaufMicros"
+        }
+      }
+    },
+    "blockMyVoucher": {
+      "params": {
+        "reason": "grund"
+      },
+      "data": {
+        "voucher": {
+          "__": "gutschein",
+          "type": "art",
+          "codeSuffix": "codeEnde",
+          "faceValueCents": "nennwertCents",
+          "balanceCents": "saldoCents",
+          "vatRateBp": "satzBp",
+          "article": {
+            "__": "artikel",
+            "vatRateBp": "satzBp",
+            "priceCents": "preisCents"
+          },
+          "quantity": "stueck",
+          "remainingQuantity": "stueckOffen",
+          "discountCents": "rabattCents",
+          "discountPercentBp": "rabattProzentBp",
+          "redeemed": "eingeloest",
+          "smallBusiness": "kleinunternehmer",
+          "salePaymentMethod": "zahlartVerkauf",
+          "validity": {
+            "__": "gueltigkeit",
+            "pattern": "muster",
+            "redeemableUntil": "einloesbarBis",
+            "refundableUntil": "rueckzahlbarBis",
+            "validUntil": "gueltigBis"
+          },
+          "issue": {
+            "__": "ausgabe",
+            "occasion": "anlass",
+            "by": "von",
+            "day": "tag"
+          },
+          "print": {
+            "__": "druck",
+            "count": "anzahl",
+            "lastAt": "zuletztAt"
+          },
+          "createdAt": "angelegtAt",
+          "updatedAt": "geaendertAt"
+        }
+      },
+      "werte": {
+        "voucher.type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucher.status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "voucher.validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "voucher.issue.occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
         }
       }
     },
@@ -2480,6 +2810,42 @@
       }
     },
     "checkPartnerCustomerEmail": {},
+    "checkVoucher": {
+      "data": {
+        "balanceCents": "saldoCents",
+        "faceValueCents": "nennwertCents",
+        "quantity": "stueck",
+        "remainingQuantity": "stueckOffen",
+        "vatRateBp": "satzBp",
+        "article": {
+          "__": "artikel",
+          "vatRateBp": "satzBp",
+          "priceCents": "preisCents"
+        },
+        "discountCents": "rabattCents",
+        "discountPercentBp": "rabattProzentBp",
+        "validity": {
+          "__": "gueltigkeit",
+          "pattern": "muster",
+          "redeemableUntil": "einloesbarBis",
+          "refundableUntil": "rueckzahlbarBis",
+          "validUntil": "gueltigBis"
+        },
+        "codeSuffix": "codeEnde",
+        "exempt": "befreit"
+      },
+      "werte": {
+        "type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        }
+      }
+    },
     "closeMyShift": {
       "params": {
         "shiftId": "schichtId",
@@ -2536,6 +2902,69 @@
         "nachrichtWoerter": {
           "verkaufbar": "sellable",
           "defekt": "defective"
+        }
+      }
+    },
+    "correctMyVoucher": {
+      "params": {
+        "reason": "grund",
+        "balanceCents": "saldoCents",
+        "remainingQuantity": "stueckOffen"
+      },
+      "data": {
+        "voucher": {
+          "__": "gutschein",
+          "type": "art",
+          "codeSuffix": "codeEnde",
+          "faceValueCents": "nennwertCents",
+          "balanceCents": "saldoCents",
+          "vatRateBp": "satzBp",
+          "article": {
+            "__": "artikel",
+            "vatRateBp": "satzBp",
+            "priceCents": "preisCents"
+          },
+          "quantity": "stueck",
+          "remainingQuantity": "stueckOffen",
+          "discountCents": "rabattCents",
+          "discountPercentBp": "rabattProzentBp",
+          "redeemed": "eingeloest",
+          "smallBusiness": "kleinunternehmer",
+          "salePaymentMethod": "zahlartVerkauf",
+          "validity": {
+            "__": "gueltigkeit",
+            "pattern": "muster",
+            "redeemableUntil": "einloesbarBis",
+            "refundableUntil": "rueckzahlbarBis",
+            "validUntil": "gueltigBis"
+          },
+          "issue": {
+            "__": "ausgabe",
+            "occasion": "anlass",
+            "by": "von",
+            "day": "tag"
+          },
+          "print": {
+            "__": "druck",
+            "count": "anzahl",
+            "lastAt": "zuletztAt"
+          },
+          "createdAt": "angelegtAt",
+          "updatedAt": "geaendertAt"
+        }
+      },
+      "werte": {
+        "voucher.type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucher.status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "voucher.validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "voucher.issue.occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
         }
       }
     },
@@ -2646,18 +3075,85 @@
             "uid_ungueltig": "vat_id_invalid",
             "uid_pruefung_offen": "vat_id_check_pending",
             "e1a_ungueltig": "invalid_e1a_group",
+            "betriebsprofil_fehlt": "business_profile_missing",
+            "betriebsprofil_ungueltig": "invalid_business_profile",
+            "klaerung_ungueltig": "invalid_clarification",
+            "klaerung_zu_viele_runden": "clarification_rounds_exhausted",
+            "klaerung_nicht_verfuegbar": "clarification_unavailable",
             "e1a_nicht_waehlbar": "group_not_selectable",
             "e1a_nur_abschluss": "group_year_end_only",
             "e1a_nur_bilanz": "group_balance_sheet_only",
             "jahr_ungueltig": "invalid_year",
             "too_many_entries": "too_many_entries",
             "steuerprofil_ungueltig": "invalid_tax_profile",
-            "nur_admin": "admin_only"
+            "nur_admin": "admin_only",
+            "fahrzeug_ungueltig": "invalid_vehicle",
+            "fahrzeug_unbekannt": "vehicle_not_found",
+            "fahrzeug_in_verwendung": "vehicle_in_use",
+            "zu_viele_fahrzeuge": "too_many_vehicles",
+            "raum_ungueltig": "invalid_room",
+            "anschluss_ungueltig": "invalid_connection",
+            "betriebsmittel_unbekannt": "asset_not_found",
+            "gedaechtnis_unbekannt": "memory_entry_not_found",
+            "betriebsmittel_in_verwendung": "asset_in_use",
+            "zu_viele_betriebsmittel": "too_many_assets",
+            "betriebsmittel_typ_ungueltig": "invalid_asset_type",
+            "dokument_ungueltig": "invalid_document",
+            "dokument_unbekannt": "document_not_found",
+            "zu_viele_dokumente": "too_many_documents",
+            "anlage_ungueltig": "invalid_asset_record",
+            "anlage_unbekannt": "asset_record_not_found",
+            "anlage_in_verwendung": "asset_record_in_use",
+            "anlage_abgegangen": "asset_record_disposed",
+            "zu_viele_anlagen": "too_many_asset_records",
+            "gwg_ueber_grenze": "low_value_limit_exceeded",
+            "nutzungsdauer_pkw": "car_useful_life_too_short"
           }
         }
       }
     },
     "createInvoiceItem": {},
+    "createMyPromoVouchers": {
+      "params": {
+        "count": "anzahl",
+        "discountCents": "rabattCents",
+        "discountPercentBp": "rabattProzentBp",
+        "validUntil": "gueltigBis",
+        "occasion": "anlass"
+      },
+      "paramWerte": {
+        "occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
+        }
+      },
+      "data": {
+        "vouchers": [
+          {
+            "__": "gutscheine",
+            "codeSuffix": "codeEnde"
+          }
+        ],
+        "count": "anzahl",
+        "validity": {
+          "__": "gueltigkeit",
+          "pattern": "muster",
+          "redeemableUntil": "einloesbarBis",
+          "refundableUntil": "rueckzahlbarBis",
+          "validUntil": "gueltigBis"
+        },
+        "notice": "hinweis",
+        "partial": "teilweise",
+        "error": "fehler"
+      },
+      "werte": {
+        "validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "notice": {
+          "$catalog": "GUTSCHEIN_HINWEIS"
+        }
+      }
+    },
     "createPartnerCustomer": {
       "paramWerte": {
         "business.legalForm": {
@@ -2758,7 +3254,25 @@
             "keptByEmployee": "direkt"
           }
         ],
-        "drawerId": "ladeId"
+        "drawerId": "ladeId",
+        "vouchers": [
+          {
+            "__": "vouchers",
+            "amountCents": "betragCents",
+            "articleId": "artikelId",
+            "quantity": "stueck",
+            "positions": "positionen",
+            "reason": "grund"
+          }
+        ]
+      },
+      "paramWerte": {
+        "vouchers[].type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "vouchers[].action": {
+          "$catalog": "GUTSCHEIN_AKTION"
+        }
       },
       "data": {
         "receipt": {
@@ -2798,7 +3312,22 @@
               "tone": "ton"
             }
           ]
-        }
+        },
+        "issuedVouchers": [
+          {
+            "__": "gutscheine",
+            "codeSuffix": "codeEnde",
+            "faceValueCents": "nennwertCents",
+            "quantity": "stueck",
+            "validity": {
+              "__": "gueltigkeit",
+              "pattern": "muster",
+              "redeemableUntil": "einloesbarBis",
+              "refundableUntil": "rueckzahlbarBis",
+              "validUntil": "gueltigBis"
+            }
+          }
+        ]
       },
       "werte": {
         "receipt.cancellationReason": {
@@ -2806,6 +3335,12 @@
         },
         "layout.lines[].tone": {
           "$catalog": "LAYOUT_TON"
+        },
+        "issuedVouchers[].type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "issuedVouchers[].validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
         }
       },
       "ergaenze": {
@@ -2953,6 +3488,14 @@
             "praefix": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut. ",
             "code": "receipt_outcome_unknown",
             "ersetzeMeldung": "Ergebnis unklar: der Beleg wurde möglicherweise erstellt. Bitte vor einem neuen Versuch die Belegliste prüfen (listMyReceipts, getReceipt) und nur wiederholen, wenn der Beleg dort fehlt."
+          },
+          {
+            "text": "Gutschein wurde inzwischen verwendet.",
+            "code": "voucher_balance_changed"
+          },
+          {
+            "text": "Gutscheincode konnte nicht vergeben werden. Bitte erneut versuchen.",
+            "code": "server_error"
           }
         ],
         "nachrichtWoerter": {
@@ -3173,13 +3716,39 @@
           "uid_ungueltig": "vat_id_invalid",
           "uid_pruefung_offen": "vat_id_check_pending",
           "e1a_ungueltig": "invalid_e1a_group",
+          "betriebsprofil_fehlt": "business_profile_missing",
+          "betriebsprofil_ungueltig": "invalid_business_profile",
+          "klaerung_ungueltig": "invalid_clarification",
+          "klaerung_zu_viele_runden": "clarification_rounds_exhausted",
+          "klaerung_nicht_verfuegbar": "clarification_unavailable",
           "e1a_nicht_waehlbar": "group_not_selectable",
           "e1a_nur_abschluss": "group_year_end_only",
           "e1a_nur_bilanz": "group_balance_sheet_only",
           "jahr_ungueltig": "invalid_year",
           "too_many_entries": "too_many_entries",
           "steuerprofil_ungueltig": "invalid_tax_profile",
-          "nur_admin": "admin_only"
+          "nur_admin": "admin_only",
+          "fahrzeug_ungueltig": "invalid_vehicle",
+          "fahrzeug_unbekannt": "vehicle_not_found",
+          "fahrzeug_in_verwendung": "vehicle_in_use",
+          "zu_viele_fahrzeuge": "too_many_vehicles",
+          "raum_ungueltig": "invalid_room",
+          "anschluss_ungueltig": "invalid_connection",
+          "betriebsmittel_unbekannt": "asset_not_found",
+          "gedaechtnis_unbekannt": "memory_entry_not_found",
+          "betriebsmittel_in_verwendung": "asset_in_use",
+          "zu_viele_betriebsmittel": "too_many_assets",
+          "betriebsmittel_typ_ungueltig": "invalid_asset_type",
+          "dokument_ungueltig": "invalid_document",
+          "dokument_unbekannt": "document_not_found",
+          "zu_viele_dokumente": "too_many_documents",
+          "anlage_ungueltig": "invalid_asset_record",
+          "anlage_unbekannt": "asset_record_not_found",
+          "anlage_in_verwendung": "asset_record_in_use",
+          "anlage_abgegangen": "asset_record_disposed",
+          "zu_viele_anlagen": "too_many_asset_records",
+          "gwg_ueber_grenze": "low_value_limit_exceeded",
+          "nutzungsdauer_pkw": "car_useful_life_too_short"
         },
         "signatures[].error.code": {
           "zeitraum_offen": "period_not_closed",
@@ -3244,13 +3813,39 @@
           "uid_ungueltig": "vat_id_invalid",
           "uid_pruefung_offen": "vat_id_check_pending",
           "e1a_ungueltig": "invalid_e1a_group",
+          "betriebsprofil_fehlt": "business_profile_missing",
+          "betriebsprofil_ungueltig": "invalid_business_profile",
+          "klaerung_ungueltig": "invalid_clarification",
+          "klaerung_zu_viele_runden": "clarification_rounds_exhausted",
+          "klaerung_nicht_verfuegbar": "clarification_unavailable",
           "e1a_nicht_waehlbar": "group_not_selectable",
           "e1a_nur_abschluss": "group_year_end_only",
           "e1a_nur_bilanz": "group_balance_sheet_only",
           "jahr_ungueltig": "invalid_year",
           "too_many_entries": "too_many_entries",
           "steuerprofil_ungueltig": "invalid_tax_profile",
-          "nur_admin": "admin_only"
+          "nur_admin": "admin_only",
+          "fahrzeug_ungueltig": "invalid_vehicle",
+          "fahrzeug_unbekannt": "vehicle_not_found",
+          "fahrzeug_in_verwendung": "vehicle_in_use",
+          "zu_viele_fahrzeuge": "too_many_vehicles",
+          "raum_ungueltig": "invalid_room",
+          "anschluss_ungueltig": "invalid_connection",
+          "betriebsmittel_unbekannt": "asset_not_found",
+          "gedaechtnis_unbekannt": "memory_entry_not_found",
+          "betriebsmittel_in_verwendung": "asset_in_use",
+          "zu_viele_betriebsmittel": "too_many_assets",
+          "betriebsmittel_typ_ungueltig": "invalid_asset_type",
+          "dokument_ungueltig": "invalid_document",
+          "dokument_unbekannt": "document_not_found",
+          "zu_viele_dokumente": "too_many_documents",
+          "anlage_ungueltig": "invalid_asset_record",
+          "anlage_unbekannt": "asset_record_not_found",
+          "anlage_in_verwendung": "asset_record_in_use",
+          "anlage_abgegangen": "asset_record_disposed",
+          "zu_viele_anlagen": "too_many_asset_records",
+          "gwg_ueber_grenze": "low_value_limit_exceeded",
+          "nutzungsdauer_pkw": "car_useful_life_too_short"
         }
       }
     },
@@ -3389,6 +3984,12 @@
           "terminalVia": "terminalVia",
           "terminalType": "terminalArt",
           "shortcutHints": "tastenMarken"
+        },
+        "vouchers": {
+          "__": "gutscheine",
+          "sale": "verkauf",
+          "valueVoucherType": "wertArt",
+          "vatRateBp": "satzBp"
         }
       },
       "werte": {
@@ -3439,6 +4040,10 @@
         },
         "device.terminalType": {
           "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        },
+        "vouchers.valueVoucherType": {
+          "mehrzweck": "multi_purpose",
+          "einzweck": "single_purpose"
         }
       }
     },
@@ -3470,6 +4075,68 @@
         }
       }
     },
+    "getMyOpenVouchers": {
+      "params": {
+        "cutoffDate": "stichtag"
+      },
+      "data": {
+        "cutoffDate": "stichtag",
+        "vouchers": [
+          {
+            "__": "gutscheine",
+            "type": "art",
+            "codeSuffix": "codeEnde",
+            "issueDay": "ausgabeTag",
+            "faceValueCents": "nennwertCents",
+            "openCents": "offenCents",
+            "quantity": "stueck",
+            "remainingQuantity": "stueckOffen",
+            "vatRateBp": "satzBp",
+            "netCents": "nettoCents",
+            "vatCents": "ustCents",
+            "ageClass": "altersklasse",
+            "blocked": "gesperrt",
+            "expired": "abgelaufen",
+            "redeemableUntil": "einloesbarBis",
+            "refundableUntil": "rueckzahlbarBis"
+          }
+        ],
+        "totals": {
+          "__": "summen",
+          "total": {
+            "__": "gesamt",
+            "count": "anzahl",
+            "openCents": "offenCents",
+            "netCents": "nettoCents",
+            "vatCents": "ustCents"
+          },
+          "byAgeClass": [
+            {
+              "__": "jeKlasse",
+              "ageClass": "klasse",
+              "count": "anzahl",
+              "openCents": "offenCents",
+              "netCents": "nettoCents",
+              "vatCents": "ustCents"
+            }
+          ]
+        },
+        "redemptionRates": [
+          {
+            "__": "quoten",
+            "year": "jahr",
+            "issuedCents": "ausgegebenCents",
+            "redeemedCents": "eingeloestCents",
+            "rateBp": "quoteBp"
+          }
+        ]
+      },
+      "werte": {
+        "vouchers[].type": {
+          "$catalog": "GUTSCHEIN_ART"
+        }
+      }
+    },
     "getMyShiftReport": {
       "params": {
         "shiftId": "schichtId"
@@ -3495,6 +4162,146 @@
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"
+        }
+      }
+    },
+    "getMyVoucher": {
+      "data": {
+        "voucher": {
+          "__": "gutschein",
+          "type": "art",
+          "codeSuffix": "codeEnde",
+          "faceValueCents": "nennwertCents",
+          "balanceCents": "saldoCents",
+          "vatRateBp": "satzBp",
+          "article": {
+            "__": "artikel",
+            "vatRateBp": "satzBp",
+            "priceCents": "preisCents"
+          },
+          "quantity": "stueck",
+          "remainingQuantity": "stueckOffen",
+          "discountCents": "rabattCents",
+          "discountPercentBp": "rabattProzentBp",
+          "redeemed": "eingeloest",
+          "smallBusiness": "kleinunternehmer",
+          "salePaymentMethod": "zahlartVerkauf",
+          "validity": {
+            "__": "gueltigkeit",
+            "pattern": "muster",
+            "redeemableUntil": "einloesbarBis",
+            "refundableUntil": "rueckzahlbarBis",
+            "validUntil": "gueltigBis"
+          },
+          "issue": {
+            "__": "ausgabe",
+            "occasion": "anlass",
+            "by": "von",
+            "day": "tag"
+          },
+          "print": {
+            "__": "druck",
+            "count": "anzahl",
+            "lastAt": "zuletztAt"
+          },
+          "createdAt": "angelegtAt",
+          "updatedAt": "geaendertAt"
+        },
+        "bookings": [
+          {
+            "__": "buchungen",
+            "type": "art",
+            "amountCents": "betragCents",
+            "quantity": "stueck",
+            "balanceAfterCents": "saldoNachCents",
+            "remainingQuantityAfter": "stueckOffenNach",
+            "reference": "bezug",
+            "reason": "grund",
+            "by": "von",
+            "day": "tag"
+          }
+        ]
+      },
+      "werte": {
+        "voucher.type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucher.status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "voucher.validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "voucher.issue.occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
+        },
+        "bookings[].type": {
+          "$catalog": "GUTSCHEIN_BUCHUNG"
+        }
+      }
+    },
+    "getMyVoucherSettings": {
+      "data": {
+        "settings": {
+          "__": "einstellung",
+          "valueVoucherType": "wertArt",
+          "vatRateBp": "satzBp",
+          "validity": "gueltigkeit",
+          "label": {
+            "__": "etikett",
+            "size": "groesse",
+            "fields": {
+              "__": "felder",
+              "business": "betrieb",
+              "value": "wert",
+              "validity": "gueltigkeit",
+              "checkPage": "pruefseite"
+            },
+            "freeText": "freitext"
+          },
+          "suggestion": {
+            "__": "vorschlag",
+            "valueVoucherType": "wertArt",
+            "vatRateBp": "satzBp",
+            "reason": "grund",
+            "notice": "hinweis"
+          },
+          "confirmedAt": "bestaetigtAt",
+          "confirmedBy": "bestaetigtVon"
+        },
+        "confirmed": "bestaetigt",
+        "suggestion": {
+          "__": "vorschlag",
+          "valueVoucherType": "wertArt",
+          "vatRateBp": "satzBp",
+          "reason": "grund",
+          "notice": "hinweis"
+        }
+      },
+      "werte": {
+        "settings.valueVoucherType": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "settings.validity": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "settings.suggestion.valueVoucherType": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "settings.suggestion.reason": {
+          "$catalog": "GUTSCHEIN_VORSCHLAG_GRUND"
+        },
+        "settings.suggestion.notice": {
+          "$catalog": "GUTSCHEIN_VORSCHLAG_HINWEIS"
+        },
+        "suggestion.valueVoucherType": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "suggestion.reason": {
+          "$catalog": "GUTSCHEIN_VORSCHLAG_GRUND"
+        },
+        "suggestion.notice": {
+          "$catalog": "GUTSCHEIN_VORSCHLAG_HINWEIS"
         }
       }
     },
@@ -3610,7 +4417,22 @@
               "tone": "ton"
             }
           ]
-        }
+        },
+        "issuedVouchers": [
+          {
+            "__": "gutscheine",
+            "codeSuffix": "codeEnde",
+            "faceValueCents": "nennwertCents",
+            "quantity": "stueck",
+            "validity": {
+              "__": "gueltigkeit",
+              "pattern": "muster",
+              "redeemableUntil": "einloesbarBis",
+              "refundableUntil": "rueckzahlbarBis",
+              "validUntil": "gueltigBis"
+            }
+          }
+        ]
       },
       "werte": {
         "receipt.cancellationReason": {
@@ -3618,6 +4440,12 @@
         },
         "layout.lines[].tone": {
           "$catalog": "LAYOUT_TON"
+        },
+        "issuedVouchers[].type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "issuedVouchers[].validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
         }
       },
       "ergaenze": {
@@ -3692,6 +4520,7 @@
         }
       }
     },
+    "getSignatureCardOrder": {},
     "getStock": {
       "data": {
         "stock": [
@@ -3891,13 +4720,39 @@
           "uid_ungueltig": "vat_id_invalid",
           "uid_pruefung_offen": "vat_id_check_pending",
           "e1a_ungueltig": "invalid_e1a_group",
+          "betriebsprofil_fehlt": "business_profile_missing",
+          "betriebsprofil_ungueltig": "invalid_business_profile",
+          "klaerung_ungueltig": "invalid_clarification",
+          "klaerung_zu_viele_runden": "clarification_rounds_exhausted",
+          "klaerung_nicht_verfuegbar": "clarification_unavailable",
           "e1a_nicht_waehlbar": "group_not_selectable",
           "e1a_nur_abschluss": "group_year_end_only",
           "e1a_nur_bilanz": "group_balance_sheet_only",
           "jahr_ungueltig": "invalid_year",
           "too_many_entries": "too_many_entries",
           "steuerprofil_ungueltig": "invalid_tax_profile",
-          "nur_admin": "admin_only"
+          "nur_admin": "admin_only",
+          "fahrzeug_ungueltig": "invalid_vehicle",
+          "fahrzeug_unbekannt": "vehicle_not_found",
+          "fahrzeug_in_verwendung": "vehicle_in_use",
+          "zu_viele_fahrzeuge": "too_many_vehicles",
+          "raum_ungueltig": "invalid_room",
+          "anschluss_ungueltig": "invalid_connection",
+          "betriebsmittel_unbekannt": "asset_not_found",
+          "gedaechtnis_unbekannt": "memory_entry_not_found",
+          "betriebsmittel_in_verwendung": "asset_in_use",
+          "zu_viele_betriebsmittel": "too_many_assets",
+          "betriebsmittel_typ_ungueltig": "invalid_asset_type",
+          "dokument_ungueltig": "invalid_document",
+          "dokument_unbekannt": "document_not_found",
+          "zu_viele_dokumente": "too_many_documents",
+          "anlage_ungueltig": "invalid_asset_record",
+          "anlage_unbekannt": "asset_record_not_found",
+          "anlage_in_verwendung": "asset_record_in_use",
+          "anlage_abgegangen": "asset_record_disposed",
+          "zu_viele_anlagen": "too_many_asset_records",
+          "gwg_ueber_grenze": "low_value_limit_exceeded",
+          "nutzungsdauer_pkw": "car_useful_life_too_short"
         }
       }
     },
@@ -4077,6 +4932,9 @@
           "$catalog": "STORNO_GRUND"
         }
       },
+      "ergaenze": {
+        "$function": "receiptsMitGutscheinen"
+      },
       "fehler": {
         "nachrichtWoerter": {
           "cashregisterid": "cashregisterId"
@@ -4193,6 +5051,80 @@
       }
     },
     "listMyTipRecipients": {},
+    "listMyVouchers": {
+      "params": {
+        "search": "suche",
+        "type": "art",
+        "after": "nach"
+      },
+      "paramWerte": {
+        "type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        }
+      },
+      "data": {
+        "vouchers": [
+          {
+            "__": "gutscheine",
+            "type": "art",
+            "codeSuffix": "codeEnde",
+            "faceValueCents": "nennwertCents",
+            "balanceCents": "saldoCents",
+            "vatRateBp": "satzBp",
+            "article": {
+              "__": "artikel",
+              "vatRateBp": "satzBp",
+              "priceCents": "preisCents"
+            },
+            "quantity": "stueck",
+            "remainingQuantity": "stueckOffen",
+            "discountCents": "rabattCents",
+            "discountPercentBp": "rabattProzentBp",
+            "redeemed": "eingeloest",
+            "smallBusiness": "kleinunternehmer",
+            "salePaymentMethod": "zahlartVerkauf",
+            "validity": {
+              "__": "gueltigkeit",
+              "pattern": "muster",
+              "redeemableUntil": "einloesbarBis",
+              "refundableUntil": "rueckzahlbarBis",
+              "validUntil": "gueltigBis"
+            },
+            "issue": {
+              "__": "ausgabe",
+              "occasion": "anlass",
+              "by": "von",
+              "day": "tag"
+            },
+            "print": {
+              "__": "druck",
+              "count": "anzahl",
+              "lastAt": "zuletztAt"
+            },
+            "createdAt": "angelegtAt",
+            "updatedAt": "geaendertAt"
+          }
+        ],
+        "next": "nach"
+      },
+      "werte": {
+        "vouchers[].type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "vouchers[].status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "vouchers[].validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "vouchers[].issue.occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
+        }
+      }
+    },
     "listPartnerCustomers": {
       "werte": {
         "customers[].avv.mode": {
@@ -4589,6 +5521,80 @@
         "nextCursor": "weiter"
       }
     },
+    "listVouchersAdmin": {
+      "params": {
+        "search": "suche",
+        "type": "art",
+        "after": "nach"
+      },
+      "paramWerte": {
+        "type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        }
+      },
+      "data": {
+        "vouchers": [
+          {
+            "__": "gutscheine",
+            "type": "art",
+            "codeSuffix": "codeEnde",
+            "faceValueCents": "nennwertCents",
+            "balanceCents": "saldoCents",
+            "vatRateBp": "satzBp",
+            "article": {
+              "__": "artikel",
+              "vatRateBp": "satzBp",
+              "priceCents": "preisCents"
+            },
+            "quantity": "stueck",
+            "remainingQuantity": "stueckOffen",
+            "discountCents": "rabattCents",
+            "discountPercentBp": "rabattProzentBp",
+            "redeemed": "eingeloest",
+            "smallBusiness": "kleinunternehmer",
+            "salePaymentMethod": "zahlartVerkauf",
+            "validity": {
+              "__": "gueltigkeit",
+              "pattern": "muster",
+              "redeemableUntil": "einloesbarBis",
+              "refundableUntil": "rueckzahlbarBis",
+              "validUntil": "gueltigBis"
+            },
+            "issue": {
+              "__": "ausgabe",
+              "occasion": "anlass",
+              "by": "von",
+              "day": "tag"
+            },
+            "print": {
+              "__": "druck",
+              "count": "anzahl",
+              "lastAt": "zuletztAt"
+            },
+            "createdAt": "angelegtAt",
+            "updatedAt": "geaendertAt"
+          }
+        ],
+        "next": "nach"
+      },
+      "werte": {
+        "vouchers[].type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "vouchers[].status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "vouchers[].validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "vouchers[].issue.occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
+        }
+      }
+    },
     "listWebhookDeliveries": {
       "data": {
         "deliveries": [
@@ -4716,6 +5722,7 @@
         }
       }
     },
+    "orderSignatureCard": {},
     "pairRegisterDevice": {
       "data": {
         "companyName": "betrieb",
@@ -4968,6 +5975,122 @@
         }
       }
     },
+    "reprintMyVoucherLabel": {
+      "data": {
+        "voucher": {
+          "__": "gutschein",
+          "type": "art",
+          "codeSuffix": "codeEnde",
+          "faceValueCents": "nennwertCents",
+          "balanceCents": "saldoCents",
+          "vatRateBp": "satzBp",
+          "article": {
+            "__": "artikel",
+            "vatRateBp": "satzBp",
+            "priceCents": "preisCents"
+          },
+          "quantity": "stueck",
+          "remainingQuantity": "stueckOffen",
+          "discountCents": "rabattCents",
+          "discountPercentBp": "rabattProzentBp",
+          "redeemed": "eingeloest",
+          "smallBusiness": "kleinunternehmer",
+          "salePaymentMethod": "zahlartVerkauf",
+          "validity": {
+            "__": "gueltigkeit",
+            "pattern": "muster",
+            "redeemableUntil": "einloesbarBis",
+            "refundableUntil": "rueckzahlbarBis",
+            "validUntil": "gueltigBis"
+          },
+          "issue": {
+            "__": "ausgabe",
+            "occasion": "anlass",
+            "by": "von",
+            "day": "tag"
+          },
+          "print": {
+            "__": "druck",
+            "count": "anzahl",
+            "lastAt": "zuletztAt"
+          },
+          "createdAt": "angelegtAt",
+          "updatedAt": "geaendertAt"
+        }
+      },
+      "werte": {
+        "voucher.type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucher.status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "voucher.validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "voucher.issue.occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
+        }
+      }
+    },
+    "reprintVoucherLabel": {
+      "data": {
+        "voucher": {
+          "__": "gutschein",
+          "type": "art",
+          "codeSuffix": "codeEnde",
+          "faceValueCents": "nennwertCents",
+          "balanceCents": "saldoCents",
+          "vatRateBp": "satzBp",
+          "article": {
+            "__": "artikel",
+            "vatRateBp": "satzBp",
+            "priceCents": "preisCents"
+          },
+          "quantity": "stueck",
+          "remainingQuantity": "stueckOffen",
+          "discountCents": "rabattCents",
+          "discountPercentBp": "rabattProzentBp",
+          "redeemed": "eingeloest",
+          "smallBusiness": "kleinunternehmer",
+          "salePaymentMethod": "zahlartVerkauf",
+          "validity": {
+            "__": "gueltigkeit",
+            "pattern": "muster",
+            "redeemableUntil": "einloesbarBis",
+            "refundableUntil": "rueckzahlbarBis",
+            "validUntil": "gueltigBis"
+          },
+          "issue": {
+            "__": "ausgabe",
+            "occasion": "anlass",
+            "by": "von",
+            "day": "tag"
+          },
+          "print": {
+            "__": "druck",
+            "count": "anzahl",
+            "lastAt": "zuletztAt"
+          },
+          "createdAt": "angelegtAt",
+          "updatedAt": "geaendertAt"
+        }
+      },
+      "werte": {
+        "voucher.type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucher.status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "voucher.validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "voucher.issue.occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
+        }
+      }
+    },
     "requestCustomerSignature": {
       "data": {
         "fee": {
@@ -5045,13 +6168,39 @@
           "uid_ungueltig": "vat_id_invalid",
           "uid_pruefung_offen": "vat_id_check_pending",
           "e1a_ungueltig": "invalid_e1a_group",
+          "betriebsprofil_fehlt": "business_profile_missing",
+          "betriebsprofil_ungueltig": "invalid_business_profile",
+          "klaerung_ungueltig": "invalid_clarification",
+          "klaerung_zu_viele_runden": "clarification_rounds_exhausted",
+          "klaerung_nicht_verfuegbar": "clarification_unavailable",
           "e1a_nicht_waehlbar": "group_not_selectable",
           "e1a_nur_abschluss": "group_year_end_only",
           "e1a_nur_bilanz": "group_balance_sheet_only",
           "jahr_ungueltig": "invalid_year",
           "too_many_entries": "too_many_entries",
           "steuerprofil_ungueltig": "invalid_tax_profile",
-          "nur_admin": "admin_only"
+          "nur_admin": "admin_only",
+          "fahrzeug_ungueltig": "invalid_vehicle",
+          "fahrzeug_unbekannt": "vehicle_not_found",
+          "fahrzeug_in_verwendung": "vehicle_in_use",
+          "zu_viele_fahrzeuge": "too_many_vehicles",
+          "raum_ungueltig": "invalid_room",
+          "anschluss_ungueltig": "invalid_connection",
+          "betriebsmittel_unbekannt": "asset_not_found",
+          "gedaechtnis_unbekannt": "memory_entry_not_found",
+          "betriebsmittel_in_verwendung": "asset_in_use",
+          "zu_viele_betriebsmittel": "too_many_assets",
+          "betriebsmittel_typ_ungueltig": "invalid_asset_type",
+          "dokument_ungueltig": "invalid_document",
+          "dokument_unbekannt": "document_not_found",
+          "zu_viele_dokumente": "too_many_documents",
+          "anlage_ungueltig": "invalid_asset_record",
+          "anlage_unbekannt": "asset_record_not_found",
+          "anlage_in_verwendung": "asset_record_in_use",
+          "anlage_abgegangen": "asset_record_disposed",
+          "zu_viele_anlagen": "too_many_asset_records",
+          "gwg_ueber_grenze": "low_value_limit_exceeded",
+          "nutzungsdauer_pkw": "car_useful_life_too_short"
         }
       },
       "fehler": {
@@ -5486,6 +6635,96 @@
         }
       }
     },
+    "setMyVoucherSettings": {
+      "params": {
+        "valueVoucherType": "wertArt",
+        "vatRateBp": "satzBp",
+        "validity": "gueltigkeit",
+        "label": {
+          "__": "etikett",
+          "size": "groesse",
+          "fields": {
+            "__": "felder",
+            "business": "betrieb",
+            "value": "wert",
+            "validity": "gueltigkeit",
+            "checkPage": "pruefseite"
+          },
+          "freeText": "freitext"
+        }
+      },
+      "paramWerte": {
+        "valueVoucherType": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "validity": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        }
+      },
+      "data": {
+        "settings": {
+          "__": "einstellung",
+          "valueVoucherType": "wertArt",
+          "vatRateBp": "satzBp",
+          "validity": "gueltigkeit",
+          "label": {
+            "__": "etikett",
+            "size": "groesse",
+            "fields": {
+              "__": "felder",
+              "business": "betrieb",
+              "value": "wert",
+              "validity": "gueltigkeit",
+              "checkPage": "pruefseite"
+            },
+            "freeText": "freitext"
+          },
+          "suggestion": {
+            "__": "vorschlag",
+            "valueVoucherType": "wertArt",
+            "vatRateBp": "satzBp",
+            "reason": "grund",
+            "notice": "hinweis"
+          },
+          "confirmedAt": "bestaetigtAt",
+          "confirmedBy": "bestaetigtVon"
+        },
+        "confirmed": "bestaetigt",
+        "suggestion": {
+          "__": "vorschlag",
+          "valueVoucherType": "wertArt",
+          "vatRateBp": "satzBp",
+          "reason": "grund",
+          "notice": "hinweis"
+        }
+      },
+      "werte": {
+        "settings.valueVoucherType": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "settings.validity": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "settings.suggestion.valueVoucherType": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "settings.suggestion.reason": {
+          "$catalog": "GUTSCHEIN_VORSCHLAG_GRUND"
+        },
+        "settings.suggestion.notice": {
+          "$catalog": "GUTSCHEIN_VORSCHLAG_HINWEIS"
+        },
+        "suggestion.valueVoucherType": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "suggestion.reason": {
+          "$catalog": "GUTSCHEIN_VORSCHLAG_GRUND"
+        },
+        "suggestion.notice": {
+          "$catalog": "GUTSCHEIN_VORSCHLAG_HINWEIS"
+        }
+      }
+    },
     "stripeCaptureIntent": {},
     "transferStock": {
       "data": {
@@ -5499,6 +6738,67 @@
             "message": "message"
           }
         ]
+      }
+    },
+    "unblockMyVoucher": {
+      "params": {
+        "reason": "grund"
+      },
+      "data": {
+        "voucher": {
+          "__": "gutschein",
+          "type": "art",
+          "codeSuffix": "codeEnde",
+          "faceValueCents": "nennwertCents",
+          "balanceCents": "saldoCents",
+          "vatRateBp": "satzBp",
+          "article": {
+            "__": "artikel",
+            "vatRateBp": "satzBp",
+            "priceCents": "preisCents"
+          },
+          "quantity": "stueck",
+          "remainingQuantity": "stueckOffen",
+          "discountCents": "rabattCents",
+          "discountPercentBp": "rabattProzentBp",
+          "redeemed": "eingeloest",
+          "smallBusiness": "kleinunternehmer",
+          "salePaymentMethod": "zahlartVerkauf",
+          "validity": {
+            "__": "gueltigkeit",
+            "pattern": "muster",
+            "redeemableUntil": "einloesbarBis",
+            "refundableUntil": "rueckzahlbarBis",
+            "validUntil": "gueltigBis"
+          },
+          "issue": {
+            "__": "ausgabe",
+            "occasion": "anlass",
+            "by": "von",
+            "day": "tag"
+          },
+          "print": {
+            "__": "druck",
+            "count": "anzahl",
+            "lastAt": "zuletztAt"
+          },
+          "createdAt": "angelegtAt",
+          "updatedAt": "geaendertAt"
+        }
+      },
+      "werte": {
+        "voucher.type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucher.status": {
+          "$catalog": "GUTSCHEIN_STATUS"
+        },
+        "voucher.validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "voucher.issue.occasion": {
+          "$catalog": "GUTSCHEIN_ANLASS"
+        }
       }
     },
     "unpairRegisterDevice": {},
@@ -5675,13 +6975,39 @@
           "uid_ungueltig": "vat_id_invalid",
           "uid_pruefung_offen": "vat_id_check_pending",
           "e1a_ungueltig": "invalid_e1a_group",
+          "betriebsprofil_fehlt": "business_profile_missing",
+          "betriebsprofil_ungueltig": "invalid_business_profile",
+          "klaerung_ungueltig": "invalid_clarification",
+          "klaerung_zu_viele_runden": "clarification_rounds_exhausted",
+          "klaerung_nicht_verfuegbar": "clarification_unavailable",
           "e1a_nicht_waehlbar": "group_not_selectable",
           "e1a_nur_abschluss": "group_year_end_only",
           "e1a_nur_bilanz": "group_balance_sheet_only",
           "jahr_ungueltig": "invalid_year",
           "too_many_entries": "too_many_entries",
           "steuerprofil_ungueltig": "invalid_tax_profile",
-          "nur_admin": "admin_only"
+          "nur_admin": "admin_only",
+          "fahrzeug_ungueltig": "invalid_vehicle",
+          "fahrzeug_unbekannt": "vehicle_not_found",
+          "fahrzeug_in_verwendung": "vehicle_in_use",
+          "zu_viele_fahrzeuge": "too_many_vehicles",
+          "raum_ungueltig": "invalid_room",
+          "anschluss_ungueltig": "invalid_connection",
+          "betriebsmittel_unbekannt": "asset_not_found",
+          "gedaechtnis_unbekannt": "memory_entry_not_found",
+          "betriebsmittel_in_verwendung": "asset_in_use",
+          "zu_viele_betriebsmittel": "too_many_assets",
+          "betriebsmittel_typ_ungueltig": "invalid_asset_type",
+          "dokument_ungueltig": "invalid_document",
+          "dokument_unbekannt": "document_not_found",
+          "zu_viele_dokumente": "too_many_documents",
+          "anlage_ungueltig": "invalid_asset_record",
+          "anlage_unbekannt": "asset_record_not_found",
+          "anlage_in_verwendung": "asset_record_in_use",
+          "anlage_abgegangen": "asset_record_disposed",
+          "zu_viele_anlagen": "too_many_asset_records",
+          "gwg_ueber_grenze": "low_value_limit_exceeded",
+          "nutzungsdauer_pkw": "car_useful_life_too_short"
         }
       }
     },
@@ -5833,13 +7159,39 @@
           "uid_ungueltig": "vat_id_invalid",
           "uid_pruefung_offen": "vat_id_check_pending",
           "e1a_ungueltig": "invalid_e1a_group",
+          "betriebsprofil_fehlt": "business_profile_missing",
+          "betriebsprofil_ungueltig": "invalid_business_profile",
+          "klaerung_ungueltig": "invalid_clarification",
+          "klaerung_zu_viele_runden": "clarification_rounds_exhausted",
+          "klaerung_nicht_verfuegbar": "clarification_unavailable",
           "e1a_nicht_waehlbar": "group_not_selectable",
           "e1a_nur_abschluss": "group_year_end_only",
           "e1a_nur_bilanz": "group_balance_sheet_only",
           "jahr_ungueltig": "invalid_year",
           "too_many_entries": "too_many_entries",
           "steuerprofil_ungueltig": "invalid_tax_profile",
-          "nur_admin": "admin_only"
+          "nur_admin": "admin_only",
+          "fahrzeug_ungueltig": "invalid_vehicle",
+          "fahrzeug_unbekannt": "vehicle_not_found",
+          "fahrzeug_in_verwendung": "vehicle_in_use",
+          "zu_viele_fahrzeuge": "too_many_vehicles",
+          "raum_ungueltig": "invalid_room",
+          "anschluss_ungueltig": "invalid_connection",
+          "betriebsmittel_unbekannt": "asset_not_found",
+          "gedaechtnis_unbekannt": "memory_entry_not_found",
+          "betriebsmittel_in_verwendung": "asset_in_use",
+          "zu_viele_betriebsmittel": "too_many_assets",
+          "betriebsmittel_typ_ungueltig": "invalid_asset_type",
+          "dokument_ungueltig": "invalid_document",
+          "dokument_unbekannt": "document_not_found",
+          "zu_viele_dokumente": "too_many_documents",
+          "anlage_ungueltig": "invalid_asset_record",
+          "anlage_unbekannt": "asset_record_not_found",
+          "anlage_in_verwendung": "asset_record_in_use",
+          "anlage_abgegangen": "asset_record_disposed",
+          "zu_viele_anlagen": "too_many_asset_records",
+          "gwg_ueber_grenze": "low_value_limit_exceeded",
+          "nutzungsdauer_pkw": "car_useful_life_too_short"
         }
       }
     },

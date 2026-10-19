@@ -1,0 +1,216 @@
+{
+  "lines": [
+    {
+      "kind": "text",
+      "text": "Melisse Nails e.U.",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Melissenweg 7",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "1070 Wien",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "ATU12345675",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "+43 1 2345678",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Datum:",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "19.10.2026 10:15:30",
+          "width": 8,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kassen-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "KASSE1",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Beleg-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "AT0-KASSE1-74",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "1  x Mehrzweckgutschein ····-····-NNNY",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "30,00 D",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "text",
+      "text": "  USt bei Einlösung",
+      "align": "left",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "MwSt%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "MwSt",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Netto",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Brutto",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "D 0%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "0,00",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "30,00",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "30,00",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamt:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "30,00 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Zahlungsart:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "Barzahlung",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "qr",
+      "data": "_R1-AT1_KASSE1_AT0-KASSE1-74_2026-10-19T10:15:30_0,00_0,00_0,00_30,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR"
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Danke für Ihren Besuch",
+      "align": "center",
+      "bold": false
+    }
+  ],
+  "paperSize": "mm58",
+  "ruleset": 2
+}

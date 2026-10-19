@@ -1,16 +1,18 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "86c7d842017f818e348b80ebebdce8492cfcbd76e388cba9de41a5c888114e6a",
-    "inputsSha256": "95fd7b1f3704811d3a3f79b1dbb6aea668e8c0e3a663e5b0ca9c07f2e11e37b5",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
+    "sha256": "c5db01aa176f4449a18bf0affdf984a8b3fef75b9e3344721cb03cb3a6fdb272",
+    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
+    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/aktivierung-api-core.js",
       "functions/beleg-mail-core.js",
       "functions/gemeinsam/api-rand.js",
       "functions/gemeinsam/api-vokabular-v3.js",
       "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/gutschein-beleg.js",
       "functions/gemeinsam/storno-core.js",
       "functions/gemeinsam/tip-core.js",
       "functions/gemeinsam/vat-buckets.js",
@@ -20,6 +22,7 @@
       "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
       "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
       "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/gutschein-belege.js",
       "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
       "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
       "functions/test/unit/helpers/kassen-fehlerstellen.js",
@@ -377,6 +380,109 @@
       }
     },
     {
+      "channel": "api",
+      "name": "cancel_redeemed_multi_purpose_voucher",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "reason": "input_error",
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": -490,
+            "refundOf": "p1"
+          }
+        ],
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-5"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "cancellationOf": {
+            "receiptId": "KECK-1-ID-5",
+            "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000008d3ea402",
+            "timeStamp": "2026-09-26T10:00:00"
+          },
+          "remaining": [
+            0
+          ],
+          "receipt": {
+            "counter": 10,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-10",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "redeem",
+                "type": "value",
+                "code": "····-····-5KNZ",
+                "name": "Gutschein",
+                "value": 17.5,
+                "voucherType": "multi_purpose",
+                "voucherId": "gmz1",
+                "valueCents": 1750,
+                "codeSuffix": "5KNZ"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-5 – Fehleingabe",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": -22.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "C8hNRzjBX9Jz1rP64uIZZA==",
+            "signaturePreviousReceipt": "dETi/1Jv73U=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000004dddd2a",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": -490,
+                "refundOf": "p1"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMTBfMjAyNi0wOS0yNlQxMDowMDowMF8tMjIsNDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9VMVJQX0FCQzEyM19kRVRpLzFKdjczVT0.tr8bqyCQvn4jZjGfoa0YBPWoqMKFrDhdGxaLnyElofTz_UZZV1vTUf-rf4Ns6y7Q_1K2fdwwqq2Qu1k2kUcZCw",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-10_2026-09-26T10:00:00_-22,40_0,00_0,00_0,00_0,00_U1RP_ABC123_dETi/1Jv73U=_tr8bqyCQvn4jZjGfoa0YBPWoqMKFrDhdGxaLnyElofTz/UZZV1vTUf+rf4Ns6y7Q/1K2fdwwqq2Qu1k2kUcZCw==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-5",
+              "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000008d3ea402",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "input_error",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Blumenstrauß",
+                "quantity": 1,
+                "unitPriceCents": -2240,
+                "vatRate": 20,
+                "amount": 1,
+                "vat": 20,
+                "priceOneCents": -2240,
+                "priceOne": -22.4
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "channel": "app",
       "name": "cancel_full_card_refund",
       "endpoint": "cancelReceipt",
@@ -731,6 +837,111 @@
           "code": "receipt_not_found"
         },
         "code": "receipt_not_found"
+      }
+    },
+    {
+      "channel": "app",
+      "name": "cancel_redeemed_multi_purpose_voucher",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "reason": "input_error",
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": -490,
+            "refundOf": "p1"
+          }
+        ],
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-5"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "cancellationOf": {
+            "receiptId": "KECK-1-ID-5",
+            "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000008d3ea402",
+            "timeStamp": "2026-09-26T10:00:00"
+          },
+          "remaining": [
+            0
+          ],
+          "receipt": {
+            "counter": 10,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-10",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "redeem",
+                "type": "value",
+                "code": "····-····-5KNZ",
+                "name": "Gutschein",
+                "value": 17.5,
+                "voucherType": "multi_purpose",
+                "voucherId": "gmz1",
+                "valueCents": 1750,
+                "codeSuffix": "5KNZ"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-5 – Fehleingabe",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": -22.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "C8hNRzjBX9Jz1rP64uIZZA==",
+            "signaturePreviousReceipt": "dETi/1Jv73U=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000004dddd2a",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": -490,
+                "refundOf": "p1"
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMTBfMjAyNi0wOS0yNlQxMDowMDowMF8tMjIsNDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9VMVJQX0FCQzEyM19kRVRpLzFKdjczVT0.tr8bqyCQvn4jZjGfoa0YBPWoqMKFrDhdGxaLnyElofTz_UZZV1vTUf-rf4Ns6y7Q_1K2fdwwqq2Qu1k2kUcZCw",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-10_2026-09-26T10:00:00_-22,40_0,00_0,00_0,00_0,00_U1RP_ABC123_dETi/1Jv73U=_tr8bqyCQvn4jZjGfoa0YBPWoqMKFrDhdGxaLnyElofTz/UZZV1vTUf+rf4Ns6y7Q/1K2fdwwqq2Qu1k2kUcZCw==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-5",
+              "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000008d3ea402",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "input_error",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Blumenstrauß",
+                "quantity": 1,
+                "unitPriceCents": -2240,
+                "vatRate": 20,
+                "amount": 1,
+                "vat": 20,
+                "priceOneCents": -2240,
+                "priceOne": -22.4
+              }
+            ]
+          }
+        }
       }
     }
   ]

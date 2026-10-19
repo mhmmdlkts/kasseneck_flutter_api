@@ -33,9 +33,14 @@ if [ "$paketversion" != "$version" ]; then
   echo "Das Paket traegt die Version '${paketversion}', angeheftet ist ${version}." >&2
   exit 1
 fi
+# Seit npm 1.12.0 hat das Paket eine Laufzeitabhaengigkeit
+# (@kreiseck/validator); ohne sie laesst sich dist/ nicht laden. Installiert
+# wird genau, was package.json des Tarballs nennt, ohne Skripte.
+(cd "$paket" && npm install --omit=dev --ignore-scripts --no-audit --no-fund --silent >/dev/null)
 ziel="test/fixtures/zeichensatz"
 mkdir -p "$ziel"
-node --input-type=module - "$paket" > "$ziel/special-characters.lines.json" <<'JS'
+# Erst daneben schreiben: bricht node ab, bleibt die vorhandene Datei stehen.
+node --input-type=module - "$paket" > "$tmp/special-characters.lines.json" <<'JS'
 import { readFileSync } from 'node:fs';
 const p = process.argv[2];
 const { fromReceiptPayload } = await import(p + '/dist/esm/models/index.js');
@@ -45,6 +50,7 @@ const f = bons.cases.find((c) => c.name === 'special-characters').input;
 const receipt = fromReceiptPayload({ ...f.receipt, customerDetails: f.receipt.customerDetails.join('\n'), legalMessage: f.receipt.legalMessage.join('\n') });
 process.stdout.write(JSON.stringify(buildReceiptLayout(receipt, f.company, f.options ?? {}), null, 2) + '\n');
 JS
+mv "$tmp/special-characters.lines.json" "$ziel/special-characters.lines.json"
 tarsha="$(shasum -a 1 "$tarball" | cut -d' ' -f1)"
 dateisha="$(shasum -a 256 "$ziel/special-characters.lines.json" | cut -d' ' -f1)"
 printf '{\n  "npmVersion": "%s",\n  "tarballShasum": "%s",\n  "sha256": "%s"\n}\n' "$version" "$tarsha" "$dateisha" > "$ziel/special-characters.source.json"

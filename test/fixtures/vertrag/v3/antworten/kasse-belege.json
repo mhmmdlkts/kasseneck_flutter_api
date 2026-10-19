@@ -1,16 +1,18 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "aad7147db385e4a6d88ba5fb59d24c04e7e1f01195778aa70ccdc68fb90adcd7",
-    "inputsSha256": "95fd7b1f3704811d3a3f79b1dbb6aea668e8c0e3a663e5b0ca9c07f2e11e37b5",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
+    "sha256": "d43bc765cb47497658bfc93ae64e06bffbb293585373d7231b50cb3438a8157d",
+    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
+    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/aktivierung-api-core.js",
       "functions/beleg-mail-core.js",
       "functions/gemeinsam/api-rand.js",
       "functions/gemeinsam/api-vokabular-v3.js",
       "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/gutschein-beleg.js",
       "functions/gemeinsam/storno-core.js",
       "functions/gemeinsam/tip-core.js",
       "functions/gemeinsam/vat-buckets.js",
@@ -20,6 +22,7 @@
       "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
       "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
       "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/gutschein-belege.js",
       "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
       "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
       "functions/test/unit/helpers/kassen-fehlerstellen.js",
@@ -4298,6 +4301,3423 @@
           "code": "receipt_not_found"
         },
         "code": "receipt_not_found"
+      }
+    },
+    {
+      "name": "sale_single_purpose_voucher",
+      "endpoint": "createReceipt",
+      "path": "/api/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [],
+        "vouchers": [
+          {
+            "action": "sell",
+            "type": "single_purpose",
+            "amountCents": 5000
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 5000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 2,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-2",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "sell",
+                "type": "single_purpose",
+                "voucherType": "single_purpose",
+                "amountCents": 5000,
+                "vatRateBp": 2000,
+                "name": "Einzweckgutschein 20 %",
+                "code": "····-····-JJJ2",
+                "codeSuffix": "JJJ2",
+                "voucherId": "auto2"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 50,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "girlnnGhSdImcB9LEr65jQ==",
+            "signaturePreviousReceipt": "6Mn4bx4N/M8=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000014c32cfb",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 5000
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMl8yMDI2LTA5LTI2VDEwOjAwOjAwXzUwLDAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfZ2lybG5uR2hfQUJDMTIzXzZNbjRieDROL004PQ.luLGr48WW9JRFAz58ZFJtmBH2i9jCWmie0KQZE3JaDgC1wgIm-Kb4LpTxSnPm4OfhYRKsrAMYMmYHUOi3-XGaQ",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_50,00_0,00_0,00_0,00_0,00_girlnnGh_ABC123_6Mn4bx4N/M8=_luLGr48WW9JRFAz58ZFJtmBH2i9jCWmie0KQZE3JaDgC1wgIm+Kb4LpTxSnPm4OfhYRKsrAMYMmYHUOi3+XGaQ==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Einzweckgutschein 20 %",
+                "vat": 20,
+                "vatRate": 20,
+                "priceOne": 50,
+                "priceOneCents": 5000,
+                "unitPriceCents": 5000,
+                "amount": 1,
+                "quantity": 1,
+                "kind": "voucher"
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-2",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Einzweckgutschein 20 % ····-····-JJJ2",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "50,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "8,33",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "41,67",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "50,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "50,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-2_2026-09-26T10:00:00_50,00_0,00_0,00_0,00_0,00_girlnnGh_ABC123_6Mn4bx4N/M8=_luLGr48WW9JRFAz58ZFJtmBH2i9jCWmie0KQZE3JaDgC1wgIm+Kb4LpTxSnPm4OfhYRKsrAMYMmYHUOi3+XGaQ=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "issuedVouchers": [
+            {
+              "id": "auto2",
+              "code": "JJJJ-JJJJ-JJJ2",
+              "type": "single_purpose",
+              "index": 0,
+              "codeSuffix": "JJJ2",
+              "faceValueCents": 5000,
+              "validity": {
+                "pattern": "1+3",
+                "redeemableUntil": "2027-09-26",
+                "refundableUntil": "2030-09-26",
+                "validUntil": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "sale_multi_purpose_voucher",
+      "endpoint": "createReceipt",
+      "path": "/api/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [],
+        "vouchers": [
+          {
+            "action": "sell",
+            "type": "multi_purpose",
+            "amountCents": 5000
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 5000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 3,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-3",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "sell",
+                "type": "value",
+                "voucherType": "multi_purpose",
+                "value": 50,
+                "valueCents": 5000,
+                "name": "Mehrzweckgutschein",
+                "code": "····-····-NNNY",
+                "codeSuffix": "NNNY",
+                "voucherId": "auto4"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "izsnQdMe1xpqCzEZFG8+tg==",
+            "signaturePreviousReceipt": "xxF3t1dE2g0=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000625152eb",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 5000
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtM18yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9penNuUWRNZV9BQkMxMjNfeHhGM3QxZEUyZzA9.9dkSuItdy0pVgBoINrkPAJctt5s4y4MO3OFuGGLo05cf04OIXZNP9jNDGv2hiUWg_Geo31l2SizXgvkGhqFW3Q",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_izsnQdMe_ABC123_xxF3t1dE2g0=_9dkSuItdy0pVgBoINrkPAJctt5s4y4MO3OFuGGLo05cf04OIXZNP9jNDGv2hiUWg/Geo31l2SizXgvkGhqFW3Q==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": []
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-3",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Wertgutschein ····-····-NNNY - Mehrzweckgutschein",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "50,00 D",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "D 0%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,00",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "50,00",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "50,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "50,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_izsnQdMe_ABC123_xxF3t1dE2g0=_9dkSuItdy0pVgBoINrkPAJctt5s4y4MO3OFuGGLo05cf04OIXZNP9jNDGv2hiUWg/Geo31l2SizXgvkGhqFW3Q=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "issuedVouchers": [
+            {
+              "id": "auto4",
+              "code": "NNNN-NNNN-NNNY",
+              "type": "multi_purpose",
+              "index": 0,
+              "codeSuffix": "NNNY",
+              "faceValueCents": 5000,
+              "validity": {
+                "pattern": "1+3",
+                "redeemableUntil": "2027-09-26",
+                "refundableUntil": "2030-09-26",
+                "validUntil": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "sale_service_voucher",
+      "endpoint": "createReceipt",
+      "path": "/api/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [],
+        "vouchers": [
+          {
+            "action": "sell",
+            "type": "service",
+            "articleId": "art_mani",
+            "quantity": 2
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 7000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 4,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-4",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "sell",
+                "type": "service",
+                "voucherType": "service",
+                "amountCents": 7000,
+                "vatRateBp": 2000,
+                "article": {
+                  "id": "art_mani",
+                  "name": "Maniküre",
+                  "vatRateBp": 2000,
+                  "priceCents": 3500
+                },
+                "quantity": 2,
+                "name": "Leistungsgutschein 2× Maniküre",
+                "code": "····-····-RRRF",
+                "codeSuffix": "RRRF",
+                "voucherId": "auto6"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 70,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "V2ekatXgznVxKgmTPRuabQ==",
+            "signaturePreviousReceipt": "7kGvRsFiNGA=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000008c0b9c7f",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 7000
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzcwLDAwXzAsMDBfMCwwMF8wLDAwXzAsMDBfVjJla2F0WGdfQUJDMTIzXzdrR3ZSc0ZpTkdBPQ.eu4GvJo8pYi5YhammqR4esmBPHyYC1e2VJL4K1qkzIPm7gOn5vWgQieC2Nvt8xhxm2Oh-hTALIHhGkCMK4cihA",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_70,00_0,00_0,00_0,00_0,00_V2ekatXg_ABC123_7kGvRsFiNGA=_eu4GvJo8pYi5YhammqR4esmBPHyYC1e2VJL4K1qkzIPm7gOn5vWgQieC2Nvt8xhxm2Oh+hTALIHhGkCMK4cihA==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Leistungsgutschein 2× Maniküre",
+                "vat": 20,
+                "vatRate": 20,
+                "priceOne": 70,
+                "priceOneCents": 7000,
+                "unitPriceCents": 7000,
+                "amount": 1,
+                "quantity": 1,
+                "kind": "voucher"
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-4",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Leistungsgutschein 2× Maniküre ····-····-RRRF",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "70,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "11,67",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "58,33",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "70,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "70,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-4_2026-09-26T10:00:00_70,00_0,00_0,00_0,00_0,00_V2ekatXg_ABC123_7kGvRsFiNGA=_eu4GvJo8pYi5YhammqR4esmBPHyYC1e2VJL4K1qkzIPm7gOn5vWgQieC2Nvt8xhxm2Oh+hTALIHhGkCMK4cihA=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "issuedVouchers": [
+            {
+              "id": "auto6",
+              "code": "RRRR-RRRR-RRRF",
+              "type": "service",
+              "index": 0,
+              "codeSuffix": "RRRF",
+              "faceValueCents": 7000,
+              "quantity": 2,
+              "validity": {
+                "pattern": "unlimited",
+                "redeemableUntil": null,
+                "refundableUntil": null,
+                "validUntil": null
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "redeem_multi_purpose_voucher",
+      "endpoint": "createReceipt",
+      "path": "/api/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Blumenstrauß",
+            "amount": 1,
+            "priceOneCents": 2240,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "multi_purpose",
+            "code": "DTD5-9ECF-5KNZ",
+            "amountCents": 1750
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 490
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 5,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-5",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "redeem",
+                "type": "value",
+                "voucherType": "multi_purpose",
+                "value": 17.5,
+                "valueCents": 1750,
+                "name": "Gutschein",
+                "code": "····-····-5KNZ",
+                "codeSuffix": "5KNZ",
+                "voucherId": "gmz1",
+                "balanceAfterCents": 3250
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 22.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "X1ROZYYsXJxg0xCA9eb0Tw==",
+            "signaturePreviousReceipt": "QOkpGhikZFE=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.000000000000000000000000000000000000000000000000000000008d3ea402",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 490
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNV8yMDI2LTA5LTI2VDEwOjAwOjAwXzIyLDQwXzAsMDBfMCwwMF8wLDAwXzAsMDBfWDFST1pZWXNfQUJDMTIzX1FPa3BHaGlrWkZFPQ.XuW0DkUc9uQzO0m851-naunhzUGw3XEDX231_miD0D68z591fw3vn7EMT3Tb4DT4xINpp4g8T93XDpTs6NVbeA",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-5_2026-09-26T10:00:00_22,40_0,00_0,00_0,00_0,00_X1ROZYYs_ABC123_QOkpGhikZFE=_XuW0DkUc9uQzO0m851+naunhzUGw3XEDX231/miD0D68z591fw3vn7EMT3Tb4DT4xINpp4g8T93XDpTs6NVbeA==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Blumenstrauß",
+                "amount": 1,
+                "priceOneCents": 2240,
+                "vat": 20,
+                "priceOne": 22.4
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-5",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Blumenstrauß",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "22,40 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,73",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "18,67",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "22,40",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zwischensumme",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "22,40 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Wertgutschein ····-····-5KNZ - Gutschein",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-17,50 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "4,90 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-5_2026-09-26T10:00:00_22,40_0,00_0,00_0,00_0,00_X1ROZYYs_ABC123_QOkpGhikZFE=_XuW0DkUc9uQzO0m851+naunhzUGw3XEDX231/miD0D68z591fw3vn7EMT3Tb4DT4xINpp4g8T93XDpTs6NVbeA=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "issuedVouchers": []
+        }
+      }
+    },
+    {
+      "name": "redeem_single_purpose_voucher",
+      "endpoint": "createReceipt",
+      "path": "/api/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "single_purpose",
+            "code": "5TD5-9ECF-5KN2",
+            "amountCents": 300
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 340
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 6,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-6",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "redeem",
+                "type": "single_purpose",
+                "voucherType": "single_purpose",
+                "amountCents": 300,
+                "vatRateBp": 2000,
+                "balanceAfterCents": 1700,
+                "taxedWith": "KECK-0-ID-1",
+                "name": "Gutschein",
+                "code": "····-····-5KN2",
+                "codeSuffix": "5KN2",
+                "voucherId": "gez1"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 3.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "RlNOHtsn9a3wfMGEG9jAxA==",
+            "signaturePreviousReceipt": "VArpzwmbUXc=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000d6d9c909",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 340
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNl8yMDI2LTA5LTI2VDEwOjAwOjAwXzMsNDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9SbE5PSHRzbl9BQkMxMjNfVkFycHp3bWJVWGM9.0cA5v2NZPX46ba0Am9mmjbMehYzfElPGYVnuNZQKdWnbxUAAckXTWzqXZXLscRSb9IIgQIA47MeD3GVY6jWESg",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_3,40_0,00_0,00_0,00_0,00_RlNOHtsn_ABC123_VArpzwmbUXc=_0cA5v2NZPX46ba0Am9mmjbMehYzfElPGYVnuNZQKdWnbxUAAckXTWzqXZXLscRSb9IIgQIA47MeD3GVY6jWESg==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20,
+                "priceOne": 3.2
+              },
+              {
+                "name": "Gutschein ····-5KN2",
+                "vat": 20,
+                "vatRate": 20,
+                "priceOne": -3,
+                "priceOneCents": -300,
+                "unitPriceCents": -300,
+                "amount": 1,
+                "quantity": 1,
+                "kind": "voucher"
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-6",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2  x Kaffee je 3,20",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,40 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Gutschein ····-5KN2",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-3,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,57",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2,83",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,40",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,40 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_3,40_0,00_0,00_0,00_0,00_RlNOHtsn_ABC123_VArpzwmbUXc=_0cA5v2NZPX46ba0Am9mmjbMehYzfElPGYVnuNZQKdWnbxUAAckXTWzqXZXLscRSb9IIgQIA47MeD3GVY6jWESg=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "issuedVouchers": []
+        }
+      }
+    },
+    {
+      "name": "redeem_service_voucher",
+      "endpoint": "createReceipt",
+      "path": "/api/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Maniküre",
+            "amount": 1,
+            "priceOneCents": 3500,
+            "vat": 20,
+            "articleId": "art_mani"
+          },
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "service",
+            "code": "CKD59ECF5KNN",
+            "positions": [
+              0
+            ]
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 640
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 7,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-7",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "redeem",
+                "type": "service",
+                "voucherType": "service",
+                "articleId": "art_mani",
+                "quantity": 1,
+                "positions": [
+                  0
+                ],
+                "amountCents": 3500,
+                "vatRateBp": 2000,
+                "remainingQuantityAfter": 2,
+                "taxedWith": "KECK-0-ID-1",
+                "name": "Gutschein",
+                "code": "····-····-5KNN",
+                "codeSuffix": "5KNN",
+                "voucherId": "gls1"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 6.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "e42ZjyKQgXyXfp6ZK6VUzA==",
+            "signaturePreviousReceipt": "zYL9tCKXJi8=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000be378ab0",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 640
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtN18yMDI2LTA5LTI2VDEwOjAwOjAwXzYsNDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9lNDJaanlLUV9BQkMxMjNfellMOXRDS1hKaTg9.ECII68SATZuX-flczqe-pI-idOyK9wLSR23LOAk9fFSYzWlU8PtpC246C8dS0kyvKKccrDvmf4um80hAYK_uCA",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-7_2026-09-26T10:00:00_6,40_0,00_0,00_0,00_0,00_e42ZjyKQ_ABC123_zYL9tCKXJi8=_ECII68SATZuX+flczqe+pI+idOyK9wLSR23LOAk9fFSYzWlU8PtpC246C8dS0kyvKKccrDvmf4um80hAYK/uCA==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Maniküre",
+                "amount": 1,
+                "priceOneCents": 3500,
+                "vat": 20,
+                "articleId": "art_mani",
+                "priceOne": 35
+              },
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20,
+                "priceOne": 3.2
+              },
+              {
+                "name": "Gutschein ····-5KNN",
+                "vat": 20,
+                "vatRate": 20,
+                "priceOne": -35,
+                "priceOneCents": -3500,
+                "unitPriceCents": -3500,
+                "amount": 1,
+                "quantity": 1,
+                "kind": "voucher"
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-7",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Maniküre",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "35,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2  x Kaffee je 3,20",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,40 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Gutschein ····-5KNN",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-35,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,07",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "5,33",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,40",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,40 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-7_2026-09-26T10:00:00_6,40_0,00_0,00_0,00_0,00_e42ZjyKQ_ABC123_zYL9tCKXJi8=_ECII68SATZuX+flczqe+pI+idOyK9wLSR23LOAk9fFSYzWlU8PtpC246C8dS0kyvKKccrDvmf4um80hAYK/uCA=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "issuedVouchers": []
+        }
+      }
+    },
+    {
+      "name": "redeem_promotion_voucher",
+      "endpoint": "createReceipt",
+      "path": "/api/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "promotion",
+            "code": "1BD59ECF5KNJ"
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 756
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 8,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-8",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "redeem",
+                "type": "promo",
+                "voucherType": "promotion",
+                "value": 2,
+                "valueCents": 200,
+                "name": "Aktion",
+                "code": "····-····-5KNJ",
+                "codeSuffix": "5KNJ",
+                "voucherId": "gak1"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 5.06,
+            "amountRateReduced1": 2.5,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "FKv36l/r5cSDIv7d/PNpSg==",
+            "signaturePreviousReceipt": "fsXBFNiDq+k=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000099dccbdc",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 756
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtOF8yMDI2LTA5LTI2VDEwOjAwOjAwXzUsMDZfMiw1MF8wLDAwXzAsMDBfMCwwMF9GS3YzNmwvcl9BQkMxMjNfZnNYQkZOaURxK2s9.qlkHVjEVjEx0SPdY9SFHtpeMB4SIT_DLz4UlcEU9cn7kgA_8bUL87mpq7VyWbQhC8b_qTvdJ8wTMXbhkQCK56Q",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-8_2026-09-26T10:00:00_5,06_2,50_0,00_0,00_0,00_FKv36l/r_ABC123_fsXBFNiDq+k=_qlkHVjEVjEx0SPdY9SFHtpeMB4SIT/DLz4UlcEU9cn7kgA/8bUL87mpq7VyWbQhC8b/qTvdJ8wTMXbhkQCK56Q==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20,
+                "priceOne": 3.2
+              },
+              {
+                "name": "Semmel",
+                "amount": 4,
+                "priceOneCents": 79,
+                "vat": 10,
+                "priceOne": 0.79
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-8",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2  x Kaffee je 3,20",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,40 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "4  x Semmel je 0,79",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,16 B",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Promotionsgutschein ····-····-5KNJ - Aktion",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-2,00 €",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,84",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "4,22",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "5,06",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "B 10%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,23",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2,27",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2,50",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "7,56 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-8_2026-09-26T10:00:00_5,06_2,50_0,00_0,00_0,00_FKv36l/r_ABC123_fsXBFNiDq+k=_qlkHVjEVjEx0SPdY9SFHtpeMB4SIT/DLz4UlcEU9cn7kgA/8bUL87mpq7VyWbQhC8b/qTvdJ8wTMXbhkQCK56Q=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "issuedVouchers": []
+        }
+      }
+    },
+    {
+      "name": "payout_multi_purpose_voucher",
+      "endpoint": "createReceipt",
+      "path": "/api/v3/createReceipt",
+      "params": {
+        "receiptType": "standard",
+        "items": [],
+        "vouchers": [
+          {
+            "action": "payout",
+            "type": "multi_purpose",
+            "code": "DTD1-NKT1-8CN5",
+            "amountCents": 3000,
+            "reason": "Kunde zieht weg"
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": -3000
+          }
+        ]
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "is_small_business": false,
+          "company": "Bäckerei Welt",
+          "phone": "+43 1 234",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "logo_url": null,
+          "kreiseck_logo": false,
+          "thanks_message": "Bis bald",
+          "receipt": {
+            "counter": 9,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-9",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "payout",
+                "type": "value",
+                "voucherType": "multi_purpose",
+                "value": 30,
+                "valueCents": 3000,
+                "name": "Auszahlung Gutschein",
+                "code": "····-····-8CN5",
+                "codeSuffix": "8CN5",
+                "voucherId": "gmz2",
+                "balanceAfterCents": 0,
+                "reason": "Kunde zieht weg",
+                "zeroRateBucket": true
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": -30,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "TBYB9mrEWcnljmcjdebbLQ==",
+            "signaturePreviousReceipt": "ggg2KWZCgiQ=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000676d8c59",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": -3000
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtOV8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXy0zMCwwMF8wLDAwX1RCWUI5bXJFX0FCQzEyM19nZ2cyS1daQ2dpUT0.vi2GoJsNoK1tP49BCNkKqJBOYWa0oWIB8vzN0R3cEUeRndJLEB_JOD7rpX2_AZnrtTJvEaQ7znwhuY-yZvIRzA",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-9_2026-09-26T10:00:00_0,00_0,00_0,00_-30,00_0,00_TBYB9mrE_ABC123_ggg2KWZCgiQ=_vi2GoJsNoK1tP49BCNkKqJBOYWa0oWIB8vzN0R3cEUeRndJLEB/JOD7rpX2/AZnrtTJvEaQ7znwhuY+yZvIRzA==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Auszahlung Gutschein ····-8CN5",
+                "vat": 0,
+                "vatRate": 0,
+                "priceOne": -30,
+                "priceOneCents": -3000,
+                "unitPriceCents": -3000,
+                "amount": 1,
+                "quantity": 1,
+                "kind": "voucher_float"
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-9",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Auszahlung Gutschein ····-8CN5",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-30,00 D",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "D 0%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,00",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-30,00",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-30,00",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-30,00 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-9_2026-09-26T10:00:00_0,00_0,00_0,00_-30,00_0,00_TBYB9mrE_ABC123_ggg2KWZCgiQ=_vi2GoJsNoK1tP49BCNkKqJBOYWa0oWIB8vzN0R3cEUeRndJLEB/JOD7rpX2/AZnrtTJvEaQ7znwhuY+yZvIRzA=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "issuedVouchers": []
+        }
+      }
+    },
+    {
+      "name": "get_receipt_single_purpose_redeemed",
+      "endpoint": "getReceipt",
+      "path": "/api/v3/getReceipt",
+      "params": {
+        "receiptId": "KECK-1-ID-6"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "company": "Bäckerei Welt",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "phone": "+43 1 234",
+          "is_small_business": false,
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "thanks_message": "Bis bald",
+          "kreiseck_logo": false,
+          "logo_url": null,
+          "receipt": {
+            "counter": 6,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-6",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "redeem",
+                "type": "single_purpose",
+                "voucherType": "single_purpose",
+                "amountCents": 300,
+                "vatRateBp": 2000,
+                "balanceAfterCents": 1700,
+                "taxedWith": "KECK-0-ID-1",
+                "name": "Gutschein",
+                "code": "····-····-5KN2",
+                "codeSuffix": "5KN2",
+                "voucherId": "gez1"
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 3.4,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "RlNOHtsn9a3wfMGEG9jAxA==",
+            "signaturePreviousReceipt": "VArpzwmbUXc=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000d6d9c909",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 340
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNl8yMDI2LTA5LTI2VDEwOjAwOjAwXzMsNDBfMCwwMF8wLDAwXzAsMDBfMCwwMF9SbE5PSHRzbl9BQkMxMjNfVkFycHp3bWJVWGM9.0cA5v2NZPX46ba0Am9mmjbMehYzfElPGYVnuNZQKdWnbxUAAckXTWzqXZXLscRSb9IIgQIA47MeD3GVY6jWESg",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_3,40_0,00_0,00_0,00_0,00_RlNOHtsn_ABC123_VArpzwmbUXc=_0cA5v2NZPX46ba0Am9mmjbMehYzfElPGYVnuNZQKdWnbxUAAckXTWzqXZXLscRSb9IIgQIA47MeD3GVY6jWESg==",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Kaffee",
+                "amount": 2,
+                "priceOneCents": 320,
+                "vat": 20,
+                "priceOne": 3.2
+              },
+              {
+                "name": "Gutschein ····-5KN2",
+                "vat": 20,
+                "vatRate": 20,
+                "priceOne": -3,
+                "priceOneCents": -300,
+                "unitPriceCents": -300,
+                "amount": 1,
+                "quantity": 1,
+                "kind": "voucher"
+              }
+            ]
+          },
+          "taxNumber": "12-345/6789",
+          "vatId": "ATU12345678",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Welt",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345678",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-6",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "2  x Kaffee je 3,20",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "6,40 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "1  x Gutschein ····-5KN2",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "-3,00 A",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "A 20%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,57",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2,83",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,40",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,40 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-6_2026-09-26T10:00:00_3,40_0,00_0,00_0,00_0,00_RlNOHtsn_ABC123_VArpzwmbUXc=_0cA5v2NZPX46ba0Am9mmjbMehYzfElPGYVnuNZQKdWnbxUAAckXTWzqXZXLscRSb9IIgQIA47MeD3GVY6jWESg=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          }
+        }
       }
     }
   ]

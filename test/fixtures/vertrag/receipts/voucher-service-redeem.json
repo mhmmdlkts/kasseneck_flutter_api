@@ -1,0 +1,82 @@
+{
+  "company": {
+    "companyName": "Melisse Nails e.U.",
+    "street": "Melissenweg 7",
+    "zip": "1070",
+    "city": "Wien",
+    "phone": "+43 1 2345678",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Danke für Ihren Besuch",
+    "footer2": "",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-72",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-10-19T10:15:30",
+    "items": [
+      {
+        "name": "Maniküre",
+        "quantity": 1,
+        "unitPriceCents": 3500,
+        "vatRate": 20
+      },
+      {
+        "name": "Kaffee",
+        "quantity": 1,
+        "unitPriceCents": 320,
+        "vatRate": 20
+      },
+      {
+        "name": "Gutschein ····-RRRF",
+        "quantity": 1,
+        "unitPriceCents": -3500,
+        "vatRate": 20,
+        "kind": "voucher"
+      }
+    ],
+    "vouchers": [
+      {
+        "action": "redeem",
+        "type": "service",
+        "voucherType": "service",
+        "articleId": "manicure",
+        "quantity": 1,
+        "positions": [
+          0
+        ],
+        "amountCents": 3500,
+        "vatRateBp": 2000,
+        "remainingQuantityAfter": 9,
+        "taxedWith": "K1-ID-4712",
+        "name": "Gutschein",
+        "code": "····-····-RRRF",
+        "codeSuffix": "RRRF",
+        "voucherId": "gls1"
+      }
+    ],
+    "paymentMethod": "cash",
+    "payments": [
+      {
+        "id": "p1",
+        "method": "cash",
+        "amountCents": 320
+      }
+    ],
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-72_2026-10-19T10:15:30_3,20_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": []
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}

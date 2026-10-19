@@ -16,8 +16,6 @@ import 'package:kasseneck_api/services/vienna_time.dart';
 
 import 'enums/receipt_type.dart';
 import 'enums/signature_status.dart';
-import 'enums/voucher_action.dart';
-import 'enums/voucher_type.dart';
 import 'models/kasseneck_item.dart';
 import 'models/keck_tip.dart';
 import 'models/keck_tip_person.dart';
@@ -26,6 +24,7 @@ import 'models/keck_payment.dart';
 import 'src/aufrufe.dart';
 import 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
 import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
+import 'src/kasse/gutschein_wunsch.dart';
 import 'src/receipt/codes.dart' show receiptEmailErrorCodes;
 import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons;
 import 'src/kasse/storno_nutzlast.dart';
@@ -101,12 +100,17 @@ export 'src/receipt/due.dart'
         ReceiptDueTip,
         ReceiptDueTipRecipient,
         ReceiptDueTipShare,
+        VoucherDueArticle,
+        VoucherDueInfo,
         receiptDueBreakdown,
         receiptDueBreakdownForLines,
         receiptDueCents,
         receiptDueErrorCode,
         receiptDueErrorReasons,
-        isReceiptDueError;
+        isReceiptDueError,
+        voucherRedeemMaxCents,
+        voucherRedeemMaxCentsForLines,
+        voucherZeroRateBucketFrom;
 // HpsObserver ist zahlwegneutral und wird auch von HobexCloudPayments
 // entgegengenommen -- ohne diesen Export waere sein Typ aus diesem Barrel
 // nicht benennbar.
@@ -635,46 +639,11 @@ class KasseneckApi {
     );
   }
 
-  String? checkVoucherCombinationError(List<KeckVoucher> vouchers, List<KasseneckItem> items) {
-    int countRedeemValueVoucher = 0;
-    int countSellValueVoucher = 0;
-    int countRedeemPromoVoucher = 0;
-    int countSellPromoVoucher = 0;
-    int countRedeemTotalVoucher = 0;
-    int countSellTotalVoucher = 0;
-
-    for (var voucher in vouchers) {
-      if (voucher.type == VoucherType.value && voucher.action == VoucherAction.redeem) {
-        countRedeemValueVoucher++;
-      } else if (voucher.type == VoucherType.value && voucher.action == VoucherAction.sell) {
-        countSellValueVoucher++;
-      } else if (voucher.type == VoucherType.promo && voucher.action == VoucherAction.redeem) {
-        countRedeemPromoVoucher++;
-      } else if (voucher.type == VoucherType.promo && voucher.action == VoucherAction.sell) {
-        countSellPromoVoucher++;
-      }
-    }
-
-    countRedeemTotalVoucher = countRedeemValueVoucher + countRedeemPromoVoucher;
-    countSellTotalVoucher = countSellValueVoucher + countSellPromoVoucher;
-
-    if (countSellPromoVoucher > 0) {
-      return 'Ungültige Daten: Gutscheine mit type promo dürfen nicht verkauft werden';
-    }
-    if (countRedeemPromoVoucher > 1) {
-      return 'Ungültige Daten: Es darf nur ein Gutschein mit type promo eingelöst werden';
-    }
-    if (countRedeemPromoVoucher > 0 && countRedeemTotalVoucher > 1) {
-      return 'Ungültige Daten: Ein Gutschein mit type promo darf nicht mit anderen Gutscheinen kombiniert werden';
-    }
-    if (countRedeemPromoVoucher > 0 && countSellTotalVoucher > 0) {
-      return 'Ungültige Daten: Mit einem Gutschein mit type promo dürfen nicht andere Gutscheine verkauft werden';
-    }
-    if (countRedeemTotalVoucher > 0 && items.isEmpty) {
-      return 'Ungültige Daten: Gutscheine mit action redeem benötigen mindestens ein item';
-    }
-    return null;
-  }
+  /// Kombinationen der Gutscheine eines Belegs, wie der Server sie annimmt
+  /// (Altform und neue Form); `null`, wenn sie passen. Zwilling von
+  /// `checkVoucherCombinationError` im npm-Paket.
+  String? checkVoucherCombinationError(List<KeckVoucher> vouchers, List<KasseneckItem> items) =>
+      voucherCombinationError(vouchers, items);
 
   /// Eingabefehler eines Belegs vor dem Senden: derselbe Typ wie im
   /// Kassenweg (`RegisterReceiptClient.sell`) und im npm-Paket, damit ein
@@ -697,8 +666,13 @@ class KasseneckApi {
     KeckTip? tip,
   }) async {
 
+    // Gutscheinzeilen setzt nur der Server; vor jeder anderen Positionspruefung.
+    final zeilenFehler = voucherItemError(items ?? const []);
+    if (zeilenFehler != null) throw _belegEingabe(zeilenFehler);
+
     if (receiptType.needsItems) {
-      bool hasSellVoucher = vouchers?.any((v) => v.action == VoucherAction.sell)??false;
+      // Ein reiner Gutscheinverkauf (und eine Auszahlung) ist ein Umsatz ohne Positionen.
+      final bool hasSellVoucher = vouchersWithoutItems(vouchers ?? const []);
       if ((items == null || items.isEmpty) && !hasSellVoucher) {
         throw _belegEingabe(
           'Items sind Pflicht bei receiptType "$receiptType" und dürfen nicht leer sein.',
@@ -718,10 +692,7 @@ class KasseneckApi {
       if (!receiptType.allowsVouchers) {
         throw _belegEingabe('Vouchers sind nicht erlaubt bei receiptType "$receiptType".');
       }
-      if (vouchers.any((voucher) => !voucher.isValid)) {
-        throw _belegEingabe('Ungültige Vouchers übergeben.');
-      }
-      String? voucherError = checkVoucherCombinationError(vouchers, items ?? []);
+      final voucherError = voucherWishError(vouchers, items ?? const [], training: receiptType == ReceiptType.training);
       if (voucherError != null) {
         throw _belegEingabe(voucherError);
       }
@@ -731,6 +702,10 @@ class KasseneckApi {
 
     if (items != null && items.isNotEmpty) {
       params['items'] = items.map((e) => e.toJson()).toList();
+    } else if (vouchers != null && vouchers.any((v) => v.isNewForm)) {
+      // Verkauf/Auszahlung der neuen Form ohne Positionen: die leere Liste geht
+      // mit, wie der Vertrag es zeigt (Altform ohne Positionen bleibt gleich).
+      params['items'] = const <Map<String, dynamic>>[];
     }
 
     if (tip != null) {
@@ -759,7 +734,9 @@ class KasseneckApi {
       if (payments == null) {
         throw _belegEingabe('payments fehlt: unter /v3 ist die Zahlungsliste Pflicht (Summe = receiptDueCents).');
       }
-      final fehler = paymentsError(payments, cancellation: false);
+      // Beleg nur aus Gutschein-Auszahlungen: genau eine negative Barzahlung.
+      final auszahlung = isPayoutOnly(vouchers ?? const [], items ?? const [], withTip: tip != null);
+      final fehler = paymentsError(payments, cancellation: false, payout: auszahlung);
       if (fehler != null) throw _belegEingabe(fehler);
       params['payments'] = [for (final p in payments) p.toJson()];
     } else if (payments != null) {
