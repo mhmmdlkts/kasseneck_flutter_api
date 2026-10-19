@@ -92,7 +92,7 @@ final Set<String> woerter = _liste('''
   save scale scales scan scanned scheme schemes scope screen search seconds
   secret seen select selected selection sell sellable send sent september sequence serial server
   service services session sessions set setting settings setup shadow share
-  shared sheet short shortcut shortcuts shorten shortfall shortfalls show side signature signed
+  shared sheet short shortcut shortcuts shorten shortfall shortfalls show side sign signature signed
   signing since single site size sizing sleep small software sold sort
   source sources space split staff stamp standard start started state
   statement status statuses step steps stock stocktake stop storage store stored street strength

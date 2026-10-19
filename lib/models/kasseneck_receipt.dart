@@ -515,29 +515,44 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     return '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year} ${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:${t.second.toString().padLeft(2, '0')}';
   }
 
+  /// Vorzeichen der Wertgutscheine an diesem Beleg: am Storno-Beleg -1, sonst 1.
+  ///
+  /// Das Backend spiegelt Wertgutscheine beim Vollstorno mit UNVERAENDERTER
+  /// `action` und positivem Wert (storno-core.stornoVouchers); der Fluss dreht
+  /// sich am Storno um (zahlungen-core.wertgutscheinFlussCents, hier
+  /// `receiptDueCents`): ein verkaufter Gutschein wird zurueckgezahlt, ein
+  /// eingeloester mindert die Rueckzahlung.
+  int get valueVoucherSign => receiptType == ReceiptType.cancellation ? -1 : 1;
+
   /// Zwischensumme in **Cent** (exakte Integer-Arithmetik, keine Gleitkommafehler).
+  /// Am Storno-Beleg zaehlen Wertgutscheine mit umgekehrtem Vorzeichen
+  /// ([valueVoucherSign]), und ein gespiegelter Promo-Gutschein mindert
+  /// nichts: den Rabatt nimmt der Server dort ueber Ausgleichspositionen
+  /// (`kind: 'discount'`) zurueck, und belegToepfe verteilt einen Promo-Eintrag
+  /// nur auf eine positive Topfsumme, die ein Storno nie hat.
   int get subSumCents {
     int cents = 0;
     for (KasseneckItem item in items) {
       cents += item.totalCents;
     }
     for (KeckVoucher voucher in vouchers??[]) {
-      if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
+      if (valueVoucherSign == 1 && voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
         cents -= voucher.valueCents ?? 0;
       }
       if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
-        cents += voucher.valueCents ?? 0;
+        cents += valueVoucherSign * (voucher.valueCents ?? 0);
       }
     }
     return cents;
   }
 
-  /// Gesamtsumme in **Cent** (exakte Integer-Arithmetik).
+  /// Gesamtsumme in **Cent** (exakte Integer-Arithmetik); eingeloeste
+  /// Wertgutscheine mindern sie, am Storno-Beleg erhoehen sie sie.
   int get sumCents {
     int cents = subSumCents;
     for (KeckVoucher voucher in vouchers??[]) {
       if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value) {
-        cents -= voucher.valueCents ?? 0;
+        cents -= valueVoucherSign * (voucher.valueCents ?? 0);
       }
     }
     return cents;

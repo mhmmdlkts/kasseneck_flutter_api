@@ -454,23 +454,28 @@ class PrintPaper {
 
     int totalPromoVoucherValueCents = 0;
     for (KeckVoucher voucher in receipt.vouchers??[]) {
+      // Am Storno-Beleg wird ein verkaufter Wertgutschein zurueckgezahlt.
+      final int vz = voucher.type == VoucherType.value ? receipt.valueVoucherSign : 1;
 
       if (voucher.isValid && voucher.action == VoucherAction.sell) {
         itemsByVat[VatRate.vat0] ??= [];
         itemsByVat[VatRate.vat0]!.add(KasseneckItem(
           name: voucher.receiptText,
           quantity: 1,
-          priceCents: voucher.valueCents ?? 0,
+          priceCents: vz * (voucher.valueCents ?? 0),
           vat: VatRate.vat0
         ));
       }
       if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
         String amount = '1  x ';
-        addDoubleText('$amount${voucher.receiptText}', '${formatCents(voucher.valueCents??0)} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
+        addDoubleText('$amount${voucher.receiptText}', '${formatCents(vz * (voucher.valueCents??0))} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
       }
       if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
-        totalPromoVoucherValueCents += voucher.valueCents ?? 0;
-        addDoubleText(voucher.receiptText, '-${formatCents(voucher.valueCents??0)} EUR', leftWidth: 7, rightWidth: 5);
+        // Am Storno-Beleg nur als Bezug: den Rabatt nimmt die Position
+        // „Gutschein-Ausgleich“ zurueck (siehe subSumCents).
+        final bool storno = receipt.valueVoucherSign == -1;
+        if (!storno) totalPromoVoucherValueCents += voucher.valueCents ?? 0;
+        addDoubleText(voucher.receiptText, storno ? '' : '-${formatCents(voucher.valueCents??0)} EUR', leftWidth: 7, rightWidth: 5);
       }
     }
 
@@ -541,7 +546,9 @@ class PrintPaper {
 
       for (KeckVoucher voucher in receipt.vouchers??[]) {
         if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value) {
-          addDoubleText(voucher.receiptText, '-${formatCents(voucher.valueCents??0)} EUR');
+          // Am Storno-Beleg geht der Wert auf den Gutschein zurueck: ohne Minus.
+          final String wert = formatCents(voucher.valueCents??0);
+          addDoubleText(voucher.receiptText, receipt.valueVoucherSign == 1 ? '-$wert EUR' : '$wert EUR');
         }
       }
 

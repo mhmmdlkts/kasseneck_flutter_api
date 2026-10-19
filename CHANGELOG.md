@@ -1,3 +1,21 @@
+## 11.2.1
+
+- `sumCents`, `subSumCents`, the printed receipt and `KeckReceiptWidget` count
+  value vouchers with the opposite sign on a cancellation receipt; new getter
+  `KasseneckReceipt.valueVoucherSign`. Reason: the backend mirrors value
+  vouchers onto a full cancellation with the same `action` and a positive
+  value, and reverses the flow there (`receiptDueCents` already did). The
+  cancellation of a sale paid partly with a value voucher (22.40, 17.50 by
+  voucher, 4.90 cash) showed "Total -39.90" instead of the -4.90 actually
+  refunded.
+- On a cancellation receipt a mirrored promotional voucher no longer reduces
+  `subSumCents`/`sumCents`; print and widget show it as a reference without
+  an amount. Reason: the backend takes the discount back through compensation
+  items ("Gutschein-Ausgleich") and applies a promo entry only to a positive
+  bucket total. The cancellation of a 34.30 sale with a 10.00 promotional
+  voucher showed "Total -34.30" instead of the -24.30 refunded.
+- Other receipts are unchanged. npm twin 1.11.1.
+
 ## 11.2.0
 
 Twin of `@kreiseck/kasseneck-api` `1.11.0` (contract files pulled from that
