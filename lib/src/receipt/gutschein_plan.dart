@@ -190,9 +190,12 @@ Map<int, List<Innen>> _jeSatz(Iterable<Innen> liste) {
   return jeSatz;
 }
 
-/// Summe, die `kuTeile` hoechstens verteilt: je Satz `centSumme` der deckbaren Positionen, nur positive.
-int kuBasisCents(List<Innen> kunde) =>
-    _jeSatz(kunde.where(istDeckbar)).values.map(centSumme).where((c) => c > 0).fold(0, (a, b) => a + b);
+/// Die Saetze, auf die `kuTeile` verteilt: je Satz `centSumme` der deckbaren
+/// Positionen, nur positive (Zwilling von `kuSaetze` im npm-Paket).
+List<({int satzBp, int basis})> kuSaetze(List<Innen> kunde) => [
+      for (final MapEntry(key: s, value: liste) in _jeSatz(kunde.where(istDeckbar)).entries)
+        (satzBp: s, basis: centSumme(liste)),
+    ].where((x) => x.basis > 0).toList();
 
 /// `gutschein-core.kuTeile`: anteilig zur Positionssumme je Satz, groesster
 /// Rest, Topf-Reihenfolge bei Gleichstand. `null`, wenn der Korb den Betrag

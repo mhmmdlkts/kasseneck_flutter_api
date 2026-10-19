@@ -64,8 +64,13 @@ Changes:
   at most its balance; the register pre-fills exactly that, so the server never
   answers `voucher_exceeds_total`/`voucher_rate_mismatch` for an honest input.
   A voucher that covers everything gives a due amount of 0 (no payment, no
-  card terminal). The probe behind `voucherRedeemMaxCents` searches at most 64
-  cents below its upper bound and otherwise offers 0 (pinned in a test).
+  card terminal). The pre-filled maximum is checked with the same computation
+  as the due amount, including half-cent rounding and the proportional split
+  of exempt or small-business vouchers (also next to vouchers already chosen
+  on the receipt: each bucket bounds its share plus the redemptions already
+  there), so it is never above what the server accepts and never 0 when the
+  server accepts at least one cent (64 cents down, then bisection, then 16
+  cents up).
 - **Sums count each amount once.** `sumCents`/`subSumCents` skip entries with
   `zeroRateBucket` (their amount is already the 0 % item), single-purpose and
   service vouchers count only through their items, and a payout of a value
@@ -78,7 +83,9 @@ Changes:
   „Gutschein ····-XXXX“ with „Einzweck, versteuert mit Beleg …“ or
   „…, befreit verkauft (Kleinunternehmer)“ and „Rest am Gutschein“ (amount or
   „n Stück“), multi-purpose redemption after „Zwischensumme“ with the rest,
-  payout „Auszahlung Gutschein ····-XXXX“ with „Grund: …“. Items are matched
+  payout „Auszahlung Gutschein ····-XXXX“ with „Grund: …“ (a value voucher
+  payout without the multi-purpose mark reads „Auszahlung Wertgutschein …“ as
+  in the npm layout). Items are matched
   to entries per action and in order; the server placeholder `no-code` never
   appears. `KeckVoucher.receiptText` follows the same form and never shows the
   clear code. Receipts without new-form vouchers print the same bytes as

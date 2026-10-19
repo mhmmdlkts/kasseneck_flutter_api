@@ -521,20 +521,59 @@ void main() {
       expect(topf(drei, 4), toepfe({'amountRateStandard': 498, 'amountRateReduced1': 499, 'amountRateReduced2': 499}));
     });
 
-    test('Hoechstbetrag sucht hoechstens 64 Cent unter der Obergrenze, dann 0 (Grenze der Probe-Rechnung)', () {
-      // Ein schon gewaehlter Einzweck 20 % (P Cent) mindert den 20-%-Topf; der befreite Einzweck
-      // verteilt anteilig auf die Saetze (je 10,00), also deckt er hoechstens 2 x (1000 - P).
-      // Die Obergrenze vor der Probe ist offen + 6 = 2006 - P: Abstand P + 6 Cent. Der Server
-      // (gutschein-beleg.plane, 19.10.2026) nimmt bei P = 57 genau 1886, bei P = 58 genau 1884
-      // und weist jeweils einen Cent mehr mit voucher_rate_mismatch ab.
+    test('Hoechstbetrag mit Abstand P + 6 zur alten Grenze: der Wert des Servers, nie 0', () {
+      // Ein schon gewaehlter Einzweck 20 % (P) mindert den 20-%-Topf; der befreite Einzweck verteilt
+      // anteilig auf die Saetze (je 10,00). Server (gutschein-beleg.plane, 19.10.2026): P = 57 nimmt
+      // genau 1886, P = 58 genau 1884, jeweils einen Cent mehr voucher_rate_mismatch. Vor npm 1.12.0
+      // Task 8c bot die Kasse bei P = 58 nach 64 Schritten 0 an.
       final korb = [pos('Gelnägel', 1000, 20), pos('Handcreme', 1000, 10)];
       const codeK = 'DTD5-9ECF-5KNZ';
       int max(int p) => voucherRedeemMaxCentsForLines(korb, einzweck(100000, 0, exempt: true),
           vouchers: [einloesen(VoucherType.singlePurpose, codeK, p)], voucherInfo: [info(codeK, einzweck(5000, 2000))]);
-      expect(max(57), 1886); // Abstand 63: der 64. Versuch trifft
-      // Abstand 64: die Probe gibt nach 64 Versuchen auf, die Kasse bietet keinen Betrag an
-      // (der Server naehme 1884). Wer die Grenze aendert, aendert diese Zeile bewusst.
-      expect(max(58), 0);
+      expect(max(57), 1886);
+      expect(max(58), 1884);
+    });
+
+    // Erwartete Hoechstbetraege mit dem Server-Code (gutschein-beleg.plane) durch Abzaehlen aller
+    // Betraege ermittelt (npm 1.12.0, Task 8c).
+    VoucherCheck befreit() => einzweck(1000000, 0, exempt: true);
+
+    test('befreit neben einem schon gewaehlten Einzweck: Anteil je Topf plus Vorgaenger (Server 3357, nicht 0)', () {
+      // 3500 zu 20 %, 1200 zu 10 %; schon gewaehlt 1000 Einzweck 20 %. Der 20-%-Anteil 3500/4700 * c plus
+      // 1000 darf 3500 nicht uebersteigen.
+      final items = [pos('Maniküre', 3500, 20), pos('Shampoo', 1200, 10)];
+      final vorher = [einloesen(VoucherType.singlePurpose, codeE, 1000)];
+      final i = [info(codeE, einzweck(1000000, 2000))];
+      expect(voucherRedeemMaxCentsForLines(items, befreit(), vouchers: vorher, voucherInfo: i), 3357);
+      // Als Kleinunternehmer verteilt sich auch der schon gewaehlte Gutschein anteilig: dann begrenzt nur
+      // der offene Betrag (Server 3700).
+      expect(voucherRedeemMaxCentsForLines(items, einzweck(1000000, 2000), vouchers: vorher, voucherInfo: i, smallBusiness: true),
+          3700);
+      int mit(int cents) => receiptDueBreakdownForLines(
+              items, [...vorher, einloesen(VoucherType.singlePurpose, codeM, cents)], ReceiptType.standard,
+              voucherInfo: [...i, info(codeM, befreit())])
+          .dueCents;
+      expect(mit(3357), 343);
+      expect(() => mit(3358), wirft('voucher_rate_mismatch'));
+    });
+
+    test('mehr als 64 Cent unter der Grenze findet die Bisektion den Hoechstbetrag (Server 67)', () {
+      // 20000 zu 20 %, je 100 zu 19 % und 4,9 %; der Topf Besonders ist durch 200 Einzweck 19 % voll.
+      // Angenommen wird nur, solange kein Cent dorthin faellt: bis 67 (danach erhalten 19 % und 4,9 % den
+      // groessten Rest). Grenze 202.
+      final items = [pos('Ware', 20000, 20), pos('Wein', 100, 19), pos('Brot', 100, 4.9)];
+      final vorher = [einloesen(VoucherType.singlePurpose, codeE, 200)];
+      expect(
+          voucherRedeemMaxCentsForLines(items, befreit(), vouchers: vorher, voucherInfo: [info(codeE, einzweck(1000000, 1900))]), 67);
+    });
+
+    test('kuTeile: gleicher Rest in zwei Saetzen, der Cent geht an den Topf in fester Reihenfolge (20 % vor 10 %)', () {
+      final items = [pos('Kaffee', 100, 20), pos('Semmel', 100, 10)];
+      expect(
+          receiptDueBreakdownForLines(items, [einloesen(VoucherType.singlePurpose, codeE, 1)], ReceiptType.standard,
+                  voucherInfo: [info(codeE, befreit())])
+              .bucketsCents,
+          toepfe({'amountRateStandard': 99, 'amountRateReduced1': 100}));
     });
 
     test('mit schon gewaehlten Gutscheinen: der Rest des Topfs und des Betrags', () {

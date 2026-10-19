@@ -401,15 +401,20 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
 
 /// Hoechstbetrag zum Vorbelegen einer Einloesung an der Kasse, in Cent, nie
 /// negativ: der groesste Betrag, den der Server fuer diesen Gutschein annimmt.
-/// Gesucht wird unter einer festen Obergrenze (Saldo, offener Betrag, bei
-/// Einzweck die deckbaren Positionen im Topf seines Satzes abzueglich schon
-/// gewaehlter Einloesungen dort, befreit bzw. als Kleinunternehmer die Summe
-/// je Satz ueber den ganzen Korb); jeder Kandidat wird mit genau der Rechnung
-/// von [receiptDueCents] geprueft und bei Ablehnung um einen Cent gesenkt.
-/// So zaehlen auch die Rundungen halber Cent in den Toepfen, an denen der
-/// Server `voucher_exceeds_total` bzw. `voucher_rate_mismatch` meldet.
-/// Leistung (wird ueber Positionen eingeloest), Aktion (Rabatt rechnet der
-/// Server) und jeder nicht aktive Gutschein: 0.
+///
+/// Obergrenze: Saldo, offener Betrag; bei Einzweck die deckbaren Positionen im
+/// Topf seines Satzes abzueglich der schon gewaehlten Einloesungen dort. Befreit
+/// verkauft bzw. als Kleinunternehmer verteilt der Server anteilig auf alle
+/// Saetze (`kuTeile`); dann begrenzt jeder Topf: sein Anteil plus die schon
+/// gewaehlten Einloesungen dort darf seine Positionen nicht uebersteigen.
+///
+/// Unter dieser Grenze wird jeder Kandidat mit genau der Rechnung von
+/// [receiptDueCents] geprueft (Rundung halber Cent, groesster Rest), zuerst
+/// Cent fuer Cent abwaerts (64 Schritte). Findet das nichts, sucht eine
+/// Bisektion ueber [1, Grenze] und prueft danach 16 Cent aufwaerts: am Rand
+/// des groessten Rests ist die Annahme nicht monoton. Leistung (wird ueber
+/// Positionen eingeloest), Aktion (Rabatt rechnet der Server) und jeder nicht
+/// aktive Gutschein: 0.
 ///
 /// [vouchers] sind die schon gewaehlten Gutscheine des Belegs; die uebrigen
 /// Angaben wie bei [receiptDueCents]. Zwilling von `voucherRedeemMaxCents` im
@@ -473,17 +478,17 @@ int voucherRedeemMaxCentsForLines(
   // Rundung je Topf: hoechstens ein halber Cent je Topf ueber dem offenen Betrag.
   var oben = _min(_min(saldo, r.ergebnis.dueCents + r.auszahlungCents + 6), _hoechstbetragCents);
   if (voucher.type == VoucherType.singlePurpose) {
+    int topfBasis(String topf) => centSumme(r.kunde.where((it) => istDeckbar(it) && topfFuerSatz(it.vat) == topf));
     if (voucher.exempt == true || smallBusiness) {
-      // kuTeile verteilt hoechstens die Summe der Saetze; je Topf prueft der Server danach die Deckung.
-      oben = _min(oben, kuBasisCents(r.kunde));
+      oben = _min(oben, _kuGrenze(r.kunde, topfBasis, r.minusJeTopf));
     } else {
       final satz = voucher.vatRateBp;
       if (satz == null) return 0;
       final topf = topfFuerSatz(satz / 100);
-      final basis = centSumme(r.kunde.where((it) => istDeckbar(it) && topfFuerSatz(it.vat) == topf));
-      oben = _min(oben, basis - (r.minusJeTopf[topf] ?? 0));
+      oben = _min(oben, topfBasis(topf) - (r.minusJeTopf[topf] ?? 0));
     }
   }
+  if (oben <= 0) return 0;
   final code = _probeCode(vouchers);
   final probe = o.mit(voucherInfo: [...?voucherInfo, VoucherDueInfo(code: code, check: voucher)]);
   bool passt(int cents) {
@@ -496,11 +501,64 @@ int voucherRedeemMaxCentsForLines(
     }
   }
 
-  for (var cents = oben, schritte = 0; cents > 0 && schritte < 64; cents--, schritte++) {
+  return _groessterBetrag(oben, passt);
+}
+
+/// Schritte der linearen Suche, bevor die Bisektion uebernimmt.
+const _linearSchritte = 64;
+
+/// Cent, die nach der Bisektion aufwaerts geprueft werden (nicht monotoner Rand).
+const _nachpruefen = 16;
+
+/// Groesster Betrag in [1, oben], den [passt] annimmt; 0, wenn keiner gefunden wird.
+int _groessterBetrag(int oben, bool Function(int cents) passt) {
+  final untenLinear = oben - _linearSchritte < 0 ? 0 : oben - _linearSchritte;
+  for (var cents = oben; cents > untenLinear; cents--) {
     if (passt(cents)) return cents;
   }
-  return 0;
+  // Bisektion ueber [1, untenLinear]: `ja` angenommen (0 gilt als angenommen), `nein` abgewiesen.
+  var ja = 0;
+  var nein = untenLinear + 1;
+  while (nein - ja > 1) {
+    final mitte = ja + (nein - ja) ~/ 2;
+    if (passt(mitte)) {
+      ja = mitte;
+    } else {
+      nein = mitte;
+    }
+  }
+  var bester = ja;
+  for (var cents = ja + 1; cents <= _min(untenLinear, ja + _nachpruefen); cents++) {
+    if (passt(cents)) bester = cents;
+  }
+  return bester;
 }
+
+/// Obergrenze fuer eine anteilige Einloesung (`kuTeile`): je Satz ist der Anteil
+/// mindestens `floor(c * basis / summe)`, je Topf also mehr als
+/// `c * basisTopf / summe - saetzeImTopf`. Mit dem freien Rest des Topfs
+/// (Positionen minus schon gewaehlte Einloesungen) folgt
+/// `c <= (frei + saetzeImTopf) * summe / basisTopf`.
+int _kuGrenze(List<Innen> kunde, int Function(String topf) topfBasis, Map<String, int> minusJeTopf) {
+  final saetze = kuSaetze(kunde);
+  final summe = saetze.fold(0, (a, x) => a + x.basis);
+  var grenze = summe;
+  final jeTopf = <String, ({int basis, int anzahl})>{};
+  for (final x in saetze) {
+    final topf = topfFuerSatz(x.satzBp / 100);
+    final t = jeTopf[topf] ?? (basis: 0, anzahl: 0);
+    jeTopf[topf] = (basis: t.basis + x.basis, anzahl: t.anzahl + 1);
+  }
+  for (final MapEntry(key: topf, value: t) in jeTopf.entries) {
+    final frei = topfBasis(topf) - (minusJeTopf[topf] ?? 0);
+    grenze = _min(grenze, _abgerundet((frei + t.anzahl) * summe, t.basis));
+  }
+  return grenze < 0 ? 0 : grenze;
+}
+
+/// Ganzzahlige Division mit Abrundung (wie `Math.floor(a / b)` fuer b > 0); `~/`
+/// schnitte bei negativem Zaehler zur Null hin ab.
+int _abgerundet(int a, int b) => a >= 0 ? a ~/ b : -((-a + b - 1) ~/ b);
 
 const _hoechstbetragCents = 1000000;
 

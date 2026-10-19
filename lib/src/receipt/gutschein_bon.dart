@@ -84,6 +84,23 @@ String? voucherEnding(KeckVoucher v) {
   return code != null && code.length >= 4 && code != 'no-code' ? code.substring(code.length - 4) : null;
 }
 
+/// Belegtext eines Gutscheins wie `gutscheinText` im npm-Layout: Gutscheinart
+/// (Wert-/Promotionsgutschein), dann Code und Name; ein Name, der die Art
+/// schon nennt, steht allein. Ohne Betrag (der steht rechts in der Zeile).
+String layoutVoucherText(KeckVoucher v) {
+  var text = switch (v.type) {
+    VoucherType.value => 'Wertgutschein',
+    VoucherType.promo => 'Promotionsgutschein',
+    _ => '',
+  };
+  final name = v.name;
+  if (name != null && name.toLowerCase().contains(text.toLowerCase())) return name;
+  final code = v.code;
+  if (code != null && code.isNotEmpty) text += ' $code';
+  if (name != null && name.isNotEmpty) text += ' - $name';
+  return text;
+}
+
 /// Zuordnung einer Gutscheinposition zu ihrem Eintrag.
 class VoucherItemMatch {
   const VoucherItemMatch(this.voucher, {required this.last});
@@ -203,12 +220,19 @@ List<VoucherBonPairLine>? voucherPaymentLines(
   final wert = formatCents(v.valueCents ?? 0);
   final betrag = sign == 1 ? '-$wert $currency' : '$wert $currency';
   final endung = isMultiPurposeWithCode(v) ? voucherEnding(v) : null;
-  // receiptText einer Auszahlung traegt „Auszahlung“ schon (neue Form).
-  final text = endung != null
-      ? '${v.action == VoucherAction.payout ? 'Auszahlung ' : ''}Gutschein ····-$endung'
-      : v.receiptText;
+  // Auszahlung wie npm (layout.ts): „Auszahlung “ vor dem Text des Pakets
+  // (gutscheinText); eine Einloesung der Altform behaelt ihren bisherigen
+  // Dart-Text (receiptText), damit Altbelege byte-gleich bleiben.
+  final String text;
+  if (endung != null) {
+    text = 'Gutschein ····-$endung';
+  } else if (v.action == VoucherAction.payout) {
+    text = layoutVoucherText(v);
+  } else {
+    text = v.receiptText;
+  }
   return [
-    VoucherBonPairLine(text, betrag),
+    VoucherBonPairLine(v.action == VoucherAction.payout ? 'Auszahlung $text' : text, betrag),
     if (endung != null && sign == 1 && v.balanceAfterCents != null)
       VoucherBonPairLine(_restText, '${formatCents(v.balanceAfterCents!)} $currency'),
   ];

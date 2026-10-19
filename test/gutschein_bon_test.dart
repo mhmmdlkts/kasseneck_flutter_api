@@ -168,8 +168,14 @@ void main() {
       ]);
       expect(r.subSumCents, 0);
       expect(r.sumCents, -1200);
+      // Beschriftung wie npm (layout.ts, `Auszahlung ${gutscheinText}`): ohne voucherType multi_purpose
+      // keine Endung, sondern Art, Code und Name (Werte aus dem npm-Layout 1.12.0).
       final z = await _gedruckt(r);
-      expect(z, containsAllInOrder(['Zwischensumme | 0,00 EUR', 'Auszahlung Gutschein ····-8CN5 | -12,00 EUR', 'Gesamt: | -12,00 EUR']));
+      expect(z, containsAllInOrder(['Zwischensumme | 0,00 EUR', 'Auszahlung Wertgutschein | -12,00 EUR', 'Gesamt: | -12,00 EUR']));
+      final mitName = buildReceipt(vouchers: [
+        KeckVoucher(action: VoucherAction.payout, type: VoucherType.value, valueCents: 1200, reason: 'Rest bar', code: 'GS-9', name: 'Geschenk'),
+      ]);
+      expect(await _gedruckt(mitName), contains('Auszahlung Wertgutschein GS-9 - Geschenk | -12,00 EUR'));
     });
 
     test('Einzweck und Leistung zaehlen nur ueber ihre Positionen', () {
