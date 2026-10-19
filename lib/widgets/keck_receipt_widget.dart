@@ -109,7 +109,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       for (final KeckVoucher voucher in widget.receipt.vouchers ?? []) {
         if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
           bruttoByVatCents[VatRate.vat0] =
-              (bruttoByVatCents[VatRate.vat0] ?? 0) + (voucher.valueCents ?? 0);
+              (bruttoByVatCents[VatRate.vat0] ?? 0) + widget.receipt.valueVoucherSign * (voucher.valueCents ?? 0);
         }
       }
     }
@@ -264,7 +264,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                     Expanded(
                       child: Text('1 x ${voucher.receiptText}', style: textStyle),
                     ),
-                    Text('${formatCents(voucher.valueCents??0)} ${VatRate.vat0.category}', style: textStyle),
+                    Text('${formatCents(widget.receipt.valueVoucherSign * (voucher.valueCents??0))} ${VatRate.vat0.category}', style: textStyle),
                   ],
                 )
               else if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo)
@@ -277,7 +277,9 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                       Expanded(
                         child: Text(voucher.receiptText, style: textStyle),
                       ),
-                      Text('-${formatCents(voucher.valueCents??0)} EUR', style: textStyle),
+                      // Am Storno-Beleg nur als Bezug, ohne Betrag (siehe subSumCents).
+                      if (widget.receipt.valueVoucherSign == 1)
+                        Text('-${formatCents(voucher.valueCents??0)} EUR', style: textStyle),
                     ],
                   ),
                 ],
@@ -311,7 +313,8 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                         Expanded(
                           child: Text(voucher.receiptText, style: textStyle),
                         ),
-                        Text('-${formatCents(voucher.valueCents??0)} EUR', style: textStyle),
+                        // Am Storno-Beleg geht der Wert auf den Gutschein zurueck: ohne Minus.
+                        Text('${widget.receipt.valueVoucherSign == 1 ? '-' : ''}${formatCents(voucher.valueCents??0)} EUR', style: textStyle),
                       ],
                     ),
                 Divider(color: widget.qrColor),
