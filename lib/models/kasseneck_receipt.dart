@@ -530,12 +530,21 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// nichts: den Rabatt nimmt der Server dort ueber Ausgleichspositionen
   /// (`kind: 'discount'`) zurueck, und belegToepfe verteilt einen Promo-Eintrag
   /// nur auf eine positive Topfsumme, die ein Storno nie hat.
+  ///
+  /// Gutscheine der neuen Form (Spec 2026-10-14): ihr Betrag steht als Position
+  /// (`kind: 'voucher'` bei Einzweck/Leistung, `'voucher_float'` im 0-%-Topf)
+  /// und zaehlt hier schon mit den Positionen. Ein Eintrag mit
+  /// [KeckVoucher.zeroRateBucket] (Server `imNullTopf`) zaehlt darum nicht noch
+  /// einmal -- sonst stuende der Betrag doppelt am Bon (Vorfall 16.10.2026:
+  /// Verkauf ueber 30 € mit „Gesamt 60,00“). Einzweck/Leistung tragen keinen
+  /// Fluss. Zwilling von `receiptSubSumCents` (npm 1.12.0).
   int get subSumCents {
     int cents = 0;
     for (KasseneckItem item in items) {
       cents += item.totalCents;
     }
     for (KeckVoucher voucher in vouchers??[]) {
+      if (voucher.zeroRateBucket == true) continue;
       if (valueVoucherSign == 1 && voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
         cents -= voucher.valueCents ?? 0;
       }
@@ -547,11 +556,15 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   }
 
   /// Gesamtsumme in **Cent** (exakte Integer-Arithmetik); eingeloeste
-  /// Wertgutscheine mindern sie, am Storno-Beleg erhoehen sie sie.
+  /// Wertgutscheine mindern sie, am Storno-Beleg erhoehen sie sie. Zwilling
+  /// von zahlungen-core.wertgutscheinFlussCents: eine Auszahlung eines
+  /// Wertgutscheins ohne [KeckVoucher.zeroRateBucket] mindert wie eine
+  /// Einloesung; mit `zeroRateBucket` steht sie als Position und zaehlt nur dort.
   int get sumCents {
     int cents = subSumCents;
     for (KeckVoucher voucher in vouchers??[]) {
-      if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value) {
+      if (voucher.zeroRateBucket == true || voucher.type != VoucherType.value) continue;
+      if (voucher.action == VoucherAction.redeem || voucher.action == VoucherAction.payout) {
         cents -= valueVoucherSign * (voucher.valueCents ?? 0);
       }
     }

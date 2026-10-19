@@ -360,9 +360,27 @@ void main() {
         final kp = (kassenFall['params'] as Map).cast<String, dynamic>();
         final w = _weg(kassenFall['response'] as Map<String, dynamic>);
         final beleg = await w.kasse.sell(items: positionen(kp), payments: zahlungen(kp), vouchers: wuensche(kp));
-        final gesendet = _params(w.log.single);
-        expect(gesendet['vouchers'], kp['vouchers']);
-        expect(gesendet['payments'], kp['payments']);
+        // Der ganze Rumpf wie im Vertrag (Positionen, Zahlungen, Wuensche), nicht nur die
+        // Gutscheine. Die Kasse legt der Sitzungs-Transport jeder Nutzlast bei (wie
+        // kasse_v3_test); nennt der Fall sie nicht, zaehlt sie nicht.
+        // Positionen zeichnet der Vertrag in der inneren Form auf (amount,
+        // priceOneCents, vat), der Kassenweg sendet sie unter /v3 englisch (wie
+        // `_soll` in kasse_v3_test); der Artikel bleibt dabei.
+        final gesendet = Map<String, dynamic>.from(_params(w.log.single));
+        expect(gesendet.remove('cashregisterId'), 'KASSE1');
+        expect(gesendet, {
+          ...kp,
+          'items': [
+            for (final i in (kp['items'] as List).cast<Map<String, dynamic>>())
+              {
+                'name': i['name'],
+                'quantity': i['quantity'] ?? i['amount'],
+                'unitPriceCents': i['unitPriceCents'] ?? i['priceOneCents'],
+                'vatRate': i['vatRate'] ?? i['vat'],
+                'articleId': ?i['articleId'],
+              },
+          ],
+        });
         expect(beleg.vouchers, isNotEmpty);
 
         final apiFall = _belege.firstWhere((f) => f['name'] == name);

@@ -504,6 +504,39 @@ void main() {
       expect(() => mit(845), wirft());
     });
 
+    test('Kleinunternehmer, gleiche Reste: der Cent geht nach der Topf-Reihenfolge (Werte aus gutschein-beleg.kuTeile des Servers)', () {
+      // Server (functions/gemeinsam/gutschein-beleg.js kuTeile, 19.10.2026 ausgefuehrt):
+      // 20 %/10 % je 10,00: 1 Cent -> 20 % 1; 3 Cent -> 20 % 2, 10 % 1; auch bei umgekehrter
+      // Positionsfolge. 13 %/10 %/20 % je 5,00: 4 Cent -> 20 % 2, 10 % 1, 13 % 1.
+      final ku = einzweck(100000, 0, exempt: true);
+      Map<String, int>? topf(List<ReceiptDueLine> korb, int cents) => receiptDueBreakdownForLines(
+              korb, [einloesen(VoucherType.singlePurpose, codeE, cents)], ReceiptType.standard,
+              voucherInfo: [info(codeE, ku)])
+          .bucketsCents;
+      final gleich = [pos('Gelnägel', 1000, 20), pos('Handcreme', 1000, 10)];
+      expect(topf(gleich, 1), toepfe({'amountRateStandard': 999, 'amountRateReduced1': 1000}));
+      expect(topf(gleich, 3), toepfe({'amountRateStandard': 998, 'amountRateReduced1': 999}));
+      expect(topf(gleich.reversed.toList(), 3), toepfe({'amountRateStandard': 998, 'amountRateReduced1': 999}));
+      final drei = [pos('Blumen', 500, 13), pos('Handcreme', 500, 10), pos('Gelnägel', 500, 20)];
+      expect(topf(drei, 4), toepfe({'amountRateStandard': 498, 'amountRateReduced1': 499, 'amountRateReduced2': 499}));
+    });
+
+    test('Hoechstbetrag sucht hoechstens 64 Cent unter der Obergrenze, dann 0 (Grenze der Probe-Rechnung)', () {
+      // Ein schon gewaehlter Einzweck 20 % (P Cent) mindert den 20-%-Topf; der befreite Einzweck
+      // verteilt anteilig auf die Saetze (je 10,00), also deckt er hoechstens 2 x (1000 - P).
+      // Die Obergrenze vor der Probe ist offen + 6 = 2006 - P: Abstand P + 6 Cent. Der Server
+      // (gutschein-beleg.plane, 19.10.2026) nimmt bei P = 57 genau 1886, bei P = 58 genau 1884
+      // und weist jeweils einen Cent mehr mit voucher_rate_mismatch ab.
+      final korb = [pos('Gelnägel', 1000, 20), pos('Handcreme', 1000, 10)];
+      const codeK = 'DTD5-9ECF-5KNZ';
+      int max(int p) => voucherRedeemMaxCentsForLines(korb, einzweck(100000, 0, exempt: true),
+          vouchers: [einloesen(VoucherType.singlePurpose, codeK, p)], voucherInfo: [info(codeK, einzweck(5000, 2000))]);
+      expect(max(57), 1886); // Abstand 63: der 64. Versuch trifft
+      // Abstand 64: die Probe gibt nach 64 Versuchen auf, die Kasse bietet keinen Betrag an
+      // (der Server naehme 1884). Wer die Grenze aendert, aendert diese Zeile bewusst.
+      expect(max(58), 0);
+    });
+
     test('mit schon gewaehlten Gutscheinen: der Rest des Topfs und des Betrags', () {
       final vorher = [einloesen(VoucherType.singlePurpose, codeE, 3000)];
       final i = [info(codeE, einzweck(5000, 2000))];

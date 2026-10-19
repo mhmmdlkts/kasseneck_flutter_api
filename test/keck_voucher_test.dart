@@ -46,6 +46,51 @@ void main() {
     test('leerer Name wird ignoriert', () {
       expect(v(cents: 500, name: '').receiptText, 'Wertgutschein 5 EUR');
     });
+
+    // Neue Form (Spec 2026-10-14, „Bon und Beleg“): Zeilen wie am Bon, nie der Klartext-Code.
+    KeckVoucher gelesen(String voucherType, VoucherAction action, {VoucherType? type, String? name, int? valueCents, int? amountCents}) =>
+        KeckVoucher.fromJson({
+          'action': action.name,
+          'type': (type ?? VoucherType.fromWire(voucherType)!).wire,
+          'voucherType': voucherType,
+          'name': ?name,
+          'valueCents': ?valueCents,
+          'amountCents': ?amountCents,
+          'code': '····-····-9DWT',
+          'codeSuffix': '9DWT',
+          'voucherId': 'g1',
+        });
+
+    test('neue Form: Einloesung „Gutschein ····-XXXX“, Auszahlung mit „Auszahlung“ davor', () {
+      expect(gelesen('multi_purpose', VoucherAction.redeem, type: VoucherType.value, name: 'Gutschein', valueCents: 1750).receiptText,
+          'Gutschein ····-9DWT');
+      expect(gelesen('single_purpose', VoucherAction.redeem, name: 'Gutschein', amountCents: 3050).receiptText, 'Gutschein ····-9DWT');
+      expect(gelesen('service', VoucherAction.redeem, name: 'Gutschein', amountCents: 3500).receiptText, 'Gutschein ····-9DWT');
+      expect(gelesen('multi_purpose', VoucherAction.payout, type: VoucherType.value, name: 'Auszahlung Gutschein', valueCents: 1200).receiptText,
+          'Auszahlung Gutschein ····-9DWT');
+    });
+
+    test('neue Form: Verkauf mit Bezeichnung und Code-Maske', () {
+      expect(gelesen('single_purpose', VoucherAction.sell, name: 'Einzweckgutschein 20 %', amountCents: 5000).receiptText,
+          'Einzweckgutschein 20 % ····-····-9DWT');
+      expect(gelesen('multi_purpose', VoucherAction.sell, type: VoucherType.value, name: 'Mehrzweckgutschein', valueCents: 5000).receiptText,
+          'Mehrzweckgutschein ····-····-9DWT');
+      expect(gelesen('service', VoucherAction.sell, amountCents: 7000).receiptText, 'Leistungsgutschein ····-····-9DWT');
+    });
+
+    test('neue Form, Wunsch mit Klartext-Code: nur die letzten vier Zeichen, nie der Code', () {
+      final wunsch = KeckVoucher(action: VoucherAction.redeem, type: VoucherType.multiPurpose, code: 'B1KK5EQ57DHP', amountCents: 500);
+      expect(wunsch.receiptText, 'Gutschein ····-7DHP');
+      expect(wunsch.receiptText, isNot(contains('B1KK5EQ5')));
+      expect(KeckVoucher(action: VoucherAction.redeem, type: VoucherType.promotion, code: 'B1KK5EQ57DHP').receiptText,
+          'Aktionsgutschein ····-7DHP');
+      expect(KeckVoucher(action: VoucherAction.sell, type: VoucherType.singlePurpose, amountCents: 5000).receiptText, 'Einzweckgutschein');
+    });
+
+    test('Aktion, wie der Server sie liest (type promo): Rabattzeile wie bisher', () {
+      final aktion = gelesen('promotion', VoucherAction.redeem, type: VoucherType.promo, name: 'Aktion', valueCents: 200);
+      expect(aktion.receiptText, 'Promotionsgutschein 2 EUR - Aktion');
+    });
   });
 
   group('euro-Konstruktor', () {

@@ -109,6 +109,65 @@ void main() {
     expect(texte, contains('-4,90 EUR'));
   });
 
+  // Neue Form (Spec 2026-10-14): ein Mehrzweckgutschein mit Code, wie der Server
+  // ihn liest (type value, voucherType multi_purpose). Am Storno geht der Wert
+  // ohne Minus auf den Gutschein zurueck, ohne „Rest am Gutschein“ (der Rest des
+  // Originals gilt nicht mehr); Gesamt = Rueckzahlung (Vertragsbeispiel
+  // storno/cancel_redeemed_multi_purpose_voucher).
+  final mehrzweck = KeckVoucher.fromJson(const {
+    'action': 'redeem',
+    'type': 'value',
+    'voucherType': 'multi_purpose',
+    'valueCents': 1750,
+    'name': 'Gutschein',
+    'code': '····-····-5KNZ',
+    'codeSuffix': '5KNZ',
+    'voucherId': 'gmz1',
+    'balanceAfterCents': 3250,
+  });
+
+  test('Druck: Storno einer Mehrzweck-Einloesung zeigt „Gutschein ····-5KNZ“ ohne Minus, keinen Rest, Gesamt -4,90', () async {
+    final r = buildReceipt(
+      receiptType: ReceiptType.cancellation,
+      items: [KasseneckItem(name: 'Gelnägel', quantity: 1, vat: VatRate.vat20, priceCents: -2240)],
+      vouchers: [mehrzweck],
+    );
+    expect(r.sumCents, -490);
+    expect(r.sumCents, receiptDueCents(r.items, r.vouchers!, ReceiptType.cancellation));
+    final zeilen = await gedruckt(r);
+    expect(zeilen.firstWhere((z) => z.left == 'Gutschein ····-5KNZ').right, '17,50 EUR');
+    expect(zeilen.any((z) => z.left.contains('Rest am Gutschein')), isFalse);
+    expect(zeilen.any((z) => z.left.contains('Wertgutschein')), isFalse);
+    expect(zeilen.firstWhere((z) => z.left == 'Gesamt:').right, '-4,90 EUR');
+  });
+
+  test('Druck: Original der Mehrzweck-Einloesung zeigt Gutschein und Rest nach der Zwischensumme', () async {
+    final r = buildReceipt(
+      items: [KasseneckItem(name: 'Gelnägel', quantity: 1, vat: VatRate.vat20, priceCents: 2240)],
+      vouchers: [mehrzweck],
+    );
+    final zeilen = await gedruckt(r);
+    final i = zeilen.indexWhere((z) => z.left == 'Zwischensumme');
+    expect(zeilen.sublist(i, i + 3).map((z) => '${z.left} | ${z.right}'),
+        ['Zwischensumme | 22,40 EUR', 'Gutschein ····-5KNZ | -17,50 EUR', '  Rest am Gutschein | 32,50 EUR']);
+    expect(zeilen.firstWhere((z) => z.left == 'Gesamt:').right, '4,90 EUR');
+  });
+
+  testWidgets('Bildschirm: Storno einer Mehrzweck-Einloesung zeigt 17,50 ohne Rest und Gesamt -4,90', (tester) async {
+    final r = buildReceipt(
+      receiptType: ReceiptType.cancellation,
+      items: [KasseneckItem(name: 'Gelnägel', quantity: 1, vat: VatRate.vat20, priceCents: -2240)],
+      vouchers: [mehrzweck],
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: SingleChildScrollView(child: KeckReceiptWidget(receipt: r))),
+    ));
+    final texte = tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '').toList();
+    expect(texte, containsAllInOrder(['Gutschein ····-5KNZ', '17,50 EUR']));
+    expect(texte.any((t) => t.contains('Rest am Gutschein')), isFalse);
+    expect(texte, contains('-4,90 EUR'));
+  });
+
   // Aktionsgutschein (promo): der Server spiegelt ihn an den Storno, nimmt den
   // Rabatt aber ueber Ausgleichspositionen zurueck; der Eintrag mindert dort nichts.
   KasseneckReceipt stornoMitAktion() => buildReceipt(

@@ -10,6 +10,8 @@ import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/sumup_checkout_response.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
+import 'package:kasseneck_api/src/receipt/einzug.dart';
+import 'package:kasseneck_api/src/receipt/gutschein_bon.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../enums/voucher_type.dart';
@@ -107,6 +109,8 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
 
     if (bruttoByVatCents.containsKey(VatRate.vat0)) {
       for (final KeckVoucher voucher in widget.receipt.vouchers ?? []) {
+        // Ein Eintrag im 0-%-Topf steht schon als Position (oben gezaehlt).
+        if (voucherStandsAsItem(voucher)) continue;
         if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
           bruttoByVatCents[VatRate.vat0] =
               (bruttoByVatCents[VatRate.vat0] ?? 0) + widget.receipt.valueVoucherSign * (voucher.valueCents ?? 0);
@@ -176,6 +180,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
 
   Widget receiptWidget() {
     setTemp();
+    final gutscheinZuordnung = voucherItemMatches(widget.receipt.items, widget.receipt.vouchers ?? const []);
     return SizedBox(
       child: Container(
         decoration: BoxDecoration(
@@ -244,29 +249,27 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             ),
             const SizedBox(height: 32),
 
-            for (KasseneckItem item in widget.receipt.items)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text('${item.quantity} x ${item.name}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', style: textStyle),
-                  ),
-                  Text('${formatCents(item.totalCents)} ${item.vat.category}', style: textStyle),
-                ],
-              ),
-            for (KeckVoucher voucher in widget.receipt.vouchers??[])
+            for (final (i, item) in widget.receipt.items.indexed)
+              ..._positionsZeilen(item, gutscheinZuordnung[i]),
+            // Betrag steht als Position (Einzweck, Leistung, 0-%-Topf): keine Zeile aus dem Eintrag.
+            for (KeckVoucher voucher in (widget.receipt.vouchers??[]).where((v) => !voucherStandsAsItem(v)))
               if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text('1 x ${voucher.receiptText}', style: textStyle),
-                    ),
-                    Text('${formatCents(widget.receipt.valueVoucherSign * (voucher.valueCents??0))} ${VatRate.vat0.category}', style: textStyle),
-                  ],
-                )
+                ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        // Mehrzweck mit Code (vor dem Stichtag nur als Eintrag): wie die Position im 0-%-Topf.
+                        child: Text(
+                            '1 x ${isMultiPurposeWithCode(voucher) ? 'Mehrzweckgutschein${voucherCodeSuffixText(voucher)}' : voucher.receiptText}',
+                            style: textStyle),
+                      ),
+                      Text('${formatCents(widget.receipt.valueVoucherSign * (voucher.valueCents??0))} ${VatRate.vat0.category}', style: textStyle),
+                    ],
+                  ),
+                  if (isMultiPurposeWithCode(voucher)) _einzugText(multiPurposeVatNote),
+                ]
               else if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo)
                 ...[
                   const SizedBox(height: 4),
@@ -304,19 +307,12 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                     Text('${formatCents(widget.receipt.subSumCents)} EUR', style: textStyle)
                   ],
                 ),
+                // Am Storno-Beleg geht der Wert auf den Gutschein zurueck: ohne Minus.
                 for (KeckVoucher voucher in widget.receipt.vouchers??[])
-                  if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(voucher.receiptText, style: textStyle),
-                        ),
-                        // Am Storno-Beleg geht der Wert auf den Gutschein zurueck: ohne Minus.
-                        Text('${widget.receipt.valueVoucherSign == 1 ? '-' : ''}${formatCents(voucher.valueCents??0)} EUR', style: textStyle),
-                      ],
-                    ),
+                  for (final z in voucherPaymentLines(voucher,
+                          sign: widget.receipt.valueVoucherSign, currency: 'EUR', formatCents: formatCents) ??
+                      const <VoucherBonPairLine>[])
+                    _paarZeile(z.left, z.right),
                 Divider(color: widget.qrColor),
               ],
             Row(
@@ -378,6 +374,53 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Zeilen einer Position; eine Gutscheinposition der neuen Form wie im
+  /// Server-Layout (Code, Vermerk, Rest, Grund; siehe gutschein_bon.dart).
+  List<Widget> _positionsZeilen(KasseneckItem item, VoucherItemMatch? gutschein) {
+    final String betrag = '${formatCents(item.totalCents)} ${item.vat.category}';
+    if (gutschein == null) return [_positionsZeile(item, item.name, betrag)];
+    return [
+      for (final z in voucherItemLines(item, gutschein, amount: betrag, formatCents: formatCents))
+        switch (z) {
+          VoucherBonItemLine() => _positionsZeile(item, z.name, betrag),
+          VoucherBonPairLine() => _paarZeile(z.left, z.right),
+          VoucherBonTextLine() => _einzugText(z.text),
+        },
+    ];
+  }
+
+  Widget _positionsZeile(KasseneckItem item, String name, String betrag) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text('${item.quantity} x $name${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', style: textStyle),
+          ),
+          Text(betrag, style: textStyle),
+        ],
+      );
+
+  Widget _paarZeile(String links, String rechts) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Text(links, style: textStyle)),
+          Text(rechts, style: textStyle),
+        ],
+      );
+
+  /// Haengender Einzug wie im Zeichenraster: die fuehrenden Leerzeichen
+  /// werden zum Abstand links, damit auch die Folgezeilen eingerueckt stehen.
+  Widget _einzugText(String text) {
+    final einzug = leadingIndent(text);
+    if (einzug == 0) return Align(alignment: Alignment.centerLeft, child: Text(text, style: textStyle));
+    final breite = (TextPainter(text: TextSpan(text: ' ' * einzug, style: textStyle), textDirection: TextDirection.ltr)..layout()).width;
+    return Padding(
+      padding: EdgeInsets.only(left: breite),
+      child: Align(alignment: Alignment.centerLeft, child: Text(text.substring(einzug), style: textStyle)),
     );
   }
 

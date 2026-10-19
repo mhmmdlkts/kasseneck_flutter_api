@@ -326,7 +326,15 @@ class KeckVoucher {
         positions == null;
   }
 
+  /// Belegtext. Altform: Art, Wert und Name (ein Name, der die Art schon
+  /// nennt, steht allein). Neue Form (auch eine gelesene Mehrzweck-Einloesung
+  /// mit `type: value`) wie die Zeilen am Bon (Spec 2026-10-14, „Bon und
+  /// Beleg“): Einloesung „Gutschein ····-9DWT“, Auszahlung „Auszahlung
+  /// Gutschein ····-9DWT“, Verkauf Bezeichnung und Code-Maske. Vom Code steht
+  /// nie mehr als die Maske bzw. die letzten vier Zeichen da: ein Wunsch traegt
+  /// den Klartext, der nie auf einen Beleg gehoert.
   String get receiptText {
+    if (isNewForm || voucherType == VoucherType.multiPurpose.wire) return _neueFormText;
     String text = '';
     if (type == VoucherType.value) {
       text += 'Wertgutschein';
@@ -347,6 +355,28 @@ class KeckVoucher {
   }
 
 
+
+  String get _neueFormText {
+    final art = VoucherType.fromWire(voucherType) ?? type;
+    if (action == VoucherAction.sell) {
+      final n = name?.trim() ?? '';
+      final bezeichnung = n.toLowerCase().contains('gutschein') ? n : _artText(art);
+      final maske = code != null && code!.startsWith('····') ? ' $code' : '';
+      return '$bezeichnung$maske';
+    }
+    final ende = codeSuffix != null && codeSuffix!.isNotEmpty
+        ? codeSuffix
+        : (code != null && code!.length >= 4 && code != 'no-code' ? code!.substring(code!.length - 4) : null);
+    final text = art == VoucherType.promotion ? 'Aktionsgutschein' : 'Gutschein';
+    return '${action == VoucherAction.payout ? 'Auszahlung ' : ''}$text${ende == null ? '' : ' ····-$ende'}';
+  }
+
+  static String _artText(VoucherType art) => switch (art) {
+        VoucherType.multiPurpose || VoucherType.value => 'Mehrzweckgutschein',
+        VoucherType.singlePurpose => 'Einzweckgutschein',
+        VoucherType.service => 'Leistungsgutschein',
+        VoucherType.promotion || VoucherType.promo => 'Aktionsgutschein',
+      };
 
   /// Ganze Betraege kurz ("10"), krumme exakt mit 2 Nachkommastellen ("1,50") —
   /// frueher wurde gerundet ("~2"), was auf dem Beleg wie ein falscher Betrag wirkte.
