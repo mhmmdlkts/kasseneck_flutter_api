@@ -1,5 +1,5 @@
 {
-  "version": "1.12.0",
+  "version": "1.13.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -404,6 +404,60 @@
     },
     "voucher_error.sale_off": {
       "text": "Gutscheine verkaufen geht hier noch nicht."
+    },
+    "voucher.reentry_needed": {
+      "text": "Die Karte ist belastet, der Beleg fehlt noch: zu jedem Gutschein den Code erneut eingeben, dann den Beleg abschließen."
+    },
+    "voucher.reentry_mismatch": {
+      "text": "Mit diesen Gutscheinen ergibt der Beleg nicht mehr den belasteten Betrag – die Karte zurückbuchen."
+    },
+    "voucher.not_this_voucher": {
+      "text": "Das ist nicht der Gutschein ····-{suffix}.",
+      "placeholders": [
+        "suffix"
+      ]
+    },
+    "voucher.reentry_no_permission": {
+      "text": "Die Karte ist belastet, der Beleg fehlt noch: den Gutschein-Code kann nur jemand mit dem Recht zum Einlösen nachtragen – sonst die Karte zurückbuchen."
+    },
+    "voucher.already_covered": {
+      "text": "Diese Positionen deckt schon ein anderer Gutschein."
+    },
+    "voucher.payout_reason_too_long": {
+      "text": "Der Grund hat höchstens 200 Zeichen."
+    },
+    "voucher.payout_reason_missing": {
+      "text": "Für die Auszahlung fehlt der Grund."
+    },
+    "voucher.payout_check_first": {
+      "text": "Die letzte Auszahlung ging unklar aus und kann schon gebucht sein. Erst unter „Belege“ die Liste neu laden und nachsehen, dann ist eine neue möglich."
+    },
+    "voucher.sale_max_amount": {
+      "text": "Höchstens {amount} je Gutschein.",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "voucher.sale_not_at_terminal": {
+      "text": "Gutscheine mit Karte am Terminal zu verkaufen geht an dieser Kasse noch nicht – bar kassieren."
+    },
+    "voucher.no_redeem_with_sale": {
+      "text": "Auf einem Beleg, der Gutscheine verkauft, lässt sich kein Gutschein einlösen."
+    },
+    "voucher.code_not_on_receipt": {
+      "text": "Der Code steht nicht auf dem Bon – jetzt auf den Gutschein schreiben."
+    },
+    "cancellation.voucher_sale_cancelled": {
+      "text": "Der Gutschein ····-{suffix} wird mitstorniert und gilt danach nicht mehr.",
+      "placeholders": [
+        "suffix"
+      ]
+    },
+    "cancellation.promo_valid_again": {
+      "text": "Der Aktionsgutschein ····-{suffix} gilt danach wieder.",
+      "placeholders": [
+        "suffix"
+      ]
     },
     "split.setting_hint": {
       "text": "Ein Tisch zahlt in Teilen: jede Zahlung bar oder mit Karte, mit eigenem Trinkgeld – am Ende ein Beleg für alles."
@@ -1889,6 +1943,39 @@
       "placeholders": [
         "amount"
       ]
+    },
+    "voucher.apply": {
+      "text": "Übernehmen"
+    },
+    "voucher.redeemable_until": {
+      "text": "einlösbar bis {date}",
+      "placeholders": [
+        "date"
+      ]
+    },
+    "voucher.remove_line": {
+      "text": "{line} entfernen",
+      "placeholders": [
+        "line"
+      ]
+    },
+    "voucher.reenter_code": {
+      "text": "Code erneut eingeben"
+    },
+    "voucher.refundable_until": {
+      "text": "rückzahlbar bis {date}",
+      "placeholders": [
+        "date"
+      ]
+    },
+    "voucher.code_done": {
+      "text": "Fertig"
+    },
+    "voucher.article": {
+      "text": "Artikel"
+    },
+    "voucher.add": {
+      "text": "Hinzufügen"
     },
     "shift.all_payments": {
       "text": "Alle Zahlungen dieser Schicht (bar + unbar)"

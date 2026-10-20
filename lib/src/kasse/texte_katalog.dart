@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.12.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.13.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.12.0';
+const String posTextsVersion = '1.13.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -113,6 +113,20 @@ const Map<String, PosText> posMessages = {
   'voucher_error.settings_missing': PosText('Die Gutschein-Einstellungen fehlen. Bitte die Kasse neu laden.'),
   'voucher_error.too_many_checks': PosText('Zu viele Versuche. Bitte in einer Stunde wieder.'),
   'voucher_error.sale_off': PosText('Gutscheine verkaufen geht hier noch nicht.'),
+  'voucher.reentry_needed': PosText('Die Karte ist belastet, der Beleg fehlt noch: zu jedem Gutschein den Code erneut eingeben, dann den Beleg abschließen.'),
+  'voucher.reentry_mismatch': PosText('Mit diesen Gutscheinen ergibt der Beleg nicht mehr den belasteten Betrag – die Karte zurückbuchen.'),
+  'voucher.not_this_voucher': PosText('Das ist nicht der Gutschein ····-{suffix}.', placeholders: ['suffix']),
+  'voucher.reentry_no_permission': PosText('Die Karte ist belastet, der Beleg fehlt noch: den Gutschein-Code kann nur jemand mit dem Recht zum Einlösen nachtragen – sonst die Karte zurückbuchen.'),
+  'voucher.already_covered': PosText('Diese Positionen deckt schon ein anderer Gutschein.'),
+  'voucher.payout_reason_too_long': PosText('Der Grund hat höchstens 200 Zeichen.'),
+  'voucher.payout_reason_missing': PosText('Für die Auszahlung fehlt der Grund.'),
+  'voucher.payout_check_first': PosText('Die letzte Auszahlung ging unklar aus und kann schon gebucht sein. Erst unter „Belege“ die Liste neu laden und nachsehen, dann ist eine neue möglich.'),
+  'voucher.sale_max_amount': PosText('Höchstens {amount} je Gutschein.', placeholders: ['amount']),
+  'voucher.sale_not_at_terminal': PosText('Gutscheine mit Karte am Terminal zu verkaufen geht an dieser Kasse noch nicht – bar kassieren.'),
+  'voucher.no_redeem_with_sale': PosText('Auf einem Beleg, der Gutscheine verkauft, lässt sich kein Gutschein einlösen.'),
+  'voucher.code_not_on_receipt': PosText('Der Code steht nicht auf dem Bon – jetzt auf den Gutschein schreiben.'),
+  'cancellation.voucher_sale_cancelled': PosText('Der Gutschein ····-{suffix} wird mitstorniert und gilt danach nicht mehr.', placeholders: ['suffix']),
+  'cancellation.promo_valid_again': PosText('Der Aktionsgutschein ····-{suffix} gilt danach wieder.', placeholders: ['suffix']),
   'split.setting_hint': PosText('Ein Tisch zahlt in Teilen: jede Zahlung bar oder mit Karte, mit eigenem Trinkgeld – am Ende ein Beleg für alles.'),
   'split.amount_over_open': PosText('Der Betrag ist höher als offen – höchstens {amount}.', placeholders: ['amount']),
   'split.tip_over_amount': PosText('Das Trinkgeld ist höher als der Betrag dieser Zahlung.'),
@@ -458,6 +472,14 @@ const Map<String, PosText> posLabels = {
   'voucher.add_article': PosText('{article} hinzufügen', placeholders: ['article']),
   'voucher.payout_confirm': PosText('{amount} bar auszahlen?', placeholders: ['amount']),
   'cancellation.voucher_back': PosText('{amount} geht zurück auf den Gutschein', placeholders: ['amount']),
+  'voucher.apply': PosText('Übernehmen'),
+  'voucher.redeemable_until': PosText('einlösbar bis {date}', placeholders: ['date']),
+  'voucher.remove_line': PosText('{line} entfernen', placeholders: ['line']),
+  'voucher.reenter_code': PosText('Code erneut eingeben'),
+  'voucher.refundable_until': PosText('rückzahlbar bis {date}', placeholders: ['date']),
+  'voucher.code_done': PosText('Fertig'),
+  'voucher.article': PosText('Artikel'),
+  'voucher.add': PosText('Hinzufügen'),
   'shift.all_payments': PosText('Alle Zahlungen dieser Schicht (bar + unbar)'),
   'shift.receipt_count_one': PosText('1 Beleg'),
   'shift.receipt_count_other': PosText('{count} Belege', placeholders: ['count']),
