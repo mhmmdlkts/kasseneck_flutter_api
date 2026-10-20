@@ -72,6 +72,12 @@ const _nach10 = (
     'voucher_error.exceeds_total', 'voucher_error.balance_changed', 'voucher_error.rate_mismatch',
     'voucher_error.item_mismatch', 'voucher_error.already_used', 'voucher_error.partial_cancel',
     'voucher_error.settings_missing', 'voucher_error.too_many_checks', 'voucher_error.sale_off',
+    // Gutscheine an der Kasse, Stufe 3 (11.4.0, npm 1.13.0)
+    'voucher.reentry_needed', 'voucher.reentry_mismatch', 'voucher.not_this_voucher',
+    'voucher.reentry_no_permission', 'voucher.already_covered', 'voucher.payout_reason_too_long',
+    'voucher.payout_reason_missing', 'voucher.payout_check_first', 'voucher.sale_max_amount',
+    'voucher.sale_not_at_terminal', 'voucher.no_redeem_with_sale', 'voucher.code_not_on_receipt',
+    'cancellation.voucher_sale_cancelled', 'cancellation.promo_valid_again',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -140,6 +146,9 @@ const _nach10 = (
     'voucher.multi_purpose', 'voucher.single_purpose', 'voucher.service', 'voucher.promotion',
     'voucher.payment_line', 'voucher.covers_items', 'voucher.code_shown_once', 'voucher.not_in_split',
     'voucher.payout_not_possible', 'voucher.add_article', 'voucher.payout_confirm', 'cancellation.voucher_back',
+    // Gutscheine an der Kasse, Stufe 3 (11.4.0, npm 1.13.0)
+    'voucher.apply', 'voucher.redeemable_until', 'voucher.remove_line', 'voucher.reenter_code',
+    'voucher.refundable_until', 'voucher.code_done', 'voucher.article', 'voucher.add',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'voucherErrors', 'returnDispositionLabels'],
   placeholders: {
@@ -150,6 +159,8 @@ const _nach10 = (
     'title',
     // Gutscheine an der Kasse (11.3.0)
     'suffix', 'items', 'article',
+    // Gutscheine an der Kasse, Stufe 3 (11.4.0)
+    'date', 'line',
   },
 );
 

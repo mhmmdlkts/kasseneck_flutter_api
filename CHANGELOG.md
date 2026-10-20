@@ -1,3 +1,18 @@
+## 11.4.0
+
+Twin of `@kreiseck/kasseneck-api` `1.13.0` (contract files pulled from that
+version): the sentences and words of the voucher screens are part of the shared
+text catalogue, so the web register and the app register say the same.
+Additive; no existing key changes.
+
+- **14 sentences and 8 labels** (`voucher.reentry_needed`, `voucher.not_this_voucher`,
+  `voucher.sale_max_amount`, `voucher.payout_check_first`, `cancellation.voucher_sale_cancelled`,
+  `voucher.apply`, `voucher.redeemable_until`, `voucher.article`, `voucher.add` ...).
+  Reason: the web register kept these words in its own constant until the
+  catalogue had keys for them; both registers now take them from the catalogue.
+  The generated `texte_katalog.dart` and the contract copy under
+  `test/fixtures/vertrag/` carry them.
+
 ## 11.3.0
 
 Twin of `@kreiseck/kasseneck-api` `1.12.0` (contract files pulled from that
