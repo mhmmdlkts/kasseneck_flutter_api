@@ -1,6 +1,9 @@
 import '../enums/vat_rate.dart';
 import '../src/kasse/rueckgabe.dart';
 
+/// Die Kennzeichnungen, die eine Position tragen kann ([KasseneckItem.kind]).
+const _bekannteArten = {'tip', 'discount', 'voucher', 'voucher_float'};
+
 class KasseneckItem {
   /// Name des Artikels / der Dienstleistung
   final String name;
@@ -19,9 +22,12 @@ class KasseneckItem {
   final int priceCents;
 
   /// Positions-Kennzeichnung: `'tip'` (Trinkgeld, vom Backend aus dem
-  /// Parameter `tip` erzeugt) oder `'discount'` (Rabatt, [distributeDiscount]).
-  /// Steuert nur die Beleg-Darstellung und die Berichts-Zuordnung, nie die
-  /// Beträge. Zwilling von `ReceiptItem.kind` im JS-Paket.
+  /// Parameter `tip` erzeugt), `'discount'` (Rabatt, [distributeDiscount])
+  /// oder eine Gutscheinzeile der neuen Form, die nur der Server setzt:
+  /// `'voucher'` (Einzweck/Leistung) bzw. `'voucher_float'` (0-%-Topf,
+  /// Mehrzweck-Verkauf ab dem Stichtag und Auszahlung). Steuert nur die
+  /// Beleg-Darstellung und die Berichts-Zuordnung, nie die Beträge. Zwilling
+  /// von `ReceiptItem.kind` im JS-Paket.
   final String? kind;
 
   /// Empfänger einer Trinkgeld-Position: `{registerUserId, name, owner?}`.
@@ -82,6 +88,14 @@ class KasseneckItem {
 
   /// Rabatt-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
   bool get isDiscount => kind == 'discount';
+
+  /// Gutscheinzeile mit Umsatzsteuer-Wirkung (Einzweck, Leistung), vom Server
+  /// gesetzt. Zwilling von `isVoucherItem` im JS-Paket.
+  bool get isVoucher => kind == 'voucher';
+
+  /// Gutscheinzeile als durchlaufender Posten im 0-%-Topf (Mehrzweck:
+  /// Verkauf ab dem Stichtag, Auszahlung). Zwilling von `isVoucherFloatItem`.
+  bool get isVoucherFloat => kind == 'voucher_float';
 
   /// Trinkgeld an den Inhaber? Dann ist es Entgelt (§ 4 UStG) und traegt den
   /// Steuersatz der Leistung; Trinkgeld an Mitarbeiter ist durchlaufender
@@ -164,6 +178,10 @@ class KasseneckItem {
         if (keptByEmployee) 'keptByEmployee': true,
       },
       if (kind == 'discount') 'kind': 'discount',
+      // Gutscheinzeilen (vom Server) reisen mit: der Zwischenspeicher schreibt
+      // gelesene Belege wieder. Ein Verkauf traegt sie nie (createReceipt
+      // weist sie vor dem Senden als voucher_invalid ab).
+      if (kind == 'voucher' || kind == 'voucher_float') 'kind': kind,
       if (articleId != null && articleId!.isNotEmpty) 'articleId': articleId,
       // Nur an gelesenen Storno-Zeilen gesetzt (der Zwischenspeicher behaelt
       // sie); eine Verkaufszeile traegt beides nie.
@@ -194,7 +212,7 @@ class KasseneckItem {
       quantity: quantity is num ? quantity.toInt() : 0,
       vat: VatRate.values.firstWhere((e) => e.rate == rate, orElse: () => VatRate.vat0),
       priceCents: cents is num ? cents.round() : (euro is num ? (euro * 100).round() : 0),
-      kind: kind == 'tip' || kind == 'discount' ? kind as String : null,
+      kind: _bekannteArten.contains(kind) ? kind as String : null,
       recipient: json['recipient'] is Map ? Map<String, dynamic>.from(json['recipient'] as Map) : null,
       paymentMethod: json['paymentMethod'] as String?,
       articleId: json['articleId'] is String && (json['articleId'] as String).isNotEmpty ? json['articleId'] as String : null,

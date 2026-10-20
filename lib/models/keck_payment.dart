@@ -177,18 +177,28 @@ const int maxPayments = 20;
 ///
 /// Zwilling von `gepruefteZahlungen` im Client des npm-Pakets, Wortlaut
 /// inklusive; [cancellation] kehrt das Vorzeichen um und erlaubt `refundOf`, verbietet
-/// `tenderedCents`.
-String? paymentsError(List<KeckPaymentInput> payments, {required bool cancellation}) {
+/// `tenderedCents`. [payout]: ein Beleg nur aus Gutschein-Auszahlungen; der
+/// Betrag geht bar hinaus, genau eine Zahlung, negativ, ohne `tenderedCents`
+/// und ohne `tipCents` (Server `pruefeZahlungen` mit Auszahlung).
+String? paymentsError(List<KeckPaymentInput> payments, {required bool cancellation, bool payout = false}) {
   if (payments.length > maxPayments) {
     return 'payments: es sind hoechstens $maxPayments Eintraege erlaubt.';
+  }
+  final negativ = cancellation || payout;
+  if (payout) {
+    if (payments.length != 1) return 'Auszahlung: genau eine Barzahlung angeben.';
+    final z = payments.single;
+    if (z.method != KeckPaymentMethod.cash) return 'Auszahlung: nur in bar moeglich.';
+    if (z.tenderedCents != null) return 'Auszahlung: tenderedCents ist nicht moeglich.';
+    if (z.tipCents != null) return 'Auszahlung: tipCents ist nicht moeglich.';
   }
   for (final (i, z) in payments.indexed) {
     final nr = i + 1;
     if (z.method == KeckPaymentMethod.mixed) {
       return 'Zahlung $nr: $mixedNotSentReason';
     }
-    if (cancellation ? z.amountCents >= 0 : z.amountCents <= 0) {
-      return 'Zahlung $nr: amountCents muss eine ganze Zahl ${cancellation ? 'kleiner' : 'groesser'} als 0 sein.';
+    if (negativ ? z.amountCents >= 0 : z.amountCents <= 0) {
+      return 'Zahlung $nr: amountCents muss eine ganze Zahl ${negativ ? 'kleiner' : 'groesser'} als 0 sein.';
     }
     final gegeben = z.tenderedCents;
     if (gegeben != null && (cancellation || gegeben < z.amountCents)) {

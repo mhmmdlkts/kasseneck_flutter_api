@@ -196,3 +196,8 @@ String receiptEmailErrorMessage(String? code) => receiptEmailErrorMessages[code]
 /// Einen unbekannten Code faengt der allgemeine Storno-Satz auf.
 String cancellationPaymentErrorMessage(String? code) =>
     cancellationPaymentErrorMessages[code] ?? 'cancellation.failed';
+
+/// Der Satz zu einem Gutschein-`code` des Backends (`/v3`); `null` fuer jeden
+/// anderen Code, der dann den allgemeinen Weg des Aufrufs geht. Wie beim
+/// E-Mail-Versand entscheiden beide Kassen am Code, nie am Wortlaut.
+String? voucherErrorMessage(String? code) => code == null ? null : voucherErrorMessages[code];

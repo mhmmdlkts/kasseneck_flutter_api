@@ -44,6 +44,8 @@ Map<String, dynamic> _params(String fall) =>
 /// npm. Hier von Hand: ein neuer Aufruf in [Aufrufe.alle] muss bewusst
 /// eingeordnet werden, sonst wird der Waechter rot.
 const Set<String> _lesen = {
+  // Zaehlt am Server gegen die Versuchsgrenze (too_many_voucher_checks), aendert aber nichts am Gutschein.
+  'checkVoucher',
   'downloadDailyReport',
   'downloadReport',
   'getCashregisterReport',
@@ -107,6 +109,8 @@ const Set<String> _wiederholbar = {
   'registerPinLogin',
   'registerUserLogin',
   'renewRegisterSession',
+  // Liefert denselben Code noch einmal; ein zweiter Aufruf aendert nichts.
+  'reprintVoucherLabel',
 };
 
 const _kennzeichen = {'kasseneck-api-version': 'v3'};

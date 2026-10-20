@@ -23,6 +23,8 @@
 /// Einstellung verloren.
 library;
 
+import 'gutschein.dart' show PosVoucherSettings;
+
 // ------------------------------------------------------------------ Enums
 
 /// Gemeinsame Sicht auf die Aufzählungen der Einstellungen: [value] ist der
@@ -884,15 +886,23 @@ class PosDeviceSettings {
 // ------------------------------------------------------------------ Ganzes
 
 class PosSettings {
-  const PosSettings({required this.business, required this.device});
+  const PosSettings({required this.business, required this.device, this.vouchers = PosVoucherSettings.off});
 
   /// Die Standardwerte, deckungsgleich mit Backend und Browser-Kasse.
   const PosSettings.standard()
       : business = const PosBusinessSettings(),
-        device = const PosDeviceSettings();
+        device = const PosDeviceSettings(),
+        vouchers = PosVoucherSettings.off;
 
   final PosBusinessSettings business;
   final PosDeviceSettings device;
+
+  /// Gutschein-Verkauf der Kasse (Block `vouchers` aus `getKasseSettings`).
+  /// Ohne Block oder bei einem unstimmigen Block ist Verkaufen aus
+  /// ([PosVoucherSettings.fromJson], geschlossen im Zweifel). Er gehoert nicht
+  /// zu den Standardwerten (`pos-settings-defaults.json`): der Server setzt
+  /// ihn allein, die Kasse schreibt ihn nie.
+  final PosVoucherSettings vouchers;
 
   /// Standard + Gespeichertes in der Drahtform `{business, device}`. Was
   /// fehlt, bleibt beim Standard; ein Schlüssel, den der Standard nicht
@@ -940,10 +950,18 @@ class PosSettings {
     return PosSettings(
       business: PosBusinessSettings.fromJson(teil('business', 'betrieb', legacyBusinessKeys)),
       device: PosDeviceSettings.fromJson(teil('device', 'geraet', legacyDeviceKeys)),
+      vouchers: PosVoucherSettings.fromJson(roh['vouchers']),
     );
   }
 
-  Map<String, dynamic> toJson() => {'business': business.toJson(), 'device': device.toJson()};
+  /// `{business, device}`, dazu `vouchers` nur, wenn der Block vom Standard
+  /// (Verkaufen aus) abweicht: ein Stand ohne Gutschein-Einstellung bleibt
+  /// so Byte fuer Byte, wie er bis 11.2 gespeichert wurde.
+  Map<String, dynamic> toJson() => {
+        'business': business.toJson(),
+        'device': device.toJson(),
+        if (vouchers != PosVoucherSettings.off) 'vouchers': vouchers.toJson(),
+      };
 }
 
 // ------------------------------------------- Wertemengen, Aenderungen, Pruefung

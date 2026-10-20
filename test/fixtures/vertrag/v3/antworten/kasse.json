@@ -2,10 +2,10 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "439a8bfac209333ab769a4c7133507a1730267eff4021cc9bdcf39d25805b94d",
+      "sha256": "016031af787794cf6e72932fd203138b45b7a758510af990475d9f68d35ac556",
       "head": [],
-      "inputsSha256": "3b6c5c73af674b969019c273f50068879923cee243dafa490e0c7335107c4e79",
-      "backendPackage": "@kreiseck/kasseneck-api@0.33.0",
+      "inputsSha256": "684e236f4e84e7befba5ebda44021eefc4de50a6f2507cf4de5b456e9a2ed790",
+      "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
         "functions/gemeinsam/api-rand.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "6732e8ca04bca3d4bc7574bb382613f966053e239e0c2c53126d99613d79dd18",
+      "sha256": "d4cf64a3983e96e272d2934a4e9d0e17752ce772ef817d91836593419a680e1c",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "88ae97429f7c74025f6549ac46a0db291a0407bd070e875cc93c2fc3d3f1d6d3",
+      "inputsSha256": "1efd9f548d9b578193c3dbf4aae041f4ffaa1adcaba01a7c5e2df7ba882efa94",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -3458,7 +3458,10 @@
                   "drawer": true,
                   "discount": true,
                   "tipAssign": true,
-                  "receiptsScope": "all"
+                  "receiptsScope": "all",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": true
                 }
               }
             }
@@ -3504,7 +3507,10 @@
                   "drawer": true,
                   "discount": true,
                   "tipAssign": true,
-                  "receiptsScope": "all"
+                  "receiptsScope": "all",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": true
                 }
               }
             }
@@ -3592,7 +3598,10 @@
                   "drawer": false,
                   "discount": true,
                   "tipAssign": false,
-                  "receiptsScope": "own"
+                  "receiptsScope": "own",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": false
                 }
               }
             }
@@ -3641,7 +3650,10 @@
                   "drawer": true,
                   "discount": true,
                   "tipAssign": true,
-                  "receiptsScope": "all"
+                  "receiptsScope": "all",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": true
                 }
               }
             }
@@ -3992,7 +4004,10 @@
                   "drawer": false,
                   "discount": true,
                   "tipAssign": false,
-                  "receiptsScope": "own"
+                  "receiptsScope": "own",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": false
                 }
               }
             }
@@ -4088,7 +4103,10 @@
                   "drawer": true,
                   "discount": true,
                   "tipAssign": true,
-                  "receiptsScope": "all"
+                  "receiptsScope": "all",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": true
                 }
               }
             }
@@ -4127,7 +4145,10 @@
                   "drawer": false,
                   "discount": true,
                   "tipAssign": false,
-                  "receiptsScope": "own"
+                  "receiptsScope": "own",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": false
                 }
               }
             }
@@ -4181,7 +4202,10 @@
                   "drawer": false,
                   "discount": true,
                   "tipAssign": false,
-                  "receiptsScope": "own"
+                  "receiptsScope": "own",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": false
                 }
               }
             }
@@ -4224,7 +4248,10 @@
                   "drawer": false,
                   "discount": true,
                   "tipAssign": false,
-                  "receiptsScope": "own"
+                  "receiptsScope": "own",
+                  "voucherSell": true,
+                  "voucherRedeem": true,
+                  "voucherManage": false
                 }
               }
             }
@@ -10515,6 +10542,11 @@
                 "terminalVia": "direct",
                 "terminalType": "none",
                 "shortcutHints": true
+              },
+              "vouchers": {
+                "sale": false,
+                "valueVoucherType": null,
+                "vatRateBp": null
               }
             }
           }
@@ -10681,6 +10713,11 @@
                 "terminalVia": "direct",
                 "terminalType": "none",
                 "shortcutHints": true
+              },
+              "vouchers": {
+                "sale": false,
+                "valueVoucherType": null,
+                "vatRateBp": null
               }
             }
           }
@@ -10885,6 +10922,11 @@
                 "terminalVia": "direct",
                 "terminalType": "none",
                 "shortcutHints": true
+              },
+              "vouchers": {
+                "sale": false,
+                "valueVoucherType": null,
+                "vatRateBp": null
               }
             }
           }
@@ -11051,6 +11093,11 @@
                 "terminalVia": "direct",
                 "terminalType": "none",
                 "shortcutHints": true
+              },
+              "vouchers": {
+                "sale": false,
+                "valueVoucherType": null,
+                "vatRateBp": null
               }
             }
           }
@@ -11217,6 +11264,11 @@
                 "terminalVia": "direct",
                 "terminalType": "none",
                 "shortcutHints": true
+              },
+              "vouchers": {
+                "sale": false,
+                "valueVoucherType": null,
+                "vatRateBp": null
               }
             }
           }
@@ -16927,6 +16979,561 @@
               "code": "idempotency_conflict"
             },
             "code": "idempotency_conflict"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "checkVoucher": {
+      "codebase": "default",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "code": "B1KK5EQ57DHP",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "code_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: code",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "code",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "check_digit_wrong",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "code": "B1KK5EQ57DH0",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Gutscheincode ist ungültig.",
+            "data": {
+              "code": "voucher_invalid_code"
+            },
+            "code": "voucher_invalid_code"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "code": "B1KK5EQ57DKJ",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diesen Gutschein gibt es nicht.",
+            "data": {
+              "code": "voucher_not_found"
+            },
+            "code": "voucher_not_found"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "code": "b1kk-5eq5-7dhp",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "type": "multi_purpose",
+              "status": "active",
+              "balanceCents": 3200,
+              "faceValueCents": 5000,
+              "validity": {
+                "pattern": "1+3",
+                "redeemableUntil": "2027-09-20",
+                "refundableUntil": "2030-09-20",
+                "validUntil": null
+              },
+              "codeSuffix": "7DHP"
+            }
+          }
+        },
+        {
+          "case": "success_service",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "code": "B1KK5EQ57DJG",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "type": "service",
+              "status": "active",
+              "faceValueCents": 10500,
+              "quantity": 3,
+              "remainingQuantity": 2,
+              "vatRateBp": 2000,
+              "article": {
+                "id": "art_mani",
+                "name": "Manikuere",
+                "vatRateBp": 2000,
+                "priceCents": 3500
+              },
+              "validity": {
+                "pattern": "unlimited",
+                "redeemableUntil": null,
+                "refundableUntil": null,
+                "validUntil": null
+              },
+              "codeSuffix": "7DJG"
+            }
+          }
+        },
+        {
+          "case": "success_exempt",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "code": "B1KK5EQ57DMW",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "type": "single_purpose",
+              "status": "active",
+              "balanceCents": 4000,
+              "faceValueCents": 4000,
+              "vatRateBp": 0,
+              "validity": {
+                "pattern": "unlimited",
+                "redeemableUntil": null,
+                "refundableUntil": null,
+                "validUntil": null
+              },
+              "codeSuffix": "7DMW",
+              "exempt": true
+            }
+          }
+        },
+        {
+          "case": "success_device",
+          "method": "POST",
+          "caller": "device_api_key",
+          "params": {
+            "code": "B1KK5EQ57DHP"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "type": "multi_purpose",
+              "status": "active",
+              "balanceCents": 3200,
+              "faceValueCents": 5000,
+              "validity": {
+                "pattern": "1+3",
+                "redeemableUntil": "2027-09-20",
+                "refundableUntil": "2030-09-20",
+                "validUntil": null
+              },
+              "codeSuffix": "7DHP"
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "reprintVoucherLabel": {
+      "codebase": "default",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "id": "gmz1",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "id_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: id",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "id",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "id": "gmz1",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Dafür fehlt die Berechtigung.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "id": "gxx9",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diesen Gutschein gibt es nicht.",
+            "data": {
+              "code": "voucher_not_found"
+            },
+            "code": "voucher_not_found"
+          }
+        },
+        {
+          "case": "cancelled",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "id": "gmz1",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Gutschein wurde storniert.",
+            "data": {
+              "code": "voucher_cancelled"
+            },
+            "code": "voucher_cancelled"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "id": "gmz1",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "code": "B1KK-5EQ5-7DHP",
+              "voucher": {
+                "id": "gmz1",
+                "status": "active",
+                "code": "····-····-7DHP",
+                "type": "multi_purpose",
+                "codeSuffix": "7DHP",
+                "faceValueCents": 5000,
+                "balanceCents": 3200,
+                "vatRateBp": null,
+                "smallBusiness": false,
+                "salePaymentMethod": "cash",
+                "validity": {
+                  "pattern": "1+3",
+                  "redeemableUntil": "2027-09-20",
+                  "refundableUntil": "2030-09-20",
+                  "validUntil": null
+                },
+                "issue": {
+                  "receiptId": "KASSE1-ID-9",
+                  "fullReceiptId": null,
+                  "cashregisterId": "KASSE1",
+                  "at": 1790323200000,
+                  "day": "2026-09-20"
+                },
+                "print": {
+                  "count": 1,
+                  "lastAt": 1790409600000
+                },
+                "createdAt": 1790323200000,
+                "updatedAt": 1790409600000
+              }
+            }
+          }
+        },
+        {
+          "case": "success_service",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "id": "gls1",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "code": "B1KK-5EQ5-7DJG",
+              "voucher": {
+                "id": "gls1",
+                "status": "active",
+                "code": "····-····-7DJG",
+                "type": "service",
+                "codeSuffix": "7DJG",
+                "faceValueCents": 10500,
+                "vatRateBp": 2000,
+                "article": {
+                  "id": "art_mani",
+                  "name": "Manikuere",
+                  "vatRateBp": 2000,
+                  "priceCents": 3500
+                },
+                "quantity": 3,
+                "remainingQuantity": 2,
+                "smallBusiness": false,
+                "salePaymentMethod": "cash",
+                "validity": {
+                  "pattern": "unlimited",
+                  "redeemableUntil": null,
+                  "refundableUntil": null,
+                  "validUntil": null
+                },
+                "issue": {
+                  "receiptId": "KASSE1-ID-8",
+                  "fullReceiptId": null,
+                  "cashregisterId": "KASSE1",
+                  "at": 1790323200000,
+                  "day": "2026-09-20"
+                },
+                "print": {
+                  "count": 1,
+                  "lastAt": 1790409600000
+                },
+                "createdAt": 1790323200000,
+                "updatedAt": 1790409600000
+              }
+            }
+          }
+        },
+        {
+          "case": "success_device",
+          "method": "POST",
+          "caller": "device_api_key",
+          "params": {
+            "id": "gmz1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "code": "B1KK-5EQ5-7DHP",
+              "voucher": {
+                "id": "gmz1",
+                "status": "active",
+                "code": "····-····-7DHP",
+                "type": "multi_purpose",
+                "codeSuffix": "7DHP",
+                "faceValueCents": 5000,
+                "balanceCents": 3200,
+                "vatRateBp": null,
+                "smallBusiness": false,
+                "salePaymentMethod": "cash",
+                "validity": {
+                  "pattern": "1+3",
+                  "redeemableUntil": "2027-09-20",
+                  "refundableUntil": "2030-09-20",
+                  "validUntil": null
+                },
+                "issue": {
+                  "receiptId": "KASSE1-ID-9",
+                  "fullReceiptId": null,
+                  "cashregisterId": "KASSE1",
+                  "at": 1790323200000,
+                  "day": "2026-09-20"
+                },
+                "print": {
+                  "count": 1,
+                  "lastAt": 1790409600000
+                },
+                "createdAt": 1790323200000,
+                "updatedAt": 1790409600000
+              }
+            }
           }
         },
         {

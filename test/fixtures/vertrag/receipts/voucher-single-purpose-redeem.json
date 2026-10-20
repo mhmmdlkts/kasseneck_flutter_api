@@ -1,0 +1,71 @@
+{
+  "company": {
+    "companyName": "Melisse Nails e.U.",
+    "street": "Melissenweg 7",
+    "zip": "1070",
+    "city": "Wien",
+    "phone": "+43 1 2345678",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Danke für Ihren Besuch",
+    "footer2": "",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-70",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-10-19T10:15:30",
+    "items": [
+      {
+        "name": "Maniküre",
+        "quantity": 1,
+        "unitPriceCents": 3500,
+        "vatRate": 20
+      },
+      {
+        "name": "Gutschein ····-9DWT",
+        "quantity": 1,
+        "unitPriceCents": -3050,
+        "vatRate": 20,
+        "kind": "voucher"
+      }
+    ],
+    "vouchers": [
+      {
+        "action": "redeem",
+        "type": "single_purpose",
+        "voucherType": "single_purpose",
+        "amountCents": 3050,
+        "vatRateBp": 2000,
+        "balanceAfterCents": 1950,
+        "taxedWith": "K1-ID-4711",
+        "name": "Gutschein",
+        "code": "····-····-9DWT",
+        "codeSuffix": "9DWT",
+        "voucherId": "gez1"
+      }
+    ],
+    "paymentMethod": "cash",
+    "payments": [
+      {
+        "id": "p1",
+        "method": "cash",
+        "amountCents": 450
+      }
+    ],
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-70_2026-10-19T10:15:30_4,50_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": []
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

@@ -126,6 +126,9 @@ abstract final class Aufrufe {
   static const logMyDrawerOpenings = 'logMyDrawerOpenings';
   static const getMyShiftReport = 'getMyShiftReport';
   static const closeMyShift = 'closeMyShift';
+  // Gutschein pruefen und Etikett nachdrucken an der Kasse (pos.dart).
+  static const checkVoucher = 'checkVoucher';
+  static const reprintVoucherLabel = 'reprintVoucherLabel';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -237,5 +240,7 @@ abstract final class Aufrufe {
     logMyDrawerOpenings,
     getMyShiftReport,
     closeMyShift,
+    checkVoucher,
+    reprintVoucherLabel,
   };
 }

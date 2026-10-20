@@ -1,0 +1,25 @@
+       Melisse Nails e.U.       
+         Melissenweg 7          
+           1070 Wien            
+          ATU12345675           
+         +43 1 2345678          
+                                
+Datum:       19.10.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-73
+                                
+1  x Gelnägel            22,40 A
+                                
+MwSt%   MwSt      Netto   Brutto
+A 20%   3,73      18,67    22,40
+--------------------------------
+Zwischensumme            22,40 €
+Gutschein ····-5KNZ     -17,50 €
+  Rest am Gutschein      32,50 €
+--------------------------------
+Gesamt:                   4,90 €
+Zahlungsart:          Barzahlung
+                                
+           [QR-Code]            
+                                
+     Danke für Ihren Besuch     

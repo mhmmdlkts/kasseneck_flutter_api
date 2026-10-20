@@ -22,8 +22,11 @@ import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/printable.dart' show printableText;
 import '../src/printing/qr_groesse.dart';
 import '../src/receipt/aufdruck.dart' show belegartBlock, warnrahmen;
+import '../src/receipt/einzug.dart';
+import '../src/receipt/gutschein_bon.dart';
 import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
+import 'receipt_grid.dart' show wrapWords;
 
 import 'keck_voucher.dart';
 
@@ -436,24 +439,37 @@ class PrintPaper {
     addFeed();
 
     Map<VatRate, List<KasseneckItem>> itemsByVat = {};
-    for (KasseneckItem item in receipt.items) {
+    // Gutscheine der neuen Form stehen als Position (Spec 2026-10-14): die
+    // Zeilen dazu wie im Server-Layout, siehe gutschein_bon.dart.
+    final gutscheinZuordnung = voucherItemMatches(receipt.items, receipt.vouchers ?? const []);
+    for (final (i, item) in receipt.items.indexed) {
       if (itemsByVat[item.vat] == null) {
         itemsByVat[item.vat] = [];
       }
       itemsByVat[item.vat]!.add(item);
-      String amount = item.quantity.toString().padRight(2);
-      if (item.quantity
-          .toString()
-          .length > 2) {
-        amount += ' x';
-      } else {
-        amount += ' x ';
+      final String betrag = '${formatCents(item.totalCents)} ${item.vat.category}';
+      final gutschein = gutscheinZuordnung[i];
+      if (gutschein != null) {
+        for (final z in voucherItemLines(item, gutschein, amount: betrag, formatCents: formatCents)) {
+          switch (z) {
+            case VoucherBonItemLine():
+              _positionsZeile(item, z.name, betrag);
+            case VoucherBonPairLine():
+              addDoubleText(z.left, z.right, leftWidth: 8, rightWidth: 4);
+            case VoucherBonTextLine():
+              _einzugText(z.text);
+          }
+        }
+        continue;
       }
-      addDoubleText('$amount${item.name.check()}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', '${formatCents(item.totalCents)} ${item.vat.category}', leftWidth: 7, rightWidth: 5);
+      _positionsZeile(item, item.name, betrag);
     }
 
     int totalPromoVoucherValueCents = 0;
     for (KeckVoucher voucher in receipt.vouchers??[]) {
+      // Betrag steht als Position (Einzweck, Leistung, 0-%-Topf): weder Zeile
+      // noch 0-%-Zeile aus dem Eintrag, sonst zaehlte er doppelt.
+      if (voucherStandsAsItem(voucher)) continue;
       // Am Storno-Beleg wird ein verkaufter Wertgutschein zurueckgezahlt.
       final int vz = voucher.type == VoucherType.value ? receipt.valueVoucherSign : 1;
 
@@ -468,7 +484,11 @@ class PrintPaper {
       }
       if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
         String amount = '1  x ';
-        addDoubleText('$amount${voucher.receiptText}', '${formatCents(vz * (voucher.valueCents??0))} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
+        // Mehrzweck mit Code (vor dem Stichtag nur als Eintrag): wie die Position im 0-%-Topf.
+        final bool mehrzweck = isMultiPurposeWithCode(voucher);
+        final String text = mehrzweck ? 'Mehrzweckgutschein${voucherCodeSuffixText(voucher)}' : voucher.receiptText;
+        addDoubleText('$amount$text', '${formatCents(vz * (voucher.valueCents??0))} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
+        if (mehrzweck) _einzugText(multiPurposeVatNote);
       }
       if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
         // Am Storno-Beleg nur als Bezug: den Rabatt nimmt die Position
@@ -545,10 +565,13 @@ class PrintPaper {
       addDoubleText('Zwischensumme', '${formatCents(receipt.subSumCents)} EUR');
 
       for (KeckVoucher voucher in receipt.vouchers??[]) {
-        if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.value) {
-          // Am Storno-Beleg geht der Wert auf den Gutschein zurueck: ohne Minus.
-          final String wert = formatCents(voucher.valueCents??0);
-          addDoubleText(voucher.receiptText, receipt.valueVoucherSign == 1 ? '-$wert EUR' : '$wert EUR');
+        // Am Storno-Beleg geht der Wert auf den Gutschein zurueck: ohne Minus.
+        final zeilen = voucherPaymentLines(voucher, sign: receipt.valueVoucherSign, currency: 'EUR', formatCents: formatCents);
+        if (zeilen == null) continue;
+        // Altform wie bisher (6:6), Mehrzweck mit Code und Auszahlung 8:4 wie im Server-Layout.
+        final bool neu = isMultiPurposeWithCode(voucher) || voucher.action == VoucherAction.payout;
+        for (final z in zeilen) {
+          addDoubleText(z.left, z.right, leftWidth: neu ? 8 : 6, rightWidth: neu ? 4 : 6);
         }
       }
 
@@ -652,6 +675,27 @@ class PrintPaper {
       await addImage(brandMarkImage(paperSize).toRasterImage(), align: PosAlign.center);
     } catch (_) {
       // Branding darf den Druck nie verhindern.
+    }
+  }
+
+  /// Positionszeile des Rueckfalls (7:5): Menge, Name, Einzelpreis ab zwei Stueck.
+  void _positionsZeile(KasseneckItem item, String name, String betrag) {
+    String amount = item.quantity.toString().padRight(2);
+    if (item.quantity
+        .toString()
+        .length > 2) {
+      amount += ' x';
+    } else {
+      amount += ' x ';
+    }
+    addDoubleText('$amount${name.check()}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', betrag, leftWidth: 7, rightWidth: 5);
+  }
+
+  /// Linksbuendiger Text mit haengendem Einzug wie im Zeichenraster: der
+  /// Drucker braeche selbst ohne Einzug um, darum hier vorab je Zeile.
+  void _einzugText(String text) {
+    for (final t in wrapWithIndent(text, paperSize.defaultCharCount, wrapWords)) {
+      addText(t);
     }
   }
 

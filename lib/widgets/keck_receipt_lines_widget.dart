@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:kasseneck_api/models/receipt_layout.dart';
+import 'package:kasseneck_api/src/receipt/einzug.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 /// Veraltet: rechnet Spalten mit Flex und bricht anders um als das Papier;
@@ -77,7 +78,14 @@ class _KeckReceiptLinesWidgetState extends State<KeckReceiptLinesWidget> {
   Widget _zeile(LayoutLine z, int nummer) {
     switch (z) {
       case LayoutTextLine():
-        return Text(z.text, textAlign: _ta(z.align), style: _mono.copyWith(fontWeight: z.bold ? FontWeight.bold : FontWeight.normal));
+        final stil = _mono.copyWith(fontWeight: z.bold ? FontWeight.bold : FontWeight.normal);
+        // Haengender Einzug wie im Zeichenraster (npm 1.12.0, React-Zeile):
+        // fuehrende Leerzeichen eines linksbuendigen Textes werden zum Abstand
+        // links, damit auch die Folgezeilen eingerueckt stehen.
+        final einzug = z.align == LayoutAlign.left ? leadingIndent(z.text) : 0;
+        if (einzug == 0) return Text(z.text, textAlign: _ta(z.align), style: stil);
+        final breite = (TextPainter(text: TextSpan(text: ' ' * einzug, style: stil), textDirection: TextDirection.ltr)..layout()).width;
+        return Padding(padding: EdgeInsets.only(left: breite), child: Text(z.text.substring(einzug), textAlign: TextAlign.left, style: stil));
       case LayoutBannerLine():
         return Container(
           key: Key('keck-receipt-banner-${z.warning ? 'warnung' : 'belegart'}-$nummer'),

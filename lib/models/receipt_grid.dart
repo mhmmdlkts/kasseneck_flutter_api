@@ -15,6 +15,7 @@
 library;
 
 import 'package:kasseneck_api/models/receipt_layout.dart';
+import 'package:kasseneck_api/src/receipt/einzug.dart';
 
 const int charsPer58mm = 32;
 const int charsPer80mm = 48;
@@ -120,7 +121,12 @@ class ReceiptGrid {
     for (final z in layout.lines) {
       switch (z) {
         case LayoutTextLine():
-          for (final t in wrapWords(z.text, n)) {
+          // Haengender Einzug (wie renderReceiptGrid ab npm 1.12.0): ein
+          // linksbuendiger Text mit fuehrenden Leerzeichen (Vermerke unter
+          // einer Gutscheinzeile, "  Grund: ...") bricht mit demselben Einzug
+          // um. Bisherige Belege haben keinen solchen Text.
+          final teile = z.align == LayoutAlign.left ? wrapWithIndent(z.text, n, wrapWords) : wrapWords(z.text, n);
+          for (final t in teile) {
             out.add(GridLine(text: _ausrichten(t, n, z.align), kind: GridLineKind.text, bold: z.bold));
           }
         case LayoutBannerLine():

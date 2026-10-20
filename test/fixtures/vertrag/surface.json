@@ -1,5 +1,5 @@
 {
-  "version": "1.11.0",
+  "version": "1.12.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -99,7 +99,9 @@
       "recountStocktake",
       "closeStocktake",
       "cancelStocktake",
-      "getStocktakePdf"
+      "getStocktakePdf",
+      "orderSignatureCard",
+      "getSignatureCardOrder"
     ],
     "pos": [
       "cancelReceipt",
@@ -135,6 +137,8 @@
       "listMyStocktakeCounts",
       "recordMyStocktakeCount",
       "voidMyStocktakeCount",
+      "checkVoucher",
+      "reprintVoucherLabel",
       "getMyDrawerState",
       "openMyShift",
       "recordMyCashMovement",
@@ -249,7 +253,9 @@
       "recountStocktake",
       "closeStocktake",
       "cancelStocktake",
-      "getStocktakePdf"
+      "getStocktakePdf",
+      "orderSignatureCard",
+      "getSignatureCardOrder"
     ],
     "pos": [
       "pairRegisterDevice",
@@ -285,6 +291,8 @@
       "listMyStocktakeCounts",
       "recordMyStocktakeCount",
       "voidMyStocktakeCount",
+      "checkVoucher",
+      "reprintVoucherLabel",
       "getMyDrawerState",
       "openMyShift",
       "recordMyCashMovement",
@@ -325,6 +333,7 @@
     "issueInvoice",
     "logMyDrawerOpenings",
     "openMyShift",
+    "orderSignatureCard",
     "pairRegisterDevice",
     "receiveGoods",
     "recordInvoicePayment",
@@ -538,7 +547,10 @@
     "stockLoss",
     "stocktakeCount",
     "stocktakeClose",
-    "stockLocation"
+    "stockLocation",
+    "voucherSell",
+    "voucherRedeem",
+    "voucherManage"
   ],
   "registerErrorCodes": [
     "account_not_found",
@@ -797,6 +809,20 @@
       "store",
       "vehicle",
       "other"
+    ],
+    "voucherKinds": [
+      "multi_purpose",
+      "single_purpose",
+      "service",
+      "promotion"
+    ],
+    "voucherStatuses": [
+      "active",
+      "used_up",
+      "expired",
+      "paid_out",
+      "cancelled",
+      "blocked"
     ]
   },
   "partner": {
@@ -917,6 +943,7 @@
       "text_changed",
       "already_accepted",
       "activation_failed",
+      "activation_in_progress",
       "webhook_limit",
       "webhook_inactive",
       "event_not_subscribed"
@@ -975,7 +1002,10 @@
       "finanzonline",
       "automation_off",
       "test_environment",
-      "no_stock"
+      "no_stock",
+      "card_pool_activated",
+      "activation_run",
+      "finanzonline_completed"
     ],
     "webhookDeliveryStatuses": [
       "pending",

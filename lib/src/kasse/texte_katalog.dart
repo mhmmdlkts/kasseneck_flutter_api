@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.11.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.12.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.11.0';
+const String posTextsVersion = '1.12.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -96,6 +96,23 @@ const Map<String, PosText> posMessages = {
   'cancellation.tip_refund_missing': PosText('Bitte wählen: Trinkgeld auch zurückgeben?'),
   'cancellation.tip_source_missing': PosText('Bitte wählen: Woher kommt das Trinkgeld zurück?'),
   'cancellation.tip_refunded_with_voucher': PosText('Beleg mit Gutschein: Das Trinkgeld wird mitstorniert.'),
+  'voucher_error.not_found': PosText('Diesen Gutschein gibt es in diesem Betrieb nicht.'),
+  'voucher_error.invalid': PosText('Dieser Gutschein ist nicht gültig.'),
+  'voucher_error.invalid_code': PosText('Der Code ist nicht vollständig oder falsch abgetippt.'),
+  'voucher_error.expired': PosText('Der Gutschein ist abgelaufen.'),
+  'voucher_error.used_up': PosText('Der Gutschein ist bereits aufgebraucht.'),
+  'voucher_error.blocked': PosText('Der Gutschein ist gesperrt.'),
+  'voucher_error.cancelled': PosText('Der Gutschein wurde storniert.'),
+  'voucher_error.insufficient_balance': PosText('Auf dem Gutschein ist nicht genug Guthaben.'),
+  'voucher_error.exceeds_total': PosText('Der Gutschein deckt mehr, als offen ist. Bitte den Betrag anpassen.'),
+  'voucher_error.balance_changed': PosText('Der Gutschein wurde gerade anderswo verwendet. Bitte neu prüfen.'),
+  'voucher_error.rate_mismatch': PosText('Dieser Gutschein gilt nur für Leistungen mit {rate} %.', placeholders: ['rate']),
+  'voucher_error.item_mismatch': PosText('Dieser Gutschein gilt nicht für die gewählten Positionen.'),
+  'voucher_error.already_used': PosText('Dieser Gutschein wurde bereits verwendet.'),
+  'voucher_error.partial_cancel': PosText('Belege mit Gutschein lassen sich nur ganz stornieren.'),
+  'voucher_error.settings_missing': PosText('Die Gutschein-Einstellungen fehlen. Bitte die Kasse neu laden.'),
+  'voucher_error.too_many_checks': PosText('Zu viele Versuche. Bitte in einer Stunde wieder.'),
+  'voucher_error.sale_off': PosText('Gutscheine verkaufen geht hier noch nicht.'),
   'split.setting_hint': PosText('Ein Tisch zahlt in Teilen: jede Zahlung bar oder mit Karte, mit eigenem Trinkgeld – am Ende ein Beleg für alles.'),
   'split.amount_over_open': PosText('Der Betrag ist höher als offen – höchstens {amount}.', placeholders: ['amount']),
   'split.tip_over_amount': PosText('Das Trinkgeld ist höher als der Betrag dieser Zahlung.'),
@@ -418,6 +435,29 @@ const Map<String, PosText> posLabels = {
   'shift.collected_outside_drawer': PosText('Kassiert, aber nicht in der Kassenlade'),
   'shift.non_cash_short': PosText('unbar'),
   'shift.voucher_redeemed': PosText('Gutschein eingelöst'),
+  'voucher.button': PosText('Gutschein'),
+  'voucher.redeem': PosText('Gutschein einlösen'),
+  'voucher.sell': PosText('Gutschein verkaufen'),
+  'voucher.payout': PosText('Gutschein auszahlen'),
+  'voucher.code': PosText('Code'),
+  'voucher.scan': PosText('Code scannen'),
+  'voucher.check': PosText('Prüfen'),
+  'voucher.amount': PosText('Betrag'),
+  'voucher.balance': PosText('Rest am Gutschein: {amount}', placeholders: ['amount']),
+  'voucher.remaining_quantity': PosText('{n} von {total} übrig', placeholders: ['n', 'total']),
+  'voucher.reason': PosText('Grund'),
+  'voucher.multi_purpose': PosText('Mehrzweckgutschein'),
+  'voucher.single_purpose': PosText('Einzweckgutschein {rate} %', placeholders: ['rate']),
+  'voucher.service': PosText('Leistungsgutschein'),
+  'voucher.promotion': PosText('Aktionsgutschein'),
+  'voucher.payment_line': PosText('Gutschein ····-{suffix}', placeholders: ['suffix']),
+  'voucher.covers_items': PosText('Deckt: {items}', placeholders: ['items']),
+  'voucher.code_shown_once': PosText('Code nur jetzt sichtbar: {code}', placeholders: ['code']),
+  'voucher.not_in_split': PosText('Gutscheine gehen beim getrennten Kassieren nicht.'),
+  'voucher.payout_not_possible': PosText('Dieser Gutschein lässt sich nicht auszahlen.'),
+  'voucher.add_article': PosText('{article} hinzufügen', placeholders: ['article']),
+  'voucher.payout_confirm': PosText('{amount} bar auszahlen?', placeholders: ['amount']),
+  'cancellation.voucher_back': PosText('{amount} geht zurück auf den Gutschein', placeholders: ['amount']),
   'shift.all_payments': PosText('Alle Zahlungen dieser Schicht (bar + unbar)'),
   'shift.receipt_count_one': PosText('1 Beleg'),
   'shift.receipt_count_other': PosText('{count} Belege', placeholders: ['count']),
@@ -527,6 +567,26 @@ const Map<String, String> cancellationPaymentErrorMessages = {
   'cancellation_refund_reference_unknown': 'cancellation.refund_reference_unknown',
   'payments_sum_mismatch': 'cancellation.sum_mismatch',
   'cancellation_outcome_unknown': 'cancellation.outcome_unknown',
+};
+
+/// Gutschein-Fehler (`/v3`): Code des Backends -> Schluessel des Satzes; siehe [voucherErrorMessage].
+const Map<String, String> voucherErrorMessages = {
+  'voucher_not_found': 'voucher_error.not_found',
+  'voucher_invalid': 'voucher_error.invalid',
+  'voucher_invalid_code': 'voucher_error.invalid_code',
+  'voucher_expired': 'voucher_error.expired',
+  'voucher_used_up': 'voucher_error.used_up',
+  'voucher_blocked': 'voucher_error.blocked',
+  'voucher_cancelled': 'voucher_error.cancelled',
+  'voucher_insufficient_balance': 'voucher_error.insufficient_balance',
+  'voucher_exceeds_total': 'voucher_error.exceeds_total',
+  'voucher_balance_changed': 'voucher_error.balance_changed',
+  'voucher_rate_mismatch': 'voucher_error.rate_mismatch',
+  'voucher_item_mismatch': 'voucher_error.item_mismatch',
+  'voucher_already_used': 'voucher_error.already_used',
+  'voucher_partial_cancel': 'voucher_error.partial_cancel',
+  'voucher_settings_missing': 'voucher_error.settings_missing',
+  'too_many_voucher_checks': 'voucher_error.too_many_checks',
 };
 
 /// Rueckgabe beim Storno: Wahl (`restock`, `defective`, `disposed`) -> Schluessel der Beschriftung.

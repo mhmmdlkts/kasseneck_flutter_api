@@ -264,6 +264,9 @@ class RegisterUserPerms {
     this.stocktakeCount = false,
     this.stocktakeClose = false,
     this.stockLocation = false,
+    this.voucherSell,
+    this.voucherRedeem,
+    this.voucherManage,
     this.cancelScope = RegisterScope.none,
     this.receiptsScope = RegisterScope.all,
     this.other = const {},
@@ -326,6 +329,19 @@ class RegisterUserPerms {
   /// Standort der Kasse waehlen (`setMyCashregisterStockLocation`).
   final bool stockLocation;
 
+  /// Gutschein verkaufen. `null`, wenn der Schluessel fehlt (alter Server);
+  /// entschieden wird ueber [voucherPermsOf], nicht an diesem Feld.
+  final bool? voucherSell;
+
+  /// Gutschein einloesen (`checkVoucher`, Einloesung beim Kassieren).
+  /// `null`, wenn der Schluessel fehlt; siehe [voucherPermsOf].
+  final bool? voucherRedeem;
+
+  /// Gutscheine verwalten, etwa das Etikett nachdrucken
+  /// (`reprintVoucherLabel`). `null`, wenn der Schluessel fehlt; siehe
+  /// [voucherPermsOf].
+  final bool? voucherManage;
+
   /// Storno-Reichweite; fehlt sie (Altbestand), entscheidet [cancel].
   final RegisterScope cancelScope;
 
@@ -373,6 +389,14 @@ class RegisterUserPerms {
         return stocktakeClose;
       case 'stockLocation':
         return stockLocation;
+      // Der Rohwert wie bei stockView; die Vorgabe fuer einen fehlenden
+      // Schluessel kennt [voucherPermsOf].
+      case 'voucherSell':
+        return voucherSell ?? false;
+      case 'voucherRedeem':
+        return voucherRedeem ?? false;
+      case 'voucherManage':
+        return voucherManage ?? false;
       default:
         return other[name] ?? false;
     }
@@ -384,6 +408,40 @@ class RegisterUserPerms {
 /// `false` sperrt; alle anderen Lager-Rechte gelten ohne Schluessel als
 /// verweigert. Ohne Rechte ([perms] `null`) nichts.
 bool stockViewOf(RegisterUserPerms? perms) => perms != null && (perms.stockView ?? true);
+
+/// Die drei Gutschein-Rechte, aufgeloest (kein Schluessel fehlt mehr).
+class VoucherPerms {
+  const VoucherPerms({required this.voucherSell, required this.voucherRedeem, required this.voucherManage});
+
+  final bool voucherSell;
+  final bool voucherRedeem;
+  final bool voucherManage;
+
+  @override
+  bool operator ==(Object other) =>
+      other is VoucherPerms &&
+      other.voucherSell == voucherSell &&
+      other.voucherRedeem == voucherRedeem &&
+      other.voucherManage == voucherManage;
+
+  @override
+  int get hashCode => Object.hash(voucherSell, voucherRedeem, voucherManage);
+
+  @override
+  String toString() => 'VoucherPerms(sell: $voucherSell, redeem: $voucherRedeem, manage: $voucherManage)';
+}
+
+/// Gutschein-Rechte lesen. Das Backend loest sie bei der Anmeldung auf; ein
+/// alter Server kennt sie nicht. Dann gilt je fehlendem Schluessel die
+/// Vorgabe des Kassiers: verkaufen und einloesen ja, verwalten nein. Ein
+/// ausdrueckliches `false` sperrt (beim Lesen wird jeder Wert ausser `true`
+/// zu `false`). Zwilling von `voucherPermsOf` im npm-Paket; ohne Rechte
+/// ([perms] `null`) gilt wie dort die Vorgabe.
+VoucherPerms voucherPermsOf(RegisterUserPerms? perms) => VoucherPerms(
+      voucherSell: perms?.voucherSell ?? true,
+      voucherRedeem: perms?.voucherRedeem ?? true,
+      voucherManage: perms?.voucherManage ?? false,
+    );
 
 /// Der angemeldete Kassen-Benutzer.
 class RegisterUser {
@@ -822,6 +880,7 @@ RegisterUserPerms _rechte(Object? wert) {
     'sell', 'cancel', 'articles', 'layout', 'reports', 'takeover',
     'drawer', 'discount', 'tipAssign', 'cancelScope', 'receiptsScope',
     'stockView', 'stockCosts', 'stockMove', 'stockLoss', 'stocktakeCount', 'stocktakeClose', 'stockLocation',
+    'voucherSell', 'voucherRedeem', 'voucherManage',
   };
   final weitere = <String, bool>{};
   for (final eintrag in roh.entries) {
@@ -847,6 +906,11 @@ RegisterUserPerms _rechte(Object? wert) {
     stocktakeCount: roh['stocktakeCount'] == true,
     stocktakeClose: roh['stocktakeClose'] == true,
     stockLocation: roh['stockLocation'] == true,
+    // Wie stockView: vorhanden zaehlt nur `true`, fehlend bleibt offen (null);
+    // die Vorgabe des Kassiers steht in voucherPermsOf.
+    voucherSell: roh.containsKey('voucherSell') ? roh['voucherSell'] == true : null,
+    voucherRedeem: roh.containsKey('voucherRedeem') ? roh['voucherRedeem'] == true : null,
+    voucherManage: roh.containsKey('voucherManage') ? roh['voucherManage'] == true : null,
     // Altbestand ohne Reichweite: der Schalter entscheidet (so migriert es auch
     // das Backend, register-auth.js).
     cancelScope: roh.containsKey('cancelScope') ? _scope(roh['cancelScope']) : (cancel ? RegisterScope.all : RegisterScope.none),

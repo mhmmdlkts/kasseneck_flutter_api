@@ -1,0 +1,24 @@
+               Melisse Nails e.U.               
+                 Melissenweg 7                  
+                   1070 Wien                    
+                  ATU12345675                   
+                 +43 1 2345678                  
+                                                
+Datum:                       19.10.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-70
+                                                
+1  x Maniküre                            35,00 A
+Gutschein ····-9DWT                     -30,50 A
+  Einzweck, versteuert mit Beleg K1-ID-4711     
+  Rest am Gutschein                      19,50  
+                                                
+MwSt%       MwSt            Netto         Brutto
+A 20%       0,75            3,75            4,50
+------------------------------------------------
+Gesamt:                                   4,50 €
+Zahlungsart:                          Barzahlung
+                                                
+                   [QR-Code]                    
+                                                
+             Danke für Ihren Besuch             

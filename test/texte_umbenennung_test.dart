@@ -66,6 +66,12 @@ const _nach10 = (
     'shift.change_float_missing',
     // Abmelden mit vollem Warenkorb (11.2.0)
     'logout.cart_cleared',
+    // Gutscheine an der Kasse (11.3.0, npm 1.12.0)
+    'voucher_error.not_found', 'voucher_error.invalid', 'voucher_error.invalid_code', 'voucher_error.expired',
+    'voucher_error.used_up', 'voucher_error.blocked', 'voucher_error.cancelled', 'voucher_error.insufficient_balance',
+    'voucher_error.exceeds_total', 'voucher_error.balance_changed', 'voucher_error.rate_mismatch',
+    'voucher_error.item_mismatch', 'voucher_error.already_used', 'voucher_error.partial_cancel',
+    'voucher_error.settings_missing', 'voucher_error.too_many_checks', 'voucher_error.sale_off',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -128,14 +134,22 @@ const _nach10 = (
     'shift.counted', 'shift.back', 'shift.done', 'shift.edit_amount',
     // Ein- und Auszahlungen getrennt im Kassenstand, Betrag im Buchungsknopf (11.2.0)
     'shift.pay_ins', 'shift.pay_outs', 'cash_movement.pay_in_amount', 'cash_movement.pay_out_amount',
+    // Gutscheine an der Kasse (11.3.0, npm 1.12.0)
+    'voucher.button', 'voucher.redeem', 'voucher.sell', 'voucher.payout', 'voucher.code', 'voucher.scan',
+    'voucher.check', 'voucher.amount', 'voucher.balance', 'voucher.remaining_quantity', 'voucher.reason',
+    'voucher.multi_purpose', 'voucher.single_purpose', 'voucher.service', 'voucher.promotion',
+    'voucher.payment_line', 'voucher.covers_items', 'voucher.code_shown_once', 'voucher.not_in_split',
+    'voucher.payout_not_possible', 'voucher.add_article', 'voucher.payout_confirm', 'cancellation.voucher_back',
   },
-  fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'returnDispositionLabels'],
+  fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'voucherErrors', 'returnDispositionLabels'],
   placeholders: {
     'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type',
     // Kassenstand und Trinkgeld-Liste (11.2.0)
     'duration', 'days', 'hours', 'minutes',
     // Wechselgeld je Kassenlade (11.2.0)
     'title',
+    // Gutscheine an der Kasse (11.3.0)
+    'suffix', 'items', 'article',
   },
 );
 

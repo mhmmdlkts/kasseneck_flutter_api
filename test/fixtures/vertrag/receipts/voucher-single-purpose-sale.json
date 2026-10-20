@@ -1,0 +1,88 @@
+{
+  "company": {
+    "companyName": "Melisse Nails e.U.",
+    "street": "Melissenweg 7",
+    "zip": "1070",
+    "city": "Wien",
+    "phone": "+43 1 2345678",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Danke für Ihren Besuch",
+    "footer2": "",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-75",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-10-19T10:15:30",
+    "items": [
+      {
+        "name": "Einzweckgutschein 20 %",
+        "quantity": 1,
+        "unitPriceCents": 5000,
+        "vatRate": 20,
+        "kind": "voucher"
+      },
+      {
+        "name": "Leistungsgutschein 10× Maniküre",
+        "quantity": 1,
+        "unitPriceCents": 35000,
+        "vatRate": 20,
+        "kind": "voucher"
+      }
+    ],
+    "vouchers": [
+      {
+        "action": "sell",
+        "type": "single_purpose",
+        "voucherType": "single_purpose",
+        "amountCents": 5000,
+        "vatRateBp": 2000,
+        "name": "Einzweckgutschein 20 %",
+        "code": "····-····-JJJ2",
+        "codeSuffix": "JJJ2",
+        "voucherId": "gez3"
+      },
+      {
+        "action": "sell",
+        "type": "service",
+        "voucherType": "service",
+        "amountCents": 35000,
+        "vatRateBp": 2000,
+        "article": {
+          "id": "manicure",
+          "name": "Maniküre",
+          "vatRateBp": 2000,
+          "priceCents": 3500
+        },
+        "quantity": 10,
+        "name": "Leistungsgutschein 10× Maniküre",
+        "code": "····-····-RRRF",
+        "codeSuffix": "RRRF",
+        "voucherId": "gls1"
+      }
+    ],
+    "paymentMethod": "cash",
+    "payments": [
+      {
+        "id": "p1",
+        "method": "cash",
+        "amountCents": 40000
+      }
+    ],
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-75_2026-10-19T10:15:30_400,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": []
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

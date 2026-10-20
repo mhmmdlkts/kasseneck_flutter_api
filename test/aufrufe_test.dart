@@ -11,4 +11,10 @@ void main() {
     expect(Aufrufe.alle, contains(Aufrufe.listRegisterUsersForDevice));
     expect(Aufrufe.alle.length, greaterThanOrEqualTo(12));
   });
+
+  test('die Gutschein-Aufrufe der Kasse sind bekannt, die Signaturkarten-Bestellung nicht', () {
+    expect(Aufrufe.alle, containsAll([Aufrufe.checkVoucher, Aufrufe.reprintVoucherLabel]));
+    // Konto-Vorgang ohne Aufrufstelle hier: steht in zwillinge.yaml als nicht zutreffend.
+    expect(Aufrufe.alle, isNot(contains('orderSignatureCard')));
+  });
 }

@@ -1,0 +1,29 @@
+               Melisse Nails e.U.               
+                 Melissenweg 7                  
+                   1070 Wien                    
+                  ATU12345675                   
+                 +43 1 2345678                  
+                                                
+Datum:                       19.10.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-71
+                                                
+1  x Nagellack                           12,00 A
+1  x Handcreme                            8,00 B
+Gutschein ····-7KQM                      -9,00 A
+Gutschein ····-7KQM                      -6,00 B
+  Einzweck, befreit verkauft (Kleinunternehmer) 
+  Rest am Gutschein                       5,00  
+                                                
+MwSt%       MwSt        Netto             Brutto
+A 20%       0,50        2,50                3,00
+B 10%       0,18        1,82                2,00
+------------------------------------------------
+Gesamt:                                   5,00 €
+Zahlungsart:                          Barzahlung
+  Gegeben:                               10,00 €
+  Rückgeld:                               5,00 €
+                                                
+                   [QR-Code]                    
+                                                
+             Danke für Ihren Besuch             

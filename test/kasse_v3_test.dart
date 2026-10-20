@@ -12,6 +12,7 @@ import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/models/logo_raster.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/register.dart';
+import 'package:kreiseck_validator/kreiseck_validator.dart' show VoucherCode;
 
 /// Der Kassenweg `kasse.kasseneck.at/api/v3` gegen den Vertrags-Export des
 /// Backends (`v3/antworten/kasse.json`, erzeugt aus den echten Handlern).
@@ -52,6 +53,11 @@ const _inventur = [
 const _schicht = [
   'getMyDrawerState', 'openMyShift', 'recordMyCashMovement', 'logMyDrawerOpenings', 'getMyShiftReport', 'closeMyShift',
 ];
+
+/// Gutscheine der neuen Form (seit 11.3): pruefen und Etikett nachdrucken.
+/// Ihre fachlichen Codes (`voucher_*`) stehen nicht in `posErrorCodes`; die
+/// Saetze dazu fuehrt der Textkatalog (`voucher_error.*`).
+const _gutschein = ['checkVoucher', 'reprintVoucherLabel'];
 
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
@@ -365,6 +371,10 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
               : AfterCount(type: _s((p['afterCount'] as Map)['type']), amountCents: (p['afterCount'] as Map)['amountCents'] as int),
           checkOnly: p['checkOnly'] as bool? ?? false,
         );
+      case 'checkVoucher':
+        return belege.checkVoucher(_s(p['code']));
+      case 'reprintVoucherLabel':
+        return belege.reprintVoucherLabel(_s(p['id']));
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();
         return PosSettingsClient(transport, deviceId: _s(p['deviceId'])).load();
@@ -458,6 +468,11 @@ Map<String, dynamic> _soll(String endpunkt, Map<String, dynamic> fall) {
         },
     ];
   }
+  // Der Gutscheincode geht in Normalform hinaus (der Server nimmt beide
+  // Schreibweisen; aufgezeichnet ist die getippte).
+  if (endpunkt == 'checkVoucher' && p['code'] is String) {
+    p['code'] = VoucherCode.normalize(p['code'] as String);
+  }
   // Das Zeilenmodell geht in der Form von BelegLayout.toJson hinaus: ruleset
   // immer gesetzt, Standardwerte der Zeilen ausgeschrieben. Für ein Layout des
   // Servers (success_logo_qr) ist das dieselbe Form, siehe eigener Test.
@@ -522,7 +537,7 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
 
 void main() {
   group('jeder Fall des Kassenwegs', () {
-    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht]) {
+    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein]) {
       test(endpunkt, () async {
         var gelaufen = 0;
         for (final fall in _faelle(endpunkt)) {
@@ -547,8 +562,8 @@ void main() {
       }
     });
 
-    test('alle 39 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
-      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht};
+    test('alle 41 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein};
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });

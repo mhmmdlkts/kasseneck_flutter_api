@@ -66,7 +66,26 @@ void main() {
     expect(callsWithEffect, _vertrag['callsWithEffect']);
     expect(receiptEmailErrorMessages, _vertrag['receiptEmailErrors']);
     expect(cancellationPaymentErrorMessages, _vertrag['cancellationPaymentErrors']);
+    expect(voucherErrorMessages, _vertrag['voucherErrors']);
     expect(returnDispositionLabels, _vertrag['returnDispositionLabels']);
+  });
+
+  test('Gutschein-Fehler: jeder Gutschein-Code des /v3-Vokabulars hat einen Satz, sonst keiner (wie npm)', () {
+    final vokabular = jsonDecode(File('test/fixtures/vertrag/v3/v3-vokabular.json').readAsStringSync()) as Map<String, dynamic>;
+    final alle = (((vokabular['errorCodes'] as Map)['all']) as List).cast<String>();
+    final serverCodes = alle.where((c) => c.startsWith('voucher_') || c == 'too_many_voucher_checks').toList()..sort();
+    expect(serverCodes, isNotEmpty);
+    expect(voucherErrorMessages.keys.toList()..sort(), serverCodes);
+    for (final code in serverCodes) {
+      final key = voucherErrorMessage(code);
+      expect(key, isNotNull, reason: code);
+      expect(messageText(key!, {'rate': 20}), matches(RegExp(r'^[A-ZÄÖÜ].*[.!?]$')), reason: code);
+    }
+    expect(voucherErrorMessage('server_error'), isNull);
+    expect(voucherErrorMessage(null), isNull);
+    expect(messageText('voucher_error.rate_mismatch', {'rate': 10}), 'Dieser Gutschein gilt nur für Leistungen mit 10 %.');
+    expect(labelText('voucher.balance', {'amount': '4,00 €'}), 'Rest am Gutschein: 4,00 €');
+    expect(labelText('cancellation.voucher_back', {'amount': '30,50 €'}), '30,50 € geht zurück auf den Gutschein');
   });
 
   test('callsWithEffect steht gleich in surface.json (pos.callsWithEffect)', () {

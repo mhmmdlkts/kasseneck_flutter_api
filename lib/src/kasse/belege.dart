@@ -29,6 +29,10 @@ import '../lager/schreiben.dart' show anfragefehler, kennung, pruefeGanzzahlen, 
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'artikel.dart';
+import 'gutschein.dart' as gutschein show checkVoucher, reprintVoucherLabel;
+import 'gutschein.dart' show VoucherCheck;
+import 'gutschein_wunsch.dart';
+import '../../models/keck_voucher.dart';
 import '../../models/registration_info.dart';
 import 'belegmail.dart';
 import 'lager.dart';
@@ -386,6 +390,15 @@ class RegisterReceiptClient {
   /// `tip: {cents, keptByEmployee: true}` hinaus, sonst bleibt die Nutzlast
   /// Byte fuer Byte wie bisher. Der Server nimmt es nur bei Mitarbeiter-
   /// Trinkgeld, bar und sofort erhalten. Vorbelegung: [posTipKeptByDefault].
+  ///
+  /// [vouchers]: Gutscheine des Belegs (Altform oder neue Form: Mehrzweck,
+  /// Einzweck, Leistung, Aktion, Auszahlung). Gepruefte Wuensche gehen roh
+  /// hinaus ([KeckVoucher.toPayload]); was der Server abwiese
+  /// (Serverfelder, Gutscheinzeilen in [items], Verkauf und Einloesung
+  /// zusammen, Grenzen), wirft vor dem Senden. Ein Gutscheinverkauf und eine
+  /// Auszahlung brauchen keine Positionen; ein Beleg nur aus Auszahlungen
+  /// nimmt genau eine negative Barzahlung. Den Zahlbetrag rechnet
+  /// `receiptDueCents` mit den Pruefungen aus [checkVoucher].
   Future<KasseneckReceipt> sell({
     required List<KasseneckItem> items,
     required List<KeckPaymentInput> payments,
@@ -394,9 +407,13 @@ class RegisterReceiptClient {
     List<String>? customerLines,
     List<String>? legalNotices,
     String? drawerId,
+    List<KeckVoucher>? vouchers,
   }) async {
     const name = Aufrufe.createReceipt;
-    if (items.isEmpty) {
+    final gutscheine = vouchers ?? const <KeckVoucher>[];
+    final zeilenFehler = voucherItemError(items);
+    if (zeilenFehler != null) throw KasseneckValidationError(name, zeilenFehler, 'request');
+    if (items.isEmpty && !vouchersWithoutItems(gutscheine)) {
       // Ein leerer Verkauf ist kein Verkauf, und der Fehler soll fallen,
       // bevor irgendetwas in die Signaturkette geraet.
       throw const KasseneckValidationError(name, 'Positionen fehlen', 'request');
@@ -407,7 +424,16 @@ class RegisterReceiptClient {
     if (tipCents != null && tipCents < 0) {
       throw const KasseneckValidationError(name, 'Trinkgeld muss >= 0 sein', 'request');
     }
-    final fehler = paymentsError(payments, cancellation: false);
+    final mitTrinkgeld = tipCents != null && tipCents > 0;
+    if (mitTrinkgeld && items.isEmpty) {
+      throw const KasseneckValidationError(name, 'Trinkgeld: Beleg braucht mindestens eine Position', 'request');
+    }
+    if (gutscheine.isNotEmpty) {
+      final gutscheinFehler = voucherWishError(gutscheine, items, training: false);
+      if (gutscheinFehler != null) throw KasseneckValidationError(name, gutscheinFehler, 'request');
+    }
+    final fehler = paymentsError(payments,
+        cancellation: false, payout: isPayoutOnly(gutscheine, items, withTip: mitTrinkgeld));
     if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     if (drawerId != null) _ladeKennung(name, drawerId);
 
@@ -416,6 +442,7 @@ class RegisterReceiptClient {
       params: {
         'receiptType': 'standard',
         'items': items.map((p) => p.toJson()).toList(),
+        if (gutscheine.isNotEmpty) 'vouchers': [for (final v in gutscheine) v.toPayload()],
         'payments': [for (final z in payments) z.toJson()],
         if (tipCents != null && tipCents > 0) 'tip': tipKeptByEmployee ? {'cents': tipCents, 'keptByEmployee': true} : tipCents,
         if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
@@ -753,6 +780,17 @@ class RegisterReceiptClient {
     });
     return lagerKassenStandortLesen(name, daten);
   }
+
+  // ---- Gutscheine der neuen Form (seit 11.3) ---------------------------------
+
+  /// Gutschein am Code pruefen (`checkVoucher`, Recht `voucherRedeem`); siehe
+  /// die gleichnamige Funktion. Der Code geht nur in Normalform hinaus und
+  /// steht in keinem Fehlertext.
+  Future<VoucherCheck> checkVoucher(String code) => gutschein.checkVoucher(transport, code);
+
+  /// Etikett noch einmal drucken (`reprintVoucherLabel`, Recht
+  /// `voucherManage`): liefert den Klartext-Code nur fuer den Druck.
+  Future<String> reprintVoucherLabel(String id) => gutschein.reprintVoucherLabel(transport, id);
 
   // ---- Inventur zaehlen (Lager-Kern Stufe 3, seit 10.7) ---------------------
   //

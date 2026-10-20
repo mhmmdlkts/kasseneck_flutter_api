@@ -1,3 +1,116 @@
+## 11.3.0
+
+Twin of `@kreiseck/kasseneck-api` `1.12.0` (contract files pulled from that
+version): vouchers in the new form at the register (multi-purpose,
+single-purpose, service, promotional; the clear code is shown once and never
+stored). Additive for existing calls; notes for callers:
+
+- **Two imports.** `VoucherCheck`, `VoucherStatus`, `VoucherValidity`,
+  `PosVoucherSettings`, `checkVoucher`/`reprintVoucherLabel` and the voucher
+  rights live in `package:kasseneck_api/pos.dart`; the due options
+  (`VoucherDueInfo`, `VoucherDueArticle`, `voucherRedeemMaxCents`,
+  `voucherRedeemMaxCentsForLines`, `voucherZeroRateBucketFrom`) are in the
+  package root `package:kasseneck_api/kasseneck_api.dart`. A register that
+  pre-fills a voucher amount needs both.
+- **`PosSettings.vouchers` is always set** (non-nullable, fail-closed: a
+  missing or inconsistent `vouchers` block reads as `PosVoucherSettings.off`;
+  the constructor defaults to `off`). Reason: an unreadable block must switch
+  voucher sales off, never on.
+- **A sale of a multi- or single-purpose voucher needs `voucherSettings`** in
+  the due options (`receiptDueCents`, `receiptDueBreakdown…`); without it the
+  calculation throws `ReceiptDueError` with `voucherErrorCode`
+  `voucher_settings_missing`. Reason: the rate and the kind of a sold voucher
+  come from the confirmed register setting, as on the server.
+- **New runtime dependency `kreiseck_validator ^0.14.1`** (`VoucherCode`:
+  check character and normal form of a typed code before anything is sent).
+
+Changes:
+
+- **Model.** `VoucherType` gains `multiPurpose`, `singlePurpose`, `service`,
+  `promotion` with `wire`, `fromWire` and `isNewForm`; `VoucherAction.payout`.
+  `KeckVoucher` gains `amountCents`, `articleId`, `quantity`, `positions`,
+  `reason` and the server-only fields `voucherType`, `voucherId`,
+  `codeSuffix`, `vatRateBp`, `article` (`VoucherArticle`), `balanceAfterCents`,
+  `remainingQuantityAfter`, `taxedWith`, `exempt`, `zeroRateBucket`, plus
+  `isNewForm` and `serverFields`; `valueCents` is no longer a required
+  constructor argument. `KasseneckItem.isVoucher`/`isVoucherFloat` (`kind`
+  `voucher`/`voucher_float`). Reason: the backend keeps vouchers as typed
+  records with balance, validity and rate; a receipt in the new form must read
+  without loss and never fail to open (list, detail, cache). Note:
+  `KeckVoucher.fromJson` now reads `payout` and the new types instead of
+  falling back to `sell`/`promo`, and `toJson` writes `type` as its wire value
+  (unchanged for `value`/`promo`).
+- **Request checks before sending** (`sell(vouchers:)` on
+  `RegisterReceiptClient`, `sellReceipt`): server-only fields on a wish,
+  voucher items and forbidden combinations are rejected with
+  `voucher_invalid` before anything goes out; `paymentsError(..., payout:)`
+  for a pure payout (exactly one negative cash payment). Reason: a request the
+  server would reject must not cost a receipt number.
+- **`checkVoucher` and `reprintVoucherLabel`** (function and method on
+  `RegisterReceiptClient`): the code goes out in normal form after a local
+  check character test; a server message naming the code is masked. Reason:
+  the cashier checks a code before redeeming it; a wrong check character is
+  red at once, without a call.
+- **Rights**: `RegisterUserPerms.voucherSell`, `voucherRedeem`,
+  `voucherManage`, `VoucherPerms`, `voucherPermsOf`. Catalogues
+  `voucherKinds`, `voucherStatuses`, `voucherValidityPatterns` (equal to
+  `surface.json`). Reason: redeem, sell and pay out are separate rights per
+  role, and both registers decide on the same function.
+- **Due amount**: `receiptDueCents`/`receiptDueBreakdown…` take
+  `voucherInfo`, `voucherSettings`, `voucherArticles`, `smallBusiness`,
+  `zeroRateBucketFrom`, `today`; `ReceiptDueLine.kind`/`articleId`,
+  `ReceiptDueError.voucherErrorCode`, `voucherRedeemMaxCents(ForLines)`.
+  Reason: a single-purpose voucher covers at most the items of its rate and
+  at most its balance; the register pre-fills exactly that, so the server never
+  answers `voucher_exceeds_total`/`voucher_rate_mismatch` for an honest input.
+  A voucher that covers everything gives a due amount of 0 (no payment, no
+  card terminal). The pre-filled maximum is checked with the same computation
+  as the due amount, including half-cent rounding and the proportional split
+  of exempt or small-business vouchers (also next to vouchers already chosen
+  on the receipt: each bucket bounds its share plus the redemptions already
+  there), so it is never above what the server accepts and never 0 when the
+  server accepts at least one cent (64 cents down, then bisection, then 16
+  cents up).
+- **Sums count each amount once.** `sumCents`/`subSumCents` skip entries with
+  `zeroRateBucket` (their amount is already the 0 % item), single-purpose and
+  service vouchers count only through their items, and a payout of a value
+  voucher without `zeroRateBucket` reduces the total like a redemption.
+  Reason: incident of 16.10.2026, a sale of a 30 € voucher showed
+  "Gesamt 60,00".
+- **Receipt lines of the new form** in the fallback without a server layout
+  (`PrintPaper.setKeckReceipt`, `KeckReceiptWidget`), as in the package layout:
+  sale with the code mask (multi-purpose with „USt bei Einlösung“), redemption
+  „Gutschein ····-XXXX“ with „Einzweck, versteuert mit Beleg …“ or
+  „…, befreit verkauft (Kleinunternehmer)“ and „Rest am Gutschein“ (amount or
+  „n Stück“), multi-purpose redemption after „Zwischensumme“ with the rest,
+  payout „Auszahlung Gutschein ····-XXXX“ with „Grund: …“ (a value voucher
+  payout without the multi-purpose mark reads „Auszahlung Wertgutschein …“ as
+  in the npm layout). Items are matched
+  to entries per action and in order; the server placeholder `no-code` never
+  appears. `KeckVoucher.receiptText` follows the same form and never shows the
+  clear code. Receipts without new-form vouchers print the same bytes as
+  before. Reason: a receipt without a server layout (cancellation answer,
+  older backend) must show the same receipt.
+- **Hanging indent.** `ReceiptGrid` (and so the printed sheet and
+  `KeckReceiptSheetWidget`), the fallback print and both line widgets wrap a
+  left-aligned text with leading spaces under the same indent, at 32 and 48
+  characters. Reason: the notes below a voucher line are long; without the
+  indent the continuation line looked like a new item. No existing receipt has
+  such a text, so all older goldens are unchanged.
+- **Texts**: 23 labels (22 `voucher.*`, `cancellation.voucher_back`) and 17
+  sentences (`voucher_error.*`); `voucherErrorMessages` and
+  `voucherErrorMessage(code)` map each voucher error code (`voucher_not_found`
+  … `too_many_voucher_checks`) to a sentence (`voucherErrors` in
+  `pos-texts.json`). Reason: both registers say the same words for the same
+  error and decide on the code, never on the server's text.
+- **Contract catch-up**: `receiptErrorCodes` gains `server_error` and
+  `voucher_balance_changed`, `unknownOutcomeCalls` gains
+  `orderSignatureCard`, `Aufrufe` gains `checkVoucher` and
+  `reprintVoucherLabel`; the signature card order is an account task and is
+  listed as not applicable in `zwillinge.yaml`. Code that compares these lists
+  with a fixed length needs the new entries. Reason: the re-fetched export
+  contains them, and the tests keep the lists equal to it.
+
 ## 11.2.1
 
 - `sumCents`, `subSumCents`, the printed receipt and `KeckReceiptWidget` count
