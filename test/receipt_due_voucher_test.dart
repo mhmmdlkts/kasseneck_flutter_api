@@ -108,6 +108,7 @@ void main() {
       for (final n in [
         'tip_staff_value_voucher_capped', 'tip_owner_value_voucher_capped', 'tip_owner_value_voucher_over_tip', 'tip_payment_tipcents_value_voucher',
         'tip_promo_and_value_voucher', 'tip_value_voucher_boundary_accepted', 'tip_value_voucher_boundary_rejected', 'tip_single_purpose_voucher_goods_only',
+        'tip_owner_promo_and_value_voucher', 'tip_owner_promo_and_value_voucher_over_tip', 'tip_owner_promotion_voucher', 'tip_promotion_and_value_voucher_rejected',
       ]) {
         expect(namen, contains(n));
       }
@@ -120,7 +121,7 @@ void main() {
         final roh = (input['items'] as List).cast<Map<String, dynamic>>();
         final vouchers = [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) KeckVoucher.fromJson(v)];
         final a = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
-        final t = trinkgeldAus(input);
+        final t = trinkgeldAus(fall);
         final typ = ReceiptType.values.byName(input['receiptType'] as String);
         ReceiptDueBreakdown zeilen() => receiptDueBreakdownForLines([for (final p in roh) ReceiptDueLine.fromJson(p)], vouchers, typ,
             tip: t.tip, payments: t.payments, tipRecipient: t.tipRecipient,

@@ -113,6 +113,7 @@ void main() {
       'service_voucher_sell', 'service_voucher_redeem', 'promotion_voucher_redeem',
       'tip_staff_value_voucher_capped', 'tip_owner_value_voucher_capped', 'tip_owner_value_voucher_over_tip', 'tip_payment_tipcents_value_voucher',
       'tip_promo_and_value_voucher', 'tip_value_voucher_boundary_accepted', 'tip_value_voucher_boundary_rejected', 'tip_single_purpose_voucher_goods_only',
+      'tip_owner_promo_and_value_voucher', 'tip_owner_promo_and_value_voucher_over_tip', 'tip_owner_promotion_voucher', 'tip_promotion_and_value_voucher_rejected',
     ];
     expect([for (final f in faelle) f['name'] as String]..sort(), [...bekannt]..sort());
     for (final f in faelle.where(istAbgelehnt)) {
@@ -125,7 +126,7 @@ void main() {
       test('${fall['name']} ${istAbgelehnt(fall) ? 'weist ab' : 'stimmt exakt'} wie der Server (${fall['verifiedBy']})', () {
         final input = fall['input'] as Map<String, dynamic>;
         // Trinkgeld (tip bzw. payments[].tipCents) und die Welt des Falls (Pruefung, Einstellung, Artikel).
-        final t = trinkgeldAus(input);
+        final t = trinkgeldAus(fall);
         final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
         ReceiptDueBreakdown rechnen() => receiptDueBreakdownForLines(
               [for (final p in (input['items'] as List).cast<Map<String, dynamic>>()) _zeile(p)],
@@ -153,7 +154,7 @@ void main() {
 
   group('Hoechstbetrag der Einloesung (redeemMax im Vertrag)', () {
     final mitMax = faelle.where((f) => f['redeemMax'] != null).toList();
-    test('die Faelle mit redeemMax sind da', () => expect(mitMax.length, greaterThanOrEqualTo(5)));
+    test('die Faelle mit redeemMax sind da', () => expect(mitMax.length, greaterThanOrEqualTo(6)));
     for (final fall in mitMax) {
       test('${fall['name']}: voucherRedeemMaxCents belegt genau die groesste Einloesung vor, die der Server annimmt', () {
         final input = fall['input'] as Map<String, dynamic>;
@@ -161,7 +162,7 @@ void main() {
         final index = max['voucherIndex'] as int;
         final roh = (input['vouchers'] as List).cast<Map<String, dynamic>>();
         expect(index, roh.length - 1, reason: 'nach dem Gutschein kommt keiner');
-        final t = trinkgeldAus(input);
+        final t = trinkgeldAus(fall);
         final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
         final code = VoucherCode.normalize(roh[index]['code'] as String);
         final info = welt.info!.firstWhere((i) => VoucherCode.normalize(i.code) == code);
@@ -174,6 +175,8 @@ void main() {
             payments: t.payments,
             tipRecipient: t.tipRecipient,
             voucherInfo: welt.info,
+            voucherSettings: welt.settings,
+            voucherArticles: welt.articles,
           ),
           max['maxCents'],
         );
@@ -187,7 +190,7 @@ void main() {
       final input = fall['input'] as Map<String, dynamic>;
       final roh = (input['items'] as List).cast<Map<String, dynamic>>();
       if (roh.any((p) => (p['quantity'] ?? p['amount']) is! int)) continue;
-      final t = trinkgeldAus(input);
+      final t = trinkgeldAus(fall);
       final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
       final cents = receiptDueCents(
         [for (final p in roh) KasseneckItem.fromJson(p)],
