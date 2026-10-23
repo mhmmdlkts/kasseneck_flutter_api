@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "0e36b49865452cd813feea1f6cdd6cd533d22e00b60263ff558c3fee3b9ed5ba",
-    "inputsSha256": "daf92d9dad0b8318f20c17849e523cade1162c9a0b71517f8a5683fa0b77a0ee",
+    "sha256": "bd73f42dbb0e7845e475f210818029840ec2a3907fd17021e60bac04e6f7dc8b",
+    "inputsSha256": "6eb7debc0c20d0bcc4fc8ef77eb7c8244e1b05b2ff278d622f7d768c79257f32",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -29,7 +29,7 @@
       "functions/test/unit/v3-vertrag-export.test.js"
     ]
   },
-  "note": "Geld in ganzen Cent. serverItems: die Trinkgeld-Positionen, wie der Server sie im Beleg sendet.",
+  "note": "Geld in ganzen Cent. serverItems: die Trinkgeld-Positionen, wie der Server sie im Beleg sendet. expected.errorCode: der Server weist den Beleg mit diesem Code ab (kein Betrag). redeemMax: groesste Einloesung des Gutscheins an voucherIndex, die der Server annimmt (die Gutscheine davor sind schon gewaehlt).",
   "cases": [
     {
       "name": "sale_single_rate",
@@ -1079,6 +1079,699 @@
           "amountRatOthers": 0
         }
       }
+    },
+    {
+      "name": "tip_staff_value_voucher_capped",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "multi_purpose",
+            "code": "T25M-J17D-DTHV",
+            "amountCents": 640
+          }
+        ],
+        "tip": {
+          "cents": 160
+        }
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gmz1",
+            "code": "T25MJ17DDTHV",
+            "daten": {
+              "art": "mehrzweck",
+              "status": "aktiv",
+              "codeEnde": "DTHV",
+              "nennwertCents": 5000,
+              "saldoCents": 5000,
+              "satzBp": null,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r3",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 160,
+        "counterDeltaCents": 800,
+        "valueVoucherFlowCents": -640,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 160,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "redeemMax": {
+        "voucherIndex": 0,
+        "maxCents": 640
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 1.6,
+          "priceOneCents": 160,
+          "unitPriceCents": 160,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
+    },
+    {
+      "name": "tip_owner_value_voucher_capped",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "multi_purpose",
+            "code": "T25M-J17D-DTHV",
+            "amountCents": 956
+          }
+        ],
+        "tip": {
+          "cents": 100,
+          "owner": true
+        }
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gmz1",
+            "code": "T25MJ17DDTHV",
+            "daten": {
+              "art": "mehrzweck",
+              "status": "aktiv",
+              "codeEnde": "DTHV",
+              "nennwertCents": 5000,
+              "saldoCents": 5000,
+              "satzBp": null,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r3",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ],
+        "kassenBenutzer": [
+          {
+            "id": "ru_inhaber",
+            "name": "Inhaber",
+            "inhaber": true
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 100,
+        "counterDeltaCents": 1056,
+        "valueVoucherFlowCents": -956,
+        "bucketsCents": {
+          "amountRateStandard": 707,
+          "amountRateReduced1": 349,
+          "amountRateReduced2": 0,
+          "amountRateZero": 0,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "redeemMax": {
+        "voucherIndex": 0,
+        "maxCents": 956
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 0.67,
+          "priceOneCents": 67,
+          "unitPriceCents": 67,
+          "vat": 20,
+          "vatRate": 20,
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_inhaber",
+            "name": "Inhaber",
+            "owner": true
+          }
+        },
+        {
+          "kind": "tip",
+          "name": "Trinkgeld",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 0.33,
+          "priceOneCents": 33,
+          "unitPriceCents": 33,
+          "vat": 10,
+          "vatRate": 10,
+          "paymentMethod": "cash",
+          "recipient": {
+            "registerUserId": "ru_inhaber",
+            "name": "Inhaber",
+            "owner": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "tip_owner_value_voucher_over_tip",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          },
+          {
+            "name": "Semmel",
+            "amount": 4,
+            "priceOneCents": 79,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "multi_purpose",
+            "code": "T25M-J17D-DTHV",
+            "amountCents": 957
+          }
+        ],
+        "tip": {
+          "cents": 100,
+          "owner": true
+        }
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gmz1",
+            "code": "T25MJ17DDTHV",
+            "daten": {
+              "art": "mehrzweck",
+              "status": "aktiv",
+              "codeEnde": "DTHV",
+              "nennwertCents": 5000,
+              "saldoCents": 5000,
+              "satzBp": null,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r3",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ],
+        "kassenBenutzer": [
+          {
+            "id": "ru_inhaber",
+            "name": "Inhaber",
+            "inhaber": true
+          }
+        ]
+      },
+      "expected": {
+        "errorCode": "voucher_exceeds_total"
+      }
+    },
+    {
+      "name": "tip_payment_tipcents_value_voucher",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "multi_purpose",
+            "code": "T25M-J17D-DTHV",
+            "amountCents": 640
+          }
+        ],
+        "payments": [
+          {
+            "method": "cash",
+            "tipCents": 150
+          }
+        ]
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gmz1",
+            "code": "T25MJ17DDTHV",
+            "daten": {
+              "art": "mehrzweck",
+              "status": "aktiv",
+              "codeEnde": "DTHV",
+              "nennwertCents": 5000,
+              "saldoCents": 5000,
+              "satzBp": null,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r3",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 150,
+        "counterDeltaCents": 790,
+        "valueVoucherFlowCents": -640,
+        "bucketsCents": {
+          "amountRateStandard": 640,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 150,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "redeemMax": {
+        "voucherIndex": 0,
+        "maxCents": 640
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 1.5,
+          "priceOneCents": 150,
+          "unitPriceCents": 150,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
+    },
+    {
+      "name": "tip_promo_and_value_voucher",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "promo",
+            "valueCents": 100,
+            "code": "R"
+          },
+          {
+            "action": "redeem",
+            "type": "multi_purpose",
+            "code": "T25M-J17D-DTHV",
+            "amountCents": 540
+          }
+        ],
+        "tip": {
+          "cents": 100
+        }
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gmz1",
+            "code": "T25MJ17DDTHV",
+            "daten": {
+              "art": "mehrzweck",
+              "status": "aktiv",
+              "codeEnde": "DTHV",
+              "nennwertCents": 5000,
+              "saldoCents": 5000,
+              "satzBp": null,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r3",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 100,
+        "counterDeltaCents": 640,
+        "valueVoucherFlowCents": -540,
+        "bucketsCents": {
+          "amountRateStandard": 540,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 100,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "redeemMax": {
+        "voucherIndex": 1,
+        "maxCents": 540
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 1,
+          "priceOneCents": 100,
+          "unitPriceCents": 100,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
+    },
+    {
+      "name": "tip_value_voucher_boundary_accepted",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Torte",
+            "amount": 1,
+            "priceOneCents": 2000,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "multi_purpose",
+            "code": "T25M-J17D-DTHV",
+            "amountCents": 2000
+          }
+        ],
+        "tip": {
+          "cents": 200
+        }
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gmz1",
+            "code": "T25MJ17DDTHV",
+            "daten": {
+              "art": "mehrzweck",
+              "status": "aktiv",
+              "codeEnde": "DTHV",
+              "nennwertCents": 5000,
+              "saldoCents": 5000,
+              "satzBp": null,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r3",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 200,
+        "counterDeltaCents": 2200,
+        "valueVoucherFlowCents": -2000,
+        "bucketsCents": {
+          "amountRateStandard": 0,
+          "amountRateReduced1": 2000,
+          "amountRateReduced2": 0,
+          "amountRateZero": 200,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "redeemMax": {
+        "voucherIndex": 0,
+        "maxCents": 2000
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 2,
+          "priceOneCents": 200,
+          "unitPriceCents": 200,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
+    },
+    {
+      "name": "tip_value_voucher_boundary_rejected",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Torte",
+            "amount": 1,
+            "priceOneCents": 2000,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "multi_purpose",
+            "code": "T25M-J17D-DTHV",
+            "amountCents": 2001
+          }
+        ],
+        "tip": {
+          "cents": 200
+        }
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gmz1",
+            "code": "T25MJ17DDTHV",
+            "daten": {
+              "art": "mehrzweck",
+              "status": "aktiv",
+              "codeEnde": "DTHV",
+              "nennwertCents": 5000,
+              "saldoCents": 5000,
+              "satzBp": null,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r3",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "errorCode": "voucher_exceeds_total"
+      }
+    },
+    {
+      "name": "tip_single_purpose_voucher_goods_only",
+      "verifiedBy": "createReceipt",
+      "input": {
+        "receiptType": "standard",
+        "items": [
+          {
+            "name": "Kaffee",
+            "amount": 2,
+            "priceOneCents": 320,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "single_purpose",
+            "code": "T25M-J17D-5THH",
+            "amountCents": 640
+          }
+        ],
+        "tip": {
+          "cents": 100
+        }
+      },
+      "setup": {
+        "gutscheine": [
+          {
+            "id": "gez1",
+            "code": "T25MJ17D5THH",
+            "daten": {
+              "art": "einzweck",
+              "status": "aktiv",
+              "codeEnde": "5THH",
+              "nennwertCents": 5000,
+              "saldoCents": 2000,
+              "satzBp": 2000,
+              "kleinunternehmer": false,
+              "gueltigkeit": {
+                "muster": "unbefristet",
+                "einloesbarBis": null,
+                "rueckzahlbarBis": null,
+                "gueltigBis": null
+              },
+              "ausgabe": {
+                "receiptId": "r1",
+                "fullReceiptId": null,
+                "tag": "2026-09-01"
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "dueCents": 100,
+        "counterDeltaCents": 100,
+        "valueVoucherFlowCents": 0,
+        "bucketsCents": {
+          "amountRateStandard": 0,
+          "amountRateReduced1": 0,
+          "amountRateReduced2": 0,
+          "amountRateZero": 100,
+          "amountRateSpecial": 0,
+          "amountRatOthers": 0
+        }
+      },
+      "redeemMax": {
+        "voucherIndex": 0,
+        "maxCents": 640
+      },
+      "serverItems": [
+        {
+          "kind": "tip",
+          "name": "Trinkgeld Personal",
+          "amount": 1,
+          "quantity": 1,
+          "priceOne": 1,
+          "priceOneCents": 100,
+          "unitPriceCents": 100,
+          "vat": 0,
+          "vatRate": 0,
+          "paymentMethod": "cash",
+          "recipient": null,
+          "receivedImmediately": true
+        }
+      ]
     }
   ]
 }

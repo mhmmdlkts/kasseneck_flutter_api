@@ -103,20 +103,39 @@ void main() {
       }
     });
 
+    test('Trinkgeld-Regel (ein Gutschein deckt nie das Trinkgeld) mit Server-Ergebnis', () {
+      final namen = neu.map((f) => f['name']).toSet();
+      for (final n in [
+        'tip_staff_value_voucher_capped', 'tip_owner_value_voucher_capped', 'tip_owner_value_voucher_over_tip', 'tip_payment_tipcents_value_voucher',
+        'tip_promo_and_value_voucher', 'tip_value_voucher_boundary_accepted', 'tip_value_voucher_boundary_rejected', 'tip_single_purpose_voucher_goods_only',
+      ]) {
+        expect(namen, contains(n));
+      }
+      expect(neu.where(istAbgelehnt).length, greaterThanOrEqualTo(2));
+    });
+
     for (final fall in neu) {
-      test('${fall['name']}: Zahlbetrag, Toepfe und Fluss wie der Server (auch ueber KasseneckItem)', () {
+      test('${fall['name']}: Zahlbetrag, Toepfe und Fluss bzw. Abweisung wie der Server (auch ueber KasseneckItem)', () {
         final input = fall['input'] as Map<String, dynamic>;
         final roh = (input['items'] as List).cast<Map<String, dynamic>>();
         final vouchers = [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) KeckVoucher.fromJson(v)];
         final a = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
+        final t = trinkgeldAus(input);
         final typ = ReceiptType.values.byName(input['receiptType'] as String);
-        final e = receiptDueBreakdownForLines([for (final p in roh) ReceiptDueLine.fromJson(p)], vouchers, typ,
+        ReceiptDueBreakdown zeilen() => receiptDueBreakdownForLines([for (final p in roh) ReceiptDueLine.fromJson(p)], vouchers, typ,
+            tip: t.tip, payments: t.payments, tipRecipient: t.tipRecipient,
             voucherInfo: a.info, voucherSettings: a.settings, voucherArticles: a.articles);
-        expect(alsMap(e), fall['expected']);
-        expect(
-            receiptDueCents([for (final p in roh) KasseneckItem.fromJson(p)], vouchers, typ,
-                voucherInfo: a.info, voucherSettings: a.settings, voucherArticles: a.articles),
-            (fall['expected'] as Map)['dueCents']);
+        int positionen() => receiptDueCents([for (final p in roh) KasseneckItem.fromJson(p)], vouchers, typ,
+            tip: t.tip, payments: t.payments, tipRecipient: t.tipRecipient,
+            voucherInfo: a.info, voucherSettings: a.settings, voucherArticles: a.articles);
+        if (istAbgelehnt(fall)) {
+          final code = (fall['expected'] as Map)['errorCode'] as String;
+          expect(zeilen, wirft(code));
+          expect(positionen, wirft(code));
+          return;
+        }
+        expect(alsMap(zeilen()), fall['expected']);
+        expect(positionen(), (fall['expected'] as Map)['dueCents']);
       });
     }
   });
