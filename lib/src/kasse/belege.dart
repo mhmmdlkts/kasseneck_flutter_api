@@ -437,19 +437,26 @@ class RegisterReceiptClient {
     if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     if (drawerId != null) _ladeKennung(name, drawerId);
 
-    final daten = await _signiertRufen(
-      name,
-      params: {
-        'receiptType': 'standard',
-        'items': items.map((p) => p.toJson()).toList(),
-        if (gutscheine.isNotEmpty) 'vouchers': [for (final v in gutscheine) v.toPayload()],
-        'payments': [for (final z in payments) z.toJson()],
-        if (tipCents != null && tipCents > 0) 'tip': tipKeptByEmployee ? {'cents': tipCents, 'keptByEmployee': true} : tipCents,
-        if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
-        if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
-        'drawerId': ?drawerId,
-      },
-    );
+    // Ein Servertext, der einen Code wiederholt, wird geschwaerzt (wie bei checkVoucher).
+    final geheim = voucherSecrets(gutscheine);
+    final Map<String, dynamic> daten;
+    try {
+      daten = await _signiertRufen(
+        name,
+        params: {
+          'receiptType': 'standard',
+          'items': items.map((p) => p.toJson()).toList(),
+          if (gutscheine.isNotEmpty) 'vouchers': [for (final v in gutscheine) v.toPayload()],
+          'payments': [for (final z in payments) z.toJson()],
+          if (tipCents != null && tipCents > 0) 'tip': tipKeptByEmployee ? {'cents': tipCents, 'keptByEmployee': true} : tipCents,
+          if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
+          if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
+          'drawerId': ?drawerId,
+        },
+      );
+    } on KasseneckApiError catch (fehler) {
+      throw redactVoucherCodes(fehler, geheim);
+    }
     // Ab hier ist der Beleg signiert: wer ihn nicht lesen kann, bekommt
     // `response_unreadable` (Ausgang unklar) mit der Kennung, nie einen
     // gewoehnlichen Fehler, der zum zweiten Verkauf einluede.

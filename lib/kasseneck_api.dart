@@ -753,11 +753,18 @@ class KasseneckApi {
       params['legalMessage'] = legalMessage.join('\n');
     }
 
-    final resJson = await _kasseneckJson(
-      endpoint: Aufrufe.createReceipt,
-      params: params,
-      deadline: signatureTimeout,
-    );
+    // Ein Servertext, der einen Code wiederholt, wird geschwaerzt (wie bei checkVoucher).
+    final geheim = voucherSecrets(vouchers ?? const []);
+    final Map<String, dynamic> resJson;
+    try {
+      resJson = await _kasseneckJson(
+        endpoint: Aufrufe.createReceipt,
+        params: params,
+        deadline: signatureTimeout,
+      );
+    } on KasseneckApiError catch (fehler) {
+      throw redactVoucherCodes(fehler, geheim);
+    }
 
     if (resJson['status'] == 'success') {
       // Ab hier ist der Beleg signiert und steht in der Kette. Alles, was
@@ -774,7 +781,8 @@ class KasseneckApi {
     } else {
       // Mit Code und Details: `receipt_outcome_unknown` heisst Ausgang
       // unklar, dann nachlesen statt wiederholen.
-      throw envelopeError(Aufrufe.createReceipt, resJson, fallback: 'Unbekannter Fehler');
+      throw redactVoucherCodes(
+          envelopeError(Aufrufe.createReceipt, resJson, fallback: 'Unbekannter Fehler'), geheim);
     }
   }
 

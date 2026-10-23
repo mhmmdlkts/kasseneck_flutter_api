@@ -128,6 +128,64 @@ void main() {
     });
   });
 
+  group('Servertext von createReceipt nennt den Code nie (beide Wege)', () {
+    const fehlerCode = 'voucher_not_found';
+    final item = KasseneckItem(name: 'Blumenstrauss', quantity: 1, priceCents: 2240, vat: VatRate.vat20);
+    const zahlung = [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 490)];
+
+    KeckVoucher einloesen(String code) =>
+        KeckVoucher(code: code, action: VoucherAction.redeem, type: VoucherType.multiPurpose, amountCents: 1750);
+
+    Future<String> ueberKasse(String code, String servertext) async {
+      final w = _weg({'status': 'error', 'message': servertext, 'code': fehlerCode});
+      try {
+        await w.kasse.sell(items: [item], payments: zahlung, vouchers: [einloesen(code)]);
+      } on KasseneckApiError catch (e) {
+        expect(e.code, fehlerCode, reason: 'der Code bleibt, die Kasse entscheidet daran');
+        return '${e.message} $e';
+      }
+      fail('kein Fehler');
+    }
+
+    Future<String> ueberApi(String code, String servertext) async {
+      final api = KasseneckApi(
+        apiKey: 'kr_test_x',
+        cashregisterToken: base64Encode(utf8.encode('KECK-1:secret')),
+        httpClient: MockClient((r) async => http.Response(
+            jsonEncode({'status': 'error', 'message': servertext, 'code': fehlerCode}), 200,
+            headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'})),
+      );
+      try {
+        await api.sellReceipt(items: [item], payments: zahlung, vouchers: [einloesen(code)]);
+      } on KasseneckApiError catch (e) {
+        expect(e.code, fehlerCode);
+        return '${e.message} $e';
+      }
+      fail('kein Fehler');
+    }
+
+    final wege = <String, Future<String> Function(String, String)>{'Kassenweg': ueberKasse, 'API-Schluessel': ueberApi};
+    for (final e in wege.entries) {
+      test('${e.key}: getippte Schreibweise (klein, Leerzeichen), normiert und formatiert werden geschwaerzt', () async {
+        final text = await e.value('dtd5 9ecf 5knz', 'Nichts zu dtd5 9ecf 5knz, DTD59ECF5KNZ oder DTD5-9ECF-5KNZ.');
+        for (final klar in ['dtd5 9ecf 5knz', 'DTD59ECF5KNZ', 'DTD5-9ECF-5KNZ']) {
+          expect(text, isNot(contains(klar)), reason: klar);
+        }
+        expect(text, contains('****'));
+      });
+
+      test('${e.key}: ein Code mit falschem Pruefzeichen wird ebenfalls geschwaerzt', () async {
+        final text = await e.value('DTD5-9ECF-5KNY', 'Der Code DTD5-9ECF-5KNY gilt nicht.');
+        expect(text, isNot(contains('DTD5-9ECF-5KNY')));
+      });
+
+      test('${e.key}: eine vierstellige Endung wird nie geschwaerzt', () async {
+        final text = await e.value('DTD5-9ECF-5KNZ', 'Gutschein ····-5KNZ nicht gefunden.');
+        expect(text, contains('5KNZ'));
+      });
+    }
+  });
+
   group('reprintVoucherLabel', () {
     test('sendet die Id und liefert den Klartext-Code', () async {
       final w = _weg(_fall('reprintVoucherLabel', 'success_manager')['response'] as Map<String, dynamic>);
