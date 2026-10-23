@@ -16,6 +16,21 @@ Map<String, dynamic> golden() => jsonDecode(
       File('test/fixtures/vertrag/pos-settings-defaults.json').readAsStringSync(),
     ) as Map<String, dynamic>;
 
+/// Aktionen ohne Vorgabe-Taste: der Server fuehrt sie nicht in seiner
+/// Vorgabekarte (`pos-settings-defaults.json`), hier stehen sie als leere
+/// Liste. Fuer den Vergleich mit dem Vertrag fallen sie heraus.
+const _tastenOhneVorgabe = ['shiftStatus', 'openDrawer', 'voucherPayout'];
+
+Map<String, dynamic> _ohneTastenOhneVorgabe(Map<String, dynamic> einstellungen) {
+  final kopie = jsonDecode(jsonEncode(einstellungen)) as Map<String, dynamic>;
+  final karte = (kopie['device'] as Map)['shortcuts'] as Map;
+  for (final a in _tastenOhneVorgabe) {
+    expect(karte[a], isEmpty, reason: '$a hat keine Vorgabe-Taste');
+    karte.remove(a);
+  }
+  return kopie;
+}
+
 void main() {
   // Welche Felder im Standardwert abweichen dürfen, steht in zwillinge.yaml
   // (Abschnitt wert_ausnahmen) — nicht in diesem Testcode. Sie gehen durch
@@ -26,7 +41,7 @@ void main() {
 
   test('Golden: Standardwerte Feld für Feld wie im JS-Paket', () {
     final soll = golden();
-    final ist = const PosSettings.standard().toJson();
+    final ist = _ohneTastenOhneVorgabe(const PosSettings.standard().toJson());
 
     // Was diese Prüfung hält:
     //   * Jedes Feld, das dieses Paket führt, heißt wie im Vertrag und trägt
@@ -204,7 +219,7 @@ void main() {
       // 9.x schrieb und die Flutter-Kasse zwischenspeichert.
       final stored = jsonDecode(File('test/fixtures/vertrag/stored/pos-settings-defaults.json').readAsStringSync())
           as Map<String, dynamic>;
-      expect(PosSettings.fromJson(stored).toJson(), golden());
+      expect(_ohneTastenOhneVorgabe(PosSettings.fromJson(stored).toJson()), golden());
     });
 
     test('ein eingestellter 9.x-Stand bleibt nach dem Update erhalten', () {
@@ -387,6 +402,37 @@ void main() {
       expect(k, isNotNull);
       expect(k!.key, 'Mod+B');
       expect({k.action, k.heldBy}, {'cash', 'card'});
+    });
+  });
+
+  group('Tasten: Aktionen ohne Vorgabe (11.5.0)', () {
+    const ohne = _tastenOhneVorgabe;
+
+    test('eine Serverkarte ohne die drei Aktionen liest sich als "keine Taste", nie als geratene', () {
+      final server = {for (final e in posShortcutDefaults.entries) if (!ohne.contains(e.key)) e.key: e.value};
+      final e = PosSettings.fromJson({'device': {'shortcuts': server}});
+      for (final a in ohne) {
+        expect(posShortcutActions, contains(a));
+        expect(e.device.shortcuts[a], isEmpty, reason: a);
+      }
+      expect(posShortcutConflict(e.device.shortcuts), isNull);
+      expect(PosSettings.fromJson({'device': <String, dynamic>{}}).device.shortcuts['openDrawer'], isEmpty);
+    });
+
+    test('eine Aktion mit Taste, die anderen leer: ganze Karte geht hinaus', () {
+      final vorher = const PosDeviceSettings();
+      final nachher = vorher.merge({'shortcuts': {'openDrawer': ['F7']}});
+      final karte = posSettingsChanges(vorher.toJson(), nachher.toJson())['shortcuts'] as Map;
+      expect(karte['openDrawer'], ['F7']);
+      expect(karte['shiftStatus'], isEmpty);
+      expect(karte['voucherPayout'], isEmpty);
+      expect(posShortcutConflict(karte.cast<String, Object?>()), isNull);
+    });
+
+    test('eine echte Doppelbelegung mit einer neuen Aktion wird gefunden', () {
+      final k = posShortcutConflict({...posShortcutDefaults, 'voucherPayout': ['Mod+B']});
+      expect(k, isNotNull);
+      expect({k!.action, k.heldBy}, {'cash', 'voucherPayout'});
     });
   });
 
