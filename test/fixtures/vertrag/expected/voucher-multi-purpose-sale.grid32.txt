@@ -9,8 +9,7 @@ Kassen-ID:                KASSE1
 Beleg-ID:          AT0-KASSE1-74
                                 
 1  x                     30,00 D
-Mehrzweckgutschein              
-····-····-NNNY                  
+Mehrzweckgutschein ····-NNNY    
   USt bei Einlösung             
                                 
 MwSt%   MwSt    Netto     Brutto

@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "c5db01aa176f4449a18bf0affdf984a8b3fef75b9e3344721cb03cb3a6fdb272",
-    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
+    "sha256": "53bacb07e03ff6e46d2d78d0aed71daa450dde715a9f79c927f6953f76f81997",
+    "inputsSha256": "daf92d9dad0b8318f20c17849e523cade1162c9a0b71517f8a5683fa0b77a0ee",
+    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -483,6 +483,109 @@
       }
     },
     {
+      "channel": "api",
+      "name": "cancel_payout_voucher",
+      "endpoint": "cancelReceipt",
+      "path": "/v3/cancelReceipt",
+      "params": {
+        "reason": "input_error",
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 3000
+          }
+        ],
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-9"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "cancellationOf": {
+            "receiptId": "KECK-1-ID-9",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000676d8c59",
+            "timeStamp": "2026-09-26T10:00:00"
+          },
+          "remaining": [
+            0
+          ],
+          "receipt": {
+            "counter": 11,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-11",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "payout",
+                "type": "value",
+                "code": "····-····-8CN5",
+                "name": "Auszahlung Gutschein",
+                "value": 30,
+                "voucherType": "multi_purpose",
+                "voucherId": "gmz2",
+                "valueCents": 3000,
+                "codeSuffix": "8CN5",
+                "zeroRateBucket": true
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-9 – Fehleingabe",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 30,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "05KgKPi7tces/pQSFUHUVQ==",
+            "signaturePreviousReceipt": "uE+AyYjTOZ4=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000c8061ae9",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 3000
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMTFfMjAyNi0wOS0yNlQxMDowMDowMF8wLDAwXzAsMDBfMCwwMF8zMCwwMF8wLDAwX1UxUlBfQUJDMTIzX3VFK0F5WWpUT1o0PQ.rF5B98DFaF6IGqjEk_i_ve3H6dq5-f9MGO57Y4wG3n34N4fQoV6Di6djJA0JZUF-jVGe6K-Wv12toVBOfoUxvg",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-11_2026-09-26T10:00:00_0,00_0,00_0,00_30,00_0,00_U1RP_ABC123_uE+AyYjTOZ4=_rF5B98DFaF6IGqjEk/i/ve3H6dq5+f9MGO57Y4wG3n34N4fQoV6Di6djJA0JZUF+jVGe6K+Wv12toVBOfoUxvg==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-9",
+              "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000676d8c59",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "input_error",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Auszahlung Gutschein ····-8CN5",
+                "quantity": 1,
+                "unitPriceCents": 3000,
+                "vatRate": 0,
+                "kind": "voucher_float",
+                "amount": 1,
+                "vat": 0,
+                "priceOneCents": 3000,
+                "priceOne": 30
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
       "channel": "app",
       "name": "cancel_full_card_refund",
       "endpoint": "cancelReceipt",
@@ -938,6 +1041,111 @@
                 "vat": 20,
                 "priceOneCents": -2240,
                 "priceOne": -22.4
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "channel": "app",
+      "name": "cancel_payout_voucher",
+      "endpoint": "cancelReceipt",
+      "path": "/api/v3/cancelReceipt",
+      "params": {
+        "reason": "input_error",
+        "payments": [
+          {
+            "method": "cash",
+            "amountCents": 3000
+          }
+        ],
+        "cashregisterId": "KECK-1",
+        "originalReceiptId": "KECK-1-ID-9"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "cancellationOf": {
+            "receiptId": "KECK-1-ID-9",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000676d8c59",
+            "timeStamp": "2026-09-26T10:00:00"
+          },
+          "remaining": [
+            0
+          ],
+          "receipt": {
+            "counter": 11,
+            "receiptType": "cancellation",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-11",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [
+              {
+                "action": "payout",
+                "type": "value",
+                "code": "····-····-8CN5",
+                "name": "Auszahlung Gutschein",
+                "value": 30,
+                "voucherType": "multi_purpose",
+                "voucherId": "gmz2",
+                "valueCents": 3000,
+                "codeSuffix": "8CN5",
+                "zeroRateBucket": true
+              }
+            ],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": "STORNO zu KECK-1-ID-9 – Fehleingabe",
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 30,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "05KgKPi7tces/pQSFUHUVQ==",
+            "signaturePreviousReceipt": "uE+AyYjTOZ4=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000c8061ae9",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 3000
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMTFfMjAyNi0wOS0yNlQxMDowMDowMF8wLDAwXzAsMDBfMCwwMF8zMCwwMF8wLDAwX1UxUlBfQUJDMTIzX3VFK0F5WWpUT1o0PQ.rF5B98DFaF6IGqjEk_i_ve3H6dq5-f9MGO57Y4wG3n34N4fQoV6Di6djJA0JZUF-jVGe6K-Wv12toVBOfoUxvg",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-11_2026-09-26T10:00:00_0,00_0,00_0,00_30,00_0,00_U1RP_ABC123_uE+AyYjTOZ4=_rF5B98DFaF6IGqjEk/i/ve3H6dq5+f9MGO57Y4wG3n34N4fQoV6Di6djJA0JZUF+jVGe6K+Wv12toVBOfoUxvg==",
+            "cancellationOf": {
+              "receiptId": "KECK-1-ID-9",
+              "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000676d8c59",
+              "timeStamp": "2026-09-26T10:00:00"
+            },
+            "cancellationReason": "input_error",
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Auszahlung Gutschein ····-8CN5",
+                "quantity": 1,
+                "unitPriceCents": 3000,
+                "vatRate": 0,
+                "kind": "voucher_float",
+                "amount": 1,
+                "vat": 0,
+                "priceOneCents": 3000,
+                "priceOne": 30
               }
             ]
           }

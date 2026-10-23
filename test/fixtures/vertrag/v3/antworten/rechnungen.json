@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "9d0f4b0fa978c67a77ae7a29d26fed60ae294fc597f9c23a7a27b8fcba4a8f0d",
-    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
+    "sha256": "a5d2e578f0ee866e539320866624dc9337459479bfcdcb955c8c3b821cd1c689",
+    "inputsSha256": "daf92d9dad0b8318f20c17849e523cade1162c9a0b71517f8a5683fa0b77a0ee",
+    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -612,7 +612,7 @@
       },
       "response": {
         "status": "error",
-        "message": "Behörden-Rechnung (E-Rechnung) unvollständig — fehlt: Straße, PLZ, Ort, UID-Nummer, Auftragsreferenz. Käufer-Adresse (inkl. Land) und Auftragsreferenz sind Pflicht.",
+        "message": "Behörden-Rechnung (E-Rechnung) unvollständig – fehlt: Straße, PLZ, Ort, UID-Nummer, Auftragsreferenz. Käufer-Adresse (inkl. Land) und Auftragsreferenz sind Pflicht.",
         "data": {
           "code": "invoice_requirements_missing",
           "missing": [

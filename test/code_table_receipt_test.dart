@@ -117,6 +117,6 @@ void main() {
   test('ohne Wahl: byte-gleich zum Bytestrom-Zwilling (Tabelle 16, EUR statt €)', () async {
     final layout = layoutAus('$vertrag/expected/sale-cash.lines.json');
     // Derselbe Digest wie in test/printing/zwilling_bytestrom_test.dart (80 mm ohne Marke).
-    expect(sha256.convert(await bytes(layout)).toString(), '947423a069cb37ada914bb9db3feeda4a07a5f9b627795cc769f98d06f605158');
+    expect(sha256.convert(await bytes(layout)).toString(), 'b62ab3a13df22fd6e507c4f685cb634c58933abf912d37188fa345001bacb287');
   });
 }

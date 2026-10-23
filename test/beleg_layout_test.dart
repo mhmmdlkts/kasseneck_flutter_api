@@ -119,7 +119,7 @@ void main() {
     expect(r.testSignature, isTrue);
     expect(r.testCashregister, isFalse);
     expect(r.headerVersionId, 'v1');
-    expect(r.vatId, 'ATU12345678');
+    expect(r.vatId, 'ATU12345675');
     final alt = KasseneckReceipt.fromJson({...antwort}..remove('layout')..remove('testSignature')..remove('headerVersionId'));
     expect(alt.layout, isNull);
     expect(alt.testSignature, isFalse);

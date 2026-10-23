@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "364d5c9d290532b0a41d1077ee9fdd1b78f69a1372e98d8bad405e5893b0ad53",
-    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
+    "sha256": "8307d3b935f124ed1c8f6faa826daa450daae51fae8f187031c461baa1103769",
+    "inputsSha256": "daf92d9dad0b8318f20c17849e523cade1162c9a0b71517f8a5683fa0b77a0ee",
+    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -187,9 +187,9 @@
         "id": null,
         "name": "Standard",
         "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
+        "logoAlt": "Bäckerei Kornblum",
         "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
+        "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
       "created_at": "2026-09-26T08:00:00.000Z",
@@ -299,9 +299,9 @@
         "id": null,
         "name": "Standard",
         "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
+        "logoAlt": "Bäckerei Kornblum",
         "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
+        "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
       "uidNachweis": {
@@ -434,9 +434,9 @@
         "id": null,
         "name": "Standard",
         "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
+        "logoAlt": "Bäckerei Kornblum",
         "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
+        "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
       "uidRisiko": {
@@ -547,9 +547,9 @@
         "id": null,
         "name": "Standard",
         "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
+        "logoAlt": "Bäckerei Kornblum",
         "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
+        "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
       "created_at": "2026-09-26T08:00:00.000Z",
@@ -653,9 +653,9 @@
         "id": null,
         "name": "Standard",
         "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
+        "logoAlt": "Bäckerei Kornblum",
         "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
+        "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
       "created_at": "2026-09-26T08:00:00.000Z",
@@ -789,9 +789,9 @@
         "id": null,
         "name": "Standard",
         "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
+        "logoAlt": "Bäckerei Kornblum",
         "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
+        "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
       "created_at": "2026-09-26T08:00:00.000Z",
@@ -895,9 +895,9 @@
         "id": null,
         "name": "Standard",
         "logoUrl": null,
-        "logoAlt": "Bäckerei Welt",
+        "logoAlt": "Bäckerei Kornblum",
         "farbe": "#17150F",
-        "absenderName": "Bäckerei Welt",
+        "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
       "created_at": "2026-09-26T08:00:00.000Z",

@@ -1,5 +1,5 @@
 {
-  "version": "1.13.0",
+  "version": "1.14.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -618,7 +618,10 @@
     "fullscreen",
     "clearTendered",
     "clearCart",
-    "splitPayment"
+    "splitPayment",
+    "shiftStatus",
+    "openDrawer",
+    "voucherPayout"
   ],
   "pos": {
     "afterCountTypes": [
@@ -694,7 +697,8 @@
       "change",
       "check",
       "misoperation",
-      "other"
+      "other",
+      "voucher_payout"
     ],
     "posBusinessOptionalFields": [
       "tipKeptByDefault"

@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "733e4385baf4b2aa50605e2ebe5903948ce77b3346aa3bb65c5fd0d450a6898f",
-    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
+    "sha256": "8b2cb67233c5a5cf487a077711bc1287fa49778f0fc22e9cc7675329fbdfd512",
+    "inputsSha256": "daf92d9dad0b8318f20c17849e523cade1162c9a0b71517f8a5683fa0b77a0ee",
+    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -952,7 +952,8 @@
       "wechselgeld": "change",
       "kontrolle": "check",
       "fehlbedienung": "misoperation",
-      "sonstiges": "other"
+      "sonstiges": "other",
+      "gutschein_auszahlung": "voucher_payout"
     },
     "LAGER_ABGANG_GRUND": {
       "bruch": "breakage",
@@ -1222,9 +1223,12 @@
       "invalid_asset_record",
       "invalid_asset_type",
       "invalid_business_profile",
+      "invalid_category_allocation",
       "invalid_clarification",
       "invalid_condition",
       "invalid_connection",
+      "invalid_country",
+      "invalid_currency",
       "invalid_cursor",
       "invalid_denominations",
       "invalid_dimensions",
@@ -1248,6 +1252,7 @@
       "invalid_room",
       "invalid_selection",
       "invalid_serial",
+      "invalid_service_line",
       "invalid_step",
       "invalid_stock_kind",
       "invalid_tax_profile",
@@ -1368,6 +1373,7 @@
       "serial_not_in_stock",
       "serial_required",
       "server_error",
+      "service_line_not_found",
       "session_ended",
       "session_expired",
       "session_not_running",
@@ -1557,7 +1563,12 @@
       "anlage_abgegangen": "asset_record_disposed",
       "zu_viele_anlagen": "too_many_asset_records",
       "gwg_ueber_grenze": "low_value_limit_exceeded",
-      "nutzungsdauer_pkw": "car_useful_life_too_short"
+      "nutzungsdauer_pkw": "car_useful_life_too_short",
+      "aufteilung_ungueltig": "invalid_category_allocation",
+      "land_ungueltig": "invalid_country",
+      "leistung_fehlt": "service_line_not_found",
+      "leistung_ungueltig": "invalid_service_line",
+      "waehrung_ungueltig": "invalid_currency"
     },
     "edge": [
       "validation",
@@ -2175,7 +2186,12 @@
       "asset_record_disposed",
       "too_many_asset_records",
       "low_value_limit_exceeded",
-      "car_useful_life_too_short"
+      "car_useful_life_too_short",
+      "invalid_category_allocation",
+      "invalid_country",
+      "service_line_not_found",
+      "invalid_service_line",
+      "invalid_currency"
     ],
     "receiptMessagesByEndpoint": {
       "createReceipt": [
@@ -3107,7 +3123,12 @@
             "anlage_abgegangen": "asset_record_disposed",
             "zu_viele_anlagen": "too_many_asset_records",
             "gwg_ueber_grenze": "low_value_limit_exceeded",
-            "nutzungsdauer_pkw": "car_useful_life_too_short"
+            "nutzungsdauer_pkw": "car_useful_life_too_short",
+            "aufteilung_ungueltig": "invalid_category_allocation",
+            "land_ungueltig": "invalid_country",
+            "leistung_fehlt": "service_line_not_found",
+            "leistung_ungueltig": "invalid_service_line",
+            "waehrung_ungueltig": "invalid_currency"
           }
         }
       }
@@ -3319,6 +3340,7 @@
             "codeSuffix": "codeEnde",
             "faceValueCents": "nennwertCents",
             "quantity": "stueck",
+            "articleName": "artikelName",
             "validity": {
               "__": "gueltigkeit",
               "pattern": "muster",
@@ -3748,7 +3770,12 @@
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         },
         "signatures[].error.code": {
           "zeitraum_offen": "period_not_closed",
@@ -3845,7 +3872,12 @@
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       }
     },
@@ -3960,7 +3992,10 @@
             "fullscreen": "vollbild",
             "clearTendered": "gegebenLeeren",
             "clearCart": "korbLeeren",
-            "splitPayment": "getrennt"
+            "splitPayment": "getrennt",
+            "shiftStatus": "kassenstand",
+            "openDrawer": "ladeOeffnen",
+            "voucherPayout": "gutscheinAuszahlen"
           },
           "printerEnabled": "druckerAn",
           "printerType": "druckerArt",
@@ -4424,6 +4459,7 @@
             "codeSuffix": "codeEnde",
             "faceValueCents": "nennwertCents",
             "quantity": "stueck",
+            "articleName": "artikelName",
             "validity": {
               "__": "gueltigkeit",
               "pattern": "muster",
@@ -4752,7 +4788,12 @@
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       }
     },
@@ -5251,7 +5292,10 @@
               "fullscreen": "vollbild",
               "clearTendered": "gegebenLeeren",
               "clearCart": "korbLeeren",
-              "splitPayment": "getrennt"
+              "splitPayment": "getrennt",
+              "shiftStatus": "kassenstand",
+              "openDrawer": "ladeOeffnen",
+              "voucherPayout": "gutscheinAuszahlen"
             },
             "printerEnabled": "druckerAn",
             "printerType": "druckerArt",
@@ -6200,7 +6244,12 @@
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       },
       "fehler": {
@@ -6517,7 +6566,10 @@
             "fullscreen": "vollbild",
             "clearTendered": "gegebenLeeren",
             "clearCart": "korbLeeren",
-            "splitPayment": "getrennt"
+            "splitPayment": "getrennt",
+            "shiftStatus": "kassenstand",
+            "openDrawer": "ladeOeffnen",
+            "voucherPayout": "gutscheinAuszahlen"
           },
           "printerEnabled": "druckerAn",
           "printerType": "druckerArt",
@@ -6588,7 +6640,10 @@
             "fullscreen": "vollbild",
             "clearTendered": "gegebenLeeren",
             "clearCart": "korbLeeren",
-            "splitPayment": "getrennt"
+            "splitPayment": "getrennt",
+            "shiftStatus": "kassenstand",
+            "openDrawer": "ladeOeffnen",
+            "voucherPayout": "gutscheinAuszahlen"
           },
           "printerEnabled": "druckerAn",
           "printerType": "druckerArt",
@@ -7007,7 +7062,12 @@
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       }
     },
@@ -7191,7 +7251,12 @@
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       }
     },

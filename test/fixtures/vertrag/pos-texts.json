@@ -1,5 +1,5 @@
 {
-  "version": "1.13.0",
+  "version": "1.14.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -1796,6 +1796,9 @@
     "drawer.reason_shift_close": {
       "text": "Schichtabschluss"
     },
+    "drawer.reason_voucher_payout": {
+      "text": "Gutschein-Auszahlung"
+    },
     "shift.resend": {
       "text": "Erneut senden"
     },
@@ -1907,6 +1910,87 @@
       "placeholders": [
         "suffix"
       ]
+    },
+    "quantity.at_most": {
+      "text": "höchstens {count}",
+      "placeholders": [
+        "count"
+      ]
+    },
+    "quantity.at_least": {
+      "text": "mindestens {count}",
+      "placeholders": [
+        "count"
+      ]
+    },
+    "receipts.number_hint": {
+      "text": "Nummer"
+    },
+    "receipts.clear_number": {
+      "text": "Nummer löschen"
+    },
+    "receipts.open": {
+      "text": "Öffnen"
+    },
+    "receipt.creating": {
+      "text": "Beleg wird erstellt …"
+    },
+    "receipt_done.sale_title": {
+      "text": "Verkauf abgeschlossen"
+    },
+    "receipt_done.paid_by_voucher": {
+      "text": "mit Gutschein bezahlt"
+    },
+    "receipt_done.payout_title": {
+      "text": "Auszahlung abgeschlossen"
+    },
+    "receipt_done.paid_out": {
+      "text": "{method} ausgezahlt",
+      "placeholders": [
+        "method"
+      ]
+    },
+    "voucher.code_mask": {
+      "text": "····-{suffix}",
+      "placeholders": [
+        "suffix"
+      ]
+    },
+    "cart.close": {
+      "text": "Warenkorb schließen"
+    },
+    "nav.register": {
+      "text": "Kasse"
+    },
+    "nav.receipts": {
+      "text": "Belege"
+    },
+    "nav.vouchers": {
+      "text": "Gutscheine"
+    },
+    "nav.open_drawer": {
+      "text": "Kassenlade öffnen"
+    },
+    "nav.stocktake": {
+      "text": "Inventur"
+    },
+    "nav.settings": {
+      "text": "Einstellungen"
+    },
+    "nav.settings_locked": {
+      "text": "nur mit Chef-Anmeldung"
+    },
+    "nav.logout": {
+      "text": "Abmelden"
+    },
+    "nav.logging_out": {
+      "text": "Wird abgemeldet …"
+    },
+    "nav.fullscreen": {
+      "text": "Vollbild"
+    },
+    "nav.fullscreen_exit": {
+      "text": "Vollbild verlassen"
     },
     "voucher.covers_items": {
       "text": "Deckt: {items}",

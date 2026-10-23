@@ -12,7 +12,7 @@ Beleg-ID:          AT0-KASSE1-70
 Gutschein ····-9DWT     -30,50 A
   Einzweck, versteuert mit Beleg
   K1-ID-4711                    
-  Rest am Gutschein      19,50  
+  Rest am Gutschein      19,50 €
                                 
 MwSt%   MwSt      Netto   Brutto
 A 20%   0,75      3,75      4,50

@@ -4,7 +4,7 @@ TESTKASSE — kein gültiger Beleg
         Bäckerei Muster         
           Hauptplatz 1          
          4830 Hallstatt         
-          ATU12345678           
+          ATU12345675           
          +43 6134 12345         
                                 
 Datum:       13.08.2026 10:15:30

@@ -2,10 +2,10 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "016031af787794cf6e72932fd203138b45b7a758510af990475d9f68d35ac556",
+      "sha256": "62037d32de35f685ddf6d6b72ec19ba3b80f9be20904c15a2a0a0a7ea69845d1",
       "head": [],
-      "inputsSha256": "684e236f4e84e7befba5ebda44021eefc4de50a6f2507cf4de5b456e9a2ed790",
-      "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
+      "inputsSha256": "796371ba3f9094a79f3c9b024bd7a8319952f98297f6b8eac1fdad796f35dded",
+      "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
         "functions/gemeinsam/api-rand.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "d4cf64a3983e96e272d2934a4e9d0e17752ce772ef817d91836593419a680e1c",
+      "sha256": "a626549516561f5f3bbd946249088a51ccd669097cb48fdd1cb79c374e01ecea",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "1efd9f548d9b578193c3dbf4aae041f4ffaa1adcaba01a7c5e2df7ba882efa94",
+      "inputsSha256": "e049a6ba3c3a03df06a17ab32e543ec9007d31c1a8d8091b9f50c3198335243e",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -329,7 +329,7 @@
           },
           "response": {
             "status": "error",
-            "message": "4 von 2 Lizenzplätzen dieser Kasse sind vergeben — zuerst ein Gerät entkoppeln (Kassen-Geräte) oder Lizenzen erweitern.",
+            "message": "4 von 2 Lizenzplätzen dieser Kasse sind vergeben – zuerst ein Gerät entkoppeln (Kassen-Geräte) oder Lizenzen erweitern.",
             "data": {
               "pairedDevices": 4,
               "licenses": 2,
@@ -352,7 +352,7 @@
           },
           "response": {
             "status": "error",
-            "message": "4 von 1 Lizenzplatz dieser Kasse sind vergeben — zuerst ein Gerät entkoppeln (Kassen-Geräte) oder Lizenzen erweitern.",
+            "message": "4 von 1 Lizenzplatz dieser Kasse sind vergeben – zuerst ein Gerät entkoppeln (Kassen-Geräte) oder Lizenzen erweitern.",
             "data": {
               "pairedDevices": 4,
               "licenses": 1,
@@ -3327,7 +3327,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Anmeldung derzeit nicht möglich — bitte den Betreiber verständigen.",
+            "message": "Anmeldung derzeit nicht möglich – bitte den Betreiber verständigen.",
             "data": {
               "code": "login_unavailable"
             },
@@ -3834,7 +3834,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Diese Kasse verwendet die Benutzerauswahl — bitte die Seite neu laden.",
+            "message": "Diese Kasse verwendet die Benutzerauswahl – bitte die Seite neu laden.",
             "data": {
               "code": "login_mode_select_user"
             },
@@ -4333,7 +4333,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Anmeldung abgelaufen oder ungültig — bitte neu einloggen.",
+            "message": "Anmeldung abgelaufen oder ungültig – bitte neu einloggen.",
             "data": {
               "code": "unauthorized"
             },
@@ -4390,7 +4390,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -4409,7 +4409,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -4529,7 +4529,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Anmeldung abgelaufen oder ungültig — bitte neu einloggen.",
+            "message": "Anmeldung abgelaufen oder ungültig – bitte neu einloggen.",
             "data": {
               "code": "unauthorized"
             },
@@ -4586,7 +4586,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -4605,7 +4605,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -4928,7 +4928,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Anmeldung abgelaufen oder ungültig — bitte neu einloggen.",
+            "message": "Anmeldung abgelaufen oder ungültig – bitte neu einloggen.",
             "data": {
               "code": "unauthorized"
             },
@@ -4947,7 +4947,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -6574,7 +6574,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung gehört zu einer anderen Kasse — bitte dort neu anmelden.",
+            "message": "Sitzung gehört zu einer anderen Kasse – bitte dort neu anmelden.",
             "data": {
               "code": "session_other_cashregister"
             },
@@ -9688,7 +9688,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Zu viele Versandversuche — bitte später erneut versuchen.",
+            "message": "Zu viele Versandversuche – bitte später erneut versuchen.",
             "data": {
               "code": "too_many_requests"
             },
@@ -9842,7 +9842,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -10055,7 +10055,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -10310,7 +10310,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Anmeldung abgelaufen oder ungültig — bitte neu einloggen.",
+            "message": "Anmeldung abgelaufen oder ungültig – bitte neu einloggen.",
             "data": {
               "code": "unauthorized"
             },
@@ -10329,7 +10329,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -10734,7 +10734,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Live-Umgebung noch nicht freigeschaltet. Bitte im Test-Modus arbeiten — die Freischaltung erfolgt durch Kasseneck.",
+            "message": "Live-Umgebung noch nicht freigeschaltet. Bitte im Test-Modus arbeiten – die Freischaltung erfolgt durch Kasseneck.",
             "data": {
               "code": "live_not_enabled"
             },
@@ -12378,7 +12378,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -13196,7 +13196,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung gehört zu einer anderen Kasse — bitte dort neu anmelden.",
+            "message": "Sitzung gehört zu einer anderen Kasse – bitte dort neu anmelden.",
             "data": {
               "code": "session_other_cashregister"
             },
@@ -13424,7 +13424,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -13624,7 +13624,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },
@@ -14083,7 +14083,7 @@
           },
           "response": {
             "status": "error",
-            "message": "Sitzung abgelaufen oder übernommen — bitte neu anmelden.",
+            "message": "Sitzung abgelaufen oder übernommen – bitte neu anmelden.",
             "data": {
               "code": "session_expired"
             },

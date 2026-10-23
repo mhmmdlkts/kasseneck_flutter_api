@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "e5d3e79e46c2bc3ecb54473069a6bb7de96aa91573a25f26a36c805a027f0210",
-    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
+    "sha256": "a81a4e73b2e5dce1a3e6e0b64f2db3e1f8ddb2e1bf74500f84318fed1010a4eb",
+    "inputsSha256": "daf92d9dad0b8318f20c17849e523cade1162c9a0b71517f8a5683fa0b77a0ee",
+    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -48,7 +48,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -90,8 +90,8 @@
             "layoutRuleset": 2,
             "items": []
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -108,7 +108,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -126,7 +126,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -341,7 +341,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -413,8 +413,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -431,7 +431,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -449,7 +449,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -829,7 +829,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -887,8 +887,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -905,7 +905,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -923,7 +923,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -1202,7 +1202,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -1264,8 +1264,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -1282,7 +1282,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -1300,7 +1300,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -1674,7 +1674,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -1742,8 +1742,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -1760,7 +1760,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -1778,7 +1778,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -2037,7 +2037,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -2083,8 +2083,8 @@
             },
             "items": []
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": {
             "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
@@ -2104,7 +2104,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -2122,7 +2122,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -2499,7 +2499,7 @@
         "status": "success",
         "message": "",
         "data": {
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "street": "Hauptplatz 1",
           "zip": "1010",
           "city": "Wien",
@@ -2593,8 +2593,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -2611,7 +2611,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -2629,7 +2629,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -2993,7 +2993,7 @@
         "status": "success",
         "message": "",
         "data": {
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "street": "Hauptplatz 1",
           "zip": "1010",
           "city": "Wien",
@@ -3076,8 +3076,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -3094,7 +3094,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -3112,7 +3112,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -3513,7 +3513,7 @@
         "status": "success",
         "message": "",
         "data": {
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "street": "Hauptplatz 1",
           "zip": "1010",
           "city": "Wien",
@@ -3576,8 +3576,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -3594,7 +3594,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -3612,7 +3612,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -3963,7 +3963,7 @@
         "status": "success",
         "message": "",
         "data": {
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "street": "Hauptplatz 1",
           "zip": "1010",
           "city": "Wien",
@@ -4010,8 +4010,8 @@
             },
             "items": []
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": {
             "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
@@ -4031,7 +4031,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -4049,7 +4049,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -4719,7 +4719,7 @@
           "metadata": {
             "label": "Laden",
             "is_small_business": false,
-            "company": "Bäckerei Welt",
+            "company": "Bäckerei Kornblum",
             "phone": "+43 1 234",
             "street": "Hauptplatz 1",
             "zip": "1010",
@@ -4731,8 +4731,8 @@
             "logo_url": null,
             "thanks_message": "Bis bald",
             "kreiseck_logo": false,
-            "taxNumber": "12-345/6789",
-            "vatId": "ATU12345678"
+            "taxNumber": "91-123/4565",
+            "vatId": "ATU12345675"
           }
         }
       }
@@ -4768,7 +4768,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -4840,8 +4840,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -4858,7 +4858,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -4876,7 +4876,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -4943,7 +4943,7 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "1  x Einzweckgutschein 20 % ····-····-JJJ2",
+                    "text": "1  x Einzweckgutschein 20 % ····-JJJ2",
                     "width": 7,
                     "align": "left"
                   },
@@ -5131,7 +5131,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -5191,8 +5191,8 @@
             "layoutRuleset": 2,
             "items": []
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -5209,7 +5209,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -5227,7 +5227,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -5294,7 +5294,7 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "1  x Wertgutschein ····-····-NNNY - Mehrzweckgutschein",
+                    "text": "1  x Mehrzweckgutschein ····-NNNY",
                     "width": 7,
                     "align": "left"
                   },
@@ -5304,6 +5304,12 @@
                     "align": "right"
                   }
                 ]
+              },
+              {
+                "kind": "text",
+                "text": "  USt bei Einlösung",
+                "align": "left",
+                "bold": false
               },
               {
                 "kind": "space",
@@ -5483,7 +5489,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -5516,7 +5522,7 @@
                   "priceCents": 3500
                 },
                 "quantity": 2,
-                "name": "Leistungsgutschein 2× Maniküre",
+                "name": "Leistungsgutschein Maniküre (2 Stück)",
                 "code": "····-····-RRRF",
                 "codeSuffix": "RRRF",
                 "voucherId": "auto6"
@@ -5550,7 +5556,7 @@
             "layoutRuleset": 2,
             "items": [
               {
-                "name": "Leistungsgutschein 2× Maniküre",
+                "name": "Leistungsgutschein Maniküre (2 Stück)",
                 "vat": 20,
                 "vatRate": 20,
                 "priceOne": 70,
@@ -5562,8 +5568,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -5580,7 +5586,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -5598,7 +5604,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -5665,7 +5671,7 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "1  x Leistungsgutschein 2× Maniküre ····-····-RRRF",
+                    "text": "1  x Leistungsgutschein Maniküre (2 Stück) ····-RRRF",
                     "width": 7,
                     "align": "left"
                   },
@@ -5812,6 +5818,7 @@
               "codeSuffix": "RRRF",
               "faceValueCents": 7000,
               "quantity": 2,
+              "articleName": "Maniküre",
               "validity": {
                 "pattern": "unlimited",
                 "redeemableUntil": null,
@@ -5862,7 +5869,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -5931,8 +5938,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -5949,7 +5956,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -5967,7 +5974,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -6122,12 +6129,27 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "Wertgutschein ····-····-5KNZ - Gutschein",
+                    "text": "Gutschein ····-5KNZ",
                     "width": 8,
                     "align": "left"
                   },
                   {
                     "text": "-17,50 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "  Rest am Gutschein",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "32,50 €",
                     "width": 4,
                     "align": "right"
                   }
@@ -6249,7 +6271,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -6330,8 +6352,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -6348,7 +6370,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -6366,7 +6388,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -6448,13 +6470,34 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "1  x Gutschein ····-5KN2",
-                    "width": 7,
+                    "text": "Gutschein ····-5KN2",
+                    "width": 8,
                     "align": "left"
                   },
                   {
                     "text": "-3,00 A",
-                    "width": 5,
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "  Einzweck, versteuert mit Beleg KECK-0-ID-1",
+                "align": "left",
+                "bold": false
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "  Rest am Gutschein",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "17,00 €",
+                    "width": 4,
                     "align": "right"
                   }
                 ]
@@ -6638,7 +6681,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -6732,8 +6775,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -6750,7 +6793,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -6768,7 +6811,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -6865,13 +6908,34 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "1  x Gutschein ····-5KNN",
-                    "width": 7,
+                    "text": "Gutschein ····-5KNN",
+                    "width": 8,
                     "align": "left"
                   },
                   {
                     "text": "-35,00 A",
-                    "width": 5,
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "  Leistung, versteuert mit Beleg KECK-0-ID-1",
+                "align": "left",
+                "bold": false
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "  Rest am Gutschein",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2 Stück",
+                    "width": 4,
                     "align": "right"
                   }
                 ]
@@ -7051,7 +7115,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -7126,8 +7190,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -7144,7 +7208,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -7162,7 +7226,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -7259,7 +7323,7 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "Promotionsgutschein ····-····-5KNJ - Aktion",
+                    "text": "Aktionsgutschein ····-5KNJ - Aktion",
                     "width": 7,
                     "align": "left"
                   },
@@ -7459,7 +7523,7 @@
         "message": "",
         "data": {
           "is_small_business": false,
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "phone": "+43 1 234",
           "street": "Hauptplatz 1",
           "zip": "1010",
@@ -7534,8 +7598,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -7552,7 +7616,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -7570,7 +7634,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -7637,16 +7701,22 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "1  x Auszahlung Gutschein ····-8CN5",
-                    "width": 7,
+                    "text": "Auszahlung Gutschein ····-8CN5",
+                    "width": 8,
                     "align": "left"
                   },
                   {
                     "text": "-30,00 D",
-                    "width": 5,
+                    "width": 4,
                     "align": "right"
                   }
                 ]
+              },
+              {
+                "kind": "text",
+                "text": "  Grund: Kunde zieht weg",
+                "align": "left",
+                "bold": false
               },
               {
                 "kind": "space",
@@ -7795,7 +7865,7 @@
         "status": "success",
         "message": "",
         "data": {
-          "company": "Bäckerei Welt",
+          "company": "Bäckerei Kornblum",
           "street": "Hauptplatz 1",
           "zip": "1010",
           "city": "Wien",
@@ -7877,8 +7947,8 @@
               }
             ]
           },
-          "taxNumber": "12-345/6789",
-          "vatId": "ATU12345678",
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
           "headerVersionId": "auto1",
           "registrationInfo": null,
           "testCashregister": true,
@@ -7895,7 +7965,7 @@
               },
               {
                 "kind": "text",
-                "text": "Bäckerei Welt",
+                "text": "Bäckerei Kornblum",
                 "align": "center",
                 "bold": true
               },
@@ -7913,7 +7983,7 @@
               },
               {
                 "kind": "text",
-                "text": "ATU12345678",
+                "text": "ATU12345675",
                 "align": "center",
                 "bold": false
               },
@@ -7995,13 +8065,34 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "1  x Gutschein ····-5KN2",
-                    "width": 7,
+                    "text": "Gutschein ····-5KN2",
+                    "width": 8,
                     "align": "left"
                   },
                   {
                     "text": "-3,00 A",
-                    "width": 5,
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "text",
+                "text": "  Einzweck, versteuert mit Beleg KECK-0-ID-1",
+                "align": "left",
+                "bold": false
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "  Rest am Gutschein",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "17,00 €",
+                    "width": 4,
                     "align": "right"
                   }
                 ]
