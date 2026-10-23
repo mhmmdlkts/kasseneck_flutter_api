@@ -3221,6 +3221,45 @@
         "paperSize": "mm80",
         "ruleset": 2
       }
+    },
+    {
+      "name": "already-marked-warning-tone",
+      "input": {
+        "lines": [
+          {
+            "kind": "banner",
+            "text": "DUPLIKAT",
+            "tone": "warning"
+          },
+          {
+            "kind": "text",
+            "text": "Bäckerei Kornblum",
+            "align": "center",
+            "bold": true
+          }
+        ],
+        "paperSize": "mm80",
+        "ruleset": 2
+      },
+      "times": 1,
+      "print": false,
+      "expected": {
+        "lines": [
+          {
+            "kind": "banner",
+            "text": "DUPLIKAT",
+            "tone": "warning"
+          },
+          {
+            "kind": "text",
+            "text": "Bäckerei Kornblum",
+            "align": "center",
+            "bold": true
+          }
+        ],
+        "paperSize": "mm80",
+        "ruleset": 2
+      }
     }
   ]
 }

@@ -54,8 +54,9 @@ version): vouchers follow the final Bon and payment rules. Notes for callers:
   `ReceiptLayout` whose first line is the banner `DUPLIKAT`
   (`LayoutBannerTone.receiptType`: bold, centred between two `=` frame lines,
   the strongest emphasis of the layout model); every other line stays as it
-  was, the input is never changed, and applying it twice gives the same as
-  once. Registers must call it on **every reprint and on "print copy"**, never
+  was, the input is never changed (lines and column lists are new), and
+  applying it twice gives the same as once (a first-line `DUPLIKAT` banner
+  counts as marked whatever its tone). Registers must call it on **every reprint and on "print copy"**, never
   on the first print, and pass the result to the same print path
   (`PrintPaper.setReceiptSheet`, `receiptSheet`, `KeckReceiptSheetWidget`).
   Reason: Erlass BMF-AV Nr. 2/2026, section 4.5.6, requires a receipt

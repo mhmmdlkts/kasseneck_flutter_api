@@ -202,16 +202,17 @@ const String _duplikat = 'DUPLIKAT';
 /// dem Logo.
 ///
 /// Reine Funktion: die Eingabe bleibt unangetastet, das Ergebnis trägt eine
-/// eigene Zeilenliste (die Zeilen selbst sind unveränderlich). Idempotent:
-/// trägt das Layout den Aufdruck schon als erste Zeile, kommt er nicht ein
-/// zweites Mal dazu.
+/// eigene Zeilenliste und je Spaltenzeile eine eigene Spaltenliste (wie im
+/// npm-Paket); wer am Duplikat dreht, dreht nie am Erstdruck. Idempotent:
+/// ist die erste Zeile schon ein Aufdruck `DUPLIKAT` (gleich in welchem Ton),
+/// kommt er nicht ein zweites Mal dazu.
 ReceiptLayout markAsDuplicate(ReceiptLayout layout) {
   final erste = layout.lines.isEmpty ? null : layout.lines.first;
   final schon = erste is LayoutBannerLine && erste.text == _duplikat;
   return ReceiptLayout(
     lines: [
       if (!schon) const LayoutBannerLine(text: _duplikat, tone: LayoutBannerTone.receiptType),
-      ...layout.lines,
+      for (final z in layout.lines) z is LayoutColumnsLine ? LayoutColumnsLine([...z.columns], bold: z.bold) : z,
     ],
     paperSize: layout.paperSize,
     ruleset: layout.ruleset,

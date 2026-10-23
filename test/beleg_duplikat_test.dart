@@ -128,7 +128,7 @@ void main() {
       for (final name in _goldens) {
         final erst = _golden(name);
         final dup = markAsDuplicate(erst);
-        expect(dup.lines.skip(1).toList(), erst.lines, reason: name);
+        expect((_draht(dup) as Map)['lines'], [_aufdruck, ...((_draht(erst) as Map)['lines'] as List)], reason: name);
         for (final zeichen in [32, 48]) {
           final a = ReceiptGrid.render(erst, charsPerLine: zeichen).lines.map((z) => z.text).toList();
           final b = ReceiptGrid.render(dup, charsPerLine: zeichen).lines.map((z) => z.text).toList();
@@ -152,6 +152,23 @@ void main() {
       expect(identical(zweit.lines, dup.lines), isFalse);
     });
 
+    test('die Spalten des Ergebnisses sind eigene Listen: wer sie aendert, aendert nicht den Erstdruck', () {
+      final erst = _golden('voucher-multi-purpose-redeem');
+      final vorher = jsonEncode(erst.toJson());
+      final dup = markAsDuplicate(erst);
+      final spalten = dup.lines.whereType<LayoutColumnsLine>().toList();
+      expect(spalten, isNotEmpty);
+      for (final z in spalten) {
+        z.columns[0] = const LayoutColumn(text: 'verändert', width: 12);
+        z.columns.add(const LayoutColumn(text: 'dazu', width: 1));
+      }
+      expect(jsonEncode(erst.toJson()), vorher);
+      // Auch ueber ein schon gekennzeichnetes Layout.
+      final nochmal = markAsDuplicate(dup);
+      nochmal.lines.whereType<LayoutColumnsLine>().first.columns.clear();
+      expect(dup.lines.whereType<LayoutColumnsLine>().first.columns, isNotEmpty);
+    });
+
     test('idempotent: zweimal angewandt wie einmal (Erkennung an der eigenen ersten Zeile)', () {
       for (final name in _goldens) {
         final einmal = markAsDuplicate(_golden(name));
@@ -161,6 +178,19 @@ void main() {
       // Ein „DUPLIKAT“ weiter unten (etwa im Artikelnamen) ist keine Kennzeichnung.
       const artikel = ReceiptLayout(paperSize: 'mm58', ruleset: 2, lines: [LayoutTextLine(text: 'DUPLIKAT', align: LayoutAlign.center, bold: true)]);
       expect((_draht(markAsDuplicate(artikel)) as Map)['lines'], [_aufdruck, artikel.lines.single.toJson()]);
+    });
+
+    test('die Erkennung sieht nur Art und Text der ersten Zeile, nicht den Ton', () {
+      // Ein „DUPLIKAT“-Rahmen im Ton warning an erster Stelle gilt als schon gekennzeichnet:
+      // ein zweiter Aufdruck mit anderem Ton stuende sonst doppelt auf dem Bon.
+      const warnung = ReceiptLayout(paperSize: 'mm80', ruleset: 2, lines: [
+        LayoutBannerLine(text: 'DUPLIKAT', tone: LayoutBannerTone.warning),
+        LayoutTextLine(text: 'Bäckerei Kornblum', align: LayoutAlign.center, bold: true),
+      ]);
+      expect(_draht(markAsDuplicate(warnung)), _draht(warnung));
+      // Ein anderer Rahmen an erster Stelle (TESTKASSE) ist keine Kennzeichnung.
+      final testkasse = _golden('test-cashregister-sale');
+      expect(markAsDuplicate(testkasse).bannerTexts.take(2).toList(), ['DUPLIKAT', testkasse.bannerTexts.first]);
     });
 
     test('leeres Layout wirft nicht', () {
@@ -183,6 +213,11 @@ void main() {
         expect(namen, contains(pflicht));
       }
       expect(faelle.any((f) => (f['times'] as int) > 1), isTrue, reason: 'ein Fall wendet mehrfach an (Idempotenz)');
+      expect(
+        faelle.any((f) => ((f['input'] as Map?)?['lines'] as List?)?.firstOrNull?['tone'] == 'warning'),
+        isTrue,
+        reason: 'ein Fall mit DUPLIKAT im Ton warning',
+      );
       final hex = Directory('$_vertrag/expected').listSync().map((e) => e.uri.pathSegments.last).where((d) => d.startsWith('duplicate.')).toList()..sort();
       expect(hex, [for (final f in faelle) if (f['print'] == true) 'duplicate.${f['name']}.hex']..sort());
       expect(hex.length, greaterThanOrEqualTo(2));
