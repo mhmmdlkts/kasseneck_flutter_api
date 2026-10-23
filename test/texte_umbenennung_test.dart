@@ -149,6 +149,13 @@ const _nach10 = (
     // Gutscheine an der Kasse, Stufe 3 (11.4.0, npm 1.13.0)
     'voucher.apply', 'voucher.redeemable_until', 'voucher.remove_line', 'voucher.reenter_code',
     'voucher.refundable_until', 'voucher.code_done', 'voucher.article', 'voucher.add',
+    // Navigation, Mengengrenzen, Beleg-Fertigseite, Gutschein-Auszahlung (11.5.0, npm 1.14.0)
+    'drawer.reason_voucher_payout', 'quantity.at_most', 'quantity.at_least', 'receipts.number_hint',
+    'receipts.clear_number', 'receipts.open', 'receipt.creating', 'receipt_done.sale_title',
+    'receipt_done.paid_by_voucher', 'receipt_done.payout_title', 'receipt_done.paid_out', 'voucher.code_mask',
+    'cart.close', 'nav.register', 'nav.receipts', 'nav.vouchers', 'nav.open_drawer', 'nav.stocktake',
+    'nav.settings', 'nav.settings_locked', 'nav.logout', 'nav.logging_out', 'nav.fullscreen',
+    'nav.fullscreen_exit',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'voucherErrors', 'returnDispositionLabels'],
   placeholders: {
@@ -161,6 +168,8 @@ const _nach10 = (
     'suffix', 'items', 'article',
     // Gutscheine an der Kasse, Stufe 3 (11.4.0)
     'date', 'line',
+    // Fertigseite der Auszahlung (11.5.0)
+    'method',
   },
 );
 
