@@ -9,6 +9,11 @@ version): vouchers follow the final Bon and payment rules. Notes for callers:
   pre-fill `voucherRedeemMaxCentsForLines` stops at goods (goods plus payout
   minus tip) and never turns negative. Not applied to a cancellation.
   Reason: the tip is paid in cash or by card, never from a voucher balance.
+  The server's contract cases (staff and owner tip, `payments[].tipCents`,
+  promotion plus voucher, single-purpose, the boundary 20.00 accepted and
+  20.01 rejected, each with the largest redemption the server accepts) now
+  check `receiptDueCents` and `voucherRedeemMaxCentsForLines`; an unknown
+  contract case fails the tests.
 - **Bon text.** The voucher code is always the short mask `····-XXXX` on the
   Bon (the long form `····-····-XXXX` is gone; the `code` field on the
   receipt itself is unchanged). The rest of a single-purpose or service
@@ -16,13 +21,12 @@ version): vouchers follow the final Bon and payment rules. Notes for callers:
   promotion voucher is called "Aktionsgutschein" (old receipts that still say
   "Promotionsgutschein" print that name alone). A receipt that a voucher
   covers completely prints no "Zahlungsart" line; with several payments,
-  payments of 0 cent are left out. New `paymentMethodText(receipt)` is what
-  the printer and the receipt widget use for that line. `voucherItemLines`
-  has a new parameter `currency`.
+  payments of 0 cent are left out. `PrintPaper` and `KeckReceiptWidget`
+  follow the same rule.
 - **Cancelling a voucher payout.** `cancelReceipt` accepts the one positive
-  cash payment that refunds a payout (`isPayoutCancellation`); with the
-  original at hand, a cancellation without a payout in it is still rejected
-  before sending. `paymentsError(..., payoutCancellation: true)` is additive.
+  cash payment that refunds a payout; with the original at hand, a
+  cancellation without a payout in it is still rejected before sending.
+  `paymentsError(..., payoutCancellation: true)` is additive.
 - **Catalogue.** 24 new labels (`nav.*`, `receipt_done.*`, `quantity.at_most`,
   `quantity.at_least`, `receipts.*`, `cart.close`, `voucher.code_mask`,
   `drawer.reason_voucher_payout`); new placeholder `{method}`.
