@@ -450,7 +450,7 @@ class PrintPaper {
       final String betrag = '${formatCents(item.totalCents)} ${item.vat.category}';
       final gutschein = gutscheinZuordnung[i];
       if (gutschein != null) {
-        for (final z in voucherItemLines(item, gutschein, amount: betrag, formatCents: formatCents)) {
+        for (final z in voucherItemLines(item, gutschein, amount: betrag, formatCents: formatCents, currency: 'EUR')) {
           switch (z) {
             case VoucherBonItemLine():
               _positionsZeile(item, z.name, betrag);
@@ -578,7 +578,9 @@ class PrintPaper {
       addFullHorizontalLine();
     }
     addDoubleText('Gesamt:', '${formatCents(receipt.sumCents)} EUR');
-    addDoubleText('Zahlungsart:', receipt.paymentMethod.label);
+    // Voll vom Gutschein gedeckt: keine Zahlungsart (paymentMethodText).
+    final String? zahlungsart = paymentMethodText(receipt);
+    if (zahlungsart != null) addDoubleText('Zahlungsart:', zahlungsart);
 
     addFeed();
 

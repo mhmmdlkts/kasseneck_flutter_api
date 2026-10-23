@@ -322,13 +322,15 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 Text('${formatCents(widget.receipt.sumCents)} EUR', style: textStyle)
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Zahlungsart:', style: textStyle),
-                Text(widget.receipt.paymentMethod.label, style: textStyle)
-              ],
-            ),
+            // Voll vom Gutschein gedeckt: keine Zahlungsart (paymentMethodText), wie der Druck.
+            if (paymentMethodText(widget.receipt) case final zahlungsart?)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Zahlungsart:', style: textStyle),
+                  Text(zahlungsart, style: textStyle)
+                ],
+              ),
             const SizedBox(height: 32),
             if (widget.receipt.legalMessage.isNotEmpty)
               ...[
@@ -383,7 +385,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
     final String betrag = '${formatCents(item.totalCents)} ${item.vat.category}';
     if (gutschein == null) return [_positionsZeile(item, item.name, betrag)];
     return [
-      for (final z in voucherItemLines(item, gutschein, amount: betrag, formatCents: formatCents))
+      for (final z in voucherItemLines(item, gutschein, amount: betrag, formatCents: formatCents, currency: 'EUR'))
         switch (z) {
           VoucherBonItemLine() => _positionsZeile(item, z.name, betrag),
           VoucherBonPairLine() => _paarZeile(z.left, z.right),

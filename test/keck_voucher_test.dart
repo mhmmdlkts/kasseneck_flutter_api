@@ -34,7 +34,7 @@ void main() {
       expect(v(cents: 1000).receiptText, 'Wertgutschein 10 EUR');
     });
     test('krummer Betrag exakt (kein ~ mehr)', () {
-      expect(v(type: VoucherType.promo, cents: 150).receiptText, 'Promotionsgutschein 1,50 EUR');
+      expect(v(type: VoucherType.promo, cents: 150).receiptText, 'Aktionsgutschein 1,50 EUR');
       expect(v(cents: 1).receiptText, 'Wertgutschein 0,01 EUR');
     });
     test('Name wird angehaengt', () {
@@ -70,12 +70,12 @@ void main() {
           'Auszahlung Gutschein ····-9DWT');
     });
 
-    test('neue Form: Verkauf mit Bezeichnung und Code-Maske', () {
+    test('neue Form: Verkauf mit Bezeichnung und kurzer Code-Maske (R2)', () {
       expect(gelesen('single_purpose', VoucherAction.sell, name: 'Einzweckgutschein 20 %', amountCents: 5000).receiptText,
-          'Einzweckgutschein 20 % ····-····-9DWT');
+          'Einzweckgutschein 20 % ····-9DWT');
       expect(gelesen('multi_purpose', VoucherAction.sell, type: VoucherType.value, name: 'Mehrzweckgutschein', valueCents: 5000).receiptText,
-          'Mehrzweckgutschein ····-····-9DWT');
-      expect(gelesen('service', VoucherAction.sell, amountCents: 7000).receiptText, 'Leistungsgutschein ····-····-9DWT');
+          'Mehrzweckgutschein ····-9DWT');
+      expect(gelesen('service', VoucherAction.sell, amountCents: 7000).receiptText, 'Leistungsgutschein ····-9DWT');
     });
 
     test('neue Form, Wunsch mit Klartext-Code: nur die letzten vier Zeichen, nie der Code', () {
@@ -87,9 +87,16 @@ void main() {
       expect(KeckVoucher(action: VoucherAction.sell, type: VoucherType.singlePurpose, amountCents: 5000).receiptText, 'Einzweckgutschein');
     });
 
+    test('Aktion: altes Wort am gespeicherten Namen steht allein, wie gespeichert', () {
+      expect(v(type: VoucherType.promo, cents: 300, name: 'Promotionsgutschein Sommer').receiptText, 'Promotionsgutschein Sommer');
+      expect(v(type: VoucherType.promo, cents: 300, name: 'Aktionsgutschein Herbst').receiptText, 'Aktionsgutschein Herbst');
+      // Nur bei der Aktion: ein Wertgutschein mit diesem Namen bleibt Wertgutschein.
+      expect(v(cents: 300, name: 'Promotionsgutschein').receiptText, 'Wertgutschein 3 EUR - Promotionsgutschein');
+    });
+
     test('Aktion, wie der Server sie liest (type promo): Rabattzeile wie bisher', () {
       final aktion = gelesen('promotion', VoucherAction.redeem, type: VoucherType.promo, name: 'Aktion', valueCents: 200);
-      expect(aktion.receiptText, 'Promotionsgutschein 2 EUR - Aktion');
+      expect(aktion.receiptText, 'Aktionsgutschein 2 EUR - Aktion');
     });
   });
 

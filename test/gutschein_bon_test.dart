@@ -4,17 +4,20 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
+import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/receipt_type.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/models/print_paper.dart';
 import 'package:kasseneck_api/models/receipt_grid.dart';
 import 'package:kasseneck_api/models/receipt_layout.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
+import 'package:kasseneck_api/src/receipt/gutschein_bon.dart';
 import 'package:kasseneck_api/widgets/keck_receipt_lines_widget.dart';
 import 'package:kasseneck_api/widgets/keck_receipt_widget.dart';
 
@@ -220,7 +223,7 @@ void main() {
       expect(z.sublist(i, i + 3), [
         'Gutschein ····-9DWT | -30,50 A',
         '  Einzweck, versteuert mit Beleg K1-ID-4711',
-        '  Rest am Gutschein | 19,50  ',
+        '  Rest am Gutschein | 19,50 EUR',
       ]);
       expect(z.where((t) => t.contains('9DWT')), hasLength(1));
       expect(z.any((t) => t.startsWith('Zwischensumme')), isFalse);
@@ -259,10 +262,10 @@ void main() {
       expect(z.sublist(i, i + 6), [
         'Gutschein ····-9DWT | -10,00 A',
         '  Einzweck, versteuert mit Beleg K1-ID-1',
-        '  Rest am Gutschein | 40,00  ',
+        '  Rest am Gutschein | 40,00 EUR',
         'Gutschein ····-9DWT | -5,00 A',
         '  Einzweck, versteuert mit Beleg K1-ID-2',
-        '  Rest am Gutschein | 0,00  ',
+        '  Rest am Gutschein | 0,00 EUR',
       ]);
       expect(r.sumCents, 3500);
     });
@@ -282,7 +285,7 @@ void main() {
       final z = await _gedruckt(r);
       final i = z.indexOf('Gutschein ····-9DWT | -30,50 A');
       expect(z.sublist(i, i + 3),
-          ['Gutschein ····-9DWT | -30,50 A', '  Einzweck, versteuert mit Beleg K1-ID-4711', '  Rest am Gutschein | 19,50  ']);
+          ['Gutschein ····-9DWT | -30,50 A', '  Einzweck, versteuert mit Beleg K1-ID-4711', '  Rest am Gutschein | 19,50 EUR']);
       final k = z.indexOf('Auszahlung Gutschein ····-9DWT | -5,00 A');
       expect(z.sublist(k, k + 2), ['Auszahlung Gutschein ····-9DWT | -5,00 A', '  Grund: Rest bar']);
     });
@@ -301,7 +304,7 @@ void main() {
         ),
       ]);
       final z = await _gedruckt(r);
-      expect(z, containsAllInOrder(['1  x Mehrzweckgutschein ····-····-NNNY | 50,00 D', '  USt bei Einlösung']));
+      expect(z, containsAllInOrder(['1  x Mehrzweckgutschein ····-NNNY | 50,00 D', '  USt bei Einlösung']));
       expect(z.where((t) => t.contains('NNNY')), hasLength(1));
       expect(_gesamt(z), '50,00 EUR');
     });
@@ -342,6 +345,140 @@ void main() {
       final z = await _gedruckt(r);
       expect(z, containsAllInOrder(['Zwischensumme | 22,40 EUR', 'Wertgutschein 17,50 EUR | -17,50 EUR']));
       expect(z.any((t) => t.contains('Rest am Gutschein')), isFalse);
+    });
+  });
+
+  group('Bon-Feinschliff: eine kurze Maske, Zahlungsart nur bei Zahlung, Rest mit Euro (R2, R3, R5)', () {
+    /// Spec-Beispiel, vollstaendig vom Gutschein gedeckt (Maniküre 30,50, Gutschein -30,50).
+    KasseneckReceipt gedeckt(List<KeckPayment>? zahlungen, {ReceiptType receiptType = ReceiptType.standard}) {
+      final vz = receiptType == ReceiptType.cancellation ? -1 : 1;
+      return buildReceipt(
+        receiptType: receiptType,
+        items: [
+          KasseneckItem(name: 'Maniküre', quantity: 1, vat: VatRate.vat20, priceCents: vz * 3050),
+          KasseneckItem(name: 'Gutschein ····-9DWT', quantity: 1, vat: VatRate.vat20, priceCents: vz * -3050, kind: 'voucher'),
+        ],
+        vouchers: [_einzweck(amountCents: 3050, balanceAfterCents: 1950, taxedWith: 'K1-ID-4711')],
+      )..payments = zahlungen;
+    }
+
+    KeckPayment zahlung(String id, String methode, int cents) => KeckPayment(id: id, methodValue: methode, amountCents: cents);
+    List<String> zahlungsart(List<String> zeilen) => zeilen.where((z) => z.startsWith('Zahlungsart')).toList();
+
+    test('R3: voll gedeckter Beleg (0 Cent bezahlt) traegt keine Zahlungsart-Zeile, Gesamt bleibt', () async {
+      for (final zahlungen in [null, <KeckPayment>[], [zahlung('p1', 'cash', 0)]]) {
+        final z = await _gedruckt(gedeckt(zahlungen));
+        expect(_gesamt(z), '0,00 EUR');
+        expect(zahlungsart(z), isEmpty, reason: '$zahlungen');
+      }
+    });
+
+    test('R3: Gutschein plus Barzahlung 4,90 -- die Zahlungsart-Zeile bleibt', () async {
+      final r = _specBeispiel()..payments = [zahlung('p1', 'cash', 450)];
+      expect(zahlungsart(await _gedruckt(r)), ['Zahlungsart: | Barzahlung']);
+      expect(zahlungsart(await _gedruckt(_specBeispiel())), ['Zahlungsart: | Barzahlung']);
+    });
+
+    test('R3: mehrere Zahlungen, eine mit 0 Cent -- die Zeile nennt nur, was gezahlt wurde', () async {
+      final r = _specBeispiel()
+        ..payments = [zahlung('p1', 'cash', 0), zahlung('p2', 'creditCard', 450)];
+      expect(zahlungsart(await _gedruckt(r)), ['Zahlungsart: | Kartenzahlung']);
+      final spec = _specBeispiel();
+      final zwei = buildReceipt(items: spec.items, vouchers: spec.vouchers, paymentMethod: KeckPaymentMethod.mixed)
+        ..payments = [zahlung('p1', 'cash', 0), zahlung('p2', 'cash', 250), zahlung('p3', 'creditCard', 200)];
+      // Bleiben mehrere Zahlarten, steht die Zahlungsart des Belegs da.
+      expect(zahlungsart(await _gedruckt(zwei)), ['Zahlungsart: | Mehrere Zahlungsarten']);
+    });
+
+    test('R3: ohne Gutschein bleibt alles wie bisher (Nullbeleg, 0-Cent-Zahlung, Aktion)', () async {
+      final nullbeleg = buildReceipt(items: [KasseneckItem(name: 'Gratisprobe', quantity: 1, vat: VatRate.vat20, priceCents: 0)])
+        ..payments = [zahlung('p1', 'cash', 0)];
+      expect(zahlungsart(await _gedruckt(nullbeleg)), ['Zahlungsart: | Barzahlung']);
+      final startbeleg = buildReceipt(receiptType: ReceiptType.start);
+      expect(zahlungsart(await _gedruckt(startbeleg)), ['Zahlungsart: | Barzahlung']);
+      final mehrere = buildReceipt(
+          items: [KasseneckItem(name: 'Torte', quantity: 1, vat: VatRate.vat10, priceCents: 500)],
+          paymentMethod: KeckPaymentMethod.mixed)
+        ..payments = [zahlung('p1', 'cash', 0), zahlung('p2', 'creditCard', 500)];
+      expect(zahlungsart(await _gedruckt(mehrere)), ['Zahlungsart: | Mehrere Zahlungsarten']);
+      // Ein Aktionsgutschein ist keine Zahlung: deckt er alles, bleibt die Zeile.
+      final aktion = buildReceipt(
+        items: [KasseneckItem(name: 'Torte', quantity: 1, vat: VatRate.vat10, priceCents: 1000)],
+        vouchers: [KeckVoucher(action: VoucherAction.redeem, type: VoucherType.promo, name: 'Aktion', code: '····-····-5KNJ', valueCents: 1000)],
+      )..payments = [zahlung('p1', 'cash', 0)];
+      expect(aktion.sumCents, 0);
+      expect(zahlungsart(await _gedruckt(aktion)), ['Zahlungsart: | Barzahlung']);
+      // Verkauf und Auszahlung sind keine Einloesung.
+      final auszahlung = buildReceipt(vouchers: [
+        KeckVoucher(action: VoucherAction.payout, type: VoucherType.value, valueCents: 1200, reason: 'Rest bar', codeSuffix: '8CN5'),
+      ]);
+      expect(zahlungsart(await _gedruckt(auszahlung)), ['Zahlungsart: | Barzahlung']);
+      final verkauf = buildReceipt(
+        paymentMethod: KeckPaymentMethod.mixed,
+        vouchers: [KeckVoucher(action: VoucherAction.sell, type: VoucherType.value, valueCents: 5000, name: 'Wertgutschein', code: 'GS-1')],
+      )..payments = [zahlung('p1', 'cash', 0), zahlung('p2', 'creditCard', 5000)];
+      expect(zahlungsart(await _gedruckt(verkauf)), ['Zahlungsart: | Mehrere Zahlungsarten']);
+    });
+
+    test('R3 (Review 4): Storno eines voll gedeckten Belegs zeigt keine „Barzahlung 0,00“', () async {
+      final r = gedeckt([zahlung('p1', 'cash', 0)], receiptType: ReceiptType.cancellation);
+      final z = await _gedruckt(r);
+      expect(_gesamt(z), '0,00 EUR');
+      expect(zahlungsart(z), isEmpty);
+    });
+
+    test('R5: Einzweck-Rest steht mit Euro, auch auf 58 mm', () async {
+      for (final papier in [KeckPaperSize.mm80, KeckPaperSize.mm58]) {
+        final z = await _gedruckt(_specBeispiel(), papier: papier);
+        expect(z, contains('  Rest am Gutschein | 19,50 EUR'), reason: '$papier');
+        expect(z.any((t) => RegExp(r'Rest am Gutschein \| \d+,\d\d {2}$').hasMatch(t)), isFalse);
+      }
+    });
+
+    test('R2: alter Beleg mit langer Maske und „×“-Name druckt mit kurzer Maske (Review 5)', () async {
+      final r = buildReceipt(
+        items: [KasseneckItem(name: 'Leistungsgutschein 2× Maniküre', quantity: 1, vat: VatRate.vat20, priceCents: 7000, kind: 'voucher')],
+        vouchers: [
+          KeckVoucher(
+              action: VoucherAction.sell, type: VoucherType.service, voucherType: 'service', amountCents: 7000, code: '····-····-RRRF', voucherId: 's'),
+        ],
+      );
+      final z = await _gedruckt(r);
+      expect(z.any((t) => t.contains('Leistungsgutschein 2')), isTrue, reason: '$z');
+      expect(z.any((t) => t.contains('····-····')), isFalse, reason: '$z');
+      expect(z.any((t) => t.contains('····-RRRF')), isTrue, reason: '$z');
+    });
+
+    test('R2: Verkauf Mehrzweck ohne codeSuffix: die Endung kommt aus dem Code-Ende', () async {
+      final r = buildReceipt(vouchers: [
+        KeckVoucher(
+            action: VoucherAction.sell,
+            type: VoucherType.value,
+            voucherType: 'multi_purpose',
+            valueCents: 5000,
+            name: 'Mehrzweckgutschein',
+            code: '····-····-NNNY',
+            voucherId: 'm'),
+      ]);
+      final z = await _gedruckt(r);
+      expect(z, contains('1  x Mehrzweckgutschein ····-NNNY | 50,00 D'));
+      expect(z.any((t) => t.contains('····-····')), isFalse);
+    });
+
+    test('R2: Codezusatz und Belegtext -- maskiert immer kurz, Alt-Code ohne Maske unveraendert', () {
+      KeckVoucher mit(String? code, {String? suffix, VoucherType type = VoucherType.value, String? name}) =>
+          KeckVoucher(action: VoucherAction.redeem, type: type, code: code, codeSuffix: suffix, valueCents: 300, name: name);
+      expect(voucherCodeSuffixText(mit('····-····-9DWT')), ' ····-9DWT');
+      expect(voucherCodeSuffixText(mit('····-····-9DWT', suffix: '9DWT')), ' ····-9DWT');
+      expect(voucherCodeSuffixText(mit('····-9DWT')), ' ····-9DWT');
+      expect(voucherCodeSuffixText(mit('GS-1')), ' GS-1');
+      expect(voucherCodeSuffixText(mit('no-code')), '');
+      expect(voucherCodeSuffixText(mit(null)), '');
+      expect(layoutVoucherText(mit('····-····-5KNJ', type: VoucherType.promo, name: 'Aktion')), 'Aktionsgutschein ····-5KNJ - Aktion');
+      expect(layoutVoucherText(mit('GS-9', name: 'Geschenk')), 'Wertgutschein GS-9 - Geschenk');
+      // Alte Belege nennen den Aktionsgutschein noch „Promotionsgutschein“: der Name steht allein.
+      expect(layoutVoucherText(mit('····-····-5KNJ', type: VoucherType.promo, name: 'Promotionsgutschein Sommer')), 'Promotionsgutschein Sommer');
+      expect(layoutVoucherText(mit('····-····-5KNJ', type: VoucherType.promo, name: 'Aktionsgutschein Herbst')), 'Aktionsgutschein Herbst');
     });
   });
 
@@ -395,7 +532,7 @@ void main() {
 
     testWidgets('Beleg-Widget: Spec-Beispiel Einzweck mit Vermerk, Rest und Gesamt 4,50', (tester) async {
       final t = await texte(tester, KeckReceiptWidget(receipt: _specBeispiel()));
-      expect(t, containsAllInOrder(['Gutschein ····-9DWT', '-30,50 A', 'Einzweck, versteuert mit Beleg K1-ID-4711', '  Rest am Gutschein', '19,50  ']));
+      expect(t, containsAllInOrder(['Gutschein ····-9DWT', '-30,50 A', 'Einzweck, versteuert mit Beleg K1-ID-4711', '  Rest am Gutschein', '19,50 EUR']));
       expect(t.where((x) => x.contains('9DWT')), hasLength(1));
       expect(t, contains('4,50 EUR'));
       expect(t, isNot(contains('Zwischensumme')));
@@ -420,6 +557,29 @@ void main() {
         expect(t, contains('${formatCents(_bezahlt(name))} EUR'));
       });
     }
+
+    testWidgets('Beleg-Widget R3: voll gedeckt keine Zahlungsart, mit Barzahlung bleibt sie, Aktion bleibt sie (wie der Druck)', (tester) async {
+      final gedeckt = buildReceipt(
+        items: [
+          KasseneckItem(name: 'Maniküre', quantity: 1, vat: VatRate.vat20, priceCents: 3050),
+          KasseneckItem(name: 'Gutschein ····-9DWT', quantity: 1, vat: VatRate.vat20, priceCents: -3050, kind: 'voucher'),
+        ],
+        vouchers: [_einzweck(amountCents: 3050, balanceAfterCents: 1950, taxedWith: 'K1-ID-4711')],
+      )..payments = [const KeckPayment(id: 'p1', methodValue: 'cash', amountCents: 0)];
+      final ohne = await texte(tester, KeckReceiptWidget(receipt: gedeckt));
+      expect(ohne, isNot(contains('Zahlungsart:')));
+      expect(ohne, contains('0,00 EUR'));
+      final mit = await texte(tester, KeckReceiptWidget(receipt: _specBeispiel()));
+      expect(mit, containsAllInOrder(['Zahlungsart:', 'Barzahlung']));
+      final teil = _specBeispiel()
+        ..payments = [const KeckPayment(id: 'p1', methodValue: 'cash', amountCents: 0), const KeckPayment(id: 'p2', methodValue: 'creditCard', amountCents: 450)];
+      expect(await texte(tester, KeckReceiptWidget(receipt: teil)), containsAllInOrder(['Zahlungsart:', 'Kartenzahlung']));
+      final aktion = buildReceipt(
+        items: [KasseneckItem(name: 'Torte', quantity: 1, vat: VatRate.vat10, priceCents: 1000)],
+        vouchers: [KeckVoucher(action: VoucherAction.redeem, type: VoucherType.promo, name: 'Aktion', valueCents: 1000)],
+      );
+      expect(await texte(tester, KeckReceiptWidget(receipt: aktion)), containsAllInOrder(['Aktionsgutschein 10 EUR - Aktion', 'Zahlungsart:']));
+    });
 
     testWidgets('Zeilen-Widget: Vermerk mit fuehrenden Leerzeichen steht eingerueckt, Text ohne die Leerzeichen', (tester) async {
       final layout = ReceiptLayout(paperSize: 'mm80', ruleset: 1, lines: const [

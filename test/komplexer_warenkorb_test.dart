@@ -54,7 +54,7 @@ void main() {
 
   test('Gutschein-Text: krumme Betraege exakt ("1,50"), keine ~Rundung mehr', () {
     final promo = KeckVoucher(action: VoucherAction.redeem, type: VoucherType.promo, valueCents: 150);
-    expect(promo.receiptText, 'Promotionsgutschein 1,50 EUR');
+    expect(promo.receiptText, 'Aktionsgutschein 1,50 EUR');
     final value = KeckVoucher(name: 'Geschenkkarte', action: VoucherAction.sell, type: VoucherType.value, valueCents: 1000);
     expect(value.receiptText, 'Wertgutschein 10 EUR - Geschenkkarte');
   });

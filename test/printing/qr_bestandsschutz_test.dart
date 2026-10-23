@@ -140,8 +140,14 @@ void main() {
     // also genau acht eingeschobene Bytes hinter `ESC @` und sonst keine
     // einzige Verschiebung. Nachweis samt Rohdaten: .superpowers/sdd/
     // 2026-09-21-marke-einheitlich/druckbereich-nachweis/.
+    //
+    // Nachtrag Aktionsgutschein (23.10.2026, Dart 11.5.0): noch einmal neu
+    // gezogen, weil die Rabattzeile der Aktion jetzt „Aktionsgutschein 1,50 EUR
+    // - Aktion“ statt „Promotionsgutschein …“ heisst (Wort wie npm 1.14.0).
+    // Belegt: mit dem alten Wort in `KeckVoucher.receiptText` ergeben beide
+    // Breiten wieder genau die vorigen Digests (47e7e4a9…, 1940e024…).
     expect(await belegDigest(KeckPaperSize.mm58),
-        '47e7e4a90bb69a768a7bbbd07e62f15e402ed79229be06be705128d1a2b4f74f');
+        'd5d7bf540a514ae5782ab44b64ee90ac515e4a20c4b1fb2fc669940ba141903e');
   });
 
   test('80 mm: Beleg ohne Wahl byteidentisch mit 6.8.0', () async {
@@ -179,7 +185,9 @@ void main() {
     // also genau acht eingeschobene Bytes hinter `ESC @` und sonst keine
     // einzige Verschiebung. Nachweis samt Rohdaten: .superpowers/sdd/
     // 2026-09-21-marke-einheitlich/druckbereich-nachweis/.
+    //
+    // Nachtrag Aktionsgutschein (23.10.2026): neu gezogen wie im 58-mm-Fall.
     expect(await belegDigest(KeckPaperSize.mm80),
-        '1940e02471c04cc9ca9e932c6eda23aa7e673d60d152678a2d2cc991b2f0f81e');
+        '521812f7db481529bcbb8b359cb20e16f8fd8ac7ed45dcf1a0d96644eee854f5');
   });
 }
