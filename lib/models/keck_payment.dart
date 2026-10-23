@@ -180,11 +180,15 @@ const int maxPayments = 20;
 /// `tenderedCents`. [payout]: ein Beleg nur aus Gutschein-Auszahlungen; der
 /// Betrag geht bar hinaus, genau eine Zahlung, negativ, ohne `tenderedCents`
 /// und ohne `tipCents` (Server `pruefeZahlungen` mit Auszahlung).
-String? paymentsError(List<KeckPaymentInput> payments, {required bool cancellation, bool payout = false}) {
+/// [payoutCancellation]: Storno einer Gutschein-Auszahlung, der Kunde gibt das
+/// Geld zurueck; die eine Barzahlung ist positiv (`zahlungen-core`
+/// `stornoAuszahlung`). Ob sie vorliegt, entscheidet `isPayoutCancellation`.
+String? paymentsError(List<KeckPaymentInput> payments,
+    {required bool cancellation, bool payout = false, bool payoutCancellation = false}) {
   if (payments.length > maxPayments) {
     return 'payments: es sind hoechstens $maxPayments Eintraege erlaubt.';
   }
-  final negativ = cancellation || payout;
+  final negativ = (cancellation && !payoutCancellation) || payout;
   if (payout) {
     if (payments.length != 1) return 'Auszahlung: genau eine Barzahlung angeben.';
     final z = payments.single;

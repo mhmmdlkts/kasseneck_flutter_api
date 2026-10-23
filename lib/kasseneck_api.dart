@@ -26,7 +26,7 @@ import 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
 import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
 import 'src/kasse/gutschein_wunsch.dart';
 import 'src/receipt/codes.dart' show receiptEmailErrorCodes;
-import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons;
+import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'src/kasse/storno_nutzlast.dart';
 import 'src/register/fehler.dart';
 import 'src/v3.dart';
@@ -480,7 +480,7 @@ class KasseneckApi {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
     if (payments != null) {
-      final fehler = paymentsError(payments, cancellation: true);
+      final fehler = paymentsError(payments, cancellation: true, payoutCancellation: isPayoutCancellation(payments, original));
       if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     }
     if (original != null && (original.receiptId != originalReceiptId || original.cashregisterId != cashregisterId)) {

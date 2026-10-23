@@ -13,10 +13,12 @@ library;
 
 import '../../enums/credit_card_provider.dart';
 import '../../enums/keck_payment_method.dart';
+import '../../enums/voucher_action.dart';
 import '../../enums/voucher_type.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
 import '../../models/keck_payment.dart';
+import '../../models/keck_voucher.dart';
 import '../aufrufe.dart';
 import '../register/fehler.dart' show KasseneckValidationError;
 import '../receipt/codes.dart' show cancellationErrorCodes;
@@ -138,6 +140,19 @@ String cardRefundReference(KasseneckReceipt receipt, String paymentId) {
     );
   }
   return kennung;
+}
+
+/// Storno einer Gutschein-Auszahlung: genau eine positive Barzahlung ohne
+/// `refundOf` (das Geld kommt in die Lade zurueck). Alles andere bleibt
+/// Rueckzahlung mit negativem Betrag; ob der Beleg eine Auszahlung war,
+/// entscheidet der Server. Liegt das [original] vor und traegt es keine
+/// Auszahlung, bleibt es bei negativen Rueckzahlungen. Zwilling von
+/// `istStornoAuszahlung` im npm-Paket.
+bool isPayoutCancellation(List<KeckPaymentInput> payments, KasseneckReceipt? original) {
+  if (payments.length != 1) return false;
+  if (original != null && !(original.vouchers ?? const <KeckVoucher>[]).any((v) => v.action == VoucherAction.payout)) return false;
+  final z = payments.single;
+  return z.method == KeckPaymentMethod.cash && z.amountCents > 0 && z.refundOf == null;
 }
 
 /// Karten-Rueckbuchung am Storno, geprueft **bevor** etwas hinausgeht

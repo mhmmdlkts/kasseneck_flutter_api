@@ -37,7 +37,7 @@ import '../../models/registration_info.dart';
 import 'belegmail.dart';
 import 'lager.dart';
 import 'schicht.dart';
-import 'storno.dart' show assertCardRefunds, cancellationReasons;
+import 'storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'storno_nutzlast.dart';
 
 /// Storno-Stand eines Belegs in der Liste (Drahtfeld `cancellationStatus`,
@@ -584,7 +584,7 @@ class RegisterReceiptClient {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
     if (payments != null) {
-      final fehler = paymentsError(payments, cancellation: true);
+      final fehler = paymentsError(payments, cancellation: true, payoutCancellation: isPayoutCancellation(payments, original));
       if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     }
     if (original != null && original.receiptId != originalReceiptId) {
