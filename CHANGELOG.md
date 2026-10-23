@@ -1,3 +1,54 @@
+## 11.5.0 (2026-10-23)
+
+Twin of `@kreiseck/kasseneck-api` `1.14.0` (contract files pulled from that
+version): vouchers follow the final Bon and payment rules. Notes for callers:
+
+- **A voucher never covers the tip.** `receiptDueCents` throws
+  `ReceiptDueError` (`voucher_exceeds_total`) when the amount due after
+  vouchers is below the sum of the tip lines (staff or owner tip); the
+  pre-fill `voucherRedeemMaxCentsForLines` stops at goods (goods plus payout
+  minus tip) and never turns negative. Not applied to a cancellation.
+  Reason: the tip is paid in cash or by card, never from a voucher balance.
+- **Bon text.** The voucher code is always the short mask `····-XXXX` on the
+  Bon (the long form `····-····-XXXX` is gone; the `code` field on the
+  receipt itself is unchanged). The rest of a single-purpose or service
+  voucher carries the currency (`19,50 EUR`) like a multi-purpose one. The
+  promotion voucher is called "Aktionsgutschein" (old receipts that still say
+  "Promotionsgutschein" print that name alone). A receipt that a voucher
+  covers completely prints no "Zahlungsart" line; with several payments,
+  payments of 0 cent are left out. New `paymentMethodText(receipt)` is what
+  the printer and the receipt widget use for that line. `voucherItemLines`
+  has a new parameter `currency`.
+- **Cancelling a voucher payout.** `cancelReceipt` accepts the one positive
+  cash payment that refunds a payout (`isPayoutCancellation`); with the
+  original at hand, a cancellation without a payout in it is still rejected
+  before sending. `paymentsError(..., payoutCancellation: true)` is additive.
+- **Catalogue.** 24 new labels (`nav.*`, `receipt_done.*`, `quantity.at_most`,
+  `quantity.at_least`, `receipts.*`, `cart.close`, `voucher.code_mask`,
+  `drawer.reason_voucher_payout`); new placeholder `{method}`.
+- **Drawer reason `voucher_payout`** is appended to `openingReasons` (the
+  register reports it itself at a payout); it is not in `manualOpeningReasons`.
+- **Shortcut actions `shiftStatus`, `openDrawer`, `voucherPayout`** join
+  `posShortcutActions`, without a default key (empty list in
+  `posShortcutDefaults`; the server leaves them out of its default map, so a
+  missing key reads as "no key", never as a guessed one). A card that is sent
+  must still carry every action.
+- **`createReceipt` hides voucher codes in error texts**, on both ways
+  (`KasseneckApi` and the register's `sell`): the code as typed (trimmed, from
+  8 characters, also an invalid one), its normal form and its formatted form
+  become `****`; the error code and details stay. Four-character endings are
+  never touched.
+- **`RegisterDeviceUsers.settings`**: the reply of `listRegisterUsersForDevice`
+  has no `vouchers` block. `settings.vouchers` stays the fail-closed default
+  (`PosVoucherSettings.off`) and is not part of `settings.toJson()`; only
+  `getKasseSettings` delivers the real block. No type change was needed
+  (unlike npm, where the type was narrowed).
+- No model for `issuedVouchers` exists in this package, so the optional
+  `articleName` (service voucher) has no place here; the Bon layout of the
+  server already carries it.
+- Test data: placeholder VAT id `ATU12345675` in doc comments and tests (valid
+  check digit).
+
 ## 11.4.0
 
 Twin of `@kreiseck/kasseneck-api` `1.13.0` (contract files pulled from that

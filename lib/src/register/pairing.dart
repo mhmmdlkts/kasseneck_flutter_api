@@ -223,7 +223,10 @@ class RegisterDeviceUsers {
   final bool testEnvironment;
 
   /// Kassen-Einstellungen (betriebsweit + Gerät), mit den Standardwerten
-  /// gemischt — die Kasse bekommt nie ein halbes Bild.
+  /// gemischt — die Kasse bekommt nie ein halbes Bild. Der Block `vouchers`
+  /// steht in dieser Antwort nicht: `settings.vouchers` bleibt der Standard
+  /// (Verkaufen aus) und geht nie in `settings.toJson()`; den echten Stand
+  /// liefert nur `getKasseSettings`.
   final PosSettings settings;
 
   /// Belegkopf des Betriebs als Rohdaten (`company`, Anschrift, `vatId`,

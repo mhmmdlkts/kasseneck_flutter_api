@@ -250,8 +250,8 @@ class KeckVoucher {
         ..._neueFelder(),
       };
 
-  /// Sendbar? Altform: Wert- und Promotionsgutscheine brauchen einen Wert,
-  /// Promotionsgutscheine nur einloesen, ein Wert ist positiv. Neue Form:
+  /// Sendbar? Altform: Wert- und Aktionsgutscheine brauchen einen Wert,
+  /// Aktionsgutscheine nur einloesen, ein Wert ist positiv. Neue Form:
   /// die Regeln des Servers (siehe [_neueFormGueltig]).
   bool get isValid {
     if (isNewForm) return _neueFormGueltig();

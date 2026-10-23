@@ -99,6 +99,20 @@ Map<String, dynamic> _alsVerkauf(Map<String, dynamic> fall) {
   return {...fall, 'params': p};
 }
 
+/// Tasten-Aktionen, die der Server nicht in seiner Vorgabekarte fuehrt: fehlen
+/// sie in einer Antwort, liest das Paket sie als leere Liste (keine Taste).
+const _tastenOhneServervorgabe = ['shiftStatus', 'openDrawer', 'voucherPayout'];
+
+/// Das Geraet, so wie das Paket die Serverantwort liest.
+Object? _geraetGelesen(Object? device) {
+  if (device is! Map) return device;
+  final tasten = (device['shortcuts'] as Map?) ?? const {};
+  return {
+    ...device,
+    'shortcuts': {for (final a in _tastenOhneServervorgabe) a: <String>[], ...tasten},
+  };
+}
+
 Iterable<Map<String, dynamic>> _faelle(String endpunkt) =>
     ((_endpunkte[endpunkt] as Map)['cases'] as List).cast<Map<String, dynamic>>().where((f) {
       final p = f['params'];
@@ -654,7 +668,47 @@ void main() {
           await _rufe('listRegisterUsersForDevice', _fall('listRegisterUsersForDevice', 'account_without_settings'));
       expect((konto!.ergebnis as RegisterDeviceUsers).settings.toJson()['business'], soll['business']);
       final geraet = await _rufe('getKasseSettings', _fall('getKasseSettings', 'cashier_unknown_device'));
-      expect((geraet!.ergebnis as PosSettings).toJson()['device'], soll['device']);
+      expect((geraet!.ergebnis as PosSettings).toJson()['device'], _geraetGelesen(soll['device']));
+    });
+
+    test('Benutzerliste: Einstellungen ohne erfundenen vouchers-Block (der Server fuehrt ihn dort nicht)', () async {
+      // Der Block `vouchers` kommt allein aus getKasseSettings. Hier bleibt er der
+      // Standard (Verkaufen aus) und geht nie in die Drahtform: kein Block, der
+      // wie eine Serverantwort aussaehe.
+      for (final f in _faelle('listRegisterUsersForDevice').where((f) => f['response']['status'] == 'success')) {
+        final lauf = await _rufe('listRegisterUsersForDevice', f);
+        final stand = (lauf!.ergebnis as RegisterDeviceUsers).settings;
+        final gesendet = (f['response']['data']['settings'] as Map?)?.keys.toSet() ?? <String>{};
+        expect(stand.vouchers, PosVoucherSettings.off, reason: '${f['case']}');
+        expect(stand.toJson().containsKey('vouchers'), isFalse, reason: '${f['case']}');
+        expect(gesendet.contains('vouchers'), isFalse, reason: '${f['case']}');
+      }
+    });
+
+    test('Anmeldung: Gutschein-Rechte des Vertrags = Schluessel von voucherPermsOf, kein Antwortschluessel geht verloren', () async {
+      final voucherSchluessel = <String>{};
+      for (final ep in ['registerUserLogin', 'registerPinLogin']) {
+        for (final f in _faelle(ep).where((f) => f['response']['status'] == 'success')) {
+          final d = f['response']['data'] as Map<String, dynamic>;
+          final lauf = await _rufe(ep, f);
+          expect(lauf!.ergebnis, isA<RegisterUserSession>(), reason: '$ep/${f['case']}');
+          expect(d.keys.toSet(), RegisterUserSession.fields, reason: '$ep/${f['case']}');
+          expect((d['user'] as Map).keys.toSet(), RegisterUser.fields, reason: '$ep/${f['case']} user');
+          final perms = (d['user'] as Map)['perms'] as Map<String, dynamic>;
+          voucherSchluessel.addAll(perms.keys.where((k) => k.startsWith('voucher')));
+          // Jeder Schluessel des Vertrags kommt in den gelesenen Rechten an (nicht im Auffangbecken).
+          final gelesen = RegisterUserPerms.fromJson(perms);
+          for (final k in perms.keys) {
+            expect(gelesen.other.containsKey(k), isFalse, reason: '$ep/${f['case']} perms.$k');
+          }
+        }
+      }
+      // voucherPermsOf loest genau diese Rechte auf: kippt eines, faellt es hier auf.
+      expect(voucherSchluessel, {'voucherSell', 'voucherRedeem', 'voucherManage'});
+      final alle = RegisterUserPerms.fromJson({for (final k in voucherSchluessel) k: false});
+      expect(voucherPermsOf(alle), const VoucherPerms(voucherSell: false, voucherRedeem: false, voucherManage: false));
+      final rein = RegisterUserPerms.fromJson({for (final k in voucherSchluessel) k: true});
+      expect(voucherPermsOf(rein), const VoucherPerms(voucherSell: true, voucherRedeem: true, voucherManage: true));
     });
 
     test('Sitzungen: own, deviceLabel', () async {
@@ -790,7 +844,7 @@ void main() {
       final lauf = await _rufe('getKasseSettings', _fall('getKasseSettings', 'manager_with_device'));
       final e = lauf!.ergebnis as PosSettings;
       final roh = _fall('getKasseSettings', 'manager_with_device')['response']['data'];
-      expect(e.toJson(), {'business': roh['business'], 'device': roh['device']},
+      expect(e.toJson(), {'business': roh['business'], 'device': _geraetGelesen(roh['device'])},
           reason: 'die Antwort ist schon gemischt; gelesen und zurückgeschrieben ergibt sie sich selbst');
     });
 
@@ -806,7 +860,7 @@ void main() {
             _ => throw StateError('${fall['case']}'),
           };
           for (final teil in json.keys) {
-            expect(json[teil], daten[teil], reason: '$ep/${fall['case']} $teil');
+            expect(json[teil], teil == 'device' ? _geraetGelesen(daten[teil]) : daten[teil], reason: '$ep/${fall['case']} $teil');
           }
         }
       }

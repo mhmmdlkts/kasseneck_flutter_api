@@ -117,7 +117,7 @@ class CustomerInput {
   final String? zip;
   final String? city;
 
-  /// UID-Nummer, z. B. `ATU12345678`.
+  /// UID-Nummer, z. B. `ATU12345675`.
   final String? vatId;
 
   /// Kürzel für die Rechnungsnummer; einmal gesetzt unveränderlich.
