@@ -16,7 +16,7 @@ KasseneckReceipt buildReceipt({
   ReceiptType receiptType = ReceiptType.standard,
   DateTime? timeStamp,
   String sig = 'header.payload.echteSignatur',
-  String? uid = 'ATU12345678',
+  String? uid = 'ATU12345675',
   Map<String, dynamic>? cardPaymentData,
   cardProvider,
   String? cardPaymentId,
