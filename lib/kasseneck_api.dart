@@ -86,7 +86,8 @@ export 'src/receipt/codes.dart'
 // Die Typen, die der Beleg unter /v3 traegt, und der Leser fuer gespeicherte 9.x-Belege.
 export 'models/registration_info.dart' show CancellationOf, RegistrationInfo;
 export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson, storedLayoutJson;
-export 'models/receipt_layout.dart' show LayoutBannerTone;
+// Nachdruck als Belegduplikat kennzeichnen (Erlass BMF-AV Nr. 2/2026, Abschnitt 4.5.6).
+export 'models/receipt_layout.dart' show LayoutBannerTone, markAsDuplicate;
 export 'services/print_logo.dart' show loadPrintLogo;
 // Server-Layout zuerst, sonst Rueckfall in der gewaehlten Breite.
 export 'src/receipt/layout_from_result.dart' show ReceiptPrintLayout, receiptLayoutFromResult;

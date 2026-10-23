@@ -47,6 +47,24 @@ version): vouchers follow the final Bon and payment rules. Notes for callers:
   (`PosVoucherSettings.off`) and is not part of `settings.toJson()`; only
   `getKasseSettings` delivers the real block. No type change was needed
   (unlike npm, where the type was narrowed).
+- **Mark a reprint as a duplicate (Nachdruck als Duplikat kennzeichnen):
+  `markAsDuplicate(layout)`** (top-level function in
+  `package:kasseneck_api/models/receipt_layout.dart`, also exported from
+  `package:kasseneck_api/kasseneck_api.dart`). It returns a new
+  `ReceiptLayout` whose first line is the banner `DUPLIKAT`
+  (`LayoutBannerTone.receiptType`: bold, centred between two `=` frame lines,
+  the strongest emphasis of the layout model); every other line stays as it
+  was, the input is never changed, and applying it twice gives the same as
+  once. Registers must call it on **every reprint and on "print copy"**, never
+  on the first print, and pass the result to the same print path
+  (`PrintPaper.setReceiptSheet`, `receiptSheet`, `KeckReceiptSheetWidget`).
+  Reason: Erlass BMF-AV Nr. 2/2026, section 4.5.6, requires a receipt
+  duplicate to be labelled as such (a reprint of the stored receipt is
+  already not signed again, not in the DEP and does not move the counter).
+  With a logo the banner stands above the logo, like every leading banner.
+  The cases and the printed bytes come from the contract file
+  `duplicate-cases.json` of npm 1.14.0; the result matches npm layout for
+  layout and byte for byte.
 - No model for `issuedVouchers` exists in this package, so the optional
   `articleName` (service voucher) has no place here; the Bon layout of the
   server already carries it.

@@ -176,3 +176,44 @@ class ReceiptLayout {
   /// Nutzlast des RKSV-QR (erste QR-Zeile) oder null.
   String? get qrPayload => lines.whereType<LayoutQrLine>().map((q) => q.data).cast<String?>().firstWhere((_) => true, orElse: () => null);
 }
+
+/// Der Aufdruck eines Belegduplikats; derselbe Text im npm-Paket.
+const String _duplikat = 'DUPLIKAT';
+
+/// Kennzeichnet einen Nachdruck als **Belegduplikat** (Zwilling von
+/// `markAsDuplicate` in `@kreiseck/kasseneck-api/receipt`).
+/// Registrierkassen-Erlass BMF-AV Nr. 2/2026, Abschnitt 4.5.6: „Ein
+/// Belegduplikat ist als solches zu bezeichnen, nicht nochmals zu signieren,
+/// nicht neuerlich im Datenerfassungsprotokoll aufzunehmen und darf zu keiner
+/// Veränderung des Umsatzzählers führen.“ Signatur, DEP und Zähler bleiben
+/// ohnehin unberührt, weil ein Nachdruck den gespeicherten Beleg druckt; diese
+/// Funktion liefert die Bezeichnung.
+///
+/// Die Kasse ruft sie bei **jedem** Nachdruck und bei „Kopie drucken“ auf,
+/// nie beim Erstdruck, und gibt das Ergebnis an denselben Druckweg
+/// (`PrintPaper.setReceiptSheet`, `receiptSheet`, `KeckReceiptSheetWidget`).
+///
+/// Neu ist genau eine erste Zeile: der Aufdruck `DUPLIKAT` als
+/// [LayoutBannerLine] (Ton [LayoutBannerTone.receiptType]) – die stärkste
+/// Hervorhebung des Modells: fett, zentriert, zwischen zwei `=`-Rahmenzeilen;
+/// doppelte Höhe kennt das Layout nicht. Alles andere bleibt Zeile für Zeile
+/// wie beim Erstdruck (QR, Beträge, Signaturtext, Warnrahmen von Testkasse und
+/// Testsignatur). Mit Logo steht der Aufdruck wie jeder führende Rahmen über
+/// dem Logo.
+///
+/// Reine Funktion: die Eingabe bleibt unangetastet, das Ergebnis trägt eine
+/// eigene Zeilenliste (die Zeilen selbst sind unveränderlich). Idempotent:
+/// trägt das Layout den Aufdruck schon als erste Zeile, kommt er nicht ein
+/// zweites Mal dazu.
+ReceiptLayout markAsDuplicate(ReceiptLayout layout) {
+  final erste = layout.lines.isEmpty ? null : layout.lines.first;
+  final schon = erste is LayoutBannerLine && erste.text == _duplikat;
+  return ReceiptLayout(
+    lines: [
+      if (!schon) const LayoutBannerLine(text: _duplikat, tone: LayoutBannerTone.receiptType),
+      ...layout.lines,
+    ],
+    paperSize: layout.paperSize,
+    ruleset: layout.ruleset,
+  );
+}
