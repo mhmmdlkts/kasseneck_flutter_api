@@ -9,6 +9,8 @@
 /// als Fehler behandelt — ein Beleg muss sich immer zeigen lassen.
 library;
 
+import '../services/vienna_time.dart';
+
 enum LayoutAlign { left, center, right }
 
 LayoutAlign _align(dynamic v) {
@@ -177,8 +179,31 @@ class ReceiptLayout {
   String? get qrPayload => lines.whereType<LayoutQrLine>().map((q) => q.data).cast<String?>().firstWhere((_) => true, orElse: () => null);
 }
 
-/// Der Aufdruck eines Belegduplikats; derselbe Text im npm-Paket.
-const String _duplikat = 'DUPLIKAT';
+/// Beschriftung der Duplikat-Zeile; derselbe Text im npm-Paket.
+const String _duplikatAm = 'Duplikat am:';
+
+/// Spaltenbreiten in Zwölfteln. 5:7 setzt Beschriftung (12 Zeichen) und Zeit
+/// (19 Zeichen) auf 32 und 48 Zeichen ohne Umbruch in eine Zeile, den Wert am
+/// rechten Rand wie bei `Datum:`: 13 + 19 bzw. 20 + 28 Zeichen. Die Breiten
+/// von `Beleg-ID:` (6:6) und `Datum:` (4:8) reichen auf 32 Zeichen nicht.
+const int _duplikatLinks = 5;
+const int _duplikatRechts = 7;
+
+bool _istZeile(LayoutLine z, String beschriftung) => z is LayoutColumnsLine && z.columns.isNotEmpty && z.columns.first.text == beschriftung;
+
+/// Zeitpunkt als `TT.MM.JJJJ HH:MM:SS` in Wiener Zeit; Bruchteile fallen weg.
+///
+/// Bewusst nicht über [ViennaTime.toWallClock]: das baut ein lokales
+/// `DateTime`, und eine Wiener Uhrzeit, die es in der Zeitzone des Geräts
+/// nicht gibt (Sommerzeitlücke dort), verschöbe sich um eine Stunde. Die
+/// Felder kommen darum aus einem UTC-Wert, der um den Wiener Versatz
+/// verschoben ist.
+String _wienerZeit(DateTime zeitpunkt) {
+  final utc = zeitpunkt.toUtc();
+  final t = utc.add(ViennaTime.offsetAt(utc));
+  String zwei(int n) => n.toString().padLeft(2, '0');
+  return '${zwei(t.day)}.${zwei(t.month)}.${t.year} ${zwei(t.hour)}:${zwei(t.minute)}:${zwei(t.second)}';
+}
 
 /// Kennzeichnet einen Nachdruck als **Belegduplikat** (Zwilling von
 /// `markAsDuplicate` in `@kreiseck/kasseneck-api/receipt`).
@@ -189,32 +214,40 @@ const String _duplikat = 'DUPLIKAT';
 /// ohnehin unberührt, weil ein Nachdruck den gespeicherten Beleg druckt; diese
 /// Funktion liefert die Bezeichnung.
 ///
-/// Die Kasse ruft sie bei **jedem** Nachdruck und bei „Kopie drucken“ auf,
-/// nie beim Erstdruck, und gibt das Ergebnis an denselben Druckweg
+/// Die Kasse ruft sie bei **jedem** Nachdruck und bei „Kopie drucken“ mit dem
+/// Zeitpunkt des Drucks auf, nie beim Erstdruck und nie für Mail, Link oder
+/// PDF, und gibt das Ergebnis an denselben Druckweg
 /// (`PrintPaper.setReceiptSheet`, `receiptSheet`, `KeckReceiptSheetWidget`).
 ///
-/// Neu ist genau eine erste Zeile: der Aufdruck `DUPLIKAT` als
-/// [LayoutBannerLine] (Ton [LayoutBannerTone.receiptType]) – die stärkste
-/// Hervorhebung des Modells: fett, zentriert, zwischen zwei `=`-Rahmenzeilen;
-/// doppelte Höhe kennt das Layout nicht. Alles andere bleibt Zeile für Zeile
-/// wie beim Erstdruck (QR, Beträge, Signaturtext, Warnrahmen von Testkasse und
-/// Testsignatur). Mit Logo steht der Aufdruck wie jeder führende Rahmen über
-/// dem Logo.
+/// Neu ist genau eine Zeile im Kennungsblock, direkt unter `Beleg-ID:`, in
+/// der Spaltenform von `Datum:` (nicht fett, Wert rechtsbündig):
+///
+/// ```
+/// Beleg-ID:          AT0-KASSE1-42
+/// Duplikat am: 24.10.2026 14:10:05
+/// ```
+///
+/// [printedAt] ist ein Zeitpunkt (UTC oder lokal, gleich); gedruckt wird er
+/// in Wiener Zeit (Sommerzeit nach EU-Regel), nie in der Zeitzone des Geräts.
+/// Ohne Spaltenzeile `Beleg-ID:` (Schicht-Bons) steht die Zeile ganz oben.
+/// Alles andere bleibt Zeile für Zeile wie beim Erstdruck.
 ///
 /// Reine Funktion: die Eingabe bleibt unangetastet, das Ergebnis trägt eine
 /// eigene Zeilenliste und je Spaltenzeile eine eigene Spaltenliste (wie im
-/// npm-Paket); wer am Duplikat dreht, dreht nie am Erstdruck. Idempotent:
-/// ist die erste Zeile schon ein Aufdruck `DUPLIKAT` (gleich in welchem Ton),
-/// kommt er nicht ein zweites Mal dazu.
-ReceiptLayout markAsDuplicate(ReceiptLayout layout) {
-  final erste = layout.lines.isEmpty ? null : layout.lines.first;
-  final schon = erste is LayoutBannerLine && erste.text == _duplikat;
-  return ReceiptLayout(
-    lines: [
-      if (!schon) const LayoutBannerLine(text: _duplikat, tone: LayoutBannerTone.receiptType),
-      for (final z in layout.lines) z is LayoutColumnsLine ? LayoutColumnsLine([...z.columns], bold: z.bold) : z,
-    ],
-    paperSize: layout.paperSize,
-    ruleset: layout.ruleset,
-  );
+/// npm-Paket); wer am Duplikat dreht, dreht nie am Erstdruck. Trägt das
+/// Layout schon eine Zeile `Duplikat am:`, bekommt nur sie die neue Zeit (der
+/// letzte Nachdruck gilt); es bleibt bei einer Zeile.
+ReceiptLayout markAsDuplicate(ReceiptLayout layout, {required DateTime printedAt}) {
+  final neu = LayoutColumnsLine([
+    const LayoutColumn(text: _duplikatAm, width: _duplikatLinks),
+    LayoutColumn(text: _wienerZeit(printedAt), width: _duplikatRechts, align: LayoutAlign.right),
+  ]);
+  final vorhanden = layout.lines.indexWhere((z) => _istZeile(z, _duplikatAm));
+  final lines = [
+    for (final z in layout.lines)
+      if (!_istZeile(z, _duplikatAm)) z is LayoutColumnsLine ? LayoutColumnsLine([...z.columns], bold: z.bold) : z,
+  ];
+  final stelle = vorhanden >= 0 ? vorhanden : lines.indexWhere((z) => _istZeile(z, 'Beleg-ID:')) + 1;
+  lines.insert(stelle, neu);
+  return ReceiptLayout(lines: lines, paperSize: layout.paperSize, ruleset: layout.ruleset);
 }

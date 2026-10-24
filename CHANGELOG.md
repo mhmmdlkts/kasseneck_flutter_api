@@ -48,24 +48,32 @@ version): vouchers follow the final Bon and payment rules. Notes for callers:
   `getKasseSettings` delivers the real block. No type change was needed
   (unlike npm, where the type was narrowed).
 - **Mark a reprint as a duplicate (Nachdruck als Duplikat kennzeichnen):
-  `markAsDuplicate(layout)`** (top-level function in
+  `markAsDuplicate(layout, printedAt: ...)`** (top-level function in
   `package:kasseneck_api/models/receipt_layout.dart`, also exported from
   `package:kasseneck_api/kasseneck_api.dart`). It returns a new
-  `ReceiptLayout` whose first line is the banner `DUPLIKAT`
-  (`LayoutBannerTone.receiptType`: bold, centred between two `=` frame lines,
-  the strongest emphasis of the layout model); every other line stays as it
-  was, the input is never changed (lines and column lists are new), and
-  applying it twice gives the same as once (a first-line `DUPLIKAT` banner
-  counts as marked whatever its tone). Registers must call it on **every reprint and on "print copy"**, never
-  on the first print, and pass the result to the same print path
-  (`PrintPaper.setReceiptSheet`, `receiptSheet`, `KeckReceiptSheetWidget`).
-  Reason: Erlass BMF-AV Nr. 2/2026, section 4.5.6, requires a receipt
-  duplicate to be labelled as such (a reprint of the stored receipt is
-  already not signed again, not in the DEP and does not move the counter).
-  With a logo the banner stands above the logo, like every leading banner.
-  The cases and the printed bytes come from the contract file
-  `duplicate-cases.json` of npm 1.14.0; the result matches npm layout for
-  layout and byte for byte.
+  `ReceiptLayout` with one plain (not bold) two-column line `Duplikat am:`
+  and the time of the reprint, placed right after the line `Beleg-ID:`
+  (column widths 5/7, the time at the right edge like `Datum:`): on 32
+  characters `Duplikat am: 24.10.2026 14:10:05`, on 48 characters
+  `Duplikat am:` and the time 17 spaces apart. `printedAt` (required) is an
+  instant, UTC or local; the line shows it in Europe/Vienna time (EU summer
+  time rule, `DD.MM.YYYY HH:MM:SS`, fractions cut), never in the time zone of
+  the device. A layout without a `Beleg-ID:` columns line (shift receipts)
+  gets the line on top. Applying it again replaces the time (one line, the
+  latest reprint counts); the input is never changed (lines and column lists
+  are new). Registers must call it on **every reprint and on "print copy"**
+  with the print time, never on the first print and never for mail, link or
+  PDF (the customer gets the receipt itself there), and pass the result to
+  the same print path (`PrintPaper.setReceiptSheet`, `receiptSheet`,
+  `KeckReceiptSheetWidget`). Reason: Erlass BMF-AV Nr. 2/2026, section 4.5.6,
+  requires a receipt duplicate to be labelled as such (a reprint of the
+  stored receipt is already not signed again, not in the DEP and does not
+  move the counter). On the printer the reprint is the first print plus
+  exactly this line, byte for byte. The cases (around the summer time changes
+  in March and October, 58 and 80 mm, zero receipt, cancellation, voucher
+  redemption, with logo, without `Beleg-ID:`, applied twice) and the printed
+  bytes come from the contract file `duplicate-cases.json` (version 2) of
+  npm 1.14.0; the result matches npm layout for layout and byte for byte.
 - No model for `issuedVouchers` exists in this package, so the optional
   `articleName` (service voucher) has no place here; the Bon layout of the
   server already carries it.
