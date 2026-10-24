@@ -6,10 +6,13 @@
 /// gar nicht erst hinaus, und keine Belegnummer wird verbraucht.
 library;
 
+import 'package:kreiseck_validator/kreiseck_validator.dart' show Valid, VoucherCode;
+
 import '../../enums/voucher_action.dart';
 import '../../enums/voucher_type.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/keck_voucher.dart';
+import '../register/fehler.dart';
 
 /// Eine Gutscheinzeile (`kind` `voucher`/`voucher_float`) setzt nur der
 /// Server; in einem Verkauf ist sie `voucher_invalid`, vor jeder anderen
@@ -99,4 +102,36 @@ String? voucherCombinationError(List<KeckVoucher> vouchers, List<KasseneckItem> 
     return 'Ungültige Daten: Gutscheine mit action redeem benötigen mindestens ein item';
   }
   return null;
+}
+
+
+/// Die Schreibweisen der Gutscheincodes eines Verkaufs, die in keinem
+/// Fehlertext stehen duerfen (Zwilling von `createReceiptRufen`): der Code, wie
+/// er getippt wurde (getrimmt, ab 8 Zeichen, auch ungueltig), dazu Normalform
+/// und formatierte Form eines gueltigen Codes. Kurze Reste (Endung mit vier
+/// Zeichen) kommen nie vor. Laengste zuerst, damit ein Teilstueck keinen Rest
+/// des laengeren Codes stehen laesst.
+List<String> voucherSecrets(Iterable<KeckVoucher> vouchers) {
+  final geheim = <String>{};
+  for (final v in vouchers) {
+    final code = v.code;
+    if (code == null) continue;
+    final geprueft = VoucherCode.validate(code);
+    if (geprueft is Valid) {
+      geheim.add(geprueft.normalized);
+      geheim.add(VoucherCode.format(geprueft.normalized));
+    }
+    final roh = code.trim();
+    if (roh.length >= 8) geheim.add(roh);
+  }
+  return geheim.toList()..sort((a, b) => b.length.compareTo(a.length));
+}
+
+/// Schwaerzt die [geheim]en Schreibweisen im Text eines Serverfehlers mit
+/// `****`; Code und Daten bleiben, damit die Kasse am Code entscheidet. Ohne
+/// Treffer kommt derselbe Fehler zurueck.
+KasseneckApiError redactVoucherCodes(KasseneckApiError fehler, List<String> geheim) {
+  if (!geheim.any(fehler.message.contains)) return fehler;
+  final text = geheim.fold(fehler.message, (t, g) => t.split(g).join('****'));
+  return KasseneckApiError(fehler.functionName, text, code: fehler.code, details: fehler.details);
 }

@@ -59,6 +59,10 @@ const _schicht = [
 /// Saetze dazu fuehrt der Textkatalog (`voucher_error.*`).
 const _gutschein = ['checkVoucher', 'reprintVoucherLabel'];
 
+/// Ausgaben eines Belegs melden (seit 11.5). Modelle, Vorab-Pruefung und die
+/// Faelle Feld fuer Feld prueft `beleg_ausgaben_test.dart`.
+const _ausgaben = ['logReceiptOutputs'];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
   'openMyShift/key_conflict':
@@ -76,6 +80,19 @@ const _nichtDieserWeg = {
   'cancelReceipt/tip_source_invalid': 'eine Quelle ausserhalb von tipRefundSources wirft vor dem Senden (storno_trinkgeld_test.dart)',
   'setMyCashregisterStockLocation/data_missing':
       'ohne stockLocationId: null geht als leerer Text hinaus (Zuruecksetzen), weglassen kann dieser Weg nicht',
+};
+
+/// Erfolgsfälle, die das Paket bewusst schon vor dem Senden abweist: genau
+/// die, die die gemeinsame Vertragsdatei `receipt-outputs-cases.json` als
+/// `contract_<fall>` mit Abweisung führt (Schlüssel außerhalb der Regel des
+/// Servers). Ohne den beanstandeten Eintrag laufen sie in
+/// `beleg_ausgaben_test.dart` Feld für Feld.
+final Set<String> _vorabStattErfolg = {
+  for (final a in ((jsonDecode(File('test/fixtures/vertrag/receipt-outputs-cases.json').readAsStringSync()) as Map)['requests']
+          as List)
+      .cast<Map<String, dynamic>>())
+    if ((a['name'] as String).startsWith('contract_') && (a['expected'] as Map).containsKey('error'))
+      'logReceiptOutputs/${(a['name'] as String).substring('contract_'.length)}',
 };
 
 /// Fälle, deren Fehler die Kasse beim Verkauf im Alltag sieht (Anmeldung
@@ -97,6 +114,20 @@ Map<String, dynamic> _alsVerkauf(Map<String, dynamic> fall) {
     {'method': methode, 'amountCents': summe},
   ];
   return {...fall, 'params': p};
+}
+
+/// Tasten-Aktionen, die der Server nicht in seiner Vorgabekarte fuehrt: fehlen
+/// sie in einer Antwort, liest das Paket sie als leere Liste (keine Taste).
+const _tastenOhneServervorgabe = ['shiftStatus', 'openDrawer', 'voucherPayout'];
+
+/// Das Geraet, so wie das Paket die Serverantwort liest.
+Object? _geraetGelesen(Object? device) {
+  if (device is! Map) return device;
+  final tasten = (device['shortcuts'] as Map?) ?? const {};
+  return {
+    ...device,
+    'shortcuts': {for (final a in _tastenOhneServervorgabe) a: <String>[], ...tasten},
+  };
 }
 
 Iterable<Map<String, dynamic>> _faelle(String endpunkt) =>
@@ -375,6 +406,10 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.checkVoucher(_s(p['code']));
       case 'reprintVoucherLabel':
         return belege.reprintVoucherLabel(_s(p['id']));
+      case 'logReceiptOutputs':
+        return belege.logReceiptOutputs(entries: [
+          for (final e in (p['entries'] as List? ?? const [])) ReceiptOutputEntry.fromJson((e as Map).cast()),
+        ]);
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();
         return PosSettingsClient(transport, deviceId: _s(p['deviceId'])).load();
@@ -494,9 +529,11 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   final antwort = fall['response'] as Map<String, dynamic>;
   if (lauf.vorab) {
     expect(lauf.log, isEmpty, reason: '$name: vorab abgewiesen, nichts geht hinaus');
+    if (_vorabStattErfolg.contains(name)) return;
     expect(antwort['status'], 'error', reason: '$name: der Client weist ab, was der Server annimmt');
     return;
   }
+  expect(_vorabStattErfolg.contains(name), isFalse, reason: '$name: steht in _vorabStattErfolg, ging aber hinaus');
   expect(lauf.log, hasLength(1), reason: '$name: genau ein Aufruf');
   expect(lauf.log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/$endpunkt', reason: name);
   final gesendet = Map<String, dynamic>.from(lauf.params);
@@ -533,11 +570,14 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt) || _schicht.contains(endpunkt)) {
     expect(isPosError(lauf.fehler, code as String), isTrue, reason: '$name: $code in posErrorCodes');
   }
+  if (_ausgaben.contains(endpunkt)) {
+    expect(isReceiptOutputError(lauf.fehler, code as String), isTrue, reason: '$name: $code in receiptOutputErrorCodes');
+  }
 }
 
 void main() {
   group('jeder Fall des Kassenwegs', () {
-    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein]) {
+    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben]) {
       test(endpunkt, () async {
         var gelaufen = 0;
         for (final fall in _faelle(endpunkt)) {
@@ -562,8 +602,8 @@ void main() {
       }
     });
 
-    test('alle 41 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
-      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein};
+    test('alle 42 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben};
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });
@@ -654,7 +694,47 @@ void main() {
           await _rufe('listRegisterUsersForDevice', _fall('listRegisterUsersForDevice', 'account_without_settings'));
       expect((konto!.ergebnis as RegisterDeviceUsers).settings.toJson()['business'], soll['business']);
       final geraet = await _rufe('getKasseSettings', _fall('getKasseSettings', 'cashier_unknown_device'));
-      expect((geraet!.ergebnis as PosSettings).toJson()['device'], soll['device']);
+      expect((geraet!.ergebnis as PosSettings).toJson()['device'], _geraetGelesen(soll['device']));
+    });
+
+    test('Benutzerliste: Einstellungen ohne erfundenen vouchers-Block (der Server fuehrt ihn dort nicht)', () async {
+      // Der Block `vouchers` kommt allein aus getKasseSettings. Hier bleibt er der
+      // Standard (Verkaufen aus) und geht nie in die Drahtform: kein Block, der
+      // wie eine Serverantwort aussaehe.
+      for (final f in _faelle('listRegisterUsersForDevice').where((f) => f['response']['status'] == 'success')) {
+        final lauf = await _rufe('listRegisterUsersForDevice', f);
+        final stand = (lauf!.ergebnis as RegisterDeviceUsers).settings;
+        final gesendet = (f['response']['data']['settings'] as Map?)?.keys.toSet() ?? <String>{};
+        expect(stand.vouchers, PosVoucherSettings.off, reason: '${f['case']}');
+        expect(stand.toJson().containsKey('vouchers'), isFalse, reason: '${f['case']}');
+        expect(gesendet.contains('vouchers'), isFalse, reason: '${f['case']}');
+      }
+    });
+
+    test('Anmeldung: Gutschein-Rechte des Vertrags = Schluessel von voucherPermsOf, kein Antwortschluessel geht verloren', () async {
+      final voucherSchluessel = <String>{};
+      for (final ep in ['registerUserLogin', 'registerPinLogin']) {
+        for (final f in _faelle(ep).where((f) => f['response']['status'] == 'success')) {
+          final d = f['response']['data'] as Map<String, dynamic>;
+          final lauf = await _rufe(ep, f);
+          expect(lauf!.ergebnis, isA<RegisterUserSession>(), reason: '$ep/${f['case']}');
+          expect(d.keys.toSet(), RegisterUserSession.fields, reason: '$ep/${f['case']}');
+          expect((d['user'] as Map).keys.toSet(), RegisterUser.fields, reason: '$ep/${f['case']} user');
+          final perms = (d['user'] as Map)['perms'] as Map<String, dynamic>;
+          voucherSchluessel.addAll(perms.keys.where((k) => k.startsWith('voucher')));
+          // Jeder Schluessel des Vertrags kommt in den gelesenen Rechten an (nicht im Auffangbecken).
+          final gelesen = RegisterUserPerms.fromJson(perms);
+          for (final k in perms.keys) {
+            expect(gelesen.other.containsKey(k), isFalse, reason: '$ep/${f['case']} perms.$k');
+          }
+        }
+      }
+      // voucherPermsOf loest genau diese Rechte auf: kippt eines, faellt es hier auf.
+      expect(voucherSchluessel, {'voucherSell', 'voucherRedeem', 'voucherManage'});
+      final alle = RegisterUserPerms.fromJson({for (final k in voucherSchluessel) k: false});
+      expect(voucherPermsOf(alle), const VoucherPerms(voucherSell: false, voucherRedeem: false, voucherManage: false));
+      final rein = RegisterUserPerms.fromJson({for (final k in voucherSchluessel) k: true});
+      expect(voucherPermsOf(rein), const VoucherPerms(voucherSell: true, voucherRedeem: true, voucherManage: true));
     });
 
     test('Sitzungen: own, deviceLabel', () async {
@@ -790,7 +870,7 @@ void main() {
       final lauf = await _rufe('getKasseSettings', _fall('getKasseSettings', 'manager_with_device'));
       final e = lauf!.ergebnis as PosSettings;
       final roh = _fall('getKasseSettings', 'manager_with_device')['response']['data'];
-      expect(e.toJson(), {'business': roh['business'], 'device': roh['device']},
+      expect(e.toJson(), {'business': roh['business'], 'device': _geraetGelesen(roh['device'])},
           reason: 'die Antwort ist schon gemischt; gelesen und zurückgeschrieben ergibt sie sich selbst');
     });
 
@@ -806,7 +886,7 @@ void main() {
             _ => throw StateError('${fall['case']}'),
           };
           for (final teil in json.keys) {
-            expect(json[teil], daten[teil], reason: '$ep/${fall['case']} $teil');
+            expect(json[teil], teil == 'device' ? _geraetGelesen(daten[teil]) : daten[teil], reason: '$ep/${fall['case']} $teil');
           }
         }
       }

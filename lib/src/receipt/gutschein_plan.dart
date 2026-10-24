@@ -147,6 +147,9 @@ bool _istGutscheinZeile(Innen p) => p.kind == 'voucher' || p.kind == 'voucher_fl
 /// Position, die ein Gutschein decken darf: weder Trinkgeld noch Gutscheinzeile.
 bool istDeckbar(Innen p) => p.tip == null && p.kind != 'tip' && !_istGutscheinZeile(p);
 
+/// Summe der Trinkgeldzeilen (Personal und Inhaber) in Cent, wie `centSumme(kunde.filter(istTip))` im Backend.
+int trinkgeldCents(Iterable<Innen> kunde) => centSumme(kunde.where((p) => p.tip != null || p.kind == 'tip'));
+
 /// Wie beleg-toepfe: Euro in Positionsreihenfolge aufsummieren, erst die Summe auf Cent runden.
 int centSumme(Iterable<Innen> liste) {
   var s = 0.0;

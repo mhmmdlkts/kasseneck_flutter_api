@@ -1,3 +1,139 @@
+## 11.5.0 (2026-10-23)
+
+Twin of `@kreiseck/kasseneck-api` `1.14.0` (contract files pulled from that
+version): vouchers follow the final Bon and payment rules. Notes for callers:
+
+- **A voucher never covers the tip.** `receiptDueCents` throws
+  `ReceiptDueError` (`voucher_exceeds_total`) when the amount due after
+  vouchers is below the sum of the tip lines (staff or owner tip); the
+  pre-fill `voucherRedeemMaxCentsForLines` stops at goods (goods plus payout
+  minus tip) and never turns negative. Not applied to a cancellation.
+  Reason: the tip is paid in cash or by card, never from a voucher balance.
+  The server's contract cases (staff and owner tip, `payments[].tipCents`,
+  promotion plus voucher, single-purpose, the boundary 20.00 accepted and
+  20.01 rejected, each with the largest redemption the server accepts) now
+  check `receiptDueCents` and `voucherRedeemMaxCentsForLines`; an unknown
+  contract case fails the tests.
+- **Bon text.** The voucher code is always the short mask `····-XXXX` on the
+  Bon (the long form `····-····-XXXX` is gone; the `code` field on the
+  receipt itself is unchanged). The rest of a single-purpose or service
+  voucher carries the currency (`19,50 EUR`) like a multi-purpose one. The
+  promotion voucher is called "Aktionsgutschein" (old receipts that still say
+  "Promotionsgutschein" print that name alone). A receipt that a voucher
+  covers completely prints no "Zahlungsart" line; with several payments,
+  payments of 0 cent are left out. `PrintPaper` and `KeckReceiptWidget`
+  follow the same rule.
+- **Cancelling a voucher payout.** `cancelReceipt` accepts the one positive
+  cash payment that refunds a payout; with the original at hand, a
+  cancellation without a payout in it is still rejected before sending.
+  `paymentsError(..., payoutCancellation: true)` is additive.
+- **Catalogue.** 24 new labels (`nav.*`, `receipt_done.*`, `quantity.at_most`,
+  `quantity.at_least`, `receipts.*`, `cart.close`, `voucher.code_mask`,
+  `drawer.reason_voucher_payout`); new placeholder `{method}`.
+- **Drawer reason `voucher_payout`** is appended to `openingReasons` (the
+  register reports it itself at a payout); it is not in `manualOpeningReasons`.
+- **Shortcut actions `shiftStatus`, `openDrawer`, `voucherPayout`** join
+  `posShortcutActions`, without a default key (empty list in
+  `posShortcutDefaults`; the server leaves them out of its default map, so a
+  missing key reads as "no key", never as a guessed one). A card that is sent
+  must still carry every action.
+- **`createReceipt` hides voucher codes in error texts**, on both ways
+  (`KasseneckApi` and the register's `sell`): the code as typed (trimmed, from
+  8 characters, also an invalid one), its normal form and its formatted form
+  become `****`; the error code and details stay. Four-character endings are
+  never touched.
+- **`RegisterDeviceUsers.settings`**: the reply of `listRegisterUsersForDevice`
+  has no `vouchers` block. `settings.vouchers` stays the fail-closed default
+  (`PosVoucherSettings.off`) and is not part of `settings.toJson()`; only
+  `getKasseSettings` delivers the real block. No type change was needed
+  (unlike npm, where the type was narrowed).
+- **Mark a reprint as a duplicate (Nachdruck als Duplikat kennzeichnen):
+  `markAsDuplicate(layout, printedAt: ...)`** (top-level function in
+  `package:kasseneck_api/models/receipt_layout.dart`, also exported from
+  `package:kasseneck_api/kasseneck_api.dart`). It returns a new
+  `ReceiptLayout` with one plain (not bold) two-column line `Duplikat am:`
+  and the time of the reprint, placed right after the line `Beleg-ID:`
+  (column widths 5/7, the time at the right edge like `Datum:`): on 32
+  characters `Duplikat am: 24.10.2026 14:10:05`, on 48 characters
+  `Duplikat am:` and the time 17 spaces apart. `printedAt` (required) is an
+  instant, UTC or local; the line shows it in Europe/Vienna time (EU summer
+  time rule, `DD.MM.YYYY HH:MM:SS`, fractions cut), never in the time zone of
+  the device. A layout without a `Beleg-ID:` columns line (shift receipts)
+  gets the line on top. Applying it again replaces the time (one line, the
+  latest reprint counts); the input is never changed (lines and column lists
+  are new). Registers must call it on **every reprint and on "print copy"**
+  with the print time, never on the first print and never for mail, link or
+  PDF (the customer gets the receipt itself there), and pass the result to
+  the same print path (`PrintPaper.setReceiptSheet`, `receiptSheet`,
+  `KeckReceiptSheetWidget`). Reason: Erlass BMF-AV Nr. 2/2026, section 4.5.6,
+  requires a receipt duplicate to be labelled as such (a reprint of the
+  stored receipt is already not signed again, not in the DEP and does not
+  move the counter). On the printer the reprint is the first print plus
+  exactly this line, byte for byte. The cases (around the summer time changes
+  in March and October, 58 and 80 mm, zero receipt, cancellation, voucher
+  redemption, with logo, without `Beleg-ID:`, applied twice) and the printed
+  bytes come from the contract file `duplicate-cases.json` (version 2) of
+  npm 1.14.0; the result matches npm layout for layout and byte for byte.
+- **Receipt outputs (Ausgaben eines Belegs): `logReceiptOutputs`** on
+  `RegisterReceiptClient` and on `KasseneckApi` (register path `/api/v3`
+  only; `KasseneckApi` sends this one call to `kPosBaseUrl` with its api_key
+  and `cashregister-token`). The register reports its prints and shares of a
+  receipt: `entries` (1-50, `receiptOutputEntriesMax`) of
+  `ReceiptOutputEntry(key, receiptId, kind, at, result)`, `kind` from
+  `receiptOutputLogKinds` (`print` first print, `reprint` duplicate,
+  `link_shared`, `pdf_shared`), `at` as milliseconds (`int`), `DateTime`
+  (sent as milliseconds, like the drawer openings) or ISO 8601 text with a
+  zone, `result` from `receiptOutputResults` (`ok`, `failed`, `unclear`;
+  required for prints). `toJson`/`fromJson` keep a buffered entry; `fromJson`
+  throws on an unknown field or a wrong type. The answer
+  `LogReceiptOutputsResult(accepted, rejected)` names each rejected entry
+  (`RejectedReceiptOutput(key, code)`) with a code from
+  `receiptOutputEntryErrorCodes`; one entry never fails the others. A call
+  with effect (`unknownOutcomeCalls`): after an unclear outcome send the same
+  entries with the same keys again. Rejected before sending: no or more than
+  50 entries, a missing receipt, a key outside the server's rule (8-64
+  characters `[A-Za-z0-9_-]`), a kind or result outside the catalogue, a time
+  that is neither whole milliseconds from 0 nor ISO 8601 text with a zone;
+  `email` and `opened` go out and come back as `invalid_output_kind`. A broken
+  success answer is a response error, never "0 accepted". Errors of the whole
+  request: `receiptOutputErrorCodes` with `isReceiptOutputError`,
+  `receiptOutputErrorCode`, `isReceiptOutputErrorCode`,
+  `receiptOutputFieldErrors`. Reason: Erlass BMF-AV Nr. 2/2026, section 4.2,
+  requires the way a receipt was handed over to be documented; the server
+  keeps the log next to the receipt (never on it, never in the DEP).
+- **`KasseneckReceipt.outputs`** (`List<ReceiptOutput>?`) from `getReceipt`
+  (both ways): the latest 20 outputs, newest first, each
+  `ReceiptOutput(kind, at, result, by, count)` (`by` a `ReceiptOutputActor`
+  or `null`, `count` only on `opened`). `null` when the answer has no list
+  (sale); not part of `toJson` (the log grows next to the receipt, a stored
+  copy would be stale). Read leniently, the same rule as npm: an entry
+  without kind, time or result is dropped, an actor without id reads as
+  `null`, an unknown kind or result stays readable; a broken log never fails
+  reading or reprinting the receipt.
+- **Shared contract file `receipt-outputs-cases.json`** (npm 1.14.0,
+  `fixtures:ausgaben`, pulled and verified by `tool/zwillinge.sh`): the read
+  cases of `outputs` (with `receiptOutputLabel` of each entry) and the request
+  cases of `logReceiptOutputs` (body sent or rejection with its reason). The
+  tests run every case on both ways, so npm and Dart cannot drift apart.
+  `ReceiptOutputEntry.fromJson` reads a missing `key`, `receiptId`, `kind` or
+  `at` as empty, so sending rejects it with the same reason as npm; an
+  explicit `"result": null` throws (outside the catalogue, as in npm), only a
+  missing `result` means none.
+- **9 labels for the receipt detail** (`receipt.outputs_title`,
+  `receipt.outputs_count`, `receipt.output_<kind>` for the six kinds,
+  `receipt.output_failed`) and **`receiptOutputLabel(output)`** in
+  `package:kasseneck_api/pos.dart`: the label of the kind, never throws;
+  `null` for a kind this package does not know, `opened` without a valid count
+  (whole number from 1) counts as one open; the register adds
+  `receipt.output_failed` itself when `result` is `failed`. Catalogues
+  `receiptOutputKinds` and `receiptOutputResults` equal the contract
+  (`surface.json`, `pos.receiptOutputKinds`/`receiptOutputResults`).
+- No model for `issuedVouchers` exists in this package, so the optional
+  `articleName` (service voucher) has no place here; the Bon layout of the
+  server already carries it.
+- Test data: placeholder VAT id `ATU12345675` in doc comments and tests (valid
+  check digit).
+
 ## 11.4.0
 
 Twin of `@kreiseck/kasseneck-api` `1.13.0` (contract files pulled from that

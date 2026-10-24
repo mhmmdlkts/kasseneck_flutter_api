@@ -9,11 +9,10 @@ Kassen-ID:                KASSE1
 Beleg-ID:          AT0-KASSE1-75
                                 
 1  x                     50,00 A
-Einzweckgutschein 20 %          
-····-····-JJJ2                  
+Einzweckgutschein 20 % ····-JJJ2
 1  x                    350,00 A
 Leistungsgutschein 10× Maniküre 
-····-····-RRRF                  
+····-RRRF                       
                                 
 MwSt%   MwSt      Netto   Brutto
 A 20%   66,67     333,33  400,00

@@ -80,13 +80,7 @@
     },
     {
       "kind": "line",
-      "text": "Einzweckgutschein 20 %          ",
-      "bold": false,
-      "blank": false
-    },
-    {
-      "kind": "line",
-      "text": "····-····-JJJ2                  ",
+      "text": "Einzweckgutschein 20 % ····-JJJ2",
       "bold": false,
       "blank": false
     },
@@ -104,7 +98,7 @@
     },
     {
       "kind": "line",
-      "text": "····-····-RRRF                  ",
+      "text": "····-RRRF                       ",
       "bold": false,
       "blank": false
     },

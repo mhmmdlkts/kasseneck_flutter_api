@@ -14,6 +14,10 @@ import 'package:kasseneck_api/models/receipt_layout.dart';
 /// dort von `scripts/layouts-vor-1.0.mjs` aus git e4b2887 gezogen), und
 /// dieselben Goldens heute (`expected/*.lines.json` im Vertrag). Zwilling von
 /// `test/stored-layout.test.ts` (Richtung `fromStoredLayout`).
+///
+/// Ersatzdaten (23.10.2026, npm 1.14.0): die Datei ist wie im npm-Repo mit der
+/// pruefziffernrichtigen `ATU12345675` statt `ATU12345678` gefuehrt; byteweise
+/// aus dem npm-Repo uebernommen, Hash darum neu.
 
 final _alt = jsonDecode(File('test/fixtures/vor-1.0/layouts-0.31.json').readAsStringSync()) as Map<String, dynamic>;
 final _paare = (_alt['pairs'] as List).cast<Map<String, dynamic>>();
@@ -24,7 +28,7 @@ Map<String, dynamic> _golden(String pfad) =>
 void main() {
   test('Golden-Paare: die 40 Zeilenmodelle von 0.31.0, byteweise wie im npm-Repo, jedes mit einem heutigen Golden', () {
     expect(sha256.convert(File('test/fixtures/vor-1.0/layouts-0.31.json').readAsBytesSync()).toString(),
-        'cc00130372c572b72357b0f55a935763770850d6333e746a26fc185457533ec2');
+        '49f9134497b36970781cc2c4a486e05b1bf081fc06f9a3fc60d3bbe7acf3145d');
     expect(_alt['version'], '0.31.0');
     expect(_alt['ref'], 'e4b2887');
     expect(_paare, hasLength(40));

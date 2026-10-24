@@ -8,7 +8,7 @@ enum VoucherType {
   /// Altform: Wertgutschein.
   value('value'),
 
-  /// Altform: Rabatt-/Promotionsgutschein.
+  /// Altform: Rabatt-/Aktionsgutschein.
   promo('promo'),
 
   /// Neue Form: Mehrzweckgutschein (Zahlungsmittel, Steuer erst bei der Einloesung).

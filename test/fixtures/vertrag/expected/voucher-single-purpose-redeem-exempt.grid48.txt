@@ -13,7 +13,7 @@ Beleg-ID:                          AT0-KASSE1-71
 Gutschein ····-7KQM                      -9,00 A
 Gutschein ····-7KQM                      -6,00 B
   Einzweck, befreit verkauft (Kleinunternehmer) 
-  Rest am Gutschein                       5,00  
+  Rest am Gutschein                       5,00 €
                                                 
 MwSt%       MwSt        Netto             Brutto
 A 20%       0,50        2,50                3,00

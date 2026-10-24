@@ -126,7 +126,14 @@ void main() {
       final api = apiWith(nieGerufen());
       Future<void> storno(List<KeckPaymentInput> z) =>
           api.cancelReceipt(cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-12', reason: 'input_error', payments: z);
-      expect(() => storno(const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100)]),
+      // Positiv ist nur die eine Barzahlung des Auszahlungs-Storno erlaubt (receipt_v3_test.dart), sonst nie.
+      expect(() => storno(const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 100, provider: CreditCardProvider.custom)]),
+          throwsA(isA<KasseneckValidationError>()));
+      expect(
+          () => storno(const [
+                KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 100),
+                KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -100),
+              ]),
           throwsA(isA<KasseneckValidationError>()));
       expect(() => storno(const [KeckPaymentInput(method: KeckPaymentMethod.mixed, amountCents: -100)]),
           throwsA(isA<KasseneckValidationError>()));

@@ -402,7 +402,8 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
 /// Hoechstbetrag zum Vorbelegen einer Einloesung an der Kasse, in Cent, nie
 /// negativ: der groesste Betrag, den der Server fuer diesen Gutschein annimmt.
 ///
-/// Obergrenze: Saldo, offener Betrag; bei Einzweck die deckbaren Positionen im
+/// Obergrenze: Saldo, offener Betrag ohne Trinkgeld (ein Gutschein deckt nie
+/// das Trinkgeld, Personal wie Inhaber); bei Einzweck die deckbaren Positionen im
 /// Topf seines Satzes abzueglich der schon gewaehlten Einloesungen dort. Befreit
 /// verkauft bzw. als Kleinunternehmer verteilt der Server anteilig auf alle
 /// Saetze (`kuTeile`); dann begrenzt jeder Topf: sein Anteil plus die schon
@@ -414,7 +415,8 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
 /// Bisektion ueber [1, Grenze] und prueft danach 16 Cent aufwaerts: am Rand
 /// des groessten Rests ist die Annahme nicht monoton. Leistung (wird ueber
 /// Positionen eingeloest), Aktion (Rabatt rechnet der Server) und jeder nicht
-/// aktive Gutschein: 0.
+/// aktive Gutschein: 0. Wirft nie [ReceiptDueError]: ist der Beleg ohne den
+/// Gutschein nicht rechenbar (etwa `tip_without_goods`), ist das Ergebnis 0.
 ///
 /// [vouchers] sind die schon gewaehlten Gutscheine des Belegs; die uebrigen
 /// Angaben wie bei [receiptDueCents]. Zwilling von `voucherRedeemMaxCents` im
@@ -474,9 +476,15 @@ int voucherRedeemMaxCentsForLines(
     zeroRateBucketFrom: zeroRateBucketFrom,
     today: today,
   );
-  final r = _rechne(lines, vouchers, ReceiptType.standard, o);
-  // Rundung je Topf: hoechstens ein halber Cent je Topf ueber dem offenen Betrag.
-  var oben = _min(_min(saldo, r.ergebnis.dueCents + r.auszahlungCents + 6), _hoechstbetragCents);
+  final _Rechnung r;
+  try {
+    r = _rechne(lines, vouchers, ReceiptType.standard, o);
+  } on ReceiptDueError {
+    // Nicht rechenbar (etwa Trinkgeld ohne Ware): nichts vorbelegen, die Kasse meldet es beim Zahlbetrag.
+    return 0;
+  }
+  // Rundung je Topf: hoechstens ein halber Cent je Topf ueber dem offenen Betrag. Das Trinkgeld deckt nie ein Gutschein.
+  var oben = _min(_min(saldo, r.ergebnis.dueCents + r.auszahlungCents - trinkgeldCents(r.kunde) + 6), _hoechstbetragCents);
   if (voucher.type == VoucherType.singlePurpose) {
     int topfBasis(String topf) => centSumme(r.kunde.where((it) => istDeckbar(it) && topfFuerSatz(it.vat) == topf));
     if (voucher.exempt == true || smallBusiness) {
@@ -682,6 +690,12 @@ _Rechnung _rechne(List<ReceiptDueLine> lines, List<KeckVoucher> vouchers, Receip
   // Ohne Auszahlungen darf der Zahlbetrag nicht negativ werden (Einloesung hoeher als die Summe).
   if (plan.mitPlan && dueCents + plan.auszahlungCents < 0) {
     throw const ReceiptDueError('invalid_voucher', 'die Gutscheine uebersteigen die Summe des Belegs.', 'voucher_exceeds_total');
+  }
+  // Ein Gutschein deckt nie das Trinkgeld (Personal wie Inhaber): der Zahlbetrag nach den Gutscheinen
+  // muss die Trinkgeldzeilen tragen. Storno ausgenommen (dort gibt es keinen Plan).
+  final trinkgeld = trinkgeldCents(kunde);
+  if (plan.mitPlan && receiptType != ReceiptType.cancellation && trinkgeld > 0 && dueCents + plan.auszahlungCents < trinkgeld) {
+    throw const ReceiptDueError('invalid_voucher', 'die Gutscheine decken das Trinkgeld.', 'voucher_exceeds_total');
   }
   return _Rechnung(
     ReceiptDueBreakdown(

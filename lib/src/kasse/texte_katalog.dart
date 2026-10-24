@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.13.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.14.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.13.0';
+const String posTextsVersion = '1.14.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -435,6 +435,7 @@ const Map<String, PosText> posLabels = {
   'drawer.reason_cash_movement': PosText('Kassenbewegung'),
   'drawer.reason_shift_open': PosText('Schichtbeginn'),
   'drawer.reason_shift_close': PosText('Schichtabschluss'),
+  'drawer.reason_voucher_payout': PosText('Gutschein-Auszahlung'),
   'shift.resend': PosText('Erneut senden'),
   'shift.next': PosText('Weiter'),
   'shift.print_close': PosText('Schichtabschluss drucken'),
@@ -465,6 +466,29 @@ const Map<String, PosText> posLabels = {
   'voucher.service': PosText('Leistungsgutschein'),
   'voucher.promotion': PosText('Aktionsgutschein'),
   'voucher.payment_line': PosText('Gutschein ····-{suffix}', placeholders: ['suffix']),
+  'quantity.at_most': PosText('höchstens {count}', placeholders: ['count']),
+  'quantity.at_least': PosText('mindestens {count}', placeholders: ['count']),
+  'receipts.number_hint': PosText('Nummer'),
+  'receipts.clear_number': PosText('Nummer löschen'),
+  'receipts.open': PosText('Öffnen'),
+  'receipt.creating': PosText('Beleg wird erstellt …'),
+  'receipt_done.sale_title': PosText('Verkauf abgeschlossen'),
+  'receipt_done.paid_by_voucher': PosText('mit Gutschein bezahlt'),
+  'receipt_done.payout_title': PosText('Auszahlung abgeschlossen'),
+  'receipt_done.paid_out': PosText('{method} ausgezahlt', placeholders: ['method']),
+  'voucher.code_mask': PosText('····-{suffix}', placeholders: ['suffix']),
+  'cart.close': PosText('Warenkorb schließen'),
+  'nav.register': PosText('Kasse'),
+  'nav.receipts': PosText('Belege'),
+  'nav.vouchers': PosText('Gutscheine'),
+  'nav.open_drawer': PosText('Kassenlade öffnen'),
+  'nav.stocktake': PosText('Inventur'),
+  'nav.settings': PosText('Einstellungen'),
+  'nav.settings_locked': PosText('nur mit Chef-Anmeldung'),
+  'nav.logout': PosText('Abmelden'),
+  'nav.logging_out': PosText('Wird abgemeldet …'),
+  'nav.fullscreen': PosText('Vollbild'),
+  'nav.fullscreen_exit': PosText('Vollbild verlassen'),
   'voucher.covers_items': PosText('Deckt: {items}', placeholders: ['items']),
   'voucher.code_shown_once': PosText('Code nur jetzt sichtbar: {code}', placeholders: ['code']),
   'voucher.not_in_split': PosText('Gutscheine gehen beim getrennten Kassieren nicht.'),
@@ -531,6 +555,15 @@ const Map<String, PosText> posLabels = {
   'shift.pay_outs': PosText('Auszahlungen'),
   'cash_movement.pay_in_amount': PosText('{amount} einzahlen', placeholders: ['amount']),
   'cash_movement.pay_out_amount': PosText('{amount} auszahlen', placeholders: ['amount']),
+  'receipt.outputs_title': PosText('Ausgaben'),
+  'receipt.outputs_count': PosText('{count} Ausgaben', placeholders: ['count']),
+  'receipt.output_print': PosText('Erstdruck'),
+  'receipt.output_reprint': PosText('Duplikat'),
+  'receipt.output_email': PosText('E-Mail'),
+  'receipt.output_link_shared': PosText('Link geteilt'),
+  'receipt.output_pdf_shared': PosText('PDF geteilt'),
+  'receipt.output_opened': PosText('Link geöffnet ({count}×)', placeholders: ['count']),
+  'receipt.output_failed': PosText('fehlgeschlagen'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].

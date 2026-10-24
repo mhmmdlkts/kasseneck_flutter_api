@@ -250,8 +250,8 @@ class KeckVoucher {
         ..._neueFelder(),
       };
 
-  /// Sendbar? Altform: Wert- und Promotionsgutscheine brauchen einen Wert,
-  /// Promotionsgutscheine nur einloesen, ein Wert ist positiv. Neue Form:
+  /// Sendbar? Altform: Wert- und Aktionsgutscheine brauchen einen Wert,
+  /// Aktionsgutscheine nur einloesen, ein Wert ist positiv. Neue Form:
   /// die Regeln des Servers (siehe [_neueFormGueltig]).
   bool get isValid {
     if (isNewForm) return _neueFormGueltig();
@@ -330,7 +330,7 @@ class KeckVoucher {
   /// nennt, steht allein). Neue Form (auch eine gelesene Mehrzweck-Einloesung
   /// mit `type: value`) wie die Zeilen am Bon (Spec 2026-10-14, „Bon und
   /// Beleg“): Einloesung „Gutschein ····-9DWT“, Auszahlung „Auszahlung
-  /// Gutschein ····-9DWT“, Verkauf Bezeichnung und Code-Maske. Vom Code steht
+  /// Gutschein ····-9DWT“, Verkauf Bezeichnung und kurze Code-Maske. Vom Code steht
   /// nie mehr als die Maske bzw. die letzten vier Zeichen da: ein Wunsch traegt
   /// den Klartext, der nie auf einen Beleg gehoert.
   String get receiptText {
@@ -339,10 +339,12 @@ class KeckVoucher {
     if (type == VoucherType.value) {
       text += 'Wertgutschein';
     } else if (type == VoucherType.promo) {
-      text += 'Promotionsgutschein';
+      text += 'Aktionsgutschein';
     }
 
-    if (name?.toLowerCase().contains(text.toLowerCase())??false) {
+    // Alte Belege nennen den Aktionsgutschein noch „Promotionsgutschein“: auch dieser Name steht allein.
+    final klein = name?.toLowerCase();
+    if (klein != null && (klein.contains(text.toLowerCase()) || (type == VoucherType.promo && klein.contains('promotionsgutschein')))) {
       return name!;
     }
     if (value != null) {
@@ -361,15 +363,19 @@ class KeckVoucher {
     if (action == VoucherAction.sell) {
       final n = name?.trim() ?? '';
       final bezeichnung = n.toLowerCase().contains('gutschein') ? n : _artText(art);
-      final maske = code != null && code!.startsWith('····') ? ' $code' : '';
+      // Am Bon immer die kurze Maske, auch wenn der Eintrag die lange traegt.
+      final maske = code != null && code!.startsWith('····') && _ende != null ? ' ····-$_ende' : '';
       return '$bezeichnung$maske';
     }
-    final ende = codeSuffix != null && codeSuffix!.isNotEmpty
-        ? codeSuffix
-        : (code != null && code!.length >= 4 && code != 'no-code' ? code!.substring(code!.length - 4) : null);
+    final ende = _ende;
     final text = art == VoucherType.promotion ? 'Aktionsgutschein' : 'Gutschein';
     return '${action == VoucherAction.payout ? 'Auszahlung ' : ''}$text${ende == null ? '' : ' ····-$ende'}';
   }
+
+  /// Die vier letzten Zeichen des Codes ([codeSuffix], sonst aus dem Code), oder `null`.
+  String? get _ende => codeSuffix != null && codeSuffix!.isNotEmpty
+      ? codeSuffix
+      : (code != null && code!.length >= 4 && code != 'no-code' ? code!.substring(code!.length - 4) : null);
 
   static String _artText(VoucherType art) => switch (art) {
         VoucherType.multiPurpose || VoucherType.value => 'Mehrzweckgutschein',

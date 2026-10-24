@@ -1,0 +1,2778 @@
+{
+  "version": 1,
+  "_note": "Receipt outputs (Ausgaben eines Belegs). `outputs`: `input` is `data.outputs` of a getReceipt answer as received; `expected` is the list the package reads from it (null when it is no list; an entry without non-empty text kind, at and result is dropped; by is {id, name} with name null when not text, or null without a non-empty text id; count only as a safe whole number from 0; unknown kind or result kept), `labels` is receiptOutputLabel of each expected entry (null for an unknown kind; opened without a whole count from 1 counts as 1). `requests`: `entries` as given to logReceiptOutputs; `expected.sent` is the request body (without cashregisterId, which the sign-in adds), or `expected.error` the rejection before sending (scope request, reason of the first failing check; an unknown field reads `entries[i]: unbekanntes Feld \"<name>\"`). Written by `npm run fixtures:ausgaben`.",
+  "outputs": [
+    {
+      "name": "contract_get_receipt_with_outputs",
+      "input": [
+        {
+          "at": "2026-09-26T10:04:00+02:00",
+          "kind": "reprint",
+          "result": "unclear",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "at": "2026-09-26T10:03:00+02:00",
+          "kind": "opened",
+          "result": "ok",
+          "by": null,
+          "count": 3
+        },
+        {
+          "at": "2026-09-26T10:02:00+02:00",
+          "kind": "email",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "at": "2026-09-26T10:00:05+02:00",
+          "kind": "print",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        }
+      ],
+      "expected": [
+        {
+          "kind": "reprint",
+          "at": "2026-09-26T10:04:00+02:00",
+          "result": "unclear",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 3
+        },
+        {
+          "kind": "email",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:00:05+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        }
+      ],
+      "labels": [
+        "Duplikat",
+        "Link geöffnet (3×)",
+        "E-Mail",
+        "Erstdruck"
+      ]
+    },
+    {
+      "name": "not_a_list_object",
+      "input": {
+        "kind": "print"
+      },
+      "expected": null,
+      "labels": null
+    },
+    {
+      "name": "not_a_list_none",
+      "input": null,
+      "expected": null,
+      "labels": null
+    },
+    {
+      "name": "not_a_list_text",
+      "input": "print",
+      "expected": null,
+      "labels": null
+    },
+    {
+      "name": "empty_list",
+      "input": [],
+      "expected": [],
+      "labels": []
+    },
+    {
+      "name": "broken_entries_dropped",
+      "input": [
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:00:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        null,
+        "print",
+        42,
+        [
+          {
+            "kind": "print",
+            "at": "2026-09-26T10:00:00+02:00",
+            "result": "ok",
+            "by": null
+          }
+        ],
+        {
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "reprint",
+          "at": 5,
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "reprint",
+          "at": "",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "reprint",
+          "at": "2026-09-26T10:02:00+02:00",
+          "by": null
+        },
+        {
+          "kind": "reprint",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "",
+          "by": null
+        },
+        {
+          "kind": 7,
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "email",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "extra": true
+        }
+      ],
+      "expected": [
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:00:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "email",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        }
+      ],
+      "labels": [
+        "Erstdruck",
+        "E-Mail"
+      ]
+    },
+    {
+      "name": "unknown_kind_and_result_kept",
+      "input": [
+        {
+          "kind": "fax",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "pending",
+          "by": {
+            "id": "ru_livia"
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "queued",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "constructor",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "__proto__",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "toString",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "outputs_title",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        }
+      ],
+      "expected": [
+        {
+          "kind": "fax",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "pending",
+          "by": {
+            "id": "ru_livia",
+            "name": null
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "queued",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "constructor",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "__proto__",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "toString",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "outputs_title",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        }
+      ],
+      "labels": [
+        null,
+        "Erstdruck",
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "name": "actor_rules",
+      "input": [
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:00:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia"
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": 3
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "kr_account",
+            "name": null
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:04:00+02:00",
+          "result": "ok",
+          "by": {
+            "name": "ohne Kennung"
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:05:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "",
+            "name": "leere Kennung"
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:06:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": 42
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:07:00+02:00",
+          "result": "ok",
+          "by": "ru_livia"
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:08:00+02:00",
+          "result": "ok",
+          "by": [
+            "ru_livia"
+          ]
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:09:00+02:00",
+          "result": "ok"
+        }
+      ],
+      "expected": [
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:00:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": null
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": null
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "kr_account",
+            "name": null
+          }
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:04:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:05:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:06:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:07:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:08:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:09:00+02:00",
+          "result": "ok",
+          "by": null
+        }
+      ],
+      "labels": [
+        "Erstdruck",
+        "Erstdruck",
+        "Erstdruck",
+        "Erstdruck",
+        "Erstdruck",
+        "Erstdruck",
+        "Erstdruck",
+        "Erstdruck",
+        "Erstdruck",
+        "Erstdruck"
+      ]
+    },
+    {
+      "name": "count_rules",
+      "input": [
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:00:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 40
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 1
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 0
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": -2
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:04:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 1.5
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:05:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": "3"
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:06:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": null
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:07:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:08:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 9007199254740992
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:09:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "count": 2
+        }
+      ],
+      "expected": [
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:00:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 40
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 1
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "ok",
+          "by": null,
+          "count": 0
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:04:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:05:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:06:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:07:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "opened",
+          "at": "2026-09-26T10:08:00+02:00",
+          "result": "ok",
+          "by": null
+        },
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:09:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          },
+          "count": 2
+        }
+      ],
+      "labels": [
+        "Link geöffnet (40×)",
+        "Link geöffnet (1×)",
+        "Link geöffnet (1×)",
+        "Link geöffnet (1×)",
+        "Link geöffnet (1×)",
+        "Link geöffnet (1×)",
+        "Link geöffnet (1×)",
+        "Link geöffnet (1×)",
+        "Link geöffnet (1×)",
+        "Erstdruck"
+      ]
+    },
+    {
+      "name": "label_only_kind",
+      "input": [
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:00:00+02:00",
+          "result": "failed",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "reprint",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "unclear",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "link_shared",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "pdf_shared",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "email",
+          "at": "2026-09-26T10:04:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        }
+      ],
+      "expected": [
+        {
+          "kind": "print",
+          "at": "2026-09-26T10:00:00+02:00",
+          "result": "failed",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "reprint",
+          "at": "2026-09-26T10:01:00+02:00",
+          "result": "unclear",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "link_shared",
+          "at": "2026-09-26T10:02:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "pdf_shared",
+          "at": "2026-09-26T10:03:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        },
+        {
+          "kind": "email",
+          "at": "2026-09-26T10:04:00+02:00",
+          "result": "ok",
+          "by": {
+            "id": "ru_livia",
+            "name": "Livia Lindmayr"
+          }
+        }
+      ],
+      "labels": [
+        "Erstdruck",
+        "Duplikat",
+        "Link geteilt",
+        "PDF geteilt",
+        "E-Mail"
+      ]
+    }
+  ],
+  "requests": [
+    {
+      "name": "contract_mixed",
+      "entries": [
+        {
+          "key": "mail-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "email",
+          "result": "ok"
+        },
+        {
+          "key": "abruf-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "opened",
+          "result": "ok"
+        },
+        {
+          "key": "fremd-0001",
+          "receiptId": "KASSE3-ID-1",
+          "at": 1790409599000,
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "zeit-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790410200000,
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "kurz",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "druck-0009",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "reprint"
+        },
+        {
+          "key": "druck-0010",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "reprint",
+          "result": "failed"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[4].key muss 8–64 Zeichen [A-Za-z0-9_-] haben"
+        }
+      }
+    },
+    {
+      "name": "contract_mixed_without_short_key",
+      "entries": [
+        {
+          "key": "mail-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "email",
+          "result": "ok"
+        },
+        {
+          "key": "abruf-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "opened",
+          "result": "ok"
+        },
+        {
+          "key": "fremd-0001",
+          "receiptId": "KASSE3-ID-1",
+          "at": 1790409599000,
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "zeit-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790410200000,
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "druck-0009",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "reprint"
+        },
+        {
+          "key": "druck-0010",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409599000,
+          "kind": "reprint",
+          "result": "failed"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "mail-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409599000,
+              "kind": "email",
+              "result": "ok"
+            },
+            {
+              "key": "abruf-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409599000,
+              "kind": "opened",
+              "result": "ok"
+            },
+            {
+              "key": "fremd-0001",
+              "receiptId": "KASSE3-ID-1",
+              "at": 1790409599000,
+              "kind": "print",
+              "result": "ok"
+            },
+            {
+              "key": "zeit-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790410200000,
+              "kind": "print",
+              "result": "ok"
+            },
+            {
+              "key": "druck-0009",
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409599000,
+              "kind": "reprint"
+            },
+            {
+              "key": "druck-0010",
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409599000,
+              "kind": "reprint",
+              "result": "failed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "one_entry",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "print-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "print",
+              "result": "ok"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "no_entries",
+      "entries": [],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries muss 1–50 Eintraege haben"
+        }
+      }
+    },
+    {
+      "name": "max_entries",
+      "entries": [
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1000"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1001"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1002"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1003"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1004"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1005"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1006"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1007"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1008"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1009"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1010"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1011"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1012"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1013"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1014"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1015"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1016"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1017"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1018"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1019"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1020"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1021"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1022"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1023"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1024"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1025"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1026"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1027"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1028"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1029"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1030"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1031"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1032"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1033"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1034"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1035"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1036"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1037"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1038"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1039"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1040"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1041"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1042"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1043"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1044"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1045"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1046"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1047"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1048"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1049"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1000"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1001"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1002"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1003"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1004"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1005"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1006"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1007"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1008"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1009"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1010"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1011"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1012"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1013"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1014"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1015"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1016"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1017"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1018"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1019"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1020"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1021"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1022"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1023"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1024"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1025"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1026"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1027"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1028"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1029"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1030"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1031"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1032"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1033"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1034"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1035"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1036"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1037"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1038"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1039"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1040"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1041"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1042"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1043"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1044"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1045"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1046"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1047"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1048"
+            },
+            {
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409570000,
+              "kind": "link_shared",
+              "key": "share-1049"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "too_many_entries",
+      "entries": [
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1000"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1001"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1002"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1003"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1004"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1005"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1006"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1007"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1008"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1009"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1010"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1011"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1012"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1013"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1014"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1015"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1016"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1017"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1018"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1019"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1020"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1021"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1022"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1023"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1024"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1025"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1026"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1027"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1028"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1029"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1030"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1031"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1032"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1033"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1034"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1035"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1036"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1037"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1038"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1039"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1040"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1041"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1042"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1043"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1044"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1045"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1046"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1047"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1048"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1049"
+        },
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409570000,
+          "kind": "link_shared",
+          "key": "share-1050"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries muss 1–50 Eintraege haben"
+        }
+      }
+    },
+    {
+      "name": "unknown_field",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok",
+          "receiptID": "KASSE1-ID-7"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0]: unbekanntes Feld \"receiptID\""
+        }
+      }
+    },
+    {
+      "name": "unknown_field_second_entry",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "print-0002",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok",
+          "note": "Kopie"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[1]: unbekanntes Feld \"note\""
+        }
+      }
+    },
+    {
+      "name": "unknown_field_cashregister",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok",
+          "cashregisterId": "KASSE2"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0]: unbekanntes Feld \"cashregisterId\""
+        }
+      }
+    },
+    {
+      "name": "key_missing",
+      "entries": [
+        {
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key fehlt"
+        }
+      }
+    },
+    {
+      "name": "key_empty",
+      "entries": [
+        {
+          "key": "",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key fehlt"
+        }
+      }
+    },
+    {
+      "name": "key_null",
+      "entries": [
+        {
+          "key": null,
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key fehlt"
+        }
+      }
+    },
+    {
+      "name": "key_blank",
+      "entries": [
+        {
+          "key": "        ",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key fehlt"
+        }
+      }
+    },
+    {
+      "name": "key_too_short",
+      "entries": [
+        {
+          "key": "kurz",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key muss 8–64 Zeichen [A-Za-z0-9_-] haben"
+        }
+      }
+    },
+    {
+      "name": "key_seven",
+      "entries": [
+        {
+          "key": "print-1",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key muss 8–64 Zeichen [A-Za-z0-9_-] haben"
+        }
+      }
+    },
+    {
+      "name": "key_space",
+      "entries": [
+        {
+          "key": "print 0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key muss 8–64 Zeichen [A-Za-z0-9_-] haben"
+        }
+      }
+    },
+    {
+      "name": "key_umlaut",
+      "entries": [
+        {
+          "key": "prínt-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key muss 8–64 Zeichen [A-Za-z0-9_-] haben"
+        }
+      }
+    },
+    {
+      "name": "key_too_long",
+      "entries": [
+        {
+          "key": "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key muss 8–64 Zeichen [A-Za-z0-9_-] haben"
+        }
+      }
+    },
+    {
+      "name": "key_bounds",
+      "entries": [
+        {
+          "key": "Ab_-0123",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "Ab_-0123",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "print",
+              "result": "ok"
+            },
+            {
+              "key": "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "print",
+              "result": "ok"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "key_not_trimmed",
+      "entries": [
+        {
+          "key": " print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].key muss 8–64 Zeichen [A-Za-z0-9_-] haben"
+        }
+      }
+    },
+    {
+      "name": "receipt_missing",
+      "entries": [
+        {
+          "key": "print-0001",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].receiptId fehlt"
+        }
+      }
+    },
+    {
+      "name": "receipt_blank",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": " ",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].receiptId fehlt"
+        }
+      }
+    },
+    {
+      "name": "kind_internal_word",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "erstdruck",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].kind muss print, reprint, email, link_shared, pdf_shared, opened sein"
+        }
+      }
+    },
+    {
+      "name": "kind_missing",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].kind muss print, reprint, email, link_shared, pdf_shared, opened sein"
+        }
+      }
+    },
+    {
+      "name": "kind_null",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": null,
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].kind muss print, reprint, email, link_shared, pdf_shared, opened sein"
+        }
+      }
+    },
+    {
+      "name": "kind_server_written",
+      "entries": [
+        {
+          "key": "email-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "email",
+          "result": "ok"
+        },
+        {
+          "key": "opened-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "opened",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "email-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "email",
+              "result": "ok"
+            },
+            {
+              "key": "opened-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "opened",
+              "result": "ok"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "result_outside_catalog",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "error"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].result muss ok, failed, unclear sein"
+        }
+      }
+    },
+    {
+      "name": "result_null",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": null
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].result muss ok, failed, unclear sein"
+        }
+      }
+    },
+    {
+      "name": "result_missing_share",
+      "entries": [
+        {
+          "key": "share-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "link_shared"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "share-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "link_shared"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "result_missing_print",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "print-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "print"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "result_values",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "reprint",
+          "result": "ok"
+        },
+        {
+          "key": "print-0002",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "reprint",
+          "result": "failed"
+        },
+        {
+          "key": "print-0003",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "reprint",
+          "result": "unclear"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "print-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "reprint",
+              "result": "ok"
+            },
+            {
+              "key": "print-0002",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "reprint",
+              "result": "failed"
+            },
+            {
+              "key": "print-0003",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00+02:00",
+              "kind": "reprint",
+              "result": "unclear"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "at_missing",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_empty",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_null",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": null,
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_fraction",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1.5,
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_negative",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": -1,
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_zero",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 0,
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "print-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": 0,
+              "kind": "print",
+              "result": "ok"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "at_ms",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 1790409480000,
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "print-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": 1790409480000,
+              "kind": "print",
+              "result": "ok"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "at_unsafe",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": 9007199254740992,
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_without_zone",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_fraction_without_zone",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00.123",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_offset_without_colon",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+0200",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_date_only",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_space",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26 09:58:00Z",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_seven_fraction_digits",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00.1234567Z",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_lowercase_z",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T07:58:00z",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[0].at muss Millisekunden seit 1970 oder ISO 8601 mit Zone sein"
+        }
+      }
+    },
+    {
+      "name": "at_with_zone",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T07:58:00Z",
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "print-0002",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00.123456+02:00",
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "print-0003",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T07:59:00.000Z",
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "print-0004",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T02:58:00-05:00",
+          "kind": "print",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "sent": {
+          "entries": [
+            {
+              "key": "print-0001",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T07:58:00Z",
+              "kind": "print",
+              "result": "ok"
+            },
+            {
+              "key": "print-0002",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T09:58:00.123456+02:00",
+              "kind": "print",
+              "result": "ok"
+            },
+            {
+              "key": "print-0003",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T07:59:00.000Z",
+              "kind": "print",
+              "result": "ok"
+            },
+            {
+              "key": "print-0004",
+              "receiptId": "KASSE1-ID-7",
+              "at": "2026-09-26T02:58:00-05:00",
+              "kind": "print",
+              "result": "ok"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "first_error_wins",
+      "entries": [
+        {
+          "key": "print-0001",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26T09:58:00+02:00",
+          "kind": "print",
+          "result": "ok"
+        },
+        {
+          "key": "kurz",
+          "receiptId": "KASSE1-ID-7",
+          "at": "2026-09-26",
+          "kind": "erstdruck",
+          "result": "ok"
+        }
+      ],
+      "expected": {
+        "error": {
+          "scope": "request",
+          "reason": "entries[1].key muss 8–64 Zeichen [A-Za-z0-9_-] haben"
+        }
+      }
+    }
+  ]
+}

@@ -13,11 +13,13 @@ import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/src/receipt/due.dart';
 import 'package:kasseneck_api/src/register/fehler.dart' show ErrorOutcome, isOutcomeUnknown;
+import 'package:kreiseck_validator/kreiseck_validator.dart' show VoucherCode;
 
 import 'helpers/gutschein_setup.dart';
 
 /// Zahlbetrag als Zwilling des Backends (npm `test/due.test.ts`): jeder Fall
-/// aus `v3/zahlbetrag-faelle.json` (20, gegen den echten Handler geprueft) und
+/// aus `v3/zahlbetrag-faelle.json` (gegen den echten Handler geprueft; abgelehnte
+/// Faelle mit dem Code des Servers, dazu der Hoechstbetrag der Einloesung) und
 /// aus `receipt-due-generated.json` (1206, mit dem echten Backend-Code
 /// gerechnet) muss auf den Cent stimmen, Toepfe inklusive. Hier wird nichts
 /// nachgerechnet, nur verglichen.
@@ -100,43 +102,103 @@ void main() {
     }
   });
 
+  test('Zahlbetrag-Faelle: genau die bekannten Faelle, keiner unbekannt, keiner fehlt', () {
+    // Ein neuer Fall im Backend macht diesen Test rot, bis er hier eingetragen ist:
+    // kein Fall des Servers wird still mitgenommen oder uebersprungen.
+    const bekannt = [
+      'sale_single_rate', 'sale_mixed_rates', 'sale_rate_4_9', 'sale_rate_19_and_0', 'sale_float_rounding', 'sale_decimal_quantity',
+      'sale_v2_item_form', 'training_sale', 'promo_proportional', 'promo_remainder_cent', 'promo_exceeds_total', 'value_voucher_sell',
+      'value_voucher_redeem_partial', 'tip_staff', 'tip_staff_received_immediately', 'tip_staff_with_promo', 'tip_owner_with_promo',
+      'cancellation_negative', 'cancellation_value_voucher_sell', 'zero_receipt', 'single_purpose_voucher_sell', 'single_purpose_voucher_redeem',
+      'service_voucher_sell', 'service_voucher_redeem', 'promotion_voucher_redeem',
+      'tip_staff_value_voucher_capped', 'tip_owner_value_voucher_capped', 'tip_owner_value_voucher_over_tip', 'tip_payment_tipcents_value_voucher',
+      'tip_promo_and_value_voucher', 'tip_value_voucher_boundary_accepted', 'tip_value_voucher_boundary_rejected', 'tip_single_purpose_voucher_goods_only',
+      'tip_owner_promo_and_value_voucher', 'tip_owner_promo_and_value_voucher_over_tip', 'tip_owner_promotion_voucher', 'tip_promotion_and_value_voucher_rejected',
+    ];
+    expect([for (final f in faelle) f['name'] as String]..sort(), [...bekannt]..sort());
+    for (final f in faelle.where(istAbgelehnt)) {
+      expect((f['expected'] as Map).keys, ['errorCode'], reason: f['name'] as String);
+    }
+  });
+
   group('Vertragsfaelle (zahlbetrag-faelle.json)', () {
     for (final fall in faelle) {
-      test('${fall['name']} stimmt exakt (${fall['verifiedBy']})', () {
+      test('${fall['name']} ${istAbgelehnt(fall) ? 'weist ab' : 'stimmt exakt'} wie der Server (${fall['verifiedBy']})', () {
         final input = fall['input'] as Map<String, dynamic>;
-        final tip = input['tip'] as Map<String, dynamic>?;
-        // Gutscheine der neuen Form: die Welt des Falls (Pruefung, Einstellung, Artikel).
+        // Trinkgeld (tip bzw. payments[].tipCents) und die Welt des Falls (Pruefung, Einstellung, Artikel).
+        final t = trinkgeldAus(fall);
         final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
-        final e = receiptDueBreakdownForLines(
-          [for (final p in (input['items'] as List).cast<Map<String, dynamic>>()) _zeile(p)],
-          [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) _gutschein(v)],
-          _typ(input['receiptType'] as String),
-          // Der Vertrag rechnet Personal-Trinkgeld ohne Empfaenger, Inhaber-Trinkgeld mit dem Inhaber.
-          tip: tip == null ? null : ReceiptDueTip(tip['cents'] as int),
-          tipRecipient: tip == null ? null : (tip['owner'] == true ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff),
-          voucherInfo: welt.info,
-          voucherSettings: welt.settings,
-          voucherArticles: welt.articles,
+        ReceiptDueBreakdown rechnen() => receiptDueBreakdownForLines(
+              [for (final p in (input['items'] as List).cast<Map<String, dynamic>>()) _zeile(p)],
+              [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) _gutschein(v)],
+              _typ(input['receiptType'] as String),
+              tip: t.tip,
+              payments: t.payments,
+              tipRecipient: t.tipRecipient,
+              voucherInfo: welt.info,
+              voucherSettings: welt.settings,
+              voucherArticles: welt.articles,
+            );
+        if (istAbgelehnt(fall)) {
+          final code = (fall['expected'] as Map)['errorCode'];
+          expect(
+              rechnen,
+              throwsA(predicate((Object? e) => e is ReceiptDueError && e.reason == 'invalid_voucher' && e.voucherErrorCode == code,
+                  'ReceiptDueError(invalid_voucher, $code)')));
+          return;
+        }
+        expect(_alsMap(rechnen()), fall['expected']);
+      });
+    }
+  });
+
+  group('Hoechstbetrag der Einloesung (redeemMax im Vertrag)', () {
+    final mitMax = faelle.where((f) => f['redeemMax'] != null).toList();
+    test('die Faelle mit redeemMax sind da', () => expect(mitMax.length, greaterThanOrEqualTo(6)));
+    for (final fall in mitMax) {
+      test('${fall['name']}: voucherRedeemMaxCents belegt genau die groesste Einloesung vor, die der Server annimmt', () {
+        final input = fall['input'] as Map<String, dynamic>;
+        final max = fall['redeemMax'] as Map<String, dynamic>;
+        final index = max['voucherIndex'] as int;
+        final roh = (input['vouchers'] as List).cast<Map<String, dynamic>>();
+        expect(index, roh.length - 1, reason: 'nach dem Gutschein kommt keiner');
+        final t = trinkgeldAus(fall);
+        final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
+        final code = VoucherCode.normalize(roh[index]['code'] as String);
+        final info = welt.info!.firstWhere((i) => VoucherCode.normalize(i.code) == code);
+        expect(
+          voucherRedeemMaxCentsForLines(
+            [for (final p in (input['items'] as List).cast<Map<String, dynamic>>()) _zeile(p)],
+            info.check,
+            vouchers: [for (final v in roh.sublist(0, index)) _gutschein(v)],
+            tip: t.tip,
+            payments: t.payments,
+            tipRecipient: t.tipRecipient,
+            voucherInfo: welt.info,
+            voucherSettings: welt.settings,
+            voucherArticles: welt.articles,
+          ),
+          max['maxCents'],
         );
-        expect(_alsMap(e), fall['expected']);
       });
     }
   });
 
   test('Vertragsfaelle ueber KasseneckItem (ganze Mengen) ergeben denselben Betrag', () {
     var geprueft = 0;
-    for (final fall in faelle) {
+    for (final fall in faelle.where((f) => !istAbgelehnt(f))) {
       final input = fall['input'] as Map<String, dynamic>;
       final roh = (input['items'] as List).cast<Map<String, dynamic>>();
       if (roh.any((p) => (p['quantity'] ?? p['amount']) is! int)) continue;
-      final tip = input['tip'] as Map<String, dynamic>?;
+      final t = trinkgeldAus(fall);
       final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
       final cents = receiptDueCents(
         [for (final p in roh) KasseneckItem.fromJson(p)],
         [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) _gutschein(v)],
         _typ(input['receiptType'] as String),
-        tip: tip == null ? null : ReceiptDueTip(tip['cents'] as int),
-        tipRecipient: tip == null ? null : (tip['owner'] == true ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff),
+        tip: t.tip,
+        payments: t.payments,
+        tipRecipient: t.tipRecipient,
         voucherInfo: welt.info,
         voucherSettings: welt.settings,
         voucherArticles: welt.articles,
@@ -156,10 +218,12 @@ void main() {
         ...(input['items'] as List).cast<Map<String, dynamic>>(),
         ...(fall['serverItems'] as List).cast<Map<String, dynamic>>(),
       ];
+      final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
       final ueberItems = receiptDueCents(
         [for (final p in alle) KasseneckItem.fromJson(p)],
         [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) _gutschein(v)],
         _typ(input['receiptType'] as String),
+        voucherInfo: welt.info,
       );
       expect(ueberItems, (fall['expected'] as Map)['dueCents'], reason: fall['name'] as String);
     }

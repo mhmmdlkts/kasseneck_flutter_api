@@ -87,7 +87,7 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "1  x Einzweckgutschein 20 % ····-····-JJJ2",
+          "text": "1  x Einzweckgutschein 20 % ····-JJJ2",
           "width": 7,
           "align": "left"
         },
@@ -102,7 +102,7 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "1  x Leistungsgutschein 10× Maniküre ····-····-RRRF",
+          "text": "1  x Leistungsgutschein 10× Maniküre ····-RRRF",
           "width": 7,
           "align": "left"
         },

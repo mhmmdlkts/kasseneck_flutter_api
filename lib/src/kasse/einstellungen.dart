@@ -327,6 +327,7 @@ const List<int> posWatermarkStrengths = [3, 6, 10, 16];
 const List<String> posShortcutActions = [
   'checkout', 'complete', 'cancel', 'customAmount', 'cash', 'card', 'exactAmount', 'receipts', 'undoLast',
   'settings', 'logout', 'tip', 'fullscreen', 'clearTendered', 'clearCart', 'splitPayment',
+  'shiftStatus', 'openDrawer', 'voucherPayout',
 ];
 
 /// Tastenbelegung: Aktion -> Tasten (`Mod+F`, `Enter`, `Escape`, `F5` ...;
@@ -353,6 +354,9 @@ const Map<String, List<String>> posShortcutDefaults = {
   'clearCart': ['Mod+C'],
   // Bewusst ohne Vorgabe: der Chef vergibt sie, wenn er sie braucht.
   'splitPayment': [],
+  'shiftStatus': [],
+  'openDrawer': [],
+  'voucherPayout': [],
 };
 
 /// Aktionen, die sich eine Taste teilen dürfen (Backend `TASTEN_PAARE`),

@@ -53,7 +53,7 @@ final Set<String> woerter = _liste('''
   description detail details device devices diagnosis differs digits
   dimensions direct directory disabled discount discover discovered discovery
   dispose disposed disposition dispositions distance distribute divider documented done dots double download
-  draft drawer dry due duration effect email emoji employee empty enable enabled encode encoded end endpoints
+  draft drawer dry due duplicate duration effect email emoji employee empty enable enabled encode encoded end endpoints
   enrollment entered entry enums envelope environment error errors euro event events
   everywhere exact exceeded exception expected expired expires expiry extend external
   extra failed failure failures fallback fast fault fax february feed field
@@ -75,19 +75,19 @@ final Set<String> woerter = _liste('''
   network never new next night no none normal normalize not note notes notice
   notices november now number numbers observer october of off offered offset omit on
   onboarding online only open operation operator or order original other out
-  outcome outdated output overdue overview own owner package page paid pair
+  outcome outdated output outputs overdue overview own owner package page paid pair
   paired pairs panel paper parse partial password patch pay payload payment
   payments per percent period persistent person phone photos piece pixel
   placeholders plain plate
   platform policy port position present pressed preview previous price prices
-  print printer printers printing probe production profile progress project
+  print printed printer printers printing probe production profile progress project
   promo proof provider public purchase quantities quantity quick quiet radius raised random
   range raster rasters rate rated rates ratio raw read readable ready
   reason reasons receipt receipts receive received recipient recipients record redeem
   redeemed reference refresh refund refunded refunds register registered registration rejected
   rejects related release released remaining remove removed render renew replacement replayed report
   reports request requested required requirement requirements reservation reservations reserved reset resolve restock
-  resolved resolving response result retries retry return revenue reversal reverse
+  resolved resolving response result results retries retry return revenue reversal reverse
   reversed right risk rotate row rows rule rules ruleset run safely sale saturation
   save scale scales scan scanned scheme schemes scope screen search seconds
   secret seen select selected selection sell sellable send sent september sequence serial server

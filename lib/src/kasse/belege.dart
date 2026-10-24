@@ -34,10 +34,12 @@ import 'gutschein.dart' show VoucherCheck;
 import 'gutschein_wunsch.dart';
 import '../../models/keck_voucher.dart';
 import '../../models/registration_info.dart';
+import 'beleg_ausgaben.dart';
 import 'belegmail.dart';
+import '../receipt/codes.dart' show receiptOutputEntryErrorCodes, receiptOutputErrorCodes;
 import 'lager.dart';
 import 'schicht.dart';
-import 'storno.dart' show assertCardRefunds, cancellationReasons;
+import 'storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'storno_nutzlast.dart';
 
 /// Storno-Stand eines Belegs in der Liste (Drahtfeld `cancellationStatus`,
@@ -437,19 +439,26 @@ class RegisterReceiptClient {
     if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     if (drawerId != null) _ladeKennung(name, drawerId);
 
-    final daten = await _signiertRufen(
-      name,
-      params: {
-        'receiptType': 'standard',
-        'items': items.map((p) => p.toJson()).toList(),
-        if (gutscheine.isNotEmpty) 'vouchers': [for (final v in gutscheine) v.toPayload()],
-        'payments': [for (final z in payments) z.toJson()],
-        if (tipCents != null && tipCents > 0) 'tip': tipKeptByEmployee ? {'cents': tipCents, 'keptByEmployee': true} : tipCents,
-        if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
-        if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
-        'drawerId': ?drawerId,
-      },
-    );
+    // Ein Servertext, der einen Code wiederholt, wird geschwaerzt (wie bei checkVoucher).
+    final geheim = voucherSecrets(gutscheine);
+    final Map<String, dynamic> daten;
+    try {
+      daten = await _signiertRufen(
+        name,
+        params: {
+          'receiptType': 'standard',
+          'items': items.map((p) => p.toJson()).toList(),
+          if (gutscheine.isNotEmpty) 'vouchers': [for (final v in gutscheine) v.toPayload()],
+          'payments': [for (final z in payments) z.toJson()],
+          if (tipCents != null && tipCents > 0) 'tip': tipKeptByEmployee ? {'cents': tipCents, 'keptByEmployee': true} : tipCents,
+          if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
+          if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
+          'drawerId': ?drawerId,
+        },
+      );
+    } on KasseneckApiError catch (fehler) {
+      throw redactVoucherCodes(fehler, geheim);
+    }
     // Ab hier ist der Beleg signiert: wer ihn nicht lesen kann, bekommt
     // `response_unreadable` (Ausgang unklar) mit der Kennung, nie einen
     // gewoehnlichen Fehler, der zum zweiten Verkauf einluede.
@@ -584,7 +593,7 @@ class RegisterReceiptClient {
       throw const KasseneckValidationError(name, 'Anmerkung ist zu lang', 'request');
     }
     if (payments != null) {
-      final fehler = paymentsError(payments, cancellation: true);
+      final fehler = paymentsError(payments, cancellation: true, payoutCancellation: isPayoutCancellation(payments, original));
       if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     }
     if (original != null && original.receiptId != originalReceiptId) {
@@ -701,6 +710,35 @@ class RegisterReceiptClient {
     );
 
     return SendReceiptEmailResult.fromResponse(daten, sentTo: adresse);
+  }
+
+  /// Drucke und das Teilen eines Belegs an das Protokoll „Ausgaben“ melden
+  /// (`logReceiptOutputs`, nur ueber den Kassenweg). Registrierkassen-Erlass
+  /// BMF-AV Nr. 2/2026, Abschnitt 4.2: die Belegerteilung ist zu
+  /// dokumentieren. Der Beleg selbst bleibt unberuehrt; das Protokoll steht
+  /// nie im DEP. Die Kasse steht im Transport (wie bei [sendReceiptEmail]).
+  ///
+  /// **Ein Eintrag scheitert nie die anderen.** Der Server nimmt jeden Eintrag
+  /// einzeln an oder lehnt ihn mit Code ab ([LogReceiptOutputsResult.rejected],
+  /// Codes [receiptOutputEntryErrorCodes]); nach einer Erfolgsantwort ist jeder
+  /// gesendete Eintrag erledigt. Die Kasse puffert die Eintraege (offline,
+  /// Neustart; [ReceiptOutputEntry.toJson]/[ReceiptOutputEntry.fromJson]) und
+  /// sendet sie spaeter; der Puffer blockiert nie Druck oder Teilen.
+  ///
+  /// **Wiederholen ist gefahrlos:** jeder Eintrag traegt seinen Schluessel. Bei
+  /// unklarem Ausgang (`isOutcomeUnknown`) dieselben Eintraege mit denselben
+  /// Schluesseln noch einmal senden.
+  ///
+  /// Vor dem Senden abgewiesen ([KasseneckValidationError], `kind: request`):
+  /// keine oder mehr als 50 Eintraege, ein fehlender Beleg, ein Schluessel
+  /// ausserhalb der Regel des Servers (8-64 Zeichen `[A-Za-z0-9_-]`), eine Art
+  /// oder ein Ergebnis ausserhalb des Katalogs, eine Zeit, die weder ganze
+  /// Millisekunden noch ISO 8601 mit Zone ist. Fehler der ganzen Anfrage:
+  /// [receiptOutputErrorCodes].
+  Future<LogReceiptOutputsResult> logReceiptOutputs({required List<ReceiptOutputEntry> entries}) async {
+    const name = Aufrufe.logReceiptOutputs;
+    final nutzlast = ausgabenNutzlast(name, entries);
+    return ausgabenGemeldet(name, await transport.call(name, params: {'entries': nutzlast}));
   }
 
   /// Artikelgruppen (Kategorien der Kachel-Kasse).

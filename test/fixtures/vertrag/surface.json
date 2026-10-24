@@ -1,5 +1,5 @@
 {
-  "version": "1.13.0",
+  "version": "1.14.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -144,7 +144,8 @@
       "recordMyCashMovement",
       "logMyDrawerOpenings",
       "getMyShiftReport",
-      "closeMyShift"
+      "closeMyShift",
+      "logReceiptOutputs"
     ]
   },
   "routes": {
@@ -298,7 +299,8 @@
       "recordMyCashMovement",
       "logMyDrawerOpenings",
       "getMyShiftReport",
-      "closeMyShift"
+      "closeMyShift",
+      "logReceiptOutputs"
     ]
   },
   "unknownOutcomeCalls": [
@@ -332,6 +334,7 @@
     "hobexRefundApi",
     "issueInvoice",
     "logMyDrawerOpenings",
+    "logReceiptOutputs",
     "openMyShift",
     "orderSignatureCard",
     "pairRegisterDevice",
@@ -618,7 +621,10 @@
     "fullscreen",
     "clearTendered",
     "clearCart",
-    "splitPayment"
+    "splitPayment",
+    "shiftStatus",
+    "openDrawer",
+    "voucherPayout"
   ],
   "pos": {
     "afterCountTypes": [
@@ -694,7 +700,8 @@
       "change",
       "check",
       "misoperation",
-      "other"
+      "other",
+      "voucher_payout"
     ],
     "posBusinessOptionalFields": [
       "tipKeptByDefault"
@@ -793,6 +800,19 @@
     "quantityRules": [
       "piece",
       "decimal"
+    ],
+    "receiptOutputKinds": [
+      "print",
+      "reprint",
+      "email",
+      "link_shared",
+      "pdf_shared",
+      "opened"
+    ],
+    "receiptOutputResults": [
+      "ok",
+      "failed",
+      "unclear"
     ],
     "returnDispositions": [
       "restock",

@@ -1,4 +1,6 @@
+import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
+import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/pos.dart' show PosVoucherSettings, VoucherCheck, VoucherStatus, VoucherValidity;
 import 'package:kasseneck_api/src/receipt/due.dart';
@@ -114,3 +116,38 @@ VoucherCheck pruefungAusDraht(Map<String, dynamic> o) {
           ),
   );
 }
+
+/// Trinkgeld eines Vertragsfalls (`input.tip` bzw. `input.payments[].tipCents`) in
+/// die Angaben an `receiptDueCents`. `tip.owner: true` heisst: an einen
+/// Kassen-Benutzer mit Inhaber-Kennzeichen; sonst (auch fuer `tipCents`) bucht
+/// der Server ohne Kassen-Benutzer Personal-Trinkgeld. Zwilling von
+/// `optionenDesFalls` in `test/gutschein-setup.ts`. Eine Zahlung traegt den
+/// Betrag, den der Export-Test dem Server schickt: den Zahlbetrag des Falls, bei
+/// einem abgelehnten Fall ihr Trinkgeld – nie `tipCents > amountCents`.
+({ReceiptDueTip? tip, List<KeckPaymentInput>? payments, ReceiptDueTipRecipient? tipRecipient}) trinkgeldAus(
+    Map<String, dynamic> fall) {
+  final input = fall['input'] as Map<String, dynamic>;
+  final due = (fall['expected'] as Map)['dueCents'] as int?;
+  final tip = input['tip'] as Map<String, dynamic>?;
+  final zahlungen = (input['payments'] as List?)?.cast<Map<String, dynamic>>();
+  final mitTipCents = zahlungen?.any((z) => z['tipCents'] != null) ?? false;
+  return (
+    tip: tip == null ? null : ReceiptDueTip(tip['cents'] as int),
+    payments: zahlungen == null
+        ? null
+        : [
+            for (final z in zahlungen)
+              KeckPaymentInput(
+                method: KeckPaymentMethod.values.byName(z['method'] as String),
+                amountCents: due ?? (z['tipCents'] as int? ?? 0),
+                tipCents: z['tipCents'] as int?,
+              ),
+          ],
+    tipRecipient: tip != null
+        ? (tip['owner'] == true ? ReceiptDueTipRecipient.owner : ReceiptDueTipRecipient.staff)
+        : (mitTipCents ? ReceiptDueTipRecipient.staff : null),
+  );
+}
+
+/// Der Server weist den Fall ab: in `expected` steht nur der /v3-Code (`errorCode`).
+bool istAbgelehnt(Map<String, dynamic> fall) => (fall['expected'] as Map).containsKey('errorCode');

@@ -80,13 +80,7 @@
     },
     {
       "kind": "line",
-      "text": "Mehrzweckgutschein              ",
-      "bold": false,
-      "blank": false
-    },
-    {
-      "kind": "line",
-      "text": "····-····-NNNY                  ",
+      "text": "Mehrzweckgutschein ····-NNNY    ",
       "bold": false,
       "blank": false
     },

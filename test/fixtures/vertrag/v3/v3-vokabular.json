@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "733e4385baf4b2aa50605e2ebe5903948ce77b3346aa3bb65c5fd0d450a6898f",
-    "inputsSha256": "29f295ee139942d79758255d7b6284e2810477e4e22249d9b703c0110129e78b",
-    "backendPackage": "@kreiseck/kasseneck-api@0.33.1",
+    "sha256": "328c8d0ff0f496f8f6b7d9ed78673e7666980e38586ec7efacb442e6906d898a",
+    "inputsSha256": "ef1648206351fe21b4cb0cb35e6235d45f938b548b20ca1a70f1de6d43fe9f47",
+    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -289,7 +289,8 @@
       "recordMyCashMovement",
       "logMyDrawerOpenings",
       "getMyShiftReport",
-      "closeMyShift"
+      "closeMyShift",
+      "logReceiptOutputs"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -326,7 +327,8 @@
       "recordMyCashMovement",
       "logMyDrawerOpenings",
       "getMyShiftReport",
-      "closeMyShift"
+      "closeMyShift",
+      "logReceiptOutputs"
     ],
     "withSchema": [
       "activateCashregister",
@@ -434,6 +436,7 @@
       "listWebhookDeliveries",
       "listWebhooks",
       "logMyDrawerOpenings",
+      "logReceiptOutputs",
       "lookupArticleByCode",
       "openMyShift",
       "orderSignatureCard",
@@ -523,6 +526,19 @@
     "ANMELDEMODUS": {
       "auswahl": "select_user",
       "pin": "pin"
+    },
+    "AUSGABE_ART": {
+      "erstdruck": "print",
+      "duplikat": "reprint",
+      "mail": "email",
+      "link_geteilt": "link_shared",
+      "pdf_geteilt": "pdf_shared",
+      "abruf": "opened"
+    },
+    "AUSGABE_ERGEBNIS": {
+      "ok": "ok",
+      "fehler": "failed",
+      "unklar": "unclear"
     },
     "AVV_MODUS": {
       "direkt": "direct",
@@ -952,7 +968,8 @@
       "wechselgeld": "change",
       "kontrolle": "check",
       "fehlbedienung": "misoperation",
-      "sonstiges": "other"
+      "sonstiges": "other",
+      "gutschein_auszahlung": "voucher_payout"
     },
     "LAGER_ABGANG_GRUND": {
       "bruch": "breakage",
@@ -1156,6 +1173,8 @@
       "asset_record_disposed",
       "asset_record_in_use",
       "asset_record_not_found",
+      "bank_transaction_not_found",
+      "bank_transaction_not_outgoing",
       "brand_not_found",
       "business_profile_missing",
       "cancellation_failed",
@@ -1222,9 +1241,12 @@
       "invalid_asset_record",
       "invalid_asset_type",
       "invalid_business_profile",
+      "invalid_category_allocation",
       "invalid_clarification",
       "invalid_condition",
       "invalid_connection",
+      "invalid_country",
+      "invalid_currency",
       "invalid_cursor",
       "invalid_denominations",
       "invalid_dimensions",
@@ -1239,6 +1261,8 @@
       "invalid_method",
       "invalid_minimum",
       "invalid_movement_type",
+      "invalid_output_kind",
+      "invalid_payroll_reference",
       "invalid_period",
       "invalid_position",
       "invalid_price",
@@ -1248,9 +1272,11 @@
       "invalid_room",
       "invalid_selection",
       "invalid_serial",
+      "invalid_service_line",
       "invalid_step",
       "invalid_stock_kind",
       "invalid_tax_profile",
+      "invalid_template",
       "invalid_tip_refund_source",
       "invalid_transfer",
       "invalid_variant_attributes",
@@ -1302,6 +1328,7 @@
       "order_not_found",
       "order_open",
       "oss_not_enabled",
+      "output_time_out_of_range",
       "own_receipts_only",
       "pairing_code_expired",
       "pairing_code_unknown",
@@ -1328,6 +1355,7 @@
       "payments_not_allowed",
       "payments_required",
       "payments_sum_mismatch",
+      "payroll_already_booked",
       "period_in_future",
       "period_not_closed",
       "power_of_attorney_missing",
@@ -1368,6 +1396,7 @@
       "serial_not_in_stock",
       "serial_required",
       "server_error",
+      "service_line_not_found",
       "session_ended",
       "session_expired",
       "session_not_running",
@@ -1400,6 +1429,7 @@
       "stocktake_review_running",
       "tax_number_missing",
       "tax_scheme_mismatch",
+      "template_not_found",
       "test_environment",
       "text_changed",
       "tip_conflict",
@@ -1436,6 +1466,7 @@
       "variant_group_inactive",
       "variant_group_not_found",
       "variant_limit",
+      "vat_conflict",
       "vat_id_check_pending",
       "vat_id_invalid",
       "vat_rate_not_in_country",
@@ -1551,13 +1582,25 @@
       "dokument_ungueltig": "invalid_document",
       "dokument_unbekannt": "document_not_found",
       "zu_viele_dokumente": "too_many_documents",
+      "ust_konflikt": "vat_conflict",
+      "vorlage_ungueltig": "invalid_template",
+      "vorlage_unbekannt": "template_not_found",
+      "lohnreferenz_ungueltig": "invalid_payroll_reference",
+      "lohn_schon_gebucht": "payroll_already_booked",
+      "bankbewegung_unbekannt": "bank_transaction_not_found",
+      "bankbewegung_kein_abfluss": "bank_transaction_not_outgoing",
       "anlage_ungueltig": "invalid_asset_record",
       "anlage_unbekannt": "asset_record_not_found",
       "anlage_in_verwendung": "asset_record_in_use",
       "anlage_abgegangen": "asset_record_disposed",
       "zu_viele_anlagen": "too_many_asset_records",
       "gwg_ueber_grenze": "low_value_limit_exceeded",
-      "nutzungsdauer_pkw": "car_useful_life_too_short"
+      "nutzungsdauer_pkw": "car_useful_life_too_short",
+      "aufteilung_ungueltig": "invalid_category_allocation",
+      "land_ungueltig": "invalid_country",
+      "leistung_fehlt": "service_line_not_found",
+      "leistung_ungueltig": "invalid_service_line",
+      "waehrung_ungueltig": "invalid_currency"
     },
     "edge": [
       "validation",
@@ -1655,6 +1698,7 @@
       "invalid_items",
       "invalid_line",
       "invalid_movement_type",
+      "invalid_output_kind",
       "invalid_quantity",
       "invalid_return_disposition",
       "invalid_serial",
@@ -1674,6 +1718,7 @@
       "not_permitted",
       "note_required",
       "note_too_long",
+      "output_time_out_of_range",
       "own_receipts_only",
       "pairing_code_expired",
       "pairing_code_unknown",
@@ -2169,13 +2214,25 @@
       "invalid_document",
       "document_not_found",
       "too_many_documents",
+      "vat_conflict",
+      "invalid_template",
+      "template_not_found",
+      "invalid_payroll_reference",
+      "payroll_already_booked",
+      "bank_transaction_not_found",
+      "bank_transaction_not_outgoing",
       "invalid_asset_record",
       "asset_record_not_found",
       "asset_record_in_use",
       "asset_record_disposed",
       "too_many_asset_records",
       "low_value_limit_exceeded",
-      "car_useful_life_too_short"
+      "car_useful_life_too_short",
+      "invalid_category_allocation",
+      "invalid_country",
+      "service_line_not_found",
+      "invalid_service_line",
+      "invalid_currency"
     ],
     "receiptMessagesByEndpoint": {
       "createReceipt": [
@@ -2567,6 +2624,14 @@
         "shift_closed",
         "shift_not_open",
         "tip_payout_exceeds_claim",
+        "validation"
+      ],
+      "logReceiptOutputs": [
+        "idempotency_key_required",
+        "invalid_output_kind",
+        "output_time_out_of_range",
+        "receipt_not_found",
+        "server_error",
         "validation"
       ]
     }
@@ -3101,13 +3166,25 @@
             "dokument_ungueltig": "invalid_document",
             "dokument_unbekannt": "document_not_found",
             "zu_viele_dokumente": "too_many_documents",
+            "ust_konflikt": "vat_conflict",
+            "vorlage_ungueltig": "invalid_template",
+            "vorlage_unbekannt": "template_not_found",
+            "lohnreferenz_ungueltig": "invalid_payroll_reference",
+            "lohn_schon_gebucht": "payroll_already_booked",
+            "bankbewegung_unbekannt": "bank_transaction_not_found",
+            "bankbewegung_kein_abfluss": "bank_transaction_not_outgoing",
             "anlage_ungueltig": "invalid_asset_record",
             "anlage_unbekannt": "asset_record_not_found",
             "anlage_in_verwendung": "asset_record_in_use",
             "anlage_abgegangen": "asset_record_disposed",
             "zu_viele_anlagen": "too_many_asset_records",
             "gwg_ueber_grenze": "low_value_limit_exceeded",
-            "nutzungsdauer_pkw": "car_useful_life_too_short"
+            "nutzungsdauer_pkw": "car_useful_life_too_short",
+            "aufteilung_ungueltig": "invalid_category_allocation",
+            "land_ungueltig": "invalid_country",
+            "leistung_fehlt": "service_line_not_found",
+            "leistung_ungueltig": "invalid_service_line",
+            "waehrung_ungueltig": "invalid_currency"
           }
         }
       }
@@ -3319,6 +3396,7 @@
             "codeSuffix": "codeEnde",
             "faceValueCents": "nennwertCents",
             "quantity": "stueck",
+            "articleName": "artikelName",
             "validity": {
               "__": "gueltigkeit",
               "pattern": "muster",
@@ -3742,13 +3820,25 @@
           "dokument_ungueltig": "invalid_document",
           "dokument_unbekannt": "document_not_found",
           "zu_viele_dokumente": "too_many_documents",
+          "ust_konflikt": "vat_conflict",
+          "vorlage_ungueltig": "invalid_template",
+          "vorlage_unbekannt": "template_not_found",
+          "lohnreferenz_ungueltig": "invalid_payroll_reference",
+          "lohn_schon_gebucht": "payroll_already_booked",
+          "bankbewegung_unbekannt": "bank_transaction_not_found",
+          "bankbewegung_kein_abfluss": "bank_transaction_not_outgoing",
           "anlage_ungueltig": "invalid_asset_record",
           "anlage_unbekannt": "asset_record_not_found",
           "anlage_in_verwendung": "asset_record_in_use",
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         },
         "signatures[].error.code": {
           "zeitraum_offen": "period_not_closed",
@@ -3839,13 +3929,25 @@
           "dokument_ungueltig": "invalid_document",
           "dokument_unbekannt": "document_not_found",
           "zu_viele_dokumente": "too_many_documents",
+          "ust_konflikt": "vat_conflict",
+          "vorlage_ungueltig": "invalid_template",
+          "vorlage_unbekannt": "template_not_found",
+          "lohnreferenz_ungueltig": "invalid_payroll_reference",
+          "lohn_schon_gebucht": "payroll_already_booked",
+          "bankbewegung_unbekannt": "bank_transaction_not_found",
+          "bankbewegung_kein_abfluss": "bank_transaction_not_outgoing",
           "anlage_ungueltig": "invalid_asset_record",
           "anlage_unbekannt": "asset_record_not_found",
           "anlage_in_verwendung": "asset_record_in_use",
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       }
     },
@@ -3960,7 +4062,10 @@
             "fullscreen": "vollbild",
             "clearTendered": "gegebenLeeren",
             "clearCart": "korbLeeren",
-            "splitPayment": "getrennt"
+            "splitPayment": "getrennt",
+            "shiftStatus": "kassenstand",
+            "openDrawer": "ladeOeffnen",
+            "voucherPayout": "gutscheinAuszahlen"
           },
           "printerEnabled": "druckerAn",
           "printerType": "druckerArt",
@@ -4424,6 +4529,7 @@
             "codeSuffix": "codeEnde",
             "faceValueCents": "nennwertCents",
             "quantity": "stueck",
+            "articleName": "artikelName",
             "validity": {
               "__": "gueltigkeit",
               "pattern": "muster",
@@ -4431,6 +4537,15 @@
               "refundableUntil": "rueckzahlbarBis",
               "validUntil": "gueltigBis"
             }
+          }
+        ],
+        "outputs": [
+          {
+            "__": "ausgaben",
+            "kind": "art",
+            "result": "ergebnis",
+            "by": "durch",
+            "count": "anzahl"
           }
         ]
       },
@@ -4446,6 +4561,12 @@
         },
         "issuedVouchers[].validity.pattern": {
           "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "outputs[].kind": {
+          "$catalog": "AUSGABE_ART"
+        },
+        "outputs[].result": {
+          "$catalog": "AUSGABE_ERGEBNIS"
         }
       },
       "ergaenze": {
@@ -4746,13 +4867,25 @@
           "dokument_ungueltig": "invalid_document",
           "dokument_unbekannt": "document_not_found",
           "zu_viele_dokumente": "too_many_documents",
+          "ust_konflikt": "vat_conflict",
+          "vorlage_ungueltig": "invalid_template",
+          "vorlage_unbekannt": "template_not_found",
+          "lohnreferenz_ungueltig": "invalid_payroll_reference",
+          "lohn_schon_gebucht": "payroll_already_booked",
+          "bankbewegung_unbekannt": "bank_transaction_not_found",
+          "bankbewegung_kein_abfluss": "bank_transaction_not_outgoing",
           "anlage_ungueltig": "invalid_asset_record",
           "anlage_unbekannt": "asset_record_not_found",
           "anlage_in_verwendung": "asset_record_in_use",
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       }
     },
@@ -5251,7 +5384,10 @@
               "fullscreen": "vollbild",
               "clearTendered": "gegebenLeeren",
               "clearCart": "korbLeeren",
-              "splitPayment": "getrennt"
+              "splitPayment": "getrennt",
+              "shiftStatus": "kassenstand",
+              "openDrawer": "ladeOeffnen",
+              "voucherPayout": "gutscheinAuszahlen"
             },
             "printerEnabled": "druckerAn",
             "printerType": "druckerArt",
@@ -5678,6 +5814,33 @@
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"
+        }
+      }
+    },
+    "logReceiptOutputs": {
+      "params": {
+        "entries": [
+          {
+            "__": "eintraege",
+            "kind": "art",
+            "result": "ergebnis"
+          }
+        ]
+      },
+      "paramWerte": {
+        "entries[].kind": {
+          "$catalog": "AUSGABE_ART"
+        },
+        "entries[].result": {
+          "$catalog": "AUSGABE_ERGEBNIS"
+        }
+      },
+      "ergaenze": {
+        "$function": "ausgabenMeldenNachAussen"
+      },
+      "fehler": {
+        "felder": {
+          "eintraege": "entries"
         }
       }
     },
@@ -6194,13 +6357,25 @@
           "dokument_ungueltig": "invalid_document",
           "dokument_unbekannt": "document_not_found",
           "zu_viele_dokumente": "too_many_documents",
+          "ust_konflikt": "vat_conflict",
+          "vorlage_ungueltig": "invalid_template",
+          "vorlage_unbekannt": "template_not_found",
+          "lohnreferenz_ungueltig": "invalid_payroll_reference",
+          "lohn_schon_gebucht": "payroll_already_booked",
+          "bankbewegung_unbekannt": "bank_transaction_not_found",
+          "bankbewegung_kein_abfluss": "bank_transaction_not_outgoing",
           "anlage_ungueltig": "invalid_asset_record",
           "anlage_unbekannt": "asset_record_not_found",
           "anlage_in_verwendung": "asset_record_in_use",
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       },
       "fehler": {
@@ -6517,7 +6692,10 @@
             "fullscreen": "vollbild",
             "clearTendered": "gegebenLeeren",
             "clearCart": "korbLeeren",
-            "splitPayment": "getrennt"
+            "splitPayment": "getrennt",
+            "shiftStatus": "kassenstand",
+            "openDrawer": "ladeOeffnen",
+            "voucherPayout": "gutscheinAuszahlen"
           },
           "printerEnabled": "druckerAn",
           "printerType": "druckerArt",
@@ -6588,7 +6766,10 @@
             "fullscreen": "vollbild",
             "clearTendered": "gegebenLeeren",
             "clearCart": "korbLeeren",
-            "splitPayment": "getrennt"
+            "splitPayment": "getrennt",
+            "shiftStatus": "kassenstand",
+            "openDrawer": "ladeOeffnen",
+            "voucherPayout": "gutscheinAuszahlen"
           },
           "printerEnabled": "druckerAn",
           "printerType": "druckerArt",
@@ -7001,13 +7182,25 @@
           "dokument_ungueltig": "invalid_document",
           "dokument_unbekannt": "document_not_found",
           "zu_viele_dokumente": "too_many_documents",
+          "ust_konflikt": "vat_conflict",
+          "vorlage_ungueltig": "invalid_template",
+          "vorlage_unbekannt": "template_not_found",
+          "lohnreferenz_ungueltig": "invalid_payroll_reference",
+          "lohn_schon_gebucht": "payroll_already_booked",
+          "bankbewegung_unbekannt": "bank_transaction_not_found",
+          "bankbewegung_kein_abfluss": "bank_transaction_not_outgoing",
           "anlage_ungueltig": "invalid_asset_record",
           "anlage_unbekannt": "asset_record_not_found",
           "anlage_in_verwendung": "asset_record_in_use",
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       }
     },
@@ -7185,13 +7378,25 @@
           "dokument_ungueltig": "invalid_document",
           "dokument_unbekannt": "document_not_found",
           "zu_viele_dokumente": "too_many_documents",
+          "ust_konflikt": "vat_conflict",
+          "vorlage_ungueltig": "invalid_template",
+          "vorlage_unbekannt": "template_not_found",
+          "lohnreferenz_ungueltig": "invalid_payroll_reference",
+          "lohn_schon_gebucht": "payroll_already_booked",
+          "bankbewegung_unbekannt": "bank_transaction_not_found",
+          "bankbewegung_kein_abfluss": "bank_transaction_not_outgoing",
           "anlage_ungueltig": "invalid_asset_record",
           "anlage_unbekannt": "asset_record_not_found",
           "anlage_in_verwendung": "asset_record_in_use",
           "anlage_abgegangen": "asset_record_disposed",
           "zu_viele_anlagen": "too_many_asset_records",
           "gwg_ueber_grenze": "low_value_limit_exceeded",
-          "nutzungsdauer_pkw": "car_useful_life_too_short"
+          "nutzungsdauer_pkw": "car_useful_life_too_short",
+          "aufteilung_ungueltig": "invalid_category_allocation",
+          "land_ungueltig": "invalid_country",
+          "leistung_fehlt": "service_line_not_found",
+          "leistung_ungueltig": "invalid_service_line",
+          "waehrung_ungueltig": "invalid_currency"
         }
       }
     },

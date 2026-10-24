@@ -92,7 +92,7 @@ void main() {
     expect(widgetTexts, contains(gesamtPrint));
 
     // Promo-Zeile: gleicher Abzug auf beiden Seiten
-    final promoPrint = print.doubles.firstWhere((d) => d.left.startsWith('Promotionsgutschein'));
+    final promoPrint = print.doubles.firstWhere((d) => d.left.startsWith('Aktionsgutschein'));
     expect(promoPrint.right, '-1,50 EUR');
     expect(widgetTexts, contains('-1,50 EUR'));
 

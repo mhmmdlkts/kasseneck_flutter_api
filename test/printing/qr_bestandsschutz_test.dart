@@ -140,8 +140,17 @@ void main() {
     // also genau acht eingeschobene Bytes hinter `ESC @` und sonst keine
     // einzige Verschiebung. Nachweis samt Rohdaten: .superpowers/sdd/
     // 2026-09-21-marke-einheitlich/druckbereich-nachweis/.
+    //
+    // Nachtrag Aktionsgutschein (23.10.2026, Dart 11.5.0): noch einmal neu
+    // gezogen, weil die Rabattzeile der Aktion jetzt „Aktionsgutschein 1,50 EUR
+    // - Aktion“ statt „Promotionsgutschein …“ heisst (Wort wie npm 1.14.0).
+    // Belegt: mit dem alten Wort in `KeckVoucher.receiptText` ergeben beide
+    // Breiten wieder genau die vorigen Digests (47e7e4a9…, 1940e024…).
+    // Nachtrag Ersatzdaten (23.10.2026): der Hilfsbeleg `buildReceipt` fuehrt die
+    // UID jetzt als pruefziffernrichtiges ATU12345675 (statt ATU12345678); nur die
+    // UID-Zeile des Bons aendert sich, beide Digests daraus neu gezogen.
     expect(await belegDigest(KeckPaperSize.mm58),
-        '47e7e4a90bb69a768a7bbbd07e62f15e402ed79229be06be705128d1a2b4f74f');
+        '94a1919866e4284a458df475faed1ce85d2c7ab1d961c9feacd9e5807536aab7');
   });
 
   test('80 mm: Beleg ohne Wahl byteidentisch mit 6.8.0', () async {
@@ -179,7 +188,10 @@ void main() {
     // also genau acht eingeschobene Bytes hinter `ESC @` und sonst keine
     // einzige Verschiebung. Nachweis samt Rohdaten: .superpowers/sdd/
     // 2026-09-21-marke-einheitlich/druckbereich-nachweis/.
+    //
+    // Nachtrag Aktionsgutschein (23.10.2026): neu gezogen wie im 58-mm-Fall.
+    // Nachtrag Ersatzdaten (23.10.2026): UID ATU12345675, siehe 58-mm-Fall.
     expect(await belegDigest(KeckPaperSize.mm80),
-        '1940e02471c04cc9ca9e932c6eda23aa7e673d60d152678a2d2cc991b2f0f81e');
+        'c1ec44dc48f6716a8bcc8761c9fbfd75cb865f0a9da057b24418ce1cbb2477a9');
   });
 }

@@ -124,9 +124,16 @@ Code-Änderung zusammen einchecken.
   auf Cent gerundet, Summe = `counterDeltaCents`). `verifiedBy`: `createReceipt` bzw.
   `cancelReceipt` = gegen den echten Handler geprüft (`dueCents` wird angenommen,
   `dueCents + 1` gibt `payments_sum_mismatch` mit `expectedCents = dueCents`),
-  `computed` = nur mit dem Kern gerechnet (Inhaber-Trinkgeld; die Welt kennt keinen
-  Inhaber-Kassenbenutzer). `serverItems`: die Trinkgeld-Positionen genau so, wie der
-  Server sie im Beleg sendet.
+  `computed` = nur mit dem Kern gerechnet (`tip_owner_with_promo`: ohne Inhaber-Kassenbenutzer
+  im Bestand). `serverItems`: die Trinkgeld-Positionen genau so, wie der
+  Server sie im Beleg sendet. Trinkgeld kommt als `input.tip` (mit `owner: true` an einen
+  Kassen-Benutzer mit Inhaber-Kennzeichen aus `setup.kassenBenutzer`, gesendet als
+  `tip.recipients`) oder als `input.payments[].tipCents`. Weist der Server den Beleg ab,
+  steht in `expected` nur `errorCode` (der `/v3`-Code, gleich welcher Betrag gezahlt wird;
+  etwa `voucher_exceeds_total`, wenn ein Gutschein das Trinkgeld decken würde).
+  `redeemMax` (`voucherIndex`, `maxCents`): die größte Einlösung des Gutscheins an
+  `voucherIndex`, die der Server annimmt (die Gutscheine davor sind schon gewählt) –
+  `maxCents` geht durch, `maxCents + 1` nicht; das liefert `voucherRedeemMaxCents`.
 
 Jede Antwort in `antworten/` besteht den Wächter aus Stufe 4a Aufgabe 7
 (`functions-kasse/test/unit/fixtures/v3-waechter.js`): kein deutsches Wort außer

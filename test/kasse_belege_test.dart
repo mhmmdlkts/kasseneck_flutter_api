@@ -38,7 +38,7 @@ Map<String, dynamic> huelleMitBeleg({
       },
       'company': 'Testbetrieb',
       'is_small_business': false,
-      'vatId': 'ATU12345678',
+      'vatId': 'ATU12345675',
       'taxNumber': '12/345',
       'phone': '+43 1 234',
       'street': 'Teststrasse 1',

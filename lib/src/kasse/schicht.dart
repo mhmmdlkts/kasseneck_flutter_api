@@ -72,7 +72,8 @@ const List<String> cashLocations = ['bank', 'safe'];
 
 /// Warum die Lade aufging (Katalog `LADE_OEFFNUNG_GRUND`). `sale`,
 /// `cash_movement`, `shift_open` und `shift_close` meldet die Kasse selbst beim
-/// jeweiligen Vorgang; von Hand waehlt der Kassier aus [manualOpeningReasons].
+/// jeweiligen Vorgang (`voucher_payout` bei der Gutschein-Auszahlung); von Hand
+/// waehlt der Kassier aus [manualOpeningReasons].
 const List<String> openingReasons = [
   'sale',
   'cash_movement',
@@ -82,6 +83,7 @@ const List<String> openingReasons = [
   'check',
   'misoperation',
   'other',
+  'voucher_payout',
 ];
 
 /// Die Gruende des Knopfs „Lade“; `other` braucht einen Text (`note`).

@@ -1,6 +1,8 @@
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
+import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 
 /// Gutscheine der neuen Form am Bon des Rueckfalls ohne Server-Layout
@@ -15,9 +17,13 @@ import 'package:kasseneck_api/models/keck_voucher.dart';
 ///   Leistung                   letzten Zeile dieses Gutscheins der Vermerk
 ///                              („  Einzweck, versteuert mit Beleg K1-ID-4711“
 ///                              bzw. „…, befreit verkauft (Kleinunternehmer)“)
-///                              und 8:4 „  Rest am Gutschein“ | „19,50  “ bzw. „2 Stück“
+///                              und 8:4 „  Rest am Gutschein“ | „19,50 EUR“ bzw. „2 Stück“
 ///   Einloesung Mehrzweck       nach „Zwischensumme“ „Gutschein ····-9DWT“ und Rest
 ///   Auszahlung                 8:4 „Auszahlung Gutschein ····-9DWT“, Text „  Grund: …“
+///   Zahlungsart                entfaellt, wenn ein Gutschein eingeloest und 0 Cent
+///                              bezahlt wurde (`paymentMethodText`)
+///
+/// Codes stehen am Bon immer in der kurzen Maske `····-XXXX` (`voucherShortCode`).
 ///
 /// Paketintern: der Rueckfall ist veraltet, die Regeln gelten aber wie im
 /// Server-Layout, damit ein Beleg ohne Layout denselben Bon zeigt.
@@ -68,12 +74,22 @@ bool voucherStandsAsItem(KeckVoucher v) =>
 bool isMultiPurposeWithCode(KeckVoucher v) =>
     v.type == VoucherType.value && v.voucherType == VoucherType.multiPurpose.wire;
 
-/// Code fuer die Belegzeile: die Maske des Eintrags mit fuehrendem
-/// Leerzeichen, ohne den Platzhalter `no-code`, den der Server Alt-Eintraegen
-/// ohne Code setzt. Leer, wenn es keinen gibt.
+/// Code fuer die Belegzeile mit fuehrendem Leerzeichen: immer die kurze Maske
+/// `····-XXXX` aus dem Code-Ende (auch wenn ein alter Beleg die lange
+/// `····-····-XXXX` im Eintrag traegt), ohne den Platzhalter `no-code`, den
+/// der Server Alt-Eintraegen ohne Code setzt. Leer, wenn es keinen gibt.
 String voucherCodeSuffixText(KeckVoucher v) {
   final code = v.code;
-  return code != null && code.isNotEmpty && code != 'no-code' ? ' $code' : '';
+  return code != null && code.isNotEmpty && code != 'no-code' ? ' ${voucherShortCode(v)}' : '';
+}
+
+/// Maskierte Codes (`····-····-XXXX` alt, `····-XXXX` neu) drucken immer kurz;
+/// ein Alt-Code ohne Maske (z. B. `GS-1`) bleibt, wie er ist. Zwilling von
+/// `codeKurz` im npm-Layout.
+String voucherShortCode(KeckVoucher v) {
+  final code = v.code ?? '';
+  final endung = voucherEnding(v);
+  return code.contains('····') && endung != null ? '····-$endung' : code;
 }
 
 /// Die vier letzten Zeichen des Codes ([KeckVoucher.codeSuffix], sonst aus der Maske), oder `null`.
@@ -85,18 +101,19 @@ String? voucherEnding(KeckVoucher v) {
 }
 
 /// Belegtext eines Gutscheins wie `gutscheinText` im npm-Layout: Gutscheinart
-/// (Wert-/Promotionsgutschein), dann Code und Name; ein Name, der die Art
-/// schon nennt, steht allein. Ohne Betrag (der steht rechts in der Zeile).
+/// (Wert-/Aktionsgutschein), dann Code (kurze Maske) und Name; ein Name, der
+/// die Art schon nennt, steht allein (auch das alte „Promotionsgutschein“
+/// einer Aktion). Ohne Betrag (der steht rechts in der Zeile).
 String layoutVoucherText(KeckVoucher v) {
   var text = switch (v.type) {
     VoucherType.value => 'Wertgutschein',
-    VoucherType.promo => 'Promotionsgutschein',
+    VoucherType.promo => 'Aktionsgutschein',
     _ => '',
   };
   final name = v.name;
-  if (name != null && name.toLowerCase().contains(text.toLowerCase())) return name;
+  if (name != null && _nenntArt(v, name, text)) return name;
   final code = v.code;
-  if (code != null && code.isNotEmpty) text += ' $code';
+  if (code != null && code.isNotEmpty) text += ' ${voucherShortCode(v)}';
   if (name != null && name.isNotEmpty) text += ' - $name';
   return text;
 }
@@ -164,12 +181,14 @@ Map<int, VoucherItemMatch> voucherItemMatches(List<KasseneckItem> items, List<Ke
 /// Auszahlung ohne Menge in der Breite der Rabattzeilen (8:4), damit
 /// „Gutschein ····-9DWT“ auch auf 58 mm in einer Zeile steht. [amount] ist
 /// der Betrag der Position, wie die Positionszeilen ihn rechts zeigen
-/// („-30,50 A“); [formatCents] formatiert den Rest.
+/// („-30,50 A“); [formatCents] formatiert den Rest, [currency] ist die
+/// Waehrungsangabe des Weges.
 List<VoucherBonLine> voucherItemLines(
   KasseneckItem item,
   VoucherItemMatch match, {
   required String amount,
   required String Function(int cents) formatCents,
+  required String currency,
 }) {
   final v = match.voucher;
   if (v.action == VoucherAction.sell) {
@@ -192,13 +211,13 @@ List<VoucherBonLine> voucherItemLines(
   } else if (v.exempt == true) {
     zeilen.add(VoucherBonTextLine('  $art, befreit verkauft (Kleinunternehmer)'));
   }
-  // Rest: Betrag fluchtet mit den Positionsbetraegen (zwei Zeichen statt
-  // " A"), Stueck rechtsbuendig. Die Gesamtzahl kennt der Beleg nicht.
+  // Rest: Betrag mit Waehrung wie beim Mehrzweckgutschein, Stueck
+  // rechtsbuendig. Die Gesamtzahl kennt der Beleg nicht.
   if (v.type == VoucherType.service) {
     final rest = v.remainingQuantityAfter;
     if (rest != null) zeilen.add(VoucherBonPairLine(_restText, '$rest Stück'));
   } else if (v.balanceAfterCents case final saldo?) {
-    zeilen.add(VoucherBonPairLine(_restText, '${formatCents(saldo)}  '));
+    zeilen.add(VoucherBonPairLine(_restText, '${formatCents(saldo)} $currency'));
   }
   return zeilen;
 }
@@ -236,4 +255,35 @@ List<VoucherBonPairLine>? voucherPaymentLines(
     if (endung != null && sign == 1 && v.balanceAfterCents != null)
       VoucherBonPairLine(_restText, '${formatCents(v.balanceAfterCents!)} $currency'),
   ];
+}
+
+/// Nennt [name] die Gutscheinart [art] schon? Alte Belege nennen den
+/// Aktionsgutschein noch „Promotionsgutschein“: auch dieser Name steht allein.
+bool _nenntArt(KeckVoucher v, String name, String art) {
+  final klein = name.toLowerCase();
+  return klein.contains(art.toLowerCase()) || (v.type == VoucherType.promo && klein.contains('promotionsgutschein'));
+}
+
+/// Text rechts in der Zeile „Zahlungsart:“ am Bon des Rueckfalls, oder `null`,
+/// wenn die Zeile entfaellt (Zwilling von `zahlungsZeilen` im npm-Layout).
+///
+/// Traegt der Beleg eine Gutschein-Einloesung (nicht die Aktion, die ist keine
+/// Zahlung), entfaellt, was 0 Cent kostet (§ 132a Abs. 3 BAO: die Zahlungsart
+/// ist kein Pflichtinhalt, der Betrag bleibt): ohne Zahlungsliste bei Summe 0,
+/// bei einer Zahlung mit 0 Cent die Zeile, bei mehreren die Zahlungen mit
+/// 0 Cent -- bleibt dann eine Zahlart, steht sie da, sonst die des Belegs.
+/// Ohne Gutschein-Einloesung (Null-, Startbeleg) bleibt alles wie bisher.
+String? paymentMethodText(KasseneckReceipt r) {
+  final mitGutschein = (r.vouchers ?? const <KeckVoucher>[])
+      .any((v) => v.action == VoucherAction.redeem && v.type != VoucherType.promo);
+  final label = r.paymentMethod.label;
+  if (!mitGutschein) return label;
+  final zahlungen = r.payments ?? const <KeckPayment>[];
+  if (zahlungen.isEmpty) return r.sumCents == 0 ? null : label;
+  final bezahlt = zahlungen.where((z) => z.amountCents != 0).toList();
+  if (bezahlt.isEmpty) return null;
+  if (zahlungen.length == 1) return label;
+  final arten = {for (final z in bezahlt) z.method};
+  final art = arten.length == 1 ? arten.single : null;
+  return art?.label ?? label;
 }

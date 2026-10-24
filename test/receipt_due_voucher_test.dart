@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/receipt_type.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/kasseneck_api.dart' as wurzel;
 import 'package:kasseneck_api/models/kasseneck_item.dart';
+import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 import 'package:kasseneck_api/pos.dart' show PosVoucherSettings, VoucherCheck, VoucherStatus, VoucherValidity;
 import 'package:kasseneck_api/src/receipt/due.dart';
@@ -101,20 +103,40 @@ void main() {
       }
     });
 
+    test('Trinkgeld-Regel (ein Gutschein deckt nie das Trinkgeld) mit Server-Ergebnis', () {
+      final namen = neu.map((f) => f['name']).toSet();
+      for (final n in [
+        'tip_staff_value_voucher_capped', 'tip_owner_value_voucher_capped', 'tip_owner_value_voucher_over_tip', 'tip_payment_tipcents_value_voucher',
+        'tip_promo_and_value_voucher', 'tip_value_voucher_boundary_accepted', 'tip_value_voucher_boundary_rejected', 'tip_single_purpose_voucher_goods_only',
+        'tip_owner_promo_and_value_voucher', 'tip_owner_promo_and_value_voucher_over_tip', 'tip_owner_promotion_voucher', 'tip_promotion_and_value_voucher_rejected',
+      ]) {
+        expect(namen, contains(n));
+      }
+      expect(neu.where(istAbgelehnt).length, greaterThanOrEqualTo(2));
+    });
+
     for (final fall in neu) {
-      test('${fall['name']}: Zahlbetrag, Toepfe und Fluss wie der Server (auch ueber KasseneckItem)', () {
+      test('${fall['name']}: Zahlbetrag, Toepfe und Fluss bzw. Abweisung wie der Server (auch ueber KasseneckItem)', () {
         final input = fall['input'] as Map<String, dynamic>;
         final roh = (input['items'] as List).cast<Map<String, dynamic>>();
         final vouchers = [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) KeckVoucher.fromJson(v)];
         final a = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
+        final t = trinkgeldAus(fall);
         final typ = ReceiptType.values.byName(input['receiptType'] as String);
-        final e = receiptDueBreakdownForLines([for (final p in roh) ReceiptDueLine.fromJson(p)], vouchers, typ,
+        ReceiptDueBreakdown zeilen() => receiptDueBreakdownForLines([for (final p in roh) ReceiptDueLine.fromJson(p)], vouchers, typ,
+            tip: t.tip, payments: t.payments, tipRecipient: t.tipRecipient,
             voucherInfo: a.info, voucherSettings: a.settings, voucherArticles: a.articles);
-        expect(alsMap(e), fall['expected']);
-        expect(
-            receiptDueCents([for (final p in roh) KasseneckItem.fromJson(p)], vouchers, typ,
-                voucherInfo: a.info, voucherSettings: a.settings, voucherArticles: a.articles),
-            (fall['expected'] as Map)['dueCents']);
+        int positionen() => receiptDueCents([for (final p in roh) KasseneckItem.fromJson(p)], vouchers, typ,
+            tip: t.tip, payments: t.payments, tipRecipient: t.tipRecipient,
+            voucherInfo: a.info, voucherSettings: a.settings, voucherArticles: a.articles);
+        if (istAbgelehnt(fall)) {
+          final code = (fall['expected'] as Map)['errorCode'] as String;
+          expect(zeilen, wirft(code));
+          expect(positionen, wirft(code));
+          return;
+        }
+        expect(alsMap(zeilen()), fall['expected']);
+        expect(positionen(), (fall['expected'] as Map)['dueCents']);
       });
     }
   });
@@ -581,6 +603,125 @@ void main() {
       final i = [info(codeE, einzweck(5000, 2000))];
       expect(voucherRedeemMaxCentsForLines(korb, einzweck(5000, 2000), vouchers: vorher, voucherInfo: i), 500);
       expect(voucherRedeemMaxCentsForLines(korb, mehrzweck(5000), vouchers: vorher, voucherInfo: i), 1700);
+    });
+  });
+
+  group('Trinkgeld: ein Gutschein deckt es nie (gutschein-beleg.plane)', () {
+    final items = [pos('Maniküre', 2000, 20)];
+    const personal = (tip: ReceiptDueTip(200), recipient: ReceiptDueTipRecipient.staff);
+    const inhaber = (tip: ReceiptDueTip(200), recipient: ReceiptDueTipRecipient.owner);
+    const gemischt = (
+      tip: ReceiptDueTip(200, recipients: [ReceiptDueTipShare(cents: 120, owner: true), ReceiptDueTipShare(cents: 80, owner: false)]),
+      recipient: null,
+    );
+    List<KeckVoucher> promo(int cents) => [KeckVoucher(action: VoucherAction.redeem, type: VoucherType.promo, valueCents: cents, code: 'R')];
+    final ueberZahlung = [const KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 2200, tipCents: 200)];
+
+    test('Einloesung bis Ware, nie in das Trinkgeld (Personal wie Inhaber, auch Grenzwerte 2001, 2100, 2199, 2200)', () {
+      int mit(int cents, {ReceiptDueTip? tip, ReceiptDueTipRecipient? recipient, List<KeckPaymentInput>? payments}) =>
+          receiptDueBreakdownForLines(items, [einloesen(VoucherType.multiPurpose, codeM, cents)], ReceiptType.standard,
+                  tip: tip, payments: payments, tipRecipient: recipient, voucherInfo: [info(codeM, mehrzweck(5000))])
+              .dueCents;
+      for (final o in [personal, inhaber, gemischt]) {
+        expect(mit(2000, tip: o.tip, recipient: o.recipient), 200);
+        for (final zuViel in [2001, 2100, 2199, 2200]) {
+          expect(() => mit(zuViel, tip: o.tip, recipient: o.recipient), wirft('voucher_exceeds_total'), reason: '$zuViel');
+        }
+      }
+      // Trinkgeld ueber die Zahlung (payments[].tipCents) zaehlt genauso.
+      expect(mit(2000, payments: ueberZahlung, recipient: ReceiptDueTipRecipient.staff), 200);
+      expect(() => mit(2001, payments: ueberZahlung, recipient: ReceiptDueTipRecipient.staff), wirft('voucher_exceeds_total'));
+    });
+
+    test('ohne Gutschein der neuen Form bleibt alles wie bisher (Storno, Altform-Rabatt)', () {
+      expect(receiptDueBreakdownForLines(items, const [], ReceiptType.standard, tip: personal.tip, tipRecipient: personal.recipient).dueCents,
+          2200);
+      // Altform-Rabatt verteilt sich auch auf das Inhaber-Trinkgeld; ohne Plan prueft der Server das nicht.
+      expect(
+          receiptDueBreakdownForLines(items, promo(2200), ReceiptType.standard, tip: inhaber.tip, tipRecipient: inhaber.recipient).dueCents,
+          0);
+      expect(receiptDueBreakdownForLines([pos('Maniküre', -2000, 20)], const [], ReceiptType.cancellation).dueCents, -2000);
+    });
+
+    test('Aktionsgutschein mindert nur die Ware, das Trinkgeld bleibt zu zahlen', () {
+      const check = VoucherCheck(type: VoucherType.promotion, status: VoucherStatus.active, codeSuffix: '5KNJ', discountCents: 10000);
+      for (final o in [personal, inhaber]) {
+        expect(
+            receiptDueBreakdownForLines(items, [einloesen(VoucherType.promotion, codeA)], ReceiptType.standard,
+                    tip: o.tip, tipRecipient: o.recipient, voucherInfo: [info(codeA, check)])
+                .dueCents,
+            200);
+      }
+    });
+
+    test('Vorbelegung: Mehrzweck hoechstens der offene Betrag ohne Trinkgeld (Personal und Inhaber)', () {
+      expect(voucherRedeemMaxCentsForLines(items, mehrzweck(5000), tip: personal.tip, tipRecipient: personal.recipient), 2000);
+      expect(voucherRedeemMaxCentsForLines(items, mehrzweck(5000), tip: inhaber.tip, tipRecipient: inhaber.recipient), 2000);
+      expect(
+          voucherRedeemMaxCentsForLines(items, mehrzweck(5000),
+              payments: [const KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 2200, tipCents: 200)],
+              tipRecipient: ReceiptDueTipRecipient.staff),
+          2000);
+      // Der Saldo begrenzt weiter.
+      expect(voucherRedeemMaxCentsForLines(items, mehrzweck(1500), tip: personal.tip, tipRecipient: personal.recipient), 1500);
+      // Schon gewaehlte Einloesung: der Rest der Ware, nie das Trinkgeld.
+      expect(
+          voucherRedeemMaxCentsForLines(items, mehrzweck(5000),
+              vouchers: [einloesen(VoucherType.multiPurpose, codeP, 1200)],
+              voucherInfo: [info(codeP, mehrzweck(5000))],
+              tip: inhaber.tip,
+              tipRecipient: inhaber.recipient),
+          800);
+    });
+
+    test('Vorbelegung: Einzweck, der nur Ware deckt, bekommt die Ware (nicht 0)', () {
+      expect(voucherRedeemMaxCentsForLines(items, einzweck(5000, 2000), tip: personal.tip, tipRecipient: personal.recipient), 2000);
+      expect(voucherRedeemMaxCentsForLines(items, einzweck(5000, 2000), tip: inhaber.tip, tipRecipient: inhaber.recipient), 2000);
+      // Zwei Saetze: Einzweck 10 % deckt nur seinen Topf, das Trinkgeld begrenzt hier nicht.
+      final zwei = [pos('Maniküre', 2000, 20), pos('Shampoo', 1200, 10)];
+      expect(voucherRedeemMaxCentsForLines(zwei, einzweck(5000, 1000), tip: inhaber.tip, tipRecipient: inhaber.recipient), 1200);
+    });
+
+    test('Vorbelegung mit Rabatt bzw. Altform-Aktion: Deckel nach dem Abzug, nie negativ', () {
+      final rabatt = pos('Rabatt', -500, 20, kind: 'discount');
+      expect(voucherRedeemMaxCentsForLines([...items, rabatt], mehrzweck(5000), tip: personal.tip, tipRecipient: personal.recipient), 1500);
+      expect(voucherRedeemMaxCentsForLines([...items, rabatt], mehrzweck(5000), tip: inhaber.tip, tipRecipient: inhaber.recipient), 1500);
+      expect(
+          voucherRedeemMaxCentsForLines([...items, rabatt], einzweck(5000, 2000), tip: personal.tip, tipRecipient: personal.recipient), 1500);
+      expect(
+          voucherRedeemMaxCentsForLines(items, mehrzweck(5000), vouchers: promo(500), tip: personal.tip, tipRecipient: personal.recipient),
+          1500);
+      expect(
+          voucherRedeemMaxCentsForLines(items, mehrzweck(5000), vouchers: promo(500), tip: inhaber.tip, tipRecipient: inhaber.recipient),
+          1500);
+      // Rabatt in Hoehe der Ware: nur noch das Trinkgeld offen, also 0 (nie negativ).
+      expect(
+          voucherRedeemMaxCentsForLines(items, mehrzweck(5000), vouchers: promo(2000), tip: personal.tip, tipRecipient: personal.recipient),
+          0);
+      expect(
+          voucherRedeemMaxCentsForLines(items, mehrzweck(5000), vouchers: promo(2200), tip: inhaber.tip, tipRecipient: inhaber.recipient),
+          0);
+      expect(
+          voucherRedeemMaxCentsForLines(items, einzweck(5000, 2000),
+              vouchers: promo(2200), tip: inhaber.tip, tipRecipient: inhaber.recipient),
+          0);
+    });
+
+    test('Vorbelegung wirft nie: nicht rechenbarer Beleg (Trinkgeld ohne Ware) ergibt 0', () {
+      final gratis = [pos('Gratisprobe', 0, 20)];
+      expect(voucherRedeemMaxCentsForLines(gratis, mehrzweck(5000), tip: personal.tip, tipRecipient: personal.recipient), 0);
+      expect(voucherRedeemMaxCentsForLines(gratis, einzweck(5000, 2000), tip: inhaber.tip, tipRecipient: inhaber.recipient), 0);
+      expect(voucherRedeemMaxCentsForLines(const [], mehrzweck(5000), tip: personal.tip, tipRecipient: personal.recipient), 0);
+      // Ohne Empfaenger (tip_recipient_missing) ebenso.
+      expect(voucherRedeemMaxCentsForLines(items, mehrzweck(5000), tip: const ReceiptDueTip(200)), 0);
+      // Schon gewaehlte Gutscheine decken das Trinkgeld bereits: 0 statt Wurf.
+      expect(
+          voucherRedeemMaxCentsForLines(items, mehrzweck(5000),
+              vouchers: [einloesen(VoucherType.multiPurpose, codeP, 2100)],
+              voucherInfo: [info(codeP, mehrzweck(5000))],
+              tip: personal.tip,
+              tipRecipient: personal.recipient),
+          0);
     });
   });
 

@@ -130,6 +130,8 @@ pflicht=(
   invoice-texts.json
   receipt-due-generated.json
   receipt-due-voucher-generated.json
+  duplicate-cases.json
+  receipt-outputs-cases.json
   renames-1.0.json
   receipts
   expected

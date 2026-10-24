@@ -301,6 +301,66 @@ void main() {
     });
   });
 
+  group('Storno einer Gutschein-Auszahlung (cancel_payout_voucher)', () {
+    // Das Geld kommt in die Lade zurueck: genau eine positive Barzahlung ohne refundOf. Alles andere
+    // bleibt Rueckzahlung mit negativem Betrag; ob der Beleg eine Auszahlung war, entscheidet der Server.
+    const bar = KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 3000);
+
+    ({Future<CancelReceiptResult> aufruf, List<http.Request> log}) storno(String kanal, List<KeckPaymentInput> payments,
+        {KasseneckReceipt? original}) {
+      final m = _einmal(_fall(_storno, 'cancel_payout_voucher', channel: kanal));
+      final aufruf = kanal == 'app'
+          ? _kasse(m.client).cancelReceipt(originalReceiptId: 'KECK-1-ID-9', reason: 'input_error', payments: payments, original: original)
+          : _api(m.client).cancelReceipt(
+              cashregisterId: 'KECK-1', originalReceiptId: 'KECK-1-ID-9', reason: 'input_error', payments: payments, original: original);
+      return (aufruf: aufruf, log: m.log);
+    }
+
+    /// Der ausgezahlte Beleg aus dem Vertrag; [ohneAuszahlung] nimmt ihm den Auszahlungseintrag.
+    KasseneckReceipt original({bool ohneAuszahlung = false}) {
+      final daten =
+          jsonDecode(jsonEncode((_fall(_kasseBelege, 'payout_multi_purpose_voucher')['response'] as Map)['data'])) as Map<String, dynamic>;
+      if (ohneAuszahlung) (daten['receipt'] as Map)['vouchers'] = <Object>[];
+      return KasseneckReceipt.fromJson(daten);
+    }
+
+    for (final kanal in ['api', 'app']) {
+      test('$kanal: nur die eine positive Barzahlung darf positiv sein', () async {
+        for (final zahlungen in [
+          const [KeckPaymentInput(method: KeckPaymentMethod.creditCard, amountCents: 3000, provider: CreditCardProvider.custom)],
+          const [bar, bar],
+          const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 3000, refundOf: 'p1')],
+        ]) {
+          final s = storno(kanal, zahlungen);
+          await expectLater(s.aufruf, throwsA(isA<KasseneckValidationError>()), reason: '${zahlungen.length} ${zahlungen.first.method.name}');
+          expect(s.log, isEmpty);
+        }
+      });
+
+      test('$kanal: eine negative Barrueckzahlung ohne refundOf geht unveraendert hinaus', () async {
+        final s = storno(kanal, const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: -100)]);
+        await s.aufruf.then<void>((_) {}, onError: (_) {});
+        expect(s.log, hasLength(1));
+        expect(_params(s.log.single)['payments'], [
+          {'method': 'cash', 'amountCents': -100}
+        ]);
+      });
+
+      test('$kanal: mit Original ohne Auszahlung wird die positive Barzahlung vor dem Senden abgewiesen, mit Auszahlung geht sie hinaus',
+          () async {
+        final ohne = storno(kanal, const [bar], original: original(ohneAuszahlung: true));
+        await expectLater(ohne.aufruf, throwsA(isA<KasseneckValidationError>()));
+        expect(ohne.log, isEmpty);
+        final mit = storno(kanal, const [bar], original: original());
+        await mit.aufruf;
+        expect(mit.log, hasLength(1));
+        expect(_params(mit.log.single)['payments'], [
+          {'method': 'cash', 'amountCents': 3000}
+        ]);
+      });
+    }
+  });
+
   group('Rueckgabe beim Storno (Lager, Issue 85)', () {
     // Teilstorno einer Artikelzeile aus dem Vertrag, je Kanal.
     Future<void> stornieren(
@@ -513,6 +573,18 @@ void main() {
     final ohne = KasseneckReceipt.fromJson(kopie);
     expect(ohne.vatId, isNull);
     expect(ohne.testCashregister, isFalse);
+  });
+
+  test('gespeicherter Gutschein-Beleg (Leistung eingeloest, Auszahlung): Layout bleibt das des Servers (0.35.0), nichts baut es neu', () {
+    // Der Server gibt den Beleg seit Paket 0.34.0 roh an das Paket (keine Aufbereitung mehr). Hier wird
+    // das Layout nie aus dem gespeicherten Beleg nachgebaut, sondern nur gelesen; das haelt diese Probe fest.
+    expect((_json('antworten/kasse-belege.json')['_quelle'] as Map)['backendPackage'], '@kreiseck/kasseneck-api@0.35.0');
+    for (final name in ['redeem_service_voucher', 'payout_multi_purpose_voucher']) {
+      final daten = (_fall(_kasseBelege, name)['response'] as Map)['data'] as Map<String, dynamic>;
+      final gespeichert = jsonDecode(jsonEncode(KasseneckReceipt.fromJson(daten).toJson())) as Map<String, dynamic>;
+      final gelesen = KasseneckReceipt.fromJson(migrateStoredReceiptJson(gespeichert));
+      expect(jsonEncode(gelesen.layout!.toJson()), jsonEncode(daten['layout']), reason: name);
+    }
   });
 
   test('migrateStoredReceiptJson: Lager-Standort faellt weg, rueckgabe wird returnDisposition (wie npm stored)', () {

@@ -27,6 +27,10 @@ import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
 /// traegt der Vorspann den Druckbereich des Blatts (`GS L` / `GS W`, acht
 /// Bytes) -- ohne ihn mittelte der Drucker Bilder in SEINER Flaeche.
 ///
+/// Ersatzdaten (23.10.2026, npm 1.14.0): der Golden-Beleg traegt statt
+/// `ATU12345678` die pruefziffernrichtige `ATU12345675`; die vier Digests sind
+/// darum mit dem npm-Paket neu gezogen (nur die UID-Zeile aendert sich).
+///
 /// Grundlage ist die gezogene Vertragsdatei `sale-cash.lines.json`, also
 /// buchstaeblich dasselbe Layout auf beiden Seiten. Der QR laeuft im nativen
 /// Modus, weil nur der ohne gerastertes Bild auskommt und damit in beiden
@@ -57,22 +61,22 @@ void main() {
 
   test('58 mm ohne Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm58, marke: false),
-        '521e45bb716bc552eab2163868806be07e626a6dc47cb1fdd71c3018d2c9d48b');
+        'a805e7a09063c9b8cf781d3dc03d5028a23b785c15a8101f0d589328ac6424fd');
   });
 
   test('80 mm ohne Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm80, marke: false),
-        '947423a069cb37ada914bb9db3feeda4a07a5f9b627795cc769f98d06f605158');
+        'b62ab3a13df22fd6e507c4f685cb634c58933abf912d37188fa345001bacb287');
   });
 
   test('58 mm mit Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm58, marke: true),
-        '83d391bdf5ab85602686009c59281223d267b10b57cca9750a88007d9c984823');
+        'c70419bd79bed9a860f9f506bf72b4954b57050346ab344467f20c27d1edc9c3');
   });
 
   test('80 mm mit Marke: Byte fuer Byte wie das npm-Paket', () async {
     expect(await digest(KeckPaperSize.mm80, marke: true),
-        'b40133de3fc03e9a3884123ebc16a5dc8bf97b089e7609952590dfb119203ace');
+        '0e476d59f8ff4995869b4e084d4632040f313d5dfdc6a6254c457e0396e1cd3d');
   });
 
   // Bon der Schicht mit fetter Spaltenzeile („Bleibt in der Kassenlade“, Wechselgeld 11.2.0):
