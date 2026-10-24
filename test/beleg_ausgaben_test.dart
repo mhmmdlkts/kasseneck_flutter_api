@@ -559,7 +559,7 @@ void main() {
         'receipt.output_email': ('E-Mail', null),
         'receipt.output_link_shared': ('Link geteilt', null),
         'receipt.output_pdf_shared': ('PDF geteilt', null),
-        'receipt.output_opened': ('Vom Kunden geöffnet ({count}×)', ['count']),
+        'receipt.output_opened': ('Link geöffnet ({count}×)', ['count']),
         'receipt.output_failed': ('fehlgeschlagen', null),
       };
       for (final MapEntry(key: schluessel, value: (text, platzhalter)) in erwartet.entries) {
@@ -574,7 +574,7 @@ void main() {
         expect(posLabels.containsKey('receipt.output_$art'), isTrue, reason: art);
       }
       expect(posLabels.keys.where((k) => k.startsWith('receipt.output')).toList()..sort(), erwartet.keys.toList()..sort());
-      expect(labelText('receipt.output_opened', {'count': 3}), 'Vom Kunden geöffnet (3×)');
+      expect(labelText('receipt.output_opened', {'count': 3}), 'Link geöffnet (3×)');
       expect(labelText('receipt.outputs_count', {'count': 4}), '4 Ausgaben');
     });
 

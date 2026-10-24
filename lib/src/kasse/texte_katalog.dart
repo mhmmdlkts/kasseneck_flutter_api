@@ -562,7 +562,7 @@ const Map<String, PosText> posLabels = {
   'receipt.output_email': PosText('E-Mail'),
   'receipt.output_link_shared': PosText('Link geteilt'),
   'receipt.output_pdf_shared': PosText('PDF geteilt'),
-  'receipt.output_opened': PosText('Vom Kunden geöffnet ({count}×)', placeholders: ['count']),
+  'receipt.output_opened': PosText('Link geöffnet ({count}×)', placeholders: ['count']),
   'receipt.output_failed': PosText('fehlgeschlagen'),
 };
 

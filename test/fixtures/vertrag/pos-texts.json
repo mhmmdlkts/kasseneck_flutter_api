@@ -2287,7 +2287,7 @@
       "text": "PDF geteilt"
     },
     "receipt.output_opened": {
-      "text": "Vom Kunden geöffnet ({count}×)",
+      "text": "Link geöffnet ({count}×)",
       "placeholders": [
         "count"
       ]

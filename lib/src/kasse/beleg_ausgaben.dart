@@ -54,7 +54,7 @@ class ReceiptOutput {
   final String kind;
 
   /// Zeitpunkt, ISO 8601 mit Wiener Zonenoffset; bei Kassenmeldungen der
-  /// Zeitpunkt am Geraet, beim Abruf der letzte der Stunde. Bewusst Text: der
+  /// Zeitpunkt am Geraet, beim Abruf der erste der Stunde. Bewusst Text: der
   /// Offset ist Teil der Aussage.
   final String at;
 
