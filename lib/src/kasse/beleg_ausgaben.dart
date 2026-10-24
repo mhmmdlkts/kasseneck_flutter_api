@@ -181,6 +181,12 @@ class ReceiptOutputEntry {
 
     final at = json['at'];
     final ergebnis = json['result'];
+    // Ein ausdrueckliches null ist kein fehlendes Ergebnis, sondern ein Wert
+    // ausserhalb des Katalogs (wie im npm-Paket); nur ein fehlendes Feld gilt
+    // als ohne Ergebnis.
+    if (ergebnis == null && json.containsKey('result')) {
+      throw KasseneckValidationError(name, 'result muss ${receiptOutputResults.join(', ')} sein', 'request');
+    }
     if (ergebnis != null && ergebnis is! String) {
       throw const KasseneckValidationError(name, 'result muss ein Text sein', 'request');
     }

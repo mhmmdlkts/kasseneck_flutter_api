@@ -216,15 +216,17 @@ void main() {
             },
           });
         }));
-        // Wie die Kasse ihren Puffer liest: je Eintrag fromJson. Ein unbekanntes
-        // Feld meldet fromJson ohne den Vorsatz `entries[i]: ` des npm-Pakets.
+        // Wie die Kasse ihren Puffer liest: je Eintrag fromJson. fromJson meldet
+        // ohne den Vorsatz des npm-Pakets: `entries[i]: ` vor einem unbekannten
+        // Feld, `entries[i].` vor einem Feldgrund (`result muss ...`).
         Object? fehler;
         final eintraege = <ReceiptOutputEntry>[];
         for (final (i, e) in (a['entries'] as List).indexed) {
           try {
             eintraege.add(ReceiptOutputEntry.fromJson((e as Map).cast<String, dynamic>()));
           } on KasseneckValidationError catch (f) {
-            fehler = KasseneckValidationError(f.functionName, 'entries[$i]: ${f.reason}', f.kind);
+            final trenner = f.reason.startsWith('unbekanntes Feld') ? ': ' : '.';
+            fehler = KasseneckValidationError(f.functionName, 'entries[$i]$trenner${f.reason}', f.kind);
             break;
           }
         }
@@ -248,7 +250,7 @@ void main() {
       }
     });
 
-    test('Zwilling: KasseneckApi prueft vor dem Senden gleich (jede abgewiesene Anfrage ohne unbekanntes Feld)', () async {
+    test('Zwilling: KasseneckApi prueft vor dem Senden gleich (jede abgewiesene Anfrage, die fromJson durchlaesst)', () async {
       final api = KasseneckApi(
           apiKey: 'kr_live_Ab12',
           cashregisterToken: 'cb_live_Xy34',
@@ -256,8 +258,16 @@ void main() {
       var n = 0;
       for (final a in _anfragen) {
         final soll = (a['expected'] as Map)['error'] as Map?;
-        if (soll == null || (soll['reason'] as String).contains('unbekanntes Feld')) continue;
-        await expectLater(() => api.logReceiptOutputs(entries: _eintraege(a['entries'])),
+        if (soll == null) continue;
+        // Was schon fromJson abweist (unbekanntes Feld, ausdrueckliches null im
+        // Ergebnis), prueft der Test davor mit dem Grund des npm-Pakets.
+        final List<ReceiptOutputEntry> eintraege;
+        try {
+          eintraege = _eintraege(a['entries']);
+        } on KasseneckValidationError {
+          continue;
+        }
+        await expectLater(() => api.logReceiptOutputs(entries: eintraege),
             throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', soll['reason'])),
             reason: a['name'] as String);
         n++;

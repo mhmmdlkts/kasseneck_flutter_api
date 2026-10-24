@@ -116,7 +116,9 @@ version): vouchers follow the final Bon and payment rules. Notes for callers:
   cases of `logReceiptOutputs` (body sent or rejection with its reason). The
   tests run every case on both ways, so npm and Dart cannot drift apart.
   `ReceiptOutputEntry.fromJson` reads a missing `key`, `receiptId`, `kind` or
-  `at` as empty, so sending rejects it with the same reason as npm.
+  `at` as empty, so sending rejects it with the same reason as npm; an
+  explicit `"result": null` throws (outside the catalogue, as in npm), only a
+  missing `result` means none.
 - **9 labels for the receipt detail** (`receipt.outputs_title`,
   `receipt.outputs_count`, `receipt.output_<kind>` for the six kinds,
   `receipt.output_failed`) and **`receiptOutputLabel(output)`** in
