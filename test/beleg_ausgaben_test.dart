@@ -10,6 +10,7 @@ import 'package:kasseneck_api/pos.dart' as kasse;
 import 'package:kasseneck_api/pos.dart' show KasseneckReceipt, RegisterReceiptClient, labelText, posLabels, receiptOutputLabel;
 import 'package:kasseneck_api/register.dart' show FieldError, RegisterTransport;
 import 'package:kasseneck_api/src/aufrufe.dart';
+import 'package:kasseneck_api/src/kasse/beleg_ausgaben.dart' show ausgabenLesen;
 import 'package:kasseneck_api/src/receipt/codes.dart' show anmeldungUndRandCodes;
 import 'package:kasseneck_api/src/v3.dart' show isUnknownOutcomeCall, unknownOutcomeCalls;
 
@@ -17,15 +18,19 @@ import 'package:kasseneck_api/src/v3.dart' show isUnknownOutcomeCall, unknownOut
 /// `logReceiptOutputs` am Kassenweg gegen den Vertrag
 /// (`v3/antworten/kasse.json`), `outputs` aus `getReceipt` (`belege.json`,
 /// `kasse-belege.json`, Fall `get_receipt_with_outputs`), Kataloge, Codes,
-/// Texte. Zwilling von `test/receipt-outputs.test.ts` im npm-Paket, Fall fuer
-/// Fall: die nachsichtige Leseregel fuer `outputs` und die Vorab-Pruefung der
-/// Eintraege fuehrt der Vertrag nicht als eigene Datei, darum stehen dieselben
-/// Faelle hier woertlich wie dort.
+/// Texte. Zwilling von `test/receipt-outputs.test.ts` im npm-Paket. Die
+/// nachsichtige Leseregel fuer `outputs` (samt `receiptOutputLabel`) und die
+/// Pruefung der Eintraege vor dem Senden kommen aus der gemeinsamen
+/// Vertragsdatei `receipt-outputs-cases.json` (npm `fixtures:ausgaben`, gezogen
+/// mit `tool/zwillinge.sh`): beide Pakete rechnen dieselben Faelle. Von Hand
+/// stehen hier nur, was es nur in Dart gibt (DateTime, Typfehler im Puffer).
 ///
 /// Rot-Proben (belegt): Text in `pos-texts.json` abweichend -> „Golden“ des
 /// Katalogs und „Texte“ rot; `logReceiptOutputs` aus `unknownOutcomeCalls`
 /// genommen -> Einordnung und „Kassenaufruf mit Wirkung“ rot; ein unbekanntes
-/// Feld in `ReceiptOutputEntry.fromJson` angenommen -> „vor dem Senden“ rot.
+/// Feld in `ReceiptOutputEntry.fromJson` angenommen -> Zwillingsanfragen rot;
+/// ein erwarteter Wert nur in der npm-Vertragsdatei geaendert -> `pruefen` und
+/// die Zwillingsfaelle rot; Beschriftungsregel in Dart gebrochen -> Lesefaelle rot.
 final _v3 = Directory('test/fixtures/vertrag/v3');
 
 Map<String, dynamic> _json(String pfad) => jsonDecode(File('${_v3.path}/$pfad').readAsStringSync()) as Map<String, dynamic>;
@@ -37,6 +42,14 @@ final _faelle = (((_json('antworten/kasse.json')['endpoints'] as Map)['logReceip
 final _vokabular = _json('v3-vokabular.json');
 final _belege = (_json('antworten/belege.json')['cases'] as List).cast<Map<String, dynamic>>();
 final _kasseBelege = (_json('antworten/kasse-belege.json')['cases'] as List).cast<Map<String, dynamic>>();
+
+/// Gemeinsame Prueffaelle mit dem npm-Paket (`fixtures/receipt-outputs-cases.json`).
+final _zwilling =
+    jsonDecode(File('test/fixtures/vertrag/receipt-outputs-cases.json').readAsStringSync()) as Map<String, dynamic>;
+final _lesefaelle = (_zwilling['outputs'] as List).cast<Map<String, dynamic>>();
+final _anfragen = (_zwilling['requests'] as List).cast<Map<String, dynamic>>();
+Map<String, dynamic> _anfrage(String name) => _anfragen.firstWhere((a) => a['name'] == name);
+Map<String, dynamic>? _anfrageOderNull(String name) => _anfragen.where((a) => a['name'] == name).firstOrNull;
 
 Map<String, dynamic> _fall(String name) => _faelle.firstWhere((c) => c['case'] == name);
 
@@ -84,14 +97,6 @@ Future<({Object? ergebnis, Object? fehler, List<Map<String, dynamic>> gesendet})
 /// Faelle, die das Paket schon vor dem Senden abweist (sicher falsch ohne Netz): genau diese. Fall -> Grund.
 const _vorDemSenden = {'data_missing': 'entries fehlt', 'entries_empty': 'leere Liste'};
 
-/// Eintraege der Erfolgsfaelle, die das Paket vor dem Senden abweist, weil der
-/// Schluessel nicht der Regel des Servers folgt (8-64 Zeichen [A-Za-z0-9_-]).
-/// Der Server zeigt damit `idempotency_key_required`; die Kasse soll den Fehler
-/// schon beim Entwickeln sehen und `rejected[].key` immer ihren Pufferschluessel tragen.
-const _vorabAbgewiesen = {
-  'mixed': ['kurz'],
-};
-
 Matcher _anfragefehler([Pattern? muster]) => isA<KasseneckValidationError>()
     .having((e) => e.kind, 'kind', 'request')
     .having((e) => muster == null || e.reason.contains(muster), 'reason passt zu $muster', isTrue);
@@ -135,29 +140,30 @@ void main() {
       expect(faelle.length, greaterThanOrEqualTo(4));
       for (final f in faelle) {
         final name = f['case'] as String;
-        final weg = _vorabAbgewiesen[name] ?? const <String>[];
-        if (weg.isNotEmpty) {
-          // Wie gesendet weist das Paket den Fall vor dem Senden ab ...
+        var gesendetWird = f;
+        // Ein Fall, den das Paket vor dem Senden abweist, steht so in der
+        // Zwillingsdatei (contract_<fall>), dazu der Fall ohne den beanstandeten
+        // Eintrag (contract_<fall>_without_short_key), der hinausgeht.
+        final zwilling = _anfrageOderNull('contract_$name');
+        if (zwilling != null) {
+          expect(zwilling['entries'], (f['params'] as Map)['entries'], reason: '$name: Zwillingsdatei aus einem anderen Vertragsstand');
+          final grund = ((zwilling['expected'] as Map)['error'] as Map)['reason'] as String;
           final ganz = await _rufe(f);
           expect(ganz.gesendet, isEmpty, reason: name);
-          expect(ganz.fehler, _anfragefehler(), reason: name);
+          expect(ganz.fehler, isA<KasseneckValidationError>().having((e) => e.reason, 'reason', grund), reason: name);
+          gesendetWird = _tief(f);
+          (gesendetWird['params'] as Map)['entries'] = _anfrage('contract_${name}_without_short_key')['entries'];
         }
-        // ... ohne diese Eintraege geht der Rest Feld fuer Feld hinaus.
-        final ohne = _tief(f);
-        final alle = (f['params'] as Map)['entries'] as List;
-        (ohne['params'] as Map)['entries'] = [for (final e in alle) if (!weg.contains((e as Map)['key'])) e];
-        expect(((ohne['params'] as Map)['entries'] as List).length, alle.length - weg.length, reason: name);
-        final lauf = await _rufe(ohne);
+        final lauf = await _rufe(gesendetWird);
         expect(lauf.fehler, isNull, reason: '$name: ${lauf.fehler}');
-        expect(lauf.gesendet, [ohne['params']], reason: name);
+        expect(lauf.gesendet, [gesendetWird['params']], reason: name);
         expect((lauf.ergebnis as LogReceiptOutputsResult).toJson(), (f['response'] as Map)['data'], reason: name);
       }
     });
 
     test('abgelehnte Eintraege kommen je Schluessel mit Code zurueck, die anderen sind angenommen (Review Focus 5)', () async {
       final f = _tief(_fall('mixed'));
-      final p = f['params'] as Map;
-      p['entries'] = [for (final e in p['entries'] as List) if ((e as Map)['key'] != 'kurz') e];
+      (f['params'] as Map)['entries'] = _anfrage('contract_mixed_without_short_key')['entries'];
       final lauf = await _rufe(f);
       // Mail und Abruf meldet die Kasse nie selbst; das Paket sendet sie trotzdem,
       // damit der Server genau diesen Eintrag ablehnt und der Puffer ihn verwirft.
@@ -190,58 +196,92 @@ void main() {
       expect(abgewiesen..sort(), _vorDemSenden.keys.toList()..sort());
     });
 
-    test('vor dem Senden: unbekannte Felder, Form der Liste und der Eintraege', () async {
-      final kasse = _kasse(MockClient((_) async => throw StateError('darf nicht senden')));
-      Future<void> abgewiesen(List<ReceiptOutputEntry> Function() eintraege, Pattern muster) async {
-        await expectLater(() async => kasse.logReceiptOutputs(entries: eintraege()), throwsA(_anfragefehler(muster)));
-      }
-
-      // Ein gepufferter Eintrag mit unbekanntem Feld ginge sonst still verloren.
-      // Die Kasse steht im Transport, nie ein zweites Mal im Eintrag.
-      await abgewiesen(() => _eintraege([
-            {..._gut.toJson(), 'receiptID': 'KASSE1-ID-7'},
-          ]), 'unbekanntes Feld "receiptID"');
-      await abgewiesen(() => _eintraege([
-            _gut.toJson(),
-            {..._mit(key: 'druck-0002').toJson(), 'note': 'Kopie'},
-          ]), 'unbekanntes Feld "note"');
-      await abgewiesen(() => _eintraege([
-            {..._gut.toJson(), 'cashregisterId': 'KASSE2'},
-          ]), 'unbekanntes Feld "cashregisterId"');
-      await abgewiesen(() => _eintraege([
-            {..._gut.toJson(), 'key': 42},
-          ]), 'key');
-      await abgewiesen(() => const [], 'entries');
-      await abgewiesen(
-          () => [for (var i = 0; i <= receiptOutputEntriesMax; i++) _mit(key: 'druck-${1000 + i}')], '1–50');
-      await abgewiesen(() => [_mit(key: '')], 'entries[0].key');
-      await abgewiesen(() => [_mit(key: '   ')], 'entries[0].key');
-      await abgewiesen(() => [_mit(receiptId: ' ')], 'entries[0].receiptId');
-      // Ein Wert ausserhalb des Katalogs liesse den Rand die GANZE Anfrage abweisen.
-      await abgewiesen(() => [_mit(kind: 'erstdruck')], 'entries[0].kind');
-      await abgewiesen(() => [_mit(result: 'fehler')], 'entries[0].result');
-      await abgewiesen(() => [_mit(at: 1.5)], 'entries[0].at');
-      await abgewiesen(() => [_mit(at: -1)], 'entries[0].at');
-      await abgewiesen(() => [_mit(at: '')], 'entries[0].at');
-      await abgewiesen(() => [_mit(at: DateTime.utc(1969, 12, 31))], 'entries[0].at');
-      // Schluessel nach der Regel des Servers: 8-64 Zeichen [A-Za-z0-9_-].
-      await abgewiesen(() => [_mit(key: 'kurz')], 'entries[0].key muss 8–64 Zeichen');
-      await abgewiesen(() => [_mit(key: 'druck 0001')], 'entries[0].key');
-      await abgewiesen(() => [_mit(key: 'drück-0001')], 'entries[0].key');
-      await abgewiesen(() => [_mit(key: 'd' * 65)], 'entries[0].key');
-      // Zeit als Text nur mit Zone: ohne Zone, Offset ohne Doppelpunkt, nur Datum, Leerzeichen statt T.
-      for (final at in [
-        '2026-09-26T09:58:00',
-        '2026-09-26T09:58:00.123',
-        '2026-09-26T09:58:00+0200',
-        '2026-09-26',
-        '2026-09-26 09:58:00Z',
-      ]) {
-        await abgewiesen(() => [_mit(at: at)], 'entries[0].at muss');
+    test('Zwilling: jede Anfrage der Vertragsdatei sendet genau die erwartete Nutzlast oder wird mit genau diesem Grund abgewiesen',
+        () async {
+      expect(_zwilling['version'], 1);
+      expect(_anfragen.length, greaterThanOrEqualTo(40));
+      for (final a in _anfragen) {
+        final name = a['name'] as String;
+        final erwartet = a['expected'] as Map;
+        final gesendet = <Map<String, dynamic>>[];
+        final kasse = _kasse(MockClient((r) async {
+          final p = (jsonDecode(r.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
+          p.remove('cashregisterId');
+          gesendet.add(p);
+          return _antwort({
+            'response': {
+              'status': 'success',
+              'message': '',
+              'data': {'accepted': (a['entries'] as List).length, 'rejected': []},
+            },
+          });
+        }));
+        // Wie die Kasse ihren Puffer liest: je Eintrag fromJson. Ein unbekanntes
+        // Feld meldet fromJson ohne den Vorsatz `entries[i]: ` des npm-Pakets.
+        Object? fehler;
+        final eintraege = <ReceiptOutputEntry>[];
+        for (final (i, e) in (a['entries'] as List).indexed) {
+          try {
+            eintraege.add(ReceiptOutputEntry.fromJson((e as Map).cast<String, dynamic>()));
+          } on KasseneckValidationError catch (f) {
+            fehler = KasseneckValidationError(f.functionName, 'entries[$i]: ${f.reason}', f.kind);
+            break;
+          }
+        }
+        if (fehler == null) {
+          try {
+            await kasse.logReceiptOutputs(entries: eintraege);
+          } catch (e) {
+            fehler = e;
+          }
+        }
+        if (erwartet.containsKey('sent')) {
+          expect(fehler, isNull, reason: '$name: $fehler');
+          expect(gesendet, [erwartet['sent']], reason: name);
+        } else {
+          final soll = erwartet['error'] as Map;
+          expect(gesendet, isEmpty, reason: name);
+          expect(fehler, isA<KasseneckValidationError>(), reason: '$name: $fehler');
+          expect((fehler as KasseneckValidationError).kind, soll['scope'], reason: name);
+          expect(fehler.reason, soll['reason'], reason: name);
+        }
       }
     });
 
-    test('Schluessel an den Grenzen und Zeiten mit Zone gehen hinaus', () async {
+    test('Zwilling: KasseneckApi prueft vor dem Senden gleich (jede abgewiesene Anfrage ohne unbekanntes Feld)', () async {
+      final api = KasseneckApi(
+          apiKey: 'kr_live_Ab12',
+          cashregisterToken: 'cb_live_Xy34',
+          httpClient: MockClient((_) async => throw StateError('darf nicht senden')));
+      var n = 0;
+      for (final a in _anfragen) {
+        final soll = (a['expected'] as Map)['error'] as Map?;
+        if (soll == null || (soll['reason'] as String).contains('unbekanntes Feld')) continue;
+        await expectLater(() => api.logReceiptOutputs(entries: _eintraege(a['entries'])),
+            throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', soll['reason'])),
+            reason: a['name'] as String);
+        n++;
+      }
+      expect(n, greaterThanOrEqualTo(25));
+    });
+
+    test('vor dem Senden, nur in Dart: Typfehler im Puffer, DateTime vor 1970', () async {
+      final kasse = _kasse(MockClient((_) async => throw StateError('darf nicht senden')));
+      await expectLater(
+          () => _eintraege([
+                {..._gut.toJson(), 'key': 42},
+              ]),
+          throwsA(_anfragefehler('key muss ein Text sein')));
+      await expectLater(
+          () => _eintraege([
+                {..._gut.toJson(), 'result': true},
+              ]),
+          throwsA(_anfragefehler('result muss ein Text sein')));
+      await expectLater(() => kasse.logReceiptOutputs(entries: [_mit(at: DateTime.utc(1969, 12, 31))]),
+          throwsA(_anfragefehler('entries[0].at muss')));
+    });
+
+    test('DateTime geht als Millisekunden hinaus (wie die Ladeoeffnungen)', () async {
       final gesendet = <Map<String, dynamic>>[];
       final kasse = _kasse(MockClient((r) async {
         gesendet.add((jsonDecode(r.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>);
@@ -249,34 +289,19 @@ void main() {
           'response': {
             'status': 'success',
             'message': '',
-            'data': {'accepted': 5, 'rejected': []},
+            'data': {'accepted': 2, 'rejected': []},
           },
         });
       }));
-      final eintraege = [
-        const ReceiptOutputEntry(
-            key: 'Ab_-0123', receiptId: 'KASSE1-ID-7', kind: 'print', at: '2026-09-26T07:58:00Z', result: 'ok'),
+      await kasse.logReceiptOutputs(entries: [
+        ReceiptOutputEntry(key: 'share-0003', receiptId: 'KASSE1-ID-7', kind: 'pdf_shared', at: DateTime.utc(2026, 9, 26, 8)),
         ReceiptOutputEntry(
-            key: 'k' * 64,
-            receiptId: 'KASSE1-ID-7',
-            kind: 'reprint',
-            at: '2026-09-26T09:58:00.123456+02:00',
-            result: 'unclear'),
-        ReceiptOutputEntry(
-            key: 'teilen-0001',
-            receiptId: 'KASSE1-ID-7',
-            kind: 'link_shared',
-            at: DateTime.utc(2026, 9, 26, 7, 59).toIso8601String()),
-        const ReceiptOutputEntry(key: 'teilen-0002', receiptId: 'KASSE1-ID-7', kind: 'pdf_shared', at: 0),
-        // DateTime geht als Millisekunden hinaus (wie die Ladeoeffnungen).
-        ReceiptOutputEntry(key: 'teilen-0003', receiptId: 'KASSE1-ID-7', kind: 'pdf_shared', at: DateTime.utc(2026, 9, 26, 8)),
-      ];
-      await kasse.logReceiptOutputs(entries: eintraege);
-      expect(gesendet.single['entries'], [
-        for (final e in eintraege.take(4)) e.toJson(),
-        {'key': 'teilen-0003', 'receiptId': 'KASSE1-ID-7', 'at': 1790409600000, 'kind': 'pdf_shared'},
+            key: 'share-0004', receiptId: 'KASSE1-ID-7', kind: 'link_shared', at: DateTime.utc(2026, 9, 26, 7, 59).toIso8601String()),
       ]);
-      expect((gesendet.single['entries'] as List)[2]['at'], '2026-09-26T07:59:00.000Z');
+      expect(gesendet.single['entries'], [
+        {'key': 'share-0003', 'receiptId': 'KASSE1-ID-7', 'at': 1790409600000, 'kind': 'pdf_shared'},
+        {'key': 'share-0004', 'receiptId': 'KASSE1-ID-7', 'at': '2026-09-26T07:59:00.000Z', 'kind': 'link_shared'},
+      ]);
     });
 
     test('50 Eintraege gehen in einem Aufruf hinaus, ein fehlendes Ergebnis nicht', () async {
@@ -438,55 +463,30 @@ void main() {
       expect((await _belegLesen(ohne)).outputs, isNull);
     });
 
-    test('ein kaputtes Protokoll laesst den Beleg nie scheitern; unbekannte Werte bleiben stehen', () async {
-      final f = _tief(_belege.firstWhere((c) => c['name'] == 'get_receipt_with_outputs'));
-      final daten = (f['response'] as Map)['data'] as Map;
-      daten['outputs'] = [
-        {
-          'kind': 'print',
-          'at': '2026-09-26T10:00:05+02:00',
-          'result': 'ok',
-          'by': {'id': 'ru_livia', 'name': 'Livia Lindmayr'},
-        },
-        {
-          'kind': 'fax',
-          'at': '2026-09-26T10:01:00+02:00',
-          'result': 'pending',
-          'by': {'id': 'ru_livia'},
-          'count': 'x',
-        },
-        null,
-        'print',
-        {'at': '2026-09-26T10:02:00+02:00', 'result': 'ok', 'by': null},
-        {'kind': 'reprint', 'at': 5, 'result': 'ok', 'by': null},
-        {
-          'kind': 'opened',
-          'at': '2026-09-26T10:03:00+02:00',
-          'result': 'ok',
-          'by': {'name': 'ohne Kennung'},
-          'count': 2,
-          'extra': true,
-        },
-      ];
-      final beleg = await _belegLesen(f);
-      expect(beleg.receiptId, (daten['receipt'] as Map)['receiptId']);
-      expect(_alsJson(beleg.outputs), [
-        {
-          'kind': 'print',
-          'at': '2026-09-26T10:00:05+02:00',
-          'result': 'ok',
-          'by': {'id': 'ru_livia', 'name': 'Livia Lindmayr'},
-        },
-        {
-          'kind': 'fax',
-          'at': '2026-09-26T10:01:00+02:00',
-          'result': 'pending',
-          'by': {'id': 'ru_livia', 'name': null},
-        },
-        {'kind': 'opened', 'at': '2026-09-26T10:03:00+02:00', 'result': 'ok', 'by': null, 'count': 2},
-      ]);
-      daten['outputs'] = {'kind': 'print'};
-      expect((await _belegLesen(f)).outputs, isNull);
+    test('Zwilling: jeder Lesefall der Vertragsdatei ergibt genau die erwartete Liste und Beschriftungen', () {
+      expect(_lesefaelle.length, greaterThanOrEqualTo(8));
+      for (final f in _lesefaelle) {
+        final gelesen = ausgabenLesen(f['input']);
+        expect(_alsJson(gelesen), f['expected'], reason: f['name'] as String);
+        expect(gelesen?.map(receiptOutputLabel).toList(), f['labels'], reason: f['name'] as String);
+      }
+      // Der Vertragsfall steht unveraendert darin.
+      final vertrag = _belege.firstWhere((c) => c['name'] == 'get_receipt_with_outputs');
+      expect(_lesefaelle.firstWhere((f) => f['name'] == 'contract_get_receipt_with_outputs')['input'],
+          ((vertrag['response'] as Map)['data'] as Map)['outputs']);
+    });
+
+    test('ein kaputtes Protokoll laesst den Beleg nie scheitern (Lesefaelle der Vertragsdatei am ganzen Beleg, beide Wege)', () async {
+      for (final liste in [_belege, _kasseBelege]) {
+        for (final z in _lesefaelle) {
+          final f = _tief(liste.firstWhere((c) => c['name'] == 'get_receipt_with_outputs'));
+          final daten = (f['response'] as Map)['data'] as Map;
+          daten['outputs'] = z['input'];
+          final beleg = await _belegLesen(f);
+          expect(beleg.receiptId, (daten['receipt'] as Map)['receiptId'], reason: z['name'] as String);
+          expect(_alsJson(beleg.outputs), z['expected'], reason: '${f['path']} ${z['name']}');
+        }
+      }
     });
   });
 
@@ -568,50 +568,16 @@ void main() {
       expect(labelText('receipt.outputs_count', {'count': 4}), '4 Ausgaben');
     });
 
-    test('receiptOutputLabel: Art -> Beschriftung, nie eine Ausnahme (kaputtes oder neueres Protokoll)', () {
-      expect(receiptOutputLabel(_o('print')), 'Erstdruck');
-      expect(receiptOutputLabel(_o('reprint', result: 'unclear')), 'Duplikat');
-      expect(receiptOutputLabel(_o('email')), 'E-Mail');
-      expect(receiptOutputLabel(_o('link_shared')), 'Link geteilt');
-      expect(receiptOutputLabel(_o('pdf_shared')), 'PDF geteilt');
-      expect(receiptOutputLabel(_o('opened', count: 40)), 'Vom Kunden geöffnet (40×)');
-      // Nur die Art: „fehlgeschlagen“ setzt die Kasse selbst dazu.
-      expect(receiptOutputLabel(_o('print', result: 'failed')), 'Erstdruck');
-      expect(labelText('receipt.output_failed'), 'fehlgeschlagen');
-      // Abruf ohne gueltige Anzahl zaehlt als ein Abruf (1.5, NaN und '3' liest
-      // ausgabenLesen gar nicht erst als Anzahl, siehe kaputtes Protokoll).
-      for (final count in [null, 0, -2]) {
-        expect(receiptOutputLabel(_o('opened', count: count)), 'Vom Kunden geöffnet (1×)', reason: '$count');
-      }
-      // Unbekannte Art (neuerer Server) oder kaputtes Protokoll: null, keine Ausnahme.
-      for (final art in ['fax', '', 'constructor', 'toString', '__proto__', 'outputs_title']) {
-        expect(receiptOutputLabel(_o(art)), isNull, reason: art);
-      }
-      // Jede Art des Katalogs hat eine Beschriftung.
+    test('receiptOutputLabel: jede Art des Katalogs hat eine Beschriftung, die Vertragsdatei zeigt jede', () {
       for (final art in receiptOutputKinds) {
         expect(receiptOutputLabel(_o(art)), isA<String>(), reason: art);
       }
-    });
-
-    test('receiptOutputLabel: jeder Eintrag des Vertragsfalls und eines kaputten Protokolls ergibt eine Zeile ohne Ausnahme',
-        () async {
-      final f = _tief(_belege.firstWhere((c) => c['name'] == 'get_receipt_with_outputs'));
-      final outputs = (await _belegLesen(f)).outputs!;
-      expect(outputs.map(receiptOutputLabel).toList(), ['Duplikat', 'Vom Kunden geöffnet (3×)', 'E-Mail', 'Erstdruck']);
-      ((f['response'] as Map)['data'] as Map)['outputs'] = [
-        {'kind': 'fax', 'at': '2026-09-26T10:01:00+02:00', 'result': 'ok', 'by': null},
-        {'kind': 'opened', 'at': '2026-09-26T10:03:00+02:00', 'result': 'ok', 'by': null},
-        {'kind': 'opened', 'at': '2026-09-26T10:03:30+02:00', 'result': 'ok', 'by': null, 'count': 1.5},
-        {
-          'kind': 'reprint',
-          'at': '2026-09-26T10:04:00+02:00',
-          'result': 'failed',
-          'by': {'id': 'ru_livia', 'name': 'Livia Lindmayr'},
-        },
-      ];
-      final kaputt = (await _belegLesen(f)).outputs!;
-      expect(kaputt.map(receiptOutputLabel).toList(), [null, 'Vom Kunden geöffnet (1×)', 'Vom Kunden geöffnet (1×)', 'Duplikat']);
-      expect(kaputt[3].result, 'failed');
+      final gezeigt = {
+        for (final f in _lesefaelle)
+          for (final o in (f['expected'] as List?) ?? const []) (o as Map)['kind'],
+      };
+      expect(gezeigt, containsAll(receiptOutputKinds));
+      expect(labelText('receipt.output_failed'), 'fehlgeschlagen');
     });
   });
 }

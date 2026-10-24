@@ -110,6 +110,13 @@ version): vouchers follow the final Bon and payment rules. Notes for callers:
   without kind, time or result is dropped, an actor without id reads as
   `null`, an unknown kind or result stays readable; a broken log never fails
   reading or reprinting the receipt.
+- **Shared contract file `receipt-outputs-cases.json`** (npm 1.14.0,
+  `fixtures:ausgaben`, pulled and verified by `tool/zwillinge.sh`): the read
+  cases of `outputs` (with `receiptOutputLabel` of each entry) and the request
+  cases of `logReceiptOutputs` (body sent or rejection with its reason). The
+  tests run every case on both ways, so npm and Dart cannot drift apart.
+  `ReceiptOutputEntry.fromJson` reads a missing `key`, `receiptId`, `kind` or
+  `at` as empty, so sending rejects it with the same reason as npm.
 - **9 labels for the receipt detail** (`receipt.outputs_title`,
   `receipt.outputs_count`, `receipt.output_<kind>` for the six kinds,
   `receipt.output_failed`) and **`receiptOutputLabel(output)`** in

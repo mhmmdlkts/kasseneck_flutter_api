@@ -82,12 +82,17 @@ const _nichtDieserWeg = {
       'ohne stockLocationId: null geht als leerer Text hinaus (Zuruecksetzen), weglassen kann dieser Weg nicht',
 };
 
-/// Erfolgsfälle, die das Paket bewusst schon vor dem Senden abweist, mit Grund.
-/// Ohne den beanstandeten Eintrag laufen sie in `beleg_ausgaben_test.dart`
-/// Feld für Feld (wie `VORAB_ABGEWIESEN` im npm-Paket).
-const _vorabStattErfolg = {
-  'logReceiptOutputs/mixed':
-      'Eintrag mit dem Schluessel "kurz" (ausserhalb 8-64 Zeichen [A-Za-z0-9_-]): wirft vor dem Senden, damit rejected[].key immer der Pufferschluessel ist',
+/// Erfolgsfälle, die das Paket bewusst schon vor dem Senden abweist: genau
+/// die, die die gemeinsame Vertragsdatei `receipt-outputs-cases.json` als
+/// `contract_<fall>` mit Abweisung führt (Schlüssel außerhalb der Regel des
+/// Servers). Ohne den beanstandeten Eintrag laufen sie in
+/// `beleg_ausgaben_test.dart` Feld für Feld.
+final Set<String> _vorabStattErfolg = {
+  for (final a in ((jsonDecode(File('test/fixtures/vertrag/receipt-outputs-cases.json').readAsStringSync()) as Map)['requests']
+          as List)
+      .cast<Map<String, dynamic>>())
+    if ((a['name'] as String).startsWith('contract_') && (a['expected'] as Map).containsKey('error'))
+      'logReceiptOutputs/${(a['name'] as String).substring('contract_'.length)}',
 };
 
 /// Fälle, deren Fehler die Kasse beim Verkauf im Alltag sieht (Anmeldung
@@ -524,11 +529,11 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   final antwort = fall['response'] as Map<String, dynamic>;
   if (lauf.vorab) {
     expect(lauf.log, isEmpty, reason: '$name: vorab abgewiesen, nichts geht hinaus');
-    if (_vorabStattErfolg.containsKey(name)) return;
+    if (_vorabStattErfolg.contains(name)) return;
     expect(antwort['status'], 'error', reason: '$name: der Client weist ab, was der Server annimmt');
     return;
   }
-  expect(_vorabStattErfolg.containsKey(name), isFalse, reason: '$name: steht in _vorabStattErfolg, ging aber hinaus');
+  expect(_vorabStattErfolg.contains(name), isFalse, reason: '$name: steht in _vorabStattErfolg, ging aber hinaus');
   expect(lauf.log, hasLength(1), reason: '$name: genau ein Aufruf');
   expect(lauf.log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/$endpunkt', reason: name);
   final gesendet = Map<String, dynamic>.from(lauf.params);

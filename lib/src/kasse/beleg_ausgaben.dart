@@ -160,7 +160,8 @@ class ReceiptOutputEntry {
   });
 
   /// Liest einen gepufferten Eintrag ([toJson]) zurueck, **streng**: ein
-  /// unbekanntes Feld oder ein Feld mit falschem Typ wirft
+  /// unbekanntes Feld (`unbekanntes Feld "<name>"`, wie npm ohne den Vorsatz
+  /// `entries[i]: `) oder ein Feld mit falschem Typ wirft
   /// [KasseneckValidationError] (`kind: request`). Ein unbekanntes Feld ginge
   /// sonst still verloren (der Puffer haette etwas gemerkt, das nie gemeldet
   /// wird). Ob die Werte gueltig sind, prueft erst das Melden.
@@ -169,8 +170,11 @@ class ReceiptOutputEntry {
     for (final feld in json.keys) {
       if (!_eintragsfelder.contains(feld)) throw KasseneckValidationError(name, 'unbekanntes Feld "$feld"', 'request');
     }
+    // Ein fehlendes Feld bleibt leer: das Melden weist es dann mit demselben
+    // Grund ab wie das npm-Paket (`entries[i].key fehlt` ...).
     String text(String feld) {
       final w = json[feld];
+      if (w == null) return '';
       if (w is! String) throw KasseneckValidationError(name, '$feld muss ein Text sein', 'request');
       return w;
     }
