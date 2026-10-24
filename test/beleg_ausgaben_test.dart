@@ -170,14 +170,20 @@ void main() {
       expect([for (final e in lauf.gesendet.single['entries'] as List) (e as Map)['kind']],
           ['email', 'opened', 'print', 'print', 'reprint', 'reprint']);
       final r = lauf.ergebnis as LogReceiptOutputsResult;
-      expect(r.accepted, 1);
+      // Angenommen: der Duplikat-Fehlschlag und der Erstdruck mit 10 Minuten vorgehender
+      // Geraeteuhr (der Server klemmt die Zeit, statt abzulehnen).
+      expect(r.accepted, 2);
+      expect(r.rejected.where((x) => x.key == 'zeit-0001'), isEmpty);
       expect(r.rejected.firstWhere((x) => x.key == 'fremd-0001'),
           const RejectedReceiptOutput(key: 'fremd-0001', code: 'receipt_not_found'));
       for (final x in r.rejected) {
         expect(receiptOutputEntryErrorCodes, contains(x.code));
       }
-      // Jeder Code je Eintrag aus dem Vertrag steht in der Liste, und umgekehrt.
-      expect(r.rejected.map((x) => x.code).toSet(), receiptOutputEntryErrorCodes.toSet());
+      // Jeder Code je Eintrag aus dem Vertrag steht in der Liste, und umgekehrt -- bis auf
+      // output_time_out_of_range: den gibt der Server nur noch fuer eine unlesbare Zeit, und
+      // die weist das Paket schon vor dem Senden ab.
+      expect(r.rejected.map((x) => x.code).toSet(),
+          receiptOutputEntryErrorCodes.where((c) => c != 'output_time_out_of_range').toSet());
     });
 
     test('jeder Fehlerfall wird am Code erkannt; vor dem Senden abgewiesen nur die benannten', () async {

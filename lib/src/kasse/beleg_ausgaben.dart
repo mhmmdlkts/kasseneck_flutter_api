@@ -218,9 +218,8 @@ class ReceiptOutputEntry {
   /// Zeitpunkt am Geraet: Millisekunden seit 1970 ([int]), ISO 8601 **mit
   /// Zone** ([String], `DateTime.now().toUtc().toIso8601String()`) oder
   /// [DateTime] (geht als Millisekunden hinaus, wie bei den Ladeoeffnungen).
-  /// Text ohne Zone wirft vor dem Senden. Frueher als eine Minute vor der
-  /// Belegzeit oder spaeter als fuenf Minuten nach dem Eingang:
-  /// `output_time_out_of_range`.
+  /// Text ohne Zone wirft vor dem Senden. Eine falsch gehende Geraeteuhr lehnt
+  /// der Server nicht ab: er klemmt die Zeit auf Belegzeit bis Eingang.
   final Object at;
 
   /// Ergebnis eines Drucks: `ok`, `failed` (sicher nicht gedruckt) oder
