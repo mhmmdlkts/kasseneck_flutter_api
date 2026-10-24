@@ -34,7 +34,9 @@ import 'gutschein.dart' show VoucherCheck;
 import 'gutschein_wunsch.dart';
 import '../../models/keck_voucher.dart';
 import '../../models/registration_info.dart';
+import 'beleg_ausgaben.dart';
 import 'belegmail.dart';
+import '../receipt/codes.dart' show receiptOutputEntryErrorCodes, receiptOutputErrorCodes;
 import 'lager.dart';
 import 'schicht.dart';
 import 'storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
@@ -708,6 +710,35 @@ class RegisterReceiptClient {
     );
 
     return SendReceiptEmailResult.fromResponse(daten, sentTo: adresse);
+  }
+
+  /// Drucke und das Teilen eines Belegs an das Protokoll „Ausgaben“ melden
+  /// (`logReceiptOutputs`, nur ueber den Kassenweg). Registrierkassen-Erlass
+  /// BMF-AV Nr. 2/2026, Abschnitt 4.2: die Belegerteilung ist zu
+  /// dokumentieren. Der Beleg selbst bleibt unberuehrt; das Protokoll steht
+  /// nie im DEP. Die Kasse steht im Transport (wie bei [sendReceiptEmail]).
+  ///
+  /// **Ein Eintrag scheitert nie die anderen.** Der Server nimmt jeden Eintrag
+  /// einzeln an oder lehnt ihn mit Code ab ([LogReceiptOutputsResult.rejected],
+  /// Codes [receiptOutputEntryErrorCodes]); nach einer Erfolgsantwort ist jeder
+  /// gesendete Eintrag erledigt. Die Kasse puffert die Eintraege (offline,
+  /// Neustart; [ReceiptOutputEntry.toJson]/[ReceiptOutputEntry.fromJson]) und
+  /// sendet sie spaeter; der Puffer blockiert nie Druck oder Teilen.
+  ///
+  /// **Wiederholen ist gefahrlos:** jeder Eintrag traegt seinen Schluessel. Bei
+  /// unklarem Ausgang (`isOutcomeUnknown`) dieselben Eintraege mit denselben
+  /// Schluesseln noch einmal senden.
+  ///
+  /// Vor dem Senden abgewiesen ([KasseneckValidationError], `kind: request`):
+  /// keine oder mehr als 50 Eintraege, ein fehlender Beleg, ein Schluessel
+  /// ausserhalb der Regel des Servers (8-64 Zeichen `[A-Za-z0-9_-]`), eine Art
+  /// oder ein Ergebnis ausserhalb des Katalogs, eine Zeit, die weder ganze
+  /// Millisekunden noch ISO 8601 mit Zone ist. Fehler der ganzen Anfrage:
+  /// [receiptOutputErrorCodes].
+  Future<LogReceiptOutputsResult> logReceiptOutputs({required List<ReceiptOutputEntry> entries}) async {
+    const name = Aufrufe.logReceiptOutputs;
+    final nutzlast = ausgabenNutzlast(name, entries);
+    return ausgabenGemeldet(name, await transport.call(name, params: {'entries': nutzlast}));
   }
 
   /// Artikelgruppen (Kategorien der Kachel-Kasse).

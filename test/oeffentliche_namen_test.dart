@@ -75,7 +75,7 @@ final Set<String> woerter = _liste('''
   network never new next night no none normal normalize not note notes notice
   notices november now number numbers observer october of off offered offset omit on
   onboarding online only open operation operator or order original other out
-  outcome outdated output overdue overview own owner package page paid pair
+  outcome outdated output outputs overdue overview own owner package page paid pair
   paired pairs panel paper parse partial password patch pay payload payment
   payments per percent period persistent person phone photos piece pixel
   placeholders plain plate
@@ -87,7 +87,7 @@ final Set<String> woerter = _liste('''
   redeemed reference refresh refund refunded refunds register registered registration rejected
   rejects related release released remaining remove removed render renew replacement replayed report
   reports request requested required requirement requirements reservation reservations reserved reset resolve restock
-  resolved resolving response result retries retry return revenue reversal reverse
+  resolved resolving response result results retries retry return revenue reversal reverse
   reversed right risk rotate row rows rule rules ruleset run safely sale saturation
   save scale scales scan scanned scheme schemes scope screen search seconds
   secret seen select selected selection sell sellable send sent september sequence serial server

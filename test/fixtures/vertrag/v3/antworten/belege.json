@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "a81a4e73b2e5dce1a3e6e0b64f2db3e1f8ddb2e1bf74500f84318fed1010a4eb",
-    "inputsSha256": "8fdadd69ed5039e181130b3e44f1ee140921ea4500bc6c26ffafda33a555e425",
+    "sha256": "474a5fe11f758f005bce30cefb74b9e122284b09bf0a4677a4a7b16b19c33211",
+    "inputsSha256": "a7f7b48d9c9eb9f9635d7cbf2dd76243569979974a16cd040389c57d37e3c780",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -2973,7 +2973,410 @@
                 "tone": "warning"
               }
             ]
-          }
+          },
+          "outputs": []
+        }
+      }
+    },
+    {
+      "name": "get_receipt_with_outputs",
+      "endpoint": "getReceipt",
+      "path": "/v3/getReceipt",
+      "params": {
+        "receiptId": "KECK-1-ID-3"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "success",
+        "message": "",
+        "data": {
+          "company": "Bäckerei Kornblum",
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien",
+          "phone": "+43 1 234",
+          "is_small_business": false,
+          "footer1": "Danke",
+          "footer2": null,
+          "footer3": null,
+          "footer4": null,
+          "thanks_message": "Bis bald",
+          "kreiseck_logo": false,
+          "logo_url": null,
+          "receipt": {
+            "counter": 3,
+            "receiptType": "standard",
+            "zeroKind": null,
+            "receiptId": "KECK-1-ID-3",
+            "cashregisterId": "KECK-1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 3.16,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "izsnQcNu1xpqCzEZFG8+tg==",
+            "signaturePreviousReceipt": "HhOPJTRRalc=",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000a8e47982",
+            "payments": [
+              {
+                "id": "p1",
+                "method": "cash",
+                "amountCents": 316,
+                "tenderedCents": 500,
+                "changeCents": 184
+              }
+            ],
+            "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtM18yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMywxNl8wLDAwXzAsMDBfMCwwMF9penNuUWNOdV9BQkMxMjNfSGhPUEpUUlJhbGM9.yWN78jiyeGFxKsTzPGv0CyrzcHFwW_Zmc5Sl3r7FyllBXKRXQf_qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_3,16_0,00_0,00_0,00_izsnQcNu_ABC123_HhOPJTRRalc=_yWN78jiyeGFxKsTzPGv0CyrzcHFwW/Zmc5Sl3r7FyllBXKRXQf/qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw==",
+            "cancellations": [
+              {
+                "receiptId": "KECK-1-ID-8",
+                "at": 1790409600000,
+                "by": null,
+                "note": null,
+                "items": [
+                  {
+                    "index": 0,
+                    "quantity": 1
+                  }
+                ],
+                "refundedByPayment": {
+                  "p1": 79
+                }
+              }
+            ],
+            "headerVersionId": "auto1",
+            "layoutRuleset": 2,
+            "items": [
+              {
+                "name": "Semmel",
+                "amount": 4,
+                "priceOneCents": 79,
+                "vat": 10,
+                "priceOne": 0.79
+              }
+            ]
+          },
+          "taxNumber": "91-123/4565",
+          "vatId": "ATU12345675",
+          "headerVersionId": "auto1",
+          "registrationInfo": null,
+          "testCashregister": true,
+          "testSignature": false,
+          "logo_scale": "M",
+          "layout": {
+            "paperSize": "mm80",
+            "ruleset": 2,
+            "lines": [
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              },
+              {
+                "kind": "text",
+                "text": "Bäckerei Kornblum",
+                "align": "center",
+                "bold": true
+              },
+              {
+                "kind": "text",
+                "text": "Hauptplatz 1",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "1010 Wien",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "ATU12345675",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "+43 1 234",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Datum:",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "26.09.2026 10:00:00",
+                    "width": 8,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Kassen-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Beleg-ID:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "KECK-1-ID-3",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "4  x Semmel je 0,79",
+                    "width": 7,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,16 B",
+                    "width": 5,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "MwSt%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "MwSt",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Netto",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Brutto",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "B 10%",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "0,29",
+                    "width": 4,
+                    "align": "left"
+                  },
+                  {
+                    "text": "2,87",
+                    "width": 3,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,16",
+                    "width": 2,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "rule",
+                "char": "-"
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Gesamt:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "3,16 €",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "Zahlungsart:",
+                    "width": 6,
+                    "align": "left"
+                  },
+                  {
+                    "text": "Barzahlung",
+                    "width": 6,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "  Gegeben:",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "5,00 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "columns",
+                "columns": [
+                  {
+                    "text": "  Rückgeld:",
+                    "width": 8,
+                    "align": "left"
+                  },
+                  {
+                    "text": "1,84 €",
+                    "width": 4,
+                    "align": "right"
+                  }
+                ]
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "qr",
+                "data": "_R1-AT100_KECK-1_KECK-1-ID-3_2026-09-26T10:00:00_0,00_3,16_0,00_0,00_0,00_izsnQcNu_ABC123_HhOPJTRRalc=_yWN78jiyeGFxKsTzPGv0CyrzcHFwW/Zmc5Sl3r7FyllBXKRXQf/qeJngnrwz817GNybQJuT9ntJoNCP1pxFoTw=="
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "text",
+                "text": "Bis bald",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "text",
+                "text": "Danke",
+                "align": "center",
+                "bold": false
+              },
+              {
+                "kind": "space",
+                "lines": 1
+              },
+              {
+                "kind": "banner",
+                "text": "TESTKASSE — kein gültiger Beleg",
+                "tone": "warning"
+              }
+            ]
+          },
+          "outputs": [
+            {
+              "at": "2026-09-26T10:04:00+02:00",
+              "kind": "reprint",
+              "result": "unclear",
+              "by": {
+                "id": "ru_livia",
+                "name": "Livia Lindmayr"
+              }
+            },
+            {
+              "at": "2026-09-26T10:03:00+02:00",
+              "kind": "opened",
+              "result": "ok",
+              "by": null,
+              "count": 3
+            },
+            {
+              "at": "2026-09-26T10:02:00+02:00",
+              "kind": "email",
+              "result": "ok",
+              "by": {
+                "id": "ru_livia",
+                "name": "Livia Lindmayr"
+              }
+            },
+            {
+              "at": "2026-09-26T10:00:05+02:00",
+              "kind": "print",
+              "result": "ok",
+              "by": {
+                "id": "ru_livia",
+                "name": "Livia Lindmayr"
+              }
+            }
+          ]
         }
       }
     },
@@ -3493,7 +3896,8 @@
                 "tone": "warning"
               }
             ]
-          }
+          },
+          "outputs": []
         }
       }
     },
@@ -3943,7 +4347,8 @@
                 "tone": "warning"
               }
             ]
-          }
+          },
+          "outputs": []
         }
       }
     },
@@ -4234,7 +4639,8 @@
                 "tone": "warning"
               }
             ]
-          }
+          },
+          "outputs": []
         }
       }
     },
@@ -8223,7 +8629,8 @@
                 "tone": "warning"
               }
             ]
-          }
+          },
+          "outputs": []
         }
       }
     }

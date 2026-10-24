@@ -59,6 +59,10 @@ const _schicht = [
 /// Saetze dazu fuehrt der Textkatalog (`voucher_error.*`).
 const _gutschein = ['checkVoucher', 'reprintVoucherLabel'];
 
+/// Ausgaben eines Belegs melden (seit 11.5). Modelle, Vorab-Pruefung und die
+/// Faelle Feld fuer Feld prueft `beleg_ausgaben_test.dart`.
+const _ausgaben = ['logReceiptOutputs'];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
   'openMyShift/key_conflict':
@@ -76,6 +80,14 @@ const _nichtDieserWeg = {
   'cancelReceipt/tip_source_invalid': 'eine Quelle ausserhalb von tipRefundSources wirft vor dem Senden (storno_trinkgeld_test.dart)',
   'setMyCashregisterStockLocation/data_missing':
       'ohne stockLocationId: null geht als leerer Text hinaus (Zuruecksetzen), weglassen kann dieser Weg nicht',
+};
+
+/// Erfolgsfälle, die das Paket bewusst schon vor dem Senden abweist, mit Grund.
+/// Ohne den beanstandeten Eintrag laufen sie in `beleg_ausgaben_test.dart`
+/// Feld für Feld (wie `VORAB_ABGEWIESEN` im npm-Paket).
+const _vorabStattErfolg = {
+  'logReceiptOutputs/mixed':
+      'Eintrag mit dem Schluessel "kurz" (ausserhalb 8-64 Zeichen [A-Za-z0-9_-]): wirft vor dem Senden, damit rejected[].key immer der Pufferschluessel ist',
 };
 
 /// Fälle, deren Fehler die Kasse beim Verkauf im Alltag sieht (Anmeldung
@@ -389,6 +401,10 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.checkVoucher(_s(p['code']));
       case 'reprintVoucherLabel':
         return belege.reprintVoucherLabel(_s(p['id']));
+      case 'logReceiptOutputs':
+        return belege.logReceiptOutputs(entries: [
+          for (final e in (p['entries'] as List? ?? const [])) ReceiptOutputEntry.fromJson((e as Map).cast()),
+        ]);
       case 'getKasseSettings':
         if (p['deviceId'] != null && p['deviceId'] is! String) throw const _NichtDarstellbar();
         return PosSettingsClient(transport, deviceId: _s(p['deviceId'])).load();
@@ -508,9 +524,11 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   final antwort = fall['response'] as Map<String, dynamic>;
   if (lauf.vorab) {
     expect(lauf.log, isEmpty, reason: '$name: vorab abgewiesen, nichts geht hinaus');
+    if (_vorabStattErfolg.containsKey(name)) return;
     expect(antwort['status'], 'error', reason: '$name: der Client weist ab, was der Server annimmt');
     return;
   }
+  expect(_vorabStattErfolg.containsKey(name), isFalse, reason: '$name: steht in _vorabStattErfolg, ging aber hinaus');
   expect(lauf.log, hasLength(1), reason: '$name: genau ein Aufruf');
   expect(lauf.log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/$endpunkt', reason: name);
   final gesendet = Map<String, dynamic>.from(lauf.params);
@@ -547,11 +565,14 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt) || _schicht.contains(endpunkt)) {
     expect(isPosError(lauf.fehler, code as String), isTrue, reason: '$name: $code in posErrorCodes');
   }
+  if (_ausgaben.contains(endpunkt)) {
+    expect(isReceiptOutputError(lauf.fehler, code as String), isTrue, reason: '$name: $code in receiptOutputErrorCodes');
+  }
 }
 
 void main() {
   group('jeder Fall des Kassenwegs', () {
-    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein]) {
+    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben]) {
       test(endpunkt, () async {
         var gelaufen = 0;
         for (final fall in _faelle(endpunkt)) {
@@ -576,8 +597,8 @@ void main() {
       }
     });
 
-    test('alle 41 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
-      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein};
+    test('alle 42 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben};
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });

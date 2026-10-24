@@ -152,3 +152,46 @@ const List<String> receiptEmailVias = ['own', 'platform', 'platform_fallback'];
 
 /// Stornostand eines Belegs in der Belegliste (Katalog `STORNO_STAND`).
 const List<String> cancellationStatuses = ['none', 'partial', 'full'];
+
+/// Arten einer Ausgabe des Belegs (Katalog `AUSGABE_ART`): `print`
+/// Erstdruck, `reprint` Duplikat, `email` Belegmail, `link_shared` Link
+/// geteilt, `pdf_shared` PDF geteilt, `opened` vom Kunden geoeffnet (Abrufe
+/// je Stunde). Zwilling von `RECEIPT_OUTPUT_KINDS`.
+const List<String> receiptOutputKinds = ['print', 'reprint', 'email', 'link_shared', 'pdf_shared', 'opened'];
+
+/// Die Arten, die eine Kasse selbst meldet (`RECEIPT_OUTPUT_LOG_KINDS`).
+/// `email` und `opened` schreibt das Backend selbst; meldet eine Kasse sie,
+/// lehnt der Server genau diesen Eintrag ab (`invalid_output_kind`).
+const List<String> receiptOutputLogKinds = ['print', 'reprint', 'link_shared', 'pdf_shared'];
+
+/// Ergebnis einer Ausgabe (Katalog `AUSGABE_ERGEBNIS`); Mail und Abruf sind
+/// immer `ok`. Zwilling von `RECEIPT_OUTPUT_RESULTS`.
+const List<String> receiptOutputResults = ['ok', 'failed', 'unclear'];
+
+/// Hoechstens so viele Eintraege je Aufruf von `logReceiptOutputs`.
+const int receiptOutputEntriesMax = 50;
+
+/// Codes je Eintrag in `rejected[].code` einer Antwort von
+/// `logReceiptOutputs`: der Eintrag ist dauerhaft abgelehnt (aus dem Puffer
+/// nehmen, nicht noch einmal senden). `validation` heisst hier: ein Druck ohne
+/// oder mit unbekanntem Ergebnis.
+const List<String> receiptOutputEntryErrorCodes = [
+  'receipt_not_found', // Beleg gibt es nicht ODER er liegt in einer anderen Kasse
+  'invalid_output_kind', // Art, die die Kasse nicht meldet (email, opened)
+  'output_time_out_of_range', // vor der Belegzeit (1 min Spielraum), mehr als 5 min nach Eingang, oder ohne Zone
+  'idempotency_key_required', // Schluessel fehlt oder hat nicht 8-64 Zeichen [A-Za-z0-9_-]
+  'validation', // Druck ohne bzw. mit unbekanntem Ergebnis
+];
+
+/// Codes von `logReceiptOutputs`, wenn die ganze Anfrage scheitert
+/// (Vokabular `errorCodes.registerHandlersByEndpoint.logReceiptOutputs`),
+/// dahinter Anmeldung und Rand, zuletzt `route_missing`. Zwilling von
+/// `RECEIPT_OUTPUT_ERROR_CODES`.
+final List<String> receiptOutputErrorCodes = _mitRand(const [
+  'idempotency_key_required',
+  'invalid_output_kind',
+  'output_time_out_of_range',
+  'receipt_not_found',
+  'server_error',
+  'validation',
+], const ['route_missing']);

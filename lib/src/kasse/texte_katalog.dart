@@ -555,6 +555,15 @@ const Map<String, PosText> posLabels = {
   'shift.pay_outs': PosText('Auszahlungen'),
   'cash_movement.pay_in_amount': PosText('{amount} einzahlen', placeholders: ['amount']),
   'cash_movement.pay_out_amount': PosText('{amount} auszahlen', placeholders: ['amount']),
+  'receipt.outputs_title': PosText('Ausgaben'),
+  'receipt.outputs_count': PosText('{count} Ausgaben', placeholders: ['count']),
+  'receipt.output_print': PosText('Erstdruck'),
+  'receipt.output_reprint': PosText('Duplikat'),
+  'receipt.output_email': PosText('E-Mail'),
+  'receipt.output_link_shared': PosText('Link geteilt'),
+  'receipt.output_pdf_shared': PosText('PDF geteilt'),
+  'receipt.output_opened': PosText('Vom Kunden geöffnet ({count}×)', placeholders: ['count']),
+  'receipt.output_failed': PosText('fehlgeschlagen'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].

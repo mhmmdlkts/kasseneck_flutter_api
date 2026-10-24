@@ -2261,6 +2261,39 @@
       "placeholders": [
         "amount"
       ]
+    },
+    "receipt.outputs_title": {
+      "text": "Ausgaben"
+    },
+    "receipt.outputs_count": {
+      "text": "{count} Ausgaben",
+      "placeholders": [
+        "count"
+      ]
+    },
+    "receipt.output_print": {
+      "text": "Erstdruck"
+    },
+    "receipt.output_reprint": {
+      "text": "Duplikat"
+    },
+    "receipt.output_email": {
+      "text": "E-Mail"
+    },
+    "receipt.output_link_shared": {
+      "text": "Link geteilt"
+    },
+    "receipt.output_pdf_shared": {
+      "text": "PDF geteilt"
+    },
+    "receipt.output_opened": {
+      "text": "Vom Kunden geöffnet ({count}×)",
+      "placeholders": [
+        "count"
+      ]
+    },
+    "receipt.output_failed": {
+      "text": "fehlgeschlagen"
     }
   },
   "returnDispositionLabels": {

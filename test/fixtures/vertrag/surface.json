@@ -144,7 +144,8 @@
       "recordMyCashMovement",
       "logMyDrawerOpenings",
       "getMyShiftReport",
-      "closeMyShift"
+      "closeMyShift",
+      "logReceiptOutputs"
     ]
   },
   "routes": {
@@ -298,7 +299,8 @@
       "recordMyCashMovement",
       "logMyDrawerOpenings",
       "getMyShiftReport",
-      "closeMyShift"
+      "closeMyShift",
+      "logReceiptOutputs"
     ]
   },
   "unknownOutcomeCalls": [
@@ -332,6 +334,7 @@
     "hobexRefundApi",
     "issueInvoice",
     "logMyDrawerOpenings",
+    "logReceiptOutputs",
     "openMyShift",
     "orderSignatureCard",
     "pairRegisterDevice",
@@ -797,6 +800,19 @@
     "quantityRules": [
       "piece",
       "decimal"
+    ],
+    "receiptOutputKinds": [
+      "print",
+      "reprint",
+      "email",
+      "link_shared",
+      "pdf_shared",
+      "opened"
+    ],
+    "receiptOutputResults": [
+      "ok",
+      "failed",
+      "unclear"
     ],
     "returnDispositions": [
       "restock",

@@ -23,9 +23,10 @@ import 'models/kasseneck_receipt.dart';
 import 'models/keck_payment.dart';
 import 'src/aufrufe.dart';
 import 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
+import 'src/kasse/beleg_ausgaben.dart' show LogReceiptOutputsResult, ReceiptOutputEntry, ausgabenGemeldet, ausgabenNutzlast;
 import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
 import 'src/kasse/gutschein_wunsch.dart';
-import 'src/receipt/codes.dart' show receiptEmailErrorCodes;
+import 'src/receipt/codes.dart' show receiptEmailErrorCodes, receiptOutputErrorCodes;
 import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'src/kasse/storno_nutzlast.dart';
 import 'src/register/fehler.dart';
@@ -64,6 +65,10 @@ export 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
 // pruefen, ob ein Code zum Katalog gehoert.
 export 'src/kasse/belegmail.dart'
     show SendReceiptEmailResult, isReceiptEmailErrorCode;
+// Ausgaben eines Belegs (KasseneckApi.logReceiptOutputs, `outputs` am Beleg):
+// Eintrag, Antwort und Codes; die Leser bleiben paketintern.
+export 'src/kasse/beleg_ausgaben.dart'
+    hide ausgabenGemeldet, ausgabenLesen, ausgabenNutzlast;
 export 'src/kasse/storno.dart' show cancellationReasons, isCancellationErrorCode, cardRefundReference;
 // Rueckgabe-Wahl beim Storno (Lager): KasseneckApi.cancelReceipt nimmt sie.
 export 'src/kasse/rueckgabe.dart';
@@ -82,7 +87,13 @@ export 'src/receipt/codes.dart'
         receiptEmailErrorCodes,
         receiptEmailSendErrorCodes,
         receiptEmailVias,
-        receiptErrorCodes;
+        receiptErrorCodes,
+        receiptOutputEntriesMax,
+        receiptOutputEntryErrorCodes,
+        receiptOutputErrorCodes,
+        receiptOutputKinds,
+        receiptOutputLogKinds,
+        receiptOutputResults;
 // Die Typen, die der Beleg unter /v3 traegt, und der Leser fuer gespeicherte 9.x-Belege.
 export 'models/registration_info.dart' show CancellationOf, RegistrationInfo;
 export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson, storedLayoutJson;
@@ -154,8 +165,14 @@ export 'widgets/keck_receipt_sheet_widget.dart' show KeckReceiptSheetWidget;
 /// );
 /// ```
 class KasseneckApi {
-  /// Die oeffentliche Basis: alle Aufrufe dieses Clients sind oeffentlich.
+  /// Die oeffentliche Basis: alle Aufrufe dieses Clients sind oeffentlich,
+  /// ausser denen in [_nurKassenweg].
   static const String _baseUrl = kPublicBaseUrl;
+
+  /// Aufrufe, die es nur ueber den Kassenweg gibt (unter
+  /// `api.kasseneck.at/v3` nicht): sie gehen an [kPosBaseUrl], mit demselben
+  /// api_key und `cashregister-token` (wie `isPosOnlyCall` im npm-Paket).
+  static const Set<String> _nurKassenweg = {Aufrufe.logReceiptOutputs};
   static final String downloadBaseUrl = 'https://beleg.kasseneck.at';
   final String apiKey;
   final String cashregisterToken;
@@ -221,7 +238,7 @@ class KasseneckApi {
     return v3Post(
       _http,
       functionName: fehlerName,
-      basis: _baseUrl,
+      basis: _nurKassenweg.contains(name) ? kPosBaseUrl : _baseUrl,
       name: name,
       headers: {
         'Authorization': 'Bearer $apiKey',
@@ -598,6 +615,27 @@ class KasseneckApi {
     // Kassier schickte sie ein zweites Mal an den Gast. Die Huelle selbst muss
     // trotzdem eine sein -- dieselbe Grenze zieht der Kassen-Weg im Transport.
     return SendReceiptEmailResult.fromResponse(_daten(name, resJson), sentTo: adresse);
+  }
+
+  /// Drucke und das Teilen eines Belegs an das Protokoll „Ausgaben“ melden –
+  /// Endpunkt `logReceiptOutputs`, Zwilling von `logReceiptOutputs` im npm-Paket
+  /// und Gegenstueck zu `RegisterReceiptClient.logReceiptOutputs` der
+  /// Kassen-Anmeldung. Den Aufruf gibt es nur ueber den Kassenweg: er geht an
+  /// [kPosBaseUrl], die Kasse sagt der `cashregister-token` dieses Clients.
+  ///
+  /// Dieselben Regeln wie dort: jeder Eintrag wird einzeln angenommen oder mit
+  /// Code abgelehnt, Wiederholen mit denselben Schluesseln ist gefahrlos, vor
+  /// dem Senden abgewiesen wird nur, was ohne Netz sicher falsch ist. Fehler
+  /// der ganzen Anfrage kommen als [KasseneckApiError] mit einem Code aus
+  /// [receiptOutputErrorCodes].
+  Future<LogReceiptOutputsResult> logReceiptOutputs({required List<ReceiptOutputEntry> entries}) async {
+    const name = Aufrufe.logReceiptOutputs;
+    final nutzlast = ausgabenNutzlast(name, entries);
+    final resJson = await _kasseneckJson(endpoint: name, params: {'entries': nutzlast});
+    if (resJson['status'] != 'success') {
+      throw envelopeError(name, resJson, fallback: 'Melden der Ausgaben fehlgeschlagen');
+    }
+    return ausgabenGemeldet(name, resJson['data']);
   }
 
   /// Issues a **zero** receipt (_Nullbeleg_), e.g. for the periodic RKSV check.

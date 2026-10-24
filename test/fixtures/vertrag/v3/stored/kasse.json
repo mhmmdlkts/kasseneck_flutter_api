@@ -4,7 +4,7 @@
     "default": {
       "sha256": "2cc77736cae05b3d7c2e67d59bd6bd7cfb9f5484eed54cf236e3a412ab9e78f9",
       "head": [],
-      "inputsSha256": "796371ba3f9094a79f3c9b024bd7a8319952f98297f6b8eac1fdad796f35dded",
+      "inputsSha256": "91fbe4e28280d2ea3e3b369fc6d4e9460cfac0d4028448ba8f29ccd835344570",
       "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "9fe8af1be0eb68c393b9ec35f27ecd055dee206fd43f579449a7d8e8f75ac82c",
+      "sha256": "b59dd1a8487db01009343c2a815a3007f725a77fc99e4b0dbc3ecb17aa91443d",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "e049a6ba3c3a03df06a17ab32e543ec9007d31c1a8d8091b9f50c3198335243e",
+      "inputsSha256": "345787aa911a03e797c60686fd5394b13d6e06ad57b8424c947724a9bf62426a",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -9024,6 +9024,103 @@
             "pdf": null,
             "tagesabschlussId": null,
             "kennzahlenAbOeffnung": true
+          }
+        }
+      }
+    },
+    "logReceiptOutputs": {
+      "codebase": "kasse",
+      "cases": {
+        "success_cashier": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7/ausgaben/k_69919d29fa2b786430fd789114dce973": {
+            "art": "link_geteilt",
+            "at": "2026-09-26T09:59:30+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "ok",
+            "durch": {
+              "id": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "geraet": "dev_auswahl",
+            "quelle": "kasse"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7/ausgaben/k_7d73e44c72a29d4133a8d374e7d03ccc": {
+            "art": "erstdruck",
+            "at": "2026-09-26T09:58:00+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "ok",
+            "durch": {
+              "id": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "geraet": "dev_auswahl",
+            "quelle": "kasse"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7/ausgaben/k_94f986f06fa19684b51bd2af37238607": {
+            "art": "duplikat",
+            "at": "2026-09-26T09:59:00+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "unklar",
+            "durch": {
+              "id": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "geraet": "dev_auswahl",
+            "quelle": "kasse"
+          }
+        },
+        "success_duplicate": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7/ausgaben/k_69919d29fa2b786430fd789114dce973": {
+            "art": "link_geteilt",
+            "at": "2026-09-26T09:59:30+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "ok",
+            "durch": {
+              "id": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "geraet": "dev_auswahl",
+            "quelle": "kasse"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7/ausgaben/k_94f986f06fa19684b51bd2af37238607": {
+            "art": "duplikat",
+            "at": "2026-09-26T09:59:00+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "unklar",
+            "durch": {
+              "id": "ru_kellner",
+              "name": "Ben Kellner"
+            },
+            "geraet": "dev_auswahl",
+            "quelle": "kasse"
+          }
+        },
+        "success_api_key": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7/ausgaben/k_4bba899d58d3f36d211b46bf211e8b30": {
+            "art": "pdf_geteilt",
+            "at": "2026-09-26T09:59:59+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "ok",
+            "durch": {
+              "id": "kw_betrieb1",
+              "name": null
+            },
+            "geraet": null,
+            "quelle": "kasse"
+          }
+        },
+        "mixed": {
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-7/ausgaben/k_21ee50bd38fcb1309cf9f30e62885efb": {
+            "art": "duplikat",
+            "at": "2026-09-26T09:59:59+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "fehler",
+            "durch": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "geraet": "dev_pin",
+            "quelle": "kasse"
           }
         }
       }

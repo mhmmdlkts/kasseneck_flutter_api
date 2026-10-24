@@ -156,6 +156,10 @@ const _nach10 = (
     'cart.close', 'nav.register', 'nav.receipts', 'nav.vouchers', 'nav.open_drawer', 'nav.stocktake',
     'nav.settings', 'nav.settings_locked', 'nav.logout', 'nav.logging_out', 'nav.fullscreen',
     'nav.fullscreen_exit',
+    // Ausgaben eines Belegs im Belegdetail (11.5.0, npm 1.14.0)
+    'receipt.outputs_title', 'receipt.outputs_count', 'receipt.output_print', 'receipt.output_reprint',
+    'receipt.output_email', 'receipt.output_link_shared', 'receipt.output_pdf_shared', 'receipt.output_opened',
+    'receipt.output_failed',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'voucherErrors', 'returnDispositionLabels'],
   placeholders: {

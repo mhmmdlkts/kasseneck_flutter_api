@@ -74,6 +74,51 @@ version): vouchers follow the final Bon and payment rules. Notes for callers:
   redemption, with logo, without `Beleg-ID:`, applied twice) and the printed
   bytes come from the contract file `duplicate-cases.json` (version 2) of
   npm 1.14.0; the result matches npm layout for layout and byte for byte.
+- **Receipt outputs (Ausgaben eines Belegs): `logReceiptOutputs`** on
+  `RegisterReceiptClient` and on `KasseneckApi` (register path `/api/v3`
+  only; `KasseneckApi` sends this one call to `kPosBaseUrl` with its api_key
+  and `cashregister-token`). The register reports its prints and shares of a
+  receipt: `entries` (1-50, `receiptOutputEntriesMax`) of
+  `ReceiptOutputEntry(key, receiptId, kind, at, result)`, `kind` from
+  `receiptOutputLogKinds` (`print` first print, `reprint` duplicate,
+  `link_shared`, `pdf_shared`), `at` as milliseconds (`int`), `DateTime`
+  (sent as milliseconds, like the drawer openings) or ISO 8601 text with a
+  zone, `result` from `receiptOutputResults` (`ok`, `failed`, `unclear`;
+  required for prints). `toJson`/`fromJson` keep a buffered entry; `fromJson`
+  throws on an unknown field or a wrong type. The answer
+  `LogReceiptOutputsResult(accepted, rejected)` names each rejected entry
+  (`RejectedReceiptOutput(key, code)`) with a code from
+  `receiptOutputEntryErrorCodes`; one entry never fails the others. A call
+  with effect (`unknownOutcomeCalls`): after an unclear outcome send the same
+  entries with the same keys again. Rejected before sending: no or more than
+  50 entries, a missing receipt, a key outside the server's rule (8-64
+  characters `[A-Za-z0-9_-]`), a kind or result outside the catalogue, a time
+  that is neither whole milliseconds from 0 nor ISO 8601 text with a zone;
+  `email` and `opened` go out and come back as `invalid_output_kind`. A broken
+  success answer is a response error, never "0 accepted". Errors of the whole
+  request: `receiptOutputErrorCodes` with `isReceiptOutputError`,
+  `receiptOutputErrorCode`, `isReceiptOutputErrorCode`,
+  `receiptOutputFieldErrors`. Reason: Erlass BMF-AV Nr. 2/2026, section 4.2,
+  requires the way a receipt was handed over to be documented; the server
+  keeps the log next to the receipt (never on it, never in the DEP).
+- **`KasseneckReceipt.outputs`** (`List<ReceiptOutput>?`) from `getReceipt`
+  (both ways): the latest 20 outputs, newest first, each
+  `ReceiptOutput(kind, at, result, by, count)` (`by` a `ReceiptOutputActor`
+  or `null`, `count` only on `opened`). `null` when the answer has no list
+  (sale); not part of `toJson` (the log grows next to the receipt, a stored
+  copy would be stale). Read leniently, the same rule as npm: an entry
+  without kind, time or result is dropped, an actor without id reads as
+  `null`, an unknown kind or result stays readable; a broken log never fails
+  reading or reprinting the receipt.
+- **9 labels for the receipt detail** (`receipt.outputs_title`,
+  `receipt.outputs_count`, `receipt.output_<kind>` for the six kinds,
+  `receipt.output_failed`) and **`receiptOutputLabel(output)`** in
+  `package:kasseneck_api/pos.dart`: the label of the kind, never throws;
+  `null` for a kind this package does not know, `opened` without a valid count
+  (whole number from 1) counts as one open; the register adds
+  `receipt.output_failed` itself when `result` is `failed`. Catalogues
+  `receiptOutputKinds` and `receiptOutputResults` equal the contract
+  (`surface.json`, `pos.receiptOutputKinds`/`receiptOutputResults`).
 - No model for `issuedVouchers` exists in this package, so the optional
   `articleName` (service voucher) has no place here; the Bon layout of the
   server already carries it.

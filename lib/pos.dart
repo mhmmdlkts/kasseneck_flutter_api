@@ -25,7 +25,13 @@ export 'src/receipt/codes.dart'
         receiptEmailErrorCodes,
         receiptEmailSendErrorCodes,
         receiptEmailVias,
-        receiptErrorCodes;
+        receiptErrorCodes,
+        receiptOutputEntriesMax,
+        receiptOutputEntryErrorCodes,
+        receiptOutputErrorCodes,
+        receiptOutputKinds,
+        receiptOutputLogKinds,
+        receiptOutputResults;
 // Wer einen Beleg einliest, muss den Lesefehler fangen koennen: er traegt die
 // receiptId eines bereits signierten Belegs.
 export 'src/register/fehler.dart' show KasseneckReceiptFormatError;
@@ -56,6 +62,9 @@ export 'src/kasse/testkennzeichen.dart';
 export 'src/kasse/belege.dart';
 export 'src/kasse/belegliste.dart';
 export 'src/kasse/belegmail.dart';
+// Ausgaben eines Belegs (logReceiptOutputs, `outputs` am Beleg); die Leser
+// bleiben paketintern.
+export 'src/kasse/beleg_ausgaben.dart' hide ausgabenGemeldet, ausgabenLesen, ausgabenNutzlast;
 export 'src/kasse/codes.dart';
 export 'src/kasse/drucker.dart';
 export 'src/kasse/einstellungen.dart';

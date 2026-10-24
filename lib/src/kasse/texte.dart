@@ -8,6 +8,7 @@
 library;
 
 import '../register/fehler.dart';
+import 'beleg_ausgaben.dart' show ReceiptOutput;
 
 part 'texte_katalog.dart';
 
@@ -196,6 +197,30 @@ String receiptEmailErrorMessage(String? code) => receiptEmailErrorMessages[code]
 /// Einen unbekannten Code faengt der allgemeine Storno-Satz auf.
 String cancellationPaymentErrorMessage(String? code) =>
     cancellationPaymentErrorMessages[code] ?? 'cancellation.failed';
+
+/// Art einer Ausgabe -> Beschriftung (`receipt.output_<kind>`).
+const Map<String, String> _ausgabeBeschriftung = {
+  'print': 'receipt.output_print',
+  'reprint': 'receipt.output_reprint',
+  'email': 'receipt.output_email',
+  'link_shared': 'receipt.output_link_shared',
+  'pdf_shared': 'receipt.output_pdf_shared',
+  'opened': 'receipt.output_opened',
+};
+
+/// Die Beschriftung der Art einer Ausgabe (Belegdetail, Zeile „Ausgaben“), nie
+/// eine Ausnahme: `null` bei einer Art, die dieses Paket nicht kennt (neuerer
+/// Server); `opened` ohne gueltige Anzahl (ganze Zahl ab 1) zaehlt als ein
+/// Abruf. Nur die Art: „fehlgeschlagen“ (`receipt.output_failed`) setzt die
+/// Kasse selbst dazu, wenn `result` `failed` ist. Zwilling von
+/// `receiptOutputLabel` im npm-Paket.
+String? receiptOutputLabel(ReceiptOutput output) {
+  final schluessel = _ausgabeBeschriftung[output.kind];
+  if (schluessel == null) return null;
+  if (output.kind != 'opened') return labelText(schluessel);
+  final anzahl = output.count;
+  return labelText(schluessel, {'count': anzahl != null && anzahl >= 1 ? anzahl : 1});
+}
 
 /// Der Satz zu einem Gutschein-`code` des Backends (`/v3`); `null` fuer jeden
 /// anderen Code, der dann den allgemeinen Weg des Aufrufs geht. Wie beim

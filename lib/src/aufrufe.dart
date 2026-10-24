@@ -129,6 +129,8 @@ abstract final class Aufrufe {
   // Gutschein pruefen und Etikett nachdrucken an der Kasse (pos.dart).
   static const checkVoucher = 'checkVoucher';
   static const reprintVoucherLabel = 'reprintVoucherLabel';
+  // Ausgaben eines Belegs (Drucke, Teilen) melden: nur ueber den Kassenweg.
+  static const logReceiptOutputs = 'logReceiptOutputs';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -242,5 +244,6 @@ abstract final class Aufrufe {
     closeMyShift,
     checkVoucher,
     reprintVoucherLabel,
+    logReceiptOutputs,
   };
 }

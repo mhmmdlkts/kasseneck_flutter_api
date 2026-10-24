@@ -99,6 +99,7 @@ const Set<String> unknownOutcomeCalls = {
   'hobexRefundApi',
   'issueInvoice',
   'logMyDrawerOpenings',
+  'logReceiptOutputs',
   'openMyShift',
   'orderSignatureCard',
   'pairRegisterDevice',

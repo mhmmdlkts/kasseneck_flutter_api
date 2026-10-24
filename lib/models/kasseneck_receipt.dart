@@ -16,6 +16,7 @@ import '../enums/keck_payment_method.dart';
 import '../enums/qr_print_mode.dart';
 import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/qr_groesse.dart';
+import '../src/kasse/beleg_ausgaben.dart' show ReceiptOutput, ausgabenLesen;
 import '../src/kasse/rueckgabe.dart';
 import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
@@ -198,6 +199,15 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// nur, damit der Storno-Dialog Reste zeigen kann, bevor er den Server fragt.
   List<Map<String, dynamic>> cancellations;
 
+  /// Ausgaben des Belegs (`data.outputs`, nur `getReceipt` unter `/v3`): die
+  /// neuesten 20, neueste zuerst; Erstdruck, Duplikat, Mail, Link oder PDF
+  /// geteilt, Abrufe des Kunden. `null`, wenn die Antwort keine Liste traegt
+  /// (Verkauf, gespeicherter Beleg). Nachsichtig gelesen: ein kaputter Eintrag
+  /// faellt weg, der Beleg bleibt lesbar. Steht nicht in [toJson]: das
+  /// Protokoll waechst neben dem Beleg weiter, eine gespeicherte Kopie waere
+  /// bald veraltet.
+  List<ReceiptOutput>? outputs;
+
   KasseneckReceipt({
     required this.receiptId,
     required this.cashregisterId,
@@ -378,7 +388,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       testSignature: json['testSignature'] == true,
       headerVersionId: _nichtLeer(json['headerVersionId']),
       registrationInfo: RegistrationInfo.fromJson(json['registrationInfo']),
-    );
+    )..outputs = ausgabenLesen(json['outputs']);
   }
 
   // Nur die Beleg-Daten (ohne Firma/Metadaten)
