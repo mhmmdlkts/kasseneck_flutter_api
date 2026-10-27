@@ -14,13 +14,19 @@
 /// - Mehrzweck einloesen: Eintrag `value`, mindert den Zahlbetrag als Fluss.
 /// - Mehrzweck verkaufen: Eintrag `value` (+Fluss); ab dem Stichtag des
 ///   0-%-Topfs stattdessen Position im 0-%-Satz ohne Fluss.
-/// - Mehrzweck auszahlen: immer Position im 0-%-Satz (minus), kein Fluss.
-/// - Einzweck: Position im Satz (Verkauf aus der Einstellung der Kasse,
-///   Einloesung und Auszahlung aus der Pruefung des Gutscheins); als
-///   Kleinunternehmer bzw. befreit verkauft eingeloest anteilig auf alle
-///   Saetze des Korbs.
-/// - Leistung verkaufen: Stueck mal Artikelpreis im Artikelsatz; einloesen: je
-///   Satz eine Minuszeile ueber die gewaehlten Positionen.
+/// - Mehrzweck auszahlen: immer Position im 0-%-Satz (minus), kein Fluss;
+///   nie bei einem Gutschein mit Auszahlung `never`.
+/// - Einzweck: Position im Satz (Verkauf aus der Sorte, Einloesung und
+///   Auszahlung aus der Pruefung des Gutscheins); als Kleinunternehmer bzw.
+///   befreit verkauft eingeloest anteilig auf alle Saetze des Korbs.
+/// - Wertgutschein verkaufen (Stufe 4b): nur ueber eine Sorte (`typeId`); Art
+///   und Satz kommen aus der Sorte, ein Fixbetrag muss stimmen. Ohne Sorte
+///   rechnet nur noch ein Aufrufer mit einer alten Gutschein-Einstellung mit
+///   Art (`voucherSettings.valueVoucherType`) wie bisher; sonst und beim
+///   Server immer `voucher_type_required`.
+/// - Leistung verkaufen: Stueck mal Artikelpreis im Artikelsatz (nur ein
+///   freigegebener Artikel, sonst `voucher_service_not_allowed`); einloesen:
+///   je Satz eine Minuszeile ueber die gewaehlten Positionen.
 /// - Aktion: Rabatt wie `promo`, Betrag aus der Pruefung, hoechstens die Summe.
 ///
 /// Kein Fehler wird still geschluckt: was der Server mit einem Gutschein-Code
@@ -34,6 +40,7 @@ import '../../enums/voucher_action.dart';
 import '../../enums/voucher_type.dart';
 import '../../models/keck_voucher.dart';
 import '../kasse/gutschein.dart';
+import '../kasse/gutschein_wunsch.dart' show artOderNull, istWertVerkauf, wunschFormGueltig;
 
 /// Stichtag des 0-%-Topfs fuer Mehrzweck-Verkaeufe (Backend
 /// `gutschein-core.NULLTOPF_AB`).
@@ -81,6 +88,7 @@ class PlanOptionen {
   const PlanOptionen({
     this.voucherInfo,
     this.voucherSettings,
+    this.voucherTypes,
     this.voucherArticles,
     this.smallBusiness = false,
     this.zeroRateBucketFrom,
@@ -89,7 +97,8 @@ class PlanOptionen {
 
   final List<({String code, VoucherCheck check})>? voucherInfo;
   final PosVoucherSettings? voucherSettings;
-  final List<({String id, int priceCents, int vatRateBp})>? voucherArticles;
+  final List<({String id, VoucherType kind, int? vatRateBp, VoucherTypeAmount amount})>? voucherTypes;
+  final List<({String id, int priceCents, int vatRateBp, bool? serviceVoucher})>? voucherArticles;
   final bool smallBusiness;
   final String? zeroRateBucketFrom;
 
@@ -163,6 +172,31 @@ int centSumme(Iterable<Innen> liste) {
 int _satzBp(double vat) => jsRound(vat * 100).toInt();
 
 Innen _position(int satzBp, int cents, String kind) => Innen(1, cents / 100, satzBp / 100, null, kind: kind);
+
+/// Reservierte Kennung (`__…__`): gibt es am Server nie als Sorte (gutschein-core.RESERVIERTE_ID).
+final RegExp _reservierteId = RegExp(r'^__.*__$');
+
+/// Grenzen eines Fixbetrags am Server (gutschein-core.pruefeSorte): 1,00 bis 10.000,00 €.
+const int _minFixCents = 100;
+const int _maxFixCents = 1000000;
+
+/// Die Sorte zum Wunsch, wie der Server sie verkaufen wuerde, oder `null`
+/// (unbekannt): Mehrzweck ohne Satz, Einzweck mit Satz > 0, Betrag frei oder
+/// fest im Rahmen. Eine unstimmige Sorte verkauft der Server nicht
+/// (`gutschein-beleg.sorteFuerVerkauf` ueber `gutschein-core.pruefeSorte`).
+({String id, VoucherType kind, int? vatRateBp, VoucherTypeAmount amount})? _sorteZumWunsch(
+    List<({String id, VoucherType kind, int? vatRateBp, VoucherTypeAmount amount})>? typen, String typeId) {
+  for (final t in typen ?? const <({String id, VoucherType kind, int? vatRateBp, VoucherTypeAmount amount})>[]) {
+    if (t.id != typeId) continue;
+    final satz = t.vatRateBp;
+    final satzOk = t.kind == VoucherType.multiPurpose ? satz == null : t.kind == VoucherType.singlePurpose && satz != null && satz > 0;
+    final cents = t.amount.cents;
+    final betragOk = t.amount.mode == VoucherAmountMode.free ||
+        (t.amount.mode == VoucherAmountMode.fixed && cents != null && cents >= _minFixCents && cents <= _maxFixCents);
+    return satzOk && betragOk ? t : null;
+  }
+  return null;
+}
 
 /// Code in Normalform (tolerant eingelesen, Pruefzeichen stimmt) oder `null`.
 String? normalerCode(String? code) {
@@ -245,19 +279,23 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
   // Wert und Rabatt der Altform bzw. gelesener Belege: Euro aus ganzen Cent.
   PlanGutschein altEintrag(KeckVoucher v, int i) {
     final c = v.valueCents;
+    final art = artOderNull(v);
+    // Ein Verkauf mit unbekannter Art wird nie geraten (siehe KeckVoucher.type).
+    if (art == null) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: unbekannte Art.');
     if (c == null) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1} hat keinen ganzen Cent-Wert.');
-    return PlanGutschein(v.action, v.type, c / 100, imNullTopf: v.zeroRateBucket == true);
+    return PlanGutschein(v.action, art, c / 100, imNullTopf: v.zeroRateBucket == true);
   }
 
   if (wuensche.isEmpty) {
     final nulltopf = !storno && o.today.compareTo(o.zeroRateBucketFrom ?? nullTopfAb) >= 0;
     // `gutschein-transaktion.brauchtPlan`: ab dem Stichtag laeuft plane auch fuer einen Altform-Verkauf.
     final mitPlan = nulltopf &&
-        vouchers.any((v) => !_istGelesen(v) && v.action == VoucherAction.sell && v.type == VoucherType.value);
+        vouchers.any((v) => !_istGelesen(v) && v.action == VoucherAction.sell && artOderNull(v) == VoucherType.value);
     if (mitPlan && kunde.any(_istGutscheinZeile)) throw const PlanFehler('voucher_invalid', 'Gutschein-Positionen setzt nur der Server.');
     for (final (i, v) in vouchers.indexed) {
-      // Gelesene Eintraege der neuen Form ohne Wert/Rabatt: ihr Geld steht in den Positionen.
-      if (_istGelesen(v) && v.type != VoucherType.value && v.type != VoucherType.promo) continue;
+      // Gelesene Eintraege der neuen Form ohne Wert/Rabatt (oder ohne bekannte Art): ihr Geld steht in den Positionen.
+      final art = artOderNull(v);
+      if (_istGelesen(v) && art != VoucherType.value && art != VoucherType.promo) continue;
       final g = altEintrag(v, i);
       // Altform-Verkauf ab dem Stichtag: Betrag in den 0-%-Topf.
       if (nulltopf && !_istGelesen(v) && g.action == VoucherAction.sell && g.type == VoucherType.value) {
@@ -275,7 +313,23 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
   if (kunde.any(_istGutscheinZeile)) throw const PlanFehler('voucher_invalid', 'Gutschein-Positionen setzt nur der Server.');
   for (final (i, v) in vouchers.indexed) {
     if (_istGelesen(v)) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: Serverfelder an einem Wunsch.');
-    if (v.isNewForm && !v.isValid) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1} ist unvollstaendig.');
+    if (!v.isNewForm) continue;
+    if (istWertVerkauf(v) && v.typeId == null) {
+      // Wie gutschein-beleg.pruefeWuensche: ein Wert-Verkauf ohne Sorte ist voucher_type_required.
+      // Nur eine alte Gutschein-Einstellung MIT Art (Aufrufer von 11.5) rechnet wie bisher; ein Server ab
+      // Stufe 4b schickt `valueVoucherType` immer null, dort hilft kein Neuladen – die Sorte fehlt.
+      if (o.voucherSettings?.valueVoucherType == null) {
+        throw PlanFehler('voucher_type_required', 'Gutschein ${i + 1}: die Gutschein-Sorte fehlt (typeId).');
+      }
+      if (!wunschFormGueltig(v, sorteNoetig: false)) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1} ist unvollstaendig.');
+      continue;
+    }
+    // Eine reservierte Kennung weist der Server vor jeder anderen Pruefung als unbekannt ab.
+    final sorteId = v.typeId;
+    if (istWertVerkauf(v) && sorteId != null && _reservierteId.hasMatch(sorteId)) {
+      throw PlanFehler('voucher_type_not_found', 'Gutschein ${i + 1}: diese Gutschein-Sorte gibt es nicht.');
+    }
+    if (!v.isValid) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1} ist unvollstaendig.');
   }
   // Kein Gutschein mit Gutschein bezahlen, sobald einer der beiden die neue Form hat.
   final handel = vouchers.where((v) => v.action == VoucherAction.sell || v.action == VoucherAction.redeem).toList();
@@ -284,10 +338,10 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
       handel.any((v) => v.isNewForm)) {
     throw const PlanFehler('voucher_invalid', 'Gutscheine verkaufen und einloesen gehen nicht am selben Beleg.');
   }
-  if (wuensche.any((v) => v.type == VoucherType.promotion) && vouchers.length > 1) {
+  if (wuensche.any((v) => artOderNull(v) == VoucherType.promotion) && vouchers.length > 1) {
     throw const PlanFehler('voucher_invalid', 'Ein Aktionsgutschein steht allein am Beleg.');
   }
-  if (wuensche.any((v) => v.action == VoucherAction.payout) && vouchers.any((v) => !v.isNewForm && v.type == VoucherType.promo)) {
+  if (wuensche.any((v) => v.action == VoucherAction.payout) && vouchers.any((v) => !v.isNewForm && artOderNull(v) == VoucherType.promo)) {
     throw const PlanFehler('voucher_invalid', 'Rabatt und Auszahlung gehen nicht am selben Beleg.');
   }
   final codes = [
@@ -323,7 +377,7 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
     final code = normalerCode(v.code);
     for (final info in o.voucherInfo ?? const <({String code, VoucherCheck check})>[]) {
       if (normalerCode(info.code) != code) continue;
-      if (info.check.type != v.type) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: die Art passt nicht zur Pruefung.');
+      if (info.check.type != artOderNull(v)) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: die Art passt nicht zur Pruefung.');
       return info.check;
     }
     throw PlanFehler('voucher_not_found', 'Gutschein ${i + 1}: keine Pruefung zum Code (checkVoucher).');
@@ -344,10 +398,35 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
       gutscheine.add(g);
       continue;
     }
-    if (!v.type.isNewForm) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: unbekannte Art.');
+    final sorteId = v.typeId;
+    if (istWertVerkauf(v) && sorteId != null) {
+      // Verkauf ueber eine Sorte (gutschein-beleg.plane): unbekannt, andere Art, falscher Fixbetrag.
+      final sorte = _sorteZumWunsch(o.voucherTypes, sorteId);
+      if (sorte == null) throw PlanFehler('voucher_type_not_found', 'Gutschein ${i + 1}: die Gutschein-Sorte fehlt (voucherTypes).');
+      final wunschArt = artOderNull(v);
+      if (wunschArt != null && wunschArt != sorte.kind) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: die Art passt nicht zur Gutschein-Sorte.');
+      if (sorte.amount.mode == VoucherAmountMode.fixed && v.amountCents != sorte.amount.cents) {
+        throw PlanFehler('voucher_amount_mismatch', 'Gutschein ${i + 1}: der Betrag passt nicht zum Fixbetrag der Gutschein-Sorte.');
+      }
+      final c = v.amountCents!;
+      if (sorte.kind == VoucherType.multiPurpose) {
+        if (nulltopf) {
+          zusatz.add(_position(0, c, 'voucher_float'));
+          gutscheine.add(PlanGutschein(VoucherAction.sell, VoucherType.value, c / 100, imNullTopf: true));
+        } else {
+          gutscheine.add(PlanGutschein(VoucherAction.sell, VoucherType.value, c / 100));
+        }
+      } else {
+        // Kleinunternehmer: befreit verkauft, der Satz der Sorte legt nur fest, wofuer der Gutschein gilt.
+        zusatz.add(_position(ku ? 0 : sorte.vatRateBp!, c, 'voucher'));
+      }
+      continue;
+    }
+    final art = artOderNull(v);
+    if (art == null || !art.isNewForm) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: unbekannte Art.');
 
     if (v.action == VoucherAction.sell) {
-      if (v.type == VoucherType.multiPurpose) {
+      if (art == VoucherType.multiPurpose) {
         einstellung(VoucherType.multiPurpose);
         final c = v.amountCents!;
         if (nulltopf) {
@@ -356,7 +435,7 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
         } else {
           gutscheine.add(PlanGutschein(VoucherAction.sell, VoucherType.value, c / 100));
         }
-      } else if (v.type == VoucherType.singlePurpose) {
+      } else if (art == VoucherType.singlePurpose) {
         einstellung(VoucherType.singlePurpose);
         final satz = ku ? 0 : o.voucherSettings!.vatRateBp;
         if (satz == null || satz < 0) {
@@ -364,14 +443,17 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
         }
         zusatz.add(_position(satz, v.amountCents!, 'voucher'));
       } else {
-        ({String id, int priceCents, int vatRateBp})? a;
-        for (final x in o.voucherArticles ?? const <({String id, int priceCents, int vatRateBp})>[]) {
+        ({String id, int priceCents, int vatRateBp, bool? serviceVoucher})? a;
+        for (final x in o.voucherArticles ?? const <({String id, int priceCents, int vatRateBp, bool? serviceVoucher})>[]) {
           if (x.id == v.articleId) {
             a = x;
             break;
           }
         }
         if (a == null) throw PlanFehler('voucher_item_mismatch', 'Gutschein ${i + 1}: der Artikel fehlt (voucherArticles).');
+        if (a.serviceVoucher == false) {
+          throw PlanFehler('voucher_service_not_allowed', 'Gutschein ${i + 1}: der Artikel ist nicht als Leistungsgutschein freigegeben.');
+        }
         if (a.priceCents <= 0 || a.vatRateBp < 0) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: Artikel ohne Preis oder Satz.');
         final c = v.quantity! * a.priceCents;
         if (c > 1000000) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: Betrag zu hoch.');
@@ -383,7 +465,8 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
     final check = pruefung(v, i);
 
     if (v.action == VoucherAction.payout) {
-      // `gutschein-core.darfAuszahlen`: aktiv, oder abgelaufen bis zum Ende der Rueckzahlbarkeit.
+      // `gutschein-core.darfAuszahlen`: Auszahlung nicht gesperrt, aktiv oder abgelaufen bis zum Ende der Rueckzahlbarkeit.
+      if (check.payout == VoucherPayout.never) throw PlanFehler('voucher_payout_not_allowed', 'Gutschein ${i + 1}: dieser Gutschein wird nie ausgezahlt.');
       if (!((check.balanceCents ?? 0) > 0)) throw PlanFehler('voucher_used_up', 'Gutschein ${i + 1}: kein Saldo.');
       if (check.status == VoucherStatus.expired) {
         final bis = check.validity?.refundableUntil;
@@ -395,7 +478,7 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
       }
       final c = v.amountCents!;
       saldo(check, c, i);
-      if (v.type == VoucherType.multiPurpose) {
+      if (art == VoucherType.multiPurpose) {
         zusatz.add(_position(0, -c, 'voucher_float'));
         gutscheine.add(PlanGutschein(VoucherAction.payout, VoucherType.value, c / 100, imNullTopf: true));
       } else {
@@ -411,10 +494,10 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
       throw PlanFehler(_statusFehler[check.status] ?? 'voucher_invalid', 'Gutschein ${i + 1}: Status ${check.status.wire}.');
     }
 
-    if (v.type == VoucherType.multiPurpose || v.type == VoucherType.singlePurpose) {
+    if (art == VoucherType.multiPurpose || art == VoucherType.singlePurpose) {
       final c = v.amountCents!;
       saldo(check, c, i);
-      if (v.type == VoucherType.multiPurpose) {
+      if (art == VoucherType.multiPurpose) {
         gutscheine.add(PlanGutschein(VoucherAction.redeem, VoucherType.value, c / 100));
       } else if (check.exempt == true || ku) {
         // Befreit verkauft (`kuEingefroren`) oder Kleinunternehmer-Konto: der gedeckte Teil
@@ -431,7 +514,7 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
         zusatz.add(_position(satz, -c, 'voucher'));
         minus(satz, c);
       }
-    } else if (v.type == VoucherType.service) {
+    } else if (art == VoucherType.service) {
       final artikelId = check.article?.id;
       var stueck = 0.0;
       final jeSatz = <int, List<Innen>>{};

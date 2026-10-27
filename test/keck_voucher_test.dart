@@ -126,10 +126,19 @@ void main() {
 
   group('neue Form (Zwilling von voucher-neue-form.test.ts)', () {
     KeckVoucher n(VoucherAction action, VoucherType type,
-            {String? code, int? amountCents, String? articleId, int? quantity, List<int>? positions, String? reason, int? valueCents, String? voucherId}) =>
+            {String? code,
+            int? amountCents,
+            String? articleId,
+            int? quantity,
+            List<int>? positions,
+            String? reason,
+            int? valueCents,
+            String? voucherId,
+            String? typeId}) =>
         KeckVoucher(
             action: action,
             type: type,
+            typeId: typeId,
             code: code,
             amountCents: amountCents,
             articleId: articleId,
@@ -151,7 +160,7 @@ void main() {
 
     test('Pruefung bildet die Server-Regeln ab', () {
       for (final g in [
-        n(sell, e, amountCents: 100),
+        n(sell, e, amountCents: 100, typeId: 'vt_1'),
         n(sell, l, articleId: 'a', quantity: 2),
         n(redeem, l, code: 'C', positions: [0]),
         n(redeem, a, code: 'C'),
@@ -161,7 +170,9 @@ void main() {
       }
       for (final g in [
         n(sell, m),
-        n(sell, m, amountCents: 0),
+        // Ein Wertgutschein nur ueber eine Sorte (Server: voucher_type_required, 11.6.0).
+        n(sell, e, amountCents: 100),
+        n(sell, m, amountCents: 0, typeId: 'vt_1'),
         n(sell, l, articleId: 'a'),
         n(sell, a, code: 'C'),
         n(redeem, m, amountCents: 1),
@@ -180,8 +191,8 @@ void main() {
     });
 
     test('Grenzen wie der Server: Betrag, Menge, Positionen, Grund und Code getrimmt', () {
-      expect(n(sell, m, amountCents: 1000000).isValid, isTrue);
-      expect(n(sell, m, amountCents: 1000001).isValid, isFalse);
+      expect(n(sell, m, amountCents: 1000000, typeId: 'vt_1').isValid, isTrue);
+      expect(n(sell, m, amountCents: 1000001, typeId: 'vt_1').isValid, isFalse);
       expect(n(redeem, e, code: 'C', amountCents: 1000001).isValid, isFalse);
       expect(n(sell, l, articleId: 'a', quantity: 100).isValid, isTrue);
       expect(n(sell, l, articleId: 'a', quantity: 101).isValid, isFalse);
@@ -194,7 +205,8 @@ void main() {
     });
 
     test('Nutzlast: die neue Form roh ohne valueCents, die Altform unveraendert', () {
-      expect(n(sell, m, amountCents: 5000).toPayload(), {'action': 'sell', 'type': 'multi_purpose', 'amountCents': 5000});
+      expect(n(sell, m, amountCents: 5000, typeId: 'vt_mz').toPayload(),
+          {'action': 'sell', 'type': 'multi_purpose', 'typeId': 'vt_mz', 'amountCents': 5000});
       expect(n(redeem, l, code: 'CKD59ECF5KNN', positions: [0]).toPayload(),
           {'action': 'redeem', 'type': 'service', 'code': 'CKD59ECF5KNN', 'positions': [0]});
       expect(v(cents: 500, code: 'WG-1').toPayload(), {'action': 'redeem', 'type': 'value', 'valueCents': 500, 'code': 'WG-1'});

@@ -2,14 +2,17 @@ import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
-import 'package:kasseneck_api/pos.dart' show PosVoucherSettings, VoucherCheck, VoucherStatus, VoucherValidity;
+import 'package:kasseneck_api/pos.dart'
+    show PosVoucherSettings, VoucherCheck, VoucherPayout, VoucherStatus, VoucherTypeAmount, VoucherValidity;
 import 'package:kasseneck_api/src/receipt/due.dart';
 
 /// Die Welt eines Zahlbetrag-Falls (`setup` in `v3/zahlbetrag-faelle.json`,
 /// deutsche Form der Server-Dokumente) in die Angaben, die eine Kasse an
 /// `receiptDueCents` gibt: gepruefte Gutscheine (wie `checkVoucher` sie
-/// liefert), die Gutschein-Einstellung der Kasse und die Artikel fuer
-/// Leistungsgutscheine. Zwilling von `test/gutschein-setup.ts` im npm-Paket.
+/// liefert), die Gutschein-Einstellung der Kasse (bis Stufe 4), die
+/// Gutschein-Sorten (Stufe 4b, wie `getKasseSettings` `vouchers.types[]`) und
+/// die Artikel fuer Leistungsgutscheine. Zwilling von `test/gutschein-setup.ts`
+/// im npm-Paket.
 
 const _art = {'mehrzweck': 'multi_purpose', 'einzweck': 'single_purpose', 'leistung': 'service', 'aktion': 'promotion'};
 const _status = {
@@ -36,6 +39,11 @@ VoucherCheck pruefungAus(Map<String, dynamic> daten) {
     discountCents: daten['rabattCents'] as int?,
     discountPercentBp: daten['rabattProzentBp'] as int?,
     exempt: daten['kleinunternehmer'] == true && daten['satzBp'] == 0 ? true : null,
+    payout: switch (daten['auszahlung']) {
+      'erlaubt' => VoucherPayout.allowed,
+      'nie' => VoucherPayout.never,
+      _ => null,
+    },
     article: artikel == null
         ? null
         : VoucherArticle(
@@ -47,12 +55,29 @@ VoucherCheck pruefungAus(Map<String, dynamic> daten) {
   );
 }
 
+/// Ein Sortendokument des Servers (`users/{owner}/gutschein_sorten`) so, wie
+/// `getKasseSettings` es der Kasse zeigt.
+VoucherDueType sorteAus(String id, Map<String, dynamic> d) {
+  final betrag = d['betrag'] as Map?;
+  return VoucherDueType(
+    id: id,
+    kind: VoucherType.fromWire(_art[d['art']])!,
+    vatRateBp: d['art'] == 'einzweck' ? d['satzBp'] as int : null,
+    amount: betrag?['modus'] == 'fix' ? VoucherTypeAmount.fixed(betrag!['cents'] as int) : const VoucherTypeAmount.free(),
+  );
+}
+
 /// Die Angaben eines Falls aus seinem `setup`.
-({List<VoucherDueInfo>? info, PosVoucherSettings? settings, List<VoucherDueArticle>? articles}) angabenAusSetup(
-    Map<String, dynamic>? setup) {
-  if (setup == null) return (info: null, settings: null, articles: null);
+({
+  List<VoucherDueInfo>? info,
+  PosVoucherSettings? settings,
+  List<VoucherDueType>? types,
+  List<VoucherDueArticle>? articles,
+}) angabenAusSetup(Map<String, dynamic>? setup) {
+  if (setup == null) return (info: null, settings: null, types: null, articles: null);
   final gutscheine = setup['gutscheine'] as List?;
   final einstellung = setup['einstellung'] as Map?;
+  final sorten = setup['sorten'] as List?;
   final artikel = setup['artikel'] as List?;
   return (
     info: gutscheine == null
@@ -68,6 +93,13 @@ VoucherCheck pruefungAus(Map<String, dynamic> daten) {
             valueVoucherType: einstellung['wertArt'] == 'einzweck' ? VoucherType.singlePurpose : VoucherType.multiPurpose,
             vatRateBp: einstellung['wertArt'] == 'einzweck' ? einstellung['satzBp'] as int : null,
           ),
+    // Die Kasse kennt nur, was getKasseSettings listet: aktive Sorten.
+    types: sorten == null
+        ? null
+        : [
+            for (final s in sorten.cast<Map<String, dynamic>>())
+              if ((s['daten'] as Map)['aktiv'] != false) sorteAus(s['id'] as String, (s['daten'] as Map).cast()),
+          ],
     articles: artikel == null
         ? null
         : [
@@ -76,6 +108,7 @@ VoucherCheck pruefungAus(Map<String, dynamic> daten) {
                 id: a['id'] as String,
                 priceCents: a['unitPriceCents'] as int,
                 vatRateBp: ((a['vatRate'] as num) * 100).round(),
+                serviceVoucher: a['gutscheinLeistung'] as bool?,
               ),
           ],
   );
@@ -98,6 +131,7 @@ VoucherCheck pruefungAusDraht(Map<String, dynamic> o) {
     discountCents: o['discountCents'] as int?,
     discountPercentBp: o['discountPercentBp'] as int?,
     exempt: o['exempt'] as bool?,
+    payout: VoucherPayout.fromWire(o['payout']),
     article: artikel == null
         ? null
         : VoucherArticle(
@@ -110,6 +144,7 @@ VoucherCheck pruefungAusDraht(Map<String, dynamic> o) {
         ? null
         : VoucherValidity(
             pattern: g['pattern'] as String,
+            redeemableYears: g['redeemableYears'] as int?,
             redeemableUntil: g['redeemableUntil'] as String?,
             refundableUntil: g['refundableUntil'] as String?,
             validUntil: g['validUntil'] as String?,

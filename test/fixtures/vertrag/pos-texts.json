@@ -1,5 +1,5 @@
 {
-  "version": "1.14.0",
+  "version": "1.15.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -404,6 +404,21 @@
     },
     "voucher_error.sale_off": {
       "text": "Gutscheine verkaufen geht hier noch nicht."
+    },
+    "voucher_error.type_required": {
+      "text": "Bitte eine Gutschein-Sorte wählen."
+    },
+    "voucher_error.type_not_found": {
+      "text": "Diese Gutschein-Sorte gibt es nicht mehr. Die Kasse lädt die Sorten neu."
+    },
+    "voucher_error.amount_mismatch": {
+      "text": "Die Gutschein-Sorte hat sich geändert. Die Kasse lädt die Sorten neu."
+    },
+    "voucher_error.service_not_allowed": {
+      "text": "Dieser Artikel ist nicht als Leistungsgutschein freigegeben."
+    },
+    "voucher_error.payout_not_allowed": {
+      "text": "Dieser Gutschein kann nicht ausgezahlt werden."
     },
     "voucher.reentry_needed": {
       "text": "Die Karte ist belastet, der Beleg fehlt noch: zu jedem Gutschein den Code erneut eingeben, dann den Beleg abschließen."
@@ -1141,7 +1156,12 @@
     "voucher_already_used": "voucher_error.already_used",
     "voucher_partial_cancel": "voucher_error.partial_cancel",
     "voucher_settings_missing": "voucher_error.settings_missing",
-    "too_many_voucher_checks": "voucher_error.too_many_checks"
+    "too_many_voucher_checks": "voucher_error.too_many_checks",
+    "voucher_type_required": "voucher_error.type_required",
+    "voucher_type_not_found": "voucher_error.type_not_found",
+    "voucher_amount_mismatch": "voucher_error.amount_mismatch",
+    "voucher_service_not_allowed": "voucher_error.service_not_allowed",
+    "voucher_payout_not_allowed": "voucher_error.payout_not_allowed"
   },
   "labels": {
     "common.cancel": {
@@ -2060,6 +2080,24 @@
     },
     "voucher.add": {
       "text": "Hinzufügen"
+    },
+    "voucher.tab": {
+      "text": "Gutscheine"
+    },
+    "voucher.enter_amount": {
+      "text": "Betrag eingeben"
+    },
+    "voucher.service_tile": {
+      "text": "Leistungsgutschein"
+    },
+    "voucher.kind_multi_short": {
+      "text": "Mehrzweck"
+    },
+    "voucher.kind_single_short": {
+      "text": "Einzweck {rate} %",
+      "placeholders": [
+        "rate"
+      ]
     },
     "shift.all_payments": {
       "text": "Alle Zahlungen dieser Schicht (bar + unbar)"

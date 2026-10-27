@@ -130,6 +130,13 @@ Object? _geraetGelesen(Object? device) {
   };
 }
 
+/// Der Gutschein-Block, so wie das Paket ihn liest: ohne das alte Feld `label`
+/// (Kassen vor 11.6, Ruling R3), sonst unveraendert.
+Object? _gutscheinGelesen(Object? vouchers) {
+  if (vouchers is! Map) return vouchers;
+  return {...vouchers}..remove('label');
+}
+
 Iterable<Map<String, dynamic>> _faelle(String endpunkt) =>
     ((_endpunkte[endpunkt] as Map)['cases'] as List).cast<Map<String, dynamic>>().where((f) {
       final p = f['params'];
@@ -870,7 +877,7 @@ void main() {
       final lauf = await _rufe('getKasseSettings', _fall('getKasseSettings', 'manager_with_device'));
       final e = lauf!.ergebnis as PosSettings;
       final roh = _fall('getKasseSettings', 'manager_with_device')['response']['data'];
-      expect(e.toJson(), {'business': roh['business'], 'device': _geraetGelesen(roh['device'])},
+      expect(e.toJson(), {'business': roh['business'], 'device': _geraetGelesen(roh['device']), 'vouchers': _gutscheinGelesen(roh['vouchers'])},
           reason: 'die Antwort ist schon gemischt; gelesen und zurückgeschrieben ergibt sie sich selbst');
     });
 
@@ -886,7 +893,12 @@ void main() {
             _ => throw StateError('${fall['case']}'),
           };
           for (final teil in json.keys) {
-            expect(json[teil], teil == 'device' ? _geraetGelesen(daten[teil]) : daten[teil], reason: '$ep/${fall['case']} $teil');
+            final soll = switch (teil) {
+              'device' => _geraetGelesen(daten[teil]),
+              'vouchers' => _gutscheinGelesen(daten[teil]),
+              _ => daten[teil],
+            };
+            expect(json[teil], soll, reason: '$ep/${fall['case']} $teil');
           }
         }
       }
@@ -1192,6 +1204,8 @@ void main() {
             (PosArticle.fields, const {
               'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds',
               'number', 'ean', 'internalCode', 'stockTracked',
+              // Leistungsgutschein-Freigabe (11.6.0): der Vertrag zeigt sie in keinem Artikelfall.
+              'serviceVoucher',
             }),
         'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),
         'setMyKasseLogo': (const {'logoImage'}, const {}),

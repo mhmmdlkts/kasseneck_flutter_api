@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "328c8d0ff0f496f8f6b7d9ed78673e7666980e38586ec7efacb442e6906d898a",
-    "inputsSha256": "ef1648206351fe21b4cb0cb35e6235d45f938b548b20ca1a70f1de6d43fe9f47",
+    "sha256": "cac577066b5f6bfb5901d35fecfd6f8b20dfbdf5c48381b938d7c137d0a7c018",
+    "inputsSha256": "ab5aba2efbc7fdfa6de0840e59800baf33bd4df6d091ae639b0fd8f41c15ab24",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -359,6 +359,7 @@
       "createVariantGroup",
       "createWebhook",
       "deactivateArticle",
+      "deleteMyVoucherType",
       "deletePartnerWebhook",
       "deleteWebhook",
       "downloadDailyReport",
@@ -419,6 +420,7 @@
       "listMyStocktakeItems",
       "listMyStocktakes",
       "listMyTipRecipients",
+      "listMyVoucherTypes",
       "listMyVouchers",
       "listPartnerCustomers",
       "listPartnerWebhookDeliveries",
@@ -432,6 +434,7 @@
       "listStocktakeItems",
       "listStocktakes",
       "listVariantGroups",
+      "listVoucherTypesAdmin",
       "listVouchersAdmin",
       "listWebhookDeliveries",
       "listWebhooks",
@@ -461,6 +464,7 @@
       "revokeCustomerMandate",
       "rotatePartnerWebhookSecret",
       "rotateWebhookSecret",
+      "saveMyVoucherType",
       "searchCustomers",
       "sendPartnerCustomerFonLink",
       "sendPartnerWebhookTest",
@@ -560,7 +564,10 @@
       "taxedWith": "versteuertMit",
       "exempt": "befreit",
       "reason": "grund",
-      "zeroRateBucket": "imNullTopf"
+      "zeroRateBucket": "imNullTopf",
+      "typeId": "sorteId",
+      "typeName": "sorteName",
+      "payout": "auszahlung"
     },
     "BEWEGUNG_ART": {
       "verkauf": "sale",
@@ -783,6 +790,14 @@
       "leistung": "service",
       "aktion": "promotion"
     },
+    "GUTSCHEIN_AUSZAHLUNG": {
+      "erlaubt": "allowed",
+      "nie": "never"
+    },
+    "GUTSCHEIN_BETRAG_MODUS": {
+      "frei": "free",
+      "fix": "fixed"
+    },
     "GUTSCHEIN_BUCHUNG": {
       "verkauf": "sale",
       "einloesung": "redemption",
@@ -800,6 +815,10 @@
       "unbefristet": "unlimited",
       "1+3": "1+3",
       "frei": "custom"
+    },
+    "GUTSCHEIN_SORTE_MUSTER": {
+      "unbefristet": "unlimited",
+      "jahre": "years"
     },
     "GUTSCHEIN_STATUS": {
       "aktiv": "active",
@@ -1473,6 +1492,7 @@
       "vehicle_in_use",
       "vehicle_not_found",
       "voucher_already_used",
+      "voucher_amount_mismatch",
       "voucher_balance_changed",
       "voucher_blocked",
       "voucher_cancelled",
@@ -1484,8 +1504,12 @@
       "voucher_item_mismatch",
       "voucher_not_found",
       "voucher_partial_cancel",
+      "voucher_payout_not_allowed",
       "voucher_rate_mismatch",
+      "voucher_service_not_allowed",
       "voucher_settings_missing",
+      "voucher_type_not_found",
+      "voucher_type_required",
       "voucher_used_up",
       "webhook_inactive",
       "webhook_limit",
@@ -1778,6 +1802,7 @@
       "user_disabled",
       "validation",
       "voucher_already_used",
+      "voucher_amount_mismatch",
       "voucher_balance_changed",
       "voucher_blocked",
       "voucher_cancelled",
@@ -1789,8 +1814,12 @@
       "voucher_item_mismatch",
       "voucher_not_found",
       "voucher_partial_cancel",
+      "voucher_payout_not_allowed",
       "voucher_rate_mismatch",
+      "voucher_service_not_allowed",
       "voucher_settings_missing",
+      "voucher_type_not_found",
+      "voucher_type_required",
       "voucher_used_up"
     ],
     "cancellation": [
@@ -2354,6 +2383,7 @@
         "tip_payment_method_invalid",
         "tip_payment_method_required",
         "voucher_already_used",
+        "voucher_amount_mismatch",
         "voucher_balance_changed",
         "voucher_blocked",
         "voucher_cancelled",
@@ -2364,8 +2394,12 @@
         "voucher_invalid_code",
         "voucher_item_mismatch",
         "voucher_not_found",
+        "voucher_payout_not_allowed",
         "voucher_rate_mismatch",
+        "voucher_service_not_allowed",
         "voucher_settings_missing",
+        "voucher_type_not_found",
+        "voucher_type_required",
         "voucher_used_up"
       ],
       "generateFullReceiptId": [],
@@ -2550,7 +2584,8 @@
         "not_permitted",
         "server_error",
         "voucher_cancelled",
-        "voucher_not_found"
+        "voucher_not_found",
+        "voucher_used_up"
       ],
       "getMyDrawerState": [
         "cashregister_not_assigned",
@@ -2690,6 +2725,9 @@
           "faceValueCents": "nennwertCents",
           "balanceCents": "saldoCents",
           "vatRateBp": "satzBp",
+          "typeId": "sorteId",
+          "typeName": "sorteName",
+          "payout": "auszahlung",
           "article": {
             "__": "artikel",
             "vatRateBp": "satzBp",
@@ -2705,6 +2743,7 @@
           "validity": {
             "__": "gueltigkeit",
             "pattern": "muster",
+            "redeemableYears": "jahre",
             "redeemableUntil": "einloesbarBis",
             "refundableUntil": "rueckzahlbarBis",
             "validUntil": "gueltigBis"
@@ -2736,6 +2775,9 @@
         },
         "voucher.issue.occasion": {
           "$catalog": "GUTSCHEIN_ANLASS"
+        },
+        "voucher.payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -2892,12 +2934,15 @@
         "validity": {
           "__": "gueltigkeit",
           "pattern": "muster",
+          "redeemableYears": "jahre",
           "redeemableUntil": "einloesbarBis",
           "refundableUntil": "rueckzahlbarBis",
           "validUntil": "gueltigBis"
         },
         "codeSuffix": "codeEnde",
-        "exempt": "befreit"
+        "exempt": "befreit",
+        "typeName": "sorteName",
+        "payout": "auszahlung"
       },
       "werte": {
         "type": {
@@ -2908,6 +2953,9 @@
         },
         "validity.pattern": {
           "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -2984,6 +3032,9 @@
           "faceValueCents": "nennwertCents",
           "balanceCents": "saldoCents",
           "vatRateBp": "satzBp",
+          "typeId": "sorteId",
+          "typeName": "sorteName",
+          "payout": "auszahlung",
           "article": {
             "__": "artikel",
             "vatRateBp": "satzBp",
@@ -2999,6 +3050,7 @@
           "validity": {
             "__": "gueltigkeit",
             "pattern": "muster",
+            "redeemableYears": "jahre",
             "redeemableUntil": "einloesbarBis",
             "refundableUntil": "rueckzahlbarBis",
             "validUntil": "gueltigBis"
@@ -3030,6 +3082,9 @@
         },
         "voucher.issue.occasion": {
           "$catalog": "GUTSCHEIN_ANLASS"
+        },
+        "voucher.payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -3214,6 +3269,7 @@
         "validity": {
           "__": "gueltigkeit",
           "pattern": "muster",
+          "redeemableYears": "jahre",
           "redeemableUntil": "einloesbarBis",
           "refundableUntil": "rueckzahlbarBis",
           "validUntil": "gueltigBis"
@@ -3339,7 +3395,8 @@
             "articleId": "artikelId",
             "quantity": "stueck",
             "positions": "positionen",
-            "reason": "grund"
+            "reason": "grund",
+            "typeId": "sorteId"
           }
         ]
       },
@@ -3397,9 +3454,12 @@
             "faceValueCents": "nennwertCents",
             "quantity": "stueck",
             "articleName": "artikelName",
+            "typeId": "sorteId",
+            "typeName": "sorteName",
             "validity": {
               "__": "gueltigkeit",
               "pattern": "muster",
+              "redeemableYears": "jahre",
               "redeemableUntil": "einloesbarBis",
               "refundableUntil": "rueckzahlbarBis",
               "validUntil": "gueltigBis"
@@ -3669,6 +3729,7 @@
         }
       }
     },
+    "deleteMyVoucherType": {},
     "deletePartnerWebhook": {
       "data": {
         "deleted": "geloescht"
@@ -4093,8 +4154,72 @@
         "vouchers": {
           "__": "gutscheine",
           "sale": "verkauf",
+          "typeSale": "sortenVerkauf",
           "valueVoucherType": "wertArt",
-          "vatRateBp": "satzBp"
+          "vatRateBp": "satzBp",
+          "label": {
+            "__": "etikett",
+            "size": "groesse",
+            "rotation": "drehung",
+            "fields": {
+              "__": "felder",
+              "business": "betrieb",
+              "value": "wert",
+              "validity": "gueltigkeit",
+              "checkPage": "pruefseite",
+              "designation": "bezeichnung"
+            },
+            "freeText": "freitext"
+          },
+          "labelDefault": {
+            "__": "etikettStandard",
+            "size": "groesse",
+            "rotation": "drehung",
+            "fields": {
+              "__": "felder",
+              "business": "betrieb",
+              "value": "wert",
+              "validity": "gueltigkeit",
+              "checkPage": "pruefseite",
+              "designation": "bezeichnung"
+            },
+            "freeText": "freitext"
+          },
+          "types": [
+            {
+              "__": "sorten",
+              "kind": "art",
+              "vatRateBp": "satzBp",
+              "amount": {
+                "__": "betrag",
+                "mode": "modus"
+              },
+              "validity": {
+                "__": "gueltigkeit",
+                "pattern": "muster",
+                "years": "jahre"
+              },
+              "payout": "auszahlung",
+              "label": {
+                "__": "etikett",
+                "size": "groesse",
+                "rotation": "drehung",
+                "fields": {
+                  "__": "felder",
+                  "business": "betrieb",
+                  "value": "wert",
+                  "validity": "gueltigkeit",
+                  "checkPage": "pruefseite",
+                  "designation": "bezeichnung"
+                },
+                "freeText": "freitext"
+              },
+              "order": "reihenfolge",
+              "active": "aktiv",
+              "soldCount": "verkauft"
+            }
+          ],
+          "serviceArticles": "leistungsArtikel"
         }
       },
       "werte": {
@@ -4149,6 +4274,18 @@
         "vouchers.valueVoucherType": {
           "mehrzweck": "multi_purpose",
           "einzweck": "single_purpose"
+        },
+        "vouchers.types[].kind": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "vouchers.types[].amount.mode": {
+          "$catalog": "GUTSCHEIN_BETRAG_MODUS"
+        },
+        "vouchers.types[].validity.pattern": {
+          "$catalog": "GUTSCHEIN_SORTE_MUSTER"
+        },
+        "vouchers.types[].payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -4279,6 +4416,9 @@
           "faceValueCents": "nennwertCents",
           "balanceCents": "saldoCents",
           "vatRateBp": "satzBp",
+          "typeId": "sorteId",
+          "typeName": "sorteName",
+          "payout": "auszahlung",
           "article": {
             "__": "artikel",
             "vatRateBp": "satzBp",
@@ -4294,6 +4434,7 @@
           "validity": {
             "__": "gueltigkeit",
             "pattern": "muster",
+            "redeemableYears": "jahre",
             "redeemableUntil": "einloesbarBis",
             "refundableUntil": "rueckzahlbarBis",
             "validUntil": "gueltigBis"
@@ -4340,6 +4481,9 @@
         "voucher.issue.occasion": {
           "$catalog": "GUTSCHEIN_ANLASS"
         },
+        "voucher.payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
+        },
         "bookings[].type": {
           "$catalog": "GUTSCHEIN_BUCHUNG"
         }
@@ -4355,12 +4499,14 @@
           "label": {
             "__": "etikett",
             "size": "groesse",
+            "rotation": "drehung",
             "fields": {
               "__": "felder",
               "business": "betrieb",
               "value": "wert",
               "validity": "gueltigkeit",
-              "checkPage": "pruefseite"
+              "checkPage": "pruefseite",
+              "designation": "bezeichnung"
             },
             "freeText": "freitext"
           },
@@ -4381,7 +4527,8 @@
           "vatRateBp": "satzBp",
           "reason": "grund",
           "notice": "hinweis"
-        }
+        },
+        "labelSaved": "etikettGespeichert"
       },
       "werte": {
         "settings.valueVoucherType": {
@@ -4530,9 +4677,12 @@
             "faceValueCents": "nennwertCents",
             "quantity": "stueck",
             "articleName": "artikelName",
+            "typeId": "sorteId",
+            "typeName": "sorteName",
             "validity": {
               "__": "gueltigkeit",
               "pattern": "muster",
+              "redeemableYears": "jahre",
               "redeemableUntil": "einloesbarBis",
               "refundableUntil": "rueckzahlbarBis",
               "validUntil": "gueltigBis"
@@ -4959,6 +5109,7 @@
             "__": "articles",
             "quantityRule": "mengenregel",
             "askQuantity": "mengeFragen",
+            "serviceVoucher": "gutscheinLeistung",
             "maxQuantity": "maxMenge",
             "tile": {
               "__": "kasse",
@@ -5184,6 +5335,58 @@
       }
     },
     "listMyTipRecipients": {},
+    "listMyVoucherTypes": {
+      "data": {
+        "voucherTypes": [
+          {
+            "__": "sorten",
+            "kind": "art",
+            "vatRateBp": "satzBp",
+            "amount": {
+              "__": "betrag",
+              "mode": "modus"
+            },
+            "validity": {
+              "__": "gueltigkeit",
+              "pattern": "muster",
+              "years": "jahre"
+            },
+            "payout": "auszahlung",
+            "label": {
+              "__": "etikett",
+              "size": "groesse",
+              "rotation": "drehung",
+              "fields": {
+                "__": "felder",
+                "business": "betrieb",
+                "value": "wert",
+                "validity": "gueltigkeit",
+                "checkPage": "pruefseite",
+                "designation": "bezeichnung"
+              },
+              "freeText": "freitext"
+            },
+            "order": "reihenfolge",
+            "active": "aktiv",
+            "soldCount": "verkauft"
+          }
+        ]
+      },
+      "werte": {
+        "voucherTypes[].kind": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucherTypes[].amount.mode": {
+          "$catalog": "GUTSCHEIN_BETRAG_MODUS"
+        },
+        "voucherTypes[].validity.pattern": {
+          "$catalog": "GUTSCHEIN_SORTE_MUSTER"
+        },
+        "voucherTypes[].payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
+        }
+      }
+    },
     "listMyVouchers": {
       "params": {
         "search": "suche",
@@ -5207,6 +5410,9 @@
             "faceValueCents": "nennwertCents",
             "balanceCents": "saldoCents",
             "vatRateBp": "satzBp",
+            "typeId": "sorteId",
+            "typeName": "sorteName",
+            "payout": "auszahlung",
             "article": {
               "__": "artikel",
               "vatRateBp": "satzBp",
@@ -5222,6 +5428,7 @@
             "validity": {
               "__": "gueltigkeit",
               "pattern": "muster",
+              "redeemableYears": "jahre",
               "redeemableUntil": "einloesbarBis",
               "refundableUntil": "rueckzahlbarBis",
               "validUntil": "gueltigBis"
@@ -5255,6 +5462,9 @@
         },
         "vouchers[].issue.occasion": {
           "$catalog": "GUTSCHEIN_ANLASS"
+        },
+        "vouchers[].payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -5657,6 +5867,58 @@
         "nextCursor": "weiter"
       }
     },
+    "listVoucherTypesAdmin": {
+      "data": {
+        "voucherTypes": [
+          {
+            "__": "sorten",
+            "kind": "art",
+            "vatRateBp": "satzBp",
+            "amount": {
+              "__": "betrag",
+              "mode": "modus"
+            },
+            "validity": {
+              "__": "gueltigkeit",
+              "pattern": "muster",
+              "years": "jahre"
+            },
+            "payout": "auszahlung",
+            "label": {
+              "__": "etikett",
+              "size": "groesse",
+              "rotation": "drehung",
+              "fields": {
+                "__": "felder",
+                "business": "betrieb",
+                "value": "wert",
+                "validity": "gueltigkeit",
+                "checkPage": "pruefseite",
+                "designation": "bezeichnung"
+              },
+              "freeText": "freitext"
+            },
+            "order": "reihenfolge",
+            "active": "aktiv",
+            "soldCount": "verkauft"
+          }
+        ]
+      },
+      "werte": {
+        "voucherTypes[].kind": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucherTypes[].amount.mode": {
+          "$catalog": "GUTSCHEIN_BETRAG_MODUS"
+        },
+        "voucherTypes[].validity.pattern": {
+          "$catalog": "GUTSCHEIN_SORTE_MUSTER"
+        },
+        "voucherTypes[].payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
+        }
+      }
+    },
     "listVouchersAdmin": {
       "params": {
         "search": "suche",
@@ -5680,6 +5942,9 @@
             "faceValueCents": "nennwertCents",
             "balanceCents": "saldoCents",
             "vatRateBp": "satzBp",
+            "typeId": "sorteId",
+            "typeName": "sorteName",
+            "payout": "auszahlung",
             "article": {
               "__": "artikel",
               "vatRateBp": "satzBp",
@@ -5695,6 +5960,7 @@
             "validity": {
               "__": "gueltigkeit",
               "pattern": "muster",
+              "redeemableYears": "jahre",
               "redeemableUntil": "einloesbarBis",
               "refundableUntil": "rueckzahlbarBis",
               "validUntil": "gueltigBis"
@@ -5728,6 +5994,9 @@
         },
         "vouchers[].issue.occasion": {
           "$catalog": "GUTSCHEIN_ANLASS"
+        },
+        "vouchers[].payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -6147,6 +6416,9 @@
           "faceValueCents": "nennwertCents",
           "balanceCents": "saldoCents",
           "vatRateBp": "satzBp",
+          "typeId": "sorteId",
+          "typeName": "sorteName",
+          "payout": "auszahlung",
           "article": {
             "__": "artikel",
             "vatRateBp": "satzBp",
@@ -6162,6 +6434,7 @@
           "validity": {
             "__": "gueltigkeit",
             "pattern": "muster",
+            "redeemableYears": "jahre",
             "redeemableUntil": "einloesbarBis",
             "refundableUntil": "rueckzahlbarBis",
             "validUntil": "gueltigBis"
@@ -6179,6 +6452,20 @@
           },
           "createdAt": "angelegtAt",
           "updatedAt": "geaendertAt"
+        },
+        "label": {
+          "__": "etikett",
+          "size": "groesse",
+          "rotation": "drehung",
+          "fields": {
+            "__": "felder",
+            "business": "betrieb",
+            "value": "wert",
+            "validity": "gueltigkeit",
+            "checkPage": "pruefseite",
+            "designation": "bezeichnung"
+          },
+          "freeText": "freitext"
         }
       },
       "werte": {
@@ -6193,6 +6480,9 @@
         },
         "voucher.issue.occasion": {
           "$catalog": "GUTSCHEIN_ANLASS"
+        },
+        "voucher.payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -6205,6 +6495,9 @@
           "faceValueCents": "nennwertCents",
           "balanceCents": "saldoCents",
           "vatRateBp": "satzBp",
+          "typeId": "sorteId",
+          "typeName": "sorteName",
+          "payout": "auszahlung",
           "article": {
             "__": "artikel",
             "vatRateBp": "satzBp",
@@ -6220,6 +6513,7 @@
           "validity": {
             "__": "gueltigkeit",
             "pattern": "muster",
+            "redeemableYears": "jahre",
             "redeemableUntil": "einloesbarBis",
             "refundableUntil": "rueckzahlbarBis",
             "validUntil": "gueltigBis"
@@ -6237,6 +6531,20 @@
           },
           "createdAt": "angelegtAt",
           "updatedAt": "geaendertAt"
+        },
+        "label": {
+          "__": "etikett",
+          "size": "groesse",
+          "rotation": "drehung",
+          "fields": {
+            "__": "felder",
+            "business": "betrieb",
+            "value": "wert",
+            "validity": "gueltigkeit",
+            "checkPage": "pruefseite",
+            "designation": "bezeichnung"
+          },
+          "freeText": "freitext"
         }
       },
       "werte": {
@@ -6251,6 +6559,9 @@
         },
         "voucher.issue.occasion": {
           "$catalog": "GUTSCHEIN_ANLASS"
+        },
+        "voucher.payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -6434,6 +6745,100 @@
       "werte": {
         "webhook.lastDelivery.status": {
           "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
+    "saveMyVoucherType": {
+      "params": {
+        "kind": "art",
+        "vatRateBp": "satzBp",
+        "amount": {
+          "__": "betrag",
+          "mode": "modus"
+        },
+        "validity": {
+          "__": "gueltigkeit",
+          "pattern": "muster",
+          "years": "jahre"
+        },
+        "payout": "auszahlung",
+        "label": {
+          "__": "etikett",
+          "size": "groesse",
+          "rotation": "drehung",
+          "fields": {
+            "__": "felder",
+            "business": "betrieb",
+            "value": "wert",
+            "validity": "gueltigkeit",
+            "checkPage": "pruefseite",
+            "designation": "bezeichnung"
+          },
+          "freeText": "freitext"
+        },
+        "order": "reihenfolge",
+        "active": "aktiv"
+      },
+      "paramWerte": {
+        "kind": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "amount.mode": {
+          "$catalog": "GUTSCHEIN_BETRAG_MODUS"
+        },
+        "validity.pattern": {
+          "$catalog": "GUTSCHEIN_SORTE_MUSTER"
+        },
+        "payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
+        }
+      },
+      "data": {
+        "voucherType": {
+          "__": "sorte",
+          "kind": "art",
+          "vatRateBp": "satzBp",
+          "amount": {
+            "__": "betrag",
+            "mode": "modus"
+          },
+          "validity": {
+            "__": "gueltigkeit",
+            "pattern": "muster",
+            "years": "jahre"
+          },
+          "payout": "auszahlung",
+          "label": {
+            "__": "etikett",
+            "size": "groesse",
+            "rotation": "drehung",
+            "fields": {
+              "__": "felder",
+              "business": "betrieb",
+              "value": "wert",
+              "validity": "gueltigkeit",
+              "checkPage": "pruefseite",
+              "designation": "bezeichnung"
+            },
+            "freeText": "freitext"
+          },
+          "order": "reihenfolge",
+          "active": "aktiv",
+          "soldCount": "verkauft"
+        }
+      },
+      "werte": {
+        "voucherType.kind": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "voucherType.amount.mode": {
+          "$catalog": "GUTSCHEIN_BETRAG_MODUS"
+        },
+        "voucherType.validity.pattern": {
+          "$catalog": "GUTSCHEIN_SORTE_MUSTER"
+        },
+        "voucherType.payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -6824,12 +7229,14 @@
         "label": {
           "__": "etikett",
           "size": "groesse",
+          "rotation": "drehung",
           "fields": {
             "__": "felder",
             "business": "betrieb",
             "value": "wert",
             "validity": "gueltigkeit",
-            "checkPage": "pruefseite"
+            "checkPage": "pruefseite",
+            "designation": "bezeichnung"
           },
           "freeText": "freitext"
         }
@@ -6851,12 +7258,14 @@
           "label": {
             "__": "etikett",
             "size": "groesse",
+            "rotation": "drehung",
             "fields": {
               "__": "felder",
               "business": "betrieb",
               "value": "wert",
               "validity": "gueltigkeit",
-              "checkPage": "pruefseite"
+              "checkPage": "pruefseite",
+              "designation": "bezeichnung"
             },
             "freeText": "freitext"
           },
@@ -6877,7 +7286,8 @@
           "vatRateBp": "satzBp",
           "reason": "grund",
           "notice": "hinweis"
-        }
+        },
+        "labelSaved": "etikettGespeichert"
       },
       "werte": {
         "settings.valueVoucherType": {
@@ -6933,6 +7343,9 @@
           "faceValueCents": "nennwertCents",
           "balanceCents": "saldoCents",
           "vatRateBp": "satzBp",
+          "typeId": "sorteId",
+          "typeName": "sorteName",
+          "payout": "auszahlung",
           "article": {
             "__": "artikel",
             "vatRateBp": "satzBp",
@@ -6948,6 +7361,7 @@
           "validity": {
             "__": "gueltigkeit",
             "pattern": "muster",
+            "redeemableYears": "jahre",
             "redeemableUntil": "einloesbarBis",
             "refundableUntil": "rueckzahlbarBis",
             "validUntil": "gueltigBis"
@@ -6979,6 +7393,9 @@
         },
         "voucher.issue.occasion": {
           "$catalog": "GUTSCHEIN_ANLASS"
+        },
+        "voucher.payout": {
+          "$catalog": "GUTSCHEIN_AUSZAHLUNG"
         }
       }
     },
@@ -7482,6 +7899,7 @@
       "askQuantity",
       "maxQuantity",
       "revenueGroupId",
+      "serviceVoucher",
       "active",
       "groupId",
       "tile",
@@ -7508,6 +7926,7 @@
       "mengeFragen",
       "maxMenge",
       "revenueGroupId",
+      "gutscheinLeistung",
       "active",
       "groupId",
       "kasse",

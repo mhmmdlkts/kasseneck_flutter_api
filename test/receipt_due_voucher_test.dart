@@ -11,7 +11,7 @@ import 'package:kasseneck_api/kasseneck_api.dart' as wurzel;
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
-import 'package:kasseneck_api/pos.dart' show PosVoucherSettings, VoucherCheck, VoucherStatus, VoucherValidity;
+import 'package:kasseneck_api/pos.dart' show PosVoucherSettings, VoucherCheck, VoucherStatus, VoucherTypeAmount, VoucherValidity;
 import 'package:kasseneck_api/src/receipt/due.dart';
 
 import 'helpers/gutschein_setup.dart';
@@ -93,8 +93,9 @@ const mehrzweckEin = PosVoucherSettings(sale: true, valueVoucherType: VoucherTyp
 void main() {
   group('Vertragsfaelle der neuen Form (zahlbetrag-faelle.json)', () {
     final faelle = (_json('v3/zahlbetrag-faelle.json')['cases'] as List).cast<Map<String, dynamic>>();
+    // Neue Form: eine ihrer Arten, eine Auszahlung oder ein Verkauf ueber eine Sorte (`typeId`, die Art darf fehlen).
     final neu = faelle.where((f) => (f['input']['vouchers'] as List)
-        .any((v) => VoucherType.fromWire(v['type'])?.isNewForm == true || v['action'] == 'payout'));
+        .any((v) => VoucherType.fromWire(v['type'])?.isNewForm == true || v['action'] == 'payout' || v['typeId'] != null));
 
     test('die Faelle mit Gutscheinen der neuen Form sind da', () {
       final namen = neu.map((f) => f['name']).toSet();
@@ -125,10 +126,10 @@ void main() {
         final typ = ReceiptType.values.byName(input['receiptType'] as String);
         ReceiptDueBreakdown zeilen() => receiptDueBreakdownForLines([for (final p in roh) ReceiptDueLine.fromJson(p)], vouchers, typ,
             tip: t.tip, payments: t.payments, tipRecipient: t.tipRecipient,
-            voucherInfo: a.info, voucherSettings: a.settings, voucherArticles: a.articles);
+            voucherInfo: a.info, voucherSettings: a.settings, voucherTypes: a.types, voucherArticles: a.articles);
         int positionen() => receiptDueCents([for (final p in roh) KasseneckItem.fromJson(p)], vouchers, typ,
             tip: t.tip, payments: t.payments, tipRecipient: t.tipRecipient,
-            voucherInfo: a.info, voucherSettings: a.settings, voucherArticles: a.articles);
+            voucherInfo: a.info, voucherSettings: a.settings, voucherTypes: a.types, voucherArticles: a.articles);
         if (istAbgelehnt(fall)) {
           final code = (fall['expected'] as Map)['errorCode'] as String;
           expect(zeilen, wirft(code));
@@ -215,13 +216,19 @@ void main() {
           });
     });
 
-    test('Verkauf ohne Gutschein-Einstellung: voucher_settings_missing (Mehrzweck wie Einzweck)', () {
+    test('Verkauf ohne Sorte: voucher_type_required ohne alte Einstellung oder mit einer ohne Art (jeder Server ab Stufe 4b)', () {
       for (final type in [VoucherType.multiPurpose, VoucherType.singlePurpose]) {
         final v = [KeckVoucher(action: VoucherAction.sell, type: type, amountCents: 5000)];
-        expect(() => receiptDueBreakdownForLines(const [], v, ReceiptType.standard), wirft('voucher_settings_missing'));
+        expect(() => receiptDueBreakdownForLines(const [], v, ReceiptType.standard), wirft('voucher_type_required'));
         expect(() => receiptDueBreakdownForLines(const [], v, ReceiptType.standard, voucherSettings: PosVoucherSettings.off),
-            wirft('voucher_settings_missing'));
+            wirft('voucher_type_required'));
       }
+      // Eine echte alte Einstellung mit Art rechnet wie 11.5 (Mehrzweck als Fluss).
+      expect(
+          receiptDueBreakdownForLines(const [], [KeckVoucher(action: VoucherAction.sell, type: VoucherType.multiPurpose, amountCents: 5000)],
+                  ReceiptType.standard, voucherSettings: mehrzweckEin)
+              .dueCents,
+          5000);
     });
 
     test('Altform nach dem Stichtag: plane laeuft, ein negativer Zahlbetrag ist voucher_exceeds_total', () {
@@ -338,7 +345,7 @@ void main() {
       });
       expect(receiptDueBreakdownForLines(const [], v, ReceiptType.standard, voucherSettings: e, smallBusiness: true).bucketsCents,
           toepfe({'amountRateZero': 5000}));
-      expect(() => receiptDueBreakdownForLines(const [], v, ReceiptType.standard), wirft('voucher_settings_missing'));
+      expect(() => receiptDueBreakdownForLines(const [], v, ReceiptType.standard), wirft('voucher_type_required'));
     });
 
     test('Auszahlung: Minusposition im Satz des Gutscheins', () {
@@ -433,9 +440,23 @@ void main() {
       final i = [info(codeM, mehrzweck(5000))];
       expect(
           () => receiptDueBreakdownForLines(
+              items,
+              [KeckVoucher(action: VoucherAction.sell, type: VoucherType.multiPurpose, typeId: 'vt_mz', amountCents: 1000), ...v],
+              ReceiptType.standard,
+              voucherInfo: i,
+              voucherTypes: const [VoucherDueType(id: 'vt_mz', kind: VoucherType.multiPurpose, amount: VoucherTypeAmount.free())]),
+          wirft('voucher_invalid'));
+      expect(
+          () => receiptDueBreakdownForLines(
               items, [KeckVoucher(action: VoucherAction.sell, type: VoucherType.multiPurpose, amountCents: 1000), ...v], ReceiptType.standard,
               voucherInfo: i, voucherSettings: mehrzweckEin),
           wirft('voucher_invalid'));
+      // Ohne Sorte und ohne alte Einstellung prueft der Server zuerst die Form des Wunschs (gutschein-beleg.pruefeWuensche).
+      expect(
+          () => receiptDueBreakdownForLines(
+              items, [KeckVoucher(action: VoucherAction.sell, type: VoucherType.multiPurpose, amountCents: 1000), ...v], ReceiptType.standard,
+              voucherInfo: i),
+          wirft('voucher_type_required'));
       expect(
           () => receiptDueBreakdownForLines(items, [...v, einloesen(VoucherType.multiPurpose, 'dtd5 9ecf 5knz', 100)], ReceiptType.standard,
               voucherInfo: i),
@@ -760,7 +781,19 @@ void main() {
             isTrue,
             reason: art);
       }
-      for (final code in ['voucher_rate_mismatch', 'voucher_exceeds_total', 'voucher_insufficient_balance', 'voucher_item_mismatch', 'voucher_settings_missing']) {
+      // Verkauf ueber eine Sorte (Stufe 4b): mit und ohne Art am Wunsch, frei und fix.
+      bool sortenVerkauf(Map<String, dynamic> f, {bool ohneArt = false}) => (f['input']['vouchers'] as List)
+          .any((v) => v['action'] == 'sell' && v['typeId'] != null && (!ohneArt || v['type'] == null));
+      bool angenommen(Map<String, dynamic> f) => (f['expected'] as Map).containsKey('dueCents');
+      expect(faelle.where((f) => sortenVerkauf(f) && angenommen(f)).length, greaterThanOrEqualTo(30));
+      expect(faelle.any((f) => sortenVerkauf(f, ohneArt: true) && angenommen(f)), isTrue);
+      expect(
+          faelle.any((f) => (f['input']['voucherTypes'] as List? ?? const []).any((t) => t['amount']['mode'] == 'fixed') && angenommen(f)),
+          isTrue);
+      for (final code in [
+        'voucher_rate_mismatch', 'voucher_exceeds_total', 'voucher_insufficient_balance', 'voucher_item_mismatch', 'voucher_type_required',
+        'voucher_type_not_found', 'voucher_amount_mismatch', 'voucher_payout_not_allowed', 'voucher_invalid',
+      ]) {
         expect(faelle.any((f) => (f['expected'] as Map)['voucherError'] == code), isTrue, reason: code);
       }
     });
@@ -787,6 +820,15 @@ void main() {
                 VoucherDueInfo(code: x['code'] as String, check: pruefungAusDraht((x['check'] as Map).cast())),
             ],
             voucherSettings: einstellung == null ? null : PosVoucherSettings.fromJson(einstellung),
+            voucherTypes: [
+              for (final t in (i['voucherTypes'] as List? ?? const []).cast<Map<String, dynamic>>())
+                VoucherDueType(
+                  id: t['id'] as String,
+                  kind: VoucherType.fromWire(t['kind'])!,
+                  vatRateBp: t['vatRateBp'] as int?,
+                  amount: t['amount']['mode'] == 'fixed' ? VoucherTypeAmount.fixed(t['amount']['cents'] as int) : const VoucherTypeAmount.free(),
+                ),
+            ],
             voucherArticles: [
               for (final a in (i['voucherArticles'] as List? ?? const []).cast<Map<String, dynamic>>())
                 VoucherDueArticle(id: a['id'] as String, priceCents: a['priceCents'] as int, vatRateBp: a['vatRateBp'] as int),

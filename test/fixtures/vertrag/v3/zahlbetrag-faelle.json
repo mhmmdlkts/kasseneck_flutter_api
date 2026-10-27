@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "90f66035c11062ba153d92802076c21e7102602957a681da148db116402f9c40",
-    "inputsSha256": "ef1648206351fe21b4cb0cb35e6235d45f938b548b20ca1a70f1de6d43fe9f47",
+    "sha256": "c9779c167da78af095a7a45a25d7cd69a1c31041adb99347e14dd2f7779a621c",
+    "inputsSha256": "ab5aba2efbc7fdfa6de0840e59800baf33bd4df6d091ae639b0fd8f41c15ab24",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -802,18 +802,33 @@
         "vouchers": [
           {
             "action": "sell",
-            "type": "single_purpose",
+            "typeId": "vt_ez20",
             "amountCents": 5000
           }
         ]
       },
       "setup": {
-        "einstellung": {
-          "wertArt": "einzweck",
-          "satzBp": 2000,
-          "gueltigkeit": "1+3",
-          "bestaetigtAt": 1
-        }
+        "sorten": [
+          {
+            "id": "vt_ez20",
+            "daten": {
+              "name": "Geschenkgutschein",
+              "art": "einzweck",
+              "satzBp": 2000,
+              "betrag": {
+                "modus": "frei"
+              },
+              "gueltigkeit": {
+                "muster": "jahre",
+                "jahre": 1
+              },
+              "auszahlung": "erlaubt",
+              "reihenfolge": 0,
+              "aktiv": true,
+              "verkauft": 0
+            }
+          }
+        ]
       },
       "expected": {
         "dueCents": 5000,
@@ -915,7 +930,8 @@
             "name": "Maniküre",
             "unitPriceCents": 3500,
             "vatRate": 20,
-            "active": true
+            "active": true,
+            "gutscheinLeistung": true
           }
         ]
       },

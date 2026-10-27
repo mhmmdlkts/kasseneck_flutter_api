@@ -17,6 +17,7 @@ import '../enums/qr_print_mode.dart';
 import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/qr_groesse.dart';
 import '../src/kasse/beleg_ausgaben.dart' show ReceiptOutput, ausgabenLesen;
+import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
 import '../src/kasse/rueckgabe.dart';
 import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
@@ -555,10 +556,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     }
     for (KeckVoucher voucher in vouchers??[]) {
       if (voucher.zeroRateBucket == true) continue;
-      if (valueVoucherSign == 1 && voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
+      if (valueVoucherSign == 1 && voucher.action == VoucherAction.redeem && artOderNull(voucher) == VoucherType.promo) {
         cents -= voucher.valueCents ?? 0;
       }
-      if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
+      if (voucher.action == VoucherAction.sell && artOderNull(voucher) == VoucherType.value) {
         cents += valueVoucherSign * (voucher.valueCents ?? 0);
       }
     }
@@ -573,7 +574,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   int get sumCents {
     int cents = subSumCents;
     for (KeckVoucher voucher in vouchers??[]) {
-      if (voucher.zeroRateBucket == true || voucher.type != VoucherType.value) continue;
+      if (voucher.zeroRateBucket == true || artOderNull(voucher) != VoucherType.value) continue;
       if (voucher.action == VoucherAction.redeem || voucher.action == VoucherAction.payout) {
         cents -= valueVoucherSign * (voucher.valueCents ?? 0);
       }
@@ -630,7 +631,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   int get totalPromoVoucherValueCents {
     int cents = 0;
     for (KeckVoucher voucher in vouchers??[]) {
-      if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
+      if (voucher.action == VoucherAction.redeem && artOderNull(voucher) == VoucherType.promo) {
         cents += voucher.valueCents ?? 0;
       }
     }

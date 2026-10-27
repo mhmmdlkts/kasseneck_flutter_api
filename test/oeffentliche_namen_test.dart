@@ -114,6 +114,7 @@ final Set<String> woerter = _liste('''
   reconciliation retained rights role running sales shift suggested take target tips float over without taken
   balance bucket exempt face manage multi pattern positions promotion purpose redeemable refundable reprint
   suffix taxed up used validity patterns
+  fixed rotation template unlimited years
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,

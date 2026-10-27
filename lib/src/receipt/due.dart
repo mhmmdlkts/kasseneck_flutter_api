@@ -32,9 +32,9 @@
 /// (`gutschein-beleg.plane`, Zwilling in `gutschein_plan.dart`). Was er dafuer
 /// aus seinen Daten liest, gibt die Kasse mit: je Einloesung/Auszahlung die
 /// Pruefung aus `checkVoucher` (`voucherInfo`, ueber den Code zugeordnet), fuer
-/// einen Verkauf die Gutschein-Einstellung der Kasse (`voucherSettings`), fuer
-/// einen Leistungsgutschein-Verkauf den Artikel (`voucherArticles`) und
-/// `smallBusiness` fuer ein Kleinunternehmer-Konto. Was fehlt oder was der
+/// einen Wertgutschein-Verkauf die Gutschein-Sorten (`voucherTypes`, Art, Satz,
+/// Betrag; seit 11.6.0), fuer einen Leistungsgutschein-Verkauf den Artikel
+/// (`voucherArticles`) und `smallBusiness` fuer ein Kleinunternehmer-Konto. Was fehlt oder was der
 /// Server abwiese, wirft `invalid_voucher` mit dem erwarteten Server-Code in
 /// [ReceiptDueError.voucherErrorCode]. Ein Beleg nur aus Auszahlungen hat
 /// einen negativen Zahlbetrag (genau eine Barzahlung ueber diesen Betrag);
@@ -256,13 +256,38 @@ class VoucherDueInfo {
 /// Artikel fuer den Verkauf eines Leistungsgutscheins: Preis und Satz wie im
 /// Artikelstamm der Kasse.
 class VoucherDueArticle {
-  const VoucherDueArticle({required this.id, required this.priceCents, required this.vatRateBp});
+  const VoucherDueArticle({required this.id, required this.priceCents, required this.vatRateBp, this.serviceVoucher});
 
   final String id;
   final int priceCents;
 
   /// Steuersatz in Basispunkten.
   final int vatRateBp;
+
+  /// Als Leistungsgutschein freigegeben (`PosArticle.serviceVoucher`): bei
+  /// `false` verkauft der Server den Artikel nicht
+  /// (`voucher_service_not_allowed`); ohne Angabe rechnet der Zahlbetrag wie
+  /// bisher.
+  final bool? serviceVoucher;
+}
+
+/// Gutschein-Sorte fuer den Verkauf: Kennung, Art, Satz und Betrag wie in
+/// `getKasseSettings` (`vouchers.types[]`). Zwilling von `VoucherDueType` im
+/// npm-Paket; jede [PosVoucherType] ist eine.
+class VoucherDueType {
+  const VoucherDueType({required this.id, required this.kind, this.vatRateBp, required this.amount});
+
+  final String id;
+
+  /// [VoucherType.multiPurpose] oder [VoucherType.singlePurpose]; eine Sorte
+  /// einer anderen Art verkauft der Server nicht.
+  final VoucherType kind;
+
+  /// Satz in Basispunkten, nur bei Einzweck (> 0); Mehrzweck `null`.
+  final int? vatRateBp;
+
+  /// Frei oder fest (dann traegt ein Verkauf genau diesen Betrag).
+  final VoucherTypeAmount amount;
 }
 
 /// Stichtag des 0-%-Topfs fuer Mehrzweck-Verkaeufe (Backend
@@ -299,11 +324,21 @@ class ReceiptDueBreakdown {
 ///
 /// Gutscheine der neuen Form: [voucherInfo] je Einloesung/Auszahlung die
 /// Pruefung aus `checkVoucher` (fehlt sie fuer einen Code:
-/// `voucher_not_found`); [voucherSettings] die Gutschein-Einstellung der
-/// Kasse, Pflicht fuer jeden Mehrzweck- und Einzweck-Verkauf (fehlt sie oder
-/// ist keine Art gewaehlt: `voucher_settings_missing`, eine andere Art:
-/// `voucher_invalid`); [voucherArticles] Preis und Satz fuer einen
-/// Leistungsgutschein-Verkauf (fehlt der Artikel: `voucher_item_mismatch`);
+/// `voucher_not_found`; eine Auszahlung eines Gutscheins mit
+/// [VoucherCheck.payout] `never`: `voucher_payout_not_allowed`);
+/// [voucherTypes] die Gutschein-Sorten der Kasse (`getKasseSettings`,
+/// `vouchers.types`, oder je Verkauf die gewaehlte): ein Wertgutschein wird
+/// nur ueber eine Sorte verkauft ([KeckVoucher.typeId]), Art und Satz kommen
+/// aus ihr (fehlt die Sorte hier oder verkauft der Server sie nicht:
+/// `voucher_type_not_found`, ein anderer Fixbetrag:
+/// `voucher_amount_mismatch`, eine andere Art am Wunsch: `voucher_invalid`);
+/// [voucherSettings] die alte Gutschein-Einstellung (bis 11.5): nur fuer einen
+/// Wert-Verkauf ohne `typeId` – nennt sie eine Art, rechnet der Zahlbetrag wie
+/// bisher, ohne sie oder ohne Art (so liest sich der Block jedes Servers ab
+/// Stufe 4b) `voucher_type_required`; [voucherArticles] Preis und Satz fuer
+/// einen Leistungsgutschein-Verkauf (fehlt der Artikel:
+/// `voucher_item_mismatch`, ist er nicht freigegeben:
+/// `voucher_service_not_allowed`);
 /// [smallBusiness] fuer ein Kleinunternehmer-Konto (Verkauf zu 0 %, eine
 /// Einzweck-Einloesung anteilig auf alle Saetze des Korbs, ebenso fuer einen
 /// befreit verkauften Gutschein, [VoucherCheck.exempt]);
@@ -319,6 +354,7 @@ int receiptDueCents(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
   String? zeroRateBucketFrom,
@@ -330,6 +366,7 @@ int receiptDueCents(
             tipRecipient: tipRecipient,
             voucherInfo: voucherInfo,
             voucherSettings: voucherSettings,
+            voucherTypes: voucherTypes,
             voucherArticles: voucherArticles,
             smallBusiness: smallBusiness,
             zeroRateBucketFrom: zeroRateBucketFrom,
@@ -346,6 +383,7 @@ ReceiptDueBreakdown receiptDueBreakdown(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
   String? zeroRateBucketFrom,
@@ -357,6 +395,7 @@ ReceiptDueBreakdown receiptDueBreakdown(
         tipRecipient: tipRecipient,
         voucherInfo: voucherInfo,
         voucherSettings: voucherSettings,
+        voucherTypes: voucherTypes,
         voucherArticles: voucherArticles,
         smallBusiness: smallBusiness,
         zeroRateBucketFrom: zeroRateBucketFrom,
@@ -377,6 +416,7 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
   String? zeroRateBucketFrom,
@@ -392,6 +432,7 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
         tipRecipient: tipRecipient,
         voucherInfo: voucherInfo,
         voucherSettings: voucherSettings,
+        voucherTypes: voucherTypes,
         voucherArticles: voucherArticles,
         smallBusiness: smallBusiness,
         zeroRateBucketFrom: zeroRateBucketFrom,
@@ -430,6 +471,7 @@ int voucherRedeemMaxCents(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
   String? zeroRateBucketFrom,
@@ -442,6 +484,7 @@ int voucherRedeemMaxCents(
         tipRecipient: tipRecipient,
         voucherInfo: voucherInfo,
         voucherSettings: voucherSettings,
+        voucherTypes: voucherTypes,
         voucherArticles: voucherArticles,
         smallBusiness: smallBusiness,
         zeroRateBucketFrom: zeroRateBucketFrom,
@@ -457,6 +500,7 @@ int voucherRedeemMaxCentsForLines(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
   String? zeroRateBucketFrom,
@@ -471,6 +515,7 @@ int voucherRedeemMaxCentsForLines(
     tipRecipient: tipRecipient,
     voucherInfo: voucherInfo,
     voucherSettings: voucherSettings,
+    voucherTypes: voucherTypes,
     voucherArticles: voucherArticles,
     smallBusiness: smallBusiness,
     zeroRateBucketFrom: zeroRateBucketFrom,
@@ -590,6 +635,7 @@ class _Optionen {
     this.tipRecipient,
     this.voucherInfo,
     this.voucherSettings,
+    this.voucherTypes,
     this.voucherArticles,
     this.smallBusiness = false,
     this.zeroRateBucketFrom,
@@ -601,6 +647,7 @@ class _Optionen {
   final ReceiptDueTipRecipient? tipRecipient;
   final List<VoucherDueInfo>? voucherInfo;
   final PosVoucherSettings? voucherSettings;
+  final List<VoucherDueType>? voucherTypes;
   final List<VoucherDueArticle>? voucherArticles;
   final bool smallBusiness;
   final String? zeroRateBucketFrom;
@@ -612,6 +659,7 @@ class _Optionen {
         tipRecipient: tipRecipient,
         voucherInfo: voucherInfo,
         voucherSettings: voucherSettings,
+        voucherTypes: voucherTypes,
         voucherArticles: voucherArticles,
         smallBusiness: smallBusiness,
         zeroRateBucketFrom: zeroRateBucketFrom,
@@ -665,9 +713,15 @@ _Rechnung _rechne(List<ReceiptDueLine> lines, List<KeckVoucher> vouchers, Receip
       o: PlanOptionen(
         voucherInfo: o.voucherInfo == null ? null : [for (final i in o.voucherInfo!) (code: i.code, check: i.check)],
         voucherSettings: o.voucherSettings,
+        voucherTypes: o.voucherTypes == null
+            ? null
+            : [for (final t in o.voucherTypes!) (id: t.id, kind: t.kind, vatRateBp: t.vatRateBp, amount: t.amount)],
         voucherArticles: o.voucherArticles == null
             ? null
-            : [for (final a in o.voucherArticles!) (id: a.id, priceCents: a.priceCents, vatRateBp: a.vatRateBp)],
+            : [
+                for (final a in o.voucherArticles!)
+                  (id: a.id, priceCents: a.priceCents, vatRateBp: a.vatRateBp, serviceVoucher: a.serviceVoucher),
+              ],
         smallBusiness: o.smallBusiness,
         zeroRateBucketFrom: o.zeroRateBucketFrom,
         today: o.today ?? ViennaTime.dayKey(DateTime.now()),

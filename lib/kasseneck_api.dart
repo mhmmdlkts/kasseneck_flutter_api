@@ -114,6 +114,7 @@ export 'src/receipt/due.dart'
         ReceiptDueTipShare,
         VoucherDueArticle,
         VoucherDueInfo,
+        VoucherDueType,
         receiptDueBreakdown,
         receiptDueBreakdownForLines,
         receiptDueCents,

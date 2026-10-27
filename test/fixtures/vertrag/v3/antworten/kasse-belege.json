@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "ec87fe9ec152900f6fe85659e54d78a67de2271470e8564cd2c8eabb6197a4f1",
-    "inputsSha256": "ef1648206351fe21b4cb0cb35e6235d45f938b548b20ca1a70f1de6d43fe9f47",
+    "sha256": "67e6724c25a0fe4ff89a99dd9b09666f16ce8af606efd1af0e98d55851b51086",
+    "inputsSha256": "ab5aba2efbc7fdfa6de0840e59800baf33bd4df6d091ae639b0fd8f41c15ab24",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -4721,6 +4721,7 @@
         "vouchers": [
           {
             "action": "sell",
+            "typeId": "vt_ez20",
             "type": "single_purpose",
             "amountCents": 5000
           }
@@ -4768,7 +4769,10 @@
                 "voucherType": "single_purpose",
                 "amountCents": 5000,
                 "vatRateBp": 2000,
-                "name": "Einzweckgutschein 20 %",
+                "name": "Geschenkgutschein (Einzweckgutschein 20 %)",
+                "typeId": "vt_ez20",
+                "typeName": "Geschenkgutschein",
+                "payout": "never",
                 "code": "····-····-JJJ2",
                 "codeSuffix": "JJJ2",
                 "voucherId": "auto2"
@@ -4804,7 +4808,7 @@
             "layoutRuleset": 2,
             "items": [
               {
-                "name": "Einzweckgutschein 20 %",
+                "name": "Geschenkgutschein (Einzweckgutschein 20 %)",
                 "vat": 20,
                 "vatRate": 20,
                 "priceOne": 50,
@@ -4919,7 +4923,7 @@
                 "kind": "columns",
                 "columns": [
                   {
-                    "text": "1  x Einzweckgutschein 20 % ····-JJJ2",
+                    "text": "1  x Geschenkgutschein (Einzweckgutschein 20 %) ····-JJJ2",
                     "width": 7,
                     "align": "left"
                   },
@@ -5065,10 +5069,12 @@
               "index": 0,
               "codeSuffix": "JJJ2",
               "faceValueCents": 5000,
+              "typeId": "vt_ez20",
+              "typeName": "Geschenkgutschein",
               "validity": {
-                "pattern": "1+3",
-                "redeemableUntil": "2027-09-26",
-                "refundableUntil": "2030-09-26",
+                "pattern": "unlimited",
+                "redeemableUntil": null,
+                "refundableUntil": null,
                 "validUntil": null
               }
             }
@@ -5086,7 +5092,7 @@
         "vouchers": [
           {
             "action": "sell",
-            "type": "multi_purpose",
+            "typeId": "vt_mz",
             "amountCents": 5000
           }
         ],
@@ -5133,7 +5139,10 @@
                 "voucherType": "multi_purpose",
                 "value": 50,
                 "valueCents": 5000,
-                "name": "Mehrzweckgutschein",
+                "name": "Geschenkgutschein (Mehrzweckgutschein)",
+                "typeId": "vt_mz",
+                "typeName": "Geschenkgutschein",
+                "payout": "allowed",
                 "code": "····-····-NNNY",
                 "codeSuffix": "NNNY",
                 "voucherId": "auto4"
@@ -5424,10 +5433,13 @@
               "index": 0,
               "codeSuffix": "NNNY",
               "faceValueCents": 5000,
+              "typeId": "vt_mz",
+              "typeName": "Geschenkgutschein",
               "validity": {
-                "pattern": "1+3",
-                "redeemableUntil": "2027-09-26",
-                "refundableUntil": "2030-09-26",
+                "pattern": "custom",
+                "redeemableYears": 3,
+                "redeemableUntil": "2029-09-26",
+                "refundableUntil": "2032-09-26",
                 "validUntil": null
               }
             }

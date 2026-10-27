@@ -23,6 +23,7 @@ import '../src/printing/printable.dart' show printableText;
 import '../src/printing/qr_groesse.dart';
 import '../src/receipt/aufdruck.dart' show belegartBlock, warnrahmen;
 import '../src/receipt/einzug.dart';
+import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
 import '../src/receipt/gutschein_bon.dart';
 import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
@@ -471,7 +472,7 @@ class PrintPaper {
       // noch 0-%-Zeile aus dem Eintrag, sonst zaehlte er doppelt.
       if (voucherStandsAsItem(voucher)) continue;
       // Am Storno-Beleg wird ein verkaufter Wertgutschein zurueckgezahlt.
-      final int vz = voucher.type == VoucherType.value ? receipt.valueVoucherSign : 1;
+      final int vz = artOderNull(voucher) == VoucherType.value ? receipt.valueVoucherSign : 1;
 
       if (voucher.isValid && voucher.action == VoucherAction.sell) {
         itemsByVat[VatRate.vat0] ??= [];
@@ -482,7 +483,7 @@ class PrintPaper {
           vat: VatRate.vat0
         ));
       }
-      if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
+      if (voucher.action == VoucherAction.sell && artOderNull(voucher) == VoucherType.value) {
         String amount = '1  x ';
         // Mehrzweck mit Code (vor dem Stichtag nur als Eintrag): wie die Position im 0-%-Topf.
         final bool mehrzweck = isMultiPurposeWithCode(voucher);
@@ -490,7 +491,7 @@ class PrintPaper {
         addDoubleText('$amount$text', '${formatCents(vz * (voucher.valueCents??0))} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
         if (mehrzweck) _einzugText(multiPurposeVatNote);
       }
-      if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo) {
+      if (voucher.action == VoucherAction.redeem && artOderNull(voucher) == VoucherType.promo) {
         // Am Storno-Beleg nur als Bezug: den Rabatt nimmt die Position
         // „Gutschein-Ausgleich“ zurueck (siehe subSumCents).
         final bool storno = receipt.valueVoucherSign == -1;
