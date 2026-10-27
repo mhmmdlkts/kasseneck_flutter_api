@@ -1,3 +1,126 @@
+## 11.6.0 (2026-10-27)
+
+Twin of `@kreiseck/kasseneck-api` `1.15.0` (contract files pulled from that
+version): vouchers at the register, stage 4b, voucher types
+(Gutschein-Sorten). A business names any number of voucher types; the
+register shows one tile per type in the tab "Gutscheine" and sells a value
+voucher only through a type. Additive for reading, with behaviour changes
+for selling (named below). Notes for callers:
+
+- **Voucher types in the register settings: `PosVoucherSettings.typeSale`,
+  `types`, `serviceArticles`, `labelDefault`.** New optional constructor
+  parameters (off, empty, `null`), so existing calls still compile.
+  `typeSale` shows the tab (server switch and at least one sellable type or
+  service article), `types` are the sellable types in tile order
+  (`PosVoucherType`), `serviceArticles` adds the fixed tile
+  "Leistungsgutschein", `labelDefault` is the business's standard label
+  template. Fail-closed as before: a malformed `typeSale`, `serviceArticles`
+  or `types` closes the whole block (`PosVoucherSettings.off`), a malformed
+  type is dropped on its own (unknown kind, rate not matching the kind, fixed
+  amount outside 1.00-10,000.00 €, years outside 1-30, payout `never` with a
+  limited validity, inactive, reserved id; the first of two equal ids
+  counts), and `typeSale` is off when no type and no service article is
+  left. An unusable label template becomes `null` and never closes anything.
+  The old field `label` (registers before 11.6) is not read. `toJson` now
+  always writes the four fields and `==` compares them (types and templates
+  deeply), so a stored block reads back equal. Reason: from stage 4b the
+  server sells value vouchers only through a type and keeps `sale` always
+  `false`.
+- **New public types (`package:kasseneck_api/pos.dart`):** `PosVoucherType`
+  (`id`, `name`, `kind`, `vatRateBp`, `amount`, `validity`, `payout`,
+  `label`, `order`, `active`, `soldCount`, `fromJson`, `toJson`),
+  `VoucherTypeAmount` (`.free()`, `.fixed(cents)`), `VoucherAmountMode`,
+  `VoucherTypeValidity` (`.unlimited()`, `.years(n)`),
+  `VoucherTypeValidityPattern`, `VoucherPayout`, `VoucherLabelTemplate` (a
+  copy of the template with `size`, `layout`, `rotation`, `fields`,
+  `freeText` and `toJson`; the package draws no labels), and the lists
+  `voucherTypeKinds`, `voucherAmountModes`, `voucherTypeValidityPatterns`,
+  `voucherPayouts` (equal to `surface.json` and the `/v3` catalogues). From
+  `package:kasseneck_api/kasseneck_api.dart`: `VoucherDueType` (`id`,
+  `kind`, `vatRateBp`, `amount`); every `PosVoucherType` is one, so
+  `settings.vouchers.types` goes straight into `voucherTypes`. Reason: web
+  register and app read the same model.
+- **A value voucher is sold only with `typeId`.** `KeckVoucher.typeId`
+  (constructor, `fromJson`, `toJson`, `toPayload`); for a `PosVoucherType t`
+  the recommended wish is `KeckVoucher(action: VoucherAction.sell, type:
+  t.kind, typeId: t.id, amountCents: …)`, with a fixed amount exactly
+  `t.amount.cents`. On
+  the wire `type` may be missing (the kind then comes from the type): such a
+  wish read with `fromJson` goes out again without `type`. Behaviour change:
+  `isValid` is `false` for a multi- or single-purpose sale without `typeId`,
+  and `sellReceipt` and the register's `sell` reject it before sending
+  (message starts with `voucher_type_required`); `typeId` on any other
+  action or kind is rejected as `voucher_invalid`, and so are `typeName` and
+  `payout` on a wish (both are now in `serverFields`). Reason: the server
+  answers a value sale without type `voucher_type_required`; nothing is sent
+  that it would refuse.
+- **`KeckVoucher.hasType`; `KeckVoucher.type` throws without a type.**
+  Behaviour change: `fromJson` no longer turns an explicit sale
+  (`action: sell`) with a missing or unknown `type` into `promo`. Such a
+  voucher has no type (`hasType` is `false`), reading `type` throws
+  `StateError`, and an unknown value is written back unchanged; it is never
+  sendable, except the sale through a type without kind above. Every other
+  action keeps the fallback to `promo`, and every receipt entry of the server
+  carries a type. The package's own readers (receipt sums, Bon, receipt
+  widget, cancellation helpers, due amount) treat a voucher without type as
+  neither value nor promo voucher. Reason: a sale must never count as a
+  discount, and a kind must not be guessed.
+- **Due amount with voucher types: `voucherTypes` on `receiptDueCents`,
+  `receiptDueBreakdown`, `receiptDueBreakdownForLines`,
+  `voucherRedeemMaxCents` and `voucherRedeemMaxCentsForLines`.** A sale
+  through a type takes kind and rate from the type (multi-purpose as value
+  flow, from the zero-rate date in the 0 % bucket; single-purpose as an item
+  at the rate of the type, 0 % for a small business). A type that is not
+  passed or that the server would not sell (rate not matching the kind,
+  fixed amount out of range, reserved id) throws `voucher_type_not_found`, a
+  different fixed amount `voucher_amount_mismatch`, a `type` other than the
+  kind of the type `voucher_invalid`. Behaviour change: a value sale without
+  `typeId` still computes with a `voucherSettings` that names a kind exactly
+  as in 11.5, but without `voucherSettings` or with one naming no kind
+  (`valueVoucherType: null`, as every stage-4b server sends) it now throws
+  `voucher_type_required` instead of `voucher_settings_missing`. Reason: the
+  register computes the amount to charge before the card terminal, with the
+  same rules and codes as the server's `gutschein-beleg.plane`.
+- **Payout locked per voucher: `VoucherCheck.payout` (`VoucherPayout`, frozen
+  at sale) and `VoucherCheck.typeName` from `checkVoucher`.** A payout of a
+  `never` voucher throws `voucher_payout_not_allowed` in the due amount (also
+  when expired). An unknown payout value reads as `never` without throwing;
+  a `typeName` that is not a non-empty text is a read error. Reason: a
+  business may exclude payouts for unlimited voucher types; redeeming must
+  not fail on a new value.
+- **Validity in years: `VoucherValidity.redeemableYears`** (constructor
+  parameter, part of `==`) from `checkVoucher`, a whole number from 1
+  (anything else is a read error, like the other fields of the answer). The
+  patterns stay `unlimited`, `1+3`, `custom` (`voucherValidityPatterns`); the
+  type's own pattern `years` never appears on a voucher. Reason: the server
+  sends a type with "N years redeemable, then 3 years refundable" as `1+3`
+  or `custom` with the dates, so registers with 11.5 keep redeeming such
+  vouchers.
+- **Service vouchers only for approved articles: `PosArticle.serviceVoucher`**
+  (read from `serviceVoucher`, only `true` counts; in `toJson` and
+  `PosArticle.fields`) and `VoucherDueArticle.serviceVoucher`: `false` throws
+  `voucher_service_not_allowed`, absent computes as before. Reason: the tile
+  "Leistungsgutschein" offers only approved articles; the server sells no
+  other.
+- **Receipt entries of a sale through a type** read and write back `typeId`,
+  `typeName` and `payout` (`KeckVoucher.typeName`, `KeckVoucher.payout`, as
+  text: an unknown value stays). Reason: the receipt and the label show the
+  type name, and a cached receipt must write back unchanged.
+- **Catalogue: 5 labels and 5 sentences.** `voucher.tab` (Gutscheine),
+  `voucher.enter_amount` (Betrag eingeben), `voucher.service_tile`
+  (Leistungsgutschein), `voucher.kind_multi_short` (Mehrzweck),
+  `voucher.kind_single_short` (Einzweck {rate} %); `voucherErrorMessage` maps
+  `voucher_type_required`, `voucher_type_not_found`,
+  `voucher_amount_mismatch`, `voucher_service_not_allowed` and
+  `voucher_payout_not_allowed` to `voucher_error.*`. The codes of the
+  customer area (`invalid_voucher_type`, `voucher_type_in_use`,
+  `too_many_voucher_types`) are not register codes and get no sentence.
+  Reason: web register and app say the same words.
+- Contract re-fetched (stage 4b): the generated due cases
+  (`receipt-due-voucher-generated.json`) now sell through types, with and
+  without `type`, free and fixed, and cover the rejections above; the server
+  names the item of a single-purpose sale with the type name.
+
 ## 11.5.0 (2026-10-23)
 
 Twin of `@kreiseck/kasseneck-api` `1.14.0` (contract files pulled from that
