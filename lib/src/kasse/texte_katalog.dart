@@ -118,6 +118,7 @@ const Map<String, PosText> posMessages = {
   'voucher_error.amount_mismatch': PosText('Die Gutschein-Sorte hat sich geändert. Die Kasse lädt die Sorten neu.'),
   'voucher_error.service_not_allowed': PosText('Dieser Artikel ist nicht als Leistungsgutschein freigegeben.'),
   'voucher_error.payout_not_allowed': PosText('Dieser Gutschein kann nicht ausgezahlt werden.'),
+  'voucher.type_changed': PosText('Diese Gutschein-Sorte hat sich geändert. Bitte die Zeile entfernen und die Kachel neu antippen.'),
   'voucher.reentry_needed': PosText('Die Karte ist belastet, der Beleg fehlt noch: zu jedem Gutschein den Code erneut eingeben, dann den Beleg abschließen.'),
   'voucher.reentry_mismatch': PosText('Mit diesen Gutscheinen ergibt der Beleg nicht mehr den belasteten Betrag – die Karte zurückbuchen.'),
   'voucher.not_this_voucher': PosText('Das ist nicht der Gutschein ····-{suffix}.', placeholders: ['suffix']),

@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "8307d3b935f124ed1c8f6faa826daa450daae51fae8f187031c461baa1103769",
-    "inputsSha256": "ab5aba2efbc7fdfa6de0840e59800baf33bd4df6d091ae639b0fd8f41c15ab24",
+    "sha256": "8ab1b71c62ba07684e9ef254a7434be434247afdb1ac9947e083b4b0af5f3c04",
+    "inputsSha256": "97a401b10dd0a0b95dac705e6c1b37bdf50b0d1c88afe98e1a1d1b3e753456e6",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -192,6 +192,26 @@
         "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
+      },
       "created_at": "2026-09-26T08:00:00.000Z",
       "updated_at": "2026-09-26T08:00:00.000Z",
       "creditedCents": {
@@ -303,6 +323,26 @@
         "farbe": "#17150F",
         "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
+      },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
       },
       "uidNachweis": {
         "pruefungId": "p_eu_heute",
@@ -439,6 +479,26 @@
         "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
+      },
       "uidRisiko": {
         "bestaetigtVon": "test_welt1",
         "bestaetigtAm": 1790409600000,
@@ -552,6 +612,26 @@
         "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
+      },
       "created_at": "2026-09-26T08:00:00.000Z",
       "updated_at": "2026-09-26T08:00:00.000Z"
     },
@@ -657,6 +737,26 @@
         "farbe": "#17150F",
         "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
+      },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
       },
       "created_at": "2026-09-26T08:00:00.000Z",
       "updated_at": "2026-09-26T08:00:00.000Z",
@@ -794,6 +894,26 @@
         "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
       },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
+      },
       "created_at": "2026-09-26T08:00:00.000Z",
       "updated_at": "2026-09-26T08:00:00.000Z"
     },
@@ -899,6 +1019,26 @@
         "farbe": "#17150F",
         "absenderName": "Bäckerei Kornblum",
         "fusszeile": []
+      },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
       },
       "created_at": "2026-09-26T08:00:00.000Z",
       "updated_at": "2026-09-26T08:00:00.000Z",

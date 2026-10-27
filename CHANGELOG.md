@@ -73,8 +73,10 @@ for selling (named below). Notes for callers:
   at the rate of the type, 0 % for a small business). A type that is not
   passed or that the server would not sell (rate not matching the kind,
   fixed amount out of range, reserved id) throws `voucher_type_not_found`, a
-  different fixed amount `voucher_amount_mismatch`, a `type` other than the
-  kind of the type `voucher_invalid`. Behaviour change: a value sale without
+  different fixed amount `voucher_amount_mismatch`, and so does a `type`
+  other than the kind of the type (the owner switched the kind after the
+  register loaded its types; the register reloads them on this code).
+  Behaviour change: a value sale without
   `typeId` still computes with a `voucherSettings` that names a kind exactly
   as in 11.5, but without `voucherSettings` or with one naming no kind
   (`valueVoucherType: null`, as every stage-4b server sends) it now throws
@@ -92,10 +94,13 @@ for selling (named below). Notes for callers:
   parameter, part of `==`) from `checkVoucher`, a whole number from 1
   (anything else is a read error, like the other fields of the answer). The
   patterns stay `unlimited`, `1+3`, `custom` (`voucherValidityPatterns`); the
-  type's own pattern `years` never appears on a voucher. Reason: the server
-  sends a type with "N years redeemable, then 3 years refundable" as `1+3`
-  or `custom` with the dates, so registers with 11.5 keep redeeming such
-  vouchers.
+  type's own pattern `years` never appears on a voucher. A voucher of a type
+  with N years comes as `1+3` for every N, with the explicit dates
+  (`redeemableUntil` = sale + N years, `refundableUntil` = sale + N + 3
+  years) and `redeemableYears` = N; read N from `redeemableYears`, never from
+  the pattern. Reason: registers with 11.5 keep redeeming such vouchers and
+  print "einlösbar bis <date>" from `redeemableUntil` on a reprint (with
+  `custom` and no `validUntil` they printed no validity line at all).
 - **Service vouchers only for approved articles: `PosArticle.serviceVoucher`**
   (read from `serviceVoucher`, only `true` counts; in `toJson` and
   `PosArticle.fields`) and `VoucherDueArticle.serviceVoucher`: `false` throws
@@ -116,6 +121,22 @@ for selling (named below). Notes for callers:
   customer area (`invalid_voucher_type`, `voucher_type_in_use`,
   `too_many_voucher_types`) are not register codes and get no sentence.
   Reason: web register and app say the same words.
+- **One sentence of the register itself: `voucher.type_changed`** ("Diese
+  Gutschein-Sorte hat sich geändert. Bitte die Zeile entfernen und die Kachel
+  neu antippen."). The register shows it on a voucher sale line in the cart
+  that no longer matches the reloaded types (type changed, deactivated or
+  deleted); the sentences after a server rejection stay
+  `voucher_error.type_not_found` and `voucher_error.amount_mismatch`. Reason:
+  those say "Die Kasse lädt die Sorten neu", which is over once the types are
+  reloaded; the line blocks payment until it is removed and the tile tapped
+  again.
+- **Two server codes from the re-fetched contract:** `idempotency_conflict`
+  in `receiptErrorCodes` (the server takes an optional `idempotencyKey` on
+  `createReceipt`; the same key with a different body is rejected and nothing
+  is written; this package does not send a key yet) and `invoice_number_taken`
+  in `invoiceErrorCodes` (the invoice number is already taken, nothing
+  issued). Reason: the lists equal the `/v3` vocabulary of the server, which
+  gained both codes (twin of npm 1.15.0).
 - Contract re-fetched (stage 4b): the generated due cases
   (`receipt-due-voucher-generated.json`) now sell through types, with and
   without `type`, free and fixed, and cover the rejections above; the server

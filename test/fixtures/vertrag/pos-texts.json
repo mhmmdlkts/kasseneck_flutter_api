@@ -420,6 +420,9 @@
     "voucher_error.payout_not_allowed": {
       "text": "Dieser Gutschein kann nicht ausgezahlt werden."
     },
+    "voucher.type_changed": {
+      "text": "Diese Gutschein-Sorte hat sich geändert. Bitte die Zeile entfernen und die Kachel neu antippen."
+    },
     "voucher.reentry_needed": {
       "text": "Die Karte ist belastet, der Beleg fehlt noch: zu jedem Gutschein den Code erneut eingeben, dann den Beleg abschließen."
     },

@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "cac577066b5f6bfb5901d35fecfd6f8b20dfbdf5c48381b938d7c137d0a7c018",
-    "inputsSha256": "ab5aba2efbc7fdfa6de0840e59800baf33bd4df6d091ae639b0fd8f41c15ab24",
+    "sha256": "f00792a09a9db30291009681aa6e57041a136cff3f35d2884b2fbdc21b760169",
+    "inputsSha256": "97a401b10dd0a0b95dac705e6c1b37bdf50b0d1c88afe98e1a1d1b3e753456e6",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -1306,6 +1306,7 @@
       "invoice_ambiguous",
       "invoice_api_not_enabled",
       "invoice_not_found",
+      "invoice_number_taken",
       "invoice_requirements_missing",
       "invoice_setup_incomplete",
       "kind_not_allowed",
@@ -1672,6 +1673,7 @@
       "cashregister_decommissioned",
       "final_receipt_expired",
       "final_receipt_not_allowed",
+      "idempotency_conflict",
       "module_inactive",
       "not_permitted",
       "receipt_limit_exceeded",
@@ -1908,7 +1910,8 @@
       "vat_id_check_pending",
       "reservation_not_found",
       "reservation_mismatch",
-      "reservation_not_active"
+      "reservation_not_active",
+      "invoice_number_taken"
     ],
     "partner": [
       "validation",
@@ -2270,6 +2273,7 @@
         "cashregister_decommissioned",
         "final_receipt_expired",
         "final_receipt_not_allowed",
+        "idempotency_conflict",
         "module_inactive",
         "not_permitted",
         "receipt_limit_exceeded",
@@ -2362,6 +2366,7 @@
       ],
       "getReceipt": [],
       "createReceipt": [
+        "idempotency_conflict",
         "not_permitted",
         "payment_amount_invalid",
         "payment_method_invalid",
@@ -3593,7 +3598,7 @@
           },
           {
             "muster": {
-              "$pattern": "^Ungültige Daten: ((?:items|vouchers|paymentMethod|creditCardProvider|cardPaymentId|cardPaymentData|zeroKind|cancellationReason)(?:\\.[A-Za-z]+)?) "
+              "$pattern": "^Ungültige Daten: ((?:items|vouchers|paymentMethod|creditCardProvider|cardPaymentId|cardPaymentData|zeroKind|cancellationReason|idempotencyKey)(?:\\.[A-Za-z]+)?) "
             },
             "code": "validation",
             "feld": {
@@ -3634,6 +3639,10 @@
           {
             "text": "Gutscheincode konnte nicht vergeben werden. Bitte erneut versuchen.",
             "code": "server_error"
+          },
+          {
+            "text": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+            "code": "idempotency_conflict"
           }
         ],
         "nachrichtWoerter": {

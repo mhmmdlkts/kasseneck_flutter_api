@@ -330,8 +330,8 @@ class ReceiptDueBreakdown {
 /// `vouchers.types`, oder je Verkauf die gewaehlte): ein Wertgutschein wird
 /// nur ueber eine Sorte verkauft ([KeckVoucher.typeId]), Art und Satz kommen
 /// aus ihr (fehlt die Sorte hier oder verkauft der Server sie nicht:
-/// `voucher_type_not_found`, ein anderer Fixbetrag:
-/// `voucher_amount_mismatch`, eine andere Art am Wunsch: `voucher_invalid`);
+/// `voucher_type_not_found`, ein anderer Fixbetrag oder eine andere Art am
+/// Wunsch (die Sorte wurde umgestellt): `voucher_amount_mismatch`);
 /// [voucherSettings] die alte Gutschein-Einstellung (bis 11.5): nur fuer einen
 /// Wert-Verkauf ohne `typeId` – nennt sie eine Art, rechnet der Zahlbetrag wie
 /// bisher, ohne sie oder ohne Art (so liest sich der Block jedes Servers ab

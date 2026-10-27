@@ -400,11 +400,15 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
     }
     final sorteId = v.typeId;
     if (istWertVerkauf(v) && sorteId != null) {
-      // Verkauf ueber eine Sorte (gutschein-beleg.plane): unbekannt, andere Art, falscher Fixbetrag.
+      // Verkauf ueber eine Sorte (gutschein-beleg.plane): unbekannt, andere Art, falscher Fixbetrag. Eine andere Art
+      // heisst: die Kasse hat eine alte Sicht (Sorte umgestellt) – wie ein anderer Fixbetrag voucher_amount_mismatch,
+      // die Kasse laedt die Sorten neu.
       final sorte = _sorteZumWunsch(o.voucherTypes, sorteId);
       if (sorte == null) throw PlanFehler('voucher_type_not_found', 'Gutschein ${i + 1}: die Gutschein-Sorte fehlt (voucherTypes).');
       final wunschArt = artOderNull(v);
-      if (wunschArt != null && wunschArt != sorte.kind) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: die Art passt nicht zur Gutschein-Sorte.');
+      if (wunschArt != null && wunschArt != sorte.kind) {
+        throw PlanFehler('voucher_amount_mismatch', 'Gutschein ${i + 1}: die Art passt nicht (mehr) zur Gutschein-Sorte.');
+      }
       if (sorte.amount.mode == VoucherAmountMode.fixed && v.amountCents != sorte.amount.cents) {
         throw PlanFehler('voucher_amount_mismatch', 'Gutschein ${i + 1}: der Betrag passt nicht zum Fixbetrag der Gutschein-Sorte.');
       }

@@ -56,10 +56,11 @@ final List<String> voucherStatuses = List.unmodifiable([for (final s in VoucherS
 /// rueckzahlbar, `custom`).
 ///
 /// Nur die Muster, die der Server an Gutscheinen nach aussen gibt: eine Sorte
-/// mit „N Jahre“ geht als `1+3` bzw. `custom` mit
-/// [VoucherValidity.redeemableYears] hinaus (Nachtrag E1), damit Kassen mit
-/// 11.5 beim Einloesen nicht an einem neuen Muster scheitern. Das Muster der
-/// Sorte selbst steht in [voucherTypeValidityPatterns].
+/// mit „N Jahre“ geht fuer jedes N als `1+3` mit den Daten und
+/// [VoucherValidity.redeemableYears] = N hinaus (Nachtrag E1), damit Kassen
+/// mit 11.5 beim Einloesen nicht an einem neuen Muster scheitern und
+/// „einloesbar bis“ mit dem Datum drucken. Das Muster der Sorte selbst steht in
+/// [voucherTypeValidityPatterns].
 const List<String> voucherValidityPatterns = ['unlimited', '1+3', 'custom'];
 
 /// Gueltigkeit eines Gutscheins; Daten als `YYYY-MM-DD` (Wiener Tag). Was der
@@ -71,9 +72,9 @@ class VoucherValidity {
   final String pattern;
 
   /// Gutschein einer Sorte „N Jahre einloesbar, danach 3 Jahre Rueckzahlung“:
-  /// die Zahl N (ab 1). Fehlt bei Gutscheinen ohne Sorte und bei
-  /// unbefristeten; die Daten stehen trotzdem in [redeemableUntil] und
-  /// [refundableUntil].
+  /// die Zahl N (ab 1); [pattern] ist dann `1+3` fuer jedes N. Fehlt bei
+  /// Gutscheinen ohne Sorte und bei unbefristeten; die Daten stehen trotzdem
+  /// in [redeemableUntil] (+N) und [refundableUntil] (+N+3) und gelten.
   final int? redeemableYears;
   final String? redeemableUntil;
   final String? refundableUntil;

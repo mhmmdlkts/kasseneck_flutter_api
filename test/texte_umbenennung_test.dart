@@ -80,7 +80,7 @@ const _nach10 = (
     'cancellation.voucher_sale_cancelled', 'cancellation.promo_valid_again',
     // Gutschein-Sorten (11.6.0, npm 1.15.0)
     'voucher_error.type_required', 'voucher_error.type_not_found', 'voucher_error.amount_mismatch',
-    'voucher_error.service_not_allowed', 'voucher_error.payout_not_allowed',
+    'voucher_error.service_not_allowed', 'voucher_error.payout_not_allowed', 'voucher.type_changed',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',

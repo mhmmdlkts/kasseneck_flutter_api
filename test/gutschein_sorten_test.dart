@@ -341,15 +341,16 @@ void main() {
         ..['typeName'] = 'Geschenkgutschein'
         ..['payout'] = 'never'
         ..['validity'] = {
-          'pattern': 'custom',
+          'pattern': '1+3',
           'redeemableYears': 3,
           'redeemableUntil': '2029-09-20',
           'refundableUntil': '2032-09-20',
           'validUntil': null,
         });
       expect([v.typeName, v.payout], ['Geschenkgutschein', VoucherPayout.never]);
-      expect(v.validity, const VoucherValidity(pattern: 'custom', redeemableYears: 3, redeemableUntil: '2029-09-20', refundableUntil: '2032-09-20'));
-      expect(v.validity, isNot(const VoucherValidity(pattern: 'custom', redeemableUntil: '2029-09-20', refundableUntil: '2032-09-20')));
+      // Jedes N geht als `1+3` mit den Daten der Sorte hinaus (Nachtrag E1), N steht in redeemableYears.
+      expect(v.validity, const VoucherValidity(pattern: '1+3', redeemableYears: 3, redeemableUntil: '2029-09-20', refundableUntil: '2032-09-20'));
+      expect(v.validity, isNot(const VoucherValidity(pattern: '1+3', redeemableUntil: '2029-09-20', refundableUntil: '2032-09-20')));
       // Ein Gutschein ohne Sorte (Stufe 4 und aelter): die Felder fehlen.
       final alt = await mit((_) {});
       expect([alt.typeName, alt.payout, alt.validity?.redeemableYears], everyElement(isNull));
@@ -582,13 +583,15 @@ void main() {
           ReceiptType.standard, voucherTypes: s.types), wirft('voucher_amount_mismatch'));
     });
 
-    test('Fixbetrag muss stimmen (voucher_amount_mismatch), die Art passt zur Sorte (voucher_invalid)', () {
+    // Eine andere Art am Wunsch als an der Sorte heisst: die Kasse hat eine alte Sicht (Sorte umgestellt) – wie beim
+    // Server voucher_amount_mismatch, die Kasse laedt die Sorten neu.
+    test('Fixbetrag und Art muessen zur Sorte passen, sonst voucher_amount_mismatch', () {
       expect(receiptDueCents(const [], [wunsch({'action': 'sell', 'typeId': 'vt_fix50', 'amountCents': 5000})], ReceiptType.standard,
           voucherTypes: _sorten), 5000);
       expect(() => receiptDueCents(const [], [wunsch({'action': 'sell', 'typeId': 'vt_fix50', 'amountCents': 4999})], ReceiptType.standard,
           voucherTypes: _sorten), wirft('voucher_amount_mismatch'));
       expect(() => receiptDueCents(const [], [wunsch({'action': 'sell', 'type': 'multi_purpose', 'typeId': 'vt_ez10', 'amountCents': 5000})],
-          ReceiptType.standard, voucherTypes: _sorten), wirft('voucher_invalid'));
+          ReceiptType.standard, voucherTypes: _sorten), wirft('voucher_amount_mismatch'));
     });
 
     test('eine unstimmige Sorte verkauft der Server nicht (voucher_type_not_found)', () {
@@ -701,6 +704,14 @@ void main() {
       for (final code in ['invalid_voucher_type', 'voucher_type_in_use', 'too_many_voucher_types']) {
         expect(voucherErrorMessage(code), isNull, reason: code);
       }
+    });
+
+    // Eine Verkaufszeile, die nach dem Neuladen der Sorten nicht mehr passt, sperrt das Kassieren mit einem eigenen Satz
+    // der Kasse – der Satz zur Absage des Servers sagt „Die Kasse laedt die Sorten neu“, das ist dann vorbei.
+    test('Satz fuer eine Verkaufszeile mit geaenderter Sorte', () {
+      expect(messageText('voucher.type_changed'),
+          'Diese Gutschein-Sorte hat sich geändert. Bitte die Zeile entfernen und die Kachel neu antippen.');
+      expect(messageText('voucher.type_changed'), isNot(messageText('voucher_error.amount_mismatch')));
     });
   });
 }
