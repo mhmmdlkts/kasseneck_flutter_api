@@ -1150,12 +1150,14 @@ void main() {
     });
 
     test('neue Codes hinten, in der Reihenfolge des Backends', () {
-      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 7, invoiceErrorCodes.length - 5),
+      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 8, invoiceErrorCodes.length - 6),
           ['einvoice_unavailable', 'amount_too_large']);
-      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 5, invoiceErrorCodes.length - 3),
+      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 6, invoiceErrorCodes.length - 4),
           ['vat_id_invalid', 'vat_id_check_pending']);
-      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 3),
+      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 4, invoiceErrorCodes.length - 1),
           ['reservation_not_found', 'reservation_mismatch', 'reservation_not_active']);
+      // 11.7 (npm 1.16.0): Rechnungsnummer schon vergeben, hinten angehaengt.
+      expect(invoiceErrorCodes.last, 'invoice_number_taken');
       expect(invoiceNoticeCodes.last, 'reservation_expired');
       for (final code in invoiceNoticeCodes) {
         expect(invoiceErrorCodes, isNot(contains(code)), reason: code);

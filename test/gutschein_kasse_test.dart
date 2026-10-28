@@ -278,8 +278,10 @@ void main() {
           .toList();
       expect(faelle, isNotEmpty);
       for (final f in faelle) {
-        final block = f['response']['data']['vouchers'];
-        expect(PosVoucherSettings.fromJson(block).toJson(), block);
+        final block = f['response']['data']['vouchers'] as Map<String, dynamic>;
+        // Das alte Feld `label` (Etikett-Vorlage der Kassen vor Gutschein-Stufe 4b)
+        // liest das Paket nicht, wie npm 1.16.0; es geht darum nicht zurueck.
+        expect(PosVoucherSettings.fromJson(block).toJson(), {...block}..remove('label'), reason: '${f['case']}');
       }
       final w = _weg(faelle.first['response'] as Map<String, dynamic>);
       final s = await PosSettingsClient(w.transport, deviceId: '').load();

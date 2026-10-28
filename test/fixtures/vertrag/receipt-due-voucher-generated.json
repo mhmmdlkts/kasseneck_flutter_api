@@ -3,7 +3,7 @@
   "_source": {
     "beleg-toepfe.js": "60630493a589469d1cdfeea6fef667d20feb8f3a156819ba4d90b21501fdc4ea",
     "gutschein-beleg.js": "8dac4b9c734344ffdad92a4027a11eec73153dbbacdadae3e97ef2cc345a1a66",
-    "gutschein-core.js": "47235038bbb7efc1926af2bee178714421df5a1af169f8839047aff01ede3ffd",
+    "gutschein-core.js": "70456d76bda1a7acb5dc0574bde4fb390d1ce1d75157e31e3cd8de3fa6e28492",
     "tip-core.js": "2d5b65c3cbe96935c8537d35f02b30906a7477afa340e18325b60bd60af1c7d9",
     "vat-buckets.js": "92c69632c0120dbb09a22cef5a36b052e81605d99907eeda7289b0d3db78454c",
     "zahlungen-core.js": "7ea8b07dfd222741049a47bec0149953d5696b0e1e089bf9919d4bd2cafff530"

@@ -70,6 +70,9 @@ const List<String> invoiceErrorCodes = [
   'reservation_not_found',
   'reservation_mismatch',
   'reservation_not_active',
+  // Seit 11.7 (Vertrag 1.16.0): die Rechnungsnummer ist schon vergeben
+  // (§ 11 Abs. 1 Z 3 lit. h UStG), nichts ausgestellt.
+  'invoice_number_taken',
 ];
 
 /// Fehlercodes, die nicht die Rechnung, sondern die Anfrage betreffen:

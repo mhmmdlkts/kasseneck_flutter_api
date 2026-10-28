@@ -1,5 +1,5 @@
 {
-  "version": "1.14.0",
+  "version": "1.16.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -45,6 +45,7 @@
       "listPartnerCustomers",
       "listPartnerWebhookDeliveries",
       "listPartnerWebhooks",
+      "listReceipts",
       "recordInvoicePayment",
       "reportCustomerContract",
       "requestCustomerSignature",
@@ -256,7 +257,8 @@
       "cancelStocktake",
       "getStocktakePdf",
       "orderSignatureCard",
-      "getSignatureCardOrder"
+      "getSignatureCardOrder",
+      "listReceipts"
     ],
     "pos": [
       "pairRegisterDevice",
@@ -1129,7 +1131,8 @@
       "vat_id_check_pending",
       "reservation_not_found",
       "reservation_mismatch",
-      "reservation_not_active"
+      "reservation_not_active",
+      "invoice_number_taken"
     ],
     "invoiceLanguages": [
       "de",

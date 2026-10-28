@@ -905,54 +905,46 @@ class KasseneckApi {
     }
   }
 
-  /// Returns all receipts created between [start] and [end].
+  /// Returns all receipts created between [start] and [end] ([end]
+  /// exclusive), oldest first, each with the header data of the business
+  /// (company, address, footer, logo).
+  ///
+  /// [start] and [end] are read as Vienna wall clock, without time zone, as
+  /// before. Since 11.7 the receipts come from `listReceipts` (`view: full`,
+  /// page by page) instead of `getReportV2`, which the server limits to 62
+  /// days (`range_too_long`); a period longer than 31 days is fetched in
+  /// consecutive windows of at most 31 calendar days. An error on any page
+  /// throws: there is no partial result. A receipt that cannot be read is
+  /// skipped, as before.
   Future<List<KasseneckReceipt>> getReceipts(DateTime start, DateTime end) async {
     if (start.isAfter(end)) {
       throw ArgumentError('start darf nicht nach end sein.');
     }
+    // Wie bisher an getReportV2: die Felder des DateTime als Wanduhr, ohne
+    // Bruchteile und ohne Zeitzone. Eine Umrechnung nach Wien fiele um
+    // Mitternacht auf den falschen Tag, wenn der Aufrufer schon Wiener Zeit
+    // uebergibt (karteck, Verlauf je Tag).
+    final von = start.toIso8601String().split('.').first;
+    final bis = end.toIso8601String().split('.').first;
 
-    final resJson = await _kasseneckJson(endpoint: Aufrufe.getReportV2, params: {
-      'start': start.toIso8601String().split('.').first,
-      'end': end.toIso8601String().split('.').first
-    });
-    if (resJson['status'] == 'success') {
-      final daten = _daten(Aufrufe.getReportV2, resJson);
-      final rohMetadata = daten['metadata'];
-      if (rohMetadata is! Map) {
-        throw const KasseneckValidationError(
-            Aufrufe.getReportV2, 'Antwort enthaelt keine Metadaten (data.metadata fehlt)', 'response');
-      }
-      final Map<String, dynamic> metadata = Map<String, dynamic>.from(rohMetadata);
-      final rohBelege = daten['receipts'];
-      if (rohBelege is! List) {
-        // Keine Liste ist etwas anderes als eine leere Liste: „im Zeitraum
-        // nichts verkauft" darf nicht aussehen wie „Antwort kaputt". Wortgleich
-        // mit `receipts.dart` auf dem Kassen-Weg -- dieselbe Lage, derselbe Typ.
-        throw const KasseneckValidationError(
-            Aufrufe.getReportV2, 'Antwort enthaelt keine Belegliste (data.receipts fehlt)', 'response');
-      }
-      // Gezaehlt wird erst HIER. Die Zeile stand vorher ueber den Pruefungen
-      // und las `data['receipts']` mit einem String-Index: bei `data: [...]`
-      // oder `data: "text"` griff das in eine Liste bzw. einen Text, bei
-      // `receipts: {...}` scheiterte der Cast — in allen drei Faellen ein
-      // roher TypeError, genau vor der Stelle, die ihn verhindern soll.
-      debugPrint('getReportV2 $start–$end: ${rohBelege.length} Belege');
-      // Pro Beleg parsen: EIN defekter/unerwarteter Beleg (z. B. Nullbeleg ohne
-      // items) darf nicht den gesamten Abruf kippen — sonst bleibt der ganze
-      // Tages-/Zeitraums-Cache leer und keine Buchung findet ihren Beleg.
-      final List<KasseneckReceipt> receipts = [];
-      for (final r in rohBelege) {
-        try {
-          receipts.add(KasseneckReceipt.fromMetadata(r, metadata));
-        } catch (e) {
-          debugPrint('getReceipts: Beleg übersprungen (${r is Map ? r['receiptId'] : r}): $e');
-        }
-      }
-      await Future.wait(receipts.map((r) => r.init()));
-      return receipts;
-    } else {
-      throw envelopeError(Aufrufe.getReportV2, resJson);
+    // Erst alle Fenster pruefen, dann holen: ein Formatfehler im letzten
+    // Fenster soll nicht nach den Netzwegen der ersten auffallen.
+    final fenster = receiptListWindows(von, bis);
+    for (final f in fenster) {
+      receiptListParams(view: 'full', from: f.from, to: f.to, order: 'asc');
     }
+    final List<KasseneckReceipt> receipts = [];
+    for (final f in fenster) {
+      // `await for` reicht jeden Fehler einer Seite durch; die Belege davor
+      // gehen mit der Liste verloren. Ein halber Zeitraum saehe in der App wie
+      // ein ganzer aus, in dem Belege fehlen.
+      await for (final r in listAllFullReceipts(from: f.from, to: f.to, order: 'asc')) {
+        receipts.add(r);
+      }
+    }
+    debugPrint('getReceipts $von–$bis: ${receipts.length} Belege in ${fenster.length} Fenstern');
+    await Future.wait(receipts.map((r) => r.init()));
+    return receipts;
   }
 
   /// One page of the receipts of this cash register (`listReceipts`, `view:
@@ -978,15 +970,18 @@ class KasseneckApi {
   }) =>
       _belegSeite(
           receiptListParams(view: 'summary', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
-          (roh) => [for (final (i, e) in roh.indexed) receiptListEntry(i, e)]);
+          (roh, _) => [for (final (i, e) in roh.indexed) receiptListEntry(i, e)]);
 
   /// Like [listReceipts], but with the stored receipts (`view: full`, the
-  /// shape of [getReceipts]) read into [KasseneckReceipt].
+  /// shape of `getReportV2`) read into [KasseneckReceipt].
   ///
-  /// The page carries no header data of the business (company, address,
-  /// footer, logo); [KasseneckReceipt.companyName] stays empty. For printing a
-  /// single receipt use [getReceipt]. Like [getReceipts], a single receipt
-  /// that cannot be read is skipped instead of failing the page.
+  /// Since 11.7 the page carries the header data of the business
+  /// ([ReceiptListPage.metadata], as `metadata` of `getReportV2`), and every
+  /// receipt is built with it like in [getReceipts] (company, address,
+  /// footer, logo URL). A backend without `metadata` gives receipts without
+  /// header ([KasseneckReceipt.companyName] empty), as before. The logo itself
+  /// is loaded by [KasseneckReceipt.init]. Like [getReceipts], a single
+  /// receipt that cannot be read is skipped instead of failing the page.
   Future<ReceiptListPage<KasseneckReceipt>> listFullReceipts({
     String? date,
     String? from,
@@ -997,7 +992,7 @@ class KasseneckApi {
   }) =>
       _belegSeite(
           receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
-          (roh) => [for (final r in roh) ?_vollerBeleg(r)]);
+          (roh, kopf) => [for (final r in roh) ?_vollerBeleg(r, kopf)]);
 
   /// All receipts of the window, page by page over `nextCursor`, as a stream
   /// (summary lines). [limit] is the page size, here 500 unless given:
@@ -1021,18 +1016,18 @@ class KasseneckApi {
   }
 
   Future<ReceiptListPage<T>> _belegSeite<T>(
-      Map<String, dynamic> params, List<T> Function(List<Object?> roh) eintraege) async {
+      Map<String, dynamic> params, List<T> Function(List<Object?> roh, Map<String, dynamic>? metadata) eintraege) async {
     const name = Aufrufe.listReceipts;
     final resJson = await _kasseneckJson(endpoint: name, params: params);
     if (resJson['status'] != 'success') throw envelopeError(name, resJson);
     return receiptListPage(_daten(name, resJson), eintraege);
   }
 
-  /// Ein Beleg der vollen Ansicht oder `null`. Ohne Kopfdaten (die Antwort
-  /// traegt keine `metadata`), sonst derselbe Weg wie [getReceipts].
-  static KasseneckReceipt? _vollerBeleg(Object? roh) {
+  /// Ein Beleg der vollen Ansicht oder `null`, mit den Kopfdaten der Seite
+  /// (derselbe Weg wie frueher getReportV2); ohne `metadata` ohne Kopf.
+  static KasseneckReceipt? _vollerBeleg(Object? roh, Map<String, dynamic>? kopf) {
     try {
-      return KasseneckReceipt.fromMetadata(roh, const {});
+      return KasseneckReceipt.fromMetadata(roh, kopf ?? const {});
     } catch (e) {
       debugPrint('listFullReceipts: Beleg übersprungen (${roh is Map ? roh['receiptId'] : roh}): $e');
       return null;
