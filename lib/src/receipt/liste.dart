@@ -188,6 +188,7 @@ class ReceiptListPage<T> {
     required this.hasMore,
     required this.nextCursor,
     required this.daySummary,
+    this.metadata,
   });
 
   final List<T> receipts;
@@ -202,6 +203,18 @@ class ReceiptListPage<T> {
   /// Nur mit `date` und nur auf der ersten Seite; `null`, wenn der Tag keine
   /// Statistik hat oder ein Zeitraum abgefragt wurde.
   final ReceiptDaySummary? daySummary;
+
+  /// Betriebsdaten fuer den Belegkopf, nur in der vollen Ansicht: dieselben
+  /// Felder wie `metadata` von `getReportV2` (`company`, `street`, `zip`,
+  /// `city`, `phone`, `taxNumber`, `vatId`, `is_small_business`,
+  /// `footer1`..`footer4`, `logo_url`, `thanks_message`, `kreiseck_logo`,
+  /// `label`), nur lesbar. `null` in der Kurzansicht und von einem aelteren
+  /// Backend (vor dem 28.10.2026); die Belege der Seite tragen dann keinen Kopf.
+  //
+  // Roh als Map statt einer eigenen Klasse: getReportV2 reicht dieselben
+  // Daten seit jeher roh an `KasseneckReceipt.fromMetadata` weiter, und eine
+  // zweite Lesart derselben Felder koennte nur auseinanderlaufen.
+  final Map<String, dynamic>? metadata;
 }
 
 final RegExp _tag = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
@@ -267,8 +280,10 @@ Map<String, dynamic> receiptListParams({
   return {...fenster, 'limit': ?limit, 'order': ?order, 'view': view, 'cursor': ?cursor};
 }
 
-/// Eine Seite aus `data`; die Eintraege liest [eintraege].
-ReceiptListPage<T> receiptListPage<T>(Map<String, dynamic> daten, List<T> Function(List<Object?> roh) eintraege) {
+/// Eine Seite aus `data`; die Eintraege liest [eintraege], mit den
+/// Betriebsdaten der Seite (`data.metadata`, nur in der vollen Ansicht).
+ReceiptListPage<T> receiptListPage<T>(
+    Map<String, dynamic> daten, List<T> Function(List<Object?> roh, Map<String, dynamic>? metadata) eintraege) {
   const name = Aufrufe.listReceipts;
   final roh = daten['receipts'];
   if (roh is! List) {
@@ -283,12 +298,51 @@ ReceiptListPage<T> receiptListPage<T>(Map<String, dynamic> daten, List<T> Functi
   // Blaettern still enden und Belege fehlten, ein Cursor ohne hasMore waere
   // eine Seite, die niemand holt.
   if (mehr != (cursor != null)) throw antwortfehler(name, 'Antwort ist unbrauchbar (data.hasMore passt nicht zu data.nextCursor)');
+  // Fehlt `metadata`, ist das ein Backend vor keck#790 (oder die Kurzansicht):
+  // die Belege kommen dann ohne Kopf wie bis 11.6. Steht aber etwas anderes
+  // als ein Objekt da, ist die Antwort kaputt; ein still leerer Kopf saehe
+  // aus wie ein Betrieb ohne Namen (§ 132a Abs. 3 Z 1 BAO), wie npm 1.16.0.
+  final rohKopf = daten['metadata'];
+  final kopf = rohKopf == null ? null : Map<String, dynamic>.unmodifiable(_objekt('metadata', rohKopf));
   return ReceiptListPage<T>(
-    receipts: List.unmodifiable(eintraege(roh)),
+    receipts: List.unmodifiable(eintraege(roh, kopf)),
     hasMore: mehr,
     nextCursor: cursor,
     daySummary: _tagesSumme(daten['daySummary']),
+    metadata: kopf,
   );
+}
+
+/// Teilt das Fenster [from] bis [to] (Wanduhr `YYYY-MM-DDTHH:mm:ss`, [to]
+/// ausschliesslich) in aufeinanderfolgende Fenster von hoechstens
+/// [receiptListDaysMax] Kalendertagen. Das `to` eines Fensters ist das `from`
+/// des naechsten: lueckenlos, und weil `to` nicht mehr dazuzaehlt, liegt kein
+/// Beleg in zwei Fenstern. Leer, wenn [to] nicht nach [from] liegt.
+///
+/// Gerechnet wird wie in [receiptListParams] in UTC, also ohne
+/// Zeitumstellung: 31 Kalendertage der Wanduhr, nicht 31 x 24 Stunden.
+List<({String from, String to})> receiptListWindows(String from, String to) {
+  final von = _wanduhr(from, nurTag: false);
+  final bis = _wanduhr(to, nurTag: false);
+  if (von == null || bis == null) {
+    // Fehler kommt dann aus receiptListParams, mit dem Grund je Feld.
+    return [(from: from, to: to)];
+  }
+  final fenster = <({String from, String to})>[];
+  var beginn = von;
+  var beginnText = from;
+  while (bis.isAfter(beginn)) {
+    final grenze = beginn.add(const Duration(days: receiptListDaysMax));
+    if (!bis.isAfter(grenze)) {
+      fenster.add((from: beginnText, to: to));
+      break;
+    }
+    final grenzeText = _wanduhrText(grenze);
+    fenster.add((from: beginnText, to: grenzeText));
+    beginn = grenze;
+    beginnText = grenzeText;
+  }
+  return fenster;
 }
 
 int _cent(String pfad, Object? w) =>

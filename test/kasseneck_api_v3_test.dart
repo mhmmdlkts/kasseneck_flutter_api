@@ -372,16 +372,25 @@ void main() {
       expect(_params(m.log.single), fall['params']);
     });
 
-    test('getReceipts (getReportV2): start/end, Belege und Firmendaten englisch', () async {
+    test('getReceipts (listReceipts, view full): from/to, Belege und Firmendaten englisch', () async {
+      // Seit 11.7 holt getReceipts ueber listReceipts. Der Vertrag fuehrt fuer
+      // listReceipts keinen Fall; die volle Seite traegt laut Backend
+      // (keck#790) dieselben Belege und dieselbe metadata wie getReportV2,
+      // darum dient der Fall `report` als Inhalt der Seite.
       final fall = _fall('report');
-      final m = _mock((_) => _antwort(fall));
-      final belege = await _api(m.client).getReceipts(DateTime(2026, 9, 1), DateTime(2026, 9, 30));
-      expect(m.log.single.url.toString(), 'https://api.kasseneck.at/v3/getReportV2');
-      final p = _params(m.log.single);
-      expect(p.keys.toSet(), (fall['params'] as Map).keys.toSet());
-      expect(p['start'], startsWith(fall['params']['start'] as String));
-      expect(p['end'], startsWith(fall['params']['end'] as String));
       final daten = (fall['response'] as Map)['data'] as Map<String, dynamic>;
+      final m = _mock((_) => http.Response(
+          jsonEncode({
+            'status': 'success',
+            'message': '',
+            'data': {'receipts': daten['receipts'], 'hasMore': false, 'nextCursor': null, 'metadata': daten['metadata']},
+          }),
+          200,
+          headers: _kopf));
+      final belege = await _api(m.client).getReceipts(DateTime(2026, 9, 1), DateTime(2026, 9, 30));
+      expect(m.log.single.url.toString(), 'https://api.kasseneck.at/v3/listReceipts');
+      expect(_params(m.log.single),
+          {'from': '2026-09-01T00:00:00', 'to': '2026-09-30T00:00:00', 'limit': 500, 'order': 'asc', 'view': 'full'});
       final roh = (daten['receipts'] as List).cast<Map<String, dynamic>>();
       final meta = daten['metadata'] as Map<String, dynamic>;
       expect(belege.map((b) => b.receiptId), roh.map((b) => b['receiptId']));
@@ -390,6 +399,7 @@ void main() {
         expect(b.layoutRuleset, roh[i]['layoutRuleset'], reason: b.receiptId);
         expect(b.taxNumber, meta['taxNumber']);
         expect(b.vatId, meta['vatId']);
+        expect(b.companyName, meta['company']);
       }
     });
 

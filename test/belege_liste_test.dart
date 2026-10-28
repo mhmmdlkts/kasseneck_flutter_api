@@ -8,20 +8,27 @@ import 'package:http/testing.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/receipt_type.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
+import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 
 /// `listReceipts` (nur `/v3`): Seiten, Blaettern, Tagessumme, Fehler und die
-/// Pruefung der Eingaben vor dem Senden. Der Endpunkt steht noch nicht im
-/// Vertrag des npm-Zwillings; die Kurzzeilen folgen der Projektion des
-/// Backends (`beleg-liste-core.zusammenfassung`), die volle Ansicht nimmt die
-/// Belege des Vertragsfalls `report` (`getReportV2`, dieselbe Form).
+/// Pruefung der Eingaben vor dem Senden. Der Vertrag (npm 1.16.0) fuehrt den
+/// Endpunkt in `surface.json`, aber noch ohne Antwortfall; die Kurzzeilen
+/// folgen der Projektion des Backends (`beleg-liste-core.zusammenfassung`),
+/// die volle Ansicht nimmt Belege und `metadata` des Vertragsfalls `report`
+/// (`getReportV2`, dieselbe Form, seit keck#790 auch dieselbe metadata).
 
 const _kopf = {'content-type': 'application/json', 'kasseneck-api-version': 'v3'};
 
-final List<Map<String, dynamic>> _berichtBelege = () {
+final Map<String, dynamic> _bericht = () {
   final belege = jsonDecode(File('test/fixtures/vertrag/v3/antworten/belege.json').readAsStringSync()) as Map;
   final fall = (belege['cases'] as List).cast<Map<String, dynamic>>().firstWhere((f) => f['name'] == 'report');
-  return (((fall['response'] as Map)['data'] as Map)['receipts'] as List).cast<Map<String, dynamic>>();
+  return (fall['response'] as Map)['data'] as Map<String, dynamic>;
 }();
+
+final List<Map<String, dynamic>> _berichtBelege = (_bericht['receipts'] as List).cast<Map<String, dynamic>>();
+
+/// `metadata` des Vertragsfalls `report` (Felder unter `/v3`).
+final Map<String, dynamic> _berichtKopf = _bericht['metadata'] as Map<String, dynamic>;
 
 KasseneckApi _api(http.Client client) => KasseneckApi(
       apiKey: 'kr_test_x',
@@ -70,11 +77,14 @@ Map<String, dynamic> _zeile(String id, {Map<String, dynamic> ueber = const {}}) 
       ...ueber,
     };
 
-Map<String, dynamic> _seite(List<Object?> receipts, {String? next, Object? daySummary, bool mitTagessumme = false}) => {
+Map<String, dynamic> _seite(List<Object?> receipts,
+        {String? next, Object? daySummary, bool mitTagessumme = false, Object? metadata, bool mitKopf = false}) =>
+    {
       'receipts': receipts,
       'hasMore': next != null,
       'nextCursor': next,
       if (mitTagessumme) 'daySummary': daySummary,
+      if (mitKopf) 'metadata': metadata,
     };
 
 const _tagessumme = {
@@ -175,7 +185,7 @@ void main() {
       expect(summe.revenueByRate, [(rateBp: 2000, grossCents: 401200), (rateBp: 1000, grossCents: 111140)]);
     });
 
-    test('full: die gespeicherten Belege als KasseneckReceipt (Form von getReportV2)', () async {
+    test('full ohne metadata (aelteres Backend): Belege ohne Kopf, wie bis 11.6', () async {
       final m = _mock((_, _) => _erfolg(_seite(_berichtBelege)));
       final seite = await _api(m.client).listFullReceipts(from: '2026-09-26', to: '2026-09-27T00:00:00', order: 'asc', limit: 500);
       expect(_params(m.log.single), {'from': '2026-09-26', 'to': '2026-09-27T00:00:00', 'limit': 500, 'order': 'asc', 'view': 'full'});
@@ -185,8 +195,63 @@ void main() {
         expect(b.headerVersionId, _berichtBelege[i]['headerVersionId']);
         // Die Seite traegt keine Kopfdaten des Betriebs.
         expect(b.companyName, '');
+        expect(b.taxNumber, '');
+        expect(b.vatId, isNull);
       }
       expect(seite.daySummary, isNull);
+      expect(seite.metadata, isNull);
+    });
+
+    test('full mit metadata: jeder Beleg bekommt den Kopf wie bei getReportV2', () async {
+      final kopf = {
+        ..._berichtKopf,
+        'footer2': 'Montag Ruhetag',
+        'logo_url': 'https://cdn.kasseneck.at/logo/kornblum.png',
+        'thanks_message': r'Danke!\nBis bald',
+        'kreiseck_logo': true,
+      };
+      final m = _mock((_, _) => _erfolg(_seite(_berichtBelege, mitKopf: true, metadata: kopf)));
+      final seite = await _api(m.client).listFullReceipts(date: '2026-09-26');
+
+      expect(seite.metadata, kopf);
+      expect(() => seite.metadata!['company'] = 'x', throwsUnsupportedError, reason: 'nur lesbar');
+      expect(seite.receipts.map((b) => b.receiptId), _berichtBelege.map((b) => b['receiptId']));
+      for (final b in seite.receipts) {
+        // Derselbe Bauweg wie getReceipts bis 11.6: KasseneckReceipt.fromMetadata.
+        final erwartet = KasseneckReceipt.fromMetadata(_berichtBelege.firstWhere((r) => r['receiptId'] == b.receiptId), kopf);
+        expect(b.companyName, 'Bäckerei Kornblum');
+        expect(b.street, 'Hauptplatz 1');
+        expect(b.zip, '1010');
+        expect(b.city, 'Wien');
+        expect(b.phone, '+43 1 234');
+        expect(b.taxNumber, '91-123/4565');
+        expect(b.vatId, 'ATU12345675');
+        expect(b.isSmallBusiness, isFalse);
+        expect(b.footer1, 'Danke');
+        expect(b.footer2, 'Montag Ruhetag');
+        expect(b.logoUrl, 'https://cdn.kasseneck.at/logo/kornblum.png');
+        expect(b.thanksMessage, ['Danke!', 'Bis bald']);
+        expect(b.showKreiseckLogo, isTrue);
+        expect(b.hasMandatoryFields, isTrue);
+        expect(jsonEncode(b.toJson()), jsonEncode(erwartet.toJson()), reason: b.receiptId);
+      }
+    });
+
+    test('summary: metadata, falls doch mitgeschickt, aendert die Zeilen nicht', () async {
+      final m = _mock((_, _) => _erfolg(_seite([_zeile('KECK-1-ID-2')], mitKopf: true, metadata: _berichtKopf)));
+      final seite = await _api(m.client).listReceipts(date: '2026-10-27');
+      expect(seite.receipts.single.receiptId, 'KECK-1-ID-2');
+    });
+
+    test('metadata null zaehlt wie fehlend, ein Nicht-Objekt ist ein Antwortfehler', () async {
+      final ohne = _mock((_, _) => _erfolg(_seite(_berichtBelege, mitKopf: true)));
+      final seite = await _api(ohne.client).listFullReceipts(date: '2026-09-26');
+      expect(seite.metadata, isNull);
+      expect(seite.receipts.first.companyName, '');
+      for (final kaputt in <Object>['Bäckerei Kornblum', 1, [_berichtKopf]]) {
+        final m = _mock((_, _) => _erfolg(_seite(_berichtBelege, mitKopf: true, metadata: kaputt)));
+        await expectLater(_api(m.client).listFullReceipts(date: '2026-09-26'), _antwortfehler('data.metadata'), reason: '$kaputt');
+      }
     });
 
     test('full: ein unlesbarer Beleg faellt heraus, die Seite nicht (wie getReceipts)', () async {

@@ -574,16 +574,18 @@ void main() {
       );
     });
 
-    test('getReceipts: fehlende Metadaten ebenso', () async {
+    test('getReceipts: Metadaten, die kein Objekt sind, sind ein Antwortfehler', () async {
+      // Fehlen darf `metadata` (Backend vor 11.7, Belege ohne Kopf); ein Text
+      // an ihrer Stelle ist dagegen eine kaputte Antwort und kein leerer Kopf.
       final api = apiMit(jsonEncode({
         'status': 'success',
-        'data': {'receipts': <dynamic>[]},
+        'data': {'receipts': <dynamic>[], 'hasMore': false, 'nextCursor': null, 'metadata': 'kaputt'},
       }));
       await expectLater(
         api.getReceipts(DateTime(2026, 8, 1), DateTime(2026, 8, 2)),
         throwsA(isA<KasseneckValidationError>()
             .having((e) => e.kind, 'kind', 'response')
-            .having((e) => e.reason, 'reason', contains('keine Metadaten'))),
+            .having((e) => e.reason, 'reason', contains('data.metadata'))),
       );
     });
 

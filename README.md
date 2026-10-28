@@ -1038,7 +1038,14 @@ final status  = await kasseneck.getCashboxStatus();                        // re
 ```
 
 `getReceipts` skips single receipts it cannot read instead of failing the whole
-range.
+range. Since 11.7 it reads through `listReceipts` (`view: full`, oldest first,
+page by page) instead of `getReportV2`, with the same result: every receipt
+with the header data of the business. A range over 31 days is fetched in
+consecutive windows of at most 31 calendar days (`start`/`end` as Vienna wall
+clock, `end` exclusive); an error on any page throws, there is no partial
+list. The server now refuses `getReportV2` for more than 62 days
+(`range_too_long`), so apps that call `getReceipts` on 11.6 or older should
+update the package; no code change is needed.
 
 **Listing receipts page by page (`listReceipts`).** One Vienna day (`date`) or
 a period (`from`, `to`, local time in Vienna as text, `to` exclusive, at most
@@ -1063,8 +1070,9 @@ final full = await kasseneck.listFullReceipts(date: '2026-10-27', limit: 100);
 
 The method fixes the view: `listReceipts` and `listAllReceipts` return
 `ReceiptListEntry` (`view: summary`), `listFullReceipts` and
-`listAllFullReceipts` return `KasseneckReceipt` (`view: full`, without the
-header data of the business; for printing one receipt use `getReceipt`). A
+`listAllFullReceipts` return `KasseneckReceipt` (`view: full`, with the header
+data of the business from `page.metadata` since 11.7, as with `getReceipts`;
+a backend without `metadata` gives receipts without header). A
 wrong date, a period over 31 days, a `limit` outside 1–500 or an unknown
 `order` throws a `KasseneckValidationError` before anything is sent.
 `daySummary.revenueCents` comes from the daily statistics and is not the sum of
