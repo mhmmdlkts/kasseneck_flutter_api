@@ -1,3 +1,62 @@
+## 11.6.0 (2026-10-28)
+
+List the receipts of the cash register page by page over the new backend
+endpoint `listReceipts` (only `/v3`, api_key and `cashregister-token` like
+`getReportV2`). Reason: `getReportV2` returns every receipt of any period in
+one answer, without limit or paging; `listReceipts` is bounded (at most 500
+receipts per page, at most 31 days per window) and has a slim line view.
+Additive; `getReceipts` is unchanged in this release.
+
+- **`listReceipts({date, from, to, limit, order, cursor})`** returns
+  `ReceiptListPage<ReceiptListEntry>` (`view: summary`): per receipt
+  `receiptId`, `counter`, `receiptType`, `zeroKind`, `timeStamp`,
+  `totalCents`, `grossByRateCents` (`ReceiptGrossByRate`: `standard`,
+  `reduced1`, `reduced2`, `zero`, `special`), `paymentMethod` (`null` when
+  missing or unknown, never guessed as cash), `payments`, `tipCents`,
+  `operator` (name only), `cancellationOf`, `cancellationReason`,
+  `cancellationStatus`, `signatureOk`, `customProjectId`, `fullReceiptId`.
+  All amounts are whole cents; an amount that is not an integer ends the call
+  with a `KasseneckValidationError` (`kind: response`) instead of a guessed 0.
+- **`listFullReceipts(...)`** returns `ReceiptListPage<KasseneckReceipt>`
+  (`view: full`, the stored receipts in the shape of `getReportV2`, read the
+  same way as `getReceipts`). The answer carries no header data of the
+  business, so `companyName`, address, footer and logo stay empty; print a
+  single receipt via `getReceipt`. Like `getReceipts`, a receipt that cannot
+  be read is skipped, not the whole page.
+- Why two methods and one generic page: the view decides the type of the
+  lines, so it is fixed by the method, not by a parameter that could be read
+  the wrong way round. Paging, cursor and `daySummary` are the same in both.
+- **`ReceiptListPage`**: `receipts`, `hasMore`, `nextCursor` (the next page
+  needs the same window and `order`; only `limit` may change) and
+  `daySummary` (`ReceiptDaySummary`: `date`, `receiptCount`, `revenueCents`,
+  `revenueByRate` as records `(rateBp, grossCents)`), only with `date` and only
+  on the first page, `null` without daily statistics. `revenueCents` is not
+  the sum of `totalCents` of the list. `hasMore` and `nextCursor` must agree,
+  otherwise the answer is rejected (paging would stop silently).
+- **`listAllReceipts(...)` and `listAllFullReceipts(...)`** stream every
+  receipt of the window, page by page, with page size 500 unless `limit` is
+  given. They stop with an error after 100 pages (`receiptListPagesMax`) or
+  when the server repeats a cursor; an error on a later page ends the stream
+  after the receipts already delivered.
+- **Input is checked before sending** and throws `KasseneckValidationError`
+  (`kind: request`), the same rules as the server: exactly one of `date` or
+  `from` + `to`; `YYYY-MM-DD` or `YYYY-MM-DDTHH:mm:ss` (Vienna local time as
+  text, no zone, impossible dates such as `2026-02-30` rejected); `to` after
+  `from` and at most 31 calendar days later (also across the clock changes);
+  `limit` 1–500; `order` `desc` or `asc`; no empty `cursor`.
+- New exports from `package:kasseneck_api/kasseneck_api.dart`:
+  `ReceiptListEntry`, `ReceiptListPage`, `ReceiptDaySummary`,
+  `ReceiptGrossByRate`, `receiptListErrorCodes` (`invalid_date`,
+  `invalid_range`, `range_too_long`, `invalid_limit`, `invalid_order`,
+  `invalid_view`, `invalid_cursor`, `server_error`), `receiptListOrders`,
+  `receiptListLimitMax`, `receiptListDaysMax`, `receiptListPagesMax`, and
+  `CancellationState` and `ReceiptOperator` (already public through
+  `pos.dart`, same types). The line type is not called `ReceiptSummary`: that
+  name is the line of `listMyReceipts` on the register path (`pos.dart`).
+- `Aufrufe.listReceipts` is a reading call (outcome `rejected` on every
+  error). The endpoint is not yet in the contract of npm `1.14.0`; the
+  contract pin stays at `1.14.0`.
+
 ## 11.5.0 (2026-10-23)
 
 Twin of `@kreiseck/kasseneck-api` `1.14.0` (contract files pulled from that

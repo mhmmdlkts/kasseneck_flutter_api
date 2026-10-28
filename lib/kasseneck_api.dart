@@ -27,6 +27,7 @@ import 'src/kasse/beleg_ausgaben.dart' show LogReceiptOutputsResult, ReceiptOutp
 import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
 import 'src/kasse/gutschein_wunsch.dart';
 import 'src/receipt/codes.dart' show receiptEmailErrorCodes, receiptOutputErrorCodes;
+import 'src/receipt/liste.dart';
 import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'src/kasse/storno_nutzlast.dart';
 import 'src/register/fehler.dart';
@@ -59,6 +60,21 @@ export 'src/v3.dart' show kPublicBaseUrl, kPosBaseUrl;
 // Der Storno mit Bezug (KasseneckApi.stornieren) liefert und nimmt diese Typen
 // -- ohne sie waere er aus diesem Barrel nicht benutzbar.
 export 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
+// Belege auflisten (KasseneckApi.listReceipts): Seite, Zeile, Tagessumme und
+// Grenzen. Storno-Stand und Bediener der Zeile sind dieselben Typen wie in der
+// Belegliste der Kasse (pos.dart), damit beide Listen gleich lesbar sind.
+export 'src/kasse/belege.dart' show CancellationState, ReceiptOperator;
+export 'src/receipt/liste.dart'
+    show
+        ReceiptDaySummary,
+        ReceiptGrossByRate,
+        ReceiptListEntry,
+        ReceiptListPage,
+        receiptListDaysMax,
+        receiptListErrorCodes,
+        receiptListLimitMax,
+        receiptListOrders,
+        receiptListPagesMax;
 // Der Belegversand per Mail (KasseneckApi.belegSenden) liefert sein Ergebnis
 // und nennt seine Fehlercodes aus diesem Teil -- ohne die Exporte koennte ein
 // Aufrufer, der nur dieses Barrel importiert, weder das Ergebnis benennen noch
@@ -936,6 +952,113 @@ class KasseneckApi {
       return receipts;
     } else {
       throw envelopeError(Aufrufe.getReportV2, resJson);
+    }
+  }
+
+  /// One page of the receipts of this cash register (`listReceipts`, `view:
+  /// summary`): a short line per receipt, amounts in cents.
+  ///
+  /// Either a Vienna day [date] (`YYYY-MM-DD`) or a period [from] to [to]
+  /// (`YYYY-MM-DD` or `YYYY-MM-DDTHH:mm:ss`, local time in Vienna, [to]
+  /// exclusive, at most 31 calendar days). [limit] 1-500 (server default
+  /// 100), [order] `desc` (default, newest first) or `asc`. For the next
+  /// page pass [cursor] = `nextCursor` with the same window and [order];
+  /// [limit] may change. With [date] the first page carries `daySummary`.
+  ///
+  /// Invalid input throws a [KasseneckValidationError] (`kind: request`)
+  /// before anything is sent; server errors come as [KasseneckApiError] with a
+  /// code from [receiptListErrorCodes]. All pages at once: [listAllReceipts].
+  Future<ReceiptListPage<ReceiptListEntry>> listReceipts({
+    String? date,
+    String? from,
+    String? to,
+    int? limit,
+    String? order,
+    String? cursor,
+  }) =>
+      _belegSeite(
+          receiptListParams(view: 'summary', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
+          (roh) => [for (final (i, e) in roh.indexed) receiptListEntry(i, e)]);
+
+  /// Like [listReceipts], but with the stored receipts (`view: full`, the
+  /// shape of [getReceipts]) read into [KasseneckReceipt].
+  ///
+  /// The page carries no header data of the business (company, address,
+  /// footer, logo); [KasseneckReceipt.companyName] stays empty. For printing a
+  /// single receipt use [getReceipt]. Like [getReceipts], a single receipt
+  /// that cannot be read is skipped instead of failing the page.
+  Future<ReceiptListPage<KasseneckReceipt>> listFullReceipts({
+    String? date,
+    String? from,
+    String? to,
+    int? limit,
+    String? order,
+    String? cursor,
+  }) =>
+      _belegSeite(
+          receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
+          (roh) => [for (final r in roh) ?_vollerBeleg(r)]);
+
+  /// All receipts of the window, page by page over `nextCursor`, as a stream
+  /// (summary lines). [limit] is the page size, here 500 unless given:
+  /// fewer calls for the same receipts. Stops with an error after 100 pages
+  /// or when the server repeats a cursor; an error on a later page ends the
+  /// stream after the receipts already delivered. `daySummary` is only on
+  /// the first page of [listReceipts].
+  Stream<ReceiptListEntry> listAllReceipts({String? date, String? from, String? to, int? limit, String? order}) {
+    // Vor dem ersten Netzweg pruefen, nicht erst beim Abonnieren: ein
+    // Eingabefehler soll an der Aufrufstelle fallen wie bei listReceipts.
+    receiptListParams(view: 'summary', date: date, from: from, to: to, limit: limit, order: order);
+    return _alleSeiten((c) => listReceipts(
+        date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c));
+  }
+
+  /// Like [listAllReceipts], with the stored receipts (see [listFullReceipts]).
+  Stream<KasseneckReceipt> listAllFullReceipts({String? date, String? from, String? to, int? limit, String? order}) {
+    receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order);
+    return _alleSeiten((c) => listFullReceipts(
+        date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c));
+  }
+
+  Future<ReceiptListPage<T>> _belegSeite<T>(
+      Map<String, dynamic> params, List<T> Function(List<Object?> roh) eintraege) async {
+    const name = Aufrufe.listReceipts;
+    final resJson = await _kasseneckJson(endpoint: name, params: params);
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    return receiptListPage(_daten(name, resJson), eintraege);
+  }
+
+  /// Ein Beleg der vollen Ansicht oder `null`. Ohne Kopfdaten (die Antwort
+  /// traegt keine `metadata`), sonst derselbe Weg wie [getReceipts].
+  static KasseneckReceipt? _vollerBeleg(Object? roh) {
+    try {
+      return KasseneckReceipt.fromMetadata(roh, const {});
+    } catch (e) {
+      debugPrint('listFullReceipts: Beleg übersprungen (${roh is Map ? roh['receiptId'] : roh}): $e');
+      return null;
+    }
+  }
+
+  /// Blaettert ueber alle Seiten. Derselbe Cursor zweimal waere eine
+  /// Endlosschleife, mehr als [receiptListPagesMax] Seiten ebenso verdaechtig
+  /// (und teuer); beides endet mit einem Fehler statt still.
+  static Stream<T> _alleSeiten<T>(Future<ReceiptListPage<T>> Function(String? cursor) seite) async* {
+    const name = Aufrufe.listReceipts;
+    final gesehen = <String>{};
+    String? cursor;
+    for (var n = 1;; n++) {
+      final s = await seite(cursor);
+      yield* Stream.fromIterable(s.receipts);
+      final naechster = s.nextCursor;
+      if (naechster == null) return;
+      if (!gesehen.add(naechster)) {
+        throw const KasseneckValidationError(name, 'Antwort nennt denselben nextCursor zweimal', 'response');
+      }
+      if (n >= receiptListPagesMax) {
+        throw const KasseneckValidationError(
+            name, 'mehr als $receiptListPagesMax Seiten; kleineren Zeitraum oder groesseres limit waehlen', 'request');
+      }
+      cursor = naechster;
     }
   }
 
