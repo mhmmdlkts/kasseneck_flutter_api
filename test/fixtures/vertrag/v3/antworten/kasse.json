@@ -4,7 +4,7 @@
     "default": {
       "sha256": "ca4d4b3b682333ac6dc4345e5876323c60ee7e00896ccbe1c5f3d49ce37a52aa",
       "head": [],
-      "inputsSha256": "17ad91ff10d3654e40e5a2aa4f049158acaf04f6ea1cb07da3ae656dd557aca0",
+      "inputsSha256": "f48c36d18384af53982b84dcdcff2d9e95f8be3756e3eb39d22977cff454715a",
       "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "aec13193cae1e9b67b2614994d0862202441d80aaa86c8f879fc0dfa23c992ce",
+      "sha256": "de42edbec8757863eadac3cefca79e66cecf17186ee7ce617f5ea70baa53a99c",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "43f37b0b04ce56bd73d8758a4fda0a3d4d514cefe3a438aaa6c2f3a758eb8b80",
+      "inputsSha256": "a368b145b5d753a33042488972e79bffaecb436cf72ce0fae1854842adf7e1d0",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -10548,7 +10548,20 @@
               "vouchers": {
                 "sale": false,
                 "valueVoucherType": null,
-                "vatRateBp": null
+                "vatRateBp": null,
+                "label": {
+                  "layout": "a",
+                  "size": "40x30",
+                  "fields": {
+                    "logo": true,
+                    "qr": true,
+                    "business": true,
+                    "value": true,
+                    "validity": true,
+                    "checkPage": true
+                  },
+                  "freeText": []
+                }
               }
             }
           }
@@ -10719,7 +10732,20 @@
               "vouchers": {
                 "sale": false,
                 "valueVoucherType": null,
-                "vatRateBp": null
+                "vatRateBp": null,
+                "label": {
+                  "layout": "a",
+                  "size": "40x30",
+                  "fields": {
+                    "logo": true,
+                    "qr": true,
+                    "business": true,
+                    "value": true,
+                    "validity": true,
+                    "checkPage": true
+                  },
+                  "freeText": []
+                }
               }
             }
           }
@@ -10928,7 +10954,20 @@
               "vouchers": {
                 "sale": false,
                 "valueVoucherType": null,
-                "vatRateBp": null
+                "vatRateBp": null,
+                "label": {
+                  "layout": "a",
+                  "size": "40x30",
+                  "fields": {
+                    "logo": true,
+                    "qr": true,
+                    "business": true,
+                    "value": true,
+                    "validity": true,
+                    "checkPage": true
+                  },
+                  "freeText": []
+                }
               }
             }
           }
@@ -11099,7 +11138,20 @@
               "vouchers": {
                 "sale": false,
                 "valueVoucherType": null,
-                "vatRateBp": null
+                "vatRateBp": null,
+                "label": {
+                  "layout": "a",
+                  "size": "40x30",
+                  "fields": {
+                    "logo": true,
+                    "qr": true,
+                    "business": true,
+                    "value": true,
+                    "validity": true,
+                    "checkPage": true
+                  },
+                  "freeText": []
+                }
               }
             }
           }
@@ -11270,7 +11322,20 @@
               "vouchers": {
                 "sale": false,
                 "valueVoucherType": null,
-                "vatRateBp": null
+                "vatRateBp": null,
+                "label": {
+                  "layout": "a",
+                  "size": "40x30",
+                  "fields": {
+                    "logo": true,
+                    "qr": true,
+                    "business": true,
+                    "value": true,
+                    "validity": true,
+                    "checkPage": true
+                  },
+                  "freeText": []
+                }
               }
             }
           }
@@ -11505,7 +11570,7 @@
                 "logoEnabled": true,
                 "logoSize": "M",
                 "watermark": "login",
-                "color": "#136B6B",
+                "color": "#222222",
                 "theme": "clear",
                 "fontSize": "M",
                 "settingsFontSize": "S",
@@ -11599,7 +11664,7 @@
                 "logoSize": "M",
                 "watermark": "login",
                 "color": "#136B6B",
-                "theme": "clear",
+                "theme": "night",
                 "fontSize": "L",
                 "settingsFontSize": "S",
                 "tileStyle": "stripe",

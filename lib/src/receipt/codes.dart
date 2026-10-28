@@ -62,6 +62,10 @@ final List<String> receiptErrorCodes = _mitRand(const [
   'cashregister_decommissioned',
   'final_receipt_expired',
   'final_receipt_not_allowed',
+  // Seit 11.7 (Vertrag 1.16.0): derselbe idempotencyKey mit anderem Inhalt,
+  // nichts geschrieben. Der Server nimmt den Schluessel optional an; dieses
+  // Paket sendet (noch) keinen, der Code bleibt damit nur lesbar.
+  'idempotency_conflict',
   'module_inactive',
   'not_permitted',
   'receipt_limit_exceeded',
