@@ -1,3 +1,47 @@
+## 11.7.0 (2026-10-28)
+
+`getReceipts` reads through `listReceipts`, and the full view of
+`listReceipts` carries the header data of the business. Reason: the server
+now refuses `getReportV2` for more than 62 calendar days
+(`range_too_long`) and lists belong to the bounded, paged `listReceipts`;
+the registers only need to raise the package to move over. Additive; the
+return of `getReceipts` is unchanged.
+
+- **`getReceipts(start, end)`** now calls `listAllFullReceipts` (`view:
+  full`, `order: asc`, pages of 500 over `nextCursor`) instead of
+  `getReportV2`. It still returns `List<KasseneckReceipt>`, oldest first,
+  each with company, address, tax number, footers and logo URL, and still
+  loads the logo (`init()`). `start` and `end` are formatted exactly as
+  before (`toIso8601String().split('.').first`, the fields of the `DateTime`
+  as Vienna wall clock, no zone), `end` stays exclusive. A range over 31 days
+  is split into consecutive windows of at most 31 calendar days (counted
+  without time zone, also across the clock changes); each window's `to` is
+  the next one's `from`, so no receipt falls into a gap or into two windows.
+  An error on any page or window throws; the receipts fetched before are
+  dropped, never returned as if the range were complete. A receipt that
+  cannot be read is still skipped. `start` equal to `end` returns an empty
+  list without a call (`listReceipts` refuses an empty window).
+- **`ReceiptListPage.metadata`** (`view: full` only): the business data for
+  the receipt header, the same fields as `metadata` of `getReportV2` (read
+  only). `listFullReceipts` and `listAllFullReceipts` build every receipt with
+  it through `KasseneckReceipt.fromMetadata`, the same path `getReceipts`
+  took. A backend without `metadata` (before 28.10.2026) gives receipts
+  without header, as in 11.6; a `metadata` that is not an object is a
+  response error (`KasseneckValidationError`, `kind: response`), like npm
+  1.16.0. Reason: an empty header would look like a business without a name
+  (§ 132a Abs. 3 Z 1 BAO).
+- Behaviour change for a broken answer: `getReceipts` without `metadata` no
+  longer throws „keine Metadaten“; the receipts come without header instead,
+  because that is how an older backend answers `listReceipts`.
+- **Contract pinned to npm `1.16.0`** (fetched from the locally packed
+  tarball, not yet on the registry). From the backend it brings
+  `idempotency_conflict` in `receiptErrorCodes` (readable only; this package
+  sends no `idempotencyKey` on receipts), `invoice_number_taken` at the end of
+  `invoiceErrorCodes`, and the old settings field `vouchers.label`, which the
+  package does not read (registers before voucher stage 4b), as npm. The text
+  catalogue and the code table layout source were regenerated; the layout
+  itself is unchanged (same sha256).
+
 ## 11.6.0 (2026-10-28)
 
 List the receipts of the cash register page by page over the new backend
