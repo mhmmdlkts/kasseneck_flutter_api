@@ -1,0 +1,151 @@
+{
+  "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
+  "_quelle": {
+    "sha256": "497fe59db3414bf3143c0102eedfd371e165ad2f1878e74a9e1e31bd9413f1b0",
+    "inputsSha256": "931df962ad989229c326fa42dbfda9a5535c23bdd9a52425f19d53dfaa2d6abc",
+    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
+    "inputs": [
+      "docs/api/fehlercodes.json",
+      "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
+      "functions/aktivierung-api-core.js",
+      "functions/beleg-mail-core.js",
+      "functions/bericht-v2-liefern.js",
+      "functions/gemeinsam/api-rand.js",
+      "functions/gemeinsam/api-vokabular-v3.js",
+      "functions/gemeinsam/beleg-toepfe.js",
+      "functions/gemeinsam/gutschein-beleg.js",
+      "functions/gemeinsam/storno-core.js",
+      "functions/gemeinsam/tip-core.js",
+      "functions/gemeinsam/vat-buckets.js",
+      "functions/gemeinsam/zahlungen-core.js",
+      "functions/invoice-api-core.js",
+      "functions/invoice-api-endpoints.js",
+      "functions/report-endpoints.js",
+      "functions/report-v2.js",
+      "functions/test/unit/fixtures/v3-belege/beleg-welt.js",
+      "functions/test/unit/fixtures/v3-rechnungen/rechnungs-welt.js",
+      "functions/test/unit/fixtures/vertrag-v3/ablage.js",
+      "functions/test/unit/fixtures/vertrag-v3/gutschein-belege.js",
+      "functions/test/unit/fixtures/vertrag-v3/vokabular.js",
+      "functions/test/unit/fixtures/vertrag-v3/zahlbetrag.js",
+      "functions/test/unit/helpers/kassen-fehlerstellen.js",
+      "functions/test/unit/v3-vertrag-export.test.js"
+    ]
+  },
+  "channel": "api",
+  "note": "Binaerweg: ein Fall mit file ist die Datei (HTTP 200, Content-Type application/pdf, die Bytes beginnen mit file.startsWith), ein Fall mit response die Ablehnung als Huelle, ebenfalls mit HTTP 200. Entschieden wird an den ersten Bytes, nicht am Inhaltstyp.",
+  "cases": [
+    {
+      "name": "report_closed_day",
+      "endpoint": "getCashregisterReport",
+      "path": "/v3/getCashregisterReport",
+      "params": {
+        "year": 2026,
+        "month": 9,
+        "day": 25
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version",
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=daily-report_KECK-1_2026-09-25.pdf"
+      },
+      "file": {
+        "startsWith": "%PDF-"
+      }
+    },
+    {
+      "name": "error_period_not_closed",
+      "endpoint": "getCashregisterReport",
+      "path": "/v3/getCashregisterReport",
+      "params": {
+        "year": 2026,
+        "month": 9
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Ungültige Daten: Der Monat ist noch nicht abgeschlossen – Monatsbericht erst ab dem Folgemonat.",
+        "data": {
+          "code": "period_not_closed"
+        },
+        "code": "period_not_closed"
+      }
+    },
+    {
+      "name": "error_period_not_closed_today",
+      "endpoint": "getCashregisterReport",
+      "path": "/v3/getCashregisterReport",
+      "params": {
+        "year": 2026,
+        "month": 9,
+        "day": 26
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Der Tag ist noch nicht abgeschlossen – der Tagesbericht ist ab morgen verfügbar.",
+        "data": {
+          "code": "period_not_closed"
+        },
+        "code": "period_not_closed"
+      }
+    },
+    {
+      "name": "error_period_in_future",
+      "endpoint": "getCashregisterReport",
+      "path": "/v3/getCashregisterReport",
+      "params": {
+        "year": 2026,
+        "month": 9,
+        "day": 27
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Ungültige Daten: day liegt in der Zukunft.",
+        "data": {
+          "code": "period_in_future"
+        },
+        "code": "period_in_future"
+      }
+    },
+    {
+      "name": "error_invalid_period",
+      "endpoint": "getCashregisterReport",
+      "path": "/v3/getCashregisterReport",
+      "params": {
+        "year": 2026,
+        "month": 9,
+        "start": "2026-09-01",
+        "end": "2026-09-15"
+      },
+      "httpStatus": 200,
+      "headers": {
+        "Kasseneck-Api-Version": "v3",
+        "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+      },
+      "response": {
+        "status": "error",
+        "message": "Ungültige Daten: genau eine Form – year+month(, day) oder start+end.",
+        "data": {
+          "code": "invalid_period"
+        },
+        "code": "invalid_period"
+      }
+    }
+  ]
+}

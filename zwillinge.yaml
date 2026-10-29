@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.17.0
+npm_version: 1.17.1
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -28,6 +28,10 @@ npm_version: 1.17.0
 # zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.17.1: kein neuer Aufruf; neu im Vertrag antworten/berichte.json
+# (getCashregisterReport als Binaerweg), nachgespielt in
+# test/bericht_vertrag_test.dart, ohne Eintrag hier.
 #
 # Stand 1.15.0: kein neuer Aufruf; die vier neuen Listen der Gutschein-Sorten
 # unter `pos` (voucherTypeKinds, voucherAmountModes,
