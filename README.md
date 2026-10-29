@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.8.0
+  kasseneck_api: ^11.8.1
 ```
 
 ```bash
@@ -1036,6 +1036,10 @@ final history = await kasseneck.getReceipts(start, end);                   // Li
 final one     = await kasseneck.getReceipt(receiptId);
 final status  = await kasseneck.getCashboxStatus();                        // register status at FinanzOnline
 ```
+
+A report the server refuses comes back as a `KasseneckApiError` with its code,
+never as bytes: the current month or today is `period_not_closed`, the future
+`period_in_future`. Only a real PDF is returned.
 
 `getReceipts` skips single receipts it cannot read instead of failing the whole
 range. Since 11.7 it reads through `listReceipts` (`view: full`, oldest first,

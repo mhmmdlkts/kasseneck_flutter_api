@@ -5,10 +5,12 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:kasseneck_api/enums/keck_month.dart';
 import 'package:kasseneck_api/enums/keck_payment_method.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
+import 'package:kasseneck_api/models/report_month.dart';
 import 'package:kasseneck_api/invoice.dart' show InvoiceTransport, InvoiceApi, kInvoiceBaseUrl;
 import 'package:kasseneck_api/register.dart' show RegisterClient, RegisterTransport, kRegisterBaseUrl;
 import 'package:kasseneck_api/services/logo_service.dart';
@@ -99,6 +101,11 @@ final _wege = <_Weg>[
     'hobexPayApi': (c) => _geraet(c).hobexPay(transactionId: '1', amountCents: 100),
     'hobexRefundApi': (c) => _geraet(c).hobexRefund(transactionId: '1', amountCents: 100),
     'stripeCaptureIntent': (c) => _geraet(c).stripeCaptureIntent(stripeSessionId: 's1'),
+    'getCashregisterReport': (c) => _geraet(c).getCashregisterReport(year: 2026, month: 9),
+    // ignore: deprecated_member_use_from_same_package
+    'downloadReport': (c) => _geraet(c).downloadMonthlyReport(const ReportMonth(KeckMonth.september, 2026)),
+    // ignore: deprecated_member_use_from_same_package
+    'downloadDailyReport': (c) => _geraet(c).downloadDailyReport(DateTime(2026, 9, 30)),
   }),
   _Weg('RegisterClient (Kopplung)', 'https://kasse.kasseneck.at/api/v3', {
     'pairRegisterDevice': (c) => RegisterClient(httpClient: c).pairRegisterDevice(code: 'ABC123'),
@@ -137,6 +144,11 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
         'hobexPayApi' => geraet.hobexPay(transactionId: '1', amountCents: 100),
         'hobexRefundApi' => geraet.hobexRefund(transactionId: '1', amountCents: 100),
         'stripeCaptureIntent' => geraet.stripeCaptureIntent(stripeSessionId: 's1'),
+        'getCashregisterReport' => geraet.getCashregisterReport(year: 2026, month: 9),
+        // ignore: deprecated_member_use_from_same_package
+        'downloadReport' => geraet.downloadMonthlyReport(const ReportMonth(KeckMonth.september, 2026)),
+        // ignore: deprecated_member_use_from_same_package
+        'downloadDailyReport' => geraet.downloadDailyReport(DateTime(2026, 9, 30)),
         _ => throw StateError(name),
       };
     case 'RegisterClient (Kopplung)':

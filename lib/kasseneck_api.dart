@@ -273,14 +273,10 @@ class KasseneckApi {
   /// `not-json`, bei wirkenden Aufrufen mit Ausgang unklar.
   static String _rumpf(String fehlerName, http.Response response) => readBodyText(fehlerName, response);
 
-  /// Die Bytes einer Binaerantwort (Bericht-PDF), nie ueber eine Textdeutung.
-  Future<Uint8List> _bytes(String endpoint, Map<String, dynamic> params) async {
-    final antwort = await _senden(endpoint, endpoint, {'params': params}, null);
-    if (antwort.bodyBytes.isEmpty) {
-      throw KasseneckHttpError(endpoint, antwort.statusCode, 'empty-body', outcome: unreadableOutcome(endpoint));
-    }
-    return antwort.bodyBytes;
-  }
+  /// Die Bytes einer Binaerantwort (Bericht-PDF), nie ueber eine Textdeutung;
+  /// eine Ablehnung mit HTTP 200 wird zum Fehler mit Code ([readPdfBody]).
+  Future<Uint8List> _bytes(String endpoint, Map<String, dynamic> params) async =>
+      readPdfBody(endpoint, await _senden(endpoint, endpoint, {'params': params}, null));
 
   Future<dynamic> _kasseneckPostRequest(
       {required String endpoint, Map<String, dynamic> params = const {}, Duration? deadline}) async =>
@@ -385,8 +381,9 @@ class KasseneckApi {
   /// closed day (yesterday or earlier; `year` + `month` + `day`) or a date
   /// range (`start` and `end` as YYYY-MM-DD, `end` exclusive, at most 366
   /// days). The current month and today are rejected by the server
-  /// (`period_not_closed`), the future too (`period_in_future`). Successor of [downloadMonthlyReport] and
-  /// [downloadDailyReport].
+  /// (`period_not_closed`), the future too (`period_in_future`); a rejection
+  /// throws a [KasseneckApiError] with that code, only a PDF is returned.
+  /// Successor of [downloadMonthlyReport] and [downloadDailyReport].
   ///
   /// Exactly one form: a mixed or partial input throws an [ArgumentError]
   /// before anything is sent.

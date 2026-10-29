@@ -73,19 +73,9 @@ class InvoiceTransport {
   }
 
   /// Einen Aufruf mit Binärantwort (PDF) absetzen. Im Fehlerfall antwortet der
-  /// Server mit der gewohnten JSON-Hülle.
-  Future<Uint8List> callBinary(String name, Map<String, dynamic> params) async {
-    final antwort = await _senden(name, params, false);
-    final bytes = antwort.bodyBytes;
-    if (bytes.length >= 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) {
-      return bytes; // %PDF
-    }
-    final huelle = readEnvelope(name, antwort);
-    if (huelle['status'] == 'success') {
-      throw KasseneckValidationError(name, 'Antwort ist ein Erfolgsrumpf statt eines PDF', 'response');
-    }
-    throw envelopeError(name, huelle);
-  }
+  /// Server mit der gewohnten JSON-Hülle ([readPdfBody]).
+  Future<Uint8List> callBinary(String name, Map<String, dynamic> params) async =>
+      readPdfBody(name, await _senden(name, params, false));
 
   /// Ueber issueInvoice kann die Rechnung nach einem Zeitlimit laengst
   /// bestehen: mit demselben idempotencyKey wiederholen, nie mit einem neuen.

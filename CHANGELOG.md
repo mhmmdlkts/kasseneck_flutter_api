@@ -1,3 +1,28 @@
+## 11.8.1 (2026-10-29)
+
+- **`getCashregisterReport`, `downloadMonthlyReport` and `downloadDailyReport`
+  throw the server's rejection instead of returning it as PDF bytes.** The
+  backend rejects a report with HTTP 200 and its JSON envelope (current month
+  or today: `period_not_closed`, future: `period_in_future`). Up to 11.8.0 the
+  device client only checked for an empty body and returned the envelope's
+  192 bytes as the "PDF", so a PDF viewer opened the error message as the
+  report. Now a `KasseneckApiError` with the server's code, message and
+  outcome `rejected` arrives, as on every JSON call. A success envelope without
+  a file is a `KasseneckValidationError` (`kind: response`); an empty, non-JSON
+  or status-less body is the same `KasseneckHttpError` (`empty-body`,
+  `not-json`, `missing-status`) as on the JSON path. The first bytes decide
+  (`%PDF`), not the content type, which a proxy can drop or get wrong. Found
+  live on 29.10.2026 against the demo register. Apps that catch this
+  themselves (checking for `%PDF-`) can switch to the package error.
+- The three report calls, `InvoiceTransport.callBinary` (`getInvoicePdf`) and
+  the file branch of `InventoryTransport.callPdfOrData` now share one check,
+  so a binary path can no longer drift from the others. `getInvoicePdf` and
+  `getStocktakePdf` already behaved correctly and are unchanged. Reason: the
+  report path was the only one written by hand, and the transport test matrix
+  did not list it.
+- No public symbol changed. The npm twin `@kreiseck/kasseneck-api` checked the
+  first bytes from the start (`createBinaryTransport`) and is unaffected.
+
 ## 11.8.0 (2026-10-29)
 
 Twin of `@kreiseck/kasseneck-api` `1.17.0` (contract files pulled from that
