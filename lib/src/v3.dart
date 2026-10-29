@@ -22,6 +22,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -35,7 +36,7 @@ const String kPublicBaseUrl = 'https://api.kasseneck.at/v3';
 const String kPosBaseUrl = 'https://kasse.kasseneck.at/api/v3';
 
 /// Version dieses Pakets, wie in `pubspec.yaml` (ein Test haelt beide gleich).
-const String kPackageVersion = '11.8.0';
+const String kPackageVersion = '11.8.1';
 
 const String _versionKopf = 'Kasseneck-Api-Version';
 const String _clientKopf = 'Kasseneck-Client';
@@ -439,4 +440,30 @@ KasseneckApiError envelopeError(String functionName, Map<String, dynamic> huelle
     code: errorCodeFrom(huelle) ?? datenCode,
     details: daten is Map ? Map<String, dynamic>.from(daten) : const {},
   );
+}
+
+/// `%PDF` am Anfang: die Kennung jeder PDF-Datei, die das Backend erzeugt
+/// (pdf-lib). Zwilling von `istPdf` im npm-Paket.
+bool startsWithPdf(List<int> bytes) =>
+    bytes.length >= 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46;
+
+/// Die Bytes einer Binaerantwort (PDF), der eine Weg fuer Berichte und
+/// Rechnungs-PDF; Zwilling von `pdfAuswerten` im npm-Paket.
+///
+/// Das Backend lehnt auch hier mit HTTP 200 und seiner JSON-Huelle ab
+/// (`getCashregisterReport` im laufenden Monat: `period_not_closed`). Bis
+/// 11.8.0 reichte der Geraete-Client diese Bytes als Bericht durch, und der
+/// Betrachter oeffnete die Fehlermeldung. Entschieden wird an den ersten
+/// Bytes, nicht am Inhaltstyp: den kann ein Proxy verlieren oder falsch
+/// setzen, `%PDF` steht in jeder Datei. Alles andere ist ein Fehler mit
+/// denselben Gruenden wie auf dem JSON-Weg ([readEnvelope], [envelopeError]);
+/// eine Erfolgshuelle ohne Datei traegt nicht, was der Aufruf zusagt.
+Uint8List readPdfBody(String functionName, http.Response antwort) {
+  final bytes = antwort.bodyBytes;
+  if (startsWithPdf(bytes)) return bytes;
+  final huelle = readEnvelope(functionName, antwort);
+  if (huelle['status'] == 'success') {
+    throw KasseneckValidationError(functionName, 'Antwort ist ein Erfolgsrumpf statt eines PDF', 'response');
+  }
+  throw envelopeError(functionName, huelle);
 }

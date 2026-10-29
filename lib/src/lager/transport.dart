@@ -87,9 +87,7 @@ class InventoryTransport {
     final probelauf = isDryRun(name, params);
     final antwort = await _senden(name, params, probelauf);
     final bytes = antwort.bodyBytes;
-    if (bytes.length >= 4 && bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) {
-      return PdfOrDataFile(bytes); // %PDF
-    }
+    if (startsWithPdf(bytes)) return PdfOrDataFile(bytes);
     final huelle = readEnvelope(name, antwort, dryRun: probelauf);
     if (huelle['status'] == 'success') {
       return PdfOrDataPayload(envelopeData(name, huelle, antwort.statusCode, dryRun: probelauf));
