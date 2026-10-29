@@ -1,3 +1,22 @@
+## 11.8.2 (2026-10-29)
+
+Twin of `@kreiseck/kasseneck-api` `1.17.1` (contract files pulled from that
+version). No behaviour change.
+
+- **The contract now carries the report as a binary path:**
+  `antworten/berichte.json` (backend keck#798), generated from the real
+  `getCashregisterReport` handler: one closed day as PDF (HTTP 200,
+  `application/pdf`, bytes from `%PDF-`) and the rejections with HTTP 200 as an
+  envelope with a code (`period_not_closed` for the current month and today,
+  `period_in_future`, `invalid_period`). `test/bericht_vertrag_test.dart`
+  replays it through `readPdfBody` and through `getCashregisterReport` over the
+  whole transport: the PDF arrives byte for byte, each rejection is a
+  `KasseneckApiError` with the contract's code and outcome `rejected`; the mixed
+  form of `invalid_period` is refused before sending (`ArgumentError`). Reason:
+  up to 11.8.0 this package returned such an envelope as PDF bytes; with the
+  case in the contract, backend, npm and Dart are pinned to the same answer.
+- The other contract files change only `_quelle` (new inputs on the backend side).
+
 ## 11.8.1 (2026-10-29)
 
 - **`getCashregisterReport`, `downloadMonthlyReport` and `downloadDailyReport`

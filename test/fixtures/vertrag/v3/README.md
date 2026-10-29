@@ -14,7 +14,7 @@ Erzeugt von Jest-Tests in zwei Codebases (jede übersetzt mit ihrem eigenen Rand
 
 | Test | schreibt |
 | --- | --- |
-| `functions/test/unit/v3-vertrag-export.test.js` | `v3-vokabular.json`, `antworten/belege.json`, `antworten/kasse-belege.json`, `antworten/storno.json`, `antworten/belegmail.json`, `antworten/rechnungen.json`, `stored/belege.json`, `stored/rechnungen.json`, `zahlbetrag-faelle.json` |
+| `functions/test/unit/v3-vertrag-export.test.js` | `v3-vokabular.json`, `antworten/belege.json`, `antworten/kasse-belege.json`, `antworten/storno.json`, `antworten/belegmail.json`, `antworten/rechnungen.json`, `antworten/berichte.json`, `stored/belege.json`, `stored/rechnungen.json`, `zahlbetrag-faelle.json` |
 | `functions/test/unit/v3-vertrag-export-kassenweg.test.js` | Teil `default` von `antworten/kasse.json` und `stored/kasse.json` (6 Beleg-Endpunkte der Kasse) |
 | `functions-kasse/test/unit/v3-vertrag-export.test.js` | Teil `kasse` derselben zwei Dateien (die übrigen 19 Kassen-Endpunkte) |
 | `functions-kasse/test/unit/v3-vertrag-export-lager.test.js` | `antworten/lager.json` (Lager-API, Stufe 5a) |
@@ -109,6 +109,13 @@ Code-Änderung zusammen einchecken.
   `platform_fallback`, Fehler).
 - **`antworten/rechnungen.json`**: Rechnungs-API (Probelauf, Festschreiben, Lesen,
   Liste, Storno, Gutschrift, Zahlung, Fehler).
+- **`antworten/berichte.json`**: `getCashregisterReport` unter `/v3` (Kanal `api`), der
+  Binärweg. Ein Fall mit `file` ist die Datei: HTTP 200, `Content-Type: application/pdf`,
+  die Bytes beginnen mit `file.startsWith` (`%PDF-`); mehr vom PDF steht hier nicht, der
+  Rest hängt an Schrift und Satz. Jede Ablehnung kommt ebenfalls mit HTTP 200, als Hülle
+  mit Code (`period_not_closed` für den laufenden Monat und heute, `period_in_future`,
+  `invalid_period`). Ein Paket entscheidet an den ersten Bytes, nicht am Inhaltstyp, und
+  wirft die Hülle wie auf dem JSON-Weg.
 - **`antworten/kasse.json`**: alle 25 Kassen-Endpunkte unter `/api/v3`, je Fall
   (englischer Name) Methode, Aufrufer, Parameter, HTTP-Status, Kopfzeilen und Antwort.
 - **`antworten/lager.json`**: Lager-API unter `/v3` (Kanal `api`) in Ablaufreihenfolge an
