@@ -30,7 +30,7 @@ Map<String, dynamic> _fall(String endpunkt, String name) => ((_kasse[endpunkt] a
 
 Map<String, dynamic> _kopie(Map<String, dynamic> m) => jsonDecode(jsonEncode(m)) as Map<String, dynamic>;
 
-/// Die Felder der Gutschein-Sorten (11.6.0) ohne Angabe: kein Sortenverkauf, keine Sorten, keine Vorlage.
+/// Die Felder der Gutschein-Sorten (11.8.0) ohne Angabe: kein Sortenverkauf, keine Sorten, keine Vorlage.
 const _ohneSorten = {'typeSale': false, 'types': <Object?>[], 'serviceArticles': false, 'labelDefault': null};
 
 /// Der Kassenweg mit einer Attrappe, die immer [antwort] liefert und die
@@ -282,7 +282,7 @@ void main() {
       expect(faelle, isNotEmpty);
       for (final f in faelle) {
         final block = f['response']['data']['vouchers'] as Map<String, dynamic>;
-        // Das alte Feld `label` gilt Kassen vor 11.6 (Ruling R3); das Paket liest `labelDefault` und `types[].label`.
+        // Das alte Feld `label` gilt Kassen vor 11.8 (Ruling R3); das Paket liest `labelDefault` und `types[].label`.
         expect(PosVoucherSettings.fromJson(block).toJson(), {...block}..remove('label'), reason: '${f['case']}');
       }
       final w = _weg(faelle.first['response'] as Map<String, dynamic>);

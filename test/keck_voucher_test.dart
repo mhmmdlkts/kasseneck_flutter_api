@@ -170,7 +170,7 @@ void main() {
       }
       for (final g in [
         n(sell, m),
-        // Ein Wertgutschein nur ueber eine Sorte (Server: voucher_type_required, 11.6.0).
+        // Ein Wertgutschein nur ueber eine Sorte (Server: voucher_type_required, 11.8.0).
         n(sell, e, amountCents: 100),
         n(sell, m, amountCents: 0, typeId: 'vt_1'),
         n(sell, l, articleId: 'a'),

@@ -223,7 +223,7 @@ void main() {
         expect(() => receiptDueBreakdownForLines(const [], v, ReceiptType.standard, voucherSettings: PosVoucherSettings.off),
             wirft('voucher_type_required'));
       }
-      // Eine echte alte Einstellung mit Art rechnet wie 11.5 (Mehrzweck als Fluss).
+      // Eine echte alte Einstellung mit Art rechnet wie bis 11.7 (Mehrzweck als Fluss).
       expect(
           receiptDueBreakdownForLines(const [], [KeckVoucher(action: VoucherAction.sell, type: VoucherType.multiPurpose, amountCents: 5000)],
                   ReceiptType.standard, voucherSettings: mehrzweckEin)

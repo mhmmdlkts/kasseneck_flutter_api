@@ -131,7 +131,7 @@ Object? _geraetGelesen(Object? device) {
 }
 
 /// Der Gutschein-Block, so wie das Paket ihn liest: ohne das alte Feld `label`
-/// (Kassen vor 11.6, Ruling R3), sonst unveraendert.
+/// (Kassen vor 11.8, Ruling R3), sonst unveraendert.
 Object? _gutscheinGelesen(Object? vouchers) {
   if (vouchers is! Map) return vouchers;
   return {...vouchers}..remove('label');
@@ -1204,7 +1204,7 @@ void main() {
             (PosArticle.fields, const {
               'unitPriceCents', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds',
               'number', 'ean', 'internalCode', 'stockTracked',
-              // Leistungsgutschein-Freigabe (11.6.0): der Vertrag zeigt sie in keinem Artikelfall.
+              // Leistungsgutschein-Freigabe (11.8.0): der Vertrag zeigt sie in keinem Artikelfall.
               'serviceVoucher',
             }),
         'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),

@@ -57,7 +57,7 @@ class VoucherArticle {
 /// Server schreibt dort `····-····-XXXX` in [code] und die letzten vier
 /// Zeichen in [codeSuffix].
 ///
-/// **Verkauf ueber eine Gutschein-Sorte** (seit 11.6.0): ein Mehrzweck- oder
+/// **Verkauf ueber eine Gutschein-Sorte** (seit 11.8.0): ein Mehrzweck- oder
 /// Einzweckgutschein wird nur mit [typeId] verkauft. Empfohlen ist die Form
 /// mit der Art der Sorte:
 /// `KeckVoucher(action: sell, type: sorte.kind, typeId: sorte.id, amountCents: …)`.

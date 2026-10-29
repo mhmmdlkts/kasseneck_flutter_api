@@ -1,6 +1,6 @@
 /// Gutscheine der neuen Form an der Kasse: pruefen (`checkVoucher`), Etikett
 /// nachdrucken (`reprintVoucherLabel`), die Gutschein-Einstellung der Kasse
-/// (Block `vouchers` aus `getKasseSettings`, seit 11.6.0 mit den
+/// (Block `vouchers` aus `getKasseSettings`, seit 11.8.0 mit den
 /// Gutschein-Sorten) und die Gutschein-Rechte. Zwilling von `pos/gutschein.ts`
 /// im npm-Paket, gleiche Namen.
 ///
@@ -58,7 +58,7 @@ final List<String> voucherStatuses = List.unmodifiable([for (final s in VoucherS
 /// Nur die Muster, die der Server an Gutscheinen nach aussen gibt: eine Sorte
 /// mit „N Jahre“ geht fuer jedes N als `1+3` mit den Daten und
 /// [VoucherValidity.redeemableYears] = N hinaus (Nachtrag E1), damit Kassen
-/// mit 11.5 beim Einloesen nicht an einem neuen Muster scheitern und
+/// bis 11.7 beim Einloesen nicht an einem neuen Muster scheitern und
 /// „einloesbar bis“ mit dem Datum drucken. Das Muster der Sorte selbst steht in
 /// [voucherTypeValidityPatterns].
 const List<String> voucherValidityPatterns = ['unlimited', '1+3', 'custom'];
@@ -521,11 +521,11 @@ class VoucherCheck {
 
 /// Gutschein-Einstellung der Kasse (Block `vouchers` aus `getKasseSettings`).
 ///
-/// Seit Gutscheine Stufe 4b (11.6.0) verkauft eine Kasse ueber Sorten: Reiter
+/// Seit Gutscheine Stufe 4b (11.8.0) verkauft eine Kasse ueber Sorten: Reiter
 /// und Kacheln zeigt sie mit [typeSale] (und dem Recht `voucherSell`), je
 /// Sorte aus [types] und die feste Kachel „Leistungsgutschein“ mit
 /// [serviceArticles]. [sale], [valueVoucherType] und [vatRateBp] gelten nur
-/// Kassen vor 11.6; der Server schickt `sale` immer als `false`.
+/// Kassen vor 11.8; der Server schickt `sale` immer als `false`.
 class PosVoucherSettings {
   const PosVoucherSettings({
     required this.sale,
@@ -541,15 +541,15 @@ class PosVoucherSettings {
   /// Block: Verkaufen ist aus.
   static const off = PosVoucherSettings(sale: false, valueVoucherType: null, vatRateBp: null);
 
-  /// Gutscheine verkaufen ist eingeschaltet (Kassen vor 11.6).
+  /// Gutscheine verkaufen ist eingeschaltet (Kassen vor 11.8).
   final bool sale;
 
   /// Die bestaetigte Art des Wertgutscheins: [VoucherType.multiPurpose],
-  /// [VoucherType.singlePurpose] oder `null` (Kassen vor 11.6).
+  /// [VoucherType.singlePurpose] oder `null` (Kassen vor 11.8).
   final VoucherType? valueVoucherType;
 
   /// Satz des Einzweckgutscheins in Basispunkten; bei Mehrzweck `null`
-  /// (Kassen vor 11.6).
+  /// (Kassen vor 11.8).
   final int? vatRateBp;
 
   /// Gutscheine verkaufen (Reiter „Gutscheine“): Schalter des Servers und
@@ -583,7 +583,7 @@ class PosVoucherSettings {
   /// gilt die erste; ist danach weder eine Sorte noch ein Leistungsartikel da,
   /// ist `typeSale` aus (kein leerer Reiter). Eine unbrauchbare
   /// Etikett-Vorlage schliesst nichts: sie wird `null`. Das alte Feld `label`
-  /// (Kassen vor 11.6) liest das Paket nicht.
+  /// (Kassen vor 11.8) liest das Paket nicht.
   static PosVoucherSettings fromJson(Object? block) {
     if (block is! Map) return off;
     final sale = block['sale'];

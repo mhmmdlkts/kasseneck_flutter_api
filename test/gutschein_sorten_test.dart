@@ -14,7 +14,7 @@ import 'package:kasseneck_api/src/receipt/due.dart';
 /// verkaufbaren Sorten aus `getKasseSettings` (`vouchers.types[]`), verkauft
 /// einen Wertgutschein nur noch ueber eine Sorte (`typeId`) und rechnet den
 /// Zahlbetrag mit Art und Satz der Sorte. Zwilling von
-/// `test/gutschein-sorten.test.ts` im npm-Paket (1.15.0).
+/// `test/gutschein-sorten.test.ts` im npm-Paket (1.17.0).
 final _v3 = Directory('test/fixtures/vertrag/v3');
 
 Map<String, dynamic> _json(String pfad) => jsonDecode(File('${_v3.path}/$pfad').readAsStringSync()) as Map<String, dynamic>;
@@ -79,7 +79,7 @@ Map<String, dynamic> block([Map<String, Object?> aendern = const {}]) => {
       ...aendern,
     };
 
-/// Der Block ohne das alte Feld `label` (Kassen vor 1.15): das Paket liest es nicht.
+/// Der Block ohne das alte Feld `label` (Kassen vor 1.17): das Paket liest es nicht.
 Map<String, dynamic> ohneAltesEtikett(Map<String, dynamic> b) => {...b}..remove('label');
 
 /// Der Kassenweg mit einer Attrappe, die immer [antwort] liefert und mitschreibt.
@@ -295,7 +295,7 @@ void main() {
           isNot(PosVoucherSettings.fromJson(block({'labelDefault': {..._standard, 'size': '50x80'}}))));
     });
 
-    test('das alte Feld label (Kassen vor 1.15) liest das Paket nicht', () {
+    test('das alte Feld label (Kassen vor 1.17) liest das Paket nicht', () {
       final draht = _fall('getKasseSettings', 'owner')['response']['data']['vouchers'] as Map<String, dynamic>;
       expect(draht['label'], isNotNull, reason: 'der Vertrag traegt das alte Feld');
       expect(PosVoucherSettings.fromJson(draht).toJson().containsKey('label'), isFalse);
@@ -632,7 +632,7 @@ void main() {
       }
     });
 
-    test('Aufrufer von 11.5 mit einer Einstellung mit Art rechnen den Verkauf ohne Sorte wie bisher', () {
+    test('Aufrufer bis 11.7 mit einer Einstellung mit Art rechnen den Verkauf ohne Sorte wie bisher', () {
       expect(
           receiptDueBreakdown(const [], [KeckVoucher(action: VoucherAction.sell, type: VoucherType.singlePurpose, amountCents: 5000)],
                   ReceiptType.standard,

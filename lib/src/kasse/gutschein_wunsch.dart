@@ -145,7 +145,7 @@ bool _hatText(String? t) => t != null && t.trim().isNotEmpty;
 /// Die Form eines Wunschs der neuen Form ([KeckVoucher.isValid], Zwilling von
 /// `wunschFormGueltig` im npm-Paket). [sorteNoetig] `false` laesst einen
 /// Wert-Verkauf ohne `typeId` zu: so rechnet der Zahlbetrag den Verkauf eines
-/// Aufrufers von 11.5 mit der alten Gutschein-Einstellung weiter (der Server
+/// Aufrufers bis 11.7 mit der alten Gutschein-Einstellung weiter (der Server
 /// ab Stufe 4b antwortet darauf `voucher_type_required`).
 bool wunschFormGueltig(KeckVoucher v, {required bool sorteNoetig}) {
   if (v.serverFields.isNotEmpty) return false;

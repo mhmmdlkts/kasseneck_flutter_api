@@ -33,7 +33,7 @@
 /// aus seinen Daten liest, gibt die Kasse mit: je Einloesung/Auszahlung die
 /// Pruefung aus `checkVoucher` (`voucherInfo`, ueber den Code zugeordnet), fuer
 /// einen Wertgutschein-Verkauf die Gutschein-Sorten (`voucherTypes`, Art, Satz,
-/// Betrag; seit 11.6.0), fuer einen Leistungsgutschein-Verkauf den Artikel
+/// Betrag; seit 11.8.0), fuer einen Leistungsgutschein-Verkauf den Artikel
 /// (`voucherArticles`) und `smallBusiness` fuer ein Kleinunternehmer-Konto. Was fehlt oder was der
 /// Server abwiese, wirft `invalid_voucher` mit dem erwarteten Server-Code in
 /// [ReceiptDueError.voucherErrorCode]. Ein Beleg nur aus Auszahlungen hat
@@ -332,7 +332,7 @@ class ReceiptDueBreakdown {
 /// aus ihr (fehlt die Sorte hier oder verkauft der Server sie nicht:
 /// `voucher_type_not_found`, ein anderer Fixbetrag oder eine andere Art am
 /// Wunsch (die Sorte wurde umgestellt): `voucher_amount_mismatch`);
-/// [voucherSettings] die alte Gutschein-Einstellung (bis 11.5): nur fuer einen
+/// [voucherSettings] die alte Gutschein-Einstellung (bis 11.7): nur fuer einen
 /// Wert-Verkauf ohne `typeId` – nennt sie eine Art, rechnet der Zahlbetrag wie
 /// bisher, ohne sie oder ohne Art (so liest sich der Block jedes Servers ab
 /// Stufe 4b) `voucher_type_required`; [voucherArticles] Preis und Satz fuer

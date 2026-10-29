@@ -316,7 +316,7 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
     if (!v.isNewForm) continue;
     if (istWertVerkauf(v) && v.typeId == null) {
       // Wie gutschein-beleg.pruefeWuensche: ein Wert-Verkauf ohne Sorte ist voucher_type_required.
-      // Nur eine alte Gutschein-Einstellung MIT Art (Aufrufer von 11.5) rechnet wie bisher; ein Server ab
+      // Nur eine alte Gutschein-Einstellung MIT Art (Aufrufer bis 11.7) rechnet wie bisher; ein Server ab
       // Stufe 4b schickt `valueVoucherType` immer null, dort hilft kein Neuladen – die Sorte fehlt.
       if (o.voucherSettings?.valueVoucherType == null) {
         throw PlanFehler('voucher_type_required', 'Gutschein ${i + 1}: die Gutschein-Sorte fehlt (typeId).');
