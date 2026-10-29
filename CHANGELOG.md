@@ -1,6 +1,6 @@
-## 11.6.0 (2026-10-27)
+## 11.8.0 (2026-10-29)
 
-Twin of `@kreiseck/kasseneck-api` `1.15.0` (contract files pulled from that
+Twin of `@kreiseck/kasseneck-api` `1.17.0` (contract files pulled from that
 version): vouchers at the register, stage 4b, voucher types
 (Gutschein-Sorten). A business names any number of voucher types; the
 register shows one tile per type in the tab "Gutscheine" and sells a value
@@ -21,7 +21,7 @@ for selling (named below). Notes for callers:
   limited validity, inactive, reserved id; the first of two equal ids
   counts), and `typeSale` is off when no type and no service article is
   left. An unusable label template becomes `null` and never closes anything.
-  The old field `label` (registers before 11.6) is not read. `toJson` now
+  The old field `label` (registers before 11.8) is not read. `toJson` now
   always writes the four fields and `==` compares them (types and templates
   deeply), so a stored block reads back equal. Reason: from stage 4b the
   server sells value vouchers only through a type and keeps `sale` always
@@ -78,7 +78,7 @@ for selling (named below). Notes for callers:
   register loaded its types; the register reloads them on this code).
   Behaviour change: a value sale without
   `typeId` still computes with a `voucherSettings` that names a kind exactly
-  as in 11.5, but without `voucherSettings` or with one naming no kind
+  as in 11.7, but without `voucherSettings` or with one naming no kind
   (`valueVoucherType: null`, as every stage-4b server sends) it now throws
   `voucher_type_required` instead of `voucher_settings_missing`. Reason: the
   register computes the amount to charge before the card terminal, with the
@@ -98,7 +98,7 @@ for selling (named below). Notes for callers:
   with N years comes as `1+3` for every N, with the explicit dates
   (`redeemableUntil` = sale + N years, `refundableUntil` = sale + N + 3
   years) and `redeemableYears` = N; read N from `redeemableYears`, never from
-  the pattern. Reason: registers with 11.5 keep redeeming such vouchers and
+  the pattern. Reason: registers before 11.8 keep redeeming such vouchers and
   print "einlösbar bis <date>" from `redeemableUntil` on a reprint (with
   `custom` and no `validUntil` they printed no validity line at all).
 - **Service vouchers only for approved articles: `PosArticle.serviceVoucher`**
@@ -130,17 +130,113 @@ for selling (named below). Notes for callers:
   those say "Die Kasse lädt die Sorten neu", which is over once the types are
   reloaded; the line blocks payment until it is removed and the tile tapped
   again.
-- **Two server codes from the re-fetched contract:** `idempotency_conflict`
-  in `receiptErrorCodes` (the server takes an optional `idempotencyKey` on
-  `createReceipt`; the same key with a different body is rejected and nothing
-  is written; this package does not send a key yet) and `invoice_number_taken`
-  in `invoiceErrorCodes` (the invoice number is already taken, nothing
-  issued). Reason: the lists equal the `/v3` vocabulary of the server, which
-  gained both codes (twin of npm 1.15.0).
 - Contract re-fetched (stage 4b): the generated due cases
   (`receipt-due-voucher-generated.json`) now sell through types, with and
   without `type`, free and fixed, and cover the rejections above; the server
   names the item of a single-purpose sale with the type name.
+
+## 11.7.0 (2026-10-28)
+
+`getReceipts` reads through `listReceipts`, and the full view of
+`listReceipts` carries the header data of the business. Reason: the server
+now refuses `getReportV2` for more than 62 calendar days
+(`range_too_long`) and lists belong to the bounded, paged `listReceipts`;
+the registers only need to raise the package to move over. Additive; the
+return of `getReceipts` is unchanged.
+
+- **`getReceipts(start, end)`** now calls `listAllFullReceipts` (`view:
+  full`, `order: asc`, pages of 500 over `nextCursor`) instead of
+  `getReportV2`. It still returns `List<KasseneckReceipt>`, oldest first,
+  each with company, address, tax number, footers and logo URL, and still
+  loads the logo (`init()`). `start` and `end` are formatted exactly as
+  before (`toIso8601String().split('.').first`, the fields of the `DateTime`
+  as Vienna wall clock, no zone), `end` stays exclusive. A range over 31 days
+  is split into consecutive windows of at most 31 calendar days (counted
+  without time zone, also across the clock changes); each window's `to` is
+  the next one's `from`, so no receipt falls into a gap or into two windows.
+  An error on any page or window throws; the receipts fetched before are
+  dropped, never returned as if the range were complete. A receipt that
+  cannot be read is still skipped. `start` equal to `end` returns an empty
+  list without a call (`listReceipts` refuses an empty window).
+- **`ReceiptListPage.metadata`** (`view: full` only): the business data for
+  the receipt header, the same fields as `metadata` of `getReportV2` (read
+  only). `listFullReceipts` and `listAllFullReceipts` build every receipt with
+  it through `KasseneckReceipt.fromMetadata`, the same path `getReceipts`
+  took. A backend without `metadata` (before 28.10.2026) gives receipts
+  without header, as in 11.6; a `metadata` that is not an object is a
+  response error (`KasseneckValidationError`, `kind: response`), like npm
+  1.16.0. Reason: an empty header would look like a business without a name
+  (§ 132a Abs. 3 Z 1 BAO).
+- Behaviour change for a broken answer: `getReceipts` without `metadata` no
+  longer throws „keine Metadaten“; the receipts come without header instead,
+  because that is how an older backend answers `listReceipts`.
+- **Contract pinned to npm `1.16.0`** (fetched from the locally packed
+  tarball, not yet on the registry). From the backend it brings
+  `idempotency_conflict` in `receiptErrorCodes` (readable only; this package
+  sends no `idempotencyKey` on receipts), `invoice_number_taken` at the end of
+  `invoiceErrorCodes`, and the old settings field `vouchers.label`, which the
+  package does not read (registers before voucher stage 4b), as npm. The text
+  catalogue and the code table layout source were regenerated; the layout
+  itself is unchanged (same sha256).
+
+## 11.6.0 (2026-10-28)
+
+List the receipts of the cash register page by page over the new backend
+endpoint `listReceipts` (only `/v3`, api_key and `cashregister-token` like
+`getReportV2`). Reason: `getReportV2` returns every receipt of any period in
+one answer, without limit or paging; `listReceipts` is bounded (at most 500
+receipts per page, at most 31 days per window) and has a slim line view.
+Additive; `getReceipts` is unchanged in this release.
+
+- **`listReceipts({date, from, to, limit, order, cursor})`** returns
+  `ReceiptListPage<ReceiptListEntry>` (`view: summary`): per receipt
+  `receiptId`, `counter`, `receiptType`, `zeroKind`, `timeStamp`,
+  `totalCents`, `grossByRateCents` (`ReceiptGrossByRate`: `standard`,
+  `reduced1`, `reduced2`, `zero`, `special`), `paymentMethod` (`null` when
+  missing or unknown, never guessed as cash), `payments`, `tipCents`,
+  `operator` (name only), `cancellationOf`, `cancellationReason`,
+  `cancellationStatus`, `signatureOk`, `customProjectId`, `fullReceiptId`.
+  All amounts are whole cents; an amount that is not an integer ends the call
+  with a `KasseneckValidationError` (`kind: response`) instead of a guessed 0.
+- **`listFullReceipts(...)`** returns `ReceiptListPage<KasseneckReceipt>`
+  (`view: full`, the stored receipts in the shape of `getReportV2`, read the
+  same way as `getReceipts`). The answer carries no header data of the
+  business, so `companyName`, address, footer and logo stay empty; print a
+  single receipt via `getReceipt`. Like `getReceipts`, a receipt that cannot
+  be read is skipped, not the whole page.
+- Why two methods and one generic page: the view decides the type of the
+  lines, so it is fixed by the method, not by a parameter that could be read
+  the wrong way round. Paging, cursor and `daySummary` are the same in both.
+- **`ReceiptListPage`**: `receipts`, `hasMore`, `nextCursor` (the next page
+  needs the same window and `order`; only `limit` may change) and
+  `daySummary` (`ReceiptDaySummary`: `date`, `receiptCount`, `revenueCents`,
+  `revenueByRate` as records `(rateBp, grossCents)`), only with `date` and only
+  on the first page, `null` without daily statistics. `revenueCents` is not
+  the sum of `totalCents` of the list. `hasMore` and `nextCursor` must agree,
+  otherwise the answer is rejected (paging would stop silently).
+- **`listAllReceipts(...)` and `listAllFullReceipts(...)`** stream every
+  receipt of the window, page by page, with page size 500 unless `limit` is
+  given. They stop with an error after 100 pages (`receiptListPagesMax`) or
+  when the server repeats a cursor; an error on a later page ends the stream
+  after the receipts already delivered.
+- **Input is checked before sending** and throws `KasseneckValidationError`
+  (`kind: request`), the same rules as the server: exactly one of `date` or
+  `from` + `to`; `YYYY-MM-DD` or `YYYY-MM-DDTHH:mm:ss` (Vienna local time as
+  text, no zone, impossible dates such as `2026-02-30` rejected); `to` after
+  `from` and at most 31 calendar days later (also across the clock changes);
+  `limit` 1–500; `order` `desc` or `asc`; no empty `cursor`.
+- New exports from `package:kasseneck_api/kasseneck_api.dart`:
+  `ReceiptListEntry`, `ReceiptListPage`, `ReceiptDaySummary`,
+  `ReceiptGrossByRate`, `receiptListErrorCodes` (`invalid_date`,
+  `invalid_range`, `range_too_long`, `invalid_limit`, `invalid_order`,
+  `invalid_view`, `invalid_cursor`, `server_error`), `receiptListOrders`,
+  `receiptListLimitMax`, `receiptListDaysMax`, `receiptListPagesMax`, and
+  `CancellationState` and `ReceiptOperator` (already public through
+  `pos.dart`, same types). The line type is not called `ReceiptSummary`: that
+  name is the line of `listMyReceipts` on the register path (`pos.dart`).
+- `Aufrufe.listReceipts` is a reading call (outcome `rejected` on every
+  error). The endpoint is not yet in the contract of npm `1.14.0`; the
+  contract pin stays at `1.14.0`.
 
 ## 11.5.0 (2026-10-23)
 

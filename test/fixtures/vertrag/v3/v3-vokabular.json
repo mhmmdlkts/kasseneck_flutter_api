@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "f00792a09a9db30291009681aa6e57041a136cff3f35d2884b2fbdc21b760169",
-    "inputsSha256": "97a401b10dd0a0b95dac705e6c1b37bdf50b0d1c88afe98e1a1d1b3e753456e6",
+    "sha256": "3088cb472f3fef3ed4ff969bf0d37d051363714096616a9263270c58266bde14",
+    "inputsSha256": "2fc82d7d936fbb7e239ae5ce0eb3166a12034a6dc6f3d94482b33ef92068be26",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -137,7 +137,8 @@
       "cancelStocktake",
       "getStocktakePdf",
       "orderSignatureCard",
-      "getSignatureCardOrder"
+      "getSignatureCardOrder",
+      "listReceipts"
     ],
     "v3Routed": [
       "createReceipt",
@@ -246,7 +247,8 @@
       "cancelStocktake",
       "getStocktakePdf",
       "orderSignatureCard",
-      "getSignatureCardOrder"
+      "getSignatureCardOrder",
+      "listReceipts"
     ],
     "register": [
       "pairRegisterDevice",
@@ -425,6 +427,7 @@
       "listPartnerCustomers",
       "listPartnerWebhookDeliveries",
       "listPartnerWebhooks",
+      "listReceipts",
       "listRegisterSessionsForDevice",
       "listRegisterUsersForDevice",
       "listReservations",
@@ -1267,6 +1270,7 @@
       "invalid_country",
       "invalid_currency",
       "invalid_cursor",
+      "invalid_date",
       "invalid_denominations",
       "invalid_dimensions",
       "invalid_distribution",
@@ -1274,18 +1278,21 @@
       "invalid_e1a_group",
       "invalid_items",
       "invalid_landed_cost",
+      "invalid_limit",
       "invalid_line",
       "invalid_location",
       "invalid_locations",
       "invalid_method",
       "invalid_minimum",
       "invalid_movement_type",
+      "invalid_order",
       "invalid_output_kind",
       "invalid_payroll_reference",
       "invalid_period",
       "invalid_position",
       "invalid_price",
       "invalid_quantity",
+      "invalid_range",
       "invalid_reason",
       "invalid_return_disposition",
       "invalid_room",
@@ -1300,6 +1307,7 @@
       "invalid_transfer",
       "invalid_variant_attributes",
       "invalid_vehicle",
+      "invalid_view",
       "invalid_webhook_url",
       "invalid_year",
       "inventory_api_not_enabled",
@@ -1383,6 +1391,7 @@
       "print_layout_failed",
       "printer_not_found",
       "quantity_exceeds_remaining",
+      "range_too_long",
       "rate_limited",
       "reason_required",
       "receipt_limit_exceeded",
@@ -1522,6 +1531,7 @@
       "zeitraum_offen": "period_not_closed",
       "zeitraum_zukunft": "period_in_future",
       "zeitraum_ungueltig": "invalid_period",
+      "zeitraum_zu_lang": "range_too_long",
       "bericht_entsteht": "report_generating",
       "kasse_unbekannt": "cashregister_not_found",
       "zugang_nicht_erlaubt": "access_not_allowed",
@@ -2075,6 +2085,16 @@
       "activation_failed",
       "server_error"
     ],
+    "receiptList": [
+      "invalid_date",
+      "invalid_range",
+      "range_too_long",
+      "invalid_limit",
+      "invalid_order",
+      "invalid_view",
+      "invalid_cursor",
+      "server_error"
+    ],
     "registerCases": [
       "after_count_not_permitted",
       "already_cancelled",
@@ -2161,6 +2181,7 @@
       "period_not_closed",
       "period_in_future",
       "invalid_period",
+      "range_too_long",
       "report_generating",
       "cashregister_not_found",
       "access_not_allowed",
@@ -3141,6 +3162,7 @@
             "zeitraum_offen": "period_not_closed",
             "zeitraum_zukunft": "period_in_future",
             "zeitraum_ungueltig": "invalid_period",
+            "zeitraum_zu_lang": "range_too_long",
             "bericht_entsteht": "report_generating",
             "kasse_unbekannt": "cashregister_not_found",
             "zugang_nicht_erlaubt": "access_not_allowed",
@@ -3805,6 +3827,7 @@
           "zeitraum_offen": "period_not_closed",
           "zeitraum_zukunft": "period_in_future",
           "zeitraum_ungueltig": "invalid_period",
+          "zeitraum_zu_lang": "range_too_long",
           "bericht_entsteht": "report_generating",
           "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
@@ -3914,6 +3937,7 @@
           "zeitraum_offen": "period_not_closed",
           "zeitraum_zukunft": "period_in_future",
           "zeitraum_ungueltig": "invalid_period",
+          "zeitraum_zu_lang": "range_too_long",
           "bericht_entsteht": "report_generating",
           "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
@@ -4773,7 +4797,7 @@
         }
       },
       "ergaenze": {
-        "$function": "ergaenze"
+        "$function": "belegeNachAussen"
       }
     },
     "getReservation": {
@@ -4941,6 +4965,7 @@
           "zeitraum_offen": "period_not_closed",
           "zeitraum_zukunft": "period_in_future",
           "zeitraum_ungueltig": "invalid_period",
+          "zeitraum_zu_lang": "range_too_long",
           "bericht_entsteht": "report_generating",
           "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
@@ -5499,6 +5524,46 @@
       },
       "ergaenze": {
         "$function": "ergaenze"
+      }
+    },
+    "listReceipts": {
+      "data": {
+        "receipts": [
+          {
+            "__": "receipts",
+            "headerVersionId": "kopfId",
+            "layoutRuleset": "layoutRegeln",
+            "registrationInfo": {
+              "__": "pruefangaben",
+              "cardRegisteredAt": "karteRegistriertAm",
+              "cashregisterRegisteredAt": "kasseRegistriertAm"
+            },
+            "items": [
+              {
+                "__": "items",
+                "receivedImmediately": "sofortErhalten",
+                "keptByEmployee": "direkt"
+              }
+            ],
+            "cancellationStatus": "stornoStand"
+          }
+        ],
+        "metadata": {
+          "__": "metadata",
+          "taxNumber": "taxnr",
+          "vatId": "uid"
+        }
+      },
+      "werte": {
+        "receipts[].cancellationStatus": {
+          "$catalog": "STORNO_STAND"
+        },
+        "receipts[].cancellationReason": {
+          "$catalog": "STORNO_GRUND"
+        }
+      },
+      "ergaenze": {
+        "$function": "belegeNachAussen"
       }
     },
     "listRegisterSessionsForDevice": {
@@ -6592,6 +6657,7 @@
           "zeitraum_offen": "period_not_closed",
           "zeitraum_zukunft": "period_in_future",
           "zeitraum_ungueltig": "invalid_period",
+          "zeitraum_zu_lang": "range_too_long",
           "bericht_entsteht": "report_generating",
           "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
@@ -7523,6 +7589,7 @@
           "zeitraum_offen": "period_not_closed",
           "zeitraum_zukunft": "period_in_future",
           "zeitraum_ungueltig": "invalid_period",
+          "zeitraum_zu_lang": "range_too_long",
           "bericht_entsteht": "report_generating",
           "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",
@@ -7719,6 +7786,7 @@
           "zeitraum_offen": "period_not_closed",
           "zeitraum_zukunft": "period_in_future",
           "zeitraum_ungueltig": "invalid_period",
+          "zeitraum_zu_lang": "range_too_long",
           "bericht_entsteht": "report_generating",
           "kasse_unbekannt": "cashregister_not_found",
           "zugang_nicht_erlaubt": "access_not_allowed",

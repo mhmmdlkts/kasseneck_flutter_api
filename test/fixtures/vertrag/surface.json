@@ -1,5 +1,5 @@
 {
-  "version": "1.15.0",
+  "version": "1.17.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -45,6 +45,7 @@
       "listPartnerCustomers",
       "listPartnerWebhookDeliveries",
       "listPartnerWebhooks",
+      "listReceipts",
       "recordInvoicePayment",
       "reportCustomerContract",
       "requestCustomerSignature",
@@ -256,7 +257,8 @@
       "cancelStocktake",
       "getStocktakePdf",
       "orderSignatureCard",
-      "getSignatureCardOrder"
+      "getSignatureCardOrder",
+      "listReceipts"
     ],
     "pos": [
       "pairRegisterDevice",

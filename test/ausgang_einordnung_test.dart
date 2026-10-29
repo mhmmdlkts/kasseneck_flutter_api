@@ -84,6 +84,7 @@ const Set<String> _lesen = {
   'listMyStocktakeItems',
   'listMyStocktakes',
   'listMyTipRecipients',
+  'listReceipts',
   'listRegisterSessionsForDevice',
   'listRegisterUsersForDevice',
   'listReservations',

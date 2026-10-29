@@ -45,6 +45,7 @@ abstract final class Aufrufe {
   static const listMyStock = 'listMyStock';
   static const listMyStockLocations = 'listMyStockLocations';
   static const listMyTipRecipients = 'listMyTipRecipients';
+  static const listReceipts = 'listReceipts';
   static const listRegisterSessionsForDevice = 'listRegisterSessionsForDevice';
   static const listRegisterUsersForDevice = 'listRegisterUsersForDevice';
   static const pairRegisterDevice = 'pairRegisterDevice';
@@ -167,6 +168,7 @@ abstract final class Aufrufe {
     listMyStock,
     listMyStockLocations,
     listMyTipRecipients,
+    listReceipts,
     listRegisterSessionsForDevice,
     listRegisterUsersForDevice,
     pairRegisterDevice,

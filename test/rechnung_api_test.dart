@@ -1156,7 +1156,7 @@ void main() {
           ['vat_id_invalid', 'vat_id_check_pending']);
       expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 4, invoiceErrorCodes.length - 1),
           ['reservation_not_found', 'reservation_mismatch', 'reservation_not_active']);
-      // 11.6 (npm 1.15.0): Rechnungsnummer schon vergeben, hinten angehaengt.
+      // 11.7 (npm 1.16.0): Rechnungsnummer schon vergeben, hinten angehaengt.
       expect(invoiceErrorCodes.last, 'invoice_number_taken');
       expect(invoiceNoticeCodes.last, 'reservation_expired');
       for (final code in invoiceNoticeCodes) {

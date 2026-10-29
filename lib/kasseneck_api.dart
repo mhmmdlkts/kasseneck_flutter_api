@@ -27,6 +27,7 @@ import 'src/kasse/beleg_ausgaben.dart' show LogReceiptOutputsResult, ReceiptOutp
 import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
 import 'src/kasse/gutschein_wunsch.dart';
 import 'src/receipt/codes.dart' show receiptEmailErrorCodes, receiptOutputErrorCodes;
+import 'src/receipt/liste.dart';
 import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'src/kasse/storno_nutzlast.dart';
 import 'src/register/fehler.dart';
@@ -59,6 +60,21 @@ export 'src/v3.dart' show kPublicBaseUrl, kPosBaseUrl;
 // Der Storno mit Bezug (KasseneckApi.stornieren) liefert und nimmt diese Typen
 // -- ohne sie waere er aus diesem Barrel nicht benutzbar.
 export 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
+// Belege auflisten (KasseneckApi.listReceipts): Seite, Zeile, Tagessumme und
+// Grenzen. Storno-Stand und Bediener der Zeile sind dieselben Typen wie in der
+// Belegliste der Kasse (pos.dart), damit beide Listen gleich lesbar sind.
+export 'src/kasse/belege.dart' show CancellationState, ReceiptOperator;
+export 'src/receipt/liste.dart'
+    show
+        ReceiptDaySummary,
+        ReceiptGrossByRate,
+        ReceiptListEntry,
+        ReceiptListPage,
+        receiptListDaysMax,
+        receiptListErrorCodes,
+        receiptListLimitMax,
+        receiptListOrders,
+        receiptListPagesMax;
 // Der Belegversand per Mail (KasseneckApi.belegSenden) liefert sein Ergebnis
 // und nennt seine Fehlercodes aus diesem Teil -- ohne die Exporte koennte ein
 // Aufrufer, der nur dieses Barrel importiert, weder das Ergebnis benennen noch
@@ -890,53 +906,155 @@ class KasseneckApi {
     }
   }
 
-  /// Returns all receipts created between [start] and [end].
+  /// Returns all receipts created between [start] and [end] ([end]
+  /// exclusive), oldest first, each with the header data of the business
+  /// (company, address, footer, logo).
+  ///
+  /// [start] and [end] are read as Vienna wall clock, without time zone, as
+  /// before. Since 11.7 the receipts come from `listReceipts` (`view: full`,
+  /// page by page) instead of `getReportV2`, which the server limits to 62
+  /// days (`range_too_long`); a period longer than 31 days is fetched in
+  /// consecutive windows of at most 31 calendar days. An error on any page
+  /// throws: there is no partial result. A receipt that cannot be read is
+  /// skipped, as before.
   Future<List<KasseneckReceipt>> getReceipts(DateTime start, DateTime end) async {
     if (start.isAfter(end)) {
       throw ArgumentError('start darf nicht nach end sein.');
     }
+    // Wie bisher an getReportV2: die Felder des DateTime als Wanduhr, ohne
+    // Bruchteile und ohne Zeitzone. Eine Umrechnung nach Wien fiele um
+    // Mitternacht auf den falschen Tag, wenn der Aufrufer schon Wiener Zeit
+    // uebergibt (karteck, Verlauf je Tag).
+    final von = start.toIso8601String().split('.').first;
+    final bis = end.toIso8601String().split('.').first;
 
-    final resJson = await _kasseneckJson(endpoint: Aufrufe.getReportV2, params: {
-      'start': start.toIso8601String().split('.').first,
-      'end': end.toIso8601String().split('.').first
-    });
-    if (resJson['status'] == 'success') {
-      final daten = _daten(Aufrufe.getReportV2, resJson);
-      final rohMetadata = daten['metadata'];
-      if (rohMetadata is! Map) {
+    // Erst alle Fenster pruefen, dann holen: ein Formatfehler im letzten
+    // Fenster soll nicht nach den Netzwegen der ersten auffallen.
+    final fenster = receiptListWindows(von, bis);
+    for (final f in fenster) {
+      receiptListParams(view: 'full', from: f.from, to: f.to, order: 'asc');
+    }
+    final List<KasseneckReceipt> receipts = [];
+    for (final f in fenster) {
+      // `await for` reicht jeden Fehler einer Seite durch; die Belege davor
+      // gehen mit der Liste verloren. Ein halber Zeitraum saehe in der App wie
+      // ein ganzer aus, in dem Belege fehlen.
+      await for (final r in listAllFullReceipts(from: f.from, to: f.to, order: 'asc')) {
+        receipts.add(r);
+      }
+    }
+    debugPrint('getReceipts $von–$bis: ${receipts.length} Belege in ${fenster.length} Fenstern');
+    await Future.wait(receipts.map((r) => r.init()));
+    return receipts;
+  }
+
+  /// One page of the receipts of this cash register (`listReceipts`, `view:
+  /// summary`): a short line per receipt, amounts in cents.
+  ///
+  /// Either a Vienna day [date] (`YYYY-MM-DD`) or a period [from] to [to]
+  /// (`YYYY-MM-DD` or `YYYY-MM-DDTHH:mm:ss`, local time in Vienna, [to]
+  /// exclusive, at most 31 calendar days). [limit] 1-500 (server default
+  /// 100), [order] `desc` (default, newest first) or `asc`. For the next
+  /// page pass [cursor] = `nextCursor` with the same window and [order];
+  /// [limit] may change. With [date] the first page carries `daySummary`.
+  ///
+  /// Invalid input throws a [KasseneckValidationError] (`kind: request`)
+  /// before anything is sent; server errors come as [KasseneckApiError] with a
+  /// code from [receiptListErrorCodes]. All pages at once: [listAllReceipts].
+  Future<ReceiptListPage<ReceiptListEntry>> listReceipts({
+    String? date,
+    String? from,
+    String? to,
+    int? limit,
+    String? order,
+    String? cursor,
+  }) =>
+      _belegSeite(
+          receiptListParams(view: 'summary', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
+          (roh, _) => [for (final (i, e) in roh.indexed) receiptListEntry(i, e)]);
+
+  /// Like [listReceipts], but with the stored receipts (`view: full`, the
+  /// shape of `getReportV2`) read into [KasseneckReceipt].
+  ///
+  /// Since 11.7 the page carries the header data of the business
+  /// ([ReceiptListPage.metadata], as `metadata` of `getReportV2`), and every
+  /// receipt is built with it like in [getReceipts] (company, address,
+  /// footer, logo URL). A backend without `metadata` gives receipts without
+  /// header ([KasseneckReceipt.companyName] empty), as before. The logo itself
+  /// is loaded by [KasseneckReceipt.init]. Like [getReceipts], a single
+  /// receipt that cannot be read is skipped instead of failing the page.
+  Future<ReceiptListPage<KasseneckReceipt>> listFullReceipts({
+    String? date,
+    String? from,
+    String? to,
+    int? limit,
+    String? order,
+    String? cursor,
+  }) =>
+      _belegSeite(
+          receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
+          (roh, kopf) => [for (final r in roh) ?_vollerBeleg(r, kopf)]);
+
+  /// All receipts of the window, page by page over `nextCursor`, as a stream
+  /// (summary lines). [limit] is the page size, here 500 unless given:
+  /// fewer calls for the same receipts. Stops with an error after 100 pages
+  /// or when the server repeats a cursor; an error on a later page ends the
+  /// stream after the receipts already delivered. `daySummary` is only on
+  /// the first page of [listReceipts].
+  Stream<ReceiptListEntry> listAllReceipts({String? date, String? from, String? to, int? limit, String? order}) {
+    // Vor dem ersten Netzweg pruefen, nicht erst beim Abonnieren: ein
+    // Eingabefehler soll an der Aufrufstelle fallen wie bei listReceipts.
+    receiptListParams(view: 'summary', date: date, from: from, to: to, limit: limit, order: order);
+    return _alleSeiten((c) => listReceipts(
+        date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c));
+  }
+
+  /// Like [listAllReceipts], with the stored receipts (see [listFullReceipts]).
+  Stream<KasseneckReceipt> listAllFullReceipts({String? date, String? from, String? to, int? limit, String? order}) {
+    receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order);
+    return _alleSeiten((c) => listFullReceipts(
+        date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c));
+  }
+
+  Future<ReceiptListPage<T>> _belegSeite<T>(
+      Map<String, dynamic> params, List<T> Function(List<Object?> roh, Map<String, dynamic>? metadata) eintraege) async {
+    const name = Aufrufe.listReceipts;
+    final resJson = await _kasseneckJson(endpoint: name, params: params);
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    return receiptListPage(_daten(name, resJson), eintraege);
+  }
+
+  /// Ein Beleg der vollen Ansicht oder `null`, mit den Kopfdaten der Seite
+  /// (derselbe Weg wie frueher getReportV2); ohne `metadata` ohne Kopf.
+  static KasseneckReceipt? _vollerBeleg(Object? roh, Map<String, dynamic>? kopf) {
+    try {
+      return KasseneckReceipt.fromMetadata(roh, kopf ?? const {});
+    } catch (e) {
+      debugPrint('listFullReceipts: Beleg übersprungen (${roh is Map ? roh['receiptId'] : roh}): $e');
+      return null;
+    }
+  }
+
+  /// Blaettert ueber alle Seiten. Derselbe Cursor zweimal waere eine
+  /// Endlosschleife, mehr als [receiptListPagesMax] Seiten ebenso verdaechtig
+  /// (und teuer); beides endet mit einem Fehler statt still.
+  static Stream<T> _alleSeiten<T>(Future<ReceiptListPage<T>> Function(String? cursor) seite) async* {
+    const name = Aufrufe.listReceipts;
+    final gesehen = <String>{};
+    String? cursor;
+    for (var n = 1;; n++) {
+      final s = await seite(cursor);
+      yield* Stream.fromIterable(s.receipts);
+      final naechster = s.nextCursor;
+      if (naechster == null) return;
+      if (!gesehen.add(naechster)) {
+        throw const KasseneckValidationError(name, 'Antwort nennt denselben nextCursor zweimal', 'response');
+      }
+      if (n >= receiptListPagesMax) {
         throw const KasseneckValidationError(
-            Aufrufe.getReportV2, 'Antwort enthaelt keine Metadaten (data.metadata fehlt)', 'response');
+            name, 'mehr als $receiptListPagesMax Seiten; kleineren Zeitraum oder groesseres limit waehlen', 'request');
       }
-      final Map<String, dynamic> metadata = Map<String, dynamic>.from(rohMetadata);
-      final rohBelege = daten['receipts'];
-      if (rohBelege is! List) {
-        // Keine Liste ist etwas anderes als eine leere Liste: „im Zeitraum
-        // nichts verkauft" darf nicht aussehen wie „Antwort kaputt". Wortgleich
-        // mit `receipts.dart` auf dem Kassen-Weg -- dieselbe Lage, derselbe Typ.
-        throw const KasseneckValidationError(
-            Aufrufe.getReportV2, 'Antwort enthaelt keine Belegliste (data.receipts fehlt)', 'response');
-      }
-      // Gezaehlt wird erst HIER. Die Zeile stand vorher ueber den Pruefungen
-      // und las `data['receipts']` mit einem String-Index: bei `data: [...]`
-      // oder `data: "text"` griff das in eine Liste bzw. einen Text, bei
-      // `receipts: {...}` scheiterte der Cast — in allen drei Faellen ein
-      // roher TypeError, genau vor der Stelle, die ihn verhindern soll.
-      debugPrint('getReportV2 $start–$end: ${rohBelege.length} Belege');
-      // Pro Beleg parsen: EIN defekter/unerwarteter Beleg (z. B. Nullbeleg ohne
-      // items) darf nicht den gesamten Abruf kippen — sonst bleibt der ganze
-      // Tages-/Zeitraums-Cache leer und keine Buchung findet ihren Beleg.
-      final List<KasseneckReceipt> receipts = [];
-      for (final r in rohBelege) {
-        try {
-          receipts.add(KasseneckReceipt.fromMetadata(r, metadata));
-        } catch (e) {
-          debugPrint('getReceipts: Beleg übersprungen (${r is Map ? r['receiptId'] : r}): $e');
-        }
-      }
-      await Future.wait(receipts.map((r) => r.init()));
-      return receipts;
-    } else {
-      throw envelopeError(Aufrufe.getReportV2, resJson);
+      cursor = naechster;
     }
   }
 

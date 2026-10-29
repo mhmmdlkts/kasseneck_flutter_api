@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "2cc77736cae05b3d7c2e67d59bd6bd7cfb9f5484eed54cf236e3a412ab9e78f9",
+      "sha256": "7f93b1458c7d25548321c31eadaf6cc93a804cd1eedf78effa11d5a1110df7aa",
       "head": [],
-      "inputsSha256": "c5596984ff964b489fe9d096e4b40cd79873b3d0f39afb0735d2ed31b548af10",
+      "inputsSha256": "c18e7adc7420e634394fb1b1e738dc18aeed9d31cc7d2ac5847d3e06b9ca7130",
       "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "46e9d3ca2c8c176710891dc12c94d26314692bdd0f81c44be782bbfbe623e636",
+      "sha256": "4949c9f3c2feb9c190bdcd5cb79bd1dd28bb1a0a03c40f8999094bcc3a759c2e",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "9b3380d13fabe0ba3a9b7f10c283e8a418e841bb2751deeb0af354e4bf02ee11",
+      "inputsSha256": "7567e06f91a415e03ce4c459050006f7b3f4e06644f5731559261d05f0eb23a5",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -2615,9 +2615,7 @@
             "unit": "E4",
             "count": 1,
             "countByType": {
-              "start": {
-                "__increment": 1
-              }
+              "start": 1
             },
             "lastCounter": 1,
             "lastTs": "2026-09-26T10:00:00",
@@ -2629,9 +2627,7 @@
             "unit": "E4",
             "count": 1,
             "countByType": {
-              "start": {
-                "__increment": 1
-              }
+              "start": 1
             },
             "lastCounter": 1,
             "lastTs": "2026-09-26T10:00:00",
@@ -2643,9 +2639,7 @@
             "unit": "E4",
             "count": 1,
             "countByType": {
-              "start": {
-                "__increment": 1
-              }
+              "start": 1
             },
             "lastCounter": 1,
             "lastTs": "2026-09-26T10:00:00",
@@ -2714,27 +2708,20 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             }
           },
           "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
@@ -2743,32 +2730,23 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             },
             "grossByDay": {
-              "2026-09-26": {
-                "__increment": 64000
-              }
+              "2026-09-26": 64000
             }
           },
           "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
@@ -2777,32 +2755,23 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             },
             "grossByMonth": {
-              "2026-09": {
-                "__increment": 64000
-              }
+              "2026-09": 64000
             }
           },
           "users/kw_betrieb1/lade_tage/2026-09-26_haupt_KASSE1": {
@@ -2810,47 +2779,29 @@
             "ladeId": "haupt_KASSE1",
             "cashregisterId": "KASSE1",
             "kennzahlen": {
-              "kassiertCents": {
-                "__increment": 640
-              },
-              "belegAnzahl": {
-                "__increment": 1
-              },
+              "kassiertCents": 640,
+              "belegAnzahl": 1,
               "jeZahlart": {
                 "cash": {
-                  "cents": {
-                    "__increment": 640
-                  },
-                  "anzahl": {
-                    "__increment": 1
-                  }
+                  "cents": 640,
+                  "anzahl": 1
                 }
               },
               "mitarbeiter": {
                 "ru_kellner": {
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
-                  "belegAnzahl": {
-                    "__increment": 1
-                  },
-                  "kassiertCents": {
-                    "__increment": 640
-                  },
+                  "belegAnzahl": 1,
+                  "kassiertCents": 640,
                   "jeZahlart": {
-                    "cash": {
-                      "__increment": 640
-                    }
+                    "cash": 640
                   }
                 }
               },
               "jeStunde": {
                 "2026-09-26T10": {
-                  "anzahl": {
-                    "__increment": 1
-                  },
-                  "kassiertCents": {
-                    "__increment": 640
-                  }
+                  "anzahl": 1,
+                  "kassiertCents": 640
                 }
               }
             },
@@ -2938,33 +2889,22 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 40000
-              },
-              "creditCard": {
-                "__increment": 24000
-              }
+              "cash": 40000,
+              "creditCard": 24000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              },
-              "creditCard": {
-                "__increment": 1
-              }
+              "cash": 1,
+              "creditCard": 1
             }
           },
           "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
@@ -2973,38 +2913,25 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 40000
-              },
-              "creditCard": {
-                "__increment": 24000
-              }
+              "cash": 40000,
+              "creditCard": 24000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              },
-              "creditCard": {
-                "__increment": 1
-              }
+              "cash": 1,
+              "creditCard": 1
             },
             "grossByDay": {
-              "2026-09-26": {
-                "__increment": 64000
-              }
+              "2026-09-26": 64000
             }
           },
           "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
@@ -3013,38 +2940,25 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 40000
-              },
-              "creditCard": {
-                "__increment": 24000
-              }
+              "cash": 40000,
+              "creditCard": 24000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              },
-              "creditCard": {
-                "__increment": 1
-              }
+              "cash": 1,
+              "creditCard": 1
             },
             "grossByMonth": {
-              "2026-09": {
-                "__increment": 64000
-              }
+              "2026-09": 64000
             }
           },
           "users/kw_betrieb1/lade_tage/2026-09-26_haupt_KASSE1": {
@@ -3052,68 +2966,40 @@
             "ladeId": "haupt_KASSE1",
             "cashregisterId": "KASSE1",
             "kennzahlen": {
-              "kassiertCents": {
-                "__increment": 640
-              },
-              "belegAnzahl": {
-                "__increment": 1
-              },
+              "kassiertCents": 640,
+              "belegAnzahl": 1,
               "jeZahlart": {
                 "cash": {
-                  "cents": {
-                    "__increment": 400
-                  },
-                  "anzahl": {
-                    "__increment": 1
-                  }
+                  "cents": 400,
+                  "anzahl": 1
                 },
                 "creditCard": {
-                  "cents": {
-                    "__increment": 240
-                  },
-                  "anzahl": {
-                    "__increment": 1
-                  }
+                  "cents": 240,
+                  "anzahl": 1
                 }
               },
               "jeAnbieter": {
                 "custom": {
-                  "cents": {
-                    "__increment": 240
-                  },
-                  "anzahl": {
-                    "__increment": 1
-                  }
+                  "cents": 240,
+                  "anzahl": 1
                 }
               },
               "mitarbeiter": {
                 "ru_chef": {
                   "registerUserId": "ru_chef",
                   "name": "Anna Chef",
-                  "belegAnzahl": {
-                    "__increment": 1
-                  },
-                  "kassiertCents": {
-                    "__increment": 640
-                  },
+                  "belegAnzahl": 1,
+                  "kassiertCents": 640,
                   "jeZahlart": {
-                    "cash": {
-                      "__increment": 400
-                    },
-                    "creditCard": {
-                      "__increment": 240
-                    }
+                    "cash": 400,
+                    "creditCard": 240
                   }
                 }
               },
               "jeStunde": {
                 "2026-09-26T10": {
-                  "anzahl": {
-                    "__increment": 1
-                  },
-                  "kassiertCents": {
-                    "__increment": 640
-                  }
+                  "anzahl": 1,
+                  "kassiertCents": 640
                 }
               }
             },
@@ -3190,27 +3076,20 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             }
           },
           "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
@@ -3219,32 +3098,23 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             },
             "grossByDay": {
-              "2026-09-26": {
-                "__increment": 64000
-              }
+              "2026-09-26": 64000
             }
           },
           "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
@@ -3253,32 +3123,23 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             },
             "grossByMonth": {
-              "2026-09": {
-                "__increment": 64000
-              }
+              "2026-09": 64000
             }
           },
           "users/kw_betrieb1/lade_tage/2026-09-26_haupt_KASSE1": {
@@ -3286,45 +3147,27 @@
             "ladeId": "haupt_KASSE1",
             "cashregisterId": "KASSE1",
             "kennzahlen": {
-              "kassiertCents": {
-                "__increment": 640
-              },
-              "belegAnzahl": {
-                "__increment": 1
-              },
+              "kassiertCents": 640,
+              "belegAnzahl": 1,
               "jeZahlart": {
                 "cash": {
-                  "cents": {
-                    "__increment": 640
-                  },
-                  "anzahl": {
-                    "__increment": 1
-                  }
+                  "cents": 640,
+                  "anzahl": 1
                 }
               },
               "mitarbeiter": {
                 "_ohne": {
-                  "belegAnzahl": {
-                    "__increment": 1
-                  },
-                  "kassiertCents": {
-                    "__increment": 640
-                  },
+                  "belegAnzahl": 1,
+                  "kassiertCents": 640,
                   "jeZahlart": {
-                    "cash": {
-                      "__increment": 640
-                    }
+                    "cash": 640
                   }
                 }
               },
               "jeStunde": {
                 "2026-09-26T10": {
-                  "anzahl": {
-                    "__increment": 1
-                  },
-                  "kassiertCents": {
-                    "__increment": 640
-                  }
+                  "anzahl": 1,
+                  "kassiertCents": 640
                 }
               }
             },
@@ -3424,37 +3267,26 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             },
             "tipByPayment": {
-              "cash": {
-                "__increment": 16000
-              }
+              "cash": 16000
             },
             "tipByRecipient": {
-              "ru_kellner": {
-                "__increment": 16000
-              }
+              "ru_kellner": 16000
             },
             "tipStaff": 16000
           },
@@ -3464,42 +3296,29 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             },
             "tipByPayment": {
-              "cash": {
-                "__increment": 16000
-              }
+              "cash": 16000
             },
             "tipByRecipient": {
-              "ru_kellner": {
-                "__increment": 16000
-              }
+              "ru_kellner": 16000
             },
             "grossByDay": {
-              "2026-09-26": {
-                "__increment": 64000
-              }
+              "2026-09-26": 64000
             },
             "tipStaff": 16000
           },
@@ -3509,42 +3328,29 @@
             "unit": "E4",
             "count": 2,
             "countByType": {
-              "standard": {
-                "__increment": 1
-              }
+              "start": 1,
+              "standard": 1
             },
             "lastCounter": 2,
             "lastTs": "2026-09-26T10:00:00",
             "updated_at": 1790409600000,
             "grossByRate": {
-              "20": {
-                "__increment": 64000
-              }
+              "20": 64000
             },
             "grossByPayment": {
-              "cash": {
-                "__increment": 64000
-              }
+              "cash": 64000
             },
             "countByPayment": {
-              "cash": {
-                "__increment": 1
-              }
+              "cash": 1
             },
             "tipByPayment": {
-              "cash": {
-                "__increment": 16000
-              }
+              "cash": 16000
             },
             "tipByRecipient": {
-              "ru_kellner": {
-                "__increment": 16000
-              }
+              "ru_kellner": 16000
             },
             "grossByMonth": {
-              "2026-09": {
-                "__increment": 64000
-              }
+              "2026-09": 64000
             },
             "tipStaff": 16000
           },
@@ -3553,50 +3359,30 @@
             "ladeId": "haupt_KASSE1",
             "cashregisterId": "KASSE1",
             "kennzahlen": {
-              "kassiertCents": {
-                "__increment": 800
-              },
-              "belegAnzahl": {
-                "__increment": 1
-              },
+              "kassiertCents": 800,
+              "belegAnzahl": 1,
               "jeZahlart": {
                 "cash": {
-                  "cents": {
-                    "__increment": 800
-                  },
-                  "anzahl": {
-                    "__increment": 1
-                  }
+                  "cents": 800,
+                  "anzahl": 1
                 }
               },
               "mitarbeiter": {
                 "ru_kellner": {
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
-                  "belegAnzahl": {
-                    "__increment": 1
-                  },
-                  "kassiertCents": {
-                    "__increment": 800
-                  },
+                  "belegAnzahl": 1,
+                  "kassiertCents": 800,
                   "jeZahlart": {
-                    "cash": {
-                      "__increment": 800
-                    }
+                    "cash": 800
                   },
-                  "trinkgeldCents": {
-                    "__increment": 160
-                  }
+                  "trinkgeldCents": 160
                 }
               },
               "jeStunde": {
                 "2026-09-26T10": {
-                  "anzahl": {
-                    "__increment": 1
-                  },
-                  "kassiertCents": {
-                    "__increment": 800
-                  }
+                  "anzahl": 1,
+                  "kassiertCents": 800
                 }
               }
             },
@@ -4086,6 +3872,7 @@
             "register_settings": {
               "kasse": {
                 "stil": "klar",
+                "farbe": "#222222",
                 "uhr": false
               }
             }
@@ -4138,6 +3925,7 @@
             "logo_url": "https://example.invalid/logo.png",
             "register_settings": {
               "kasse": {
+                "stil": "nacht",
                 "farbe": "#136B6B",
                 "schrift": "L"
               }
@@ -4196,6 +3984,8 @@
             "logo_url": "https://example.invalid/logo.png",
             "register_settings": {
               "kasse": {
+                "stil": "nacht",
+                "farbe": "#222222",
                 "logoBild": ""
               }
             }
@@ -4223,6 +4013,8 @@
             "logo_url": "https://example.invalid/logo.png",
             "register_settings": {
               "kasse": {
+                "stil": "nacht",
+                "farbe": "#222222",
                 "logoBild": "https://firebasestorage.googleapis.com/v0/b/kasseneck.appspot.com/o/users%2Fkw_betrieb1%2Fkasse%2Flogo.png?alt=media&token=11111111-2222-4333-8444-555555555555"
               }
             }
@@ -4270,6 +4062,8 @@
             "logo_url": "https://example.invalid/logo.png",
             "register_settings": {
               "kasse": {
+                "stil": "nacht",
+                "farbe": "#222222",
                 "logoBild": "https://firebasestorage.googleapis.com/v0/b/kasseneck.appspot.com/o/users%2Fkw_betrieb1%2Fkasse%2Flogo.svg?alt=media&token=11111111-2222-4333-8444-555555555555"
               }
             }
@@ -4352,8 +4146,8 @@
             "lockedUntil": 0,
             "kasse": {
               "layout": "rechts",
-              "druckerAn": true,
-              "papier": "mm80"
+              "papier": "mm80",
+              "druckerAn": true
             }
           }
         },
@@ -6051,9 +5845,7 @@
             "trinkgeld": {
               "ru_kellner": {
                 "name": "Ben Kellner",
-                "ausgezahltCents": {
-                  "__increment": 400
-                }
+                "ausgezahltCents": 400
               }
             },
             "geaendertAt": "2026-09-26T08:00:00.000Z"
@@ -6251,9 +6043,7 @@
             "trinkgeld": {
               "ru_kellner": {
                 "name": "Ben Kellner",
-                "ausgezahltCents": {
-                  "__increment": 250
-                }
+                "ausgezahltCents": 250
               }
             },
             "geaendertAt": "2026-09-26T08:00:00.000Z"
@@ -6551,15 +6341,9 @@
             "cashregisterId": "KASSE1",
             "kennzahlen": {
               "oeffnungen": {
-                "anzahl": {
-                  "__increment": 2
-                },
-                "ohneVerkauf": {
-                  "__increment": 1
-                },
-                "fehlgeschlagen": {
-                  "__increment": 1
-                }
+                "anzahl": 2,
+                "ohneVerkauf": 1,
+                "fehlgeschlagen": 1
               }
             },
             "geaendertAt": "2026-09-26T08:00:00.000Z"
@@ -6780,12 +6564,8 @@
             "cashregisterId": "KASSE1",
             "kennzahlen": {
               "oeffnungen": {
-                "anzahl": {
-                  "__increment": 2
-                },
-                "ohneVerkauf": {
-                  "__increment": 1
-                }
+                "anzahl": 2,
+                "ohneVerkauf": 1
               }
             },
             "geaendertAt": "2026-09-26T08:00:00.000Z"
@@ -6971,12 +6751,8 @@
             "cashregisterId": "KASSE1",
             "kennzahlen": {
               "oeffnungen": {
-                "anzahl": {
-                  "__increment": 1
-                },
-                "ohneVerkauf": {
-                  "__increment": 1
-                }
+                "anzahl": 1,
+                "ohneVerkauf": 1
               }
             },
             "geaendertAt": "2026-09-26T08:00:00.000Z"
@@ -7647,9 +7423,7 @@
             "trinkgeld": {
               "ru_kellner": {
                 "name": "Ben Kellner",
-                "ausgezahltCents": {
-                  "__increment": 400
-                }
+                "ausgezahltCents": 400
               }
             },
             "geaendertAt": "2026-09-26T08:00:00.000Z"
@@ -8022,9 +7796,7 @@
             "trinkgeld": {
               "ru_kellner": {
                 "name": "Ben Kellner",
-                "ausgezahltCents": {
-                  "__increment": 400
-                }
+                "ausgezahltCents": 400
               }
             },
             "geaendertAt": "2026-09-26T08:00:00.000Z"
@@ -8451,9 +8223,7 @@
             "trinkgeld": {
               "ru_kellner": {
                 "name": "Ben Kellner",
-                "ausgezahltCents": {
-                  "__increment": 400
-                }
+                "ausgezahltCents": 400
               }
             },
             "geaendertAt": "2026-09-26T08:00:00.000Z"

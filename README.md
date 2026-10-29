@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.6.0
+  kasseneck_api: ^11.8.0
 ```
 
 ```bash
@@ -1038,7 +1038,46 @@ final status  = await kasseneck.getCashboxStatus();                        // re
 ```
 
 `getReceipts` skips single receipts it cannot read instead of failing the whole
-range. `getSignatureStatus(certificateHex)` asks FinanzOnline for the status of a
+range. Since 11.7 it reads through `listReceipts` (`view: full`, oldest first,
+page by page) instead of `getReportV2`, with the same result: every receipt
+with the header data of the business. A range over 31 days is fetched in
+consecutive windows of at most 31 calendar days (`start`/`end` as Vienna wall
+clock, `end` exclusive); an error on any page throws, there is no partial
+list. The server now refuses `getReportV2` for more than 62 days
+(`range_too_long`), so apps that call `getReceipts` on 11.6 or older should
+update the package; no code change is needed.
+
+**Listing receipts page by page (`listReceipts`).** One Vienna day (`date`) or
+a period (`from`, `to`, local time in Vienna as text, `to` exclusive, at most
+31 calendar days), up to 500 receipts per page. While `hasMore` is true, ask
+again with the same window and `order` and `cursor: nextCursor`.
+
+```dart
+final page = await kasseneck.listReceipts(date: '2026-10-27');       // summary lines, amounts in cents
+for (final r in page.receipts) {
+  print('${r.timeStamp} ${r.receiptId} ${r.totalCents} ${r.cancellationStatus}');
+}
+final day = page.daySummary;                                          // first page with date only, or null
+
+// Every receipt of a period, all pages (stops with an error after 100 pages).
+await for (final r in kasseneck.listAllReceipts(from: '2026-10-01', to: '2026-11-01', order: 'asc')) {
+  print(r.receiptId);
+}
+
+// The stored receipts instead of summary lines.
+final full = await kasseneck.listFullReceipts(date: '2026-10-27', limit: 100);
+```
+
+The method fixes the view: `listReceipts` and `listAllReceipts` return
+`ReceiptListEntry` (`view: summary`), `listFullReceipts` and
+`listAllFullReceipts` return `KasseneckReceipt` (`view: full`, with the header
+data of the business from `page.metadata` since 11.7, as with `getReceipts`;
+a backend without `metadata` gives receipts without header). A
+wrong date, a period over 31 days, a `limit` outside 1–500 or an unknown
+`order` throws a `KasseneckValidationError` before anything is sent.
+`daySummary.revenueCents` comes from the daily statistics and is not the sum of
+`totalCents` of the list (zero, start and training receipts count in
+`receiptCount`, not in revenue). `getSignatureStatus(certificateHex)` asks FinanzOnline for the status of a
 signature certificate.
 
 ## Invoices (invoice API)

@@ -4,7 +4,7 @@
     "default": {
       "sha256": "1c9e54a06b1851753d793301dd351bc9179079bcc53fa4a5205959a34373e172",
       "head": [],
-      "inputsSha256": "c5596984ff964b489fe9d096e4b40cd79873b3d0f39afb0735d2ed31b548af10",
+      "inputsSha256": "c18e7adc7420e634394fb1b1e738dc18aeed9d31cc7d2ac5847d3e06b9ca7130",
       "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "8898e2375ed0d3528b59b49b261729a1a56e151b74d339498bf28b0bf3cde0ac",
+      "sha256": "0e0af617e711c9677d350bd049d4441d5973d1d0a2dbd6497024156d1ded1da6",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "9b3380d13fabe0ba3a9b7f10c283e8a418e841bb2751deeb0af354e4bf02ee11",
+      "inputsSha256": "7567e06f91a415e03ce4c459050006f7b3f4e06644f5731559261d05f0eb23a5",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -11885,7 +11885,7 @@
                 "logoEnabled": true,
                 "logoSize": "M",
                 "watermark": "login",
-                "color": "#136B6B",
+                "color": "#222222",
                 "theme": "clear",
                 "fontSize": "M",
                 "settingsFontSize": "S",
@@ -11979,7 +11979,7 @@
                 "logoSize": "M",
                 "watermark": "login",
                 "color": "#136B6B",
-                "theme": "clear",
+                "theme": "night",
                 "fontSize": "L",
                 "settingsFontSize": "S",
                 "tileStyle": "stripe",
