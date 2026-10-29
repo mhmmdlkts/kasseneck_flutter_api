@@ -24,6 +24,7 @@ import '../register/fehler.dart' show KasseneckValidationError;
 import '../receipt/codes.dart' show cancellationErrorCodes;
 import '../register/pairing.dart' show RegisterScope;
 import 'belege.dart';
+import 'gutschein_wunsch.dart' show artOderNull;
 
 /// Die Gründe, die das Backend annimmt – Codes wie unter `/v3` (Katalog
 /// `STORNO_GRUND`), Beschriftung für den Bildschirm und den Bon (bleibt
@@ -243,7 +244,7 @@ int openStaffTipCents(KasseneckReceipt receipt, {int? nowMs}) => _offenesTrinkge
 /// Frage nach der Quelle bleibt ([asksTipRefundSource]). Zwilling von
 /// `asksRefundTip` im npm-Paket.
 bool asksRefundTip(KasseneckReceipt receipt, {int? nowMs}) =>
-    openStaffTipCents(receipt, nowMs: nowMs) > 0 && !(receipt.vouchers ?? const []).any((v) => v.type == VoucherType.value);
+    openStaffTipCents(receipt, nowMs: nowMs) > 0 && !(receipt.vouchers ?? const []).any((v) => artOderNull(v) == VoucherType.value);
 
 /// Die Positionen, die nach der Antwort auf „Trinkgeld auch zurueckgeben?"
 /// hinausgehen – dieselbe Regel wie im Backend. [items] `null` = ganzer Beleg.

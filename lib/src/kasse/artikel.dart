@@ -110,7 +110,7 @@ QuantityDefaults quantityDefaults(PosArticle a) {
 class PosArticle {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked'};
+  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher'};
 
   /// Die Felder von `tile`.
   static const Set<String> tileFields = {'visible', 'sort'};
@@ -134,6 +134,7 @@ class PosArticle {
     this.ean,
     this.internalCode,
     this.stockTracked,
+    this.serviceVoucher = false,
   });
 
   final String id;
@@ -186,9 +187,15 @@ class PosArticle {
   /// traegt (aeltere Backends) – dann nicht aus anderen Feldern ableiten.
   final bool? stockTracked;
 
+  /// Als Leistungsgutschein verkaufbar (Gutscheine Stufe 4b, Haken im
+  /// Artikelstamm). Die Kachel „Leistungsgutschein“ bietet nur diese Artikel
+  /// an; der Server verkauft einen anderen nicht (`voucher_service_not_allowed`).
+  /// Nur ein ausdrueckliches `true` gilt.
+  final bool serviceVoucher;
+
   /// Aus der Drahtform `/api/v3` (`tile {visible, sort}`, `quantityRule`,
   /// `askQuantity`, `maxQuantity`, `revenueGroupId`, `stockLocationIds`,
-  /// `number`, `ean`, `internalCode`, `stockTracked`).
+  /// `number`, `ean`, `internalCode`, `stockTracked`, `serviceVoucher`).
   ///
   /// Liest auch einen **Zwischenspeicher der Version 9.x** (`kasse
   /// {sichtbar, sort}`, `quantityRule stueck|dezimal`, `askQuantity`,
@@ -234,6 +241,7 @@ class PosArticle {
       ean: _textOderNull(json['ean']),
       internalCode: _textOderNull(json['internalCode']),
       stockTracked: json['stockTracked'] is bool ? json['stockTracked'] as bool : null,
+      serviceVoucher: json['serviceVoucher'] == true,
     );
   }
 
@@ -257,6 +265,7 @@ class PosArticle {
         'ean': ean,
         'internalCode': internalCode,
         'stockTracked': stockTracked,
+        'serviceVoucher': serviceVoucher,
       };
 }
 

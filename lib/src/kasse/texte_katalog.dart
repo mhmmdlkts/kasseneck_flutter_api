@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.16.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.17.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.16.0';
+const String posTextsVersion = '1.17.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -113,6 +113,12 @@ const Map<String, PosText> posMessages = {
   'voucher_error.settings_missing': PosText('Die Gutschein-Einstellungen fehlen. Bitte die Kasse neu laden.'),
   'voucher_error.too_many_checks': PosText('Zu viele Versuche. Bitte in einer Stunde wieder.'),
   'voucher_error.sale_off': PosText('Gutscheine verkaufen geht hier noch nicht.'),
+  'voucher_error.type_required': PosText('Bitte eine Gutschein-Sorte wählen.'),
+  'voucher_error.type_not_found': PosText('Diese Gutschein-Sorte gibt es nicht mehr. Die Kasse lädt die Sorten neu.'),
+  'voucher_error.amount_mismatch': PosText('Die Gutschein-Sorte hat sich geändert. Die Kasse lädt die Sorten neu.'),
+  'voucher_error.service_not_allowed': PosText('Dieser Artikel ist nicht als Leistungsgutschein freigegeben.'),
+  'voucher_error.payout_not_allowed': PosText('Dieser Gutschein kann nicht ausgezahlt werden.'),
+  'voucher.type_changed': PosText('Diese Gutschein-Sorte hat sich geändert. Bitte die Zeile entfernen und die Kachel neu antippen.'),
   'voucher.reentry_needed': PosText('Die Karte ist belastet, der Beleg fehlt noch: zu jedem Gutschein den Code erneut eingeben, dann den Beleg abschließen.'),
   'voucher.reentry_mismatch': PosText('Mit diesen Gutscheinen ergibt der Beleg nicht mehr den belasteten Betrag – die Karte zurückbuchen.'),
   'voucher.not_this_voucher': PosText('Das ist nicht der Gutschein ····-{suffix}.', placeholders: ['suffix']),
@@ -504,6 +510,11 @@ const Map<String, PosText> posLabels = {
   'voucher.code_done': PosText('Fertig'),
   'voucher.article': PosText('Artikel'),
   'voucher.add': PosText('Hinzufügen'),
+  'voucher.tab': PosText('Gutscheine'),
+  'voucher.enter_amount': PosText('Betrag eingeben'),
+  'voucher.service_tile': PosText('Leistungsgutschein'),
+  'voucher.kind_multi_short': PosText('Mehrzweck'),
+  'voucher.kind_single_short': PosText('Einzweck {rate} %', placeholders: ['rate']),
   'shift.all_payments': PosText('Alle Zahlungen dieser Schicht (bar + unbar)'),
   'shift.receipt_count_one': PosText('1 Beleg'),
   'shift.receipt_count_other': PosText('{count} Belege', placeholders: ['count']),
@@ -642,6 +653,11 @@ const Map<String, String> voucherErrorMessages = {
   'voucher_partial_cancel': 'voucher_error.partial_cancel',
   'voucher_settings_missing': 'voucher_error.settings_missing',
   'too_many_voucher_checks': 'voucher_error.too_many_checks',
+  'voucher_type_required': 'voucher_error.type_required',
+  'voucher_type_not_found': 'voucher_error.type_not_found',
+  'voucher_amount_mismatch': 'voucher_error.amount_mismatch',
+  'voucher_service_not_allowed': 'voucher_error.service_not_allowed',
+  'voucher_payout_not_allowed': 'voucher_error.payout_not_allowed',
 };
 
 /// Rueckgabe beim Storno: Wahl (`restock`, `defective`, `disposed`) -> Schluessel der Beschriftung.

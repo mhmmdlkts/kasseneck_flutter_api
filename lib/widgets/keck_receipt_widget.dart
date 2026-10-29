@@ -17,6 +17,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../enums/voucher_type.dart';
 import '../models/keck_voucher.dart';
 import '../models/print_paper.dart';
+import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
 
 
 /// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [PrintPaper.setReceiptSheet] bzw. `KeckReceiptSheetWidget`.
@@ -111,7 +112,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       for (final KeckVoucher voucher in widget.receipt.vouchers ?? []) {
         // Ein Eintrag im 0-%-Topf steht schon als Position (oben gezaehlt).
         if (voucherStandsAsItem(voucher)) continue;
-        if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value) {
+        if (voucher.action == VoucherAction.sell && artOderNull(voucher) == VoucherType.value) {
           bruttoByVatCents[VatRate.vat0] =
               (bruttoByVatCents[VatRate.vat0] ?? 0) + widget.receipt.valueVoucherSign * (voucher.valueCents ?? 0);
         }
@@ -253,7 +254,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
               ..._positionsZeilen(item, gutscheinZuordnung[i]),
             // Betrag steht als Position (Einzweck, Leistung, 0-%-Topf): keine Zeile aus dem Eintrag.
             for (KeckVoucher voucher in (widget.receipt.vouchers??[]).where((v) => !voucherStandsAsItem(v)))
-              if (voucher.action == VoucherAction.sell && voucher.type == VoucherType.value)
+              if (voucher.action == VoucherAction.sell && artOderNull(voucher) == VoucherType.value)
                 ...[
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -270,7 +271,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                   ),
                   if (isMultiPurposeWithCode(voucher)) _einzugText(multiPurposeVatNote),
                 ]
-              else if (voucher.action == VoucherAction.redeem && voucher.type == VoucherType.promo)
+              else if (voucher.action == VoucherAction.redeem && artOderNull(voucher) == VoucherType.promo)
                 ...[
                   const SizedBox(height: 4),
                   Row(

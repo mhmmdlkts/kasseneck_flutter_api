@@ -30,6 +30,9 @@ Map<String, dynamic> _fall(String endpunkt, String name) => ((_kasse[endpunkt] a
 
 Map<String, dynamic> _kopie(Map<String, dynamic> m) => jsonDecode(jsonEncode(m)) as Map<String, dynamic>;
 
+/// Die Felder der Gutschein-Sorten (11.8.0) ohne Angabe: kein Sortenverkauf, keine Sorten, keine Vorlage.
+const _ohneSorten = {'typeSale': false, 'types': <Object?>[], 'serviceArticles': false, 'labelDefault': null};
+
 /// Der Kassenweg mit einer Attrappe, die immer [antwort] liefert und die
 /// Anfragen mitschreibt.
 ({RegisterReceiptClient kasse, RegisterTransport transport, List<http.Request> log}) _weg(Map<String, dynamic> antwort,
@@ -279,8 +282,7 @@ void main() {
       expect(faelle, isNotEmpty);
       for (final f in faelle) {
         final block = f['response']['data']['vouchers'] as Map<String, dynamic>;
-        // Das alte Feld `label` (Etikett-Vorlage der Kassen vor Gutschein-Stufe 4b)
-        // liest das Paket nicht, wie npm 1.16.0; es geht darum nicht zurueck.
+        // Das alte Feld `label` gilt Kassen vor 11.8 (Ruling R3); das Paket liest `labelDefault` und `types[].label`.
         expect(PosVoucherSettings.fromJson(block).toJson(), {...block}..remove('label'), reason: '${f['case']}');
       }
       final w = _weg(faelle.first['response'] as Map<String, dynamic>);
@@ -289,7 +291,12 @@ void main() {
     });
 
     test('fehlt der Block, ist Verkaufen aus', () {
-      expect(zu.toJson(), {'sale': false, 'valueVoucherType': null, 'vatRateBp': null});
+      expect(zu.toJson(), {
+        'sale': false,
+        'valueVoucherType': null,
+        'vatRateBp': null,
+        ..._ohneSorten,
+      });
       expect(PosSettings.fromJson(const {'business': {}, 'device': {}}).vouchers, zu);
       expect(PosSettings.fromJson(null).vouchers, zu);
       expect(const PosSettings.standard().vouchers, zu);
@@ -304,7 +311,7 @@ void main() {
         {'sale': false, 'valueVoucherType': 'multi_purpose', 'vatRateBp': null},
         {'sale': false, 'valueVoucherType': null, 'vatRateBp': null},
       ]) {
-        expect(PosVoucherSettings.fromJson(b).toJson(), b);
+        expect(PosVoucherSettings.fromJson(b).toJson(), {...b, ..._ohneSorten});
       }
     });
 

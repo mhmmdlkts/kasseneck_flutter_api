@@ -1,6 +1,8 @@
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 
+import '../src/kasse/gutschein_wunsch.dart' show wunschFormGueltig;
+
 /// Artikel eines Leistungsgutscheins, wie der Server ihn festhaelt (am Beleg
 /// und in `checkVoucher`). Zwilling von `VoucherArticle` im npm-Paket.
 class VoucherArticle {
@@ -54,12 +56,44 @@ class VoucherArticle {
 /// Der Klartext-Code eines Gutscheins der neuen Form steht nie am Beleg: der
 /// Server schreibt dort `····-····-XXXX` in [code] und die letzten vier
 /// Zeichen in [codeSuffix].
+///
+/// **Verkauf ueber eine Gutschein-Sorte** (seit 11.8.0): ein Mehrzweck- oder
+/// Einzweckgutschein wird nur mit [typeId] verkauft. Empfohlen ist die Form
+/// mit der Art der Sorte:
+/// `KeckVoucher(action: sell, type: sorte.kind, typeId: sorte.id, amountCents: …)`.
+/// Am Draht darf die Art fehlen; ein so gelesener Wunsch hat keine Art
+/// ([hasType] ist `false`) und geht ohne `type` wieder hinaus.
 class KeckVoucher {
 
   final String? name;
   final String? code;
   final VoucherAction action;
-  final VoucherType type;
+
+  /// Die Art; `null` nur bei einem gelesenen Verkauf ohne bekannte Art.
+  final VoucherType? _type;
+
+  /// Eine unbekannte Art eines gelesenen Verkaufs, wie sie am Draht stand;
+  /// sie geht beim Schreiben unveraendert zurueck.
+  final Object? _typeRoh;
+
+  /// Die Art des Gutscheins.
+  ///
+  /// Wirft [StateError], wenn der Gutschein keine Art hat ([hasType] ist
+  /// `false`): ein Verkauf ueber eine Sorte, der ohne `type` gelesen wurde
+  /// (die Art kommt dann aus der Sorte), oder ein Verkauf mit einer Art, die
+  /// dieses Paket nicht kennt. Eine Art wird dort bewusst nicht geraten: ein
+  /// Verkauf, der still zum Rabatt (`promo`) oder zu einer anderen Art wuerde,
+  /// rechnete im Zahlbetrag und am Bon falsch. Ein Beleg des Servers traegt an
+  /// jedem Eintrag eine Art.
+  VoucherType get type {
+    final art = _type;
+    if (art == null) throw StateError('KeckVoucher ohne bekannte Art (Verkauf ueber eine Gutschein-Sorte): hasType pruefen.');
+    return art;
+  }
+
+  /// Hat der Gutschein eine bekannte Art? Nur ein Verkauf kann ohne sein
+  /// (siehe [type]); jeder andere Gutschein hat eine.
+  bool get hasType => _type != null;
 
   /// Gutscheinwert in **Cent** (z. B. 500 = 5,00 EUR), Altform.
   ///
@@ -82,7 +116,21 @@ class KeckVoucher {
   /// Neue Form, Auszahlung: Grund, 1 bis 200 Zeichen.
   final String? reason;
 
+  /// Neue Form, Wertgutschein verkaufen: die Gutschein-Sorte
+  /// (`PosVoucherType.id` aus `getKasseSettings`). Pflicht fuer jeden Verkauf
+  /// eines Mehrzweck- oder Einzweckgutscheins (Server:
+  /// `voucher_type_required`), an jeder anderen Aktion oder Art verboten. Am
+  /// gelesenen Eintrag die Sorte des Verkaufs (fehlt ohne Sorte).
+  final String? typeId;
+
   // ---- nur gelesen (setzt der Server, ein Wunsch traegt sie nie) ----------
+
+  /// Name der Sorte beim Verkauf (eingefroren).
+  final String? typeName;
+
+  /// Auszahlung des verkauften Gutscheins (`allowed`/`never`, beim Verkauf
+  /// eingefroren), wie am Draht: ein unbekannter Wert bleibt erhalten.
+  final String? payout;
 
   /// Art des Gutscheins am Server (Drahtwert, z. B. `multi_purpose`); an
   /// einer gelesenen Mehrzweck-Einloesung steht [type] auf `value`.
@@ -109,16 +157,70 @@ class KeckVoucher {
   final bool? zeroRateBucket;
 
   KeckVoucher({
+    String? name,
+    String? code,
+    required VoucherAction action,
+    required VoucherType type,
+    int? valueCents,
+    int? amountCents,
+    String? articleId,
+    int? quantity,
+    List<int>? positions,
+    String? reason,
+    String? typeId,
+    String? typeName,
+    String? payout,
+    String? voucherType,
+    String? voucherId,
+    String? codeSuffix,
+    int? vatRateBp,
+    VoucherArticle? article,
+    int? balanceAfterCents,
+    int? remainingQuantityAfter,
+    String? taxedWith,
+    bool? exempt,
+    bool? zeroRateBucket,
+  }) : this._(
+          name: name,
+          code: code,
+          action: action,
+          type: type,
+          valueCents: valueCents,
+          amountCents: amountCents,
+          articleId: articleId,
+          quantity: quantity,
+          positions: positions,
+          reason: reason,
+          typeId: typeId,
+          typeName: typeName,
+          payout: payout,
+          voucherType: voucherType,
+          voucherId: voucherId,
+          codeSuffix: codeSuffix,
+          vatRateBp: vatRateBp,
+          article: article,
+          balanceAfterCents: balanceAfterCents,
+          remainingQuantityAfter: remainingQuantityAfter,
+          taxedWith: taxedWith,
+          exempt: exempt,
+          zeroRateBucket: zeroRateBucket,
+        );
+
+  KeckVoucher._({
     this.name,
     this.code,
     required this.action,
-    required this.type,
+    required VoucherType? type,
+    Object? typeRoh,
     this.valueCents,
     this.amountCents,
     this.articleId,
     this.quantity,
     this.positions,
     this.reason,
+    this.typeId,
+    this.typeName,
+    this.payout,
     this.voucherType,
     this.voucherId,
     this.codeSuffix,
@@ -129,7 +231,8 @@ class KeckVoucher {
     this.taxedWith,
     this.exempt,
     this.zeroRateBucket,
-  });
+  })  : _type = type,
+        _typeRoh = type == null ? typeRoh : null;
 
   /// Komfort-Konstruktor mit Wert in **Euro** (einmalige Rundung auf Cent).
   factory KeckVoucher.euro({
@@ -151,33 +254,48 @@ class KeckVoucher {
   /// Wert in Euro (Anzeige/Format — fuer Arithmetik [valueCents] nutzen).
   double? get value => valueCents == null ? null : valueCents! / 100;
 
-  /// Gehoert der Gutschein zur neuen Form (Art der neuen Form oder Aktion
-  /// [VoucherAction.payout])? Ein gelesener Auszahlungseintrag (`type: value`,
-  /// `action: payout`) zaehlt dazu.
-  bool get isNewForm => type.isNewForm || action == VoucherAction.payout;
+  /// Gehoert der Gutschein zur neuen Form (Art der neuen Form, Aktion
+  /// [VoucherAction.payout] oder Verkauf ueber eine Sorte ohne Art)? Ein
+  /// gelesener Auszahlungseintrag (`type: value`, `action: payout`) zaehlt
+  /// dazu, ein Verkauf mit unbekannter Art nicht.
+  bool get isNewForm => (_type?.isNewForm ?? _sortenVerkaufOhneArt) || action == VoucherAction.payout;
+
+  /// Verkauf ueber eine Sorte, bei dem die Art fehlt (nicht: unbekannt ist).
+  /// Zwilling von `istSortenVerkaufOhneArt` im npm-Paket.
+  bool get _sortenVerkaufOhneArt => action == VoucherAction.sell && _type == null && _typeRoh == null && typeId != null;
 
   /// Die Felder, die nur der Server setzt und die hier gesetzt sind (leer =
-  /// keines). An einem Wunsch ist jedes davon `voucher_invalid`.
+  /// keines). An einem Wunsch ist jedes davon `voucher_invalid`. Sortenname
+  /// und Auszahlung friert der Server beim Verkauf ein.
   List<String> get serverFields => [
         if (voucherId != null) 'voucherId',
         if (codeSuffix != null) 'codeSuffix',
         if (zeroRateBucket != null) 'zeroRateBucket',
         if (voucherType != null) 'voucherType',
+        if (typeName != null) 'typeName',
+        if (payout != null) 'payout',
       ];
 
   /// Nachsichtig gelesen: ein gespeicherter oder empfangener Beleg darf am
   /// Gutschein nie scheitern (die Liste muss ihn oeffnen). `valueCents` wird
   /// bevorzugt (exakt); Fallback: Euro mit einmaliger Rundung. Eine
-  /// unbekannte Aktion bzw. Art faellt auf `sell`/`promo` zurueck; ein Feld
-  /// der neuen Form mit falschem Typ faellt weg.
+  /// unbekannte Aktion faellt auf `sell` zurueck, eine unbekannte Art auf
+  /// `promo` – ausser an einem ausdruecklichen Verkauf: dort bleibt die Art
+  /// offen ([hasType] ist `false`), denn ein Verkauf ueber eine Sorte darf
+  /// ohne Art kommen, und ein Verkauf ist nie ein Rabatt. Ein Feld der neuen
+  /// Form mit falschem Typ faellt weg.
   factory KeckVoucher.fromJson(Map<String, dynamic> json) {
     final cents = json['valueCents'];
     final positionen = json['positions'];
-    return KeckVoucher(
+    final typRoh = json['type'];
+    final art = VoucherType.fromWire(typRoh);
+    final verkauf = json['action'] == VoucherAction.sell.name;
+    return KeckVoucher._(
       name: json['name'] as String?,
       code: json['code'] as String?,
       action: VoucherAction.values.firstWhere((e) => e.name == json['action'], orElse: () => VoucherAction.sell),
-      type: VoucherType.fromWire(json['type']) ?? VoucherType.promo,
+      type: art ?? (verkauf ? null : VoucherType.promo),
+      typeRoh: typRoh,
       valueCents: cents is num
           ? cents.round()
           : (json['value'] == null ? null : ((json['value'] as num) * 100).round()),
@@ -188,6 +306,9 @@ class KeckVoucher {
           ? List.unmodifiable([for (final i in positionen) _ganz(i)!])
           : null,
       reason: _text(json['reason']),
+      typeId: _text(json['typeId']),
+      typeName: _text(json['typeName']),
+      payout: _text(json['payout']),
       voucherType: _text(json['voucherType']),
       voucherId: _text(json['voucherId']),
       codeSuffix: _text(json['codeSuffix']),
@@ -201,6 +322,15 @@ class KeckVoucher {
     );
   }
 
+  /// Die Art am Draht: bekannt als Drahtwert, unbekannt wie gelesen, ohne Art
+  /// gar nicht (ein Verkauf ueber eine Sorte ohne Art bleibt ohne `type`).
+  Map<String, Object?> _art() {
+    final art = _type;
+    return {
+      if (art != null) 'type': art.wire else if (_typeRoh != null) 'type': _typeRoh,
+    };
+  }
+
   /// Die Felder der neuen Form, soweit gesetzt (Altbelege bleiben schlank).
   Map<String, dynamic> _neueFelder() => {
         'amountCents': ?amountCents,
@@ -208,6 +338,9 @@ class KeckVoucher {
         'quantity': ?quantity,
         'positions': ?positions,
         'reason': ?reason,
+        'typeId': ?typeId,
+        'typeName': ?typeName,
+        'payout': ?payout,
         'voucherType': ?voucherType,
         'voucherId': ?voucherId,
         'codeSuffix': ?codeSuffix,
@@ -228,7 +361,7 @@ class KeckVoucher {
       'name': name,
       'code': code,
       'action': action.name,
-      'type': type.wire,
+      ..._art(),
       'value': valueCents == null ? null : valueCents! / 100,
       'valueCents': valueCents,
       ..._neueFelder(),
@@ -240,10 +373,11 @@ class KeckVoucher {
   /// kein Euro-Wert; die neue Form roh mit `amountCents` und den gesetzten
   /// Feldern, ohne `valueCents` (nur ein gelesener Auszahlungseintrag traegt
   /// es weiter). `name` und `code` nur, wenn gesetzt. [toJson] bleibt die
-  /// gespeicherte Form.
+  /// gespeicherte Form. Ein Verkauf ueber eine Sorte ohne Art geht ohne
+  /// `type` hinaus.
   Map<String, dynamic> toPayload() => {
         'action': action.name,
-        'type': type.wire,
+        ..._art(),
         if (!(isNewForm && valueCents == null)) 'valueCents': valueCents,
         'code': ?code,
         'name': ?name,
@@ -252,9 +386,18 @@ class KeckVoucher {
 
   /// Sendbar? Altform: Wert- und Aktionsgutscheine brauchen einen Wert,
   /// Aktionsgutscheine nur einloesen, ein Wert ist positiv. Neue Form:
-  /// die Regeln des Servers (siehe [_neueFormGueltig]).
+  /// die Regeln des Servers (Zwilling von `newFormVoucherIsValid` im
+  /// npm-Paket): Serverfelder nie, Betrag 1 bis 1.000.000 Cent, Menge 1 bis
+  /// 100, Code bei Einloesung und Auszahlung, Auszahlung nur Mehrzweck/Einzweck
+  /// mit Grund (1 bis 200 Zeichen), Aktion nur einloesbar, Leistung braucht
+  /// Artikel und Menge bzw. Positionen, ein Wertgutschein wird nur ueber eine
+  /// Sorte verkauft ([typeId], Form wie am Server). Ein Feld, das zu einer
+  /// anderen Aktion/Art gehoert, weist der Server ab.
   bool get isValid {
-    if (isNewForm) return _neueFormGueltig();
+    if (isNewForm) return wunschFormGueltig(this, sorteNoetig: true);
+    // Ohne bekannte Art (unbekannter Verkauf) ist nichts sendbar.
+    final type = _type;
+    if (type == null) return false;
     if (type == VoucherType.value && valueCents == null) {
       return false;
     }
@@ -270,62 +413,6 @@ class KeckVoucher {
     return true;
   }
 
-  /// Wunsch der neuen Form sendbar? Wie `newFormVoucherIsValid` im npm-Paket
-  /// und die Pruefung des Servers (gutschein-beleg): Serverfelder nie, Betrag
-  /// 1 bis 1.000.000 Cent, Menge 1 bis 100, Code (getrimmt nicht leer) bei
-  /// Einloesung und Auszahlung, Auszahlung nur Mehrzweck/Einzweck mit Grund
-  /// (getrimmt 1 bis 200 Zeichen), Aktion nur einloesbar, Leistung braucht
-  /// Artikel und Menge (Verkauf) bzw. Positionen ohne Doppel (Einloesung).
-  /// Ein Feld, das zu einer anderen Aktion/Art gehoert, weist der Server ab.
-  bool _neueFormGueltig() {
-    if (serverFields.isNotEmpty) return false;
-    if (vatRateBp != null || article != null || balanceAfterCents != null || remainingQuantityAfter != null ||
-        taxedWith != null || exempt != null) {
-      return false;
-    }
-    if (valueCents != null) return false;
-    final allein = type == VoucherType.multiPurpose || type == VoucherType.singlePurpose;
-    if (action == VoucherAction.payout) {
-      final grund = reason?.trim() ?? '';
-      return allein &&
-          _hatText(code) &&
-          _istCent(amountCents) &&
-          grund.isNotEmpty &&
-          grund.length <= _maxGrund &&
-          articleId == null &&
-          quantity == null &&
-          positions == null;
-    }
-    if (reason != null) return false;
-    if (allein) {
-      if (articleId != null || quantity != null || positions != null) return false;
-      if (action == VoucherAction.sell) return _istCent(amountCents);
-      return _hatText(code) && _istCent(amountCents);
-    }
-    if (type == VoucherType.service) {
-      if (amountCents != null) return false;
-      if (action == VoucherAction.sell) {
-        return _hatText(articleId) && _istMenge(quantity) && positions == null;
-      }
-      final p = positions;
-      return _hatText(code) &&
-          p != null &&
-          p.isNotEmpty &&
-          p.every((i) => i >= 0) &&
-          p.toSet().length == p.length &&
-          articleId == null &&
-          quantity == null;
-    }
-    // Aktion: nur einloesen, nur mit Code. (Altart mit Auszahlung ist oben schon raus.)
-    return type == VoucherType.promotion &&
-        action == VoucherAction.redeem &&
-        _hatText(code) &&
-        amountCents == null &&
-        articleId == null &&
-        quantity == null &&
-        positions == null;
-  }
-
   /// Belegtext. Altform: Art, Wert und Name (ein Name, der die Art schon
   /// nennt, steht allein). Neue Form (auch eine gelesene Mehrzweck-Einloesung
   /// mit `type: value`) wie die Zeilen am Bon (Spec 2026-10-14, „Bon und
@@ -335,6 +422,7 @@ class KeckVoucher {
   /// den Klartext, der nie auf einen Beleg gehoert.
   String get receiptText {
     if (isNewForm || voucherType == VoucherType.multiPurpose.wire) return _neueFormText;
+    final type = _type;
     String text = '';
     if (type == VoucherType.value) {
       text += 'Wertgutschein';
@@ -359,7 +447,7 @@ class KeckVoucher {
 
 
   String get _neueFormText {
-    final art = VoucherType.fromWire(voucherType) ?? type;
+    final art = VoucherType.fromWire(voucherType) ?? _type;
     if (action == VoucherAction.sell) {
       final n = name?.trim() ?? '';
       final bezeichnung = n.toLowerCase().contains('gutschein') ? n : _artText(art);
@@ -377,11 +465,14 @@ class KeckVoucher {
       ? codeSuffix
       : (code != null && code!.length >= 4 && code != 'no-code' ? code!.substring(code!.length - 4) : null);
 
-  static String _artText(VoucherType art) => switch (art) {
+  /// Ohne Art (Verkauf ueber eine Sorte, die Art kennt erst der Server) steht
+  /// nur „Gutschein“ da; den Namen der Sorte setzt der Server am Beleg.
+  static String _artText(VoucherType? art) => switch (art) {
         VoucherType.multiPurpose || VoucherType.value => 'Mehrzweckgutschein',
         VoucherType.singlePurpose => 'Einzweckgutschein',
         VoucherType.service => 'Leistungsgutschein',
         VoucherType.promotion || VoucherType.promo => 'Aktionsgutschein',
+        null => 'Gutschein',
       };
 
   /// Ganze Betraege kurz ("10"), krumme exakt mit 2 Nachkommastellen ("1,50") —
@@ -393,15 +484,6 @@ class KeckVoucher {
     return value.toStringAsFixed(0);
   }
 }
-
-/// Grenzen wie der Server (gutschein-beleg).
-const int _maxBetragCents = 1000000;
-const int _maxStueck = 100;
-const int _maxGrund = 200;
-
-bool _istCent(int? n) => n != null && n >= 1 && n <= _maxBetragCents;
-bool _istMenge(int? n) => n != null && n >= 1 && n <= _maxStueck;
-bool _hatText(String? t) => t != null && t.trim().isNotEmpty;
 
 /// Ganze Zahl oder `null` (auch `3.0` gilt als ganz, `3.5` nicht).
 int? _ganz(Object? w) {

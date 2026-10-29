@@ -78,6 +78,9 @@ const _nach10 = (
     'voucher.payout_reason_missing', 'voucher.payout_check_first', 'voucher.sale_max_amount',
     'voucher.sale_not_at_terminal', 'voucher.no_redeem_with_sale', 'voucher.code_not_on_receipt',
     'cancellation.voucher_sale_cancelled', 'cancellation.promo_valid_again',
+    // Gutschein-Sorten (11.8.0, npm 1.17.0)
+    'voucher_error.type_required', 'voucher_error.type_not_found', 'voucher_error.amount_mismatch',
+    'voucher_error.service_not_allowed', 'voucher_error.payout_not_allowed', 'voucher.type_changed',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -160,6 +163,8 @@ const _nach10 = (
     'receipt.outputs_title', 'receipt.outputs_count', 'receipt.output_print', 'receipt.output_reprint',
     'receipt.output_email', 'receipt.output_link_shared', 'receipt.output_pdf_shared', 'receipt.output_opened',
     'receipt.output_failed',
+    // Gutschein-Sorten als Kacheln im Reiter „Gutscheine“ (11.8.0, npm 1.17.0)
+    'voucher.tab', 'voucher.enter_amount', 'voucher.service_tile', 'voucher.kind_multi_short', 'voucher.kind_single_short',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'voucherErrors', 'returnDispositionLabels'],
   placeholders: {

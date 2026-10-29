@@ -5,6 +5,8 @@ import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/models/keck_payment.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
 
+import '../kasse/gutschein_wunsch.dart' show artOderNull;
+
 /// Gutscheine der neuen Form am Bon des Rueckfalls ohne Server-Layout
 /// (`PrintPaper.setKeckReceipt`, `KeckReceiptWidget`). Zwilling der
 /// Gutscheinzeilen von `buildReceiptLayout` (npm `receipt/layout.ts` ab 1.12.0,
@@ -68,11 +70,11 @@ const String _restText = '  Rest am Gutschein';
 
 /// Steht der Betrag des Eintrags als Position am Beleg (Einzweck, Leistung, 0-%-Topf)?
 bool voucherStandsAsItem(KeckVoucher v) =>
-    v.type == VoucherType.singlePurpose || v.type == VoucherType.service || v.zeroRateBucket == true;
+    artOderNull(v) == VoucherType.singlePurpose || artOderNull(v) == VoucherType.service || v.zeroRateBucket == true;
 
 /// Mehrzweckgutschein mit Code (Altart `value`, vom Server als `multi_purpose` gekennzeichnet).
 bool isMultiPurposeWithCode(KeckVoucher v) =>
-    v.type == VoucherType.value && v.voucherType == VoucherType.multiPurpose.wire;
+    artOderNull(v) == VoucherType.value && v.voucherType == VoucherType.multiPurpose.wire;
 
 /// Code fuer die Belegzeile mit fuehrendem Leerzeichen: immer die kurze Maske
 /// `····-XXXX` aus dem Code-Ende (auch wenn ein alter Beleg die lange
@@ -105,7 +107,7 @@ String? voucherEnding(KeckVoucher v) {
 /// die Art schon nennt, steht allein (auch das alte „Promotionsgutschein“
 /// einer Aktion). Ohne Betrag (der steht rechts in der Zeile).
 String layoutVoucherText(KeckVoucher v) {
-  var text = switch (v.type) {
+  var text = switch (artOderNull(v)) {
     VoucherType.value => 'Wertgutschein',
     VoucherType.promo => 'Aktionsgutschein',
     _ => '',
@@ -194,7 +196,7 @@ List<VoucherBonLine> voucherItemLines(
   if (v.action == VoucherAction.sell) {
     return [
       VoucherBonItemLine('${item.name}${voucherCodeSuffixText(v)}'),
-      if (v.type == VoucherType.value) const VoucherBonTextLine(multiPurposeVatNote),
+      if (artOderNull(v) == VoucherType.value) const VoucherBonTextLine(multiPurposeVatNote),
     ];
   }
   final zeilen = <VoucherBonLine>[VoucherBonPairLine(item.name, amount)];
@@ -204,7 +206,7 @@ List<VoucherBonLine> voucherItemLines(
     if (grund.isNotEmpty) zeilen.add(VoucherBonTextLine('  Grund: $grund'));
     return zeilen;
   }
-  final art = v.type == VoucherType.service ? 'Leistung' : 'Einzweck';
+  final art = artOderNull(v) == VoucherType.service ? 'Leistung' : 'Einzweck';
   final belegt = v.taxedWith;
   if (belegt != null && belegt.isNotEmpty) {
     zeilen.add(VoucherBonTextLine('  $art, versteuert mit Beleg $belegt'));
@@ -213,7 +215,7 @@ List<VoucherBonLine> voucherItemLines(
   }
   // Rest: Betrag mit Waehrung wie beim Mehrzweckgutschein, Stueck
   // rechtsbuendig. Die Gesamtzahl kennt der Beleg nicht.
-  if (v.type == VoucherType.service) {
+  if (artOderNull(v) == VoucherType.service) {
     final rest = v.remainingQuantityAfter;
     if (rest != null) zeilen.add(VoucherBonPairLine(_restText, '$rest Stück'));
   } else if (v.balanceAfterCents case final saldo?) {
@@ -234,7 +236,7 @@ List<VoucherBonPairLine>? voucherPaymentLines(
   required String currency,
   required String Function(int cents) formatCents,
 }) {
-  if (v.type != VoucherType.value || v.zeroRateBucket == true) return null;
+  if (artOderNull(v) != VoucherType.value || v.zeroRateBucket == true) return null;
   if (v.action != VoucherAction.redeem && v.action != VoucherAction.payout) return null;
   final wert = formatCents(v.valueCents ?? 0);
   final betrag = sign == 1 ? '-$wert $currency' : '$wert $currency';
@@ -261,7 +263,7 @@ List<VoucherBonPairLine>? voucherPaymentLines(
 /// Aktionsgutschein noch „Promotionsgutschein“: auch dieser Name steht allein.
 bool _nenntArt(KeckVoucher v, String name, String art) {
   final klein = name.toLowerCase();
-  return klein.contains(art.toLowerCase()) || (v.type == VoucherType.promo && klein.contains('promotionsgutschein'));
+  return klein.contains(art.toLowerCase()) || (artOderNull(v) == VoucherType.promo && klein.contains('promotionsgutschein'));
 }
 
 /// Text rechts in der Zeile „Zahlungsart:“ am Bon des Rueckfalls, oder `null`,
@@ -275,7 +277,7 @@ bool _nenntArt(KeckVoucher v, String name, String art) {
 /// Ohne Gutschein-Einloesung (Null-, Startbeleg) bleibt alles wie bisher.
 String? paymentMethodText(KasseneckReceipt r) {
   final mitGutschein = (r.vouchers ?? const <KeckVoucher>[])
-      .any((v) => v.action == VoucherAction.redeem && v.type != VoucherType.promo);
+      .any((v) => v.action == VoucherAction.redeem && artOderNull(v) != VoucherType.promo);
   final label = r.paymentMethod.label;
   if (!mitGutschein) return label;
   final zahlungen = r.payments ?? const <KeckPayment>[];

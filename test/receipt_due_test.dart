@@ -137,6 +137,7 @@ void main() {
               tipRecipient: t.tipRecipient,
               voucherInfo: welt.info,
               voucherSettings: welt.settings,
+              voucherTypes: welt.types,
               voucherArticles: welt.articles,
             );
         if (istAbgelehnt(fall)) {
@@ -176,6 +177,7 @@ void main() {
             tipRecipient: t.tipRecipient,
             voucherInfo: welt.info,
             voucherSettings: welt.settings,
+            voucherTypes: welt.types,
             voucherArticles: welt.articles,
           ),
           max['maxCents'],
@@ -201,6 +203,7 @@ void main() {
         tipRecipient: t.tipRecipient,
         voucherInfo: welt.info,
         voucherSettings: welt.settings,
+        voucherTypes: welt.types,
         voucherArticles: welt.articles,
       );
       expect(cents, (fall['expected'] as Map)['dueCents'], reason: fall['name'] as String);

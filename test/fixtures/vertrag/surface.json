@@ -1,5 +1,5 @@
 {
-  "version": "1.16.0",
+  "version": "1.17.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -832,11 +832,19 @@
       "vehicle",
       "other"
     ],
+    "voucherAmountModes": [
+      "free",
+      "fixed"
+    ],
     "voucherKinds": [
       "multi_purpose",
       "single_purpose",
       "service",
       "promotion"
+    ],
+    "voucherPayouts": [
+      "allowed",
+      "never"
     ],
     "voucherStatuses": [
       "active",
@@ -845,6 +853,14 @@
       "paid_out",
       "cancelled",
       "blocked"
+    ],
+    "voucherTypeKinds": [
+      "multi_purpose",
+      "single_purpose"
+    ],
+    "voucherTypeValidityPatterns": [
+      "unlimited",
+      "years"
     ]
   },
   "partner": {
