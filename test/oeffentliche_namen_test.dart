@@ -115,6 +115,7 @@ final Set<String> woerter = _liste('''
   balance bucket exempt face manage multi pattern positions promotion purpose redeemable refundable reprint
   suffix taxed up used validity patterns
   fixed rotation template unlimited years
+  access breaks chain clean export findings links revocation revoke revoked wait
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,
@@ -140,6 +141,8 @@ final Set<String> marken = _liste('''
 const Map<String, String> fachbegriffe = {
   'rksv':
       'Registrierkassensicherheitsverordnung (BMF), fester Begriff wie in RKSVService',
+  'dep':
+      'Datenerfassungsprotokoll nach RKSV (BMF), fester Begriff wie der Endpunkt createDepExport',
 };
 
 /// Namen, die trotz deutschem Teilwort bleiben. Fundstelle -> Grund.

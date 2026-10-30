@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.8.2
+  kasseneck_api: ^11.9.0
 ```
 
 ```bash
@@ -1083,6 +1083,31 @@ wrong date, a period over 31 days, a `limit` outside 1–500 or an unknown
 `totalCents` of the list (zero, start and training receipts count in
 `receiptCount`, not in revenue). `getSignatureStatus(certificateHex)` asks FinanzOnline for the status of a
 signature certificate.
+
+## DEP export for the tax inspection (Kassennachschau)
+
+The inspector asks for the DEP of a period. Create the export, wait for it, fetch
+the files and, if wanted, hand over a link with a code (all `/v3`, api_key + cash
+register token).
+
+```dart
+final created = await kasseneck.createDepExport(from: '2026-10-01', to: '2026-10-31', requestId: 'nachschau-1');
+final export = await kasseneck.waitForDepExport(created.exportId);   // polls every 2-15 s, 10 minutes by default
+print('${export.receiptCount} receipts, gaps: ${export.findings?.gaps.length}');
+
+final dep = await kasseneck.getDepExportFile(export.exportId, 'dep');   // 'dep' | 'protocol' | 'items' | 'zip'
+print('${dep.fileName} (${dep.contentType}), ${dep.bytes.length} bytes');
+
+final link = await kasseneck.createDepHandoverLink(export.exportId);    // url + 6-digit code, valid for 14 days
+await kasseneck.revokeDepHandoverLink(link.linkId);
+```
+
+A failed export throws `DepExportFailedException` (`error` holds the code), a wait
+that runs out of time `DepExportTimeoutException` (the export keeps running;
+`getDepExport` asks again). Large files come as a short-lived download link which
+the package follows itself; size and SHA-256 are checked, and a mismatch throws a
+`KasseneckValidationError`. The same `requestId` returns the export already
+created, so repeat a lost `createDepExport` with the same one.
 
 ## Invoices (invoice API)
 

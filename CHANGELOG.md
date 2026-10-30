@@ -1,3 +1,40 @@
+## 11.9.0 (2026-10-30)
+
+- **DEP export for the inspection by the tax authority (Kassennachschau,
+  § 19 para 2 RKSV).** Five new calls, `/v3` only, api_key + cash register
+  token like `listReceipts`: `createDepExport({from, to, requestId})`,
+  `getDepExport(exportId)`, `waitForDepExport(exportId, {timeout})`,
+  `getDepExportFile(exportId, file)` and `createDepHandoverLink(exportId)` /
+  `revokeDepHandoverLink(linkId)`. Reason: an inspector asks for the DEP of a
+  period on the spot; the server builds it in the background (DEP, check
+  protocol, items CSV, ZIP) and the register can hand the inspector a link with
+  a 6-digit code instead of a USB stick.
+  - `waitForDepExport` polls after 2 s, then at 1.5 times the interval, at most
+    every 15 s, 10 minutes by default. A failed export throws
+    `DepExportFailedException` (`error` carries the code: `export_failed`,
+    `export_stalled`), running out of time throws `DepExportTimeoutException`;
+    the export keeps running on the server, `getDepExport` asks again.
+  - `getDepExportFile` (`file`: `dep`, `protocol`, `items` or `zip`) returns bytes
+    with `fileName` and `contentType`. Small files come directly; for a large one
+    the server answers with a short-lived download link, which the package follows
+    itself (no api_key or token goes to that address) and checks size and SHA-256
+    against the server's figures -- a mismatch throws a
+    `KasseneckValidationError` (`kind: response`) instead of returning corrupt
+    bytes. The whole file is held in memory.
+  - `DepExport` carries the finding (`findings`: counter gaps, the first chain
+    break, receipts without counter or signature), the items file and the
+    inspector links of the export. `DepHandoverLink` shows url and code only once
+    and keeps both out of `toString`.
+  - Error codes: `depExportErrorCodes` (`invalid_period`, `export_running`,
+    `too_many_exports`, `export_not_found`, `export_not_ready`, `export_failed`,
+    `invalid_file`, `file_not_available`, `too_many_links`, `link_not_found`, ...).
+  - All five count as repeatable after a lost answer (`rejected` outcome, not
+    `unknown`): the same `requestId` returns the export already created, a link
+    can be revoked. Pull the contract with the next twin version (npm `1.18.0`);
+    until then `zwillinge.yaml` stays at `1.17.1` and the calls are covered by
+    `test/dep_nachschau_test.dart`.
+- Dev dependency `fake_async` for the waiting tests.
+
 ## 11.8.2 (2026-10-29)
 
 Twin of `@kreiseck/kasseneck-api` `1.17.1` (contract files pulled from that
