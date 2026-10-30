@@ -10,7 +10,9 @@
 /// SHA-256, wo der Server sie nennt.
 ///
 /// Aus der Antwort wird nichts erfunden: ein fehlendes oder fremdes Feld ist
-/// `null`, eine Kennung oder Zahl, die da sein muss, ein Antwortfehler.
+/// `null`, eine Kennung oder Zahl, die da sein muss, ein Antwortfehler. Alle
+/// Zeiten kommen als ISO 8601 in UTC (`2026-10-30T08:00:00.000Z`) und bleiben
+/// Text.
 library;
 
 import 'dart:convert';
@@ -19,6 +21,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import '../lager/lesen.dart' show antwortfehler, ganzzahlVon, objekt;
+import '../register/fehler.dart' show KasseneckValidationError;
 
 /// Stabile Fehlercodes der fuenf Endpunkte unter `/v3` (Katalog
 /// `dep_nachschau`). Sie kommen als `KasseneckApiError.code` an; der Code
@@ -27,6 +30,8 @@ import '../lager/lesen.dart' show antwortfehler, ganzzahlVon, objekt;
 const Set<String> depExportErrorCodes = {
   'validation',
   'invalid_period',
+  // Dieselbe requestId gehoert zu einem Export mit anderem Zeitraum.
+  'idempotency_conflict',
   'export_running',
   'too_many_exports',
   'export_not_found',
@@ -73,15 +78,16 @@ class DepExport {
   /// Kennung `DEP-YYYY-MM-DD-NNNN`.
   final String exportId;
 
-  /// [depExportRunning], [depExportDone] oder [depExportFailed]; ein hier
-  /// unbekannter Wert wird wie `running` behandelt, nie als fertig.
+  /// [depExportRunning], [depExportDone] oder [depExportFailed]; einen
+  /// anderen Wert weist das Paket als Antwortfehler ab
+  /// ([KasseneckValidationError], `kind: response`).
   final String status;
 
   /// Zeitraum, wie angefragt (`YYYY-MM-DD`); `null` = unbegrenzt.
   final String? from;
   final String? to;
 
-  /// Wiener Wanduhr ohne Offset.
+  /// Beginn und Ende des Exports, ISO 8601 in UTC (`…Z`).
   final String? createdAt;
   final String? finishedAt;
 
@@ -174,6 +180,8 @@ class DepHandoverLinkInfo {
   });
 
   final String linkId;
+
+  /// Angelegt, gueltig bis, widerrufen und erster Abruf, je ISO 8601 in UTC (`…Z`).
   final String? createdAt;
   final String? expiresAt;
   final String? revokedAt;
@@ -191,7 +199,10 @@ class DepHandoverLink {
   final String linkId;
   final String url;
   final String code;
-  final String? expiresAt;
+
+  /// Ablauf des Links (14 Tage), ISO 8601 in UTC (`…Z`); fehlt er, ist die
+  /// Antwort unbrauchbar.
+  final String expiresAt;
 
   // Adresse und Code nie in einem Protokoll: toString nennt nur die Kennung.
   @override
@@ -202,6 +213,8 @@ class DepHandoverLink {
 class DepHandoverRevocation {
   const DepHandoverRevocation({required this.linkId, required this.revokedAt});
   final String linkId;
+
+  /// Zeitpunkt des Widerrufs, ISO 8601 in UTC (`…Z`); ein zweiter Widerruf nennt den ersten.
   final String? revokedAt;
 }
 
@@ -252,11 +265,58 @@ class DepDownloadLink {
   });
 
   final String url;
-  final String? expiresAt;
+
+  /// Ablauf des Links (15 Minuten), ISO 8601 in UTC (`…Z`); fehlt er, ist die Antwort unbrauchbar.
+  final String expiresAt;
   final int? size;
   final String? sha256;
   final String fileName;
   final String contentType;
+}
+
+// ---- Eingaben (vor dem Senden) ---------------------------------------------
+
+KasseneckValidationError _eingabefehler(String name, String grund) => KasseneckValidationError(name, grund, 'request');
+
+final RegExp _tag = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+final RegExp _anfrageId = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+final RegExp _sha256 = RegExp(r'^[0-9a-fA-F]{64}$');
+
+// Ein echter Kalendertag `JJJJ-MM-TT` (kein 30.02.), ohne Zeitzone gerechnet.
+bool _istKalendertag(String text) {
+  if (!_tag.hasMatch(text)) return false;
+  final teile = text.split('-').map(int.parse).toList();
+  final d = DateTime.utc(teile[0], teile[1], teile[2]);
+  return d.year == teile[0] && d.month == teile[1] && d.day == teile[2];
+}
+
+/// Prueft Zeitraum und requestId von `createDepExport` vor dem Senden (wie das
+/// npm-Paket): echte Tage `JJJJ-MM-TT`, [to] nicht vor [from], [requestId]
+/// hoechstens 64 Zeichen aus `A-Z a-z 0-9 _ -`.
+void pruefeDepExportEingabe(String name, {String? from, String? to, String? requestId}) {
+  if (from != null && !_istKalendertag(from)) throw _eingabefehler(name, 'from muss ein Datum JJJJ-MM-TT sein');
+  if (to != null && !_istKalendertag(to)) throw _eingabefehler(name, 'to muss ein Datum JJJJ-MM-TT sein');
+  if (from != null && to != null && to.compareTo(from) < 0) throw _eingabefehler(name, 'to liegt vor from');
+  if (requestId != null && !_anfrageId.hasMatch(requestId)) {
+    throw _eingabefehler(name, 'requestId: hoechstens 64 Zeichen aus A-Z, a-z, 0-9, _ und -');
+  }
+}
+
+/// Eine Kennung (exportId, linkId), die nicht leer sein darf.
+void pruefeDepKennung(String name, String feld, String wert) {
+  if (wert.trim().isEmpty) throw _eingabefehler(name, '$feld fehlt oder ist leer');
+}
+
+/// Eine Frist, die positiv sein muss.
+void pruefeDepFrist(String name, String feld, Duration wert) {
+  if (wert <= Duration.zero) throw _eingabefehler(name, '$feld muss positiv sein');
+}
+
+/// Eine bekannte SHA-256-Pruefsumme (64 Hexzeichen), klein geschrieben; `null` bleibt `null`.
+String? pruefeDepSha256(String name, String? wert) {
+  if (wert == null) return null;
+  if (!_sha256.hasMatch(wert)) throw _eingabefehler(name, 'sha256 muss 64 Hexzeichen haben');
+  return wert.toLowerCase();
 }
 
 // ---- Lesen -----------------------------------------------------------------
@@ -275,10 +335,15 @@ List<String> _texte(Object? w) => w is List
       ]
     : const [];
 
-/// Ein Export aus `data` von `createDepExport` oder `getDepExport`.
+const Set<String> _statuswerte = {depExportRunning, depExportDone, depExportFailed};
+
+/// Ein Export aus `data` von `createDepExport` oder `getDepExport`. Ein
+/// unbekannter Status ist ein Antwortfehler (wie im npm-Paket): als „laeuft
+/// noch“ gelesen, wartete [KasseneckApi.waitForDepExport] bis zur Frist.
 DepExport depExportAus(String name, Map<String, dynamic> d) {
   final status = _text(d['status']);
   if (status == null) throw antwortfehler(name, 'Antwort ist unbrauchbar (data.status fehlt)');
+  if (!_statuswerte.contains(status)) throw antwortfehler(name, 'Antwort ist unbrauchbar (unbekannter data.status)');
   final befund = objekt(d['findings']);
   final positionen = objekt(d['items']);
   return DepExport(
@@ -340,14 +405,15 @@ DepHandoverLinkInfo _linkInfo(String name, Map<String, dynamic> l) => DepHandove
 DepHandoverLink depHandoverLinkAus(String name, Map<String, dynamic> d) {
   final url = d['url'];
   final code = d['code'];
-  if (url is! String || url.isEmpty || code is! String || code.isEmpty) {
-    throw antwortfehler(name, 'Antwort ist unbrauchbar (data.url oder data.code fehlt)');
+  final ablauf = _text(d['expiresAt']);
+  if (url is! String || url.isEmpty || code is! String || code.isEmpty || ablauf == null) {
+    throw antwortfehler(name, 'Antwort ist unbrauchbar (data.url, data.code oder data.expiresAt fehlt)');
   }
   return DepHandoverLink(
     linkId: _kennung(name, 'linkId', d['linkId']),
     url: url,
     code: code,
-    expiresAt: _text(d['expiresAt']),
+    expiresAt: ablauf,
   );
 }
 
@@ -420,13 +486,15 @@ DepDownloadLink _downloadLink(String name, String exportId, String file, Map<Str
     throw antwortfehler(name, 'Antwort ist unbrauchbar (data.download.url)');
   }
   final sha = dl['sha256'];
-  if (sha != null && !(sha is String && RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(sha))) {
+  if (sha != null && !(sha is String && _sha256.hasMatch(sha))) {
     throw antwortfehler(name, 'Antwort ist unbrauchbar (data.download.sha256)');
   }
+  final ablauf = _text(dl['expiresAt']);
+  if (ablauf == null) throw antwortfehler(name, 'Antwort ist unbrauchbar (data.download.expiresAt fehlt)');
   final name0 = _text(dl['fileName']);
   return DepDownloadLink(
     url: url as String,
-    expiresAt: _text(dl['expiresAt']),
+    expiresAt: ablauf,
     size: ganzzahlVon(dl['size']),
     sha256: (sha as String?)?.toLowerCase(),
     fileName: name0 == null ? '$exportId${_endung(file)}' : _nurName(name0),

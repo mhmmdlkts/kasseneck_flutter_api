@@ -1095,7 +1095,7 @@ final created = await kasseneck.createDepExport(from: '2026-10-01', to: '2026-10
 final export = await kasseneck.waitForDepExport(created.exportId);   // polls every 2-15 s, 10 minutes by default
 print('${export.receiptCount} receipts, gaps: ${export.findings?.gaps.length}');
 
-final dep = await kasseneck.getDepExportFile(export.exportId, 'dep');   // 'dep' | 'protocol' | 'items' | 'zip'
+final dep = await kasseneck.getDepExportFile(export.exportId, 'dep', sha256: export.sha256);   // 'dep' | 'protocol' | 'items' | 'zip'
 print('${dep.fileName} (${dep.contentType}), ${dep.bytes.length} bytes');
 
 final link = await kasseneck.createDepHandoverLink(export.exportId);    // url + 6-digit code, valid for 14 days
@@ -1104,10 +1104,22 @@ await kasseneck.revokeDepHandoverLink(link.linkId);
 
 A failed export throws `DepExportFailedException` (`error` holds the code), a wait
 that runs out of time `DepExportTimeoutException` (the export keeps running;
-`getDepExport` asks again). Large files come as a short-lived download link which
+`getDepExport` asks again). A network error while waiting also ends
+`waitForDepExport`; the export keeps running on the server as well, follow it
+with `getDepExport`. Large files come as a short-lived download link which
 the package follows itself; size and SHA-256 are checked, and a mismatch throws a
-`KasseneckValidationError`. The same `requestId` returns the export already
-created, so repeat a lost `createDepExport` with the same one.
+`KasseneckValidationError`. Pass `sha256` (for example `export.sha256` for `dep`)
+to check a file the server sends directly as well. `downloadTimeout` (10 minutes
+by default) limits the call itself and the download over a link, each; the
+general `readTimeout` (30 s) does not apply, because a direct file of up to 9 MiB
+comes in the answer of the call. The same `requestId` with the same period
+returns the export already created (with its current status), so repeat a lost
+`createDepExport` with the same one; the same `requestId` with another period is
+`idempotency_conflict`. Days, `requestId`, ids, `sha256` and timeouts are checked
+before sending (`KasseneckValidationError`, `kind: request`); an unknown `status`
+or a link without `expiresAt` is a response error. All times (`createdAt`,
+`finishedAt`, `expiresAt`, `revokedAt`, `firstAccessAt`) are ISO 8601 in UTC
+(`2026-10-30T08:00:00.000Z`).
 
 ## Invoices (invoice API)
 

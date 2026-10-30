@@ -15,11 +15,16 @@ import 'package:kasseneck_api/kasseneck_api.dart';
 const _kopf = {'content-type': 'application/json', 'kasseneck-api-version': 'v3'};
 const _id = 'DEP-2026-10-30-0001';
 
-KasseneckApi _api(http.Client client) => KasseneckApi(
+KasseneckApi _api(http.Client client, {Duration readTimeout = const Duration(seconds: 30)}) => KasseneckApi(
   apiKey: 'kr_test_x',
   cashregisterToken: base64Encode(utf8.encode('KECK-1:secret')),
   httpClient: client,
+  readTimeout: readTimeout,
 );
+
+/// Ein Antwortfehler (`kind: response`) bzw. ein Eingabefehler vor dem Senden (`kind: request`).
+final _antwortfehler = throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response'));
+final _eingabefehler = throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request'));
 
 http.Response _erfolg(Map<String, dynamic> daten) =>
     http.Response(jsonEncode({'status': 'success', 'message': '', 'data': daten}), 200, headers: _kopf);
@@ -43,8 +48,9 @@ Map<String, dynamic> _export(String status, {Map<String, dynamic>? mehr}) => {
   'status': status,
   'from': '2026-10-01',
   'to': '2026-10-31',
-  'createdAt': '2026-10-30T09:00:00',
-  'finishedAt': status == 'done' ? '2026-10-30T09:01:10' : null,
+  // Zeiten wie der Server sie unter /v3 sendet: ISO 8601 in UTC (`…Z`).
+  'createdAt': '2026-10-30T08:00:00.000Z',
+  'finishedAt': status == 'done' ? '2026-10-30T08:01:10.000Z' : null,
   'receiptCount': status == 'done' ? 3 : null,
   'counterFrom': status == 'done' ? 7 : null,
   'counterTo': status == 'done' ? 9 : null,
@@ -69,8 +75,8 @@ Map<String, dynamic> _export(String status, {Map<String, dynamic>? mehr}) => {
   'handoverLinks': [
     {
       'linkId': 'L' * 20,
-      'createdAt': '2026-10-30T09:05:00',
-      'expiresAt': '2026-11-13T09:05:00',
+      'createdAt': '2026-10-30T08:05:00.000Z',
+      'expiresAt': '2026-11-13T08:05:00.000Z',
       'revokedAt': null,
       'firstAccessAt': null,
       'accessCount': 0,
@@ -112,17 +118,18 @@ void main() {
     });
 
     test('Fehlercodes des Servers kommen als KasseneckApiError', () async {
-      for (final code in ['invalid_period', 'export_running', 'too_many_exports', 'validation']) {
+      for (final code in ['invalid_period', 'idempotency_conflict', 'export_running', 'too_many_exports', 'validation']) {
         expect(depExportErrorCodes, contains(code));
         final api = _api(MockClient((_) async => _fehler(code)));
         await expectLater(api.createDepExport(), throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', code)));
       }
     });
 
-    test('Antwort ohne Kennung oder Status ist ein Antwortfehler', () async {
+    test('Antwort ohne Kennung, ohne Status oder mit unbekanntem Status ist ein Antwortfehler', () async {
       for (final daten in [
         {'status': 'running'},
         {'exportId': _id},
+        {'exportId': _id, 'status': 'queued'},
       ]) {
         final api = _api(MockClient((_) async => _erfolg(daten)));
         await expectLater(
@@ -130,6 +137,52 @@ void main() {
           throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response')),
         );
       }
+    });
+  });
+
+  group('Eingaben vor dem Senden', () {
+    test('createDepExport: Datum, Reihenfolge und requestId', () async {
+      var gesendet = 0;
+      final api = _api(
+        MockClient((_) async {
+          gesendet++;
+          return _erfolg({'exportId': _id, 'status': 'running'});
+        }),
+      );
+      for (final aufruf in <Future<DepExport> Function()>[
+        () => api.createDepExport(from: '2026-02-30'),
+        () => api.createDepExport(to: '30.10.2026'),
+        () => api.createDepExport(from: '2026-10-1'),
+        () => api.createDepExport(from: '2026-10-10', to: '2026-10-09'),
+        () => api.createDepExport(requestId: 'mit leerzeichen'),
+        () => api.createDepExport(requestId: 'x' * 65),
+        () => api.createDepExport(requestId: ''),
+      ]) {
+        await expectLater(aufruf(), _eingabefehler);
+      }
+      expect(gesendet, 0);
+      // Grenzfaelle, die gelten: Schalttag, ein Tag, 64 Zeichen.
+      await api.createDepExport(from: '2028-02-29', to: '2028-02-29', requestId: 'a' * 64);
+      expect(gesendet, 1);
+    });
+
+    test('leere Kennungen, Fristen und Pruefsumme fallen vor dem Senden auf', () async {
+      var gesendet = 0;
+      final api = _api(
+        MockClient((_) async {
+          gesendet++;
+          return _erfolg({});
+        }),
+      );
+      await expectLater(api.getDepExport(' '), _eingabefehler);
+      await expectLater(api.waitForDepExport(''), _eingabefehler);
+      await expectLater(api.waitForDepExport(_id, timeout: Duration.zero), _eingabefehler);
+      await expectLater(api.getDepExportFile('', 'dep'), _eingabefehler);
+      await expectLater(api.getDepExportFile(_id, 'dep', sha256: 'zz'), _eingabefehler);
+      await expectLater(api.getDepExportFile(_id, 'dep', downloadTimeout: Duration.zero), _eingabefehler);
+      await expectLater(api.createDepHandoverLink(''), _eingabefehler);
+      await expectLater(api.revokeDepHandoverLink(' '), _eingabefehler);
+      expect(gesendet, 0);
     });
   });
 
@@ -150,7 +203,10 @@ void main() {
       expect(e.counterTo, 9);
       expect(e.sha256, 'a' * 64);
       expect(e.size, 2048);
-      expect(e.createdAt, '2026-10-30T09:00:00');
+      expect(e.createdAt, '2026-10-30T08:00:00.000Z');
+      expect(e.finishedAt, '2026-10-30T08:01:10.000Z');
+      expect(e.handoverLinks.single.createdAt, '2026-10-30T08:05:00.000Z');
+      expect(e.handoverLinks.single.expiresAt, '2026-11-13T08:05:00.000Z');
       final f = e.findings!;
       expect(f.gaps.single.from, 4);
       expect(f.gaps.single.to, 5);
@@ -174,6 +230,11 @@ void main() {
       expect(e.error, 'export_failed');
       expect(e.receiptCount, isNull);
       expect(e.size, isNull);
+    });
+
+    test('unbekannter Status ist ein Antwortfehler, nie „laeuft noch“', () async {
+      final api = _api(MockClient((_) async => _erfolg(_export('zerstoert'))));
+      await expectLater(api.getDepExport(_id), _antwortfehler);
     });
 
     test('export_not_found', () async {
@@ -328,7 +389,7 @@ void main() {
           return _erfolg({
             'download': {
               'url': 'https://speicher.example/b/dep.zip?sig=abc',
-              'expiresAt': '2026-10-30T09:20:00.000Z',
+              'expiresAt': '2026-10-30T08:20:00.000Z',
               'size': bytes.length,
               'sha256': sha256.convert(bytes).toString().toUpperCase(),
               'fileName': '../$_id.zip',
@@ -354,7 +415,7 @@ void main() {
           return _erfolg({
             'download': {
               'url': 'https://speicher.example/x',
-              'expiresAt': '2026-10-30T09:20:00.000Z',
+              'expiresAt': '2026-10-30T08:20:00.000Z',
               'size': size,
               'sha256': sha,
               'fileName': 'a.zip',
@@ -395,11 +456,14 @@ void main() {
       );
     });
 
-    test('Link mit unbrauchbarer Adresse oder Pruefsumme ist ein Antwortfehler', () async {
+    test('Link mit unbrauchbarer Adresse, Pruefsumme oder ohne Ablauf ist ein Antwortfehler', () async {
+      const ab = '2026-10-30T08:20:00.000Z';
       for (final dl in [
-        {'url': 'ftp://x/y'},
-        {'url': 'http://example.com/x'},
-        {'url': 'https://speicher.example/x', 'sha256': 'zz'},
+        {'url': 'ftp://x/y', 'expiresAt': ab},
+        {'url': 'http://example.com/x', 'expiresAt': ab},
+        {'url': 'https://speicher.example/x', 'sha256': 'zz', 'expiresAt': ab},
+        {'url': 'https://speicher.example/x'},
+        {'url': 'https://speicher.example/x', 'expiresAt': null},
         <String, dynamic>{},
       ]) {
         final api = _api(MockClient((r) async => _erfolg({'download': dl})));
@@ -414,7 +478,7 @@ void main() {
           MockClient((r) async {
             if (r.url.host != 'api.kasseneck.at') return http.Response.bytes(b, 200);
             return _erfolg({
-              'download': {'url': 'http://$host/b/x?alt=media', 'fileName': 'a.zip'},
+              'download': {'url': 'http://$host/b/x?alt=media', 'expiresAt': '2026-10-30T08:20:00.000Z', 'fileName': 'a.zip'},
             });
           }),
         );
@@ -430,6 +494,70 @@ void main() {
           throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', code)),
         );
       }
+    });
+
+    test('Option sha256: eine direkte Datei wird gegen die bekannte Pruefsumme geprueft', () async {
+      final dep = Uint8List.fromList(utf8.encode('{"Belege-Gruppe":[]}'));
+      final api = _api(
+        MockClient(
+          (r) async => http.Response.bytes(
+            dep,
+            200,
+            headers: {
+              'content-type': 'application/json',
+              'content-disposition': 'attachment; filename="$_id.json"',
+              'kasseneck-api-version': 'v3',
+            },
+          ),
+        ),
+      );
+      final richtig = sha256.convert(dep).toString();
+      expect((await api.getDepExportFile(_id, 'dep', sha256: richtig.toUpperCase())).bytes, dep);
+      await expectLater(
+        api.getDepExportFile(_id, 'dep', sha256: 'c' * 64),
+        throwsA(isA<KasseneckValidationError>()
+            .having((e) => e.kind, 'kind', 'response')
+            .having((e) => e.reason, 'reason', contains('SHA-256'))),
+      );
+    });
+
+    test('Option sha256 gilt auch fuer eine Datei ueber den Lese-Link', () async {
+      final b = Uint8List.fromList([1, 2, 3]);
+      final api = _api(
+        MockClient((r) async {
+          if (r.url.host == 'speicher.example') return http.Response.bytes(b, 200);
+          return _erfolg({
+            'download': {'url': 'https://speicher.example/x', 'expiresAt': '2026-10-30T08:20:00.000Z', 'fileName': 'a.zip'},
+          });
+        }),
+      );
+      expect((await api.getDepExportFile(_id, 'zip', sha256: sha256.convert(b).toString())).bytes, b);
+      await expectLater(api.getDepExportFile(_id, 'zip', sha256: 'd' * 64), _antwortfehler);
+    });
+
+    // Eine direkte Datei bis 9 MiB liest und prueft der Server ganz, bevor er antwortet: der Aufruf selbst laeuft mit
+    // downloadTimeout, nicht mit readTimeout (30 s).
+    http.Client langsam(Duration verzoegerung) => MockClient((r) async {
+      await Future<void>.delayed(verzoegerung);
+      return http.Response.bytes(
+        [1, 2],
+        200,
+        headers: {
+          'content-type': 'application/zip',
+          'content-disposition': 'attachment; filename="$_id.zip"',
+          'kasseneck-api-version': 'v3',
+        },
+      );
+    });
+
+    test('der Aufruf selbst laeuft mit downloadTimeout, nicht mit readTimeout', () async {
+      final api = _api(langsam(const Duration(milliseconds: 80)), readTimeout: const Duration(milliseconds: 20));
+      expect((await api.getDepExportFile(_id, 'zip')).bytes, [1, 2]);
+      expect((await api.getDepExportFile(_id, 'zip', downloadTimeout: const Duration(seconds: 2))).bytes, [1, 2]);
+      await expectLater(
+        api.getDepExportFile(_id, 'zip', downloadTimeout: const Duration(milliseconds: 10)),
+        throwsA(isA<KasseneckHttpError>().having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)),
+      );
     });
 
     test('ein unbekannter file-Wert faellt vor dem Senden auf', () async {
@@ -473,11 +601,21 @@ void main() {
       expect(l.toString(), isNot(contains('tok')));
     });
 
-    test('Antwort ohne Code ist ein Antwortfehler; too_many_links kommt mit Code', () async {
+    test('Antwort ohne Code oder ohne Ablauf ist ein Antwortfehler; too_many_links kommt mit Code', () async {
       await expectLater(
         _api(MockClient((_) async => _erfolg({'linkId': 'L', 'url': 'https://x/y'}))).createDepHandoverLink(_id),
         throwsA(isA<KasseneckValidationError>()),
       );
+      for (final ablauf in [null, '']) {
+        await expectLater(
+          _api(
+            MockClient(
+              (_) async => _erfolg({'linkId': 'L' * 20, 'url': 'https://x/y', 'code': '123456', 'expiresAt': ablauf}),
+            ),
+          ).createDepHandoverLink(_id),
+          _antwortfehler,
+        );
+      }
       await expectLater(
         _api(MockClient((_) async => _fehler('too_many_links'))).createDepHandoverLink(_id),
         throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'too_many_links')),
@@ -509,6 +647,7 @@ void main() {
     expect(depExportErrorCodes, {
       'validation',
       'invalid_period',
+      'idempotency_conflict',
       'export_running',
       'too_many_exports',
       'export_not_found',

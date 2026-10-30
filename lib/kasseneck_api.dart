@@ -1085,19 +1085,24 @@ class KasseneckApi {
   /// dieser Kasse, optional fuer einen Zeitraum [from] bis [to] (Wiener Tage
   /// `YYYY-MM-DD`, beide einschliesslich).
   ///
-  /// Die Antwort kommt sofort mit `status: running`; der Server baut den Export
-  /// im Hintergrund. Weiter mit [waitForDepExport]. Mit derselben [requestId]
-  /// (bis 64 Zeichen `A-Za-z0-9_-`) liefert eine Wiederholung den schon
-  /// angelegten Export statt eines zweiten -- nach einem Zeitlimit also mit der
-  /// **gleichen** requestId nachfassen, nie mit einer neuen. Eine Kasse hat
-  /// hoechstens einen laufenden Export (`export_running`), ein Konto 20 am Tag
-  /// (`too_many_exports`); ein ungueltiger Zeitraum ist `invalid_period`.
+  /// Ein neuer Export antwortet sofort mit `status: running`; der Server baut
+  /// ihn im Hintergrund. Weiter mit [waitForDepExport]. Mit derselben
+  /// [requestId] (bis 64 Zeichen `A-Za-z0-9_-`) und demselben Zeitraum liefert
+  /// eine Wiederholung den schon angelegten Export mit seinem aktuellen Stand
+  /// (auch `done` oder `failed`) statt eines zweiten -- nach einem Zeitlimit
+  /// also mit der **gleichen** requestId nachfassen, nie mit einer neuen;
+  /// dieselbe requestId mit anderem Zeitraum ist `idempotency_conflict`. Eine
+  /// Kasse hat hoechstens einen laufenden Export (`export_running`, `data.exportId`
+  /// nennt ihn), ein Konto 20 am Tag (`too_many_exports`); ein ungueltiger
+  /// Zeitraum ist `invalid_period`. Tage und requestId prueft das Paket vor dem
+  /// Senden ([KasseneckValidationError], `kind: request`).
   Future<DepExport> createDepExport({
     String? from,
     String? to,
     String? requestId,
   }) async {
     const name = Aufrufe.createDepExport;
+    pruefeDepExportEingabe(name, from: from, to: to, requestId: requestId);
     final resJson = await _kasseneckJson(
       endpoint: name,
       params: {'from': ?from, 'to': ?to, 'requestId': ?requestId},
@@ -1110,6 +1115,7 @@ class KasseneckApi {
   /// Pruefer-Links. Nur Exporte der eigenen Kasse (`export_not_found`).
   Future<DepExport> getDepExport(String exportId) async {
     const name = Aufrufe.getDepExport;
+    pruefeDepKennung(name, 'exportId', exportId);
     final resJson = await _kasseneckJson(
       endpoint: name,
       params: {'exportId': exportId},
@@ -1124,11 +1130,15 @@ class KasseneckApi {
   /// Ein fehlgeschlagener Export wirft [DepExportFailedException] (mit dem
   /// Code aus `error`), nach [timeout] ohne Ergebnis wirft
   /// [DepExportTimeoutException] -- der Export laeuft dann weiter, spaeter hilft
-  /// [getDepExport]. Fehler der einzelnen Abfrage gehen unveraendert durch.
+  /// [getDepExport]. Fehler der einzelnen Abfrage gehen unveraendert durch; auch
+  /// ein Netzfehler beendet das Warten, der Export laeuft serverseitig weiter
+  /// und ist mit [getDepExport] weiterzuverfolgen.
   Future<DepExport> waitForDepExport(
     String exportId, {
     Duration timeout = const Duration(minutes: 10),
   }) async {
+    pruefeDepKennung('waitForDepExport', 'exportId', exportId);
+    pruefeDepFrist('waitForDepExport', 'timeout', timeout);
     var abstand = const Duration(seconds: 2);
     const hoechstens = Duration(seconds: 15);
     // Der Fortschritt zaehlt die Wartezeiten mit: die Uhr des Geraets allein
@@ -1157,11 +1167,15 @@ class KasseneckApi {
   /// Eine Datei eines fertigen Exports: [file] ist `dep` (JSON), `protocol`
   /// (PDF), `items` (CSV) oder `zip` ([depExportFiles]).
   ///
-  /// Kleine Dateien kommen direkt, grosse als Lese-Link (15 Minuten); dem Link
-  /// folgt das Paket selbst ([downloadTimeout] deckt den ganzen Abruf) und
-  /// prueft Groesse und SHA-256, wo der Server sie nennt -- bei einer
-  /// Abweichung wirft es [KasseneckValidationError] (`kind: response`) statt
-  /// verdorbene Bytes zu liefern. Die Datei liegt ganz im Speicher.
+  /// Kleine Dateien (bis 9 MiB) kommen direkt, grosse als Lese-Link
+  /// (15 Minuten); dem Link folgt das Paket selbst und prueft Groesse und
+  /// SHA-256, wo der Server sie nennt. [downloadTimeout] gilt je fuer den
+  /// Aufruf selbst (eine direkte Datei kommt in seiner Antwort, darum nicht
+  /// [readTimeout]) und fuer das Laden ueber den Link. Mit [sha256] (etwa
+  /// [DepExport.sha256] fuer `dep`, [DepExportItems.sha256] fuer `items`) prueft
+  /// es auch eine direkte Datei. Bei einer Abweichung wirft es
+  /// [KasseneckValidationError] (`kind: response`) statt verdorbene Bytes zu
+  /// liefern. Die Datei liegt ganz im Speicher.
   ///
   /// Ein Export, der noch laeuft, ist `export_not_ready`; eine Datei, die es zu
   /// diesem Export nicht gibt (etwa Positionen bei einem alten Export),
@@ -1170,8 +1184,10 @@ class KasseneckApi {
     String exportId,
     String file, {
     Duration downloadTimeout = const Duration(minutes: 10),
+    String? sha256,
   }) async {
     const name = Aufrufe.getDepExportFile;
+    pruefeDepKennung(name, 'exportId', exportId);
     if (!depExportFiles.contains(file)) {
       throw KasseneckValidationError(
         name,
@@ -1179,13 +1195,24 @@ class KasseneckApi {
         'request',
       );
     }
+    final bekannt = pruefeDepSha256(name, sha256);
+    pruefeDepFrist(name, 'downloadTimeout', downloadTimeout);
+    // Eine direkte Datei liest und prueft der Server ganz, bevor er antwortet: dieselbe Frist wie der Link.
     final antwort = await _senden(name, name, {
       'params': {'exportId': exportId, 'file': file},
-    }, null);
-    if (!depAntwortIstHuelle(antwort)) return depDirekteDatei(exportId, file, antwort);
-    final huelle = readEnvelope(name, antwort);
-    if (huelle['status'] != 'success') throw envelopeError(name, huelle);
-    return _depDownload(name, depLeseLink(name, exportId, file, huelle), downloadTimeout);
+    }, downloadTimeout);
+    final DepExportFile datei;
+    if (!depAntwortIstHuelle(antwort)) {
+      datei = depDirekteDatei(exportId, file, antwort);
+    } else {
+      final huelle = readEnvelope(name, antwort);
+      if (huelle['status'] != 'success') throw envelopeError(name, huelle);
+      datei = await _depDownload(name, depLeseLink(name, exportId, file, huelle), downloadTimeout);
+    }
+    if (bekannt != null && crypto.sha256.convert(datei.bytes).toString() != bekannt) {
+      throw KasseneckValidationError(name, 'Pruefsumme der Datei passt nicht (SHA-256)', 'response');
+    }
+    return datei;
   }
 
   Future<DepExportFile> _depDownload(
@@ -1261,6 +1288,7 @@ class KasseneckApi {
   /// (`too_many_links`). Der Kontoinhaber bekommt eine Hinweis-Mail.
   Future<DepHandoverLink> createDepHandoverLink(String exportId) async {
     const name = Aufrufe.createDepHandoverLink;
+    pruefeDepKennung(name, 'exportId', exportId);
     final resJson = await _kasseneckJson(
       endpoint: name,
       params: {'exportId': exportId},
@@ -1271,9 +1299,11 @@ class KasseneckApi {
 
   /// Widerruft einen Pruefer-Link (`revokeDepHandoverLink`); danach oeffnet er
   /// nichts mehr. Ein Link eines anderen Kontos oder einer anderen Kasse ist
-  /// `link_not_found`.
+  /// `link_not_found`; ein schon widerrufener ist kein Fehler (`revokedAt` nennt
+  /// den ersten Widerruf).
   Future<DepHandoverRevocation> revokeDepHandoverLink(String linkId) async {
     const name = Aufrufe.revokeDepHandoverLink;
+    pruefeDepKennung(name, 'linkId', linkId);
     final resJson = await _kasseneckJson(
       endpoint: name,
       params: {'linkId': linkId},
