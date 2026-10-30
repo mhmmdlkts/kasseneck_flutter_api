@@ -3,17 +3,12 @@
 The full view of `listReceipts` delivers what `getReceipt` delivers (backend
 30.10.2026, spec `list-receipts-voll`). Additive.
 
-- **`listFullReceipts(withLayout:)` and `listAllFullReceipts(withLayout:)`:**
-  with `true` every receipt carries the server layout
-  (`KasseneckReceipt.layout`). `true` only with the full view; `listReceipts`
-  takes only `false`. New code `invalid_with_layout` in
-  `receiptListErrorCodes`. Reason: the app no longer fetches `getReceipt` per
-  receipt to show it from the history.
 - **Every receipt of the full view is built like the one of `getReceipt`:** the
   header of the receipt's own version from the new `ReceiptListPage.headers`
   (not today's `metadata`), `testCashregister` and `logoScale` of the page,
-  `testSignature`, `registrationInfo` and `layout` of the receipt; zero
-  receipts carry no logo. New page fields `headers`, `testCashregister`,
+  `testSignature` and `registrationInfo` of the receipt; zero receipts carry no
+  logo. Never the server layout: it is the main cost driver of a page and stays
+  with `getReceipt`, for the receipt someone opens or prints. New page fields `headers`, `testCashregister`,
   `logoScale` (`null` from an older backend, which still builds from
   `metadata`). Reason: a reprinted old receipt showed today's address and
   footer.

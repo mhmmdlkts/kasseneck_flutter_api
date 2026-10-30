@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "96368bb8264d3d8c1376f57d93d0f417e031e790657cb0646e80841eb7219e7d",
-    "inputsSha256": "7abea582065b8f692962e7d21d5609ea0d3a7eb0a03a2745426ed1d2139c2a46",
+    "sha256": "a34565a3795177d2830fc98dfddc5fb519fd401a5d186b0bed2095bb8cac5b8a",
+    "inputsSha256": "7e0635cd224c1eb5a03b5055106959e4d58a0bd6edc919c12137b55623df2e15",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -1312,7 +1312,6 @@
       "invalid_vehicle",
       "invalid_view",
       "invalid_webhook_url",
-      "invalid_with_layout",
       "invalid_year",
       "inventory_api_not_enabled",
       "invoice_ambiguous",
@@ -2097,7 +2096,6 @@
       "invalid_order",
       "invalid_view",
       "invalid_cursor",
-      "invalid_with_layout",
       "server_error"
     ],
     "registerCases": [
@@ -5551,17 +5549,7 @@
               }
             ],
             "cancellationStatus": "stornoStand",
-            "testSignature": "testSignatur",
-            "layout": {
-              "__": "layout",
-              "ruleset": "regelwerk",
-              "lines": [
-                {
-                  "__": "lines",
-                  "tone": "ton"
-                }
-              ]
-            }
+            "testSignature": "testSignatur"
           }
         ],
         "metadata": {
@@ -5586,9 +5574,6 @@
         },
         "receipts[].cancellationReason": {
           "$catalog": "STORNO_GRUND"
-        },
-        "receipts[].layout.lines[].tone": {
-          "$catalog": "LAYOUT_TON"
         }
       },
       "ergaenze": {

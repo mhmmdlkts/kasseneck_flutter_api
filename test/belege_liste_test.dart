@@ -450,7 +450,7 @@ void main() {
   });
 
   // Backend 30.10.2026 (Spec list-receipts-voll): die volle Ansicht liefert je Beleg dasselbe wie getReceipt.
-  group('listFullReceipts: wie getReceipt (headers, Kennzeichen, Layout)', () {
+  group('listFullReceipts: wie getReceipt (headers, Kennzeichen), nie ein Layout', () {
     const kopfV1 = {
       'headerVersionId': 'v1', 'company': 'Bäckerei Kornblum', 'street': 'Alter Weg 1', 'zip': '1010', 'city': 'Wien',
       'phone': '+43 1 234', 'taxNumber': '91-123/4565', 'vatId': 'ATU12345675', 'is_small_business': false,
@@ -458,42 +458,26 @@ void main() {
       'kreiseck_logo': false, 'logo_url': 'https://example.at/logo.png',
     };
     final kopfV2 = {...kopfV1, 'headerVersionId': 'v2', 'street': 'Neuer Platz 2'};
-    final layout = {
-      'paperSize': 'mm80',
-      'ruleset': 2,
-      'lines': [
-        {'kind': 'text', 'text': 'Bäckerei Kornblum', 'align': 'left', 'bold': false},
-      ],
-    };
     Map<String, dynamic> volleSeite({List<Object?>? belege, bool mitKoepfen = true}) => {
           ..._seite(belege ??
               [
-                {..._berichtBelege[0], 'headerVersionId': 'v1', 'testSignature': false, 'layout': layout},
-                {..._berichtBelege[1], 'headerVersionId': 'v2', 'testSignature': true, 'layout': null},
+                {..._berichtBelege[0], 'headerVersionId': 'v1', 'testSignature': false},
+                {..._berichtBelege[1], 'headerVersionId': 'v2', 'testSignature': true},
               ]),
           'metadata': {...kopfV2, 'label': 'Schank'}..remove('headerVersionId'),
           if (mitKoepfen) ...{'headers': [kopfV1, kopfV2], 'testCashregister': true, 'logo_scale': 'L'},
         };
 
-    test('withLayout geht nur gesetzt hinaus; true nur mit full, false auch mit summary', () async {
-      final m = _mock((_, n) => _erfolg(n == 2 ? _seite([]) : volleSeite()));
-      await _api(m.client).listFullReceipts(date: '2026-10-27', withLayout: true);
-      await _api(m.client).listReceipts(date: '2026-10-27', withLayout: false);
+    test('kein withLayout: die Parameter bleiben wie bisher, der Fehlercode existiert nicht', () async {
+      final m = _mock((_, _) => _erfolg(volleSeite()));
       await _api(m.client).listFullReceipts(date: '2026-10-27');
-      expect(m.log.map(_params), [
-        {'date': '2026-10-27', 'view': 'full', 'withLayout': true},
-        {'date': '2026-10-27', 'view': 'summary', 'withLayout': false},
-        {'date': '2026-10-27', 'view': 'full'},
-      ]);
-      final leer = _mock((_, _) => _erfolg(_seite([])));
-      expect(() => _api(leer.client).listReceipts(date: '2026-10-27', withLayout: true), _anfragefehler('withLayout'));
-      expect(leer.log, isEmpty);
-      expect(receiptListErrorCodes, contains('invalid_with_layout'));
+      expect(_params(m.log.single), {'date': '2026-10-27', 'view': 'full'});
+      expect(receiptListErrorCodes, isNot(contains('invalid_with_layout')));
     });
 
     test('Seite: headers, testCashregister, logoScale; je Beleg der Kopf seiner Version und die Zusaetze', () async {
       final m = _mock((_, _) => _erfolg(volleSeite()));
-      final seite = await _api(m.client).listFullReceipts(date: '2026-10-27', withLayout: true);
+      final seite = await _api(m.client).listFullReceipts(date: '2026-10-27');
       expect(seite.headers!.map((h) => h['headerVersionId']), ['v1', 'v2']);
       expect(seite.testCashregister, isTrue);
       expect(seite.logoScale, 'L');
@@ -504,21 +488,21 @@ void main() {
       expect(a.testSignature, isFalse);
       expect(a.logoScale.code, 'L');
       expect(a.logoUrl, 'https://example.at/logo.png');
-      expect(a.layout!.toJson(), layout);
+      expect(a.layout, isNull, reason: 'das Layout gibt es nur ueber getReceipt');
       expect(b.street, 'Neuer Platz 2');
       expect(b.testSignature, isTrue);
       expect(b.layout, isNull);
     });
 
-    test('ein Beleg aus der Liste gleicht dem aus getReceipt (dieselbe Huelle)', () async {
+    test('ein Beleg aus der Liste gleicht dem aus getReceipt (dieselbe Huelle ohne Layout)', () async {
       final m = _mock((_, _) => _erfolg(volleSeite()));
-      final seite = await _api(m.client).listFullReceipts(date: '2026-10-27', withLayout: true);
+      final seite = await _api(m.client).listFullReceipts(date: '2026-10-27');
       final roh = Map<String, dynamic>.from(_berichtBelege[0]);
       final getReceipt = KasseneckReceipt.fromJson({
         ...Map<String, dynamic>.from(kopfV1)..remove('headerVersionId'),
         'receipt': {...roh, 'headerVersionId': 'v1'},
         'headerVersionId': 'v1', 'testCashregister': true, 'testSignature': false, 'logo_scale': 'L',
-        'registrationInfo': null, 'layout': layout,
+        'registrationInfo': null,
       });
       expect(jsonEncode(seite.receipts.first.toJson()), jsonEncode(getReceipt.toJson()));
     });

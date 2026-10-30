@@ -959,9 +959,6 @@ class KasseneckApi {
   /// Invalid input throws a [KasseneckValidationError] (`kind: request`)
   /// before anything is sent; server errors come as [KasseneckApiError] with a
   /// code from [receiptListErrorCodes]. All pages at once: [listAllReceipts].
-  ///
-  /// [withLayout] only `false` here (it goes with either view); `true`
-  /// throws before sending, the layout comes only with [listFullReceipts].
   Future<ReceiptListPage<ReceiptListEntry>> listReceipts({
     String? date,
     String? from,
@@ -969,11 +966,9 @@ class KasseneckApi {
     int? limit,
     String? order,
     String? cursor,
-    bool? withLayout,
   }) =>
       _belegSeite(
-          receiptListParams(
-              view: 'summary', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor, withLayout: withLayout),
+          receiptListParams(view: 'summary', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
           (roh, _) => [for (final (i, e) in roh.indexed) receiptListEntry(i, e)]);
 
   /// Like [listReceipts], but with the stored receipts (`view: full`, the
@@ -990,10 +985,12 @@ class KasseneckApi {
   /// Since the backend of 30.10.2026 every receipt is built like the one of
   /// [getReceipt]: the header of the receipt's own version
   /// ([ReceiptListPage.headers], not today's [ReceiptListPage.metadata]),
-  /// `testCashregister`, `testSignature`, `logoScale`, `registrationInfo`,
-  /// and with [withLayout] `true` the server layout ([KasseneckReceipt.layout]).
-  /// Provider data of card payments (`payments[].providerPaymentId`) come
-  /// with the business's own API key, never with a partner access.
+  /// `testCashregister`, `testSignature`, `logoScale`, `registrationInfo`.
+  /// Never the server layout ([KasseneckReceipt.layout] stays `null`): it is
+  /// the main cost driver of a page and comes only with [getReceipt], for the
+  /// receipt someone opens or prints. Provider data of card payments
+  /// (`payments[].providerPaymentId`) come with the business's own API key,
+  /// never with a partner access.
   Future<ReceiptListPage<KasseneckReceipt>> listFullReceipts({
     String? date,
     String? from,
@@ -1001,11 +998,9 @@ class KasseneckApi {
     int? limit,
     String? order,
     String? cursor,
-    bool? withLayout,
   }) =>
       _belegSeite(
-          receiptListParams(
-              view: 'full', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor, withLayout: withLayout),
+          receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
           (roh, seite) => [for (final r in roh) ?_vollerBeleg(r, seite)]);
 
   /// All receipts of the window, page by page over `nextCursor`, as a stream
@@ -1023,11 +1018,10 @@ class KasseneckApi {
   }
 
   /// Like [listAllReceipts], with the stored receipts (see [listFullReceipts]).
-  Stream<KasseneckReceipt> listAllFullReceipts(
-      {String? date, String? from, String? to, int? limit, String? order, bool? withLayout}) {
-    receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order, withLayout: withLayout);
+  Stream<KasseneckReceipt> listAllFullReceipts({String? date, String? from, String? to, int? limit, String? order}) {
+    receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order);
     return _alleSeiten((c) => listFullReceipts(
-        date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c, withLayout: withLayout));
+        date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c));
   }
 
   Future<ReceiptListPage<T>> _belegSeite<T>(

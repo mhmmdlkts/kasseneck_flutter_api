@@ -35,8 +35,6 @@ const Set<String> receiptListErrorCodes = {
   'invalid_order',
   'invalid_view',
   'invalid_cursor',
-  // withLayout kein Boolean oder true ohne view full (Backend 30.10.2026).
-  'invalid_with_layout',
   'server_error',
 };
 
@@ -248,9 +246,10 @@ typedef ReceiptListContext = ({
   String? logoScale,
 });
 
-/// Die Huelle, die `getReceipt` fuer einen Beleg der vollen Ansicht liefert
-/// (Kopf der Version des Belegs aus `headers`, Kennzeichen der Seite,
-/// `testSignature`, `registrationInfo` und `layout` vom Beleg), damit
+/// Die Huelle, die `getReceipt` fuer einen Beleg der vollen Ansicht liefert,
+/// ohne `outputs` und ohne Zeilenmodell (das gibt es nur ueber `getReceipt`):
+/// Kopf der Version des Belegs aus `headers`, Kennzeichen der Seite,
+/// `testSignature` und `registrationInfo` vom Beleg, damit
 /// [KasseneckReceipt.fromJson] ihn genau so baut. Nullbelege tragen wie beim
 /// Server kein Logo. `null`, wenn die Seite keine `headers` traegt (aelteres
 /// Backend) oder keiner zum Beleg passt: dann gilt wie bisher [metadata].
@@ -262,7 +261,6 @@ Map<String, dynamic>? receiptListEnvelope(Object? roh, ReceiptListContext seite)
   final kopf = koepfe.where((h) => h['headerVersionId'] == kennung).firstOrNull;
   if (kopf == null) return null;
   final testSignatur = beleg.remove('testSignature');
-  final layout = beleg.remove('layout');
   return {
     ...Map<String, dynamic>.from(kopf)..remove('headerVersionId'),
     if (beleg['receiptType'] == 'zero') 'logo_url': null,
@@ -272,7 +270,6 @@ Map<String, dynamic>? receiptListEnvelope(Object? roh, ReceiptListContext seite)
     'testSignature': testSignatur == true,
     'logo_scale': seite.logoScale,
     'registrationInfo': beleg['registrationInfo'],
-    'layout': layout,
   };
 }
 
@@ -309,7 +306,6 @@ Map<String, dynamic> receiptListParams({
   int? limit,
   String? order,
   String? cursor,
-  bool? withLayout,
 }) {
   const name = Aufrufe.listReceipts;
   KasseneckValidationError fehler(String grund) => KasseneckValidationError(name, grund, 'request');
@@ -337,9 +333,7 @@ Map<String, dynamic> receiptListParams({
   }
   if (order != null && !receiptListOrders.contains(order)) throw fehler('order muss desc oder asc sein');
   if (cursor != null && cursor.isEmpty) throw fehler('cursor ist leer');
-  // Zeilenmodell je Beleg: true nur in der vollen Ansicht, false geht immer (wie das Backend).
-  if (withLayout == true && view != 'full') throw fehler('withLayout: true geht nur mit view full');
-  return {...fenster, 'limit': ?limit, 'order': ?order, 'view': view, 'cursor': ?cursor, 'withLayout': ?withLayout};
+  return {...fenster, 'limit': ?limit, 'order': ?order, 'view': view, 'cursor': ?cursor};
 }
 
 /// Eine Seite aus `data`; die Eintraege liest [eintraege], mit dem, was die
