@@ -1,0 +1,43 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-50",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-08-13T10:15:30",
+    "items": [],
+    "vouchers": [],
+    "paymentMethod": null,
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "zero",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [
+      "Sicherheitseinrichtung ausgefallen von 12.08.2026 08:10 bis 13.08.2026 10:14 (ab Beleg AT0-KASSE1-41)"
+    ],
+    "zeroKind": "outage_end"
+  },
+  "options": {
+    "paperSize": "mm80",
+    "registrationInfo": {
+      "cardRegisteredAt": "2024-03-12",
+      "cashregisterRegisteredAt": "2024-03-12"
+    }
+  }
+}

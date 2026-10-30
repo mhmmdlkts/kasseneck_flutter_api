@@ -1,0 +1,55 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "isSmallBusiness": false,
+    "thanksMessage": [],
+    "showKreiseckLogo": false,
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at"
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-116",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-11-04T07:06:02",
+    "items": [
+      {
+        "name": "Umsatz 10 % lt. Handbelegen",
+        "quantity": 1,
+        "unitPriceCents": 15420,
+        "vatRate": 10
+      },
+      {
+        "name": "Umsatz 20 % lt. Handbelegen",
+        "quantity": 1,
+        "unitPriceCents": 8640,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "cash",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-116_2026-11-04T07:06:02_0,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "manualReceipt": {
+      "number": "201",
+      "numberTo": "248",
+      "date": "2026-11-03",
+      "reason": "power_outage"
+    }
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

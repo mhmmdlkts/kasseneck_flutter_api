@@ -1,0 +1,35 @@
+        Bäckerei Muster         
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345675           
+         +43 6134 12345         
+                                
+================================
+         NACHERFASSUNG          
+================================
+     nach Ausfall der Kasse     
+Grund: Kasse beim Umzug abgebaut
+                                
+       Handbeleg Nr. 301        
+   vom 29.11.2026, 09:10 Uhr    
+  USt: Duplikat des Handbelegs  
+                                
+Datum:       01.12.2026 06:15:44
+Kassen-ID:                KASSE1
+Beleg-ID:         AT0-KASSE1-109
+                                
+4  x Semmel               3,16 B
+je 0,79                         
+1  x Kaffee klein         2,80 A
+                                
+MwSt%   MwSt      Netto   Brutto
+B 10%   0,29      2,87      3,16
+A 20%   0,47      2,33      2,80
+--------------------------------
+Gesamt:                   5,96 €
+Zahlungsart:          Barzahlung
+                                
+           [QR-Code]            
+                                
+ Vielen Dank für Ihren Einkauf  
+    www.baeckerei-muster.at     

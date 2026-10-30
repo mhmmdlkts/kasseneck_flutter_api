@@ -1,0 +1,236 @@
+{
+  "charsPerLine": 32,
+  "blocks": [
+    {
+      "kind": "logo",
+      "widthFraction": 0.62,
+      "heightLines": 3.968
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "        Bäckerei Muster         ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          Hauptplatz 1          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         4830 Hallstatt         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          ATU12345675           ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         +43 6134 12345         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "           NULLBELEG            ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": " Prüfbeleg nach Signaturausfall ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:       13.08.2026 10:15:30",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:          AT0-KASSE1-50",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "--------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          Prüfangaben           ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Barumsatz:                0,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Signatur:               signiert",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Signaturkarte:        0x5A1C3E07",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zertifizierungsdi  A-Trust (AT1)",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "enst:                           ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Karte                 12.03.2024",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "registriert:                    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kasse                 12.03.2024",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "registriert:                    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "--------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "     Sicherheitseinrichtung     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "ausgefallen von 12.08.2026 08:10",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": " bis 13.08.2026 10:14 (ab Beleg ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         AT0-KASSE1-41)         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT1_KASSE1_AT0-KASSE1-42_2026-08-13T10:15:30_5,00_2,70_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+      "widthFraction": 0.828125
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 234,
+      "height": 34
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+       Melisse Nails e.U.       
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345675           
+         +43 6134 12345         
+                                
+================================
+         NACHERFASSUNG          
+================================
+     nach Ausfall der Kasse     
+      Grund: Gerät defekt       
+                                
+        Handbeleg Nr. 8         
+         vom 10.11.2026         
+  USt: Duplikat des Handbelegs  
+                                
+Datum:       12.11.2026 10:02:31
+Kassen-ID:                KASSE1
+Beleg-ID:         AT0-KASSE1-106
+                                
+1  x Maniküre            35,00 A
+                                
+MwSt%   MwSt      Netto   Brutto
+A 20%   5,83      29,17    35,00
+--------------------------------
+Gesamt:                  35,00 €
+Zahlungsart:          Barzahlung
+                                
+           [QR-Code]            
+                                
+      Bis zum nächsten Mal      
