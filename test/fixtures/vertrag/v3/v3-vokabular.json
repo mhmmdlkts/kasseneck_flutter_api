@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "f9d375a30bfb51addc8405dd6f5c24928ebc628166ae5ebf2b0c43d9f19701dd",
-    "inputsSha256": "df1229235f9e3230ca2d6b32ad65c0dfb5ca5a476551e92d1bc92bb2fd5d11bf",
+    "sha256": "b06a8be2fe8c96e7e266a4e237c77588e9bef4e3272a9343ed2969ba722a87f4",
+    "inputsSha256": "3ee0bad6bd2e4b8c87412d7301d9862d0d79adf3494bde08ad8fc533c9a60b66",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -141,7 +141,12 @@
       "getStocktakePdf",
       "orderSignatureCard",
       "getSignatureCardOrder",
-      "listReceipts"
+      "listReceipts",
+      "createDepExport",
+      "getDepExport",
+      "getDepExportFile",
+      "createDepHandoverLink",
+      "revokeDepHandoverLink"
     ],
     "v3Routed": [
       "createReceipt",
@@ -251,7 +256,12 @@
       "getStocktakePdf",
       "orderSignatureCard",
       "getSignatureCardOrder",
-      "listReceipts"
+      "listReceipts",
+      "createDepExport",
+      "getDepExport",
+      "getDepExportFile",
+      "createDepHandoverLink",
+      "revokeDepHandoverLink"
     ],
     "register": [
       "pairRegisterDevice",
@@ -352,6 +362,8 @@
       "createCreditNote",
       "createCustomer",
       "createCustomerCashregister",
+      "createDepExport",
+      "createDepHandoverLink",
       "createInvoiceItem",
       "createMyPromoVouchers",
       "createPartnerCustomer",
@@ -364,6 +376,7 @@
       "createVariantGroup",
       "createWebhook",
       "deactivateArticle",
+      "deleteMyVoucherLabelTemplate",
       "deleteMyVoucherType",
       "deletePartnerWebhook",
       "deleteWebhook",
@@ -379,6 +392,8 @@
       "getCustomer",
       "getCustomerCredentials",
       "getCustomerSignatureStatus",
+      "getDepExport",
+      "getDepExportFile",
       "getFirstReceiptDate",
       "getInvoice",
       "getInvoiceItem",
@@ -425,6 +440,7 @@
       "listMyStocktakeItems",
       "listMyStocktakes",
       "listMyTipRecipients",
+      "listMyVoucherLabelTemplates",
       "listMyVoucherTypes",
       "listMyVouchers",
       "listPartnerCustomers",
@@ -468,8 +484,10 @@
       "reverseStockMovement",
       "reviewStocktake",
       "revokeCustomerMandate",
+      "revokeDepHandoverLink",
       "rotatePartnerWebhookSecret",
       "rotateWebhookSecret",
+      "saveMyVoucherLabelTemplate",
       "saveMyVoucherType",
       "searchCustomers",
       "sendPartnerCustomerFonLink",
@@ -613,6 +631,10 @@
       "tirol": "AT-7",
       "vorarlberg": "AT-8",
       "wien": "AT-9"
+    },
+    "DEP_EXPORT_FEHLER": {
+      "export_haengt": "export_stalled",
+      "export_fehlgeschlagen": "export_failed"
     },
     "DOKART": {
       "RE": "invoice",
@@ -1255,7 +1277,12 @@
       "email_taken",
       "event_not_subscribed",
       "exceeds_stock",
+      "export_failed",
+      "export_not_found",
+      "export_not_ready",
+      "export_running",
       "external_id_taken",
+      "file_not_available",
       "final_receipt_expired",
       "final_receipt_not_allowed",
       "finanzonline_error",
@@ -1287,6 +1314,7 @@
       "invalid_distribution",
       "invalid_document",
       "invalid_e1a_group",
+      "invalid_file",
       "invalid_items",
       "invalid_landed_cost",
       "invalid_limit",
@@ -1333,6 +1361,7 @@
       "landed_costs_mismatch",
       "language_not_allowed",
       "licenses_exhausted",
+      "link_not_found",
       "live_not_allowed",
       "live_not_enabled",
       "location_inactive",
@@ -1494,6 +1523,8 @@
       "too_many_counts",
       "too_many_documents",
       "too_many_entries",
+      "too_many_exports",
+      "too_many_links",
       "too_many_orders",
       "too_many_positions",
       "too_many_requests",
@@ -2128,6 +2159,21 @@
       "invalid_cursor",
       "server_error"
     ],
+    "depExport": [
+      "validation",
+      "invalid_period",
+      "idempotency_conflict",
+      "export_running",
+      "too_many_exports",
+      "export_not_found",
+      "export_not_ready",
+      "export_failed",
+      "invalid_file",
+      "file_not_available",
+      "too_many_links",
+      "link_not_found",
+      "server_error"
+    ],
     "registerCases": [
       "after_count_not_permitted",
       "already_cancelled",
@@ -2485,6 +2531,7 @@
         "invalid_line",
         "invalid_return_disposition",
         "invalid_tip_refund_source",
+        "manual_receipt_not_allowed",
         "not_permitted",
         "note_too_long",
         "own_receipts_only",
@@ -3332,6 +3379,8 @@
         }
       }
     },
+    "createDepExport": {},
+    "createDepHandoverLink": {},
     "createInvoiceItem": {},
     "createMyPromoVouchers": {
       "params": {
@@ -3847,6 +3896,7 @@
         }
       }
     },
+    "deleteMyVoucherLabelTemplate": {},
     "deleteMyVoucherType": {},
     "deletePartnerWebhook": {
       "data": {
@@ -4142,6 +4192,8 @@
         }
       }
     },
+    "getDepExport": {},
+    "getDepExportFile": {},
     "getFirstReceiptDate": {},
     "getInvoice": {
       "werte": {
@@ -5510,6 +5562,36 @@
       }
     },
     "listMyTipRecipients": {},
+    "listMyVoucherLabelTemplates": {
+      "data": {
+        "labelTemplates": [
+          {
+            "__": "vorlagen",
+            "label": {
+              "__": "etikett",
+              "size": "groesse",
+              "rotation": "drehung",
+              "fields": {
+                "__": "felder",
+                "business": "betrieb",
+                "value": "wert",
+                "validity": "gueltigkeit",
+                "checkPage": "pruefseite",
+                "designation": "bezeichnung"
+              },
+              "freeText": "freitext"
+            },
+            "isDefault": "standard",
+            "saved": "gespeichert",
+            "usedBy": [
+              {
+                "__": "verwendetVon"
+              }
+            ]
+          }
+        ]
+      }
+    },
     "listMyVoucherTypes": {
       "data": {
         "voucherTypes": [
@@ -5543,7 +5625,8 @@
             },
             "order": "reihenfolge",
             "active": "aktiv",
-            "soldCount": "verkauft"
+            "soldCount": "verkauft",
+            "templateId": "vorlageId"
           }
         ]
       },
@@ -6139,7 +6222,8 @@
             },
             "order": "reihenfolge",
             "active": "aktiv",
-            "soldCount": "verkauft"
+            "soldCount": "verkauft",
+            "templateId": "vorlageId"
           }
         ]
       },
@@ -6966,6 +7050,7 @@
       }
     },
     "revokeCustomerMandate": {},
+    "revokeDepHandoverLink": {},
     "rotatePartnerWebhookSecret": {
       "werte": {
         "webhook.lastDelivery.status": {
@@ -6990,6 +7075,51 @@
       "werte": {
         "webhook.lastDelivery.status": {
           "$catalog": "ZUSTELLUNG"
+        }
+      }
+    },
+    "saveMyVoucherLabelTemplate": {
+      "params": {
+        "label": {
+          "__": "etikett",
+          "size": "groesse",
+          "rotation": "drehung",
+          "fields": {
+            "__": "felder",
+            "business": "betrieb",
+            "value": "wert",
+            "validity": "gueltigkeit",
+            "checkPage": "pruefseite",
+            "designation": "bezeichnung"
+          },
+          "freeText": "freitext"
+        },
+        "isDefault": "standard"
+      },
+      "data": {
+        "labelTemplate": {
+          "__": "vorlage",
+          "label": {
+            "__": "etikett",
+            "size": "groesse",
+            "rotation": "drehung",
+            "fields": {
+              "__": "felder",
+              "business": "betrieb",
+              "value": "wert",
+              "validity": "gueltigkeit",
+              "checkPage": "pruefseite",
+              "designation": "bezeichnung"
+            },
+            "freeText": "freitext"
+          },
+          "isDefault": "standard",
+          "saved": "gespeichert",
+          "usedBy": [
+            {
+              "__": "verwendetVon"
+            }
+          ]
         }
       }
     },
@@ -7022,7 +7152,8 @@
           "freeText": "freitext"
         },
         "order": "reihenfolge",
-        "active": "aktiv"
+        "active": "aktiv",
+        "templateId": "vorlageId"
       },
       "paramWerte": {
         "kind": {
@@ -7069,7 +7200,8 @@
           },
           "order": "reihenfolge",
           "active": "aktiv",
-          "soldCount": "verkauft"
+          "soldCount": "verkauft",
+          "templateId": "vorlageId"
         }
       },
       "werte": {

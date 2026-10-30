@@ -16,6 +16,8 @@ abstract final class Aufrufe {
   static const cancelReceipt = 'cancelReceipt';
   static const createCreditNote = 'createCreditNote';
   static const createCustomer = 'createCustomer';
+  static const createDepExport = 'createDepExport';
+  static const createDepHandoverLink = 'createDepHandoverLink';
   static const createPaymentLinkStripe = 'createPaymentLinkStripe';
   static const createReceipt = 'createReceipt';
   static const downloadDailyReport = 'downloadDailyReport';
@@ -24,6 +26,8 @@ abstract final class Aufrufe {
   static const financeWebService = 'financeWebService';
   static const getCashregisterReport = 'getCashregisterReport';
   static const getCustomer = 'getCustomer';
+  static const getDepExport = 'getDepExport';
+  static const getDepExportFile = 'getDepExportFile';
   static const getFirstReceiptDate = 'getFirstReceiptDate';
   static const getInvoice = 'getInvoice';
   static const getInvoicePdf = 'getInvoicePdf';
@@ -52,6 +56,7 @@ abstract final class Aufrufe {
   static const registerPinLogin = 'registerPinLogin';
   static const registerUserLogin = 'registerUserLogin';
   static const renewRegisterSession = 'renewRegisterSession';
+  static const revokeDepHandoverLink = 'revokeDepHandoverLink';
   static const searchCustomers = 'searchCustomers';
   static const sendReceiptEmail = 'sendReceiptEmail';
   static const setMyKasseSettings = 'setMyKasseSettings';
@@ -139,6 +144,8 @@ abstract final class Aufrufe {
     cancelReceipt,
     createCreditNote,
     createCustomer,
+    createDepExport,
+    createDepHandoverLink,
     createPaymentLinkStripe,
     createReceipt,
     downloadDailyReport,
@@ -147,6 +154,8 @@ abstract final class Aufrufe {
     financeWebService,
     getCashregisterReport,
     getCustomer,
+    getDepExport,
+    getDepExportFile,
     getFirstReceiptDate,
     getInvoice,
     getInvoicePdf,
@@ -175,6 +184,7 @@ abstract final class Aufrufe {
     registerPinLogin,
     registerUserLogin,
     renewRegisterSession,
+    revokeDepHandoverLink,
     searchCustomers,
     sendReceiptEmail,
     setMyKasseSettings,

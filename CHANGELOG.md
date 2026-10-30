@@ -1,3 +1,55 @@
+## 11.11.0 (2026-10-30)
+
+Twin of `@kreiseck/kasseneck-api` `1.20.0` (contract files pulled from that
+version).
+
+- **DEP export for the inspection by the tax authority (Kassennachschau,
+  § 19 para 2 RKSV).** Five new calls, `/v3` only, api_key + cash register
+  token like `listReceipts`: `createDepExport({from, to, requestId})`,
+  `getDepExport(exportId)`, `waitForDepExport(exportId, {timeout})`,
+  `getDepExportFile(exportId, file, {sha256, downloadTimeout})` and `createDepHandoverLink(exportId)` /
+  `revokeDepHandoverLink(linkId)`. Reason: an inspector asks for the DEP of a
+  period on the spot; the server builds it in the background (DEP, check
+  protocol, items CSV, ZIP) and the register can hand the inspector a link with
+  a 6-digit code instead of a USB stick.
+  - `waitForDepExport` polls after 2 s, then at 1.5 times the interval, at most
+    every 15 s, 10 minutes by default. A failed export throws
+    `DepExportFailedException` (`error` carries the code: `export_failed`,
+    `export_stalled`), running out of time throws `DepExportTimeoutException`;
+    the export keeps running on the server, `getDepExport` asks again. A network
+    error while polling ends the wait as well; the export keeps running.
+  - `getDepExportFile` (`file`: `dep`, `protocol`, `items` or `zip`) returns bytes
+    with `fileName` and `contentType`. Small files come directly; for a large one
+    the server answers with a short-lived download link, which the package follows
+    itself (no api_key or token goes to that address) and checks size and SHA-256
+    against the server's figures -- a mismatch throws a
+    `KasseneckValidationError` (`kind: response`) instead of returning corrupt
+    bytes. With `sha256` (for example `DepExport.sha256`) a direct file is
+    checked too. `downloadTimeout` (10 minutes) limits the call itself and the
+    download over the link, each; `readTimeout` (30 s) does not apply to this
+    call, because the server reads and checks a direct file of up to 9 MiB before
+    it answers. The whole file is held in memory.
+  - Inputs are checked before sending, as in the npm twin: `from`/`to` real
+    calendar days `YYYY-MM-DD`, `to` not before `from`, `requestId` at most 64
+    characters of `A-Z a-z 0-9 _ -`, non-empty ids, `sha256` 64 hex characters,
+    positive timeouts (`KasseneckValidationError`, `kind: request`). An unknown
+    `status` is a response error (it is never read as running), and so is a
+    handover or download link without `expiresAt` (`DepHandoverLink.expiresAt`
+    and `DepDownloadLink.expiresAt` are non-null). All times are ISO 8601 in UTC
+    (`…Z`), kept as text. The same `requestId` with another period is
+    `idempotency_conflict`.
+  - `DepExport` carries the finding (`findings`: counter gaps, the first chain
+    break, receipts without counter or signature), the items file and the
+    inspector links of the export. `DepHandoverLink` shows url and code only once
+    and keeps both out of `toString`.
+  - Error codes: `depExportErrorCodes` (`invalid_period`, `idempotency_conflict`, `export_running`,
+    `too_many_exports`, `export_not_found`, `export_not_ready`, `export_failed`,
+    `invalid_file`, `file_not_available`, `too_many_links`, `link_not_found`, ...).
+  - All five count as repeatable after a lost answer (`rejected` outcome, not
+    `unknown`): the same `requestId` returns the export already created, a link
+    can be revoked.
+- Dev dependency `fake_async` for the waiting tests.
+
 ## 11.10.0 (2026-10-30)
 
 Twin of `@kreiseck/kasseneck-api` `1.19.0` (contract files pulled from that
@@ -22,6 +74,7 @@ The full view of `listReceipts` delivers what `getReceipt` delivers (backend
   gets them. Messages of `cardRefundReference` and of the card-refund check
   name that rule.
 - Contract re-pulled (provider data in the `/v3` cases, `listReceipts` schema).
+
 ## 11.9.0 (2026-10-30)
 
 Twin of `@kreiseck/kasseneck-api` `1.18.0` (contract files pulled from that

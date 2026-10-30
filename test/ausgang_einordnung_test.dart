@@ -52,6 +52,8 @@ const Set<String> _lesen = {
   'generateFullReceiptId', // leitet nur einen Link-Schluessel ab, schreibt nichts
   'getArticle',
   'getCustomer',
+  'getDepExport',
+  'getDepExportFile',
   'getFirstReceiptDate',
   'getInvoice',
   'getInvoicePdf',
@@ -105,6 +107,14 @@ const Set<String> _lesen = {
 /// Stripe-Zahlungslink. Mit `unknown` saehe die Kasse beim Zeitlimit der
 /// Anmeldung „kann gebucht sein“.
 const Set<String> _wiederholbar = {
+  // createDepExport: mit requestId idempotent (eine Wiederholung liefert den schon
+  // angelegten Export); ohne nur harmlos doppelt (Grenze 20 je Tag, keine Buchung).
+  // createDepHandoverLink: eine Wiederholung erzeugt einen zweiten Link; der alte ist
+  // ueber getDepExport().handoverLinks auffindbar und widerrufbar, der Preis hoechstens
+  // too_many_links. revokeDepHandoverLink: idempotent.
+  'createDepExport',
+  'createDepHandoverLink',
+  'revokeDepHandoverLink',
   'createPaymentLinkStripe',
   'endRegisterSession',
   'registerPinLogin',
