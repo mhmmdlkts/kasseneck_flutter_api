@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "c14617ec83a2eac2bdffc6794cc2c7f72ae04504259a55313f01fe83747fa565",
-    "inputsSha256": "f7f7091faee9c671b006237afa8c7dbba340d0120105259fce69ddad3bf10d93",
+    "sha256": "f9d375a30bfb51addc8405dd6f5c24928ebc628166ae5ebf2b0c43d9f19701dd",
+    "inputsSha256": "df1229235f9e3230ca2d6b32ad65c0dfb5ca5a476551e92d1bc92bb2fd5d11bf",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -5696,14 +5696,25 @@
               "reason": "grund",
               "note": "grundText"
             },
-            "cancellationStatus": "stornoStand"
+            "cancellationStatus": "stornoStand",
+            "testSignature": "testSignatur"
           }
         ],
         "metadata": {
           "__": "metadata",
           "taxNumber": "taxnr",
           "vatId": "uid"
-        }
+        },
+        "headers": [
+          {
+            "__": "kopfVersionen",
+            "headerVersionId": "kopfId",
+            "taxNumber": "taxnr",
+            "vatId": "uid"
+          }
+        ],
+        "testCashregister": "testKasse",
+        "logo_scale": "logo_skala"
       },
       "werte": {
         "receipts[].cancellationStatus": {

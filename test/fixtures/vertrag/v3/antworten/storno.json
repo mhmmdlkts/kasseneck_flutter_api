@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "53bacb07e03ff6e46d2d78d0aed71daa450dde715a9f79c927f6953f76f81997",
-    "inputsSha256": "f7f7091faee9c671b006237afa8c7dbba340d0120105259fce69ddad3bf10d93",
+    "sha256": "ebac6f488dc946aebb1e7fc6ea9ccdeef3a21bfb60ff07478972b32c229f2183",
+    "inputsSha256": "df1229235f9e3230ca2d6b32ad65c0dfb5ca5a476551e92d1bc92bb2fd5d11bf",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -86,6 +86,8 @@
             "legalMessage": "STORNO zu KECK-1-ID-2 – Fehleingabe",
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": -6,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -101,6 +103,10 @@
                 "method": "creditCard",
                 "amountCents": -700,
                 "provider": "sumup",
+                "providerPaymentId": "rf-1",
+                "providerData": {
+                  "refund": "ok"
+                },
                 "refundOf": "p1"
               }
             ],
@@ -199,6 +205,8 @@
             "legalMessage": "STORNO zu KECK-1-ID-3 – Kunde hat storniert",
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": -0.79,
             "amountRateReduced2": 0,
@@ -441,6 +449,8 @@
             "legalMessage": "STORNO zu KECK-1-ID-5 – Fehleingabe",
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": -22.4,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -544,6 +554,8 @@
             "legalMessage": "STORNO zu KECK-1-ID-9 – Fehleingabe",
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
