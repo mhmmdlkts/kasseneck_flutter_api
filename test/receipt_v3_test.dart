@@ -15,8 +15,9 @@ import 'package:kasseneck_api/register.dart' show RegisterTransport;
 /// Der Beleg-, Storno- und Mailweg gegen den Vertrag `/v3`
 /// (`test/fixtures/vertrag/v3/antworten/*.json`), Zwilling von
 /// `test/receipts-v3.test.ts` im npm-Paket: jede Antwort wird mit den
-/// englischen Namen gelesen, die Anbieterdaten erscheinen nur im Kanal `app`
-/// (Kassenweg), und was hinausgeht, ist genau das, was der Vertrag zeigt.
+/// englischen Namen gelesen, die Anbieterdaten bekommt der Betrieb in beiden
+/// Kanaelen (der Vertrag entsteht mit seinem Schluessel), ein Partner-Zugang
+/// nie ([_partnerSicht]), und was hinausgeht, ist genau das, was der Vertrag zeigt.
 final _v3 = Directory('test/fixtures/vertrag/v3');
 
 Map<String, dynamic> _json(String pfad) => jsonDecode(File('${_v3.path}/$pfad').readAsStringSync()) as Map<String, dynamic>;
@@ -27,6 +28,25 @@ final _kasseBelege = _faelle('antworten/kasse-belege.json');
 final _storno = _faelle('antworten/storno.json');
 final _mail = _faelle('antworten/belegmail.json');
 final _vokabular = _json('v3-vokabular.json');
+
+/// Ein Vertragsfall, wie ihn ein Partner-Zugang saehe: Belege ohne Anbieterdaten
+/// der Zahlungen (dieselbe Regel wie das Backend, sonst nichts geaendert).
+Map<String, dynamic> _partnerSicht(Map<String, dynamic> fall) {
+  Map<String, dynamic> ohne(Map<String, dynamic> b) => {
+        for (final e in b.entries)
+          if (e.key != 'cardPaymentId' && e.key != 'cardPaymentData')
+            e.key: e.key == 'payments' && e.value is List
+                ? [
+                    for (final z in (e.value as List).cast<Map<String, dynamic>>())
+                      {for (final f in z.entries) if (f.key != 'providerPaymentId' && f.key != 'providerData') f.key: f.value},
+                  ]
+                : e.value,
+      };
+  final kopie = jsonDecode(jsonEncode(fall)) as Map<String, dynamic>;
+  final daten = (kopie['response'] as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+  if (daten['receipt'] is Map) daten['receipt'] = ohne(daten['receipt'] as Map<String, dynamic>);
+  return kopie;
+}
 
 Map<String, dynamic> _fall(List<Map<String, dynamic>> faelle, String name, {String? channel}) =>
     faelle.firstWhere((f) => f['name'] == name && (channel == null || f['channel'] == channel));
@@ -91,7 +111,7 @@ Set<String> _alleSchluessel(Object? knoten) => switch (knoten) {
       _ => const <String>{},
     };
 
-void _pruefeBeleg(KasseneckReceipt r, Map<String, dynamic> daten, String wo, {required bool kassenweg}) {
+void _pruefeBeleg(KasseneckReceipt r, Map<String, dynamic> daten, String wo) {
   final roh = daten['receipt'] as Map<String, dynamic>;
   expect(r.receiptId, roh['receiptId'], reason: wo);
   expect(r.vatId, daten['vatId'], reason: wo);
@@ -111,7 +131,6 @@ void _pruefeBeleg(KasseneckReceipt r, Map<String, dynamic> daten, String wo, {re
     final ist = r.payments![i];
     expect(ist.providerPaymentId, z['providerPaymentId'], reason: '$wo Zahlung $i');
     expect(ist.providerData, z['providerData'], reason: '$wo Zahlung $i');
-    if (!kassenweg) expect(ist.providerPaymentId, isNull, reason: '$wo: der oeffentliche Weg traegt keine Anbieterdaten');
   }
   for (final (i, p) in ((roh['items'] as List?) ?? const []).cast<Map<String, dynamic>>().indexed) {
     if (p['kind'] == 'tip') expect(r.items[i].receivedImmediately, p['receivedImmediately'], reason: '$wo Position $i');
@@ -125,16 +144,16 @@ void _pruefeBeleg(KasseneckReceipt r, Map<String, dynamic> daten, String wo, {re
 
 void main() {
   group('Beleg lesen (createReceipt, getReceipt) je Kanal', () {
-    for (final (datei, faelle, kassenweg) in [('belege', _belege, false), ('kasse-belege', _kasseBelege, true)]) {
+    for (final (datei, faelle) in [('belege', _belege), ('kasse-belege', _kasseBelege)]) {
       for (final fall in faelle) {
         final resp = fall['response'] as Map<String, dynamic>;
         if (resp['status'] != 'success' || !['createReceipt', 'getReceipt'].contains(fall['endpoint'])) continue;
-        test('$datei/${fall['name']}: englische Namen, Anbieterdaten je Kanal, Rundreise ueber toJson', () {
+        test('$datei/${fall['name']}: englische Namen, Anbieterdaten wie am Draht, Rundreise ueber toJson', () {
           final daten = resp['data'] as Map<String, dynamic>;
           final r = KasseneckReceipt.fromJson(daten);
-          _pruefeBeleg(r, daten, fall['name'] as String, kassenweg: kassenweg);
+          _pruefeBeleg(r, daten, fall['name'] as String);
           final gespeichert = r.toJson();
-          _pruefeBeleg(KasseneckReceipt.fromJson(gespeichert), daten, '${fall['name']} (gespeichert)', kassenweg: kassenweg);
+          _pruefeBeleg(KasseneckReceipt.fromJson(gespeichert), daten, '${fall['name']} (gespeichert)');
           final deutsch = _deutscheNamen(fall['endpoint'] as String).intersection(_alleSchluessel(gespeichert));
           expect(deutsch, isEmpty, reason: 'deutsche 0.x-Namen in toJson');
         });
@@ -142,7 +161,7 @@ void main() {
     }
   });
 
-  test('der Kassenweg (holen) liest den Kartenbeleg mit Kennung, der oeffentliche (getReceipt) ohne', () async {
+  test('der Betrieb liest den Kartenbeleg mit Kennung in beiden Kanaelen, ein Partner-Zugang ohne', () async {
     final app = _fall(_kasseBelege, 'get_card_receipt_with_cancellation');
     final k = _einmal(app);
     final ueberKasse = await _kasse(k.client).get('KECK-1-ID-2');
@@ -155,11 +174,15 @@ void main() {
     final a = _einmal(api);
     final oeffentlich = (await _api(a.client).getReceipt('KECK-1-ID-2'))!;
     expect(_params(a.log.single), api['params']);
+    expect(cardRefundReference(oeffentlich, 'p1'), 'tx-4711');
+
+    final p = _einmal(_partnerSicht(api));
+    final partner = (await _api(p.client).getReceipt('KECK-1-ID-2'))!;
     expect(
-      () => cardRefundReference(oeffentlich, 'p1'),
-      throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', contains('Kassenweg'))),
+      () => cardRefundReference(partner, 'p1'),
+      throwsA(isA<KasseneckValidationError>().having((e) => e.reason, 'reason', contains('ohne Anbieterdaten'))),
     );
-    expect(() => cardRefundReference(oeffentlich, 'p9'), throwsA(isA<KasseneckValidationError>()));
+    expect(() => cardRefundReference(partner, 'p9'), throwsA(isA<KasseneckValidationError>()));
   });
 
   test('Bericht (getReportV2): Metadaten mit taxNumber und vatId', () {
@@ -265,10 +288,10 @@ void main() {
       });
     }
 
-    test('Karten-Storno im Kanal api ohne Kennung der Erstattung, aber mit Original vom oeffentlichen Weg: wirft, nichts geht hinaus',
+    test('Karten-Storno im Kanal api ohne Kennung der Erstattung, mit Original ohne Anbieterdaten (Partner): wirft, nichts geht hinaus',
         () async {
       final original = KasseneckReceipt.fromJson(
-          (_fall(_belege, 'get_card_receipt_with_cancellation')['response'] as Map)['data'] as Map<String, dynamic>);
+          (_partnerSicht(_fall(_belege, 'get_card_receipt_with_cancellation'))['response'] as Map)['data'] as Map<String, dynamic>);
       final m = _einmal(_fall(_storno, 'cancel_full_card_refund', channel: 'api'));
       await expectLater(
         _api(m.client).cancelReceipt(

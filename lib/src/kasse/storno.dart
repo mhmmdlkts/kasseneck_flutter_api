@@ -119,9 +119,10 @@ String? fullReceiptIdFromNumber(String cashregisterId, String number) {
 
 /// Kennung der Originalzahlung fuer die Rueckbuchung am Terminal (Hobex
 /// `originalTransactionId`, SumUp-Transaktion …): `providerPaymentId` der
-/// Zahlung [paymentId] des Originals. Die liefert nur der Kassenweg
-/// (`kasse.kasseneck.at/api/v3`, Kanal `app`); am oeffentlichen Weg fehlt sie,
-/// und dann wirft dieser Aufruf, statt `null` an ein Terminal weiterzugeben.
+/// Zahlung [paymentId] des Originals. Die bekommt nur der Betrieb selbst
+/// (API-Schluessel oder Kassen-Anmeldung, beide Kanaele, seit dem Backend vom
+/// 30.10.2026), nie ein Partner-Zugang; fehlt sie, wirft dieser Aufruf, statt
+/// `null` an ein Terminal weiterzugeben.
 /// Zwilling von `cardRefundReference` im npm-Paket.
 String cardRefundReference(KasseneckReceipt receipt, String paymentId) {
   final zahlung = (receipt.payments ?? const <KeckPayment>[]).where((z) => z.id == paymentId).firstOrNull;
@@ -135,8 +136,8 @@ String cardRefundReference(KasseneckReceipt receipt, String paymentId) {
   if (kennung == null || kennung.isEmpty) {
     throw KasseneckValidationError(
       Aufrufe.cancelReceipt,
-      'Kennung der Kartenzahlung "$paymentId" fehlt: sie kommt nur ueber den Kassenweg '
-          '(kasse.kasseneck.at/api/v3), nicht ueber den oeffentlichen Weg',
+      'Kennung der Kartenzahlung "$paymentId" fehlt: der Beleg kam ohne Anbieterdaten '
+          '(sie bekommt nur der Betrieb selbst, mit API-Schluessel oder Kassen-Anmeldung, nie ein Partner-Zugang)',
       'request',
     );
   }
@@ -185,7 +186,8 @@ void assertCardRefunds(List<KeckPaymentInput> payments, KasseneckReceipt? origin
     throw KasseneckValidationError(
       Aufrufe.cancelReceipt,
       'Zahlung ${i + 1}: Karten-Rueckbuchung ohne Bezug: providerPaymentId der Erstattung am Terminal angeben '
-          '(oder das Original ueber den Kassenweg lesen, dort traegt es die Kennung der Kartenzahlung)',
+          '(oder das Original mit Anbieterdaten lesen: API-Schluessel des Betriebs oder Kassen-Anmeldung, '
+          'dort traegt es die Kennung der Kartenzahlung)',
       'request',
     );
   }
