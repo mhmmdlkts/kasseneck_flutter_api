@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.11.0
+  kasseneck_api: ^11.12.0
 ```
 
 ```bash
@@ -1025,6 +1025,12 @@ same receipt. `KeckPrinterService.getPaperFromReceipt` follows the same rule:
 a server layout is always printed; the local fallback prints the TESTKASSE and
 TESTSIGNATUR frames and the receipt type block (STORNOBELEG, TRAININGSBELEG,
 NULLBELEG, ...) itself.
+
+`KeckReceiptWidget(receipt: receipt)` makes that choice for you on screen: with
+a complete server layout (`receipt.isLayoutComplete`) it draws
+`KeckReceiptSheetWidget`, scaled down to the available width, otherwise the
+local fallback. Use `KeckReceiptSheetWidget` directly to choose characters per
+line, font size or QR size yourself.
 
 ## Reports, receipt history, FinanzOnline status
 
