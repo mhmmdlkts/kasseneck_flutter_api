@@ -454,8 +454,9 @@ class KasseneckApi {
   /// Terminal beschreibt die Zahlung selbst (`provider`, `providerPaymentId`,
   /// `providerData`). Eine Karten-Rueckbuchung ueber einen Anbieter braucht
   /// einen Bezug: ihre eigene `providerPaymentId` oder, mit [original], die
-  /// Kennung der erstatteten Kartenzahlung dort. Die liefert nur der
-  /// Kassenweg; ueber diesen oeffentlichen Weg traegt das Original keine
+  /// Kennung der erstatteten Kartenzahlung dort. Die bekommt der Betrieb mit
+  /// diesem API-Schluessel seit dem Backend vom 30.10.2026 auch ueber diesen
+  /// Weg ([getReceipt], [listFullReceipts]); ein Partner-Zugang nie
   /// (`cardRefundReference`). Fehlt beides, wirft der Aufruf vor dem Senden.
   ///
   /// Fachliche Ablehnungen kommen als [KasseneckApiError] mit `code` aus
@@ -958,6 +959,9 @@ class KasseneckApi {
   /// Invalid input throws a [KasseneckValidationError] (`kind: request`)
   /// before anything is sent; server errors come as [KasseneckApiError] with a
   /// code from [receiptListErrorCodes]. All pages at once: [listAllReceipts].
+  ///
+  /// [withLayout] only `false` here (it goes with either view); `true`
+  /// throws before sending, the layout comes only with [listFullReceipts].
   Future<ReceiptListPage<ReceiptListEntry>> listReceipts({
     String? date,
     String? from,
@@ -965,9 +969,11 @@ class KasseneckApi {
     int? limit,
     String? order,
     String? cursor,
+    bool? withLayout,
   }) =>
       _belegSeite(
-          receiptListParams(view: 'summary', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
+          receiptListParams(
+              view: 'summary', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor, withLayout: withLayout),
           (roh, _) => [for (final (i, e) in roh.indexed) receiptListEntry(i, e)]);
 
   /// Like [listReceipts], but with the stored receipts (`view: full`, the
@@ -980,6 +986,14 @@ class KasseneckApi {
   /// header ([KasseneckReceipt.companyName] empty), as before. The logo itself
   /// is loaded by [KasseneckReceipt.init]. Like [getReceipts], a single
   /// receipt that cannot be read is skipped instead of failing the page.
+  ///
+  /// Since the backend of 30.10.2026 every receipt is built like the one of
+  /// [getReceipt]: the header of the receipt's own version
+  /// ([ReceiptListPage.headers], not today's [ReceiptListPage.metadata]),
+  /// `testCashregister`, `testSignature`, `logoScale`, `registrationInfo`,
+  /// and with [withLayout] `true` the server layout ([KasseneckReceipt.layout]).
+  /// Provider data of card payments (`payments[].providerPaymentId`) come
+  /// with the business's own API key, never with a partner access.
   Future<ReceiptListPage<KasseneckReceipt>> listFullReceipts({
     String? date,
     String? from,
@@ -987,10 +1001,12 @@ class KasseneckApi {
     int? limit,
     String? order,
     String? cursor,
+    bool? withLayout,
   }) =>
       _belegSeite(
-          receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor),
-          (roh, kopf) => [for (final r in roh) ?_vollerBeleg(r, kopf)]);
+          receiptListParams(
+              view: 'full', date: date, from: from, to: to, limit: limit, order: order, cursor: cursor, withLayout: withLayout),
+          (roh, seite) => [for (final r in roh) ?_vollerBeleg(r, seite)]);
 
   /// All receipts of the window, page by page over `nextCursor`, as a stream
   /// (summary lines). [limit] is the page size, here 500 unless given:
@@ -1007,25 +1023,30 @@ class KasseneckApi {
   }
 
   /// Like [listAllReceipts], with the stored receipts (see [listFullReceipts]).
-  Stream<KasseneckReceipt> listAllFullReceipts({String? date, String? from, String? to, int? limit, String? order}) {
-    receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order);
+  Stream<KasseneckReceipt> listAllFullReceipts(
+      {String? date, String? from, String? to, int? limit, String? order, bool? withLayout}) {
+    receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order, withLayout: withLayout);
     return _alleSeiten((c) => listFullReceipts(
-        date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c));
+        date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c, withLayout: withLayout));
   }
 
   Future<ReceiptListPage<T>> _belegSeite<T>(
-      Map<String, dynamic> params, List<T> Function(List<Object?> roh, Map<String, dynamic>? metadata) eintraege) async {
+      Map<String, dynamic> params, List<T> Function(List<Object?> roh, ReceiptListContext seite) eintraege) async {
     const name = Aufrufe.listReceipts;
     final resJson = await _kasseneckJson(endpoint: name, params: params);
     if (resJson['status'] != 'success') throw envelopeError(name, resJson);
     return receiptListPage(_daten(name, resJson), eintraege);
   }
 
-  /// Ein Beleg der vollen Ansicht oder `null`, mit den Kopfdaten der Seite
-  /// (derselbe Weg wie frueher getReportV2); ohne `metadata` ohne Kopf.
-  static KasseneckReceipt? _vollerBeleg(Object? roh, Map<String, dynamic>? kopf) {
+  /// Ein Beleg der vollen Ansicht oder `null`: wie [getReceipt] aus der Huelle,
+  /// die die Seite fuer ihn traegt ([receiptListEnvelope]); von einem
+  /// aelteren Backend ohne `headers` mit `metadata` wie frueher getReportV2,
+  /// ohne beides ohne Kopf.
+  static KasseneckReceipt? _vollerBeleg(Object? roh, ReceiptListContext seite) {
     try {
-      return KasseneckReceipt.fromMetadata(roh, kopf ?? const {});
+      final huelle = receiptListEnvelope(roh, seite);
+      if (huelle != null) return KasseneckReceipt.fromJson(huelle);
+      return KasseneckReceipt.fromMetadata(roh, seite.metadata ?? const {});
     } catch (e) {
       debugPrint('listFullReceipts: Beleg übersprungen (${roh is Map ? roh['receiptId'] : roh}): $e');
       return null;

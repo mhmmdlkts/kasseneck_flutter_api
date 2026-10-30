@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "34ee7654a5df2ecf75982d65af731b9a501d978b4ef7fae041817cb2d4915343",
-    "inputsSha256": "931df962ad989229c326fa42dbfda9a5535c23bdd9a52425f19d53dfaa2d6abc",
+    "sha256": "e08f193ea91d6c45f519253aaf747f360ba09b8a7aa45e6a5dca5c0d595289d5",
+    "inputsSha256": "4c4b02dbadd33a5a0919a74eafc7a984a08dfd7d0da708619ad7ecbdbec5c5a2",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -76,6 +76,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -369,6 +371,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 6,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -383,7 +387,12 @@
                 "id": "p1",
                 "method": "creditCard",
                 "amountCents": 700,
-                "provider": "sumup"
+                "provider": "sumup",
+                "providerPaymentId": "tx-4711",
+                "providerData": {
+                  "cardLast4": "4242",
+                  "terminal": "T1"
+                }
               }
             ],
             "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMl8yMDI2LTA5LTI2VDEwOjAwOjAwXzYsMDBfMCwwMF8wLDAwXzEsMDBfMCwwMF9naXJsbm1DVl9BQkMxMjNfNk1uNGJ4NE4vTTg9.8VaXQwBb_1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg",
@@ -857,6 +866,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 3.16,
             "amountRateReduced2": 0,
@@ -1230,6 +1241,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 7,
             "amountRateReduced2": 0,
@@ -1249,7 +1262,12 @@
                 "id": "p2",
                 "method": "creditCard",
                 "amountCents": 500,
-                "provider": "sumup"
+                "provider": "sumup",
+                "providerPaymentId": "tx-4712",
+                "providerData": {
+                  "cardLast4": "4242",
+                  "terminal": "T1"
+                }
               }
             ],
             "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfNywwMF8wLDAwXzAsMDBfMCwwMF9WMmVrYXYyMF9BQkMxMjNfTk1PQW9qckhRbWM9.-OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA-ewViGfUdVOhpPn0tpqzrp30x4B1j_yNJ3gBjVOeSNDJolfdVw",
@@ -1711,6 +1729,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 8.7,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -2065,6 +2085,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -2528,6 +2550,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 6,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -2542,7 +2566,12 @@
                 "id": "p1",
                 "method": "creditCard",
                 "amountCents": 700,
-                "provider": "sumup"
+                "provider": "sumup",
+                "providerPaymentId": "tx-4711",
+                "providerData": {
+                  "cardLast4": "4242",
+                  "terminal": "T1"
+                }
               }
             ],
             "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMl8yMDI2LTA5LTI2VDEwOjAwOjAwXzYsMDBfMCwwMF8wLDAwXzEsMDBfMCwwMF9naXJsbm1DVl9BQkMxMjNfNk1uNGJ4NE4vTTg9.8VaXQwBb_1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg",
@@ -3023,6 +3052,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 3.16,
             "amountRateReduced2": 0,
@@ -3425,6 +3456,8 @@
             "legalMessage": "STORNO zu KECK-1-ID-2 – Fehleingabe",
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": -6,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -3440,6 +3473,10 @@
                 "method": "creditCard",
                 "amountCents": -700,
                 "provider": "sumup",
+                "providerPaymentId": "rf-1",
+                "providerData": {
+                  "refund": "ok"
+                },
                 "refundOf": "p1"
               }
             ],
@@ -3946,6 +3983,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 7,
             "amountRateReduced2": 0,
@@ -3965,7 +4004,12 @@
                 "id": "p2",
                 "method": "creditCard",
                 "amountCents": 500,
-                "provider": "sumup"
+                "provider": "sumup",
+                "providerPaymentId": "tx-4712",
+                "providerData": {
+                  "cardLast4": "4242",
+                  "terminal": "T1"
+                }
               }
             ],
             "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfNywwMF8wLDAwXzAsMDBfMCwwMF9WMmVrYXYyMF9BQkMxMjNfTk1PQW9qckhRbWM9.-OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA-ewViGfUdVOhpPn0tpqzrp30x4B1j_yNJ3gBjVOeSNDJolfdVw",
@@ -4397,6 +4441,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -4699,6 +4745,8 @@
               "legalMessage": null,
               "customProjectId": null,
               "creditCardProvider": null,
+              "cardPaymentId": null,
+              "cardPaymentData": null,
               "amountRateStandard": 0,
               "amountRateReduced1": 0,
               "amountRateReduced2": 0,
@@ -4729,6 +4777,8 @@
               "legalMessage": null,
               "customProjectId": null,
               "creditCardProvider": null,
+              "cardPaymentId": null,
+              "cardPaymentData": null,
               "amountRateStandard": 6,
               "amountRateReduced1": 0,
               "amountRateReduced2": 0,
@@ -4743,7 +4793,12 @@
                   "id": "p1",
                   "method": "creditCard",
                   "amountCents": 700,
-                  "provider": "sumup"
+                  "provider": "sumup",
+                  "providerPaymentId": "tx-4711",
+                  "providerData": {
+                    "cardLast4": "4242",
+                    "terminal": "T1"
+                  }
                 }
               ],
               "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtMl8yMDI2LTA5LTI2VDEwOjAwOjAwXzYsMDBfMCwwMF8wLDAwXzEsMDBfMCwwMF9naXJsbm1DVl9BQkMxMjNfNk1uNGJ4NE4vTTg9.8VaXQwBb_1qUWiN4ic16Cm895xtSRuMLh8gpgX9iXxeggQTkkDbTMiu0k05rQq5n4Sb9LFrKbOTM1DsXwKhAwg",
@@ -4810,6 +4865,8 @@
               "legalMessage": null,
               "customProjectId": null,
               "creditCardProvider": null,
+              "cardPaymentId": null,
+              "cardPaymentData": null,
               "amountRateStandard": 0,
               "amountRateReduced1": 3.16,
               "amountRateReduced2": 0,
@@ -4873,6 +4930,8 @@
               "legalMessage": null,
               "customProjectId": null,
               "creditCardProvider": null,
+              "cardPaymentId": null,
+              "cardPaymentData": null,
               "amountRateStandard": 0,
               "amountRateReduced1": 7,
               "amountRateReduced2": 0,
@@ -4892,7 +4951,12 @@
                   "id": "p2",
                   "method": "creditCard",
                   "amountCents": 500,
-                  "provider": "sumup"
+                  "provider": "sumup",
+                  "providerPaymentId": "tx-4712",
+                  "providerData": {
+                    "cardLast4": "4242",
+                    "terminal": "T1"
+                  }
                 }
               ],
               "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtNF8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfNywwMF8wLDAwXzAsMDBfMCwwMF9WMmVrYXYyMF9BQkMxMjNfTk1PQW9qckhRbWM9.-OysxJgnuauIJHzFDRcQITpVPhgSiyRCOYLA-ewViGfUdVOhpPn0tpqzrp30x4B1j_yNJ3gBjVOeSNDJolfdVw",
@@ -4932,6 +4996,8 @@
               "legalMessage": null,
               "customProjectId": null,
               "creditCardProvider": null,
+              "cardPaymentId": null,
+              "cardPaymentData": null,
               "amountRateStandard": 8.7,
               "amountRateReduced1": 0,
               "amountRateReduced2": 0,
@@ -4979,6 +5045,8 @@
               "legalMessage": null,
               "customProjectId": null,
               "creditCardProvider": null,
+              "cardPaymentId": null,
+              "cardPaymentData": null,
               "amountRateStandard": 0,
               "amountRateReduced1": 0,
               "amountRateReduced2": 0,
@@ -5013,6 +5081,8 @@
               "legalMessage": "STORNO zu KECK-1-ID-2 – Fehleingabe",
               "customProjectId": null,
               "creditCardProvider": null,
+              "cardPaymentId": null,
+              "cardPaymentData": null,
               "amountRateStandard": -6,
               "amountRateReduced1": 0,
               "amountRateReduced2": 0,
@@ -5028,6 +5098,10 @@
                   "method": "creditCard",
                   "amountCents": -700,
                   "provider": "sumup",
+                  "providerPaymentId": "rf-1",
+                  "providerData": {
+                    "refund": "ok"
+                  },
                   "refundOf": "p1"
                 }
               ],
@@ -5083,6 +5157,8 @@
               "legalMessage": "STORNO zu KECK-1-ID-3 – Kunde hat storniert",
               "customProjectId": null,
               "creditCardProvider": null,
+              "cardPaymentId": null,
+              "cardPaymentData": null,
               "amountRateStandard": 0,
               "amountRateReduced1": -0.79,
               "amountRateReduced2": 0,
@@ -5218,6 +5294,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 50,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -5586,6 +5664,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -5954,6 +6034,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 70,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -6328,6 +6410,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 22.4,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -6731,6 +6815,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 3.4,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -7146,6 +7232,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 6.4,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -7573,6 +7661,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 5.06,
             "amountRateReduced1": 2.5,
             "amountRateReduced2": 0,
@@ -7984,6 +8074,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 0,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,
@@ -8326,6 +8418,8 @@
             "legalMessage": null,
             "customProjectId": null,
             "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
             "amountRateStandard": 3.4,
             "amountRateReduced1": 0,
             "amountRateReduced2": 0,

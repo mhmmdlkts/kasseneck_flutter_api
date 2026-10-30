@@ -35,6 +35,8 @@ const Set<String> receiptListErrorCodes = {
   'invalid_order',
   'invalid_view',
   'invalid_cursor',
+  // withLayout kein Boolean oder true ohne view full (Backend 30.10.2026).
+  'invalid_with_layout',
   'server_error',
 };
 
@@ -189,6 +191,9 @@ class ReceiptListPage<T> {
     required this.nextCursor,
     required this.daySummary,
     this.metadata,
+    this.headers,
+    this.testCashregister,
+    this.logoScale,
   });
 
   final List<T> receipts;
@@ -215,6 +220,60 @@ class ReceiptListPage<T> {
   // Daten seit jeher roh an `KasseneckReceipt.fromMetadata` weiter, und eine
   // zweite Lesart derselben Felder koennte nur auseinanderlaufen.
   final Map<String, dynamic>? metadata;
+
+  /// Die Kopf-Versionen der Belege dieser Seite, je Version einmal, aelteste
+  /// zuerst (nur volle Ansicht, Backend ab 30.10.2026): dieselben Felder wie
+  /// die Huelle von `getReceipt` plus `headerVersionId`. Jeder Beleg traegt
+  /// in `headerVersionId` die Version, die fuer ihn gilt; fuer den Druck gilt
+  /// dieser Eintrag, nicht [metadata] (heutiger Stand). Die Belege der Seite
+  /// sind damit schon gebaut. `null` in der Kurzansicht und von einem
+  /// aelteren Backend. Nur lesbar.
+  final List<Map<String, dynamic>>? headers;
+
+  /// Belege einer Testumgebung (Aufdruck TESTKASSE), wie `getReceipt`; nur
+  /// volle Ansicht, `null` von einem aelteren Backend.
+  final bool? testCashregister;
+
+  /// Groesse des Firmenlogos (`logo_scale`, S/M/L/XL), wie `getReceipt`; nur
+  /// volle Ansicht, `null` von einem aelteren Backend.
+  final String? logoScale;
+}
+
+/// Was eine Seite der vollen Ansicht neben den Belegen traegt; [receiptListPage]
+/// reicht es an das Lesen der Eintraege weiter.
+typedef ReceiptListContext = ({
+  Map<String, dynamic>? metadata,
+  List<Map<String, dynamic>>? headers,
+  bool? testCashregister,
+  String? logoScale,
+});
+
+/// Die Huelle, die `getReceipt` fuer einen Beleg der vollen Ansicht liefert
+/// (Kopf der Version des Belegs aus `headers`, Kennzeichen der Seite,
+/// `testSignature`, `registrationInfo` und `layout` vom Beleg), damit
+/// [KasseneckReceipt.fromJson] ihn genau so baut. Nullbelege tragen wie beim
+/// Server kein Logo. `null`, wenn die Seite keine `headers` traegt (aelteres
+/// Backend) oder keiner zum Beleg passt: dann gilt wie bisher [metadata].
+Map<String, dynamic>? receiptListEnvelope(Object? roh, ReceiptListContext seite) {
+  final koepfe = seite.headers;
+  if (koepfe == null || roh is! Map) return null;
+  final beleg = Map<String, dynamic>.from(roh);
+  final kennung = beleg['headerVersionId'];
+  final kopf = koepfe.where((h) => h['headerVersionId'] == kennung).firstOrNull;
+  if (kopf == null) return null;
+  final testSignatur = beleg.remove('testSignature');
+  final layout = beleg.remove('layout');
+  return {
+    ...Map<String, dynamic>.from(kopf)..remove('headerVersionId'),
+    if (beleg['receiptType'] == 'zero') 'logo_url': null,
+    'receipt': beleg,
+    'headerVersionId': kennung,
+    'testCashregister': seite.testCashregister == true,
+    'testSignature': testSignatur == true,
+    'logo_scale': seite.logoScale,
+    'registrationInfo': beleg['registrationInfo'],
+    'layout': layout,
+  };
 }
 
 final RegExp _tag = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
@@ -250,6 +309,7 @@ Map<String, dynamic> receiptListParams({
   int? limit,
   String? order,
   String? cursor,
+  bool? withLayout,
 }) {
   const name = Aufrufe.listReceipts;
   KasseneckValidationError fehler(String grund) => KasseneckValidationError(name, grund, 'request');
@@ -277,13 +337,15 @@ Map<String, dynamic> receiptListParams({
   }
   if (order != null && !receiptListOrders.contains(order)) throw fehler('order muss desc oder asc sein');
   if (cursor != null && cursor.isEmpty) throw fehler('cursor ist leer');
-  return {...fenster, 'limit': ?limit, 'order': ?order, 'view': view, 'cursor': ?cursor};
+  // Zeilenmodell je Beleg: true nur in der vollen Ansicht, false geht immer (wie das Backend).
+  if (withLayout == true && view != 'full') throw fehler('withLayout: true geht nur mit view full');
+  return {...fenster, 'limit': ?limit, 'order': ?order, 'view': view, 'cursor': ?cursor, 'withLayout': ?withLayout};
 }
 
-/// Eine Seite aus `data`; die Eintraege liest [eintraege], mit den
-/// Betriebsdaten der Seite (`data.metadata`, nur in der vollen Ansicht).
-ReceiptListPage<T> receiptListPage<T>(
-    Map<String, dynamic> daten, List<T> Function(List<Object?> roh, Map<String, dynamic>? metadata) eintraege) {
+/// Eine Seite aus `data`; die Eintraege liest [eintraege], mit dem, was die
+/// Seite neben den Belegen traegt (`metadata`, `headers`, Kennzeichen; nur in
+/// der vollen Ansicht).
+ReceiptListPage<T> receiptListPage<T>(Map<String, dynamic> daten, List<T> Function(List<Object?> roh, ReceiptListContext seite) eintraege) {
   const name = Aufrufe.listReceipts;
   final roh = daten['receipts'];
   if (roh is! List) {
@@ -304,12 +366,26 @@ ReceiptListPage<T> receiptListPage<T>(
   // aus wie ein Betrieb ohne Namen (§ 132a Abs. 3 Z 1 BAO), wie npm 1.16.0.
   final rohKopf = daten['metadata'];
   final kopf = rohKopf == null ? null : Map<String, dynamic>.unmodifiable(_objekt('metadata', rohKopf));
+  // headers (Backend ab 30.10.2026): eine Liste von Objekten oder gar nicht; alles andere ist eine kaputte Antwort.
+  final rohKoepfe = daten['headers'];
+  if (rohKoepfe != null && (rohKoepfe is! List || rohKoepfe.any((h) => h is! Map))) {
+    throw antwortfehler(name, 'Antwort ist unbrauchbar (data.headers)');
+  }
+  final koepfe = rohKoepfe == null
+      ? null
+      : List<Map<String, dynamic>>.unmodifiable([for (final h in rohKoepfe as List) Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(h as Map))]);
+  final testKasse = daten['testCashregister'] is bool ? daten['testCashregister'] as bool : null;
+  final stufe = daten['logo_scale'] is String ? daten['logo_scale'] as String : null;
+  final seite = (metadata: kopf, headers: koepfe, testCashregister: testKasse, logoScale: stufe);
   return ReceiptListPage<T>(
-    receipts: List.unmodifiable(eintraege(roh, kopf)),
+    receipts: List.unmodifiable(eintraege(roh, seite)),
     hasMore: mehr,
     nextCursor: cursor,
     daySummary: _tagesSumme(daten['daySummary']),
     metadata: kopf,
+    headers: koepfe,
+    testCashregister: testKasse,
+    logoScale: stufe,
   );
 }
 

@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "3088cb472f3fef3ed4ff969bf0d37d051363714096616a9263270c58266bde14",
-    "inputsSha256": "931df962ad989229c326fa42dbfda9a5535c23bdd9a52425f19d53dfaa2d6abc",
+    "sha256": "96368bb8264d3d8c1376f57d93d0f417e031e790657cb0646e80841eb7219e7d",
+    "inputsSha256": "4c4b02dbadd33a5a0919a74eafc7a984a08dfd7d0da708619ad7ecbdbec5c5a2",
     "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -1312,6 +1312,7 @@
       "invalid_vehicle",
       "invalid_view",
       "invalid_webhook_url",
+      "invalid_with_layout",
       "invalid_year",
       "inventory_api_not_enabled",
       "invoice_ambiguous",
@@ -2096,6 +2097,7 @@
       "invalid_order",
       "invalid_view",
       "invalid_cursor",
+      "invalid_with_layout",
       "server_error"
     ],
     "registerCases": [
@@ -5548,14 +5550,35 @@
                 "keptByEmployee": "direkt"
               }
             ],
-            "cancellationStatus": "stornoStand"
+            "cancellationStatus": "stornoStand",
+            "testSignature": "testSignatur",
+            "layout": {
+              "__": "layout",
+              "ruleset": "regelwerk",
+              "lines": [
+                {
+                  "__": "lines",
+                  "tone": "ton"
+                }
+              ]
+            }
           }
         ],
         "metadata": {
           "__": "metadata",
           "taxNumber": "taxnr",
           "vatId": "uid"
-        }
+        },
+        "headers": [
+          {
+            "__": "kopfVersionen",
+            "headerVersionId": "kopfId",
+            "taxNumber": "taxnr",
+            "vatId": "uid"
+          }
+        ],
+        "testCashregister": "testKasse",
+        "logo_scale": "logo_skala"
       },
       "werte": {
         "receipts[].cancellationStatus": {
@@ -5563,6 +5586,9 @@
         },
         "receipts[].cancellationReason": {
           "$catalog": "STORNO_GRUND"
+        },
+        "receipts[].layout.lines[].tone": {
+          "$catalog": "LAYOUT_TON"
         }
       },
       "ergaenze": {

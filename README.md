@@ -1068,15 +1068,21 @@ await for (final r in kasseneck.listAllReceipts(from: '2026-10-01', to: '2026-11
   print(r.receiptId);
 }
 
-// The stored receipts instead of summary lines.
-final full = await kasseneck.listFullReceipts(date: '2026-10-27', limit: 100);
+// The stored receipts instead of summary lines, built like getReceipt;
+// withLayout: true adds the server layout to every receipt.
+final full = await kasseneck.listFullReceipts(date: '2026-10-27', limit: 100, withLayout: true);
 ```
 
 The method fixes the view: `listReceipts` and `listAllReceipts` return
 `ReceiptListEntry` (`view: summary`), `listFullReceipts` and
-`listAllFullReceipts` return `KasseneckReceipt` (`view: full`, with the header
-data of the business from `page.metadata` since 11.7, as with `getReceipts`;
-a backend without `metadata` gives receipts without header). A
+`listAllFullReceipts` return `KasseneckReceipt` (`view: full`). From the
+backend of 30.10.2026 every receipt is built like the one of `getReceipt`: the
+header of its own version (`page.headers`, not today's `page.metadata`),
+`testCashregister`, `testSignature`, `logoScale`, `registrationInfo`, and with
+`withLayout: true` the server `layout`; card payments carry
+`providerPaymentId` with the business's own API key (never with a partner
+access). An older backend gives the header from `page.metadata` (since 11.7),
+or none. `withLayout: true` only goes with the full view. A
 wrong date, a period over 31 days, a `limit` outside 1–500 or an unknown
 `order` throws a `KasseneckValidationError` before anything is sent.
 `daySummary.revenueCents` comes from the daily statistics and is not the sum of

@@ -1,3 +1,30 @@
+## Unreleased (next free minor, set on release; twin of the next npm minor)
+
+The full view of `listReceipts` delivers what `getReceipt` delivers (backend
+30.10.2026, spec `list-receipts-voll`). Additive.
+
+- **`listFullReceipts(withLayout:)` and `listAllFullReceipts(withLayout:)`:**
+  with `true` every receipt carries the server layout
+  (`KasseneckReceipt.layout`). `true` only with the full view; `listReceipts`
+  takes only `false`. New code `invalid_with_layout` in
+  `receiptListErrorCodes`. Reason: the app no longer fetches `getReceipt` per
+  receipt to show it from the history.
+- **Every receipt of the full view is built like the one of `getReceipt`:** the
+  header of the receipt's own version from the new `ReceiptListPage.headers`
+  (not today's `metadata`), `testCashregister` and `logoScale` of the page,
+  `testSignature`, `registrationInfo` and `layout` of the receipt; zero
+  receipts carry no logo. New page fields `headers`, `testCashregister`,
+  `logoScale` (`null` from an older backend, which still builds from
+  `metadata`). Reason: a reprinted old receipt showed today's address and
+  footer.
+- **Provider data follow the caller, not the channel.** The backend returns
+  `payments[].providerPaymentId`/`providerData` to the business itself on both
+  channels, so `cardRefundReference` works with a receipt from
+  `getReceipt`/`listFullReceipts` over the API key too; a partner access never
+  gets them. Messages of `cardRefundReference` and of the card-refund check
+  name that rule.
+- Contract re-pulled (provider data in the `/v3` cases, `listReceipts` schema).
+
 ## 11.8.2 (2026-10-29)
 
 Twin of `@kreiseck/kasseneck-api` `1.17.1` (contract files pulled from that
