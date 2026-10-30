@@ -45,7 +45,7 @@
   - All five count as repeatable after a lost answer (`rejected` outcome, not
     `unknown`): the same `requestId` returns the export already created, a link
     can be revoked. Pull the contract with the next twin version (npm `1.19.0`);
-    until then `zwillinge.yaml` stays at `1.17.1` and the calls are covered by
+    until then `zwillinge.yaml` stays at `1.18.0` and the calls are covered by
     `test/dep_nachschau_test.dart`.
 - Dev dependency `fake_async` for the waiting tests.
 
