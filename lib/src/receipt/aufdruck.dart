@@ -102,8 +102,9 @@ String _handbelegDatum(String tag) {
 
 /// Block „NACHERFASSUNG“ (manualReceipt) unter dem Kopf: Art, Grund, Nummer und
 /// Tag des Handbelegs bzw. der Handbelege eines Tagessammelbelegs, dazu der
-/// Hinweis, dass der Beleg fuer die USt ein Duplikat ist (Erlass 2019, 3.3
-/// Faelle 5 und 6, 2.4.11); nicht bei Kleinunternehmern. Leer ohne Handbeleg.
+/// Hinweis, dass der Beleg fuer die USt ein Duplikat ist
+/// (Registrierkassenerlass 3.3 Faelle 5 und 6, 2.4.11); nicht bei
+/// Kleinunternehmern. Leer ohne Handbeleg.
 /// Zwilling von `nacherfassungBlock` im npm-Paket.
 List<LayoutLine> nacherfassungBlock(KasseneckReceipt beleg) {
   final m = beleg.manualReceipt;

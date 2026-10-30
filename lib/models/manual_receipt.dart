@@ -4,8 +4,9 @@
 /// dann Nummer, Datum und Grund des Handbelegs; sein eigener Zeitstempel bleibt
 /// der Zeitpunkt der Nacherfassung (kein Rueckdatieren).
 ///
-/// Rechtsgrundlage: § 17 Abs 5 RKSV, Erlass 2019 Abschnitt 3.6.1 (Ausfall,
-/// Tagessammelbeleg erlaubt) und 6.7 (ausser Haus, jeder Beleg einzeln).
+/// Rechtsgrundlage: § 17 Abs 5 RKSV, Registrierkassenerlass Abschnitt 3.6.1
+/// (Ausfall, Tagessammelbeleg erlaubt) und 6.7 (ausser Haus, jeder Beleg
+/// einzeln; nicht fuer Taxi und Mietwagen, § 7 Abs 2 BarUV).
 /// Geprueft wird am Server. Zwilling von `models/manual-receipt.ts` im npm-Paket.
 library;
 
