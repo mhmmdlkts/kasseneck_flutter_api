@@ -9,6 +9,8 @@ import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/sumup_checkout_response.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart';
+import 'package:kasseneck_api/widgets/keck_receipt_sheet_widget.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
 import 'package:kasseneck_api/src/receipt/einzug.dart';
 import 'package:kasseneck_api/src/receipt/gutschein_bon.dart';
@@ -20,7 +22,14 @@ import '../models/print_paper.dart';
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
 
 
-/// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [PrintPaper.setReceiptSheet] bzw. `KeckReceiptSheetWidget`.
+/// Ein Beleg am Bildschirm. Traegt er ein vollstaendiges Zeilenmodell des
+/// Servers ([KasseneckReceipt.isLayoutComplete]), zeichnet das Widget das Blatt
+/// ([KeckReceiptSheetWidget]) -- dieselben Zeilen wie Bon und PDF, bei Bedarf
+/// verkleinert. Sonst zeichnet es den lokalen Rueckfall aus den Belegangaben
+/// (Backends vor npm 0.9.0, Layout ohne Kartenblock je Zahlung).
+/// [paperColor] wird die Papierfarbe des Blatts, [qrColor] seine Schrift- und
+/// QR-Farbe. Wer Zeichenzahl, Schriftgroesse oder QR-Mass selbst waehlen will,
+/// nimmt [KeckReceiptSheetWidget] direkt (Druck: [PrintPaper.setReceiptSheet]).
 class KeckReceiptWidget extends StatefulWidget {
   final Color paperColor;
   final Color qrColor;
@@ -86,8 +95,31 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Mit vollstaendigem Zeilenmodell des Servers das Blatt: nur dort stehen
+    // dieselben Zeilen wie auf Bon und PDF (etwa die Zahlungen einzeln mit
+    // Betrag statt „Mehrere Zahlungsarten“). Ein Layout ohne den Kartenblock
+    // je Zahlung (Backend vor der Aufschluesselung) zeichnet weiter der lokale
+    // Weg -- Kasse und karteck rufen das Widget genau dafuer als Rueckfall auf.
+    if (widget.receipt.isLayoutComplete) return _blatt(widget.receipt.layout!);
     return receiptWidget();
   }
+
+  // Das Blatt hat eine feste Zeichenzahl je Zeile; ist der Platz schmaler,
+  // wird es kleiner gezeichnet statt Zeichen am Rand zu verlieren.
+  Widget _blatt(ReceiptLayout layout) => FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.topCenter,
+        child: KeckReceiptSheetWidget(
+          layout: layout,
+          logoUrl: widget.receipt.logoUrl,
+          logoSize: widget.receipt.logoScale,
+          brandMark: widget.receipt.showKreiseckLogo,
+          paperColor: widget.paperColor,
+          textColor: widget.qrColor,
+          qrCovered: widget.qrCovered,
+          qrCoveredText: widget.qrCoveredText,
+        ),
+      );
 
   void setTemp() {
     temp = [

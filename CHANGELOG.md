@@ -1,3 +1,26 @@
+## 11.12.0 (2026-10-31)
+
+No twin change (Flutter widget only, contract files unchanged).
+
+- **`KeckReceiptWidget` draws the server's line model when the receipt carries
+  a complete one.** With `receipt.isLayoutComplete` the widget now shows
+  `KeckReceiptSheetWidget` (the same lines as paper and PDF), otherwise the
+  local fallback as before. Reason: an app that showed every receipt with
+  `KeckReceiptWidget` printed only "Zahlungsart: Mehrere Zahlungsarten" for card
+  plus cash tip, while the server's receipt lists each payment with its amount
+  ("1. Kartenzahlung 35,00 €", "2. Barzahlung 3,00 €"). The fallback cannot
+  build that block; the server's layout already has it.
+  - `paperColor` becomes the sheet's paper colour, `qrColor` its text and QR
+    colour; `qrCovered`/`qrCoveredText` and the receipt's logo (`logoUrl`,
+    `logoScale`, `showKreiseckLogo`) are passed on.
+  - The sheet keeps its fixed characters per line and is scaled down when the
+    space is narrower (`FittedBox`), instead of losing characters at the edge.
+  - A layout without the card block of each payment (backend before the
+    breakdown, `isLayoutComplete == false`) still draws the fallback: Kasse and
+    karteck call the widget exactly for that case.
+  - Apps that already choose between `KeckReceiptSheetWidget` and
+    `KeckReceiptWidget` themselves see no change.
+
 ## 11.11.0 (2026-10-30)
 
 Twin of `@kreiseck/kasseneck-api` `1.20.0` (contract files pulled from that
