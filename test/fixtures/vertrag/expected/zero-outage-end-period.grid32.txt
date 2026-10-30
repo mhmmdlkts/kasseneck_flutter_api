@@ -1,0 +1,35 @@
+        Bäckerei Muster         
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345675           
+         +43 6134 12345         
+                                
+================================
+           NULLBELEG            
+================================
+ Prüfbeleg nach Signaturausfall 
+                                
+Datum:       13.08.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-50
+                                
+--------------------------------
+          Prüfangaben           
+Barumsatz:                0,00 €
+Signatur:               signiert
+Signaturkarte:        0x5A1C3E07
+Zertifizierungsdi  A-Trust (AT1)
+enst:                           
+Karte                 12.03.2024
+registriert:                    
+Kasse                 12.03.2024
+registriert:                    
+--------------------------------
+                                
+     Sicherheitseinrichtung     
+ausgefallen von 12.08.2026 08:10
+ bis 13.08.2026 10:14 (ab Beleg 
+         AT0-KASSE1-41)         
+                                
+           [QR-Code]            
+                                

@@ -1,0 +1,55 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "isSmallBusiness": false,
+    "thanksMessage": [],
+    "showKreiseckLogo": false,
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at"
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-103",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-11-04T07:05:12",
+    "items": [
+      {
+        "name": "Semmel",
+        "quantity": 4,
+        "unitPriceCents": 79,
+        "vatRate": 10
+      },
+      {
+        "name": "Kaffee klein",
+        "quantity": 1,
+        "unitPriceCents": 280,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "cash",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-103_2026-11-04T07:05:12_0,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "manualReceipt": {
+      "number": "233",
+      "date": "2026-11-03",
+      "time": "16:48",
+      "reason": "power_outage"
+    }
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

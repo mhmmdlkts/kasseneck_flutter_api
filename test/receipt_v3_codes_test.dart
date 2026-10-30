@@ -68,7 +68,7 @@ void main() {
 
   test('jeder Fehlercode eines Belegfalls im Vertrag steht in einer Liste seines Endpunkts', () {
     final listen = <String, List<String>>{
-      'createReceipt': [...receiptErrorCodes, ...paymentErrorCodes],
+      'createReceipt': [...receiptErrorCodes, ...paymentErrorCodes, ...manualReceiptErrorCodes],
       'getReceipt': receiptErrorCodes,
       'cancelReceipt': [...cancellationErrorCodes, ...paymentErrorCodes],
       'sendReceiptEmail': receiptEmailErrorCodes,
