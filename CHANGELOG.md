@@ -1,4 +1,4 @@
-## 11.9.0 (2026-10-30)
+## 11.10.0 (2026-10-30)
 
 - **DEP export for the inspection by the tax authority (Kassennachschau,
   § 19 para 2 RKSV).** Five new calls, `/v3` only, api_key + cash register
@@ -44,7 +44,7 @@
     `invalid_file`, `file_not_available`, `too_many_links`, `link_not_found`, ...).
   - All five count as repeatable after a lost answer (`rejected` outcome, not
     `unknown`): the same `requestId` returns the export already created, a link
-    can be revoked. Pull the contract with the next twin version (npm `1.18.0`);
+    can be revoked. Pull the contract with the next twin version (npm `1.19.0`);
     until then `zwillinge.yaml` stays at `1.17.1` and the calls are covered by
     `test/dep_nachschau_test.dart`.
 - Dev dependency `fake_async` for the waiting tests.
