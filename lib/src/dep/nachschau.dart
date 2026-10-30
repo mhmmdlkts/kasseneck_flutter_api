@@ -406,10 +406,17 @@ DepDownloadLink depLeseLink(String name, String exportId, String file, Map<Strin
   return _downloadLink(name, exportId, file, dl);
 }
 
+// Der signierte Link geht nur ueber https; http nur fuer den lokalen Storage-Emulator.
+bool _linkErlaubt(Uri uri) {
+  if (uri.host.isEmpty) return false;
+  if (uri.scheme == 'https') return true;
+  return uri.scheme == 'http' && (uri.host == 'localhost' || uri.host == '127.0.0.1');
+}
+
 DepDownloadLink _downloadLink(String name, String exportId, String file, Map<String, dynamic> dl) {
   final url = dl['url'];
   final uri = url is String ? Uri.tryParse(url) : null;
-  if (uri == null || !(uri.scheme == 'https' || uri.scheme == 'http') || uri.host.isEmpty) {
+  if (uri == null || !_linkErlaubt(uri)) {
     throw antwortfehler(name, 'Antwort ist unbrauchbar (data.download.url)');
   }
   final sha = dl['sha256'];

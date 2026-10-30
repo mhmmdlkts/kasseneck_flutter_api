@@ -398,11 +398,27 @@ void main() {
     test('Link mit unbrauchbarer Adresse oder Pruefsumme ist ein Antwortfehler', () async {
       for (final dl in [
         {'url': 'ftp://x/y'},
+        {'url': 'http://example.com/x'},
         {'url': 'https://speicher.example/x', 'sha256': 'zz'},
         <String, dynamic>{},
       ]) {
         final api = _api(MockClient((r) async => _erfolg({'download': dl})));
         await expectLater(api.getDepExportFile(_id, 'zip'), throwsA(isA<KasseneckValidationError>()));
+      }
+    });
+
+    test('http ist nur fuer localhost und 127.0.0.1 erlaubt', () async {
+      final b = Uint8List.fromList([7]);
+      for (final host in ['127.0.0.1:9199', 'localhost:9199']) {
+        final api = _api(
+          MockClient((r) async {
+            if (r.url.host != 'api.kasseneck.at') return http.Response.bytes(b, 200);
+            return _erfolg({
+              'download': {'url': 'http://$host/b/x?alt=media', 'fileName': 'a.zip'},
+            });
+          }),
+        );
+        expect((await api.getDepExportFile(_id, 'zip')).bytes, b);
       }
     });
 

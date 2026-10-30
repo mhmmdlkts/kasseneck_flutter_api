@@ -107,8 +107,11 @@ const Set<String> _lesen = {
 /// Stripe-Zahlungslink. Mit `unknown` saehe die Kasse beim Zeitlimit der
 /// Anmeldung „kann gebucht sein“.
 const Set<String> _wiederholbar = {
-  // Eine Wiederholung mit derselben requestId liefert den schon angelegten Export;
-  // Links sind widerrufbar, der Widerruf wirkt ein zweites Mal nicht anders.
+  // createDepExport: mit requestId idempotent (eine Wiederholung liefert den schon
+  // angelegten Export); ohne nur harmlos doppelt (Grenze 20 je Tag, keine Buchung).
+  // createDepHandoverLink: eine Wiederholung erzeugt einen zweiten Link; der alte ist
+  // ueber getDepExport().handoverLinks auffindbar und widerrufbar, der Preis hoechstens
+  // too_many_links. revokeDepHandoverLink: idempotent.
   'createDepExport',
   'createDepHandoverLink',
   'revokeDepHandoverLink',
