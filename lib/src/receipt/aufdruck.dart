@@ -88,3 +88,43 @@ String? _originalDatum(String roh) {
     return null;
   }
 }
+
+/// Grund-Zeile nach einem Ausfall der Kasse; `other` druckt den eigenen Text.
+const Map<String, String> _nacherfassungGrund = {
+  'network_outage': 'Internet', 'power_outage': 'Strom', 'device_failure': 'Gerät defekt', 'system_outage': 'Störung',
+};
+
+/// `YYYY-MM-DD` als `TT.MM.JJJJ`; anderes bleibt, wie es kam.
+String _handbelegDatum(String tag) {
+  final m = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(tag);
+  return m == null ? tag : '${m[3]}.${m[2]}.${m[1]}';
+}
+
+/// Block „NACHERFASSUNG“ (manualReceipt) unter dem Kopf: Art, Grund, Nummer und
+/// Tag des Handbelegs bzw. der Handbelege eines Tagessammelbelegs, dazu der
+/// Hinweis, dass der Beleg fuer die USt ein Duplikat ist (Erlass 2019, 3.3
+/// Faelle 5 und 6, 2.4.11); nicht bei Kleinunternehmern. Leer ohne Handbeleg.
+/// Zwilling von `nacherfassungBlock` im npm-Paket.
+List<LayoutLine> nacherfassungBlock(KasseneckReceipt beleg) {
+  final m = beleg.manualReceipt;
+  if (m == null) return const [];
+  LayoutTextLine mitte(String text) => LayoutTextLine(text: text, align: LayoutAlign.center);
+  final grund = m.reason == 'other' ? m.note : _nacherfassungGrund[m.reason];
+  final tag = _handbelegDatum(m.date);
+  return [
+    const LayoutBannerLine(text: 'NACHERFASSUNG', tone: LayoutBannerTone.receiptType),
+    mitte(m.reason == 'outside_premises' ? 'Leistung außer Haus' : 'nach Ausfall der Kasse'),
+    if (grund != null) mitte('Grund: $grund'),
+    const LayoutSpaceLine(),
+    if (m.isDailySummary) ...[
+      mitte('Tagessammelbeleg'),
+      mitte('Handbelege Nr. ${m.number} bis ${m.numberTo}'),
+      mitte('${m.count != null ? '${m.count} Belege ' : ''}vom $tag'),
+      if (!beleg.isSmallBusiness) mitte('USt: Duplikat der Handbelege'),
+    ] else ...[
+      mitte('Handbeleg Nr. ${m.number}'),
+      mitte('vom $tag${m.time != null ? ', ${m.time} Uhr' : ''}'),
+      if (!beleg.isSmallBusiness) mitte('USt: Duplikat des Handbelegs'),
+    ],
+  ];
+}

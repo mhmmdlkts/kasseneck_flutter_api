@@ -1,0 +1,253 @@
+{
+  "lines": [
+    {
+      "kind": "text",
+      "text": "Melisse Nails e.U.",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Hauptplatz 1",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "4830 Hallstatt",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "ATU12345675",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "+43 6134 12345",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "banner",
+      "text": "NACHERFASSUNG",
+      "tone": "receipt_type"
+    },
+    {
+      "kind": "text",
+      "text": "nach Ausfall der Kasse",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Grund: Gerät defekt",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Handbeleg Nr. 8",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "vom 10.11.2026, 15:20 Uhr",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "USt: Duplikat des Handbelegs",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Datum:",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "12.11.2026 10:02:31",
+          "width": 8,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kassen-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "KASSE1",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Beleg-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "AT0-KASSE1-105",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "1  x Maniküre",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "35,00 A",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "MwSt%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "MwSt",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "Netto",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Brutto",
+          "width": 2,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "A 20%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "5,83",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "29,17",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "35,00",
+          "width": 2,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamt:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "35,00 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Zahlungsart:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "Barzahlung",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "qr",
+      "data": "_R1-AT1_KASSE1_AT0-KASSE1-105_2026-11-12T10:02:31_0,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR"
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Bis zum nächsten Mal",
+      "align": "center",
+      "bold": false
+    }
+  ],
+  "paperSize": "mm80",
+  "ruleset": 2
+}

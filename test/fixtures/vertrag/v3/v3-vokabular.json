@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "3088cb472f3fef3ed4ff969bf0d37d051363714096616a9263270c58266bde14",
-    "inputsSha256": "931df962ad989229c326fa42dbfda9a5535c23bdd9a52425f19d53dfaa2d6abc",
-    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
+    "sha256": "c14617ec83a2eac2bdffc6794cc2c7f72ae04504259a55313f01fe83747fa565",
+    "inputsSha256": "599a02f43f96e919c8844f4430b57c1528c228c92f5be973974b945cda11e7a0",
+    "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -842,6 +842,14 @@
     "GUTSCHEIN_VORSCHLAG_HINWEIS": {
       "kleinunternehmer": "small_business"
     },
+    "HANDBELEG_GRUND": {
+      "internet": "network_outage",
+      "strom": "power_outage",
+      "geraet": "device_failure",
+      "stoerung": "system_outage",
+      "sonstiges": "other",
+      "ausser_haus": "outside_premises"
+    },
     "INVENTUR_AKTEUR": {
       "inhaber": "owner",
       "admin": "admin",
@@ -1285,6 +1293,7 @@
       "invalid_line",
       "invalid_location",
       "invalid_locations",
+      "invalid_manual_receipt",
       "invalid_method",
       "invalid_minimum",
       "invalid_movement_type",
@@ -1338,6 +1347,10 @@
       "logo_too_large",
       "lot_not_found",
       "low_value_limit_exceeded",
+      "manual_receipt_date_in_future",
+      "manual_receipt_duplicate",
+      "manual_receipt_not_allowed",
+      "manual_receipt_range_not_allowed",
       "memory_entry_not_found",
       "method_not_allowed",
       "mfa_required",
@@ -1577,6 +1590,11 @@
       "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
       "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
       "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+      "handbeleg_ungueltig": "invalid_manual_receipt",
+      "handbeleg_nicht_erlaubt": "manual_receipt_not_allowed",
+      "handbeleg_datum_zukunft": "manual_receipt_date_in_future",
+      "handbeleg_bereich_nicht_erlaubt": "manual_receipt_range_not_allowed",
+      "handbeleg_doppelt": "manual_receipt_duplicate",
       "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
       "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
       "PAYMENTS_CONFLICT": "payments_conflict",
@@ -1736,6 +1754,7 @@
       "invalid_denominations",
       "invalid_items",
       "invalid_line",
+      "invalid_manual_receipt",
       "invalid_movement_type",
       "invalid_output_kind",
       "invalid_quantity",
@@ -1752,6 +1771,10 @@
       "logo_invalid",
       "logo_invalid_type",
       "logo_too_large",
+      "manual_receipt_date_in_future",
+      "manual_receipt_duplicate",
+      "manual_receipt_not_allowed",
+      "manual_receipt_range_not_allowed",
       "method_not_allowed",
       "module_inactive",
       "not_permitted",
@@ -1882,6 +1905,13 @@
       "payment_refund_not_allowed",
       "payment_tip_invalid",
       "tip_conflict"
+    ],
+    "manualReceipt": [
+      "invalid_manual_receipt",
+      "manual_receipt_not_allowed",
+      "manual_receipt_date_in_future",
+      "manual_receipt_range_not_allowed",
+      "manual_receipt_duplicate"
     ],
     "receiptEmail": [
       "invalid_address",
@@ -2227,6 +2257,11 @@
       "payment_provider_invalid",
       "payment_provider_not_allowed",
       "payments_sum_mismatch",
+      "invalid_manual_receipt",
+      "manual_receipt_not_allowed",
+      "manual_receipt_date_in_future",
+      "manual_receipt_range_not_allowed",
+      "manual_receipt_duplicate",
       "payments_due_negative",
       "payments_not_allowed",
       "payments_conflict",
@@ -2391,6 +2426,11 @@
       "getReceipt": [],
       "createReceipt": [
         "idempotency_conflict",
+        "invalid_manual_receipt",
+        "manual_receipt_date_in_future",
+        "manual_receipt_duplicate",
+        "manual_receipt_not_allowed",
+        "manual_receipt_range_not_allowed",
         "not_permitted",
         "payment_amount_invalid",
         "payment_method_invalid",
@@ -2877,12 +2917,25 @@
               "receivedImmediately": "sofortErhalten",
               "keptByEmployee": "direkt"
             }
-          ]
+          ],
+          "manualReceipt": {
+            "__": "handbeleg",
+            "number": "nummer",
+            "numberTo": "nummerBis",
+            "count": "anzahl",
+            "date": "datum",
+            "time": "uhrzeit",
+            "reason": "grund",
+            "note": "grundText"
+          }
         }
       },
       "werte": {
         "receipt.cancellationReason": {
           "$catalog": "STORNO_GRUND"
+        },
+        "receipt.manualReceipt.reason": {
+          "$catalog": "HANDBELEG_GRUND"
         }
       },
       "ergaenze": {
@@ -3208,6 +3261,11 @@
             "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
             "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
             "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+            "handbeleg_ungueltig": "invalid_manual_receipt",
+            "handbeleg_nicht_erlaubt": "manual_receipt_not_allowed",
+            "handbeleg_datum_zukunft": "manual_receipt_date_in_future",
+            "handbeleg_bereich_nicht_erlaubt": "manual_receipt_range_not_allowed",
+            "handbeleg_doppelt": "manual_receipt_duplicate",
             "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
             "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
             "PAYMENTS_CONFLICT": "payments_conflict",
@@ -3428,7 +3486,17 @@
             "reason": "grund",
             "typeId": "sorteId"
           }
-        ]
+        ],
+        "manualReceipt": {
+          "__": "handbeleg",
+          "number": "nummer",
+          "numberTo": "nummerBis",
+          "count": "anzahl",
+          "date": "datum",
+          "time": "uhrzeit",
+          "reason": "grund",
+          "note": "grundText"
+        }
       },
       "paramWerte": {
         "vouchers[].type": {
@@ -3436,6 +3504,9 @@
         },
         "vouchers[].action": {
           "$catalog": "GUTSCHEIN_AKTION"
+        },
+        "manualReceipt.reason": {
+          "$catalog": "HANDBELEG_GRUND"
         }
       },
       "data": {
@@ -3454,7 +3525,17 @@
               "receivedImmediately": "sofortErhalten",
               "keptByEmployee": "direkt"
             }
-          ]
+          ],
+          "manualReceipt": {
+            "__": "handbeleg",
+            "number": "nummer",
+            "numberTo": "nummerBis",
+            "count": "anzahl",
+            "date": "datum",
+            "time": "uhrzeit",
+            "reason": "grund",
+            "note": "grundText"
+          }
         },
         "taxNumber": "taxnr",
         "vatId": "uid",
@@ -3500,6 +3581,9 @@
       "werte": {
         "receipt.cancellationReason": {
           "$catalog": "STORNO_GRUND"
+        },
+        "receipt.manualReceipt.reason": {
+          "$catalog": "HANDBELEG_GRUND"
         },
         "layout.lines[].tone": {
           "$catalog": "LAYOUT_TON"
@@ -3873,6 +3957,11 @@
           "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
           "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
           "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "handbeleg_ungueltig": "invalid_manual_receipt",
+          "handbeleg_nicht_erlaubt": "manual_receipt_not_allowed",
+          "handbeleg_datum_zukunft": "manual_receipt_date_in_future",
+          "handbeleg_bereich_nicht_erlaubt": "manual_receipt_range_not_allowed",
+          "handbeleg_doppelt": "manual_receipt_duplicate",
           "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
           "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
           "PAYMENTS_CONFLICT": "payments_conflict",
@@ -3983,6 +4072,11 @@
           "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
           "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
           "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "handbeleg_ungueltig": "invalid_manual_receipt",
+          "handbeleg_nicht_erlaubt": "manual_receipt_not_allowed",
+          "handbeleg_datum_zukunft": "manual_receipt_date_in_future",
+          "handbeleg_bereich_nicht_erlaubt": "manual_receipt_range_not_allowed",
+          "handbeleg_doppelt": "manual_receipt_duplicate",
           "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
           "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
           "PAYMENTS_CONFLICT": "payments_conflict",
@@ -4683,7 +4777,17 @@
               "receivedImmediately": "sofortErhalten",
               "keptByEmployee": "direkt"
             }
-          ]
+          ],
+          "manualReceipt": {
+            "__": "handbeleg",
+            "number": "nummer",
+            "numberTo": "nummerBis",
+            "count": "anzahl",
+            "date": "datum",
+            "time": "uhrzeit",
+            "reason": "grund",
+            "note": "grundText"
+          }
         },
         "taxNumber": "taxnr",
         "vatId": "uid",
@@ -4739,6 +4843,9 @@
         "receipt.cancellationReason": {
           "$catalog": "STORNO_GRUND"
         },
+        "receipt.manualReceipt.reason": {
+          "$catalog": "HANDBELEG_GRUND"
+        },
         "layout.lines[].tone": {
           "$catalog": "LAYOUT_TON"
         },
@@ -4785,7 +4892,17 @@
                 "receivedImmediately": "sofortErhalten",
                 "keptByEmployee": "direkt"
               }
-            ]
+            ],
+            "manualReceipt": {
+              "__": "handbeleg",
+              "number": "nummer",
+              "numberTo": "nummerBis",
+              "count": "anzahl",
+              "date": "datum",
+              "time": "uhrzeit",
+              "reason": "grund",
+              "note": "grundText"
+            }
           }
         ],
         "metadata": {
@@ -4797,6 +4914,9 @@
       "werte": {
         "receipts[].cancellationReason": {
           "$catalog": "STORNO_GRUND"
+        },
+        "receipts[].manualReceipt.reason": {
+          "$catalog": "HANDBELEG_GRUND"
         }
       },
       "ergaenze": {
@@ -5011,6 +5131,11 @@
           "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
           "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
           "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "handbeleg_ungueltig": "invalid_manual_receipt",
+          "handbeleg_nicht_erlaubt": "manual_receipt_not_allowed",
+          "handbeleg_datum_zukunft": "manual_receipt_date_in_future",
+          "handbeleg_bereich_nicht_erlaubt": "manual_receipt_range_not_allowed",
+          "handbeleg_doppelt": "manual_receipt_duplicate",
           "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
           "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
           "PAYMENTS_CONFLICT": "payments_conflict",
@@ -5228,7 +5353,17 @@
         "receipts": [
           {
             "__": "receipts",
-            "cancellationStatus": "stornoStand"
+            "cancellationStatus": "stornoStand",
+            "manualReceipt": {
+              "__": "handbeleg",
+              "number": "nummer",
+              "numberTo": "nummerBis",
+              "count": "anzahl",
+              "date": "datum",
+              "time": "uhrzeit",
+              "reason": "grund",
+              "note": "grundText"
+            }
           }
         ],
         "stats": {
@@ -5251,6 +5386,9 @@
         },
         "receipts[].cancellationReason": {
           "$catalog": "STORNO_GRUND"
+        },
+        "receipts[].manualReceipt.reason": {
+          "$catalog": "HANDBELEG_GRUND"
         }
       },
       "ergaenze": {
@@ -5548,6 +5686,16 @@
                 "keptByEmployee": "direkt"
               }
             ],
+            "manualReceipt": {
+              "__": "handbeleg",
+              "number": "nummer",
+              "numberTo": "nummerBis",
+              "count": "anzahl",
+              "date": "datum",
+              "time": "uhrzeit",
+              "reason": "grund",
+              "note": "grundText"
+            },
             "cancellationStatus": "stornoStand"
           }
         ],
@@ -5563,6 +5711,9 @@
         },
         "receipts[].cancellationReason": {
           "$catalog": "STORNO_GRUND"
+        },
+        "receipts[].manualReceipt.reason": {
+          "$catalog": "HANDBELEG_GRUND"
         }
       },
       "ergaenze": {
@@ -6703,6 +6854,11 @@
           "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
           "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
           "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "handbeleg_ungueltig": "invalid_manual_receipt",
+          "handbeleg_nicht_erlaubt": "manual_receipt_not_allowed",
+          "handbeleg_datum_zukunft": "manual_receipt_date_in_future",
+          "handbeleg_bereich_nicht_erlaubt": "manual_receipt_range_not_allowed",
+          "handbeleg_doppelt": "manual_receipt_duplicate",
           "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
           "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
           "PAYMENTS_CONFLICT": "payments_conflict",
@@ -7635,6 +7791,11 @@
           "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
           "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
           "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "handbeleg_ungueltig": "invalid_manual_receipt",
+          "handbeleg_nicht_erlaubt": "manual_receipt_not_allowed",
+          "handbeleg_datum_zukunft": "manual_receipt_date_in_future",
+          "handbeleg_bereich_nicht_erlaubt": "manual_receipt_range_not_allowed",
+          "handbeleg_doppelt": "manual_receipt_duplicate",
           "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
           "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
           "PAYMENTS_CONFLICT": "payments_conflict",
@@ -7832,6 +7993,11 @@
           "PAYMENT_PROVIDER_INVALID": "payment_provider_invalid",
           "PAYMENT_PROVIDER_NOT_ALLOWED": "payment_provider_not_allowed",
           "PAYMENTS_SUM_MISMATCH": "payments_sum_mismatch",
+          "handbeleg_ungueltig": "invalid_manual_receipt",
+          "handbeleg_nicht_erlaubt": "manual_receipt_not_allowed",
+          "handbeleg_datum_zukunft": "manual_receipt_date_in_future",
+          "handbeleg_bereich_nicht_erlaubt": "manual_receipt_range_not_allowed",
+          "handbeleg_doppelt": "manual_receipt_duplicate",
           "PAYMENTS_DUE_NEGATIVE": "payments_due_negative",
           "PAYMENTS_NOT_ALLOWED": "payments_not_allowed",
           "PAYMENTS_CONFLICT": "payments_conflict",

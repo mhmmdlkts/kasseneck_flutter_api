@@ -161,6 +161,190 @@
       "sheet32": "6f4756a465ec98c6d717f6b47384a40c28ae8d2bffca0f38a7ad817ac9200f75",
       "sheet48": "81a77014f6e7000e029c2a63bf86b7ff97cac574ac020ec5c1a806dc3cf57dcb"
     },
+    "manual-receipt-range-device-failure-count": {
+      "input": "e3fdf72e9501bf1fbccc9d259d8dd8ded3e4fdd9cd421d55bd009952c1ae5dc3",
+      "expected": "459b8719ba3bf5f42d9296dabae0a7ff4a59d6af48b2381bcfea6c58d9d82e2c",
+      "grid32": "8b9e43e02204ae46790036eb654529be27e0bd87e20b9fed434fa08fad1a7de4",
+      "grid48": "ce4ebc5c07e4ff3de7994de578d7d1b6013ad4f4d3061e4f8cfd7ffb6afab7aa",
+      "sheet32": "777e41088e123a20cc7c92debfb06ce246b26d0e1effee51012358a1a74e437e",
+      "sheet48": "3282adeb206953abc1dd888af6dc5d0692dd439dd599f9b5459ca1133c55723d"
+    },
+    "manual-receipt-range-device-failure-no-count": {
+      "input": "c97610abab48cd5720952f58201363f4f66f8f86d9870abed37dc6c5727c26d2",
+      "expected": "2b6c469f652e72e876ad7cf3b1e20c5f06f90b2d7744b2fe927d61de388331ce",
+      "grid32": "68406906af8d9104f20a11ab3d8d68036d2c47f2c348e413c70a3bd8850e24d5",
+      "grid48": "b271d82c9984641ff16ec4cf67733317e771780739ec829614d94e0ed070c5fe",
+      "sheet32": "641830315c9a669c2b4c7c1dfd3821c2eac23bcf8376aa240b8fcb2d9bc294a3",
+      "sheet48": "b10d40df2da69ef2e3d5d9eb93e88636d0ba0aec7f201dbf5dc37a2cb8d646bf"
+    },
+    "manual-receipt-range-network-outage-count": {
+      "input": "0d6ef880a91e98fcaf9ba3249341ed637277acc0b014defef860ca0085f2520d",
+      "expected": "50cf7d645eb82b6c75f63fb7ca64296eae9ca973e1b9dab82b8c0d4510b223f8",
+      "grid32": "6257225c0e52a2f2c0c44f9e7bdfb1c12f6b40e45ded8d7146db8ed9b22b39ab",
+      "grid48": "c4421b26326053eb5069efdbb96ad64cced21ed1cc4077d65c039d669e43a0dd",
+      "sheet32": "7920293a20781f6b275f41cd622d709bc049b355d20fd45bf7c07a756996cf49",
+      "sheet48": "c7563ec6ebf2f85e6c28a493de617e807a9cc12e73809a2bd7cab297da40881a"
+    },
+    "manual-receipt-range-network-outage-no-count": {
+      "input": "bab77d19bd26723d8b9815adf778a53fafa839c5ddb6ce742b7aaf990e8db828",
+      "expected": "3c4f7ff7e09679b8f4ca728287d5118d628149477a03fe56d3e83e279fcbe2ae",
+      "grid32": "fde9f6fb9e1fa26a269f839a82c6e02f9bdca9b2c7369ff1e3455a6f2038c676",
+      "grid48": "26ee933b5a739e475decf41a0f68b4c48100a9916857d66b52d9da963f13ef6d",
+      "sheet32": "0712b8a6d296b51584e8a9af47bdd8b75c7aa6ab64ed9728286a044d9efebe9d",
+      "sheet48": "c58bf2029dff19089e5f6133b1402b40d7949683d599697e3bee34b205451764"
+    },
+    "manual-receipt-range-other-count": {
+      "input": "07e78c5378fc6cf235709503d45bed95e33cb8a25a2876be04d000ae3bb15575",
+      "expected": "71f22fd72d7b2df1a8066ce71b9110525d003080412816400aff8820b9450be1",
+      "grid32": "237d31dbf9abe627eeb90db59b7cf0e6ac5f35cd579a6b704e69f727357e69f8",
+      "grid48": "8c3aaeb019cf771e728d3fbfd0cbe528702d155aae5ecf56460e303a387c43a8",
+      "sheet32": "e9cda57f61815d17670edb44e849e464b10ab889649f3997d36786c56048e74d",
+      "sheet48": "a236b829f6a97291a8a5ab226eee0571714d5be4e25caadf3702daf8df97d7cc"
+    },
+    "manual-receipt-range-other-no-count": {
+      "input": "e25a0f528bbebfa0ea6f36a6e764ec2f98d8f84fecb126028a1872e2530affb9",
+      "expected": "3cb5be2c8154094ee0635e5d7bf7d101d1a3dc4a27ffba0aa58646cdb4ca822c",
+      "grid32": "86de144c3fe9182e817df4c5549dcace337c3ee16d2bea8b5eea43c5d0871cd3",
+      "grid48": "6eac28206d66de34f71898c2b9faebf1fa4cfcb3d0c1a42ba3a33994a7022b68",
+      "sheet32": "17de808e53ac07a51b33b17c0920ca449944ac8aef52948e0cf8729429b9efb2",
+      "sheet48": "7ed79b1dee35cea0909764df58c0c7464fc4fa4b2eaf23b223db7888228ee885"
+    },
+    "manual-receipt-range-power-outage-count": {
+      "input": "0484bf31fd5a6398ba8b107cb33ddd05e350b2c3f5812276072e604ad6e7fec4",
+      "expected": "46c87b709864e41584fbba9cdc91b168041ec43c801e2af26585e21b4413d21e",
+      "grid32": "82e4312a0aa0c7909c5eeffba584ef91955ff31dfc472beb87c85c3f545dab18",
+      "grid48": "f59a349539da6441c6f828f5458b61753793b27b2457d844fc0ab0b85b24ca1b",
+      "sheet32": "954aa0a0626eae8107cad5ca846a8b6f90d05e2703b86020eda1c2a1d9bea16b",
+      "sheet48": "2cc9381dd2278d768903c9710ea2d6910e3e2b5fbff8bf97bd561936cef93372"
+    },
+    "manual-receipt-range-power-outage-no-count": {
+      "input": "af7cacb3d70e36634704ece7600bd8de2b6cb1f56c8898d0e13cfec1a8fab4da",
+      "expected": "a7c22e73011d6510b7e00a809c58180800082c158658bc8008b4a545239803bb",
+      "grid32": "dff04e4ec5c58e91507a83855f79ef93809024f8661e7f37bf46cf28245a4c0d",
+      "grid48": "767a36c16d31c0ac3f619b4a80795671fc2d5939b94355d48ae47b85af7557fc",
+      "sheet32": "e733d5c1b08becb702bfdd0327a3a9e6b03d78b8e73a41923da5bf292a3abd5f",
+      "sheet48": "3f0d075e190accd8c79742fd2a193c31e899d9bce689381b4140f938cdc21661"
+    },
+    "manual-receipt-range-system-outage-count": {
+      "input": "ab91b8056bdd73bc08e1412fe2684de8cb8cf54a562bbdfeaaf36615b86a9a98",
+      "expected": "3ba49a7bde7b0889f73fdd8941dd1a110acd8507084540872b1d5818726ca93d",
+      "grid32": "a0f012adf8f97115df95dc9b5e5fbce848310ff93807261a7d42b38e6c1da778",
+      "grid48": "1f00a1bad11ab1e104673875349c3aa696a362d06e295c152d6c83443069493c",
+      "sheet32": "52a97cbc929f4cedcb65025a95c2f4735c6f712907bb1c63488692e75ec11938",
+      "sheet48": "d6ed7898467943e09d9fd83c5c8fa70a3cdc72cf44dfdb5ffc507d1f6188548e"
+    },
+    "manual-receipt-range-system-outage-no-count": {
+      "input": "d29443763b6a71398ae0947bdb64209935aa6407be4aa080bad5bfc046888c54",
+      "expected": "3880594ec9d8970e3a18729c4b74513611beb949ee73aa150b057e7a0ef36a63",
+      "grid32": "ffb6f7c45a092aca318f94c226639f24d7d8fac28399cf66cc896dafa9665150",
+      "grid48": "1085150efeb6afd5d3196bd59e351c3f5b1738acf100cb9c167023e8c0a563a4",
+      "sheet32": "946bb96557346cb0107ce0230180df5255544062f45d9b29fcd5512585517960",
+      "sheet48": "3c7c96af4415ed807262b2f78f068ee3a0ae115ade5a9ed14b0db5d566ca9bd6"
+    },
+    "manual-receipt-single-device-failure-no-time": {
+      "input": "15c0fdb2a985cab1febbac85c82c4592fa813cad4d083739c4512cc1d73da6f2",
+      "expected": "b00600111eaf0100d14fafb8e43890aad81873fdb638121a7824bde46c58482a",
+      "grid32": "5dc345e5852b8c2ffa39b523d6d4807501e6e610eda231d4445bb274cbe2a0d4",
+      "grid48": "557a27067ad7b1b9dc0bab1d1be93d95d434bb5f0330d68b93354d51318f3d1b",
+      "sheet32": "7cd0932a4dc542a912f1ef968c97a3468cb61ac5c79fe33b8933667a20a06fba",
+      "sheet48": "4edd70103eb52ddaa1893a10c4ac9ceb1dbca828b0be4b83a559b20d2820e933"
+    },
+    "manual-receipt-single-device-failure-time": {
+      "input": "bd419f6239e325108dd672e69dd28ec4108476409e3052d8a7fe48a29bf60854",
+      "expected": "047308a07d82fe5d642b5e5e67d571b69473c6c4075937569a13cb3ff286c5c9",
+      "grid32": "5b43f5117569db77030c0417ef1617aec64a4cb18811c98f6877a711ff0e07ca",
+      "grid48": "7d3df1c41df4d5a9ad3bb9258c4226b7d1849ced69330d7ea5e1e2dae2af6d1a",
+      "sheet32": "871cda9c1b5f306d03ab478eb0db31db4af7c56034264c91524337088fad77e1",
+      "sheet48": "ff06166245b759365892950c949173c74e912a74065982538e8cd1032b6a368f"
+    },
+    "manual-receipt-single-network-outage-no-time": {
+      "input": "7b76e05e0758d0a2fa172a58a74a3f80806c664f857ed9d7f3cb255ed1664254",
+      "expected": "7462c4abe69948be3269b8fcbda93445c66b368a4556cef5e257c8922cde49d4",
+      "grid32": "91e3be88ae3810bed9b16aef432700fed24df557de3ce75f42152200897a5a3c",
+      "grid48": "74efdb25ee8f5cf3b9e239ea436fea26c4ca63a6e27e988c484b2993cd41817b",
+      "sheet32": "f8dcf896d35236d38a1ce173430d334f9dd230ac3d58dfae874f3842498c7a45",
+      "sheet48": "23059e39293639b8cfbb23e93d4bf1b0b7155edbb7563322514518abfbd34693"
+    },
+    "manual-receipt-single-network-outage-time": {
+      "input": "0aa321466f62dda426da9bc7ca2ee08663361468446fbece1fd3b0fee87ac68f",
+      "expected": "b867cc57d0ec8d36db53b7fc85ad1dd7eb041dea472afe2a4da7044293828158",
+      "grid32": "1fe6c58fb2e44bef9237e1e9ab09360642b33e742ab0e4aa0e4f8554b3f00da3",
+      "grid48": "6ef59db68527db2eec2be74c98fe71879dd85b73873f70af39132bd89e928f1b",
+      "sheet32": "d4364b9f19fac8fa13dbf6886e720328b2a074817f5f79171a445cf2e825538b",
+      "sheet48": "765ca90082b033b0bed8d8376d67478bb9bd5374ce6ff5fe76b97c17449c26e6"
+    },
+    "manual-receipt-single-other-no-time": {
+      "input": "7228d8cdf990325db8bc1299020624bd4d7b36f8099788e73b264c0d9ba61dff",
+      "expected": "3593e54dcfa5512b70ea17237ab3de43ddcbfb760eb05effe4541c1fba9b7d81",
+      "grid32": "5014c6ea397739135a0a2acbe82646b2e8855f0d42ca3929f9fd0866020efce3",
+      "grid48": "1e54503379b413f7b8b449b73e8277135dfa5db7cfee05328475d4f524723a54",
+      "sheet32": "1cd87d23e94106ed64a011a5212c27306a0eead323f562eed816c48ff7ce1d9f",
+      "sheet48": "f12ce41446127b6774aa7ffe89608e84aed625fe7422666b92a4f177d194c491"
+    },
+    "manual-receipt-single-other-time": {
+      "input": "2b5f47af3b05eeca2fde14ef04701ca309e504e1ed5ceed222f863ca34bee40e",
+      "expected": "13086b29a679a8fcd52015e27ef158fa7e0a47387aa474e394a7bc94f64f88a5",
+      "grid32": "e51acd53529e1b1ed867854d56b63c656e7f94d0c59953bb9d5024c65a92f76d",
+      "grid48": "b5c42d0fbf82fb57c668603ddd3e5f18451c4248158348c23aa66063df7ab3d1",
+      "sheet32": "eb8e79892a256612f95e6b1ea233d491d84441a39f4f625adbf95188cc160f57",
+      "sheet48": "614503be18c0b8c8ebed63e4cfe867cd864682384ca4280bfbf1b80ca120d0d0"
+    },
+    "manual-receipt-single-outside-premises-no-time": {
+      "input": "1d39658a462d48e1c8f1fc802e25a4b436fd1a76233f653339128494a81afecb",
+      "expected": "ee4253bf3d2d5b8a3005b2f6cd5f2daad7164a459f3e2699e7308d8596ee9e7a",
+      "grid32": "c7b2cc06213f73e20759aed325334ac1f8a1c5dd6fc57940e62dd338abfda368",
+      "grid48": "78a502bbf78e7983b97db21f1c14d2f14adf19ba97163ea04a659937d785b137",
+      "sheet32": "656c5c8cb192f14341ccac735f6b1f3473b9076daa30b8bfd3e81c39a6830723",
+      "sheet48": "de57178db59345a30be5e3100ee997d698ca3d01410cbd1b2802e837a59febc5"
+    },
+    "manual-receipt-single-outside-premises-time": {
+      "input": "4f72f3fe74e878b4a70748a3e03e05704d020e3de78fecdbb87c936b354cfe9c",
+      "expected": "c094d57d10d4ac20692c51c0eaee551361b8241c585eda649bf88b9da44b9fd4",
+      "grid32": "f12c40357fbee64dd4d8ce98fc144053951b2be5f35813ab13d030a8d9bbab60",
+      "grid48": "79eb1e9a71af6dd16368a3e4466030212d8bde33497e8cf82817465336aa2850",
+      "sheet32": "4d7276aa772a8d393f0de6e69db42808a272e1e56b6e07b51b4f7a6a7ae61402",
+      "sheet48": "e00748b24b0cd9c1c6a3de5c788920f2b397a75c1de2aa322809ed580008fbc6"
+    },
+    "manual-receipt-single-power-outage-no-time": {
+      "input": "2b90ad4ca498f69c498c4655ad224710bf8e68915989ee017a09738cf441d167",
+      "expected": "43c1e79474eab5f33792930d02e53dbe125d1c9259b177edb9e8733bbd1dcadd",
+      "grid32": "484ff9002a65f1579cf0258682610a907bfc0071b6f28ec6dd0ccd433d2bdd5a",
+      "grid48": "fb6bf412e583d7decc581b92855d7fbdaf1956bf4a77f47b577baa0401f8fe98",
+      "sheet32": "06aefbcff6e8fed5adc4c4fcd02d7bb21b52c0ad797104f555d7328997097e50",
+      "sheet48": "dfec85d746582c91fa65bcd967a616edd596f6b55cf39123d88f39caad979d0d"
+    },
+    "manual-receipt-single-power-outage-time": {
+      "input": "622b6e7992383e43b197f395d785cfdff5acdf26a1826719012193ad01a2041e",
+      "expected": "21bb3ecd38cf31df53821d5a8f8450e0a934bdf5bf32e5dbd04db05c6f337b80",
+      "grid32": "e921612a6ba0e9f5778b44e657f4d4dfafe0e0fb6fd93c61c08ed745718c4100",
+      "grid48": "84d79bcf04c1aadac4621cf48ebe2f81e41d547962a395a76670ced46e07e53e",
+      "sheet32": "f7965dc35074e2f2d584881a3b583e8b0138860f1f3f43b529357a982ead6794",
+      "sheet48": "58f9b52f5b21dadfa49853e82859d5cbeff48010ea47436c74fb147e5eba3590"
+    },
+    "manual-receipt-single-small-business": {
+      "input": "e099a32f461a69eed487ac517846b8e2d60ac38e1272a21ed50d584ba19c488d",
+      "expected": "ef19b7b39f70baabf7e069f692ce132acf3f77b9c5bd5661ad19c9e8caf0e0aa",
+      "grid32": "a5a914464bd83b153d35c4b747f097461cb896f8c2fdcc7c94e64e8cd5163f32",
+      "grid48": "9b2e893b54da5a90f776675208d70e52c15d452688ffa25622f248e8aa9471e8",
+      "sheet32": "87a0d7ecebe72cf6e6cf7bd3d30d5e5ac957a3431a1962761e6211c437b009a8",
+      "sheet48": "dfc98d5b8e55211cb1b29222e23401a1cb0d70167686b6817b5ab90b2d982f0e"
+    },
+    "manual-receipt-single-system-outage-no-time": {
+      "input": "af7db4a0bf71ee194da827e28f326cf6b8c469ec42d9bf889ad5752da1c3d395",
+      "expected": "d182049863f6553a6547fdeec3b0fade44638a0ea0fa59be641b909f91d168d7",
+      "grid32": "b401ead6dbd8c1859cf09b6677cc5e914d6226b7d2c66d05e5e39cf37e8f65e0",
+      "grid48": "da5712d42bd006ea2b7dc496b8b2a724d4681f8c50493a193995e6e68c7b7b07",
+      "sheet32": "04bd3d8a7038ed65c4c49ee6c7267007852f348eba9d86152506cf0c6a8ae290",
+      "sheet48": "f47e4d426066a4837fde1f1ef83575a251ac5df6556284541ef792d7011420cc"
+    },
+    "manual-receipt-single-system-outage-time": {
+      "input": "7ff2dc30964c3a4aedae33935b7ddb6c0409de5f1a9d0e6dc436a15b21d97ba9",
+      "expected": "b526835f7692d42960cf5f7daef45861070c0a747b06d83875b524ca47503f06",
+      "grid32": "019f0e4c619751925166e34d7e1b6526fd6231f7ebb5dde053b4a247105b7065",
+      "grid48": "1af936246aca80ac0197f6dd1ac6b9085b61e98c50bbaa49cd5c1de5132bfa23",
+      "sheet32": "418a02de8af4e9b892cd0eeeab7143cd06fd66f5be8bccd33174264f354477c2",
+      "sheet48": "6efd0475bfad014f1b84b3699aab098255659fec46069d383e2a7a2160973210"
+    },
     "sale-card": {
       "input": "7fd3ba001113ea79602f5fb775c29ac095b431d549150f11d609213a0c85d9d0",
       "expected": "3307c1e629d16466b80d68c571b63af6b64b55660d4086f738c46cbef1be6871",
@@ -376,6 +560,14 @@
       "grid48": "65a05967b57fbdf36ec3a22af4f89ebd4bb750e0ba33a4e34040ca1dcc24ca4a",
       "sheet32": "5954814971cd7895e3fb3dcb64531520fde7d35da9341472a9f0dc6e322c4fec",
       "sheet48": "b52661f6e677f522483ba3292095c8765577a96f47536ffd200adb28d3253872"
+    },
+    "zero-outage-end-period": {
+      "input": "0ff0bde3cedb53ecd56d560d37a2b4ca32ca2ad95fd280096789159c5fb055c3",
+      "expected": "6be3791d9761fdf3dcd9d4871720e0cb8003f5caccff9c77c300117264fc4d27",
+      "grid32": "27e52cd3cd2d86d77b6b4bb2f6865c0027c3c16ca99140cc7e75c8d3b9bad73b",
+      "grid48": "2b4bf4c54b5d05d64d2e04d7eb1f84287b3178bb36b617ba43e9142e031b9885",
+      "sheet32": "65245c0d4c2c8a7e30487bc4e1efca0a371cb306ee27f80d0f134e90a5f35746",
+      "sheet48": "47832a50ddd7d90fc611eae29d31416f129885937c0ac7d463c6314a246be3aa"
     },
     "zero-start": {
       "input": "ff025b6484b81293581dd2374d54697ab00c22e7bf55b0524e889ab31f65dbb6",

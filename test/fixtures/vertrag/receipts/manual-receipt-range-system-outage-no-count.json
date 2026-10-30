@@ -1,0 +1,49 @@
+{
+  "company": {
+    "companyName": "Praxis Mag. Mirela Weinzierl",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "isSmallBusiness": false,
+    "thanksMessage": [],
+    "showKreiseckLogo": false,
+    "vatId": "",
+    "taxNumber": "91-123/4565",
+    "footer1": "Danke für Ihren Besuch",
+    "footer2": ""
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-120",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2027-01-08T08:05:00",
+    "items": [
+      {
+        "name": "Umsatz 0 % lt. Handbelegen",
+        "quantity": 1,
+        "unitPriceCents": 96000,
+        "vatRate": 0
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "cash",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-120_2027-01-08T08:05:00_0,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "manualReceipt": {
+      "number": "41",
+      "numberTo": "48",
+      "date": "2027-01-07",
+      "reason": "system_outage"
+    }
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

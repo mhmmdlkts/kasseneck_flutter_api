@@ -1,0 +1,259 @@
+{
+  "lines": [
+    {
+      "kind": "text",
+      "text": "Melisse Nails e.U.",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Hauptplatz 1",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "4830 Hallstatt",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "ATU12345675",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "+43 6134 12345",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "banner",
+      "text": "NACHERFASSUNG",
+      "tone": "receipt_type"
+    },
+    {
+      "kind": "text",
+      "text": "nach Ausfall der Kasse",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Grund: Internet",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Tagessammelbeleg",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Handbelege Nr. 9 bis 21",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "13 Belege vom 12.11.2026",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "USt: Duplikat der Handbelege",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Datum:",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "13.11.2026 09:01:17",
+          "width": 8,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kassen-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "KASSE1",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Beleg-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "AT0-KASSE1-113",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "1  x Umsatz 20 % lt. Handbelegen",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "412,00 A",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "MwSt%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "MwSt",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "Netto",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Brutto",
+          "width": 2,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "A 20%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "68,67",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "343,33",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "412,00",
+          "width": 2,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamt:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "412,00 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Zahlungsart:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "Barzahlung",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "qr",
+      "data": "_R1-AT1_KASSE1_AT0-KASSE1-113_2026-11-13T09:01:17_0,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR"
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Bis zum nächsten Mal",
+      "align": "center",
+      "bold": false
+    }
+  ],
+  "paperSize": "mm80",
+  "ruleset": 2
+}

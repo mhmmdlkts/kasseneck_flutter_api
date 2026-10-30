@@ -104,6 +104,7 @@ Future<KasseneckReceipt?> _verkaufen(KasseneckApi api, Map<String, dynamic> para
       items: [for (final p in (params['items'] as List).cast<Map<String, dynamic>>()) KasseneckItem.fromJson(p)],
       vouchers: _gutscheine(params),
       tip: _tip(params),
+      manualReceipt: ManualReceipt.fromJson(params['manualReceipt']),
     );
 
 final _einfach = [KasseneckItem(name: 'Kaffee', quantity: 2, priceCents: 300, vat: VatRate.vat20)];

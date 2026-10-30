@@ -6,6 +6,7 @@ import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart' show KasseneckApi, KasseneckReceiptFormatError;
 import 'package:kasseneck_api/models/keck_voucher.dart';
+import 'package:kasseneck_api/models/manual_receipt.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
@@ -191,6 +192,9 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// `final`, `outage_end`); bestimmt den Aufdruck (MONATSBELEG …).
   String? zeroKind;
 
+  /// Nur an nacherfassten Belegen: der Handbeleg (siehe [ManualReceipt]).
+  ManualReceipt? manualReceipt;
+
   /// Nur am Storno-Beleg: der Grund, Code aus `cancellationReasons` (englisch, wie
   /// unter `/v3`; ein unbekannter kuenftiger Code bleibt roh stehen).
   String? cancellationReason;
@@ -257,6 +261,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.zeroKind,
     this.cancellationReason,
     this.cancellations = const [],
+    this.manualReceipt,
   });
 
   factory KasseneckReceipt.create({
@@ -348,6 +353,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       cancellationOf: CancellationOf.fromJson(receipt['cancellationOf']),
       zeroKind: _nichtLeer(receipt['zeroKind']),
       cancellationReason: _nichtLeer(receipt['cancellationReason']),
+      manualReceipt: ManualReceipt.fromJson(receipt['manualReceipt']),
     );
   }
 
@@ -423,6 +429,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'zeroKind': ?zeroKind,
       'cancellationReason': ?cancellationReason,
       if (cancellations.isNotEmpty) 'cancellations': cancellations,
+      'manualReceipt': ?manualReceipt?.toJson(),
     };
   }
 

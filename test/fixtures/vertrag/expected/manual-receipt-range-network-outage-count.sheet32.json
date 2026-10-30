@@ -1,0 +1,224 @@
+{
+  "charsPerLine": 32,
+  "blocks": [
+    {
+      "kind": "logo",
+      "widthFraction": 0.62,
+      "heightLines": 3.968
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "       Melisse Nails e.U.       ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          Hauptplatz 1          ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         4830 Hallstatt         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "          ATU12345675           ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         +43 6134 12345         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "         NACHERFASSUNG          ",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "================================",
+      "bold": true,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "     nach Ausfall der Kasse     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "        Grund: Internet         ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "        Tagessammelbeleg        ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "    Handbelege Nr. 9 bis 21     ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "    13 Belege vom 12.11.2026    ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "  USt: Duplikat der Handbelege  ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "Datum:       13.11.2026 09:01:17",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Kassen-ID:                KASSE1",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Beleg-ID:         AT0-KASSE1-113",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "1  x Umsatz 20 %        412,00 A",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "lt. Handbelegen                 ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "MwSt%   MwSt      Netto   Brutto",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "A 20%   68,67     343,33  412,00",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "--------------------------------",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Gesamt:                 412,00 €",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "Zahlungsart:          Barzahlung",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "qr",
+      "payload": "_R1-AT1_KASSE1_AT0-KASSE1-113_2026-11-13T09:01:17_0,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+      "widthFraction": 0.828125
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "line",
+      "text": "      Bis zum nächsten Mal      ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
+      "text": "                                ",
+      "bold": false,
+      "blank": true
+    },
+    {
+      "kind": "brandMark",
+      "width": 234,
+      "height": 34
+    }
+  ]
+}
