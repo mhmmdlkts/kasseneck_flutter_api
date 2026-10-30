@@ -21,7 +21,7 @@ import '../services/vienna_time.dart';
 import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/printable.dart' show printableText;
 import '../src/printing/qr_groesse.dart';
-import '../src/receipt/aufdruck.dart' show belegartBlock, warnrahmen;
+import '../src/receipt/aufdruck.dart' show belegartBlock, nacherfassungBlock, warnrahmen;
 import '../src/receipt/einzug.dart';
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
 import '../src/receipt/gutschein_bon.dart';
@@ -372,6 +372,8 @@ class PrintPaper {
         addFullHorizontalLine(ch: '=');
       case LayoutTextLine():
         addText(z.text, styles: PosStyles(align: PosAlign.center, bold: z.bold));
+      case LayoutSpaceLine():
+        addFeed();
       default:
         break;
     }
@@ -417,6 +419,15 @@ class PrintPaper {
     if (belegart.isNotEmpty) {
       addFeed();
       for (final z in belegart) {
+        _aufdruckZeile(z);
+      }
+    }
+
+    // Nacherfassung eines Handbelegs unter dem Kopf, vor den Pflichtangaben.
+    final nacherfassung = nacherfassungBlock(receipt);
+    if (nacherfassung.isNotEmpty) {
+      addFeed();
+      for (final z in nacherfassung) {
         _aufdruckZeile(z);
       }
     }

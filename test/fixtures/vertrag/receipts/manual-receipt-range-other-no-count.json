@@ -1,0 +1,56 @@
+{
+  "company": {
+    "companyName": "Blumen G'schenk e.U.",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "isSmallBusiness": false,
+    "thanksMessage": [],
+    "showKreiseckLogo": false,
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "footer1": "Danke und schöne Tage",
+    "footer2": ""
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-122",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-12-02T08:12:20",
+    "items": [
+      {
+        "name": "Umsatz 13 % lt. Handbelegen",
+        "quantity": 1,
+        "unitPriceCents": 31870,
+        "vatRate": 13
+      },
+      {
+        "name": "Umsatz 20 % lt. Handbelegen",
+        "quantity": 1,
+        "unitPriceCents": 4600,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "cash",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-122_2026-12-02T08:12:20_0,00_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "manualReceipt": {
+      "number": "B-500",
+      "numberTo": "B-547",
+      "date": "2026-12-01",
+      "reason": "other",
+      "note": "Kasse beim Umzug abgebaut"
+    }
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

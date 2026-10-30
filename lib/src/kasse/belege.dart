@@ -22,6 +22,7 @@ import '../../models/kasseneck_item.dart';
 import '../../models/kasseneck_receipt.dart';
 import '../../models/keck_payment.dart';
 import '../../models/keck_tip_person.dart';
+import '../../models/manual_receipt.dart';
 import '../aufrufe.dart';
 import '../lager/lesen.dart' show inventur, inventurPosition, inventurZaehlung, liste, naechsterCursor, zaehlungMitPosition;
 import '../lager/modelle.dart' show Stocktake, StocktakeCountPage, StocktakeCountResult, StocktakeItemPage;
@@ -410,6 +411,7 @@ class RegisterReceiptClient {
     List<String>? legalNotices,
     String? drawerId,
     List<KeckVoucher>? vouchers,
+    ManualReceipt? manualReceipt,
   }) async {
     const name = Aufrufe.createReceipt;
     final gutscheine = vouchers ?? const <KeckVoucher>[];
@@ -454,6 +456,7 @@ class RegisterReceiptClient {
           if (customerLines != null && customerLines.isNotEmpty) 'customerDetails': customerLines.join('\n'),
           if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
           'drawerId': ?drawerId,
+          'manualReceipt': ?manualReceipt?.toJson(),
         },
       );
     } on KasseneckApiError catch (fehler) {

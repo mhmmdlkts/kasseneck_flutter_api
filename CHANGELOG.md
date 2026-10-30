@@ -1,4 +1,7 @@
-## Unreleased (next free minor, set on release; twin of the next npm minor)
+## 11.10.0 (2026-10-30)
+
+Twin of `@kreiseck/kasseneck-api` `1.19.0` (contract files pulled from that
+version).
 
 The full view of `listReceipts` delivers what `getReceipt` delivers (backend
 30.10.2026, spec `list-receipts-voll`). Additive.
@@ -19,6 +22,26 @@ The full view of `listReceipts` delivers what `getReceipt` delivers (backend
   gets them. Messages of `cardRefundReference` and of the card-refund check
   name that rule.
 - Contract re-pulled (provider data in the `/v3` cases, `listReceipts` schema).
+## 11.9.0 (2026-10-30)
+
+Twin of `@kreiseck/kasseneck-api` `1.18.0` (contract files pulled from that
+version): recording handwritten receipts (Nacherfassung). Additive.
+
+- **`ManualReceipt` (`manualReceipt`) on `sellReceipt`, on
+  `RegisterReceiptClient.sell` and on `KasseneckReceipt`:** `number` (the paper
+  pad's own number range), optional `numberTo`/`count` (daily summary receipt,
+  only after an outage), `date` (`YYYY-MM-DD`), optional `time`, `reason`
+  (`manualReceiptReasons`) and `note` (only with `other`). Only on standard
+  receipts; anything else throws before sending. The server checks the rest;
+  the receipt's own `timeStamp` stays the time of recording.
+- **Error codes `manualReceiptErrorCodes`** (contract `errorCodes.manualReceipt`)
+  with `isManualReceiptErrorCode`; `manual_receipt_duplicate` names the receipt
+  that already recorded the paper receipt in `details.receiptId`.
+- **`nacherfassungBlock`**, twin of the npm block „NACHERFASSUNG“; the fallback
+  print path without a server layout prints it below the header. Checked
+  against the 23 new golden receipts `manual-receipt-*` (and
+  `zero-outage-end-period`, whose start and end of the signature outage the old
+  print path already printed from `legalMessage`).
 
 ## 11.8.2 (2026-10-29)
 

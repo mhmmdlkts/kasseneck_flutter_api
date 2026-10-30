@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "2781c0716b6ba63ef2c14eb5a3e6abab37adf42af72c9aee60bbbb1ebd716cf1",
-    "inputsSha256": "7e0635cd224c1eb5a03b5055106959e4d58a0bd6edc919c12137b55623df2e15",
-    "backendPackage": "@kreiseck/kasseneck-api@0.35.0",
+    "sha256": "3ee85fbbb73b268269dbf1a8bb955f3bf84fcf062bd3c3307481d6306676b650",
+    "inputsSha256": "df1229235f9e3230ca2d6b32ad65c0dfb5ca5a476551e92d1bc92bb2fd5d11bf",
+    "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -513,6 +513,60 @@
       },
       "stornoMarke": "mui3ncw0-1111111111",
       "cancellationReason": "kunde_storniert",
+      "ladeId": "haupt_KECK-1",
+      "schichtId": null
+    },
+    "users/test_welt1/cashregisters/KECK-1/receipts/KECK-1-ID-9": {
+      "counter": 9,
+      "receiptType": "standard",
+      "zeroKind": null,
+      "receiptId": "KECK-1-ID-9",
+      "cashregisterId": "KECK-1",
+      "timeStamp": "2026-09-26T10:00:00",
+      "items": [
+        {
+          "name": "Behandlung",
+          "amount": 1,
+          "priceOneCents": 12000,
+          "vat": 0,
+          "priceOne": 120
+        }
+      ],
+      "vouchers": [],
+      "paymentMethod": "cash",
+      "customerDetails": null,
+      "legalMessage": null,
+      "customProjectId": null,
+      "creditCardProvider": null,
+      "cardPaymentId": null,
+      "cardPaymentData": null,
+      "amountRateStandard": 0,
+      "amountRateReduced1": 0,
+      "amountRateReduced2": 0,
+      "amountRateZero": 120,
+      "amountRateSpecial": 0,
+      "turnoverCounterAES256ICM": "TBYB9m2bWcnljmcjdebbLQ==",
+      "signaturePreviousReceipt": "rXWdCT1GHhM=",
+      "certificateSerialNumber": "ABC123",
+      "fullReceiptId": "00000000000000000000000000000000.00000000000000000000000000000000000000000000000000000000f34182c3",
+      "kopfId": "auto1",
+      "layoutRegeln": 2,
+      "payments": [
+        {
+          "id": "p1",
+          "method": "cash",
+          "amountCents": 12000
+        }
+      ],
+      "sig": "eyJhbGciOiJFUzI1NiJ9.X1IxLUFUMTAwX0tFQ0stMV9LRUNLLTEtSUQtOV8yMDI2LTA5LTI2VDEwOjAwOjAwXzAsMDBfMCwwMF8wLDAwXzEyMCwwMF8wLDAwX1RCWUI5bTJiX0FCQzEyM19yWFdkQ1QxR0hoTT0.DdN3NqCojZl5CNuTYbwOhBxNNvWenBgTVe34mpFO6iwVkzmTnaMfXWzix7th-fQ9x2mRqf4FPKSkiKON_zrCKA",
+      "signatureSuccess": true,
+      "qr": "_R1-AT100_KECK-1_KECK-1-ID-9_2026-09-26T10:00:00_0,00_0,00_0,00_120,00_0,00_TBYB9m2b_ABC123_rXWdCT1GHhM=_DdN3NqCojZl5CNuTYbwOhBxNNvWenBgTVe34mpFO6iwVkzmTnaMfXWzix7th+fQ9x2mRqf4FPKSkiKON/zrCKA==",
+      "handbeleg": {
+        "nummer": "H-17",
+        "datum": "2026-09-25",
+        "uhrzeit": "14:30",
+        "grund": "internet"
+      },
       "ladeId": "haupt_KECK-1",
       "schichtId": null
     }

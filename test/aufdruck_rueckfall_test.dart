@@ -16,7 +16,7 @@ import 'helpers/test_receipts.dart';
 
 /// Der Rueckfall ohne Server-Layout (`setKeckReceipt`) druckt denselben
 /// Aufdruck wie das Server-Layout: Warnrahmen TESTKASSE/TESTSIGNATUR und die
-/// Belegart. Die Regeln werden gegen die 48 Golden-Belege des npm-Pakets
+/// Belegart bzw. die Nacherfassung. Die Regeln werden gegen die 72 Golden-Belege des npm-Pakets
 /// geprueft (Eingabe `receipts/*.json`, Erwartung `expected/*.lines.json`).
 final _wurzel = Directory('test/fixtures/vertrag');
 
@@ -31,13 +31,15 @@ void main() {
   group('Aufdruck-Regeln gegen die Golden-Belege', () {
     final dateien = Directory('${_wurzel.path}/receipts').listSync().whereType<File>().toList()
       ..sort((a, b) => a.path.compareTo(b.path));
-    test('alle 48 Eingaben da', () => expect(dateien, hasLength(48)));
+    // 48 bis 11.8, dazu 23 Nacherfassungen (manual-receipt-*) und zero-outage-end-period (11.9.0).
+    test('alle 72 Eingaben da', () => expect(dateien, hasLength(72)));
     for (final datei in dateien) {
       final name = datei.uri.pathSegments.last.replaceAll('.json', '');
       test(name, () {
         final ein = _json(datei.path);
         final optionen = ein['options'] as Map<String, dynamic>;
-        final beleg = KasseneckReceipt.fromMetadata(ein['receipt'], {'company': (ein['company'] as Map)['companyName']})
+        final firma = ein['company'] as Map;
+        final beleg = KasseneckReceipt.fromMetadata(ein['receipt'], {'company': firma['companyName'], 'is_small_business': firma['isSmallBusiness'] == true})
           ..testCashregister = optionen['testCashregister'] == true
           ..testSignature = optionen['testSignature'] == true;
         final erwartet = ReceiptLayout.fromJson(_json('${_wurzel.path}/expected/$name.lines.json'))!;
@@ -49,7 +51,8 @@ void main() {
         expect([...warn, ...warn], warnErwartet);
         expect(zeilen.take(warn.length).toList(), warn, reason: 'Warnrahmen ueber dem Kopf');
 
-        final art = [for (final z in belegartBlock(beleg)) z.toJson()];
+        // Belegart und Nacherfassung: nie beide an einem Beleg (manualReceipt nur am Verkaufsbeleg).
+        final art = [for (final z in [...belegartBlock(beleg), ...nacherfassungBlock(beleg)]) z.toJson()];
         final start = zeilen.indexWhere((z) => z['kind'] == 'banner' && z['tone'] == 'receipt_type');
         if (start < 0) {
           expect(art, isEmpty);

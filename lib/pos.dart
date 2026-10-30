@@ -15,6 +15,7 @@ export 'enums/vat_rate.dart';
 export 'enums/credit_card_provider.dart';
 export 'models/kasseneck_item.dart';
 export 'models/kasseneck_receipt.dart';
+export 'models/manual_receipt.dart';
 export 'models/registration_info.dart';
 export 'src/receipt/codes.dart'
     show

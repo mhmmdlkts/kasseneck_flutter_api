@@ -9,6 +9,7 @@ import 'package:kasseneck_api/enums/receipt_print_type.dart';
 import 'package:kasseneck_api/enums/stripe_link_mode.dart';
 import 'package:kasseneck_api/models/hobex_receipt.dart';
 import 'package:kasseneck_api/models/keck_voucher.dart';
+import 'package:kasseneck_api/models/manual_receipt.dart';
 import 'package:kasseneck_api/models/report_month.dart';
 import 'package:kasseneck_api/models/stripe_url_session.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
@@ -112,6 +113,7 @@ export 'src/receipt/codes.dart'
         receiptOutputResults;
 // Die Typen, die der Beleg unter /v3 traegt, und der Leser fuer gespeicherte 9.x-Belege.
 export 'models/registration_info.dart' show CancellationOf, RegistrationInfo;
+export 'models/manual_receipt.dart' show ManualReceipt, manualReceiptReasons, manualReceiptErrorCodes, isManualReceiptErrorCode;
 export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson, storedLayoutJson;
 // Nachdruck als Belegduplikat kennzeichnen (Erlass BMF-AV Nr. 2/2026, Abschnitt 4.5.6).
 export 'models/receipt_layout.dart' show LayoutBannerTone, markAsDuplicate;
@@ -680,10 +682,12 @@ class KasseneckApi {
     List<String>? legalMessage,
     String? customProjectId,
     KeckTip? tip,
+    ManualReceipt? manualReceipt,
   }) async {
     return _createReceipt(
       receiptType: ReceiptType.standard,
       tip: tip,
+      manualReceipt: manualReceipt,
       customerDetails: customerDetails,
       items: items,
       vouchers: vouchers,
@@ -718,6 +722,7 @@ class KasseneckApi {
     List<String>? customerDetails,
     List<String>? legalMessage,
     KeckTip? tip,
+    ManualReceipt? manualReceipt,
   }) async {
 
     // Gutscheinzeilen setzt nur der Server; vor jeder anderen Positionspruefung.
@@ -805,6 +810,13 @@ class KasseneckApi {
     }
     if (legalMessage != null) {
       params['legalMessage'] = legalMessage.join('\n');
+    }
+    if (manualReceipt != null) {
+      // Nacherfassung eines Handbelegs: nur am Verkaufsbeleg; den Rest prueft der Server.
+      if (receiptType != ReceiptType.standard) {
+        throw _belegEingabe('manualReceipt ist nur bei receiptType standard möglich, nicht bei "${receiptType.name}".');
+      }
+      params['manualReceipt'] = manualReceipt.toJson();
     }
 
     // Ein Servertext, der einen Code wiederholt, wird geschwaerzt (wie bei checkVoucher).
