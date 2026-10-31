@@ -661,6 +661,24 @@ void main() {
           wirft('voucher_payout_not_allowed'));
     });
 
+    test('Auszahlung storniert/gesperrt: ihr Status vor „aufgebraucht“ und vor „nie“ (gutschein-core.darfAuszahlen)', () {
+      const code = 'DTD1-NKT1-8CN5';
+      final v = [KeckVoucher(action: VoucherAction.payout, type: VoucherType.multiPurpose, code: code, amountCents: 1000, reason: 'Probe')];
+      Object? ergebnis(VoucherStatus status, int saldo, {VoucherPayout? payout}) {
+        final check = VoucherCheck(type: VoucherType.multiPurpose, status: status, codeSuffix: '8CN5', balanceCents: saldo, payout: payout);
+        return () => receiptDueCents(const [], v, ReceiptType.standard, voucherInfo: [VoucherDueInfo(code: code, check: check)]);
+      }
+
+      // Der Storno des Verkaufs setzt den Saldo auf 0; die Kasse soll trotzdem „storniert“ sagen.
+      expect(ergebnis(VoucherStatus.cancelled, 0), wirft('voucher_cancelled'));
+      expect(ergebnis(VoucherStatus.cancelled, 0, payout: VoucherPayout.never), wirft('voucher_cancelled'));
+      expect(ergebnis(VoucherStatus.blocked, 3000, payout: VoucherPayout.never), wirft('voucher_blocked'));
+      // Aufgebraucht und ausgezahlt bleiben „aufgebraucht“, ein leerer aktiver auch.
+      expect(ergebnis(VoucherStatus.usedUp, 0), wirft('voucher_used_up'));
+      expect(ergebnis(VoucherStatus.paidOut, 0), wirft('voucher_used_up'));
+      expect(ergebnis(VoucherStatus.active, 0), wirft('voucher_used_up'));
+    });
+
     test('ein Leistungsartikel ohne Freigabe ist voucher_service_not_allowed; ohne Angabe wie bisher', () {
       final v = [KeckVoucher(action: VoucherAction.sell, type: VoucherType.service, articleId: 'art_mani', quantity: 2)];
       expect(receiptDueCents(const [], v, ReceiptType.standard,
