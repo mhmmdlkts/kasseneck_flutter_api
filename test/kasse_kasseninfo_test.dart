@@ -243,6 +243,8 @@ void main() {
       expect(labelText('zero_receipt.create'), 'Nullbeleg erstellen');
       expect(labelText('zero_receipt.created', {'number': 'KECK-1-17', 'time': '14:05'}), 'Nullbeleg KECK-1-17 erstellt, 14:05');
       expect(messageText('inspection.print_question'), 'Kasseninfo für den Prüfer auch drucken?');
+      expect(messageText('zero_receipt.check_first'),
+          'Der letzte Nullbeleg ging unklar aus und kann schon erstellt sein. Erst unter „Belege“ die Liste neu laden und nachsehen, dann ist ein neuer möglich.');
       expect(messageText('dep.manager_only'), 'Den Export macht der Chef.');
       expect(messageText('dep.offline'), 'Ohne Internet geht der Export nicht.');
     });

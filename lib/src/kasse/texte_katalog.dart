@@ -257,6 +257,7 @@ const Map<String, PosText> posMessages = {
   'inspection.how_it_works_text': PosText('Erfasst wird in der Kassen-App oder in der Web-Kasse, gespeichert wird online. Jeder Beleg wird beim Erstellen signiert. Den Beleg gibt es gedruckt, per Mail oder als QR-Code.'),
   'inspection.print_question': PosText('Kasseninfo für den Prüfer auch drucken?'),
   'inspection.load_failed': PosText('Die Kasseninfo konnte nicht geladen werden.'),
+  'zero_receipt.check_first': PosText('Der letzte Nullbeleg ging unklar aus und kann schon erstellt sein. Erst unter „Belege“ die Liste neu laden und nachsehen, dann ist ein neuer möglich.'),
   'app.not_in_browser': PosText('Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.', only: [PosSurface.app]),
   'app.open_in_browser': PosText('Bitte im Browser öffnen: {target}', placeholders: ['target'], only: [PosSurface.app]),
 };

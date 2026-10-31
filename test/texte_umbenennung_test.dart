@@ -86,7 +86,7 @@ const _nach10 = (
     'dep.period_invalid', 'dep.usb_hint', 'dep.saved', 'dep.save_failed', 'dep.zip_fallback', 'dep.code_once',
     'dep.revoked',
     // Reiter „Pruefung“: Kasseninfo fuer den Pruefer (11.15.0, npm 1.23.0)
-    'inspection.how_it_works_text', 'inspection.print_question', 'inspection.load_failed',
+    'inspection.how_it_works_text', 'inspection.print_question', 'inspection.load_failed', 'zero_receipt.check_first',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',

@@ -994,6 +994,9 @@
     "inspection.load_failed": {
       "text": "Die Kasseninfo konnte nicht geladen werden."
     },
+    "zero_receipt.check_first": {
+      "text": "Der letzte Nullbeleg ging unklar aus und kann schon erstellt sein. Erst unter „Belege“ die Liste neu laden und nachsehen, dann ist ein neuer möglich."
+    },
     "app.not_in_browser": {
       "text": "Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.",
       "only": [

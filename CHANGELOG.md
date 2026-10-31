@@ -46,7 +46,10 @@ screen and as a printout, and the words of the tab. Additive.
   drucken“, the question `inspection.print_question` with
   `inspection.print_yes`/`print_no`, `zero_receipt.create` „Nullbeleg
   erstellen“ and `zero_receipt.created` „Nullbeleg {number} erstellt,
-  {time}“. `dep.manager_only` is now „Den Export macht der Chef.“ and
+  {time}“, and `zero_receipt.check_first` (the lock after a zero receipt with
+  an unknown outcome: read the receipt list first, then a new one is
+  possible; so far written into the register app by hand). `dep.manager_only`
+  is now „Den Export macht der Chef.“ and
   `dep.offline` „Ohne Internet geht der Export nicht.“ (same keys).
 - Contract `v3` re-fetched: `getRegisterInspectionInfo` in `calls.pos` (48),
   its register-path cases and the zero receipt of a cashier, which
