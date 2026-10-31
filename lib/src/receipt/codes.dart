@@ -55,7 +55,8 @@ const _signierend = ['route_missing', 'response_unreadable'];
 
 /// Codes von `createReceipt` und `getReceipt` (ohne die Zahlungscodes, die
 /// stehen in `paymentErrorCodes`). `receipt_outcome_unknown` heisst: der
-/// Beleg ist moeglicherweise signiert, nachlesen statt wiederholen.
+/// Beleg ist moeglicherweise signiert, nachlesen statt wiederholen (mit
+/// `idempotencyKey`: dieselbe Anfrage mit demselben Schluessel erneut senden).
 final List<String> receiptErrorCodes = _mitRand(const [
   'cancellation_reference_unavailable',
   'cashregister_closed',
@@ -63,8 +64,9 @@ final List<String> receiptErrorCodes = _mitRand(const [
   'final_receipt_expired',
   'final_receipt_not_allowed',
   // Seit 11.7 (Vertrag 1.16.0): derselbe idempotencyKey mit anderem Inhalt,
-  // nichts geschrieben. Der Server nimmt den Schluessel optional an; dieses
-  // Paket sendet (noch) keinen, der Code bleibt damit nur lesbar.
+  // nichts geschrieben. Seit 11.14 sendet dieses Paket den Schluessel, wenn der
+  // Aufrufer ihn angibt (`idempotencyKey` an sellReceipt und
+  // RegisterReceiptClient.sell).
   'idempotency_conflict',
   'module_inactive',
   'not_permitted',

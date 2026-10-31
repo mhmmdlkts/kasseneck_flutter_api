@@ -30,6 +30,7 @@ import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
 import 'src/kasse/gutschein_wunsch.dart';
 import 'src/receipt/codes.dart' show receiptEmailErrorCodes, receiptOutputErrorCodes;
 import 'src/dep/nachschau.dart';
+import 'src/receipt/idempotenz.dart';
 import 'src/receipt/liste.dart';
 import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'src/kasse/storno_nutzlast.dart';
@@ -697,7 +698,23 @@ class KasseneckApi {
   /// geht nie hinaus, das vergibt der Server.
   ///
   /// Fehler behalten Code und Ausgang: bei `isOutcomeUnknown(e)` den Beleg
-  /// nachlesen, nie ein zweites Mal verkaufen.
+  /// nachlesen, nie ein zweites Mal verkaufen – ausser mit [idempotencyKey].
+  ///
+  /// [idempotencyKey] schuetzt vor einem zweiten Beleg, wenn die Antwort
+  /// verloren geht. Gilt je Kasse: dieselbe Anfrage mit demselben Schluessel
+  /// liefert den schon signierten Beleg zurueck (kein neuer Beleg, kein
+  /// Zaehlerschritt; [KasseneckReceipt.replayed] ist dann `true`, Klartext-Codes
+  /// neu verkaufter Gutscheine kommen nur beim ersten Mal). Derselbe Schluessel
+  /// mit anderem Inhalt wird mit `idempotency_conflict` abgewiesen, geschrieben
+  /// wird nichts. Empfohlen ist eine eigene, stabile Kennung des Vorgangs
+  /// (Bestellnummer, Nummer des Ersatzbelegs), nie eine je Versuch neu
+  /// erzeugte: nach einem unklaren Ausgang geht dieselbe Anfrage mit
+  /// **demselben** Schluessel erneut hinaus, ein neuer waere ein zweiter
+  /// Beleg. Bei der Nacherfassung ([manualReceipt]) sperrt der Server dieselbe
+  /// Handbeleg-Nummer am selben Tag zusaetzlich mit `manual_receipt_duplicate`.
+  /// Text mit 1 bis 120 Zeichen (`String.length`), geht unveraendert hinaus;
+  /// leer, nur Leerraum oder laenger wirft vor dem Senden, nie gekuerzt. Ohne
+  /// Angabe bleibt der Aufruf wie bisher.
   Future<KasseneckReceipt?> sellReceipt({
     required List<KeckPaymentInput> payments,
     List<KasseneckItem>? items,
@@ -707,11 +724,13 @@ class KasseneckApi {
     String? customProjectId,
     KeckTip? tip,
     ManualReceipt? manualReceipt,
+    String? idempotencyKey,
   }) async {
     return _createReceipt(
       receiptType: ReceiptType.standard,
       tip: tip,
       manualReceipt: manualReceipt,
+      idempotencyKey: idempotencyKey,
       customerDetails: customerDetails,
       items: items,
       vouchers: vouchers,
@@ -747,6 +766,7 @@ class KasseneckApi {
     List<String>? legalMessage,
     KeckTip? tip,
     ManualReceipt? manualReceipt,
+    String? idempotencyKey,
   }) async {
 
     // Gutscheinzeilen setzt nur der Server; vor jeder anderen Positionspruefung.
@@ -841,6 +861,11 @@ class KasseneckApi {
         throw _belegEingabe('manualReceipt ist nur bei receiptType standard möglich, nicht bei "${receiptType.name}".');
       }
       params['manualReceipt'] = manualReceipt.toJson();
+    }
+    if (idempotencyKey != null) {
+      final fehler = belegSchluesselFehler(idempotencyKey);
+      if (fehler != null) throw _belegEingabe(fehler);
+      params['idempotencyKey'] = idempotencyKey;
     }
 
     // Ein Servertext, der einen Code wiederholt, wird geschwaerzt (wie bei checkVoucher).

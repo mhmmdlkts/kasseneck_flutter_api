@@ -1,3 +1,38 @@
+## 11.14.0 (2026-10-31)
+
+Twin of `@kreiseck/kasseneck-api` `1.22.0`. Idempotent sales: `createReceipt`
+can carry an `idempotencyKey` (the backend evaluates it under `/v3` since
+26.10.2026). Additive; without a key the request stays as before.
+
+- **`idempotencyKey` on `KasseneckApi.sellReceipt` and
+  `RegisterReceiptClient.sell`** (new optional named parameter `String?`),
+  sent as `params.idempotencyKey`. Affects the call `createReceipt` only.
+  Per register: the same request with the same key returns the receipt
+  already signed (no second receipt, no counter step; the plain codes of newly
+  sold vouchers only the first time); the same key with other content is
+  rejected with `idempotency_conflict` and nothing is written. Use a stable id
+  of your own transaction (order number, number of the paper replacement
+  receipt), never one made up per attempt. When recording a paper receipt
+  (`manualReceipt`) the server also refuses the same paper number on the same
+  day with `manual_receipt_duplicate`, a second, independent lock. Reason:
+  after a lost answer (`isOutcomeUnknown`) a sale could only be looked up,
+  never resent; with a key the same request can go out again unchanged.
+- **Checked before sending like the server** (`beleg-idempotenz-core`): 1 to
+  120 characters (`String.length`), not only whitespace. Empty, whitespace or
+  longer throws `KasseneckValidationError` (`kind: request`) before anything
+  is sent; the key is never shortened or trimmed, because the server
+  recognises the repeat by the key as it arrives. `null` sends no field.
+- **`KasseneckReceipt.replayed`** (new field, `bool`, default `false`): `true`
+  when the answer carried `replayed: true` (the receipt of the first attempt).
+  Not part of `toJson`: it describes the answer, not the receipt, so a stored
+  receipt reads back with `false`.
+- `cancelReceipt` takes no key: the backend's cancellation endpoint does not
+  evaluate one; after `cancellation_outcome_unknown` look the original up as
+  before. `zeroReceipt` is unchanged.
+- `zwillinge.yaml` pins npm `1.22.0`; the contract copy, the text catalogue
+  and the origin of the special-character layout come from that version (only
+  the version number changes, the layout is byte for byte the same).
+
 ## 11.13.1 (2026-10-31)
 
 Twin of `@kreiseck/kasseneck-api` `1.21.1` (contract files pulled from that

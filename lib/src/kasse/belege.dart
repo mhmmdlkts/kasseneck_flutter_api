@@ -54,6 +54,7 @@ import '../../models/registration_info.dart';
 import 'beleg_ausgaben.dart';
 import 'belegmail.dart';
 import '../receipt/codes.dart' show receiptOutputEntryErrorCodes, receiptOutputErrorCodes;
+import '../receipt/idempotenz.dart';
 import 'lager.dart';
 import 'schicht.dart';
 import 'storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
@@ -418,6 +419,15 @@ class RegisterReceiptClient {
   /// Auszahlung brauchen keine Positionen; ein Beleg nur aus Auszahlungen
   /// nimmt genau eine negative Barzahlung. Den Zahlbetrag rechnet
   /// `receiptDueCents` mit den Pruefungen aus [checkVoucher].
+  ///
+  /// [idempotencyKey]: wie bei `KasseneckApi.sellReceipt` – je Kasse liefert
+  /// dieselbe Anfrage mit demselben Schluessel den schon signierten Beleg
+  /// zurueck ([KasseneckReceipt.replayed]), ein anderer Inhalt endet mit
+  /// `idempotency_conflict`. Nach einem unklaren Ausgang darf der Verkauf mit
+  /// **demselben** Schluessel unveraendert erneut hinaus; dieser Aufruf selbst
+  /// wiederholt nie. Eine stabile Kennung des Vorgangs nehmen (Bestellnummer,
+  /// Nummer des Ersatzbelegs). Text mit 1 bis 120 Zeichen, unveraendert
+  /// gesendet; leer, nur Leerraum oder laenger wirft vor dem Senden.
   Future<KasseneckReceipt> sell({
     required List<KasseneckItem> items,
     required List<KeckPaymentInput> payments,
@@ -428,6 +438,7 @@ class RegisterReceiptClient {
     String? drawerId,
     List<KeckVoucher>? vouchers,
     ManualReceipt? manualReceipt,
+    String? idempotencyKey,
   }) async {
     const name = Aufrufe.createReceipt;
     final gutscheine = vouchers ?? const <KeckVoucher>[];
@@ -456,6 +467,8 @@ class RegisterReceiptClient {
         cancellation: false, payout: isPayoutOnly(gutscheine, items, withTip: mitTrinkgeld));
     if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     if (drawerId != null) _ladeKennung(name, drawerId);
+    final schluesselFehler = idempotencyKey == null ? null : belegSchluesselFehler(idempotencyKey);
+    if (schluesselFehler != null) throw KasseneckValidationError(name, schluesselFehler, 'request');
 
     // Ein Servertext, der einen Code wiederholt, wird geschwaerzt (wie bei checkVoucher).
     final geheim = voucherSecrets(gutscheine);
@@ -473,6 +486,7 @@ class RegisterReceiptClient {
           if (legalNotices != null && legalNotices.isNotEmpty) 'legalMessage': legalNotices.join('\n'),
           'drawerId': ?drawerId,
           'manualReceipt': ?manualReceipt?.toJson(),
+          'idempotencyKey': ?idempotencyKey,
         },
       );
     } on KasseneckApiError catch (fehler) {

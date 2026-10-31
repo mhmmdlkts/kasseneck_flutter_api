@@ -213,6 +213,13 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// bald veraltet.
   List<ReceiptOutput>? outputs;
 
+  /// Nur nach einem Verkauf mit `idempotencyKey`: `true`, wenn der Server den
+  /// schon signierten Beleg zu diesem Schluessel zurueckgab (Antwortfeld
+  /// `replayed`; Wiederholung, kein neuer Beleg). Sonst `false`, auch beim
+  /// ersten Verkauf mit Schluessel. Steht nicht in [toJson]: es beschreibt die
+  /// Antwort, nicht den Beleg.
+  bool replayed = false;
+
   KasseneckReceipt({
     required this.receiptId,
     required this.cashregisterId,
@@ -395,7 +402,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       testSignature: json['testSignature'] == true,
       headerVersionId: _nichtLeer(json['headerVersionId']),
       registrationInfo: RegistrationInfo.fromJson(json['registrationInfo']),
-    )..outputs = ausgabenLesen(json['outputs']);
+    )
+      ..outputs = ausgabenLesen(json['outputs'])
+      // Nur genau true: ein anderer Wert ist keine Aussage des Servers.
+      ..replayed = json['replayed'] == true;
   }
 
   // Nur die Beleg-Daten (ohne Firma/Metadaten)
