@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.22.0
+npm_version: 1.23.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -28,6 +28,11 @@ npm_version: 1.22.0
 # zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.23.0: getRegisterInspectionInfo steht in calls.pos (48); am
+# Kassenweg gedeckt durch RegisterReceiptClient (Dart 11.15.0), ohne Eintrag
+# hier. inspectionInfoRows und inspectionInfoLines prueft
+# test/kasse_kasseninfo_test.dart an inspection-info-cases.json.
 #
 # Stand 1.21.0: die fuenf DEP-Aufrufe stehen auch in calls.pos (47); am
 # Kassenweg gedeckt durch RegisterReceiptClient (Dart 11.13.0), ohne Eintrag

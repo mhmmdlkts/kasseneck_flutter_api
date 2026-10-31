@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.22.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.23.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.22.0';
+const String posTextsVersion = '1.23.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -241,8 +241,8 @@ const Map<String, PosText> posMessages = {
   'tip_payout.none_open': PosText('In dieser Schicht ist kein Trinkgeld offen.'),
   'shift.pending_hint': PosText('Noch nicht bestätigt. „Erneut senden“ schickt denselben Vorgang – er zählt nur einmal.'),
   'shift.change_float_missing': PosText('Es fehlen {amount} bis zum Wechselgeld von {total}.', placeholders: ['amount', 'total']),
-  'dep.manager_only': PosText('Den Export für die Prüfung macht der Chef. Ist er nicht da, darf die Behörde bis zu zwei Werktage warten.'),
-  'dep.offline': PosText('Ohne Internet ist kein Export möglich. Die Behörde muss dann bis zu zwei Werktage warten; der Export geht später hier oder unter mein.kasseneck.at.'),
+  'dep.manager_only': PosText('Den Export macht der Chef.'),
+  'dep.offline': PosText('Ohne Internet geht der Export nicht.'),
   'dep.creating': PosText('Wird erstellt …'),
   'dep.running': PosText('Für diese Kasse läuft schon ein Export. Bitte kurz warten, er wird gleich fertig.'),
   'dep.failed': PosText('Der Export ist fehlgeschlagen. Bitte erneut erstellen.'),
@@ -254,6 +254,9 @@ const Map<String, PosText> posMessages = {
   'dep.zip_fallback': PosText('Dieser Browser kann keinen Ordner wählen – der Export kommt als ZIP-Datei in den Download-Ordner.', only: [PosSurface.web]),
   'dep.code_once': PosText('Code und QR-Code gibt es nur auf diesem Bildschirm. Wer zurückgeht, erstellt beim nächsten Mal einen neuen Link.'),
   'dep.revoked': PosText('Der Link ist widerrufen.'),
+  'inspection.how_it_works_text': PosText('Erfasst wird in der Kassen-App oder in der Web-Kasse, gespeichert wird online. Jeder Beleg wird beim Erstellen signiert. Den Beleg gibt es gedruckt, per Mail oder als QR-Code.'),
+  'inspection.print_question': PosText('Kasseninfo für den Prüfer auch drucken?'),
+  'inspection.load_failed': PosText('Die Kasseninfo konnte nicht geladen werden.'),
   'app.not_in_browser': PosText('Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.', only: [PosSurface.app]),
   'app.open_in_browser': PosText('Bitte im Browser öffnen: {target}', placeholders: ['target'], only: [PosSurface.app]),
 };
@@ -503,6 +506,7 @@ const Map<String, PosText> posLabels = {
   'nav.open_drawer': PosText('Kassenlade öffnen'),
   'nav.stocktake': PosText('Inventur'),
   'nav.dep': PosText('Prüfung (DEP)'),
+  'nav.inspection': PosText('Prüfung'),
   'nav.settings': PosText('Einstellungen'),
   'nav.settings_locked': PosText('nur mit Chef-Anmeldung'),
   'nav.logout': PosText('Abmelden'),
@@ -606,6 +610,50 @@ const Map<String, PosText> posLabels = {
   'dep.revoke': PosText('Widerrufen'),
   'dep.checksum': PosText('Prüfsumme (SHA-256)'),
   'dep.new_export': PosText('Neuer Export'),
+  'inspection.part_inspector': PosText('Für den Prüfer'),
+  'inspection.part_zero_receipt': PosText('Nullbeleg'),
+  'inspection.part_dep': PosText('DEP'),
+  'inspection.title': PosText('Kasseninfo für die Prüfung'),
+  'inspection.product_cloud': PosText('{name} – cloudbasierte Registrierkasse', placeholders: ['name']),
+  'inspection.manufacturer': PosText('Hersteller'),
+  'inspection.vat_id': PosText('UID {number}', placeholders: ['number']),
+  'inspection.cashregister_id': PosText('Kassen-ID'),
+  'inspection.signature': PosText('Signatur'),
+  'inspection.unit': PosText('Einheit'),
+  'inspection.unit_a_trust': PosText('Signaturkarte von A-Trust'),
+  'inspection.unit_test_card': PosText('Testkarte'),
+  'inspection.hosting': PosText('Betrieb'),
+  'inspection.hosting_server': PosText('im Signier-Server von Kasseneck'),
+  'inspection.certificate': PosText('Zertifikat'),
+  'inspection.serial_hex': PosText('Seriennr. {number} (hex)', placeholders: ['number']),
+  'inspection.serial_decimal': PosText('{number} (dezimal)', placeholders: ['number']),
+  'inspection.serial_decimal_only': PosText('Seriennr. {number} (dezimal)', placeholders: ['number']),
+  'inspection.holder': PosText('Inhaber'),
+  'inspection.issuer': PosText('Aussteller'),
+  'inspection.valid': PosText('Gültig'),
+  'inspection.valid_range': PosText('{from} – {to}', placeholders: ['from', 'to']),
+  'inspection.valid_from': PosText('ab {date}', placeholders: ['date']),
+  'inspection.valid_to': PosText('bis {date}', placeholders: ['date']),
+  'inspection.check': PosText('Abgleich'),
+  'inspection.check_holder': PosText('Inhaber mit A-Trust geprüft'),
+  'inspection.status': PosText('Status'),
+  'inspection.status_active': PosText('in Betrieb'),
+  'inspection.status_outage': PosText('ausgefallen'),
+  'inspection.status_outage_since': PosText('ausgefallen seit {date}, {time}', placeholders: ['date', 'time']),
+  'inspection.dep': PosText('DEP'),
+  'inspection.dep_online': PosText('online gespeichert, jederzeit exportierbar (USB-Stick, Link)'),
+  'inspection.closings': PosText('Abschlüsse'),
+  'inspection.closings_monthly_first': PosText('Monatsbeleg automatisch am Monatsersten um {time}', placeholders: ['time']),
+  'inspection.closings_monthly_day': PosText('Monatsbeleg automatisch am {n}. jedes Monats um {time}', placeholders: ['n', 'time']),
+  'inspection.closings_annual_december': PosText('der Dezember-Beleg ist der Jahresbeleg'),
+  'inspection.contact': PosText('Kontakt'),
+  'inspection.how_it_works': PosText('So arbeitet die Kasse:'),
+  'inspection.printed_at': PosText('Gedruckt {date}, {time}', placeholders: ['date', 'time']),
+  'inspection.print': PosText('Kasseninfo drucken'),
+  'inspection.print_yes': PosText('Drucken'),
+  'inspection.print_no': PosText('Nein'),
+  'zero_receipt.create': PosText('Nullbeleg erstellen'),
+  'zero_receipt.created': PosText('Nullbeleg {number} erstellt, {time}', placeholders: ['number', 'time']),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].

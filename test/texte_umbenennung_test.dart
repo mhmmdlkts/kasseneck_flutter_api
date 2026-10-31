@@ -85,6 +85,8 @@ const _nach10 = (
     'dep.manager_only', 'dep.offline', 'dep.creating', 'dep.running', 'dep.failed', 'dep.too_many_exports',
     'dep.period_invalid', 'dep.usb_hint', 'dep.saved', 'dep.save_failed', 'dep.zip_fallback', 'dep.code_once',
     'dep.revoked',
+    // Reiter „Pruefung“: Kasseninfo fuer den Pruefer (11.15.0, npm 1.23.0)
+    'inspection.how_it_works_text', 'inspection.print_question', 'inspection.load_failed',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -173,6 +175,18 @@ const _nach10 = (
     'nav.dep', 'dep.title', 'dep.period', 'dep.period_all', 'dep.period_year', 'dep.period_quarter',
     'dep.period_custom', 'dep.from', 'dep.to', 'dep.create', 'dep.receipts', 'dep.save_usb', 'dep.handover_link',
     'dep.code', 'dep.valid_until', 'dep.revoke', 'dep.checksum', 'dep.new_export',
+    // Reiter „Pruefung“ mit Kasseninfo, Nullbeleg und DEP (11.15.0, npm 1.23.0)
+    'nav.inspection', 'inspection.part_inspector', 'inspection.part_zero_receipt', 'inspection.part_dep',
+    'inspection.title', 'inspection.product_cloud', 'inspection.manufacturer', 'inspection.vat_id',
+    'inspection.cashregister_id', 'inspection.signature', 'inspection.unit', 'inspection.unit_a_trust',
+    'inspection.unit_test_card', 'inspection.hosting', 'inspection.hosting_server', 'inspection.certificate',
+    'inspection.serial_hex', 'inspection.serial_decimal', 'inspection.serial_decimal_only', 'inspection.holder',
+    'inspection.issuer', 'inspection.valid', 'inspection.valid_range', 'inspection.valid_from', 'inspection.valid_to',
+    'inspection.check', 'inspection.check_holder', 'inspection.status', 'inspection.status_active',
+    'inspection.status_outage', 'inspection.status_outage_since', 'inspection.dep', 'inspection.dep_online',
+    'inspection.closings', 'inspection.closings_monthly_first', 'inspection.closings_monthly_day',
+    'inspection.closings_annual_december', 'inspection.contact', 'inspection.how_it_works', 'inspection.printed_at',
+    'inspection.print', 'inspection.print_yes', 'inspection.print_no', 'zero_receipt.create', 'zero_receipt.created',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'voucherErrors', 'returnDispositionLabels'],
   placeholders: {
@@ -189,6 +203,8 @@ const _nach10 = (
     'method',
     // Ordner auf dem USB-Stick (11.13.0)
     'folder',
+    // Gueltigkeit des Zertifikats in der Kasseninfo (11.15.0)
+    'from', 'to',
   },
 );
 

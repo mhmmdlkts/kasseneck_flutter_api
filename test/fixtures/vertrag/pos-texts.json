@@ -1,5 +1,5 @@
 {
-  "version": "1.22.0",
+  "version": "1.23.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -941,10 +941,10 @@
       ]
     },
     "dep.manager_only": {
-      "text": "Den Export für die Prüfung macht der Chef. Ist er nicht da, darf die Behörde bis zu zwei Werktage warten."
+      "text": "Den Export macht der Chef."
     },
     "dep.offline": {
-      "text": "Ohne Internet ist kein Export möglich. Die Behörde muss dann bis zu zwei Werktage warten; der Export geht später hier oder unter mein.kasseneck.at."
+      "text": "Ohne Internet geht der Export nicht."
     },
     "dep.creating": {
       "text": "Wird erstellt …"
@@ -984,6 +984,15 @@
     },
     "dep.revoked": {
       "text": "Der Link ist widerrufen."
+    },
+    "inspection.how_it_works_text": {
+      "text": "Erfasst wird in der Kassen-App oder in der Web-Kasse, gespeichert wird online. Jeder Beleg wird beim Erstellen signiert. Den Beleg gibt es gedruckt, per Mail oder als QR-Code."
+    },
+    "inspection.print_question": {
+      "text": "Kasseninfo für den Prüfer auch drucken?"
+    },
+    "inspection.load_failed": {
+      "text": "Die Kasseninfo konnte nicht geladen werden."
     },
     "app.not_in_browser": {
       "text": "Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.",
@@ -2066,6 +2075,9 @@
     "nav.dep": {
       "text": "Prüfung (DEP)"
     },
+    "nav.inspection": {
+      "text": "Prüfung"
+    },
     "nav.settings": {
       "text": "Einstellungen"
     },
@@ -2461,6 +2473,182 @@
     },
     "dep.new_export": {
       "text": "Neuer Export"
+    },
+    "inspection.part_inspector": {
+      "text": "Für den Prüfer"
+    },
+    "inspection.part_zero_receipt": {
+      "text": "Nullbeleg"
+    },
+    "inspection.part_dep": {
+      "text": "DEP"
+    },
+    "inspection.title": {
+      "text": "Kasseninfo für die Prüfung"
+    },
+    "inspection.product_cloud": {
+      "text": "{name} – cloudbasierte Registrierkasse",
+      "placeholders": [
+        "name"
+      ]
+    },
+    "inspection.manufacturer": {
+      "text": "Hersteller"
+    },
+    "inspection.vat_id": {
+      "text": "UID {number}",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "inspection.cashregister_id": {
+      "text": "Kassen-ID"
+    },
+    "inspection.signature": {
+      "text": "Signatur"
+    },
+    "inspection.unit": {
+      "text": "Einheit"
+    },
+    "inspection.unit_a_trust": {
+      "text": "Signaturkarte von A-Trust"
+    },
+    "inspection.unit_test_card": {
+      "text": "Testkarte"
+    },
+    "inspection.hosting": {
+      "text": "Betrieb"
+    },
+    "inspection.hosting_server": {
+      "text": "im Signier-Server von Kasseneck"
+    },
+    "inspection.certificate": {
+      "text": "Zertifikat"
+    },
+    "inspection.serial_hex": {
+      "text": "Seriennr. {number} (hex)",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "inspection.serial_decimal": {
+      "text": "{number} (dezimal)",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "inspection.serial_decimal_only": {
+      "text": "Seriennr. {number} (dezimal)",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "inspection.holder": {
+      "text": "Inhaber"
+    },
+    "inspection.issuer": {
+      "text": "Aussteller"
+    },
+    "inspection.valid": {
+      "text": "Gültig"
+    },
+    "inspection.valid_range": {
+      "text": "{from} – {to}",
+      "placeholders": [
+        "from",
+        "to"
+      ]
+    },
+    "inspection.valid_from": {
+      "text": "ab {date}",
+      "placeholders": [
+        "date"
+      ]
+    },
+    "inspection.valid_to": {
+      "text": "bis {date}",
+      "placeholders": [
+        "date"
+      ]
+    },
+    "inspection.check": {
+      "text": "Abgleich"
+    },
+    "inspection.check_holder": {
+      "text": "Inhaber mit A-Trust geprüft"
+    },
+    "inspection.status": {
+      "text": "Status"
+    },
+    "inspection.status_active": {
+      "text": "in Betrieb"
+    },
+    "inspection.status_outage": {
+      "text": "ausgefallen"
+    },
+    "inspection.status_outage_since": {
+      "text": "ausgefallen seit {date}, {time}",
+      "placeholders": [
+        "date",
+        "time"
+      ]
+    },
+    "inspection.dep": {
+      "text": "DEP"
+    },
+    "inspection.dep_online": {
+      "text": "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+    },
+    "inspection.closings": {
+      "text": "Abschlüsse"
+    },
+    "inspection.closings_monthly_first": {
+      "text": "Monatsbeleg automatisch am Monatsersten um {time}",
+      "placeholders": [
+        "time"
+      ]
+    },
+    "inspection.closings_monthly_day": {
+      "text": "Monatsbeleg automatisch am {n}. jedes Monats um {time}",
+      "placeholders": [
+        "n",
+        "time"
+      ]
+    },
+    "inspection.closings_annual_december": {
+      "text": "der Dezember-Beleg ist der Jahresbeleg"
+    },
+    "inspection.contact": {
+      "text": "Kontakt"
+    },
+    "inspection.how_it_works": {
+      "text": "So arbeitet die Kasse:"
+    },
+    "inspection.printed_at": {
+      "text": "Gedruckt {date}, {time}",
+      "placeholders": [
+        "date",
+        "time"
+      ]
+    },
+    "inspection.print": {
+      "text": "Kasseninfo drucken"
+    },
+    "inspection.print_yes": {
+      "text": "Drucken"
+    },
+    "inspection.print_no": {
+      "text": "Nein"
+    },
+    "zero_receipt.create": {
+      "text": "Nullbeleg erstellen"
+    },
+    "zero_receipt.created": {
+      "text": "Nullbeleg {number} erstellt, {time}",
+      "placeholders": [
+        "number",
+        "time"
+      ]
     }
   },
   "returnDispositionLabels": {
