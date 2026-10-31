@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "_note": "Paper cut at the end of a printed receipt (escPosLayoutBytes option `cut`): missing = default = `true` = `\"full\"` (five empty lines, then GS V 0), `\"partial\"` (five empty lines, then GS V 1), `false` (neither: the bytes end with the last line of the receipt). A case names a golden layout under expected/<receipt>.lines.json (with `paperSize` replacing its paper size); every other print option is the default. expected/print-cut.<name>.hex holds the bytes (32 bytes per line). Both registers set the cut per device (`cut`: partial, full, none). Written by `npm run fixtures:schnitt`.",
+  "cases": [
+    {
+      "name": "sale-cash-default",
+      "receipt": "sale-cash"
+    },
+    {
+      "name": "sale-cash-true",
+      "receipt": "sale-cash",
+      "cut": true
+    },
+    {
+      "name": "sale-cash-full",
+      "receipt": "sale-cash",
+      "cut": "full"
+    },
+    {
+      "name": "sale-cash-partial",
+      "receipt": "sale-cash",
+      "cut": "partial"
+    },
+    {
+      "name": "sale-cash-none",
+      "receipt": "sale-cash",
+      "cut": false
+    },
+    {
+      "name": "sale-cash-mm58-partial",
+      "receipt": "sale-cash",
+      "paperSize": "mm58",
+      "cut": "partial"
+    },
+    {
+      "name": "sale-cash-mm58-none",
+      "receipt": "sale-cash",
+      "paperSize": "mm58",
+      "cut": false
+    },
+    {
+      "name": "zero-start-none",
+      "receipt": "zero-start",
+      "cut": false
+    }
+  ]
+}

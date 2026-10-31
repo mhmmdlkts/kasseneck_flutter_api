@@ -51,6 +51,22 @@ screen and as a printout, and the words of the tab. Additive.
   possible; so far written into the register app by hand). `dep.manager_only`
   is now „Den Export macht der Chef.“ and
   `dep.offline` „Ohne Internet geht der Export nicht.“ (same keys).
+- **Paper cut at the end of a receipt, twin of the npm option `cut` of
+  `escPosLayoutBytes`:** new named parameters `bool cut = true` (already on
+  `PrintPaper.setReceiptSheet`/`setReceiptLayout`) and
+  `PosCutMode cutMode = PosCutMode.full` on `PrintPaper.setReceiptSheet`,
+  `setReceiptLayout`, `setKeckReceipt` (the path without a server layout),
+  `KeckPrinterService.getPaperFromReceipt`, `getBytesFromReceipt`,
+  `KasseneckReceipt.getPrintBytes` and `KeckPrinter.printReceipt`;
+  `PrintPaper.addCut` takes `mode`. Mapping: npm `true`/`'full'` = the
+  default, `'partial'` = `cutMode: PosCutMode.partial` (`GS V 1`), `false` =
+  `cut: false` (neither the five empty lines nor `GS V`). The default stays a
+  full cut, byte for byte as before. Every case of the contract file
+  `print-cut-cases.json` (bytes under `expected/print-cut.<name>.hex`) is a
+  test. Reason: the register app had to strip the trailing cut itself for the
+  device setting `cut: none` (printers without a knife); now it passes
+  `cut: false` (and `cutMode: PosCutMode.partial` where the web register
+  sends `'partial'`).
 - Contract `v3` re-fetched: `getRegisterInspectionInfo` in `calls.pos` (48),
   its register-path cases and the zero receipt of a cashier, which
   `kasse_v3_test.dart` now runs through `RegisterReceiptClient`.

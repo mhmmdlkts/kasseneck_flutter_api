@@ -32,7 +32,9 @@ npm_version: 1.23.0
 # Stand 1.23.0: getRegisterInspectionInfo steht in calls.pos (48); am
 # Kassenweg gedeckt durch RegisterReceiptClient (Dart 11.15.0), ohne Eintrag
 # hier. inspectionInfoRows und inspectionInfoLines prueft
-# test/kasse_kasseninfo_test.dart an inspection-info-cases.json.
+# test/kasse_kasseninfo_test.dart an inspection-info-cases.json, den
+# Papierschnitt (cut, cutMode) test/druck_schnitt_test.dart an
+# print-cut-cases.json.
 #
 # Stand 1.21.0: die fuenf DEP-Aufrufe stehen auch in calls.pos (47); am
 # Kassenweg gedeckt durch RegisterReceiptClient (Dart 11.13.0), ohne Eintrag
