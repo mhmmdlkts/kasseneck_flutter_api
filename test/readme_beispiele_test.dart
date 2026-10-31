@@ -55,6 +55,8 @@ late KeckPrinter printer;
 late IssueResult issued;
 late PosArticle article;
 void showHint(String text) {}
+// Der Helfer aus „What the cashier sees“ (README), im DEP-Beispiel wiederverwendet.
+String sentence(Object e, String fallback) => fallback;
 Future<void> fetchAndCheck(String url, String sha256) async {}
 ''';
 

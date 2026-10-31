@@ -1,5 +1,5 @@
 {
-  "version": "1.20.0",
+  "version": "1.21.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -111,10 +111,14 @@
     ],
     "pos": [
       "cancelReceipt",
+      "createDepExport",
+      "createDepHandoverLink",
       "createPrintJob",
       "createReceipt",
       "endRegisterSession",
       "generateFullReceiptId",
+      "getDepExport",
+      "getDepExportFile",
       "getKasseSettings",
       "getPrintJob",
       "getReceipt",
@@ -132,6 +136,7 @@
       "registerPinLogin",
       "registerUserLogin",
       "renewRegisterSession",
+      "revokeDepHandoverLink",
       "sendReceiptEmail",
       "setMyCashregisterStockLocation",
       "setMyKasseLogo",
@@ -312,7 +317,12 @@
       "logMyDrawerOpenings",
       "getMyShiftReport",
       "closeMyShift",
-      "logReceiptOutputs"
+      "logReceiptOutputs",
+      "createDepExport",
+      "getDepExport",
+      "getDepExportFile",
+      "createDepHandoverLink",
+      "revokeDepHandoverLink"
     ]
   },
   "unknownOutcomeCalls": [

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "note": "Ordner für den USB-Stick bei der Prüfung (DEP): depFolderName(cashregisterId, from, to). Web-Kasse, Kassen-App und der Dart-Zwilling benennen ihn gleich.",
+  "cases": [
+    { "name": "Zeitraum mit Anfang und Ende", "cashregisterId": "KECK-1", "from": "2026-07-01", "to": "2026-09-30", "expected": "DEP_KECK-1_2026-07-01_2026-09-30" },
+    { "name": "ein Tag", "cashregisterId": "KECK-1", "from": "2026-10-31", "to": "2026-10-31", "expected": "DEP_KECK-1_2026-10-31_2026-10-31" },
+    { "name": "alles seit Inbetriebnahme", "cashregisterId": "KECK-1", "from": null, "to": null, "expected": "DEP_KECK-1_alles" },
+    { "name": "nur Ende", "cashregisterId": "KECK-1", "from": null, "to": "2026-10-31", "expected": "DEP_KECK-1_bis_2026-10-31" },
+    { "name": "nur Anfang", "cashregisterId": "KECK-1", "from": "2026-01-01", "to": null, "expected": "DEP_KECK-1_ab_2026-01-01" },
+    { "name": "leere Texte wie fehlend", "cashregisterId": "KECK-1", "from": "", "to": "  ", "expected": "DEP_KECK-1_alles" },
+    { "name": "Zeichen, die ein Stick nicht nimmt, werden zu _", "cashregisterId": "Theke 1/2:\"A\"", "from": "2026-07-01", "to": "2026-07-31", "expected": "DEP_Theke_1_2__A__2026-07-01_2026-07-31" },
+    { "name": "ohne Kassen-ID", "cashregisterId": "", "from": "2026-07-01", "to": "2026-07-31", "expected": "DEP_Kasse_2026-07-01_2026-07-31" }
+  ]
+}

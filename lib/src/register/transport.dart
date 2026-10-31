@@ -28,8 +28,8 @@ import 'fehler.dart';
 ///
 /// **Nicht** die oeffentliche Basis: die Kassen-Aufrufe liegen hinter den
 /// Hosting-Umschreibungen der Browser-Kasse; die App spricht dieselbe Adresse
-/// an wie sie. Alle 25 Aufrufe des Kassenwegs laufen mit der Kassen-Anmeldung
-/// hierhin.
+/// an wie sie. Alle Aufrufe des Kassenwegs (`calls.pos` im Vertrag) laufen
+/// mit der Kassen-Anmeldung hierhin.
 const String kRegisterBaseUrl = kPosBaseUrl;
 
 String ohneSchraegstrich(String url) => url.replaceAll(RegExp(r'/+$'), '');
@@ -85,6 +85,27 @@ class RegisterTransport {
     Map<String, dynamic> params = const {},
     Duration? timeout,
   }) async {
+    final antwort = await callRaw(name, params: params, timeout: timeout);
+    // Fehlendes `data` ist erlaubt — nicht jeder Aufruf hat eine Nutzlast.
+    // Ein `data`, das da ist und **kein Objekt** ist (Array, Zahl, Text), ist
+    // dagegen kaputt und darf nicht als leeres Objekt durchgehen: aus dem
+    // wurde weiter oben ein voller Standardsatz Einstellungen, und der
+    // Bildschirm meldete „der Betrieb hat nichts eingestellt". Dieselbe
+    // Grenze wie bei den Listen: leer ist etwas anderes als kaputt.
+    return envelopeData(name, kassenErfolgsHuelle(name, antwort), antwort.statusCode);
+  }
+
+  /// Wie [call], liefert aber die Antwort selbst statt der gelesenen Huelle:
+  /// fuer Aufrufe, die eine Datei **oder** eine Huelle senden
+  /// (`getDepExportFile`). Gleiche Anmeldung, gleiche Pruefungen vor dem
+  /// Senden, gleiche Pruefung des Kopfs (HTTP 200, Kennzeichen `v3`, keine
+  /// HTML-Seite; siehe `v3Post`); den Rumpf liest der Aufrufer. Eine
+  /// Fehlerhuelle mit HTTP 200 wirft hier **nicht**.
+  Future<http.Response> callRaw(
+    String name, {
+    Map<String, dynamic> params = const {},
+    Duration? timeout,
+  }) async {
     // Beides frisch — siehe Klassenkommentar.
     final token = await idToken();
     final sitzung = await sessionId();
@@ -109,7 +130,7 @@ class RegisterTransport {
     // Zeitlimit getrennt vom Netzfehler: die Anfrage war draussen, ueber
     // `createReceipt` kann der Beleg laengst signiert sein. Nur der Typ der
     // Ursache, nie die Meldung: die kann eine Adresse tragen.
-    final antwort = await v3Post(
+    return v3Post(
       _http,
       functionName: name,
       basis: baseUrl,
@@ -123,17 +144,19 @@ class RegisterTransport {
       body: rumpf,
       timeout: timeout ?? _timeout,
     );
-
-    final huelle = readEnvelope(name, antwort);
-    if (huelle['status'] == 'success') {
-      // Fehlendes `data` ist erlaubt — nicht jeder Aufruf hat eine Nutzlast.
-      // Ein `data`, das da ist und **kein Objekt** ist (Array, Zahl, Text), ist
-      // dagegen kaputt und darf nicht als leeres Objekt durchgehen: aus dem
-      // wurde weiter oben ein voller Standardsatz Einstellungen, und der
-      // Bildschirm meldete „der Betrieb hat nichts eingestellt". Dieselbe
-      // Grenze wie bei den Listen: leer ist etwas anderes als kaputt.
-      return envelopeData(name, huelle, antwort.statusCode);
-    }
-    throw envelopeError(name, huelle);
   }
 }
+
+/// Die Erfolgshuelle einer Antwort von [RegisterTransport.callRaw]; eine
+/// Fehlerhuelle wirft mit Code und Details (`envelopeError`). Paketintern:
+/// der Barrel zeigt aus dieser Datei nur [RegisterTransport].
+Map<String, dynamic> kassenErfolgsHuelle(String name, http.Response antwort) {
+  final huelle = readEnvelope(name, antwort);
+  if (huelle['status'] == 'success') return huelle;
+  throw envelopeError(name, huelle);
+}
+
+/// Der HTTP-Client des Transports fuer Wege ohne Anmeldung (Lese-Link einer
+/// DEP-Datei): derselbe Client, also auch dieselbe Attrappe im Test.
+/// Paketintern wie [kassenErfolgsHuelle].
+http.Client kassenHttpClient(RegisterTransport transport) => transport._http;

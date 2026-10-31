@@ -81,6 +81,10 @@ const _nach10 = (
     // Gutschein-Sorten (11.8.0, npm 1.17.0)
     'voucher_error.type_required', 'voucher_error.type_not_found', 'voucher_error.amount_mismatch',
     'voucher_error.service_not_allowed', 'voucher_error.payout_not_allowed', 'voucher.type_changed',
+    // Pruefung (DEP) an der Kasse (11.13.0, npm 1.21.0)
+    'dep.manager_only', 'dep.offline', 'dep.creating', 'dep.running', 'dep.failed', 'dep.too_many_exports',
+    'dep.period_invalid', 'dep.usb_hint', 'dep.saved', 'dep.save_failed', 'dep.zip_fallback', 'dep.code_once',
+    'dep.revoked',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -165,6 +169,10 @@ const _nach10 = (
     'receipt.output_failed',
     // Gutschein-Sorten als Kacheln im Reiter „Gutscheine“ (11.8.0, npm 1.17.0)
     'voucher.tab', 'voucher.enter_amount', 'voucher.service_tile', 'voucher.kind_multi_short', 'voucher.kind_single_short',
+    // Pruefung (DEP) an der Kasse (11.13.0, npm 1.21.0)
+    'nav.dep', 'dep.title', 'dep.period', 'dep.period_all', 'dep.period_year', 'dep.period_quarter',
+    'dep.period_custom', 'dep.from', 'dep.to', 'dep.create', 'dep.receipts', 'dep.save_usb', 'dep.handover_link',
+    'dep.code', 'dep.valid_until', 'dep.revoke', 'dep.checksum', 'dep.new_export',
   },
   fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'voucherErrors', 'returnDispositionLabels'],
   placeholders: {
@@ -179,6 +187,8 @@ const _nach10 = (
     'date', 'line',
     // Fertigseite der Auszahlung (11.5.0)
     'method',
+    // Ordner auf dem USB-Stick (11.13.0)
+    'folder',
   },
 );
 

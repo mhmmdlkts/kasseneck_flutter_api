@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "7f93b1458c7d25548321c31eadaf6cc93a804cd1eedf78effa11d5a1110df7aa",
+      "sha256": "a65bba379d7ca833fa68ec32235c08ab89fd8c3f39d976b47a5d361dcee39c34",
       "head": [],
-      "inputsSha256": "e434dd5314bb3cd95a4c1796ad89b5a415c8bafba7c8dc6c90733dab5574bfa8",
+      "inputsSha256": "2602e3996bd0e763674aa54fe05ee2dfbc09c3ff18fd161293bf12cf9e571a4b",
       "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -24,7 +24,7 @@
         "note",
         "baseline"
       ],
-      "inputsSha256": "24aa4b4db872ce5ce11005df01426a44f9e54452711abc68e18d6c903d382dd7",
+      "inputsSha256": "ab248df756638c558f0bba786fc43aef1087b36c26329a06bcd57d155d3da72b",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -4792,7 +4792,7 @@
               "at": 1790323200000,
               "tag": "2026-09-20"
             },
-            "codeHash": "95b7fb7dace205b0dc7d7cd461413e182bde6dae82a8855371b3c89e03c706e7",
+            "codeHash": "<geheim>",
             "codeEnde": "7DHP",
             "druck": {
               "anzahl": 1,
@@ -4855,7 +4855,7 @@
               "at": 1790323200000,
               "tag": "2026-09-20"
             },
-            "codeHash": "159c6aeccb504ccc9b0a113f3ebbb011b8902f5282b76099433468aa60e983c7",
+            "codeHash": "<geheim>",
             "codeEnde": "7DJG",
             "druck": {
               "anzahl": 1,
@@ -4912,7 +4912,7 @@
               "at": 1790323200000,
               "tag": "2026-09-20"
             },
-            "codeHash": "95b7fb7dace205b0dc7d7cd461413e182bde6dae82a8855371b3c89e03c706e7",
+            "codeHash": "<geheim>",
             "codeEnde": "7DHP",
             "druck": {
               "anzahl": 1,
@@ -8904,6 +8904,153 @@
             },
             "geraet": "dev_pin",
             "quelle": "kasse"
+          }
+        }
+      }
+    },
+    "revokeDepHandoverLink": {
+      "codebase": "default",
+      "cases": {
+        "success_manager": {
+          "dep_links/kwLink0000000000000A": {
+            "uid": "kw_betrieb1",
+            "umgebung": "live",
+            "kasse": "KASSE1",
+            "kennung": "DEP-2026-09-26-0001",
+            "ownerUid": "kw_betrieb1",
+            "tokenHash": "<geheim>",
+            "codeHash": "<geheim>",
+            "codeSalt": "<geheim>",
+            "widerrufTokenHash": "<geheim>",
+            "widerrufTokenHashAbruf": null,
+            "erstelltAm": 1790409000000,
+            "gueltigBis": 1791619200000,
+            "erstelltVon": "kasse:ru_chef",
+            "widerrufenAm": 1790409600000,
+            "widerrufenVon": "kasse:ru_chef",
+            "ersterAbrufAm": null,
+            "abrufe": 0,
+            "mail": {
+              "erstellt": null,
+              "abruf": null
+            }
+          },
+          "users/kw_betrieb1/dep_exports/DEP-2026-09-26-0001": {
+            "status": "fertig",
+            "quelle": "api",
+            "kasse": "KASSE1",
+            "von": "2026-09-01",
+            "bis": "2026-09-25",
+            "anzahl": 3,
+            "zaehlerVon": 1,
+            "zaehlerBis": 3,
+            "hashSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "groesse": 4096,
+            "pfadJson": "users/kw_betrieb1/dep-export/KASSE1/DEP-2026-09-26-0001.json",
+            "pfadPdf": "users/kw_betrieb1/dep-export/KASSE1/DEP-2026-09-26-0001.pdf",
+            "hashPdf": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "groessePdf": 2048,
+            "pfadPositionen": "users/kw_betrieb1/dep-export/KASSE1/DEP-2026-09-26-0001.positionen.csv",
+            "hashPositionen": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "groessePositionen": 512,
+            "anzahlPositionen": 4,
+            "pfadZip": "users/kw_betrieb1/dep-export/KASSE1/DEP-2026-09-26-0001.zip",
+            "hashZip": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "groesseZip": 3000,
+            "befund": {
+              "anzahl": 3,
+              "zaehlerVon": 1,
+              "zaehlerBis": 3,
+              "luecken": [],
+              "kettenbruch": null,
+              "ohneZaehler": [],
+              "ohneSig": []
+            },
+            "umgebung": "live",
+            "erstelltAm": "2026-09-26T09:40:00",
+            "fertigAm": "2026-09-26T09:40:20",
+            "erstelltVon": "api",
+            "links": [
+              {
+                "linkId": "kwLink0000000000000A",
+                "erstelltAm": 1790409000000,
+                "gueltigBis": 1791619200000,
+                "widerrufenAm": 1790409600000,
+                "ersterAbrufAm": null,
+                "abrufe": 0
+              }
+            ]
+          }
+        },
+        "success_device": {
+          "dep_links/kwLink0000000000000A": {
+            "uid": "kw_betrieb1",
+            "umgebung": "live",
+            "kasse": "KASSE1",
+            "kennung": "DEP-2026-09-26-0001",
+            "ownerUid": "kw_betrieb1",
+            "tokenHash": "<geheim>",
+            "codeHash": "<geheim>",
+            "codeSalt": "<geheim>",
+            "widerrufTokenHash": "<geheim>",
+            "widerrufTokenHashAbruf": null,
+            "erstelltAm": 1790409000000,
+            "gueltigBis": 1791619200000,
+            "erstelltVon": "kasse:ru_chef",
+            "widerrufenAm": 1790409600000,
+            "widerrufenVon": "api",
+            "ersterAbrufAm": null,
+            "abrufe": 0,
+            "mail": {
+              "erstellt": null,
+              "abruf": null
+            }
+          },
+          "users/kw_betrieb1/dep_exports/DEP-2026-09-26-0001": {
+            "status": "fertig",
+            "quelle": "api",
+            "kasse": "KASSE1",
+            "von": "2026-09-01",
+            "bis": "2026-09-25",
+            "anzahl": 3,
+            "zaehlerVon": 1,
+            "zaehlerBis": 3,
+            "hashSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "groesse": 4096,
+            "pfadJson": "users/kw_betrieb1/dep-export/KASSE1/DEP-2026-09-26-0001.json",
+            "pfadPdf": "users/kw_betrieb1/dep-export/KASSE1/DEP-2026-09-26-0001.pdf",
+            "hashPdf": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "groessePdf": 2048,
+            "pfadPositionen": "users/kw_betrieb1/dep-export/KASSE1/DEP-2026-09-26-0001.positionen.csv",
+            "hashPositionen": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "groessePositionen": 512,
+            "anzahlPositionen": 4,
+            "pfadZip": "users/kw_betrieb1/dep-export/KASSE1/DEP-2026-09-26-0001.zip",
+            "hashZip": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "groesseZip": 3000,
+            "befund": {
+              "anzahl": 3,
+              "zaehlerVon": 1,
+              "zaehlerBis": 3,
+              "luecken": [],
+              "kettenbruch": null,
+              "ohneZaehler": [],
+              "ohneSig": []
+            },
+            "umgebung": "live",
+            "erstelltAm": "2026-09-26T09:40:00",
+            "fertigAm": "2026-09-26T09:40:20",
+            "erstelltVon": "api",
+            "links": [
+              {
+                "linkId": "kwLink0000000000000A",
+                "erstelltAm": 1790409000000,
+                "gueltigBis": 1791619200000,
+                "widerrufenAm": 1790409600000,
+                "ersterAbrufAm": null,
+                "abrufe": 0
+              }
+            ]
           }
         }
       }

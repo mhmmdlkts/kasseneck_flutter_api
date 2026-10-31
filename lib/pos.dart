@@ -63,6 +63,29 @@ export 'src/kasse/testkennzeichen.dart';
 export 'src/kasse/belege.dart';
 export 'src/kasse/belegliste.dart';
 export 'src/kasse/belegmail.dart';
+// Pruefung (DEP) an der Kasse (seit 11.13): die Aufrufe stehen an
+// RegisterReceiptClient, hier ihre Typen (dieselben wie in kasseneck_api.dart)
+// und der Ordnername fuer den USB-Stick.
+export 'src/dep/nachschau.dart'
+    show
+        DepChainBreak,
+        DepCounterRange,
+        DepDownloadLink,
+        DepExport,
+        DepExportFailedException,
+        DepExportFile,
+        DepExportItems,
+        DepExportTimeoutException,
+        DepFindings,
+        DepHandoverLink,
+        DepHandoverLinkInfo,
+        DepHandoverRevocation,
+        depExportDone,
+        depExportErrorCodes,
+        depExportFailed,
+        depExportFiles,
+        depExportRunning;
+export 'src/kasse/dep.dart';
 // Ausgaben eines Belegs (logReceiptOutputs, `outputs` am Beleg); die Leser
 // bleiben paketintern.
 export 'src/kasse/beleg_ausgaben.dart' hide ausgabenGemeldet, ausgabenLesen, ausgabenNutzlast;

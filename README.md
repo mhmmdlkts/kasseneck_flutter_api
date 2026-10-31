@@ -68,7 +68,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.12.0
+  kasseneck_api: ^11.13.0
 ```
 
 ```bash
@@ -1132,6 +1132,39 @@ before sending (`KasseneckValidationError`, `kind: request`); an unknown `status
 or a link without `expiresAt` is a response error. All times (`createdAt`,
 `finishedAt`, `expiresAt`, `revokedAt`, `firstAccessAt`) are ISO 8601 in UTC
 (`2026-10-30T08:00:00.000Z`).
+
+### At the register (register sign-in)
+
+A register app with personal sign-in exports the DEP at the register itself
+(since 11.13.0): the same calls with the same arguments on
+`RegisterReceiptClient`, sent to `https://kasse.kasseneck.at/api/v3` for the
+cash register of the session. Only the manager may export: the owner or a
+register user with the permission `layout` (*Kassen-Chef*). Anyone else gets
+`manager_only` on each of the five calls, and nothing is created.
+
+```dart
+final client = RegisterReceiptClient(transport);   // the client the register already holds
+try {
+  final created = await client.createDepExport(from: '2026-07-01', to: '2026-09-30', requestId: 'nachschau-1');
+  final export = await client.waitForDepExport(created.exportId);
+  final dep = await client.getDepExportFile(export.exportId, 'dep', sha256: export.sha256);
+  final folder = depFolderName(transport.cashregisterId, from: export.from, to: export.to);
+  // write dep.bytes as '$folder/${dep.fileName}' to the USB stick
+} catch (e) {
+  showHint(sentence(e, messageText('dep.failed')));   // manager_only -> dep.manager_only
+}
+```
+
+`depFolderName` (`pos.dart`) names the folder the way the web register does:
+`DEP_<cash register>_<from>_<to>`, `DEP_<id>_alles` without a period,
+`DEP_<id>_bis_<to>` or `DEP_<id>_ab_<from>` with one end only; characters FAT32
+or exFAT refuse become `_`. The words of the screen *Prüfung (DEP)* are in the
+text catalogue (`nav.dep`, `dep.*`); `sentence` is the helper from *What the
+cashier sees* above, whose code rules turn `manager_only`, `export_running` and
+`too_many_exports` into the register's own sentence. `RegisterTransport.callRaw` is the
+transport behind `getDepExportFile`: the same sign-in and header checks as
+`call`, but it returns the response, because the answer is either the file or an
+envelope.
 
 ## Invoices (invoice API)
 

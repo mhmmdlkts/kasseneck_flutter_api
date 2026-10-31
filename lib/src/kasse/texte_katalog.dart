@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.20.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.21.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.20.0';
+const String posTextsVersion = '1.21.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -241,6 +241,19 @@ const Map<String, PosText> posMessages = {
   'tip_payout.none_open': PosText('In dieser Schicht ist kein Trinkgeld offen.'),
   'shift.pending_hint': PosText('Noch nicht bestätigt. „Erneut senden“ schickt denselben Vorgang – er zählt nur einmal.'),
   'shift.change_float_missing': PosText('Es fehlen {amount} bis zum Wechselgeld von {total}.', placeholders: ['amount', 'total']),
+  'dep.manager_only': PosText('Den Export für die Prüfung macht der Chef. Ist er nicht da, darf die Behörde bis zu zwei Werktage warten.'),
+  'dep.offline': PosText('Ohne Internet ist kein Export möglich. Die Behörde muss dann bis zu zwei Werktage warten; der Export geht später hier oder unter mein.kasseneck.at.'),
+  'dep.creating': PosText('Wird erstellt …'),
+  'dep.running': PosText('Für diese Kasse läuft schon ein Export. Bitte kurz warten, er wird gleich fertig.'),
+  'dep.failed': PosText('Der Export ist fehlgeschlagen. Bitte erneut erstellen.'),
+  'dep.too_many_exports': PosText('Heute sind an diesem Konto keine weiteren Exporte möglich – morgen geht es wieder. Ein schon erstellter Export bleibt nutzbar.'),
+  'dep.period_invalid': PosText('Bitte einen gültigen Zeitraum wählen: „Von“ nicht in der Zukunft, „Bis“ nicht vor „Von“.'),
+  'dep.usb_hint': PosText('USB-Stick anstecken (FAT32 oder exFAT). Der Prüfer behält den Stick.'),
+  'dep.saved': PosText('Gespeichert im Ordner {folder}.', placeholders: ['folder']),
+  'dep.save_failed': PosText('Speichern hat nicht geklappt. Bitte den Stick prüfen und erneut speichern.'),
+  'dep.zip_fallback': PosText('Dieser Browser kann keinen Ordner wählen – der Export kommt als ZIP-Datei in den Download-Ordner.', only: [PosSurface.web]),
+  'dep.code_once': PosText('Code und QR-Code gibt es nur auf diesem Bildschirm. Wer zurückgeht, erstellt beim nächsten Mal einen neuen Link.'),
+  'dep.revoked': PosText('Der Link ist widerrufen.'),
   'app.not_in_browser': PosText('Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.', only: [PosSurface.app]),
   'app.open_in_browser': PosText('Bitte im Browser öffnen: {target}', placeholders: ['target'], only: [PosSurface.app]),
 };
@@ -489,6 +502,7 @@ const Map<String, PosText> posLabels = {
   'nav.vouchers': PosText('Gutscheine'),
   'nav.open_drawer': PosText('Kassenlade öffnen'),
   'nav.stocktake': PosText('Inventur'),
+  'nav.dep': PosText('Prüfung (DEP)'),
   'nav.settings': PosText('Einstellungen'),
   'nav.settings_locked': PosText('nur mit Chef-Anmeldung'),
   'nav.logout': PosText('Abmelden'),
@@ -575,6 +589,23 @@ const Map<String, PosText> posLabels = {
   'receipt.output_pdf_shared': PosText('PDF geteilt'),
   'receipt.output_opened': PosText('Link geöffnet ({count}×)', placeholders: ['count']),
   'receipt.output_failed': PosText('fehlgeschlagen'),
+  'dep.title': PosText('Prüfung (DEP)'),
+  'dep.period': PosText('Zeitraum'),
+  'dep.period_all': PosText('Alles seit Inbetriebnahme'),
+  'dep.period_year': PosText('Ein Jahr'),
+  'dep.period_quarter': PosText('Ein Quartal'),
+  'dep.period_custom': PosText('Eigener Zeitraum'),
+  'dep.from': PosText('Von'),
+  'dep.to': PosText('Bis'),
+  'dep.create': PosText('Export erstellen'),
+  'dep.receipts': PosText('{count} Belege', placeholders: ['count']),
+  'dep.save_usb': PosText('Auf USB-Stick speichern'),
+  'dep.handover_link': PosText('Link für den Prüfer'),
+  'dep.code': PosText('Code'),
+  'dep.valid_until': PosText('gültig bis {date}', placeholders: ['date']),
+  'dep.revoke': PosText('Widerrufen'),
+  'dep.checksum': PosText('Prüfsumme (SHA-256)'),
+  'dep.new_export': PosText('Neuer Export'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].
@@ -606,6 +637,9 @@ const List<ErrorRule> errorCodeRules = [
   ErrorRule(kind: ErrorKind.api, codes: ['invalid_amount'], key: 'amount.invalid'),
   ErrorRule(kind: ErrorKind.api, codes: ['drawer_not_found'], key: 'drawer.not_found'),
   ErrorRule(kind: ErrorKind.api, codes: ['drawer_inactive'], key: 'drawer.inactive'),
+  ErrorRule(kind: ErrorKind.api, codes: ['manager_only'], key: 'dep.manager_only'),
+  ErrorRule(kind: ErrorKind.api, codes: ['export_running'], key: 'dep.running'),
+  ErrorRule(kind: ErrorKind.api, codes: ['too_many_exports'], key: 'dep.too_many_exports'),
 ];
 
 /// Regeln je Ausgang, nach den Code-Regeln; siehe [findErrorRule] und [messageOutcome].

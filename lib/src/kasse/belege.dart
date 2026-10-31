@@ -24,6 +24,22 @@ import '../../models/keck_payment.dart';
 import '../../models/keck_tip_person.dart';
 import '../../models/manual_receipt.dart';
 import '../aufrufe.dart';
+import '../dep/nachschau.dart'
+    show
+        DepExport,
+        DepExportFailedException,
+        DepExportFile,
+        DepExportTimeoutException,
+        DepHandoverLink,
+        DepHandoverRevocation,
+        depAbwarten,
+        depDateiAusAntwort,
+        depExportAus,
+        depHandoverLinkAus,
+        depWiderrufAus,
+        pruefeDepDateiEingabe,
+        pruefeDepExportEingabe,
+        pruefeDepKennung;
 import '../lager/lesen.dart' show inventur, inventurPosition, inventurZaehlung, liste, naechsterCursor, zaehlungMitPosition;
 import '../lager/modelle.dart' show Stocktake, StocktakeCountPage, StocktakeCountResult, StocktakeItemPage;
 import '../lager/schreiben.dart' show anfragefehler, kennung, pruefeGanzzahlen, pruefeSchluessel, stornoPruefen, zaehlungPruefen;
@@ -832,6 +848,112 @@ class RegisterReceiptClient {
   /// Etikett noch einmal drucken (`reprintVoucherLabel`, Recht
   /// `voucherManage`): liefert den Klartext-Code nur fuer den Druck.
   Future<String> reprintVoucherLabel(String id) => gutschein.reprintVoucherLabel(transport, id);
+
+  // ---- Pruefung (DEP) bei der Kassennachschau (seit 11.13) -----------------
+  //
+  // Dieselben Aufrufe wie `KasseneckApi.createDepExport` und Verwandte, hier
+  // ueber den Kassenweg mit der Kassen-Anmeldung; die Kasse ist die der
+  // Sitzung. Exportieren darf nur der Chef: der Inhaber oder ein
+  // Kassen-Benutzer mit dem Recht `layout` (beide Kassen nennen ihn
+  // „Kassen-Chef“). Jeder andere bekommt bei jedem der fuenf Aufrufe
+  // `manager_only` als `KasseneckApiError.code`, ohne dass etwas entsteht.
+  // Pruefung vor dem Senden, Warten und Laden ueber den Lese-Link teilen sich
+  // beide Wege (`src/dep/nachschau.dart`); keiner der Aufrufe steht in
+  // `unknownOutcomeCalls` (createDepExport mit requestId idempotent, ein
+  // zweiter Pruefer-Link kostet hoechstens `too_many_links`).
+
+  /// Legt einen DEP-Export fuer die Kassennachschau an (`createDepExport`,
+  /// § 19 Abs 2 RKSV), optional fuer [from] bis [to] (Wiener Tage
+  /// `YYYY-MM-DD`, beide einschliesslich). Antwortet sofort mit
+  /// `status: running`; weiter mit [waitForDepExport].
+  ///
+  /// Nach einem Zeitlimit mit **derselben** [requestId] (bis 64 Zeichen
+  /// `A-Za-z0-9_-`) und demselben Zeitraum nachfassen: die Wiederholung
+  /// liefert den schon angelegten Export statt eines zweiten. Tage und
+  /// requestId prueft das Paket vor dem Senden ([KasseneckValidationError],
+  /// `kind: request`). Codes: `manager_only`, `invalid_period`,
+  /// `idempotency_conflict`, `export_running` (`details['exportId']` nennt den
+  /// laufenden), `too_many_exports`.
+  Future<DepExport> createDepExport({String? from, String? to, String? requestId}) async {
+    const name = Aufrufe.createDepExport;
+    pruefeDepExportEingabe(name, from: from, to: to, requestId: requestId);
+    final daten = await transport.call(name, params: {'from': from, 'to': to, 'requestId': requestId});
+    return depExportAus(name, daten);
+  }
+
+  /// Der Stand eines Exports dieser Kasse (`getDepExport`) mit Befund,
+  /// Positionsdatei und Pruefer-Links (ohne Adresse und Code).
+  Future<DepExport> getDepExport(String exportId) async {
+    const name = Aufrufe.getDepExport;
+    pruefeDepKennung(name, 'exportId', exportId);
+    return depExportAus(name, await transport.call(name, params: {'exportId': exportId}));
+  }
+
+  /// Wartet, bis der Export fertig ist ([getDepExport]): sofort, dann nach
+  /// 2 s und mit je 1,5-fachem Abstand, hoechstens alle 15 s. `failed` wirft
+  /// [DepExportFailedException], nach [timeout] [DepExportTimeoutException]
+  /// (der Export laeuft weiter, [getDepExport] fragt spaeter). Ein Fehler der
+  /// Abfrage, auch ein Netzfehler, beendet das Warten unveraendert.
+  Future<DepExport> waitForDepExport(String exportId, {Duration timeout = const Duration(minutes: 10)}) =>
+      depAbwarten(exportId, timeout, getDepExport);
+
+  /// Eine Datei eines fertigen Exports: [file] ist `dep` (JSON), `protocol`
+  /// (PDF), `items` (CSV) oder `zip`.
+  ///
+  /// Kleine Dateien kommen direkt, grosse als Lese-Link; dem Link folgt das
+  /// Paket ohne Anmelde-Kopfzeilen (ID-Token und Kassen-Sitzung gehen nie an
+  /// den Speicherdienst) und prueft Groesse und SHA-256. Mit [sha256] (etwa
+  /// [DepExport.sha256] fuer `dep`) prueft es auch eine direkte Datei; eine
+  /// Abweichung wirft [KasseneckValidationError] (`kind: response`).
+  /// [downloadTimeout] gilt je fuer den Aufruf und fuer das Laden ueber den
+  /// Link, nicht die Frist des Transports.
+  Future<DepExportFile> getDepExportFile(
+    String exportId,
+    String file, {
+    Duration downloadTimeout = const Duration(minutes: 10),
+    String? sha256,
+  }) async {
+    const name = Aufrufe.getDepExportFile;
+    final bekannt = pruefeDepDateiEingabe(
+      name,
+      exportId: exportId,
+      file: file,
+      sha256: sha256,
+      downloadTimeout: downloadTimeout,
+    );
+    final antwort = await transport.callRaw(
+      name,
+      params: {'exportId': exportId, 'file': file},
+      timeout: downloadTimeout,
+    );
+    return depDateiAusAntwort(
+      name,
+      client: kassenHttpClient(transport),
+      exportId: exportId,
+      file: file,
+      antwort: antwort,
+      erfolgsHuelle: () => kassenErfolgsHuelle(name, antwort),
+      frist: downloadTimeout,
+      bekannt: bekannt,
+    );
+  }
+
+  /// Ein Pruefer-Link fuer einen fertigen Export (`createDepHandoverLink`):
+  /// Adresse (QR-Code) und 6-stelliger Code, 14 Tage gueltig. **Beides steht
+  /// nur in dieser Antwort** und gehoert in kein Protokoll.
+  Future<DepHandoverLink> createDepHandoverLink(String exportId) async {
+    const name = Aufrufe.createDepHandoverLink;
+    pruefeDepKennung(name, 'exportId', exportId);
+    return depHandoverLinkAus(name, await transport.call(name, params: {'exportId': exportId}));
+  }
+
+  /// Widerruft einen Pruefer-Link (`revokeDepHandoverLink`); ein schon
+  /// widerrufener ist kein Fehler, einer einer anderen Kasse `link_not_found`.
+  Future<DepHandoverRevocation> revokeDepHandoverLink(String linkId) async {
+    const name = Aufrufe.revokeDepHandoverLink;
+    pruefeDepKennung(name, 'linkId', linkId);
+    return depWiderrufAus(name, await transport.call(name, params: {'linkId': linkId}));
+  }
 
   // ---- Inventur zaehlen (Lager-Kern Stufe 3, seit 10.7) ---------------------
   //

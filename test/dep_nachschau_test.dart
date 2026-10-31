@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -642,22 +643,13 @@ void main() {
     });
   });
 
-  test('Fehlercodes: alle Codes des Backend-Katalogs dep_nachschau sind bekannt', () {
-    // docs/api/fehlercodes.json, Eintrag dep_nachschau.
-    expect(depExportErrorCodes, {
-      'validation',
-      'invalid_period',
-      'idempotency_conflict',
-      'export_running',
-      'too_many_exports',
-      'export_not_found',
-      'export_not_ready',
-      'export_failed',
-      'invalid_file',
-      'file_not_available',
-      'too_many_links',
-      'link_not_found',
-      'server_error',
-    });
+  test('Fehlercodes: depExportErrorCodes ist errorCodes.depExport des Vertrags, Reihenfolge eingeschlossen', () {
+    // v3-vokabular.json aus dem npm-Paket (Backend-Katalog dep_nachschau);
+    // seit 1.21.0 mit manager_only (Kassenweg, nur der Chef).
+    final vokabular = jsonDecode(File('test/fixtures/vertrag/v3/v3-vokabular.json').readAsStringSync()) as Map;
+    final codes = vokabular['errorCodes'] as Map;
+    expect(depExportErrorCodes.toList(), codes['depExport']);
+    expect(depExportErrorCodes, contains('manager_only'));
+    expect((codes['all'] as List).toSet(), containsAll(depExportErrorCodes));
   });
 }
