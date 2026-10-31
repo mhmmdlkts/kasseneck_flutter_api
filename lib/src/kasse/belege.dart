@@ -49,6 +49,7 @@ import 'artikel.dart';
 import 'gutschein.dart' as gutschein show checkVoucher, reprintVoucherLabel;
 import 'gutschein.dart' show VoucherCheck;
 import 'gutschein_wunsch.dart';
+import 'kasseninfo.dart' show RegisterInspectionInfo;
 import '../../models/keck_voucher.dart';
 import '../../models/registration_info.dart';
 import 'beleg_ausgaben.dart';
@@ -862,6 +863,37 @@ class RegisterReceiptClient {
   /// Etikett noch einmal drucken (`reprintVoucherLabel`, Recht
   /// `voucherManage`): liefert den Klartext-Code nur fuer den Druck.
   Future<String> reprintVoucherLabel(String id) => gutschein.reprintVoucherLabel(transport, id);
+
+  // ---- Pruefung: Nullbeleg und Kasseninfo (seit 11.15) --------------------
+  //
+  // Bei einer Nachschau erstellt die Kasse einen Nullbeleg und zeigt bzw.
+  // druckt die Kasseninfo fuer den Pruefer. Beides darf jeder Kassen-Benutzer,
+  // ein Kassier reicht (der Chef ist oft nicht da); das DEP bleibt beim Chef.
+
+  /// Nullbeleg (`createReceipt` mit `receiptType: zero`): ein signierter
+  /// Beleg ohne Positionen und ohne Zahlung, etwa fuer den Pruefer bei einer
+  /// Nachschau. Dieselbe Anfrage wie `KasseneckApi.zeroReceipt`, hier ueber
+  /// den Kassenweg mit der Kassen-Anmeldung; der Server verlangt das Recht
+  /// `sell` (oder `layout`), sonst `not_permitted`.
+  ///
+  /// Wie bei [sell]: der Beleg kann signiert sein, auch wenn die Antwort
+  /// nicht ankommt (`isOutcomeUnknown`). Dann zuerst die Belegliste ([list])
+  /// lesen und nur einen neuen Nullbeleg erstellen, wenn dort keiner steht.
+  /// Eine unlesbare Erfolgsantwort kommt als `response_unreadable` mit der
+  /// Kennung des Belegs.
+  Future<KasseneckReceipt> zeroReceipt() async {
+    const name = Aufrufe.createReceipt;
+    final daten = await _signiertRufen(name, params: {'receiptType': 'zero'});
+    return readSignedResponse(name, () => _belegAus(daten, name), receiptId: () => _kennungAus(daten));
+  }
+
+  /// Kasseninfo fuer die Pruefung (`getRegisterInspectionInfo`, nur
+  /// Kassenweg): Produkt, Hersteller, Kassen-ID, Signatureinheit,
+  /// Abschluesse und Kontakt fuer den Pruefer. Die Kasse ist die der Sitzung;
+  /// liest nur, aendert nichts. Bildschirm und Ausdruck daraus mit
+  /// `inspectionInfoRows` und `inspectionInfoLines`.
+  Future<RegisterInspectionInfo> getRegisterInspectionInfo() async =>
+      RegisterInspectionInfo.fromJson(await transport.call(Aufrufe.getRegisterInspectionInfo));
 
   // ---- Pruefung (DEP) bei der Kassennachschau (seit 11.13) -----------------
   //

@@ -117,6 +117,7 @@ final Set<String> woerter = _liste('''
   fixed rotation template unlimited years
   access breaks chain clean export findings links revocation revoke revoked wait
   folder
+  annual based closings contact holder inspection manufacturer outage product section
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,

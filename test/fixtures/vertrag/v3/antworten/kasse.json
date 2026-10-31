@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "aeb5b3adbbf7bc56d3353b43d024a3e80fdedbcffe974f4f4c2d821d8c30e222",
+      "sha256": "33ec86c49da47f5c8a624ed721c4d422fabeab8aa2d5c2fd9d6d491790ccc3bf",
       "head": [],
-      "inputsSha256": "2602e3996bd0e763674aa54fe05ee2dfbc09c3ff18fd161293bf12cf9e571a4b",
+      "inputsSha256": "b5d46d661435eac06805cbd21d8afde6bc01455740e2750be7223917cf4620de",
       "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -24,7 +24,7 @@
         "channel",
         "note"
       ],
-      "inputsSha256": "ab248df756638c558f0bba786fc43aef1087b36c26329a06bcd57d155d3da72b",
+      "inputsSha256": "e72d75f38d7d0ef68acf797cc9646936839ce446fc7febf7da77e915c1131f1a",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -8432,6 +8432,319 @@
                     "text": "Danke für Ihren Besuch",
                     "align": "center",
                     "bold": false
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "banner",
+                    "text": "TESTSIGNATUR — kein gültiger Beleg",
+                    "tone": "warning"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "case": "zero_receipt_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "receiptType": "zero",
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "is_small_business": false,
+              "company": "Café Welt",
+              "phone": "+43 1 234 56",
+              "street": "Hauptplatz 1",
+              "zip": "1010",
+              "city": "Wien",
+              "footer1": "Danke für Ihren Besuch",
+              "footer2": null,
+              "footer3": null,
+              "footer4": null,
+              "logo_url": null,
+              "kreiseck_logo": false,
+              "thanks_message": "Bis bald",
+              "receipt": {
+                "counter": 2,
+                "receiptType": "zero",
+                "zeroKind": "manual",
+                "receiptId": "KASSE1-ID-2",
+                "cashregisterId": "KASSE1",
+                "timeStamp": "2026-09-26T10:00:00",
+                "vouchers": [],
+                "paymentMethod": "cash",
+                "customerDetails": null,
+                "legalMessage": null,
+                "customProjectId": null,
+                "creditCardProvider": null,
+                "cardPaymentId": null,
+                "cardPaymentData": null,
+                "amountRateStandard": 0,
+                "amountRateReduced1": 0,
+                "amountRateReduced2": 0,
+                "amountRateZero": 0,
+                "amountRateSpecial": 0,
+                "turnoverCounterAES256ICM": "XVyQJUu2DiM4NjAKsiguYw==",
+                "signaturePreviousReceipt": "<signatur>",
+                "certificateSerialNumber": "ABC123",
+                "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000019d51dc2",
+                "payments": [],
+                "sig": "<signatur>",
+                "signatureSuccess": true,
+                "qr": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_XVyQJUu2_ABC123_<verkettung>_<signatur>",
+                "operator": {
+                  "uid": "ru_kellner",
+                  "name": "Ben Kellner"
+                },
+                "headerVersionId": "auto1",
+                "layoutRuleset": 2,
+                "registrationInfo": {
+                  "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
+                  "cashregisterRegisteredAt": "2026-01-02T09:00:00.000Z"
+                },
+                "items": []
+              },
+              "taxNumber": "12-345/6789",
+              "vatId": "ATU12345678",
+              "headerVersionId": "auto1",
+              "registrationInfo": {
+                "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
+                "cashregisterRegisteredAt": "2026-01-02T09:00:00.000Z"
+              },
+              "testCashregister": false,
+              "testSignature": true,
+              "logo_scale": "M",
+              "layout": {
+                "paperSize": "mm80",
+                "ruleset": 2,
+                "lines": [
+                  {
+                    "kind": "banner",
+                    "text": "TESTSIGNATUR — kein gültiger Beleg",
+                    "tone": "warning"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Café Welt",
+                    "align": "center",
+                    "bold": true
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Hauptplatz 1",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "1010 Wien",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "ATU12345678",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "text",
+                    "text": "+43 1 234 56",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "banner",
+                    "text": "NULLBELEG",
+                    "tone": "receipt_type"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Prüfbeleg",
+                    "align": "center",
+                    "bold": false
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Datum:",
+                        "width": 4,
+                        "align": "left"
+                      },
+                      {
+                        "text": "26.09.2026 10:00:00",
+                        "width": 8,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Kassen-ID:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "KASSE1",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Beleg-ID:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "KASSE1-ID-2",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "rule",
+                    "char": "-"
+                  },
+                  {
+                    "kind": "text",
+                    "text": "Prüfangaben",
+                    "align": "center",
+                    "bold": true
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Barumsatz:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "0,00 €",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Signatur:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "signiert",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Signaturkarte:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "0xABC123",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Zertifizierungsdienst:",
+                        "width": 7,
+                        "align": "left"
+                      },
+                      {
+                        "text": "Testsignatur (AT100)",
+                        "width": 5,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Karte registriert:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "11.03.2024",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "columns",
+                    "columns": [
+                      {
+                        "text": "Kasse registriert:",
+                        "width": 6,
+                        "align": "left"
+                      },
+                      {
+                        "text": "02.01.2026",
+                        "width": 6,
+                        "align": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "kind": "rule",
+                    "char": "-"
+                  },
+                  {
+                    "kind": "space",
+                    "lines": 1
+                  },
+                  {
+                    "kind": "qr",
+                    "data": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_XVyQJUu2_ABC123_<verkettung>_<signatur>"
                   },
                   {
                     "kind": "space",
@@ -24513,6 +24826,331 @@
             "data": {
               "linkId": "kwLink0000000000000A",
               "revokedAt": "2026-09-26T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getRegisterInspectionInfo": {
+      "codebase": "default",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "cashregister_not_assigned",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "session_other_cashregister",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Sitzung gehört zu einer anderen Kasse – bitte dort neu anmelden.",
+            "data": {
+              "code": "session_other_cashregister"
+            },
+            "code": "session_other_cashregister"
+          }
+        },
+        {
+          "case": "cashregister_token_wrong",
+          "method": "POST",
+          "caller": "device_api_key",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger cashregisterToken.",
+            "data": {
+              "code": "cashregister_token_invalid"
+            },
+            "code": "cashregister_token_invalid"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cashregisterId": "KASSE1",
+              "product": {
+                "name": "Kasseneck",
+                "cloudBased": true
+              },
+              "manufacturer": {
+                "name": "Post Now e.U.",
+                "vatId": "ATU76279224"
+              },
+              "signature": {
+                "serialHex": "abc123",
+                "serialDecimal": "11256099",
+                "testCard": true,
+                "status": "active"
+              },
+              "closings": {
+                "monthlyDay": 1,
+                "monthlyTime": "00:05",
+                "timeZone": "Europe/Vienna",
+                "annualIsDecember": true
+              },
+              "contactEmail": "hello@kasseneck.at"
+            }
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cashregisterId": "KASSE1",
+              "product": {
+                "name": "Kasseneck",
+                "cloudBased": true
+              },
+              "manufacturer": {
+                "name": "Post Now e.U.",
+                "vatId": "ATU76279224"
+              },
+              "signature": {
+                "provider": "a_trust",
+                "serialHex": "11c6c7cd",
+                "serialDecimal": "298239949",
+                "holder": "UID ATU12345675",
+                "issuer": "A-Trust Registrierkasse.CA",
+                "validFrom": "2026-09-01T08:00:00.000Z",
+                "validTo": "2031-09-01T08:00:00.000Z",
+                "holderChecked": true,
+                "testCard": false,
+                "status": "active"
+              },
+              "closings": {
+                "monthlyDay": 1,
+                "monthlyTime": "00:05",
+                "timeZone": "Europe/Vienna",
+                "annualIsDecember": true
+              },
+              "contactEmail": "hello@kasseneck.at"
+            }
+          }
+        },
+        {
+          "case": "success_outage",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cashregisterId": "KASSE1",
+              "product": {
+                "name": "Kasseneck",
+                "cloudBased": true
+              },
+              "manufacturer": {
+                "name": "Post Now e.U.",
+                "vatId": "ATU76279224"
+              },
+              "signature": {
+                "provider": "a_trust",
+                "serialHex": "11c6c7cd",
+                "serialDecimal": "298239949",
+                "holder": "UID ATU12345675",
+                "issuer": "A-Trust Registrierkasse.CA",
+                "validFrom": "2026-09-01T08:00:00.000Z",
+                "validTo": "2031-09-01T08:00:00.000Z",
+                "holderChecked": true,
+                "testCard": false,
+                "status": "outage",
+                "outageSince": "2026-09-26T07:12:00.000Z"
+              },
+              "closings": {
+                "monthlyDay": 1,
+                "monthlyTime": "00:05",
+                "timeZone": "Europe/Vienna",
+                "annualIsDecember": true
+              },
+              "contactEmail": "hello@kasseneck.at"
+            }
+          }
+        },
+        {
+          "case": "success_without_card",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cashregisterId": "KASSE1",
+              "product": {
+                "name": "Kasseneck",
+                "cloudBased": true
+              },
+              "manufacturer": {
+                "name": "Post Now e.U.",
+                "vatId": "ATU76279224"
+              },
+              "signature": null,
+              "closings": {
+                "monthlyDay": 1,
+                "monthlyTime": "00:05",
+                "timeZone": "Europe/Vienna",
+                "annualIsDecember": true
+              },
+              "contactEmail": "hello@kasseneck.at"
+            }
+          }
+        },
+        {
+          "case": "success_device",
+          "method": "POST",
+          "caller": "device_api_key",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "cashregisterId": "KASSE1",
+              "product": {
+                "name": "Kasseneck",
+                "cloudBased": true
+              },
+              "manufacturer": {
+                "name": "Post Now e.U.",
+                "vatId": "ATU76279224"
+              },
+              "signature": {
+                "provider": "a_trust",
+                "serialHex": "11c6c7cd",
+                "serialDecimal": "298239949",
+                "holder": "UID ATU12345675",
+                "issuer": "A-Trust Registrierkasse.CA",
+                "validFrom": "2026-09-01T08:00:00.000Z",
+                "validTo": "2031-09-01T08:00:00.000Z",
+                "holderChecked": true,
+                "testCard": false,
+                "status": "active"
+              },
+              "closings": {
+                "monthlyDay": 1,
+                "monthlyTime": "00:05",
+                "timeZone": "Europe/Vienna",
+                "annualIsDecember": true
+              },
+              "contactEmail": "hello@kasseneck.at"
             }
           }
         },

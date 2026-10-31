@@ -16,6 +16,7 @@ import '../enums/credit_card_provider.dart';
 import '../enums/keck_payment_method.dart';
 import '../enums/qr_print_mode.dart';
 import '../src/printing/code_tables.dart' show CodeTableId;
+import '../src/printing/escpos/enums.dart' show PosCutMode;
 import '../src/printing/qr_groesse.dart';
 import '../src/kasse/beleg_ausgaben.dart' show ReceiptOutput, ausgabenLesen;
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
@@ -636,9 +637,11 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
           {required KeckPaperSize paperSize,
           QrPrintMode qrMode = QrPrintMode.imageRaster,
           QrModuleSize qrModuleSize = QrModuleSize.auto,
-          CodeTableId? codeTable}) =>
+          CodeTableId? codeTable,
+          bool cut = true,
+          PosCutMode cutMode = PosCutMode.full}) =>
       KeckPrinterService.getBytesFromReceipt(this, paperSize,
-          qrMode: qrMode, qrModuleSize: qrModuleSize, codeTable: codeTable);
+          qrMode: qrMode, qrModuleSize: qrModuleSize, codeTable: codeTable, cut: cut, cutMode: cutMode);
 
   bool get isSigFailed => !RKSVService.isSigSuccess(sig);
 

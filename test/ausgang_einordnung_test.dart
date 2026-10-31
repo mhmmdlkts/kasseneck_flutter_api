@@ -64,6 +64,8 @@ const Set<String> _lesen = {
   'getMyShiftReport',
   'getPrintJob',
   'getReceipt',
+  // Kasseninfo fuer die Pruefung: liest nur.
+  'getRegisterInspectionInfo',
   'getReportV2',
   'getReservation',
   'getStock',

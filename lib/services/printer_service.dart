@@ -127,12 +127,19 @@ class KeckPrinterService {
   ///
   /// [codeTable] ist die im Drucker-Wizard gewaehlte Tabelle dieses Druckers
   /// (siehe [PrintPaper.codeTable]); ohne Wahl bleibt der Bon byte-gleich.
+  ///
+  /// [cut] und [cutMode]: Papierschnitt am Ende wie bei
+  /// [PrintPaper.setReceiptSheet] (Zwilling der Option `cut` von
+  /// `escPosLayoutBytes`). Vorgabe ein voller Schnitt wie bisher; `cut: false`
+  /// fuer die Geraete-Einstellung `cut: none` (Drucker ohne Messer).
   static Future<PrintPaper> getPaperFromReceipt(
     KasseneckReceipt receipt,
     KeckPaperSize paperSize, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModuleSize qrModuleSize = QrModuleSize.auto,
     CodeTableId? codeTable,
+    bool cut = true,
+    PosCutMode cutMode = PosCutMode.full,
     @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
     PrintLogo? logo,
     @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
@@ -168,7 +175,12 @@ class KeckPrinterService {
       // (`showKreiseckLogo`).
       try {
         await paper.setReceiptSheet(layout,
-            logo: wirksamesLogo, brandMark: wirksameMarke, qrMode: qrMode, qrModuleSize: qrModuleSize);
+            logo: wirksamesLogo,
+            brandMark: wirksameMarke,
+            cut: cut,
+            cutMode: cutMode,
+            qrMode: qrMode,
+            qrModuleSize: qrModuleSize);
       } on ArgumentError {
         // [setReceiptSheet] wirft nur ueber ein gesetztes Logo -- diese Pruefung
         // war fuer den AUFRUFER gedacht, der ein eigenes Raster mitbringt. Kommt
@@ -179,10 +191,10 @@ class KeckPrinterService {
         // bleibt hart -- wer ein Raster mitbringt, soll erfahren, dass es nicht passt.
         if (!belegTraegtLogo) rethrow;
         await paper.setReceiptSheet(layout,
-            brandMark: wirksameMarke, qrMode: qrMode, qrModuleSize: qrModuleSize);
+            brandMark: wirksameMarke, cut: cut, cutMode: cutMode, qrMode: qrMode, qrModuleSize: qrModuleSize);
       }
     } else {
-      await paper.setKeckReceipt(receipt, qrMode: qrMode, qrModuleSize: qrModuleSize);
+      await paper.setKeckReceipt(receipt, qrMode: qrMode, qrModuleSize: qrModuleSize, cut: cut, cutMode: cutMode);
     }
     return paper;
   }
@@ -197,12 +209,20 @@ class KeckPrinterService {
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModuleSize qrModuleSize = QrModuleSize.auto,
       CodeTableId? codeTable,
+      bool cut = true,
+      PosCutMode cutMode = PosCutMode.full,
       @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       PrintLogo? logo,
       @Deprecated('Das Logo kommt aus dem Beleg (logoUrl); dieser Parameter greift nur ohne Adresse.')
       bool brandMark = false}) async {
     final PrintPaper paper = await getPaperFromReceipt(receipt, paperSize,
-        qrMode: qrMode, qrModuleSize: qrModuleSize, codeTable: codeTable, logo: logo, brandMark: brandMark);
+        qrMode: qrMode,
+        qrModuleSize: qrModuleSize,
+        codeTable: codeTable,
+        cut: cut,
+        cutMode: cutMode,
+        logo: logo,
+        brandMark: brandMark);
     _letzterQrFehler = paper.qrError;
     _letzterQrAusweich = paper.qrFallback;
     return paper.bytes;

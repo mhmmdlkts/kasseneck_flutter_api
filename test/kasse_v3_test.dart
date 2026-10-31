@@ -71,6 +71,11 @@ const _ausgaben = ['logReceiptOutputs'];
 /// `kasse_dep_test.dart`.
 const _dep = ['createDepExport', 'getDepExport', 'getDepExportFile', 'createDepHandoverLink', 'revokeDepHandoverLink'];
 
+/// Kasseninfo fuer die Pruefung (seit 11.15, npm 1.23.0): jeder
+/// Kassen-Benutzer darf lesen. Die Faelle des Geraets mit api_key laufen
+/// mit wie beim DEP. Die Zeilen daraus prueft `kasse_kasseninfo_test.dart`.
+const _kasseninfo = ['getRegisterInspectionInfo'];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
   'openMyShift/key_conflict':
@@ -432,6 +437,8 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.createDepHandoverLink(_s(p['exportId']));
       case 'revokeDepHandoverLink':
         return belege.revokeDepHandoverLink(_s(p['linkId']));
+      case 'getRegisterInspectionInfo':
+        return belege.getRegisterInspectionInfo();
       case 'logReceiptOutputs':
         return belege.logReceiptOutputs(entries: [
           for (final e in (p['entries'] as List? ?? const [])) ReceiptOutputEntry.fromJson((e as Map).cast()),
@@ -472,6 +479,8 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
       case 'getPrintJob':
         return drucker.getPrintJob(printerId: _s(p['printerId']), jobId: _s(p['jobId']));
       case 'createReceipt':
+        // Der Nullbeleg (seit 11.15) hat einen eigenen Aufruf ohne Positionen und Zahlungen.
+        if (p['receiptType'] == 'zero') return belege.zeroReceipt();
         return belege.sell(
           items: [for (final i in (p['items'] as List? ?? const [])) KasseneckItem.fromJson((i as Map).cast())],
           payments: [for (final z in (p['payments'] as List? ?? const [])) _zahlung(z as Map)],
@@ -593,7 +602,8 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   if (_anmeldung.contains(endpunkt)) {
     expect(isRegisterError(lauf.fehler, code as String), isTrue, reason: '$name: $code in registerErrorCodes');
   }
-  if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt) || _schicht.contains(endpunkt)) {
+  if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt) || _schicht.contains(endpunkt) ||
+      _kasseninfo.contains(endpunkt)) {
     expect(isPosError(lauf.fehler, code as String), isTrue, reason: '$name: $code in posErrorCodes');
   }
   if (_ausgaben.contains(endpunkt)) {
@@ -607,7 +617,10 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
 
 void main() {
   group('jeder Fall des Kassenwegs', () {
-    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep]) {
+    for (final endpunkt in [
+      ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
+      ..._kasseninfo,
+    ]) {
       test(endpunkt, () async {
         var gelaufen = 0;
         for (final fall in _faelle(endpunkt)) {
@@ -632,9 +645,12 @@ void main() {
       }
     });
 
-    test('alle 47 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
-      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep};
-      expect((_vertrag['calls']['pos'] as List), hasLength(47));
+    test('alle 48 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+      final hier = {
+        ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
+        ..._kasseninfo,
+      };
+      expect((_vertrag['calls']['pos'] as List), hasLength(48));
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });
@@ -874,6 +890,36 @@ void main() {
       expect(zurueck!.params['stockLocationId'], '');
       final z = zurueck.ergebnis as CashregisterStockLocation;
       expect([z.cashregisterId, z.stockLocationId], ['KASSE1', null]);
+    });
+  });
+
+  group('Pruefung: Kasseninfo und Nullbeleg am Kassenweg (Vertragsfaelle)', () {
+    test('getRegisterInspectionInfo liest jeden Erfolgsfall verlustfrei, auch fuer den Kassier', () async {
+      final gesehen = <String>{};
+      for (final fall in _faelle('getRegisterInspectionInfo')) {
+        if (fall['response']['status'] != 'success') continue;
+        final lauf = (await _rufe('getRegisterInspectionInfo', fall))!;
+        final info = lauf.ergebnis as RegisterInspectionInfo;
+        final roh = fall['response']['data'] as Map<String, dynamic>;
+        expect(info.toJson(), roh, reason: fall['case'] as String);
+        final s = info.signature;
+        gesehen.add(s == null ? 'ohne' : s.testCard ? 'test' : s.status!);
+      }
+      // Testkarte, echte Karte in Betrieb, offener Ausfall und Kasse ohne Karte stehen im Vertrag.
+      expect(gesehen, {'test', 'active', 'outage', 'ohne'});
+      expect(_fall('getRegisterInspectionInfo', 'success_cashier')['caller'], 'register_user_cashier');
+    });
+
+    test('Nullbeleg eines Kassiers: receiptType zero, Kasse der Sitzung, gelesen als signierter Beleg', () async {
+      final fall = _fall('createReceipt', 'zero_receipt_cashier');
+      final lauf = (await _rufe('createReceipt', fall))!;
+      expect(lauf.log.single.url.toString(), 'https://kasse.kasseneck.at/api/v3/createReceipt');
+      expect(lauf.log.single.headers['register-session'], 'sess-1');
+      expect(lauf.params, {'cashregisterId': 'KASSE1', 'receiptType': 'zero'});
+      final beleg = lauf.ergebnis as KasseneckReceipt;
+      final roh = fall['response']['data']['receipt'] as Map<String, dynamic>;
+      expect(beleg.receiptId, roh['receiptId']);
+      expect(beleg.receiptType.name, 'zero');
     });
   });
 

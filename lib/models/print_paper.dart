@@ -85,8 +85,10 @@ class PrintPaper {
   /// werden Ersatzbuchstaben.
   String _printable(String text) => printableText(text, codeTable: codeTable);
 
-  void addCut() {
-    bytes.add(Uint8List.fromList(generator.cut()));
+  /// Papierschnitt: fuenf Leerzeilen, dann `GS V 0` ([PosCutMode.full]) bzw.
+  /// `GS V 1` ([PosCutMode.partial]) -- wie `escPosCut` im npm-Paket.
+  void addCut({PosCutMode mode = PosCutMode.full}) {
+    bytes.add(Uint8List.fromList(generator.cut(mode: mode)));
     // myPosPaper does not support cut
   }
 
@@ -380,9 +382,13 @@ class PrintPaper {
   }
 
   /// Veraltet: nur noch Rueckfall fuer Backends vor npm 0.9.0; neue Oberflaechen nutzen [setReceiptSheet] bzw. `KeckReceiptSheetWidget`.
+  ///
+  /// [cut] und [cutMode] wie bei [setReceiptSheet].
   Future setKeckReceipt(KasseneckReceipt receipt,
       {QrPrintMode qrMode = QrPrintMode.imageRaster,
-      QrModuleSize qrModuleSize = QrModuleSize.auto}) async {
+      QrModuleSize qrModuleSize = QrModuleSize.auto,
+      bool cut = true,
+      PosCutMode cutMode = PosCutMode.full}) async {
     reset();
 
     // Warnrahmen ueber allem (wie im Server-Layout): ein Beleg einer
@@ -675,7 +681,7 @@ class PrintPaper {
       await _addKreiseckBranding();
     }
 
-    addCut();
+    if (cut) addCut(mode: cutMode);
   }
 
   /// Das Kasseneck-Logo als allerletzter Block vor dem Cut -- der alte Weg
@@ -760,9 +766,10 @@ class PrintPaper {
   Future<void> setReceiptLayout(
     ReceiptLayout layout, {
     bool cut = true,
+    PosCutMode cutMode = PosCutMode.full,
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModuleSize qrModuleSize = QrModuleSize.auto,
-  }) => setReceiptSheet(layout, cut: cut, qrMode: qrMode, qrModuleSize: qrModuleSize);
+  }) => setReceiptSheet(layout, cut: cut, cutMode: cutMode, qrMode: qrMode, qrModuleSize: qrModuleSize);
 
   /// Druckt das **Blatt** (Zwilling von `escPosLayoutBytes` ab npm 0.14.0):
   /// Rasterzeilen, Firmenlogo nach dem fuehrenden Rahmen, QR im eingestellten
@@ -771,10 +778,18 @@ class PrintPaper {
   /// Wirft [ArgumentError], wenn das Rasterbild von [logo] nicht so gross ist,
   /// wie das Blatt das Logo setzt -- vor dem ersten Byte, das Papier bleibt
   /// dann unangetastet.
+  ///
+  /// Papierschnitt am Ende, Zwilling der Option `cut` von
+  /// `escPosLayoutBytes`: Vorgabe ein voller Schnitt (npm `true`/`'full'`),
+  /// [cutMode] [PosCutMode.partial] schneidet teilweise (npm `'partial'`),
+  /// [cut] `false` laesst Leerzeilen und Schnittbefehl ganz weg (npm `false`;
+  /// die Geraete-Einstellung `cut: none`, Drucker ohne Messer). Alles andere
+  /// bleibt Byte fuer Byte gleich (Prueffaelle `print-cut-cases.json`).
   Future<void> setReceiptSheet(ReceiptLayout layout,
       {PrintLogo? logo,
       bool brandMark = false,
       bool cut = true,
+      PosCutMode cutMode = PosCutMode.full,
       QrPrintMode qrMode = QrPrintMode.imageRaster,
       QrModuleSize qrModuleSize = QrModuleSize.auto}) async {
     final blatt = receiptSheet(
@@ -824,7 +839,7 @@ class PrintPaper {
           await _qrNachModus(b.payload, qrMode, groesse: qrModuleSize, blattAnteil: b.widthFraction);
       }
     }
-    if (cut) addCut();
+    if (cut) addCut(mode: cutMode);
   }
 
   /// Erst druckbar machen (Codepage, EUR statt Euro-Zeichen), DANN rastern —
