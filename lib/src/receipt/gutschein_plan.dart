@@ -469,7 +469,12 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
     final check = pruefung(v, i);
 
     if (v.action == VoucherAction.payout) {
-      // `gutschein-core.darfAuszahlen`: Auszahlung nicht gesperrt, aktiv oder abgelaufen bis zum Ende der Rueckzahlbarkeit.
+      // `gutschein-core.darfAuszahlen`: storniert und gesperrt zuerst (der Storno setzt den Saldo auf 0, die Kasse soll
+      // „storniert“ sagen, nicht „aufgebraucht“), dann Auszahlung nicht gesperrt, aktiv oder abgelaufen bis zum Ende der
+      // Rueckzahlbarkeit.
+      if (check.status == VoucherStatus.cancelled || check.status == VoucherStatus.blocked) {
+        throw PlanFehler(_statusFehler[check.status] ?? 'voucher_invalid', 'Gutschein ${i + 1}: Status ${check.status.wire}.');
+      }
       if (check.payout == VoucherPayout.never) throw PlanFehler('voucher_payout_not_allowed', 'Gutschein ${i + 1}: dieser Gutschein wird nie ausgezahlt.');
       if (!((check.balanceCents ?? 0) > 0)) throw PlanFehler('voucher_used_up', 'Gutschein ${i + 1}: kein Saldo.');
       if (check.status == VoucherStatus.expired) {

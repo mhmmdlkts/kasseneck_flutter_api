@@ -1,3 +1,16 @@
+## 11.13.1 (2026-10-31)
+
+Twin of `@kreiseck/kasseneck-api` `1.21.1` (contract files pulled from that
+version; the generated voucher cases gain four payout cases at the end).
+
+- **A payout checks `cancelled` and `blocked` first.** `receiptDueCents` and
+  `receiptDueBreakdown` with a `payout` wish reject a cancelled voucher with
+  `voucher_cancelled` and a blocked one with `voucher_blocked`, before the
+  balance and before `VoucherPayout.never`. Reason: cancelling a voucher sale
+  sets its balance to 0, so the register told the cashier "already used up"
+  (`voucher_used_up`) for a cancelled voucher. Used up and paid out stay
+  `voucher_used_up`. Same rule as the backend (`gutschein-core.darfAuszahlen`).
+
 ## 11.13.0 (2026-10-31)
 
 Twin of `@kreiseck/kasseneck-api` `1.21.0` (contract files pulled from that
