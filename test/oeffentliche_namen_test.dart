@@ -116,6 +116,7 @@ final Set<String> woerter = _liste('''
   suffix taxed up used validity patterns
   fixed rotation template unlimited years
   access breaks chain clean export findings links revocation revoke revoked wait
+  folder
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,

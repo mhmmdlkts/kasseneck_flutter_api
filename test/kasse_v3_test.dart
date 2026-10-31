@@ -63,6 +63,14 @@ const _gutschein = ['checkVoucher', 'reprintVoucherLabel'];
 /// Faelle Feld fuer Feld prueft `beleg_ausgaben_test.dart`.
 const _ausgaben = ['logReceiptOutputs'];
 
+/// Pruefung (DEP) an der Kasse (seit 11.13, npm 1.21.0): nur der Chef
+/// exportiert (`manager_only`). Die Faelle des Geraets mit api_key
+/// (`*_device`) laufen hier mit, wie `checkVoucher/success_device`: die
+/// Nutzlast ist dieselbe, nur die Anmeldung eine andere. Eine Datei als
+/// Antwort fuehrt der Export nicht (nur JSON); den Dateiweg prueft
+/// `kasse_dep_test.dart`.
+const _dep = ['createDepExport', 'getDepExport', 'getDepExportFile', 'createDepHandoverLink', 'revokeDepHandoverLink'];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
   'openMyShift/key_conflict':
@@ -413,6 +421,17 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.checkVoucher(_s(p['code']));
       case 'reprintVoucherLabel':
         return belege.reprintVoucherLabel(_s(p['id']));
+      case 'createDepExport':
+        return belege.createDepExport(
+            from: p['from'] as String?, to: p['to'] as String?, requestId: p['requestId'] as String?);
+      case 'getDepExport':
+        return belege.getDepExport(_s(p['exportId']));
+      case 'getDepExportFile':
+        return belege.getDepExportFile(_s(p['exportId']), _s(p['file']));
+      case 'createDepHandoverLink':
+        return belege.createDepHandoverLink(_s(p['exportId']));
+      case 'revokeDepHandoverLink':
+        return belege.revokeDepHandoverLink(_s(p['linkId']));
       case 'logReceiptOutputs':
         return belege.logReceiptOutputs(entries: [
           for (final e in (p['entries'] as List? ?? const [])) ReceiptOutputEntry.fromJson((e as Map).cast()),
@@ -580,11 +599,15 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
   if (_ausgaben.contains(endpunkt)) {
     expect(isReceiptOutputError(lauf.fehler, code as String), isTrue, reason: '$name: $code in receiptOutputErrorCodes');
   }
+  if (_dep.contains(endpunkt)) {
+    expect(depExportErrorCodes.contains(code) || isPosError(lauf.fehler, code as String), isTrue,
+        reason: '$name: $code in depExportErrorCodes oder posErrorCodes');
+  }
 }
 
 void main() {
   group('jeder Fall des Kassenwegs', () {
-    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben]) {
+    for (final endpunkt in [..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep]) {
       test(endpunkt, () async {
         var gelaufen = 0;
         for (final fall in _faelle(endpunkt)) {
@@ -609,8 +632,9 @@ void main() {
       }
     });
 
-    test('alle 42 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
-      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben};
+    test('alle 47 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+      final hier = {..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep};
+      expect((_vertrag['calls']['pos'] as List), hasLength(47));
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });
@@ -850,6 +874,64 @@ void main() {
       expect(zurueck!.params['stockLocationId'], '');
       final z = zurueck.ergebnis as CashregisterStockLocation;
       expect([z.cashregisterId, z.stockLocationId], ['KASSE1', null]);
+    });
+  });
+
+  group('Pruefung (DEP) am Kassenweg (Vertragsfaelle)', () {
+    test('ein Kassierer ohne Chef-Recht bekommt bei jedem der fuenf Aufrufe manager_only und den Satz der Kasse', () async {
+      for (final ep in _dep) {
+        final lauf = (await _rufe(ep, _fall(ep, 'cashier_no_manager')))!;
+        expect(lauf.log, hasLength(1), reason: ep);
+        expect(lauf.log.single.headers['Authorization'], 'Bearer id-token', reason: ep);
+        expect(lauf.log.single.headers['register-session'], 'sess-1', reason: ep);
+        expect(lauf.params['cashregisterId'], 'KASSE1', reason: ep);
+        final fehler = lauf.fehler;
+        expect(fehler, isA<KasseneckApiError>().having((e) => e.code, 'code', 'manager_only'), reason: ep);
+        expect(isOutcomeUnknown(fehler), isFalse, reason: '$ep: abgewiesen, nichts entstanden');
+        final regel = findErrorRule(ErrorKind.api,
+            code: (fehler as KasseneckApiError).code, outcome: messageOutcome(fehler));
+        expect(regel.key, 'dep.manager_only', reason: ep);
+      }
+    });
+
+    test('getDepExport liest den Export samt Befund und Pruefer-Links', () async {
+      final roh = _fall('getDepExport', 'success_manager')['response']['data'] as Map<String, dynamic>;
+      final e = (await _rufe('getDepExport', _fall('getDepExport', 'success_manager')))!.ergebnis as DepExport;
+      expect(e.exportId, roh['exportId']);
+      expect(e.isDone, isTrue);
+      expect((e.from, e.to), (roh['from'], roh['to']));
+      expect((e.receiptCount, e.counterFrom, e.counterTo), (3, 1, 3));
+      expect(e.sha256, roh['sha256']);
+      expect(e.findings!.isClean, isTrue);
+      expect(e.items!.rowCount, 4);
+      expect(e.handoverLinks.single.linkId, 'kwLink0000000000000A');
+      expect(e.handoverLinks.single.expiresAt, '2026-10-10T08:00:00.000Z');
+
+      final laeuft = (await _rufe('getDepExport', _fall('getDepExport', 'success_running')))!.ergebnis as DepExport;
+      expect(laeuft.status, depExportRunning);
+      expect(laeuft.sha256, isNull);
+      expect(laeuft.handoverLinks, isEmpty);
+    });
+
+    test('export_running nennt den laufenden Export, invalid_period vor dem Senden oder vom Server', () async {
+      final lauf = (await _rufe('createDepExport', _fall('createDepExport', 'running_already')))!;
+      expect((lauf.fehler as KasseneckApiError).details['exportId'], 'DEP-2026-09-26-0002');
+      expect(findErrorRule(ErrorKind.api, code: 'export_running').key, 'dep.running');
+
+      // bis vor von: das Paket weist ab, bevor etwas hinausgeht.
+      final vorab = (await _rufe('createDepExport', _fall('createDepExport', 'period_wrong')))!;
+      expect(vorab.vorab, isTrue);
+      expect(vorab.log, isEmpty);
+      // von in der Zukunft kennt nur der Server.
+      final zukunft = (await _rufe('createDepExport', _fall('createDepExport', 'period_future')))!;
+      expect(zukunft.fehler, isA<KasseneckApiError>().having((e) => e.code, 'code', 'invalid_period'));
+    });
+
+    test('revokeDepHandoverLink liest den Widerruf', () async {
+      final r = (await _rufe('revokeDepHandoverLink', _fall('revokeDepHandoverLink', 'success_manager')))!.ergebnis
+          as DepHandoverRevocation;
+      expect(r.linkId, 'kwLink0000000000000A');
+      expect(r.revokedAt, '2026-09-26T08:00:00.000Z');
     });
   });
 

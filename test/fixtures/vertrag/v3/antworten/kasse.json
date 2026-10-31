@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "1c9e54a06b1851753d793301dd351bc9179079bcc53fa4a5205959a34373e172",
+      "sha256": "aeb5b3adbbf7bc56d3353b43d024a3e80fdedbcffe974f4f4c2d821d8c30e222",
       "head": [],
-      "inputsSha256": "e434dd5314bb3cd95a4c1796ad89b5a415c8bafba7c8dc6c90733dab5574bfa8",
+      "inputsSha256": "2602e3996bd0e763674aa54fe05ee2dfbc09c3ff18fd161293bf12cf9e571a4b",
       "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -24,7 +24,7 @@
         "channel",
         "note"
       ],
-      "inputsSha256": "24aa4b4db872ce5ce11005df01426a44f9e54452711abc68e18d6c903d382dd7",
+      "inputsSha256": "ab248df756638c558f0bba786fc43aef1087b36c26329a06bcd57d155d3da72b",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -23714,6 +23714,805 @@
                   "code": "validation"
                 }
               ]
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "createDepExport": {
+      "codebase": "default",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "cashier_no_manager",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "from": "2026-09-01",
+            "to": "2026-09-25"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Den Export für die Prüfung macht der Chef.",
+            "data": {
+              "code": "manager_only"
+            },
+            "code": "manager_only"
+          }
+        },
+        {
+          "case": "period_wrong",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "from": "2026-09-25",
+            "to": "2026-09-01"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "bis: liegt vor von.",
+            "data": {
+              "code": "invalid_period"
+            },
+            "code": "invalid_period"
+          }
+        },
+        {
+          "case": "period_future",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "from": "2026-10-01"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "von: darf nicht in der Zukunft liegen.",
+            "data": {
+              "code": "invalid_period"
+            },
+            "code": "invalid_period"
+          }
+        },
+        {
+          "case": "running_already",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "from": "2026-09-01",
+            "to": "2026-09-25"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Für diese Kasse läuft bereits ein Export.",
+            "data": {
+              "code": "export_running",
+              "exportId": "DEP-2026-09-26-0002"
+            },
+            "code": "export_running"
+          }
+        },
+        {
+          "case": "running_already_device",
+          "method": "POST",
+          "caller": "device_api_key",
+          "params": {
+            "from": "2026-09-01",
+            "to": "2026-09-25"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Für diese Kasse läuft bereits ein Export.",
+            "data": {
+              "code": "export_running",
+              "exportId": "DEP-2026-09-26-0002"
+            },
+            "code": "export_running"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getDepExport": {
+      "codebase": "default",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "cashier_no_manager",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Den Export für die Prüfung macht der Chef.",
+            "data": {
+              "code": "manager_only"
+            },
+            "code": "manager_only"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0099"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Export nicht gefunden.",
+            "data": {
+              "code": "export_not_found"
+            },
+            "code": "export_not_found"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "exportId": "DEP-2026-09-26-0001",
+              "status": "done",
+              "from": "2026-09-01",
+              "to": "2026-09-25",
+              "createdAt": "2026-09-26T07:40:00.000Z",
+              "finishedAt": "2026-09-26T07:40:20.000Z",
+              "receiptCount": 3,
+              "counterFrom": 1,
+              "counterTo": 3,
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "size": 4096,
+              "findings": {
+                "receiptCount": 3,
+                "counterFrom": 1,
+                "counterTo": 3,
+                "gaps": [],
+                "chainBreaks": [],
+                "withoutCounter": [],
+                "withoutSignature": []
+              },
+              "items": {
+                "rowCount": 4,
+                "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                "size": 512
+              },
+              "handoverLinks": [
+                {
+                  "linkId": "kwLink0000000000000A",
+                  "createdAt": "2026-09-26T07:50:00.000Z",
+                  "expiresAt": "2026-10-10T08:00:00.000Z",
+                  "revokedAt": null,
+                  "firstAccessAt": null,
+                  "accessCount": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_running",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0002"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "exportId": "DEP-2026-09-26-0002",
+              "status": "running",
+              "from": "2026-09-01",
+              "to": "2026-09-25",
+              "createdAt": "2026-09-26T07:55:00.000Z",
+              "finishedAt": null,
+              "receiptCount": 3,
+              "counterFrom": 1,
+              "counterTo": 3,
+              "sha256": null,
+              "size": 4096,
+              "findings": {
+                "receiptCount": 3,
+                "counterFrom": 1,
+                "counterTo": 3,
+                "gaps": [],
+                "chainBreaks": [],
+                "withoutCounter": [],
+                "withoutSignature": []
+              },
+              "items": {
+                "rowCount": 4,
+                "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                "size": 512
+              },
+              "handoverLinks": []
+            }
+          }
+        },
+        {
+          "case": "success_device",
+          "method": "POST",
+          "caller": "device_api_key",
+          "params": {
+            "exportId": "DEP-2026-09-26-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "exportId": "DEP-2026-09-26-0001",
+              "status": "done",
+              "from": "2026-09-01",
+              "to": "2026-09-25",
+              "createdAt": "2026-09-26T07:40:00.000Z",
+              "finishedAt": "2026-09-26T07:40:20.000Z",
+              "receiptCount": 3,
+              "counterFrom": 1,
+              "counterTo": 3,
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "size": 4096,
+              "findings": {
+                "receiptCount": 3,
+                "counterFrom": 1,
+                "counterTo": 3,
+                "gaps": [],
+                "chainBreaks": [],
+                "withoutCounter": [],
+                "withoutSignature": []
+              },
+              "items": {
+                "rowCount": 4,
+                "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                "size": 512
+              },
+              "handoverLinks": [
+                {
+                  "linkId": "kwLink0000000000000A",
+                  "createdAt": "2026-09-26T07:50:00.000Z",
+                  "expiresAt": "2026-10-10T08:00:00.000Z",
+                  "revokedAt": null,
+                  "firstAccessAt": null,
+                  "accessCount": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getDepExportFile": {
+      "codebase": "default",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0001",
+            "file": "dep"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "cashier_no_manager",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0001",
+            "file": "dep"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Den Export für die Prüfung macht der Chef.",
+            "data": {
+              "code": "manager_only"
+            },
+            "code": "manager_only"
+          }
+        },
+        {
+          "case": "file_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0001",
+            "file": "xml"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Unbekannte Datei. Möglich: dep, protocol, items, zip.",
+            "data": {
+              "code": "invalid_file"
+            },
+            "code": "invalid_file"
+          }
+        },
+        {
+          "case": "not_ready",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0002",
+            "file": "dep"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Export wird noch erstellt.",
+            "data": {
+              "code": "export_not_ready"
+            },
+            "code": "export_not_ready"
+          }
+        },
+        {
+          "case": "without_items",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-20-0001",
+            "file": "items"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Datei gibt es zu diesem Export nicht.",
+            "data": {
+              "code": "file_not_available"
+            },
+            "code": "file_not_available"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "createDepHandoverLink": {
+      "codebase": "default",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "cashier_no_manager",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Den Export für die Prüfung macht der Chef.",
+            "data": {
+              "code": "manager_only"
+            },
+            "code": "manager_only"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0099"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Export nicht gefunden.",
+            "data": {
+              "code": "export_not_found"
+            },
+            "code": "export_not_found"
+          }
+        },
+        {
+          "case": "not_ready",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "exportId": "DEP-2026-09-26-0002"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Export wird noch erstellt.",
+            "data": {
+              "code": "export_not_ready"
+            },
+            "code": "export_not_ready"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "revokeDepHandoverLink": {
+      "codebase": "default",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "linkId": "kwLink0000000000000A"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "cashier_no_manager",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "linkId": "kwLink0000000000000A"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Den Export für die Prüfung macht der Chef.",
+            "data": {
+              "code": "manager_only"
+            },
+            "code": "manager_only"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "linkId": "kwLink0000000000000Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Link nicht gefunden.",
+            "data": {
+              "code": "link_not_found"
+            },
+            "code": "link_not_found"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "cashregisterId": "KASSE1",
+            "linkId": "kwLink0000000000000A"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "linkId": "kwLink0000000000000A",
+              "revokedAt": "2026-09-26T08:00:00.000Z"
+            }
+          }
+        },
+        {
+          "case": "success_device",
+          "method": "POST",
+          "caller": "device_api_key",
+          "params": {
+            "linkId": "kwLink0000000000000A"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "linkId": "kwLink0000000000000A",
+              "revokedAt": "2026-09-26T08:00:00.000Z"
             }
           }
         },

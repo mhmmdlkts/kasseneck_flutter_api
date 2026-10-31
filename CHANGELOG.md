@@ -1,3 +1,59 @@
+## 11.13.0 (2026-10-31)
+
+Twin of `@kreiseck/kasseneck-api` `1.21.0` (contract files pulled from that
+version).
+
+DEP export at the register (*Kassennachschau*, stage 2): the five DEP calls now
+also run on the register path, for the manager only. Additive.
+
+- **`RegisterReceiptClient.createDepExport({from, to, requestId})`,
+  `getDepExport(exportId)`, `waitForDepExport(exportId, {timeout})`,
+  `getDepExportFile(exportId, file, {downloadTimeout, sha256})`,
+  `createDepHandoverLink(exportId)` and `revokeDepHandoverLink(linkId)`**: the
+  same arguments, results and exceptions as on `KasseneckApi`, sent to
+  `https://kasse.kasseneck.at/api/v3/<name>` with the register sign-in (ID
+  token, `register-session`, the session's `cashregisterId`). Reason: during an
+  inspection the manager exports the DEP at the register itself and saves it to
+  a USB stick or shows the inspector a link with a code, instead of sending the
+  owner to the customer area.
+  - Only the manager exports: the owner or a register user with the permission
+    `layout` (what both registers call *Kassen-Chef*). Anyone else gets
+    `manager_only` on each of the five calls as `KasseneckApiError.code`
+    (outcome `rejected`, nothing is created).
+  - Input checks, the wait loop (2 s, times 1.5, at most 15 s, 10 minutes by
+    default) and following the download link with its size and SHA-256 checks
+    are now shared by both paths (`lib/src/dep/nachschau.dart`). The behaviour
+    of `KasseneckApi` is unchanged; its doc comment of `waitForDepExport` now
+    says that the first query goes out at once.
+  - None of the five is in `unknownOutcomeCalls`; as on the device path
+    `createDepExport` is idempotent with the same `requestId`, and a repeated
+    `createDepHandoverLink` creates a second link, which can be revoked.
+- **`RegisterTransport.callRaw(name, {params, timeout})`**: the same sign-in,
+  checks before sending and header checks as `call` (HTTP 200, `v3` marker, no
+  HTML page), but it returns the `http.Response`, also for an error envelope.
+  Reason: `getDepExportFile` answers with the file itself or with an envelope,
+  which `call` cannot tell apart. `call` now runs through it, unchanged.
+- **`depFolderName(cashregisterId, {from, to})`** (`pos.dart`): the folder on
+  the USB stick, `DEP_<id>_<from>_<to>`, `DEP_<id>_alles` without a period,
+  `DEP_<id>_bis_<to>` or `DEP_<id>_ab_<from>` with one end only; empty or blank
+  counts as missing, an empty id becomes `Kasse`, characters FAT32 or exFAT
+  refuse (and control characters, whitespace) become `_`. Every case of the
+  contract file `dep-folder-cases.json` is a test. Reason: web register and
+  register app name the folder the same way. The npm twin takes `from` and `to`
+  positionally; here they are named like the arguments of `createDepExport`.
+- **`depExportErrorCodes` gains `manager_only`** and is now pinned to
+  `errorCodes.depExport` of the contract, order included.
+- `pos.dart` exports the DEP types (`DepExport`, `DepExportFile`,
+  `DepHandoverLink`, `DepExportFailedException`, `DepExportTimeoutException`,
+  ...) and `depExportErrorCodes`, the same declarations as `kasseneck_api.dart`.
+- Text catalogue from the contract: the words of the screen *Prüfung (DEP)*
+  (`nav.dep`, `dep.*` labels and messages), and `errorCodeRules` turn
+  `manager_only`, `export_running` and `too_many_exports` into the register's
+  own sentence (`dep.manager_only`, `dep.running`, `dep.too_many_exports`).
+- Contract `v3` re-fetched: the five calls in `calls.pos` (47) and their
+  register-path cases, which `kasse_v3_test.dart` now runs through
+  `RegisterReceiptClient`.
+
 ## 11.12.0 (2026-10-31)
 
 No twin change (Flutter widget only, contract files unchanged).

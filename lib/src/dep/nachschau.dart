@@ -1,7 +1,10 @@
 /// DEP-Export fuer die Kassennachschau: der Vertrag der fuenf Endpunkte
 /// `createDepExport`, `getDepExport`, `getDepExportFile`,
-/// `createDepHandoverLink` und `revokeDepHandoverLink` (nur `/v3`, api_key +
-/// `cashregister-token` wie `listReceipts`).
+/// `createDepHandoverLink` und `revokeDepHandoverLink` (nur `/v3`). Seit 11.13
+/// auf zwei Wegen: api_key + `cashregister-token` wie `listReceipts`
+/// (`KasseneckApi`) und der Kassenweg mit der Kassen-Anmeldung
+/// (`RegisterReceiptClient`, nur der Chef). Pruefung vor dem Senden, Warten
+/// und Laden ueber den Lese-Link stehen hier einmal fuer beide.
 ///
 /// Der Export laeuft im Hintergrund des Servers; der Aufrufer legt ihn an,
 /// wartet ([KasseneckApi.waitForDepExport]) und holt die Dateien. Kleine
@@ -15,13 +18,15 @@
 /// Text.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:http/http.dart' as http;
 
 import '../lager/lesen.dart' show antwortfehler, ganzzahlVon, objekt;
-import '../register/fehler.dart' show KasseneckValidationError;
+import '../register/fehler.dart' show KasseneckHttpError, KasseneckValidationError;
 
 /// Stabile Fehlercodes der fuenf Endpunkte unter `/v3` (Katalog
 /// `dep_nachschau`). Sie kommen als `KasseneckApiError.code` an; der Code
@@ -41,6 +46,9 @@ const Set<String> depExportErrorCodes = {
   'file_not_available',
   'too_many_links',
   'link_not_found',
+  // Kassenweg (seit 11.13): nur der Chef exportiert, also der Inhaber oder ein
+  // Kassen-Benutzer mit dem Recht `layout`; ein Geraet mit api_key nie.
+  'manager_only',
   'server_error',
 };
 
@@ -319,6 +327,63 @@ String? pruefeDepSha256(String name, String? wert) {
   return wert.toLowerCase();
 }
 
+/// Prueft die Eingaben von `getDepExportFile` vor dem Senden (Kennung, Datei,
+/// Pruefsumme, Frist) und liefert die bekannte Pruefsumme klein geschrieben
+/// oder `null`.
+String? pruefeDepDateiEingabe(
+  String name, {
+  required String exportId,
+  required String file,
+  required String? sha256,
+  required Duration downloadTimeout,
+}) {
+  pruefeDepKennung(name, 'exportId', exportId);
+  if (!depExportFiles.contains(file)) throw _eingabefehler(name, 'file muss dep, protocol, items oder zip sein');
+  final bekannt = pruefeDepSha256(name, sha256);
+  pruefeDepFrist(name, 'downloadTimeout', downloadTimeout);
+  return bekannt;
+}
+
+// ---- Warten ----------------------------------------------------------------
+
+/// Wartet, bis der Export fertig ist, und liefert ihn; [abfrage] ist
+/// `getDepExport` des jeweiligen Wegs.
+///
+/// Fragt sofort, dann nach 2 s, mit je 1,5-fachem Abstand, hoechstens alle
+/// 15 s; die letzte Pause endet auf der Frist. `failed` wirft
+/// [DepExportFailedException], die Frist [DepExportTimeoutException]. Ein
+/// Fehler der Abfrage geht unveraendert durch und beendet das Warten; der
+/// Export laeuft serverseitig weiter.
+Future<DepExport> depAbwarten(
+  String exportId,
+  Duration timeout,
+  Future<DepExport> Function(String exportId) abfrage,
+) async {
+  pruefeDepKennung('waitForDepExport', 'exportId', exportId);
+  pruefeDepFrist('waitForDepExport', 'timeout', timeout);
+  var abstand = const Duration(seconds: 2);
+  const hoechstens = Duration(seconds: 15);
+  // Der Fortschritt zaehlt die Wartezeiten mit: die Uhr des Geraets allein
+  // liesse sich in Tests nicht vorstellen, und Abfragezeit zaehlt die Stoppuhr.
+  final uhr = Stopwatch()..start();
+  var gewartet = Duration.zero;
+  for (;;) {
+    final stand = await abfrage(exportId);
+    if (stand.isDone) return stand;
+    if (stand.isFailed) {
+      throw DepExportFailedException(exportId, stand.error ?? 'export_failed');
+    }
+    final vergangen = uhr.elapsed > gewartet ? uhr.elapsed : gewartet;
+    if (vergangen >= timeout) throw DepExportTimeoutException(exportId, timeout);
+    final rest = timeout - vergangen;
+    final pause = abstand < rest ? abstand : rest;
+    await Future<void>.delayed(pause);
+    gewartet += pause;
+    final naechster = Duration(milliseconds: (abstand.inMilliseconds * 1.5).round());
+    abstand = naechster > hoechstens ? hoechstens : naechster;
+  }
+}
+
 // ---- Lesen -----------------------------------------------------------------
 
 String? _text(Object? w) => w is String && w.isNotEmpty ? w : null;
@@ -500,4 +565,74 @@ DepDownloadLink _downloadLink(String name, String exportId, String file, Map<Str
     fileName: name0 == null ? '$exportId${_endung(file)}' : _nurName(name0),
     contentType: _text(dl['contentType']) ?? 'application/octet-stream',
   );
+}
+
+// ---- Datei holen -----------------------------------------------------------
+
+/// Die Datei aus der Antwort von `getDepExportFile`, fuer beide Wege: direkt
+/// ausgeliefert oder ueber den Lese-Link der Erfolgshuelle geladen
+/// ([depLaden]), danach gegen [bekannt] geprueft (die Pruefsumme, die der
+/// Aufrufer mitgab).
+///
+/// [erfolgsHuelle] liest die Huelle mit den Mitteln des Wegs und wirft deren
+/// Fehler mit Code (`export_not_ready`, `manager_only`, ...); gerufen wird sie
+/// nur, wenn die Antwort eine Huelle ist ([depAntwortIstHuelle]).
+Future<DepExportFile> depDateiAusAntwort(
+  String name, {
+  required http.Client client,
+  required String exportId,
+  required String file,
+  required http.Response antwort,
+  required Map<String, dynamic> Function() erfolgsHuelle,
+  required Duration frist,
+  String? bekannt,
+}) async {
+  final DepExportFile datei;
+  if (!depAntwortIstHuelle(antwort)) {
+    datei = depDirekteDatei(exportId, file, antwort);
+  } else {
+    datei = await depLaden(client, name, depLeseLink(name, exportId, file, erfolgsHuelle()), frist);
+  }
+  if (bekannt != null && crypto.sha256.convert(datei.bytes).toString() != bekannt) {
+    throw KasseneckValidationError(name, 'Pruefsumme der Datei passt nicht (SHA-256)', 'response');
+  }
+  return datei;
+}
+
+/// Laedt eine Datei ueber den signierten Lese-Link und prueft Groesse und
+/// SHA-256, wo der Server sie nennt. [frist] deckt Kopf und Rumpf.
+Future<DepExportFile> depLaden(
+  http.Client client,
+  String name,
+  DepDownloadLink link,
+  Duration frist,
+) async {
+  // Ohne Kopfzeilen des Backends: die Adresse ist signiert und gehoert dem
+  // Speicherdienst. api_key, Kassen-Token, ID-Token und Kassen-Sitzung gehen
+  // nie dorthin.
+  final abbruch = Completer<void>();
+  final anfrage = http.AbortableRequest('GET', Uri.parse(link.url), abortTrigger: abbruch.future);
+  final http.Response antwort;
+  try {
+    antwort = await Future(() async => http.Response.fromStream(await client.send(anfrage))).timeout(
+      frist,
+      onTimeout: () {
+        if (!abbruch.isCompleted) abbruch.complete();
+        throw TimeoutException('download', frist);
+      },
+    );
+  } on TimeoutException {
+    throw KasseneckHttpError(name, 200, KasseneckHttpError.reasonTimeout, timeout: frist);
+  } on Object catch (e) {
+    throw KasseneckHttpError(name, 200, KasseneckHttpError.reasonNetwork, causeType: e.runtimeType.toString());
+  }
+  if (antwort.statusCode != 200) throw KasseneckHttpError(name, antwort.statusCode, 'server-error');
+  final bytes = antwort.bodyBytes;
+  if (link.size != null && bytes.length != link.size) {
+    throw KasseneckValidationError(name, 'Dateigroesse weicht von der Angabe des Servers ab', 'response');
+  }
+  if (link.sha256 != null && crypto.sha256.convert(bytes).toString() != link.sha256) {
+    throw KasseneckValidationError(name, 'Pruefsumme der Datei passt nicht (SHA-256)', 'response');
+  }
+  return DepExportFile(bytes: bytes, fileName: link.fileName, contentType: link.contentType);
 }

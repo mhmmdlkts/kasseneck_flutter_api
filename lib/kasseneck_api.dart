@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
@@ -1153,7 +1152,7 @@ class KasseneckApi {
 
   /// Wartet, bis der Export fertig ist, und liefert ihn ([getDepExport]).
   ///
-  /// Fragt zuerst nach 2 s, dann mit je 1,5-fachem Abstand, hoechstens alle 15 s.
+  /// Fragt sofort, dann nach 2 s und mit je 1,5-fachem Abstand, hoechstens alle 15 s.
   /// Ein fehlgeschlagener Export wirft [DepExportFailedException] (mit dem
   /// Code aus `error`), nach [timeout] ohne Ergebnis wirft
   /// [DepExportTimeoutException] -- der Export laeuft dann weiter, spaeter hilft
@@ -1163,33 +1162,7 @@ class KasseneckApi {
   Future<DepExport> waitForDepExport(
     String exportId, {
     Duration timeout = const Duration(minutes: 10),
-  }) async {
-    pruefeDepKennung('waitForDepExport', 'exportId', exportId);
-    pruefeDepFrist('waitForDepExport', 'timeout', timeout);
-    var abstand = const Duration(seconds: 2);
-    const hoechstens = Duration(seconds: 15);
-    // Der Fortschritt zaehlt die Wartezeiten mit: die Uhr des Geraets allein
-    // liesse sich in Tests nicht vorstellen, und Abfragezeit zaehlt die Stoppuhr.
-    final uhr = Stopwatch()..start();
-    var gewartet = Duration.zero;
-    for (;;) {
-      final stand = await getDepExport(exportId);
-      if (stand.isDone) return stand;
-      if (stand.isFailed) {
-        throw DepExportFailedException(exportId, stand.error ?? 'export_failed');
-      }
-      final vergangen = uhr.elapsed > gewartet ? uhr.elapsed : gewartet;
-      if (vergangen >= timeout) throw DepExportTimeoutException(exportId, timeout);
-      final rest = timeout - vergangen;
-      final pause = abstand < rest ? abstand : rest;
-      await Future<void>.delayed(pause);
-      gewartet += pause;
-      final naechster = Duration(
-        milliseconds: (abstand.inMilliseconds * 1.5).round(),
-      );
-      abstand = naechster > hoechstens ? hoechstens : naechster;
-    }
-  }
+  }) => depAbwarten(exportId, timeout, getDepExport);
 
   /// Eine Datei eines fertigen Exports: [file] ist `dep` (JSON), `protocol`
   /// (PDF), `items` (CSV) oder `zip` ([depExportFiles]).
@@ -1214,95 +1187,30 @@ class KasseneckApi {
     String? sha256,
   }) async {
     const name = Aufrufe.getDepExportFile;
-    pruefeDepKennung(name, 'exportId', exportId);
-    if (!depExportFiles.contains(file)) {
-      throw KasseneckValidationError(
-        name,
-        'file muss dep, protocol, items oder zip sein',
-        'request',
-      );
-    }
-    final bekannt = pruefeDepSha256(name, sha256);
-    pruefeDepFrist(name, 'downloadTimeout', downloadTimeout);
+    final bekannt = pruefeDepDateiEingabe(
+      name,
+      exportId: exportId,
+      file: file,
+      sha256: sha256,
+      downloadTimeout: downloadTimeout,
+    );
     // Eine direkte Datei liest und prueft der Server ganz, bevor er antwortet: dieselbe Frist wie der Link.
     final antwort = await _senden(name, name, {
       'params': {'exportId': exportId, 'file': file},
     }, downloadTimeout);
-    final DepExportFile datei;
-    if (!depAntwortIstHuelle(antwort)) {
-      datei = depDirekteDatei(exportId, file, antwort);
-    } else {
-      final huelle = readEnvelope(name, antwort);
-      if (huelle['status'] != 'success') throw envelopeError(name, huelle);
-      datei = await _depDownload(name, depLeseLink(name, exportId, file, huelle), downloadTimeout);
-    }
-    if (bekannt != null && crypto.sha256.convert(datei.bytes).toString() != bekannt) {
-      throw KasseneckValidationError(name, 'Pruefsumme der Datei passt nicht (SHA-256)', 'response');
-    }
-    return datei;
-  }
-
-  Future<DepExportFile> _depDownload(
-    String name,
-    DepDownloadLink link,
-    Duration frist,
-  ) async {
-    // Ohne Kopfzeilen des Backends: die Adresse ist signiert und gehoert dem
-    // Speicherdienst, api_key und Kassen-Token gehen nie dorthin.
-    final abbruch = Completer<void>();
-    final anfrage = http.AbortableRequest(
-      'GET',
-      Uri.parse(link.url),
-      abortTrigger: abbruch.future,
-    );
-    final http.Response antwort;
-    try {
-      antwort =
-          await Future(
-            () async => http.Response.fromStream(await _http.send(anfrage)),
-          ).timeout(
-            frist,
-            onTimeout: () {
-              if (!abbruch.isCompleted) abbruch.complete();
-              throw TimeoutException('download', frist);
-            },
-          );
-    } on TimeoutException {
-      throw KasseneckHttpError(
-        name,
-        200,
-        KasseneckHttpError.reasonTimeout,
-        timeout: frist,
-      );
-    } on Object catch (e) {
-      throw KasseneckHttpError(
-        name,
-        200,
-        KasseneckHttpError.reasonNetwork,
-        causeType: e.runtimeType.toString(),
-      );
-    }
-    if (antwort.statusCode != 200) throw KasseneckHttpError(name, antwort.statusCode, 'server-error');
-    final bytes = antwort.bodyBytes;
-    if (link.size != null && bytes.length != link.size) {
-      throw KasseneckValidationError(
-        name,
-        'Dateigroesse weicht von der Angabe des Servers ab',
-        'response',
-      );
-    }
-    if (link.sha256 != null &&
-        crypto.sha256.convert(bytes).toString() != link.sha256) {
-      throw KasseneckValidationError(
-        name,
-        'Pruefsumme der Datei passt nicht (SHA-256)',
-        'response',
-      );
-    }
-    return DepExportFile(
-      bytes: bytes,
-      fileName: link.fileName,
-      contentType: link.contentType,
+    return depDateiAusAntwort(
+      name,
+      client: _http,
+      exportId: exportId,
+      file: file,
+      antwort: antwort,
+      erfolgsHuelle: () {
+        final huelle = readEnvelope(name, antwort);
+        if (huelle['status'] != 'success') throw envelopeError(name, huelle);
+        return huelle;
+      },
+      frist: downloadTimeout,
+      bekannt: bekannt,
     );
   }
 

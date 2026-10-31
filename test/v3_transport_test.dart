@@ -12,6 +12,7 @@ import 'package:kasseneck_api/kasseneck_api.dart';
 import 'package:kasseneck_api/models/kasseneck_item.dart';
 import 'package:kasseneck_api/models/report_month.dart';
 import 'package:kasseneck_api/invoice.dart' show InvoiceTransport, InvoiceApi, kInvoiceBaseUrl;
+import 'package:kasseneck_api/pos.dart' show RegisterReceiptClient;
 import 'package:kasseneck_api/register.dart' show RegisterClient, RegisterTransport, kRegisterBaseUrl;
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/src/hobex_hps/discovery.dart';
@@ -116,6 +117,14 @@ final _wege = <_Weg>[
     'listMyReceipts': (c) => _sitzung(c).call('listMyReceipts'),
     'setMyKasseSettings': (c) => _sitzung(c).call('setMyKasseSettings'),
   }),
+  // Pruefung (DEP) am Kassenweg (seit 11.13). getDepExportFile liest eine
+  // Datei oder eine Huelle und steht darum in einer eigenen Gruppe unten.
+  _Weg('RegisterReceiptClient (DEP)', 'https://kasse.kasseneck.at/api/v3', {
+    'createDepExport': (c) => RegisterReceiptClient(_sitzung(c)).createDepExport(),
+    'getDepExport': (c) => RegisterReceiptClient(_sitzung(c)).getDepExport('DEP-1'),
+    'createDepHandoverLink': (c) => RegisterReceiptClient(_sitzung(c)).createDepHandoverLink('DEP-1'),
+    'revokeDepHandoverLink': (c) => RegisterReceiptClient(_sitzung(c)).revokeDepHandoverLink('L1'),
+  }),
   _Weg('RechnungTransport', 'https://api.kasseneck.at/v3', {
     'getInvoice': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).call('getInvoice', {}),
     'issueInvoice': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).call('issueInvoice', {}),
@@ -157,6 +166,16 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
       return RegisterTransport(
               idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K', httpClient: c, timeout: f)
           .call(name);
+    case 'RegisterReceiptClient (DEP)':
+      final kasse = RegisterReceiptClient(RegisterTransport(
+          idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K', httpClient: c, timeout: f));
+      return switch (name) {
+        'createDepExport' => kasse.createDepExport(),
+        'getDepExport' => kasse.getDepExport('DEP-1'),
+        'createDepHandoverLink' => kasse.createDepHandoverLink('DEP-1'),
+        'revokeDepHandoverLink' => kasse.revokeDepHandoverLink('L1'),
+        _ => throw StateError(name),
+      };
     default:
       final t = InvoiceTransport(apiKey: 'kr_test_x', httpClient: c, timeout: f);
       return name == 'getInvoicePdf' ? t.callBinary(name, {}) : t.call(name, {});
@@ -566,6 +585,67 @@ void main() {
           httpClient: c, timeout: const Duration(milliseconds: 20));
       await expectLater(t.call('createReceipt'),
           throwsA(_httpFehler('server-error', ErrorOutcome.rejected).having((e) => e.statusCode, 'statusCode', 404)));
+    });
+  });
+
+  group('getDepExportFile am Kassenweg: Datei oder Huelle (callRaw)', () {
+    const name = 'getDepExportFile';
+    Future<Object?> datei(http.Client c, {Duration download = const Duration(minutes: 10)}) =>
+        RegisterReceiptClient(_sitzung(c)).getDepExportFile('DEP-1', 'dep', downloadTimeout: download);
+
+    test('steht in routes.pos, geht an die Kassenbasis mit Anmeldung und Kasseneck-Kopfzeilen', () async {
+      final vertrag = jsonDecode(File('test/fixtures/vertrag/surface.json').readAsStringSync()) as Map<String, dynamic>;
+      expect(vertrag['routes']['pos'], contains(name));
+      final netz = _Netz((_) => _v3({'status': 'error', 'code': 'manager_only', 'message': 'nein'}));
+      await expectLater(datei(netz.client), throwsA(_apiFehler('manager_only', ErrorOutcome.rejected)));
+      final a = netz.anfragen.single;
+      expect(a.url.toString(), '$kRegisterBaseUrl/$name');
+      expect(a.headers['Authorization'], 'Bearer tok');
+      expect(a.headers['register-session'], 'sess');
+      expect(a.headers['Kasseneck-Api-Version'], 'v3');
+      expect(a.headers['Kasseneck-Client'], 'kasseneck_api/$kPackageVersion');
+      expect(jsonDecode((a as http.Request).body), {
+        'params': {'cashregisterId': 'K1', 'exportId': 'DEP-1', 'file': 'dep'},
+      });
+    });
+
+    test('der Kopf wird geprueft wie bei call: Kennzeichen, HTML, HTTP-Status', () async {
+      var netz = _Netz((_) => _ohneKennzeichen());
+      await expectLater(datei(netz.client), throwsA(_apiFehler('dialect_mismatch', ErrorOutcome.unknown)));
+      expect(netz.gelesen, isFalse);
+      netz = _Netz((_) => _html());
+      await expectLater(datei(netz.client), throwsA(_apiFehler('route_missing', ErrorOutcome.rejected)));
+      for (final status in [500, 404]) {
+        netz = _Netz((_) => _Antwort(status, {'content-type': 'text/html', ..._kennzeichen}, utf8.encode('<html/>')));
+        await expectLater(datei(netz.client), throwsA(_httpFehler('server-error', ErrorOutcome.rejected)),
+            reason: '$status');
+      }
+      await expectLater(datei(MockClient((_) async => throw const SocketException('weg'))),
+          throwsA(_httpFehler(KasseneckHttpError.reasonNetwork, ErrorOutcome.rejected)));
+    });
+
+    test('die Frist ist downloadTimeout, nicht die des Transports', () async {
+      const frist = Duration(milliseconds: 20);
+      final haengt = MockClient((_) => Completer<http.Response>().future);
+      await expectLater(
+          datei(haengt, download: frist),
+          throwsA(_httpFehler(KasseneckHttpError.reasonTimeout, ErrorOutcome.rejected)
+              .having((e) => e.timeout, 'timeout', frist)));
+    });
+
+    test('callRaw liefert die Antwort ungelesen, auch eine Fehlerhuelle; Anmeldung vor dem Senden geprueft', () async {
+      final netz = _Netz((_) => _v3({'status': 'error', 'code': 'export_not_ready', 'message': 'x'}));
+      final antwort = await _sitzung(netz.client).callRaw(name, params: {'exportId': 'DEP-1', 'file': 'zip', 'leer': null});
+      expect(antwort.statusCode, 200);
+      expect(jsonDecode(utf8.decode(antwort.bodyBytes))['code'], 'export_not_ready');
+      expect(jsonDecode((netz.anfragen.single as http.Request).body)['params'],
+          {'cashregisterId': 'K1', 'exportId': 'DEP-1', 'file': 'zip'});
+
+      final ohneToken = RegisterTransport(
+          idToken: () async => null, sessionId: () async => 's', cashregisterId: 'K', httpClient: netz.client);
+      await expectLater(ohneToken.callRaw(name),
+          throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'request')));
+      expect(netz.anfragen, hasLength(1), reason: 'ohne Token geht nichts hinaus');
     });
   });
 
