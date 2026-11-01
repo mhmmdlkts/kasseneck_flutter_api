@@ -1,5 +1,5 @@
 {
-  "version": "1.22.0",
+  "version": "1.23.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -156,7 +156,8 @@
       "logMyDrawerOpenings",
       "getMyShiftReport",
       "closeMyShift",
-      "logReceiptOutputs"
+      "logReceiptOutputs",
+      "getRegisterInspectionInfo"
     ]
   },
   "routes": {
@@ -322,7 +323,8 @@
       "getDepExport",
       "getDepExportFile",
       "createDepHandoverLink",
-      "revokeDepHandoverLink"
+      "revokeDepHandoverLink",
+      "getRegisterInspectionInfo"
     ]
   },
   "unknownOutcomeCalls": [

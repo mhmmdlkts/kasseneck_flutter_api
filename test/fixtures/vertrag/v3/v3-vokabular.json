@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "ff400b73f31d963cb2051ca8b7a06cef0bf126483b528320e2a503a6035a7c59",
-    "inputsSha256": "b008ce1c1465149f0748185704c3e593a6d537e869691bd0e60e3e4368142189",
+    "sha256": "efbf6b21460bb07cf926b0ff35837e47d67c4f4b440a7a7cf536f949869b5816",
+    "inputsSha256": "883620c3b9941916edeb283cd0c5eac966324d1a200e6b4a1e93786335984d5d",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -310,7 +310,8 @@
       "getDepExport",
       "getDepExportFile",
       "createDepHandoverLink",
-      "revokeDepHandoverLink"
+      "revokeDepHandoverLink",
+      "getRegisterInspectionInfo"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -348,7 +349,8 @@
       "logMyDrawerOpenings",
       "getMyShiftReport",
       "closeMyShift",
-      "logReceiptOutputs"
+      "logReceiptOutputs",
+      "getRegisterInspectionInfo"
     ],
     "withSchema": [
       "activateCashregister",
@@ -417,6 +419,7 @@
       "getPartnerInfo",
       "getPrintJob",
       "getReceipt",
+      "getRegisterInspectionInfo",
       "getReportV2",
       "getReservation",
       "getSignatureCardOrder",
@@ -2862,6 +2865,9 @@
         "manager_only",
         "server_error",
         "too_many_links"
+      ],
+      "getRegisterInspectionInfo": [
+        "server_error"
       ]
     }
   },
@@ -5004,6 +5010,7 @@
         ]
       }
     },
+    "getRegisterInspectionInfo": {},
     "getReportV2": {
       "data": {
         "receipts": [

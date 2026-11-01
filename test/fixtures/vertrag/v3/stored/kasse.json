@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "a65bba379d7ca833fa68ec32235c08ab89fd8c3f39d976b47a5d361dcee39c34",
+      "sha256": "17c317c31c32dc116a5700dd1fca3b76d2cee1c8e64441c4a700bdf901b983f3",
       "head": [],
-      "inputsSha256": "2602e3996bd0e763674aa54fe05ee2dfbc09c3ff18fd161293bf12cf9e571a4b",
+      "inputsSha256": "b5d46d661435eac06805cbd21d8afde6bc01455740e2750be7223917cf4620de",
       "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -24,7 +24,7 @@
         "note",
         "baseline"
       ],
-      "inputsSha256": "ab248df756638c558f0bba786fc43aef1087b36c26329a06bcd57d155d3da72b",
+      "inputsSha256": "e72d75f38d7d0ef68acf797cc9646936839ce446fc7febf7da77e915c1131f1a",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -3400,6 +3400,90 @@
             "schichtZaehler": 0,
             "angelegtAt": "2026-09-26T08:00:00.000Z"
           }
+        },
+        "zero_receipt_cashier": {
+          "users/kw_betrieb1/cashregisters/KASSE1/metadata/lastReceipt": {
+            "id": "KASSE1-ID-2"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2": {
+            "counter": 2,
+            "receiptType": "zero",
+            "zeroKind": "manual",
+            "receiptId": "KASSE1-ID-2",
+            "cashregisterId": "KASSE1",
+            "timeStamp": "2026-09-26T10:00:00",
+            "items": [],
+            "vouchers": [],
+            "paymentMethod": "cash",
+            "customerDetails": null,
+            "legalMessage": null,
+            "customProjectId": null,
+            "creditCardProvider": null,
+            "cardPaymentId": null,
+            "cardPaymentData": null,
+            "amountRateStandard": 0,
+            "amountRateReduced1": 0,
+            "amountRateReduced2": 0,
+            "amountRateZero": 0,
+            "amountRateSpecial": 0,
+            "turnoverCounterAES256ICM": "XVyQJUu2DiM4NjAKsiguYw==",
+            "signaturePreviousReceipt": "<signatur>",
+            "certificateSerialNumber": "ABC123",
+            "fullReceiptId": "00000000000000000000000000000000.0000000000000000000000000000000000000000000000000000000019d51dc2",
+            "kopfId": "auto1",
+            "layoutRegeln": 2,
+            "payments": [],
+            "pruefangaben": {
+              "karteRegistriertAm": "2024-03-11T08:00:00.000Z",
+              "kasseRegistriertAm": "2026-01-02T09:00:00.000Z"
+            },
+            "sig": "<signatur>",
+            "signatureSuccess": true,
+            "qr": "_R1-AT100_KASSE1_KASSE1-ID-2_2026-09-26T10:00:00_0,00_0,00_0,00_0,00_0,00_XVyQJUu2_ABC123_<verkettung>_<signatur>",
+            "operator": {
+              "uid": "ru_kellner",
+              "name": "Ben Kellner"
+            }
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/d_2026-09-26": {
+            "scope": "day",
+            "key": "2026-09-26",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "start": 1,
+              "zero": 1
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/m_2026-09": {
+            "scope": "month",
+            "key": "2026-09",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "start": 1,
+              "zero": 1
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/stats/y_2026": {
+            "scope": "year",
+            "key": "2026",
+            "unit": "E4",
+            "count": 2,
+            "countByType": {
+              "start": 1,
+              "zero": 1
+            },
+            "lastCounter": 2,
+            "lastTs": "2026-09-26T10:00:00",
+            "updated_at": 1790409600000
+          }
         }
       }
     },
@@ -3832,6 +3916,25 @@
           "rate_limits/belegmail_kasse_87c57ff9e564bac5e069fdb2b4a812c9": {
             "count": 1,
             "windowStart": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2/ausgaben/auto2": {
+            "art": "mail",
+            "at": "2026-09-26T10:00:00+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "ok",
+            "durch": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "geraet": null,
+            "quelle": "server",
+            "mailId": "auto1"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2/mails/auto1": {
+            "to": "gast@example.at",
+            "at": "2026-09-26T10:00:00+02:00",
+            "by": "ru_chef",
+            "postausgangId": "post1"
           }
         },
         "success_device": {
@@ -3842,6 +3945,25 @@
           "rate_limits/belegmail_kasse_87c57ff9e564bac5e069fdb2b4a812c9": {
             "count": 1,
             "windowStart": 1790409600000
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2/ausgaben/auto2": {
+            "art": "mail",
+            "at": "2026-09-26T10:00:00+02:00",
+            "eingangAt": "2026-09-26T08:00:00.000Z",
+            "ergebnis": "ok",
+            "durch": {
+              "id": "kw_betrieb1",
+              "name": null
+            },
+            "geraet": null,
+            "quelle": "server",
+            "mailId": "auto1"
+          },
+          "users/kw_betrieb1/cashregisters/KASSE1/receipts/KASSE1-ID-2/mails/auto1": {
+            "to": "gast@example.at",
+            "at": "2026-09-26T10:00:00+02:00",
+            "by": "kw_betrieb1",
+            "postausgangId": "post1"
           }
         }
       }

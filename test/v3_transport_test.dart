@@ -125,6 +125,12 @@ final _wege = <_Weg>[
     'createDepHandoverLink': (c) => RegisterReceiptClient(_sitzung(c)).createDepHandoverLink('DEP-1'),
     'revokeDepHandoverLink': (c) => RegisterReceiptClient(_sitzung(c)).revokeDepHandoverLink('L1'),
   }),
+  // Pruefung am Kassenweg (seit 11.15): der Nullbeleg signiert (Wirkung wie
+  // jeder createReceipt), die Kasseninfo liest nur.
+  _Weg('RegisterReceiptClient (Pruefung)', 'https://kasse.kasseneck.at/api/v3', {
+    'createReceipt': (c) => RegisterReceiptClient(_sitzung(c)).zeroReceipt(),
+    'getRegisterInspectionInfo': (c) => RegisterReceiptClient(_sitzung(c)).getRegisterInspectionInfo(),
+  }),
   _Weg('RechnungTransport', 'https://api.kasseneck.at/v3', {
     'getInvoice': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).call('getInvoice', {}),
     'issueInvoice': (c) => InvoiceTransport(apiKey: 'kr_test_x', httpClient: c).call('issueInvoice', {}),
@@ -174,6 +180,17 @@ Future<Object?> _mitFrist(_Weg weg, String name, http.Client c) {
         'getDepExport' => kasse.getDepExport('DEP-1'),
         'createDepHandoverLink' => kasse.createDepHandoverLink('DEP-1'),
         'revokeDepHandoverLink' => kasse.revokeDepHandoverLink('L1'),
+        _ => throw StateError(name),
+      };
+    case 'RegisterReceiptClient (Pruefung)':
+      // Der Nullbeleg signiert und wartet darum mit signingTimeout, nicht mit der Frist des Transports.
+      final kasse = RegisterReceiptClient(
+          RegisterTransport(
+              idToken: () async => 't', sessionId: () async => 's', cashregisterId: 'K', httpClient: c, timeout: f),
+          signingTimeout: f);
+      return switch (name) {
+        'createReceipt' => kasse.zeroReceipt(),
+        'getRegisterInspectionInfo' => kasse.getRegisterInspectionInfo(),
         _ => throw StateError(name),
       };
     default:

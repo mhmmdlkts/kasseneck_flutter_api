@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "a5d2e578f0ee866e539320866624dc9337459479bfcdcb955c8c3b821cd1c689",
-    "inputsSha256": "b008ce1c1465149f0748185704c3e593a6d537e869691bd0e60e3e4368142189",
+    "sha256": "8880e6173354887c067a7347b3ae6dabd9072f535836211a59960e80ae5b90ea",
+    "inputsSha256": "883620c3b9941916edeb283cd0c5eac966324d1a200e6b4a1e93786335984d5d",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -260,7 +260,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto1",
+            "id": "auto2",
             "number": "0001",
             "docType": "invoice",
             "status": "final",
@@ -335,7 +335,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto1",
+            "id": "auto2",
             "number": "0001",
             "docType": "invoice",
             "status": "final",
@@ -411,7 +411,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto2",
+            "id": "auto3",
             "number": "0002",
             "docType": "invoice",
             "status": "final",
@@ -535,7 +535,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto4",
+            "id": "auto7",
             "number": "0003",
             "docType": "invoice",
             "status": "final",
@@ -634,7 +634,7 @@
       "endpoint": "getInvoice",
       "path": "/v3/getInvoice",
       "params": {
-        "invoiceId": "auto1"
+        "invoiceId": "auto2"
       },
       "httpStatus": 200,
       "headers": {
@@ -646,7 +646,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto1",
+            "id": "auto2",
             "number": "0001",
             "docType": "invoice",
             "status": "final",
@@ -738,7 +738,7 @@
       "endpoint": "getInvoice",
       "path": "/v3/getInvoice",
       "params": {
-        "invoiceId": "auto2"
+        "invoiceId": "auto3"
       },
       "httpStatus": 200,
       "headers": {
@@ -750,7 +750,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto2",
+            "id": "auto3",
             "number": "0002",
             "docType": "invoice",
             "status": "final",
@@ -850,7 +850,7 @@
       "path": "/v3/createCreditNote",
       "params": {
         "idempotencyKey": "gu-1",
-        "invoiceId": "auto1",
+        "invoiceId": "auto2",
         "reason": "price_reduction",
         "items": [
           {
@@ -872,7 +872,7 @@
         "message": "",
         "data": {
           "creditNote": {
-            "id": "auto6",
+            "id": "auto9",
             "number": "0004",
             "docType": "credit_note",
             "status": "final",
@@ -923,7 +923,7 @@
       "endpoint": "getInvoice",
       "path": "/v3/getInvoice",
       "params": {
-        "invoiceId": "auto1"
+        "invoiceId": "auto2"
       },
       "httpStatus": 200,
       "headers": {
@@ -935,7 +935,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto1",
+            "id": "auto2",
             "number": "0001",
             "docType": "invoice",
             "status": "final",
@@ -1016,7 +1016,7 @@
             "related": null,
             "creditNotes": [
               {
-                "id": "auto6",
+                "id": "auto9",
                 "number": "0004",
                 "grossCents": 1200
               }
@@ -1058,7 +1058,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto7",
+            "id": "auto11",
             "number": "0005",
             "docType": "invoice",
             "status": "final",
@@ -1109,7 +1109,7 @@
       "path": "/v3/cancelInvoice",
       "params": {
         "idempotencyKey": "gu-2",
-        "invoiceId": "auto7",
+        "invoiceId": "auto11",
         "reason": "cancellation"
       },
       "httpStatus": 200,
@@ -1122,7 +1122,7 @@
         "message": "",
         "data": {
           "creditNote": {
-            "id": "auto8",
+            "id": "auto12",
             "number": "0006",
             "docType": "credit_note",
             "status": "final",
@@ -1164,7 +1164,7 @@
             "vatIdRisk": null
           },
           "original": {
-            "id": "auto7",
+            "id": "auto11",
             "status": "cancelled"
           },
           "originalPaidCents": 0,
@@ -1178,7 +1178,7 @@
       "path": "/v3/recordInvoicePayment",
       "params": {
         "idempotencyKey": "z-1",
-        "invoiceId": "auto2",
+        "invoiceId": "auto3",
         "method": "transfer",
         "amountCents": 5000
       },
@@ -1192,7 +1192,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto2",
+            "id": "auto3",
             "number": "0002",
             "docType": "invoice",
             "status": "final",
@@ -1281,7 +1281,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto9",
+            "id": "auto14",
             "number": "0007",
             "docType": "invoice",
             "status": "final",
@@ -1331,7 +1331,7 @@
       "endpoint": "getInvoice",
       "path": "/v3/getInvoice",
       "params": {
-        "invoiceId": "auto9"
+        "invoiceId": "auto14"
       },
       "httpStatus": 200,
       "headers": {
@@ -1343,7 +1343,7 @@
         "message": "",
         "data": {
           "invoice": {
-            "id": "auto9",
+            "id": "auto14",
             "number": "0007",
             "docType": "invoice",
             "status": "final",
@@ -1446,7 +1446,7 @@
         "data": {
           "invoices": [
             {
-              "id": "auto1",
+              "id": "auto2",
               "number": "0001",
               "docType": "invoice",
               "status": "final",
@@ -1488,7 +1488,7 @@
               "vatIdRisk": null
             },
             {
-              "id": "auto2",
+              "id": "auto3",
               "number": "0002",
               "docType": "invoice",
               "status": "final",
@@ -1537,7 +1537,7 @@
               "vatIdRisk": null
             },
             {
-              "id": "auto4",
+              "id": "auto7",
               "number": "0003",
               "docType": "invoice",
               "status": "final",
@@ -1581,7 +1581,7 @@
               }
             },
             {
-              "id": "auto6",
+              "id": "auto9",
               "number": "0004",
               "docType": "credit_note",
               "status": "final",
@@ -1623,7 +1623,7 @@
               "vatIdRisk": null
             },
             {
-              "id": "auto7",
+              "id": "auto11",
               "number": "0005",
               "docType": "invoice",
               "status": "cancelled",
@@ -1665,7 +1665,7 @@
               "vatIdRisk": null
             },
             {
-              "id": "auto8",
+              "id": "auto12",
               "number": "0006",
               "docType": "credit_note",
               "status": "final",
@@ -1707,7 +1707,7 @@
               "vatIdRisk": null
             },
             {
-              "id": "auto9",
+              "id": "auto14",
               "number": "0007",
               "docType": "invoice",
               "status": "final",
@@ -1771,7 +1771,7 @@
         "data": {
           "invoices": [
             {
-              "id": "auto6",
+              "id": "auto9",
               "number": "0004",
               "docType": "credit_note",
               "status": "final",
@@ -1813,7 +1813,7 @@
               "vatIdRisk": null
             },
             {
-              "id": "auto8",
+              "id": "auto12",
               "number": "0006",
               "docType": "credit_note",
               "status": "final",

@@ -1,0 +1,2348 @@
+{
+  "version": 1,
+  "note": "Kasseninfo für die Prüfung (Kassennachschau, Stufe 2b). `info` ist `data` von getRegisterInspectionInfo, wie der Server sie sendet; `rows` ist inspectionInfoRows(info) für den Bildschirm, `lines` ist inspectionInfoLines(info, { width, printedAt }) für den Bondrucker. Fehlt ein Wert, entfällt die Zeile. Datum und Uhrzeit in Wiener Zeit. Web-Kasse, Kassen-App und der Dart-Zwilling liefern dieselben Zeilen.",
+  "cases": [
+    {
+      "name": "echte Karte von A-Trust, Breite 42",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validFrom": "2026-10-05T08:00:00.000Z",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "active"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "05.10.2026 – 05.10.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "in Betrieb"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von A-Trust",
+        "Betrieb      im Signier-Server von",
+        "             Kasseneck",
+        "Zertifikat   Seriennr. 11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust Registrierkasse.CA",
+        "Gültig       05.10.2026 – 05.10.2031",
+        "Abgleich     Inhaber mit A-Trust geprüft",
+        "Status       in Betrieb",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "echte Karte von A-Trust, Breite 48 (Zeilen wie im freigegebenen Text)",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validFrom": "2026-10-05T08:00:00.000Z",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "active"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 48,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "05.10.2026 – 05.10.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "in Betrieb"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U., UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von A-Trust",
+        "Betrieb      im Signier-Server von Kasseneck",
+        "Zertifikat   Seriennr. 11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust Registrierkasse.CA",
+        "Gültig       05.10.2026 – 05.10.2031",
+        "Abgleich     Inhaber mit A-Trust geprüft",
+        "Status       in Betrieb",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick, Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder Beleg",
+        "wird beim Erstellen signiert. Den Beleg gibt es",
+        "gedruckt, per Mail oder als QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "echte Karte von A-Trust, Breite 32",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validFrom": "2026-10-05T08:00:00.000Z",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "active"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 32,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "05.10.2026 – 05.10.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "in Betrieb"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte",
+        "Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von",
+        "             A-Trust",
+        "Betrieb      im Signier-Server",
+        "             von Kasseneck",
+        "Zertifikat   Seriennr.",
+        "             11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust",
+        "             Registrierkasse.CA",
+        "Gültig       05.10.2026 –",
+        "             05.10.2031",
+        "Abgleich     Inhaber mit A-Trust",
+        "             geprüft",
+        "Status       in Betrieb",
+        "",
+        "DEP          online gespeichert,",
+        "             jederzeit",
+        "             exportierbar",
+        "             (USB-Stick, Link)",
+        "Abschlüsse   Monatsbeleg",
+        "             automatisch am",
+        "             Monatsersten um",
+        "             00:05, der",
+        "             Dezember-Beleg ist",
+        "             der Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App",
+        "oder in der Web-Kasse,",
+        "gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen",
+        "signiert. Den Beleg gibt es",
+        "gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "Testkarte: Einheit Testkarte, kein Betrieb, nur Seriennummer und Status",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "serialHex": "abc123",
+          "serialDecimal": "11256099",
+          "testCard": true,
+          "status": "active"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Testkarte"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. abc123 (hex)",
+            "11256099 (dezimal)"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "in Betrieb"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Testkarte",
+        "Zertifikat   Seriennr. abc123 (hex)",
+        "             11256099 (dezimal)",
+        "Status       in Betrieb",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "ohne Signatureinheit: der Teil Signatur entfaellt",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": null,
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "Ausfall mit Beginn (Wiener Zeit)",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validFrom": "2026-10-05T08:00:00.000Z",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "outage",
+          "outageSince": "2026-10-29T13:47:12.000Z"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T14:10:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "05.10.2026 – 05.10.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "ausgefallen seit 29.10.2026, 14:47"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von A-Trust",
+        "Betrieb      im Signier-Server von",
+        "             Kasseneck",
+        "Zertifikat   Seriennr. 11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust Registrierkasse.CA",
+        "Gültig       05.10.2026 – 05.10.2031",
+        "Abgleich     Inhaber mit A-Trust geprüft",
+        "Status       ausgefallen seit",
+        "             29.10.2026, 14:47",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 15:10"
+      ]
+    },
+    {
+      "name": "Ausfall ohne Beginn",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validFrom": "2026-10-05T08:00:00.000Z",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "outage"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "05.10.2026 – 05.10.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "ausgefallen"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von A-Trust",
+        "Betrieb      im Signier-Server von",
+        "             Kasseneck",
+        "Zertifikat   Seriennr. 11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust Registrierkasse.CA",
+        "Gültig       05.10.2026 – 05.10.2031",
+        "Abgleich     Inhaber mit A-Trust geprüft",
+        "Status       ausgefallen",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "Inhaber nicht abgeglichen: keine Zeile Abgleich",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validFrom": "2026-10-05T08:00:00.000Z",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": false,
+          "testCard": false,
+          "status": "active"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "05.10.2026 – 05.10.2031"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "in Betrieb"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von A-Trust",
+        "Betrieb      im Signier-Server von",
+        "             Kasseneck",
+        "Zertifikat   Seriennr. 11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust Registrierkasse.CA",
+        "Gültig       05.10.2026 – 05.10.2031",
+        "Status       in Betrieb",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "fehlende Angaben: jede Zeile ohne Wert entfaellt",
+      "info": {
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": false
+        },
+        "manufacturer": {
+          "name": "Post Now e.U."
+        },
+        "signature": {
+          "serialDecimal": "298239949",
+          "testCard": false
+        },
+        "closings": {
+          "timeZone": "Europe/Vienna"
+        }
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U."
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck",
+        "Hersteller   Post Now e.U.",
+        "",
+        "SIGNATUR",
+        "Zertifikat   Seriennr. 298239949 (dezimal)",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "unbekannter Anbieter, nur Beginn der Gueltigkeit, unbekannter Stand",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "serialHex": "0a1b2c3d",
+          "serialDecimal": "169552957",
+          "issuer": "Beispiel-CA",
+          "validFrom": "2026-01-15T09:00:00.000Z",
+          "testCard": false,
+          "status": "recovering"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 0a1b2c3d (hex)",
+            "169552957 (dezimal)"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "Beispiel-CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "ab 15.01.2026"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Zertifikat   Seriennr. 0a1b2c3d (hex)",
+        "             169552957 (dezimal)",
+        "Aussteller   Beispiel-CA",
+        "Gültig       ab 15.01.2026",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "nur Ende der Gueltigkeit, Hersteller nur mit UID",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "active"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "bis 05.10.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "in Betrieb"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von A-Trust",
+        "Betrieb      im Signier-Server von",
+        "             Kasseneck",
+        "Zertifikat   Seriennr. 11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust Registrierkasse.CA",
+        "Gültig       bis 05.10.2031",
+        "Abgleich     Inhaber mit A-Trust geprüft",
+        "Status       in Betrieb",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "Monatsbeleg am 15., ohne Jahresbeleg-Satz, Breite 48",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validFrom": "2026-10-05T08:00:00.000Z",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "active"
+        },
+        "closings": {
+          "monthlyDay": 15,
+          "monthlyTime": "06:30",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": false
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 48,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "05.10.2026 – 05.10.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "in Betrieb"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am 15. jedes Monats um 06:30"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U., UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von A-Trust",
+        "Betrieb      im Signier-Server von Kasseneck",
+        "Zertifikat   Seriennr. 11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust Registrierkasse.CA",
+        "Gültig       05.10.2026 – 05.10.2031",
+        "Abgleich     Inhaber mit A-Trust geprüft",
+        "Status       in Betrieb",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick, Link)",
+        "Abschlüsse   Monatsbeleg automatisch am 15.",
+        "             jedes Monats um 06:30",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder Beleg",
+        "wird beim Erstellen signiert. Den Beleg gibt es",
+        "gedruckt, per Mail oder als QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    },
+    {
+      "name": "Sommerzeit: Tageswechsel in Wien, nicht in UTC",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "11c6c7cd",
+          "serialDecimal": "298239949",
+          "holder": "UID ATU12345675",
+          "issuer": "A-Trust Registrierkasse.CA",
+          "validFrom": "2026-07-01T22:30:00.000Z",
+          "validTo": "2031-06-30T21:59:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "outage",
+          "outageSince": "2026-08-14T22:15:00.000Z"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "hello@kasseneck.at"
+      },
+      "width": 42,
+      "printedAt": "2026-08-14T22:20:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 11c6c7cd (hex)",
+            "298239949 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "UID ATU12345675"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "02.07.2026 – 30.06.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "ausgefallen seit 15.08.2026, 00:15"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "hello@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von A-Trust",
+        "Betrieb      im Signier-Server von",
+        "             Kasseneck",
+        "Zertifikat   Seriennr. 11c6c7cd (hex)",
+        "             298239949 (dezimal)",
+        "Inhaber      UID ATU12345675",
+        "Aussteller   A-Trust Registrierkasse.CA",
+        "Gültig       02.07.2026 – 30.06.2031",
+        "Abgleich     Inhaber mit A-Trust geprüft",
+        "Status       ausgefallen seit",
+        "             15.08.2026, 00:15",
+        "",
+        "DEP          online gespeichert, jederzeit",
+        "             exportierbar (USB-Stick,",
+        "             Link)",
+        "Abschlüsse   Monatsbeleg automatisch am",
+        "             Monatsersten um 00:05, der",
+        "             Dezember-Beleg ist der",
+        "             Jahresbeleg",
+        "Kontakt      hello@kasseneck.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App oder in der",
+        "Web-Kasse, gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen signiert. Den",
+        "Beleg gibt es gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 15.08.2026, 00:20"
+      ]
+    },
+    {
+      "name": "lange Werte brechen hart, Steuerzeichen werden Leerzeichen, Breite 32",
+      "info": {
+        "cashregisterId": "KECK-1",
+        "product": {
+          "name": "Kasseneck",
+          "cloudBased": true
+        },
+        "manufacturer": {
+          "name": "Post Now e.U.",
+          "vatId": "ATU76279224"
+        },
+        "signature": {
+          "provider": "a_trust",
+          "serialHex": "4f3a9c0e11d2b7a65c8e0f1a2b3c4d5e6f708192",
+          "serialDecimal": "452938465093028741093847561029384756102938",
+          "holder": "Steuernummer 91-123/4565",
+          "issuer": "\tA-Trust Registrierkasse.CA\nZweite Zeile",
+          "validFrom": "2026-10-05T08:00:00.000Z",
+          "validTo": "2031-10-05T08:00:00.000Z",
+          "holderChecked": true,
+          "testCard": false,
+          "status": "active"
+        },
+        "closings": {
+          "monthlyDay": 1,
+          "monthlyTime": "00:05",
+          "timeZone": "Europe/Vienna",
+          "annualIsDecember": true
+        },
+        "contactEmail": "pruefung-der-registrierkassen@kasseneck.at"
+      },
+      "width": 32,
+      "printedAt": "2026-10-29T13:05:00.000Z",
+      "rows": [
+        {
+          "key": "product",
+          "section": "register",
+          "label": "",
+          "value": [
+            "Kasseneck – cloudbasierte Registrierkasse"
+          ]
+        },
+        {
+          "key": "manufacturer",
+          "section": "register",
+          "label": "Hersteller",
+          "value": [
+            "Post Now e.U., UID ATU76279224"
+          ]
+        },
+        {
+          "key": "cashregister_id",
+          "section": "register",
+          "label": "Kassen-ID",
+          "value": [
+            "KECK-1"
+          ]
+        },
+        {
+          "key": "unit",
+          "section": "signature",
+          "label": "Einheit",
+          "value": [
+            "Signaturkarte von A-Trust"
+          ]
+        },
+        {
+          "key": "hosting",
+          "section": "signature",
+          "label": "Betrieb",
+          "value": [
+            "im Signier-Server von Kasseneck"
+          ]
+        },
+        {
+          "key": "certificate",
+          "section": "signature",
+          "label": "Zertifikat",
+          "value": [
+            "Seriennr. 4f3a9c0e11d2b7a65c8e0f1a2b3c4d5e6f708192 (hex)",
+            "452938465093028741093847561029384756102938 (dezimal)"
+          ]
+        },
+        {
+          "key": "holder",
+          "section": "signature",
+          "label": "Inhaber",
+          "value": [
+            "Steuernummer 91-123/4565"
+          ]
+        },
+        {
+          "key": "issuer",
+          "section": "signature",
+          "label": "Aussteller",
+          "value": [
+            "A-Trust Registrierkasse.CA Zweite Zeile"
+          ]
+        },
+        {
+          "key": "valid",
+          "section": "signature",
+          "label": "Gültig",
+          "value": [
+            "05.10.2026 – 05.10.2031"
+          ]
+        },
+        {
+          "key": "check",
+          "section": "signature",
+          "label": "Abgleich",
+          "value": [
+            "Inhaber mit A-Trust geprüft"
+          ]
+        },
+        {
+          "key": "status",
+          "section": "signature",
+          "label": "Status",
+          "value": [
+            "in Betrieb"
+          ]
+        },
+        {
+          "key": "dep",
+          "section": "operation",
+          "label": "DEP",
+          "value": [
+            "online gespeichert, jederzeit exportierbar (USB-Stick, Link)"
+          ]
+        },
+        {
+          "key": "closings",
+          "section": "operation",
+          "label": "Abschlüsse",
+          "value": [
+            "Monatsbeleg automatisch am Monatsersten um 00:05, der Dezember-Beleg ist der Jahresbeleg"
+          ]
+        },
+        {
+          "key": "contact",
+          "section": "operation",
+          "label": "Kontakt",
+          "value": [
+            "pruefung-der-registrierkassen@kasseneck.at"
+          ]
+        }
+      ],
+      "lines": [
+        "KASSENINFO FÜR DIE PRÜFUNG",
+        "",
+        "Kasseneck – cloudbasierte",
+        "Registrierkasse",
+        "Hersteller   Post Now e.U.,",
+        "             UID ATU76279224",
+        "Kassen-ID    KECK-1",
+        "",
+        "SIGNATUR",
+        "Einheit      Signaturkarte von",
+        "             A-Trust",
+        "Betrieb      im Signier-Server",
+        "             von Kasseneck",
+        "Zertifikat   Seriennr.",
+        "             4f3a9c0e11d2b7a65c8",
+        "             e0f1a2b3c4d5e6f7081",
+        "             92 (hex)",
+        "             4529384650930287410",
+        "             9384756102938475610",
+        "             2938 (dezimal)",
+        "Inhaber      Steuernummer",
+        "             91-123/4565",
+        "Aussteller   A-Trust",
+        "             Registrierkasse.CA",
+        "             Zweite Zeile",
+        "Gültig       05.10.2026 –",
+        "             05.10.2031",
+        "Abgleich     Inhaber mit A-Trust",
+        "             geprüft",
+        "Status       in Betrieb",
+        "",
+        "DEP          online gespeichert,",
+        "             jederzeit",
+        "             exportierbar",
+        "             (USB-Stick, Link)",
+        "Abschlüsse   Monatsbeleg",
+        "             automatisch am",
+        "             Monatsersten um",
+        "             00:05, der",
+        "             Dezember-Beleg ist",
+        "             der Jahresbeleg",
+        "Kontakt      pruefung-der-regist",
+        "             rierkassen@kassenec",
+        "             k.at",
+        "",
+        "So arbeitet die Kasse:",
+        "Erfasst wird in der Kassen-App",
+        "oder in der Web-Kasse,",
+        "gespeichert wird online. Jeder",
+        "Beleg wird beim Erstellen",
+        "signiert. Den Beleg gibt es",
+        "gedruckt, per Mail oder als",
+        "QR-Code.",
+        "",
+        "Gedruckt 29.10.2026, 14:05"
+      ]
+    }
+  ]
+}

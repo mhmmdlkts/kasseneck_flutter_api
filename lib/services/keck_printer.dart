@@ -192,14 +192,19 @@ class KeckPrinter {
   ///
   /// [codeTable]: die im Drucker-Wizard gewaehlte Tabelle dieses Druckers;
   /// ohne Wahl bleibt der Bon byte-gleich (Tabelle 16).
+  ///
+  /// [cut] und [cutMode]: Papierschnitt am Ende wie bei
+  /// [KeckPrinterService.getPaperFromReceipt]; Vorgabe ein voller Schnitt.
   Future<KeckPrintResult> printReceipt(
     KasseneckReceipt r, {
     QrPrintMode qrMode = QrPrintMode.imageRaster,
     QrModuleSize qrModuleSize = QrModuleSize.auto,
     CodeTableId? codeTable,
+    bool cut = true,
+    PosCutMode cutMode = PosCutMode.full,
   }) async {
     final PrintPaper paper = await KeckPrinterService.getPaperFromReceipt(r, size,
-        qrMode: qrMode, qrModuleSize: qrModuleSize, codeTable: codeTable);
+        qrMode: qrMode, qrModuleSize: qrModuleSize, codeTable: codeTable, cut: cut, cutMode: cutMode);
     final List<int> bytes = <int>[for (final p in paper.bytes) ...p];
     final KeckPrintResult ergebnis = await transport.send(bytes);
     if (paper.qrError == null && paper.qrFallback == null) return ergebnis;

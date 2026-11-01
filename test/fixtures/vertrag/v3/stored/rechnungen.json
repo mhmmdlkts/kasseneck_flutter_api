@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "8ab1b71c62ba07684e9ef254a7434be434247afdb1ac9947e083b4b0af5f3c04",
-    "inputsSha256": "b008ce1c1465149f0748185704c3e593a6d537e869691bd0e60e3e4368142189",
+    "sha256": "c4c2fc57a33fae3dec2677a87c124449ad62ef8af6b584f2bbdd12b7c1d42bb2",
+    "inputsSha256": "883620c3b9941916edeb283cd0c5eac966324d1a200e6b4a1e93786335984d5d",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -92,7 +92,417 @@
       "isAuthority": false,
       "language": null
     },
-    "users/test_welt1/invoices/auto1": {
+    "users/test_welt1/invoices/auto11": {
+      "docType": "RE",
+      "invoiceDate": "2026-09-26",
+      "serviceStart": "2026-09-26",
+      "serviceEnd": null,
+      "paymentTermDays": 14,
+      "customerId": "k_at",
+      "customer": {
+        "name": "Baecker Wien GmbH",
+        "type": "company",
+        "street": "Hauptplatz 1",
+        "houseNumber": null,
+        "zip": "1010",
+        "city": "Wien",
+        "country": "AT",
+        "uid": "ATU87654321",
+        "shortCode": null,
+        "email": null,
+        "isAuthority": false
+      },
+      "taxScheme": "normal",
+      "reverseChargeReason": null,
+      "taxCountry": "AT",
+      "priceMode": "net",
+      "items": [
+        {
+          "id": "i1",
+          "description": "Beratung",
+          "subtitle": "",
+          "quantity": 2,
+          "unit": "piece",
+          "kind": "service",
+          "unitPrice": 50,
+          "vatRate": 20,
+          "discountPct": 0
+        }
+      ],
+      "intro": null,
+      "note": null,
+      "orderReference": null,
+      "verwendungszweck": null,
+      "girocode": false,
+      "tracking": false,
+      "relatedInvoiceId": null,
+      "relatedNumber": null,
+      "relatedDate": null,
+      "cancelsOriginal": false,
+      "metadata": {},
+      "source": "api",
+      "language": "de",
+      "markeId": null,
+      "idempotencyKey": "i-storno",
+      "rechenweg": 2,
+      "status": "cancelled",
+      "number": "0005",
+      "totals": {
+        "totalNet": 100,
+        "totalVat": 20,
+        "totalGross": 120
+      },
+      "totalsCents": {
+        "netCents": 10000,
+        "vatCents": 2000,
+        "grossCents": 12000,
+        "byRate": [
+          {
+            "rateBp": 2000,
+            "netCents": 10000,
+            "vatCents": 2000,
+            "grossCents": 12000
+          }
+        ],
+        "lines": [
+          {
+            "netCents": 10000,
+            "grossCents": 12000,
+            "rateBp": 2000
+          }
+        ],
+        "weg": "2",
+        "quelle": "festschreiben"
+      },
+      "internal_seq": 5,
+      "einvoice": {
+        "level": "full",
+        "formats": [
+          "UBL",
+          "Factur-X"
+        ],
+        "missing": []
+      },
+      "finalized_at": "2026-09-26T08:00:00.000Z",
+      "public_token": "00000000000000000000000000000000000000002f7a9406",
+      "public_password": "EXAM-5B1F",
+      "marke": {
+        "id": null,
+        "name": "Standard",
+        "logoUrl": null,
+        "logoAlt": "Bäckerei Kornblum",
+        "farbe": "#17150F",
+        "absenderName": "Bäckerei Kornblum",
+        "fusszeile": []
+      },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
+      },
+      "created_at": "2026-09-26T08:00:00.000Z",
+      "updated_at": "2026-09-26T08:00:00.000Z",
+      "creditedCents": {
+        "total": 12000,
+        "byRate": {
+          "20": 12000
+        }
+      },
+      "cancelled_at": "2026-09-26T08:00:00.000Z",
+      "cancelled_by": "auto12"
+    },
+    "users/test_welt1/invoices/auto12": {
+      "docType": "GU",
+      "invoiceDate": "2026-09-26",
+      "serviceStart": "2026-09-26",
+      "serviceEnd": null,
+      "paymentTermDays": 0,
+      "customerId": "k_at",
+      "customer": {
+        "name": "Baecker Wien GmbH",
+        "type": "company",
+        "street": "Hauptplatz 1",
+        "houseNumber": null,
+        "zip": "1010",
+        "city": "Wien",
+        "country": "AT",
+        "uid": "ATU87654321",
+        "shortCode": null,
+        "email": null,
+        "isAuthority": false
+      },
+      "taxScheme": "normal",
+      "reverseChargeReason": null,
+      "taxCountry": "AT",
+      "priceMode": "net",
+      "items": [
+        {
+          "id": "i1",
+          "description": "Beratung",
+          "subtitle": "",
+          "quantity": 2,
+          "unit": "piece",
+          "kind": "service",
+          "unitPrice": 50,
+          "vatRate": 20,
+          "discountPct": 0
+        }
+      ],
+      "intro": "Grund: Stornierung",
+      "note": null,
+      "orderReference": null,
+      "verwendungszweck": null,
+      "girocode": false,
+      "tracking": false,
+      "relatedInvoiceId": "auto11",
+      "relatedNumber": "0005",
+      "relatedDate": "2026-09-26",
+      "cancelsOriginal": true,
+      "vollstorno": true,
+      "vollstornoVon": "auto11",
+      "totalsCentsKopie": {
+        "netCents": 10000,
+        "vatCents": 2000,
+        "grossCents": 12000,
+        "byRate": [
+          {
+            "rateBp": 2000,
+            "netCents": 10000,
+            "vatCents": 2000,
+            "grossCents": 12000
+          }
+        ],
+        "lines": [
+          {
+            "netCents": 10000,
+            "grossCents": 12000,
+            "rateBp": 2000
+          }
+        ]
+      },
+      "creditNoteReason": "cancellation",
+      "metadata": {},
+      "source": "api",
+      "language": "de",
+      "idempotencyKey": "gu-2",
+      "rechenweg": 2,
+      "status": "final",
+      "number": "0006",
+      "totals": {
+        "totalNet": 100,
+        "totalVat": 20,
+        "totalGross": 120
+      },
+      "totalsCents": {
+        "netCents": 10000,
+        "vatCents": 2000,
+        "grossCents": 12000,
+        "byRate": [
+          {
+            "rateBp": 2000,
+            "netCents": 10000,
+            "vatCents": 2000,
+            "grossCents": 12000
+          }
+        ],
+        "lines": [
+          {
+            "netCents": 10000,
+            "grossCents": 12000,
+            "rateBp": 2000
+          }
+        ],
+        "weg": "gespeichert",
+        "quelle": "festschreiben"
+      },
+      "internal_seq": 6,
+      "einvoice": {
+        "level": "full",
+        "formats": [
+          "UBL",
+          "Factur-X"
+        ],
+        "missing": []
+      },
+      "finalized_at": "2026-09-26T08:00:00.000Z",
+      "public_token": "00000000000000000000000000000000000000002f7a9406",
+      "public_password": "EXAM-5B1F",
+      "marke": {
+        "id": null,
+        "name": "Standard",
+        "logoUrl": null,
+        "logoAlt": "Bäckerei Kornblum",
+        "farbe": "#17150F",
+        "absenderName": "Bäckerei Kornblum",
+        "fusszeile": []
+      },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
+      },
+      "created_at": "2026-09-26T08:00:00.000Z",
+      "updated_at": "2026-09-26T08:00:00.000Z"
+    },
+    "users/test_welt1/invoices/auto14": {
+      "docType": "RE",
+      "invoiceDate": "2026-09-26",
+      "serviceStart": "2026-09-26",
+      "serviceEnd": null,
+      "paymentTermDays": 14,
+      "customerId": "k_at",
+      "customer": {
+        "name": "Baecker Wien GmbH",
+        "type": "company",
+        "street": "Hauptplatz 1",
+        "houseNumber": null,
+        "zip": "1010",
+        "city": "Wien",
+        "country": "AT",
+        "uid": "ATU87654321",
+        "shortCode": null,
+        "email": null,
+        "isAuthority": false
+      },
+      "taxScheme": "normal",
+      "reverseChargeReason": null,
+      "taxCountry": "AT",
+      "priceMode": "net",
+      "items": [
+        {
+          "id": "i1",
+          "description": "Beratung",
+          "subtitle": "",
+          "quantity": 2,
+          "unit": "piece",
+          "kind": "service",
+          "unitPrice": 50,
+          "vatRate": 20,
+          "discountPct": 0
+        }
+      ],
+      "intro": null,
+      "note": null,
+      "orderReference": null,
+      "verwendungszweck": null,
+      "girocode": false,
+      "tracking": false,
+      "relatedInvoiceId": null,
+      "relatedNumber": null,
+      "relatedDate": null,
+      "cancelsOriginal": false,
+      "metadata": {},
+      "source": "api",
+      "language": "de",
+      "markeId": null,
+      "idempotencyKey": "i-abschreibung",
+      "rechenweg": 2,
+      "status": "final",
+      "number": "0007",
+      "totals": {
+        "totalNet": 100,
+        "totalVat": 20,
+        "totalGross": 120
+      },
+      "totalsCents": {
+        "netCents": 10000,
+        "vatCents": 2000,
+        "grossCents": 12000,
+        "byRate": [
+          {
+            "rateBp": 2000,
+            "netCents": 10000,
+            "vatCents": 2000,
+            "grossCents": 12000
+          }
+        ],
+        "lines": [
+          {
+            "netCents": 10000,
+            "grossCents": 12000,
+            "rateBp": 2000
+          }
+        ],
+        "weg": "2",
+        "quelle": "festschreiben"
+      },
+      "internal_seq": 7,
+      "einvoice": {
+        "level": "full",
+        "formats": [
+          "UBL",
+          "Factur-X"
+        ],
+        "missing": []
+      },
+      "finalized_at": "2026-09-26T08:00:00.000Z",
+      "public_token": "00000000000000000000000000000000000000002f7a9406",
+      "public_password": "EXAM-5B1F",
+      "marke": {
+        "id": null,
+        "name": "Standard",
+        "logoUrl": null,
+        "logoAlt": "Bäckerei Kornblum",
+        "farbe": "#17150F",
+        "absenderName": "Bäckerei Kornblum",
+        "fusszeile": []
+      },
+      "aussteller": {
+        "company_name": "Bäckerei Kornblum",
+        "address": {
+          "street": "Hauptplatz 1",
+          "zip": "1010",
+          "city": "Wien"
+        },
+        "tax_details": {
+          "uid": "ATU12345675"
+        },
+        "bank": {
+          "iban": "AT611904300234573201",
+          "account_holder": "Bäckerei Kornblum"
+        },
+        "phone": "+43 1 234"
+      },
+      "zahlstandAusgestellt": {
+        "paidAt": null,
+        "paymentMethod": null
+      },
+      "created_at": "2026-09-26T08:00:00.000Z",
+      "updated_at": "2026-09-26T08:00:00.000Z",
+      "writtenOff": true,
+      "writeOffReasonCode": "uneinbringlich"
+    },
+    "users/test_welt1/invoices/auto2": {
       "docType": "RE",
       "invoiceDate": "2026-09-26",
       "serviceStart": "2026-09-26",
@@ -224,7 +634,7 @@
         }
       }
     },
-    "users/test_welt1/invoices/auto2": {
+    "users/test_welt1/invoices/auto3": {
       "docType": "RE",
       "invoiceDate": "2026-09-26",
       "serviceStart": "2026-09-26",
@@ -379,7 +789,7 @@
         "2026-09"
       ]
     },
-    "users/test_welt1/invoices/auto4": {
+    "users/test_welt1/invoices/auto7": {
       "docType": "RE",
       "invoiceDate": "2026-09-26",
       "serviceStart": "2026-09-26",
@@ -512,7 +922,7 @@
       "created_at": "2026-09-26T08:00:00.000Z",
       "updated_at": "2026-09-26T08:00:00.000Z"
     },
-    "users/test_welt1/invoices/auto6": {
+    "users/test_welt1/invoices/auto9": {
       "docType": "GU",
       "invoiceDate": "2026-09-26",
       "serviceStart": "2026-09-26",
@@ -555,7 +965,7 @@
       "verwendungszweck": null,
       "girocode": false,
       "tracking": false,
-      "relatedInvoiceId": "auto1",
+      "relatedInvoiceId": "auto2",
       "relatedNumber": "0001",
       "relatedDate": "2026-09-26",
       "cancelsOriginal": false,
@@ -637,416 +1047,6 @@
       },
       "created_at": "2026-09-26T08:00:00.000Z",
       "updated_at": "2026-09-26T08:00:00.000Z"
-    },
-    "users/test_welt1/invoices/auto7": {
-      "docType": "RE",
-      "invoiceDate": "2026-09-26",
-      "serviceStart": "2026-09-26",
-      "serviceEnd": null,
-      "paymentTermDays": 14,
-      "customerId": "k_at",
-      "customer": {
-        "name": "Baecker Wien GmbH",
-        "type": "company",
-        "street": "Hauptplatz 1",
-        "houseNumber": null,
-        "zip": "1010",
-        "city": "Wien",
-        "country": "AT",
-        "uid": "ATU87654321",
-        "shortCode": null,
-        "email": null,
-        "isAuthority": false
-      },
-      "taxScheme": "normal",
-      "reverseChargeReason": null,
-      "taxCountry": "AT",
-      "priceMode": "net",
-      "items": [
-        {
-          "id": "i1",
-          "description": "Beratung",
-          "subtitle": "",
-          "quantity": 2,
-          "unit": "piece",
-          "kind": "service",
-          "unitPrice": 50,
-          "vatRate": 20,
-          "discountPct": 0
-        }
-      ],
-      "intro": null,
-      "note": null,
-      "orderReference": null,
-      "verwendungszweck": null,
-      "girocode": false,
-      "tracking": false,
-      "relatedInvoiceId": null,
-      "relatedNumber": null,
-      "relatedDate": null,
-      "cancelsOriginal": false,
-      "metadata": {},
-      "source": "api",
-      "language": "de",
-      "markeId": null,
-      "idempotencyKey": "i-storno",
-      "rechenweg": 2,
-      "status": "cancelled",
-      "number": "0005",
-      "totals": {
-        "totalNet": 100,
-        "totalVat": 20,
-        "totalGross": 120
-      },
-      "totalsCents": {
-        "netCents": 10000,
-        "vatCents": 2000,
-        "grossCents": 12000,
-        "byRate": [
-          {
-            "rateBp": 2000,
-            "netCents": 10000,
-            "vatCents": 2000,
-            "grossCents": 12000
-          }
-        ],
-        "lines": [
-          {
-            "netCents": 10000,
-            "grossCents": 12000,
-            "rateBp": 2000
-          }
-        ],
-        "weg": "2",
-        "quelle": "festschreiben"
-      },
-      "internal_seq": 5,
-      "einvoice": {
-        "level": "full",
-        "formats": [
-          "UBL",
-          "Factur-X"
-        ],
-        "missing": []
-      },
-      "finalized_at": "2026-09-26T08:00:00.000Z",
-      "public_token": "00000000000000000000000000000000000000002f7a9406",
-      "public_password": "EXAM-5B1F",
-      "marke": {
-        "id": null,
-        "name": "Standard",
-        "logoUrl": null,
-        "logoAlt": "Bäckerei Kornblum",
-        "farbe": "#17150F",
-        "absenderName": "Bäckerei Kornblum",
-        "fusszeile": []
-      },
-      "aussteller": {
-        "company_name": "Bäckerei Kornblum",
-        "address": {
-          "street": "Hauptplatz 1",
-          "zip": "1010",
-          "city": "Wien"
-        },
-        "tax_details": {
-          "uid": "ATU12345675"
-        },
-        "bank": {
-          "iban": "AT611904300234573201",
-          "account_holder": "Bäckerei Kornblum"
-        },
-        "phone": "+43 1 234"
-      },
-      "zahlstandAusgestellt": {
-        "paidAt": null,
-        "paymentMethod": null
-      },
-      "created_at": "2026-09-26T08:00:00.000Z",
-      "updated_at": "2026-09-26T08:00:00.000Z",
-      "creditedCents": {
-        "total": 12000,
-        "byRate": {
-          "20": 12000
-        }
-      },
-      "cancelled_at": "2026-09-26T08:00:00.000Z",
-      "cancelled_by": "auto8"
-    },
-    "users/test_welt1/invoices/auto8": {
-      "docType": "GU",
-      "invoiceDate": "2026-09-26",
-      "serviceStart": "2026-09-26",
-      "serviceEnd": null,
-      "paymentTermDays": 0,
-      "customerId": "k_at",
-      "customer": {
-        "name": "Baecker Wien GmbH",
-        "type": "company",
-        "street": "Hauptplatz 1",
-        "houseNumber": null,
-        "zip": "1010",
-        "city": "Wien",
-        "country": "AT",
-        "uid": "ATU87654321",
-        "shortCode": null,
-        "email": null,
-        "isAuthority": false
-      },
-      "taxScheme": "normal",
-      "reverseChargeReason": null,
-      "taxCountry": "AT",
-      "priceMode": "net",
-      "items": [
-        {
-          "id": "i1",
-          "description": "Beratung",
-          "subtitle": "",
-          "quantity": 2,
-          "unit": "piece",
-          "kind": "service",
-          "unitPrice": 50,
-          "vatRate": 20,
-          "discountPct": 0
-        }
-      ],
-      "intro": "Grund: Stornierung",
-      "note": null,
-      "orderReference": null,
-      "verwendungszweck": null,
-      "girocode": false,
-      "tracking": false,
-      "relatedInvoiceId": "auto7",
-      "relatedNumber": "0005",
-      "relatedDate": "2026-09-26",
-      "cancelsOriginal": true,
-      "vollstorno": true,
-      "vollstornoVon": "auto7",
-      "totalsCentsKopie": {
-        "netCents": 10000,
-        "vatCents": 2000,
-        "grossCents": 12000,
-        "byRate": [
-          {
-            "rateBp": 2000,
-            "netCents": 10000,
-            "vatCents": 2000,
-            "grossCents": 12000
-          }
-        ],
-        "lines": [
-          {
-            "netCents": 10000,
-            "grossCents": 12000,
-            "rateBp": 2000
-          }
-        ]
-      },
-      "creditNoteReason": "cancellation",
-      "metadata": {},
-      "source": "api",
-      "language": "de",
-      "idempotencyKey": "gu-2",
-      "rechenweg": 2,
-      "status": "final",
-      "number": "0006",
-      "totals": {
-        "totalNet": 100,
-        "totalVat": 20,
-        "totalGross": 120
-      },
-      "totalsCents": {
-        "netCents": 10000,
-        "vatCents": 2000,
-        "grossCents": 12000,
-        "byRate": [
-          {
-            "rateBp": 2000,
-            "netCents": 10000,
-            "vatCents": 2000,
-            "grossCents": 12000
-          }
-        ],
-        "lines": [
-          {
-            "netCents": 10000,
-            "grossCents": 12000,
-            "rateBp": 2000
-          }
-        ],
-        "weg": "gespeichert",
-        "quelle": "festschreiben"
-      },
-      "internal_seq": 6,
-      "einvoice": {
-        "level": "full",
-        "formats": [
-          "UBL",
-          "Factur-X"
-        ],
-        "missing": []
-      },
-      "finalized_at": "2026-09-26T08:00:00.000Z",
-      "public_token": "00000000000000000000000000000000000000002f7a9406",
-      "public_password": "EXAM-5B1F",
-      "marke": {
-        "id": null,
-        "name": "Standard",
-        "logoUrl": null,
-        "logoAlt": "Bäckerei Kornblum",
-        "farbe": "#17150F",
-        "absenderName": "Bäckerei Kornblum",
-        "fusszeile": []
-      },
-      "aussteller": {
-        "company_name": "Bäckerei Kornblum",
-        "address": {
-          "street": "Hauptplatz 1",
-          "zip": "1010",
-          "city": "Wien"
-        },
-        "tax_details": {
-          "uid": "ATU12345675"
-        },
-        "bank": {
-          "iban": "AT611904300234573201",
-          "account_holder": "Bäckerei Kornblum"
-        },
-        "phone": "+43 1 234"
-      },
-      "zahlstandAusgestellt": {
-        "paidAt": null,
-        "paymentMethod": null
-      },
-      "created_at": "2026-09-26T08:00:00.000Z",
-      "updated_at": "2026-09-26T08:00:00.000Z"
-    },
-    "users/test_welt1/invoices/auto9": {
-      "docType": "RE",
-      "invoiceDate": "2026-09-26",
-      "serviceStart": "2026-09-26",
-      "serviceEnd": null,
-      "paymentTermDays": 14,
-      "customerId": "k_at",
-      "customer": {
-        "name": "Baecker Wien GmbH",
-        "type": "company",
-        "street": "Hauptplatz 1",
-        "houseNumber": null,
-        "zip": "1010",
-        "city": "Wien",
-        "country": "AT",
-        "uid": "ATU87654321",
-        "shortCode": null,
-        "email": null,
-        "isAuthority": false
-      },
-      "taxScheme": "normal",
-      "reverseChargeReason": null,
-      "taxCountry": "AT",
-      "priceMode": "net",
-      "items": [
-        {
-          "id": "i1",
-          "description": "Beratung",
-          "subtitle": "",
-          "quantity": 2,
-          "unit": "piece",
-          "kind": "service",
-          "unitPrice": 50,
-          "vatRate": 20,
-          "discountPct": 0
-        }
-      ],
-      "intro": null,
-      "note": null,
-      "orderReference": null,
-      "verwendungszweck": null,
-      "girocode": false,
-      "tracking": false,
-      "relatedInvoiceId": null,
-      "relatedNumber": null,
-      "relatedDate": null,
-      "cancelsOriginal": false,
-      "metadata": {},
-      "source": "api",
-      "language": "de",
-      "markeId": null,
-      "idempotencyKey": "i-abschreibung",
-      "rechenweg": 2,
-      "status": "final",
-      "number": "0007",
-      "totals": {
-        "totalNet": 100,
-        "totalVat": 20,
-        "totalGross": 120
-      },
-      "totalsCents": {
-        "netCents": 10000,
-        "vatCents": 2000,
-        "grossCents": 12000,
-        "byRate": [
-          {
-            "rateBp": 2000,
-            "netCents": 10000,
-            "vatCents": 2000,
-            "grossCents": 12000
-          }
-        ],
-        "lines": [
-          {
-            "netCents": 10000,
-            "grossCents": 12000,
-            "rateBp": 2000
-          }
-        ],
-        "weg": "2",
-        "quelle": "festschreiben"
-      },
-      "internal_seq": 7,
-      "einvoice": {
-        "level": "full",
-        "formats": [
-          "UBL",
-          "Factur-X"
-        ],
-        "missing": []
-      },
-      "finalized_at": "2026-09-26T08:00:00.000Z",
-      "public_token": "00000000000000000000000000000000000000002f7a9406",
-      "public_password": "EXAM-5B1F",
-      "marke": {
-        "id": null,
-        "name": "Standard",
-        "logoUrl": null,
-        "logoAlt": "Bäckerei Kornblum",
-        "farbe": "#17150F",
-        "absenderName": "Bäckerei Kornblum",
-        "fusszeile": []
-      },
-      "aussteller": {
-        "company_name": "Bäckerei Kornblum",
-        "address": {
-          "street": "Hauptplatz 1",
-          "zip": "1010",
-          "city": "Wien"
-        },
-        "tax_details": {
-          "uid": "ATU12345675"
-        },
-        "bank": {
-          "iban": "AT611904300234573201",
-          "account_holder": "Bäckerei Kornblum"
-        },
-        "phone": "+43 1 234"
-      },
-      "zahlstandAusgestellt": {
-        "paidAt": null,
-        "paymentMethod": null
-      },
-      "created_at": "2026-09-26T08:00:00.000Z",
-      "updated_at": "2026-09-26T08:00:00.000Z",
-      "writtenOff": true,
-      "writeOffReasonCode": "uneinbringlich"
     }
   }
 }

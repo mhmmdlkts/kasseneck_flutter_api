@@ -137,6 +137,8 @@ abstract final class Aufrufe {
   static const reprintVoucherLabel = 'reprintVoucherLabel';
   // Ausgaben eines Belegs (Drucke, Teilen) melden: nur ueber den Kassenweg.
   static const logReceiptOutputs = 'logReceiptOutputs';
+  // Kasseninfo fuer die Pruefung (Kassennachschau, Stufe 2b): nur ueber den Kassenweg.
+  static const getRegisterInspectionInfo = 'getRegisterInspectionInfo';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -257,5 +259,6 @@ abstract final class Aufrufe {
     checkVoucher,
     reprintVoucherLabel,
     logReceiptOutputs,
+    getRegisterInspectionInfo,
   };
 }

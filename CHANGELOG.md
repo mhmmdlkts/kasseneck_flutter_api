@@ -1,3 +1,78 @@
+## 11.15.0 (2026-10-31)
+
+Twin of `@kreiseck/kasseneck-api` `1.23.0` (contract files pulled from that
+version). The tab *Prüfung* at the register (*Kassennachschau*, stage 2b):
+zero receipt on the register path, the register info for the inspector on
+screen and as a printout, and the words of the tab. Additive.
+
+- **`RegisterReceiptClient.zeroReceipt()`** (new): a zero receipt
+  (`createReceipt` with `receiptType: zero`, plus the session's
+  `cashregisterId`), the same request as `KasseneckApi.zeroReceipt`. Returns
+  `KasseneckReceipt` like `sell`. Every register user with the permission
+  `sell` (or `layout`) may create one, a cashier too; without it the server
+  answers `not_permitted`. `createReceipt` stays in `unknownOutcomeCalls`:
+  after a lost answer (`isOutcomeUnknown`) read the receipt list before
+  creating another one; an unreadable success answer comes as
+  `response_unreadable` with the receipt id. Reason: the register app hid its
+  zero-receipt button because this call was missing on the register path.
+- **`RegisterReceiptClient.getRegisterInspectionInfo()`** (new call
+  `getRegisterInspectionInfo`, register path only, reads only): returns
+  **`RegisterInspectionInfo`** (`cashregisterId`, `product`
+  (`RegisterInspectionProduct`: `name`, `cloudBased`), `manufacturer`
+  (`RegisterInspectionManufacturer`: `name`, `vatId`), `signature`
+  (`RegisterInspectionSignature`: `provider`, `serialHex`, `serialDecimal` as
+  text, `holder`, `issuer`, `validFrom`, `validTo`, `holderChecked`,
+  `testCard`, `status`, `outageSince`), `closings`
+  (`RegisterInspectionClosings`: `monthlyDay`, `monthlyTime`, `timeZone`,
+  `annualIsDecember`), `contactEmail`). Every field is nullable except
+  `testCard` (`false` when missing). Read by a positive list like npm: a field
+  of the wrong type is `null`, an unknown `status` too (only
+  `inspectionSignatureActive` and `inspectionSignatureOutage`); `toJson()`
+  gives the wire form back. Reason: the inspector asks for these facts, and
+  the contact address comes from the server.
+- **`inspectionInfoRows(info)`** and **`inspectionInfoLines(info, width:,
+  printedAt:)`** (`pos.dart`), twins of the npm functions: the rows for the
+  screen (`InspectionInfoRow`: `key`, `section`, `label`, `value`) and plain
+  lines for the receipt printer (no receipt header or number, headings in
+  capitals, a label column of 13 characters, values wrapped word by word,
+  Vienna time, never wider than `width`; `width` below 24 throws
+  `KasseneckValidationError`, `kind: request`). A missing value leaves its
+  row out, never „unbekannt“. Every case of the contract file
+  `inspection-info-cases.json` is a test (rows and lines, widths 32, 42 and
+  48). Timestamps are read in the same forms as npm (with zone, or Vienna wall
+  clock with seconds); a bare day counts as unreadable on both sides.
+- Text catalogue from the contract: `nav.inspection` „Prüfung“, the words of
+  the register info (`inspection.*`), `inspection.print` „Kasseninfo
+  drucken“, the question `inspection.print_question` with
+  `inspection.print_yes`/`print_no`, `zero_receipt.create` „Nullbeleg
+  erstellen“ and `zero_receipt.created` „Nullbeleg {number} erstellt,
+  {time}“, and `zero_receipt.check_first` (the lock after a zero receipt with
+  an unknown outcome: read the receipt list first, then a new one is
+  possible; so far written into the register app by hand). `dep.manager_only`
+  is now „Den Export macht der Chef.“ and
+  `dep.offline` „Ohne Internet geht der Export nicht.“ (same keys).
+- **Paper cut at the end of a receipt, twin of the npm option `cut` of
+  `escPosLayoutBytes`:** new named parameters `bool cut = true` (already on
+  `PrintPaper.setReceiptSheet`/`setReceiptLayout`) and
+  `PosCutMode cutMode = PosCutMode.full` on `PrintPaper.setReceiptSheet`,
+  `setReceiptLayout`, `setKeckReceipt` (the path without a server layout),
+  `KeckPrinterService.getPaperFromReceipt`, `getBytesFromReceipt`,
+  `KasseneckReceipt.getPrintBytes` and `KeckPrinter.printReceipt`;
+  `PrintPaper.addCut` takes `mode`. Mapping: npm `true`/`'full'` = the
+  default, `'partial'` = `cutMode: PosCutMode.partial` (`GS V 1`), `false` =
+  `cut: false` (neither the five empty lines nor `GS V`). The default stays a
+  full cut, byte for byte as before. Every case of the contract file
+  `print-cut-cases.json` (bytes under `expected/print-cut.<name>.hex`) is a
+  test. Reason: the register app had to strip the trailing cut itself for the
+  device setting `cut: none` (printers without a knife); now it passes
+  `cut: false` (and `cutMode: PosCutMode.partial` where the web register
+  sends `'partial'`).
+- Contract `v3` re-fetched: `getRegisterInspectionInfo` in `calls.pos` (48),
+  its register-path cases and the zero receipt of a cashier, which
+  `kasse_v3_test.dart` now runs through `RegisterReceiptClient`.
+- `zwillinge.yaml` pins npm `1.23.0`; the origin of the special-character
+  layout comes from that version (the layout is byte for byte the same).
+
 ## 11.14.0 (2026-10-31)
 
 Twin of `@kreiseck/kasseneck-api` `1.22.0`. Idempotent sales: `createReceipt`
