@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "33ec86c49da47f5c8a624ed721c4d422fabeab8aa2d5c2fd9d6d491790ccc3bf",
+      "sha256": "b3ed9b5e54fb6a0c27c2e9b494c8676926b80b4527236f0f4f71403c455fa477",
       "head": [],
-      "inputsSha256": "b5d46d661435eac06805cbd21d8afde6bc01455740e2750be7223917cf4620de",
+      "inputsSha256": "8b3dbb0fbb4d2e385bd2a58f33a61f20be02009e395e95d66bbaf3605e629724",
       "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "0e0af617e711c9677d350bd049d4441d5973d1d0a2dbd6497024156d1ded1da6",
+      "sha256": "6b7c3a09b39b38a5bc26c6fa1b3d3d41051a3e0e13def0e26508e28f5f8a3841",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "e72d75f38d7d0ef68acf797cc9646936839ce446fc7febf7da77e915c1131f1a",
+      "inputsSha256": "3ad66d934b06587a4c7b59e9b8071e49ba1c26b090995f58cd28080dfc299471",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -921,8 +921,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": false,
               "cashregister": {
@@ -1160,8 +1160,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": false,
               "cashregister": {
@@ -1399,8 +1399,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": false,
               "cashregister": {
@@ -1597,8 +1597,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": false,
               "cashregister": {
@@ -1795,8 +1795,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": false,
               "cashregister": {
@@ -1993,8 +1993,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": false,
               "cashregister": {
@@ -2190,8 +2190,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": false,
               "cashregister": {
@@ -2388,8 +2388,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": true,
               "cashregister": {
@@ -2585,8 +2585,8 @@
                 "footer4": null,
                 "thanks_message": "Bis bald",
                 "logo_url": "https://example.invalid/logo.png",
-                "vatId": "ATU12345678",
-                "taxNumber": "12-345/6789"
+                "vatId": "ATU12345675",
+                "taxNumber": "91-123/4565"
               },
               "locationLock": false,
               "cashregister": {
@@ -5906,8 +5906,8 @@
                   }
                 ]
               },
-              "taxNumber": "12-345/6789",
-              "vatId": "ATU12345678",
+              "taxNumber": "91-123/4565",
+              "vatId": "ATU12345675",
               "headerVersionId": "auto1",
               "registrationInfo": null,
               "testCashregister": false,
@@ -5942,7 +5942,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "ATU12345678",
+                    "text": "ATU12345675",
                     "align": "center",
                     "bold": false
                   },
@@ -6223,8 +6223,8 @@
                   }
                 ]
               },
-              "taxNumber": "12-345/6789",
-              "vatId": "ATU12345678",
+              "taxNumber": "91-123/4565",
+              "vatId": "ATU12345675",
               "headerVersionId": "auto1",
               "registrationInfo": null,
               "testCashregister": false,
@@ -6259,7 +6259,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "ATU12345678",
+                    "text": "ATU12345675",
                     "align": "center",
                     "bold": false
                   },
@@ -6793,8 +6793,8 @@
                 "layoutRuleset": 2,
                 "items": []
               },
-              "taxNumber": "12-345/6789",
-              "vatId": "ATU12345678",
+              "taxNumber": "91-123/4565",
+              "vatId": "ATU12345675",
               "headerVersionId": "auto1",
               "registrationInfo": null,
               "testCashregister": false,
@@ -6829,7 +6829,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "ATU12345678",
+                    "text": "ATU12345675",
                     "align": "center",
                     "bold": false
                   },
@@ -7097,8 +7097,8 @@
                   }
                 ]
               },
-              "taxNumber": "12-345/6789",
-              "vatId": "ATU12345678",
+              "taxNumber": "91-123/4565",
+              "vatId": "ATU12345675",
               "headerVersionId": "auto1",
               "registrationInfo": null,
               "testCashregister": false,
@@ -7133,7 +7133,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "ATU12345678",
+                    "text": "ATU12345675",
                     "align": "center",
                     "bold": false
                   },
@@ -7448,8 +7448,8 @@
                   }
                 ]
               },
-              "taxNumber": "12-345/6789",
-              "vatId": "ATU12345678",
+              "taxNumber": "91-123/4565",
+              "vatId": "ATU12345675",
               "headerVersionId": "auto1",
               "registrationInfo": null,
               "testCashregister": false,
@@ -7484,7 +7484,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "ATU12345678",
+                    "text": "ATU12345675",
                     "align": "center",
                     "bold": false
                   },
@@ -7802,8 +7802,8 @@
                   }
                 ]
               },
-              "taxNumber": "12-345/6789",
-              "vatId": "ATU12345678",
+              "taxNumber": "91-123/4565",
+              "vatId": "ATU12345675",
               "headerVersionId": "auto1",
               "registrationInfo": null,
               "testCashregister": false,
@@ -7838,7 +7838,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "ATU12345678",
+                    "text": "ATU12345675",
                     "align": "center",
                     "bold": false
                   },
@@ -8163,8 +8163,8 @@
                   }
                 ]
               },
-              "taxNumber": "12-345/6789",
-              "vatId": "ATU12345678",
+              "taxNumber": "91-123/4565",
+              "vatId": "ATU12345675",
               "headerVersionId": "auto1",
               "registrationInfo": null,
               "testCashregister": false,
@@ -8199,7 +8199,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "ATU12345678",
+                    "text": "ATU12345675",
                     "align": "center",
                     "bold": false
                   },
@@ -8517,8 +8517,8 @@
                 },
                 "items": []
               },
-              "taxNumber": "12-345/6789",
-              "vatId": "ATU12345678",
+              "taxNumber": "91-123/4565",
+              "vatId": "ATU12345675",
               "headerVersionId": "auto1",
               "registrationInfo": {
                 "cardRegisteredAt": "2024-03-11T08:00:00.000Z",
@@ -8556,7 +8556,7 @@
                   },
                   {
                     "kind": "text",
-                    "text": "ATU12345678",
+                    "text": "ATU12345675",
                     "align": "center",
                     "bold": false
                   },
@@ -10892,6 +10892,10 @@
                 },
                 "types": [],
                 "serviceArticles": false
+              },
+              "connect": {
+                "minimumVersion": null,
+                "deadline": null
               }
             }
           }
@@ -11093,6 +11097,10 @@
                 },
                 "types": [],
                 "serviceArticles": false
+              },
+              "connect": {
+                "minimumVersion": null,
+                "deadline": null
               }
             }
           }
@@ -11332,6 +11340,10 @@
                 },
                 "types": [],
                 "serviceArticles": false
+              },
+              "connect": {
+                "minimumVersion": null,
+                "deadline": null
               }
             }
           }
@@ -11533,6 +11545,10 @@
                 },
                 "types": [],
                 "serviceArticles": false
+              },
+              "connect": {
+                "minimumVersion": null,
+                "deadline": null
               }
             }
           }
@@ -11734,6 +11750,10 @@
                 },
                 "types": [],
                 "serviceArticles": false
+              },
+              "connect": {
+                "minimumVersion": null,
+                "deadline": null
               }
             }
           }
@@ -12033,6 +12053,10 @@
                   }
                 ],
                 "serviceArticles": false
+              },
+              "connect": {
+                "minimumVersion": null,
+                "deadline": null
               }
             }
           }
@@ -24974,7 +24998,7 @@
                 "timeZone": "Europe/Vienna",
                 "annualIsDecember": true
               },
-              "contactEmail": "hello@kasseneck.at"
+              "contactEmail": "rksv@kasseneck.at"
             }
           }
         },
@@ -25021,7 +25045,7 @@
                 "timeZone": "Europe/Vienna",
                 "annualIsDecember": true
               },
-              "contactEmail": "hello@kasseneck.at"
+              "contactEmail": "rksv@kasseneck.at"
             }
           }
         },
@@ -25069,7 +25093,7 @@
                 "timeZone": "Europe/Vienna",
                 "annualIsDecember": true
               },
-              "contactEmail": "hello@kasseneck.at"
+              "contactEmail": "rksv@kasseneck.at"
             }
           }
         },
@@ -25105,7 +25129,7 @@
                 "timeZone": "Europe/Vienna",
                 "annualIsDecember": true
               },
-              "contactEmail": "hello@kasseneck.at"
+              "contactEmail": "rksv@kasseneck.at"
             }
           }
         },
@@ -25150,8 +25174,248 @@
                 "timeZone": "Europe/Vienna",
                 "annualIsDecember": true
               },
-              "contactEmail": "hello@kasseneck.at"
+              "contactEmail": "rksv@kasseneck.at"
             }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "reportConnectState": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "version": "1.4.0",
+            "os": "macos",
+            "osVersion": "26.5.1",
+            "arch": "arm64",
+            "features": [
+              "bluetooth",
+              "https",
+              "update"
+            ],
+            "httpsTrusted": true,
+            "bluetooth": "poweredOn"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "version": "1.4.0",
+            "os": "macos",
+            "osVersion": "26.5.1",
+            "arch": "arm64",
+            "features": [
+              "bluetooth",
+              "https",
+              "update"
+            ],
+            "httpsTrusted": true,
+            "bluetooth": "poweredOn"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "data_invalid",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "version": "1.4",
+            "os": "macos",
+            "osVersion": "26.5.1",
+            "arch": "arm64",
+            "features": [
+              "bluetooth",
+              "https",
+              "update"
+            ],
+            "httpsTrusted": true,
+            "bluetooth": "poweredOn"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Angaben zu Kasseneck Connect sind unvollständig.",
+            "data": {
+              "code": "invalid_connect_report"
+            },
+            "code": "invalid_connect_report"
+          }
+        },
+        {
+          "case": "device_unknown",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_gibtsnicht",
+            "version": "1.4.0",
+            "os": "macos",
+            "osVersion": "26.5.1",
+            "arch": "arm64",
+            "features": [
+              "bluetooth",
+              "https",
+              "update"
+            ],
+            "httpsTrusted": true,
+            "bluetooth": "poweredOn"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Angaben zu Kasseneck Connect sind unvollständig.",
+            "data": {
+              "code": "invalid_connect_report"
+            },
+            "code": "invalid_connect_report"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_kasse3",
+            "version": "1.4.0",
+            "os": "macos",
+            "osVersion": "26.5.1",
+            "arch": "arm64",
+            "features": [
+              "bluetooth",
+              "https",
+              "update"
+            ],
+            "httpsTrusted": true,
+            "bluetooth": "poweredOn"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "version": "1.4.0",
+            "os": "macos",
+            "osVersion": "26.5.1",
+            "arch": "arm64",
+            "features": [
+              "bluetooth",
+              "https",
+              "update"
+            ],
+            "httpsTrusted": true,
+            "bluetooth": "poweredOn"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {}
+          }
+        },
+        {
+          "case": "success_old",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "version": "1.3.0",
+            "os": "macos"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {}
           }
         },
         {

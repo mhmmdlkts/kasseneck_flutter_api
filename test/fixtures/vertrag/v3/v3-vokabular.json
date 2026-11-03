@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "efbf6b21460bb07cf926b0ff35837e47d67c4f4b440a7a7cf536f949869b5816",
-    "inputsSha256": "883620c3b9941916edeb283cd0c5eac966324d1a200e6b4a1e93786335984d5d",
+    "sha256": "44d12486b6108ca8c040230f317438b21c7761477fa1a9a7d6a65b28a5444e32",
+    "inputsSha256": "144fab3789f188415dc358c57ce75c29c583fe068c2a68dd78ac72fc99629539",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -311,7 +311,8 @@
       "getDepExportFile",
       "createDepHandoverLink",
       "revokeDepHandoverLink",
-      "getRegisterInspectionInfo"
+      "getRegisterInspectionInfo",
+      "reportConnectState"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -350,7 +351,8 @@
       "getMyShiftReport",
       "closeMyShift",
       "logReceiptOutputs",
-      "getRegisterInspectionInfo"
+      "getRegisterInspectionInfo",
+      "reportConnectState"
     ],
     "withSchema": [
       "activateCashregister",
@@ -485,6 +487,7 @@
       "registerUserLogin",
       "releaseReservation",
       "renewRegisterSession",
+      "reportConnectState",
       "reportCustomerVertrag",
       "reprintMyVoucherLabel",
       "reprintVoucherLabel",
@@ -599,7 +602,8 @@
       "zeroRateBucket": "imNullTopf",
       "typeId": "sorteId",
       "typeName": "sorteName",
-      "payout": "auszahlung"
+      "payout": "auszahlung",
+      "fromReturn": "rueckgabe"
     },
     "BEWEGUNG_ART": {
       "verkauf": "sale",
@@ -842,7 +846,8 @@
       "auszahlung": "payout",
       "korrektur": "correction",
       "sperre": "blocked",
-      "entsperrt": "unblocked"
+      "entsperrt": "unblocked",
+      "rueckgabe_ausgabe": "return_issue"
     },
     "GUTSCHEIN_HINWEIS": {
       "befristung_pruefen": "check_validity_period"
@@ -1312,6 +1317,7 @@
       "invalid_category_allocation",
       "invalid_clarification",
       "invalid_condition",
+      "invalid_connect_report",
       "invalid_connection",
       "invalid_country",
       "invalid_currency",
@@ -1455,6 +1461,13 @@
       "receipt_type_not_cancellable",
       "recipient_required",
       "recount_exhausted",
+      "refund_as_conflict",
+      "refund_as_invalid",
+      "refund_as_voucher_amount",
+      "refund_as_voucher_no_type",
+      "refund_as_voucher_not_available",
+      "refund_as_voucher_reason",
+      "refund_as_voucher_with_voucher",
       "register_user_no_business",
       "register_user_not_allowed",
       "register_user_not_found",
@@ -1609,6 +1622,7 @@
       "anmerkung_zu_lang": "note_too_long",
       "items_ungueltig": "invalid_items",
       "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+      "connect_meldung_ungueltig": "invalid_connect_report",
       "keine_berechtigung": "not_permitted",
       "nur_eigene_belege": "own_receipts_only",
       "kasse_unvollstaendig": "cashregister_incomplete",
@@ -1795,6 +1809,7 @@
       "idempotency_key_required",
       "invalid_address",
       "invalid_amount",
+      "invalid_connect_report",
       "invalid_cursor",
       "invalid_denominations",
       "invalid_file",
@@ -1856,6 +1871,13 @@
       "receipt_not_found",
       "receipt_type_not_cancellable",
       "recount_exhausted",
+      "refund_as_conflict",
+      "refund_as_invalid",
+      "refund_as_voucher_amount",
+      "refund_as_voucher_no_type",
+      "refund_as_voucher_not_available",
+      "refund_as_voucher_reason",
+      "refund_as_voucher_with_voucher",
       "register_user_only",
       "send_failed",
       "serial_already_counted",
@@ -1935,7 +1957,15 @@
       "tip_refund_conflict",
       "invalid_tip_refund_source",
       "tip_refund_source_requires_cash",
-      "tip_keep_not_possible_with_voucher"
+      "tip_keep_not_possible_with_voucher",
+      "refund_as_invalid",
+      "refund_as_conflict",
+      "refund_as_voucher_not_available",
+      "refund_as_voucher_reason",
+      "refund_as_voucher_with_voucher",
+      "refund_as_voucher_no_type",
+      "refund_as_voucher_amount",
+      "idempotency_key_required"
     ],
     "payments": [
       "payments_invalid",
@@ -2220,6 +2250,7 @@
       "idempotency_conflict",
       "idempotency_key_required",
       "invalid_amount",
+      "invalid_connect_report",
       "invalid_cursor",
       "invalid_denominations",
       "invalid_items",
@@ -2303,6 +2334,7 @@
       "note_too_long",
       "invalid_items",
       "cashregister_not_assigned",
+      "invalid_connect_report",
       "not_permitted",
       "own_receipts_only",
       "cashregister_incomplete",
@@ -2548,6 +2580,8 @@
         "cancellation_refund_reference_unknown",
         "cashregister_incomplete",
         "cashregister_not_assigned",
+        "idempotency_conflict",
+        "idempotency_key_required",
         "invalid_items",
         "invalid_line",
         "invalid_return_disposition",
@@ -2573,6 +2607,13 @@
         "quantity_exceeds_remaining",
         "receipt_not_found",
         "receipt_type_not_cancellable",
+        "refund_as_conflict",
+        "refund_as_invalid",
+        "refund_as_voucher_amount",
+        "refund_as_voucher_no_type",
+        "refund_as_voucher_not_available",
+        "refund_as_voucher_reason",
+        "refund_as_voucher_with_voucher",
         "server_error",
         "tip_conflict",
         "tip_exceeds_payment",
@@ -2584,8 +2625,10 @@
         "training_receipt",
         "unknown_reason",
         "voucher_already_used",
+        "voucher_amount_mismatch",
         "voucher_balance_changed",
-        "voucher_partial_cancel"
+        "voucher_partial_cancel",
+        "voucher_type_not_found"
       ],
       "sendReceiptEmail": [
         "invalid_address",
@@ -2868,6 +2911,11 @@
       ],
       "getRegisterInspectionInfo": [
         "server_error"
+      ],
+      "reportConnectState": [
+        "cashregister_not_assigned",
+        "invalid_connect_report",
+        "server_error"
       ]
     }
   },
@@ -2952,7 +3000,9 @@
             "__": "ausgabe",
             "occasion": "anlass",
             "by": "von",
-            "day": "tag"
+            "day": "tag",
+            "fromReturn": "rueckgabe",
+            "reference": "bezug"
           },
           "print": {
             "__": "druck",
@@ -3015,7 +3065,9 @@
         ],
         "drawerId": "ladeId",
         "refundTip": "trinkgeldZurueck",
-        "tipRefundSource": "trinkgeldQuelle"
+        "tipRefundSource": "trinkgeldQuelle",
+        "refundAs": "refundAs",
+        "idempotencyKey": "idempotencyKey"
       },
       "paramWerte": {
         "reason": {
@@ -3030,6 +3082,9 @@
         "tipRefundSource": {
           "lade": "drawer",
           "mitarbeiter": "employee"
+        },
+        "refundAs": {
+          "gutschein": "voucher"
         }
       },
       "data": {
@@ -3059,7 +3114,28 @@
             "reason": "grund",
             "note": "grundText"
           }
-        }
+        },
+        "issuedVouchers": [
+          {
+            "__": "gutscheine",
+            "codeSuffix": "codeEnde",
+            "faceValueCents": "nennwertCents",
+            "quantity": "stueck",
+            "articleName": "artikelName",
+            "typeId": "sorteId",
+            "typeName": "sorteName",
+            "validity": {
+              "__": "gueltigkeit",
+              "pattern": "muster",
+              "redeemableYears": "jahre",
+              "redeemableUntil": "einloesbarBis",
+              "refundableUntil": "rueckzahlbarBis",
+              "validUntil": "gueltigBis"
+            },
+            "fromReturn": "rueckgabe"
+          }
+        ],
+        "replayed": "replayed"
       },
       "werte": {
         "receipt.cancellationReason": {
@@ -3067,6 +3143,12 @@
         },
         "receipt.manualReceipt.reason": {
           "$catalog": "HANDBELEG_GRUND"
+        },
+        "issuedVouchers[].type": {
+          "$catalog": "GUTSCHEIN_ART"
+        },
+        "issuedVouchers[].validity.pattern": {
+          "$catalog": "GUTSCHEIN_MUSTER"
         }
       },
       "ergaenze": {
@@ -3272,7 +3354,9 @@
             "__": "ausgabe",
             "occasion": "anlass",
             "by": "von",
-            "day": "tag"
+            "day": "tag",
+            "fromReturn": "rueckgabe",
+            "reference": "bezug"
           },
           "print": {
             "__": "druck",
@@ -3371,6 +3455,7 @@
             "anmerkung_zu_lang": "note_too_long",
             "items_ungueltig": "invalid_items",
             "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+            "connect_meldung_ungueltig": "invalid_connect_report",
             "keine_berechtigung": "not_permitted",
             "nur_eigene_belege": "own_receipts_only",
             "kasse_unvollstaendig": "cashregister_incomplete",
@@ -3707,7 +3792,8 @@
               "redeemableUntil": "einloesbarBis",
               "refundableUntil": "rueckzahlbarBis",
               "validUntil": "gueltigBis"
-            }
+            },
+            "fromReturn": "rueckgabe"
           }
         ]
       },
@@ -4070,6 +4156,7 @@
           "anmerkung_zu_lang": "note_too_long",
           "items_ungueltig": "invalid_items",
           "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "connect_meldung_ungueltig": "invalid_connect_report",
           "keine_berechtigung": "not_permitted",
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
@@ -4185,6 +4272,7 @@
           "anmerkung_zu_lang": "note_too_long",
           "items_ungueltig": "invalid_items",
           "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "connect_meldung_ungueltig": "invalid_connect_report",
           "keine_berechtigung": "not_permitted",
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
@@ -4485,7 +4573,17 @@
               "soldCount": "verkauft"
             }
           ],
-          "serviceArticles": "leistungsArtikel"
+          "serviceArticles": "leistungsArtikel",
+          "returnType": {
+            "__": "rueckgabe",
+            "typeId": "sorteId",
+            "typeName": "sorteName"
+          }
+        },
+        "connect": {
+          "__": "connect",
+          "minimumVersion": "mindestversion",
+          "deadline": "frist"
         }
       },
       "werte": {
@@ -4709,7 +4807,9 @@
             "__": "ausgabe",
             "occasion": "anlass",
             "by": "von",
-            "day": "tag"
+            "day": "tag",
+            "fromReturn": "rueckgabe",
+            "reference": "bezug"
           },
           "print": {
             "__": "druck",
@@ -4784,7 +4884,8 @@
             "notice": "hinweis"
           },
           "confirmedAt": "bestaetigtAt",
-          "confirmedBy": "bestaetigtVon"
+          "confirmedBy": "bestaetigtVon",
+          "returnTypeId": "rueckgabeSorteId"
         },
         "confirmed": "bestaetigt",
         "suggestion": {
@@ -4962,7 +5063,8 @@
               "redeemableUntil": "einloesbarBis",
               "refundableUntil": "rueckzahlbarBis",
               "validUntil": "gueltigBis"
-            }
+            },
+            "fromReturn": "rueckgabe"
           }
         ],
         "outputs": [
@@ -5247,6 +5349,7 @@
           "anmerkung_zu_lang": "note_too_long",
           "items_ungueltig": "invalid_items",
           "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "connect_meldung_ungueltig": "invalid_connect_report",
           "keine_berechtigung": "not_permitted",
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
@@ -5780,7 +5883,9 @@
               "__": "ausgabe",
               "occasion": "anlass",
               "by": "von",
-              "day": "tag"
+              "day": "tag",
+              "fromReturn": "rueckgabe",
+              "reference": "bezug"
             },
             "print": {
               "__": "druck",
@@ -6377,7 +6482,9 @@
               "__": "ausgabe",
               "occasion": "anlass",
               "by": "von",
-              "day": "tag"
+              "day": "tag",
+              "fromReturn": "rueckgabe",
+              "reference": "bezug"
             },
             "print": {
               "__": "druck",
@@ -6782,6 +6889,7 @@
       }
     },
     "renewRegisterSession": {},
+    "reportConnectState": {},
     "reportCustomerVertrag": {
       "params": {
         "customerId": "kundeId",
@@ -6851,7 +6959,9 @@
             "__": "ausgabe",
             "occasion": "anlass",
             "by": "von",
-            "day": "tag"
+            "day": "tag",
+            "fromReturn": "rueckgabe",
+            "reference": "bezug"
           },
           "print": {
             "__": "druck",
@@ -6930,7 +7040,9 @@
             "__": "ausgabe",
             "occasion": "anlass",
             "by": "von",
-            "day": "tag"
+            "day": "tag",
+            "fromReturn": "rueckgabe",
+            "reference": "bezug"
           },
           "print": {
             "__": "druck",
@@ -7013,6 +7125,7 @@
           "anmerkung_zu_lang": "note_too_long",
           "items_ungueltig": "invalid_items",
           "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "connect_meldung_ungueltig": "invalid_connect_report",
           "keine_berechtigung": "not_permitted",
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
@@ -7701,7 +7814,8 @@
             "designation": "bezeichnung"
           },
           "freeText": "freitext"
-        }
+        },
+        "returnTypeId": "rueckgabeSorteId"
       },
       "paramWerte": {
         "valueVoucherType": {
@@ -7739,7 +7853,8 @@
             "notice": "hinweis"
           },
           "confirmedAt": "bestaetigtAt",
-          "confirmedBy": "bestaetigtVon"
+          "confirmedBy": "bestaetigtVon",
+          "returnTypeId": "rueckgabeSorteId"
         },
         "confirmed": "bestaetigt",
         "suggestion": {
@@ -7832,7 +7947,9 @@
             "__": "ausgabe",
             "occasion": "anlass",
             "by": "von",
-            "day": "tag"
+            "day": "tag",
+            "fromReturn": "rueckgabe",
+            "reference": "bezug"
           },
           "print": {
             "__": "druck",
@@ -7998,6 +8115,7 @@
           "anmerkung_zu_lang": "note_too_long",
           "items_ungueltig": "invalid_items",
           "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "connect_meldung_ungueltig": "invalid_connect_report",
           "keine_berechtigung": "not_permitted",
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",
@@ -8200,6 +8318,7 @@
           "anmerkung_zu_lang": "note_too_long",
           "items_ungueltig": "invalid_items",
           "kasse_nicht_zugewiesen": "cashregister_not_assigned",
+          "connect_meldung_ungueltig": "invalid_connect_report",
           "keine_berechtigung": "not_permitted",
           "nur_eigene_belege": "own_receipts_only",
           "kasse_unvollstaendig": "cashregister_incomplete",

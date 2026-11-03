@@ -156,6 +156,12 @@ class KeckVoucher {
   /// er zaehlt nicht noch einmal als Wertgutschein-Fluss.
   final bool? zeroRateBucket;
 
+  /// Rueckgabe als Gutschein (Server 2026-11, Zwilling von `Voucher.fromReturn`
+  /// im npm-Paket 1.25.0): der Eintrag am Storno-Beleg ist die Ausgabe eines
+  /// neuen Mehrzweck-Gutscheins statt einer Rueckzahlung (`redeem`). Am Bon
+  /// Zahlweg statt Einloesung. Setzt nur der Server.
+  final bool? fromReturn;
+
   KeckVoucher({
     String? name,
     String? code,
@@ -180,6 +186,7 @@ class KeckVoucher {
     String? taxedWith,
     bool? exempt,
     bool? zeroRateBucket,
+    bool? fromReturn,
   }) : this._(
           name: name,
           code: code,
@@ -204,6 +211,7 @@ class KeckVoucher {
           taxedWith: taxedWith,
           exempt: exempt,
           zeroRateBucket: zeroRateBucket,
+          fromReturn: fromReturn,
         );
 
   KeckVoucher._({
@@ -231,6 +239,7 @@ class KeckVoucher {
     this.taxedWith,
     this.exempt,
     this.zeroRateBucket,
+    this.fromReturn,
   })  : _type = type,
         _typeRoh = type == null ? typeRoh : null;
 
@@ -274,6 +283,7 @@ class KeckVoucher {
         if (voucherType != null) 'voucherType',
         if (typeName != null) 'typeName',
         if (payout != null) 'payout',
+        if (fromReturn != null) 'fromReturn',
       ];
 
   /// Nachsichtig gelesen: ein gespeicherter oder empfangener Beleg darf am
@@ -319,6 +329,7 @@ class KeckVoucher {
       taxedWith: _text(json['taxedWith']),
       exempt: json['exempt'] is bool ? json['exempt'] as bool : null,
       zeroRateBucket: json['zeroRateBucket'] is bool ? json['zeroRateBucket'] as bool : null,
+      fromReturn: json['fromReturn'] is bool ? json['fromReturn'] as bool : null,
     );
   }
 
@@ -351,6 +362,7 @@ class KeckVoucher {
         'taxedWith': ?taxedWith,
         'exempt': ?exempt,
         'zeroRateBucket': ?zeroRateBucket,
+        'fromReturn': ?fromReturn,
       };
 
   /// Gespeicherte Form. Sendet BEIDE Felder: `value` (Euro, altes Backend) +

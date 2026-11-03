@@ -1,3 +1,16 @@
+## 11.16.0 (2026-11-03)
+
+Twin of `@kreiseck/kasseneck-api` `1.25.0` (contract files pulled from that version, which includes 1.24.0). Return as voucher on cancellation and the Kasseneck Connect inventory. Additive.
+
+- **`RegisterReceiptClient.cancelReceipt(refundAs:, idempotencyKey:)`**: `refundAs: 'voucher'` refunds as a new multi-purpose voucher of the account's return type instead of money; needs `idempotencyKey` (1 to 120 characters) and never goes with `payments` (checked before sending, `KasseneckValidationError`). Reason: a retried partial cancellation could otherwise create a second receipt and a second voucher.
+- **`CancelReceiptResult.issuedVouchers`** (`List<ReturnIssuedVoucher>`, empty without `refundAs`) and **`replayed`**: the voucher with its plain code exactly once; a retry with the same key returns the same receipt, the voucher without `code` and with `reprintRequired`. New class `ReturnIssuedVoucher`.
+- **`PosVoucherSettings.returnType`** (`PosVoucherReturnType { typeId, typeName }`, new): from `getKasseSettings` `vouchers.returnType`; `null` when the return as voucher is not possible. The register shows „Als Gutschein“ only with it.
+- **`KeckVoucher.fromReturn`** (read only, a server field): the entry of the new voucher on the cancellation receipt.
+- **Receipt (print fallback and `KeckReceiptWidget`)**: a cancellation with such an entry shows „Gesamt:“ with the amount of the goods (`displayedTotalCents`) and below it „Gutschein ····-2D9A | -24,90 EUR“ instead of the payment method, a cash tip refund as „Barzahlung | -2,00 EUR“ (`returnPaymentLines`, `isReturnVoucher`, `returnVoucherCents`). `sumCents` stays the amount paid. Same as the npm layout (goldens `voucher-return`, `voucher-return-tip`).
+- **`cancellationErrorMessage(code)`** and `cancellationVoucherErrorMessages` (generated): the sentence for a refund code, then the cancellation payment codes. `cancellationErrorCodes` gains the eight `refund_as_*`/`idempotency_key_required` codes. Texts `cancellation.as_voucher`, `cancellation.voucher_confirm` and six `cancellation.voucher_*` messages.
+- **`RegisterReceiptClient.reportConnectState(ConnectStateReport)`** (new, twin of npm 1.24.0): reports the Connect version at this register device; fields an older Connect does not know are left out. Classified as unknown outcome on a timeout.
+- Known difference kept: the print fallback still prints a staff tip with a quantity („1  x Trinkgeld Personal“), the npm layout without.
+
 ## 11.15.0 (2026-10-31)
 
 Twin of `@kreiseck/kasseneck-api` `1.23.0` (contract files pulled from that

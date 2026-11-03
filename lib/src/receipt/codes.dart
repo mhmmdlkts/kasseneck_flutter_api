@@ -117,6 +117,15 @@ final List<String> cancellationErrorCodes = _mitRand(const [
   'invalid_tip_refund_source', // tipRefundSource nicht drawer oder employee
   'tip_refund_source_requires_cash', // eine Quelle nur, wenn das Bargeld des Stornos das Trinkgeld deckt
   'tip_keep_not_possible_with_voucher', // refundTip false an einem Beleg mit Wertgutschein (das Trinkgeld geht mit)
+  // Rueckgabe als Gutschein (refundAs voucher, npm 1.25.0)
+  'refund_as_invalid', // refundAs ist nicht voucher
+  'refund_as_conflict', // refundAs zusammen mit payments
+  'refund_as_voucher_not_available', // ohne Kassen-Benutzer oder Gutscheinverkauf an der Kasse aus
+  'refund_as_voucher_reason', // Grund passt nicht (nur customer_cancelled, other)
+  'refund_as_voucher_with_voucher', // am Original haengt ein Gutschein mit Code
+  'refund_as_voucher_no_type', // keine passende Rueckgabe-Sorte eingestellt
+  'refund_as_voucher_amount', // Betrag ohne Trinkgeld ausserhalb 1,00 bis 10.000,00 Euro
+  'idempotency_key_required', // refundAs ohne idempotencyKey
 ], _signierend);
 
 /// Codes rund um `payments` an `createReceipt` und `cancelReceipt`.

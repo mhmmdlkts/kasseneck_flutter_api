@@ -2,9 +2,9 @@
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
     "default": {
-      "sha256": "17c317c31c32dc116a5700dd1fca3b76d2cee1c8e64441c4a700bdf901b983f3",
+      "sha256": "e5ed8eb2bdb2b8cba51102c6e00f73fe20bcaa0d8c355ed93901508fa7abc97e",
       "head": [],
-      "inputsSha256": "b5d46d661435eac06805cbd21d8afde6bc01455740e2750be7223917cf4620de",
+      "inputsSha256": "8b3dbb0fbb4d2e385bd2a58f33a61f20be02009e395e95d66bbaf3605e629724",
       "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "4949c9f3c2feb9c190bdcd5cb79bd1dd28bb1a0a03c40f8999094bcc3a759c2e",
+      "sha256": "61ae40fef26d862e1f2757d014f35ec222e79fa0ab4509e92a5decfe8bc08d1b",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "e72d75f38d7d0ef68acf797cc9646936839ce446fc7febf7da77e915c1131f1a",
+      "inputsSha256": "3ad66d934b06587a4c7b59e9b8071e49ba1c26b090995f58cd28080dfc299471",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -49,8 +49,8 @@
         "city": "Wien"
       },
       "tax_details": {
-        "uid": "ATU12345678",
-        "taxnr": "12-345/6789",
+        "uid": "ATU12345675",
+        "taxnr": "91-123/4565",
         "is_small_business": false
       },
       "footer": {
@@ -2535,8 +2535,8 @@
             "zip": "1010",
             "city": "Wien",
             "phone": "+43 1 234 56",
-            "uid": "ATU12345678",
-            "taxnr": "12-345/6789",
+            "uid": "ATU12345675",
+            "taxnr": "91-123/4565",
             "isSmallBusiness": false,
             "footer1": "Danke für Ihren Besuch",
             "footer2": null,
@@ -3982,8 +3982,8 @@
               "city": "Wien"
             },
             "tax_details": {
-              "uid": "ATU12345678",
-              "taxnr": "12-345/6789",
+              "uid": "ATU12345675",
+              "taxnr": "91-123/4565",
               "is_small_business": false
             },
             "footer": {
@@ -4036,8 +4036,8 @@
               "city": "Wien"
             },
             "tax_details": {
-              "uid": "ATU12345678",
-              "taxnr": "12-345/6789",
+              "uid": "ATU12345675",
+              "taxnr": "91-123/4565",
               "is_small_business": false
             },
             "footer": {
@@ -4095,8 +4095,8 @@
               "city": "Wien"
             },
             "tax_details": {
-              "uid": "ATU12345678",
-              "taxnr": "12-345/6789",
+              "uid": "ATU12345675",
+              "taxnr": "91-123/4565",
               "is_small_business": false
             },
             "footer": {
@@ -4124,8 +4124,8 @@
               "city": "Wien"
             },
             "tax_details": {
-              "uid": "ATU12345678",
-              "taxnr": "12-345/6789",
+              "uid": "ATU12345675",
+              "taxnr": "91-123/4565",
               "is_small_business": false
             },
             "footer": {
@@ -4173,8 +4173,8 @@
               "city": "Wien"
             },
             "tax_details": {
-              "uid": "ATU12345678",
-              "taxnr": "12-345/6789",
+              "uid": "ATU12345675",
+              "taxnr": "91-123/4565",
               "is_small_business": false
             },
             "footer": {
@@ -9173,6 +9173,47 @@
                 "abrufe": 0
               }
             ]
+          }
+        }
+      }
+    },
+    "reportConnectState": {
+      "codebase": "kasse",
+      "cases": {
+        "success_cashier": {
+          "connect_bestand/kw_betrieb1~dev_pin": {
+            "kontoUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "test": false,
+            "version": "1.4.0",
+            "os": "macos",
+            "osVersion": "26.5.1",
+            "arch": "arm64",
+            "features": [
+              "bluetooth",
+              "https",
+              "update"
+            ],
+            "httpsTrusted": true,
+            "bluetooth": "poweredOn",
+            "erstmalsAm": 1790409600000,
+            "zuletztAm": 1790409600000
+          }
+        },
+        "success_old": {
+          "connect_bestand/kw_betrieb1~dev_pin": {
+            "kontoUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "test": false,
+            "version": "1.3.0",
+            "os": "macos",
+            "osVersion": null,
+            "arch": null,
+            "features": [],
+            "httpsTrusted": null,
+            "bluetooth": null,
+            "erstmalsAm": 1790409600000,
+            "zuletztAm": 1790409600000
           }
         }
       }

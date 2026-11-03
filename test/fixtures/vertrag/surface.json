@@ -1,5 +1,5 @@
 {
-  "version": "1.23.0",
+  "version": "1.25.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -157,7 +157,8 @@
       "getMyShiftReport",
       "closeMyShift",
       "logReceiptOutputs",
-      "getRegisterInspectionInfo"
+      "getRegisterInspectionInfo",
+      "reportConnectState"
     ]
   },
   "routes": {
@@ -324,7 +325,8 @@
       "getDepExportFile",
       "createDepHandoverLink",
       "revokeDepHandoverLink",
-      "getRegisterInspectionInfo"
+      "getRegisterInspectionInfo",
+      "reportConnectState"
     ]
   },
   "unknownOutcomeCalls": [
@@ -370,6 +372,7 @@
     "recordStocktakeCount",
     "recountStocktake",
     "releaseReservation",
+    "reportConnectState",
     "reportCustomerContract",
     "requestCustomerSignature",
     "reverseStockMovement",

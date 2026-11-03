@@ -198,6 +198,12 @@ String receiptEmailErrorMessage(String? code) => receiptEmailErrorMessages[code]
 String cancellationPaymentErrorMessage(String? code) =>
     cancellationPaymentErrorMessages[code] ?? 'cancellation.failed';
 
+/// Der Satz zu einem `code` eines Stornos: zuerst die Rueckgabe als Gutschein
+/// (`refundAs: 'voucher'`), dann die Storno-Zahlungen, sonst der allgemeine
+/// Storno-Satz. Zwilling von `cancellationErrorMessage` im npm-Paket.
+String cancellationErrorMessage(String? code) =>
+    cancellationVoucherErrorMessages[code] ?? cancellationPaymentErrorMessage(code);
+
 /// Art einer Ausgabe -> Beschriftung (`receipt.output_<kind>`).
 const Map<String, String> _ausgabeBeschriftung = {
   'print': 'receipt.output_print',

@@ -331,7 +331,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
               )).toList(),
             ),
             Divider(color: widget.qrColor),
-            if (widget.receipt.sumCents != widget.receipt.subSumCents)
+            if (displayedTotalCents(widget.receipt) != widget.receipt.subSumCents)
               ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -352,11 +352,16 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Gesamt:', style: textStyle),
-                Text('${formatCents(widget.receipt.sumCents)} EUR', style: textStyle)
+                Text('${formatCents(displayedTotalCents(widget.receipt))} EUR', style: textStyle)
               ],
             ),
+            // Rueckgabe als Gutschein: Zahlwege mit Betrag wie der Druck (returnPaymentLines).
+            for (final z in returnPaymentLines(widget.receipt, currency: 'EUR', formatCents: formatCents) ??
+                const <VoucherBonPairLine>[])
+              _paarZeile(z.left, z.right),
             // Voll vom Gutschein gedeckt: keine Zahlungsart (paymentMethodText), wie der Druck.
-            if (paymentMethodText(widget.receipt) case final zahlungsart?)
+            if (returnPaymentLines(widget.receipt, currency: 'EUR', formatCents: formatCents) == null)
+              if (paymentMethodText(widget.receipt) case final zahlungsart?)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

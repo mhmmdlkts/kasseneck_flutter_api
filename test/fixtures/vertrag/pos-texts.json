@@ -1,5 +1,5 @@
 {
-  "version": "1.23.0",
+  "version": "1.25.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -350,6 +350,24 @@
     },
     "cancellation.tip_refunded_with_voucher": {
       "text": "Beleg mit Gutschein: Das Trinkgeld wird mitstorniert."
+    },
+    "cancellation.voucher_not_available": {
+      "text": "Als Gutschein geht hier nicht – bitte wie bezahlt zurückgeben."
+    },
+    "cancellation.voucher_reason": {
+      "text": "Als Gutschein nur bei „Kunde hat storniert“ oder „Sonstiges“."
+    },
+    "cancellation.voucher_with_voucher": {
+      "text": "Dieser Beleg hat einen Gutschein – bitte wie bezahlt zurückgeben."
+    },
+    "cancellation.voucher_no_type": {
+      "text": "Keine Gutschein-Sorte für Rückgaben eingestellt – bitte wie bezahlt zurückgeben."
+    },
+    "cancellation.voucher_amount": {
+      "text": "Dieser Betrag geht nicht als Gutschein – bitte wie bezahlt zurückgeben."
+    },
+    "cancellation.voucher_type_changed": {
+      "text": "Die Gutschein-Sorte für Rückgaben hat sich geändert – bitte erneut versuchen."
     },
     "voucher_error.not_found": {
       "text": "Diesen Gutschein gibt es in diesem Betrieb nicht."
@@ -1221,6 +1239,19 @@
     "payments_sum_mismatch": "cancellation.sum_mismatch",
     "cancellation_outcome_unknown": "cancellation.outcome_unknown"
   },
+  "cancellationVoucherErrors": {
+    "refund_as_voucher_not_available": "cancellation.voucher_not_available",
+    "refund_as_voucher_reason": "cancellation.voucher_reason",
+    "refund_as_voucher_with_voucher": "cancellation.voucher_with_voucher",
+    "refund_as_voucher_no_type": "cancellation.voucher_no_type",
+    "refund_as_voucher_amount": "cancellation.voucher_amount",
+    "voucher_type_not_found": "cancellation.voucher_type_changed",
+    "voucher_amount_mismatch": "cancellation.voucher_type_changed",
+    "refund_as_invalid": "cancellation.input_rejected",
+    "refund_as_conflict": "cancellation.input_rejected",
+    "idempotency_key_required": "cancellation.input_rejected",
+    "idempotency_conflict": "cancellation.input_rejected"
+  },
   "voucherErrors": {
     "voucher_not_found": "voucher_error.not_found",
     "voucher_invalid": "voucher_error.invalid",
@@ -1514,6 +1545,15 @@
     },
     "cancellation.all_cash": {
       "text": "Alles bar"
+    },
+    "cancellation.as_voucher": {
+      "text": "Als Gutschein"
+    },
+    "cancellation.voucher_confirm": {
+      "text": "{amount} als Gutschein zurückgeben",
+      "placeholders": [
+        "amount"
+      ]
     },
     "cancellation.payment_remainder": {
       "text": "Rest {amount}",
