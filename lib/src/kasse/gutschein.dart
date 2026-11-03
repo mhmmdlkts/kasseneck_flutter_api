@@ -526,6 +526,79 @@ class VoucherCheck {
 /// Sorte aus [types] und die feste Kachel „Leistungsgutschein“ mit
 /// [serviceArticles]. [sale], [valueVoucherType] und [vatRateBp] gelten nur
 /// Kassen vor 11.8; der Server schickt `sale` immer als `false`.
+/// Sorte fuer Rueckgaben (`vouchers.returnType`): Kennung und Name.
+class PosVoucherReturnType {
+  const PosVoucherReturnType({required this.typeId, required this.typeName});
+
+  final String typeId;
+  final String typeName;
+
+  /// Nur stimmig (Kennung wie eine Sorte, Name als Text); sonst `null`.
+  static PosVoucherReturnType? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final id = json['typeId'];
+    final name = json['typeName'];
+    if (id is! String || !_sorteId.hasMatch(id) || name is! String) return null;
+    return PosVoucherReturnType(typeId: id, typeName: name);
+  }
+
+  Map<String, dynamic> toJson() => {'typeId': typeId, 'typeName': typeName};
+}
+
+/// Gutschein aus einer Rueckgabe in der Antwort von `cancelReceipt`
+/// (`data.issuedVouchers[]`, npm `ReturnIssuedVoucher`). Beim ersten Mal mit
+/// Klartext-Code [code]; bei einer Wiederholung mit demselben
+/// `idempotencyKey` ohne Code, dafuer [reprintRequired] (der Zettel kommt
+/// dann ueber den Nachdruck). Nachsichtig gelesen: der Storno ist schon
+/// signiert, ein schiefes Feld darf ihn nie kosten.
+class ReturnIssuedVoucher {
+  const ReturnIssuedVoucher({
+    required this.id,
+    this.code,
+    this.codeSuffix,
+    this.faceValueCents,
+    this.typeId,
+    this.typeName,
+    this.validity,
+    this.fromReturn = false,
+    this.reprintRequired = false,
+  });
+
+  final String id;
+
+  /// Klartext-Code; nie protokollieren, nie in eine Fehlermeldung.
+  final String? code;
+  final String? codeSuffix;
+  final int? faceValueCents;
+  final String? typeId;
+  final String? typeName;
+  final VoucherValidity? validity;
+  final bool fromReturn;
+  final bool reprintRequired;
+
+  static ReturnIssuedVoucher? fromJson(Object? json) {
+    if (json is! Map || json['id'] is! String) return null;
+    String? text(Object? w) => w is String && w.isNotEmpty ? w : null;
+    VoucherValidity? gueltigkeit;
+    try {
+      gueltigkeit = json['validity'] == null ? null : _gueltigkeit('cancelReceipt', json['validity']);
+    } on KasseneckValidationError {
+      gueltigkeit = null;
+    }
+    return ReturnIssuedVoucher(
+      id: json['id'] as String,
+      code: text(json['code']),
+      codeSuffix: text(json['codeSuffix']),
+      faceValueCents: json['faceValueCents'] is int ? json['faceValueCents'] as int : null,
+      typeId: text(json['typeId']),
+      typeName: text(json['typeName']),
+      validity: gueltigkeit,
+      fromReturn: json['fromReturn'] == true,
+      reprintRequired: json['reprintRequired'] == true,
+    );
+  }
+}
+
 class PosVoucherSettings {
   const PosVoucherSettings({
     required this.sale,
@@ -535,6 +608,7 @@ class PosVoucherSettings {
     this.types = const [],
     this.serviceArticles = false,
     this.labelDefault,
+    this.returnType,
   });
 
   /// Ohne Block (alter Server, Konto ohne Schalter) oder bei einem unstimmigen
@@ -566,6 +640,11 @@ class PosVoucherSettings {
   /// Standardvorlage des Etiketts (Leistungsgutschein, Notausgang); `null`
   /// ohne brauchbare Vorlage.
   final VoucherLabelTemplate? labelDefault;
+
+  /// Sorte fuer Rueckgaben (`vouchers.returnType`, npm 1.25.0): nur gesetzt,
+  /// wenn die Rueckgabe als Gutschein geht (Schalter, passende Sorte). Fehlt
+  /// sie, zeigt die Kasse „Als Gutschein“ nicht. Unstimmig gelesen: `null`.
+  final PosVoucherReturnType? returnType;
 
   /// Block `vouchers`, geschlossen im Zweifel: ist irgendein Feld unstimmig,
   /// gilt der ganze Block als nicht gelesen und Verkaufen bleibt aus (kein
@@ -615,6 +694,7 @@ class PosVoucherSettings {
       types: List.unmodifiable(types),
       serviceArticles: leistung,
       labelDefault: VoucherLabelTemplate.fromJson(block['labelDefault']),
+      returnType: PosVoucherReturnType.fromJson(block['returnType']),
     );
   }
 
@@ -626,6 +706,7 @@ class PosVoucherSettings {
         'types': [for (final t in types) t.toJson()],
         'serviceArticles': serviceArticles,
         'labelDefault': labelDefault?.toJson(),
+        if (returnType != null) 'returnType': returnType!.toJson(),
       };
 
   @override

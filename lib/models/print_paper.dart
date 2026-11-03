@@ -579,7 +579,8 @@ class PrintPaper {
 
     addFullHorizontalLine();
 
-    if (receipt.sumCents != receipt.subSumCents) {
+    final int gesamtCents = displayedTotalCents(receipt);
+    if (gesamtCents != receipt.subSumCents) {
       addDoubleText('Zwischensumme', '${formatCents(receipt.subSumCents)} EUR');
 
       for (KeckVoucher voucher in receipt.vouchers??[]) {
@@ -595,10 +596,18 @@ class PrintPaper {
 
       addFullHorizontalLine();
     }
-    addDoubleText('Gesamt:', '${formatCents(receipt.sumCents)} EUR');
-    // Voll vom Gutschein gedeckt: keine Zahlungsart (paymentMethodText).
-    final String? zahlungsart = paymentMethodText(receipt);
-    if (zahlungsart != null) addDoubleText('Zahlungsart:', zahlungsart);
+    addDoubleText('Gesamt:', '${formatCents(gesamtCents)} EUR');
+    // Rueckgabe als Gutschein: der neue Gutschein (und ein Bar-Trinkgeld) als Zahlwege mit Betrag, 8:4 wie
+    // im npm-Layout; sonst die Zahlungsart, voll vom Gutschein gedeckt keine (paymentMethodText).
+    final rueckgabe = returnPaymentLines(receipt, currency: 'EUR', formatCents: formatCents);
+    if (rueckgabe != null) {
+      for (final z in rueckgabe) {
+        addDoubleText(z.left, z.right, leftWidth: 8, rightWidth: 4);
+      }
+    } else {
+      final String? zahlungsart = paymentMethodText(receipt);
+      if (zahlungsart != null) addDoubleText('Zahlungsart:', zahlungsart);
+    }
 
     addFeed();
 

@@ -236,7 +236,7 @@ List<VoucherBonPairLine>? voucherPaymentLines(
   required String currency,
   required String Function(int cents) formatCents,
 }) {
-  if (artOderNull(v) != VoucherType.value || v.zeroRateBucket == true) return null;
+  if (artOderNull(v) != VoucherType.value || v.zeroRateBucket == true || isReturnVoucher(v)) return null;
   if (v.action != VoucherAction.redeem && v.action != VoucherAction.payout) return null;
   final wert = formatCents(v.valueCents ?? 0);
   final betrag = sign == 1 ? '-$wert $currency' : '$wert $currency';
@@ -257,6 +257,44 @@ List<VoucherBonPairLine>? voucherPaymentLines(
     if (endung != null && sign == 1 && v.balanceAfterCents != null)
       VoucherBonPairLine(_restText, '${formatCents(v.balanceAfterCents!)} $currency'),
   ];
+}
+
+/// Eintrag einer Rueckgabe als Gutschein: Mehrzweck (`value`), `redeem` mit
+/// `fromReturn` (Zwilling von `istRueckgabeGutschein` im npm-Layout).
+bool isReturnVoucher(KeckVoucher v) =>
+    v.fromReturn == true && v.action == VoucherAction.redeem && artOderNull(v) == VoucherType.value;
+
+/// Summe der Rueckgabe-Gutscheine eines Belegs in Cent (0 ohne Rueckgabe).
+int returnVoucherCents(KasseneckReceipt r) =>
+    (r.vouchers ?? const <KeckVoucher>[]).where(isReturnVoucher).fold(0, (s, v) => s + (v.valueCents ?? 0));
+
+/// Betrag der Zeile „Gesamt:“: wie [KasseneckReceipt.sumCents], bei einer
+/// Rueckgabe als Gutschein ohne den Gutschein -- der Storno zeigt wie ein
+/// Bar-Storno den Betrag der Waren (npm-Layout 1.25.0).
+int displayedTotalCents(KasseneckReceipt r) => r.sumCents - returnVoucherCents(r);
+
+/// Zahlwege unter „Gesamt:“ bei einer Rueckgabe als Gutschein, je mit Betrag
+/// (8:4): jeder neue Gutschein „Gutschein ····-XXXX“ | „-24,90 €“, dann jede
+/// Zahlung ausser 0 Cent (Mitarbeiter-Trinkgeld bar zurueck). `null` ohne
+/// Rueckgabe -- dann gilt die Zeile „Zahlungsart:“ ([paymentMethodText]).
+List<VoucherBonPairLine>? returnPaymentLines(
+  KasseneckReceipt r, {
+  required String currency,
+  required String Function(int cents) formatCents,
+}) {
+  final rueckgaben = (r.vouchers ?? const <KeckVoucher>[]).where(isReturnVoucher).toList();
+  if (rueckgaben.isEmpty) return null;
+  return [
+    for (final v in rueckgaben)
+      VoucherBonPairLine(_rueckgabeText(v), '${formatCents(-(v.valueCents ?? 0))} $currency'),
+    for (final z in r.payments ?? const <KeckPayment>[])
+      if (z.amountCents != 0) VoucherBonPairLine(z.method?.label ?? r.paymentMethod.label, '${formatCents(z.amountCents)} $currency'),
+  ];
+}
+
+String _rueckgabeText(KeckVoucher v) {
+  final endung = voucherEnding(v);
+  return endung != null ? 'Gutschein ····-$endung' : 'Gutschein';
 }
 
 /// Nennt [name] die Gutscheinart [art] schon? Alte Belege nennen den

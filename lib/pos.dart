@@ -89,6 +89,7 @@ export 'src/kasse/dep.dart';
 // Kasseninfo fuer die Pruefung (seit 11.15): Modell, Zeilen fuer Bildschirm
 // und Bondrucker; der Aufruf steht an RegisterReceiptClient.
 export 'src/kasse/kasseninfo.dart';
+export 'src/kasse/connect_bestand.dart' show ConnectStateReport;
 // Ausgaben eines Belegs (logReceiptOutputs, `outputs` am Beleg); die Leser
 // bleiben paketintern.
 export 'src/kasse/beleg_ausgaben.dart' hide ausgabenGemeldet, ausgabenLesen, ausgabenNutzlast;

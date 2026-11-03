@@ -139,6 +139,8 @@ abstract final class Aufrufe {
   static const logReceiptOutputs = 'logReceiptOutputs';
   // Kasseninfo fuer die Pruefung (Kassennachschau, Stufe 2b): nur ueber den Kassenweg.
   static const getRegisterInspectionInfo = 'getRegisterInspectionInfo';
+  // Bestand von Kasseneck Connect melden (npm 1.24.0): nur ueber den Kassenweg.
+  static const reportConnectState = 'reportConnectState';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -260,5 +262,6 @@ abstract final class Aufrufe {
     reprintVoucherLabel,
     logReceiptOutputs,
     getRegisterInspectionInfo,
+    reportConnectState,
   };
 }

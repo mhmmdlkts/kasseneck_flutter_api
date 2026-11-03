@@ -76,6 +76,11 @@ const _dep = ['createDepExport', 'getDepExport', 'getDepExportFile', 'createDepH
 /// mit wie beim DEP. Die Zeilen daraus prueft `kasse_kasseninfo_test.dart`.
 const _kasseninfo = ['getRegisterInspectionInfo'];
 
+/// Bestand von Kasseneck Connect melden (seit 11.16, npm 1.24.0). Sein Code
+/// `invalid_connect_report` steht nicht in `posErrorCodes` (wie im Zwilling);
+/// geprueft wird nur, dass der Code des Vertrags ankommt.
+const _connect = ['reportConnectState'];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
   'openMyShift/key_conflict':
@@ -90,6 +95,7 @@ const _nichtDieserWeg = {
   'cancelReceipt/payments_conflict': 'paymentMethod am Storno, sendet dieser Weg nie',
   'cancelReceipt/card_data_without_card': 'cardPaymentId am Storno, sendet dieser Weg nie',
   'cancelReceipt/items_no_array': 'items ist hier immer eine Liste (Stornoposition)',
+  'reportConnectState/data_missing': 'ohne deviceId: ConnectStateReport verlangt die Kennung schon im Typ, das Paket prueft sie vor dem Senden',
   'cancelReceipt/tip_source_invalid': 'eine Quelle ausserhalb von tipRefundSources wirft vor dem Senden (storno_trinkgeld_test.dart)',
   'setMyCashregisterStockLocation/data_missing':
       'ohne stockLocationId: null geht als leerer Text hinaus (Zuruecksetzen), weglassen kann dieser Weg nicht',
@@ -439,6 +445,19 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.revokeDepHandoverLink(_s(p['linkId']));
       case 'getRegisterInspectionInfo':
         return belege.getRegisterInspectionInfo();
+      case 'reportConnectState':
+        await belege.reportConnectState(ConnectStateReport(
+          deviceId: _s(p['deviceId']),
+          version: _s(p['version']),
+          os: _s(p['os']),
+          osVersion: p['osVersion'] as String?,
+          arch: p['arch'] as String?,
+          features: [for (final f in (p['features'] as List? ?? const [])) f as String],
+          httpsTrusted: p['httpsTrusted'] as bool?,
+          bluetooth: p['bluetooth'] as String?,
+        ));
+        // Keine Antwort: ein Erfolg kommt hier als leere Karte an (wie der Vertrag: data ohne Felder).
+        return const <String, Object?>{};
       case 'logReceiptOutputs':
         return belege.logReceiptOutputs(entries: [
           for (final e in (p['entries'] as List? ?? const [])) ReceiptOutputEntry.fromJson((e as Map).cast()),
@@ -619,7 +638,7 @@ void main() {
   group('jeder Fall des Kassenwegs', () {
     for (final endpunkt in [
       ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
-      ..._kasseninfo,
+      ..._kasseninfo, ..._connect,
     ]) {
       test(endpunkt, () async {
         var gelaufen = 0;
@@ -645,12 +664,12 @@ void main() {
       }
     });
 
-    test('alle 48 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+    test('alle 49 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
       final hier = {
         ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
-        ..._kasseninfo,
+        ..._kasseninfo, ..._connect,
       };
-      expect((_vertrag['calls']['pos'] as List), hasLength(48));
+      expect((_vertrag['calls']['pos'] as List), hasLength(49));
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });

@@ -28,6 +28,7 @@ const List<String> _dateiSchluessel = [
   'callsWithEffect',
   'receiptEmailErrors',
   'cancellationPaymentErrors',
+  'cancellationVoucherErrors',
   'voucherErrors',
   'labels',
   'returnDispositionLabels',
@@ -138,6 +139,8 @@ String erzeugeKatalog(Map<String, dynamic> vertrag) {
   zuordnung('receiptEmailErrorMessages', 'receiptEmailErrors', 'Beleg per E-Mail: Code des Backends -> Schluessel des Satzes.');
   zuordnung('cancellationPaymentErrorMessages', 'cancellationPaymentErrors',
       'Storno mit mehreren Zahlungen: Code des Backends -> Schluessel des Satzes.');
+  zuordnung('cancellationVoucherErrorMessages', 'cancellationVoucherErrors',
+      'Storno mit Rueckgabe als Gutschein: Code des Backends -> Schluessel des Satzes; siehe [cancellationErrorMessage].');
   zuordnung('voucherErrorMessages', 'voucherErrors',
       'Gutschein-Fehler (`/v3`): Code des Backends -> Schluessel des Satzes; siehe [voucherErrorMessage].');
   zuordnung('returnDispositionLabels', 'returnDispositionLabels',

@@ -1,0 +1,29 @@
+       Melisse Nails e.U.       
+         Melissenweg 7          
+           1070 Wien            
+          ATU12345675           
+         +43 1 2345678          
+                                
+================================
+          STORNOBELEG           
+================================
+     Stornobuchung zu Beleg     
+         AT0-KASSE1-70          
+   vom 19.10.2026, 10:15 Uhr    
+   Grund: Kunde hat storniert   
+                                
+Datum:       19.10.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-78
+                                
+1  x Torte              -24,90 B
+                                
+MwSt%   MwSt      Netto   Brutto
+B 10%   -2,26     -22,64  -24,90
+--------------------------------
+Gesamt:                 -24,90 €
+Gutschein ····-2D9A     -24,90 €
+                                
+           [QR-Code]            
+                                
+     Danke für Ihren Besuch     

@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.23.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.25.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.23.0';
+const String posTextsVersion = '1.25.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -96,6 +96,12 @@ const Map<String, PosText> posMessages = {
   'cancellation.tip_refund_missing': PosText('Bitte wählen: Trinkgeld auch zurückgeben?'),
   'cancellation.tip_source_missing': PosText('Bitte wählen: Woher kommt das Trinkgeld zurück?'),
   'cancellation.tip_refunded_with_voucher': PosText('Beleg mit Gutschein: Das Trinkgeld wird mitstorniert.'),
+  'cancellation.voucher_not_available': PosText('Als Gutschein geht hier nicht – bitte wie bezahlt zurückgeben.'),
+  'cancellation.voucher_reason': PosText('Als Gutschein nur bei „Kunde hat storniert“ oder „Sonstiges“.'),
+  'cancellation.voucher_with_voucher': PosText('Dieser Beleg hat einen Gutschein – bitte wie bezahlt zurückgeben.'),
+  'cancellation.voucher_no_type': PosText('Keine Gutschein-Sorte für Rückgaben eingestellt – bitte wie bezahlt zurückgeben.'),
+  'cancellation.voucher_amount': PosText('Dieser Betrag geht nicht als Gutschein – bitte wie bezahlt zurückgeben.'),
+  'cancellation.voucher_type_changed': PosText('Die Gutschein-Sorte für Rückgaben hat sich geändert – bitte erneut versuchen.'),
   'voucher_error.not_found': PosText('Diesen Gutschein gibt es in diesem Betrieb nicht.'),
   'voucher_error.invalid': PosText('Dieser Gutschein ist nicht gültig.'),
   'voucher_error.invalid_code': PosText('Der Code ist nicht vollständig oder falsch abgetippt.'),
@@ -336,6 +342,8 @@ const Map<String, PosText> posLabels = {
   'cancellation.as_paid': PosText('wie bezahlt'),
   'cancellation.cash': PosText('bar'),
   'cancellation.all_cash': PosText('Alles bar'),
+  'cancellation.as_voucher': PosText('Als Gutschein'),
+  'cancellation.voucher_confirm': PosText('{amount} als Gutschein zurückgeben', placeholders: ['amount']),
   'cancellation.payment_remainder': PosText('Rest {amount}', placeholders: ['amount']),
   'cancellation.difference': PosText('Differenz'),
   'cancellation.tip_refund_question': PosText('Trinkgeld auch zurückgeben?'),
@@ -716,6 +724,21 @@ const Map<String, String> cancellationPaymentErrorMessages = {
   'cancellation_refund_reference_unknown': 'cancellation.refund_reference_unknown',
   'payments_sum_mismatch': 'cancellation.sum_mismatch',
   'cancellation_outcome_unknown': 'cancellation.outcome_unknown',
+};
+
+/// Storno mit Rueckgabe als Gutschein: Code des Backends -> Schluessel des Satzes; siehe [cancellationErrorMessage].
+const Map<String, String> cancellationVoucherErrorMessages = {
+  'refund_as_voucher_not_available': 'cancellation.voucher_not_available',
+  'refund_as_voucher_reason': 'cancellation.voucher_reason',
+  'refund_as_voucher_with_voucher': 'cancellation.voucher_with_voucher',
+  'refund_as_voucher_no_type': 'cancellation.voucher_no_type',
+  'refund_as_voucher_amount': 'cancellation.voucher_amount',
+  'voucher_type_not_found': 'cancellation.voucher_type_changed',
+  'voucher_amount_mismatch': 'cancellation.voucher_type_changed',
+  'refund_as_invalid': 'cancellation.input_rejected',
+  'refund_as_conflict': 'cancellation.input_rejected',
+  'idempotency_key_required': 'cancellation.input_rejected',
+  'idempotency_conflict': 'cancellation.input_rejected',
 };
 
 /// Gutschein-Fehler (`/v3`): Code des Backends -> Schluessel des Satzes; siehe [voucherErrorMessage].

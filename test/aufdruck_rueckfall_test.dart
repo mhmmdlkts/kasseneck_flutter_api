@@ -16,7 +16,7 @@ import 'helpers/test_receipts.dart';
 
 /// Der Rueckfall ohne Server-Layout (`setKeckReceipt`) druckt denselben
 /// Aufdruck wie das Server-Layout: Warnrahmen TESTKASSE/TESTSIGNATUR und die
-/// Belegart bzw. die Nacherfassung. Die Regeln werden gegen die 72 Golden-Belege des npm-Pakets
+/// Belegart bzw. die Nacherfassung. Die Regeln werden gegen die 74 Golden-Belege des npm-Pakets
 /// geprueft (Eingabe `receipts/*.json`, Erwartung `expected/*.lines.json`).
 final _wurzel = Directory('test/fixtures/vertrag');
 
@@ -32,7 +32,7 @@ void main() {
     final dateien = Directory('${_wurzel.path}/receipts').listSync().whereType<File>().toList()
       ..sort((a, b) => a.path.compareTo(b.path));
     // 48 bis 11.8, dazu 23 Nacherfassungen (manual-receipt-*) und zero-outage-end-period (11.9.0).
-    test('alle 72 Eingaben da', () => expect(dateien, hasLength(72)));
+    test('alle 74 Eingaben da', () => expect(dateien, hasLength(74)));
     for (final datei in dateien) {
       final name = datei.uri.pathSegments.last.replaceAll('.json', '');
       test(name, () {

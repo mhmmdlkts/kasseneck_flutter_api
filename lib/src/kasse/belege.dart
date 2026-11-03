@@ -47,9 +47,10 @@ import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'artikel.dart';
 import 'gutschein.dart' as gutschein show checkVoucher, reprintVoucherLabel;
-import 'gutschein.dart' show VoucherCheck;
+import 'gutschein.dart' show ReturnIssuedVoucher, VoucherCheck;
 import 'gutschein_wunsch.dart';
 import 'kasseninfo.dart' show RegisterInspectionInfo;
+import 'connect_bestand.dart';
 import '../../models/keck_voucher.dart';
 import '../../models/registration_info.dart';
 import 'beleg_ausgaben.dart';
@@ -202,9 +203,18 @@ class CancelReceiptResult {
     required this.remaining,
     this.originalFullReceiptId,
     this.originalTimeStamp,
+    this.issuedVouchers = const [],
+    this.replayed = false,
   });
 
   final KasseneckReceipt receipt;
+
+  /// Nur mit `refundAs: 'voucher'`: der ausgegebene Gutschein (Klartext-Code
+  /// nur beim ersten Mal); sonst leer.
+  final List<ReturnIssuedVoucher> issuedVouchers;
+
+  /// Wiederholung mit demselben `idempotencyKey`: es entstand kein neuer Beleg.
+  final bool replayed;
   final String originalReceiptId;
   final String? originalFullReceiptId;
 
@@ -230,6 +240,11 @@ class CancelReceiptResult {
       originalFullReceiptId: bezug.fullReceiptId,
       originalTimeStamp: bezug.timeStamp,
       remaining: rest.cast<int>(),
+      issuedVouchers: [
+        for (final g in (data['issuedVouchers'] is List ? data['issuedVouchers'] as List : const <Object?>[]))
+          ?ReturnIssuedVoucher.fromJson(g),
+      ],
+      replayed: data['replayed'] == true,
     );
   }
 
@@ -601,8 +616,23 @@ class RegisterReceiptClient {
     String? drawerId,
     bool? refundTip,
     String? tipRefundSource,
+    String? refundAs,
+    String? idempotencyKey,
   }) async {
     const name = Aufrufe.cancelReceipt;
+    // Rueckgabe als Gutschein (npm 1.25.0): nur `voucher`, nie mit payments, immer mit Schluessel.
+    if (refundAs != null) {
+      if (refundAs != 'voucher') throw const KasseneckValidationError(name, 'refundAs: erlaubt ist nur voucher (oder weglassen)', 'request');
+      if (payments != null) {
+        throw const KasseneckValidationError(name, 'refundAs und payments gehen nicht zusammen: die Rueckzahlung baut der Server', 'request');
+      }
+    }
+    if (refundAs != null || idempotencyKey != null) {
+      final k = idempotencyKey;
+      if (k == null || k.trim().isEmpty || k.length > 120) {
+        throw const KasseneckValidationError(name, 'idempotencyKey muss ein Text mit 1 bis 120 Zeichen sein (Pflicht mit refundAs)', 'request');
+      }
+    }
     if (originalReceiptId.trim().isEmpty) {
       throw const KasseneckValidationError(name, 'originalReceiptId fehlt', 'request');
     }
@@ -649,6 +679,8 @@ class RegisterReceiptClient {
         if (payments != null) 'payments': [for (final z in payments) z.toJson()],
         'drawerId': ?drawerId,
         ...trinkgeld,
+        'refundAs': ?refundAs,
+        'idempotencyKey': ?idempotencyKey,
       },
     );
 
@@ -773,6 +805,16 @@ class RegisterReceiptClient {
     const name = Aufrufe.logReceiptOutputs;
     final nutzlast = ausgabenNutzlast(name, entries);
     return ausgabenGemeldet(name, await transport.call(name, params: {'entries': nutzlast}));
+  }
+
+  /// Meldet den Stand von Kasseneck Connect an diesem Kassengeraet
+  /// (`reportConnectState`, nur Kassenweg; Zwilling von npm 1.24.0). Keine
+  /// Antwort; die Form prueft das Paket vor dem Senden, was der Server nicht
+  /// annimmt, lehnt er mit `invalid_connect_report` ab. Nach einer Frist ist
+  /// der Ausgang unklar (`unknownOutcomeCalls`); eine zweite Meldung schadet nie.
+  Future<void> reportConnectState(ConnectStateReport report) async {
+    const name = Aufrufe.reportConnectState;
+    await transport.call(name, params: connectStateNutzlast(name, report));
   }
 
   /// Artikelgruppen (Kategorien der Kachel-Kasse).

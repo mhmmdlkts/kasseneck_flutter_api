@@ -60,6 +60,9 @@ const _nach10 = (
     'tip_payout.recipient_required', 'shift.pending_hint', 'shift.mode_off', 'tip.kept_setting_hint',
     // Storno mit oder ohne Trinkgeld (11.2.0)
     'cancellation.tip_refund_missing', 'cancellation.tip_source_missing', 'cancellation.tip_refunded_with_voucher',
+    // Rueckgabe als Gutschein (npm 1.25.0)
+    'cancellation.voucher_not_available', 'cancellation.voucher_reason', 'cancellation.voucher_with_voucher', 'cancellation.voucher_no_type',
+    'cancellation.voucher_amount', 'cancellation.voucher_type_changed',
     // Kassenstand und Trinkgeld-Liste an der Kasse (11.2.0)
     'tip_payout.none_open',
     // Wechselgeld je Kassenlade und Entnehmen/Einlegen beim Abschluss (11.2.0)
@@ -128,6 +131,8 @@ const _nach10 = (
     'cancellation.tip_refund_question', 'cancellation.tip_refund_yes', 'cancellation.tip_refund_no',
     'cancellation.tip_source_question', 'cancellation.tip_source_drawer', 'cancellation.tip_source_employee',
     'cancellation.tip_stays', 'shift_receipt.tip_refunded_by_employee', 'shift_receipt.tip_carried_over',
+    // Rueckgabe als Gutschein (npm 1.25.0)
+    'cancellation.as_voucher', 'cancellation.voucher_confirm',
     // Kassenstand und Trinkgeld-Liste an der Kasse (11.2.0)
     'shift.drawer_should_have', 'shift.drawer_named', 'shift.running_since', 'shift.since',
     'shift.collected_outside_drawer', 'shift.non_cash_short', 'shift.voucher_redeemed', 'shift.all_payments',
@@ -188,7 +193,7 @@ const _nach10 = (
     'inspection.closings_annual_december', 'inspection.contact', 'inspection.how_it_works', 'inspection.printed_at',
     'inspection.print', 'inspection.print_yes', 'inspection.print_no', 'zero_receipt.create', 'zero_receipt.created',
   },
-  fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'voucherErrors', 'returnDispositionLabels'],
+  fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'cancellationVoucherErrors', 'voucherErrors', 'returnDispositionLabels'],
   placeholders: {
     'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type',
     // Kassenstand und Trinkgeld-Liste (11.2.0)
