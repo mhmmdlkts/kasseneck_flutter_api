@@ -1,5 +1,5 @@
 {
-  "version": "1.25.0",
+  "version": "1.25.1",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -1557,6 +1557,43 @@
     },
     "cancellation.payment_remainder": {
       "text": "Rest {amount}",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "cancellation.refund_cash": {
+      "text": "{amount} bar",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "cancellation.refund_card": {
+      "text": "{amount} auf die Karte",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "cancellation.refund_other": {
+      "text": "{amount} per {method}",
+      "placeholders": [
+        "amount",
+        "method"
+      ]
+    },
+    "cancellation.refund_line": {
+      "text": "{refunds} zurückgeben",
+      "placeholders": [
+        "refunds"
+      ]
+    },
+    "cancellation.refund_line_estimated": {
+      "text": "voraussichtlich {refunds} zurückgeben",
+      "placeholders": [
+        "refunds"
+      ]
+    },
+    "cancellation.voucher_tip_cash": {
+      "text": "{amount} Trinkgeld bar zurückgeben",
       "placeholders": [
         "amount"
       ]

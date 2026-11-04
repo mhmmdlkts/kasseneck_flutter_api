@@ -1,3 +1,10 @@
+## 11.16.1 (2026-11-04)
+
+Twin of `@kreiseck/kasseneck-api` `1.25.1`: register texts for the cancellation sheet, no API change.
+
+- **Refund line under „wie bezahlt“:** `cancellation.refund_cash`, `cancellation.refund_card`, `cancellation.refund_other`, joined with „ · “ into `cancellation.refund_line` or `cancellation.refund_line_estimated`.
+- **`cancellation.voucher_tip_cash`** „{amount} Trinkgeld bar zurückgeben“ below „Als Gutschein“.
+
 ## 11.16.0 (2026-11-03)
 
 Twin of `@kreiseck/kasseneck-api` `1.25.0` (contract files pulled from that version, which includes 1.24.0). Return as voucher on cancellation and the Kasseneck Connect inventory. Additive.
