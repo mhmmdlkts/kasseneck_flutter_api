@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.25.1). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.26.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.25.1';
+const String posTextsVersion = '1.26.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -38,6 +38,9 @@ const Map<String, PosText> posMessages = {
   'articles.vat_rate_unknown': PosText('„{name}“ hat einen Steuersatz, den die Kasse nicht kennt.', placeholders: ['name']),
   'item.amount_missing': PosText('Bitte einen Betrag eingeben.'),
   'item.description_missing': PosText('Bitte eine Bezeichnung eingeben – sie steht am Beleg.'),
+  'reference.missing': PosText('Bitte „{name}“ eingeben.', placeholders: ['name']),
+  'reference.format_invalid': PosText('Das Format passt nicht.'),
+  'reference.format_warning': PosText('Das Format passt nicht. Trotzdem übernehmen?'),
   'discount.percent_invalid': PosText('Bitte einen Prozentwert zwischen 0,1 und 100 eingeben.'),
   'checkout.nothing_entered': PosText('Noch nichts erfasst – bitte zuerst eine Position aufnehmen.'),
   'checkout.tendered_missing': PosText('Erst eintippen, was der Gast gibt – der Rückgeld-Rechner ist an.'),
@@ -543,6 +546,10 @@ const Map<String, PosText> posLabels = {
   'voucher.code_done': PosText('Fertig'),
   'voucher.article': PosText('Artikel'),
   'voucher.add': PosText('Hinzufügen'),
+  'tile_prompt.amount': PosText('Betrag'),
+  'tile_prompt.quantity': PosText('Menge'),
+  'tile_prompt.apply': PosText('Übernehmen'),
+  'tile_prompt.apply_anyway': PosText('Trotzdem übernehmen'),
   'voucher.tab': PosText('Gutscheine'),
   'voucher.enter_amount': PosText('Betrag eingeben'),
   'voucher.service_tile': PosText('Leistungsgutschein'),

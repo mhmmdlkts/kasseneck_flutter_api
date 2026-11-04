@@ -3,6 +3,8 @@
 /// `article-endpoints.js`).
 library;
 
+import 'kachel_referenz.dart';
+
 /// Kategorie der Kachel-Kasse.
 class ArticleGroup {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
@@ -110,7 +112,7 @@ QuantityDefaults quantityDefaults(PosArticle a) {
 class PosArticle {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher'};
+  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher', 'askPrice', 'reference'};
 
   /// Die Felder von `tile`.
   static const Set<String> tileFields = {'visible', 'sort'};
@@ -135,6 +137,8 @@ class PosArticle {
     this.internalCode,
     this.stockTracked,
     this.serviceVoucher = false,
+    this.askPrice = false,
+    this.reference,
   });
 
   final String id;
@@ -193,6 +197,14 @@ class PosArticle {
   /// Nur ein ausdrueckliches `true` gilt.
   final bool serviceVoucher;
 
+  /// Kasse fragt beim Antippen den Betrag (Kachel mit Betrag und Referenz,
+  /// 11.17.0); ein vorhandener Preis ist Vorschlag. Nur ein ausdrueckliches
+  /// `true` gilt.
+  final bool askPrice;
+
+  /// Kasse fragt beim Antippen eine Referenz ab; `null` = aus.
+  final PosReference? reference;
+
   /// Aus der Drahtform `/api/v3` (`tile {visible, sort}`, `quantityRule`,
   /// `askQuantity`, `maxQuantity`, `revenueGroupId`, `stockLocationIds`,
   /// `number`, `ean`, `internalCode`, `stockTracked`, `serviceVoucher`).
@@ -242,6 +254,8 @@ class PosArticle {
       internalCode: _textOderNull(json['internalCode']),
       stockTracked: json['stockTracked'] is bool ? json['stockTracked'] as bool : null,
       serviceVoucher: json['serviceVoucher'] == true,
+      askPrice: json['askPrice'] == true,
+      reference: PosReference.fromJson(json['reference']),
     );
   }
 
@@ -266,12 +280,25 @@ class PosArticle {
         'internalCode': internalCode,
         'stockTracked': stockTracked,
         'serviceVoucher': serviceVoucher,
+        'askPrice': askPrice,
+        'reference': reference?.toJson(),
       };
 }
 
 /// Ein Text mit Inhalt, unveraendert; leer, nur Leerraum oder kein Text -> `null`
 /// (Zwilling von `textOderNull` in `pos/artikel.ts`).
 String? _textOderNull(Object? wert) => wert is String && wert.trim().isNotEmpty ? wert : null;
+
+/// Kann die Kachel gebucht werden? Mit festem Preis immer, ohne Preis nur mit
+/// `askPrice` (der Betrag kommt aus dem Eingabeblatt). Zwilling von
+/// `isBookableArticle` in `pos/artikel.ts`.
+bool isBookableArticle(PosArticle a) => a.askPrice || (a.unitPriceCents != null && a.unitPriceCents! >= 0);
+
+/// Was die Kachel beim Antippen abfragt (Betrag, Referenz, Menge).
+typedef TilePrompts = ({bool amount, bool reference, bool quantity});
+
+/// Zwilling von `tilePrompts` in `pos/artikel.ts`.
+TilePrompts tilePrompts(PosArticle a) => (amount: a.askPrice, reference: a.reference != null, quantity: quantityDefaults(a).ask);
 
 /// Deckelt eine gewünschte Menge an der Höchstmenge des Artikels.
 num allowedQuantity(PosArticle a, num wanted) {

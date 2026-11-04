@@ -1,5 +1,5 @@
 {
-  "version": "1.25.1",
+  "version": "1.26.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -96,6 +96,18 @@
     },
     "item.description_missing": {
       "text": "Bitte eine Bezeichnung eingeben – sie steht am Beleg."
+    },
+    "reference.missing": {
+      "text": "Bitte „{name}“ eingeben.",
+      "placeholders": [
+        "name"
+      ]
+    },
+    "reference.format_invalid": {
+      "text": "Das Format passt nicht."
+    },
+    "reference.format_warning": {
+      "text": "Das Format passt nicht. Trotzdem übernehmen?"
     },
     "discount.percent_invalid": {
       "text": "Bitte einen Prozentwert zwischen 0,1 und 100 eingeben."
@@ -2244,6 +2256,18 @@
     },
     "voucher.add": {
       "text": "Hinzufügen"
+    },
+    "tile_prompt.amount": {
+      "text": "Betrag"
+    },
+    "tile_prompt.quantity": {
+      "text": "Menge"
+    },
+    "tile_prompt.apply": {
+      "text": "Übernehmen"
+    },
+    "tile_prompt.apply_anyway": {
+      "text": "Trotzdem übernehmen"
     },
     "voucher.tab": {
       "text": "Gutscheine"

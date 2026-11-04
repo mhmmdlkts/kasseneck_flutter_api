@@ -1353,6 +1353,8 @@ void main() {
               'number', 'ean', 'internalCode', 'stockTracked',
               // Leistungsgutschein-Freigabe (11.8.0): der Vertrag zeigt sie in keinem Artikelfall.
               'serviceVoucher',
+              // Kachel mit Betrag und Referenz (11.17.0): der Vertrag zeigt sie in keinem Artikelfall.
+              'askPrice', 'reference',
             }),
         'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),
         'setMyKasseLogo': (const {'logoImage'}, const {}),
