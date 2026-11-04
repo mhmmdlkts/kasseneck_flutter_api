@@ -65,7 +65,7 @@ const Map<String, String> referencePatternTemplates = {
   'letters_digits': r'[A-Za-z]{1,4}-?\d{1,8}',
 };
 
-final RegExp _steuerzeichen = RegExp('[\u0000-\u001f\u007f-\u009f​-‏  ‪-‮⁠-⁤﻿]');
+final RegExp _steuerzeichen = RegExp('[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u2064\ufeff]');
 final RegExp _leerraum = RegExp(r'\s+');
 
 /// Eingabe an der Kasse: ohne Steuer- und Formatzeichen, Leerraum
