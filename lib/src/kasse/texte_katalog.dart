@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.25.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.25.1). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.25.0';
+const String posTextsVersion = '1.25.1';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -345,6 +345,12 @@ const Map<String, PosText> posLabels = {
   'cancellation.as_voucher': PosText('Als Gutschein'),
   'cancellation.voucher_confirm': PosText('{amount} als Gutschein zurückgeben', placeholders: ['amount']),
   'cancellation.payment_remainder': PosText('Rest {amount}', placeholders: ['amount']),
+  'cancellation.refund_cash': PosText('{amount} bar', placeholders: ['amount']),
+  'cancellation.refund_card': PosText('{amount} auf die Karte', placeholders: ['amount']),
+  'cancellation.refund_other': PosText('{amount} per {method}', placeholders: ['amount', 'method']),
+  'cancellation.refund_line': PosText('{refunds} zurückgeben', placeholders: ['refunds']),
+  'cancellation.refund_line_estimated': PosText('voraussichtlich {refunds} zurückgeben', placeholders: ['refunds']),
+  'cancellation.voucher_tip_cash': PosText('{amount} Trinkgeld bar zurückgeben', placeholders: ['amount']),
   'cancellation.difference': PosText('Differenz'),
   'cancellation.tip_refund_question': PosText('Trinkgeld auch zurückgeben?'),
   'cancellation.tip_refund_yes': PosText('Ja'),
