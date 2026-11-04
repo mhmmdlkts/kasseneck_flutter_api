@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "44d12486b6108ca8c040230f317438b21c7761477fa1a9a7d6a65b28a5444e32",
-    "inputsSha256": "144fab3789f188415dc358c57ce75c29c583fe068c2a68dd78ac72fc99629539",
+    "sha256": "a17db090c6fb519a9fb0c707461a1da228f4c6ce8e6a6e23cc6e20e2702baf0f",
+    "inputsSha256": "4e2ab9f8f1a53515313a5950468057a1e53d80d51e461b278707d84321db0b59",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -1132,6 +1132,10 @@
       "ag": "ag",
       "verein": "association",
       "sonstige": "other"
+    },
+    "REFERENZ_STUFE": {
+      "fragen": "optional",
+      "pflicht": "required"
     },
     "RESERVIERUNG_STATUS": {
       "aktiv": "active",
@@ -5519,7 +5523,16 @@
               "sort": "sort"
             },
             "stockLocationIds": "standorte",
-            "minStockByLocation": "mindestJeStandort"
+            "minStockByLocation": "mindestJeStandort",
+            "askPrice": "preisFragen",
+            "reference": {
+              "__": "referenz",
+              "mode": "stufe",
+              "label": "bezeichnung",
+              "hint": "hinweis",
+              "pattern": "muster",
+              "patternStrict": "musterStreng"
+            }
           }
         ]
       },
@@ -5529,6 +5542,9 @@
         },
         "articles[].e1aGroup": {
           "$catalog": "E1A_GRUPPE"
+        },
+        "articles[].reference.mode": {
+          "$catalog": "REFERENZ_STUFE"
         }
       },
       "ergaenze": {
@@ -8497,7 +8513,9 @@
       "groupId",
       "tile",
       "stockLocationIds",
-      "minStockByLocation"
+      "minStockByLocation",
+      "askPrice",
+      "reference"
     ],
     "inner": [
       "id",
@@ -8524,7 +8542,9 @@
       "groupId",
       "kasse",
       "standorte",
-      "mindestJeStandort"
+      "mindestJeStandort",
+      "preisFragen",
+      "referenz"
     ]
   },
   "articleGroupFields": [

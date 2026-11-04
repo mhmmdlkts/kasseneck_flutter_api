@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "notes": "Vertrag Kachel mit Betrag und Referenz: Backend (kachel-referenz-core.js), npm (@kreiseck/kasseneck-api/pos) und Dart (kasseneck_api) rechnen diese Faelle gleich. Referenz in /v3-Form (mode optional|required, pattern, patternStrict). Aenderung immer auf allen Seiten.",
+  "patterns": [
+    {
+      "pattern": "\\d+",
+      "valid": true,
+      "digitsOnly": true
+    },
+    {
+      "pattern": "\\d{4}/\\d{1,6}",
+      "valid": true,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "[A-Za-z]{1,4}-?\\d{1,8}",
+      "valid": true,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "[0-9]{6}",
+      "valid": true,
+      "digitsOnly": true
+    },
+    {
+      "pattern": "(\\d{3}|\\d{5})",
+      "valid": true,
+      "digitsOnly": true
+    },
+    {
+      "pattern": "(?:\\d{2})+",
+      "valid": true,
+      "digitsOnly": true
+    },
+    {
+      "pattern": "\\d+[.,]\\d{2}",
+      "valid": true,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "HN-\\d+",
+      "valid": true,
+      "digitsOnly": false
+    },
+    {
+      "pattern": ".*",
+      "valid": true,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "(",
+      "valid": false,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "[a-",
+      "valid": false,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "(?<=A)\\d",
+      "valid": false,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "(?<!A)\\d",
+      "valid": false,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "(?<nr>\\d+)",
+      "valid": false,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "(\\d)\\1",
+      "valid": false,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "(?i)hn\\d+",
+      "valid": false,
+      "digitsOnly": false
+    },
+    {
+      "pattern": "",
+      "valid": false,
+      "digitsOnly": false
+    }
+  ],
+  "inputs": [
+    {
+      "name": "Pflicht, passt",
+      "reference": {
+        "mode": "required",
+        "pattern": "\\d{4}/\\d{1,6}",
+        "patternStrict": true
+      },
+      "input": "2026/0123",
+      "result": "ok",
+      "value": "2026/0123"
+    },
+    {
+      "name": "Pflicht, leer",
+      "reference": {
+        "mode": "required",
+        "pattern": null,
+        "patternStrict": false
+      },
+      "input": "   ",
+      "result": "empty",
+      "value": ""
+    },
+    {
+      "name": "Fragen, leer ist ok",
+      "reference": {
+        "mode": "optional",
+        "pattern": "\\d+",
+        "patternStrict": true
+      },
+      "input": "",
+      "result": "ok",
+      "value": ""
+    },
+    {
+      "name": "Streng, passt nicht",
+      "reference": {
+        "mode": "required",
+        "pattern": "\\d{4}/\\d{1,6}",
+        "patternStrict": true
+      },
+      "input": "0123",
+      "result": "error",
+      "value": "0123"
+    },
+    {
+      "name": "Nur warnen, passt nicht",
+      "reference": {
+        "mode": "required",
+        "pattern": "\\d{4}/\\d{1,6}",
+        "patternStrict": false
+      },
+      "input": "0123",
+      "result": "warning",
+      "value": "0123"
+    },
+    {
+      "name": "Ganzer Treffer, kein Teiltreffer",
+      "reference": {
+        "mode": "required",
+        "pattern": "\\d+",
+        "patternStrict": true
+      },
+      "input": "12a",
+      "result": "error",
+      "value": "12a"
+    },
+    {
+      "name": "Ohne Muster alles erlaubt",
+      "reference": {
+        "mode": "required",
+        "pattern": null,
+        "patternStrict": false
+      },
+      "input": "Akt 12/26",
+      "result": "ok",
+      "value": "Akt 12/26"
+    },
+    {
+      "name": "Leerraum gesaeubert",
+      "reference": {
+        "mode": "optional",
+        "pattern": null,
+        "patternStrict": false
+      },
+      "input": "  HN   2026/7 \t",
+      "result": "ok",
+      "value": "HN 2026/7"
+    },
+    {
+      "name": "Steuerzeichen entfernt",
+      "reference": {
+        "mode": "required",
+        "pattern": "\\d+",
+        "patternStrict": true
+      },
+      "input": "12\u200b34",
+      "result": "ok",
+      "value": "1234"
+    },
+    {
+      "name": "Hoechstens 40 Zeichen",
+      "reference": {
+        "mode": "required",
+        "pattern": null,
+        "patternStrict": false
+      },
+      "input": "12345678901234567890123456789012345678901234567890",
+      "result": "ok",
+      "value": "1234567890123456789012345678901234567890"
+    },
+    {
+      "name": "Ungueltiges Muster wird ignoriert",
+      "reference": {
+        "mode": "required",
+        "pattern": "(",
+        "patternStrict": true
+      },
+      "input": "abc",
+      "result": "ok",
+      "value": "abc"
+    },
+    {
+      "name": "Keine Referenz eingestellt",
+      "reference": null,
+      "input": "egal",
+      "result": "ok",
+      "value": "egal"
+    }
+  ],
+  "lineNames": [
+    {
+      "articleName": "Honorarnote",
+      "value": "2026/0123",
+      "lineName": "Honorarnote 2026/0123"
+    },
+    {
+      "articleName": "Honorarnote",
+      "value": "",
+      "lineName": "Honorarnote"
+    },
+    {
+      "articleName": "Akonto",
+      "value": "Akt 12/26",
+      "lineName": "Akonto Akt 12/26"
+    }
+  ]
+}

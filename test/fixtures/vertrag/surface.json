@@ -1,5 +1,5 @@
 {
-  "version": "1.25.1",
+  "version": "1.26.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -840,6 +840,10 @@
       "ok",
       "failed",
       "unclear"
+    ],
+    "referenceModes": [
+      "optional",
+      "required"
     ],
     "returnDispositions": [
       "restock",

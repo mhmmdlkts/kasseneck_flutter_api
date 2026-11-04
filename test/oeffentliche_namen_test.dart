@@ -37,7 +37,7 @@ final Set<String> woerter = _liste('''
   amounts and applies approval approved april area article articles as ask asks assert
   assign at attempt attempts attribute attributes august auth authority authorization authorized auto available average background
   backoff bad bank banner barcode base batch before behavior below between binary bit
-  bits blank block blocked blocks body bold bolt book booking border both
+  bits blank block blocked blocks body bold bolt book bookable booking border both
   brand brands breakdown buckets budget build builder bundle business busy by
   byte bytes cache call calls can cancel canceled cancellation cancellations
   cap capability capture card carried cart cash cashbox cashregister cashregisters
@@ -119,6 +119,7 @@ final Set<String> woerter = _liste('''
   folder
   annual based closings contact holder inspection manufacturer outage product section
   arch features https issued os trusted
+  prompts strict templates
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,

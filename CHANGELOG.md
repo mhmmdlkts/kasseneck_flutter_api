@@ -1,3 +1,11 @@
+## 11.17.0 (2026-11-04)
+
+Twin of `@kreiseck/kasseneck-api` `1.26.0`: tile with amount and reference. Additive.
+
+- **`PosArticle.askPrice`** (the register asks for the amount when the tile is tapped; a stored price is the suggestion) and **`PosArticle.reference`** (`PosReference`: `mode` optional/required, `label`, `hint`, `pattern`, `patternStrict`). Reason: a law office takes cash for fee notes; the receipt line „Honorarnote 2026/0123“ refers to the invoice without the client's name.
+- **Helpers** `checkReference` (`ReferenceCheckResult.ok|empty|warning|error` and the cleaned value), `isValidReferencePattern`, `isDigitsOnlyPattern` (numeric keyboard), `referenceLineName`, `isBookableArticle`, `tilePrompts`, `referencePatternTemplates`; same contract cases as npm and the backend (`reference-cases.json`).
+- **Texts** `reference.missing`, `reference.format_invalid`, `reference.format_warning` and the labels `tile_prompt.*`.
+
 ## 11.16.1 (2026-11-04)
 
 Twin of `@kreiseck/kasseneck-api` `1.25.1`: register texts for the cancellation sheet, no API change.

@@ -90,6 +90,8 @@ const _nach10 = (
     'dep.revoked',
     // Reiter „Pruefung“: Kasseninfo fuer den Pruefer (11.15.0, npm 1.23.0)
     'inspection.how_it_works_text', 'inspection.print_question', 'inspection.load_failed', 'zero_receipt.check_first',
+    // Kachel mit Betrag und Referenz (11.17.0)
+    'reference.missing', 'reference.format_invalid', 'reference.format_warning',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -166,6 +168,8 @@ const _nach10 = (
     // Gutscheine an der Kasse, Stufe 3 (11.4.0, npm 1.13.0)
     'voucher.apply', 'voucher.redeemable_until', 'voucher.remove_line', 'voucher.reenter_code',
     'voucher.refundable_until', 'voucher.code_done', 'voucher.article', 'voucher.add',
+    // Kachel mit Betrag und Referenz (11.17.0)
+    'tile_prompt.amount', 'tile_prompt.quantity', 'tile_prompt.apply', 'tile_prompt.apply_anyway',
     // Navigation, Mengengrenzen, Beleg-Fertigseite, Gutschein-Auszahlung (11.5.0, npm 1.14.0)
     'drawer.reason_voucher_payout', 'quantity.at_most', 'quantity.at_least', 'receipts.number_hint',
     'receipts.clear_number', 'receipts.open', 'receipt.creating', 'receipt_done.sale_title',
