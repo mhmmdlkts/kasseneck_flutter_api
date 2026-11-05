@@ -1,5 +1,5 @@
 {
-  "version": "1.26.0",
+  "version": "1.27.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -654,6 +654,15 @@
     "voucherPayout"
   ],
   "pos": {
+    "addOnBlockReasons": [
+      "inactive",
+      "own_list",
+      "asks_price",
+      "reference",
+      "asks_quantity",
+      "no_price",
+      "service_voucher"
+    ],
     "afterCountTypes": [
       "cash_drop",
       "change_in"

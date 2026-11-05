@@ -80,6 +80,20 @@ String _restNach(String text, String erste) {
   return text.substring(i);
 }
 
+/// Einzug einer linksbuendigen Spalte: fuehrende Leerzeichen plus ein
+/// folgendes "+ "; 0, wenn keiner, er die Spalte fuellt oder nur Leerraum folgt.
+int _spaltenEinzug(String text, LayoutAlign align, int breite) {
+  if (align != LayoutAlign.left) return 0;
+  final e = RegExp(r'^ +(?:\+ )?').firstMatch(text)?.group(0)?.length ?? 0;
+  return e > 0 && e < breite && text.substring(e).trim().isNotEmpty ? e : 0;
+}
+
+List<String> _umbrechen(String text, int breite, int e) {
+  if (e <= 0) return wrapWords(text, breite);
+  final teile = wrapWords(text.substring(e), breite - e);
+  return [for (var k = 0; k < teile.length; k++) (k == 0 ? text.substring(0, e) : ' ' * e) + teile[k]];
+}
+
 /// Zwölftel → Zeichen je Spalte (ganze Zeichen, Rest an die letzte, mindestens 1).
 List<int> gridColumnWidths(List<int> twelfths, int chars) {
   final out = <int>[];
@@ -151,7 +165,16 @@ class ReceiptGrid {
         case LayoutColumnsLine():
           final breiten = gridColumnWidths(z.columns.map((c) => c.width).toList(), n);
           final inhalt = <int>[for (var i = 0; i < breiten.length; i++) i < breiten.length - 1 ? (breiten[i] - 1 < 1 ? 1 : breiten[i] - 1) : breiten[i]];
-          final teile = <List<String>>[for (var i = 0; i < z.columns.length; i++) wrapWords(z.columns[i].text, inhalt[i])];
+          // Haengender Einzug wie bei Textzeilen (npm 1.27.0): eine linksbuendige
+          // Spalte mit fuehrenden Leerzeichen bricht mit demselben Einzug um; ein
+          // Spiegelstrich "+ " danach zaehlt mit (Zusatzzeile "  + 1  x ...":
+          // Fortsetzung unter der Menge). Ohne fuehrende Leerzeichen wie bisher.
+          final einzuege = <int>[
+            for (var i = 0; i < z.columns.length; i++) _spaltenEinzug(z.columns[i].text, z.columns[i].align, inhalt[i]),
+          ];
+          final teile = <List<String>>[
+            for (var i = 0; i < z.columns.length; i++) _umbrechen(z.columns[i].text, inhalt[i], einzuege[i]),
+          ];
           // Fließregel (wie renderReceiptGrid): läuft nur EINE Spalte über die erste Zeile
           // hinaus, bekommt ihr Rest die volle Breite; laufen mehrere weiter, bleibt das Raster.
           final weiterlaufend = <int>[for (var i = 0; i < teile.length; i++) if (teile[i].length > 1) i];
@@ -173,8 +196,12 @@ class ReceiptGrid {
           }
           if (fliesst) {
             final i = weiterlaufend.first;
-            final rest = _restNach(z.columns[i].text, teile[i].first);
-            for (final t in wrapWords(rest, n)) {
+            final e = einzuege[i];
+            final rest = e > 0
+                ? _restNach(z.columns[i].text.substring(e), teile[i].first.substring(e))
+                : _restNach(z.columns[i].text, teile[i].first);
+            final restZeilen = e > 0 ? [for (final x in wrapWords(rest, n - e)) ' ' * e + x] : wrapWords(rest, n);
+            for (final t in restZeilen) {
               out.add(GridLine(text: _ausrichten(t, n, z.columns[i].align), kind: GridLineKind.columns, bold: z.bold));
             }
           }

@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "a17db090c6fb519a9fb0c707461a1da228f4c6ce8e6a6e23cc6e20e2702baf0f",
-    "inputsSha256": "4e2ab9f8f1a53515313a5950468057a1e53d80d51e461b278707d84321db0b59",
+    "sha256": "842340e1f94c14fab01ffe96277d76dff4482b97df2e355daa583ff49c2db634",
+    "inputsSha256": "f3c7448afc7e7d5442af4b1fa0d9c28643d6ae945859371e285d39501d57125f",
     "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -1313,6 +1313,7 @@
       "incomplete",
       "insufficient_available",
       "internal_translation_error",
+      "invalid_add_on_reference",
       "invalid_address",
       "invalid_amount",
       "invalid_asset_record",
@@ -1763,6 +1764,7 @@
       "final_receipt_expired",
       "final_receipt_not_allowed",
       "idempotency_conflict",
+      "invalid_add_on_reference",
       "module_inactive",
       "not_permitted",
       "receipt_limit_exceeded",
@@ -2436,6 +2438,7 @@
         "final_receipt_expired",
         "final_receipt_not_allowed",
         "idempotency_conflict",
+        "invalid_add_on_reference",
         "module_inactive",
         "not_permitted",
         "receipt_limit_exceeded",
@@ -3105,7 +3108,8 @@
             {
               "__": "items",
               "receivedImmediately": "sofortErhalten",
-              "keptByEmployee": "direkt"
+              "keptByEmployee": "direkt",
+              "addOnOf": "zusatzZu"
             }
           ],
           "manualReceipt": {
@@ -3694,7 +3698,8 @@
           {
             "__": "items",
             "receivedImmediately": "sofortErhalten",
-            "keptByEmployee": "direkt"
+            "keptByEmployee": "direkt",
+            "addOnOf": "zusatzZu"
           }
         ],
         "drawerId": "ladeId",
@@ -3745,7 +3750,8 @@
             {
               "__": "items",
               "receivedImmediately": "sofortErhalten",
-              "keptByEmployee": "direkt"
+              "keptByEmployee": "direkt",
+              "addOnOf": "zusatzZu"
             }
           ],
           "manualReceipt": {
@@ -3927,6 +3933,12 @@
           {
             "text": "Trinkgeld über den Parameter tip übergeben",
             "code": "tip_invalid"
+          },
+          {
+            "praefix": "Ungültige Daten: items.zusatzZu ",
+            "code": "invalid_add_on_reference",
+            "feld": "items.addOnOf",
+            "ersetzeMeldung": "Ungültige Daten: items.addOnOf muss auf eine frühere Warenposition zeigen, die selbst kein Zusatz ist."
           },
           {
             "muster": {
@@ -5016,7 +5028,8 @@
             {
               "__": "items",
               "receivedImmediately": "sofortErhalten",
-              "keptByEmployee": "direkt"
+              "keptByEmployee": "direkt",
+              "addOnOf": "zusatzZu"
             }
           ],
           "manualReceipt": {
@@ -5133,7 +5146,8 @@
               {
                 "__": "items",
                 "receivedImmediately": "sofortErhalten",
-                "keptByEmployee": "direkt"
+                "keptByEmployee": "direkt",
+                "addOnOf": "zusatzZu"
               }
             ],
             "manualReceipt": {
@@ -5532,7 +5546,8 @@
               "hint": "hinweis",
               "pattern": "muster",
               "patternStrict": "musterStreng"
-            }
+            },
+            "addOns": "zusaetze"
           }
         ]
       },
@@ -5972,7 +5987,8 @@
               {
                 "__": "items",
                 "receivedImmediately": "sofortErhalten",
-                "keptByEmployee": "direkt"
+                "keptByEmployee": "direkt",
+                "addOnOf": "zusatzZu"
               }
             ],
             "manualReceipt": {
@@ -8515,7 +8531,8 @@
       "stockLocationIds",
       "minStockByLocation",
       "askPrice",
-      "reference"
+      "reference",
+      "addOns"
     ],
     "inner": [
       "id",
@@ -8544,7 +8561,8 @@
       "standorte",
       "mindestJeStandort",
       "preisFragen",
-      "referenz"
+      "referenz",
+      "zusaetze"
     ]
   },
   "articleGroupFields": [
@@ -8553,6 +8571,7 @@
     "color",
     "symbol",
     "sort",
-    "vatRate"
+    "vatRate",
+    "addOns"
   ]
 }

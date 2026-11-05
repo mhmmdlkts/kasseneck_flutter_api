@@ -16,6 +16,7 @@ import '../../models/keck_payment.dart';
 import '../vat_math.dart';
 import 'einstellungen.dart';
 import 'warenkorb.dart';
+import 'zusaetze.dart';
 
 // Die USt-Zerlegung gehoert zur Kassieren-Schnittstelle: wer die enthaltene
 // MwSt anzeigt, braucht dieselbe Regel wie der Beleg — und nicht eine eigene.
@@ -42,8 +43,15 @@ int? discountCentsFor(DiscountKind kind, num value, int total) {
 }
 
 /// Positionen für den Beleg: Korb plus Rabattzeilen (eine je Steuersatz).
+///
+/// Zusätze stehen direkt hinter ihrer Hauptposition und tragen deren Index
+/// (`addOnOf`); fehlt die Hauptzeile im übergebenen Korb (etwa vorher
+/// herausgefilterte Gutschein-Verkäufe), werden sie gewöhnliche Positionen.
+/// Die Rabattzeilen hängen hinten an und verschieben keinen Verweis.
 List<KasseneckItem> receiptItems(Cart cart, int discount) {
-  final basis = cart.items.map((p) => p.toReceiptItem()).toList();
+  final basis = [
+    for (final z in orderAddOnLines(cart.items, idOf: (p) => p.id, parentOf: (p) => p.addOnOf)) z.line.toReceiptItem(addOnOf: z.addOnOf),
+  ];
   if (discount <= 0) return basis;
   return [...basis, ...distributeDiscount(basis, discount)];
 }

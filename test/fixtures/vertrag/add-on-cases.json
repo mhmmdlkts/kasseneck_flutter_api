@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "notes": "Vertrag Zusatz-Kacheln: Backend (gemeinsam/zusatz-core.js), npm (@kreiseck/kasseneck-api/pos, add-on-cases.json) und Dart (kasseneck_api) rechnen diese Faelle gleich. Artikel und Gruppen in /v3-Form (addOns, askPrice, reference, askQuantity, serviceVoucher, active, unitPriceCents), Belegpositionen mit addOnOf. Die Codes unter save sind englische Namen; das Backend antwortet innen mit zusatz_ungueltig, zusatz_unbekannt und zusatz_nicht_waehlbar (die Speicher-Endpunkte haben keinen /v3-Rand). receiptOrder rechnen nur die Pakete (Warenkorb). Aenderung immer auf allen Seiten.",
+  "articles": {
+    "manikuere": { "id": "manikuere", "name": "Klassische Maniküre", "unitPriceCents": 3600, "active": true },
+    "pedikuere": { "id": "pedikuere", "name": "Pediküre", "unitPriceCents": 4200, "active": true, "addOns": ["massage", "nailart"] },
+    "nailart": { "id": "nailart", "name": "Nail Art Light", "unitPriceCents": 1500, "active": true },
+    "reparatur": { "id": "reparatur", "name": "Fingernagelreparatur", "unitPriceCents": 1100, "active": true },
+    "massage": { "id": "massage", "name": "Handmassage", "unitPriceCents": 900 },
+    "gratis": { "id": "gratis", "name": "Pflegeöl", "unitPriceCents": 0, "active": true },
+    "express": { "id": "express", "name": "Express-Maniküre", "unitPriceCents": 2500, "active": true, "addOns": [] },
+    "retired": { "id": "retired", "name": "Altes Extra", "unitPriceCents": 500, "active": false },
+    "custom": { "id": "custom", "name": "Extra nach Aufwand", "unitPriceCents": null, "active": true, "askPrice": true },
+    "colour": { "id": "colour", "name": "Farbe Nr.", "unitPriceCents": 300, "active": true, "reference": { "mode": "optional", "label": "Nr.", "hint": null, "pattern": null, "patternStrict": false } },
+    "gel": { "id": "gel", "name": "Gel nach Gramm", "unitPriceCents": 200, "active": true, "askQuantity": true },
+    "special": { "id": "special", "name": "Sonderwunsch", "unitPriceCents": null, "active": true },
+    "voucher": { "id": "voucher", "name": "Gutschein Massage", "unitPriceCents": 900, "active": true, "serviceVoucher": true }
+  },
+  "groups": {
+    "nagel": { "id": "nagel", "name": "Maniküre & Nägel", "addOns": ["nailart", "reparatur", "massage"] },
+    "footcare": { "id": "footcare", "name": "Fußpflege" },
+    "mixed": { "id": "mixed", "name": "Gemischt", "addOns": ["nailart", "manikuere", "missing", "retired", "pedikuere", "custom", "colour", "gel", "special", "voucher", "nailart", "gratis"] }
+  },
+  "selectable": [
+    { "article": "nailart", "reason": null },
+    { "article": "massage", "reason": null },
+    { "article": "gratis", "reason": null },
+    { "article": "express", "reason": null },
+    { "article": "retired", "reason": "inactive" },
+    { "article": "pedikuere", "reason": "own_list" },
+    { "article": "custom", "reason": "asks_price" },
+    { "article": "colour", "reason": "reference" },
+    { "article": "gel", "reason": "asks_quantity" },
+    { "article": "special", "reason": "no_price" },
+    { "article": "voucher", "reason": "service_voucher" }
+  ],
+  "effective": [
+    { "name": "Artikel ohne eigene Liste nimmt die Gruppe", "article": "manikuere", "group": "nagel", "addOns": ["nailart", "reparatur", "massage"] },
+    { "name": "leere Liste am Artikel: keine, auch wenn die Gruppe welche hat", "article": "express", "group": "nagel", "addOns": [] },
+    { "name": "eigene Liste am Artikel gewinnt gegen die Gruppe", "article": "pedikuere", "group": "nagel", "addOns": ["massage", "nailart"] },
+    { "name": "Gruppe ohne Liste: keine", "article": "manikuere", "group": "footcare", "addOns": [] },
+    { "name": "ohne Gruppe: keine", "article": "manikuere", "group": null, "addOns": [] },
+    { "name": "der Artikel selbst, Unbekanntes, Inaktives, Abfragen, ohne Preis, Gutschein und Dubletten fallen still heraus", "article": "manikuere", "group": "mixed", "addOns": ["nailart", "gratis"] },
+    { "name": "Zusatz selbst hat keine eigene Liste und nimmt die Gruppe", "article": "nailart", "group": "nagel", "addOns": ["reparatur", "massage"] }
+  ],
+  "save": [
+    { "name": "null bleibt null", "self": "manikuere", "addOns": null, "ok": true, "value": null },
+    { "name": "leere Liste bleibt leer", "self": "manikuere", "addOns": [], "ok": true, "value": [] },
+    { "name": "gueltige Liste in Reihenfolge", "self": "manikuere", "addOns": ["reparatur", "nailart", "gratis"], "ok": true, "value": ["reparatur", "nailart", "gratis"] },
+    { "name": "Gruppe ohne eigenen Artikel", "self": null, "addOns": ["nailart"], "ok": true, "value": ["nailart"] },
+    { "name": "kein Array", "self": "manikuere", "addOns": "nailart", "ok": false, "code": "invalid_add_ons" },
+    { "name": "Eintrag kein Text", "self": "manikuere", "addOns": ["nailart", 7], "ok": false, "code": "invalid_add_ons" },
+    { "name": "leerer Text", "self": "manikuere", "addOns": [""], "ok": false, "code": "invalid_add_ons" },
+    { "name": "Dublette", "self": "manikuere", "addOns": ["nailart", "nailart"], "ok": false, "code": "invalid_add_ons" },
+    { "name": "unbekannter Artikel", "self": "manikuere", "addOns": ["nailart", "gone"], "ok": false, "code": "add_on_not_found", "articleId": "gone" },
+    { "name": "inaktiver Artikel", "self": "manikuere", "addOns": ["retired"], "ok": false, "code": "add_on_not_found", "articleId": "retired" },
+    { "name": "der Artikel selbst", "self": "manikuere", "addOns": ["manikuere"], "ok": false, "code": "add_on_not_selectable", "articleId": "manikuere" },
+    { "name": "Artikel mit eigener Liste", "self": "manikuere", "addOns": ["pedikuere"], "ok": false, "code": "add_on_not_selectable", "articleId": "pedikuere" },
+    { "name": "Betrag abfragen", "self": "manikuere", "addOns": ["custom"], "ok": false, "code": "add_on_not_selectable", "articleId": "custom" },
+    { "name": "Referenz", "self": "manikuere", "addOns": ["colour"], "ok": false, "code": "add_on_not_selectable", "articleId": "colour" },
+    { "name": "Menge abfragen", "self": "manikuere", "addOns": ["gel"], "ok": false, "code": "add_on_not_selectable", "articleId": "gel" },
+    { "name": "ohne Preis", "self": "manikuere", "addOns": ["special"], "ok": false, "code": "add_on_not_selectable", "articleId": "special" },
+    { "name": "Leistungsgutschein", "self": "manikuere", "addOns": ["voucher"], "ok": false, "code": "add_on_not_selectable", "articleId": "voucher" }
+  ],
+  "saveTooMany": { "count": 31, "code": "invalid_add_ons", "max": 30 },
+  "references": [
+    { "name": "ohne Verweis", "items": [{}, {}], "valid": true },
+    { "name": "zwei Zusaetze unter einer Hauptposition", "items": [{}, { "addOnOf": 0 }, { "addOnOf": 0 }], "valid": true },
+    { "name": "Zusatz unter der zweiten Hauptposition", "items": [{}, {}, { "addOnOf": 1 }], "valid": true },
+    { "name": "Verweis auf sich selbst", "items": [{}, { "addOnOf": 1 }], "valid": false },
+    { "name": "Verweis nach vorne", "items": [{ "addOnOf": 1 }, {}], "valid": false },
+    { "name": "Verweis hinter das Ende", "items": [{}, { "addOnOf": 5 }], "valid": false },
+    { "name": "verkettet: Zusatz eines Zusatzes", "items": [{}, { "addOnOf": 0 }, { "addOnOf": 1 }], "valid": false },
+    { "name": "keine ganze Zahl", "items": [{}, { "addOnOf": 0.5 }], "valid": false },
+    { "name": "Text statt Zahl", "items": [{}, { "addOnOf": "0" }], "valid": false },
+    { "name": "negative Zahl", "items": [{}, { "addOnOf": -1 }], "valid": false },
+    { "name": "null statt Zahl", "items": [{}, { "addOnOf": null }], "valid": false },
+    { "name": "Trinkgeld traegt keinen Verweis", "items": [{}, { "kind": "tip", "addOnOf": 0 }], "valid": false },
+    { "name": "Rabattzeile traegt keinen Verweis", "items": [{}, { "kind": "discount", "addOnOf": 0 }], "valid": false },
+    { "name": "Gutscheinzeile traegt keinen Verweis", "items": [{}, { "kind": "voucher", "addOnOf": 0 }], "valid": false },
+    { "name": "Ziel ist eine Rabattzeile", "items": [{ "kind": "discount" }, { "addOnOf": 0 }], "valid": false }
+  ],
+  "cancellation": [
+    { "name": "Zusaetze einer Hauptposition", "items": [{}, { "addOnOf": 0 }, {}, { "addOnOf": 0 }, { "addOnOf": 2 }], "index": 0, "addOns": [1, 3] },
+    { "name": "Hauptposition ohne Zusaetze", "items": [{}, {}], "index": 1, "addOns": [] },
+    { "name": "Zusatz hat selbst keine", "items": [{}, { "addOnOf": 0 }], "index": 1, "addOns": [] }
+  ],
+  "remap": [
+    { "name": "alles storniert: Verweise bleiben", "items": [{}, { "addOnOf": 0 }, { "addOnOf": 0 }, {}], "quantities": [1, 1, 1, 1], "addOnOf": [null, 0, 0, null] },
+    { "name": "ein Zusatz abgewaehlt: der Rest rueckt nach", "items": [{}, { "addOnOf": 0 }, { "addOnOf": 0 }, {}, { "addOnOf": 3 }], "quantities": [1, 0, 1, 1, 1], "addOnOf": [null, 0, null, 2] },
+    { "name": "Hauptposition nicht storniert: Zusatz ohne Verweis", "items": [{}, { "addOnOf": 0 }, {}], "quantities": [0, 1, 1], "addOnOf": [null, null] }
+  ],
+  "displayOrder": [
+    { "name": "schon geordnet", "items": [{}, { "addOnOf": 0 }, {}], "order": [0, 1, 2] },
+    { "name": "Zusatz hinten wird hinter seine Hauptposition gezogen", "items": [{}, {}, { "addOnOf": 0 }, { "addOnOf": 1 }, { "addOnOf": 0 }], "order": [0, 2, 4, 1, 3] },
+    { "name": "ungueltiger Verweis bleibt an seinem Platz", "items": [{}, { "addOnOf": 7 }, {}], "order": [0, 1, 2] }
+  ],
+  "receiptOrder": [
+    { "name": "Zusaetze hinter ihre Hauptzeile, Index nach dem Sortieren", "lines": [{ "id": "p1" }, { "id": "p2", "addOnOf": "p1" }, { "id": "p3" }, { "id": "p4", "addOnOf": "p1" }], "order": ["p1", "p2", "p4", "p3"], "addOnOf": [null, 0, 0, null] },
+    { "name": "Hauptzeile fehlt (Gutschein-Verkauf herausgefiltert oder geloescht): Zeile ohne Verweis", "lines": [{ "id": "p2", "addOnOf": "p1" }, { "id": "p3" }], "order": ["p2", "p3"], "addOnOf": [null, null] },
+    { "name": "Zusatz der zweiten Hauptzeile", "lines": [{ "id": "p1" }, { "id": "p3" }, { "id": "p5", "addOnOf": "p3" }, { "id": "p6", "addOnOf": "p1" }], "order": ["p1", "p6", "p3", "p5"], "addOnOf": [null, 0, null, 2] }
+  ]
+}

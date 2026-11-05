@@ -67,6 +67,11 @@ class KasseneckItem {
   /// faellt beim Lesen weg (`null`), wie am Rand des Servers.
   final String? returnDisposition;
 
+  /// Zusatz-Kacheln (11.18.0): Index der Hauptposition im selben Beleg; nur
+  /// an Zusatzpositionen. Der Server prueft: ganze Zahl, zeigt nach vorne auf
+  /// eine Warenposition, die selbst kein Zusatz ist (`invalid_add_on_reference`).
+  final int? addOnOf;
+
   KasseneckItem({
     required this.name,
     required this.quantity,
@@ -81,6 +86,7 @@ class KasseneckItem {
     this.lossyRead,
     this.originalIndex,
     this.returnDisposition,
+    this.addOnOf,
   });
 
   /// Trinkgeld-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
@@ -187,6 +193,8 @@ class KasseneckItem {
       // sie); eine Verkaufszeile traegt beides nie.
       'originalIndex': ?originalIndex,
       'returnDisposition': ?returnDisposition,
+      // Zusatz-Kacheln: Verweis auf die Hauptposition nur, wenn gesetzt.
+      if (addOnOf != null && addOnOf! >= 0) 'addOnOf': addOnOf,
     };
   }
 
@@ -223,6 +231,8 @@ class KasseneckItem {
       // unbekannter Wert faellt weg wie im JS-Zwilling).
       originalIndex: json['originalIndex'] is int && (json['originalIndex'] as int) >= 0 ? json['originalIndex'] as int : null,
       returnDisposition: isReturnDisposition(json['returnDisposition']) ? json['returnDisposition'] as String : null,
+      // Zusatz-Kacheln: nur eine ganze Zahl >= 0 (wie im JS-Zwilling).
+      addOnOf: json['addOnOf'] is int && (json['addOnOf'] as int) >= 0 ? json['addOnOf'] as int : null,
     );
   }
 
@@ -243,6 +253,8 @@ class KasseneckItem {
       receivedImmediately: receivedImmediately,
       keptByEmployee: keptByEmployee,
       lossyRead: lossyRead,
+      // Die Spiegelung behaelt die Reihenfolge, der Verweis bleibt gueltig.
+      addOnOf: addOnOf,
     );
   }
 }

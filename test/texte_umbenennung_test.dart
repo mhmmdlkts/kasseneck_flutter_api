@@ -170,6 +170,8 @@ const _nach10 = (
     'voucher.refundable_until', 'voucher.code_done', 'voucher.article', 'voucher.add',
     // Kachel mit Betrag und Referenz (11.17.0)
     'tile_prompt.amount', 'tile_prompt.quantity', 'tile_prompt.apply', 'tile_prompt.apply_anyway',
+    // Zusatz-Kacheln (11.18.0)
+    'addons.title', 'addons.none', 'addons.done', 'addons.open',
     // Navigation, Mengengrenzen, Beleg-Fertigseite, Gutschein-Auszahlung (11.5.0, npm 1.14.0)
     'drawer.reason_voucher_payout', 'quantity.at_most', 'quantity.at_least', 'receipts.number_hint',
     'receipts.clear_number', 'receipts.open', 'receipt.creating', 'receipt_done.sale_title',

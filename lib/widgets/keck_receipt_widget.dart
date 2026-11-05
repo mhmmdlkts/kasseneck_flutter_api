@@ -20,6 +20,7 @@ import '../enums/voucher_type.dart';
 import '../models/keck_voucher.dart';
 import '../models/print_paper.dart';
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
+import '../src/kasse/zusaetze.dart' show addOnDisplayOrder, isValidAddOnAt;
 
 
 /// Ein Beleg am Bildschirm. Traegt er ein vollstaendiges Zeilenmodell des
@@ -282,8 +283,9 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             ),
             const SizedBox(height: 32),
 
-            for (final (i, item) in widget.receipt.items.indexed)
-              ..._positionsZeilen(item, gutscheinZuordnung[i]),
+            // Zusatz-Kacheln: Zusaetze direkt unter ihrer Hauptposition, eingerueckt.
+            for (final i in addOnDisplayOrder(widget.receipt.items))
+              ..._positionsZeilen(widget.receipt.items[i], gutscheinZuordnung[i], zusatz: isValidAddOnAt(widget.receipt.items, i)),
             // Betrag steht als Position (Einzweck, Leistung, 0-%-Topf): keine Zeile aus dem Eintrag.
             for (KeckVoucher voucher in (widget.receipt.vouchers??[]).where((v) => !voucherStandsAsItem(v)))
               if (voucher.action == VoucherAction.sell && artOderNull(voucher) == VoucherType.value)
@@ -419,9 +421,9 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
 
   /// Zeilen einer Position; eine Gutscheinposition der neuen Form wie im
   /// Server-Layout (Code, Vermerk, Rest, Grund; siehe gutschein_bon.dart).
-  List<Widget> _positionsZeilen(KasseneckItem item, VoucherItemMatch? gutschein) {
+  List<Widget> _positionsZeilen(KasseneckItem item, VoucherItemMatch? gutschein, {bool zusatz = false}) {
     final String betrag = '${formatCents(item.totalCents)} ${item.vat.category}';
-    if (gutschein == null) return [_positionsZeile(item, item.name, betrag)];
+    if (gutschein == null) return [_positionsZeile(item, item.name, betrag, zusatz: zusatz)];
     return [
       for (final z in voucherItemLines(item, gutschein, amount: betrag, formatCents: formatCents, currency: 'EUR'))
         switch (z) {
@@ -432,12 +434,12 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
     ];
   }
 
-  Widget _positionsZeile(KasseneckItem item, String name, String betrag) => Row(
+  Widget _positionsZeile(KasseneckItem item, String name, String betrag, {bool zusatz = false}) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text('${item.quantity} x $name${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', style: textStyle),
+            child: Text('${zusatz ? '  + ' : ''}${item.quantity} x $name${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', style: textStyle),
           ),
           Text(betrag, style: textStyle),
         ],

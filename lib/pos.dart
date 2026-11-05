@@ -60,6 +60,7 @@ export 'enums/voucher_action.dart';
 export 'models/keck_voucher.dart';
 export 'src/kasse/artikel.dart';
 export 'src/kasse/kachel_referenz.dart';
+export 'src/kasse/zusaetze.dart';
 export 'src/kasse/testkennzeichen.dart';
 export 'src/kasse/belege.dart';
 export 'src/kasse/belegliste.dart';

@@ -68,6 +68,9 @@ final List<String> receiptErrorCodes = _mitRand(const [
   // Aufrufer ihn angibt (`idempotencyKey` an sellReceipt und
   // RegisterReceiptClient.sell).
   'idempotency_conflict',
+  // Seit 11.18 (Vertrag 1.27.0, Zusatz-Kacheln): addOnOf zeigt nicht nach
+  // vorne auf eine Warenposition, die selbst kein Zusatz ist.
+  'invalid_add_on_reference',
   'module_inactive',
   'not_permitted',
   'receipt_limit_exceeded',
