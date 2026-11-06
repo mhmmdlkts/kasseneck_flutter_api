@@ -35,8 +35,8 @@ const List<int> eurDenominations = [50000, 20000, 10000, 5000, 2000, 1000, 500, 
 
 /// Alle Arten einer Kassenbewegung (Katalog `KASSEN_BEWEGUNG_ART`). Die ersten
 /// acht sendet die Kasse ([manualMovementTypes]); `transfer_in` (Gegenseite
-/// einer Umbuchung), `expense`, `count_difference` und `handover_difference`
-/// vergibt nur der Server.
+/// einer Umbuchung), `expense`, `count_difference`, `handover_difference` und
+/// `interim_difference` (Differenz einer Zwischenzaehlung) vergibt nur der Server.
 const List<String> movementTypes = [
   'change_in',
   'cash_drop',
@@ -50,6 +50,7 @@ const List<String> movementTypes = [
   'expense',
   'count_difference',
   'handover_difference',
+  'interim_difference',
 ];
 
 /// Was die Kasse von Hand buchen darf. Pflichtangaben je Art (sonst lehnt der
@@ -435,6 +436,73 @@ class ShiftReconciliation {
       };
 }
 
+/// Teile des Solls in der Lade (`Shift.expectedParts`, Karte „So setzt sich das
+/// zusammen“): bekannt sind [expectedPartKeys]; die Summe der Teile ist das Soll.
+const List<String> expectedPartKeys = [
+  'opening',
+  'cash_sales',
+  'cash_tips',
+  'cancellations',
+  'cash_in',
+  'cash_out',
+  'interim_difference',
+];
+
+/// Ein Teil des Solls in Cent (Vorzeichen wie gebucht, Ausgaben negativ).
+class ShiftExpectedPart {
+  const ShiftExpectedPart({required this.key, required this.cents});
+
+  /// Ein Wert aus [expectedPartKeys] oder ein kuenftiger.
+  final String key;
+  final int cents;
+
+  Map<String, dynamic> toJson() => {'key': key, 'cents': cents};
+}
+
+/// Teile der Gesamtdifferenz einer geschlossenen Schicht mit Zwischenzaehlung:
+/// `interim` je Zaehlung, `closing` der Abschluss.
+const List<String> differencePartTypes = ['interim', 'closing'];
+
+class ShiftDifferencePart {
+  const ShiftDifferencePart({required this.type, required this.cents, this.at});
+
+  /// Ein Wert aus [differencePartTypes] oder ein kuenftiger.
+  final String type;
+  final int cents;
+
+  /// Zeitpunkt der Zaehlung (ISO 8601, UTC); beim Abschluss kann er fehlen.
+  final String? at;
+
+  Map<String, dynamic> toJson() => {'type': type, 'cents': cents, 'at': at};
+}
+
+/// Die zuletzt geschlossene Schicht einer Lade (Karte „Letzte Schicht“).
+class LastShift {
+  const LastShift({required this.number, required this.closedAt, this.closedByName});
+
+  final int number;
+  final String closedAt;
+
+  /// Wer sie schloss; `null`, wenn kein Name bekannt ist.
+  final String? closedByName;
+
+  Map<String, dynamic> toJson() => {'number': number, 'closedAt': closedAt, 'closedByName': closedByName};
+}
+
+/// Antwort von `recordMyShiftCount`: Soll, Zaehlung und Differenz dieser
+/// Zwischenzaehlung (Cent).
+class ShiftCountResult {
+  const ShiftCountResult({required this.expectedCents, required this.countedCents, required this.differenceCents});
+
+  final int expectedCents;
+  final int countedCents;
+  final int differenceCents;
+
+  Map<String, dynamic> toJson() => {
+        'count': {'expectedCents': expectedCents, 'countedCents': countedCents, 'differenceCents': differenceCents},
+      };
+}
+
 /// Eine Schicht. Die Felder nach „Nur mit `cashView`“ sind `null`, wenn der
 /// Server sie nicht sendet (kein Recht); `null` heisst dort „nicht gesendet“
 /// oder „es gibt (noch) keinen Wert“ – nie `0`. Ohne das Recht `shift` sendet
@@ -467,6 +535,13 @@ class Shift {
     this.reconciliation,
     this.afterCount,
     this.leftInDrawerCents,
+    this.openingCounted,
+    this.expectedParts,
+    this.cashTipsInDrawerCents,
+    this.interimCounts,
+    this.interimDifferenceCents,
+    this.differenceParts,
+    this.countedBeforePayoutCents,
   });
 
   final String id;
@@ -509,6 +584,31 @@ class Shift {
   /// Was danach in der Lade bleibt; nur mit [afterCount], blind `null`.
   final int? leftInDrawerCents;
 
+  // Ablauf der Kasse: was der Server nur sendet, wenn es zutrifft, fehlt sonst.
+
+  /// Wurde der Anfang gezaehlt? `false` = Bestand ohne Zaehlen uebernommen; fehlt
+  /// das Feld (aeltere Server), ist es unbekannt, nicht gezaehlt.
+  final bool? openingCounted;
+
+  /// Das Soll in Teilen (Summe = [expectedCents]); nur offen mit `cashView`.
+  final List<ShiftExpectedPart>? expectedParts;
+
+  /// Bar-Trinkgeld in der Lade (Teil des Solls); nur offen mit `cashView`.
+  final int? cashTipsInDrawerCents;
+
+  /// Zahl der Zwischenzaehlungen; nur offen mit `cashView`.
+  final int? interimCounts;
+
+  /// Summe der Differenzen der Zwischenzaehlungen.
+  final int? interimDifferenceCents;
+
+  /// Teile der Gesamtdifferenz; nur an geschlossenen Schichten mit Zwischenzaehlung.
+  final List<ShiftDifferencePart>? differenceParts;
+
+  /// Rohwert der Zaehlung vor der Trinkgeld-Auszahlung; nur wenn mit
+  /// `countedBeforePayout` geschlossen wurde ([countedCents] ist dann der Stand danach).
+  final int? countedBeforePayoutCents;
+
   /// Die Drahtform; Felder, die fehlen (kein Recht), fehlen auch hier.
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -535,6 +635,13 @@ class Shift {
         if (reconciliation != null) 'reconciliation': reconciliation!.toJson(),
         if (afterCount != null) 'afterCount': afterCount!.toJson(),
         if (leftInDrawerCents != null) 'leftInDrawerCents': leftInDrawerCents,
+        if (openingCounted != null) 'openingCounted': openingCounted,
+        if (expectedParts != null) 'expectedParts': [for (final t in expectedParts!) t.toJson()],
+        if (cashTipsInDrawerCents != null) 'cashTipsInDrawerCents': cashTipsInDrawerCents,
+        if (interimCounts != null) 'interimCounts': interimCounts,
+        if (interimDifferenceCents != null) 'interimDifferenceCents': interimDifferenceCents,
+        if (differenceParts != null) 'differenceParts': [for (final t in differenceParts!) t.toJson()],
+        if (countedBeforePayoutCents != null) 'countedBeforePayoutCents': countedBeforePayoutCents,
       };
 }
 
@@ -592,6 +699,8 @@ class DrawerState {
     this.expectedCents,
     this.recentOpenings,
     this.suggestedFromShiftNumber,
+    this.lastShift,
+    this.lastShiftGiven = false,
   });
 
   final DrawerInfo drawer;
@@ -624,6 +733,13 @@ class DrawerState {
   /// mit einem Betrag „Bleibt in der Kassenlade“ schloss; sonst `null`.
   final int? suggestedFromShiftNumber;
 
+  /// Die zuletzt geschlossene Schicht dieser Lade; `null` = es gibt keine.
+  final LastShift? lastShift;
+
+  /// Hat der Server `lastShift` gesendet (auch als `null`)? Fehlt der Schluessel
+  /// (kein Recht `shift`), bleibt er auch in [toJson] weg.
+  final bool lastShiftGiven;
+
   Map<String, dynamic> toJson() => {
         'drawer': drawer.toJson(),
         'rights': rights.toJson(),
@@ -635,6 +751,7 @@ class DrawerState {
         if (expectedCents != null) 'expectedCents': expectedCents,
         if (recentOpenings != null) 'recentOpenings': [for (final o in recentOpenings!) o.toJson()],
         if (suggestedFromShiftNumber != null) 'suggestedFromShiftNumber': suggestedFromShiftNumber,
+        if (lastShiftGiven || lastShift != null) 'lastShift': lastShift?.toJson(),
       };
 }
 
@@ -774,6 +891,11 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
     required this.openingsWithoutSale,
     this.afterCount,
     this.leftInDrawerCents,
+    this.openingCounted,
+    this.interimDifferenceCents,
+    this.differenceParts,
+    this.countedBeforePayoutCents,
+    this.countedBeforePayoutDenominations,
   });
 
   /// Nummer der Schicht (Draht: `shift.number`).
@@ -812,6 +934,24 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
   /// „Entnommen“ ergaebe es sonst das Ist).
   final int? leftInDrawerCents;
 
+  /// Wurde der Anfang gezaehlt? Nur mit `false` druckt der Bon „Anfang
+  /// uebernommen, nicht gezaehlt“; fehlt das Feld, bleibt die Zeile weg.
+  final bool? openingCounted;
+
+  /// Summe der Zwischenzaehlungs-Differenzen; fehlt, wenn sie 0 ist oder blind.
+  final int? interimDifferenceCents;
+
+  /// Teile der Gesamtdifferenz (Zwischenzaehlungen und Abschluss); fehlt ohne
+  /// Zwischenzaehlung und blind.
+  final List<ShiftDifferencePart>? differenceParts;
+
+  /// Die Zaehlung vor der Trinkgeld-Auszahlung (Rohwert); nur wenn so
+  /// geschlossen wurde, blind `null`. [countedCents] ist dann der Stand danach.
+  final int? countedBeforePayoutCents;
+
+  /// Stueckelung zu [countedBeforePayoutCents]; blind `null`.
+  final Map<String, int>? countedBeforePayoutDenominations;
+
   Map<String, dynamic> toJson() => {
         ..._kopfJson(),
         'shift': {
@@ -839,6 +979,11 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
         'openingsWithoutSale': openingsWithoutSale,
         if (afterCount != null) 'afterCount': afterCount!.toJson(),
         if (afterCount != null) 'leftInDrawerCents': leftInDrawerCents,
+        if (openingCounted != null) 'openingCounted': openingCounted,
+        if (interimDifferenceCents != null) 'interimDifferenceCents': interimDifferenceCents,
+        if (differenceParts != null) 'differenceParts': [for (final t in differenceParts!) t.toJson()],
+        if (countedBeforePayoutCents != null) 'countedBeforePayoutCents': countedBeforePayoutCents,
+        if (countedBeforePayoutDenominations != null) 'countedBeforePayoutDenominations': {...countedBeforePayoutDenominations!},
       };
 }
 
@@ -1220,6 +1365,16 @@ AfterCount? _nachZaehlung(_Ort ort, Object? w) {
   return AfterCount(type: _kennung(ort, o, 'type'), amountCents: _ganzzahl(ort, o, 'amountCents'));
 }
 
+ShiftExpectedPart _sollTeil(_Ort ort, Object? w) {
+  final o = _pflichtObjekt(ort, w);
+  return ShiftExpectedPart(key: _kennung(ort, o, 'key'), cents: _ganzzahl(ort, o, 'cents'));
+}
+
+ShiftDifferencePart _differenzTeil(_Ort ort, Object? w) {
+  final o = _pflichtObjekt(ort, w);
+  return ShiftDifferencePart(type: _kennung(ort, o, 'type'), cents: _ganzzahl(ort, o, 'cents'), at: _text(o['at']));
+}
+
 ShiftReconciliation? _abgleich(_Ort ort, Object? w) {
   if (w == null) return null;
   final o = _pflichtObjekt(ort, w);
@@ -1267,6 +1422,14 @@ Shift _schicht(_Ort ort, Object? w) {
     reconciliation: _abgleich(ort.unter('reconciliation'), o['reconciliation']),
     afterCount: _nachZaehlung(ort.unter('afterCount'), o['afterCount']),
     leftInDrawerCents: _ganzzahlOderNull(ort, o, 'leftInDrawerCents'),
+    // Ablauf der Kasse: nur, wenn der Server sie sendet.
+    openingCounted: _wahrOderNull(ort, o, 'openingCounted'),
+    expectedParts: o['expectedParts'] == null ? null : _liste(ort, o, 'expectedParts', _sollTeil),
+    cashTipsInDrawerCents: _ganzzahlOderNull(ort, o, 'cashTipsInDrawerCents'),
+    interimCounts: _ganzzahlOderNull(ort, o, 'interimCounts'),
+    interimDifferenceCents: _ganzzahlOderNull(ort, o, 'interimDifferenceCents'),
+    differenceParts: o['differenceParts'] == null ? null : _liste(ort, o, 'differenceParts', _differenzTeil),
+    countedBeforePayoutCents: _ganzzahlOderNull(ort, o, 'countedBeforePayoutCents'),
   );
 }
 
@@ -1285,6 +1448,11 @@ DrawerOpening _oeffnung(_Ort ort, Object? w) {
     byName: von == null ? null : _text(von['name']),
     ok: _wahr(ort, o, 'ok'),
   );
+}
+
+LastShift _letzteSchicht(_Ort ort, Object? w) {
+  final o = _pflichtObjekt(ort, w);
+  return LastShift(number: _ganzzahl(ort, o, 'number'), closedAt: _kennung(ort, o, 'closedAt'), closedByName: _text(o['closedByName']));
 }
 
 /// `getMyDrawerState` -> [DrawerState].
@@ -1317,6 +1485,9 @@ DrawerState ladeStand(String name, Map<String, dynamic> daten) {
     expectedCents: _ganzzahlOderNull(ort, daten, 'expectedCents'),
     recentOpenings: daten['recentOpenings'] == null ? null : _liste(ort, daten, 'recentOpenings', _oeffnung),
     suggestedFromShiftNumber: _ganzzahlOderNull(ort, daten, 'suggestedFromShiftNumber'),
+    // `null` ist eine Aussage („keine“), darum bleibt es stehen.
+    lastShift: daten['lastShift'] == null ? null : _letzteSchicht(ort.unter('lastShift'), daten['lastShift']),
+    lastShiftGiven: daten.containsKey('lastShift'),
   );
 }
 
@@ -1395,6 +1566,12 @@ ShiftSummaryReceipt _schichtBon(_Ort ort, Object? w) {
     openingsWithoutSale: _ganzzahl(ort, o, 'openingsWithoutSale'),
     afterCount: _nachZaehlung(ort.unter('afterCount'), o['afterCount']),
     leftInDrawerCents: _ganzzahlOderNull(ort, o, 'leftInDrawerCents'),
+    // Ablauf der Kasse: nur, wenn der Server sie sendet (aeltere Bons tragen sie nicht).
+    openingCounted: _wahrOderNull(ort, o, 'openingCounted'),
+    interimDifferenceCents: _ganzzahlOderNull(ort, o, 'interimDifferenceCents'),
+    differenceParts: o['differenceParts'] == null ? null : _liste(ort, o, 'differenceParts', _differenzTeil),
+    countedBeforePayoutCents: _ganzzahlOderNull(ort, o, 'countedBeforePayoutCents'),
+    countedBeforePayoutDenominations: _stueckelung(ort, o, 'countedBeforePayoutDenominations'),
   );
 }
 
@@ -1447,6 +1624,18 @@ OpenShiftResult geoeffnetLesen(String name, Map<String, dynamic> daten) {
   return OpenShiftResult(
     shift: _schicht(ort.unter('shift'), daten['shift']),
     handoverDifferenceCents: _ganzzahlOderNull(ort, daten, 'handoverDifferenceCents'),
+  );
+}
+
+/// `recordMyShiftCount` -> [ShiftCountResult].
+ShiftCountResult gezaehltLesen(String name, Map<String, dynamic> daten) {
+  final ort = _Ort(name, '');
+  final zOrt = ort.unter('count');
+  final z = _pflichtObjekt(zOrt, daten['count']);
+  return ShiftCountResult(
+    expectedCents: _ganzzahl(zOrt, z, 'expectedCents'),
+    countedCents: _ganzzahl(zOrt, z, 'countedCents'),
+    differenceCents: _ganzzahl(zOrt, z, 'differenceCents'),
   );
 }
 

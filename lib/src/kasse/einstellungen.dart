@@ -173,6 +173,31 @@ enum PosTipMode implements PosSettingValue {
   String get value => name;
 }
 
+/// Trinkgeld-Arten, die die Kasse anbietet (`business.tipKinds`): Prozent,
+/// Aufrunden (der Gast zahlt auf einen runden Betrag) und Gesamt (der Gast
+/// nennt den Betrag, den er insgesamt zahlt). Dieselben Werte hat
+/// `business.tipStart`, die zuerst offene Art.
+enum PosTipKind implements PosSettingValue {
+  percent('percent'),
+  roundUp('round_up'),
+  total('total');
+
+  const PosTipKind(this.value);
+  @override
+  final String value;
+}
+
+/// Breite der rechten Spalte (Korb) an diesem Geraet (`device.cartWidth`); in
+/// der schmalen Ansicht ohne Wirkung.
+enum PosCartWidth implements PosSettingValue {
+  narrow,
+  medium,
+  wide;
+
+  @override
+  String get value => name;
+}
+
 enum PosCheckoutMode implements PosSettingValue {
   page,
   panel;
@@ -455,6 +480,8 @@ class PosBusinessSettings {
     this.hints = true,
     this.discountChips = const [5, 10, 15, 20],
     this.tipKeptByDefault,
+    this.tipKinds,
+    this.tipStart,
     this.unknownValues = const {},
   });
 
@@ -552,6 +579,18 @@ class PosBusinessSettings {
   /// ist; `null` heisst aus. Lesen ueber [posTipKeptByDefault].
   final bool? tipKeptByDefault;
 
+  /// Angebotene Trinkgeld-Arten (nichtleere Teilmenge ohne Dubletten,
+  /// Reihenfolge wie gespeichert). Optional und ohne Standardwert: der Server
+  /// sendet das Feld nur, wenn es gespeichert ist; `null` heisst alle drei.
+  /// Eine Liste mit einer Art, die dieses Paket nicht kennt, bleibt woertlich
+  /// in [unknownValues]. Lesen ueber [posTipKinds]. `tipMode` folgt den Arten
+  /// (der Server leitet ihn ab).
+  final List<PosTipKind>? tipKinds;
+
+  /// Zuerst offene Trinkgeld-Art; optional, `null` = Prozent (sonst die erste
+  /// angebotene Art). Lesen ueber [posTipStart].
+  final PosTipKind? tipStart;
+
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
@@ -576,15 +615,24 @@ class PosBusinessSettings {
   /// 0.x (`'nacht'`): eine Änderung, die still nichts bewirkt, fiele am Tresen
   /// niemandem auf.
   PosBusinessSettings merge(Map<String, dynamic> patch) {
-    _pruefeAenderung('business', patch, {..._betriebSchluessel, ...posBusinessOptionalFields}, legacyBusinessKeys);
+    _pruefeAenderung(
+        'business', patch, {..._betriebSchluessel, ...posBusinessOptionalFields, ...posBusinessOptionalChoices}, legacyBusinessKeys);
     // Der optionale Schalter hat keinen Standardwert, den `_mische` fortschreiben
     // koennte: er wird getrennt gefuehrt und nur als Wahrheitswert genommen.
     final behalten = patch.containsKey('tipKeptByDefault') ? patch['tipKeptByDefault'] : tipKeptByDefault;
     if (behalten != null && behalten is! bool) {
       throw ArgumentError('business.tipKeptByDefault: true oder false erwartet');
     }
-    final json = _mische(toJson()..remove('tipKeptByDefault'), {...patch}..remove('tipKeptByDefault'));
-    return PosBusinessSettings.fromJson({...json, 'tipKeptByDefault': ?behalten});
+    // Ebenso die Wahlfelder: `null` entfernt sie, sonst zaehlt nur die Form.
+    final aktuell = toJson();
+    final wahl = <String, Object?>{
+      for (final k in posBusinessOptionalChoices) k: patch.containsKey(k) ? patch[k] : aktuell[k],
+    };
+    _pruefeWahlfeld('business', 'tipKinds', wahl['tipKinds']);
+    _pruefeWahlfeld('business', 'tipStart', wahl['tipStart']);
+    final weg = {'tipKeptByDefault', ...posBusinessOptionalChoices};
+    final json = _mische(toJson()..removeWhere((k, _) => weg.contains(k)), {...patch}..removeWhere((k, _) => weg.contains(k)));
+    return PosBusinessSettings.fromJson({...json, 'tipKeptByDefault': ?behalten, for (final e in wahl.entries) e.key: ?e.value});
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
@@ -644,6 +692,8 @@ class PosBusinessSettings {
       discountChips: _zahlenliste(g, 'discountChips', s.discountChips, fremd),
       // Ohne Standardwert, darum nicht in `g`: nur ein Wahrheitswert zaehlt.
       tipKeptByDefault: raw['tipKeptByDefault'] is bool ? raw['tipKeptByDefault'] as bool : null,
+      tipKinds: _wahlliste(raw, 'tipKinds', PosTipKind.values, fremd),
+      tipStart: _wahlOptional(raw, 'tipStart', PosTipKind.values, fremd),
       unknownValues: Map.unmodifiable(fremd),
     );
   }
@@ -699,6 +749,8 @@ class PosBusinessSettings {
         'hints': hints,
         'discountChips': [...discountChips],
         'tipKeptByDefault': ?tipKeptByDefault,
+        'tipKinds': ?(tipKinds == null ? null : [for (final k in tipKinds!) k.value]),
+        'tipStart': ?tipStart?.value,
         ...unknownValues,
       };
 }
@@ -730,6 +782,7 @@ class PosDeviceSettings {
     this.drawerEnabled = false,
     this.drawerAutoOpen = PosDrawerAutoOpen.cash,
     this.drawerId,
+    this.cartWidth,
     this.terminalIp = '',
     this.terminalPort = 8080,
     this.terminalTid = '',
@@ -785,6 +838,12 @@ class PosDeviceSettings {
   /// dann gilt die Hauptlade der Kasse. Gelesen wird nur eine gueltige Kennung
   /// ([posDeviceOptionalFields]); beim Schreiben entfernt `null` die Zuordnung.
   final String? drawerId;
+
+  /// Breite der rechten Spalte. Optional und ohne Standardwert: der Server
+  /// sendet das Feld nur, wenn es gespeichert ist; `null` heisst mittel. Ein
+  /// unbekannter Wert bleibt woertlich in [unknownValues]. Lesen ueber
+  /// [posCartWidth].
+  final PosCartWidth? cartWidth;
   final String terminalIp;
   final int terminalPort;
 
@@ -803,15 +862,19 @@ class PosDeviceSettings {
 
   /// Siehe [PosBusinessSettings.merge]; `shortcuts` wird je Aktion gemischt.
   PosDeviceSettings merge(Map<String, dynamic> patch) {
-    _pruefeAenderung('device', patch, {..._geraetSchluessel, ...posDeviceOptionalFields}, legacyDeviceKeys);
+    _pruefeAenderung('device', patch, {..._geraetSchluessel, ...posDeviceOptionalFields, ...posDeviceOptionalChoices}, legacyDeviceKeys);
     // Die optionale Lade hat keinen Standardwert, den `_mische` fortschreiben
     // koennte: sie wird getrennt gefuehrt, `null` entfernt die Zuordnung.
     final lade = patch.containsKey('drawerId') ? patch['drawerId'] : drawerId;
     if (lade != null && !isPosOptionalId(lade)) {
       throw ArgumentError('device.drawerId: keine Kennung (1-64 Zeichen aus A-Z a-z 0-9 _ -)');
     }
-    final json = _mische(toJson()..remove('drawerId'), {...patch}..remove('drawerId'));
-    return PosDeviceSettings.fromJson({...json, 'drawerId': lade});
+    // Ebenso die Spaltenbreite: `null` entfernt sie.
+    final breite = patch.containsKey('cartWidth') ? patch['cartWidth'] : toJson()['cartWidth'];
+    _pruefeWahlfeld('device', 'cartWidth', breite);
+    final weg = {'drawerId', ...posDeviceOptionalChoices};
+    final json = _mische(toJson()..removeWhere((k, _) => weg.contains(k)), {...patch}..removeWhere((k, _) => weg.contains(k)));
+    return PosDeviceSettings.fromJson({...json, 'drawerId': lade, 'cartWidth': ?breite});
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
@@ -844,6 +907,7 @@ class PosDeviceSettings {
       // Ohne Standardwert, darum nicht in `g`: nur eine gueltige Kennung zaehlt,
       // alles andere fehlt still (der Server sendet es so nie).
       drawerId: isPosOptionalId(raw['drawerId']) ? raw['drawerId'] as String : null,
+      cartWidth: _wahlOptional(raw, 'cartWidth', PosCartWidth.values, fremd),
       terminalIp: _text(g['terminalIp'], s.terminalIp),
       terminalPort: _ganz(g, 'terminalPort', 1, 65535, s.terminalPort, fremd),
       terminalTid: _text(g['terminalTid'], s.terminalTid),
@@ -877,6 +941,7 @@ class PosDeviceSettings {
         'drawerEnabled': drawerEnabled,
         'drawerAutoOpen': drawerAutoOpen.value,
         'drawerId': ?drawerId,
+        'cartWidth': ?cartWidth?.value,
         'terminalIp': terminalIp,
         'terminalPort': terminalPort,
         'terminalTid': terminalTid,
@@ -991,6 +1056,8 @@ final Map<String, List<Object>> posBusinessValues = Map.unmodifiable({
   'watermarkStrength': posWatermarkStrengths,
   'logoScale': _werte(PosLogoScale.values),
   'watermarkScale': _werte(PosWatermarkScale.values),
+  'tipKinds': _werte(PosTipKind.values),
+  'tipStart': _werte(PosTipKind.values),
 });
 
 /// Wie [posBusinessValues] für die Geräte-Einstellungen (`POS_DEVICE_VALUES`).
@@ -1006,6 +1073,7 @@ final Map<String, List<Object>> posDeviceValues = Map.unmodifiable({
   'drawerAutoOpen': _werte(PosDrawerAutoOpen.values),
   'terminalVia': _werte(PosTerminalVia.values),
   'terminalType': _werte(PosTerminalType.values),
+  'cartWidth': _werte(PosCartWidth.values),
 });
 
 List<Object> _werte(List<PosSettingValue> werte) => List.unmodifiable([for (final w in werte) w.value]);
@@ -1131,9 +1199,12 @@ const Map<String, Map<String, String>> legacyValues = {
   'receiptOutput': {'druck': 'print', 'mail': 'email', 'fragen': 'ask'},
   'theme': {'klar': 'clear', 'nacht': 'night', 'kontrast': 'contrast'},
   'tileStyle': {'streifen': 'stripe', 'voll': 'full'},
+  'tipKinds[]': {'prozent': 'percent', 'aufrunden': 'round_up', 'gesamt': 'total'},
   'tipMode': {'betrag': 'amount', 'gesamt': 'total', 'beides': 'both'},
+  'tipStart': {'prozent': 'percent', 'aufrunden': 'round_up', 'gesamt': 'total'},
   'watermark': {'aus': 'off', 'anmeldung': 'login', 'ueberall': 'everywhere'},
   'watermarkSide': {'links': 'left', 'mitte': 'center', 'rechts': 'right'},
+  'cartWidth': {'schmal': 'narrow', 'mittel': 'medium', 'breit': 'wide'},
   'categoryPosition': {'oben': 'top', 'links': 'left'},
   'drawerAutoOpen': {'bar': 'cash', 'immer': 'always', 'nie': 'never'},
   'layout': {'rechts': 'right', 'links': 'left', 'vollbild': 'fullscreen'},
@@ -1199,6 +1270,33 @@ const List<String> posDeviceOptionalFields = ['drawerId'];
 /// Gelesen nur als Wahrheitswert; fehlt einer, gilt aus.
 const List<String> posBusinessOptionalFields = ['tipKeptByDefault'];
 
+/// Optionale Betriebs-Einstellungen mit Wertemenge (Zwilling von
+/// `POS_BUSINESS_OPTIONAL_CHOICES`): ohne Standardwert, der Server sendet sie
+/// nur, wenn sie gespeichert sind. `tipKinds` ist eine Liste, `tipStart` ein Wert.
+const List<String> posBusinessOptionalChoices = ['tipKinds', 'tipStart'];
+
+/// Optionale Geraete-Einstellungen mit Wertemenge (`POS_DEVICE_OPTIONAL_CHOICES`).
+const List<String> posDeviceOptionalChoices = ['cartWidth'];
+
+/// Wirksame Trinkgeld-Arten: die gespeicherten, sonst alle drei
+/// (Zwilling von `posTipKinds`).
+List<PosTipKind> posTipKinds(PosBusinessSettings? business) {
+  final k = business?.tipKinds;
+  return k != null && k.isNotEmpty ? List.of(k) : List.of(PosTipKind.values);
+}
+
+/// Wirksame Start-Art: die gespeicherte, wenn sie angeboten wird, sonst
+/// Prozent (oder die erste angebotene Art); Zwilling von `posTipStart`.
+PosTipKind posTipStart(PosBusinessSettings? business) {
+  final arten = posTipKinds(business);
+  final start = business?.tipStart;
+  if (start != null && arten.contains(start)) return start;
+  return arten.contains(PosTipKind.percent) ? PosTipKind.percent : arten.first;
+}
+
+/// Wirksame Breite der rechten Spalte; ohne Angabe mittel (`posCartWidth`).
+PosCartWidth posCartWidth(PosDeviceSettings? device) => device?.cartWidth ?? PosCartWidth.medium;
+
 /// Bar-Trinkgeld „gleich behalten“ vorbelegt? Fehlt die Einstellung, gilt aus
 /// (Zwilling von `posTipKeptByDefault`).
 bool posTipKeptByDefault(PosBusinessSettings? business) => business?.tipKeptByDefault == true;
@@ -1207,6 +1305,20 @@ final RegExp _optionaleKennung = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 
 /// Ist [value] eine gueltige optionale Kennung (Backend `ladeKennung`)?
 bool isPosOptionalId(Object? value) => value is String && _optionaleKennung.hasMatch(value);
+
+/// Form eines optionalen Wahlfeldes beim Mischen: `null` entfernt es,
+/// `tipKinds` ist sonst eine nichtleere Liste von Texten, die anderen ein
+/// nichtleerer Text. Den Wert selbst prueft der Server.
+void _pruefeWahlfeld(String teil, String feld, Object? wert) {
+  if (wert == null) return;
+  if (feld == 'tipKinds') {
+    if (wert is! List || wert.isEmpty || !wert.every((e) => e is String && e.isNotEmpty)) {
+      throw ArgumentError('$teil.$feld: eine nichtleere Liste von Texten erwartet');
+    }
+    return;
+  }
+  if (wert is! String || wert.isEmpty) throw ArgumentError('$teil.$feld: ein Text erwartet');
+}
 
 void _pruefeAenderung(String teil, Map<String, dynamic> aenderung, Set<String> bekannt, Map<String, String> altform) {
   for (final e in aenderung.entries) {
@@ -1220,6 +1332,14 @@ void _pruefeAenderung(String teil, Map<String, dynamic> aenderung, Set<String> b
           'heute ${legacyValues[e.key]![e.value]}');
     }
     final wert = e.value;
+    if (wert is List) {
+      final alt = legacyValues['${e.key}[]'];
+      for (final eintrag in wert) {
+        if (alt != null && alt.containsKey(eintrag)) {
+          throw ArgumentError('$teil.${e.key}: Wert der inneren Form 0.x ($eintrag), heute ${alt[eintrag]}');
+        }
+      }
+    }
     if (e.key == 'shortcuts' && wert is Map) {
       for (final aktion in wert.keys) {
         final neu = legacyShortcutActions[aktion];
@@ -1287,6 +1407,41 @@ T _wahl<T extends PosSettingValue>(Map<String, dynamic> g, String feld, List<T> 
   }
   if (wert is String || wert is num) fremd[feld] = wert as Object;
   return standard;
+}
+
+/// Optionaler Wert ohne Standardwert (`tipStart`, `cartWidth`): bekannt ->
+/// Wert; ein Wert der inneren Form 0.x oder eine falsche Form fehlt still; ein
+/// anderer Text bleibt woertlich in [fremd] (kuenftiger Wert des Servers).
+T? _wahlOptional<T extends PosSettingValue>(Map<String, dynamic> raw, String feld, List<T> werte, Map<String, Object> fremd) {
+  final wert = raw[feld];
+  if (wert is! String || wert.isEmpty) return null;
+  for (final e in werte) {
+    if (e.value == wert) return e;
+  }
+  if (legacyValues[feld]?.containsKey(wert) ?? false) return null;
+  fremd[feld] = wert;
+  return null;
+}
+
+/// Optionale Liste von Werten (`tipKinds`): nichtleer, nur Texte der Menge,
+/// ohne Dubletten. Eine Liste von Texten, die davon abweicht (neue Art,
+/// Doppel), bleibt woertlich in [fremd]; leer, mit Altwerten oder in falscher
+/// Form fehlt sie still.
+List<T>? _wahlliste<T extends PosSettingValue>(Map<String, dynamic> raw, String feld, List<T> werte, Map<String, Object> fremd) {
+  final wert = raw[feld];
+  if (wert is! List || wert.isEmpty || !wert.every((e) => e is String && e.isNotEmpty)) return null;
+  final alt = legacyValues['$feld[]'];
+  if (alt != null && wert.any((e) => alt.containsKey(e))) return null;
+  final out = <T>[];
+  for (final e in wert) {
+    final treffer = werte.where((w) => w.value == e);
+    if (treffer.isEmpty || out.contains(treffer.first)) {
+      fremd[feld] = List<Object?>.unmodifiable(wert);
+      return null;
+    }
+    out.add(treffer.first);
+  }
+  return List.unmodifiable(out);
 }
 
 int _ausListe(Map<String, dynamic> g, String feld, List<int> erlaubt, int standard, Map<String, Object> fremd) {

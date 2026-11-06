@@ -1,0 +1,182 @@
+{
+  "_note": "Z receipt lines of the shift flow (1.28.0): interim count, count before payout, difference parts, opening not counted. Receipt data is the Z receipt of closeMyShift/success_manager (fixtures/v3) plus the new fields; grids are the expected 32/48 character rendering. Shared with the Dart package.",
+  "cases": {
+    "z-bon-ablauf": {
+      "receipt": {
+        "kind": "shift_close",
+        "blind": false,
+        "business": {
+          "name": "Café Welt"
+        },
+        "cashregister": {
+          "id": "KASSE1",
+          "name": "Theke 1"
+        },
+        "drawer": {
+          "name": "Hauptlade"
+        },
+        "shift": {
+          "number": 2,
+          "openedAt": "2026-09-25T15:00:00.000Z",
+          "closedAt": "2026-09-26T08:00:00.000Z",
+          "openedByName": "Anna Chef",
+          "closedByName": "Anna Chef"
+        },
+        "openingFloatCents": 15000,
+        "openingFloatTakenOver": true,
+        "openingDenominations": null,
+        "cashSalesCents": 9400,
+        "cashCancellationsCents": 0,
+        "receiptCount": 3,
+        "cancellationCount": 0,
+        "nonCashByMethod": [
+          {
+            "method": "card",
+            "cents": 3200
+          }
+        ],
+        "movements": [
+          {
+            "number": 3,
+            "type": "change_in",
+            "amountCents": 5000,
+            "note": null,
+            "byName": "Anna Chef",
+            "at": "2026-09-25T15:03:00.000Z"
+          },
+          {
+            "number": 4,
+            "type": "tip_payout",
+            "amountCents": -400,
+            "note": null,
+            "byName": "Anna Chef",
+            "at": "2026-09-26T08:00:00.000Z"
+          }
+        ],
+        "tips": [
+          {
+            "registerUserId": "ru_kellner",
+            "name": "Ben Kellner",
+            "receivedImmediatelyCents": 400,
+            "retainedCents": 0,
+            "paidOutCents": 400,
+            "refundedByEmployeeCents": 0,
+            "carriedOverCents": 0,
+            "openCents": 0
+          }
+        ],
+        "expectedCents": 28800,
+        "countedCents": 28800,
+        "countedDenominations": null,
+        "differenceCents": 0,
+        "comment": null,
+        "openingsWithoutSale": 1,
+        "openingCounted": false,
+        "interimDifferenceCents": -200,
+        "countedBeforePayoutCents": 29200,
+        "countedBeforePayoutDenominations": {
+          "200": 1,
+          "2000": 2,
+          "5000": 1,
+          "20000": 1
+        },
+        "differenceParts": [
+          {
+            "type": "interim",
+            "cents": -200,
+            "at": "2026-09-25T13:30:00.000Z"
+          },
+          {
+            "type": "interim",
+            "cents": 0,
+            "at": "2026-09-25T14:30:00.000Z"
+          },
+          {
+            "type": "closing",
+            "cents": 200,
+            "at": "2026-09-25T15:00:00.000Z"
+          }
+        ]
+      },
+      "grid32": "================================\n        Schichtabschluss        \n================================\n           Café Welt            \nKasse                    Theke 1\nLade                   Hauptlade\nSchicht                    Nr. 2\nGeöffnet        25.09.2026 17:00\nvon                    Anna Chef\nGeschlossen     26.09.2026 10:00\nvon                    Anna Chef\n--------------------------------\nStartgeld übernommen      150,00\nAnfang übernommen, nicht gezählt\nBar aus Verkäufen          94,00\nBar aus Storno              0,00\nZwischenzählung            -2,00\nBewegungen                      \nNr. 3 Wechselgeld          50,00\nNr. 4                      -4,00\nTrinkgeld-Auszahlung            \nSoll                      288,00\nGezählt                   292,00\n  1 x 200,00              200,00\n  1 x 50,00                50,00\n  2 x 20,00                40,00\n  1 x 2,00                  2,00\nIst                       288,00\nDifferenz                   0,00\ndavon                      -2,00\nZwischenzählung 15:30           \ndavon Abschluss             2,00\n--------------------------------\nUnbar (nur Information)         \nKartenzahlung              32,00\nBelege                         3\nStornos                        0\nÖffnungen ohne                 1\nVerkauf                         \n--------------------------------\nTrinkgeld                       \nBen Kellner                     \n  verdient                  4,00\n  schon genommen            4,00",
+      "grid48": "================================================\n                Schichtabschluss                \n================================================\n                   Café Welt                    \nKasse                                    Theke 1\nLade                                   Hauptlade\nSchicht                                    Nr. 2\nGeöffnet                        25.09.2026 17:00\nvon                                    Anna Chef\nGeschlossen                     26.09.2026 10:00\nvon                                    Anna Chef\n------------------------------------------------\nStartgeld übernommen                      150,00\nAnfang übernommen, nicht gezählt                \nBar aus Verkäufen                          94,00\nBar aus Storno                              0,00\nZwischenzählung                            -2,00\nBewegungen                                      \nNr. 3 Wechselgeld                          50,00\nNr. 4 Trinkgeld-Auszahlung                 -4,00\nSoll                                      288,00\nGezählt                                   292,00\n  1 x 200,00                              200,00\n  1 x 50,00                                50,00\n  2 x 20,00                                40,00\n  1 x 2,00                                  2,00\nIst                                       288,00\nDifferenz                                   0,00\ndavon Zwischenzählung 15:30                -2,00\ndavon Abschluss                             2,00\n------------------------------------------------\nUnbar (nur Information)                         \nKartenzahlung                              32,00\nBelege                                         3\nStornos                                        0\nÖffnungen ohne Verkauf                         1\n------------------------------------------------\nTrinkgeld                                       \nBen Kellner                                     \n  verdient                                  4,00\n  schon genommen                            4,00"
+    },
+    "z-bon-ablauf-blind": {
+      "receipt": {
+        "kind": "shift_close",
+        "blind": true,
+        "business": {
+          "name": "Café Welt"
+        },
+        "cashregister": {
+          "id": "KASSE1",
+          "name": "Theke 1"
+        },
+        "drawer": {
+          "name": "Hauptlade"
+        },
+        "shift": {
+          "number": 2,
+          "openedAt": "2026-09-25T15:00:00.000Z",
+          "closedAt": "2026-09-26T08:00:00.000Z",
+          "openedByName": "Anna Chef",
+          "closedByName": "Anna Chef"
+        },
+        "openingFloatCents": null,
+        "openingFloatTakenOver": true,
+        "openingDenominations": null,
+        "cashSalesCents": null,
+        "cashCancellationsCents": null,
+        "receiptCount": 3,
+        "cancellationCount": 0,
+        "nonCashByMethod": [
+          {
+            "method": "card",
+            "cents": 3200
+          }
+        ],
+        "movements": [
+          {
+            "number": 3,
+            "type": "change_in",
+            "amountCents": 5000,
+            "note": null,
+            "byName": "Anna Chef",
+            "at": "2026-09-25T15:03:00.000Z"
+          },
+          {
+            "number": 4,
+            "type": "tip_payout",
+            "amountCents": -400,
+            "note": null,
+            "byName": "Anna Chef",
+            "at": "2026-09-26T08:00:00.000Z"
+          }
+        ],
+        "tips": [
+          {
+            "registerUserId": "ru_kellner",
+            "name": "Ben Kellner",
+            "receivedImmediatelyCents": 400,
+            "retainedCents": 0,
+            "paidOutCents": 400,
+            "refundedByEmployeeCents": 0,
+            "carriedOverCents": 0,
+            "openCents": 0
+          }
+        ],
+        "expectedCents": null,
+        "countedCents": null,
+        "countedDenominations": null,
+        "differenceCents": null,
+        "comment": null,
+        "openingsWithoutSale": 1,
+        "countedBeforePayoutCents": null,
+        "countedBeforePayoutDenominations": null,
+        "openingCounted": false
+      },
+      "grid32": "================================\n        Schichtabschluss        \n================================\n           Café Welt            \nKasse                    Theke 1\nLade                   Hauptlade\nSchicht                    Nr. 2\nGeöffnet        25.09.2026 17:00\nvon                    Anna Chef\nGeschlossen     26.09.2026 10:00\nvon                    Anna Chef\n--------------------------------\nStartgeld übernommen            \nAnfang übernommen, nicht gezählt\nBewegungen                      \nNr. 3 Wechselgeld          50,00\nNr. 4                      -4,00\nTrinkgeld-Auszahlung            \n--------------------------------\nUnbar (nur Information)         \nKartenzahlung              32,00\nBelege                         3\nStornos                        0\nÖffnungen ohne                 1\nVerkauf                         \n--------------------------------\nTrinkgeld                       \nBen Kellner                     \n  verdient                  4,00\n  schon genommen            4,00",
+      "grid48": "================================================\n                Schichtabschluss                \n================================================\n                   Café Welt                    \nKasse                                    Theke 1\nLade                                   Hauptlade\nSchicht                                    Nr. 2\nGeöffnet                        25.09.2026 17:00\nvon                                    Anna Chef\nGeschlossen                     26.09.2026 10:00\nvon                                    Anna Chef\n------------------------------------------------\nStartgeld übernommen                            \nAnfang übernommen, nicht gezählt                \nBewegungen                                      \nNr. 3 Wechselgeld                          50,00\nNr. 4 Trinkgeld-Auszahlung                 -4,00\n------------------------------------------------\nUnbar (nur Information)                         \nKartenzahlung                              32,00\nBelege                                         3\nStornos                                        0\nÖffnungen ohne Verkauf                         1\n------------------------------------------------\nTrinkgeld                                       \nBen Kellner                                     \n  verdient                                  4,00\n  schon genommen                            4,00"
+    }
+  }
+}

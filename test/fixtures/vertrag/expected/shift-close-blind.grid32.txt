@@ -11,6 +11,7 @@ Geschlossen     26.09.2026 10:00
 von                  Ben Kellner
 --------------------------------
 Startgeld übernommen            
+Anfang übernommen, nicht gezählt
 Bewegungen                      
 Nr. 3 Wechselgeld          50,00
 Kommentar: Kassensturz am Abend 

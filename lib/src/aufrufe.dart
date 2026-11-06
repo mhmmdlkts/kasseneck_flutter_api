@@ -132,6 +132,7 @@ abstract final class Aufrufe {
   static const logMyDrawerOpenings = 'logMyDrawerOpenings';
   static const getMyShiftReport = 'getMyShiftReport';
   static const closeMyShift = 'closeMyShift';
+  static const recordMyShiftCount = 'recordMyShiftCount';
   // Gutschein pruefen und Etikett nachdrucken an der Kasse (pos.dart).
   static const checkVoucher = 'checkVoucher';
   static const reprintVoucherLabel = 'reprintVoucherLabel';
@@ -258,6 +259,7 @@ abstract final class Aufrufe {
     logMyDrawerOpenings,
     getMyShiftReport,
     closeMyShift,
+    recordMyShiftCount,
     checkVoucher,
     reprintVoucherLabel,
     logReceiptOutputs,

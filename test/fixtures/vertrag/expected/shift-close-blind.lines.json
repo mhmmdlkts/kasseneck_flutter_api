@@ -128,6 +128,12 @@
     },
     {
       "kind": "text",
+      "text": "Anfang übernommen, nicht gezählt",
+      "align": "left",
+      "bold": false
+    },
+    {
+      "kind": "text",
       "text": "Bewegungen",
       "align": "left",
       "bold": true
