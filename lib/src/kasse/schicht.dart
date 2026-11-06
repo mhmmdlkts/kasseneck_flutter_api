@@ -574,6 +574,11 @@ class Shift {
   final int? suggestedFloatCents;
   final ShiftRunningTotals? runningTotals;
   final int? expectedCents;
+
+  /// Gesamtdifferenz der Schicht. Mit Zwischenzaehlungen ist sie NICHT
+  /// `countedCents - expectedCents`: jede Zwischenzaehlung verschiebt das Soll
+  /// um ihre Differenz, gespeichert wird die Summe aus den Zwischen-Teilen und
+  /// dem Abschluss-Teil ([differenceParts]). Ohne Zwischenzaehlung gilt Ist - Soll.
   final int? differenceCents;
   final ShiftReconciliation? reconciliation;
 
@@ -923,6 +928,10 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
   /// Beim X-Bon immer `null`.
   final int? countedCents;
   final Map<String, int>? countedDenominations;
+
+  /// Gesamtdifferenz; mit Zwischenzaehlungen nicht `countedCents - expectedCents`,
+  /// sondern die Summe der Zwischen-Teile und des Abschluss-Teils
+  /// ([differenceParts]), wie an [Shift.differenceCents].
   final int? differenceCents;
   final String? comment;
   final int openingsWithoutSale;

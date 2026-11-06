@@ -1351,7 +1351,8 @@ class RegisterReceiptClient {
     return abschlussLesen(name, await transport.call(name, params: p));
   }
 
-  /// Zwischenzaehlung festhalten (`recordMyShiftCount`, Recht `shift`): der
+  /// Zwischenzaehlung festhalten (`recordMyShiftCount`, Recht `cashView`, ohne es
+  /// `not_permitted`): der
   /// Server vergleicht die Zaehlung mit dem Soll und haelt die Differenz fest,
   /// die Schicht bleibt offen. Antwort: Soll, Zaehlung und Differenz dieser
   /// Zaehlung. Derselbe [idempotencyKey] ergibt dieselbe Antwort und keinen

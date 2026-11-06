@@ -840,7 +840,7 @@ class PosDeviceSettings {
   final String? drawerId;
 
   /// Breite der rechten Spalte. Optional und ohne Standardwert: der Server
-  /// sendet das Feld nur, wenn es gespeichert ist; `null` heisst mittel. Ein
+  /// sendet das Feld nur, wenn es gespeichert ist; `null` heisst schmal. Ein
   /// unbekannter Wert bleibt woertlich in [unknownValues]. Lesen ueber
   /// [posCartWidth].
   final PosCartWidth? cartWidth;
