@@ -466,7 +466,7 @@ void main() {
         expect(standard.device.toJson().containsKey('cartWidth'), isFalse);
         expect(posTipKinds(standard.business), PosTipKind.values);
         expect(posTipStart(standard.business), PosTipKind.percent);
-        expect(posCartWidth(standard.device), PosCartWidth.medium);
+        expect(posCartWidth(standard.device), PosCartWidth.narrow);
         expect(posTipKinds(null), PosTipKind.values);
         expect(PosTipKind.values.map((k) => k.value), [
           'percent',

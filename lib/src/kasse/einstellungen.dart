@@ -1294,8 +1294,8 @@ PosTipKind posTipStart(PosBusinessSettings? business) {
   return arten.contains(PosTipKind.percent) ? PosTipKind.percent : arten.first;
 }
 
-/// Wirksame Breite der rechten Spalte; ohne Angabe mittel (`posCartWidth`).
-PosCartWidth posCartWidth(PosDeviceSettings? device) => device?.cartWidth ?? PosCartWidth.medium;
+/// Wirksame Breite der rechten Spalte; ohne Angabe schmal (`posCartWidth`).
+PosCartWidth posCartWidth(PosDeviceSettings? device) => device?.cartWidth ?? PosCartWidth.narrow;
 
 /// Bar-Trinkgeld „gleich behalten“ vorbelegt? Fehlt die Einstellung, gilt aus
 /// (Zwilling von `posTipKeptByDefault`).
