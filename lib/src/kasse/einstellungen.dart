@@ -1425,22 +1425,28 @@ T? _wahlOptional<T extends PosSettingValue>(Map<String, dynamic> raw, String fel
 
 /// Optionale Liste von Werten (`tipKinds`): nichtleer, nur Texte der Menge,
 /// ohne Dubletten. Eine Liste von Texten, die davon abweicht (neue Art,
-/// Doppel), bleibt woertlich in [fremd]; leer, mit Altwerten oder in falscher
-/// Form fehlt sie still.
+/// Doppel), bleibt woertlich in [fremd], die Kasse arbeitet mit den bekannten
+/// Arten davon (keine bekannte: wie fehlend); leer, mit Altwerten oder in
+/// falscher Form fehlt sie still.
 List<T>? _wahlliste<T extends PosSettingValue>(Map<String, dynamic> raw, String feld, List<T> werte, Map<String, Object> fremd) {
   final wert = raw[feld];
   if (wert is! List || wert.isEmpty || !wert.every((e) => e is String && e.isNotEmpty)) return null;
   final alt = legacyValues['$feld[]'];
   if (alt != null && wert.any((e) => alt.containsKey(e))) return null;
+  // Wie npm bietet die Kasse nur die bekannten Arten an, in der Reihenfolge des
+  // Servers und ohne Dubletten; die rohe Liste bleibt in [fremd] (Rueckweg).
   final out = <T>[];
+  var abweichend = false;
   for (final e in wert) {
     final treffer = werte.where((w) => w.value == e);
     if (treffer.isEmpty || out.contains(treffer.first)) {
-      fremd[feld] = List<Object?>.unmodifiable(wert);
-      return null;
+      abweichend = true;
+      continue;
     }
     out.add(treffer.first);
   }
+  if (abweichend) fremd[feld] = List<Object?>.unmodifiable(wert);
+  if (out.isEmpty) return null;
   return List.unmodifiable(out);
 }
 
