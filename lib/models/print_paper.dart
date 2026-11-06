@@ -24,6 +24,7 @@ import '../src/printing/qr_groesse.dart';
 import '../src/receipt/aufdruck.dart' show belegartBlock, nacherfassungBlock, warnrahmen;
 import '../src/receipt/einzug.dart';
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
+import '../src/kasse/zusaetze.dart' show addOnDisplayOrder, isValidAddOnAt;
 import '../src/receipt/gutschein_bon.dart';
 import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
@@ -460,7 +461,11 @@ class PrintPaper {
     // Gutscheine der neuen Form stehen als Position (Spec 2026-10-14): die
     // Zeilen dazu wie im Server-Layout, siehe gutschein_bon.dart.
     final gutscheinZuordnung = voucherItemMatches(receipt.items, receipt.vouchers ?? const []);
-    for (final (i, item) in receipt.items.indexed) {
+    // Zusatz-Kacheln: Zusaetze direkt unter ihrer Hauptposition, eingerueckt
+    // (wie buildReceiptLayout ab npm 1.27.0); ohne Verweise Belegreihenfolge.
+    for (final i in addOnDisplayOrder(receipt.items)) {
+      final item = receipt.items[i];
+      final zusatz = isValidAddOnAt(receipt.items, i);
       if (itemsByVat[item.vat] == null) {
         itemsByVat[item.vat] = [];
       }
@@ -480,7 +485,7 @@ class PrintPaper {
         }
         continue;
       }
-      _positionsZeile(item, item.name, betrag);
+      _positionsZeile(item, item.name, betrag, zusatz: zusatz);
     }
 
     int totalPromoVoucherValueCents = 0;
@@ -707,8 +712,9 @@ class PrintPaper {
     }
   }
 
-  /// Positionszeile des Rueckfalls (7:5): Menge, Name, Einzelpreis ab zwei Stueck.
-  void _positionsZeile(KasseneckItem item, String name, String betrag) {
+  /// Positionszeile des Rueckfalls (7:5): Menge, Name, Einzelpreis ab zwei
+  /// Stueck; ein Zusatz eingerueckt mit "+ ".
+  void _positionsZeile(KasseneckItem item, String name, String betrag, {bool zusatz = false}) {
     String amount = item.quantity.toString().padRight(2);
     if (item.quantity
         .toString()
@@ -717,7 +723,7 @@ class PrintPaper {
     } else {
       amount += ' x ';
     }
-    addDoubleText('$amount${name.check()}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', betrag, leftWidth: 7, rightWidth: 5);
+    addDoubleText('${zusatz ? '  + ' : ''}$amount${name.check()}${item.quantity > 1 ? ' je ${formatAmount(item.singlePrice)}' : ''}', betrag, leftWidth: 7, rightWidth: 5);
   }
 
   /// Linksbuendiger Text mit haengendem Einzug wie im Zeichenraster: der

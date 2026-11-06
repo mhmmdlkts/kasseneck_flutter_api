@@ -1345,7 +1345,8 @@ void main() {
         'listMyCashregisters.cashregisters[].onboarding': (CashregisterOnboarding.fields, const {}),
         'generateFullReceiptId': (const {'fullReceiptId'}, const {}),
         'listMyArticleGroups': (const {'groups'}, const {}),
-        'listMyArticleGroups.groups[]': (ArticleGroup.fields, const {'symbol', 'vatRate'}),
+        // Zusatz-Kacheln (11.18.0): addOns zeigt der Vertrag an keiner Gruppe.
+        'listMyArticleGroups.groups[]': (ArticleGroup.fields, const {'symbol', 'vatRate', 'addOns'}),
         'listMyArticles': (const {'articles'}, const {}),
         'listMyArticles.articles[]':
             (PosArticle.fields, const {
@@ -1355,6 +1356,8 @@ void main() {
               'serviceVoucher',
               // Kachel mit Betrag und Referenz (11.17.0): der Vertrag zeigt sie in keinem Artikelfall.
               'askPrice', 'reference',
+              // Zusatz-Kacheln (11.18.0): der Vertrag zeigt sie in keinem Artikelfall.
+              'addOns',
             }),
         'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),
         'setMyKasseLogo': (const {'logoImage'}, const {}),

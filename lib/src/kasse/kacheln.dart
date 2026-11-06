@@ -139,6 +139,11 @@ class TileBooking {
 
 /// Kachel in den Korb.
 ///
+/// Zusatz-Kacheln (11.18.0): mit `draft.addOnOf` wird ein Zusatz unter die
+/// Hauptzeile gebucht; er buendelt nur mit demselben Zusatz derselben
+/// Hauptzeile. Eine Hauptleistung, die schon Zusaetze traegt, buendelt nie –
+/// die naechste gleiche Buchung wird eine eigene Zeile.
+///
 /// Mit [bundle] wird eine gleiche Zeile (Name, Preis, Satz **und**
 /// Artikel-ID) hochgezählt, ohne entsteht je Griff eine Zeile. Zwei Artikel
 /// gleichen Aussehens bleiben zwei Zeilen (jeder bucht sein eigenes Lager),
@@ -150,7 +155,12 @@ class TileBooking {
 TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   if (bundle) {
     final artikel = artikelIdOderNull(draft.articleId);
+    final haupt = artikelIdOderNull(draft.addOnOf);
     for (final p in cart.items) {
+      // Zusatz-Kacheln: ein Zusatz buendelt nur unter derselben Hauptzeile, und
+      // eine Hauptleistung mit Zusaetzen bleibt eine eigene Zeile.
+      if (p.addOnOf != haupt) continue;
+      if (haupt == null && cart.hasAddOns(p.id)) continue;
       if (p.name != draft.name.trim()) continue;
       if (p.priceCents != draft.unitPriceCents) continue;
       if (p.vat != draft.vatRate) continue;
@@ -165,6 +175,7 @@ TileBooking bookTile(Cart cart, CartItemDraft draft, {required bool bundle}) {
   if (identical(neu, cart) || neu.items.isEmpty) {
     return TileBooking(cart: cart, lineId: '', quantity: 0);
   }
-  return TileBooking(cart: neu, lineId: neu.items.last.id, quantity: 1);
+  final zeile = neu.items.firstWhere((p) => !cart.items.contains(p));
+  return TileBooking(cart: neu, lineId: zeile.id, quantity: 1);
 }
 

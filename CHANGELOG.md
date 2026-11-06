@@ -1,3 +1,14 @@
+## 11.18.0 (2026-11-05)
+
+Twin of `@kreiseck/kasseneck-api` `1.27.0`: add-on tiles. Additive.
+
+- **`ArticleGroup.addOns`** and **`PosArticle.addOns`** (`List<String>?`; on the article `null` = like the group, empty = none, otherwise its own list). Reason: a nail salon sells many add-ons (nail art, repair per nail, hand massage) that had to be searched as a separate group; tapping the main service now opens a sheet with its add-ons.
+- **`KasseneckItem.addOnOf`**: index of the main item on the same receipt; read and written only when set. The backend rejects a reference that does not point back to a goods item that is itself no add-on (`invalid_add_on_reference`, now in `receiptErrorCodes`).
+- **Helpers** `addOnsFor` (effective list for the sheet), `isSelectableAddOn` (reason why an article cannot be an add-on), `addOnReferencesValid`, `addOnsOfItem` (cancellation pre-selection), `addOnRemap`, `addOnDisplayOrder`, `isValidAddOnAt`, `orderAddOnLines`, `addOnsMax`, `addOnBlockReasons`; same contract cases as npm and the backend (`add-on-cases.json`).
+- **Cart:** `Position.addOnOf` and `CartItemDraft.addOnOf` hold the line id of the main line (not an index, so removing or splitting lines never breaks a reference). `Cart.added` places an add-on behind its main line, `Cart.removed` and `withQuantity(id, 0)` remove the line together with its add-ons, `Cart.hasAddOns` is new, `lines()` keeps add-ons behind their main line. `bookTile` bundles an add-on only under the same main line and never bundles onto a main line that has add-ons. `receiptItems` orders add-ons behind their main item and sets `addOnOf`.
+- **Receipt:** the grid wraps a left column with leading spaces with a hanging indent (a following „+ “ counts), as in npm. The fallbacks without server layout (`setKeckReceipt`, `KeckReceiptWidget`) print add-ons indented with „+ “ under their main item. Receipts without references are unchanged.
+- **Texts** `addons.title`, `addons.none`, `addons.done`, `addons.open`.
+
 ## 11.17.0 (2026-11-04)
 
 Twin of `@kreiseck/kasseneck-api` `1.26.0`: tile with amount and reference. Additive.

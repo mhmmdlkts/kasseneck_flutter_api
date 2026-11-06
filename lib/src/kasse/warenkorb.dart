@@ -19,6 +19,7 @@ import '../../enums/vat_rate.dart';
 import '../../models/kasseneck_item.dart';
 import 'artikel_id.dart';
 import 'einstellungen.dart';
+import 'zusaetze.dart';
 
 /// Eine Position des laufenden Verkaufs.
 class Position {
@@ -30,6 +31,7 @@ class Position {
     required this.vat,
     this.maxQuantity,
     this.articleId,
+    this.addOnOf,
   });
 
   /// Kennung nur fuer diesen Bildschirm: zwei gleich aussehende Positionen sind
@@ -50,6 +52,12 @@ class Position {
   /// Belegposition (Erloesgruppen im Bericht, Lagerbuchung).
   final String? articleId;
 
+  /// Zusatz-Kacheln (11.18.0): Kennung der Hauptzeile, wenn diese Position ein
+  /// Zusatz ist. Im Korb zaehlt die Kennung, nicht der Index: Loeschen,
+  /// Umordnen und die Einzelzeilen-Ansicht brechen so keinen Verweis. Den Index
+  /// `addOnOf` der Belegposition rechnet erst [receiptItems].
+  final String? addOnOf;
+
   /// Zeilensumme in ganzen Cent — beide Faktoren sind ganze Zahlen.
   int get lineTotalCents => priceCents * quantity;
 
@@ -61,12 +69,14 @@ class Position {
         vat: vat,
         maxQuantity: maxQuantity,
         articleId: articleId,
+        addOnOf: addOnOf,
       );
 
   /// Als Belegposition – ohne die Kassen-Kennung, die das Backend nichts
-  /// angeht; mit dem Artikel-Verweis, wenn es einen gibt.
-  KasseneckItem toReceiptItem() =>
-      KasseneckItem(name: name, quantity: quantity, priceCents: priceCents, vat: vat, articleId: articleId);
+  /// angeht; mit dem Artikel-Verweis, wenn es einen gibt. [addOnOf] ist der
+  /// Index der Hauptposition im Beleg (setzt [receiptItems]).
+  KasseneckItem toReceiptItem({int? addOnOf}) =>
+      KasseneckItem(name: name, quantity: quantity, priceCents: priceCents, vat: vat, articleId: articleId, addOnOf: addOnOf);
 }
 
 /// Was der Kassier eingegeben hat, bevor daraus eine Position wird.
@@ -77,6 +87,7 @@ class CartItemDraft {
     required this.vatRate,
     this.maxQuantity,
     this.articleId,
+    this.addOnOf,
   });
 
   /// Pflicht. § 132a BAO verlangt die handelsuebliche Bezeichnung auf dem Beleg.
@@ -92,6 +103,10 @@ class CartItemDraft {
   /// Artikel-Verweis (Kachel); fehlt bei freien Positionen. Ein leerer Wert
   /// gilt als keiner.
   final String? articleId;
+
+  /// Zusatz-Kacheln: Kennung der Hauptzeile im Korb, wenn die Position ein
+  /// Zusatz ist; ein leerer Wert gilt als keiner.
+  final String? addOnOf;
 }
 
 /// Eine Anzeigezeile des Korbs: gebuendelt (Menge × Preis) oder je Stueck einzeln.
@@ -125,28 +140,41 @@ class Cart {
   /// Ohne Bezeichnung bleibt der Korb **unveraendert** (derselbe Wert): das
   /// Backend weist eine namenlose Position ohnehin ab. Den Grund nennt der
   /// Bildschirm, bevor der Kassier drueckt — hier steht nur die letzte Grenze.
+  ///
+  /// Ein Zusatz (`draft.addOnOf`) kommt direkt hinter die Hauptzeile und ihre
+  /// bisherigen Zusaetze; fehlt die Hauptzeile, wird er eine gewoehnliche
+  /// Position am Ende.
   Cart added(CartItemDraft draft) {
     final name = draft.name.trim();
     if (name.isEmpty) return this;
     _laufendeNummer += 1;
     final grenze = (draft.maxQuantity != null && draft.maxQuantity! > 0) ? draft.maxQuantity : null;
-    return Cart(items: [
-      ...items,
-      Position(
-        id: 'p$_laufendeNummer',
-        name: name,
-        quantity: 1,
-        priceCents: draft.unitPriceCents,
-        vat: draft.vatRate,
-        maxQuantity: grenze,
-        articleId: artikelIdOderNull(draft.articleId),
-      ),
-    ]);
+    final haupt = artikelIdOderNull(draft.addOnOf);
+    final hauptIndex = haupt == null ? -1 : items.indexWhere((p) => p.id == haupt);
+    final neu = Position(
+      id: 'p$_laufendeNummer',
+      name: name,
+      quantity: 1,
+      priceCents: draft.unitPriceCents,
+      vat: draft.vatRate,
+      maxQuantity: grenze,
+      articleId: artikelIdOderNull(draft.articleId),
+      addOnOf: hauptIndex < 0 ? null : haupt,
+    );
+    if (hauptIndex < 0) return Cart(items: [...items, neu]);
+    var nach = hauptIndex + 1;
+    while (nach < items.length && items[nach].addOnOf == haupt) {
+      nach += 1;
+    }
+    return Cart(items: [...items.sublist(0, nach), neu, ...items.sublist(nach)]);
   }
 
-  /// Nimmt genau eine Position heraus.
+  /// Hat die Zeile [id] Zusaetze?
+  bool hasAddOns(String id) => items.any((p) => p.addOnOf == id);
+
+  /// Nimmt genau eine Position heraus – und mit ihr ihre Zusaetze.
   Cart removed(String id) {
-    final rest = items.where((p) => p.id != id).toList();
+    final rest = items.where((p) => p.id != id && p.addOnOf != id).toList();
     // Unveraendert heisst unveraendert: derselbe Wert, damit oben niemand ohne
     // Grund neu zeichnet.
     return rest.length == items.length ? this : Cart(items: rest);
@@ -194,15 +222,17 @@ class Cart {
   }
 
   /// Zeilen fuer die Anzeige je Mengenmodus: [PosQuantity.off] loest gebuendelte
-  /// Positionen in eine Zeile je Stueck zum Einzelpreis auf.
+  /// Positionen in eine Zeile je Stueck zum Einzelpreis auf. Zusaetze stehen
+  /// direkt hinter ihrer Hauptzeile.
   List<CartLine> lines(PosQuantity mode) {
+    final geordnet = [for (final z in orderAddOnLines(items, idOf: (p) => p.id, parentOf: (p) => p.addOnOf)) z.line];
     if (mode != PosQuantity.off) {
-      return items
+      return geordnet
           .map((p) => CartLine(key: p.id, item: p, quantity: p.quantity, amountCents: p.lineTotalCents))
           .toList();
     }
     return [
-      for (final p in items)
+      for (final p in geordnet)
         for (var i = 0; i < (p.quantity < 1 ? 1 : p.quantity); i++)
           CartLine(key: '${p.id}#$i', item: p, quantity: 1, amountCents: p.priceCents),
     ];

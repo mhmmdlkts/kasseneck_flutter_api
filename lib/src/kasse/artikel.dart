@@ -9,7 +9,7 @@ import 'kachel_referenz.dart';
 class ArticleGroup {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'color', 'symbol', 'sort', 'vatRate'};
+  static const Set<String> fields = {'id', 'name', 'color', 'symbol', 'sort', 'vatRate', 'addOns'};
 
   const ArticleGroup({
     required this.id,
@@ -18,6 +18,7 @@ class ArticleGroup {
     required this.sort,
     this.symbol,
     this.vatRate,
+    this.addOns,
   });
 
   final String id;
@@ -33,6 +34,11 @@ class ArticleGroup {
   /// Vorschlag der Gruppe; der Artikel entscheidet.
   final num? vatRate;
 
+  /// Zusaetze der Gruppe (Zusatz-Kacheln, 11.18.0): Artikel-Kennungen in der
+  /// Reihenfolge des Fensters; `null` = keine. Wirksam wird die Liste erst
+  /// ueber [addOnsFor].
+  final List<String>? addOns;
+
   factory ArticleGroup.fromJson(Map<String, dynamic> json) => ArticleGroup(
         id: json['id'] is String ? json['id'] as String : '',
         name: json['name'] is String ? json['name'] as String : '',
@@ -40,6 +46,7 @@ class ArticleGroup {
         symbol: json['symbol'] is String ? json['symbol'] as String : null,
         sort: json['sort'] is num ? (json['sort'] as num).toInt() : 0,
         vatRate: json['vatRate'] is num ? json['vatRate'] as num : null,
+        addOns: _addOnListe(json['addOns']),
       );
 
   /// Zurück in die Form, aus der [ArticleGroup.fromJson] wieder liest – für
@@ -51,8 +58,13 @@ class ArticleGroup {
         'symbol': symbol,
         'sort': sort,
         'vatRate': vatRate,
+        'addOns': addOns,
       };
 }
+
+/// Zusatzliste am Draht: nur eine Liste von Texten zaehlt (leere fallen
+/// heraus), sonst `null` -- Zwilling von `addOnListe` in `pos/artikel.ts`.
+List<String>? _addOnListe(Object? wert) => wert is List ? [for (final s in wert) if (s is String && s.isNotEmpty) s] : null;
 
 /// Mengenregel eines Artikels.
 ///
@@ -112,7 +124,7 @@ QuantityDefaults quantityDefaults(PosArticle a) {
 class PosArticle {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher', 'askPrice', 'reference'};
+  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher', 'askPrice', 'reference', 'addOns'};
 
   /// Die Felder von `tile`.
   static const Set<String> tileFields = {'visible', 'sort'};
@@ -139,6 +151,7 @@ class PosArticle {
     this.serviceVoucher = false,
     this.askPrice = false,
     this.reference,
+    this.addOns,
   });
 
   final String id;
@@ -205,6 +218,11 @@ class PosArticle {
   /// Kasse fragt beim Antippen eine Referenz ab; `null` = aus.
   final PosReference? reference;
 
+  /// Eigene Zusatzliste (Zusatz-Kacheln, 11.18.0): `null` = wie die Gruppe,
+  /// leer = keine, sonst die Liste in der Reihenfolge des Fensters. Wirksam
+  /// wird sie ueber [addOnsFor].
+  final List<String>? addOns;
+
   /// Aus der Drahtform `/api/v3` (`tile {visible, sort}`, `quantityRule`,
   /// `askQuantity`, `maxQuantity`, `revenueGroupId`, `stockLocationIds`,
   /// `number`, `ean`, `internalCode`, `stockTracked`, `serviceVoucher`).
@@ -256,6 +274,7 @@ class PosArticle {
       serviceVoucher: json['serviceVoucher'] == true,
       askPrice: json['askPrice'] == true,
       reference: PosReference.fromJson(json['reference']),
+      addOns: _addOnListe(json['addOns']),
     );
   }
 
@@ -282,6 +301,7 @@ class PosArticle {
         'serviceVoucher': serviceVoucher,
         'askPrice': askPrice,
         'reference': reference?.toJson(),
+        'addOns': addOns,
       };
 }
 

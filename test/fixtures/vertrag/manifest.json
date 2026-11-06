@@ -1,6 +1,14 @@
 {
   "ruleset": 2,
   "receipts": {
+    "add-ons": {
+      "input": "81454b7604b21673b8a49d0cdd78d5173a5b08df7aa4ee2696d85ec3b6e24e2f",
+      "expected": "8c9ddc99bc408454e8d7514907baa0f41f96b2e8c8c979187a7b2d25c9d74027",
+      "grid32": "043ad3f71b363ceaa2348ad1ed16cccea9c46fd004af57cb634b5dcdb406f1bd",
+      "grid48": "8c1b8afa90ffa0952064377d7ba9a43eb3046d02e46edf5e8ef19a804a1a5f7e",
+      "sheet32": "2171fb67a11e18f3aa3c50a6054b0e84f713e505b8c7435b166d3aa99bb25353",
+      "sheet48": "15209ce37e92d34026c9190fc91831978a21593dd2aa94898dd2b2a68989dc49"
+    },
     "cancellation-discount": {
       "input": "b44ef50c16b28c77060b0dabf5d3d6ea491b5e2d82d5f897024dddacbb076f91",
       "expected": "10d69fa60b7eb94d99e2ea3a77b934efc7836c04a075bae3da6a2a044711e9ca",

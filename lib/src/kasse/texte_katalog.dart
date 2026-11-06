@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.26.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.27.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.26.0';
+const String posTextsVersion = '1.27.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -550,6 +550,10 @@ const Map<String, PosText> posLabels = {
   'tile_prompt.quantity': PosText('Menge'),
   'tile_prompt.apply': PosText('Übernehmen'),
   'tile_prompt.apply_anyway': PosText('Trotzdem übernehmen'),
+  'addons.title': PosText('Zusätze zu {name}', placeholders: ['name']),
+  'addons.none': PosText('Ohne Zusatz'),
+  'addons.done': PosText('Fertig'),
+  'addons.open': PosText('Zusätze'),
   'voucher.tab': PosText('Gutscheine'),
   'voucher.enter_amount': PosText('Betrag eingeben'),
   'voucher.service_tile': PosText('Leistungsgutschein'),
