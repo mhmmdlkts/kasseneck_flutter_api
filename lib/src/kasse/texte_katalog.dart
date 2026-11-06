@@ -745,6 +745,21 @@ const Map<String, PosText> posLabels = {
   'shift_receipt.counted_before_payout': PosText('Gezählt'),
   'shift_receipt.difference_part_interim': PosText('davon Zwischenzählung'),
   'shift_receipt.difference_part_closing': PosText('davon Abschluss'),
+  'shift.state_closing': PosText('Schicht wird geschlossen'),
+  'shift.state_interim': PosText('Zwischenzählung'),
+  'shift.tips_paid_out': PosText('Trinkgeld ausgezahlt'),
+  'shift.difference_none': PosText('stimmt'),
+  'shift.start_new': PosText('Neue Schicht beginnen'),
+  'shift.drawer_from_to': PosText('{drawer} · {from} bis {to}', placeholders: ['drawer', 'from', 'to']),
+  'shift.running_since_by': PosText('{drawer} · läuft seit {time} ({name})', placeholders: ['drawer', 'time', 'name']),
+  'shift.z_receipt_printed': PosText('Z-Bon gedruckt'),
+  'shift.count_now': PosText('Jetzt zählen'),
+  'shift.interim_entry': PosText('Zwischenzählung'),
+  'drawer.open': PosText('Lade öffnen'),
+  'time.today_at': PosText('heute {time}', placeholders: ['time']),
+  'tip.summary_percent': PosText('Trinkgeld {tip} ({percent} %)', placeholders: ['tip', 'percent']),
+  'settings.tip_kinds': PosText('Trinkgeld-Arten'),
+  'settings.tip_start': PosText('Zuerst offen'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].

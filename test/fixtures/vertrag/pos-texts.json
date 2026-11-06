@@ -3006,6 +3006,68 @@
     },
     "shift_receipt.difference_part_closing": {
       "text": "davon Abschluss"
+    },
+    "shift.state_closing": {
+      "text": "Schicht wird geschlossen"
+    },
+    "shift.state_interim": {
+      "text": "Zwischenzählung"
+    },
+    "shift.tips_paid_out": {
+      "text": "Trinkgeld ausgezahlt"
+    },
+    "shift.difference_none": {
+      "text": "stimmt"
+    },
+    "shift.start_new": {
+      "text": "Neue Schicht beginnen"
+    },
+    "shift.drawer_from_to": {
+      "text": "{drawer} · {from} bis {to}",
+      "placeholders": [
+        "drawer",
+        "from",
+        "to"
+      ]
+    },
+    "shift.running_since_by": {
+      "text": "{drawer} · läuft seit {time} ({name})",
+      "placeholders": [
+        "drawer",
+        "time",
+        "name"
+      ]
+    },
+    "shift.z_receipt_printed": {
+      "text": "Z-Bon gedruckt"
+    },
+    "shift.count_now": {
+      "text": "Jetzt zählen"
+    },
+    "shift.interim_entry": {
+      "text": "Zwischenzählung"
+    },
+    "drawer.open": {
+      "text": "Lade öffnen"
+    },
+    "time.today_at": {
+      "text": "heute {time}",
+      "placeholders": [
+        "time"
+      ]
+    },
+    "tip.summary_percent": {
+      "text": "Trinkgeld {tip} ({percent} %)",
+      "placeholders": [
+        "tip",
+        "percent"
+      ]
+    },
+    "settings.tip_kinds": {
+      "text": "Trinkgeld-Arten"
+    },
+    "settings.tip_start": {
+      "text": "Zuerst offen"
     }
   },
   "returnDispositionLabels": {
