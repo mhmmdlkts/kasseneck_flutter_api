@@ -496,7 +496,7 @@ class PrintPaper {
       // Am Storno-Beleg wird ein verkaufter Wertgutschein zurueckgezahlt.
       final int vz = artOderNull(voucher) == VoucherType.value ? receipt.valueVoucherSign : 1;
 
-      if (voucher.isValid && voucher.action == VoucherAction.sell) {
+      if (voucherEntryValid(voucher) && voucher.action == VoucherAction.sell) {
         itemsByVat[VatRate.vat0] ??= [];
         itemsByVat[VatRate.vat0]!.add(KasseneckItem(
           name: voucher.receiptText,
@@ -509,7 +509,7 @@ class PrintPaper {
         String amount = '1  x ';
         // Mehrzweck mit Code (vor dem Stichtag nur als Eintrag): wie die Position im 0-%-Topf.
         final bool mehrzweck = isMultiPurposeWithCode(voucher);
-        final String text = mehrzweck ? 'Mehrzweckgutschein${voucherCodeSuffixText(voucher)}' : voucher.receiptText;
+        final String text = voucherSaleText(voucher);
         addDoubleText('$amount$text', '${formatCents(vz * (voucher.valueCents??0))} ${VatRate.vat0.category}', leftWidth: 7, rightWidth: 5);
         if (mehrzweck) _einzugText(multiPurposeVatNote);
       }

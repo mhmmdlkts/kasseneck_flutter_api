@@ -1,7 +1,11 @@
 import 'package:kasseneck_api/enums/voucher_action.dart';
 import 'package:kasseneck_api/enums/voucher_type.dart';
 
+import 'package:kreiseck_validator/kreiseck_validator.dart' show VoucherCode;
+
 import '../src/kasse/gutschein_wunsch.dart' show wunschFormGueltig;
+import '../src/kasse/lager.dart' show jsTrim;
+import '../src/receipt/gutschein_bon.dart' show externalVoucherLine;
 
 /// Artikel eines Leistungsgutscheins, wie der Server ihn festhaelt (am Beleg
 /// und in `checkVoucher`). Zwilling von `VoucherArticle` im npm-Paket.
@@ -63,10 +67,31 @@ class VoucherArticle {
 /// `KeckVoucher(action: sell, type: sorte.kind, typeId: sorte.id, amountCents: …)`.
 /// Am Draht darf die Art fehlen; ein so gelesener Wunsch hat keine Art
 /// ([hasType] ist `false`) und geht ohne `type` wieder hinaus.
+///
+/// **Fremdgutschein** (seit 11.21.0, Server 2026-11): ein Gutschein eines
+/// anderen Systems (Warenwirtschaft, Webshop) mit [source] `external` und
+/// seiner Nummer in [number]. Kein Code, kein Saldo, keine Pruefung: Art,
+/// Satz und Betrag sagt der Betrieb.
+/// `KeckVoucher(source: voucherSourceExternal, action: redeem, type: VoucherType.multiPurpose, number: 'W-77', amountCents: 300)`;
+/// Einzweck mit [vatRateBp] aus [externalVoucherVatRatesBp].
 class KeckVoucher {
 
   final String? name;
+
+  /// Code eines eigenen Gutscheins (Einloesung, Auszahlung); am gelesenen
+  /// Eintrag die Maske. Ein Wertgutschein der Altform mit frei getipptem Code
+  /// ist veraltet ([KeckVoucher.legacyValue]).
   final String? code;
+
+  /// Herkunft: [voucherSourceExternal] fuer einen Fremdgutschein, sonst
+  /// `null` (eigener Gutschein). Ein unbekannter Wert bleibt, wie gelesen.
+  final String? source;
+
+  /// Nummer des Fremdgutscheins (nur mit [source] `external`): nach
+  /// [normalizeExternalVoucherNumber] 1 bis 40 Zeichen aus `A-Z a-z 0-9 - _ . /`;
+  /// ein eigener Gutscheincode ist keine Fremdnummer. Steht voll am Bon.
+  final String? number;
+
   final VoucherAction action;
 
   /// Die Art; `null` nur bei einem gelesenen Verkauf ohne bekannte Art.
@@ -165,6 +190,8 @@ class KeckVoucher {
   KeckVoucher({
     String? name,
     String? code,
+    String? source,
+    String? number,
     required VoucherAction action,
     required VoucherType type,
     int? valueCents,
@@ -190,6 +217,8 @@ class KeckVoucher {
   }) : this._(
           name: name,
           code: code,
+          source: source,
+          number: number,
           action: action,
           type: type,
           valueCents: valueCents,
@@ -217,6 +246,8 @@ class KeckVoucher {
   KeckVoucher._({
     this.name,
     this.code,
+    this.source,
+    this.number,
     required this.action,
     required VoucherType? type,
     Object? typeRoh,
@@ -260,6 +291,23 @@ class KeckVoucher {
     );
   }
 
+  /// Wunsch der Altform: Wertgutschein mit frei getipptem Code
+  /// (`{action, type: value, code, valueCents}`). Gleich dem Konstruktor mit
+  /// [VoucherType.value]; nur damit der veraltete Weg einen Namen hat. Ein
+  /// gelesener Beleg ist davon nicht betroffen ([VoucherType.value] steht dort
+  /// an jedem Mehrzweck-Eintrag und bleibt gueltig).
+  @Deprecated('Server 2026-11: der Weg bleibt gueltig, die Antwort traegt deprecation '
+      '(KasseneckReceipt.deprecation). Den Code prueft niemand, steuerlich ist das ein fremder Mehrzweckgutschein: '
+      'einen Gutschein eines anderen Systems als Fremdgutschein senden (source: voucherSourceExternal, '
+      'type: VoucherType.multiPurpose, number, amountCents), eigene ueber eine Sorte (typeId) verkaufen und mit ihrem Code einloesen.')
+  factory KeckVoucher.legacyValue({
+    required VoucherAction action,
+    required String code,
+    required int valueCents,
+    String? name,
+  }) =>
+      KeckVoucher(action: action, type: VoucherType.value, code: code, valueCents: valueCents, name: name);
+
   /// Wert in Euro (Anzeige/Format — fuer Arithmetik [valueCents] nutzen).
   double? get value => valueCents == null ? null : valueCents! / 100;
 
@@ -267,7 +315,11 @@ class KeckVoucher {
   /// [VoucherAction.payout] oder Verkauf ueber eine Sorte ohne Art)? Ein
   /// gelesener Auszahlungseintrag (`type: value`, `action: payout`) zaehlt
   /// dazu, ein Verkauf mit unbekannter Art nicht.
-  bool get isNewForm => (_type?.isNewForm ?? _sortenVerkaufOhneArt) || action == VoucherAction.payout;
+  bool get isNewForm => (_type?.isNewForm ?? _sortenVerkaufOhneArt) || action == VoucherAction.payout || isExternal;
+
+  /// Fremdgutschein ([source] `external`)? Zwilling von `isExternalVoucher`
+  /// im npm-Paket.
+  bool get isExternal => source == voucherSourceExternal;
 
   /// Verkauf ueber eine Sorte, bei dem die Art fehlt (nicht: unbekannt ist).
   /// Zwilling von `istSortenVerkaufOhneArt` im npm-Paket.
@@ -303,6 +355,8 @@ class KeckVoucher {
     return KeckVoucher._(
       name: json['name'] as String?,
       code: json['code'] as String?,
+      source: _text(json['source']),
+      number: _text(json['number']),
       action: VoucherAction.values.firstWhere((e) => e.name == json['action'], orElse: () => VoucherAction.sell),
       type: art ?? (verkauf ? null : VoucherType.promo),
       typeRoh: typRoh,
@@ -344,6 +398,8 @@ class KeckVoucher {
 
   /// Die Felder der neuen Form, soweit gesetzt (Altbelege bleiben schlank).
   Map<String, dynamic> _neueFelder() => {
+        'source': ?source,
+        'number': ?number,
         'amountCents': ?amountCents,
         'articleId': ?articleId,
         'quantity': ?quantity,
@@ -406,6 +462,7 @@ class KeckVoucher {
   /// Sorte verkauft ([typeId], Form wie am Server). Ein Feld, das zu einer
   /// anderen Aktion/Art gehoert, weist der Server ab.
   bool get isValid {
+    if (isExternal) return externalVoucherIsValid(this);
     if (isNewForm) return wunschFormGueltig(this, sorteNoetig: true);
     // Ohne bekannte Art (unbekannter Verkauf) ist nichts sendbar.
     final type = _type;
@@ -460,6 +517,15 @@ class KeckVoucher {
 
   String get _neueFormText {
     final art = VoucherType.fromWire(voucherType) ?? _type;
+    final fremd = externalVoucherLine(this);
+    if (fremd != null) {
+      // Fremdgutschein: die Nummer voll, die Gutscheinart steht beim Verkauf im Namen der Position (vom Server).
+      if (action == VoucherAction.sell) {
+        final n = name?.trim() ?? '';
+        return n.startsWith(fremd) ? n : fremd;
+      }
+      return '${action == VoucherAction.payout ? 'Auszahlung ' : ''}$fremd';
+    }
     if (action == VoucherAction.sell) {
       final n = name?.trim() ?? '';
       final bezeichnung = n.toLowerCase().contains('gutschein') ? n : _artText(art);
@@ -495,6 +561,138 @@ class KeckVoucher {
     }
     return value.toStringAsFixed(0);
   }
+}
+
+// ---- Fremdgutscheine (Server 2026-11) ---------------------------------------
+
+/// Herkunft eines Fremdgutscheins ([KeckVoucher.source], Katalog `GUTSCHEIN_QUELLE`).
+const String voucherSourceExternal = 'external';
+
+/// Alle Herkuenfte eines Gutscheins (Zwilling von `VOUCHER_SOURCES`).
+const List<String> voucherSources = [voucherSourceExternal];
+
+/// Hoechstlaenge der Nummer eines Fremdgutscheins (nach dem Abschneiden des Rands).
+const int externalVoucherNumberMax = 40;
+
+/// Hoechstlaenge von [KeckVoucher.taxedWith] am Fremdgutschein (Beleg im
+/// fremden System, mit dem der Einzweckgutschein versteuert ist).
+const int externalVoucherTaxedWithMax = 40;
+
+/// Saetze, mit denen ein fremder Einzweckgutschein verkauft sein kann
+/// (Basispunkte): die Saetze der Kasse (20, 10, 13, 19, 4,9 %) und 0 =
+/// befreit verkauft (Kleinunternehmer).
+const List<int> externalVoucherVatRatesBp = [2000, 1000, 1300, 1900, 490, 0];
+
+final RegExp _fremdNummerMuster = RegExp(r'^[A-Za-z0-9\-_./]{1,40}$');
+
+/// Trenner einer Fremdnummer, die die Pruefung auf den eigenen Code wie `-` liest.
+final RegExp _fremdTrenner = RegExp(r'[._/]');
+
+/// Steuer- und Formatzeichen (`gutschein-core.STEUERZEICHEN`): nie in `taxedWith`.
+final RegExp _steuerzeichen = RegExp(r'[\p{Cc}\p{Cf}]', unicode: true);
+
+/// Nummer eines Fremdgutscheins in der Form, mit der der Server sie speichert
+/// und druckt (`gutschein-core.normiereFremdnummer`): Rand weg, **keine**
+/// Unicode-Normalisierung, Gross-/Kleinschreibung bleibt; dann 1 bis 40
+/// Zeichen aus `A-Z a-z 0-9 - _ . /`. Sonst `null`
+/// (`external_voucher_number_invalid`). Einen eigenen Gutscheincode erkennt
+/// erst [checkExternalVoucherNumber].
+///
+/// Der Rand ist der Leerraum von `String.prototype.trim` (ASCII, U+00A0,
+/// U+1680, U+2000-U+200A, U+2028, U+2029, U+202F, U+205F, U+3000, U+FEFF),
+/// bewusst ohne U+0085 (NEL), das Dart-`trim` mitnaehme: ein Steuerzeichen
+/// verschwindet nie still, es macht die Nummer ungueltig.
+String? normalizeExternalVoucherNumber(Object? text) {
+  if (text is! String) return null;
+  final n = jsTrim(text);
+  return _fremdNummerMuster.hasMatch(n) ? n : null;
+}
+
+/// Ergebnis von [checkExternalVoucherNumber]: die Nummer wie gespeichert
+/// ([ok] `true`, [number]) oder der Fehlercode des Servers ([code]).
+class ExternalVoucherNumberCheck {
+  const ExternalVoucherNumberCheck.ok(String this.number) : code = null;
+  const ExternalVoucherNumberCheck.rejected(String this.code) : number = null;
+
+  /// Die Nummer, wie der Server sie speichert; `null`, wenn abgewiesen.
+  final String? number;
+
+  /// `external_voucher_number_is_own_code` oder `external_voucher_number_invalid`; `null`, wenn gueltig.
+  final String? code;
+
+  bool get ok => code == null;
+
+  @override
+  bool operator ==(Object other) => other is ExternalVoucherNumberCheck && other.number == number && other.code == code;
+
+  @override
+  int get hashCode => Object.hash(number, code);
+
+  @override
+  String toString() => ok ? 'ExternalVoucherNumberCheck.ok($number)' : 'ExternalVoucherNumberCheck.rejected($code)';
+}
+
+/// Prueft eine Fremdnummer in der Reihenfolge des Servers
+/// (`gutschein-beleg.pruefeFremd`): zuerst, ob sie ein gueltiger eigener
+/// Gutscheincode ist (12 Zeichen mit Pruefzeichen, in jeder Schreibweise der
+/// Kasse, auch mit `.`, `_` oder `/` als Trenner) -- dann
+/// `external_voucher_number_is_own_code`, der Gutschein gehoert als eigener
+/// eingeloest --, danach die Form (`external_voucher_number_invalid`). Die
+/// Trenner liest nur die Pruefung als `-`; die Nummer behaelt ihre
+/// Schreibweise. Zwilling von `checkExternalVoucherNumber` im npm-Paket.
+ExternalVoucherNumberCheck checkExternalVoucherNumber(Object? text) {
+  if (text is String && VoucherCode.isValid(text.replaceAll(_fremdTrenner, '-'))) {
+    return const ExternalVoucherNumberCheck.rejected('external_voucher_number_is_own_code');
+  }
+  final number = normalizeExternalVoucherNumber(text);
+  return number == null
+      ? const ExternalVoucherNumberCheck.rejected('external_voucher_number_invalid')
+      : ExternalVoucherNumberCheck.ok(number);
+}
+
+bool _fremdCent(int? n) => n != null && n >= 1 && n <= 1000000;
+
+/// Ist der Fremdgutschein sendbar? Die Form wie `gutschein-beleg.pruefeFremd`
+/// (ohne die Freigabe des Kontos, die kennt nur der Server bzw.
+/// [PosVoucherSettings.externalVouchers]): Aktion `sell`/`redeem`/`payout`,
+/// Art [VoucherType.multiPurpose]/[VoucherType.singlePurpose], gueltige
+/// Nummer (kein eigener Code), Betrag 1 bis 1.000.000 Cent; Einzweck mit
+/// einem Satz aus [externalVoucherVatRatesBp], Mehrzweck ohne; `taxedWith`
+/// nur bei Einzweck-Einloesung bzw. -Auszahlung (1 bis 40 Zeichen ohne
+/// Steuerzeichen); Auszahlung mit Grund (1 bis 200 Zeichen). Felder eigener
+/// Gutscheine (Code, Sorte, Artikel, Menge, Positionen), ein Wert der Altform
+/// und Serverfelder nie. Zwilling von `externalVoucherIsValid` im npm-Paket.
+bool externalVoucherIsValid(KeckVoucher voucher) {
+  final v = voucher;
+  if (!v.isExternal) return false;
+  if (v.serverFields.isNotEmpty) return false;
+  // gutschein-beleg.NICHT_BEI_FREMD (ein in Dart nie gesetztes Feld geht auch nie hinaus).
+  if (v.code != null || v.typeId != null || v.articleId != null || v.article != null || v.quantity != null || v.positions != null) {
+    return false;
+  }
+  if (v.balanceAfterCents != null || v.remainingQuantityAfter != null || v.exempt != null) return false;
+  if (v.valueCents != null) return false;
+  if (v.action != VoucherAction.sell && v.action != VoucherAction.redeem && v.action != VoucherAction.payout) return false;
+  final art = v.hasType ? v.type : null;
+  if (art != VoucherType.multiPurpose && art != VoucherType.singlePurpose) return false;
+  if (!checkExternalVoucherNumber(v.number).ok) return false;
+  if (!_fremdCent(v.amountCents)) return false;
+  if (art == VoucherType.singlePurpose) {
+    if (!externalVoucherVatRatesBp.contains(v.vatRateBp)) return false;
+  } else if (v.vatRateBp != null) {
+    return false;
+  }
+  final belegt = v.taxedWith;
+  if (belegt != null) {
+    if (art != VoucherType.singlePurpose || v.action == VoucherAction.sell) return false;
+    final t = jsTrim(belegt);
+    if (t.isEmpty || t.length > externalVoucherTaxedWithMax || _steuerzeichen.hasMatch(t)) return false;
+  }
+  if (v.action == VoucherAction.payout) {
+    final g = jsTrim(v.reason ?? '');
+    if (g.isEmpty || g.length > 200) return false;
+  }
+  return true;
 }
 
 /// Ganze Zahl oder `null` (auch `3.0` gilt als ganz, `3.5` nicht).

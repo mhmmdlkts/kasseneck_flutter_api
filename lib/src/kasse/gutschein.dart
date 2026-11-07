@@ -169,6 +169,35 @@ final List<String> voucherTypeValidityPatterns = List.unmodifiable([for (final p
 /// Die Auszahlungswerte (Drahtwerte, wie `voucherPayouts` im Vertrag).
 final List<String> voucherPayouts = List.unmodifiable([for (final p in VoucherPayout.values) p.wire]);
 
+/// Freigabe fuer Fremdgutscheine des Kontos (`vouchers.externalVouchers`,
+/// Server 2026-11): [off] keine, [multiPurpose] nur Wertgutscheine (Mehrzweck)
+/// eines anderen Systems, [all] dazu Einzweckgutscheine. Die Kasse zeigt den
+/// Weg „Fremdgutschein“ nur ab [multiPurpose], die Art Einzweck nur bei
+/// [all]; der Server prueft dieselbe Freigabe (`external_voucher_not_enabled`,
+/// `external_voucher_type_not_enabled`). Die Test-Umgebung ist immer [all].
+/// Zwilling von `PosExternalVouchers` im npm-Paket.
+enum PosExternalVouchers {
+  off('off'),
+  multiPurpose('multi_purpose'),
+  all('all');
+
+  const PosExternalVouchers(this.wire);
+
+  /// Der Wert am Draht (`/v3`).
+  final String wire;
+
+  /// Die Freigabe zum Drahtwert; `null` fuer einen unbekannten Wert.
+  static PosExternalVouchers? fromWire(Object? wire) {
+    for (final f in values) {
+      if (f.wire == wire) return f;
+    }
+    return null;
+  }
+}
+
+/// Die Freigaben fuer Fremdgutscheine (Drahtwerte, wie `externalVouchers` im Vertrag).
+final List<String> externalVouchers = List.unmodifiable([for (final f in PosExternalVouchers.values) f.wire]);
+
 /// Betrag einer Gutschein-Sorte: frei (Zahlenfeld an der Kasse) oder fest
 /// (sofort in den Korb), Cent ganzzahlig.
 class VoucherTypeAmount {
@@ -609,6 +638,7 @@ class PosVoucherSettings {
     this.serviceArticles = false,
     this.labelDefault,
     this.returnType,
+    this.externalVouchers = PosExternalVouchers.off,
   });
 
   /// Ohne Block (alter Server, Konto ohne Schalter) oder bei einem unstimmigen
@@ -645,6 +675,11 @@ class PosVoucherSettings {
   /// wenn die Rueckgabe als Gutschein geht (Schalter, passende Sorte). Fehlt
   /// sie, zeigt die Kasse „Als Gutschein“ nicht. Unstimmig gelesen: `null`.
   final PosVoucherReturnType? returnType;
+
+  /// Freigabe fuer Fremdgutscheine (Server 2026-11). Fehlt sie am Draht
+  /// (aelterer Server) oder ist sie unbekannt, gilt [PosExternalVouchers.off];
+  /// das schliesst nur den Fremdgutschein, nie den Block.
+  final PosExternalVouchers externalVouchers;
 
   /// Block `vouchers`, geschlossen im Zweifel: ist irgendein Feld unstimmig,
   /// gilt der ganze Block als nicht gelesen und Verkaufen bleibt aus (kein
@@ -695,6 +730,7 @@ class PosVoucherSettings {
       serviceArticles: leistung,
       labelDefault: VoucherLabelTemplate.fromJson(block['labelDefault']),
       returnType: PosVoucherReturnType.fromJson(block['returnType']),
+      externalVouchers: PosExternalVouchers.fromWire(block['externalVouchers']) ?? PosExternalVouchers.off,
     );
   }
 
@@ -707,6 +743,7 @@ class PosVoucherSettings {
         'serviceArticles': serviceArticles,
         'labelDefault': labelDefault?.toJson(),
         if (returnType != null) 'returnType': returnType!.toJson(),
+        'externalVouchers': externalVouchers.wire,
       };
 
   @override
@@ -718,11 +755,12 @@ class PosVoucherSettings {
       other.typeSale == typeSale &&
       _listeGleich(other.types, types) &&
       other.serviceArticles == serviceArticles &&
-      other.labelDefault == labelDefault;
+      other.labelDefault == labelDefault &&
+      other.externalVouchers == externalVouchers;
 
   @override
   int get hashCode =>
-      Object.hash(sale, valueVoucherType, vatRateBp, typeSale, Object.hashAll(types), serviceArticles, labelDefault);
+      Object.hash(sale, valueVoucherType, vatRateBp, typeSale, Object.hashAll(types), serviceArticles, labelDefault, externalVouchers);
 }
 
 // ---------------------------------------------------------------- Aufrufe

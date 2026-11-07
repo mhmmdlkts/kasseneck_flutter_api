@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "6d19c6313438a44d5f522bcaf248de293c6e285dd891185a773e05e9eef6f45b",
-    "inputsSha256": "8b075b75474552e95e4c6ee4134ab6bd775706d9209d51ddc3b0c29ba0bd05dc",
+    "sha256": "b312e1d4ca6f6ee14d75ece21b803118598a651e0cb150c92e7c2ba4b0ae807a",
+    "inputsSha256": "55fb7653e10e0076ebb5131b307ce47884b4e3297a9c6d76e2d6b0e76ceb9099",
     "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
     "inputs": [
       "functions-kasse/article-endpoints.js",
@@ -15,6 +15,7 @@
       "functions-kasse/inventur-endpoints.js",
       "functions-kasse/inventur-lauf.js",
       "functions-kasse/konto-webhook-core.js",
+      "functions-kasse/konto-webhook-endpoints.js",
       "functions-kasse/lager-api-artikel.js",
       "functions-kasse/lager-api-buchen.js",
       "functions-kasse/lager-api-core.js",
@@ -1022,7 +1023,9 @@
             "reservation.released",
             "reservation.redeemed",
             "variant_group.created",
-            "variant_group.updated"
+            "variant_group.updated",
+            "receipt.created",
+            "receipt.cancelled"
           ]
         }
       }

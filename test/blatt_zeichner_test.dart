@@ -80,8 +80,8 @@ const _qrNativ = '\x1d(k'; // GS ( k
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('Blatt-Zeichner: alle Golden-Belege liegen vor (wie npm: 75)', () {
-    expect(_namen, hasLength(75));
+  test('Blatt-Zeichner: alle Golden-Belege liegen vor (wie npm: 77)', () {
+    expect(_namen, hasLength(77));
     for (final name in _namen) {
       for (final zeichen in [32, 48]) {
         expect(File('${_wurzel.path}/expected/$name.sheet$zeichen.json').existsSync(), isTrue, reason: '$name/$zeichen');

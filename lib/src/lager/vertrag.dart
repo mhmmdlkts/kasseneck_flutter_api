@@ -134,6 +134,10 @@ const List<String> webhookDeliveryStatuses = ['delivered', 'pending', 'failed', 
 /// (seit 10.5) tragen die Variantengruppe wie `getVariantGroup`; `updated`
 /// kommt nur bei einer aussen sichtbaren Aenderung (neuer Wert, neue oder
 /// stillgelegte Variante, Name, Vorgaben, Stilllegen der Gruppe).
+/// `receipt.created` und `receipt.cancelled` (Beleg-Webhooks, seit 11.21)
+/// tragen den Beleg wie `listReceipts` mit `view: full`
+/// ([receiptWebhookEvents]); sie brauchen das Modul Registrierkasse, nicht das
+/// Lager (sonst `webhook_event_not_available` beim Anlegen oder Aendern).
 const List<String> inventoryWebhookEvents = [
   'stock.changed',
   'stock.below_minimum',
@@ -145,7 +149,17 @@ const List<String> inventoryWebhookEvents = [
   'reservation.redeemed',
   'variant_group.created',
   'variant_group.updated',
+  'receipt.created',
+  'receipt.cancelled',
 ];
+
+/// Die Beleg-Ereignisse der Konto-Webhooks (seit 11.21): `receipt.created`
+/// fuer jeden neu signierten Beleg jeder Art (auch den Storno-Beleg),
+/// `receipt.cancelled` zusaetzlich fuer jeden Storno-Beleg. Ein Storno bringt
+/// also beide. Die Ereignis-ID ist je Beleg und Ereignis fest: darauf
+/// entdoppeln. Fehlt eine fortlaufende Belegnummer einer Kasse, den Zeitraum
+/// mit `listReceipts` nachholen.
+const List<String> receiptWebhookEvents = ['receipt.created', 'receipt.cancelled'];
 
 /// Die Felder der Huelle jeder Zustellung, in der Reihenfolge am Draht. Statt
 /// `partnerId` (Partner-Webhooks) traegt sie `accountId`; `test` steht nur auf
@@ -202,6 +216,11 @@ const int inventoryListLimitMax = 200;
 /// `too_many_counts` (mehr als [stocktakeCountsPerItemMax] Zaehlungen je
 /// Position und Runde) und `stocktake_not_closed` (das Protokoll gibt es erst
 /// nach dem Abschluss, auch nicht fuer eine abgebrochene Inventur).
+///
+/// Seit 11.21 nach `server_error` (die Stelle des Vertrags):
+/// `webhook_event_not_available` – ein Ereignis, dessen Modul dem Konto fehlt
+/// (`receipt.*` ohne Registrierkasse, `stock.*` u. a. ohne Lager), laesst sich
+/// nicht abonnieren; mit `field: events`.
 const List<String> inventoryErrorCodes = [
   'validation',
   'invalid_cursor',
@@ -215,6 +234,7 @@ const List<String> inventoryErrorCodes = [
   'module_inactive',
   'rate_limited',
   'server_error',
+  'webhook_event_not_available',
   'idempotency_key_required',
   'idempotency_conflict',
   'location_not_found',

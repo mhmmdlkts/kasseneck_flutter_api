@@ -473,6 +473,22 @@
       "sheet32": "e31c0e91f4451acb556df63f7aa257cad7d4387fa650ff081b255c391cca7dbc",
       "sheet48": "ed9c15507f66d6dcbc774abf35e423dd5a40f20ac5d722c4d579bcd37e923674"
     },
+    "voucher-external-redeem": {
+      "input": "d38ec0c80db3eb5e3d675cb60ee0beeba713279b2a2c29380dc1dd4ba6bd0cbd",
+      "expected": "8ae13c9114caa0da88ce46ff04cef1ecfc0577a5177b1852598c3287693c7ec9",
+      "grid32": "fcc74fb3afcd2249060a38f7c0b4cd0fe08f90e5732d653d48f10fc01448c616",
+      "grid48": "f4852bf86651b9d44664668c9dc0403391ac71c761f5a36a064082397e43e22d",
+      "sheet32": "134b38e314e623e430343eb26e3bacd8bdc228aa2180c439af316bd4cc64be60",
+      "sheet48": "efecc12e99c415bfa4875a1adacaf35ba1d1dd014d1c5a7be076b398bdd5c3d4"
+    },
+    "voucher-external-sale": {
+      "input": "681bff53c24137f7a3523b9f37d3f762f3cf1fabbd9c781c0f748ccd0dd8e75f",
+      "expected": "ae0aaf221f4279fe6470bcf7584070dafe980482c8cf086041fb1651ecf0fbef",
+      "grid32": "88af4d85824fb1134fc19dadcd44b929b786f2e57ad4a0a782363e58cfedda8a",
+      "grid48": "b41f01f35f8a22c8f517657fd2a15588c40dc19c4bb851ba4685a1919b68632a",
+      "sheet32": "4c85d47c9f3910f772c0b16a28bb6fcdfcda74aa09ca23366edd4a8fe5491497",
+      "sheet48": "060dff43e04d4148e28d8fe9ce21f46401c9beec8ee299551c946f55101ec064"
+    },
     "voucher-multi-purpose-redeem": {
       "input": "cc306b3a70a766aeee9b8728dda65d2f154997951b9c807ed67a85bac3a9a3c4",
       "expected": "dee72991b0d719fca51284046091d558beed0e10216248c2a3bea54c0fdb2072",

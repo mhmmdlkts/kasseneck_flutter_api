@@ -1,0 +1,2800 @@
+{
+  "hinweis": "Prüffälle Gutscheine am Beleg (gemeinsam/gutschein-beleg.js, Spec 2026-10-14 „Steuer- und Kassenregeln“). Vertrag mit Web-Kasse und App – Änderungen immer auf allen Seiten. Beträge in Cent, Sätze der Positionen in Prozent (interne Form), Sätze der Gutscheine in Basispunkten. Jede Zahl ist in `herleitung` von Hand begründet. `nulltopfAb` ist der Stichtag, mit dem die Fälle gerechnet sind (Test setzt ihn über die Emulator-Übersteuerung). `toepfeCents` nennt nur Töpfe ungleich 0. `sorten` sind die Gutschein-Sorten des Owner-Kontos, wie sie gespeichert sind (Id → Dokument, Stufe 4b); ein Wert-Verkauf nennt seine Sorte über `sorteId`. Ein Fall mit `stornoVon` ist der Vollstorno des genannten Falls, wie cancelReceipt ihn baut; seine `vouchers` nennen nur die Felder des Spiegels, die nicht vom Verkauf vergeben werden (gutscheinId und Maske fehlen). `fremd` ist die wirksame Freigabe des Kontos für Fremdgutscheine (aus|wert|beide, gutschein-core.fremdFreigabe); Einträge mit `quelle: 'extern'` sind Fremdgutscheine (Spec 2026-11-06) – ohne Dokument, ohne Buchung.",
+  "nulltopfAb": "2026-11-01",
+  "faelle": [
+    {
+      "name": "mz_verkauf_vor_stichtag",
+      "herleitung": "Sorte „Geschenkgutschein“ (Mehrzweck, Betrag frei, 1 Jahr einlösbar, Auszahlung erlaubt), 5000 am 20.10.2026, vor dem Stichtag 01.11.2026: keine Position, der Verkauf bleibt Eintrag type 'value' (Zahlungsmittel, berührt keinen Topf) mit Name „Geschenkgutschein (Mehrzweckgutschein)“, Sorte und Auszahlung. Töpfe 0, Zählerdelta 0. Zahlbetrag = 0 + Wertgutschein-Fluss +5000 = 5000. Gültigkeit 1 Jahr + 3 Jahre Rückzahlung ab 20.10.2026: einlösbar bis 20.10.2027, rückzahlbar bis 20.10.2030.",
+      "eingabe": {
+        "heute": "2026-10-20",
+        "sorten": { "s-geschenk": { "name": "Geschenkgutschein", "art": "mehrzweck", "betrag": { "modus": "frei" }, "gueltigkeit": { "muster": "jahre", "jahre": 1 }, "auszahlung": "erlaubt", "reihenfolge": 0, "aktiv": true, "verkauft": 4 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-geschenk", "betragCents": 5000 }]
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [{ "action": "sell", "type": "value", "art": "mehrzweck", "value": 50, "valueCents": 5000, "name": "Geschenkgutschein (Mehrzweckgutschein)", "sorteId": "s-geschenk", "sorteName": "Geschenkgutschein", "auszahlung": "erlaubt", "code": null, "codeEnde": null, "gutscheinId": null }],
+        "verkaeufe": [{ "index": 0, "art": "mehrzweck", "nennwertCents": 5000, "satzBp": null, "artikel": null, "stueck": null, "gueltigkeit": { "muster": "jahre", "jahre": 1, "einloesbarBis": "2027-10-20", "rueckzahlbarBis": "2030-10-20", "gueltigBis": null }, "kleinunternehmer": false, "sorteId": "s-geschenk", "sorteName": "Geschenkgutschein", "auszahlung": "erlaubt" }],
+        "buchungen": [],
+        "toepfeCents": {},
+        "zaehlerDeltaCents": 0,
+        "zahlbetragCents": 5000
+      }
+    },
+    {
+      "name": "mz_verkauf_ab_stichtag",
+      "herleitung": "Sorte „Geschenkgutschein“ (Mehrzweck, frei, 1 Jahr), 5000 am 05.11.2026, ab Stichtag: Position „Geschenkgutschein (Mehrzweckgutschein)“ 5000 im Satz 0 (kind voucher_float, kein Umsatz, Erlass 4.6.6), Eintrag mit imNullTopf. Töpfe: 0 % = 5000, Zählerdelta 5000. Zahlbetrag = 5000 aus dem Topf; der Eintrag zählt nicht noch einmal (imNullTopf) → 5000, nicht 10000. Gültigkeit 1 Jahr + 3: 05.11.2027 / 05.11.2030.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-geschenk": { "name": "Geschenkgutschein", "art": "mehrzweck", "betrag": { "modus": "frei" }, "gueltigkeit": { "muster": "jahre", "jahre": 1 }, "auszahlung": "erlaubt", "reihenfolge": 0, "aktiv": true, "verkauft": 4 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-geschenk", "betragCents": 5000 }]
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Geschenkgutschein (Mehrzweckgutschein)", "vat": 0, "vatRate": 0, "priceOne": 50, "priceOneCents": 5000, "unitPriceCents": 5000, "amount": 1, "quantity": 1, "kind": "voucher_float" }],
+        "vouchers": [{ "action": "sell", "type": "value", "art": "mehrzweck", "value": 50, "valueCents": 5000, "name": "Geschenkgutschein (Mehrzweckgutschein)", "sorteId": "s-geschenk", "sorteName": "Geschenkgutschein", "auszahlung": "erlaubt", "code": null, "codeEnde": null, "gutscheinId": null, "imNullTopf": true }],
+        "verkaeufe": [{ "index": 0, "art": "mehrzweck", "nennwertCents": 5000, "satzBp": null, "artikel": null, "stueck": null, "gueltigkeit": { "muster": "jahre", "jahre": 1, "einloesbarBis": "2027-11-05", "rueckzahlbarBis": "2030-11-05", "gueltigBis": null }, "kleinunternehmer": false, "sorteId": "s-geschenk", "sorteName": "Geschenkgutschein", "auszahlung": "erlaubt" }],
+        "buchungen": [],
+        "toepfeCents": { "amountRateZero": 5000 },
+        "zaehlerDeltaCents": 5000,
+        "zahlbetragCents": 5000
+      }
+    },
+    {
+      "name": "mz_einloesung_teil",
+      "herleitung": "Ware 2240 zu 20 %, Mehrzweck mit Saldo 5000 löst 1750 ein. Keine Zusatzposition (Ware in ihrem Satz, Gutschein ist Zahlung). Töpfe: 20 % = 2240, Zählerdelta 2240. Zahlbetrag = 2240 − 1750 = 490 (bar). Saldo danach 5000 − 1750 = 3250, Status bleibt aktiv.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Blumenstrauß", "priceOne": 22.4, "priceOneCents": 2240, "amount": 1, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "mehrzweck", "code": "7KQ2-M4PZ-9DWT", "gutscheinId": "g-mz-1", "betragCents": 1750 }],
+        "gutscheine": {
+          "g-mz-1": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "9DWT", "nennwertCents": 5000, "saldoCents": 5000, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2027-10-20", "rueckzahlbarBis": "2030-10-20", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-100", "fullReceiptId": "Zk9q100Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [{ "action": "redeem", "type": "value", "art": "mehrzweck", "value": 17.5, "valueCents": 1750, "name": "Gutschein", "code": "····-····-9DWT", "codeEnde": "9DWT", "gutscheinId": "g-mz-1", "saldoNachCents": 3250 }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-mz-1", "art": "einloesung", "betragCents": 1750, "saldoNachCents": 3250, "neuerStatus": "aktiv" }],
+        "toepfeCents": { "amountRateStandard": 2240 },
+        "zaehlerDeltaCents": 2240,
+        "zahlbetragCents": 490
+      }
+    },
+    {
+      "name": "mz_einloesung_gemischte_saetze",
+      "herleitung": "2 × 600 zu 20 % = 1200, 3 × 530 zu 10 % = 1590, Summe 2790. Mehrzweck mit Saldo 2500 löst alles ein. Töpfe bleiben je Satz (20 % = 1200, 10 % = 1590), Zählerdelta 2790. Zahlbetrag = 2790 − 2500 = 290. Saldo 0 → Status aufgebraucht.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Tulpen", "priceOne": 6, "priceOneCents": 600, "amount": 2, "vat": 20 },
+          { "name": "Torte", "priceOne": 5.3, "priceOneCents": 530, "amount": 3, "vat": 10 }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "mehrzweck", "code": "C8VD-2HJN-T6EB", "gutscheinId": "g-mz-2", "betragCents": 2500 }],
+        "gutscheine": {
+          "g-mz-2": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "T6EB", "nennwertCents": 2500, "saldoCents": 2500, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-98", "fullReceiptId": "Zk9q098Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [{ "action": "redeem", "type": "value", "art": "mehrzweck", "value": 25, "valueCents": 2500, "name": "Gutschein", "code": "····-····-T6EB", "codeEnde": "T6EB", "gutscheinId": "g-mz-2", "saldoNachCents": 0 }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-mz-2", "art": "einloesung", "betragCents": 2500, "saldoNachCents": 0, "neuerStatus": "aufgebraucht" }],
+        "toepfeCents": { "amountRateStandard": 1200, "amountRateReduced1": 1590 },
+        "zaehlerDeltaCents": 2790,
+        "zahlbetragCents": 290
+      }
+    },
+    {
+      "name": "mz_einloesung_ueber_summe",
+      "herleitung": "Ware 1000 zu 20 %, Mehrzweck (Saldo 5000) soll 1500 einlösen. Zahlbetrag wäre 1000 − 1500 = −500 < 0 → voucher_exceeds_total (der Saldo reicht, die Belegsumme nicht).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Blumenstrauß", "priceOne": 10, "priceOneCents": 1000, "amount": 1, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "mehrzweck", "code": "7KQ2-M4PZ-9DWT", "gutscheinId": "g-mz-1", "betragCents": 1500 }],
+        "gutscheine": {
+          "g-mz-1": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "9DWT", "nennwertCents": 5000, "saldoCents": 5000, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2027-10-20", "rueckzahlbarBis": "2030-10-20", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-100", "fullReceiptId": "Zk9q100Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_exceeds_total" }
+    },
+    {
+      "name": "mz_einloesung_deckt_trinkgeld_personal",
+      "herleitung": "Ware 2000 zu 20 %, Trinkgeld Personal 200 (0 %), Mehrzweck (Saldo 5000) soll 2100 einlösen. Zahlbetrag vor dem Gutschein 2200, danach 2200 − 2100 = 100 und damit unter dem Trinkgeld 200: der Gutschein würde 100 vom Trinkgeld mitdecken → voucher_exceeds_total (das Trinkgeld bleibt immer eigene Zahlung).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Blumenstrauß", "priceOne": 20, "priceOneCents": 2000, "amount": 1, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "priceOne": 2, "priceOneCents": 200, "amount": 1, "vat": 0, "paymentMethod": "cash", "recipient": null }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "mehrzweck", "code": "7KQ2-M4PZ-9DWT", "gutscheinId": "g-mz-1", "betragCents": 2100 }],
+        "gutscheine": {
+          "g-mz-1": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "9DWT", "nennwertCents": 5000, "saldoCents": 5000, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2027-10-20", "rueckzahlbarBis": "2030-10-20", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-100", "fullReceiptId": "Zk9q100Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_exceeds_total" }
+    },
+    {
+      "name": "mz_einloesung_deckt_trinkgeld_inhaber",
+      "herleitung": "Wie mz_einloesung_deckt_trinkgeld_personal, aber mit Trinkgeld des Inhabers (recipient.owner): Zahlbetrag nach dem Gutschein 100 < Trinkgeld 200 → voucher_exceeds_total. Personal und Inhaber zählen gleich.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Blumenstrauß", "priceOne": 20, "priceOneCents": 2000, "amount": 1, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld", "priceOne": 2, "priceOneCents": 200, "amount": 1, "vat": 0, "paymentMethod": "cash", "recipient": { "owner": true } }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "mehrzweck", "code": "7KQ2-M4PZ-9DWT", "gutscheinId": "g-mz-1", "betragCents": 2100 }],
+        "gutscheine": {
+          "g-mz-1": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "9DWT", "nennwertCents": 5000, "saldoCents": 5000, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2027-10-20", "rueckzahlbarBis": "2030-10-20", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-100", "fullReceiptId": "Zk9q100Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_exceeds_total" }
+    },
+    {
+      "name": "ez_verkauf_20",
+      "herleitung": "Sorte „Geschenkgutschein“ (Einzweck 20 % = 2000 Bp, fix 5000, unbefristet, Auszahlung nie); die Kasse schickt die Art mit (type einzweck, gleich der Sorte). Verkauf 5000 = Fixbetrag → Position „Geschenkgutschein (Einzweckgutschein 20 %)“ +5000 im Satz 20 % (kind voucher, USt sofort). Töpfe: 20 % = 5000, Zählerdelta 5000, Zahlbetrag 5000 (kein Wertgutschein-Fluss). Gültigkeit unbefristet, Auszahlung nie eingefroren.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-ez-50": { "name": "Geschenkgutschein", "art": "einzweck", "satzBp": 2000, "betrag": { "modus": "fix", "cents": 5000 }, "gueltigkeit": { "muster": "unbefristet" }, "auszahlung": "nie", "reihenfolge": 1, "aktiv": true, "verkauft": 0 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-ez-50", "type": "einzweck", "betragCents": 5000 }]
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Geschenkgutschein (Einzweckgutschein 20 %)", "vat": 20, "vatRate": 20, "priceOne": 50, "priceOneCents": 5000, "unitPriceCents": 5000, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "sell", "type": "einzweck", "art": "einzweck", "betragCents": 5000, "satzBp": 2000, "name": "Geschenkgutschein (Einzweckgutschein 20 %)", "sorteId": "s-ez-50", "sorteName": "Geschenkgutschein", "auszahlung": "nie", "code": null, "codeEnde": null, "gutscheinId": null }],
+        "verkaeufe": [{ "index": 0, "art": "einzweck", "nennwertCents": 5000, "satzBp": 2000, "artikel": null, "stueck": null, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "kleinunternehmer": false, "sorteId": "s-ez-50", "sorteName": "Geschenkgutschein", "auszahlung": "nie" }],
+        "buchungen": [],
+        "toepfeCents": { "amountRateStandard": 5000 },
+        "zaehlerDeltaCents": 5000,
+        "zahlbetragCents": 5000
+      }
+    },
+    {
+      "name": "ez_einloesung_zuzahlung",
+      "herleitung": "Maniküre 3500 zu 20 %, Einzweck 20 % (Saldo 5000) löst 3050 ein. Minuszeile „Gutschein ····-K7QX“ −3050 im Satz 20 %; Basis des Satzes 3500 ≥ 3050. Töpfe: 20 % = 3500 − 3050 = 450, Zählerdelta 450, Zahlbetrag 450 (bar). Saldo 5000 − 3050 = 1950. Vermerk versteuertMit = Verkaufsbeleg KASSE-01-ID-101.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 35, "priceOneCents": 3500, "amount": 1, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "code": "H3NB-Q8RA-K7QX", "gutscheinId": "g-ez-1", "betragCents": 3050 }],
+        "gutscheine": {
+          "g-ez-1": { "art": "einzweck", "status": "aktiv", "codeEnde": "K7QX", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-101", "fullReceiptId": "Zk9q101Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Gutschein ····-K7QX", "vat": 20, "vatRate": 20, "priceOne": -30.5, "priceOneCents": -3050, "unitPriceCents": -3050, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "art": "einzweck", "betragCents": 3050, "satzBp": 2000, "saldoNachCents": 1950, "versteuertMit": "KASSE-01-ID-101", "name": "Gutschein", "code": "····-····-K7QX", "codeEnde": "K7QX", "gutscheinId": "g-ez-1" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ez-1", "art": "einloesung", "betragCents": 3050, "saldoNachCents": 1950, "neuerStatus": "aktiv" }],
+        "toepfeCents": { "amountRateStandard": 450 },
+        "zaehlerDeltaCents": 450,
+        "zahlbetragCents": 450
+      }
+    },
+    {
+      "name": "ez_falscher_satz",
+      "herleitung": "Einzweck 20 % auf eine einzige Position zu 10 % (Pflegeöl 3500): Basis im Satz 20 % = 0 < 3050 → voucher_rate_mismatch (nie ein negativer Topf).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Pflegeöl", "priceOne": 35, "priceOneCents": 3500, "amount": 1, "vat": 10 }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "code": "H3NB-Q8RA-K7QX", "gutscheinId": "g-ez-1", "betragCents": 3050 }],
+        "gutscheine": {
+          "g-ez-1": { "art": "einzweck", "status": "aktiv", "codeEnde": "K7QX", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-101", "fullReceiptId": "Zk9q101Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_rate_mismatch" }
+    },
+    {
+      "name": "ez_zwei_gutscheine_ein_satz_zu_viel",
+      "herleitung": "Maniküre 3500 zu 20 %, zwei Einzweck 20 %: 3000 (Saldo 5000) und 1000 (Saldo 2000). Jeder für sich deckt Saldo und Basis, zusammen −4000 > Basis 3500 → voucher_rate_mismatch (Topf wäre −500).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 35, "priceOneCents": 3500, "amount": 1, "vat": 20 }],
+        "vouchers": [
+          { "action": "redeem", "type": "einzweck", "code": "H3NB-Q8RA-K7QX", "gutscheinId": "g-ez-1", "betragCents": 3000 },
+          { "action": "redeem", "type": "einzweck", "code": "F2GT-6KWD-M4PZ", "gutscheinId": "g-ez-2", "betragCents": 1000 }
+        ],
+        "gutscheine": {
+          "g-ez-1": { "art": "einzweck", "status": "aktiv", "codeEnde": "K7QX", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-101", "fullReceiptId": "Zk9q101Xv" } },
+          "g-ez-2": { "art": "einzweck", "status": "aktiv", "codeEnde": "M4PZ", "nennwertCents": 2000, "saldoCents": 2000, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-103", "fullReceiptId": "Zk9q103Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_rate_mismatch" }
+    },
+    {
+      "name": "ez_ku_einloesung_nach_wechsel",
+      "herleitung": "Einzweck 5000 als Kleinunternehmer befreit verkauft (eingefroren kleinunternehmer true, satzBp 0); der Betrieb ist inzwischen regelbesteuert. Die Einlösung ist keine eigene Leistung, es zählt der Status beim Verkauf (UStR Rz 4): der gedeckte Teil verlässt die besteuerten Töpfe. Korb 2000 @20 % + 2000 @10 %, Basis 4000. Einlösung 3000 anteilig: 20 % = 3000 · 2000/4000 = 1500, 10 % = 3000 · 2000/4000 = 1500, kein Rest. Minuszeilen −1500 @20 % und −1500 @10 %. Töpfe: 20 % = 500, 10 % = 500, Zählerdelta 1000, Zahlbetrag 1000. Saldo 5000 − 3000 = 2000. Vermerk befreit statt versteuertMit (steuerfrei verkauft).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 20, "priceOneCents": 2000, "amount": 1, "vat": 20 },
+          { "name": "Torte", "priceOne": 20, "priceOneCents": 2000, "amount": 1, "vat": 10 }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "code": "G4XR-7NPB-V2KM", "gutscheinId": "g-ez-ku", "betragCents": 3000 }],
+        "gutscheine": {
+          "g-ez-ku": { "art": "einzweck", "status": "aktiv", "codeEnde": "V2KM", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 0, "kleinunternehmer": true, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-80", "fullReceiptId": "Zk9q080Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [
+          { "name": "Gutschein ····-V2KM", "vat": 20, "vatRate": 20, "priceOne": -15, "priceOneCents": -1500, "unitPriceCents": -1500, "amount": 1, "quantity": 1, "kind": "voucher" },
+          { "name": "Gutschein ····-V2KM", "vat": 10, "vatRate": 10, "priceOne": -15, "priceOneCents": -1500, "unitPriceCents": -1500, "amount": 1, "quantity": 1, "kind": "voucher" }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "art": "einzweck", "betragCents": 3000, "satzBp": 0, "saldoNachCents": 2000, "befreit": true, "name": "Gutschein", "code": "····-····-V2KM", "codeEnde": "V2KM", "gutscheinId": "g-ez-ku" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ez-ku", "art": "einloesung", "betragCents": 3000, "saldoNachCents": 2000, "neuerStatus": "aktiv" }],
+        "toepfeCents": { "amountRateStandard": 500, "amountRateReduced1": 500 },
+        "zaehlerDeltaCents": 1000,
+        "zahlbetragCents": 1000
+      }
+    },
+    {
+      "name": "ez_ku_einloesung_ku_korb",
+      "herleitung": "Kleinunternehmer-Einzweck (satzBp 0, Saldo 5000) auf einen reinen 0-%-Korb: Maniküre 3500 @0 %. Einlösung 3050 ergibt eine einzige Minuszeile −3050 @0 %. Töpfe: 0 % = 3500 − 3050 = 450, Zählerdelta 450, Zahlbetrag 450. Saldo 1950. Vermerk befreit.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "kleinunternehmer": true,
+        "items": [{ "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 35, "priceOneCents": 3500, "amount": 1, "vat": 0 }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "code": "G4XR-7NPB-V2KM", "gutscheinId": "g-ez-ku", "betragCents": 3050 }],
+        "gutscheine": {
+          "g-ez-ku": { "art": "einzweck", "status": "aktiv", "codeEnde": "V2KM", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 0, "kleinunternehmer": true, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-80", "fullReceiptId": "Zk9q080Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Gutschein ····-V2KM", "vat": 0, "vatRate": 0, "priceOne": -30.5, "priceOneCents": -3050, "unitPriceCents": -3050, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "art": "einzweck", "betragCents": 3050, "satzBp": 0, "saldoNachCents": 1950, "befreit": true, "name": "Gutschein", "code": "····-····-V2KM", "codeEnde": "V2KM", "gutscheinId": "g-ez-ku" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ez-ku", "art": "einloesung", "betragCents": 3050, "saldoNachCents": 1950, "neuerStatus": "aktiv" }],
+        "toepfeCents": { "amountRateZero": 450 },
+        "zaehlerDeltaCents": 450,
+        "zahlbetragCents": 450
+      }
+    },
+    {
+      "name": "ez_regel_verkauft_ku_einloesung",
+      "herleitung": "Einzweck 20 % regelbesteuert verkauft (Saldo 5000, USt mit KASSE-01-ID-101 bezahlt), das einlösende Konto ist heute Kleinunternehmer: die Deckung gilt für alle Positionen ohne Trinkgeld, anteilig je Satz. Korb Maniküre 3500 @0 %, Einlösung 3050 → eine Minuszeile −3050 @0 %. Töpfe: 0 % = 3500 − 3050 = 450, Zählerdelta 450, Zahlbetrag 450. Saldo 1950; Vermerk versteuertMit bleibt (Verkauf war besteuert).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "kleinunternehmer": true,
+        "items": [{ "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 35, "priceOneCents": 3500, "amount": 1, "vat": 0 }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "code": "H3NB-Q8RA-K7QX", "gutscheinId": "g-ez-1", "betragCents": 3050 }],
+        "gutscheine": {
+          "g-ez-1": { "art": "einzweck", "status": "aktiv", "codeEnde": "K7QX", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-101", "fullReceiptId": "Zk9q101Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Gutschein ····-K7QX", "vat": 0, "vatRate": 0, "priceOne": -30.5, "priceOneCents": -3050, "unitPriceCents": -3050, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "art": "einzweck", "betragCents": 3050, "satzBp": 2000, "saldoNachCents": 1950, "versteuertMit": "KASSE-01-ID-101", "name": "Gutschein", "code": "····-····-K7QX", "codeEnde": "K7QX", "gutscheinId": "g-ez-1" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ez-1", "art": "einloesung", "betragCents": 3050, "saldoNachCents": 1950, "neuerStatus": "aktiv" }],
+        "toepfeCents": { "amountRateZero": 450 },
+        "zaehlerDeltaCents": 450,
+        "zahlbetragCents": 450
+      }
+    },
+    {
+      "name": "ez_rundung_wie_toepfe",
+      "herleitung": "Zwei Zeilen Rosen 1,33 € × 0,5 zu 20 % und Torte 5,00 € zu 10 %. Je Zeile 0,665 €; einzeln gerundet wären es 67 + 67 = 134, der Topf summiert aber erst in Euro (1,33 €) und rundet einmal → 133. Deckung im Satz 20 % = 133. Einzweck 20 % löst 133 ein: Minuszeile −133 @20 %. Töpfe: 20 % = 0, 10 % = 500, Zählerdelta 500, Zahlbetrag 500. Saldo 5000 − 133 = 4867.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Rosen", "priceOne": 1.33, "priceOneCents": 133, "amount": 0.5, "vat": 20 },
+          { "name": "Rosen", "priceOne": 1.33, "priceOneCents": 133, "amount": 0.5, "vat": 20 },
+          { "name": "Torte", "priceOne": 5, "priceOneCents": 500, "amount": 1, "vat": 10 }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "code": "H3NB-Q8RA-K7QX", "gutscheinId": "g-ez-1", "betragCents": 133 }],
+        "gutscheine": {
+          "g-ez-1": { "art": "einzweck", "status": "aktiv", "codeEnde": "K7QX", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-101", "fullReceiptId": "Zk9q101Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Gutschein ····-K7QX", "vat": 20, "vatRate": 20, "priceOne": -1.33, "priceOneCents": -133, "unitPriceCents": -133, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "art": "einzweck", "betragCents": 133, "satzBp": 2000, "saldoNachCents": 4867, "versteuertMit": "KASSE-01-ID-101", "name": "Gutschein", "code": "····-····-K7QX", "codeEnde": "K7QX", "gutscheinId": "g-ez-1" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ez-1", "art": "einloesung", "betragCents": 133, "saldoNachCents": 4867, "neuerStatus": "aktiv" }],
+        "toepfeCents": { "amountRateReduced1": 500 },
+        "zaehlerDeltaCents": 500,
+        "zahlbetragCents": 500
+      }
+    },
+    {
+      "name": "ez_rundung_wie_toepfe_zu_viel",
+      "herleitung": "Korb wie ez_rundung_wie_toepfe (Topf 20 % = 133, nicht 134). Einlösung 134 > 133 → voucher_rate_mismatch; sonst stünde der Topf 20 % auf −0,01 €.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Rosen", "priceOne": 1.33, "priceOneCents": 133, "amount": 0.5, "vat": 20 },
+          { "name": "Rosen", "priceOne": 1.33, "priceOneCents": 133, "amount": 0.5, "vat": 20 },
+          { "name": "Torte", "priceOne": 5, "priceOneCents": 500, "amount": 1, "vat": 10 }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "code": "H3NB-Q8RA-K7QX", "gutscheinId": "g-ez-1", "betragCents": 134 }],
+        "gutscheine": {
+          "g-ez-1": { "art": "einzweck", "status": "aktiv", "codeEnde": "K7QX", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-101", "fullReceiptId": "Zk9q101Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_rate_mismatch" }
+    },
+    {
+      "name": "alt_verkauf_und_code_einloesung",
+      "herleitung": "Alt-Wertgutschein 20,00 € verkauft und im selben Beleg ein Mehrzweck mit Code eingelöst: auch der Altform-Verkauf zählt als Verkauf, kein Gutschein wird mit einem Gutschein bezahlt → voucher_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Blumenstrauß", "priceOne": 22.4, "priceOneCents": 2240, "amount": 1, "vat": 20 }],
+        "vouchers": [
+          { "action": "sell", "type": "value", "code": "no-code", "value": 20, "name": "Wertgutschein" },
+          { "action": "redeem", "type": "mehrzweck", "code": "7KQ2-M4PZ-9DWT", "gutscheinId": "g-mz-1", "betragCents": 1000 }
+        ],
+        "gutscheine": {
+          "g-mz-1": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "9DWT", "nennwertCents": 5000, "saldoCents": 5000, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2027-10-20", "rueckzahlbarBis": "2030-10-20", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-100", "fullReceiptId": "Zk9q100Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_invalid" }
+    },
+    {
+      "name": "ez_einloesung_ueber_saldo",
+      "herleitung": "Maniküre 3500 zu 20 %, Einzweck 20 % mit Saldo 2000 soll 2500 einlösen: 2500 > 2000 → voucher_insufficient_balance (Basis 3500 hätte gereicht).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 35, "priceOneCents": 3500, "amount": 1, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "einzweck", "code": "F2GT-6KWD-M4PZ", "gutscheinId": "g-ez-2", "betragCents": 2500 }],
+        "gutscheine": {
+          "g-ez-2": { "art": "einzweck", "status": "aktiv", "codeEnde": "M4PZ", "nennwertCents": 2000, "saldoCents": 2000, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-103", "fullReceiptId": "Zk9q103Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_insufficient_balance" }
+    },
+    {
+      "name": "ez_kleinunternehmer_verkauf",
+      "herleitung": "Kleinunternehmer, Sorte „Geschenkgutschein“ Einzweck 20 % (frei, unbefristet): der Verkauf ist befreit, Satz 0 wird eingefroren (satzBp 0); der Satz der Sorte legt nur fest, wofür der Gutschein gilt. Position „Geschenkgutschein (Einzweckgutschein 0 %)“ +5000 im Satz 0 (kind voucher). Töpfe: 0 % = 5000, Zählerdelta 5000, Zahlbetrag 5000.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "kleinunternehmer": true,
+        "sorten": { "s-ez-frei": { "name": "Geschenkgutschein", "art": "einzweck", "satzBp": 2000, "betrag": { "modus": "frei" }, "gueltigkeit": { "muster": "unbefristet" }, "auszahlung": "erlaubt", "reihenfolge": 2, "aktiv": true, "verkauft": 0 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-ez-frei", "betragCents": 5000 }]
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Geschenkgutschein (Einzweckgutschein 0 %)", "vat": 0, "vatRate": 0, "priceOne": 50, "priceOneCents": 5000, "unitPriceCents": 5000, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "sell", "type": "einzweck", "art": "einzweck", "betragCents": 5000, "satzBp": 0, "name": "Geschenkgutschein (Einzweckgutschein 0 %)", "sorteId": "s-ez-frei", "sorteName": "Geschenkgutschein", "auszahlung": "erlaubt", "code": null, "codeEnde": null, "gutscheinId": null }],
+        "verkaeufe": [{ "index": 0, "art": "einzweck", "nennwertCents": 5000, "satzBp": 0, "artikel": null, "stueck": null, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "kleinunternehmer": true, "sorteId": "s-ez-frei", "sorteName": "Geschenkgutschein", "auszahlung": "erlaubt" }],
+        "buchungen": [],
+        "toepfeCents": { "amountRateZero": 5000 },
+        "zaehlerDeltaCents": 5000,
+        "zahlbetragCents": 5000
+      }
+    },
+    {
+      "name": "ls_verkauf_10x",
+      "herleitung": "Leistungsgutschein 10 × Maniküre zu 3000 je Stück, Artikel 20 %: Position „Leistungsgutschein Maniküre (10 Stück)“ 10 × 3000 = 30000 im Satz 20 % (Erlass 2.4.10.2). Töpfe: 20 % = 30000, Zählerdelta 30000, Zahlbetrag 30000. Eingefroren: Artikel (Id, Name, 2000 Bp, 3000), 10 Stück; Gültigkeit unbefristet (Stufe 2: Leistungsgutscheine laufen nie ab, Auszahlung ungenutzter Stück erst Stufe 2b); Leistung verkauft ohne Sorte, die Freigabe am Artikel prüft die Vorprüfung.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [],
+        "vouchers": [{ "action": "sell", "type": "leistung", "artikelId": "art-manikuere", "stueck": 10, "artikel": { "id": "art-manikuere", "name": "Maniküre", "vatRate": 20, "preisCents": 3000 } }]
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Leistungsgutschein Maniküre (10 Stück)", "vat": 20, "vatRate": 20, "priceOne": 300, "priceOneCents": 30000, "unitPriceCents": 30000, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "sell", "type": "leistung", "art": "leistung", "betragCents": 30000, "satzBp": 2000, "artikel": { "id": "art-manikuere", "name": "Maniküre", "satzBp": 2000, "preisCents": 3000 }, "stueck": 10, "name": "Leistungsgutschein Maniküre (10 Stück)", "code": null, "codeEnde": null, "gutscheinId": null }],
+        "verkaeufe": [{ "index": 0, "art": "leistung", "nennwertCents": 30000, "satzBp": 2000, "artikel": { "id": "art-manikuere", "name": "Maniküre", "satzBp": 2000, "preisCents": 3000 }, "stueck": 10, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "kleinunternehmer": false }],
+        "buchungen": [],
+        "toepfeCents": { "amountRateStandard": 30000 },
+        "zaehlerDeltaCents": 30000,
+        "zahlbetragCents": 30000
+      }
+    },
+    {
+      "name": "ls_einloesung_1_preis_gestiegen",
+      "herleitung": "Leistungsgutschein Maniküre (verkauft zu 3000, 10 Stück offen), Maniküre kostet heute 3500 (20 %). Einlösung von Position 0 (1 Stück): Minuszeile = − aktueller Positionsbetrag = −3500 im Satz der Position (20 %). Töpfe: 20 % = 3500 − 3500 = 0, Zählerdelta 0, Zahlbetrag 0. Offen danach 10 − 1 = 9.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 35, "priceOneCents": 3500, "amount": 1, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "leistung", "code": "Y5JC-8MBQ-R2D5", "gutscheinId": "g-ls-1", "positionen": [0] }],
+        "gutscheine": {
+          "g-ls-1": { "art": "leistung", "status": "aktiv", "codeEnde": "R2D5", "nennwertCents": 30000, "artikel": { "id": "art-manikuere", "name": "Maniküre", "satzBp": 2000, "preisCents": 3000 }, "stueck": 10, "stueckOffen": 10, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-102", "fullReceiptId": "Zk9q102Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Gutschein ····-R2D5", "vat": 20, "vatRate": 20, "priceOne": -35, "priceOneCents": -3500, "unitPriceCents": -3500, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "redeem", "type": "leistung", "art": "leistung", "artikelId": "art-manikuere", "stueck": 1, "positionen": [0], "betragCents": 3500, "satzBp": 2000, "stueckOffenNach": 9, "versteuertMit": "KASSE-01-ID-102", "name": "Gutschein", "code": "····-····-R2D5", "codeEnde": "R2D5", "gutscheinId": "g-ls-1" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ls-1", "art": "einloesung", "stueck": 1, "stueckOffenNach": 9, "neuerStatus": "aktiv" }],
+        "toepfeCents": {},
+        "zaehlerDeltaCents": 0,
+        "zahlbetragCents": 0
+      }
+    },
+    {
+      "name": "ls_einloesung_2_preis_gesunken",
+      "herleitung": "Leistungsgutschein Maniküre (verkauft zu 3000), heute 2 × 2500 zu 20 % in einer Position. Minuszeile = −(2 × 2500) = −5000 im Satz 20 %, nicht der alte Preis. Töpfe: 20 % = 5000 − 5000 = 0, Zählerdelta 0, Zahlbetrag 0. Offen 10 − 2 = 8.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 25, "priceOneCents": 2500, "amount": 2, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "leistung", "code": "Y5JC-8MBQ-R2D5", "gutscheinId": "g-ls-1", "positionen": [0] }],
+        "gutscheine": {
+          "g-ls-1": { "art": "leistung", "status": "aktiv", "codeEnde": "R2D5", "nennwertCents": 30000, "artikel": { "id": "art-manikuere", "name": "Maniküre", "satzBp": 2000, "preisCents": 3000 }, "stueck": 10, "stueckOffen": 10, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-102", "fullReceiptId": "Zk9q102Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Gutschein ····-R2D5", "vat": 20, "vatRate": 20, "priceOne": -50, "priceOneCents": -5000, "unitPriceCents": -5000, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "redeem", "type": "leistung", "art": "leistung", "artikelId": "art-manikuere", "stueck": 2, "positionen": [0], "betragCents": 5000, "satzBp": 2000, "stueckOffenNach": 8, "versteuertMit": "KASSE-01-ID-102", "name": "Gutschein", "code": "····-····-R2D5", "codeEnde": "R2D5", "gutscheinId": "g-ls-1" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ls-1", "art": "einloesung", "stueck": 2, "stueckOffenNach": 8, "neuerStatus": "aktiv" }],
+        "toepfeCents": {},
+        "zaehlerDeltaCents": 0,
+        "zahlbetragCents": 0
+      }
+    },
+    {
+      "name": "ls_falscher_artikel",
+      "herleitung": "Leistungsgutschein Maniküre soll Position 0 = Pediküre (anderer Artikel) einlösen → voucher_item_mismatch.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Pediküre", "articleId": "art-pedikuere", "priceOne": 32, "priceOneCents": 3200, "amount": 1, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "leistung", "code": "Y5JC-8MBQ-R2D5", "gutscheinId": "g-ls-1", "positionen": [0] }],
+        "gutscheine": {
+          "g-ls-1": { "art": "leistung", "status": "aktiv", "codeEnde": "R2D5", "nennwertCents": 30000, "artikel": { "id": "art-manikuere", "name": "Maniküre", "satzBp": 2000, "preisCents": 3000 }, "stueck": 10, "stueckOffen": 10, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-102", "fullReceiptId": "Zk9q102Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_item_mismatch" }
+    },
+    {
+      "name": "ls_einloesung_zu_viele_stueck",
+      "herleitung": "Leistungsgutschein Maniküre mit 1 offenem Stück, Position 0 = 2 × Maniküre: Menge 2 > 1 offen → voucher_insufficient_balance.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Maniküre", "articleId": "art-manikuere", "priceOne": 35, "priceOneCents": 3500, "amount": 2, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "leistung", "code": "Q1XH-4ZRG-D9PS", "gutscheinId": "g-ls-2", "positionen": [0] }],
+        "gutscheine": {
+          "g-ls-2": { "art": "leistung", "status": "aktiv", "codeEnde": "D9PS", "nennwertCents": 30000, "artikel": { "id": "art-manikuere", "name": "Maniküre", "satzBp": 2000, "preisCents": 3000 }, "stueck": 10, "stueckOffen": 1, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-95", "fullReceiptId": "Zk9q095Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_insufficient_balance" }
+    },
+    {
+      "name": "ak_betrag_gemischt",
+      "herleitung": "Aktion 1000 auf Geschenkkorb 2240 (20 %) + Torte 1190 (10 %), Basis 3430. Eintrag type promo 1000; Verteilung wie promo heute: 20 % floor(1000·2240/3430) = 653, 10 % floor(1000·1190/3430) = 346, Rest 1 Cent an den größten Topf (20 %) → 654. Töpfe: 20 % = 2240 − 654 = 1586, 10 % = 1190 − 346 = 844, Zählerdelta 2430 = 3430 − 1000, Zahlbetrag 2430. Aktion einmalig → aufgebraucht.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Geschenkkorb", "priceOne": 22.4, "priceOneCents": 2240, "amount": 1, "vat": 20 },
+          { "name": "Torte", "priceOne": 11.9, "priceOneCents": 1190, "amount": 1, "vat": 10 }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "aktion", "code": "B5WX-J2MC-P3AK", "gutscheinId": "g-ak-1" }],
+        "gutscheine": {
+          "g-ak-1": { "art": "aktion", "status": "aktiv", "codeEnde": "P3AK", "rabattCents": 1000, "rabattProzentBp": null, "eingeloest": false, "gueltigkeit": { "muster": "frei", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": "2026-12-31" }, "ausgabe": { "panel": true, "anlass": "aktion" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [{ "action": "redeem", "type": "promo", "art": "aktion", "value": 10, "valueCents": 1000, "name": "Aktion", "code": "····-····-P3AK", "codeEnde": "P3AK", "gutscheinId": "g-ak-1" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ak-1", "art": "einloesung", "betragCents": 1000, "neuerStatus": "aufgebraucht" }],
+        "toepfeCents": { "amountRateStandard": 1586, "amountRateReduced1": 844 },
+        "zaehlerDeltaCents": 2430,
+        "zahlbetragCents": 2430
+      }
+    },
+    {
+      "name": "ak_prozent_mit_trinkgeld",
+      "herleitung": "Aktion 10 % (1000 Bp) auf Geschenkkorb 2995 (20 %) + Torte 1250 (10 %) + Trinkgeld Personal 300 (0 %). Basis ohne Trinkgeld 4245 → floor(4245·1000/10000) = floor(424,5) = 424 (mit Trinkgeld wären es 454). Verteilung: 20 % floor(424·2995/4245) = 299, 10 % floor(424·1250/4245) = 124, Rest 1 → 20 % = 300. Töpfe: 20 % = 2995 − 300 = 2695, 10 % = 1250 − 124 = 1126, 0 % = Trinkgeld 300 ungekürzt. Zählerdelta 2695 + 1126 + 300 = 4121 = 4545 − 424, Zahlbetrag 4121.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Geschenkkorb", "priceOne": 29.95, "priceOneCents": 2995, "amount": 1, "vat": 20 },
+          { "name": "Torte", "priceOne": 12.5, "priceOneCents": 1250, "amount": 1, "vat": 10 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "priceOne": 3, "priceOneCents": 300, "amount": 1, "vat": 0, "paymentMethod": "cash", "recipient": null }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "aktion", "code": "S7NE-3VAK-W9TC", "gutscheinId": "g-ak-2" }],
+        "gutscheine": {
+          "g-ak-2": { "art": "aktion", "status": "aktiv", "codeEnde": "W9TC", "rabattCents": null, "rabattProzentBp": 1000, "eingeloest": false, "gueltigkeit": { "muster": "frei", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": "2026-12-31" }, "ausgabe": { "panel": true, "anlass": "aktion" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [{ "action": "redeem", "type": "promo", "art": "aktion", "value": 4.24, "valueCents": 424, "name": "Aktion", "code": "····-····-W9TC", "codeEnde": "W9TC", "gutscheinId": "g-ak-2" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ak-2", "art": "einloesung", "betragCents": 424, "neuerStatus": "aufgebraucht" }],
+        "toepfeCents": { "amountRateStandard": 2695, "amountRateReduced1": 1126, "amountRateZero": 300 },
+        "zaehlerDeltaCents": 4121,
+        "zahlbetragCents": 4121
+      }
+    },
+    {
+      "name": "ak_mit_weiterem_gutschein",
+      "herleitung": "Aktion zusammen mit einer Mehrzweck-Einlösung im selben Beleg: eine Aktion verträgt keinen weiteren Gutschein (wie promo heute) → voucher_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Geschenkkorb", "priceOne": 22.4, "priceOneCents": 2240, "amount": 1, "vat": 20 }],
+        "vouchers": [
+          { "action": "redeem", "type": "aktion", "code": "B5WX-J2MC-P3AK", "gutscheinId": "g-ak-1" },
+          { "action": "redeem", "type": "mehrzweck", "code": "7KQ2-M4PZ-9DWT", "gutscheinId": "g-mz-1", "betragCents": 500 }
+        ],
+        "gutscheine": {
+          "g-ak-1": { "art": "aktion", "status": "aktiv", "codeEnde": "P3AK", "rabattCents": 1000, "rabattProzentBp": null, "eingeloest": false, "gueltigkeit": { "muster": "frei", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": "2026-12-31" }, "ausgabe": { "panel": true, "anlass": "aktion" } },
+          "g-mz-1": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "9DWT", "nennwertCents": 5000, "saldoCents": 5000, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2027-10-20", "rueckzahlbarBis": "2030-10-20", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-100", "fullReceiptId": "Zk9q100Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_invalid" }
+    },
+    {
+      "name": "auszahlung_mz",
+      "herleitung": "Mehrzweck mit Saldo 3250, einlösbar bis 01.11.2026, rückzahlbar bis 01.11.2029; am 05.11.2026 abgelaufen, Auszahlung erlaubt (ohne Gebühr). Position „Auszahlung Gutschein ····-E4HS“ −3250 im Satz 0 (voucher_float). Töpfe: 0 % = −3250, Zählerdelta −3250, Zahlbetrag −3250 (an den Kunden). Der Eintrag trägt imNullTopf: der Betrag steht schon als Position im 0-%-Topf, Leser zählen ihn nicht noch einmal als Fluss. Saldo 0 → ausgezahlt.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [],
+        "vouchers": [{ "action": "payout", "type": "mehrzweck", "code": "N6QR-Z1FA-E4HS", "gutscheinId": "g-mz-3", "betragCents": 3250, "grund": "Rückzahlung Restwert nach Ablauf" }],
+        "gutscheine": {
+          "g-mz-3": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "E4HS", "nennwertCents": 5000, "saldoCents": 3250, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2026-11-01", "rueckzahlbarBis": "2029-11-01", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-90", "fullReceiptId": "Zk9q090Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Auszahlung Gutschein ····-E4HS", "vat": 0, "vatRate": 0, "priceOne": -32.5, "priceOneCents": -3250, "unitPriceCents": -3250, "amount": 1, "quantity": 1, "kind": "voucher_float" }],
+        "vouchers": [{ "action": "payout", "type": "value", "art": "mehrzweck", "value": 32.5, "valueCents": 3250, "name": "Auszahlung Gutschein", "code": "····-····-E4HS", "codeEnde": "E4HS", "gutscheinId": "g-mz-3", "saldoNachCents": 0, "grund": "Rückzahlung Restwert nach Ablauf", "imNullTopf": true }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-mz-3", "art": "auszahlung", "betragCents": 3250, "saldoNachCents": 0, "neuerStatus": "ausgezahlt" }],
+        "toepfeCents": { "amountRateZero": -3250 },
+        "zaehlerDeltaCents": -3250,
+        "zahlbetragCents": -3250
+      }
+    },
+    {
+      "name": "auszahlung_ez",
+      "herleitung": "Einzweck 20 % mit Saldo 1950 wird ausgezahlt: Position „Auszahlung Gutschein ····-H8NV“ −1950 im Satz 20 % (§ 16 UStG, Berichtigung des Verkaufs KASSE-01-ID-101). Töpfe: 20 % = −1950, Zählerdelta −1950, Zahlbetrag −1950. Saldo 0 → ausgezahlt.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [],
+        "vouchers": [{ "action": "payout", "type": "einzweck", "code": "J0KM-5TEY-H8NV", "gutscheinId": "g-ez-3", "betragCents": 1950, "grund": "Kundenwunsch" }],
+        "gutscheine": {
+          "g-ez-3": { "art": "einzweck", "status": "aktiv", "codeEnde": "H8NV", "nennwertCents": 5000, "saldoCents": 1950, "satzBp": 2000, "kleinunternehmer": false, "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-101", "fullReceiptId": "Zk9q101Xv" } }
+        }
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Auszahlung Gutschein ····-H8NV", "vat": 20, "vatRate": 20, "priceOne": -19.5, "priceOneCents": -1950, "unitPriceCents": -1950, "amount": 1, "quantity": 1, "kind": "voucher" }],
+        "vouchers": [{ "action": "payout", "type": "einzweck", "art": "einzweck", "betragCents": 1950, "satzBp": 2000, "saldoNachCents": 0, "versteuertMit": "KASSE-01-ID-101", "grund": "Kundenwunsch", "name": "Auszahlung Gutschein", "code": "····-····-H8NV", "codeEnde": "H8NV", "gutscheinId": "g-ez-3" }],
+        "verkaeufe": [],
+        "buchungen": [{ "gutscheinId": "g-ez-3", "art": "auszahlung", "betragCents": 1950, "saldoNachCents": 0, "neuerStatus": "ausgezahlt" }],
+        "toepfeCents": { "amountRateStandard": -1950 },
+        "zaehlerDeltaCents": -1950,
+        "zahlbetragCents": -1950
+      }
+    },
+    {
+      "name": "alt_promo_und_auszahlung",
+      "herleitung": "Alt-Rabattgutschein (type promo, 2,00 €) zusammen mit der Auszahlung eines Mehrzweckgutscheins (3250) im selben Beleg: belegToepfe verteilte den Rabatt anteilig auf die Töpfe – auch auf den 0-%-Topf der Auszahlungszeile, deren Summe negativ ist; die Verteilung wiche damit von jedem Beleg ohne Auszahlung ab. Eine Auszahlung verträgt keinen Alt-Rabatt im selben Beleg → voucher_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Blumenstrauß", "priceOne": 22.4, "priceOneCents": 2240, "amount": 1, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "promo", "code": "SOMMER", "value": 2, "name": "Rabattgutschein" }, { "action": "payout", "type": "mehrzweck", "code": "N6QR-Z1FA-E4HS", "gutscheinId": "g-mz-3", "betragCents": 3250, "grund": "Rückzahlung Restwert nach Ablauf" }],
+        "gutscheine": {
+          "g-mz-3": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "E4HS", "nennwertCents": 5000, "saldoCents": 3250, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2026-11-01", "rueckzahlbarBis": "2029-11-01", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-90", "fullReceiptId": "Zk9q090Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_invalid" }
+    },
+    {
+      "name": "alt_value_promo_unveraendert",
+      "herleitung": "Altbeleg ohne neue Form: Geschenkkorb 1000 (20 %) + Torte 500 (10 %), Alt-Promo 3,00 €. Nichts kommt dazu. Promo-Verteilung wie heute: 20 % floor(300·1000/1500) = 200, 10 % floor(300·500/1500) = 100, kein Rest. Töpfe: 20 % = 800, 10 % = 400, Zählerdelta 1200, Zahlbetrag 1200 (promo ist kein Fluss).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          { "name": "Geschenkkorb", "priceOne": 10, "priceOneCents": 1000, "amount": 1, "vat": 20 },
+          { "name": "Torte", "priceOne": 5, "priceOneCents": 500, "amount": 1, "vat": 10 }
+        ],
+        "vouchers": [{ "action": "redeem", "type": "promo", "code": "SOMMER", "value": 3, "name": "Promo-Gutschein" }]
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [{ "action": "redeem", "type": "promo", "code": "SOMMER", "value": 3, "name": "Promo-Gutschein" }],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": { "amountRateStandard": 800, "amountRateReduced1": 400 },
+        "zaehlerDeltaCents": 1200,
+        "zahlbetragCents": 1200
+      }
+    },
+    {
+      "name": "alt_value_einloesung_unveraendert",
+      "herleitung": "Altbeleg: Ware 1200 (20 %), Alt-Wertgutschein 5,00 € eingelöst. Nichts kommt dazu. Töpfe: 20 % = 1200, Zählerdelta 1200, Zahlbetrag 1200 − 500 = 700.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Geschenkkorb", "priceOne": 12, "priceOneCents": 1200, "amount": 1, "vat": 20 }],
+        "vouchers": [{ "action": "redeem", "type": "value", "code": "no-code", "value": 5, "name": "Wertgutschein" }]
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [{ "action": "redeem", "type": "value", "code": "no-code", "value": 5, "name": "Wertgutschein" }],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": { "amountRateStandard": 1200 },
+        "zaehlerDeltaCents": 1200,
+        "zahlbetragCents": 700
+      }
+    },
+    {
+      "name": "alt_value_verkauf_vor_stichtag_unveraendert",
+      "herleitung": "Alt-Wertgutschein 20,00 € verkauft am 20.10.2026, vor dem Stichtag: nichts kommt dazu, kein imNullTopf. Töpfe 0, Zählerdelta 0, Zahlbetrag = Fluss +2000.",
+      "eingabe": {
+        "heute": "2026-10-20",
+        "items": [],
+        "vouchers": [{ "action": "sell", "type": "value", "code": "no-code", "value": 20, "name": "Wertgutschein" }]
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [{ "action": "sell", "type": "value", "code": "no-code", "value": 20, "name": "Wertgutschein" }],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {},
+        "zaehlerDeltaCents": 0,
+        "zahlbetragCents": 2000
+      }
+    },
+    {
+      "name": "alt_value_verkauf_ab_stichtag",
+      "herleitung": "Alt-Wertgutschein 20,00 € ohne Code verkauft am 05.11.2026, ab Stichtag: Position „Mehrzweckgutschein“ 2000 im Satz 0 (voucher_float), Eintrag sonst unverändert plus imNullTopf. Kein Gutschein-Dokument (kein Verkauf in verkaeufe). Töpfe: 0 % = 2000, Zählerdelta 2000, Zahlbetrag 2000 (nicht 4000).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [],
+        "vouchers": [{ "action": "sell", "type": "value", "code": "no-code", "value": 20, "name": "Wertgutschein" }]
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Mehrzweckgutschein", "vat": 0, "vatRate": 0, "priceOne": 20, "priceOneCents": 2000, "unitPriceCents": 2000, "amount": 1, "quantity": 1, "kind": "voucher_float" }],
+        "vouchers": [{ "action": "sell", "type": "value", "code": "no-code", "value": 20, "name": "Wertgutschein", "imNullTopf": true }],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": { "amountRateZero": 2000 },
+        "zaehlerDeltaCents": 2000,
+        "zahlbetragCents": 2000
+      }
+    },
+    {
+      "name": "wert_verkauf_falsche_art",
+      "herleitung": "Die Sorte ist Einzweck 20 %, die Kasse schickt type mehrzweck mit (alte Sicht: die Sorte wurde umgestellt) → voucher_amount_mismatch wie ein geänderter Fixbetrag, die Kasse lädt die Sorten neu (die Art kommt aus der Sorte; type darf fehlen oder muss ihr gleichen).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-ez-50": { "name": "Geschenkgutschein", "art": "einzweck", "satzBp": 2000, "betrag": { "modus": "fix", "cents": 5000 }, "gueltigkeit": { "muster": "unbefristet" }, "auszahlung": "nie", "reihenfolge": 1, "aktiv": true, "verkauft": 0 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-ez-50", "type": "mehrzweck", "betragCents": 5000 }]
+      },
+      "erwartet": { "fehler": "voucher_amount_mismatch" }
+    },
+    {
+      "name": "sorte_unbekannt",
+      "herleitung": "Die Kasse nennt eine Sorte, die das Konto nicht hat (gelöscht oder nie angelegt) → voucher_type_not_found, kein Verkauf.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-geschenk": { "name": "Geschenkgutschein", "art": "mehrzweck", "betrag": { "modus": "frei" }, "gueltigkeit": { "muster": "jahre", "jahre": 1 }, "auszahlung": "erlaubt", "reihenfolge": 0, "aktiv": true, "verkauft": 4 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-gibt-es-nicht", "betragCents": 5000 }]
+      },
+      "erwartet": { "fehler": "voucher_type_not_found" }
+    },
+    {
+      "name": "wert_verkauf_ohne_sorte",
+      "herleitung": "Wert-Verkauf in der Form der Stufe 3 (type einzweck, ohne sorteId): Verkäufe gehen nur noch über eine Sorte → voucher_type_required.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-ez-frei": { "name": "Geschenkgutschein", "art": "einzweck", "satzBp": 2000, "betrag": { "modus": "frei" }, "gueltigkeit": { "muster": "unbefristet" }, "auszahlung": "erlaubt", "reihenfolge": 2, "aktiv": true, "verkauft": 0 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "type": "einzweck", "betragCents": 5000 }]
+      },
+      "erwartet": { "fehler": "voucher_type_required" }
+    },
+    {
+      "name": "verkauf_und_einloesung",
+      "herleitung": "Mehrzweck-Verkauf 5000 und Mehrzweck-Einlösung 1000 im selben Beleg: kein Gutschein wird mit einem Gutschein bezahlt → voucher_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-geschenk": { "name": "Geschenkgutschein", "art": "mehrzweck", "betrag": { "modus": "frei" }, "gueltigkeit": { "muster": "jahre", "jahre": 1 }, "auszahlung": "erlaubt", "reihenfolge": 0, "aktiv": true, "verkauft": 4 } },
+        "items": [{ "name": "Blumenstrauß", "priceOne": 22.4, "priceOneCents": 2240, "amount": 1, "vat": 20 }],
+        "vouchers": [
+          { "action": "sell", "sorteId": "s-geschenk", "betragCents": 5000 },
+          { "action": "redeem", "type": "mehrzweck", "code": "7KQ2-M4PZ-9DWT", "gutscheinId": "g-mz-1", "betragCents": 1000 }
+        ],
+        "gutscheine": {
+          "g-mz-1": { "art": "mehrzweck", "status": "aktiv", "codeEnde": "9DWT", "nennwertCents": 5000, "saldoCents": 5000, "kleinunternehmer": false, "gueltigkeit": { "muster": "1+3", "einloesbarBis": "2027-10-20", "rueckzahlbarBis": "2030-10-20", "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-100", "fullReceiptId": "Zk9q100Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_invalid" }
+    },
+    {
+      "name": "sorte_frei_3250",
+      "herleitung": "Sorte „Geschenkgutschein“ (Mehrzweck, Betrag frei, 3 Jahre einlösbar, Auszahlung erlaubt), 3250 am 05.11.2026, ab Stichtag: Position „Geschenkgutschein (Mehrzweckgutschein)“ 3250 im Satz 0 (voucher_float), Eintrag mit imNullTopf. Töpfe: 0 % = 3250, Zählerdelta 3250, Zahlbetrag 3250. Gültigkeit 3 Jahre + 3 Jahre Rückzahlung: einlösbar bis 05.11.2029, rückzahlbar bis 05.11.2032.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-drei-jahre": { "name": "Geschenkgutschein", "art": "mehrzweck", "betrag": { "modus": "frei" }, "gueltigkeit": { "muster": "jahre", "jahre": 3 }, "auszahlung": "erlaubt", "reihenfolge": 3, "aktiv": true, "verkauft": 0 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-drei-jahre", "betragCents": 3250 }]
+      },
+      "erwartet": {
+        "positionen": [{ "name": "Geschenkgutschein (Mehrzweckgutschein)", "vat": 0, "vatRate": 0, "priceOne": 32.5, "priceOneCents": 3250, "unitPriceCents": 3250, "amount": 1, "quantity": 1, "kind": "voucher_float" }],
+        "vouchers": [{ "action": "sell", "type": "value", "art": "mehrzweck", "value": 32.5, "valueCents": 3250, "name": "Geschenkgutschein (Mehrzweckgutschein)", "sorteId": "s-drei-jahre", "sorteName": "Geschenkgutschein", "auszahlung": "erlaubt", "code": null, "codeEnde": null, "gutscheinId": null, "imNullTopf": true }],
+        "verkaeufe": [{ "index": 0, "art": "mehrzweck", "nennwertCents": 3250, "satzBp": null, "artikel": null, "stueck": null, "gueltigkeit": { "muster": "jahre", "jahre": 3, "einloesbarBis": "2029-11-05", "rueckzahlbarBis": "2032-11-05", "gueltigBis": null }, "kleinunternehmer": false, "sorteId": "s-drei-jahre", "sorteName": "Geschenkgutschein", "auszahlung": "erlaubt" }],
+        "buchungen": [],
+        "toepfeCents": { "amountRateZero": 3250 },
+        "zaehlerDeltaCents": 3250,
+        "zahlbetragCents": 3250
+      }
+    },
+    {
+      "name": "sorte_fix_falscher_betrag",
+      "herleitung": "Sorte mit Fixbetrag 5000, die Kasse schickt 4000 (alte Sicht der Sorte) → voucher_amount_mismatch, kein Verkauf; die Kasse lädt die Einstellungen neu.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-ez-50": { "name": "Geschenkgutschein", "art": "einzweck", "satzBp": 2000, "betrag": { "modus": "fix", "cents": 5000 }, "gueltigkeit": { "muster": "unbefristet" }, "auszahlung": "nie", "reihenfolge": 1, "aktiv": true, "verkauft": 0 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-ez-50", "betragCents": 4000 }]
+      },
+      "erwartet": { "fehler": "voucher_amount_mismatch" }
+    },
+    {
+      "name": "sorte_inaktiv",
+      "herleitung": "Die Sorte ist deaktiviert (aktiv false, schon 3 verkauft): keine neuen Verkäufe → voucher_type_not_found. Verkaufte Gutscheine dieser Sorte bleiben einlösbar.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "sorten": { "s-alt": { "name": "Sommergutschein", "art": "mehrzweck", "betrag": { "modus": "frei" }, "gueltigkeit": { "muster": "unbefristet" }, "auszahlung": "erlaubt", "reihenfolge": 4, "aktiv": false, "verkauft": 3 } },
+        "items": [],
+        "vouchers": [{ "action": "sell", "sorteId": "s-alt", "betragCents": 2000 }]
+      },
+      "erwartet": { "fehler": "voucher_type_not_found" }
+    },
+    {
+      "name": "auszahlung_nie",
+      "herleitung": "Einzweck 20 % aus einer Sorte mit Auszahlung „nie“ (eingefroren am Gutschein, unbefristet), Saldo 5000: Auszahlung → voucher_payout_not_allowed, kein Beleg. Einlösen bleibt erlaubt.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [],
+        "vouchers": [{ "action": "payout", "type": "einzweck", "code": "B5WD-Q2HT-M3XB", "gutscheinId": "g-ez-nie", "betragCents": 5000, "grund": "Kundenwunsch" }],
+        "gutscheine": {
+          "g-ez-nie": { "art": "einzweck", "status": "aktiv", "codeEnde": "M3XB", "nennwertCents": 5000, "saldoCents": 5000, "satzBp": 2000, "kleinunternehmer": false, "sorteId": "s-ez-50", "sorteName": "Geschenkgutschein", "auszahlung": "nie", "gueltigkeit": { "muster": "unbefristet", "einloesbarBis": null, "rueckzahlbarBis": null, "gueltigBis": null }, "ausgabe": { "receiptId": "KASSE-01-ID-120", "fullReceiptId": "Zk9q120Xv" } }
+        }
+      },
+      "erwartet": { "fehler": "voucher_payout_not_allowed" }
+    },
+    {
+      "name": "ez_verkauf_20_storniert",
+      "herleitung": "Einzweck 20 % Verkauf storniert: Satz 20 % negativ. Vollstorno des unberührten Verkaufs aus ez_verkauf_20 (Geschenkgutschein, Einzweck 20 %, 5000): cancelReceipt spiegelt die Position „Geschenkgutschein (Einzweckgutschein 20 %)“ mit −5000 im Satz 20 % (kind voucher bleibt) und den Eintrag des Verkaufs (Art, Betrag, Satz, Name). Töpfe: 20 % = −5000 – die beim Verkauf sofort angefallene USt wird berichtigt (5000 brutto = 4166,67 netto + 833,33 USt, beide negativ); Zählerdelta −5000, Zahlbetrag −5000 (an den Kunden). Die Gegenbuchung am Gutschein (storno_verkauf) rechnet die Transaktion des Stornos.",
+      "eingabe": { "stornoVon": "ez_verkauf_20" },
+      "erwartet": {
+        "positionen": [{ "name": "Geschenkgutschein (Einzweckgutschein 20 %)", "quantity": 1, "unitPriceCents": -5000, "vatRate": 20, "kind": "voucher", "amount": 1, "vat": 20, "priceOneCents": -5000, "priceOne": -50 }],
+        "vouchers": [{ "action": "sell", "type": "einzweck", "name": "Geschenkgutschein (Einzweckgutschein 20 %)", "art": "einzweck", "betragCents": 5000, "satzBp": 2000 }],
+        "toepfeCents": { "amountRateStandard": -5000 },
+        "zaehlerDeltaCents": -5000,
+        "zahlbetragCents": -5000
+      }
+    },
+    {
+      "name": "kunden_position_voucher",
+      "herleitung": "Die Kasse schickt selbst eine Position kind voucher auf einem Standardbeleg: Gutscheinzeilen entstehen nur am Server (Ausnahme Storno-Spiegel) → voucher_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [{ "name": "Einzweckgutschein 20 %", "priceOne": 50, "priceOneCents": 5000, "amount": 1, "vat": 20, "kind": "voucher" }],
+        "vouchers": []
+      },
+      "erwartet": { "fehler": "voucher_invalid" }
+    },
+    {
+      "name": "ez_ku_konto_regel_einzweck",
+      "herleitung": "Kleinunternehmer-Konto löst einen eigenen, regelbesteuert verkauften Einzweck 20 % (Saldo 5000) über 1500 ein (Zweig „|| ku“): der gedeckte Teil verlässt anteilig alle Töpfe. Korb 2000 zu 20 % + 1000 zu 10 % = 3000; 20 %: 1500 · 2000/3000 = 1000, 10 %: 1500 · 1000/3000 = 500, kein Rest. Minuszeilen „Gutschein ····-K7QX“ −1000 (20 %) und −500 (10 %) in Topf-Reihenfolge. Töpfe 20 % = 1000, 10 % = 500, Zählerdelta 1500, Zahlbetrag 1500. Vermerk versteuertMit KASSE-01-ID-101, Saldo 3500, Status aktiv.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "kleinunternehmer": true,
+        "items": [
+          {
+            "name": "Maniküre",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          },
+          {
+            "name": "Torte",
+            "priceOne": 10,
+            "priceOneCents": 1000,
+            "amount": 1,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "einzweck",
+            "code": "H3NB-Q8RA-K7QX",
+            "gutscheinId": "g-ez-1",
+            "betragCents": 1500
+          }
+        ],
+        "gutscheine": {
+          "g-ez-1": {
+            "art": "einzweck",
+            "status": "aktiv",
+            "codeEnde": "K7QX",
+            "nennwertCents": 5000,
+            "saldoCents": 5000,
+            "satzBp": 2000,
+            "kleinunternehmer": false,
+            "gueltigkeit": {
+              "muster": "unbefristet",
+              "einloesbarBis": null,
+              "rueckzahlbarBis": null,
+              "gueltigBis": null
+            },
+            "ausgabe": {
+              "receiptId": "KASSE-01-ID-101",
+              "fullReceiptId": "Zk9q101Xv"
+            }
+          }
+        }
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein ····-K7QX",
+            "vat": 20,
+            "vatRate": 20,
+            "priceOne": -10,
+            "priceOneCents": -1000,
+            "unitPriceCents": -1000,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          },
+          {
+            "name": "Gutschein ····-K7QX",
+            "vat": 10,
+            "vatRate": 10,
+            "priceOne": -5,
+            "priceOneCents": -500,
+            "unitPriceCents": -500,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "betragCents": 1500,
+            "satzBp": 2000,
+            "saldoNachCents": 3500,
+            "versteuertMit": "KASSE-01-ID-101",
+            "name": "Gutschein",
+            "code": "····-····-K7QX",
+            "codeEnde": "K7QX",
+            "gutscheinId": "g-ez-1"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [
+          {
+            "gutscheinId": "g-ez-1",
+            "art": "einloesung",
+            "betragCents": 1500,
+            "saldoNachCents": 3500,
+            "neuerStatus": "aktiv"
+          }
+        ],
+        "toepfeCents": {
+          "amountRateStandard": 1000,
+          "amountRateReduced1": 500
+        },
+        "zaehlerDeltaCents": 1500,
+        "zahlbetragCents": 1500
+      }
+    },
+    {
+      "name": "fg_mz_verkauf",
+      "herleitung": "Fremder Wertgutschein (Mehrzweck) W-77 über 3000 verkauft, Freigabe „wert“, ab Stichtag. Position „Gutschein Nr. W-77 (Mehrzweckgutschein)“ +3000 im 0-%-Topf (voucher_float), kein Umsatz. Eintrag mit imNullTopf (zählt nicht noch einmal als Fluss). Töpfe 0 % = 3000, Zählerdelta 3000, Zahlbetrag 3000. Kein Gutscheindokument: verkaeufe und buchungen leer.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "mehrzweck",
+            "nummer": "W-77",
+            "betragCents": 3000
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. W-77 (Mehrzweckgutschein)",
+            "vat": 0,
+            "vatRate": 0,
+            "priceOne": 30,
+            "priceOneCents": 3000,
+            "unitPriceCents": 3000,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher_float"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-77",
+            "value": 30,
+            "valueCents": 3000,
+            "name": "Gutschein Nr. W-77 (Mehrzweckgutschein)",
+            "imNullTopf": true
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateZero": 3000
+        },
+        "zaehlerDeltaCents": 3000,
+        "zahlbetragCents": 3000
+      }
+    },
+    {
+      "name": "fg_mz_einloesung",
+      "herleitung": "Bier 450 zu 20 %, fremder Wertgutschein W-77 löst 300 ein (Freigabe „wert“). Keine Position: Mehrzweck mindert nur den Zahlbetrag (Gutschein-Fluss). Töpfe 20 % = 450, Zählerdelta 450, Zahlbetrag 450 − 300 = 150. Eintrag „Gutschein Nr. W-77“ ohne Saldo (Guthaben kennt nur das fremde System).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Bier 0,5",
+            "priceOne": 4.5,
+            "priceOneCents": 450,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-77",
+            "betragCents": 300
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-77",
+            "value": 3,
+            "valueCents": 300,
+            "name": "Gutschein Nr. W-77"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 450
+        },
+        "zaehlerDeltaCents": 450,
+        "zahlbetragCents": 150
+      }
+    },
+    {
+      "name": "fg_mz_auszahlung",
+      "herleitung": "Fremder Wertgutschein W-78, 1500 ausgezahlt (Grund Kundenwunsch). Position „Auszahlung Gutschein Nr. W-78“ −1500 im 0-%-Topf (voucher_float), Eintrag imNullTopf. Töpfe 0 % = −1500, Zählerdelta −1500, Zahlbetrag −1500 (an den Kunden).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "payout",
+            "type": "mehrzweck",
+            "nummer": "W-78",
+            "betragCents": 1500,
+            "grund": "Kundenwunsch"
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Auszahlung Gutschein Nr. W-78",
+            "vat": 0,
+            "vatRate": 0,
+            "priceOne": -15,
+            "priceOneCents": -1500,
+            "unitPriceCents": -1500,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher_float"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "payout",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-78",
+            "value": 15,
+            "valueCents": 1500,
+            "name": "Auszahlung Gutschein Nr. W-78",
+            "grund": "Kundenwunsch",
+            "imNullTopf": true
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateZero": -1500
+        },
+        "zaehlerDeltaCents": -1500,
+        "zahlbetragCents": -1500
+      }
+    },
+    {
+      "name": "fg_ez_verkauf_20",
+      "herleitung": "Fremder Einzweckgutschein FG-1234 über 2000 zu 20 % verkauft (Freigabe „beide“). USt sofort: Position „Gutschein Nr. FG-1234 (Einzweckgutschein 20 %)“ +2000 im Satz 20 % (kind voucher). Töpfe 20 % = 2000, Zählerdelta 2000, Zahlbetrag 2000.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "einzweck",
+            "nummer": "FG-1234",
+            "betragCents": 2000,
+            "satzBp": 2000
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-1234 (Einzweckgutschein 20 %)",
+            "vat": 20,
+            "vatRate": 20,
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "unitPriceCents": 2000,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-1234",
+            "betragCents": 2000,
+            "satzBp": 2000,
+            "name": "Gutschein Nr. FG-1234 (Einzweckgutschein 20 %)"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 2000
+        },
+        "zaehlerDeltaCents": 2000,
+        "zahlbetragCents": 2000
+      }
+    },
+    {
+      "name": "fg_ez_und_mz_einloesung_bon",
+      "herleitung": "Beispiel-Bon der Spec: Brauereiführung 2000 + Bier 450, beide 20 %. Fremder Einzweck FG-1234 (20 %, versteuert mit FG-1234-V) löst 2000 ein: Minuszeile „Gutschein Nr. FG-1234“ −2000 im Satz 20 %, Basis 2450 ≥ 2000. Fremder Wertgutschein W-77 löst 300 ein (Fluss). Töpfe 20 % = 2450 − 2000 = 450, Zählerdelta 450, Zahlbetrag 450 − 300 = 150 (Bar 1,50).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [
+          {
+            "name": "Brauereiführung",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          },
+          {
+            "name": "Bier 0,5",
+            "priceOne": 4.5,
+            "priceOneCents": 450,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "FG-1234",
+            "betragCents": 2000,
+            "satzBp": 2000,
+            "versteuertMit": "FG-1234-V"
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-77",
+            "betragCents": 300
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-1234",
+            "vat": 20,
+            "vatRate": 20,
+            "priceOne": -20,
+            "priceOneCents": -2000,
+            "unitPriceCents": -2000,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-1234",
+            "betragCents": 2000,
+            "satzBp": 2000,
+            "versteuertMit": "FG-1234-V",
+            "name": "Gutschein Nr. FG-1234"
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-77",
+            "value": 3,
+            "valueCents": 300,
+            "name": "Gutschein Nr. W-77"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 450
+        },
+        "zaehlerDeltaCents": 450,
+        "zahlbetragCents": 150
+      }
+    },
+    {
+      "name": "fg_ez_teildeckung",
+      "herleitung": "Maniküre 3500 zu 20 %, fremder Einzweck FG-2 (20 %) löst 3050 ein. Minuszeile −3050 im Satz 20 %, Basis 3500 ≥ 3050. Töpfe 20 % = 450, Zählerdelta 450, Zahlbetrag 450. Ohne versteuertMit kein Vermerk am Eintrag.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [
+          {
+            "name": "Maniküre",
+            "priceOne": 35,
+            "priceOneCents": 3500,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "FG-2",
+            "betragCents": 3050,
+            "satzBp": 2000
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-2",
+            "vat": 20,
+            "vatRate": 20,
+            "priceOne": -30.5,
+            "priceOneCents": -3050,
+            "unitPriceCents": -3050,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-2",
+            "betragCents": 3050,
+            "satzBp": 2000,
+            "name": "Gutschein Nr. FG-2"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 450
+        },
+        "zaehlerDeltaCents": 450,
+        "zahlbetragCents": 450
+      }
+    },
+    {
+      "name": "fg_ez_zwei_saetze_nur_seiner",
+      "herleitung": "Hauswein 2 × 690 = 1380 zu 13 %, Brot 420 zu 10 %. Fremder Einzweck 13 % löst 1000 ein: nur der 13-%-Topf wird gedeckt (Basis 1380 ≥ 1000). Töpfe 13 % = 380, 10 % = 420, Zählerdelta 800, Zahlbetrag 800.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [
+          {
+            "name": "Hauswein",
+            "priceOne": 6.9,
+            "priceOneCents": 690,
+            "amount": 2,
+            "vat": 13
+          },
+          {
+            "name": "Bauernbrot",
+            "priceOne": 4.2,
+            "priceOneCents": 420,
+            "amount": 1,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "WEIN.2026/7",
+            "betragCents": 1000,
+            "satzBp": 1300
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. WEIN.2026/7",
+            "vat": 13,
+            "vatRate": 13,
+            "priceOne": -10,
+            "priceOneCents": -1000,
+            "unitPriceCents": -1000,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "WEIN.2026/7",
+            "betragCents": 1000,
+            "satzBp": 1300,
+            "name": "Gutschein Nr. WEIN.2026/7"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateReduced2": 380,
+          "amountRateReduced1": 420
+        },
+        "zaehlerDeltaCents": 800,
+        "zahlbetragCents": 800
+      }
+    },
+    {
+      "name": "fg_ez_ueber_satz",
+      "herleitung": "Hauswein 690 zu 13 %, Brot 420 zu 10 %. Fremder Einzweck 13 % über 1000: die Minuszeile im 13-%-Topf (1000) übersteigt dessen Positionen (690); auf den 10-%-Topf darf er nicht → voucher_rate_mismatch.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [
+          {
+            "name": "Hauswein",
+            "priceOne": 6.9,
+            "priceOneCents": 690,
+            "amount": 1,
+            "vat": 13
+          },
+          {
+            "name": "Bauernbrot",
+            "priceOne": 4.2,
+            "priceOneCents": 420,
+            "amount": 1,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "WEIN-8",
+            "betragCents": 1000,
+            "satzBp": 1300
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "voucher_rate_mismatch"
+      }
+    },
+    {
+      "name": "fg_eigen_und_fremd",
+      "herleitung": "Ware 2000 zu 20 %. Eigener Mehrzweck ····-T6EB (Saldo 2500) löst 1000 ein, fremder Wertgutschein W-9 500. Beide als Fluss: Zahlbetrag 2000 − 1000 − 500 = 500. Töpfe 20 % = 2000, Zählerdelta 2000. Nur der eigene wird gebucht (Saldo 1500, aktiv).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "mehrzweck",
+            "code": "C8VD-2HJN-T6EB",
+            "gutscheinId": "g-mz-2",
+            "betragCents": 1000
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-9",
+            "betragCents": 500
+          }
+        ],
+        "gutscheine": {
+          "g-mz-2": {
+            "art": "mehrzweck",
+            "status": "aktiv",
+            "codeEnde": "T6EB",
+            "nennwertCents": 2500,
+            "saldoCents": 2500,
+            "kleinunternehmer": false,
+            "gueltigkeit": {
+              "muster": "unbefristet",
+              "einloesbarBis": null,
+              "rueckzahlbarBis": null,
+              "gueltigBis": null
+            },
+            "ausgabe": {
+              "receiptId": "KASSE-01-ID-98",
+              "fullReceiptId": "Zk9q098Xv"
+            }
+          }
+        }
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "value": 10,
+            "valueCents": 1000,
+            "name": "Gutschein",
+            "code": "····-····-T6EB",
+            "codeEnde": "T6EB",
+            "gutscheinId": "g-mz-2",
+            "saldoNachCents": 1500
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-9",
+            "value": 5,
+            "valueCents": 500,
+            "name": "Gutschein Nr. W-9"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [
+          {
+            "gutscheinId": "g-mz-2",
+            "art": "einloesung",
+            "betragCents": 1000,
+            "saldoNachCents": 1500,
+            "neuerStatus": "aktiv"
+          }
+        ],
+        "toepfeCents": {
+          "amountRateStandard": 2000
+        },
+        "zaehlerDeltaCents": 2000,
+        "zahlbetragCents": 500
+      }
+    },
+    {
+      "name": "fg_mz_split_bar_karte",
+      "herleitung": "Tulpen 2 × 1250 = 2500 zu 20 %, fremder Wertgutschein W-10 löst 1000 ein. Zahlbetrag 2500 − 1000 = 1500; die Kasse teilt ihn auf bar 500 + Karte 1000 (eigener Test prüft die Zahlungsliste gegen den Zahlbetrag). Töpfe 20 % = 2500, Zählerdelta 2500.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Tulpen",
+            "priceOne": 12.5,
+            "priceOneCents": 1250,
+            "amount": 2,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-10",
+            "betragCents": 1000
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-10",
+            "value": 10,
+            "valueCents": 1000,
+            "name": "Gutschein Nr. W-10"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 2500
+        },
+        "zaehlerDeltaCents": 2500,
+        "zahlbetragCents": 1500
+      }
+    },
+    {
+      "name": "fg_trinkgeld_nie_gedeckt",
+      "herleitung": "Ware 2000 zu 20 % + Trinkgeld 200. Fremder Wertgutschein über 2100 würde 100 vom Trinkgeld decken: Zahlbetrag 2200 − 2100 = 100 < 200 → voucher_exceeds_total.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          },
+          {
+            "kind": "tip",
+            "name": "Trinkgeld Personal",
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "amount": 1,
+            "vat": 0,
+            "recipient": null
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-11",
+            "betragCents": 2100
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "voucher_exceeds_total"
+      }
+    },
+    {
+      "name": "fg_aktion_mit_fremd",
+      "herleitung": "Eigener Aktionsgutschein und fremder Wertgutschein im selben Beleg: eine Aktion steht immer allein → voucher_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "aktion",
+            "code": "M4TC-W9JD-P3AK",
+            "gutscheinId": "g-ak-1"
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-12",
+            "betragCents": 500
+          }
+        ],
+        "gutscheine": {
+          "g-ak-1": {
+            "art": "aktion",
+            "status": "aktiv",
+            "codeEnde": "P3AK",
+            "rabattCents": 500,
+            "eingeloest": false,
+            "gueltigkeit": {
+              "muster": "frei",
+              "einloesbarBis": null,
+              "rueckzahlbarBis": null,
+              "gueltigBis": "2026-12-31"
+            }
+          }
+        }
+      },
+      "erwartet": {
+        "fehler": "voucher_invalid"
+      }
+    },
+    {
+      "name": "fg_ku_ez_verkauf",
+      "herleitung": "Kleinunternehmer verkauft fremden Einzweck FG-5 (gesendet 20 %): der Verkauf ist befreit, der Server setzt satzBp 0. Position „Gutschein Nr. FG-5 (Einzweckgutschein 0 %)“ +2000 im Satz 0 (kind voucher). Töpfe 0 % = 2000, Zählerdelta 2000, Zahlbetrag 2000.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "kleinunternehmer": true,
+        "items": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "einzweck",
+            "nummer": "FG-5",
+            "betragCents": 2000,
+            "satzBp": 2000
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-5 (Einzweckgutschein 0 %)",
+            "vat": 0,
+            "vatRate": 0,
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "unitPriceCents": 2000,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-5",
+            "betragCents": 2000,
+            "satzBp": 0,
+            "name": "Gutschein Nr. FG-5 (Einzweckgutschein 0 %)"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateZero": 2000
+        },
+        "zaehlerDeltaCents": 2000,
+        "zahlbetragCents": 2000
+      }
+    },
+    {
+      "name": "fg_ku_ez_einloesung",
+      "herleitung": "Kleinunternehmer-Konto löst fremden Einzweck FG-6 (20 %) über 3000 ein: anteilig über alle Töpfe. Korb 2000 zu 20 % + 2000 zu 10 % = 4000; je Satz 3000 · 2000/4000 = 1500, kein Rest. Minuszeilen −1500 (20 %), −1500 (10 %). Töpfe 20 % = 500, 10 % = 500, Zählerdelta 1000, Zahlbetrag 1000. Am Eintrag bleibt der gesendete Satz 2000.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "kleinunternehmer": true,
+        "items": [
+          {
+            "name": "Ware A",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          },
+          {
+            "name": "Ware B",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "FG-6",
+            "betragCents": 3000,
+            "satzBp": 2000
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-6",
+            "vat": 20,
+            "vatRate": 20,
+            "priceOne": -15,
+            "priceOneCents": -1500,
+            "unitPriceCents": -1500,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          },
+          {
+            "name": "Gutschein Nr. FG-6",
+            "vat": 10,
+            "vatRate": 10,
+            "priceOne": -15,
+            "priceOneCents": -1500,
+            "unitPriceCents": -1500,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-6",
+            "betragCents": 3000,
+            "satzBp": 2000,
+            "name": "Gutschein Nr. FG-6"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 500,
+          "amountRateReduced1": 500
+        },
+        "zaehlerDeltaCents": 1000,
+        "zahlbetragCents": 1000
+      }
+    },
+    {
+      "name": "fg_ez_satz0_regelkonto",
+      "herleitung": "Regelbesteuertes Konto löst fremden Einzweck FG-7 mit satzBp 0 (befreit verkauft) über 600 ein: anteilig. Korb 1000 zu 20 % + 2000 zu 10 % = 3000; 20 %: 600 · 1000/3000 = 200, 10 %: 600 · 2000/3000 = 400. Töpfe 20 % = 800, 10 % = 1600, Zählerdelta 2400, Zahlbetrag 2400. Kein Vermerk befreit am Fremdeintrag (nur satzBp 0).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [
+          {
+            "name": "Ware A",
+            "priceOne": 10,
+            "priceOneCents": 1000,
+            "amount": 1,
+            "vat": 20
+          },
+          {
+            "name": "Ware B",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "FG-7",
+            "betragCents": 600,
+            "satzBp": 0
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-7",
+            "vat": 20,
+            "vatRate": 20,
+            "priceOne": -2,
+            "priceOneCents": -200,
+            "unitPriceCents": -200,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          },
+          {
+            "name": "Gutschein Nr. FG-7",
+            "vat": 10,
+            "vatRate": 10,
+            "priceOne": -4,
+            "priceOneCents": -400,
+            "unitPriceCents": -400,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-7",
+            "betragCents": 600,
+            "satzBp": 0,
+            "name": "Gutschein Nr. FG-7"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 800,
+          "amountRateReduced1": 1600
+        },
+        "zaehlerDeltaCents": 2400,
+        "zahlbetragCents": 2400
+      }
+    },
+    {
+      "name": "fg_ez_auszahlung",
+      "herleitung": "Fremder Einzweck FG-3 (10 %, versteuert mit R-99), 800 ausgezahlt: Berichtigung im Satz des Gutscheins (§ 16 UStG). Position „Auszahlung Gutschein Nr. FG-3“ −800 im Satz 10 % (kind voucher). Töpfe 10 % = −800, Zählerdelta −800, Zahlbetrag −800.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "payout",
+            "type": "einzweck",
+            "nummer": "FG-3",
+            "betragCents": 800,
+            "satzBp": 1000,
+            "versteuertMit": " R-99 ",
+            "grund": "Rückgabe"
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Auszahlung Gutschein Nr. FG-3",
+            "vat": 10,
+            "vatRate": 10,
+            "priceOne": -8,
+            "priceOneCents": -800,
+            "unitPriceCents": -800,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "payout",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-3",
+            "betragCents": 800,
+            "satzBp": 1000,
+            "versteuertMit": "R-99",
+            "grund": "Rückgabe",
+            "name": "Auszahlung Gutschein Nr. FG-3"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateReduced1": -800
+        },
+        "zaehlerDeltaCents": -800,
+        "zahlbetragCents": -800
+      }
+    },
+    {
+      "name": "fg_voll_gedeckt_ohne_zahlung",
+      "herleitung": "Prüfschwerpunkt 1: Führung 2000 zu 20 % + Torte 1500 zu 10 %. Fremder Einzweck 20 % deckt 2000 (Minuszeile, Topf 20 % = 0), fremder Wertgutschein W-13 deckt 1500 (Fluss). Töpfe 10 % = 1500, Zählerdelta 1500, Zahlbetrag 1500 − 1500 = 0 – Beleg ohne Zahlung.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [
+          {
+            "name": "Führung",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          },
+          {
+            "name": "Torte",
+            "priceOne": 15,
+            "priceOneCents": 1500,
+            "amount": 1,
+            "vat": 10
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "FG-8",
+            "betragCents": 2000,
+            "satzBp": 2000
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-13",
+            "betragCents": 1500
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-8",
+            "vat": 20,
+            "vatRate": 20,
+            "priceOne": -20,
+            "priceOneCents": -2000,
+            "unitPriceCents": -2000,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-8",
+            "betragCents": 2000,
+            "satzBp": 2000,
+            "name": "Gutschein Nr. FG-8"
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-13",
+            "value": 15,
+            "valueCents": 1500,
+            "name": "Gutschein Nr. W-13"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateReduced1": 1500
+        },
+        "zaehlerDeltaCents": 1500,
+        "zahlbetragCents": 0
+      }
+    },
+    {
+      "name": "fg_nummer_normiert",
+      "herleitung": "Nummer mit Rand („\\u3000FG-9 \\u00A0“, ideografisches und geschütztes Leerzeichen) wird zu „FG-9“; Groß-/Kleinschreibung bleibt. Ware 1000 zu 20 %, Wertgutschein 400: Zahlbetrag 600, Töpfe 20 % = 1000.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 10,
+            "priceOneCents": 1000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "　FG-9  ",
+            "betragCents": 400
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "FG-9",
+            "value": 4,
+            "valueCents": 400,
+            "name": "Gutschein Nr. FG-9"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 1000
+        },
+        "zaehlerDeltaCents": 1000,
+        "zahlbetragCents": 600
+      }
+    },
+    {
+      "name": "fg_cent_viele_positionen",
+      "herleitung": "Befreit verkaufter fremder Einzweck (satzBp 0) über 1001 auf vielen Positionen: 20 % 333 + 333 = 666, 10 % 3 × 167 = 501, 13 % 199; Korb 1366. Anteile: 20 % 1001 · 666/1366 = 488 Rest 58; 10 % 1001 · 501/1366 = 367 Rest 179; 13 % 1001 · 199/1366 = 145 Rest 1129. Summe 1000, offen 1 → größter Rest 13 % → 146. Minuszeilen in Topf-Reihenfolge 20/10/13: −488, −367, −146. Töpfe 20 % = 178, 10 % = 134, 13 % = 53, Zählerdelta 365, Zahlbetrag 365.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [
+          {
+            "name": "A",
+            "priceOne": 3.33,
+            "priceOneCents": 333,
+            "amount": 1,
+            "vat": 20
+          },
+          {
+            "name": "B",
+            "priceOne": 3.33,
+            "priceOneCents": 333,
+            "amount": 1,
+            "vat": 20
+          },
+          {
+            "name": "C",
+            "priceOne": 1.67,
+            "priceOneCents": 167,
+            "amount": 3,
+            "vat": 10
+          },
+          {
+            "name": "D",
+            "priceOne": 1.99,
+            "priceOneCents": 199,
+            "amount": 1,
+            "vat": 13
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "FG-10",
+            "betragCents": 1001,
+            "satzBp": 0
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-10",
+            "vat": 20,
+            "vatRate": 20,
+            "priceOne": -4.88,
+            "priceOneCents": -488,
+            "unitPriceCents": -488,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          },
+          {
+            "name": "Gutschein Nr. FG-10",
+            "vat": 10,
+            "vatRate": 10,
+            "priceOne": -3.67,
+            "priceOneCents": -367,
+            "unitPriceCents": -367,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          },
+          {
+            "name": "Gutschein Nr. FG-10",
+            "vat": 13,
+            "vatRate": 13,
+            "priceOne": -1.46,
+            "priceOneCents": -146,
+            "unitPriceCents": -146,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-10",
+            "betragCents": 1001,
+            "satzBp": 0,
+            "name": "Gutschein Nr. FG-10"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateStandard": 178,
+          "amountRateReduced1": 134,
+          "amountRateReduced2": 53
+        },
+        "zaehlerDeltaCents": 365,
+        "zahlbetragCents": 365
+      }
+    },
+    {
+      "name": "fg_fehler_nicht_freigegeben",
+      "herleitung": "Freigabe „aus“: jeder Fremdgutschein → external_voucher_not_enabled.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "aus",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-1",
+            "betragCents": 500
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "external_voucher_not_enabled"
+      }
+    },
+    {
+      "name": "fg_fehler_ohne_freigabe",
+      "herleitung": "Ohne Freigabe-Angabe gilt „aus“ (fail-closed) → external_voucher_not_enabled.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-1",
+            "betragCents": 500
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "external_voucher_not_enabled"
+      }
+    },
+    {
+      "name": "fg_fehler_einzweck_bei_wert",
+      "herleitung": "Freigabe „wert“ erlaubt nur Mehrzweck; Einzweck → external_voucher_type_not_enabled.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "FG-1",
+            "betragCents": 500,
+            "satzBp": 2000
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "external_voucher_type_not_enabled"
+      }
+    },
+    {
+      "name": "fg_fehler_nummer_ungueltig",
+      "herleitung": "Nummer „a b“ (Leerzeichen innen) ist keine gültige Fremdnummer → external_voucher_number_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "a b",
+            "betragCents": 500
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "external_voucher_number_invalid"
+      }
+    },
+    {
+      "name": "fg_fehler_nummer_nel",
+      "herleitung": "U+0085 (NEL) am Rand wird nicht abgeschnitten: „FG-1\\u0085“ → external_voucher_number_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "FG-1",
+            "betragCents": 500
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "external_voucher_number_invalid"
+      }
+    },
+    {
+      "name": "fg_fehler_nummer_zu_lang",
+      "herleitung": "41 Zeichen → external_voucher_number_invalid (höchstens 40).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "betragCents": 500
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "external_voucher_number_invalid"
+      }
+    },
+    {
+      "name": "fg_fehler_eigener_code",
+      "herleitung": "Ein gültiger eigener Gutscheincode (7148-FGQA-935K, Prüfzeichen stimmt) als Fremdnummer → external_voucher_number_is_own_code: sonst stünde der Klartext-Code am Bon und der eigene Gutschein bliebe unbelastet.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "7148-FGQA-935K",
+            "betragCents": 500
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "external_voucher_number_is_own_code"
+      }
+    },
+    {
+      "name": "fg_fehler_duplikat_normiert",
+      "herleitung": "Prüfschwerpunkt 2: „ W-77“ und „W-77\\u00A0“ ergeben normiert dieselbe Nummer → external_voucher_duplicate.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": " W-77",
+            "betragCents": 500
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-77 ",
+            "betragCents": 300
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "external_voucher_duplicate"
+      }
+    },
+    {
+      "name": "fg_fehler_satz_unbekannt",
+      "herleitung": "Einzweck mit satzBp 700: kein Satz der Kasse → voucher_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "nummer": "FG-1",
+            "betragCents": 500,
+            "satzBp": 700
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "voucher_invalid"
+      }
+    },
+    {
+      "name": "fg_fehler_auszahlung_ohne_grund",
+      "herleitung": "Auszahlung ohne Grund → voucher_invalid (wie bei eigenen).",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "payout",
+            "type": "mehrzweck",
+            "nummer": "W-2",
+            "betragCents": 500
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "voucher_invalid"
+      }
+    },
+    {
+      "name": "fg_fehler_verkauf_und_einloesung",
+      "herleitung": "Fremden Gutschein verkaufen und einen anderen im selben Beleg einlösen: kein Gutschein mit Gutschein bezahlen → voucher_invalid.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "wert",
+        "items": [
+          {
+            "name": "Ware",
+            "priceOne": 20,
+            "priceOneCents": 2000,
+            "amount": 1,
+            "vat": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "mehrzweck",
+            "nummer": "W-3",
+            "betragCents": 1000
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "mehrzweck",
+            "nummer": "W-4",
+            "betragCents": 500
+          }
+        ]
+      },
+      "erwartet": {
+        "fehler": "voucher_invalid"
+      }
+    },
+    {
+      "name": "fg_ku_ez_auszahlung",
+      "herleitung": "Kleinunternehmer-Konto zahlt fremden Einzweck FG-11 (gesendet 20 %) über 1200 aus. Ein Kleinunternehmer schuldet keine USt, also berichtigt er auch keine: wie beim Verkauf setzt der Server satzBp 0 (eigene Gutscheine tragen den beim Verkauf eingefrorenen Satz 0). Position „Auszahlung Gutschein Nr. FG-11“ −1200 im Satz 0 (kind voucher), Eintrag satzBp 0. Töpfe 0 % = −1200, Zählerdelta −1200, Zahlbetrag −1200.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "kleinunternehmer": true,
+        "items": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "payout",
+            "type": "einzweck",
+            "nummer": "FG-11",
+            "betragCents": 1200,
+            "satzBp": 2000,
+            "grund": "Rückgabe"
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Auszahlung Gutschein Nr. FG-11",
+            "vat": 0,
+            "vatRate": 0,
+            "priceOne": -12,
+            "priceOneCents": -1200,
+            "unitPriceCents": -1200,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "payout",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-11",
+            "betragCents": 1200,
+            "satzBp": 0,
+            "name": "Auszahlung Gutschein Nr. FG-11",
+            "grund": "Rückgabe"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateZero": -1200
+        },
+        "zaehlerDeltaCents": -1200,
+        "zahlbetragCents": -1200
+      }
+    },
+    {
+      "name": "fg_ez_verkauf_satz0_regelkonto",
+      "herleitung": "Regelbesteuertes Konto verkauft fremden Einzweck FG-12 mit satzBp 0: erlaubt, die Angabe verantwortet der Betrieb (Spec „Verantwortung“). Position „Gutschein Nr. FG-12 (Einzweckgutschein 0 %)“ +1500 im Satz 0 (kind voucher). Töpfe 0 % = 1500, Zählerdelta 1500, Zahlbetrag 1500.",
+      "eingabe": {
+        "heute": "2026-11-05",
+        "fremd": "beide",
+        "items": [],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "einzweck",
+            "nummer": "FG-12",
+            "betragCents": 1500,
+            "satzBp": 0
+          }
+        ]
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-12 (Einzweckgutschein 0 %)",
+            "vat": 0,
+            "vatRate": 0,
+            "priceOne": 15,
+            "priceOneCents": 1500,
+            "unitPriceCents": 1500,
+            "amount": 1,
+            "quantity": 1,
+            "kind": "voucher"
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-12",
+            "betragCents": 1500,
+            "satzBp": 0,
+            "name": "Gutschein Nr. FG-12 (Einzweckgutschein 0 %)"
+          }
+        ],
+        "verkaeufe": [],
+        "buchungen": [],
+        "toepfeCents": {
+          "amountRateZero": 1500
+        },
+        "zaehlerDeltaCents": 1500,
+        "zahlbetragCents": 1500
+      }
+    },
+    {
+      "name": "fg_mz_einloesung_storniert",
+      "herleitung": "Vollstorno von fg_mz_einloesung (Bier 450 zu 20 %, fremder Wertgutschein W-77 löst 300 ein). cancelReceipt negiert die Position (Bier −450 im Satz 20 %) und spiegelt den Eintrag mit quelle, Nummer W-77, value 3/valueCents 300 und Name, ohne Dokument und ohne Buchung. Töpfe 20 % = −450, Zählerdelta −450. Zahlbetrag = −450 + 300 (Fluss am Storno umgekehrt) = −150: zurück geht nur die Barzahlung 1,50, die 3,00 gehen auf den fremden Gutschein (das fremde System erfährt es über receipt.cancelled), nie bar.",
+      "eingabe": {
+        "stornoVon": "fg_mz_einloesung"
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Bier 0,5",
+            "quantity": 1,
+            "unitPriceCents": -450,
+            "vatRate": 20,
+            "amount": 1,
+            "vat": 20,
+            "priceOneCents": -450,
+            "priceOne": -4.5
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-77",
+            "value": 3,
+            "valueCents": 300,
+            "name": "Gutschein Nr. W-77"
+          }
+        ],
+        "toepfeCents": {
+          "amountRateStandard": -450
+        },
+        "zaehlerDeltaCents": -450,
+        "zahlbetragCents": -150
+      }
+    },
+    {
+      "name": "fg_ez_verkauf_20_storniert",
+      "herleitung": "Vollstorno von fg_ez_verkauf_20 (fremder Einzweck FG-1234, 2000 zu 20 % verkauft). Erlaubt, weil wir die Nutzung im fremden System nicht kennen (die Kasse weist darauf hin). Position „Gutschein Nr. FG-1234 (Einzweckgutschein 20 %)“ −2000 im Satz 20 % (kind voucher bleibt), die beim Verkauf sofort angefallene USt wird berichtigt. Spiegel mit quelle, Nummer, Art, Betrag, Satz und Name. Töpfe 20 % = −2000, Zählerdelta −2000, Zahlbetrag −2000 (an den Kunden).",
+      "eingabe": {
+        "stornoVon": "fg_ez_verkauf_20"
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. FG-1234 (Einzweckgutschein 20 %)",
+            "quantity": 1,
+            "unitPriceCents": -2000,
+            "vatRate": 20,
+            "kind": "voucher",
+            "amount": 1,
+            "vat": 20,
+            "priceOneCents": -2000,
+            "priceOne": -20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-1234",
+            "betragCents": 2000,
+            "satzBp": 2000,
+            "name": "Gutschein Nr. FG-1234 (Einzweckgutschein 20 %)"
+          }
+        ],
+        "toepfeCents": {
+          "amountRateStandard": -2000
+        },
+        "zaehlerDeltaCents": -2000,
+        "zahlbetragCents": -2000
+      }
+    },
+    {
+      "name": "fg_mz_verkauf_storniert",
+      "herleitung": "Vollstorno von fg_mz_verkauf (fremder Wertgutschein W-77, 3000 verkauft, ab Stichtag im 0-%-Topf). Position „Gutschein Nr. W-77 (Mehrzweckgutschein)“ −3000 im Satz 0 (voucher_float), Spiegel mit imNullTopf (zählt nicht noch einmal als Fluss). Töpfe 0 % = −3000, Zählerdelta −3000, Zahlbetrag −3000.",
+      "eingabe": {
+        "stornoVon": "fg_mz_verkauf"
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Gutschein Nr. W-77 (Mehrzweckgutschein)",
+            "quantity": 1,
+            "unitPriceCents": -3000,
+            "vatRate": 0,
+            "kind": "voucher_float",
+            "amount": 1,
+            "vat": 0,
+            "priceOneCents": -3000,
+            "priceOne": -30
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "sell",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-77",
+            "value": 30,
+            "valueCents": 3000,
+            "name": "Gutschein Nr. W-77 (Mehrzweckgutschein)",
+            "imNullTopf": true
+          }
+        ],
+        "toepfeCents": {
+          "amountRateZero": -3000
+        },
+        "zaehlerDeltaCents": -3000,
+        "zahlbetragCents": -3000
+      }
+    },
+    {
+      "name": "fg_mz_auszahlung_storniert",
+      "herleitung": "Vollstorno von fg_mz_auszahlung (fremder Wertgutschein W-78, 1500 ausgezahlt). Position „Auszahlung Gutschein Nr. W-78“ +1500 im 0-%-Topf (voucher_float), Spiegel mit imNullTopf, ohne den Grund des Originals. Töpfe 0 % = +1500, Zählerdelta +1500, Zahlbetrag +1500: der Kunde gibt den ausgezahlten Betrag bar zurück (genau eine Barzahlung, wie bei eigenen).",
+      "eingabe": {
+        "stornoVon": "fg_mz_auszahlung"
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Auszahlung Gutschein Nr. W-78",
+            "quantity": 1,
+            "unitPriceCents": 1500,
+            "vatRate": 0,
+            "kind": "voucher_float",
+            "amount": 1,
+            "vat": 0,
+            "priceOneCents": 1500,
+            "priceOne": 15
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "payout",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-78",
+            "value": 15,
+            "valueCents": 1500,
+            "name": "Auszahlung Gutschein Nr. W-78",
+            "imNullTopf": true
+          }
+        ],
+        "toepfeCents": {
+          "amountRateZero": 1500
+        },
+        "zaehlerDeltaCents": 1500,
+        "zahlbetragCents": 1500
+      }
+    },
+    {
+      "name": "fg_ez_und_mz_einloesung_bon_storniert",
+      "herleitung": "Vollstorno des Beispiel-Bons fg_ez_und_mz_einloesung_bon (Brauereiführung 2000 + Bier 450 zu 20 %, fremder Einzweck FG-1234 löst 2000 ein, fremder Wertgutschein W-77 300). Positionen negiert: −2000, −450, Minuszeile des Einzweck wird +2000 (kind voucher, Satz 20 %). Spiegel beider Einträge in der Reihenfolge des Originals (versteuertMit bleibt am Original). Töpfe 20 % = −2000 − 450 + 2000 = −450, Zählerdelta −450, Zahlbetrag −450 + 300 = −150 (zurück nur die Barzahlung 1,50).",
+      "eingabe": {
+        "stornoVon": "fg_ez_und_mz_einloesung_bon"
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Brauereiführung",
+            "quantity": 1,
+            "unitPriceCents": -2000,
+            "vatRate": 20,
+            "amount": 1,
+            "vat": 20,
+            "priceOneCents": -2000,
+            "priceOne": -20
+          },
+          {
+            "name": "Bier 0,5",
+            "quantity": 1,
+            "unitPriceCents": -450,
+            "vatRate": 20,
+            "amount": 1,
+            "vat": 20,
+            "priceOneCents": -450,
+            "priceOne": -4.5
+          },
+          {
+            "name": "Gutschein Nr. FG-1234",
+            "quantity": 1,
+            "unitPriceCents": 2000,
+            "vatRate": 20,
+            "kind": "voucher",
+            "amount": 1,
+            "vat": 20,
+            "priceOneCents": 2000,
+            "priceOne": 20
+          }
+        ],
+        "vouchers": [
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "einzweck",
+            "art": "einzweck",
+            "nummer": "FG-1234",
+            "betragCents": 2000,
+            "satzBp": 2000,
+            "name": "Gutschein Nr. FG-1234"
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-77",
+            "value": 3,
+            "valueCents": 300,
+            "name": "Gutschein Nr. W-77"
+          }
+        ],
+        "toepfeCents": {
+          "amountRateStandard": -450
+        },
+        "zaehlerDeltaCents": -450,
+        "zahlbetragCents": -150
+      }
+    },
+    {
+      "name": "fg_eigen_und_fremd_storniert",
+      "herleitung": "Vollstorno von fg_eigen_und_fremd (Ware 2000 zu 20 %, eigener Mehrzweck ····-T6EB löst 1000 ein, fremder W-9 500). Ware −2000; beide Einträge gespiegelt: der eigene mit gutscheinId g-mz-2 und Maske ····-····-T6EB des Originals (Gegenbuchung storno_gutschrift, Saldo zurück auf 2500 – rechnet die Transaktion des Stornos), der fremde nur als Spiegel mit Nummer W-9. Töpfe 20 % = −2000, Zählerdelta −2000, Zahlbetrag −2000 + 1000 + 500 = −500 (zurück nur die Barzahlung).",
+      "eingabe": {
+        "stornoVon": "fg_eigen_und_fremd"
+      },
+      "erwartet": {
+        "positionen": [
+          {
+            "name": "Ware",
+            "quantity": 1,
+            "unitPriceCents": -2000,
+            "vatRate": 20,
+            "amount": 1,
+            "vat": 20,
+            "priceOneCents": -2000,
+            "priceOne": -20
+          }
+        ],
+        "vouchers": [
+          {
+            "action": "redeem",
+            "type": "value",
+            "name": "Gutschein",
+            "value": 10,
+            "art": "mehrzweck",
+            "valueCents": 1000,
+            "gutscheinId": "g-mz-2",
+            "code": "····-····-T6EB",
+            "codeEnde": "T6EB"
+          },
+          {
+            "quelle": "extern",
+            "action": "redeem",
+            "type": "value",
+            "art": "mehrzweck",
+            "nummer": "W-9",
+            "value": 5,
+            "valueCents": 500,
+            "name": "Gutschein Nr. W-9"
+          }
+        ],
+        "toepfeCents": {
+          "amountRateStandard": -2000
+        },
+        "zaehlerDeltaCents": -2000,
+        "zahlbetragCents": -500
+      }
+    }
+  ]
+}

@@ -339,6 +339,15 @@ class ReceiptDueBreakdown {
 /// einen Leistungsgutschein-Verkauf (fehlt der Artikel:
 /// `voucher_item_mismatch`, ist er nicht freigegeben:
 /// `voucher_service_not_allowed`);
+/// [externalVouchers] die Freigabe fuer Fremdgutscheine
+/// (`getKasseSettings` `vouchers.externalVouchers`; ohne Angabe die aus
+/// [voucherSettings], fehlen beide, prueft nur der Server die Freigabe):
+/// [PosExternalVouchers.off] -> `external_voucher_not_enabled`, ein fremder
+/// Einzweck nur mit [PosExternalVouchers.all], sonst
+/// `external_voucher_type_not_enabled`; dazu `external_voucher_number_invalid`,
+/// `external_voucher_number_is_own_code` und `external_voucher_duplicate` in
+/// der Reihenfolge des Servers. Ein Fremdgutschein rechnet ohne Pruefung und
+/// Saldo (Art, Satz und Betrag sagt der Wunsch);
 /// [smallBusiness] fuer ein Kleinunternehmer-Konto (Verkauf zu 0 %, eine
 /// Einzweck-Einloesung anteilig auf alle Saetze des Korbs, ebenso fuer einen
 /// befreit verkauften Gutschein, [VoucherCheck.exempt]);
@@ -354,6 +363,7 @@ int receiptDueCents(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  PosExternalVouchers? externalVouchers,
   List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
@@ -366,6 +376,7 @@ int receiptDueCents(
             tipRecipient: tipRecipient,
             voucherInfo: voucherInfo,
             voucherSettings: voucherSettings,
+            externalVouchers: externalVouchers,
             voucherTypes: voucherTypes,
             voucherArticles: voucherArticles,
             smallBusiness: smallBusiness,
@@ -383,6 +394,7 @@ ReceiptDueBreakdown receiptDueBreakdown(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  PosExternalVouchers? externalVouchers,
   List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
@@ -395,6 +407,7 @@ ReceiptDueBreakdown receiptDueBreakdown(
         tipRecipient: tipRecipient,
         voucherInfo: voucherInfo,
         voucherSettings: voucherSettings,
+        externalVouchers: externalVouchers,
         voucherTypes: voucherTypes,
         voucherArticles: voucherArticles,
         smallBusiness: smallBusiness,
@@ -416,6 +429,7 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  PosExternalVouchers? externalVouchers,
   List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
@@ -432,6 +446,7 @@ ReceiptDueBreakdown receiptDueBreakdownForLines(
         tipRecipient: tipRecipient,
         voucherInfo: voucherInfo,
         voucherSettings: voucherSettings,
+        externalVouchers: externalVouchers,
         voucherTypes: voucherTypes,
         voucherArticles: voucherArticles,
         smallBusiness: smallBusiness,
@@ -471,6 +486,7 @@ int voucherRedeemMaxCents(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  PosExternalVouchers? externalVouchers,
   List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
@@ -484,6 +500,7 @@ int voucherRedeemMaxCents(
         tipRecipient: tipRecipient,
         voucherInfo: voucherInfo,
         voucherSettings: voucherSettings,
+        externalVouchers: externalVouchers,
         voucherTypes: voucherTypes,
         voucherArticles: voucherArticles,
         smallBusiness: smallBusiness,
@@ -500,6 +517,7 @@ int voucherRedeemMaxCentsForLines(
   ReceiptDueTipRecipient? tipRecipient,
   List<VoucherDueInfo>? voucherInfo,
   PosVoucherSettings? voucherSettings,
+  PosExternalVouchers? externalVouchers,
   List<VoucherDueType>? voucherTypes,
   List<VoucherDueArticle>? voucherArticles,
   bool smallBusiness = false,
@@ -515,6 +533,7 @@ int voucherRedeemMaxCentsForLines(
     tipRecipient: tipRecipient,
     voucherInfo: voucherInfo,
     voucherSettings: voucherSettings,
+    externalVouchers: externalVouchers,
     voucherTypes: voucherTypes,
     voucherArticles: voucherArticles,
     smallBusiness: smallBusiness,
@@ -635,6 +654,7 @@ class _Optionen {
     this.tipRecipient,
     this.voucherInfo,
     this.voucherSettings,
+    this.externalVouchers,
     this.voucherTypes,
     this.voucherArticles,
     this.smallBusiness = false,
@@ -647,6 +667,7 @@ class _Optionen {
   final ReceiptDueTipRecipient? tipRecipient;
   final List<VoucherDueInfo>? voucherInfo;
   final PosVoucherSettings? voucherSettings;
+  final PosExternalVouchers? externalVouchers;
   final List<VoucherDueType>? voucherTypes;
   final List<VoucherDueArticle>? voucherArticles;
   final bool smallBusiness;
@@ -659,6 +680,7 @@ class _Optionen {
         tipRecipient: tipRecipient,
         voucherInfo: voucherInfo,
         voucherSettings: voucherSettings,
+        externalVouchers: externalVouchers,
         voucherTypes: voucherTypes,
         voucherArticles: voucherArticles,
         smallBusiness: smallBusiness,
@@ -713,6 +735,7 @@ _Rechnung _rechne(List<ReceiptDueLine> lines, List<KeckVoucher> vouchers, Receip
       o: PlanOptionen(
         voucherInfo: o.voucherInfo == null ? null : [for (final i in o.voucherInfo!) (code: i.code, check: i.check)],
         voucherSettings: o.voucherSettings,
+        externalVouchers: o.externalVouchers,
         voucherTypes: o.voucherTypes == null
             ? null
             : [for (final t in o.voucherTypes!) (id: t.id, kind: t.kind, vatRateBp: t.vatRateBp, amount: t.amount)],

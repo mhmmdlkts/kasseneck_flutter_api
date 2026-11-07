@@ -76,6 +76,7 @@ Map<String, dynamic> block([Map<String, Object?> aendern = const {}]) => {
       'labelDefault': _standard,
       'types': [sorte()],
       'serviceArticles': false,
+      'externalVouchers': 'off',
       ...aendern,
     };
 
@@ -185,6 +186,7 @@ void main() {
         'types': <Object?>[],
         'serviceArticles': false,
         'labelDefault': null,
+        'externalVouchers': 'off',
       });
     });
 

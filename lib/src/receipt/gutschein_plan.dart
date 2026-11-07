@@ -28,6 +28,11 @@
 ///   freigegebener Artikel, sonst `voucher_service_not_allowed`); einloesen:
 ///   je Satz eine Minuszeile ueber die gewaehlten Positionen.
 /// - Aktion: Rabatt wie `promo`, Betrag aus der Pruefung, hoechstens die Summe.
+/// - Fremdgutschein ([KeckVoucher.isExternal], Server 2026-11): dieselbe
+///   Strecke wie ein eigener Mehrzweck- bzw. Einzweckgutschein, nur ohne
+///   Pruefung und Saldo (verfuegbar ist genau der Betrag des Wunschs); Satz
+///   und Vermerk sagt der Wunsch, Satz 0 heisst befreit verkauft. Freigabe aus
+///   [PlanOptionen.externalVouchers] (sonst aus der Gutschein-Einstellung).
 ///
 /// Kein Fehler wird still geschluckt: was der Server mit einem Gutschein-Code
 /// abwiese, liefert [PlanFehler] mit genau diesem Code (`voucher_*`). Der
@@ -41,6 +46,7 @@ import '../../enums/voucher_type.dart';
 import '../../models/keck_voucher.dart';
 import '../kasse/gutschein.dart';
 import '../kasse/gutschein_wunsch.dart' show artOderNull, istWertVerkauf, wunschFormGueltig;
+import '../kasse/lager.dart' show jsTrim;
 
 /// Stichtag des 0-%-Topfs fuer Mehrzweck-Verkaeufe (Backend
 /// `gutschein-core.NULLTOPF_AB`).
@@ -88,6 +94,7 @@ class PlanOptionen {
   const PlanOptionen({
     this.voucherInfo,
     this.voucherSettings,
+    this.externalVouchers,
     this.voucherTypes,
     this.voucherArticles,
     this.smallBusiness = false,
@@ -97,6 +104,10 @@ class PlanOptionen {
 
   final List<({String code, VoucherCheck check})>? voucherInfo;
   final PosVoucherSettings? voucherSettings;
+
+  /// Freigabe fuer Fremdgutscheine des Kontos; ohne Angabe die aus
+  /// [voucherSettings]. Fehlen beide, prueft nur der Server die Freigabe.
+  final PosExternalVouchers? externalVouchers;
   final List<({String id, VoucherType kind, int? vatRateBp, VoucherTypeAmount amount})>? voucherTypes;
   final List<({String id, int priceCents, int vatRateBp, bool? serviceVoucher})>? voucherArticles;
   final bool smallBusiness;
@@ -268,6 +279,65 @@ List<({int satzBp, int cents})>? _kuTeile(List<Innen> kunde, int betragCents) {
   ];
 }
 
+/// Steuer- und Formatzeichen (`gutschein-core.STEUERZEICHEN`).
+final RegExp _steuerzeichen = RegExp(r'[\p{Cc}\p{Cf}]', unicode: true);
+
+/// Form eines Fremdgutschein-Wunschs in der Reihenfolge von
+/// `gutschein-beleg.pruefeFremd`: Freigabe, Aktion, Art, Freigabe der Art,
+/// Felder eigener Gutscheine, eigener Code, Nummer, Dublette, Betrag, Satz,
+/// Vermerk, Grund. [freigabe] `null`: die Freigabe prueft nur der Server.
+/// [gesehen] sammelt die normierten Nummern des Belegs.
+PlanFehler? _pruefeFremd(KeckVoucher v, int i, PosExternalVouchers? freigabe, Set<String> gesehen) {
+  PlanFehler falsch(String feld) => PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: $feld passt nicht zum Fremdgutschein.');
+  if (freigabe == PosExternalVouchers.off) {
+    return PlanFehler('external_voucher_not_enabled', 'Gutschein ${i + 1}: Fremdgutscheine sind nicht freigegeben.');
+  }
+  if (v.action != VoucherAction.sell && v.action != VoucherAction.redeem && v.action != VoucherAction.payout) return falsch('action');
+  final art = artOderNull(v);
+  if (art != VoucherType.multiPurpose && art != VoucherType.singlePurpose) return falsch('type');
+  if (art == VoucherType.singlePurpose && freigabe != null && freigabe != PosExternalVouchers.all) {
+    return PlanFehler('external_voucher_type_not_enabled', 'Gutschein ${i + 1}: fremde Einzweckgutscheine sind nicht freigegeben.');
+  }
+  for (final (feld, gesetzt) in [
+    ('code', v.code != null),
+    ('typeId', v.typeId != null),
+    ('articleId', v.articleId != null),
+    ('article', v.article != null),
+    ('quantity', v.quantity != null),
+    ('positions', v.positions != null),
+  ]) {
+    if (gesetzt) return falsch(feld);
+  }
+  if (v.valueCents != null) return falsch('valueCents');
+  final nummer = checkExternalVoucherNumber(v.number);
+  if (!nummer.ok) {
+    final eigen = nummer.code == 'external_voucher_number_is_own_code';
+    return PlanFehler(nummer.code!, 'Gutschein ${i + 1}: die Nummer ist ${eigen ? 'ein eigener Gutscheincode' : 'ungueltig'}.');
+  }
+  if (!gesehen.add(nummer.number!)) {
+    return PlanFehler('external_voucher_duplicate', 'Gutschein ${i + 1}: dieselbe Nummer steht zweimal am Beleg.');
+  }
+  final c = v.amountCents;
+  if (c == null || c < 1 || c > 1000000) return falsch('amountCents');
+  if (art == VoucherType.singlePurpose) {
+    if (!externalVoucherVatRatesBp.contains(v.vatRateBp)) return falsch('vatRateBp');
+  } else if (v.vatRateBp != null) {
+    return falsch('vatRateBp');
+  }
+  final belegt = v.taxedWith;
+  if (belegt != null) {
+    if (art != VoucherType.singlePurpose || v.action == VoucherAction.sell) return falsch('taxedWith');
+    final t = jsTrim(belegt);
+    if (t.isEmpty || t.length > externalVoucherTaxedWithMax || _steuerzeichen.hasMatch(t)) return falsch('taxedWith');
+  }
+  if (v.action == VoucherAction.payout) {
+    final g = jsTrim(v.reason ?? '');
+    if (g.isEmpty || g.length > 200) return falsch('reason');
+  }
+  // Uebrige Serverfelder am Wunsch: wie bei eigenen Gutscheinen nie sendbar.
+  return v.isValid ? null : falsch('Angaben');
+}
+
 /// Wuensche und gelesene Eintraege in Positionen und Belegeintraege, wie
 /// `plane` sie baut. [kunde] sind Ware und Trinkgeld in innerer Form. Wirft
 /// [PlanFehler] mit dem Code des Servers.
@@ -311,9 +381,16 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
   if (storno) throw const PlanFehler('voucher_invalid', 'Gutscheine der neuen Form gibt es am Storno nur gespiegelt vom Server.');
   if (training) throw const PlanFehler('voucher_invalid', 'Gutscheine der neuen Form gibt es nicht auf Schulungsbelegen.');
   if (kunde.any(_istGutscheinZeile)) throw const PlanFehler('voucher_invalid', 'Gutschein-Positionen setzt nur der Server.');
+  final freigabe = o.externalVouchers ?? o.voucherSettings?.externalVouchers;
+  final nummern = <String>{};
   for (final (i, v) in vouchers.indexed) {
     if (_istGelesen(v)) throw PlanFehler('voucher_invalid', 'Gutschein ${i + 1}: Serverfelder an einem Wunsch.');
     if (!v.isNewForm) continue;
+    if (v.isExternal) {
+      final f = _pruefeFremd(v, i, freigabe, nummern);
+      if (f != null) throw f;
+      continue;
+    }
     if (istWertVerkauf(v) && v.typeId == null) {
       // Wie gutschein-beleg.pruefeWuensche: ein Wert-Verkauf ohne Sorte ist voucher_type_required.
       // Nur eine alte Gutschein-Einstellung MIT Art (Aufrufer bis 11.7) rechnet wie bisher; ein Server ab
@@ -344,9 +421,10 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
   if (wuensche.any((v) => v.action == VoucherAction.payout) && vouchers.any((v) => !v.isNewForm && artOderNull(v) == VoucherType.promo)) {
     throw const PlanFehler('voucher_invalid', 'Rabatt und Auszahlung gehen nicht am selben Beleg.');
   }
+  // Die Nummer eines Fremdgutscheins prueft _pruefeFremd (external_voucher_duplicate).
   final codes = [
     for (final v in wuensche)
-      if (v.action != VoucherAction.sell) normalerCode(v.code),
+      if (v.action != VoucherAction.sell && !v.isExternal) normalerCode(v.code),
   ];
   if (codes.any((c) => c == null)) throw const PlanFehler('voucher_invalid', 'Ein Gutscheincode ist ungueltig.');
   if (codes.toSet().length != codes.length) throw const PlanFehler('voucher_invalid', 'Derselbe Gutschein steht zweimal am Beleg.');
@@ -396,6 +474,48 @@ Plan planeGutscheine(List<Innen> kunde, List<KeckVoucher> vouchers, {required bo
         g.imNullTopf = true;
       }
       gutscheine.add(g);
+      continue;
+    }
+    if (v.isExternal) {
+      // gutschein-beleg.plane mit sichtExtern: kein Dokument, kein Saldo, keine Statuspruefung.
+      final c = v.amountCents!;
+      final einzweck = artOderNull(v) == VoucherType.singlePurpose;
+      final satz = einzweck ? v.vatRateBp! : 0;
+      if (v.action == VoucherAction.sell) {
+        if (!einzweck) {
+          if (nulltopf) {
+            zusatz.add(_position(0, c, 'voucher_float'));
+            gutscheine.add(PlanGutschein(VoucherAction.sell, VoucherType.value, c / 100, imNullTopf: true));
+          } else {
+            gutscheine.add(PlanGutschein(VoucherAction.sell, VoucherType.value, c / 100));
+          }
+        } else {
+          // Kleinunternehmer verkauft befreit: Satz 0, egal was gesendet wird.
+          zusatz.add(_position(ku ? 0 : satz, c, 'voucher'));
+        }
+      } else if (v.action == VoucherAction.payout) {
+        if (!einzweck) {
+          zusatz.add(_position(0, -c, 'voucher_float'));
+          gutscheine.add(PlanGutschein(VoucherAction.payout, VoucherType.value, c / 100, imNullTopf: true));
+        } else {
+          // Ohne Dokument berichtigt ein Kleinunternehmer-Konto im 0-%-Topf (nie USt, die es nie geschuldet hat).
+          zusatz.add(_position(ku ? 0 : satz, -c, 'voucher'));
+        }
+        auszahlungCents += c;
+      } else if (!einzweck) {
+        gutscheine.add(PlanGutschein(VoucherAction.redeem, VoucherType.value, c / 100));
+      } else if (satz == 0 || ku) {
+        // Befreit verkauft (Satz 0) oder Kleinunternehmer-Konto: anteilig auf alle Toepfe des Korbs.
+        final teile = _kuTeile(kunde, c);
+        if (teile == null) throw PlanFehler('voucher_rate_mismatch', 'Gutschein ${i + 1}: der Korb deckt den Betrag nicht.');
+        for (final t in teile) {
+          zusatz.add(_position(t.satzBp, -t.cents, 'voucher'));
+          minus(t.satzBp, t.cents);
+        }
+      } else {
+        zusatz.add(_position(satz, -c, 'voucher'));
+        minus(satz, c);
+      }
       continue;
     }
     final sorteId = v.typeId;

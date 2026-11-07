@@ -1,0 +1,27 @@
+       Bäckerei Kornblum        
+         Neubaugasse 12         
+           1070 Wien            
+          ATU12345675           
+         +43 1 2345678          
+                                
+Datum:       05.11.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-91
+                                
+1  x Gutschein           30,00 D
+Nr. W-77 (Mehrzweckgutschein)   
+  USt bei Einlösung             
+1  x Gutschein           20,00 A
+Nr. FG-1234 (Einzweckgutschein  
+20 %)                           
+                                
+MwSt%   MwSt      Netto   Brutto
+D 0%    0,00      30,00    30,00
+A 20%   3,33      16,67    20,00
+--------------------------------
+Gesamt:                  50,00 €
+Zahlungsart:          Barzahlung
+                                
+           [QR-Code]            
+                                
+     Danke für Ihren Besuch     

@@ -123,7 +123,8 @@ VoucherType? artOderNull(KeckVoucher v) => v.hasType ? v.type : null;
 /// Ohne bekannte Art zaehlt nur der Verkauf ueber eine Sorte, bei dem die Art
 /// fehlt ([KeckVoucher.isNewForm]); einer mit unbekannter Art nicht.
 bool istWertVerkauf(KeckVoucher v) {
-  if (v.action != VoucherAction.sell) return false;
+  // Ein Fremdgutschein wird ohne Sorte verkauft (sonst voucher_type_required).
+  if (v.isExternal || v.action != VoucherAction.sell) return false;
   final art = artOderNull(v);
   return art == null ? v.isNewForm : art == VoucherType.multiPurpose || art == VoucherType.singlePurpose;
 }
@@ -148,13 +149,19 @@ bool _hatText(String? t) => t != null && t.trim().isNotEmpty;
 /// Aufrufers bis 11.7 mit der alten Gutschein-Einstellung weiter (der Server
 /// ab Stufe 4b antwortet darauf `voucher_type_required`).
 bool wunschFormGueltig(KeckVoucher v, {required bool sorteNoetig}) {
+  if (v.isExternal) return externalVoucherIsValid(v);
   if (v.serverFields.isNotEmpty) return false;
+  // Felder nur des Fremdgutscheins (gutschein-beleg.NUR_BEI_FREMD: nummer, versteuertMit, satzBp) und eine
+  // andere Herkunft als `external` weist der Server an einem eigenen Wunsch ab. npm prueft sie auch als null;
+  // hier geht ein null-Feld nie hinaus (toPayload laesst es weg), also genuegt != null.
   if (v.vatRateBp != null ||
       v.article != null ||
       v.balanceAfterCents != null ||
       v.remainingQuantityAfter != null ||
       v.taxedWith != null ||
-      v.exempt != null) {
+      v.exempt != null ||
+      v.number != null ||
+      v.source != null) {
     return false;
   }
   if (v.valueCents != null) return false;

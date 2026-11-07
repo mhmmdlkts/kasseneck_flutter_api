@@ -500,7 +500,7 @@ void main() {
         .toList();
 
     test('variant_group.created|updated tragen die Gruppe wie getVariantGroup', () {
-      expect(inventoryWebhookEvents.sublist(inventoryWebhookEvents.length - 2), ['variant_group.created', 'variant_group.updated']);
+      expect(inventoryWebhookEvents.sublist(8, 10), ['variant_group.created', 'variant_group.updated']);
       expect({for (final e in ereignisse) e['event']}, {'variant_group.created', 'variant_group.updated'});
       for (final e in ereignisse) {
         final body = e['body'] as Map<String, dynamic>;

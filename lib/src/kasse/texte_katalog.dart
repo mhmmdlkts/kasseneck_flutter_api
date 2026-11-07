@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.29.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.30.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.29.0';
+const String posTextsVersion = '1.30.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -127,6 +127,11 @@ const Map<String, PosText> posMessages = {
   'voucher_error.amount_mismatch': PosText('Die Gutschein-Sorte hat sich geändert. Die Kasse lädt die Sorten neu.'),
   'voucher_error.service_not_allowed': PosText('Dieser Artikel ist nicht als Leistungsgutschein freigegeben.'),
   'voucher_error.payout_not_allowed': PosText('Dieser Gutschein kann nicht ausgezahlt werden.'),
+  'voucher_error.external_not_enabled': PosText('Fremde Gutscheine sind für dieses Konto nicht freigegeben.'),
+  'voucher_error.external_type_not_enabled': PosText('Fremde Einzweckgutscheine sind für dieses Konto nicht freigegeben.'),
+  'voucher_error.external_number_invalid': PosText('Gutscheinnummer prüfen: 1 bis 40 Zeichen, nur Buchstaben, Ziffern und - _ . / sind erlaubt.'),
+  'voucher_error.external_number_is_own_code': PosText('Das ist ein eigener Gutscheincode. Bitte als eigenen Gutschein einlösen.'),
+  'voucher_error.external_duplicate': PosText('Diese Gutscheinnummer steht schon auf dem Beleg.'),
   'voucher.type_changed': PosText('Diese Gutschein-Sorte hat sich geändert. Bitte die Zeile entfernen und die Kachel neu antippen.'),
   'voucher.reentry_needed': PosText('Die Karte ist belastet, der Beleg fehlt noch: zu jedem Gutschein den Code erneut eingeben, dann den Beleg abschließen.'),
   'voucher.reentry_mismatch': PosText('Mit diesen Gutscheinen ergibt der Beleg nicht mehr den belasteten Betrag – die Karte zurückbuchen.'),
@@ -873,6 +878,11 @@ const Map<String, String> voucherErrorMessages = {
   'voucher_amount_mismatch': 'voucher_error.amount_mismatch',
   'voucher_service_not_allowed': 'voucher_error.service_not_allowed',
   'voucher_payout_not_allowed': 'voucher_error.payout_not_allowed',
+  'external_voucher_not_enabled': 'voucher_error.external_not_enabled',
+  'external_voucher_type_not_enabled': 'voucher_error.external_type_not_enabled',
+  'external_voucher_number_invalid': 'voucher_error.external_number_invalid',
+  'external_voucher_number_is_own_code': 'voucher_error.external_number_is_own_code',
+  'external_voucher_duplicate': 'voucher_error.external_duplicate',
 };
 
 /// Rueckgabe beim Storno: Wahl (`restock`, `defective`, `disposed`) -> Schluessel der Beschriftung.

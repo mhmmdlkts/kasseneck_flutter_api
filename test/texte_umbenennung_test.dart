@@ -84,6 +84,9 @@ const _nach10 = (
     // Gutschein-Sorten (11.8.0, npm 1.17.0)
     'voucher_error.type_required', 'voucher_error.type_not_found', 'voucher_error.amount_mismatch',
     'voucher_error.service_not_allowed', 'voucher_error.payout_not_allowed', 'voucher.type_changed',
+    // Fremdgutscheine (11.21.0, npm 1.30.0)
+    'voucher_error.external_not_enabled', 'voucher_error.external_type_not_enabled', 'voucher_error.external_number_invalid',
+    'voucher_error.external_number_is_own_code', 'voucher_error.external_duplicate',
     // Pruefung (DEP) an der Kasse (11.13.0, npm 1.21.0)
     'dep.manager_only', 'dep.offline', 'dep.creating', 'dep.running', 'dep.failed', 'dep.too_many_exports',
     'dep.period_invalid', 'dep.usb_hint', 'dep.saved', 'dep.save_failed', 'dep.zip_fallback', 'dep.code_once',

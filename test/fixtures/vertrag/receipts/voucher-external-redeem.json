@@ -1,0 +1,85 @@
+{
+  "company": {
+    "companyName": "Bäckerei Kornblum",
+    "street": "Neubaugasse 12",
+    "zip": "1070",
+    "city": "Wien",
+    "phone": "+43 1 2345678",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Danke für Ihren Besuch",
+    "footer2": "",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-90",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-11-05T10:15:30",
+    "items": [
+      {
+        "name": "Brauereiführung",
+        "quantity": 1,
+        "unitPriceCents": 2000,
+        "vatRate": 20
+      },
+      {
+        "name": "Bier 0,5",
+        "quantity": 1,
+        "unitPriceCents": 450,
+        "vatRate": 20
+      },
+      {
+        "name": "Gutschein Nr. FG-1234",
+        "quantity": 1,
+        "unitPriceCents": -2000,
+        "vatRate": 20,
+        "kind": "voucher"
+      }
+    ],
+    "vouchers": [
+      {
+        "source": "external",
+        "action": "redeem",
+        "type": "single_purpose",
+        "voucherType": "single_purpose",
+        "number": "FG-1234",
+        "amountCents": 2000,
+        "vatRateBp": 2000,
+        "taxedWith": "FG-1234-V",
+        "name": "Gutschein Nr. FG-1234"
+      },
+      {
+        "source": "external",
+        "action": "redeem",
+        "type": "value",
+        "voucherType": "multi_purpose",
+        "number": "W-77",
+        "value": 3,
+        "valueCents": 300,
+        "name": "Gutschein Nr. W-77"
+      }
+    ],
+    "paymentMethod": "cash",
+    "payments": [
+      {
+        "id": "p1",
+        "method": "cash",
+        "amountCents": 150
+      }
+    ],
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-90_2026-11-05T10:15:30_4,50_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": []
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

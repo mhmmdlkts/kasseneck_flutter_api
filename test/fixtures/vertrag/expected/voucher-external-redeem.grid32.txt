@@ -1,0 +1,30 @@
+       Bäckerei Kornblum        
+         Neubaugasse 12         
+           1070 Wien            
+          ATU12345675           
+         +43 1 2345678          
+                                
+Datum:       05.11.2026 10:15:30
+Kassen-ID:                KASSE1
+Beleg-ID:          AT0-KASSE1-90
+                                
+1  x                     20,00 A
+Brauereiführung                 
+1  x Bier 0,5             4,50 A
+Gutschein Nr.           -20,00 A
+FG-1234                         
+  Einzweck, versteuert mit      
+  FG-1234-V                     
+                                
+MwSt%   MwSt      Netto   Brutto
+A 20%   0,75      3,75      4,50
+--------------------------------
+Zwischensumme             4,50 €
+Gutschein Nr. W-77       -3,00 €
+--------------------------------
+Gesamt:                   1,50 €
+Zahlungsart:          Barzahlung
+                                
+           [QR-Code]            
+                                
+     Danke für Ihren Besuch     
