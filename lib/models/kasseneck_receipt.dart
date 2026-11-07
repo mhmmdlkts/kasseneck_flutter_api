@@ -221,6 +221,14 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Antwort, nicht den Beleg.
   bool replayed = false;
 
+  /// Nur nach einem Verkauf auf einem veralteten Weg (Server 2026-11:
+  /// Wertgutschein der Altform mit frei getipptem Code, `type: value`): der
+  /// Hinweis des Servers (englisch, Antwortfeld `deprecation`). Der Beleg
+  /// gilt; kuenftig den Gutschein als Fremdgutschein
+  /// ([KeckVoucher.source] `external`) bzw. als eigenen ueber eine Sorte
+  /// senden. Sonst `null`. Steht nicht in [toJson], wie [replayed].
+  String? deprecation;
+
   KasseneckReceipt({
     required this.receiptId,
     required this.cashregisterId,
@@ -406,7 +414,9 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     )
       ..outputs = ausgabenLesen(json['outputs'])
       // Nur genau true: ein anderer Wert ist keine Aussage des Servers.
-      ..replayed = json['replayed'] == true;
+      ..replayed = json['replayed'] == true
+      // Nur ein nicht leerer Text: ohne Hinweis bleibt das Ergebnis wie bisher.
+      ..deprecation = json['deprecation'] is String && (json['deprecation'] as String).isNotEmpty ? json['deprecation'] as String : null;
   }
 
   // Nur die Beleg-Daten (ohne Firma/Metadaten)

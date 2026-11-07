@@ -31,7 +31,13 @@ Map<String, dynamic> _fall(String endpunkt, String name) => ((_kasse[endpunkt] a
 Map<String, dynamic> _kopie(Map<String, dynamic> m) => jsonDecode(jsonEncode(m)) as Map<String, dynamic>;
 
 /// Die Felder der Gutschein-Sorten (11.8.0) ohne Angabe: kein Sortenverkauf, keine Sorten, keine Vorlage.
-const _ohneSorten = {'typeSale': false, 'types': <Object?>[], 'serviceArticles': false, 'labelDefault': null};
+const _ohneSorten = {
+  'typeSale': false,
+  'types': <Object?>[],
+  'serviceArticles': false,
+  'labelDefault': null,
+  'externalVouchers': 'off',
+};
 
 /// Der Kassenweg mit einer Attrappe, die immer [antwort] liefert und die
 /// Anfragen mitschreibt.

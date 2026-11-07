@@ -69,7 +69,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.20.0
+  kasseneck_api: ^11.21.0
 ```
 
 ```bash
@@ -440,9 +440,20 @@ on a zero receipt, an item without a VAT rate, ...), `receiptDueCents` throws a
 
 `sellReceipt` takes, besides `items` and `payments`:
 
-- `vouchers`: `KeckVoucher(action: VoucherAction.sell or .redeem, type: VoucherType.value or .promo, valueCents: …)`.
-  Promo vouchers can only be redeemed, only one per receipt and not together
-  with other vouchers (`checkVoucherCombinationError` returns the reason).
+- `vouchers`: own vouchers of the new form (sold over a voucher type with
+  `typeId`, redeemed with their code after `checkVoucher`), or a voucher of
+  another system (since 11.21): `KeckVoucher(source: voucherSourceExternal,
+  action: VoucherAction.redeem, type: VoucherType.multiPurpose, number: 'W-77',
+  amountCents: 300)`; single-purpose with `vatRateBp` from
+  `externalVoucherVatRatesBp` and optionally `taxedWith`. Check a typed number
+  with `checkExternalVoucherNumber` (an own voucher code is refused) and pass
+  the account's release (`PosVoucherSettings.externalVouchers`) to
+  `receiptDueCents`. The old form `KeckVoucher(type: VoucherType.value, code: …,
+  valueCents: …)` with a freely typed code is deprecated
+  (`KeckVoucher.legacyValue`; the server answers with
+  `KasseneckReceipt.deprecation`). Promo vouchers (`VoucherType.promo`) can
+  only be redeemed, only one per receipt and not together with other vouchers
+  (`checkVoucherCombinationError` returns the reason).
 - `tip`: `KeckTip.forRecipient(registerUserId, cents: 200)` or `KeckTip(cents: …, recipients: …)`.
   The backend books it as its own line; `listTipRecipients()` returns the people
   a tip can be assigned to. A receipt needs at least one item for a tip.
@@ -1485,6 +1496,9 @@ int receive(String? signatureHeader, List<int> rawBody) {
       // variant_group.created or .updated: keep it only if updatedAt is later.
       final stored = variantGroups[data.id];
       if (stored == null || (data.updatedAt ?? '').compareTo(stored.updatedAt ?? '') > 0) variantGroups[data.id] = data;
+    case InventoryReceiptCreatedEvent() || InventoryReceiptCancelledEvent():
+      // receipt.created / receipt.cancelled (since 11.21): see "Receipt webhooks" below.
+      break;
   }
   return 200;
 }
@@ -1510,9 +1524,25 @@ int receive(String? signatureHeader, List<int> rawBody) {
   `article.deactivated`), since 10.4 `InventoryReservationEvent`
   (`reservation.expired`, `reservation.released`, `reservation.redeemed`)
   and since 10.5 `InventoryVariantGroupEvent` (`variant_group.created`,
-  `variant_group.updated`), each with `id`, `createdAt`, `accountId` and
-  `test`. A `switch` without `default` over all subclasses needs a case for
-  each new one.
+  `variant_group.updated`), since 11.21 `InventoryReceiptCreatedEvent` and
+  `InventoryReceiptCancelledEvent` (receipt webhooks), each with `id`,
+  `createdAt`, `accountId` and `test`. A `switch` without `default` over all
+  subclasses needs a case for each new one.
+- **Receipt webhooks** (since 11.21). `receipt.created` comes for every newly
+  signed receipt of any type (the cancellation receipt too), `receipt.cancelled`
+  additionally for every cancellation receipt; both need the register module,
+  not inventory (else `webhook_event_not_available` when subscribing).
+  `ReceiptCreatedEventData.receipt` is the receipt object as `listReceipts`
+  with `view: full` delivers it, kept as a raw map because this library runs
+  without Flutter; in an app read it with
+  `KasseneckReceipt.fromMetadata(data.receipt, const {})`. A receipt too large
+  for one delivery comes without its items, with `truncated` set and a `hint`
+  to fetch it with `getReceipt`. `ReceiptCancelledEventData` adds
+  `cancellationOf` (the original's receipt ID, `null` for the deprecated
+  cancellation without reference), `cancelledItems` (`index`, `quantity`) and
+  `refunds` (`refundOf`, `amountCents`, `method`). Deduplicate on `event.id`;
+  if a register's receipt number is missing, fetch the period with
+  `listReceipts`.
 - **Events.** `stock.changed` carries the current state of one article at one
   location (`onHand`, `reserved`, `available`, `defective`, `sequence`,
   `updatedAt`) plus `cause` (`sale`, `invoice`, `goods_receipt`, `transfer`,

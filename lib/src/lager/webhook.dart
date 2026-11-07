@@ -150,11 +150,14 @@ bool _gleichZeitkonstant(List<int> a, List<int> b) {
 ///   case InventoryArticleEvent(:final data): ...
 ///   case InventoryReservationEvent(:final data): ...
 ///   case InventoryVariantGroupEvent(:final data): ...
+///   case InventoryReceiptCreatedEvent(:final data): ...
+///   case InventoryReceiptCancelledEvent(:final data): ...
 /// }
 /// ```
 ///
 /// Seit 10.4 gibt es [InventoryReservationEvent], seit 10.5
-/// [InventoryVariantGroupEvent]. Ein `switch` ohne `default`, der alle
+/// [InventoryVariantGroupEvent], seit 11.21 [InventoryReceiptCreatedEvent]
+/// und [InventoryReceiptCancelledEvent]. Ein `switch` ohne `default`, der alle
 /// Unterklassen aufzaehlt, braucht fuer jede einen Zweig.
 sealed class InventoryWebhookEvent {
   const InventoryWebhookEvent({
@@ -270,6 +273,115 @@ final class InventoryVariantGroupEvent extends InventoryWebhookEvent {
   final VariantGroup data;
 }
 
+/// Nutzlast von `receipt.created` (Beleg-Webhooks, seit 11.21): der Beleg wie
+/// `listReceipts` mit `view: full` (dieselbe Darstellung, auch
+/// Fremdgutscheine mit Nummer, eigene maskiert).
+///
+/// [receipt] bleibt das rohe Belegobjekt vom Draht: diese Bibliothek laeuft
+/// ohne Flutter (Server eines Shops), der Belegtyp des Pakets nicht. In einer
+/// App liest `KasseneckReceipt.fromMetadata(data.receipt, const {})` ihn wie
+/// einen Beleg aus `listFullReceipts` ohne Kopf.
+///
+/// Ist der Beleg fuer eine Zustellung zu gross, fehlen seine Positionen,
+/// [truncated] ist `true` und [hint] sagt, ihn mit `getReceipt` zu holen.
+class ReceiptCreatedEventData {
+  const ReceiptCreatedEventData({required this.receipt, this.truncated = false, this.hint});
+
+  /// Das Belegobjekt (`receiptId`, `items`, `vouchers`, `payments` …).
+  final Map<String, dynamic> receipt;
+
+  /// `true` nur bei einer gekuerzten Zustellung (die Positionen fehlen).
+  final bool truncated;
+
+  /// Nur bei einer gekuerzten Zustellung: Hinweis (deutsch).
+  final String? hint;
+}
+
+/// Eine stornierte Position aus dem Storno-Beleg (`cancelledItems[]`).
+class ReceiptCancelledItem {
+  const ReceiptCancelledItem({required this.index, required this.quantity});
+
+  /// Index der Position im Original; `null`, wenn der Storno-Beleg ihn nicht
+  /// traegt (Positionen ohne Artikel).
+  final int? index;
+  final int? quantity;
+
+  @override
+  bool operator ==(Object other) => other is ReceiptCancelledItem && other.index == index && other.quantity == quantity;
+
+  @override
+  int get hashCode => Object.hash(index, quantity);
+}
+
+/// Eine Rueckzahlung des Storno-Belegs (`refunds[]`): Betrag positiv in Cent.
+class ReceiptRefund {
+  const ReceiptRefund({required this.refundOf, required this.amountCents, required this.method});
+
+  /// Kennung der Zahlung im Original (`payments[].id`); `null` ohne Bezug
+  /// (etwa bar zurueck).
+  final String? refundOf;
+  final int? amountCents;
+
+  /// Zahlart wie in `payments[].method`.
+  final String? method;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ReceiptRefund && other.refundOf == refundOf && other.amountCents == amountCents && other.method == method;
+
+  @override
+  int get hashCode => Object.hash(refundOf, amountCents, method);
+}
+
+/// Nutzlast von `receipt.cancelled`: der Storno-Beleg wie bei
+/// `receipt.created`, dazu Bezug, stornierte Positionen und Rueckzahlungen,
+/// abgeleitet aus dem Storno-Beleg selbst. [cancellationOf] ist die Beleg-ID
+/// des Originals; der veraltete Storno ohne Bezug traegt `null`.
+class ReceiptCancelledEventData extends ReceiptCreatedEventData {
+  const ReceiptCancelledEventData({
+    required super.receipt,
+    super.truncated,
+    super.hint,
+    required this.cancellationOf,
+    required this.cancelledItems,
+    required this.refunds,
+  });
+
+  final String? cancellationOf;
+  final List<ReceiptCancelledItem> cancelledItems;
+  final List<ReceiptRefund> refunds;
+}
+
+/// `receipt.created` (seit 11.21): ein neu signierter Beleg jeder Art, auch
+/// der Storno-Beleg.
+final class InventoryReceiptCreatedEvent extends InventoryWebhookEvent {
+  const InventoryReceiptCreatedEvent({
+    required super.id,
+    required super.createdAt,
+    required super.accountId,
+    required super.test,
+    required this.data,
+  }) : super(type: 'receipt.created');
+
+  @override
+  final ReceiptCreatedEventData data;
+}
+
+/// `receipt.cancelled` (seit 11.21): zusaetzlich zu `receipt.created` fuer
+/// jeden Storno-Beleg.
+final class InventoryReceiptCancelledEvent extends InventoryWebhookEvent {
+  const InventoryReceiptCancelledEvent({
+    required super.id,
+    required super.createdAt,
+    required super.accountId,
+    required super.test,
+    required this.data,
+  }) : super(type: 'receipt.cancelled');
+
+  @override
+  final ReceiptCancelledEventData data;
+}
+
 const String _parseName = 'parseInventoryWebhookEvent';
 
 KasseneckValidationError _kaputt(String grund) => KasseneckValidationError(_parseName, grund, 'response');
@@ -284,6 +396,9 @@ KasseneckValidationError _kaputt(String grund) => KasseneckValidationError(_pars
 ///   `getReservation`, mit dem Status nach dem Vorgang (seit 10.4).
 /// - `variant_group.created|updated` tragen die Gruppe wie `getVariantGroup`
 ///   (seit 10.5); den Stand nur uebernehmen, wenn `data.updatedAt` neuer ist.
+/// - `receipt.created|cancelled` (Beleg-Webhooks, seit 11.21) tragen den Beleg
+///   wie `listReceipts` mit `view: full` ([ReceiptCreatedEventData],
+///   [ReceiptCancelledEventData]).
 /// - Ein Rumpf, der keine Huelle ist, oder eine Bruchzahl in einer Menge wirft
 ///   [KasseneckValidationError] (`kind: response`).
 ///
@@ -330,7 +445,57 @@ InventoryWebhookEvent? parseInventoryWebhookEvent(Object? rawBody) {
         id: id, type: type, createdAt: createdAt, accountId: accountId, test: test, data: reservierung(ort, data)),
     'variant_group.created' || 'variant_group.updated' => InventoryVariantGroupEvent(
         id: id, type: type, createdAt: createdAt, accountId: accountId, test: test, data: variantengruppe(ort, data)),
+    'receipt.created' => InventoryReceiptCreatedEvent(
+        id: id, createdAt: createdAt, accountId: accountId, test: test, data: _belegDaten(objekt(data)!)),
+    'receipt.cancelled' => InventoryReceiptCancelledEvent(
+        id: id, createdAt: createdAt, accountId: accountId, test: test, data: _stornoDaten(objekt(data)!)),
     _ => InventoryArticleEvent(
         id: id, type: type, createdAt: createdAt, accountId: accountId, test: test, data: artikel(ort, data)),
   };
+}
+
+/// `data` von `receipt.created`: der Beleg der vollen Ansicht, bei einer
+/// gekuerzten Zustellung mit Hinweis.
+ReceiptCreatedEventData _belegDaten(Map<String, dynamic> data) {
+  final beleg = objekt(data['receipt']);
+  if (beleg == null) throw _kaputt('Ereignis ohne data.receipt');
+  return ReceiptCreatedEventData(
+    receipt: beleg,
+    truncated: data['truncated'] == true,
+    hint: data['hint'] is String ? data['hint'] as String : null,
+  );
+}
+
+String? _textOderNull(Object? w) => w is String && w.isNotEmpty ? w : null;
+
+/// `data` von `receipt.cancelled`: dazu Bezug, stornierte Positionen und
+/// Rueckzahlungen aus dem Storno-Beleg. Fehlt `cancellationOf` ganz, ist das
+/// keine Huelle des Servers (der schreibt `null` fuer den Storno ohne Bezug).
+ReceiptCancelledEventData _stornoDaten(Map<String, dynamic> data) {
+  final bezug = data['cancellationOf'];
+  if (!data.containsKey('cancellationOf') || (bezug != null && bezug is! String)) {
+    throw _kaputt('data.cancellationOf ist weder Text noch null');
+  }
+  final positionen = data['cancelledItems'];
+  if (positionen is! List || positionen.any((x) => objekt(x) == null)) {
+    throw _kaputt('data.cancelledItems ist keine Liste von Positionen');
+  }
+  final rueck = data['refunds'];
+  if (rueck is! List || rueck.any((x) => objekt(x) == null)) throw _kaputt('data.refunds ist keine Liste von Rueckzahlungen');
+  final beleg = _belegDaten(data);
+  return ReceiptCancelledEventData(
+    receipt: beleg.receipt,
+    truncated: beleg.truncated,
+    hint: beleg.hint,
+    cancellationOf: _textOderNull(bezug),
+    cancelledItems: List.unmodifiable([
+      for (final p in positionen.map(objekt))
+        ReceiptCancelledItem(index: ganzzahlVon(p!['index']), quantity: ganzzahlVon(p['quantity'])),
+    ]),
+    refunds: List.unmodifiable([
+      for (final r in rueck.map(objekt))
+        ReceiptRefund(
+            refundOf: _textOderNull(r!['refundOf']), amountCents: ganzzahlVon(r['amountCents']), method: _textOderNull(r['method'])),
+    ]),
+  );
 }

@@ -118,6 +118,7 @@ void main() {
         'landedCostAllocations': landedCostAllocations,
         'landedCostTypes': landedCostTypes,
         'locationTypes': locationTypes,
+        'receiptWebhookEvents': receiptWebhookEvents,
         'reservationStatuses': reservationStatuses,
         'stockChangeCauses': stockChangeCauses,
         'stockConditions': stockConditions,
@@ -212,13 +213,14 @@ void main() {
 
     test('inventoryWebhookEvents sind genau die Konto-Ereignisse des Vertrags, in der Reihenfolge von listWebhooks', () {
       final imVertrag =
-          (_vokabular['events'] as Map).keys.cast<String>().where((e) => RegExp(r'^(stock|article|reservation|variant_group)\.').hasMatch(e));
+          (_vokabular['events'] as Map).keys.cast<String>().where((e) => RegExp(r'^(stock|article|reservation|variant_group|receipt)\.').hasMatch(e));
       expect(inventoryWebhookEvents.toSet(), imVertrag.toSet());
       expect(inventoryWebhookEvents, _daten('list_webhooks')['events']);
-      // Angehaengt wird hinten: 5b die Reservierung, 5c die Variantengruppen.
+      // Angehaengt wird hinten: 5b die Reservierung, 5c die Variantengruppen, dann die Beleg-Webhooks (11.21).
       expect(inventoryWebhookEvents.sublist(5, 8), ['reservation.expired', 'reservation.released', 'reservation.redeemed']);
-      expect(inventoryWebhookEvents.sublist(inventoryWebhookEvents.length - 2),
-          ['variant_group.created', 'variant_group.updated']);
+      expect(inventoryWebhookEvents.sublist(8, 10), ['variant_group.created', 'variant_group.updated']);
+      expect(inventoryWebhookEvents.sublist(inventoryWebhookEvents.length - 2), ['receipt.created', 'receipt.cancelled']);
+      expect(inventoryWebhookEvents.sublist(inventoryWebhookEvents.length - 2), receiptWebhookEvents);
       expect(inventoryWebhookEnvelopeFields, ['id', 'type', 'createdAt', 'accountId', 'test', 'data']);
     });
 
@@ -228,11 +230,12 @@ void main() {
       final katalog = ((_vokabular['errorCodes'] as Map)['inventory'] as List).cast<String>();
       final vertrag = katalog.where((c) => c != 'register_user_not_allowed').toList();
       expect(inventoryErrorCodes.toSet(), vertrag.toSet());
-      // Angehaengt wird hinten: die 12 Codes aus 10.3 stehen unveraendert vorn.
-      expect(inventoryErrorCodes.sublist(0, 12), [
+      // Die 12 Codes aus 10.3 stehen unveraendert vorn, dahinter (wie im Vertrag) webhook_event_not_available der
+      // Beleg-Webhooks (11.21), dann 5b in Vertragsreihenfolge.
+      expect(inventoryErrorCodes.sublist(0, 13), [
         'validation', 'invalid_cursor', 'article_not_found', 'webhook_not_found', 'webhook_limit', 'invalid_webhook_url',
         'event_not_subscribed', 'webhook_inactive', 'inventory_api_not_enabled', 'module_inactive', 'rate_limited',
-        'server_error',
+        'server_error', 'webhook_event_not_available',
       ]);
       expect(inventoryErrorCodes.sublist(12), vertrag.sublist(vertrag.indexOf('server_error') + 1));
       // 5c haengt hinter 5b an, die Inventur hinter 5c (die Reihenfolge der
@@ -524,7 +527,8 @@ void main() {
 
     test('jedes zugestellte Ereignis liest sich typisiert, data verlustfrei', () {
       final ereignisse = (_lager['webhookEvents'] as List).cast<Map<String, dynamic>>();
-      expect(ereignisse.map((e) => e['event']).toSet(), inventoryWebhookEvents.toSet());
+      // Die Beleg-Ereignisse zeigt der Lager-Export nicht (eigener Test in fremdgutschein_test.dart).
+      expect(ereignisse.map((e) => e['event']).toSet(), inventoryWebhookEvents.where((e) => !receiptWebhookEvents.contains(e)).toSet());
       for (final e in ereignisse.where((e) => RegExp(r'^(reservation|variant_group)\.').hasMatch(e['event'] as String))) {
         final body = e['body'] as Map;
         for (final k in _schluessel(((_vokabular['events'] as Map)[e['event']] as Map)['data'])) {
@@ -546,6 +550,7 @@ void main() {
           InventoryArticleEvent(:final data) => data.toJson(),
           InventoryReservationEvent(:final data) => data.toJson(),
           InventoryVariantGroupEvent(:final data) => data.toJson(),
+          InventoryReceiptCreatedEvent() || InventoryReceiptCancelledEvent() => fail('kein Beleg-Ereignis im Lager-Export'),
         };
         expect(data, body['data'], reason: e['event'] as String);
         if (ereignis is InventoryStockChangedEvent) expect(stockChangeCauses, contains(ereignis.data.cause));

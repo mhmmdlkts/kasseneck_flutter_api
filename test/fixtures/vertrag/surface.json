@@ -1,5 +1,5 @@
 {
-  "version": "1.29.0",
+  "version": "1.30.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -735,6 +735,11 @@
       "cash_out",
       "interim_difference"
     ],
+    "externalVouchers": [
+      "off",
+      "multi_purpose",
+      "all"
+    ],
     "manualMovementTypes": [
       "change_in",
       "cash_drop",
@@ -1463,6 +1468,7 @@
       "module_inactive",
       "rate_limited",
       "server_error",
+      "webhook_event_not_available",
       "idempotency_key_required",
       "idempotency_conflict",
       "location_not_found",
@@ -1591,7 +1597,9 @@
       "reservation.released",
       "reservation.redeemed",
       "variant_group.created",
-      "variant_group.updated"
+      "variant_group.updated",
+      "receipt.created",
+      "receipt.cancelled"
     ],
     "landedCostAllocations": [
       "value",
@@ -1612,6 +1620,10 @@
       "store",
       "vehicle",
       "other"
+    ],
+    "receiptWebhookEvents": [
+      "receipt.created",
+      "receipt.cancelled"
     ],
     "reservationStatuses": [
       "active",

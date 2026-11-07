@@ -73,7 +73,11 @@ void main() {
   test('Gutschein-Fehler: jeder Gutschein-Code des /v3-Vokabulars hat einen Satz, sonst keiner (wie npm)', () {
     final vokabular = jsonDecode(File('test/fixtures/vertrag/v3/v3-vokabular.json').readAsStringSync()) as Map<String, dynamic>;
     final alle = (((vokabular['errorCodes'] as Map)['all']) as List).cast<String>();
-    final serverCodes = alle.where((c) => c.startsWith('voucher_') || c == 'too_many_voucher_checks').toList()..sort();
+    // Dazu die Codes der Fremdgutscheine (external_voucher_*, 11.21.0).
+    final serverCodes = alle
+        .where((c) => c.startsWith('voucher_') || c.startsWith('external_voucher_') || c == 'too_many_voucher_checks')
+        .toList()
+      ..sort();
     expect(serverCodes, isNotEmpty);
     expect(voucherErrorMessages.keys.toList()..sort(), serverCodes);
     for (final code in serverCodes) {

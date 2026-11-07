@@ -22,6 +22,13 @@ import '../kasse/gutschein_wunsch.dart' show artOderNull;
 ///                              und 8:4 „  Rest am Gutschein“ | „19,50 EUR“ bzw. „2 Stück“
 ///   Einloesung Mehrzweck       nach „Zwischensumme“ „Gutschein ····-9DWT“ und Rest
 ///   Auszahlung                 8:4 „Auszahlung Gutschein ····-9DWT“, Text „  Grund: …“
+///   Fremdgutschein             wie der eigene, nur „Gutschein Nr. `<Nummer>`“ statt der
+///   (`source: external`)       Maske: Verkauf aus dem Positionsnamen des Servers,
+///                              Einloesung Einzweck 8:4 „Gutschein Nr. FG-1234“ und
+///                              Text „  Einzweck, versteuert mit FG-1234-V“ (nur mit
+///                              `taxedWith`), Mehrzweck nach „Zwischensumme“, Auszahlung
+///                              „Auszahlung Gutschein Nr. …“; nie „Rest am Gutschein“
+///                              (den Saldo kennt nur das fremde System)
 ///   Zahlungsart                entfaellt, wenn ein Gutschein eingeloest und 0 Cent
 ///                              bezahlt wurde (`paymentMethodText`)
 ///
@@ -67,6 +74,28 @@ class VoucherBonTextLine extends VoucherBonLine {
 const String multiPurposeVatNote = '  USt bei Einlösung';
 
 const String _restText = '  Rest am Gutschein';
+
+/// Zeile eines Fremdgutscheins `Gutschein Nr. <Nummer>`; `null` bei einem
+/// eigenen Gutschein oder ohne Nummer (Zwilling von `fremdZeile` im npm-Layout).
+String? externalVoucherLine(KeckVoucher v) {
+  final n = v.number;
+  return v.isExternal && n != null && n.isNotEmpty ? 'Gutschein Nr. $n' : null;
+}
+
+/// Ein gelesener Eintrag mit Wert: beim Fremdgutschein ganze positive Cent,
+/// sonst wie [KeckVoucher.isValid] (Zwilling von `eintragGueltig` im
+/// npm-Layout). Ein gelesener Fremdgutschein ist nie ein sendbarer Wunsch
+/// (Serverfelder), traegt aber einen Wert.
+bool voucherEntryValid(KeckVoucher v) => v.isExternal ? (v.valueCents ?? 0) > 0 : v.isValid;
+
+/// Text der Verkaufszeile eines Wertgutscheins, der nur als Eintrag steht
+/// (Mehrzweck vor dem Stichtag des 0-%-Topfs): Fremdgutschein mit Nummer,
+/// Mehrzweck mit Code, sonst der Belegtext.
+String voucherSaleText(KeckVoucher v) {
+  final fremd = externalVoucherLine(v);
+  if (fremd != null) return '$fremd (Mehrzweckgutschein)';
+  return isMultiPurposeWithCode(v) ? 'Mehrzweckgutschein${voucherCodeSuffixText(v)}' : v.receiptText;
+}
 
 /// Steht der Betrag des Eintrags als Position am Beleg (Einzweck, Leistung, 0-%-Topf)?
 bool voucherStandsAsItem(KeckVoucher v) =>
@@ -158,9 +187,10 @@ Map<int, VoucherItemMatch> voucherItemMatches(List<KasseneckItem> items, List<Ke
       }
       continue;
     }
+    final fremd = externalVoucherLine(v);
     final endung = voucherEnding(v);
-    if (endung == null || (v.action != VoucherAction.redeem && v.action != VoucherAction.payout)) continue;
-    final name = '${v.action == VoucherAction.payout ? 'Auszahlung ' : ''}Gutschein ····-$endung';
+    if ((fremd == null && endung == null) || (v.action != VoucherAction.redeem && v.action != VoucherAction.payout)) continue;
+    final name = '${v.action == VoucherAction.payout ? 'Auszahlung ' : ''}${fremd ?? 'Gutschein ····-$endung'}';
     final ziel = _betrag(v);
     final genommen = <int>[];
     var summe = 0;
@@ -208,6 +238,11 @@ List<VoucherBonLine> voucherItemLines(
   }
   final art = artOderNull(v) == VoucherType.service ? 'Leistung' : 'Einzweck';
   final belegt = v.taxedWith;
+  if (v.isExternal) {
+    // Fremdgutschein: Vermerk nur mit `taxedWith` (Beleg im fremden System, wie gesendet), kein Rest.
+    if (belegt != null && belegt.isNotEmpty) zeilen.add(VoucherBonTextLine('  $art, versteuert mit $belegt'));
+    return zeilen;
+  }
   if (belegt != null && belegt.isNotEmpty) {
     zeilen.add(VoucherBonTextLine('  $art, versteuert mit Beleg $belegt'));
   } else if (v.exempt == true) {
@@ -240,12 +275,16 @@ List<VoucherBonPairLine>? voucherPaymentLines(
   if (v.action != VoucherAction.redeem && v.action != VoucherAction.payout) return null;
   final wert = formatCents(v.valueCents ?? 0);
   final betrag = sign == 1 ? '-$wert $currency' : '$wert $currency';
-  final endung = isMultiPurposeWithCode(v) ? voucherEnding(v) : null;
+  // Fremdgutschein: „Gutschein Nr. <Nummer>“, nie ein Rest (den Saldo kennt nur das fremde System).
+  final fremd = externalVoucherLine(v);
+  final endung = fremd == null && isMultiPurposeWithCode(v) ? voucherEnding(v) : null;
   // Auszahlung wie npm (layout.ts): „Auszahlung “ vor dem Text des Pakets
   // (gutscheinText); eine Einloesung der Altform behaelt ihren bisherigen
   // Dart-Text (receiptText), damit Altbelege byte-gleich bleiben.
   final String text;
-  if (endung != null) {
+  if (fremd != null) {
+    text = fremd;
+  } else if (endung != null) {
     text = 'Gutschein ····-$endung';
   } else if (v.action == VoucherAction.payout) {
     text = layoutVoucherText(v);

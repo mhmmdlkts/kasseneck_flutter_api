@@ -297,7 +297,7 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                       Expanded(
                         // Mehrzweck mit Code (vor dem Stichtag nur als Eintrag): wie die Position im 0-%-Topf.
                         child: Text(
-                            '1 x ${isMultiPurposeWithCode(voucher) ? 'Mehrzweckgutschein${voucherCodeSuffixText(voucher)}' : voucher.receiptText}',
+                            '1 x ${voucherSaleText(voucher)}',
                             style: textStyle),
                       ),
                       Text('${formatCents(widget.receipt.valueVoucherSign * (voucher.valueCents??0))} ${VatRate.vat0.category}', style: textStyle),

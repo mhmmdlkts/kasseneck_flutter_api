@@ -135,9 +135,11 @@ KeckVoucher _einzweck({
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('die zehn Gutschein-Belege des Vertrags sind da', () {
+  test('die zwoelf Gutschein-Belege des Vertrags sind da', () {
     expect(_gutscheinBelege, [
       'voucher-cancellation',
+      'voucher-external-redeem',
+      'voucher-external-sale',
       'voucher-multi-purpose-redeem',
       'voucher-multi-purpose-sale',
       'voucher-payout',

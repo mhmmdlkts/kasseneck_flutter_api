@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "d354e8a1424c465dab37d166dbda8c9a9ed0b4021e0564dfe23f744ecc4f4918",
-    "inputsSha256": "cf624a8ca46710680c973bff0af32b3c3a67809ae7e330175d22a0946dedfc50",
-    "backendPackage": "@kreiseck/kasseneck-api@0.37.0",
+    "sha256": "4ff21ddfad8f5fd6ae2a564989f5e31b9d2a9d272af3962cc479cfacbdd81919",
+    "inputsSha256": "fe23c2f04b2ebf175ad64aa8b1911dac55ce695fe46e5d4b8a9401c756276c27",
+    "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -1771,6 +1771,7 @@
           "registrationInfo": null,
           "testCashregister": true,
           "testSignature": false,
+          "deprecation": "Wertgutscheine mit frei getipptem Code (vouchers type value) sind veraltet: der Code wird nicht geprüft, umsatzsteuerlich ist das ein fremder Mehrzweckgutschein. Gutscheine anderer Systeme bitte als Fremdgutschein senden (source external, mit Art, Steuersatz und Betrag), eigene Gutscheine mit Code über eine Gutschein-Sorte ausgeben.",
           "logo_scale": "M",
           "layout": {
             "paperSize": "mm80",
