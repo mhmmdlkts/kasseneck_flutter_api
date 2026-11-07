@@ -30,8 +30,12 @@ const List<String> _dateiSchluessel = [
   'cancellationPaymentErrors',
   'cancellationVoucherErrors',
   'voucherErrors',
+  'externalVoucherTileMessages',
+  'externalVoucherArticleErrors',
   'labels',
   'returnDispositionLabels',
+  'externalVouchersLabels',
+  'externalVoucherKindLabels',
 ];
 
 /// `plain_text` -> `plainText`: der Name des Enum-Werts zum Drahtwert.
@@ -143,8 +147,16 @@ String erzeugeKatalog(Map<String, dynamic> vertrag) {
       'Storno mit Rueckgabe als Gutschein: Code des Backends -> Schluessel des Satzes; siehe [cancellationErrorMessage].');
   zuordnung('voucherErrorMessages', 'voucherErrors',
       'Gutschein-Fehler (`/v3`): Code des Backends -> Schluessel des Satzes; siehe [voucherErrorMessage].');
+  zuordnung('externalVoucherTileMessages', 'externalVoucherTileMessages',
+      'Fremdgutscheine (1.31.0): Sperrgrund der Kachel (`externalVoucherTileBlock`) -> Schluessel des Satzes.');
+  zuordnung('externalVoucherArticleMessages', 'externalVoucherArticleErrors',
+      'Artikel als fremder Gutschein: Grund (`data.grund`) -> Schluessel des Satzes; siehe [externalVoucherArticleErrorMessage].');
   zuordnung('returnDispositionLabels', 'returnDispositionLabels',
       'Rueckgabe beim Storno: Wahl (`restock`, `defective`, `disposed`) -> Schluessel der Beschriftung.');
+  zuordnung('externalVouchersLabels', 'externalVouchersLabels',
+      'Freigabe der Fremdgutscheine (`off`, `multi_purpose`, `all`) -> Schluessel der Beschriftung.');
+  zuordnung('externalVoucherKindLabels', 'externalVoucherKindLabels',
+      'Art eines fremden Gutscheins (`multi_purpose`, `single_purpose`) -> Schluessel der Beschriftung.');
   return sb.toString().replaceFirst(RegExp(r'\n+$'), '\n');
 }
 

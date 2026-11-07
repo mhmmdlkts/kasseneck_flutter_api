@@ -9,6 +9,7 @@ library;
 
 import '../register/fehler.dart';
 import 'beleg_ausgaben.dart' show ReceiptOutput;
+import 'fremdgutschein_artikel.dart' show articleExternalVoucherInvalid;
 
 part 'texte_katalog.dart';
 
@@ -232,3 +233,12 @@ String? receiptOutputLabel(ReceiptOutput output) {
 /// anderen Code, der dann den allgemeinen Weg des Aufrufs geht. Wie beim
 /// E-Mail-Versand entscheiden beide Kassen am Code, nie am Wortlaut.
 String? voucherErrorMessage(String? code) => code == null ? null : voucherErrorMessages[code];
+
+/// Der Satz zu einer Absage beim Speichern eines Artikels als fremder
+/// Gutschein: nur fuer `article_external_voucher_invalid` (sonst `null`), je
+/// [reason] (`data.grund`); ein unbekannter oder fehlender Grund bekommt den
+/// allgemeinen Satz. Zwilling von `externalVoucherArticleErrorMessage` im npm-Paket.
+String? externalVoucherArticleErrorMessage(String? code, [String? reason]) {
+  if (code != articleExternalVoucherInvalid) return null;
+  return externalVoucherArticleMessages[reason] ?? 'external_voucher_article.invalid';
+}

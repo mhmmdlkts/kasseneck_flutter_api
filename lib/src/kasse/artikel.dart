@@ -3,6 +3,7 @@
 /// `article-endpoints.js`).
 library;
 
+import '../../enums/voucher_type.dart';
 import 'kachel_referenz.dart';
 
 /// Kategorie der Kachel-Kasse.
@@ -120,11 +121,39 @@ QuantityDefaults quantityDefaults(PosArticle a) {
   );
 }
 
+/// Art des fremden Gutscheins am Artikel (`/v3` `externalVoucher`, gespeichert
+/// `fremdgutschein`; Fremdgutscheine an der Kasse, 11.22.0). Die Regeln dazu
+/// stehen in `fremdgutschein_artikel.dart`; die Art steht hier, weil `inventory.dart`
+/// diese Datei ohne Flutter einbindet und die Regeln die Gutschein-Einstellung brauchen.
+enum ArticleExternalVoucher {
+  /// Wertgutschein (Mehrzweck): verkauft im 0-%-Topf, der Satz des Artikels zaehlt nicht.
+  multiPurpose('multi_purpose'),
+
+  /// Leistungsgutschein (Einzweck): verkauft mit dem Satz des Artikels.
+  singlePurpose('single_purpose');
+
+  const ArticleExternalVoucher(this.wire);
+
+  /// Der Wert am Draht (`/v3`).
+  final String wire;
+
+  /// Die Art des Gutschein-Wunschs, den die Kachel verkauft.
+  VoucherType get voucherType => this == multiPurpose ? VoucherType.multiPurpose : VoucherType.singlePurpose;
+
+  /// Die Art zum Drahtwert; `null` fuer einen unbekannten Wert (auch `null`).
+  static ArticleExternalVoucher? fromWire(Object? wire) {
+    for (final a in values) {
+      if (a.wire == wire) return a;
+    }
+    return null;
+  }
+}
+
 /// Artikel, wie ihn die Kasse für Kacheln und Belegpositionen braucht.
 class PosArticle {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher', 'askPrice', 'reference', 'addOns'};
+  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher', 'askPrice', 'reference', 'addOns', 'externalVoucher'};
 
   /// Die Felder von `tile`.
   static const Set<String> tileFields = {'visible', 'sort'};
@@ -152,6 +181,7 @@ class PosArticle {
     this.askPrice = false,
     this.reference,
     this.addOns,
+    this.externalVoucher,
   });
 
   final String id;
@@ -223,6 +253,15 @@ class PosArticle {
   /// wird sie ueber [addOnsFor].
   final List<String>? addOns;
 
+  /// Kachel verkauft einen fremden Gutschein (Fremdgutscheine an der Kasse,
+  /// 11.22.0): [ArticleExternalVoucher.multiPurpose] = Wertgutschein,
+  /// [ArticleExternalVoucher.singlePurpose] = Leistungsgutschein mit dem Satz
+  /// des Artikels; `null` = normaler Artikel, auch bei einem unbekannten Wert.
+  /// Die Kasse fragt die Gutscheinnummer ab und sendet einen Gutschein-Wunsch
+  /// statt einer Position; sperren ueber `externalVoucherTileBlock`. Vor
+  /// [stockTracked] werten: ein Fremdgutschein fuehrt nie Bestand.
+  final ArticleExternalVoucher? externalVoucher;
+
   /// Aus der Drahtform `/api/v3` (`tile {visible, sort}`, `quantityRule`,
   /// `askQuantity`, `maxQuantity`, `revenueGroupId`, `stockLocationIds`,
   /// `number`, `ean`, `internalCode`, `stockTracked`, `serviceVoucher`).
@@ -275,6 +314,7 @@ class PosArticle {
       askPrice: json['askPrice'] == true,
       reference: PosReference.fromJson(json['reference']),
       addOns: _addOnListe(json['addOns']),
+      externalVoucher: ArticleExternalVoucher.fromWire(json['externalVoucher']),
     );
   }
 
@@ -302,6 +342,7 @@ class PosArticle {
         'askPrice': askPrice,
         'reference': reference?.toJson(),
         'addOns': addOns,
+        'externalVoucher': externalVoucher?.wire,
       };
 }
 

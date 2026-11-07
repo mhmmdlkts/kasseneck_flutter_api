@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "3c729299a204cf522158317aa38dcad5bb8ef797c44e9369faecc94be4717d78",
-    "inputsSha256": "fe23c2f04b2ebf175ad64aa8b1911dac55ce695fe46e5d4b8a9401c756276c27",
+    "sha256": "f5ab5e9bba448c05e6ee51f66a4f55c30e5efbff766b5b2e6814d77e3f53eb74",
+    "inputsSha256": "e57d371007798cc1eb865a609ac5975e0397fbce036680288b017448582ad8da",
     "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -589,6 +589,10 @@
     "ANMELDEMODUS": {
       "auswahl": "select_user",
       "pin": "pin"
+    },
+    "ARTIKEL_FREMDGUTSCHEIN": {
+      "mehrzweck": "multi_purpose",
+      "einzweck": "single_purpose"
     },
     "AUSGABE_ART": {
       "erstdruck": "print",
@@ -5699,7 +5703,8 @@
               "pattern": "muster",
               "patternStrict": "musterStreng"
             },
-            "addOns": "zusaetze"
+            "addOns": "zusaetze",
+            "externalVoucher": "fremdgutschein"
           }
         ]
       },
@@ -5712,6 +5717,9 @@
         },
         "articles[].reference.mode": {
           "$catalog": "REFERENZ_STUFE"
+        },
+        "articles[].externalVoucher": {
+          "$catalog": "ARTIKEL_FREMDGUTSCHEIN"
         }
       },
       "ergaenze": {
@@ -8866,7 +8874,8 @@
       "minStockByLocation",
       "askPrice",
       "reference",
-      "addOns"
+      "addOns",
+      "externalVoucher"
     ],
     "inner": [
       "id",
@@ -8896,7 +8905,8 @@
       "mindestJeStandort",
       "preisFragen",
       "referenz",
-      "zusaetze"
+      "zusaetze",
+      "fremdgutschein"
     ]
   },
   "articleGroupFields": [
