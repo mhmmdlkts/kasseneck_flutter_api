@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "3bb65a5fd076f45d799ce40864fe406a9ff9e4582c8cf638a1f81955d6efb732",
-    "inputsSha256": "411b3ef7731a7362e7c1e8115887efa358502e458f3214badb4b58b97514fbe8",
+    "sha256": "c137b0f64dd1a06c8cddd9d9164bd2360ecbc3133cc04ca2b82d0e37f9d4fe5d",
+    "inputsSha256": "cf624a8ca46710680c973bff0af32b3c3a67809ae7e330175d22a0946dedfc50",
     "backendPackage": "@kreiseck/kasseneck-api@0.37.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -319,6 +319,7 @@
       "logMyDrawerOpenings",
       "getMyShiftReport",
       "closeMyShift",
+      "recordMyShiftCount",
       "logReceiptOutputs",
       "createDepExport",
       "getDepExport",
@@ -364,6 +365,7 @@
       "logMyDrawerOpenings",
       "getMyShiftReport",
       "closeMyShift",
+      "recordMyShiftCount",
       "logReceiptOutputs",
       "getRegisterInspectionInfo",
       "reportConnectState"
@@ -496,6 +498,7 @@
       "receiveGoods",
       "recordInvoicePayment",
       "recordMyCashMovement",
+      "recordMyShiftCount",
       "recordMyStocktakeCount",
       "recordStockLoss",
       "recordStocktakeCount",
@@ -987,10 +990,20 @@
       "streifen": "stripe",
       "voll": "full"
     },
+    "KASSE_BETRIEB_WERTE.tipKinds[]": {
+      "prozent": "percent",
+      "aufrunden": "round_up",
+      "gesamt": "total"
+    },
     "KASSE_BETRIEB_WERTE.tipMode": {
       "betrag": "amount",
       "gesamt": "total",
       "beides": "both"
+    },
+    "KASSE_BETRIEB_WERTE.tipStart": {
+      "prozent": "percent",
+      "aufrunden": "round_up",
+      "gesamt": "total"
     },
     "KASSE_BETRIEB_WERTE.watermark": {
       "aus": "off",
@@ -1001,6 +1014,11 @@
       "links": "left",
       "mitte": "center",
       "rechts": "right"
+    },
+    "KASSE_GERAET_WERTE.cartWidth": {
+      "schmal": "narrow",
+      "mittel": "medium",
+      "breit": "wide"
     },
     "KASSE_GERAET_WERTE.categoryPosition": {
       "oben": "top",
@@ -1043,7 +1061,8 @@
       "umbuchung_ein": "transfer_in",
       "barausgabe": "expense",
       "differenz": "count_difference",
-      "uebergabedifferenz": "handover_difference"
+      "uebergabedifferenz": "handover_difference",
+      "zwischendifferenz": "interim_difference"
     },
     "KASSEN_ORT": {
       "bank": "bank",
@@ -1194,6 +1213,15 @@
       "schichtabschluss": "shift_close",
       "zwischenbericht": "shift_interim",
       "kassenbewegung": "cash_movement"
+    },
+    "SCHICHT_SOLL_TEIL": {
+      "anfang": "opening",
+      "barverkauf": "cash_sales",
+      "trinkgeldBar": "cash_tips",
+      "storno": "cancellations",
+      "ein": "cash_in",
+      "aus": "cash_out",
+      "zwischendifferenz": "interim_difference"
     },
     "SCHICHT_STATUS": {
       "offen": "open",
@@ -2892,6 +2920,20 @@
         "tip_payout_exceeds_claim",
         "validation"
       ],
+      "recordMyShiftCount": [
+        "cashregister_not_assigned",
+        "comment_required",
+        "idempotency_conflict",
+        "idempotency_key_required",
+        "invalid_amount",
+        "invalid_denominations",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "shift_closed",
+        "shift_not_open",
+        "validation"
+      ],
       "logReceiptOutputs": [
         "idempotency_key_required",
         "invalid_output_kind",
@@ -3324,7 +3366,8 @@
           "type": "art",
           "amountCents": "cents"
         },
-        "checkOnly": "nurPruefen"
+        "checkOnly": "nurPruefen",
+        "countedBeforePayout": "gezaehltVorAuszahlung"
       },
       "paramWerte": {
         "afterCount.type": {
@@ -4500,6 +4543,8 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKinds": "tgArten",
+          "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",
@@ -4564,7 +4609,8 @@
           "terminalTid": "terminalTid",
           "terminalVia": "terminalVia",
           "terminalType": "terminalArt",
-          "shortcutHints": "tastenMarken"
+          "shortcutHints": "tastenMarken",
+          "cartWidth": "korbBreite"
         },
         "vouchers": {
           "__": "gutscheine",
@@ -4669,6 +4715,12 @@
         "business.tipMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipMode"
         },
+        "business.tipKinds[]": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKinds[]"
+        },
+        "business.tipStart": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
         },
@@ -4695,6 +4747,9 @@
         },
         "device.terminalType": {
           "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        },
+        "device.cartWidth": {
+          "$catalog": "KASSE_GERAET_WERTE.cartWidth"
         },
         "vouchers.valueVoucherType": {
           "mehrzweck": "multi_purpose",
@@ -6147,6 +6202,8 @@
             "tipChips": "tgChips",
             "exactCash": "schnellbar",
             "tipKeptByDefault": "tgDirekt",
+            "tipKinds": "tgArten",
+            "tipStart": "tgStart",
             "checkoutMode": "kassierenModus",
             "receiptOutput": "belegAusgabe",
             "doneScreenSeconds": "fertigSekunden",
@@ -6211,7 +6268,8 @@
             "terminalTid": "terminalTid",
             "terminalVia": "terminalVia",
             "terminalType": "terminalArt",
-            "shortcutHints": "tastenMarken"
+            "shortcutHints": "tastenMarken",
+            "cartWidth": "korbBreite"
           }
         },
         "receiptHeader": {
@@ -6256,6 +6314,12 @@
         "settings.business.tipMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipMode"
         },
+        "settings.business.tipKinds[]": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKinds[]"
+        },
+        "settings.business.tipStart": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
         "settings.business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
         },
@@ -6282,6 +6346,9 @@
         },
         "settings.device.terminalType": {
           "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        },
+        "settings.device.cartWidth": {
+          "$catalog": "KASSE_GERAET_WERTE.cartWidth"
         }
       }
     },
@@ -6828,6 +6895,37 @@
       },
       "ergaenze": {
         "$function": "kassenBewegungBuchenNachAussen"
+      },
+      "fehler": {
+        "data": {
+          "shiftId": "schichtId"
+        },
+        "felder": {
+          "ladeId": "drawerId",
+          "stueckelung": "denominations",
+          "auszahlungen": "tipPayouts",
+          "eintraege": "entries",
+          "grund": "reason",
+          "zeitGeraet": "deviceTime",
+          "text": "note",
+          "fehler": "error",
+          "nachZaehlung": "afterCount",
+          "art": "type"
+        },
+        "nachrichtWoerter": {
+          "ladeId": "drawerId"
+        }
+      }
+    },
+    "recordMyShiftCount": {
+      "params": {
+        "shiftId": "schichtId",
+        "countedCents": "istCents",
+        "denominations": "stueckelung",
+        "comment": "kommentar"
+      },
+      "ergaenze": {
+        "$function": "schichtZaehlenNachAussen"
       },
       "fehler": {
         "data": {
@@ -7594,6 +7692,8 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKinds": "tgArten",
+          "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",
@@ -7630,6 +7730,12 @@
         },
         "business.tipMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipMode"
+        },
+        "business.tipKinds[]": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKinds[]"
+        },
+        "business.tipStart": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -7681,6 +7787,8 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKinds": "tgArten",
+          "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",
@@ -7717,6 +7825,12 @@
         },
         "business.tipMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipMode"
+        },
+        "business.tipKinds[]": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKinds[]"
+        },
+        "business.tipStart": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -7781,7 +7895,8 @@
           "terminalTid": "terminalTid",
           "terminalVia": "terminalVia",
           "terminalType": "terminalArt",
-          "shortcutHints": "tastenMarken"
+          "shortcutHints": "tastenMarken",
+          "cartWidth": "korbBreite"
         }
       },
       "paramWerte": {
@@ -7802,6 +7917,9 @@
         },
         "device.terminalType": {
           "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        },
+        "device.cartWidth": {
+          "$catalog": "KASSE_GERAET_WERTE.cartWidth"
         }
       },
       "data": {
@@ -7855,7 +7973,8 @@
           "terminalTid": "terminalTid",
           "terminalVia": "terminalVia",
           "terminalType": "terminalArt",
-          "shortcutHints": "tastenMarken"
+          "shortcutHints": "tastenMarken",
+          "cartWidth": "korbBreite"
         }
       },
       "werte": {
@@ -7876,6 +7995,9 @@
         },
         "device.terminalType": {
           "$catalog": "KASSE_GERAET_WERTE.terminalType"
+        },
+        "device.cartWidth": {
+          "$catalog": "KASSE_GERAET_WERTE.cartWidth"
         }
       }
     },

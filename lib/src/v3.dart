@@ -36,7 +36,7 @@ const String kPublicBaseUrl = 'https://api.kasseneck.at/v3';
 const String kPosBaseUrl = 'https://kasse.kasseneck.at/api/v3';
 
 /// Version dieses Pakets, wie in `pubspec.yaml` (ein Test haelt beide gleich).
-const String kPackageVersion = '11.19.0';
+const String kPackageVersion = '11.20.0';
 
 const String _versionKopf = 'Kasseneck-Api-Version';
 const String _clientKopf = 'Kasseneck-Client';
@@ -108,6 +108,7 @@ const Set<String> unknownOutcomeCalls = {
   'receiveGoods',
   'recordInvoicePayment',
   'recordMyCashMovement',
+  'recordMyShiftCount',
   'recordMyStocktakeCount',
   'recordStockLoss',
   'recordStocktakeCount',

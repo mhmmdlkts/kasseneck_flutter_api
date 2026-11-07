@@ -92,10 +92,10 @@ void main() {
   }
 
   test('Z-Bon mit Entnahme, 58 mm: Byte fuer Byte wie das npm-Paket', () async {
-    expect(await schichtDigest(KeckPaperSize.mm58), '289d0ec5dbdd72fdb0a4b93b316b6909a985e625c7c8845dc23f18a7a7baa9ca');
+    expect(await schichtDigest(KeckPaperSize.mm58), '44f5b442f94b50e400fb02bca545b5b902821a95640833f618751799506dd845');
   });
 
   test('Z-Bon mit Entnahme, 80 mm: Byte fuer Byte wie das npm-Paket', () async {
-    expect(await schichtDigest(KeckPaperSize.mm80), 'c0bb40b6c93e0f105d704283f6c997c5bba9878c03f94ea14eebab2d98e1e3ee');
+    expect(await schichtDigest(KeckPaperSize.mm80), '07e4b23d5861922cf74edd9092d0ecb49c21f1c89d0082ae9db1fb7cc273c340');
   });
 }

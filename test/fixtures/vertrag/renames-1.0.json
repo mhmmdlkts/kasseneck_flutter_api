@@ -1224,10 +1224,20 @@
         "streifen": "stripe",
         "voll": "full"
       },
+      "*.tipKinds[]": {
+        "prozent": "percent",
+        "aufrunden": "round_up",
+        "gesamt": "total"
+      },
       "*.tipMode": {
         "betrag": "amount",
         "gesamt": "total",
         "beides": "both"
+      },
+      "*.tipStart": {
+        "prozent": "percent",
+        "aufrunden": "round_up",
+        "gesamt": "total"
       },
       "*.watermark": {
         "aus": "off",
@@ -1238,6 +1248,11 @@
         "links": "left",
         "mitte": "center",
         "rechts": "right"
+      },
+      "*.cartWidth": {
+        "schmal": "narrow",
+        "mittel": "medium",
+        "breit": "wide"
       },
       "*.categoryPosition": {
         "oben": "top",
@@ -1308,10 +1323,20 @@
         "streifen": "stripe",
         "voll": "full"
       },
+      "enums.tipKinds[][]": {
+        "prozent": "percent",
+        "aufrunden": "round_up",
+        "gesamt": "total"
+      },
       "enums.tipMode[]": {
         "betrag": "amount",
         "gesamt": "total",
         "beides": "both"
+      },
+      "enums.tipStart[]": {
+        "prozent": "percent",
+        "aufrunden": "round_up",
+        "gesamt": "total"
       },
       "enums.watermark[]": {
         "aus": "off",
@@ -1322,6 +1347,11 @@
         "links": "left",
         "mitte": "center",
         "rechts": "right"
+      },
+      "enums.cartWidth[]": {
+        "schmal": "narrow",
+        "mittel": "medium",
+        "breit": "wide"
       },
       "enums.categoryPosition[]": {
         "oben": "top",

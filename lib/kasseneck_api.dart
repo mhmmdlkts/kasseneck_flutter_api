@@ -1297,7 +1297,7 @@ class KasseneckApi {
 
   // ---- Kartenterminal-Zugang (zentral) ---------------------------------------
   //
-  // In `unknownOutcomeCalls` (wie npm 1.28.0) stehen nur zwei: die Anmeldung
+  // In `unknownOutcomeCalls` (wie npm 1.29.0) stehen nur zwei: die Anmeldung
   // (ihre verlorene Antwort laesst ein Geraet ohne Geheimnis zurueck, das gegen
   // die Obergrenze des Betriebs zaehlt) und getTerminalCode (auf Android gibt
   // der Server den Code genau einmal heraus). Die uebrigen fuenf sind mit

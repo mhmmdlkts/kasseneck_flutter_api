@@ -92,6 +92,8 @@ const _nach10 = (
     'inspection.how_it_works_text', 'inspection.print_question', 'inspection.load_failed', 'zero_receipt.check_first',
     // Kachel mit Betrag und Referenz (11.17.0)
     'reference.missing', 'reference.format_invalid', 'reference.format_warning',
+    // Schicht-Ablauf der Kasse (11.19.0, npm 1.28.0)
+    'shift.started_taken_over', 'tip.summary', 'tip.total_below_sum', 'shift.interim_saved', 'shift.finish_step_first', 'tip.revenue_hint', 'tip.unassigned_hint',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -172,6 +174,15 @@ const _nach10 = (
     'tile_prompt.amount', 'tile_prompt.quantity', 'tile_prompt.apply', 'tile_prompt.apply_anyway',
     // Zusatz-Kacheln (11.18.0)
     'addons.title', 'addons.none', 'addons.done', 'addons.open',
+    // Schicht-Ablauf der Kasse (11.19.0, npm 1.28.0)
+    'shift.state_closed', 'shift.start_title', 'shift.band_closed', 'shift.band_closing', 'shift.band_interim', 'shift.band_cash', 'tip.revenue_title', 'tip.revenue_badge', 'tip.unassigned', 'shift.last_shift', 'shift.in_drawer_by_system', 'shift.take_over_amount', 'shift.top_up', 'shift.missing', 'shift.count_coins', 'shift.count_please', 'drawer.open_for_count', 'drawer.open_for_tips', 'drawer.open_for_take', 'shift.close_title_numbered', 'shift.closed_title', 'shift.running_since_drawer', 'shift.step_count', 'shift.step_tips', 'shift.step_take', 'shift.step_done', 'shift.expected', 'shift.of_which_cash_tips', 'shift.breakdown', 'shift.part_opening', 'shift.part_cash_sales', 'shift.part_cash_tips', 'shift.part_cancellations', 'shift.part_cash_in', 'shift.part_cash_out', 'shift.part_interim', 'tip.who_takes_now', 'tip.later_hint', 'tip.later', 'tip.pay_out', 'tip.pay_out_amount', 'shift.now_in_drawer', 'shift.interim_title', 'shift.interim_save', 'shift.opening_not_counted', 'shift.taken_over_unchecked_by', 'shift.taken_over_unchecked', 'tip.kind_percent', 'tip.kind_round_up', 'tip.kind_total', 'tip.round_to', 'tip.guest_pays_total', 'tip.remainder_is_tip', 'voucher.section', 'voucher.code_placeholder', 'settings.cart_width', 'settings.cart_width_narrow', 'settings.cart_width_medium', 'settings.cart_width_wide', 'shift_receipt.opening_not_counted', 'shift_receipt.interim_count', 'shift_receipt.counted_before_payout', 'shift_receipt.difference_part_interim', 'shift_receipt.difference_part_closing', 'cash_movement.type_interim_difference',
+    // Nachtrag Schicht-Ablauf (11.19.0, npm 1.28.0)
+    'shift.state_closing', 'shift.state_interim', 'shift.tips_paid_out', 'shift.difference_none',
+    'shift.start_new', 'shift.drawer_from_to', 'shift.running_since_by', 'shift.z_receipt_printed',
+    'shift.count_now', 'shift.interim_entry', 'drawer.open', 'time.today_at', 'tip.summary_percent',
+    'settings.tip_kinds', 'settings.tip_start',
+    // Pruefung kompakt (11.19.0, npm 1.28.0)
+    'zero_receipt.done_title', 'zero_receipt.back', 'dep.export', 'dep.period_question', 'common.close',
     // Navigation, Mengengrenzen, Beleg-Fertigseite, Gutschein-Auszahlung (11.5.0, npm 1.14.0)
     'drawer.reason_voucher_payout', 'quantity.at_most', 'quantity.at_least', 'receipts.number_hint',
     'receipts.clear_number', 'receipts.open', 'receipt.creating', 'receipt_done.sale_title',
@@ -221,6 +232,8 @@ const _nach10 = (
     'from', 'to',
     // Zeile unter „wie bezahlt“ im Storno-Blatt (11.16.1)
     'refunds',
+    // Schicht-Ablauf der Kasse (11.19.0)
+    'drawer', 'tip',
   },
 );
 

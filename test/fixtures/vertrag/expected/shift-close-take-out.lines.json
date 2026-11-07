@@ -136,6 +136,12 @@
       ]
     },
     {
+      "kind": "text",
+      "text": "Anfang übernommen, nicht gezählt",
+      "align": "left",
+      "bold": false
+    },
+    {
       "kind": "columns",
       "columns": [
         {

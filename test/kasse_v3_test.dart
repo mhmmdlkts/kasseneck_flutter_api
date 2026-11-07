@@ -51,7 +51,7 @@ const _inventur = [
 /// Schicht, Kassenstand und Lade-Protokoll (seit 11.1). Die Modelle prueft
 /// `kasse_schicht_test.dart` verlustfrei ueber `toJson`.
 const _schicht = [
-  'getMyDrawerState', 'openMyShift', 'recordMyCashMovement', 'logMyDrawerOpenings', 'getMyShiftReport', 'closeMyShift',
+  'getMyDrawerState', 'openMyShift', 'recordMyCashMovement', 'logMyDrawerOpenings', 'getMyShiftReport', 'closeMyShift', 'recordMyShiftCount',
 ];
 
 /// Gutscheine der neuen Form (seit 11.3): pruefen und Etikett nachdrucken.
@@ -427,6 +427,15 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
               ? null
               : AfterCount(type: _s((p['afterCount'] as Map)['type']), amountCents: (p['afterCount'] as Map)['amountCents'] as int),
           checkOnly: p['checkOnly'] as bool? ?? false,
+          countedBeforePayout: p['countedBeforePayout'] as bool? ?? false,
+        );
+      case 'recordMyShiftCount':
+        return belege.recordMyShiftCount(
+          idempotencyKey: _s(p['idempotencyKey']),
+          shiftId: _s(p['shiftId']),
+          countedCents: p['countedCents'] as int,
+          denominations: (p['denominations'] as Map?)?.cast<String, int>(),
+          comment: p['comment'] as String?,
         );
       case 'checkVoucher':
         return belege.checkVoucher(_s(p['code']));
@@ -664,12 +673,12 @@ void main() {
       }
     });
 
-    test('alle 49 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+    test('alle 50 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
       final hier = {
         ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
         ..._kasseninfo, ..._connect,
       };
-      expect((_vertrag['calls']['pos'] as List), hasLength(49));
+      expect((_vertrag['calls']['pos'] as List), hasLength(50));
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });

@@ -69,7 +69,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.19.0
+  kasseneck_api: ^11.20.0
 ```
 
 ```bash
@@ -1170,7 +1170,7 @@ envelope.
 ## Card terminal access (managed centrally)
 
 The card terminal is an app on the phone. Its login and terminal ID are kept by
-Kasseneck (since 11.19.0, `/v3`, api_key, live environment only). A device
+Kasseneck (since 11.20.0, `/v3`, api_key, live environment only). A device
 registers once, then fetches its access; the server keeps the device's terminal
 ID or assigns a free one of the business.
 

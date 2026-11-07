@@ -101,7 +101,7 @@ final Set<String> woerter = _liste('''
   tendered term terminal terminals test text texts thanks theme tile tiles
   time timeout timestamp tip title to today token tolerance tone top total totals touch
   tracked tracking training transaction transfer transmitted transport tries turn
-  turnover twelfths type types unavailable uncertain underline ungrouped unit
+  turnover twelfths type types unassigned unavailable uncertain underline ungrouped unit
   unexpected units unknown unpack unpaid unpair unresolved unsupported untangle until
   update updated usable user username users valid validation value values variant variants vehicle verification
   verify version vertical via vias vienna view virtual visible voided voucher vouchers wall
@@ -121,6 +121,7 @@ final Set<String> woerter = _liste('''
   arch features https issued os trusted
   prompts strict templates
   display ons ordered parent references remap selectable
+  suggestions interim given part narrow wide
 ''');
 
 /// Technische Kuerzel und Einzelbuchstaben (Farbkanaele, Groessen S/M/L,

@@ -4,7 +4,7 @@
     "default": {
       "sha256": "b3ed9b5e54fb6a0c27c2e9b494c8676926b80b4527236f0f4f71403c455fa477",
       "head": [],
-      "inputsSha256": "7da46d83e5a940870501ea867a78c77df8e1fac7b7ac0ab9327e6d5944800a8f",
+      "inputsSha256": "d691db2b804d43ad11d96acd8bc4e4ef717a4afb9b7c9f6c6db256cd692aabf1",
       "backendPackage": "@kreiseck/kasseneck-api@0.37.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "6b7c3a09b39b38a5bc26c6fa1b3d3d41051a3e0e13def0e26508e28f5f8a3841",
+      "sha256": "cb70d2265302087361db82d350eefb7652eda744f241aab3dad00b2b4de85179",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "10c2627b6bc3774645af0e70ff8c1c1b380435826ac4e0ecc5c652dbd572cb46",
+      "inputsSha256": "3bebc2af659ee33cea4e16e32b271e2b801e5b4dbe16c01a2812c5c46e0d13e4",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -18721,6 +18721,23 @@
                 },
                 "expectedCents": 29400,
                 "differenceCents": null,
+                "openingCounted": false,
+                "cashTipsInDrawerCents": 0,
+                "expectedParts": [
+                  {
+                    "key": "opening",
+                    "cents": 15000
+                  },
+                  {
+                    "key": "cash_sales",
+                    "cents": 9400
+                  },
+                  {
+                    "key": "cash_in",
+                    "cents": 5000
+                  }
+                ],
+                "interimCounts": 0,
                 "reconciliation": null
               },
               "longOpenWarning": true,
@@ -18847,6 +18864,23 @@
                 },
                 "expectedCents": 29400,
                 "differenceCents": null,
+                "openingCounted": false,
+                "cashTipsInDrawerCents": 0,
+                "expectedParts": [
+                  {
+                    "key": "opening",
+                    "cents": 15000
+                  },
+                  {
+                    "key": "cash_sales",
+                    "cents": 9400
+                  },
+                  {
+                    "key": "cash_in",
+                    "cents": 5000
+                  }
+                ],
+                "interimCounts": 0,
                 "reconciliation": null
               },
               "longOpenWarning": true,
@@ -19707,6 +19741,15 @@
                 },
                 "expectedCents": 2800,
                 "differenceCents": null,
+                "openingCounted": true,
+                "cashTipsInDrawerCents": 0,
+                "expectedParts": [
+                  {
+                    "key": "opening",
+                    "cents": 2800
+                  }
+                ],
+                "interimCounts": 0,
                 "reconciliation": null
               },
               "handoverDifferenceCents": -200
@@ -19822,6 +19865,15 @@
                 },
                 "expectedCents": 2800,
                 "differenceCents": null,
+                "openingCounted": true,
+                "cashTipsInDrawerCents": 0,
+                "expectedParts": [
+                  {
+                    "key": "opening",
+                    "cents": 2800
+                  }
+                ],
+                "interimCounts": 0,
                 "reconciliation": null
               },
               "handoverDifferenceCents": -200
@@ -21624,6 +21676,7 @@
                 },
                 "openingFloatCents": null,
                 "openingFloatTakenOver": true,
+                "openingCounted": false,
                 "openingDenominations": null,
                 "cashSalesCents": null,
                 "cashCancellationsCents": null,
@@ -21734,6 +21787,23 @@
                 },
                 "expectedCents": 29400,
                 "differenceCents": null,
+                "openingCounted": false,
+                "cashTipsInDrawerCents": 0,
+                "expectedParts": [
+                  {
+                    "key": "opening",
+                    "cents": 15000
+                  },
+                  {
+                    "key": "cash_sales",
+                    "cents": 9400
+                  },
+                  {
+                    "key": "cash_in",
+                    "cents": 5000
+                  }
+                ],
+                "interimCounts": 0,
                 "reconciliation": null
               },
               "movements": [
@@ -21777,6 +21847,7 @@
                 },
                 "openingFloatCents": 15000,
                 "openingFloatTakenOver": true,
+                "openingCounted": false,
                 "openingDenominations": null,
                 "cashSalesCents": 9400,
                 "cashCancellationsCents": 0,
@@ -21884,6 +21955,7 @@
                 },
                 "expectedCents": 15200,
                 "differenceCents": -200,
+                "openingCounted": true,
                 "reconciliation": {
                   "matches": true,
                   "deviations": null
@@ -22609,6 +22681,7 @@
                 },
                 "openingFloatCents": null,
                 "openingFloatTakenOver": true,
+                "openingCounted": false,
                 "openingDenominations": null,
                 "cashSalesCents": null,
                 "cashCancellationsCents": null,
@@ -22738,6 +22811,7 @@
                 },
                 "expectedCents": 29000,
                 "differenceCents": 0,
+                "openingCounted": false,
                 "reconciliation": {
                   "matches": false,
                   "deviations": {
@@ -22794,6 +22868,7 @@
                 },
                 "openingFloatCents": 15000,
                 "openingFloatTakenOver": true,
+                "openingCounted": false,
                 "openingDenominations": null,
                 "cashSalesCents": 9400,
                 "cashCancellationsCents": 0,
@@ -22934,6 +23009,7 @@
                 },
                 "expectedCents": 29000,
                 "differenceCents": 0,
+                "openingCounted": false,
                 "reconciliation": {
                   "matches": false,
                   "deviations": {
@@ -22995,6 +23071,7 @@
                 },
                 "openingFloatCents": 15000,
                 "openingFloatTakenOver": true,
+                "openingCounted": false,
                 "openingDenominations": null,
                 "cashSalesCents": 9400,
                 "cashCancellationsCents": 0,
@@ -23164,6 +23241,7 @@
                 },
                 "expectedCents": 29000,
                 "differenceCents": 0,
+                "openingCounted": false,
                 "reconciliation": {
                   "matches": false,
                   "deviations": {
@@ -23225,6 +23303,7 @@
                 },
                 "openingFloatCents": 15000,
                 "openingFloatTakenOver": true,
+                "openingCounted": false,
                 "openingDenominations": null,
                 "cashSalesCents": 9400,
                 "cashCancellationsCents": 0,
@@ -23543,6 +23622,7 @@
                 },
                 "expectedCents": 29000,
                 "differenceCents": 0,
+                "openingCounted": false,
                 "reconciliation": {
                   "matches": false,
                   "deviations": {
@@ -23599,6 +23679,7 @@
                 },
                 "openingFloatCents": 15000,
                 "openingFloatTakenOver": true,
+                "openingCounted": false,
                 "openingDenominations": null,
                 "cashSalesCents": 9400,
                 "cashCancellationsCents": 0,
@@ -23665,6 +23746,425 @@
               }
             ],
             "idempotencyKey": "z-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Derselbe idempotencyKey wurde mit anderem Inhalt verwendet.",
+            "data": {
+              "code": "idempotency_conflict"
+            },
+            "code": "idempotency_conflict"
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "recordMyShiftCount": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Vorgang.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "countedCents": 29000,
+            "idempotencyKey": "zz-2"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: shiftId, countedCents",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "shiftId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "shift_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s9",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine offene Schicht gefunden.",
+            "data": {
+              "code": "shift_not_open"
+            },
+            "code": "shift_not_open"
+          }
+        },
+        {
+          "case": "shift_closed",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s1",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Schicht ist bereits geschlossen.",
+            "data": {
+              "code": "shift_closed"
+            },
+            "code": "shift_closed"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "lade_terrasse_s1",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "counted_amount_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": -100,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Betrag ist ungültig.",
+            "data": {
+              "code": "invalid_amount"
+            },
+            "code": "invalid_amount"
+          }
+        },
+        {
+          "case": "denominations_wrong",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1",
+            "denominations": {
+              "20000": 1
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Stückelung passt nicht zum Betrag.",
+            "data": {
+              "code": "invalid_denominations"
+            },
+            "code": "invalid_denominations"
+          }
+        },
+        {
+          "case": "key_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "idempotencyKey fehlt.",
+            "data": {
+              "code": "idempotency_key_required"
+            },
+            "code": "idempotency_key_required"
+          }
+        },
+        {
+          "case": "comment_required",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 28000,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Differenz ist größer als die Schwelle. Bitte einen Kommentar angeben.",
+            "data": {
+              "code": "comment_required"
+            },
+            "code": "comment_required"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1",
+            "denominations": {
+              "2000": 2,
+              "5000": 1,
+              "20000": 1
+            }
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "expectedCents": 29400,
+                "countedCents": 29000,
+                "differenceCents": -400
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager_comment",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 28000,
+            "idempotencyKey": "zz-3",
+            "comment": "Kassensturz am Mittag"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "expectedCents": 29400,
+                "countedCents": 28000,
+                "differenceCents": -1400
+              }
+            }
+          }
+        },
+        {
+          "case": "success_manager_counted",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29400,
+            "idempotencyKey": "zz-4"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "expectedCents": 29400,
+                "countedCents": 29400,
+                "differenceCents": 0
+              }
+            }
+          }
+        },
+        {
+          "case": "success_same_key",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29000,
+            "idempotencyKey": "zz-1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "count": {
+                "expectedCents": 29400,
+                "countedCents": 29000,
+                "differenceCents": -400
+              }
+            }
+          }
+        },
+        {
+          "case": "key_conflict",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "shiftId": "haupt_KASSE1_s2",
+            "countedCents": 29100,
+            "idempotencyKey": "zz-1"
           },
           "httpStatus": 200,
           "headers": {
