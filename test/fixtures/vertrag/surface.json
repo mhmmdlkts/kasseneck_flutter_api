@@ -1,5 +1,5 @@
 {
-  "version": "1.28.0",
+  "version": "1.29.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -107,7 +107,14 @@
       "cancelStocktake",
       "getStocktakePdf",
       "orderSignatureCard",
-      "getSignatureCardOrder"
+      "getSignatureCardOrder",
+      "registerTerminalDevice",
+      "getTerminalAccess",
+      "claimTerminal",
+      "requestTerminalCode",
+      "getTerminalCode",
+      "reportTerminalLogin",
+      "reportTerminalReady"
     ],
     "pos": [
       "cancelReceipt",
@@ -276,7 +283,14 @@
       "getDepExport",
       "getDepExportFile",
       "createDepHandoverLink",
-      "revokeDepHandoverLink"
+      "revokeDepHandoverLink",
+      "registerTerminalDevice",
+      "getTerminalAccess",
+      "claimTerminal",
+      "requestTerminalCode",
+      "getTerminalCode",
+      "reportTerminalLogin",
+      "reportTerminalReady"
     ],
     "pos": [
       "pairRegisterDevice",
@@ -358,6 +372,7 @@
     "deleteWebhook",
     "extendReservation",
     "financeWebService",
+    "getTerminalCode",
     "hobexPayApi",
     "hobexRefundApi",
     "issueInvoice",
@@ -374,6 +389,7 @@
     "recordStockLoss",
     "recordStocktakeCount",
     "recountStocktake",
+    "registerTerminalDevice",
     "releaseReservation",
     "reportConnectState",
     "reportCustomerContract",

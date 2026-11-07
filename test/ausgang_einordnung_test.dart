@@ -124,6 +124,16 @@ const Set<String> _wiederholbar = {
   'renewRegisterSession',
   // Liefert denselben Code noch einmal; ein zweiter Aufruf aendert nichts.
   'reprintVoucherLabel',
+  // Kartenterminal-Zugang (wie CALLS_WITHOUT_EFFECT in npm 1.28.0): nichts wird
+  // gebucht oder signiert. getTerminalAccess und claimTerminal behalten bzw.
+  // setzen dieselbe Terminal-ID, requestTerminalCode antwortet bei offener
+  // Anfrage mit ihrem Stand, die beiden Meldungen setzen nur einen Stand.
+  // registerTerminalDevice und getTerminalCode stehen in unknownOutcomeCalls.
+  'claimTerminal',
+  'getTerminalAccess',
+  'reportTerminalLogin',
+  'reportTerminalReady',
+  'requestTerminalCode',
 };
 
 const _kennzeichen = {'kasseneck-api-version': 'v3'};

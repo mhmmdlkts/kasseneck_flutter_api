@@ -1,0 +1,25 @@
+{
+  "beschreibung": "Prüffälle für eingefügte Genius-Codes (Knopf „Einfügen“). Vertrag zwischen Backend (genius-core.codeAusEingabe) und Dart-Paket (parseTerminalCode). Alle Codes erfunden.",
+  "standard": { "laenge": 6, "bezeichnungen": ["Autorisierungscode", "Authorization code"] },
+  "faelle": [
+    { "name": "nur der Code", "text": "Xk7pQ2", "erwartet": "Xk7pQ2" },
+    { "name": "Code mit Leerraum am Rand", "text": "  Xk7pQ2\n", "erwartet": "Xk7pQ2" },
+    { "name": "Groß/Klein bleibt", "text": "xK7Pq2", "erwartet": "xK7Pq2" },
+    { "name": "kopierter Mail-Text, gleiche Zeile", "text": "Autorisierungscode: Xk7pQ2\nDer Autorisierungscode ist für 20 Minuten gültig.", "erwartet": "Xk7pQ2" },
+    { "name": "kopierter Mail-Text, ohne Leerzeichen", "text": "Autorisierungscode:Xk7pQ2", "erwartet": "Xk7pQ2" },
+    { "name": "kopierter Mail-Text, Code auf der nächsten Zeile", "text": "Autorisierungscode:\n\nXk7pQ2", "erwartet": "Xk7pQ2" },
+    { "name": "englische Mail", "text": "Authorization code: Xk7pQ2", "erwartet": "Xk7pQ2" },
+    { "name": "Fließtext ohne Doppelpunkt trifft nicht", "text": "einen Autorisierungscode zur Freigabe der TID erhalten", "erwartet": null },
+    { "name": "zu kurz", "text": "Xk7pQ", "erwartet": null },
+    { "name": "zu lang", "text": "Xk7pQ2a", "erwartet": null },
+    { "name": "Leerzeichen im Code", "text": "Xk7 pQ2", "erwartet": null },
+    { "name": "Sonderzeichen", "text": "Xk7-Q2", "erwartet": null },
+    { "name": "leer", "text": "", "erwartet": null },
+    { "name": "zwei verschiedene Codes", "text": "Autorisierungscode: Xk7pQ2\nAutorisierungscode: Ab3cD4", "erwartet": null },
+    { "name": "zweimal derselbe Code", "text": "Autorisierungscode: Xk7pQ2\nAutorisierungscode: Xk7pQ2", "erwartet": "Xk7pQ2" },
+    { "name": "Code-Länge 8 aus der Einstellung", "text": "Xk7pQ2ab", "laenge": 8, "erwartet": "Xk7pQ2ab" },
+    { "name": "Länge 8, Code mit 6 Zeichen", "text": "Xk7pQ2", "laenge": 8, "erwartet": null },
+    { "name": "neue Bezeichnung aus der Einstellung", "text": "Freigabecode: Xk7pQ2", "bezeichnungen": ["Freigabecode"], "erwartet": "Xk7pQ2" },
+    { "name": "alte Bezeichnung trifft nach Umstellung nicht", "text": "Autorisierungscode: Xk7pQ2 und mehr", "bezeichnungen": ["Freigabecode"], "erwartet": null }
+  ]
+}

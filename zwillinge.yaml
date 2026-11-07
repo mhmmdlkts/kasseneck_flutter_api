@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.28.0
+npm_version: 1.29.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -28,6 +28,12 @@ npm_version: 1.28.0
 # zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.29.0: die sieben Aufrufe des Kartenterminal-Zugangs (registerTerminalDevice,
+# getTerminalAccess, claimTerminal, requestTerminalCode, getTerminalCode,
+# reportTerminalLogin, reportTerminalReady) stehen in calls.public (und routes); hier
+# gedeckt durch KasseneckApi (Dart 11.20.0).
+# unknownOutcomeCalls traegt registerTerminalDevice und getTerminalCode.
 #
 # Stand 1.25.0: reportConnectState (1.24.0) steht in calls.pos (49); am
 # Kassenweg gedeckt durch RegisterReceiptClient (Dart 11.16.0), ohne Eintrag

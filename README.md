@@ -59,6 +59,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 - [Card payments](#card-payments)
 - [Printing and displaying receipts](#printing-and-displaying-receipts)
 - [Reports, receipt history, FinanzOnline status](#reports-receipt-history-finanzonline-status)
+- [Card terminal access (managed centrally)](#card-terminal-access-managed-centrally)
 - [Invoices (invoice API)](#invoices-invoice-api)
 - [Inventory API](#inventory-api)
 - [RKSV details](#rksv-details)
@@ -68,7 +69,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.19.0
+  kasseneck_api: ^11.20.0
 ```
 
 ```bash
@@ -1165,6 +1166,39 @@ cashier sees* above, whose code rules turn `manager_only`, `export_running` and
 transport behind `getDepExportFile`: the same sign-in and header checks as
 `call`, but it returns the response, because the answer is either the file or an
 envelope.
+
+## Card terminal access (managed centrally)
+
+The card terminal is an app on the phone. Its login and terminal ID are kept by
+Kasseneck (since 11.20.0, `/v3`, api_key, live environment only). A device
+registers once, then fetches its access; the server keeps the device's terminal
+ID or assigns a free one of the business.
+
+```dart
+// Once per device: keep the secret in secure storage, never log it.
+final device = await kasseneck.registerTerminalDevice(label: 'Phone Livia', platform: 'android', app: 'kasse/1.0.12');
+
+final access = await kasseneck.getTerminalAccess(deviceId: device.deviceId, deviceSecret: device.deviceSecret);
+switch (access) {
+  case TerminalAccessGranted():
+    // sign in to the terminal app with access.username / access.password and access.terminalId
+    break;
+  case TerminalAccessUnavailable(:final terminals):
+    // all terminal IDs are in use: let the user pick one, then claimTerminal(...)
+    break;
+}
+```
+
+Moving a terminal ID to a new device needs a code. With `access.autoCode` the
+server fetches it: `requestTerminalCode(...)`, then poll `getTerminalCode(...)`
+until `status` is `found` (on Android the code comes exactly once). Without it,
+`requestTerminalCode` answers `terminal_code_manual`; let the user type or paste
+the code and read it with
+`parseTerminalCode(clipboardText, length: access.codeFormat.length, labels: access.codeFormat.labels)`.
+Report the sign-in with `reportTerminalLogin(...)` and the finished setup with
+`reportTerminalReady(...)`. Errors carry a code from `terminalErrorCodes`; a
+wrong device id and a wrong secret both give `terminal_device_unknown`. Never
+log the password, the device secret or the code.
 
 ## Invoices (invoice API)
 

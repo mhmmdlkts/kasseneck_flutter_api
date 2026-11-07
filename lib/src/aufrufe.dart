@@ -142,6 +142,14 @@ abstract final class Aufrufe {
   static const getRegisterInspectionInfo = 'getRegisterInspectionInfo';
   // Bestand von Kasseneck Connect melden (npm 1.24.0): nur ueber den Kassenweg.
   static const reportConnectState = 'reportConnectState';
+  // Kartenterminal-Zugang zentral (KasseneckApi, nur /v3 mit api_key).
+  static const registerTerminalDevice = 'registerTerminalDevice';
+  static const getTerminalAccess = 'getTerminalAccess';
+  static const claimTerminal = 'claimTerminal';
+  static const requestTerminalCode = 'requestTerminalCode';
+  static const getTerminalCode = 'getTerminalCode';
+  static const reportTerminalLogin = 'reportTerminalLogin';
+  static const reportTerminalReady = 'reportTerminalReady';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -265,5 +273,12 @@ abstract final class Aufrufe {
     logReceiptOutputs,
     getRegisterInspectionInfo,
     reportConnectState,
+    registerTerminalDevice,
+    getTerminalAccess,
+    claimTerminal,
+    requestTerminalCode,
+    getTerminalCode,
+    reportTerminalLogin,
+    reportTerminalReady,
   };
 }
