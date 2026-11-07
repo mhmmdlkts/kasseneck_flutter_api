@@ -201,6 +201,22 @@ void main() {
       expect(anfragen, hasLength(1), reason: 'die zwei Fehlversuche sendeten nichts');
     });
 
+    test('Laufstand: Inhaber-Trinkgeld und Trinkgeld ohne Empfänger gelesen wie gesendet, fehlen sonst (wie npm 1.28.0)', () async {
+      final fall = jsonDecode(jsonEncode(_fall('getMyDrawerState', 'success_manager'))) as Map<String, dynamic>;
+      final (:client, anfragen: _) = _kasse((_) async => _antwort(fall));
+      final ohne = (await client.getMyDrawerState(drawerId: 'haupt_KASSE1')).shift!.runningTotals!;
+      expect(ohne.ownerTips, isNull);
+      expect(ohne.unassignedTipCents, isNull);
+      expect(ohne.toJson().containsKey('ownerTips'), isFalse);
+      final lauf = ((fall['response'] as Map)['data'] as Map)['shift']['runningTotals'] as Map;
+      lauf['ownerTips'] = [{'registerUserId': 'ru_mirela', 'name': 'Mirela Weinzierl', 'cents': 10}];
+      lauf['unassignedTipCents'] = 50;
+      final (client: c2, anfragen: _) = _kasse((_) async => _antwort(fall));
+      final mit = (await c2.getMyDrawerState(drawerId: 'haupt_KASSE1')).shift!.runningTotals!;
+      expect(mit.ownerTips!.single.toJson(), {'registerUserId': 'ru_mirela', 'name': 'Mirela Weinzierl', 'cents': 10});
+      expect(mit.unassignedTipCents, 50);
+    });
+
     test('ohne Recht shift: die offene Schicht nur mit Grunddaten, ohne Betrag (wie im npm-Paket)', () async {
       final fall = _fall('getMyDrawerState', 'success_cashier_without_permission');
       final (:client, anfragen: _) = _kasse((_) async => _antwort(fall));

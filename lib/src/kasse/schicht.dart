@@ -383,6 +383,8 @@ class ShiftRunningTotals {
     required this.cashOutCents,
     required this.tips,
     required this.openingsWithoutSale,
+    this.ownerTips,
+    this.unassignedTipCents,
   });
 
   final int cashSalesCents;
@@ -403,6 +405,14 @@ class ShiftRunningTotals {
   final List<ShiftTipTotals> tips;
   final int openingsWithoutSale;
 
+  /// Trinkgeld an Kassen-Benutzer mit „Trinkgeld steuerpflichtig“ (Inhaber): zählt als
+  /// Umsatz des Betriebs, nie als Anspruch, nie in „offen“ (nur Anzeige, npm 1.28.0).
+  /// Der Server sendet es nur, wenn es etwas gibt; `null` = keines.
+  final List<ShiftOwnerTip>? ownerTips;
+
+  /// Trinkgeld ohne angemeldeten Empfänger in Cent (nur Anzeige); `null` = 0.
+  final int? unassignedTipCents;
+
   Map<String, dynamic> toJson() => {
         'cashSalesCents': cashSalesCents,
         'cashCancellationsCents': cashCancellationsCents,
@@ -414,7 +424,20 @@ class ShiftRunningTotals {
         'cashOutCents': cashOutCents,
         'tips': [for (final t in tips) t.toJson()],
         'openingsWithoutSale': openingsWithoutSale,
+        if (ownerTips != null) 'ownerTips': [for (final t in ownerTips!) t.toJson()],
+        if (unassignedTipCents != null) 'unassignedTipCents': unassignedTipCents,
       };
+}
+
+/// Ein Eintrag von [ShiftRunningTotals.ownerTips]: Trinkgeld, das als Umsatz erfasst ist.
+class ShiftOwnerTip {
+  const ShiftOwnerTip({required this.registerUserId, this.name, required this.cents});
+
+  final String registerUserId;
+  final String? name;
+  final int cents;
+
+  Map<String, dynamic> toJson() => {'registerUserId': registerUserId, 'name': name, 'cents': cents};
 }
 
 /// Nachrechnung des Laufstands beim Abschluss: stimmt er, oder welche Felder
@@ -1364,7 +1387,15 @@ ShiftRunningTotals _laufstand(_Ort ort, Object? w) {
     cashOutCents: _ganzzahl(ort, o, 'cashOutCents'),
     tips: _liste(ort, o, 'tips', _trinkgeld),
     openingsWithoutSale: _ganzzahl(ort, o, 'openingsWithoutSale'),
+    // Nur Anzeige (npm 1.28.0); gelesen wie gesendet, fehlt = null.
+    ownerTips: o['ownerTips'] == null ? null : _liste(ort, o, 'ownerTips', _inhaberTrinkgeld),
+    unassignedTipCents: o['unassignedTipCents'] == null ? null : _ganzzahl(ort, o, 'unassignedTipCents'),
   );
+}
+
+ShiftOwnerTip _inhaberTrinkgeld(_Ort ort, Object? w) {
+  final o = _pflichtObjekt(ort, w);
+  return ShiftOwnerTip(registerUserId: _kennung(ort, o, 'registerUserId'), name: _text(o['name']), cents: _ganzzahl(ort, o, 'cents'));
 }
 
 /// Entnehmen oder Einlegen nach dem Zaehlen; `null` gilt wie fehlend.
