@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
+import 'package:kasseneck_api/src/v3.dart' show unknownOutcomeCalls;
 
 /// Kartenterminal-Zugang zentral (nur `/v3`): die sieben Aufrufe gegen eine
 /// Server-Attrappe und der Helfer fuer den Knopf „Einfuegen“. Die
@@ -80,8 +81,8 @@ Map<String, dynamic> _zugang({Map<String, dynamic>? mehr}) => {
 
 void main() {
   group('parseTerminalCode: Pruefaelle aus dem Backend', () {
-    final datei = jsonDecode(File('test/fixtures/terminal/genius-code-faelle.json').readAsStringSync())
-        as Map<String, dynamic>;
+    final datei =
+        jsonDecode(File('test/fixtures/terminal/genius-code-faelle.json').readAsStringSync()) as Map<String, dynamic>;
     final standard = datei['standard'] as Map<String, dynamic>;
     final faelle = (datei['faelle'] as List).cast<Map<String, dynamic>>();
 
@@ -178,37 +179,49 @@ void main() {
       final netz = _netz((_) => _erfolg({}));
       final api = _api(netz.client);
       await expectLater(api.registerTerminalDevice(label: '  ', platform: 'android', app: 'kasse/1'), _eingabefehler);
-      await expectLater(api.registerTerminalDevice(label: 'x' * 61, platform: 'android', app: 'kasse/1'), _eingabefehler);
+      await expectLater(
+        api.registerTerminalDevice(label: 'x' * 61, platform: 'android', app: 'kasse/1'),
+        _eingabefehler,
+      );
       // Steuerzeichen zaehlen wie beim Server als Leerraum.
       await expectLater(api.registerTerminalDevice(label: '\n\t', platform: 'android', app: 'kasse/1'), _eingabefehler);
       await expectLater(api.registerTerminalDevice(label: 'Handy', platform: 'web', app: 'kasse/1'), _eingabefehler);
-      await expectLater(api.registerTerminalDevice(label: 'Handy', platform: 'Android', app: 'kasse/1'), _eingabefehler);
+      await expectLater(
+        api.registerTerminalDevice(label: 'Handy', platform: 'Android', app: 'kasse/1'),
+        _eingabefehler,
+      );
       await expectLater(api.registerTerminalDevice(label: 'Handy', platform: 'ios', app: ''), _eingabefehler);
       await expectLater(api.registerTerminalDevice(label: 'Handy', platform: 'ios', app: 'a' * 41), _eingabefehler);
       await expectLater(
-          api.registerTerminalDevice(label: 'Handy', platform: 'ios', app: 'kasse/1', requestedBy: 'r' * 81),
-          _eingabefehler);
+        api.registerTerminalDevice(label: 'Handy', platform: 'ios', app: 'kasse/1', requestedBy: 'r' * 81),
+        _eingabefehler,
+      );
       expect(netz.anfragen, isEmpty);
       // Die Grenzen selbst gehen hinaus.
       await expectLater(
-          api.registerTerminalDevice(label: 'x' * 60, platform: 'ios', app: 'a' * 40, requestedBy: 'r' * 80),
-          _antwortfehler);
+        api.registerTerminalDevice(label: 'x' * 60, platform: 'ios', app: 'a' * 40, requestedBy: 'r' * 80),
+        _antwortfehler,
+      );
       expect(netz.anfragen, hasLength(1));
     });
 
     test('ohne Geheimnis ist die Antwort unbrauchbar', () async {
       final netz = _netz((_) => _erfolg({'deviceId': _deviceId}));
       await expectLater(
-          _api(netz.client).registerTerminalDevice(label: 'Handy', platform: 'android', app: 'kasse/1'), _antwortfehler);
+        _api(netz.client).registerTerminalDevice(label: 'Handy', platform: 'android', app: 'kasse/1'),
+        _antwortfehler,
+      );
     });
 
     test('Fachfehler kommt mit Code', () async {
       final netz = _netz((_) => _fehler('too_many_terminal_devices'));
       await expectLater(
         _api(netz.client).registerTerminalDevice(label: 'Handy', platform: 'android', app: 'kasse/1'),
-        throwsA(isA<KasseneckApiError>()
-            .having((e) => e.code, 'code', 'too_many_terminal_devices')
-            .having((e) => e.outcome, 'outcome', ErrorOutcome.rejected)),
+        throwsA(
+          isA<KasseneckApiError>()
+              .having((e) => e.code, 'code', 'too_many_terminal_devices')
+              .having((e) => e.outcome, 'outcome', ErrorOutcome.rejected),
+        ),
       );
     });
   });
@@ -257,8 +270,9 @@ void main() {
       final roh = _zugang(mehr: {'terminalName': null, 'updatedAt': null, 'autoCode': 'true'});
       (roh['setup'] as Map).remove('since');
       final netz = _netz((_) => _erfolg(roh));
-      final g = await _api(netz.client).getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret)
-          as TerminalAccessGranted;
+      final g =
+          await _api(netz.client).getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret)
+              as TerminalAccessGranted;
       expect(g.terminalName, isNull);
       expect(g.updatedAt, isNull);
       expect(g.setup.since, isNull);
@@ -266,36 +280,46 @@ void main() {
     });
 
     test('der Zugang ergibt mit parseTerminalCode den Code aus der Mail', () async {
-      final netz = _netz((_) => _erfolg(_zugang(mehr: {
-            'codeFormat': {
-              'length': 8,
-              'labels': ['Freigabecode'],
+      final netz = _netz(
+        (_) => _erfolg(
+          _zugang(
+            mehr: {
+              'codeFormat': {
+                'length': 8,
+                'labels': ['Freigabecode'],
+              },
             },
-          })));
-      final g = await _api(netz.client).getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret)
-          as TerminalAccessGranted;
+          ),
+        ),
+      );
+      final g =
+          await _api(netz.client).getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret)
+              as TerminalAccessGranted;
       expect(
-          parseTerminalCode('Freigabecode:\nXk7pQ2ab', length: g.codeFormat.length, labels: g.codeFormat.labels),
-          'Xk7pQ2ab');
+        parseTerminalCode('Freigabecode:\nXk7pQ2ab', length: g.codeFormat.length, labels: g.codeFormat.labels),
+        'Xk7pQ2ab',
+      );
     });
 
     test('keine frei: Liste des Betriebs', () async {
-      final netz = _netz((_) => _erfolg({
-            'available': false,
-            'reason': 'no_free_terminal',
-            'terminals': [
-              {
-                'terminalId': _tid,
-                'name': 'Melisse Nails e.U.',
-                'lastUsedBy': 'Handy Mirela',
-                'lastUsedAt': '2026-11-06T15:00:00.000Z',
-              },
-              {'terminalId': '87654321', 'name': null, 'lastUsedBy': null, 'lastUsedAt': null},
-              // Ohne Kennung nicht zuzuordnen: faellt weg.
-              {'name': 'kaputt'},
-              'kein Objekt',
-            ],
-          }));
+      final netz = _netz(
+        (_) => _erfolg({
+          'available': false,
+          'reason': 'no_free_terminal',
+          'terminals': [
+            {
+              'terminalId': _tid,
+              'name': 'Melisse Nails e.U.',
+              'lastUsedBy': 'Handy Mirela',
+              'lastUsedAt': '2026-11-06T15:00:00.000Z',
+            },
+            {'terminalId': '87654321', 'name': null, 'lastUsedBy': null, 'lastUsedAt': null},
+            // Ohne Kennung nicht zuzuordnen: faellt weg.
+            {'name': 'kaputt'},
+            'kein Objekt',
+          ],
+        }),
+      );
       final z = await _api(netz.client).getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret);
       expect(z.available, isFalse);
       switch (z) {
@@ -329,19 +353,25 @@ void main() {
         {..._zugang()}..remove('terminalId'),
         {..._zugang()}..remove('accountId'),
         {..._zugang()}..remove('codeFormat'),
-        _zugang(mehr: {
-          'codeFormat': {'length': '6', 'labels': <String>[]},
-        }),
+        _zugang(
+          mehr: {
+            'codeFormat': {'length': '6', 'labels': <String>[]},
+          },
+        ),
         _zugang(mehr: {'setup': null}),
-        _zugang(mehr: {
-          'setup': {'since': null},
-        }),
+        _zugang(
+          mehr: {
+            'setup': {'since': null},
+          },
+        ),
         {'available': false, 'terminals': <Object>[]},
       ]) {
         final netz = _netz((_) => _erfolg(roh));
         await expectLater(
-            _api(netz.client).getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret), _antwortfehler,
-            reason: '$roh');
+          _api(netz.client).getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret),
+          _antwortfehler,
+          reason: '$roh',
+        );
       }
     });
 
@@ -350,9 +380,15 @@ void main() {
       final api = _api(netz.client);
       await expectLater(api.getTerminalAccess(deviceId: ' ', deviceSecret: _secret), _eingabefehler);
       await expectLater(api.getTerminalAccess(deviceId: _deviceId, deviceSecret: ''), _eingabefehler);
-      await expectLater(api.getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret, platform: 'web'), _eingabefehler);
+      await expectLater(
+        api.getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret, platform: 'web'),
+        _eingabefehler,
+      );
       await expectLater(api.getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret, app: ''), _eingabefehler);
-      await expectLater(api.getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret, label: 'x' * 61), _eingabefehler);
+      await expectLater(
+        api.getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret, label: 'x' * 61),
+        _eingabefehler,
+      );
       try {
         await api.getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret, platform: 'web');
       } on KasseneckValidationError catch (e) {
@@ -366,9 +402,11 @@ void main() {
         final netz = _netz((_) => _fehler(code));
         await expectLater(
           _api(netz.client).getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret),
-          throwsA(isA<KasseneckApiError>()
-              .having((e) => e.code, 'code', code)
-              .having((e) => e.outcome, 'outcome', ErrorOutcome.rejected)),
+          throwsA(
+            isA<KasseneckApiError>()
+                .having((e) => e.code, 'code', code)
+                .having((e) => e.outcome, 'outcome', ErrorOutcome.rejected),
+          ),
           reason: code,
         );
       }
@@ -395,12 +433,9 @@ void main() {
   group('claimTerminal', () {
     test('sendet die Terminal-ID und liefert den Zugang', () async {
       final netz = _netz((_) => _erfolg(_zugang()));
-      final g = await _api(netz.client).claimTerminal(
-        deviceId: _deviceId,
-        deviceSecret: _secret,
-        terminalId: _tid,
-        label: 'Handy Livia',
-      );
+      final g = await _api(
+        netz.client,
+      ).claimTerminal(deviceId: _deviceId, deviceSecret: _secret, terminalId: _tid, label: 'Handy Livia');
       expect(g.terminalId, _tid);
       expect(g.password, _passwort);
       expect(netz.anfragen.single.url.path, '/v3/claimTerminal');
@@ -415,7 +450,9 @@ void main() {
     test('eine Liste statt des Zugangs ist ein Antwortfehler', () async {
       final netz = _netz((_) => _erfolg({'available': false, 'reason': 'no_free_terminal', 'terminals': <Object>[]}));
       await expectLater(
-          _api(netz.client).claimTerminal(deviceId: _deviceId, deviceSecret: _secret, terminalId: _tid), _antwortfehler);
+        _api(netz.client).claimTerminal(deviceId: _deviceId, deviceSecret: _secret, terminalId: _tid),
+        _antwortfehler,
+      );
     });
 
     test('fremde Terminal-ID', () async {
@@ -429,7 +466,9 @@ void main() {
     test('leere Terminal-ID geht nicht hinaus', () async {
       final netz = _netz((_) => _erfolg(_zugang()));
       await expectLater(
-          _api(netz.client).claimTerminal(deviceId: _deviceId, deviceSecret: _secret, terminalId: ' '), _eingabefehler);
+        _api(netz.client).claimTerminal(deviceId: _deviceId, deviceSecret: _secret, terminalId: ' '),
+        _eingabefehler,
+      );
       expect(netz.anfragen, isEmpty);
     });
   });
@@ -437,12 +476,9 @@ void main() {
   group('requestTerminalCode', () {
     test('sendet die Plattform und liefert den Stand', () async {
       final netz = _netz((_) => _erfolg({'status': 'searching'}));
-      final stand = await _api(netz.client).requestTerminalCode(
-        deviceId: _deviceId,
-        deviceSecret: _secret,
-        platform: 'ios',
-        requestedBy: 'Livia Lindmayr',
-      );
+      final stand = await _api(
+        netz.client,
+      ).requestTerminalCode(deviceId: _deviceId, deviceSecret: _secret, platform: 'ios', requestedBy: 'Livia Lindmayr');
       expect(stand, 'searching');
       expect(terminalCodeStatuses, contains(stand));
       expect(_params(netz.anfragen.single), {
@@ -456,10 +492,14 @@ void main() {
     test('ohne Stand unbrauchbar, Plattform Pflicht', () async {
       final netz = _netz((_) => _erfolg({}));
       final api = _api(netz.client);
-      await expectLater(api.requestTerminalCode(deviceId: _deviceId, deviceSecret: _secret, platform: 'android'),
-          _antwortfehler);
       await expectLater(
-          api.requestTerminalCode(deviceId: _deviceId, deviceSecret: _secret, platform: ''), _eingabefehler);
+        api.requestTerminalCode(deviceId: _deviceId, deviceSecret: _secret, platform: 'android'),
+        _antwortfehler,
+      );
+      await expectLater(
+        api.requestTerminalCode(deviceId: _deviceId, deviceSecret: _secret, platform: ''),
+        _eingabefehler,
+      );
       expect(netz.anfragen, hasLength(1));
     });
 
@@ -474,13 +514,15 @@ void main() {
 
   group('getTerminalCode', () {
     test('gefunden: Code, Herkunft, Gueltigkeit, Einrichtung', () async {
-      final netz = _netz((_) => _erfolg({
-            'status': 'found',
-            'code': _code,
-            'source': 'mailbox',
-            'validUntil': '2026-11-07T09:20:00.000Z',
-            'setup': {'state': 'waiting_for_code', 'since': '2026-11-07T09:00:00.000Z'},
-          }));
+      final netz = _netz(
+        (_) => _erfolg({
+          'status': 'found',
+          'code': _code,
+          'source': 'mailbox',
+          'validUntil': '2026-11-07T09:20:00.000Z',
+          'setup': {'state': 'waiting_for_code', 'since': '2026-11-07T09:00:00.000Z'},
+        }),
+      );
       final s = await _api(netz.client).getTerminalCode(deviceId: _deviceId, deviceSecret: _secret);
       expect(s.status, 'found');
       expect(s.code, _code);
@@ -495,10 +537,12 @@ void main() {
     });
 
     test('ohne Anfrage: none ohne Code', () async {
-      final netz = _netz((_) => _erfolg({
-            'status': 'none',
-            'setup': {'state': 'ready', 'since': null},
-          }));
+      final netz = _netz(
+        (_) => _erfolg({
+          'status': 'none',
+          'setup': {'state': 'ready', 'since': null},
+        }),
+      );
       final s = await _api(netz.client).getTerminalCode(deviceId: _deviceId, deviceSecret: _secret);
       expect(s.status, 'none');
       expect(s.code, isNull);
@@ -508,16 +552,20 @@ void main() {
     });
 
     test('unlesbare Gueltigkeit ist null, fehlender Stand ein Antwortfehler', () async {
-      var netz = _netz((_) => _erfolg({
-            'status': 'delivered',
-            'code': _code,
-            'validUntil': 'morgen',
-            'setup': {'state': 'setting_up'},
-          }));
+      var netz = _netz(
+        (_) => _erfolg({
+          'status': 'delivered',
+          'code': _code,
+          'validUntil': 'morgen',
+          'setup': {'state': 'setting_up'},
+        }),
+      );
       expect((await _api(netz.client).getTerminalCode(deviceId: _deviceId, deviceSecret: _secret)).validUntil, isNull);
-      netz = _netz((_) => _erfolg({
-            'setup': {'state': 'ready'},
-          }));
+      netz = _netz(
+        (_) => _erfolg({
+          'setup': {'state': 'ready'},
+        }),
+      );
       await expectLater(_api(netz.client).getTerminalCode(deviceId: _deviceId, deviceSecret: _secret), _antwortfehler);
       netz = _netz((_) => _erfolg({'status': 'none'}));
       await expectLater(_api(netz.client).getTerminalCode(deviceId: _deviceId, deviceSecret: _secret), _antwortfehler);
@@ -560,35 +608,67 @@ void main() {
       netz = _netz((_) => _fehler('terminal_device_blocked'));
       await expectLater(
         _api(netz.client).reportTerminalLogin(
-            deviceId: _deviceId, deviceSecret: _secret, terminalId: _tid, success: false, newOnDevice: false),
+          deviceId: _deviceId,
+          deviceSecret: _secret,
+          terminalId: _tid,
+          success: false,
+          newOnDevice: false,
+        ),
         throwsA(isA<KasseneckApiError>().having((e) => e.code, 'code', 'terminal_device_blocked')),
       );
     });
   });
 
-  test('Zeitlimit: Ausgang abgelehnt, keiner der sieben steht in den Aufrufen mit Wirkung', () async {
-    final client = MockClient((_) => Completer<http.Response>().future);
-    final api = _api(client, readTimeout: const Duration(milliseconds: 20));
-    final aufrufe = <String, Future<Object?> Function()>{
-      'registerTerminalDevice': () => api.registerTerminalDevice(label: 'Handy', platform: 'android', app: 'kasse/1'),
-      'getTerminalAccess': () => api.getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret),
-      'claimTerminal': () => api.claimTerminal(deviceId: _deviceId, deviceSecret: _secret, terminalId: _tid),
-      'requestTerminalCode': () =>
-          api.requestTerminalCode(deviceId: _deviceId, deviceSecret: _secret, platform: 'android'),
-      'getTerminalCode': () => api.getTerminalCode(deviceId: _deviceId, deviceSecret: _secret),
-      'reportTerminalLogin': () => api.reportTerminalLogin(
-          deviceId: _deviceId, deviceSecret: _secret, terminalId: _tid, success: true, newOnDevice: true),
-      'reportTerminalReady': () => api.reportTerminalReady(deviceId: _deviceId, deviceSecret: _secret),
-    };
-    for (final MapEntry(key: name, value: los) in aufrufe.entries) {
-      await expectLater(
-        los(),
-        throwsA(isA<KasseneckHttpError>()
-            .having((e) => e.functionName, 'functionName', name)
-            .having((e) => e.reason, 'reason', KasseneckHttpError.reasonTimeout)
-            .having((e) => e.outcome, 'outcome', ErrorOutcome.rejected)),
-        reason: name,
-      );
-    }
+  // Wie npm 1.28.0: unklar nur nach Anmeldung (Geheimnis verloren) und
+  // getTerminalCode (Code auf Android verbraucht); die uebrigen fuenf abgelehnt.
+  const unklar = {'registerTerminalDevice', 'getTerminalCode'};
+
+  for (final (art, client, grund) in [
+    ('Zeitlimit', MockClient((_) => Completer<http.Response>().future), KasseneckHttpError.reasonTimeout),
+    ('Netzfehler', MockClient((_) async => throw const SocketException('weg')), KasseneckHttpError.reasonNetwork),
+  ]) {
+    test('$art: Ausgang unklar genau bei registerTerminalDevice und getTerminalCode', () async {
+      final api = _api(client, readTimeout: const Duration(milliseconds: 20));
+      final aufrufe = <String, Future<Object?> Function()>{
+        'registerTerminalDevice': () => api.registerTerminalDevice(label: 'Handy', platform: 'android', app: 'kasse/1'),
+        'getTerminalAccess': () => api.getTerminalAccess(deviceId: _deviceId, deviceSecret: _secret),
+        'claimTerminal': () => api.claimTerminal(deviceId: _deviceId, deviceSecret: _secret, terminalId: _tid),
+        'requestTerminalCode': () =>
+            api.requestTerminalCode(deviceId: _deviceId, deviceSecret: _secret, platform: 'android'),
+        'getTerminalCode': () => api.getTerminalCode(deviceId: _deviceId, deviceSecret: _secret),
+        'reportTerminalLogin': () => api.reportTerminalLogin(
+          deviceId: _deviceId,
+          deviceSecret: _secret,
+          terminalId: _tid,
+          success: true,
+          newOnDevice: true,
+        ),
+        'reportTerminalReady': () => api.reportTerminalReady(deviceId: _deviceId, deviceSecret: _secret),
+      };
+      for (final MapEntry(key: name, value: los) in aufrufe.entries) {
+        await expectLater(
+          los(),
+          throwsA(
+            isA<KasseneckHttpError>()
+                .having((e) => e.functionName, 'functionName', name)
+                .having((e) => e.reason, 'reason', grund)
+                .having(
+                  (e) => e.outcome,
+                  'outcome',
+                  unklar.contains(name) ? ErrorOutcome.unknown : ErrorOutcome.rejected,
+                ),
+          ),
+          reason: name,
+        );
+      }
+      expect(aufrufe.keys, containsAll(unklar));
+    });
+  }
+
+  test('unknownOutcomeCalls fuehrt von den sieben genau die zwei', () {
+    expect(unknownOutcomeCalls.where((c) => c.contains('Terminal')).toSet(), {
+      'registerTerminalDevice',
+      'getTerminalCode',
+    });
   });
 }

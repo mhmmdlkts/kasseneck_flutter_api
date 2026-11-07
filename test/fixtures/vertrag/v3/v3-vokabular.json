@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "842340e1f94c14fab01ffe96277d76dff4482b97df2e355daa583ff49c2db634",
-    "inputsSha256": "f3c7448afc7e7d5442af4b1fa0d9c28643d6ae945859371e285d39501d57125f",
-    "backendPackage": "@kreiseck/kasseneck-api@0.36.0",
+    "sha256": "3bb65a5fd076f45d799ce40864fe406a9ff9e4582c8cf638a1f81955d6efb732",
+    "inputsSha256": "411b3ef7731a7362e7c1e8115887efa358502e458f3214badb4b58b97514fbe8",
+    "backendPackage": "@kreiseck/kasseneck-api@0.37.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -146,7 +146,14 @@
       "getDepExport",
       "getDepExportFile",
       "createDepHandoverLink",
-      "revokeDepHandoverLink"
+      "revokeDepHandoverLink",
+      "registerTerminalDevice",
+      "getTerminalAccess",
+      "claimTerminal",
+      "requestTerminalCode",
+      "getTerminalCode",
+      "reportTerminalLogin",
+      "reportTerminalReady"
     ],
     "v3Routed": [
       "createReceipt",
@@ -261,7 +268,14 @@
       "getDepExport",
       "getDepExportFile",
       "createDepHandoverLink",
-      "revokeDepHandoverLink"
+      "revokeDepHandoverLink",
+      "registerTerminalDevice",
+      "getTerminalAccess",
+      "claimTerminal",
+      "requestTerminalCode",
+      "getTerminalCode",
+      "reportTerminalLogin",
+      "reportTerminalReady"
     ],
     "register": [
       "pairRegisterDevice",
@@ -364,6 +378,7 @@
       "changeStockCondition",
       "checkPartnerCustomerEmail",
       "checkVoucher",
+      "claimTerminal",
       "closeMyShift",
       "closeStocktake",
       "correctMyVoucher",
@@ -428,6 +443,8 @@
       "getStock",
       "getStocktake",
       "getStocktakePdf",
+      "getTerminalAccess",
+      "getTerminalCode",
       "getVariantGroup",
       "hobexGetStatus",
       "hobexPayApi",
@@ -484,14 +501,18 @@
       "recordStocktakeCount",
       "recountStocktake",
       "registerPinLogin",
+      "registerTerminalDevice",
       "registerUserLogin",
       "releaseReservation",
       "renewRegisterSession",
       "reportConnectState",
       "reportCustomerVertrag",
+      "reportTerminalLogin",
+      "reportTerminalReady",
       "reprintMyVoucherLabel",
       "reprintVoucherLabel",
       "requestCustomerSignature",
+      "requestTerminalCode",
       "reverseStockMovement",
       "reviewStocktake",
       "revokeCustomerMandate",
@@ -1362,6 +1383,7 @@
       "invalid_stock_kind",
       "invalid_tax_profile",
       "invalid_template",
+      "invalid_terminal_device",
       "invalid_tip_refund_source",
       "invalid_transfer",
       "invalid_variant_attributes",
@@ -1531,6 +1553,14 @@
       "tax_number_missing",
       "tax_scheme_mismatch",
       "template_not_found",
+      "terminal_code_manual",
+      "terminal_code_rate_limited",
+      "terminal_device_blocked",
+      "terminal_device_unknown",
+      "terminal_not_assigned",
+      "terminal_not_enabled",
+      "terminal_not_in_business",
+      "terminal_test_environment",
       "test_environment",
       "text_changed",
       "tip_conflict",
@@ -1555,6 +1585,7 @@
       "too_many_orders",
       "too_many_positions",
       "too_many_requests",
+      "too_many_terminal_devices",
       "too_many_vehicles",
       "too_many_voucher_checks",
       "training_receipt",
@@ -2229,6 +2260,19 @@
       "too_many_links",
       "link_not_found",
       "manager_only",
+      "server_error"
+    ],
+    "terminal": [
+      "terminal_not_enabled",
+      "terminal_test_environment",
+      "terminal_device_unknown",
+      "terminal_device_blocked",
+      "invalid_terminal_device",
+      "too_many_terminal_devices",
+      "terminal_not_in_business",
+      "terminal_code_manual",
+      "terminal_code_rate_limited",
+      "terminal_not_assigned",
       "server_error"
     ],
     "registerCases": [
@@ -3262,6 +3306,7 @@
         }
       }
     },
+    "claimTerminal": {},
     "closeMyShift": {
       "params": {
         "shiftId": "schichtId",
@@ -5246,6 +5291,8 @@
         }
       }
     },
+    "getTerminalAccess": {},
+    "getTerminalCode": {},
     "getVariantGroup": {
       "data": {
         "variantGroup": {
@@ -6895,6 +6942,7 @@
       }
     },
     "registerPinLogin": {},
+    "registerTerminalDevice": {},
     "registerUserLogin": {},
     "releaseReservation": {
       "data": {
@@ -6955,6 +7003,8 @@
         }
       }
     },
+    "reportTerminalLogin": {},
+    "reportTerminalReady": {},
     "reprintMyVoucherLabel": {
       "data": {
         "voucher": {
@@ -7254,6 +7304,7 @@
         }
       }
     },
+    "requestTerminalCode": {},
     "reverseStockMovement": {
       "data": {
         "operationId": "vorgangId",

@@ -1297,12 +1297,13 @@ class KasseneckApi {
 
   // ---- Kartenterminal-Zugang (zentral) ---------------------------------------
   //
-  // Kein Aufruf steht in `unknownOutcomeCalls`: keiner bucht oder signiert,
-  // jeder ist mit denselben Angaben folgenlos wiederholbar (der Zugang behaelt
-  // die Terminal-ID des Geraets, eine offene Code-Anfrage antwortet mit ihrem
-  // Stand, die Meldungen setzen nur einen Stand). Einzige Ausnahme ist die
-  // Anmeldung: ihre verlorene Antwort laesst ein Geraet ohne Geheimnis zurueck,
-  // das gegen die Obergrenze des Betriebs zaehlt.
+  // In `unknownOutcomeCalls` (wie npm 1.28.0) stehen nur zwei: die Anmeldung
+  // (ihre verlorene Antwort laesst ein Geraet ohne Geheimnis zurueck, das gegen
+  // die Obergrenze des Betriebs zaehlt) und getTerminalCode (auf Android gibt
+  // der Server den Code genau einmal heraus). Die uebrigen fuenf sind mit
+  // denselben Angaben folgenlos wiederholbar: der Zugang behaelt die
+  // Terminal-ID des Geraets, eine offene Code-Anfrage antwortet mit ihrem
+  // Stand, die Meldungen setzen nur einen Stand.
 
   /// Meldet dieses Geraet fuer den Kartenterminal-Zugang an
   /// (`registerTerminalDevice`, nur `/v3` mit api_key, nur Live-Umgebung).
@@ -1316,6 +1317,8 @@ class KasseneckApi {
   /// Antwort**: im sicheren Speicher ablegen, nie protokollieren. Eine erneute
   /// Anmeldung legt ein weiteres Geraet an; der Betrieb hat eine Obergrenze
   /// und hoechstens 10 Anmeldungen je Tag (`too_many_terminal_devices`).
+  /// Nach Zeitlimit oder Netzfehler ist der Ausgang unklar (`isOutcomeUnknown`):
+  /// das Geraet kann angelegt sein, sein Geheimnis ist verloren.
   /// Fehlercodes aus [terminalErrorCodes].
   Future<TerminalDeviceRegistration> registerTerminalDevice({
     required String label,
@@ -1420,7 +1423,8 @@ class KasseneckApi {
   /// `found` traegt den Code. Auf Android liefert der Server ihn **genau
   /// einmal** (danach `delivered` ohne Code): sofort verwenden, nie
   /// protokollieren. Auf iOS bleibt er bis [TerminalCodeState.validUntil]
-  /// lesbar. Geht die Antwort mit dem Code verloren, hilft eine neue Anfrage
+  /// lesbar. Geht die Antwort verloren (Ausgang unklar, `isOutcomeUnknown`),
+  /// kann der Code schon verbraucht sein; dann hilft eine neue Anfrage
   /// ([requestTerminalCode]).
   Future<TerminalCodeState> getTerminalCode({required String deviceId, required String deviceSecret}) async {
     const name = Aufrufe.getTerminalCode;

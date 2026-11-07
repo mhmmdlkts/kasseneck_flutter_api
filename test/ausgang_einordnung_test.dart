@@ -71,11 +71,6 @@ const Set<String> _lesen = {
   'getStock',
   'getStocktake',
   'getStocktakePdf',
-  // Kartenterminal-Zugang: liest den Stand der Code-Anfrage. Auf Android gibt
-  // der Server den Code genau einmal heraus; ging die Antwort verloren, hilft
-  // kein Nachlesen und kein Wiederholen, nur eine neue Anfrage
-  // (requestTerminalCode). Gebucht wird nichts.
-  'getTerminalCode',
   'getVariantGroup',
   'hobexGetStatus',
   'listArticles',
@@ -129,15 +124,13 @@ const Set<String> _wiederholbar = {
   'renewRegisterSession',
   // Liefert denselben Code noch einmal; ein zweiter Aufruf aendert nichts.
   'reprintVoucherLabel',
-  // Kartenterminal-Zugang (nicht im Vertrag des npm-Zwillings): nichts wird
-  // gebucht oder signiert. registerTerminalDevice legt ein Geraet an, das ohne
-  // die verlorene Antwort (das Geheimnis) niemand erreicht; der Preis ist ein
-  // Platz der Obergrenze. getTerminalAccess und claimTerminal behalten bzw.
+  // Kartenterminal-Zugang (wie CALLS_WITHOUT_EFFECT in npm 1.28.0): nichts wird
+  // gebucht oder signiert. getTerminalAccess und claimTerminal behalten bzw.
   // setzen dieselbe Terminal-ID, requestTerminalCode antwortet bei offener
   // Anfrage mit ihrem Stand, die beiden Meldungen setzen nur einen Stand.
+  // registerTerminalDevice und getTerminalCode stehen in unknownOutcomeCalls.
   'claimTerminal',
   'getTerminalAccess',
-  'registerTerminalDevice',
   'reportTerminalLogin',
   'reportTerminalReady',
   'requestTerminalCode',
