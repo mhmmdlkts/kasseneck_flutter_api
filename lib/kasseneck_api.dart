@@ -34,6 +34,7 @@ import 'src/receipt/idempotenz.dart';
 import 'src/receipt/liste.dart';
 import 'src/kasse/storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'src/kasse/storno_nutzlast.dart';
+import 'src/terminal/zugang.dart';
 import 'src/register/fehler.dart';
 import 'src/v3.dart';
 
@@ -86,6 +87,28 @@ export 'src/dep/nachschau.dart'
         depExportFailed,
         depExportFiles,
         depExportRunning;
+// Kartenterminal-Zugang zentral (KasseneckApi.registerTerminalDevice und
+// Verwandte): Anmeldung, Zugang, Code-Stand, Codes und der Helfer fuer den
+// Knopf „Einfuegen“. Die Pruef- und Lesehelfer bleiben paketintern.
+export 'src/terminal/zugang.dart'
+    show
+        TerminalAccess,
+        TerminalAccessGranted,
+        TerminalAccessUnavailable,
+        TerminalCodeFormat,
+        TerminalCodeState,
+        TerminalDeviceRegistration,
+        TerminalListEntry,
+        TerminalSetup,
+        parseTerminalCode,
+        terminalCodeLabelsDefault,
+        terminalCodeLengthDefault,
+        terminalCodeSources,
+        terminalCodeStatuses,
+        terminalErrorCodes,
+        terminalNoFreeTerminal,
+        terminalPlatforms,
+        terminalSetupStates;
 // Belege auflisten (KasseneckApi.listReceipts): Seite, Zeile, Tagessumme und
 // Grenzen. Storno-Stand und Bediener der Zeile sind dieselben Typen wie in der
 // Belegliste der Kasse (pos.dart), damit beide Listen gleich lesbar sind.
@@ -1270,6 +1293,184 @@ class KasseneckApi {
     );
     if (resJson['status'] != 'success') throw envelopeError(name, resJson);
     return depWiderrufAus(name, _daten(name, resJson));
+  }
+
+  // ---- Kartenterminal-Zugang (zentral) ---------------------------------------
+  //
+  // Kein Aufruf steht in `unknownOutcomeCalls`: keiner bucht oder signiert,
+  // jeder ist mit denselben Angaben folgenlos wiederholbar (der Zugang behaelt
+  // die Terminal-ID des Geraets, eine offene Code-Anfrage antwortet mit ihrem
+  // Stand, die Meldungen setzen nur einen Stand). Einzige Ausnahme ist die
+  // Anmeldung: ihre verlorene Antwort laesst ein Geraet ohne Geheimnis zurueck,
+  // das gegen die Obergrenze des Betriebs zaehlt.
+
+  /// Meldet dieses Geraet fuer den Kartenterminal-Zugang an
+  /// (`registerTerminalDevice`, nur `/v3` mit api_key, nur Live-Umgebung).
+  ///
+  /// [label] (1 bis 60 Zeichen) ist der Name, unter dem Betrieb und Support
+  /// das Geraet sehen; [platform] `android` oder `ios`; [app] (1 bis 40
+  /// Zeichen) die App samt Version, etwa `kasse/1.0.12`; [requestedBy]
+  /// (1 bis 80 Zeichen) wer die Anmeldung ausloest.
+  ///
+  /// **[TerminalDeviceRegistration.deviceSecret] kommt nur in dieser
+  /// Antwort**: im sicheren Speicher ablegen, nie protokollieren. Eine erneute
+  /// Anmeldung legt ein weiteres Geraet an; der Betrieb hat eine Obergrenze
+  /// und hoechstens 10 Anmeldungen je Tag (`too_many_terminal_devices`).
+  /// Fehlercodes aus [terminalErrorCodes].
+  Future<TerminalDeviceRegistration> registerTerminalDevice({
+    required String label,
+    required String platform,
+    required String app,
+    String? requestedBy,
+  }) async {
+    const name = Aufrufe.registerTerminalDevice;
+    pruefeGeraetAnmeldung(name, label: label, platform: platform, app: app, requestedBy: requestedBy);
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {'label': label, 'platform': platform, 'app': app, 'requestedBy': ?requestedBy},
+    );
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    return geraetAnmeldungAus(name, _daten(name, resJson));
+  }
+
+  /// Zugang und Terminal-ID fuer dieses Geraet (`getTerminalAccess`): das
+  /// Geraet behaelt seine Terminal-ID, sonst bekommt es eine freie des
+  /// Betriebs ([TerminalAccessGranted]); ist keine frei, kommt die Liste des
+  /// Betriebs ([TerminalAccessUnavailable], weiter mit [claimTerminal]).
+  ///
+  /// [platform], [app] und [label] aktualisieren die Angaben zum Geraet.
+  /// Falsche Kennung oder falsches Geheimnis ergeben gleichermassen
+  /// `terminal_device_unknown`. Das Passwort nie protokollieren.
+  Future<TerminalAccess> getTerminalAccess({
+    required String deviceId,
+    required String deviceSecret,
+    String? platform,
+    String? app,
+    String? label,
+  }) async {
+    const name = Aufrufe.getTerminalAccess;
+    pruefeGeraet(name, deviceId, deviceSecret);
+    pruefeZugangAngaben(name, platform: platform, app: app, label: label);
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {
+        'deviceId': deviceId,
+        'deviceSecret': deviceSecret,
+        'platform': ?platform,
+        'app': ?app,
+        'label': ?label,
+      },
+    );
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    return terminalZugangAus(name, _daten(name, resJson));
+  }
+
+  /// Uebernimmt die Terminal-ID [terminalId] des eigenen Betriebs fuer dieses
+  /// Geraet (`claimTerminal`); das Geraet, das sie hielt, verliert sie. Danach
+  /// der Zugang wie bei [getTerminalAccess]. Eine Terminal-ID eines fremden
+  /// Betriebs (oder eine, die es nicht gibt) ist `terminal_not_in_business`.
+  Future<TerminalAccessGranted> claimTerminal({
+    required String deviceId,
+    required String deviceSecret,
+    required String terminalId,
+    String? label,
+  }) async {
+    const name = Aufrufe.claimTerminal;
+    pruefeGeraet(name, deviceId, deviceSecret);
+    pruefeTerminalId(name, terminalId);
+    pruefeZugangAngaben(name, label: label);
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {'deviceId': deviceId, 'deviceSecret': deviceSecret, 'terminalId': terminalId, 'label': ?label},
+    );
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    final zugang = terminalZugangAus(name, _daten(name, resJson));
+    if (zugang is! TerminalAccessGranted) {
+      throw const KasseneckValidationError(name, 'Antwort ist unbrauchbar (data.available ist nicht true)', 'response');
+    }
+    return zugang;
+  }
+
+  /// Fragt den Freigabecode an (`requestTerminalCode`), wenn die Terminal-ID
+  /// auf dieses Geraet zieht. Nur mit [TerminalAccessGranted.autoCode]; sonst
+  /// `terminal_code_manual` (die App laesst den Code eingeben,
+  /// [parseTerminalCode]). Liefert den Stand aus [terminalCodeStatuses],
+  /// meist `searching`; weiter mit [getTerminalCode]. Eine offene Anfrage
+  /// antwortet mit ihrem Stand statt einer neuen; zu viele Anfragen je
+  /// Stunde sind `terminal_code_rate_limited`.
+  Future<String> requestTerminalCode({
+    required String deviceId,
+    required String deviceSecret,
+    required String platform,
+    String? requestedBy,
+  }) async {
+    const name = Aufrufe.requestTerminalCode;
+    pruefeGeraet(name, deviceId, deviceSecret);
+    pruefeCodeAnfrage(name, platform: platform, requestedBy: requestedBy);
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {'deviceId': deviceId, 'deviceSecret': deviceSecret, 'platform': platform, 'requestedBy': ?requestedBy},
+    );
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    return codeAnfrageStatusAus(name, _daten(name, resJson));
+  }
+
+  /// Stand der Code-Anfrage und der Einrichtung (`getTerminalCode`).
+  ///
+  /// `found` traegt den Code. Auf Android liefert der Server ihn **genau
+  /// einmal** (danach `delivered` ohne Code): sofort verwenden, nie
+  /// protokollieren. Auf iOS bleibt er bis [TerminalCodeState.validUntil]
+  /// lesbar. Geht die Antwort mit dem Code verloren, hilft eine neue Anfrage
+  /// ([requestTerminalCode]).
+  Future<TerminalCodeState> getTerminalCode({required String deviceId, required String deviceSecret}) async {
+    const name = Aufrufe.getTerminalCode;
+    pruefeGeraet(name, deviceId, deviceSecret);
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {'deviceId': deviceId, 'deviceSecret': deviceSecret},
+    );
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    return codeStandAus(name, _daten(name, resJson));
+  }
+
+  /// Meldet den Ausgang der Anmeldung in der Terminal-App
+  /// (`reportTerminalLogin`): [success] ob sie gelang, [newOnDevice] ob die
+  /// Terminal-ID dafuer neu auf dieses Geraet zog (dann beginnt die
+  /// Einrichtung). Eine Meldung fuer eine Terminal-ID, die das Geraet nicht
+  /// mehr haelt, nimmt der Server an und uebergeht sie.
+  Future<void> reportTerminalLogin({
+    required String deviceId,
+    required String deviceSecret,
+    required String terminalId,
+    required bool success,
+    required bool newOnDevice,
+  }) async {
+    const name = Aufrufe.reportTerminalLogin;
+    pruefeGeraet(name, deviceId, deviceSecret);
+    pruefeTerminalId(name, terminalId);
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {
+        'deviceId': deviceId,
+        'deviceSecret': deviceSecret,
+        'terminalId': terminalId,
+        'success': success,
+        'newOnDevice': newOnDevice,
+      },
+    );
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+  }
+
+  /// Meldet, dass die Terminal-App fertig eingerichtet ist
+  /// (`reportTerminalReady`); eine zweite Meldung aendert nichts.
+  Future<void> reportTerminalReady({required String deviceId, required String deviceSecret}) async {
+    const name = Aufrufe.reportTerminalReady;
+    pruefeGeraet(name, deviceId, deviceSecret);
+    final resJson = await _kasseneckJson(
+      endpoint: name,
+      params: {'deviceId': deviceId, 'deviceSecret': deviceSecret},
+    );
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
   }
 
   Future initWifiPrinter(String ipAddress, KeckPaperSize size) async {

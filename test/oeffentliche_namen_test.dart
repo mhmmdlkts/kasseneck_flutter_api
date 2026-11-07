@@ -60,12 +60,12 @@ final Set<String> woerter = _liste('''
   fields file filename files filled filter final finalized find finished firmware
   first fits flip flow font footer for force form format formats found
   fraction free from full fullscreen function funds gap gateway generator
-  german get glass global goods graphics grid gross ground group groups hand hardware has
+  german get glass global goods graphics granted grid gross ground group groups hand hardware has
   hash header headers headings height heights held high hint hints horizontal
   host hosts house hue huge idempotency ids image immediately in included index
   info input installments instant insufficient intent interface interfaces
   internal intro invalid inventory invert invoice invoices is issue issuer item items iterate
-  january job journal july june kept key keys kind kinds label landed language languages
+  january job journal july june kept key keys kind kinds label labels landed language languages
   large last layout lead left legacy legal length level license licenses light limit line
   lines link list load loader local location locations lock login logo logout lookup loss
   lossy lot lots luminance mandate mandatory map march mark matrix may meaning measured
@@ -79,7 +79,7 @@ final Set<String> woerter = _liste('''
   paired pairs panel paper parse partial password patch pay payload payment
   payments per percent period persistent person phone photos piece pixel
   placeholders plain plate
-  platform policy port position present pressed preview previous price prices
+  platform platforms policy port position present pressed preview previous price prices
   print printed printer printers printing probe production profile progress project
   promo proof provider public purchase quantities quantity quick quiet radius raised random
   range raster rasters rate rated rates ratio raw read readable ready
@@ -94,7 +94,7 @@ final Set<String> woerter = _liste('''
   service services session sessions set setting settings setup shadow share
   shared sheet short shortcut shortcuts shorten shortfall shortfalls show side sign signature signed
   signing since single site size sizing sleep small software sold sort
-  source sources space special split staff stamp standard start started state
+  source sources space special split staff stamp standard start started state states
   statement status statuses step steps stock stocktake stop storage store stored street strength
   strengths string style styles subnet subtitle subtotal subtracted succeeded
   success sum summary supplier supply supported surface symbol system table tables takeover tax technical
@@ -103,7 +103,7 @@ final Set<String> woerter = _liste('''
   tracked tracking training transaction transfer transmitted transport tries turn
   turnover twelfths type types unavailable uncertain underline ungrouped unit
   unexpected units unknown unpack unpaid unpair unresolved unsupported untangle until
-  update updated usable user users valid validation value values variant variants vehicle verification
+  update updated usable user username users valid validation value values variant variants vehicle verification
   verify version vertical via vias vienna view virtual visible voided voucher vouchers wall
   wanted warehouse warm warning warnings watermark web webhook webhooks webservice widget widgets width widths
   wire with withdrawal words wrap write written wrong year yesterday zero zone

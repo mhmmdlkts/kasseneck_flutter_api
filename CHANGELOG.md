@@ -1,3 +1,20 @@
+## 11.19.0 (2026-11-07)
+
+Card terminal access, managed centrally by Kasseneck. Additive; no npm twin yet (the seven calls are not in the npm contract, `zwillinge.yaml` stays on `1.27.0`).
+
+Reason: three apps use the same card terminal app on the phone. Until now someone typed its login and terminal ID on every device, and moving a terminal ID to another phone meant waiting for a code by email. The backend now holds the logins, assigns a free terminal ID and fetches that code from the account's mailbox; the apps only need these calls.
+
+- **`KasseneckApi.registerTerminalDevice({label, platform, app, requestedBy})`** → **`TerminalDeviceRegistration`** (`deviceId`, `deviceSecret`). The secret comes in this answer only: keep it in secure storage, never log it. `label` 1 to 60 characters, `platform` `android` or `ios`, `app` 1 to 40 characters (e.g. `kasse/1.0.12`), `requestedBy` 1 to 80; checked before sending (`KasseneckValidationError`, `kind: request`). Live environment only (`terminal_test_environment`).
+- **`KasseneckApi.getTerminalAccess({deviceId, deviceSecret, platform, app, label})`** → sealed **`TerminalAccess`**: **`TerminalAccessGranted`** (`username`, `password`, `terminalId`, `terminalName`, `accountId`, `autoCode`, `codeFormat` (`TerminalCodeFormat`: `length`, `labels`), `setup` (`TerminalSetup`: `state`, `since`), `updatedAt`) or **`TerminalAccessUnavailable`** (`reason` `no_free_terminal`, `terminals` as `TerminalListEntry`: `terminalId`, `name`, `lastUsedBy`, `lastUsedAt`). `available` tells them apart, a `switch` without `default` covers both.
+- **`KasseneckApi.claimTerminal({deviceId, deviceSecret, terminalId, label})`** → `TerminalAccessGranted`: takes over a terminal ID of the own business.
+- **`KasseneckApi.requestTerminalCode({deviceId, deviceSecret, platform, requestedBy})`** → status (`searching` and the other values of `terminalCodeStatuses`). Only with `autoCode`; otherwise `terminal_code_manual`.
+- **`KasseneckApi.getTerminalCode({deviceId, deviceSecret})`** → **`TerminalCodeState`** (`status`, `code`, `source` `mailbox`|`support`, `validUntil`, `setup`). On Android the server hands out the code exactly once.
+- **`KasseneckApi.reportTerminalLogin({deviceId, deviceSecret, terminalId, success, newOnDevice})`** and **`KasseneckApi.reportTerminalReady({deviceId, deviceSecret})`** (`Future<void>`).
+- **`parseTerminalCode(text, {length, labels})`** for the app's paste button: the code alone, or a pasted email text with „label:“ (colon required) followed by exactly `length` letters or digits; exactly one distinct code, otherwise `null`. Runs every case of the backend's contract file (`test/fixtures/terminal/genius-code-faelle.json`, a byte copy).
+- **Constants** `terminalErrorCodes` (`terminal_not_enabled`, `terminal_test_environment`, `terminal_device_unknown`, `terminal_device_blocked`, `invalid_terminal_device`, `too_many_terminal_devices`, `terminal_not_in_business`, `terminal_code_manual`, `terminal_code_rate_limited`, `terminal_not_assigned`, `server_error`), `terminalPlatforms`, `terminalCodeStatuses`, `terminalSetupStates`, `terminalCodeSources`, `terminalNoFreeTerminal`, `terminalCodeLengthDefault`, `terminalCodeLabelsDefault`.
+- Password, device secret and code appear in no `toString` and no error message of the package. Times are `DateTime` in UTC, an unreadable time is `null`.
+- None of the seven calls is in `unknownOutcomeCalls`: nothing is booked or signed, and each is safe to repeat with the same input. `registerTerminalDevice` is not idempotent: a repeated call registers another device, which counts against the business's limit (`too_many_terminal_devices`).
+
 ## 11.18.0 (2026-11-05)
 
 Twin of `@kreiseck/kasseneck-api` `1.27.0`: add-on tiles. Additive.
