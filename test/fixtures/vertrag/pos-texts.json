@@ -1,5 +1,5 @@
 {
-  "version": "1.27.0",
+  "version": "1.28.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -1041,6 +1041,37 @@
       "only": [
         "app"
       ]
+    },
+    "shift.started_taken_over": {
+      "text": "Schicht {number} hat begonnen – mit {amount} in der Lade, übernommen von Schicht {from} ({time}).",
+      "placeholders": [
+        "number",
+        "amount",
+        "from",
+        "time"
+      ]
+    },
+    "tip.summary": {
+      "text": "Trinkgeld {tip} · der Gast zahlt {total}",
+      "placeholders": [
+        "tip",
+        "total"
+      ]
+    },
+    "tip.total_below_sum": {
+      "text": "Der Betrag liegt unter der Summe."
+    },
+    "shift.interim_saved": {
+      "text": "Zählung festgehalten."
+    },
+    "shift.finish_step_first": {
+      "text": "Erst den Schritt rechts abschließen oder abbrechen."
+    },
+    "tip.revenue_hint": {
+      "text": "Steuerpflichtiges Trinkgeld zählt als Umsatz des Betriebs und wird nicht ausgezahlt."
+    },
+    "tip.unassigned_hint": {
+      "text": "Trinkgeld ohne angemeldeten Benutzer."
     }
   },
   "errorRules": [
@@ -1826,6 +1857,9 @@
     },
     "cash_movement.type_handover_difference": {
       "text": "Übergabedifferenz"
+    },
+    "cash_movement.type_interim_difference": {
+      "text": "Zwischenzählung"
     },
     "shift_receipt.title_close": {
       "text": "Schichtabschluss"
@@ -2768,6 +2802,308 @@
         "number",
         "time"
       ]
+    },
+    "zero_receipt.done_title": {
+      "text": "Nullbeleg erstellt"
+    },
+    "zero_receipt.back": {
+      "text": "Zurück zur Prüfung"
+    },
+    "dep.export": {
+      "text": "DEP exportieren"
+    },
+    "dep.period_question": {
+      "text": "Welcher Zeitraum?"
+    },
+    "common.close": {
+      "text": "Schließen"
+    },
+    "shift.state_closed": {
+      "text": "Schicht geschlossen"
+    },
+    "shift.start_title": {
+      "text": "Schicht beginnen"
+    },
+    "shift.band_closed": {
+      "text": "Zum Verkaufen rechts die Schicht beginnen."
+    },
+    "shift.band_closing": {
+      "text": "Verkaufen ist pausiert, bis du fertig bist oder abbrichst."
+    },
+    "shift.band_interim": {
+      "text": "Verkaufen ist kurz pausiert."
+    },
+    "shift.band_cash": {
+      "text": "Zum Verkaufen auf die Kacheln tippen."
+    },
+    "tip.revenue_title": {
+      "text": "Als Umsatz erfasst"
+    },
+    "tip.revenue_badge": {
+      "text": "Umsatz"
+    },
+    "tip.unassigned": {
+      "text": "Nicht zugeordnet"
+    },
+    "shift.last_shift": {
+      "text": "Letzte Schicht"
+    },
+    "shift.in_drawer_by_system": {
+      "text": "Laut Kasse in der Lade"
+    },
+    "shift.take_over_amount": {
+      "text": "{amount} übernehmen",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "shift.top_up": {
+      "text": "Auffüllen"
+    },
+    "shift.missing": {
+      "text": "fehlen {amount}",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "shift.count_coins": {
+      "text": "Scheine und Münzen zählen"
+    },
+    "shift.count_please": {
+      "text": "Zähl bitte, was in der Lade liegt."
+    },
+    "drawer.open_for_count": {
+      "text": "Lade öffnen zum Zählen"
+    },
+    "drawer.open_for_tips": {
+      "text": "Lade öffnen für Trinkgeld"
+    },
+    "drawer.open_for_take": {
+      "text": "Lade öffnen zum Entnehmen"
+    },
+    "shift.close_title_numbered": {
+      "text": "Schicht {number} schließen",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "shift.closed_title": {
+      "text": "Schicht {number} geschlossen",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "shift.running_since_drawer": {
+      "text": "{drawer} · läuft seit {time} ({duration})",
+      "placeholders": [
+        "drawer",
+        "time",
+        "duration"
+      ]
+    },
+    "shift.step_count": {
+      "text": "Zählen"
+    },
+    "shift.step_tips": {
+      "text": "Trinkgeld"
+    },
+    "shift.step_take": {
+      "text": "Entnehmen"
+    },
+    "shift.step_done": {
+      "text": "Fertig"
+    },
+    "shift.expected": {
+      "text": "In der Lade sollten sein"
+    },
+    "shift.of_which_cash_tips": {
+      "text": "davon Trinkgeld bar"
+    },
+    "shift.breakdown": {
+      "text": "So setzt sich das zusammen"
+    },
+    "shift.part_opening": {
+      "text": "Anfang"
+    },
+    "shift.part_cash_sales": {
+      "text": "Barverkäufe"
+    },
+    "shift.part_cash_tips": {
+      "text": "Trinkgeld bar"
+    },
+    "shift.part_cancellations": {
+      "text": "Storno bar"
+    },
+    "shift.part_cash_in": {
+      "text": "Einzahlungen"
+    },
+    "shift.part_cash_out": {
+      "text": "Ausgaben aus der Lade"
+    },
+    "shift.part_interim": {
+      "text": "Zwischenzählung"
+    },
+    "tip.who_takes_now": {
+      "text": "Wer nimmt sein Trinkgeld jetzt bar mit?"
+    },
+    "tip.later_hint": {
+      "text": "Was du nicht auszahlst, bleibt offen und wird in einer späteren Schicht ausgezahlt."
+    },
+    "tip.later": {
+      "text": "Später"
+    },
+    "tip.pay_out": {
+      "text": "Auszahlen"
+    },
+    "tip.pay_out_amount": {
+      "text": "{amount} auszahlen",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "shift.now_in_drawer": {
+      "text": "Jetzt in der Lade"
+    },
+    "shift.interim_title": {
+      "text": "Schicht {number} zählen",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "shift.interim_save": {
+      "text": "Zählung festhalten"
+    },
+    "shift.opening_not_counted": {
+      "text": "Anfang nicht gezählt"
+    },
+    "shift.taken_over_unchecked_by": {
+      "text": "{name}, {time}",
+      "placeholders": [
+        "name",
+        "time"
+      ]
+    },
+    "shift.taken_over_unchecked": {
+      "text": "Schicht {number} wurde ohne Zählen übernommen",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "tip.kind_percent": {
+      "text": "Prozent"
+    },
+    "tip.kind_round_up": {
+      "text": "Aufrunden"
+    },
+    "tip.kind_total": {
+      "text": "Gesamt"
+    },
+    "tip.round_to": {
+      "text": "auf {amount}",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "tip.guest_pays_total": {
+      "text": "Der Gast zahlt insgesamt"
+    },
+    "tip.remainder_is_tip": {
+      "text": "Rest ist Trinkgeld"
+    },
+    "voucher.section": {
+      "text": "Gutschein"
+    },
+    "voucher.code_placeholder": {
+      "text": "Code eingeben oder scannen"
+    },
+    "settings.cart_width": {
+      "text": "Breite der rechten Spalte"
+    },
+    "settings.cart_width_narrow": {
+      "text": "Schmal"
+    },
+    "settings.cart_width_medium": {
+      "text": "Mittel"
+    },
+    "settings.cart_width_wide": {
+      "text": "Breit"
+    },
+    "shift_receipt.opening_not_counted": {
+      "text": "Anfang übernommen, nicht gezählt"
+    },
+    "shift_receipt.interim_count": {
+      "text": "Zwischenzählung"
+    },
+    "shift_receipt.counted_before_payout": {
+      "text": "Gezählt"
+    },
+    "shift_receipt.difference_part_interim": {
+      "text": "davon Zwischenzählung"
+    },
+    "shift_receipt.difference_part_closing": {
+      "text": "davon Abschluss"
+    },
+    "shift.state_closing": {
+      "text": "Schicht wird geschlossen"
+    },
+    "shift.state_interim": {
+      "text": "Zwischenzählung"
+    },
+    "shift.tips_paid_out": {
+      "text": "Trinkgeld ausgezahlt"
+    },
+    "shift.difference_none": {
+      "text": "stimmt"
+    },
+    "shift.start_new": {
+      "text": "Neue Schicht beginnen"
+    },
+    "shift.drawer_from_to": {
+      "text": "{drawer} · {from} bis {to}",
+      "placeholders": [
+        "drawer",
+        "from",
+        "to"
+      ]
+    },
+    "shift.running_since_by": {
+      "text": "{drawer} · läuft seit {time} ({name})",
+      "placeholders": [
+        "drawer",
+        "time",
+        "name"
+      ]
+    },
+    "shift.z_receipt_printed": {
+      "text": "Z-Bon gedruckt"
+    },
+    "shift.count_now": {
+      "text": "Jetzt zählen"
+    },
+    "shift.interim_entry": {
+      "text": "Zwischenzählung"
+    },
+    "drawer.open": {
+      "text": "Lade öffnen"
+    },
+    "time.today_at": {
+      "text": "heute {time}",
+      "placeholders": [
+        "time"
+      ]
+    },
+    "tip.summary_percent": {
+      "text": "Trinkgeld {tip} ({percent} %)",
+      "placeholders": [
+        "tip",
+        "percent"
+      ]
+    },
+    "settings.tip_kinds": {
+      "text": "Trinkgeld-Arten"
+    },
+    "settings.tip_start": {
+      "text": "Zuerst offen"
     }
   },
   "returnDispositionLabels": {

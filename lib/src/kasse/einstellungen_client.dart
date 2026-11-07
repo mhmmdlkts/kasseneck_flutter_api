@@ -58,7 +58,8 @@ class PosSettingsClient {
     }
     final gesendet = patch.containsKey('tipKeptByDefault') && patch.length == 1
         ? <String, dynamic>{}
-        : _pruefeTeil(name, 'business', {...patch}..remove('tipKeptByDefault'), const PosBusinessSettings().toJson(), posBusinessValues);
+        : _pruefeTeil(name, 'business', {...patch}..remove('tipKeptByDefault'), const PosBusinessSettings().toJson(), posBusinessValues,
+            wahlfelder: posBusinessOptionalChoices);
     if (patch.containsKey('tipKeptByDefault')) gesendet['tipKeptByDefault'] = behalten;
     if (gesendet.containsKey('vatRates')) {
       final karte = gesendet['vatRates'];
@@ -91,7 +92,8 @@ class PosSettingsClient {
     }
     final gesendet = mitLade && patch.length == 1
         ? <String, dynamic>{}
-        : _pruefeTeil(name, 'device', {...patch}..remove('drawerId'), const PosDeviceSettings().toJson(), posDeviceValues);
+        : _pruefeTeil(name, 'device', {...patch}..remove('drawerId'), const PosDeviceSettings().toJson(), posDeviceValues,
+            wahlfelder: posDeviceOptionalChoices);
     if (mitLade) gesendet['drawerId'] = lade;
     if (gesendet.containsKey('shortcuts')) {
       final karte = gesendet['shortcuts'];
@@ -176,8 +178,16 @@ class PosSettingsClient {
     String teil,
     Map<String, dynamic> block,
     Map<String, dynamic> standard,
-    Map<String, List<Object>> werte,
-  ) {
+    Map<String, List<Object>> werte, {
+    List<String> wahlfelder = const [],
+  }) {
+    // Ein Wahlfeld mit `null` ginge nicht hinaus und wuerde nicht geprueft: hier
+    // ist `null` kein Entfernen, sondern ein Fehler (wie im npm-Paket).
+    for (final k in wahlfelder) {
+      if (block.containsKey(k) && block[k] == null) {
+        throw KasseneckValidationError(name, '$teil.$k: ungueltiger Wert (null)', 'request');
+      }
+    }
     final gesendet = <String, dynamic>{
       for (final e in block.entries)
         if (e.value != null) e.key: e.value,
@@ -188,10 +198,22 @@ class PosSettingsClient {
       throw KasseneckValidationError(name, '$teil: keine Einstellungen uebergeben', 'request');
     }
     for (final e in gesendet.entries) {
-      if (!standard.containsKey(e.key)) {
+      if (!standard.containsKey(e.key) && !wahlfelder.contains(e.key)) {
         throw KasseneckValidationError(name, '$teil.${e.key}: unbekanntes Feld', 'request');
       }
       final erlaubt = werte[e.key];
+      final wert = e.value;
+      if (e.key == 'tipKinds' && wert is! List) {
+        throw KasseneckValidationError(name, '$teil.${e.key}: eine Liste von Trinkgeld-Arten erwartet', 'request');
+      }
+      // Eine Liste (tipKinds): nichtleer, jeder Eintrag aus der Wertemenge, ohne Dubletten.
+      if (erlaubt != null && wert is List) {
+        if (wert.isEmpty || wert.toSet().length != wert.length || !wert.every(erlaubt.contains)) {
+          throw KasseneckValidationError(
+              name, '$teil.${e.key}: ungueltiger Wert (erlaubt: ${erlaubt.join(', ')}, jede Art hoechstens einmal)', 'request');
+        }
+        continue;
+      }
       if (erlaubt != null && !erlaubt.contains(e.value)) {
         // Kein Altwert: dann ein Wert, den der Server kennt und dieses Paket
         // nicht. Wer den ganzen Block zurückschickt, braucht den Hinweis.

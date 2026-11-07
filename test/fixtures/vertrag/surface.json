@@ -1,5 +1,5 @@
 {
-  "version": "1.27.0",
+  "version": "1.28.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -156,6 +156,7 @@
       "logMyDrawerOpenings",
       "getMyShiftReport",
       "closeMyShift",
+      "recordMyShiftCount",
       "logReceiptOutputs",
       "getRegisterInspectionInfo",
       "reportConnectState"
@@ -319,6 +320,7 @@
       "logMyDrawerOpenings",
       "getMyShiftReport",
       "closeMyShift",
+      "recordMyShiftCount",
       "logReceiptOutputs",
       "createDepExport",
       "getDepExport",
@@ -367,6 +369,7 @@
     "receiveGoods",
     "recordInvoicePayment",
     "recordMyCashMovement",
+    "recordMyShiftCount",
     "recordMyStocktakeCount",
     "recordStockLoss",
     "recordStocktakeCount",
@@ -677,9 +680,18 @@
       "createPrintJob",
       "sendReceiptEmail"
     ],
+    "cartWidth": [
+      "narrow",
+      "medium",
+      "wide"
+    ],
     "cashLocations": [
       "bank",
       "safe"
+    ],
+    "differencePartTypes": [
+      "interim",
+      "closing"
     ],
     "eurDenominations": [
       50000,
@@ -697,6 +709,15 @@
       5,
       2,
       1
+    ],
+    "expectedPartKeys": [
+      "opening",
+      "cash_sales",
+      "cash_tips",
+      "cancellations",
+      "cash_in",
+      "cash_out",
+      "interim_difference"
     ],
     "manualMovementTypes": [
       "change_in",
@@ -726,7 +747,8 @@
       "transfer_in",
       "expense",
       "count_difference",
-      "handover_difference"
+      "handover_difference",
+      "interim_difference"
     ],
     "openingReasons": [
       "sale",
@@ -739,8 +761,15 @@
       "other",
       "voucher_payout"
     ],
+    "posBusinessOptionalChoices": [
+      "tipKinds",
+      "tipStart"
+    ],
     "posBusinessOptionalFields": [
       "tipKeptByDefault"
+    ],
+    "posDeviceOptionalChoices": [
+      "cartWidth"
     ],
     "posDeviceOptionalFields": [
       "drawerId"
@@ -869,6 +898,16 @@
       "store",
       "vehicle",
       "other"
+    ],
+    "tipKinds": [
+      "percent",
+      "round_up",
+      "total"
+    ],
+    "tipStart": [
+      "percent",
+      "round_up",
+      "total"
     ],
     "voucherAmountModes": [
       "free",

@@ -1170,7 +1170,7 @@ class RegisterReceiptClient {
   // ---- Schicht, Kassenstand und Lade-Protokoll (seit 11.1) ------------------
   //
   // Zwilling von `pos/schicht.ts` im JS-Paket (npm 1.9.0), gleiche Namen. Die
-  // sechs Aufrufe gibt es nur ueber den Kassenweg. Rechte am Server: `shift`
+  // sieben Aufrufe gibt es nur ueber den Kassenweg. Rechte am Server: `shift`
   // (Schicht oeffnen und schliessen, Bericht), `cashMove` (Ein- und
   // Auszahlungen), `cashView` (Soll, Ist und Differenz sehen; ohne dieses
   // Recht wird blind gezaehlt), `drawer` (Lade von Hand oeffnen).
@@ -1315,7 +1315,11 @@ class RegisterReceiptClient {
   /// [ShiftCloseResult.ready], wenn das Schliessen mit diesem Betrag ginge.
   /// Gebucht wird nichts (auch kein [afterCount]). Die Zaehlung zaehlt als einer
   /// der zwei Versuche; schliesst danach derselbe Betrag, gilt er als dieselbe
-  /// Zaehlung. Nur `true` geht hinaus.
+  /// Zaehlung. Nur `true` geht hinaus. [countedBeforePayout]: [countedCents]
+  /// ist der Stand **vor** den Trinkgeld-Auszahlungen derselben Anfrage; der
+  /// Server speichert den Rohwert ([Shift.countedBeforePayoutCents], auf dem Bon
+  /// „Gezaehlt“) und rechnet Ist und Differenz mit dem Stand danach. Nur `true`
+  /// geht hinaus.
   Future<ShiftCloseResult> closeMyShift({
     required String idempotencyKey,
     required String shiftId,
@@ -1326,6 +1330,7 @@ class RegisterReceiptClient {
     List<TipPayout>? tipPayouts,
     AfterCount? afterCount,
     bool checkOnly = false,
+    bool countedBeforePayout = false,
   }) async {
     const name = Aufrufe.closeMyShift;
     final p = <String, dynamic>{
@@ -1338,11 +1343,39 @@ class RegisterReceiptClient {
       if (tipPayouts != null) 'tipPayouts': [for (final a in tipPayouts) a.toJson()],
       if (afterCount != null) 'afterCount': afterCount.toJson(),
       if (checkOnly) 'checkOnly': true,
+      if (countedBeforePayout) 'countedBeforePayout': true,
     };
     kennung(name, 'shiftId', shiftId);
     pruefeSchluessel(name, p);
     pruefeGanzzahlen(name, p);
     return abschlussLesen(name, await transport.call(name, params: p));
+  }
+
+  /// Zwischenzaehlung festhalten (`recordMyShiftCount`, Recht `cashView`, ohne es
+  /// `not_permitted`): der
+  /// Server vergleicht die Zaehlung mit dem Soll und haelt die Differenz fest,
+  /// die Schicht bleibt offen. Antwort: Soll, Zaehlung und Differenz dieser
+  /// Zaehlung. Derselbe [idempotencyKey] ergibt dieselbe Antwort und keinen
+  /// zweiten Eintrag. [countedCents] `0` ist erlaubt.
+  Future<ShiftCountResult> recordMyShiftCount({
+    required String idempotencyKey,
+    required String shiftId,
+    required int countedCents,
+    Map<String, int>? denominations,
+    String? comment,
+  }) async {
+    const name = Aufrufe.recordMyShiftCount;
+    final p = <String, dynamic>{
+      'idempotencyKey': idempotencyKey,
+      'shiftId': shiftId,
+      'countedCents': countedCents,
+      'denominations': ?denominations,
+      'comment': ?comment,
+    };
+    kennung(name, 'shiftId', shiftId);
+    pruefeSchluessel(name, p);
+    pruefeGanzzahlen(name, p);
+    return gezaehltLesen(name, await transport.call(name, params: p));
   }
 
   /// Die Lade eines Belegs: ein nicht leerer Text, sonst wirft der Aufruf vor

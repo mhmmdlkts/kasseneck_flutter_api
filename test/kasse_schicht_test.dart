@@ -9,7 +9,7 @@ import 'package:kasseneck_api/pos.dart';
 import 'package:kasseneck_api/register.dart';
 
 /// Schicht, Kassenstand und Lade-Protokoll an der Kasse (seit 11.1), Zwilling
-/// von `pos/schicht.ts` im npm-Paket 1.9.0: die sechs Aufrufe gegen
+/// von `pos/schicht.ts` im npm-Paket 1.9.0: die sieben Aufrufe gegen
 /// `v3/antworten/kasse.json` (dass jeder Fall mit seinen Parametern hinausgeht
 /// und sein Code ankommt, prueft auch `kasse_v3_test.dart`), die Blindzaehlung,
 /// der Ausgang nach einem Zeitlimit und die Lade am Beleg und am Geraet.
@@ -25,6 +25,7 @@ const _schicht = [
   'logMyDrawerOpenings',
   'getMyShiftReport',
   'closeMyShift',
+  'recordMyShiftCount',
 ];
 
 Iterable<Map<String, dynamic>> _faelle(String endpunkt) => ((_endpunkte[endpunkt] as Map)['cases'] as List)
@@ -133,6 +134,14 @@ Future<Object?> _rufe(RegisterReceiptClient c, String endpunkt, Map<String, dyna
         ? null
         : AfterCount(type: _s((p['afterCount'] as Map)['type']), amountCents: (p['afterCount'] as Map)['amountCents'] as int),
     checkOnly: p['checkOnly'] as bool? ?? false,
+    countedBeforePayout: p['countedBeforePayout'] as bool? ?? false,
+  ),
+  'recordMyShiftCount' => c.recordMyShiftCount(
+    idempotencyKey: _s(p['idempotencyKey']),
+    shiftId: _s(p['shiftId']),
+    countedCents: p['countedCents'] as int,
+    denominations: _karte(p['denominations']),
+    comment: p['comment'] as String?,
   ),
   _ => throw StateError(endpunkt),
 };
@@ -144,6 +153,7 @@ Object? _modell(Object? e) => switch (e) {
   DrawerOpeningsResult s => s.toJson(),
   ShiftReport s => s.toJson(),
   ShiftCloseResult s => s.toJson(),
+  ShiftCountResult s => s.toJson(),
   _ => throw StateError('unbekanntes Ergebnis $e'),
 };
 
@@ -170,6 +180,41 @@ void main() {
         }
       }
       expect(gelesen, greaterThanOrEqualTo(18));
+    });
+
+    test('closeMyShift: countedBeforePayout geht nur als true hinaus', () async {
+      final (:client, :anfragen) = _kasse((_) async => _antwort(_fall('closeMyShift', 'success_manager')));
+      await client.closeMyShift(idempotencyKey: 'z', shiftId: 'haupt_KASSE1_s2', countedCents: 29000, countedBeforePayout: true);
+      expect(_params(anfragen.single)['countedBeforePayout'], isTrue);
+      final (client: c2, anfragen: a2) = _kasse((_) async => _antwort(_fall('closeMyShift', 'success_manager')));
+      await c2.closeMyShift(idempotencyKey: 'z', shiftId: 'haupt_KASSE1_s2', countedCents: 29000);
+      expect(_params(a2.single).containsKey('countedBeforePayout'), isFalse);
+    });
+
+    test('recordMyShiftCount: Antwort gelesen, ohne Schluessel oder Schicht kein Versand', () async {
+      final (:client, :anfragen) = _kasse((_) async => _antwort(_fall('recordMyShiftCount', 'success_manager')));
+      final r = await client.recordMyShiftCount(idempotencyKey: 'zz-1', shiftId: 'haupt_KASSE1_s2', countedCents: 29000);
+      expect((r.expectedCents, r.countedCents, r.differenceCents), (29400, 29000, -400));
+      expect(anfragen, hasLength(1));
+      expect(() => client.recordMyShiftCount(idempotencyKey: '', shiftId: 'haupt_KASSE1_s2', countedCents: 1), throwsA(_anfragefehler));
+      expect(() => client.recordMyShiftCount(idempotencyKey: 'k', shiftId: '', countedCents: 1), throwsA(_anfragefehler));
+      expect(anfragen, hasLength(1), reason: 'die zwei Fehlversuche sendeten nichts');
+    });
+
+    test('Laufstand: Inhaber-Trinkgeld und Trinkgeld ohne Empfänger gelesen wie gesendet, fehlen sonst (wie npm 1.28.0)', () async {
+      final fall = jsonDecode(jsonEncode(_fall('getMyDrawerState', 'success_manager'))) as Map<String, dynamic>;
+      final (:client, anfragen: _) = _kasse((_) async => _antwort(fall));
+      final ohne = (await client.getMyDrawerState(drawerId: 'haupt_KASSE1')).shift!.runningTotals!;
+      expect(ohne.ownerTips, isNull);
+      expect(ohne.unassignedTipCents, isNull);
+      expect(ohne.toJson().containsKey('ownerTips'), isFalse);
+      final lauf = ((fall['response'] as Map)['data'] as Map)['shift']['runningTotals'] as Map;
+      lauf['ownerTips'] = [{'registerUserId': 'ru_mirela', 'name': 'Mirela Weinzierl', 'cents': 10}];
+      lauf['unassignedTipCents'] = 50;
+      final (client: c2, anfragen: _) = _kasse((_) async => _antwort(fall));
+      final mit = (await c2.getMyDrawerState(drawerId: 'haupt_KASSE1')).shift!.runningTotals!;
+      expect(mit.ownerTips!.single.toJson(), {'registerUserId': 'ru_mirela', 'name': 'Mirela Weinzierl', 'cents': 10});
+      expect(mit.unassignedTipCents, 50);
     });
 
     test('ohne Recht shift: die offene Schicht nur mit Grunddaten, ohne Betrag (wie im npm-Paket)', () async {
@@ -263,6 +308,8 @@ void main() {
         'getMyShiftReport/data_missing',
         'closeMyShift/data_missing',
         'closeMyShift/key_missing',
+        'recordMyShiftCount/data_missing',
+        'recordMyShiftCount/key_missing',
       });
     });
 

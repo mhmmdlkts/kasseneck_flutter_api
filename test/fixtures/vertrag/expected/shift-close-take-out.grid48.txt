@@ -11,6 +11,7 @@ Geschlossen                     26.09.2026 10:00
 von                                    Anna Chef
 ------------------------------------------------
 Startgeld übernommen                      150,00
+Anfang übernommen, nicht gezählt                
 Bar aus Verkäufen                          94,00
 Bar aus Storno                              0,00
 Bewegungen                                      
