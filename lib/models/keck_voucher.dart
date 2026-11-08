@@ -653,7 +653,8 @@ ExternalVoucherNumberCheck checkExternalVoucherNumber(Object? text) {
 /// Wie sehr eine Eingabe einem eigenen Gutscheincode gleicht ([ownVoucherCodeShape]):
 /// `valid` = gueltiger eigener Code; `checksum` = 12 Zeichen des Code-Alphabets
 /// mit falschem Pruefzeichen (etwa eine zwoelfstellige Webshop-Nummer);
-/// `length` = Muster `4-4-x` mit Bindestrichen, aber nicht 12 Zeichen; `none` =
+/// `length` = Muster `4-4-x` mit echten Bindestrichen `-` (nie `.`, `_`, `/`),
+/// aber nicht 12 Zeichen; `none` =
 /// keine Aehnlichkeit. Zwilling von `OWN_VOUCHER_CODE_SHAPES`.
 const List<String> ownVoucherCodeShapes = ['valid', 'checksum', 'length', 'none'];
 
@@ -669,19 +670,23 @@ final RegExp _leerOderStrich = RegExp(r'[\s-]');
 /// `external_voucher.use_as_external`), `none` geht bei Freigabe direkt in das
 /// Blatt „Fremder Gutschein“. Gelesen wie [checkExternalVoucherNumber]: Rand
 /// weg, `.`, `_`, `/` wie `-`, dann die Normalisierung von `VoucherCode`
-/// (gross, ohne Leerraum und `-`, O -> 0, I/L -> 1). Eine Nachfrage weist
+/// (gross, ohne Leerraum und `-`, O -> 0, I/L -> 1); `length` nur mit echten
+/// Bindestrichen. Eine Nachfrage weist
 /// nichts ab: der Server prueft die Fremdnummer selbst
 /// (`external_voucher_number_is_own_code` nur bei `valid`). Zwilling von
 /// `ownVoucherCodeShape` im npm-Paket.
 String ownVoucherCodeShape(Object? text) {
   if (text is! String) return 'none';
-  final t = jsTrim(text).replaceAll(_fremdTrenner, '-');
+  final roh = jsTrim(text);
+  final t = roh.replaceAll(_fremdTrenner, '-');
   if (t.isEmpty) return 'none';
   if (VoucherCode.isValid(t)) return 'valid';
   final s = t.toUpperCase().replaceAll(_leerOderStrich, '').replaceAll('O', '0').replaceAll(RegExp('[IL]'), '1');
   if (!_codeAlphabet.hasMatch(s)) return 'none';
   if (s.length == 12) return 'checksum';
-  return _codeGruppen.hasMatch(t) ? 'length' : 'none';
+  // Falsche Laenge nur mit echten Bindestrichen: eigene Codes stehen immer so
+  // da, `WEIN.2026/7` ist keiner und soll keine Nachfrage ausloesen.
+  return _codeGruppen.hasMatch(roh) ? 'length' : 'none';
 }
 
 bool _fremdCent(int? n) => n != null && n >= 1 && n <= 1000000;

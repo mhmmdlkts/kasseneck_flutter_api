@@ -26,10 +26,19 @@ void main() {
     }
   });
 
-  test('Muster 4-4-x mit eigenen Bindestrichen, falsche Laenge = length', () {
-    for (final t in ['7148-FGQA-935', '7148-FGQA-935KX', '7148.FGQA.93', 'abcd-efgh-j']) {
+  test('Muster 4-4-x mit echten Bindestrichen, falsche Laenge = length', () {
+    for (final t in ['7148-FGQA-935', '7148-FGQA-935KX', 'abcd-efgh-j', ' 7148-FGQA-93 ']) {
       expect(ownVoucherCodeShape(t), 'length', reason: t);
     }
+  });
+
+  test('falsche Laenge mit . _ / als Trenner = none (Fremdnummern ohne Nachfrage)', () {
+    for (final t in ['WEIN.2026/7', '2026.0123.7', '7148.FGQA.93', '7148_FGQA_935KX', '7148/FGQA/9']) {
+      expect(ownVoucherCodeShape(t), 'none', reason: t);
+    }
+    // Die tolerante Lesart fuer gueltige Codes und falsches Pruefzeichen bleibt.
+    expect(ownVoucherCodeShape('1234.5678.9ABV'), 'valid');
+    expect(ownVoucherCodeShape('1234.5678.9AB0'), 'checksum');
   });
 
   test('keine Aehnlichkeit = none', () {
