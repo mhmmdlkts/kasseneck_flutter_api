@@ -806,6 +806,12 @@
       "other",
       "voucher_payout"
     ],
+    "ownVoucherCodeShapes": [
+      "valid",
+      "checksum",
+      "length",
+      "none"
+    ],
     "posBusinessOptionalChoices": [
       "tipKinds",
       "tipStart"
