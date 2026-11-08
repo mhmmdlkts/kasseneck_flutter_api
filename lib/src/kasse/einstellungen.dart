@@ -187,6 +187,58 @@ enum PosTipKind implements PosSettingValue {
   final String value;
 }
 
+/// Bar-Trinkgeld gleich behalten (`business.tipKeptMode`, 11.22.0): [ask] =
+/// Schalter an der Kasse, vorbelegt mit `tipKeptByDefault`; [always]/[never] =
+/// kein Schalter, die Kasse setzt die Wahl selbst. Entscheidung ueber [tipKeptFor].
+enum PosTipKeptMode implements PosSettingValue {
+  ask,
+  always,
+  never;
+
+  @override
+  String get value => name;
+}
+
+/// Art einer Rabatt-Vorlage (`business.discountPresets[].kind`): Prozent oder
+/// fester Betrag (gespeichert `art`: `prozent | betrag`).
+enum PosDiscountPresetKind implements PosSettingValue {
+  percent,
+  amount;
+
+  @override
+  String get value => name;
+}
+
+/// Benannte Rabatt-Chips der Kasse: [PosDiscountPresetKind.percent] traegt
+/// [percentBp] (Basispunkte, 10 % = 1000), [PosDiscountPresetKind.amount] traegt
+/// [amountCents] (Cent). Der Name steht auf dem Chip und als Text der Rabattzeile
+/// am Beleg; ohne Namen (`''`) bleibt die Zeile „Rabatt“. Pruefen vor dem
+/// Schreiben: `checkDiscountPresets`. Zwilling von `PosDiscountPreset`.
+class PosDiscountPreset {
+  const PosDiscountPreset({required this.name, required this.kind, this.percentBp, this.amountCents});
+
+  final String name;
+  final PosDiscountPresetKind kind;
+  final int? percentBp;
+  final int? amountCents;
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'kind': kind.value,
+        if (kind == PosDiscountPresetKind.percent) 'percentBp': percentBp else 'amountCents': amountCents,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PosDiscountPreset && other.name == name && other.kind == kind && other.percentBp == percentBp && other.amountCents == amountCents;
+
+  @override
+  int get hashCode => Object.hash(name, kind, percentBp, amountCents);
+
+  @override
+  String toString() => 'PosDiscountPreset(${toJson()})';
+}
+
 /// Breite der rechten Spalte (Korb) an diesem Geraet (`device.cartWidth`); in
 /// der schmalen Ansicht ohne Wirkung.
 enum PosCartWidth implements PosSettingValue {
@@ -482,6 +534,9 @@ class PosBusinessSettings {
     this.tipKeptByDefault,
     this.tipKinds,
     this.tipStart,
+    this.tipKeptMode,
+    this.discountPresets,
+    this.customDiscountAllowed,
     this.unknownValues = const {},
   });
 
@@ -591,6 +646,28 @@ class PosBusinessSettings {
   /// angebotene Art). Lesen ueber [posTipStart].
   final PosTipKind? tipStart;
 
+  /// Ob die Kasse beim Bar-Trinkgeld fragt ([PosTipKeptMode.ask]) oder es
+  /// immer ([PosTipKeptMode.always]) bzw. nie ([PosTipKeptMode.never]) gleich
+  /// behalten wird. Optional und ohne Standardwert: `null` heisst `ask`, ein
+  /// unbekannter Wert bleibt woertlich in [unknownValues]. Lesen ueber
+  /// [posTipKeptMode], entscheiden ueber [tipKeptFor].
+  final PosTipKeptMode? tipKeptMode;
+
+  /// Benannte Rabatt-Chips (Prozent oder Betrag, hoechstens 5). Optional: der
+  /// Server sendet das Feld nur, wenn es gespeichert ist; dann sind die
+  /// Vorlagen die Quelle der Chips und [discountChips] spiegelt ihre
+  /// Prozentwerte fuer aeltere Kassen. `null` = nicht gespeichert, es gelten
+  /// [discountChips]. Eine Vorlage mit unbekannter Art verwirft der Leser.
+  /// Lesen ueber `posDiscountPresets`, pruefen mit `checkDiscountPresets`.
+  final List<PosDiscountPreset>? discountPresets;
+
+  /// Eigener Rabatt an der Kasse: `true` = neben den Rabatt-Chips das freie
+  /// Feld (Betrag oder Prozent), `false` = nur die Chips. Optional wie
+  /// [tipKeptByDefault]: der Server sendet das Feld nur, wenn es gespeichert
+  /// ist; `null` heisst erlaubt (wie bisher). Lesen ueber
+  /// [posCustomDiscountAllowed].
+  final bool? customDiscountAllowed;
+
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
@@ -616,23 +693,39 @@ class PosBusinessSettings {
   /// niemandem auf.
   PosBusinessSettings merge(Map<String, dynamic> patch) {
     _pruefeAenderung(
-        'business', patch, {..._betriebSchluessel, ...posBusinessOptionalFields, ...posBusinessOptionalChoices}, legacyBusinessKeys);
-    // Der optionale Schalter hat keinen Standardwert, den `_mische` fortschreiben
-    // koennte: er wird getrennt gefuehrt und nur als Wahrheitswert genommen.
-    final behalten = patch.containsKey('tipKeptByDefault') ? patch['tipKeptByDefault'] : tipKeptByDefault;
-    if (behalten != null && behalten is! bool) {
-      throw ArgumentError('business.tipKeptByDefault: true oder false erwartet');
+        'business', patch,
+        {..._betriebSchluessel, ...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists}, legacyBusinessKeys);
+    // Die optionalen Schalter haben keinen Standardwert, den `_mische` fortschreiben
+    // koennte: sie werden getrennt gefuehrt und nur als Wahrheitswert genommen.
+    final aktuell = toJson();
+    final schalter = <String, Object?>{
+      for (final k in posBusinessOptionalFields) k: patch.containsKey(k) ? patch[k] : aktuell[k],
+    };
+    for (final e in schalter.entries) {
+      if (e.value != null && e.value is! bool) {
+        throw ArgumentError('business.${e.key}: true oder false erwartet');
+      }
     }
     // Ebenso die Wahlfelder: `null` entfernt sie, sonst zaehlt nur die Form.
-    final aktuell = toJson();
     final wahl = <String, Object?>{
       for (final k in posBusinessOptionalChoices) k: patch.containsKey(k) ? patch[k] : aktuell[k],
     };
     _pruefeWahlfeld('business', 'tipKinds', wahl['tipKinds']);
     _pruefeWahlfeld('business', 'tipStart', wahl['tipStart']);
-    final weg = {'tipKeptByDefault', ...posBusinessOptionalChoices};
+    _pruefeWahlfeld('business', 'tipKeptMode', wahl['tipKeptMode']);
+    // Die Vorlagen-Liste ebenso: `null` entfernt sie, sonst muss es eine Liste sein.
+    final vorlagen = patch.containsKey('discountPresets') ? patch['discountPresets'] : aktuell['discountPresets'];
+    if (vorlagen != null && vorlagen is! List) {
+      throw ArgumentError('business.discountPresets: eine Liste erwartet');
+    }
+    final weg = {...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists};
     final json = _mische(toJson()..removeWhere((k, _) => weg.contains(k)), {...patch}..removeWhere((k, _) => weg.contains(k)));
-    return PosBusinessSettings.fromJson({...json, 'tipKeptByDefault': ?behalten, for (final e in wahl.entries) e.key: ?e.value});
+    return PosBusinessSettings.fromJson({
+      ...json,
+      for (final e in schalter.entries) e.key: ?e.value,
+      for (final e in wahl.entries) e.key: ?e.value,
+      'discountPresets': ?vorlagen,
+    });
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
@@ -694,6 +787,9 @@ class PosBusinessSettings {
       tipKeptByDefault: raw['tipKeptByDefault'] is bool ? raw['tipKeptByDefault'] as bool : null,
       tipKinds: _wahlliste(raw, 'tipKinds', PosTipKind.values, fremd),
       tipStart: _wahlOptional(raw, 'tipStart', PosTipKind.values, fremd),
+      tipKeptMode: _wahlOptional(raw, 'tipKeptMode', PosTipKeptMode.values, fremd),
+      discountPresets: _vorlagenLesen(raw['discountPresets']),
+      customDiscountAllowed: raw['customDiscountAllowed'] is bool ? raw['customDiscountAllowed'] as bool : null,
       unknownValues: Map.unmodifiable(fremd),
     );
   }
@@ -751,6 +847,9 @@ class PosBusinessSettings {
         'tipKeptByDefault': ?tipKeptByDefault,
         'tipKinds': ?(tipKinds == null ? null : [for (final k in tipKinds!) k.value]),
         'tipStart': ?tipStart?.value,
+        'tipKeptMode': ?tipKeptMode?.value,
+        'discountPresets': ?(discountPresets == null ? null : [for (final v in discountPresets!) v.toJson()]),
+        'customDiscountAllowed': ?customDiscountAllowed,
         ...unknownValues,
       };
 }
@@ -1058,6 +1157,7 @@ final Map<String, List<Object>> posBusinessValues = Map.unmodifiable({
   'watermarkScale': _werte(PosWatermarkScale.values),
   'tipKinds': _werte(PosTipKind.values),
   'tipStart': _werte(PosTipKind.values),
+  'tipKeptMode': _werte(PosTipKeptMode.values),
 });
 
 /// Wie [posBusinessValues] für die Geräte-Einstellungen (`POS_DEVICE_VALUES`).
@@ -1195,6 +1295,7 @@ const Map<String, Map<String, String>> legacyValues = {
   'cardProvider': {'keiner': 'none', 'extern': 'external'},
   'checkoutMode': {'seite': 'page'},
   'discount': {'aus': 'off', 'an': 'on'},
+  'discountPresets[]': {'prozent': 'percent', 'betrag': 'amount'},
   'quantity': {'aus': 'off'},
   'receiptOutput': {'druck': 'print', 'mail': 'email', 'fragen': 'ask'},
   'theme': {'klar': 'clear', 'nacht': 'night', 'kontrast': 'contrast'},
@@ -1202,6 +1303,7 @@ const Map<String, Map<String, String>> legacyValues = {
   'tipKinds[]': {'prozent': 'percent', 'aufrunden': 'round_up', 'gesamt': 'total'},
   'tipMode': {'betrag': 'amount', 'gesamt': 'total', 'beides': 'both'},
   'tipStart': {'prozent': 'percent', 'aufrunden': 'round_up', 'gesamt': 'total'},
+  'tipKeptMode': {'fragen': 'ask', 'immer': 'always', 'nie': 'never'},
   'watermark': {'aus': 'off', 'anmeldung': 'login', 'ueberall': 'everywhere'},
   'watermarkSide': {'links': 'left', 'mitte': 'center', 'rechts': 'right'},
   'cartWidth': {'schmal': 'narrow', 'mittel': 'medium', 'breit': 'wide'},
@@ -1267,13 +1369,42 @@ const List<String> posDeviceOptionalFields = ['drawerId'];
 
 /// Optionale Betriebs-Schalter: ohne Standardwert, der Server sendet sie nur,
 /// wenn sie gespeichert sind (Zwilling von `POS_BUSINESS_OPTIONAL_FIELDS`).
-/// Gelesen nur als Wahrheitswert; fehlt einer, gilt aus.
-const List<String> posBusinessOptionalFields = ['tipKeptByDefault'];
+/// Gelesen nur als Wahrheitswert; fehlt einer, gilt sein wirksamer Standard
+/// ([posTipKeptByDefault]: aus, [posCustomDiscountAllowed]: an).
+const List<String> posBusinessOptionalFields = ['tipKeptByDefault', 'customDiscountAllowed'];
 
 /// Optionale Betriebs-Einstellungen mit Wertemenge (Zwilling von
 /// `POS_BUSINESS_OPTIONAL_CHOICES`): ohne Standardwert, der Server sendet sie
-/// nur, wenn sie gespeichert sind. `tipKinds` ist eine Liste, `tipStart` ein Wert.
-const List<String> posBusinessOptionalChoices = ['tipKinds', 'tipStart'];
+/// nur, wenn sie gespeichert sind. `tipKinds` ist eine Liste, `tipStart` und
+/// `tipKeptMode` je ein Wert.
+const List<String> posBusinessOptionalChoices = ['tipKinds', 'tipStart', 'tipKeptMode'];
+
+/// Optionale Betriebs-Listen aus Objekten (Zwilling von
+/// `POS_BUSINESS_OPTIONAL_LISTS`): ohne Standardwert, der Server sendet sie nur,
+/// wenn sie gespeichert sind (auch als leere Liste). Der Leser uebernimmt die
+/// Eintraege mit der Form einer Vorlage; eine mit unbekannter Art faellt weg.
+const List<String> posBusinessOptionalLists = ['discountPresets'];
+
+/// Die lesbaren Vorlagen einer Liste vom Draht; keine Liste -> `null` (Feld
+/// fehlt). Zwilling von `_vorlagenLesen`: Name als Text, bekannte Art, ganzzahliges
+/// Wertfeld der Art; alles andere faellt weg.
+List<PosDiscountPreset>? _vorlagenLesen(Object? wert) {
+  if (wert is! List) return null;
+  final raus = <PosDiscountPreset>[];
+  for (final e in wert) {
+    if (e is! Map || e['name'] is! String) continue;
+    final name = e['name'] as String;
+    if (e['kind'] == 'percent' && _sicherGanz(e['percentBp'])) {
+      raus.add(PosDiscountPreset(name: name, kind: PosDiscountPresetKind.percent, percentBp: (e['percentBp'] as num).toInt()));
+    } else if (e['kind'] == 'amount' && _sicherGanz(e['amountCents'])) {
+      raus.add(PosDiscountPreset(name: name, kind: PosDiscountPresetKind.amount, amountCents: (e['amountCents'] as num).toInt()));
+    }
+  }
+  return List.unmodifiable(raus);
+}
+
+/// Ganzzahl im sicheren JavaScript-Bereich (`Number.isSafeInteger`).
+bool _sicherGanz(Object? w) => w is num && w == w.truncateToDouble() && w.abs() <= 9007199254740991;
 
 /// Optionale Geraete-Einstellungen mit Wertemenge (`POS_DEVICE_OPTIONAL_CHOICES`).
 const List<String> posDeviceOptionalChoices = ['cartWidth'];
@@ -1300,6 +1431,30 @@ PosCartWidth posCartWidth(PosDeviceSettings? device) => device?.cartWidth ?? Pos
 /// Bar-Trinkgeld „gleich behalten“ vorbelegt? Fehlt die Einstellung, gilt aus
 /// (Zwilling von `posTipKeptByDefault`).
 bool posTipKeptByDefault(PosBusinessSettings? business) => business?.tipKeptByDefault == true;
+
+/// Darf an der Kasse ein eigener Rabatt (Betrag oder Prozent) eingetippt
+/// werden? Fehlt die Einstellung, gilt ja (Zwilling von `posCustomDiscountAllowed`).
+bool posCustomDiscountAllowed(PosBusinessSettings? business) => business?.customDiscountAllowed != false;
+
+/// Wirksame Stufe „Trinkgeld gleich behalten“: die gespeicherte, sonst
+/// [PosTipKeptMode.ask] (fehlt, unbekannt, Altwert); Zwilling von `posTipKeptMode`.
+PosTipKeptMode posTipKeptMode(PosBusinessSettings? business) => business?.tipKeptMode ?? PosTipKeptMode.ask;
+
+/// Ergebnis von [tipKeptFor]: zeigt die Kasse den Schalter, und wird das
+/// Bar-Trinkgeld gleich behalten?
+typedef TipKeptDecision = ({bool showSwitch, bool kept});
+
+/// Die eine Regel fuer Web-Kasse und Kassen-App beim Bar-Trinkgeld:
+/// [PosTipKeptMode.ask] zeigt den Schalter, gewaehlt ist [wanted] (die Wahl am
+/// Schalter), sonst die Vorbelegung `tipKeptByDefault`; `always` bzw. `never`
+/// zeigen keinen Schalter und behalten gleich bzw. lassen offen, eine
+/// Schalterwahl zaehlt dann nicht. `kept` geht als `KeckTip.keptByEmployee`
+/// an den Beleg (der Server erzwingt die Stufe dort nicht). Zwilling von `tipKeptFor`.
+TipKeptDecision tipKeptFor(PosBusinessSettings? business, [bool? wanted]) => switch (posTipKeptMode(business)) {
+      PosTipKeptMode.always => (showSwitch: false, kept: true),
+      PosTipKeptMode.never => (showSwitch: false, kept: false),
+      PosTipKeptMode.ask => (showSwitch: true, kept: wanted ?? posTipKeptByDefault(business)),
+    };
 
 final RegExp _optionaleKennung = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 

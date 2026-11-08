@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "notes": "Vertrag Zusatz-Kacheln: Backend (gemeinsam/zusatz-core.js), npm (@kreiseck/kasseneck-api/pos, add-on-cases.json) und Dart (kasseneck_api) rechnen diese Faelle gleich. Artikel und Gruppen in /v3-Form (addOns, askPrice, reference, askQuantity, serviceVoucher, active, unitPriceCents), Belegpositionen mit addOnOf. Die Codes unter save sind englische Namen; das Backend antwortet innen mit zusatz_ungueltig, zusatz_unbekannt und zusatz_nicht_waehlbar (die Speicher-Endpunkte haben keinen /v3-Rand). receiptOrder rechnen nur die Pakete (Warenkorb). Aenderung immer auf allen Seiten.",
+  "notes": "Vertrag Zusatz-Kacheln: Backend (gemeinsam/zusatz-core.js), npm (@kreiseck/kasseneck-api/pos, add-on-cases.json) und Dart (kasseneck_api) rechnen diese Faelle gleich. Artikel und Gruppen in /v3-Form (addOns, askPrice, reference, askQuantity, serviceVoucher, externalVoucher, active, unitPriceCents), Belegpositionen mit addOnOf. Die Codes unter save sind englische Namen; das Backend antwortet innen mit zusatz_ungueltig, zusatz_unbekannt und zusatz_nicht_waehlbar (die Speicher-Endpunkte haben keinen /v3-Rand). receiptOrder rechnen nur die Pakete (Warenkorb). Aenderung immer auf allen Seiten.",
   "articles": {
     "manikuere": { "id": "manikuere", "name": "Klassische Maniküre", "unitPriceCents": 3600, "active": true },
     "pedikuere": { "id": "pedikuere", "name": "Pediküre", "unitPriceCents": 4200, "active": true, "addOns": ["massage", "nailart"] },
@@ -14,12 +14,13 @@
     "colour": { "id": "colour", "name": "Farbe Nr.", "unitPriceCents": 300, "active": true, "reference": { "mode": "optional", "label": "Nr.", "hint": null, "pattern": null, "patternStrict": false } },
     "gel": { "id": "gel", "name": "Gel nach Gramm", "unitPriceCents": 200, "active": true, "askQuantity": true },
     "special": { "id": "special", "name": "Sonderwunsch", "unitPriceCents": null, "active": true },
-    "voucher": { "id": "voucher", "name": "Gutschein Massage", "unitPriceCents": 900, "active": true, "serviceVoucher": true }
+    "voucher": { "id": "voucher", "name": "Gutschein Massage", "unitPriceCents": 900, "active": true, "serviceVoucher": true },
+    "fremd": { "id": "fremd", "name": "Gutschein Bäckerei Kornblum", "unitPriceCents": 2500, "active": true, "externalVoucher": "multi_purpose" }
   },
   "groups": {
     "nagel": { "id": "nagel", "name": "Maniküre & Nägel", "addOns": ["nailart", "reparatur", "massage"] },
     "footcare": { "id": "footcare", "name": "Fußpflege" },
-    "mixed": { "id": "mixed", "name": "Gemischt", "addOns": ["nailart", "manikuere", "missing", "retired", "pedikuere", "custom", "colour", "gel", "special", "voucher", "nailart", "gratis"] }
+    "mixed": { "id": "mixed", "name": "Gemischt", "addOns": ["nailart", "manikuere", "missing", "retired", "pedikuere", "custom", "colour", "gel", "special", "voucher", "fremd", "nailart", "gratis"] }
   },
   "selectable": [
     { "article": "nailart", "reason": null },
@@ -32,7 +33,8 @@
     { "article": "colour", "reason": "reference" },
     { "article": "gel", "reason": "asks_quantity" },
     { "article": "special", "reason": "no_price" },
-    { "article": "voucher", "reason": "service_voucher" }
+    { "article": "voucher", "reason": "service_voucher" },
+    { "article": "fremd", "reason": "external_voucher" }
   ],
   "effective": [
     { "name": "Artikel ohne eigene Liste nimmt die Gruppe", "article": "manikuere", "group": "nagel", "addOns": ["nailart", "reparatur", "massage"] },

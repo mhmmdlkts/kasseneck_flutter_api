@@ -1,0 +1,311 @@
+{
+  "version": 1,
+  "notes": "Vertrag Artikel als fremder Gutschein: Backend (functions-kasse/fremdgutschein-artikel-core.js) und der Artikel-Editor des Kundenbereichs pruefen diese Faelle gleich. Artikel in /v3-Form (externalVoucher multi_purpose|single_purpose, unitPriceCents, vatRate, askPrice, serviceVoucher, addOns, stockTracked, reference, askQuantity). reason nennt die verletzte Regel (Antwortfeld grund), der Code ist intern und unter /v3 gleich. Aenderung immer auf allen Seiten.",
+  "values": [
+    {
+      "name": "Mehrzweck",
+      "value": "multi_purpose",
+      "ok": true
+    },
+    {
+      "name": "Einzweck",
+      "value": "single_purpose",
+      "ok": true
+    },
+    {
+      "name": "null entfernt",
+      "value": null,
+      "ok": true
+    },
+    {
+      "name": "unbekannte Art",
+      "value": "value",
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "invalid_type"
+    },
+    {
+      "name": "leerer Text",
+      "value": "",
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "invalid_type"
+    },
+    {
+      "name": "Zahl",
+      "value": 1,
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "invalid_type"
+    },
+    {
+      "name": "true",
+      "value": true,
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "invalid_type"
+    }
+  ],
+  "articles": [
+    {
+      "name": "ohne Feld: keine Regel, auch mit Lager und Mengenabfrage",
+      "article": {
+        "unitPriceCents": null,
+        "stockTracked": true,
+        "askQuantity": true
+      },
+      "ok": true
+    },
+    {
+      "name": "Mehrzweck mit Preis",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500
+      },
+      "ok": true
+    },
+    {
+      "name": "Mehrzweck mit Satz: der Satz wird ignoriert",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": 20
+      },
+      "ok": true
+    },
+    {
+      "name": "Mehrzweck ohne Satz",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": null
+      },
+      "ok": true
+    },
+    {
+      "name": "Einzweck mit Satz und Preis",
+      "article": {
+        "externalVoucher": "single_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": 20
+      },
+      "ok": true
+    },
+    {
+      "name": "Einzweck befreit verkauft (Satz 0)",
+      "article": {
+        "externalVoucher": "single_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": 0
+      },
+      "ok": true
+    },
+    {
+      "name": "Einzweck ohne Satz",
+      "article": {
+        "externalVoucher": "single_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": null
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "rate_required"
+    },
+    {
+      "name": "Einzweck mit 4,9 % (Kassensatz)",
+      "article": {
+        "externalVoucher": "single_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": 4.9
+      },
+      "ok": true
+    },
+    {
+      "name": "Einzweck mit unbekanntem Satz",
+      "article": {
+        "externalVoucher": "single_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": 12.5
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "invalid_rate"
+    },
+    {
+      "name": "Mehrzweck mit unbekanntem Satz: der Satz wird ignoriert",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": 12.5
+      },
+      "ok": true
+    },
+    {
+      "name": "Betrag an der Kasse, ohne Preis",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": null,
+        "askPrice": true
+      },
+      "ok": true
+    },
+    {
+      "name": "Betrag an der Kasse, Preis als Vorschlag",
+      "article": {
+        "externalVoucher": "single_purpose",
+        "unitPriceCents": 2500,
+        "vatRate": 20,
+        "askPrice": true
+      },
+      "ok": true
+    },
+    {
+      "name": "ohne Preis und ohne Betrag an der Kasse",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": null
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "price_required"
+    },
+    {
+      "name": "Preis 0",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 0
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "price_required"
+    },
+    {
+      "name": "Einzweck ohne Satz und ohne Preis: zuerst der Satz",
+      "article": {
+        "externalVoucher": "single_purpose",
+        "unitPriceCents": null
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "rate_required"
+    },
+    {
+      "name": "Leistungsgutschein mit Code",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "serviceVoucher": true
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "service_voucher"
+    },
+    {
+      "name": "eigene Zusatzliste",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "addOns": [
+          "nailart"
+        ]
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "add_ons"
+    },
+    {
+      "name": "leere Zusatzliste",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "addOns": []
+      },
+      "ok": true
+    },
+    {
+      "name": "Zusatzliste null (wie die Gruppe)",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "addOns": null
+      },
+      "ok": true
+    },
+    {
+      "name": "Lagerbestand",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "stockTracked": true
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "stock_tracked"
+    },
+    {
+      "name": "ohne Lagerbestand",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "stockTracked": false
+      },
+      "ok": true
+    },
+    {
+      "name": "Referenz",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "reference": {
+          "mode": "optional",
+          "label": "Nr.",
+          "hint": null,
+          "pattern": null,
+          "patternStrict": false
+        }
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "reference"
+    },
+    {
+      "name": "Referenz null",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "reference": null
+      },
+      "ok": true
+    },
+    {
+      "name": "Menge abfragen",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "askQuantity": true
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "asks_quantity"
+    },
+    {
+      "name": "Menge nicht abfragen",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "askQuantity": false
+      },
+      "ok": true
+    },
+    {
+      "name": "unbekannte Art am Artikel",
+      "article": {
+        "externalVoucher": "value",
+        "unitPriceCents": 2500
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "invalid_type"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "version": "1.30.0",
+  "version": "1.31.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -112,6 +112,33 @@
     "discount.percent_invalid": {
       "text": "Bitte einen Prozentwert zwischen 0,1 und 100 eingeben."
     },
+    "discount.preset_over_total": {
+      "text": "Der Rabatt ist höher als der Betrag, auf den er gilt."
+    },
+    "discount_preset.list": {
+      "text": "Höchstens 5 Rabatt-Vorlagen als Liste."
+    },
+    "discount_preset.entry": {
+      "text": "Eine Rabatt-Vorlage ist ein Objekt mit Name, Art und Wert."
+    },
+    "discount_preset.name": {
+      "text": "Name mit 1 bis 24 Zeichen, ohne Steuerzeichen."
+    },
+    "discount_preset.duplicate": {
+      "text": "Diesen Namen gibt es schon."
+    },
+    "discount_preset.kind": {
+      "text": "Prozent oder Betrag."
+    },
+    "discount_preset.percent": {
+      "text": "Prozent zwischen 0,1 und 100 mit höchstens einer Nachkommastelle."
+    },
+    "discount_preset.amount": {
+      "text": "Betrag zwischen 0,01 € und 1.000.000,00 €."
+    },
+    "discount_preset.unknown_field": {
+      "text": "Unbekanntes Feld."
+    },
     "checkout.nothing_entered": {
       "text": "Noch nichts erfasst – bitte zuerst eine Position aufnehmen."
     },
@@ -132,6 +159,12 @@
     },
     "tip.kept_setting_hint": {
       "text": "Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen."
+    },
+    "tip.kept_hint": {
+      "text": "Trinkgeld kommt als eigene Position auf den Beleg; der angemeldete Benutzer nimmt es gleich bar aus der Lade."
+    },
+    "tip.open_hint": {
+      "text": "Trinkgeld kommt als eigene Position auf den Beleg und bleibt für den angemeldeten Benutzer offen, bis es ausgezahlt wird."
     },
     "completion.failed": {
       "text": "Der Abschluss ist fehlgeschlagen."
@@ -464,6 +497,48 @@
     },
     "voucher_error.external_duplicate": {
       "text": "Diese Gutscheinnummer steht schon auf dem Beleg."
+    },
+    "external_voucher.not_enabled": {
+      "text": "Fremde Gutscheine sind aus. Bitte im Panel freischalten."
+    },
+    "external_voucher.type_not_enabled": {
+      "text": "Fremde Leistungsgutscheine sind aus. Bitte im Panel freischalten."
+    },
+    "external_voucher.looks_like_own_code": {
+      "text": "Sieht aus wie ein Kasseneck-Code, ist aber keiner. Als fremden Gutschein verwenden?"
+    },
+    "cancellation.external_voucher_check": {
+      "text": "Vorher im eigenen Gutscheinsystem prüfen, ob er schon benutzt wurde."
+    },
+    "settings.external_vouchers_hint": {
+      "text": "Ob ein Gutschein Wert- oder Leistungsgutschein ist und mit welchem Satz er verkauft wurde, legt der Betrieb fest. Das Guthaben führt sein eigenes System."
+    },
+    "external_voucher_article.invalid": {
+      "text": "Diese Art von fremdem Gutschein gibt es nicht."
+    },
+    "external_voucher_article.service_voucher": {
+      "text": "Ein fremder Gutschein kann kein Leistungsgutschein mit Code sein."
+    },
+    "external_voucher_article.add_ons": {
+      "text": "Ein fremder Gutschein hat keine Zusätze."
+    },
+    "external_voucher_article.stock_tracked": {
+      "text": "Ein fremder Gutschein führt keinen Lagerbestand."
+    },
+    "external_voucher_article.reference": {
+      "text": "Ein fremder Gutschein fragt keine Referenz ab, die Kasse fragt die Gutscheinnummer."
+    },
+    "external_voucher_article.asks_quantity": {
+      "text": "Ein fremder Gutschein fragt keine Menge ab."
+    },
+    "external_voucher_article.rate_required": {
+      "text": "Ein Einzweckgutschein braucht den Steuersatz, mit dem er verkauft wird."
+    },
+    "external_voucher_article.invalid_rate": {
+      "text": "Ein Einzweckgutschein braucht einen Steuersatz der Kasse: 20, 13, 10, 4,9, 0 oder 19 %."
+    },
+    "external_voucher_article.price_required": {
+      "text": "Ein fremder Gutschein braucht einen Preis oder „Betrag beim Antippen eingeben“."
     },
     "voucher.type_changed": {
       "text": "Diese Gutschein-Sorte hat sich geändert. Bitte die Zeile entfernen und die Kachel neu antippen."
@@ -1338,6 +1413,21 @@
     "external_voucher_number_is_own_code": "voucher_error.external_number_is_own_code",
     "external_voucher_duplicate": "voucher_error.external_duplicate"
   },
+  "externalVoucherTileMessages": {
+    "not_enabled": "external_voucher.not_enabled",
+    "type_not_enabled": "external_voucher.type_not_enabled"
+  },
+  "externalVoucherArticleErrors": {
+    "invalid_type": "external_voucher_article.invalid",
+    "service_voucher": "external_voucher_article.service_voucher",
+    "add_ons": "external_voucher_article.add_ons",
+    "stock_tracked": "external_voucher_article.stock_tracked",
+    "reference": "external_voucher_article.reference",
+    "asks_quantity": "external_voucher_article.asks_quantity",
+    "rate_required": "external_voucher_article.rate_required",
+    "invalid_rate": "external_voucher_article.invalid_rate",
+    "price_required": "external_voucher_article.price_required"
+  },
   "labels": {
     "common.cancel": {
       "text": "Abbrechen"
@@ -1407,6 +1497,55 @@
     },
     "tip.kept_setting": {
       "text": "Bar-Trinkgeld behält der Mitarbeiter gleich"
+    },
+    "tip_kept_mode.title": {
+      "text": "Trinkgeld gleich behalten"
+    },
+    "tip_kept_mode.always": {
+      "text": "Immer gleich behalten"
+    },
+    "tip_kept_mode.never": {
+      "text": "Immer offen lassen"
+    },
+    "tip_kept_mode.ask": {
+      "text": "Jedes Mal fragen"
+    },
+    "discount_presets.title": {
+      "text": "Rabatt-Vorlagen"
+    },
+    "discount_presets.name": {
+      "text": "Name"
+    },
+    "discount_presets.percent": {
+      "text": "Prozent"
+    },
+    "discount_presets.amount": {
+      "text": "Betrag"
+    },
+    "discount_presets.add": {
+      "text": "Vorlage hinzufügen"
+    },
+    "discount_presets.remove": {
+      "text": "Entfernen"
+    },
+    "discount_presets.limit": {
+      "text": "Höchstens 5 Vorlagen."
+    },
+    "shift_receipt.discounts": {
+      "text": "Rabatte"
+    },
+    "shift_receipt.discounts_total": {
+      "text": "Rabatte gesamt"
+    },
+    "shift_receipt.discount_line": {
+      "text": "{name} ({count}×)",
+      "placeholders": [
+        "name",
+        "count"
+      ]
+    },
+    "shift_receipt.discount_unnamed": {
+      "text": "Rabatt"
     },
     "card_payment.amount_on_terminal": {
       "text": "Betrag steht am Terminal"
@@ -2338,6 +2477,57 @@
     "addons.open": {
       "text": "Zusätze"
     },
+    "external_voucher.number": {
+      "text": "Gutscheinnummer"
+    },
+    "external_voucher.title": {
+      "text": "Fremder Gutschein"
+    },
+    "external_voucher.kind": {
+      "text": "Art"
+    },
+    "external_voucher.kind_value": {
+      "text": "Wertgutschein"
+    },
+    "external_voucher.kind_service": {
+      "text": "Leistungsgutschein"
+    },
+    "external_voucher.rate": {
+      "text": "Satz"
+    },
+    "external_voucher.taxed_with": {
+      "text": "Versteuert mit (optional)"
+    },
+    "external_voucher.line_name": {
+      "text": "Gutschein Nr. {number}",
+      "placeholders": [
+        "number"
+      ]
+    },
+    "external_voucher.use_as_external": {
+      "text": "Als fremden Gutschein"
+    },
+    "voucher.payout_source_own": {
+      "text": "Kasseneck-Gutschein"
+    },
+    "voucher.payout_source_external": {
+      "text": "Fremder Gutschein"
+    },
+    "settings.external_vouchers": {
+      "text": "Fremde Gutscheine"
+    },
+    "settings.external_vouchers_off": {
+      "text": "Aus"
+    },
+    "settings.external_vouchers_multi_purpose": {
+      "text": "Nur Wertgutscheine"
+    },
+    "settings.external_vouchers_all": {
+      "text": "Wert- und Leistungsgutscheine"
+    },
+    "article.external_voucher": {
+      "text": "Verkauft einen fremden Gutschein"
+    },
     "voucher.tab": {
       "text": "Gutscheine"
     },
@@ -3130,5 +3320,19 @@
     "restock": "stock.return_restock",
     "defective": "stock.return_defective",
     "disposed": "stock.return_disposed"
+  },
+  "externalVouchersLabels": {
+    "off": "settings.external_vouchers_off",
+    "multi_purpose": "settings.external_vouchers_multi_purpose",
+    "all": "settings.external_vouchers_all"
+  },
+  "externalVoucherKindLabels": {
+    "multi_purpose": "external_voucher.kind_value",
+    "single_purpose": "external_voucher.kind_service"
+  },
+  "tipKeptModeLabels": {
+    "ask": "tip_kept_mode.ask",
+    "always": "tip_kept_mode.always",
+    "never": "tip_kept_mode.never"
   }
 }

@@ -26,6 +26,7 @@ import '../aufrufe.dart';
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'einstellungen.dart';
+import 'rabatt_vorlagen.dart';
 
 class PosSettingsClient {
   const PosSettingsClient(this.transport, {required this.deviceId});
@@ -50,17 +51,23 @@ class PosSettingsClient {
   /// immer als ganze Karte.
   Future<PosBusinessSettings> saveBusiness(Map<String, dynamic> patch) async {
     const name = Aufrufe.setMyKasseSettings;
-    // Der optionale Schalter getrennt: er steht nicht in den Standardwerten,
+    // Die optionalen Schalter getrennt: sie stehen nicht in den Standardwerten,
     // gegen die `_pruefeTeil` die Schluessel prueft.
-    final behalten = patch['tipKeptByDefault'];
-    if (patch.containsKey('tipKeptByDefault') && behalten is! bool) {
-      throw const KasseneckValidationError(name, 'business.tipKeptByDefault: true oder false erwartet', 'request');
+    final schalter = <String, Object?>{
+      for (final k in posBusinessOptionalFields)
+        if (patch.containsKey(k)) k: patch[k],
+    };
+    for (final e in schalter.entries) {
+      if (e.value is! bool) {
+        throw KasseneckValidationError(name, 'business.${e.key}: true oder false erwartet', 'request');
+      }
     }
-    final gesendet = patch.containsKey('tipKeptByDefault') && patch.length == 1
+    final rest = {...patch}..removeWhere((k, _) => schalter.containsKey(k));
+    final gesendet = schalter.isNotEmpty && rest.isEmpty
         ? <String, dynamic>{}
-        : _pruefeTeil(name, 'business', {...patch}..remove('tipKeptByDefault'), const PosBusinessSettings().toJson(), posBusinessValues,
-            wahlfelder: posBusinessOptionalChoices);
-    if (patch.containsKey('tipKeptByDefault')) gesendet['tipKeptByDefault'] = behalten;
+        : _pruefeTeil(name, 'business', rest, const PosBusinessSettings().toJson(), posBusinessValues,
+            wahlfelder: posBusinessOptionalChoices, listen: posBusinessOptionalLists);
+    gesendet.addAll(schalter);
     if (gesendet.containsKey('vatRates')) {
       final karte = gesendet['vatRates'];
       // Unter /v3 prüft der Server die übergebene Karte für sich: ein
@@ -180,6 +187,7 @@ class PosSettingsClient {
     Map<String, dynamic> standard,
     Map<String, List<Object>> werte, {
     List<String> wahlfelder = const [],
+    List<String> listen = const [],
   }) {
     // Ein Wahlfeld mit `null` ginge nicht hinaus und wuerde nicht geprueft: hier
     // ist `null` kein Entfernen, sondern ein Fehler (wie im npm-Paket).
@@ -198,8 +206,19 @@ class PosSettingsClient {
       throw KasseneckValidationError(name, '$teil: keine Einstellungen uebergeben', 'request');
     }
     for (final e in gesendet.entries) {
-      if (!standard.containsKey(e.key) && !wahlfelder.contains(e.key)) {
+      if (!standard.containsKey(e.key) && !wahlfelder.contains(e.key) && !listen.contains(e.key)) {
         throw KasseneckValidationError(name, '$teil.${e.key}: unbekanntes Feld', 'request');
+      }
+      // Rabatt-Vorlagen: dieselbe Pruefung wie am Server, der erste Fehler mit
+      // Vorlage, Feld und Satz.
+      if (listen.contains(e.key)) {
+        final geprueft = checkDiscountPresets(e.value);
+        if (!geprueft.ok) {
+          final f = geprueft.errors.first;
+          final ort = '$teil.${e.key}${f.index == null ? '' : '[${f.index}]'}${f.field == null ? '' : '.${f.field}'}';
+          throw KasseneckValidationError(name, '$ort: ${f.message} ($invalidDiscountPreset)', 'request');
+        }
+        continue;
       }
       final erlaubt = werte[e.key];
       final wert = e.value;

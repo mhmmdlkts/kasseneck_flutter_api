@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.30.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.31.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.30.0';
+const String posTextsVersion = '1.31.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -42,12 +42,23 @@ const Map<String, PosText> posMessages = {
   'reference.format_invalid': PosText('Das Format passt nicht.'),
   'reference.format_warning': PosText('Das Format passt nicht. Trotzdem übernehmen?'),
   'discount.percent_invalid': PosText('Bitte einen Prozentwert zwischen 0,1 und 100 eingeben.'),
+  'discount.preset_over_total': PosText('Der Rabatt ist höher als der Betrag, auf den er gilt.'),
+  'discount_preset.list': PosText('Höchstens 5 Rabatt-Vorlagen als Liste.'),
+  'discount_preset.entry': PosText('Eine Rabatt-Vorlage ist ein Objekt mit Name, Art und Wert.'),
+  'discount_preset.name': PosText('Name mit 1 bis 24 Zeichen, ohne Steuerzeichen.'),
+  'discount_preset.duplicate': PosText('Diesen Namen gibt es schon.'),
+  'discount_preset.kind': PosText('Prozent oder Betrag.'),
+  'discount_preset.percent': PosText('Prozent zwischen 0,1 und 100 mit höchstens einer Nachkommastelle.'),
+  'discount_preset.amount': PosText('Betrag zwischen 0,01 € und 1.000.000,00 €.'),
+  'discount_preset.unknown_field': PosText('Unbekanntes Feld.'),
   'checkout.nothing_entered': PosText('Noch nichts erfasst – bitte zuerst eine Position aufnehmen.'),
   'checkout.tendered_missing': PosText('Erst eintippen, was der Gast gibt – der Rückgeld-Rechner ist an.'),
   'checkout.tendered_too_little': PosText('Gegeben ist weniger als der Betrag.'),
   'checkout.locked': PosText('Kassieren gesperrt: {reason}', placeholders: ['reason']),
   'tip.over_half': PosText('Über 50 % Trinkgeld – wirklich? Steuerfrei ist nur ortsübliches Trinkgeld.'),
   'tip.kept_setting_hint': PosText('Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen.'),
+  'tip.kept_hint': PosText('Trinkgeld kommt als eigene Position auf den Beleg; der angemeldete Benutzer nimmt es gleich bar aus der Lade.'),
+  'tip.open_hint': PosText('Trinkgeld kommt als eigene Position auf den Beleg und bleibt für den angemeldeten Benutzer offen, bis es ausgezahlt wird.'),
   'completion.failed': PosText('Der Abschluss ist fehlgeschlagen.'),
   'completion.unknown': PosText('Unklar, ob der Beleg entstanden ist – die Antwort kam nicht an. Bitte nicht noch einmal abschließen: der Beleg kann bereits erstellt und signiert sein. Im Panel unter „Belege“ nachsehen; nur wenn er dort fehlt, den Verkauf erneut abschließen.'),
   'completion.zero_receipt_failed': PosText('Der Nullbeleg konnte nicht erstellt werden.'),
@@ -132,6 +143,20 @@ const Map<String, PosText> posMessages = {
   'voucher_error.external_number_invalid': PosText('Gutscheinnummer prüfen: 1 bis 40 Zeichen, nur Buchstaben, Ziffern und - _ . / sind erlaubt.'),
   'voucher_error.external_number_is_own_code': PosText('Das ist ein eigener Gutscheincode. Bitte als eigenen Gutschein einlösen.'),
   'voucher_error.external_duplicate': PosText('Diese Gutscheinnummer steht schon auf dem Beleg.'),
+  'external_voucher.not_enabled': PosText('Fremde Gutscheine sind aus. Bitte im Panel freischalten.'),
+  'external_voucher.type_not_enabled': PosText('Fremde Leistungsgutscheine sind aus. Bitte im Panel freischalten.'),
+  'external_voucher.looks_like_own_code': PosText('Sieht aus wie ein Kasseneck-Code, ist aber keiner. Als fremden Gutschein verwenden?'),
+  'cancellation.external_voucher_check': PosText('Vorher im eigenen Gutscheinsystem prüfen, ob er schon benutzt wurde.'),
+  'settings.external_vouchers_hint': PosText('Ob ein Gutschein Wert- oder Leistungsgutschein ist und mit welchem Satz er verkauft wurde, legt der Betrieb fest. Das Guthaben führt sein eigenes System.'),
+  'external_voucher_article.invalid': PosText('Diese Art von fremdem Gutschein gibt es nicht.'),
+  'external_voucher_article.service_voucher': PosText('Ein fremder Gutschein kann kein Leistungsgutschein mit Code sein.'),
+  'external_voucher_article.add_ons': PosText('Ein fremder Gutschein hat keine Zusätze.'),
+  'external_voucher_article.stock_tracked': PosText('Ein fremder Gutschein führt keinen Lagerbestand.'),
+  'external_voucher_article.reference': PosText('Ein fremder Gutschein fragt keine Referenz ab, die Kasse fragt die Gutscheinnummer.'),
+  'external_voucher_article.asks_quantity': PosText('Ein fremder Gutschein fragt keine Menge ab.'),
+  'external_voucher_article.rate_required': PosText('Ein Einzweckgutschein braucht den Steuersatz, mit dem er verkauft wird.'),
+  'external_voucher_article.invalid_rate': PosText('Ein Einzweckgutschein braucht einen Steuersatz der Kasse: 20, 13, 10, 4,9, 0 oder 19 %.'),
+  'external_voucher_article.price_required': PosText('Ein fremder Gutschein braucht einen Preis oder „Betrag beim Antippen eingeben“.'),
   'voucher.type_changed': PosText('Diese Gutschein-Sorte hat sich geändert. Bitte die Zeile entfernen und die Kachel neu antippen.'),
   'voucher.reentry_needed': PosText('Die Karte ist belastet, der Beleg fehlt noch: zu jedem Gutschein den Code erneut eingeben, dann den Beleg abschließen.'),
   'voucher.reentry_mismatch': PosText('Mit diesen Gutscheinen ergibt der Beleg nicht mehr den belasteten Betrag – die Karte zurückbuchen.'),
@@ -304,6 +329,21 @@ const Map<String, PosText> posLabels = {
   'checkout.change': PosText('Rückgeld'),
   'checkout.tip_kept': PosText('gleich behalten'),
   'tip.kept_setting': PosText('Bar-Trinkgeld behält der Mitarbeiter gleich'),
+  'tip_kept_mode.title': PosText('Trinkgeld gleich behalten'),
+  'tip_kept_mode.always': PosText('Immer gleich behalten'),
+  'tip_kept_mode.never': PosText('Immer offen lassen'),
+  'tip_kept_mode.ask': PosText('Jedes Mal fragen'),
+  'discount_presets.title': PosText('Rabatt-Vorlagen'),
+  'discount_presets.name': PosText('Name'),
+  'discount_presets.percent': PosText('Prozent'),
+  'discount_presets.amount': PosText('Betrag'),
+  'discount_presets.add': PosText('Vorlage hinzufügen'),
+  'discount_presets.remove': PosText('Entfernen'),
+  'discount_presets.limit': PosText('Höchstens 5 Vorlagen.'),
+  'shift_receipt.discounts': PosText('Rabatte'),
+  'shift_receipt.discounts_total': PosText('Rabatte gesamt'),
+  'shift_receipt.discount_line': PosText('{name} ({count}×)', placeholders: ['name', 'count']),
+  'shift_receipt.discount_unnamed': PosText('Rabatt'),
   'card_payment.amount_on_terminal': PosText('Betrag steht am Terminal'),
   'card_payment.present_card': PosText('Karte vorhalten oder stecken · noch {time}', placeholders: ['time']),
   'completion.receipt_exists': PosText('Beleg ist vorhanden – erledigen'),
@@ -567,6 +607,22 @@ const Map<String, PosText> posLabels = {
   'addons.none': PosText('Ohne Zusatz'),
   'addons.done': PosText('Fertig'),
   'addons.open': PosText('Zusätze'),
+  'external_voucher.number': PosText('Gutscheinnummer'),
+  'external_voucher.title': PosText('Fremder Gutschein'),
+  'external_voucher.kind': PosText('Art'),
+  'external_voucher.kind_value': PosText('Wertgutschein'),
+  'external_voucher.kind_service': PosText('Leistungsgutschein'),
+  'external_voucher.rate': PosText('Satz'),
+  'external_voucher.taxed_with': PosText('Versteuert mit (optional)'),
+  'external_voucher.line_name': PosText('Gutschein Nr. {number}', placeholders: ['number']),
+  'external_voucher.use_as_external': PosText('Als fremden Gutschein'),
+  'voucher.payout_source_own': PosText('Kasseneck-Gutschein'),
+  'voucher.payout_source_external': PosText('Fremder Gutschein'),
+  'settings.external_vouchers': PosText('Fremde Gutscheine'),
+  'settings.external_vouchers_off': PosText('Aus'),
+  'settings.external_vouchers_multi_purpose': PosText('Nur Wertgutscheine'),
+  'settings.external_vouchers_all': PosText('Wert- und Leistungsgutscheine'),
+  'article.external_voucher': PosText('Verkauft einen fremden Gutschein'),
   'voucher.tab': PosText('Gutscheine'),
   'voucher.enter_amount': PosText('Betrag eingeben'),
   'voucher.service_tile': PosText('Leistungsgutschein'),
@@ -885,9 +941,48 @@ const Map<String, String> voucherErrorMessages = {
   'external_voucher_duplicate': 'voucher_error.external_duplicate',
 };
 
+/// Fremdgutscheine (1.31.0): Sperrgrund der Kachel (`externalVoucherTileBlock`) -> Schluessel des Satzes.
+const Map<String, String> externalVoucherTileMessages = {
+  'not_enabled': 'external_voucher.not_enabled',
+  'type_not_enabled': 'external_voucher.type_not_enabled',
+};
+
+/// Artikel als fremder Gutschein: Grund (`data.grund`) -> Schluessel des Satzes; siehe [externalVoucherArticleErrorMessage].
+const Map<String, String> externalVoucherArticleMessages = {
+  'invalid_type': 'external_voucher_article.invalid',
+  'service_voucher': 'external_voucher_article.service_voucher',
+  'add_ons': 'external_voucher_article.add_ons',
+  'stock_tracked': 'external_voucher_article.stock_tracked',
+  'reference': 'external_voucher_article.reference',
+  'asks_quantity': 'external_voucher_article.asks_quantity',
+  'rate_required': 'external_voucher_article.rate_required',
+  'invalid_rate': 'external_voucher_article.invalid_rate',
+  'price_required': 'external_voucher_article.price_required',
+};
+
 /// Rueckgabe beim Storno: Wahl (`restock`, `defective`, `disposed`) -> Schluessel der Beschriftung.
 const Map<String, String> returnDispositionLabels = {
   'restock': 'stock.return_restock',
   'defective': 'stock.return_defective',
   'disposed': 'stock.return_disposed',
+};
+
+/// Freigabe der Fremdgutscheine (`off`, `multi_purpose`, `all`) -> Schluessel der Beschriftung.
+const Map<String, String> externalVouchersLabels = {
+  'off': 'settings.external_vouchers_off',
+  'multi_purpose': 'settings.external_vouchers_multi_purpose',
+  'all': 'settings.external_vouchers_all',
+};
+
+/// Art eines fremden Gutscheins (`multi_purpose`, `single_purpose`) -> Schluessel der Beschriftung.
+const Map<String, String> externalVoucherKindLabels = {
+  'multi_purpose': 'external_voucher.kind_value',
+  'single_purpose': 'external_voucher.kind_service',
+};
+
+/// Trinkgeld gleich behalten (`ask`, `always`, `never`) -> Schluessel der Beschriftung.
+const Map<String, String> tipKeptModeLabels = {
+  'ask': 'tip_kept_mode.ask',
+  'always': 'tip_kept_mode.always',
+  'never': 'tip_kept_mode.never',
 };

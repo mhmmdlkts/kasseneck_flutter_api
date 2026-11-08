@@ -385,6 +385,7 @@ class ShiftRunningTotals {
     required this.openingsWithoutSale,
     this.ownerTips,
     this.unassignedTipCents,
+    this.discounts,
   });
 
   final int cashSalesCents;
@@ -413,6 +414,12 @@ class ShiftRunningTotals {
   /// Trinkgeld ohne angemeldeten Empfänger in Cent (nur Anzeige); `null` = 0.
   final int? unassignedTipCents;
 
+  /// Gewaehrte Rabatte je Name (nur Anzeige, nie im Soll, npm 1.31.0): `cents`
+  /// gewaehrt (positiv), `count` Belege mit diesem Namen, ein Storno nimmt beides
+  /// zurueck. Der Server sendet es erst ab dem ersten Rabatt (`null` = keiner);
+  /// auf dem Z-Bon steht es als Block (`discountBlockLines`).
+  final List<ShiftDiscount>? discounts;
+
   Map<String, dynamic> toJson() => {
         'cashSalesCents': cashSalesCents,
         'cashCancellationsCents': cashCancellationsCents,
@@ -426,7 +433,20 @@ class ShiftRunningTotals {
         'openingsWithoutSale': openingsWithoutSale,
         if (ownerTips != null) 'ownerTips': [for (final t in ownerTips!) t.toJson()],
         if (unassignedTipCents != null) 'unassignedTipCents': unassignedTipCents,
+        if (discounts != null) 'discounts': [for (final r in discounts!) r.toJson()],
       };
+}
+
+/// Ein Eintrag von [ShiftRunningTotals.discounts] bzw. [ShiftSummaryReceipt.discounts].
+class ShiftDiscount {
+  const ShiftDiscount({required this.name, required this.cents, required this.count});
+
+  /// Name der Rabattzeile am Beleg (`''` = unbenannt, „Rabatt“).
+  final String name;
+  final int cents;
+  final int count;
+
+  Map<String, dynamic> toJson() => {'name': name, 'cents': cents, 'count': count};
 }
 
 /// Ein Eintrag von [ShiftRunningTotals.ownerTips]: Trinkgeld, das als Umsatz erfasst ist.
@@ -924,6 +944,7 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
     this.differenceParts,
     this.countedBeforePayoutCents,
     this.countedBeforePayoutDenominations,
+    this.discounts,
   });
 
   /// Nummer der Schicht (Draht: `shift.number`).
@@ -958,6 +979,9 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
   final int? differenceCents;
   final String? comment;
   final int openingsWithoutSale;
+
+  /// Gewaehrte Rabatte je Name; `null`, wenn es keine gab (der Bon bleibt dann wie bisher).
+  final List<ShiftDiscount>? discounts;
 
   /// Entnommen bzw. eingelegt nach dem Zaehlen; `null`, wenn kein Geld bewegt wurde.
   final AfterCount? afterCount;
@@ -1009,6 +1033,7 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
         'differenceCents': differenceCents,
         'comment': comment,
         'openingsWithoutSale': openingsWithoutSale,
+        if (discounts != null) 'discounts': [for (final r in discounts!) r.toJson()],
         if (afterCount != null) 'afterCount': afterCount!.toJson(),
         if (afterCount != null) 'leftInDrawerCents': leftInDrawerCents,
         if (openingCounted != null) 'openingCounted': openingCounted,
@@ -1390,7 +1415,13 @@ ShiftRunningTotals _laufstand(_Ort ort, Object? w) {
     // Nur Anzeige (npm 1.28.0); gelesen wie gesendet, fehlt = null.
     ownerTips: o['ownerTips'] == null ? null : _liste(ort, o, 'ownerTips', _inhaberTrinkgeld),
     unassignedTipCents: o['unassignedTipCents'] == null ? null : _ganzzahl(ort, o, 'unassignedTipCents'),
+    discounts: o['discounts'] == null ? null : _liste(ort, o, 'discounts', _rabatt),
   );
+}
+
+ShiftDiscount _rabatt(_Ort ort, Object? w) {
+  final o = _pflichtObjekt(ort, w);
+  return ShiftDiscount(name: o['name'] is String ? o['name'] as String : '', cents: _ganzzahl(ort, o, 'cents'), count: _ganzzahl(ort, o, 'count'));
 }
 
 ShiftOwnerTip _inhaberTrinkgeld(_Ort ort, Object? w) {
@@ -1609,6 +1640,8 @@ ShiftSummaryReceipt _schichtBon(_Ort ort, Object? w) {
     // Ablauf der Kasse: nur, wenn der Server sie sendet (aeltere Bons tragen sie nicht).
     openingCounted: _wahrOderNull(ort, o, 'openingCounted'),
     interimDifferenceCents: _ganzzahlOderNull(ort, o, 'interimDifferenceCents'),
+    // Nur Anzeige: gewaehrte Rabatte je Name; der Server sendet sie erst ab dem ersten Rabatt.
+    discounts: o['discounts'] == null ? null : _liste(ort, o, 'discounts', _rabatt),
     differenceParts: o['differenceParts'] == null ? null : _liste(ort, o, 'differenceParts', _differenzTeil),
     countedBeforePayoutCents: _ganzzahlOderNull(ort, o, 'countedBeforePayoutCents'),
     countedBeforePayoutDenominations: _stueckelung(ort, o, 'countedBeforePayoutDenominations'),

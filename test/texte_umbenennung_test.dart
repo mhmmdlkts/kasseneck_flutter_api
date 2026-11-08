@@ -87,6 +87,18 @@ const _nach10 = (
     // Fremdgutscheine (11.21.0, npm 1.30.0)
     'voucher_error.external_not_enabled', 'voucher_error.external_type_not_enabled', 'voucher_error.external_number_invalid',
     'voucher_error.external_number_is_own_code', 'voucher_error.external_duplicate',
+    // Fremdgutscheine an der Kasse (11.22.0, npm 1.31.0)
+    'external_voucher.not_enabled', 'external_voucher.type_not_enabled', 'cancellation.external_voucher_check',
+    'settings.external_vouchers_hint', 'external_voucher_article.invalid', 'external_voucher_article.service_voucher',
+    'external_voucher_article.add_ons', 'external_voucher_article.stock_tracked', 'external_voucher_article.reference',
+    'external_voucher_article.asks_quantity', 'external_voucher_article.rate_required',
+    'external_voucher_article.invalid_rate', 'external_voucher_article.price_required',
+    'external_voucher.looks_like_own_code',
+    // Trinkgeld gleich behalten in drei Stufen (11.22.0, npm 1.31.0)
+    'tip.kept_hint', 'tip.open_hint',
+    // Rabatt-Vorlagen und Rabatte auf dem Z-Bon (11.22.0, npm 1.31.0)
+    'discount.preset_over_total', 'discount_preset.list', 'discount_preset.entry', 'discount_preset.name', 'discount_preset.duplicate',
+    'discount_preset.kind', 'discount_preset.percent', 'discount_preset.amount', 'discount_preset.unknown_field',
     // Pruefung (DEP) an der Kasse (11.13.0, npm 1.21.0)
     'dep.manager_only', 'dep.offline', 'dep.creating', 'dep.running', 'dep.failed', 'dep.too_many_exports',
     'dep.period_invalid', 'dep.usb_hint', 'dep.saved', 'dep.save_failed', 'dep.zip_fallback', 'dep.code_once',
@@ -177,6 +189,18 @@ const _nach10 = (
     'tile_prompt.amount', 'tile_prompt.quantity', 'tile_prompt.apply', 'tile_prompt.apply_anyway',
     // Zusatz-Kacheln (11.18.0)
     'addons.title', 'addons.none', 'addons.done', 'addons.open',
+    // Fremdgutscheine an der Kasse (11.22.0, npm 1.31.0)
+    'external_voucher.number', 'external_voucher.title', 'external_voucher.kind', 'external_voucher.kind_value',
+    'external_voucher.kind_service', 'external_voucher.rate', 'external_voucher.taxed_with', 'external_voucher.line_name',
+    'voucher.payout_source_own', 'voucher.payout_source_external', 'settings.external_vouchers',
+    'settings.external_vouchers_off', 'settings.external_vouchers_multi_purpose', 'settings.external_vouchers_all',
+    'article.external_voucher', 'external_voucher.use_as_external',
+    // Trinkgeld gleich behalten in drei Stufen (11.22.0, npm 1.31.0)
+    'tip_kept_mode.title', 'tip_kept_mode.always', 'tip_kept_mode.never', 'tip_kept_mode.ask',
+    // Rabatt-Vorlagen und Rabatte auf dem Z-Bon (11.22.0, npm 1.31.0)
+    'discount_presets.title', 'discount_presets.name', 'discount_presets.percent', 'discount_presets.amount', 'discount_presets.add',
+    'discount_presets.remove', 'discount_presets.limit', 'shift_receipt.discounts', 'shift_receipt.discounts_total',
+    'shift_receipt.discount_line', 'shift_receipt.discount_unnamed',
     // Schicht-Ablauf der Kasse (11.19.0, npm 1.28.0)
     'shift.state_closed', 'shift.start_title', 'shift.band_closed', 'shift.band_closing', 'shift.band_interim', 'shift.band_cash', 'tip.revenue_title', 'tip.revenue_badge', 'tip.unassigned', 'shift.last_shift', 'shift.in_drawer_by_system', 'shift.take_over_amount', 'shift.top_up', 'shift.missing', 'shift.count_coins', 'shift.count_please', 'drawer.open_for_count', 'drawer.open_for_tips', 'drawer.open_for_take', 'shift.close_title_numbered', 'shift.closed_title', 'shift.running_since_drawer', 'shift.step_count', 'shift.step_tips', 'shift.step_take', 'shift.step_done', 'shift.expected', 'shift.of_which_cash_tips', 'shift.breakdown', 'shift.part_opening', 'shift.part_cash_sales', 'shift.part_cash_tips', 'shift.part_cancellations', 'shift.part_cash_in', 'shift.part_cash_out', 'shift.part_interim', 'tip.who_takes_now', 'tip.later_hint', 'tip.later', 'tip.pay_out', 'tip.pay_out_amount', 'shift.now_in_drawer', 'shift.interim_title', 'shift.interim_save', 'shift.opening_not_counted', 'shift.taken_over_unchecked_by', 'shift.taken_over_unchecked', 'tip.kind_percent', 'tip.kind_round_up', 'tip.kind_total', 'tip.round_to', 'tip.guest_pays_total', 'tip.remainder_is_tip', 'voucher.section', 'voucher.code_placeholder', 'settings.cart_width', 'settings.cart_width_narrow', 'settings.cart_width_medium', 'settings.cart_width_wide', 'shift_receipt.opening_not_counted', 'shift_receipt.interim_count', 'shift_receipt.counted_before_payout', 'shift_receipt.difference_part_interim', 'shift_receipt.difference_part_closing', 'cash_movement.type_interim_difference',
     // Nachtrag Schicht-Ablauf (11.19.0, npm 1.28.0)
@@ -216,7 +240,13 @@ const _nach10 = (
     'inspection.closings_annual_december', 'inspection.contact', 'inspection.how_it_works', 'inspection.printed_at',
     'inspection.print', 'inspection.print_yes', 'inspection.print_no', 'zero_receipt.create', 'zero_receipt.created',
   },
-  fileKeys: ['errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'cancellationVoucherErrors', 'voucherErrors', 'returnDispositionLabels'],
+  fileKeys: [
+    'errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'cancellationVoucherErrors', 'voucherErrors',
+    // Fremdgutscheine an der Kasse (11.22.0, npm 1.31.0)
+    'externalVoucherTileMessages', 'externalVoucherArticleErrors',
+    'returnDispositionLabels',
+    'externalVouchersLabels', 'externalVoucherKindLabels', 'tipKeptModeLabels',
+  ],
   placeholders: {
     'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type',
     // Kassenstand und Trinkgeld-Liste (11.2.0)

@@ -1,5 +1,5 @@
 {
-  "version": "1.30.0",
+  "version": "1.31.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -680,11 +680,24 @@
       "reference",
       "asks_quantity",
       "no_price",
-      "service_voucher"
+      "service_voucher",
+      "external_voucher"
     ],
     "afterCountTypes": [
       "cash_drop",
       "change_in"
+    ],
+    "articleExternalVoucherTypes": [
+      "multi_purpose",
+      "single_purpose"
+    ],
+    "articleExternalVoucherVatRates": [
+      20,
+      13,
+      10,
+      4.9,
+      0,
+      19
     ],
     "callsWithEffect": [
       "createReceipt",
@@ -708,6 +721,10 @@
     "differencePartTypes": [
       "interim",
       "closing"
+    ],
+    "discountPresetKind": [
+      "percent",
+      "amount"
     ],
     "eurDenominations": [
       50000,
@@ -739,6 +756,17 @@
       "off",
       "multi_purpose",
       "all"
+    ],
+    "externalVoucherArticleReasons": [
+      "invalid_type",
+      "service_voucher",
+      "add_ons",
+      "stock_tracked",
+      "reference",
+      "asks_quantity",
+      "rate_required",
+      "invalid_rate",
+      "price_required"
     ],
     "manualMovementTypes": [
       "change_in",
@@ -782,12 +810,23 @@
       "other",
       "voucher_payout"
     ],
+    "ownVoucherCodeShapes": [
+      "valid",
+      "checksum",
+      "length",
+      "none"
+    ],
     "posBusinessOptionalChoices": [
       "tipKinds",
-      "tipStart"
+      "tipStart",
+      "tipKeptMode"
     ],
     "posBusinessOptionalFields": [
-      "tipKeptByDefault"
+      "tipKeptByDefault",
+      "customDiscountAllowed"
+    ],
+    "posBusinessOptionalLists": [
+      "discountPresets"
     ],
     "posDeviceOptionalChoices": [
       "cartWidth"
@@ -824,6 +863,7 @@
       "invalid_amount",
       "invalid_cursor",
       "invalid_denominations",
+      "invalid_discount_preset",
       "invalid_movement_type",
       "invalid_quantity",
       "invalid_serial",
@@ -919,6 +959,11 @@
       "store",
       "vehicle",
       "other"
+    ],
+    "tipKeptMode": [
+      "ask",
+      "always",
+      "never"
     ],
     "tipKinds": [
       "percent",

@@ -1367,6 +1367,8 @@ void main() {
               'askPrice', 'reference',
               // Zusatz-Kacheln (11.18.0): der Vertrag zeigt sie in keinem Artikelfall.
               'addOns',
+              // Fremdgutscheine an der Kasse (11.22.0): der Vertrag zeigt sie in keinem Artikelfall.
+              'externalVoucher',
             }),
         'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),
         'setMyKasseLogo': (const {'logoImage'}, const {}),

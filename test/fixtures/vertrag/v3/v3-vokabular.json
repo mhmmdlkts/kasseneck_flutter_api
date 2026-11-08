@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "3c729299a204cf522158317aa38dcad5bb8ef797c44e9369faecc94be4717d78",
-    "inputsSha256": "fe23c2f04b2ebf175ad64aa8b1911dac55ce695fe46e5d4b8a9401c756276c27",
+    "sha256": "04ab5e1d031979a4f0aa31ea000f4cbe1d6e557e2411e439899ac19a1bba0325",
+    "inputsSha256": "86a250bbb73c1f29d29793605274079ef3644f8f9c82609a80a1f4c481572c32",
     "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -590,6 +590,10 @@
       "auswahl": "select_user",
       "pin": "pin"
     },
+    "ARTIKEL_FREMDGUTSCHEIN": {
+      "mehrzweck": "multi_purpose",
+      "einzweck": "single_purpose"
+    },
     "AUSGABE_ART": {
       "erstdruck": "print",
       "duplikat": "reprint",
@@ -973,6 +977,10 @@
       "aus": "off",
       "an": "on"
     },
+    "KASSE_BETRIEB_WERTE.discountPresets[].kind": {
+      "prozent": "percent",
+      "betrag": "amount"
+    },
     "KASSE_BETRIEB_WERTE.quantity": {
       "aus": "off",
       "x": "x",
@@ -994,6 +1002,11 @@
     "KASSE_BETRIEB_WERTE.tileStyle": {
       "streifen": "stripe",
       "voll": "full"
+    },
+    "KASSE_BETRIEB_WERTE.tipKeptMode": {
+      "fragen": "ask",
+      "immer": "always",
+      "nie": "never"
     },
     "KASSE_BETRIEB_WERTE.tipKinds[]": {
       "prozent": "percent",
@@ -1389,6 +1402,7 @@
       "invalid_date",
       "invalid_denominations",
       "invalid_dimensions",
+      "invalid_discount_preset",
       "invalid_distribution",
       "invalid_document",
       "invalid_e1a_group",
@@ -1895,6 +1909,7 @@
       "invalid_connect_report",
       "invalid_cursor",
       "invalid_denominations",
+      "invalid_discount_preset",
       "invalid_file",
       "invalid_items",
       "invalid_line",
@@ -2750,6 +2765,7 @@
         "cashregister_not_assigned"
       ],
       "setMyKasseSettings": [
+        "invalid_discount_preset",
         "not_permitted",
         "validation"
       ],
@@ -4579,6 +4595,7 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
@@ -4593,7 +4610,16 @@
           "watermarkScale": "wzSkala",
           "glass": "glas",
           "hints": "hinweise",
-          "discountChips": "rabattChips"
+          "discountChips": "rabattChips",
+          "discountPresets": [
+            {
+              "__": "rabattVorlagen",
+              "kind": "art",
+              "percentBp": "prozentBp",
+              "amountCents": "betragCents"
+            }
+          ],
+          "customDiscountAllowed": "rabattFrei"
         },
         "device": {
           "__": "geraet",
@@ -4757,6 +4783,12 @@
         },
         "business.tipStart": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
+        "business.tipKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.discountPresets[].kind": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -5699,7 +5731,8 @@
               "pattern": "muster",
               "patternStrict": "musterStreng"
             },
-            "addOns": "zusaetze"
+            "addOns": "zusaetze",
+            "externalVoucher": "fremdgutschein"
           }
         ]
       },
@@ -5712,6 +5745,9 @@
         },
         "articles[].reference.mode": {
           "$catalog": "REFERENZ_STUFE"
+        },
+        "articles[].externalVoucher": {
+          "$catalog": "ARTIKEL_FREMDGUTSCHEIN"
         }
       },
       "ergaenze": {
@@ -6252,6 +6288,7 @@
             "tipChips": "tgChips",
             "exactCash": "schnellbar",
             "tipKeptByDefault": "tgDirekt",
+            "tipKeptMode": "tgDirektModus",
             "tipKinds": "tgArten",
             "tipStart": "tgStart",
             "checkoutMode": "kassierenModus",
@@ -6266,7 +6303,16 @@
             "watermarkScale": "wzSkala",
             "glass": "glas",
             "hints": "hinweise",
-            "discountChips": "rabattChips"
+            "discountChips": "rabattChips",
+            "discountPresets": [
+              {
+                "__": "rabattVorlagen",
+                "kind": "art",
+                "percentBp": "prozentBp",
+                "amountCents": "betragCents"
+              }
+            ],
+            "customDiscountAllowed": "rabattFrei"
           },
           "device": {
             "__": "geraet",
@@ -6369,6 +6415,12 @@
         },
         "settings.business.tipStart": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
+        "settings.business.tipKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "settings.business.discountPresets[].kind": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
         },
         "settings.business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -7743,6 +7795,7 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
@@ -7757,7 +7810,16 @@
           "watermarkScale": "wzSkala",
           "glass": "glas",
           "hints": "hinweise",
-          "discountChips": "rabattChips"
+          "discountChips": "rabattChips",
+          "discountPresets": [
+            {
+              "__": "rabattVorlagen",
+              "kind": "art",
+              "percentBp": "prozentBp",
+              "amountCents": "betragCents"
+            }
+          ],
+          "customDiscountAllowed": "rabattFrei"
         }
       },
       "paramWerte": {
@@ -7787,6 +7849,12 @@
         },
         "business.tipStart": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
+        "business.tipKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.discountPresets[].kind": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -7838,6 +7906,7 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
@@ -7852,7 +7921,16 @@
           "watermarkScale": "wzSkala",
           "glass": "glas",
           "hints": "hinweise",
-          "discountChips": "rabattChips"
+          "discountChips": "rabattChips",
+          "discountPresets": [
+            {
+              "__": "rabattVorlagen",
+              "kind": "art",
+              "percentBp": "prozentBp",
+              "amountCents": "betragCents"
+            }
+          ],
+          "customDiscountAllowed": "rabattFrei"
         }
       },
       "werte": {
@@ -7882,6 +7960,12 @@
         },
         "business.tipStart": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
+        "business.tipKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.discountPresets[].kind": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -8866,7 +8950,8 @@
       "minStockByLocation",
       "askPrice",
       "reference",
-      "addOns"
+      "addOns",
+      "externalVoucher"
     ],
     "inner": [
       "id",
@@ -8896,7 +8981,8 @@
       "mindestJeStandort",
       "preisFragen",
       "referenz",
-      "zusaetze"
+      "zusaetze",
+      "fremdgutschein"
     ]
   },
   "articleGroupFields": [

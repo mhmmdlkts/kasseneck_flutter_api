@@ -15,15 +15,16 @@ import 'artikel.dart';
 const int addOnsMax = 30;
 
 /// Warum ein Artikel kein Zusatz sein kann (Panel zeigt den Grund an).
-const List<String> addOnBlockReasons = ['inactive', 'own_list', 'asks_price', 'reference', 'asks_quantity', 'no_price', 'service_voucher'];
+const List<String> addOnBlockReasons = ['inactive', 'own_list', 'asks_price', 'reference', 'asks_quantity', 'no_price', 'service_voucher', 'external_voucher'];
 
 bool _eigeneListe(PosArticle a) => a.addOns != null && a.addOns!.isNotEmpty;
 
 /// Taugt der Artikel als Zusatz? `null` = ja, sonst ein Wert aus
 /// [addOnBlockReasons]. Im Fenster wird ohne Abfrage gebucht: Betrag,
 /// Referenz oder Menge fragen geht nicht, ein Preis muss feststehen (0
-/// erlaubt), ein Leistungsgutschein liefe am Gutschein-Weg vorbei, und ein
-/// Artikel mit eigener Liste oeffnete selbst ein Fenster (eine Ebene).
+/// erlaubt), ein Leistungsgutschein oder fremder Gutschein liefe am
+/// Gutschein-Weg vorbei, und ein Artikel mit eigener Liste oeffnete selbst ein
+/// Fenster (eine Ebene).
 String? isSelectableAddOn(PosArticle a) {
   if (!a.active) return 'inactive';
   if (_eigeneListe(a)) return 'own_list';
@@ -32,6 +33,7 @@ String? isSelectableAddOn(PosArticle a) {
   if (a.askQuantity == true) return 'asks_quantity';
   if (a.unitPriceCents == null || a.unitPriceCents! < 0) return 'no_price';
   if (a.serviceVoucher) return 'service_voucher';
+  if (a.externalVoucher != null) return 'external_voucher';
   return null;
 }
 

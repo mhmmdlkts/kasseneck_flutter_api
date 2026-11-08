@@ -1202,6 +1202,10 @@
         "aus": "off",
         "an": "on"
       },
+      "*.discountPresets[]": {
+        "prozent": "percent",
+        "betrag": "amount"
+      },
       "*.quantity": {
         "aus": "off",
         "x": "x",
@@ -1223,6 +1227,11 @@
       "*.tileStyle": {
         "streifen": "stripe",
         "voll": "full"
+      },
+      "*.tipKeptMode": {
+        "fragen": "ask",
+        "immer": "always",
+        "nie": "never"
       },
       "*.tipKinds[]": {
         "prozent": "percent",
@@ -1301,6 +1310,10 @@
         "aus": "off",
         "an": "on"
       },
+      "enums.discountPresets[][]": {
+        "prozent": "percent",
+        "betrag": "amount"
+      },
       "enums.quantity[]": {
         "aus": "off",
         "x": "x",
@@ -1322,6 +1335,11 @@
       "enums.tileStyle[]": {
         "streifen": "stripe",
         "voll": "full"
+      },
+      "enums.tipKeptMode[]": {
+        "fragen": "ask",
+        "immer": "always",
+        "nie": "never"
       },
       "enums.tipKinds[][]": {
         "prozent": "percent",

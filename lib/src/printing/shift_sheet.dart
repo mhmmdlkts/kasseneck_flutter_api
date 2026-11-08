@@ -17,6 +17,7 @@ library;
 import '../../models/receipt_layout.dart';
 import '../../services/vienna_time.dart';
 import '../kasse/einstellungen.dart' show PosPaperSize;
+import '../kasse/rabatt_vorlagen.dart' show discountBlockLines;
 import '../kasse/schicht.dart';
 import '../kasse/texte.dart';
 
@@ -200,6 +201,14 @@ ReceiptLayout shiftReceiptLayout(ShiftSummaryReceipt receipt, {PosPaperSize pape
     zeilen.add(_text(labelText('shift_receipt.non_cash'), bold: true));
     for (final u in bon.nonCashByMethod) {
       zeilen.add(_betrag(_zahlartText(u.method), u.cents));
+    }
+  }
+  // Gewaehrte Rabatte je Name: nur wenn es welche gab, sonst bleibt der Bon wie bisher.
+  final rabatte = discountBlockLines(bon.discounts);
+  if (rabatte.isNotEmpty) {
+    zeilen.add(_text(labelText('shift_receipt.discounts'), bold: true));
+    for (final r in rabatte) {
+      zeilen.add(_betrag(r.label, r.cents));
     }
   }
   zeilen.add(_anzahl(labelText('shift_receipt.receipts'), bon.receiptCount));

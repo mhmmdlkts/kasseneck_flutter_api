@@ -650,6 +650,45 @@ ExternalVoucherNumberCheck checkExternalVoucherNumber(Object? text) {
       : ExternalVoucherNumberCheck.ok(number);
 }
 
+/// Wie sehr eine Eingabe einem eigenen Gutscheincode gleicht ([ownVoucherCodeShape]):
+/// `valid` = gueltiger eigener Code; `checksum` = 12 Zeichen des Code-Alphabets
+/// mit falschem Pruefzeichen (etwa eine zwoelfstellige Webshop-Nummer);
+/// `length` = Muster `4-4-x` mit echten Bindestrichen `-` (nie `.`, `_`, `/`),
+/// aber nicht 12 Zeichen; `none` =
+/// keine Aehnlichkeit. Zwilling von `OWN_VOUCHER_CODE_SHAPES`.
+const List<String> ownVoucherCodeShapes = ['valid', 'checksum', 'length', 'none'];
+
+/// Alphabet der eigenen Codes (Crockford-Base32 ohne U), nach der Normalisierung von `VoucherCode`.
+final RegExp _codeAlphabet = RegExp(r'^[0-9A-HJKMNP-TV-Z]+$');
+final RegExp _codeGruppen = RegExp(r'^[0-9A-Za-z]{4}-[0-9A-Za-z]{4}-[0-9A-Za-z]+$');
+final RegExp _leerOderStrich = RegExp(r'[\s-]');
+
+/// Form-Erkennung eigener Codes fuer das Feld „Code eingeben oder scannen“
+/// (Web-Kasse und Kassen-App gleich), ein Wert aus [ownVoucherCodeShapes]:
+/// `valid` laeuft als eigener Gutschein, `checksum`/`length` fragt die Kasse
+/// nach (`external_voucher.looks_like_own_code`, Knopf
+/// `external_voucher.use_as_external`), `none` geht bei Freigabe direkt in das
+/// Blatt „Fremder Gutschein“. Gelesen wie [checkExternalVoucherNumber]: Rand
+/// weg, `.`, `_`, `/` wie `-`, dann die Normalisierung von `VoucherCode`
+/// (gross, ohne Leerraum und `-`, O -> 0, I/L -> 1); `length` nur mit echten
+/// Bindestrichen. Eine Nachfrage weist
+/// nichts ab: der Server prueft die Fremdnummer selbst
+/// (`external_voucher_number_is_own_code` nur bei `valid`). Zwilling von
+/// `ownVoucherCodeShape` im npm-Paket.
+String ownVoucherCodeShape(Object? text) {
+  if (text is! String) return 'none';
+  final roh = jsTrim(text);
+  final t = roh.replaceAll(_fremdTrenner, '-');
+  if (t.isEmpty) return 'none';
+  if (VoucherCode.isValid(t)) return 'valid';
+  final s = t.toUpperCase().replaceAll(_leerOderStrich, '').replaceAll('O', '0').replaceAll(RegExp('[IL]'), '1');
+  if (!_codeAlphabet.hasMatch(s)) return 'none';
+  if (s.length == 12) return 'checksum';
+  // Falsche Laenge nur mit echten Bindestrichen: eigene Codes stehen immer so
+  // da, `WEIN.2026/7` ist keiner und soll keine Nachfrage ausloesen.
+  return _codeGruppen.hasMatch(roh) ? 'length' : 'none';
+}
+
 bool _fremdCent(int? n) => n != null && n >= 1 && n <= 1000000;
 
 /// Ist der Fremdgutschein sendbar? Die Form wie `gutschein-beleg.pruefeFremd`
