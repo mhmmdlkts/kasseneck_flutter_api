@@ -1,0 +1,1074 @@
+{
+  "hinweis": "Vertrag fuer Backend, npm und Dart (Rabatt-Vorlagen). innen = deutsche Namen der Betriebseinstellung, aussen = /v3 (discountPresets, discountChips). Prozent in Basispunkten, Betraege in Cent.",
+  "wirksam": [
+    {
+      "name": "Vorlagen vorhanden: sie sind die Quelle, rabattChips zaehlt nicht",
+      "innen": {
+        "rabattVorlagen": [
+          {
+            "name": "Mitarbeiter-Rabatt",
+            "art": "prozent",
+            "prozentBp": 2000
+          },
+          {
+            "name": "Stammkunde",
+            "art": "betrag",
+            "betragCents": 500
+          }
+        ],
+        "rabattChips": [
+          5,
+          10
+        ]
+      },
+      "aussen": {
+        "discountPresets": [
+          {
+            "name": "Mitarbeiter-Rabatt",
+            "kind": "percent",
+            "percentBp": 2000
+          },
+          {
+            "name": "Stammkunde",
+            "kind": "amount",
+            "amountCents": 500
+          }
+        ],
+        "discountChips": [
+          5,
+          10
+        ]
+      },
+      "erwartet": [
+        {
+          "name": "Mitarbeiter-Rabatt",
+          "art": "prozent",
+          "prozentBp": 2000
+        },
+        {
+          "name": "Stammkunde",
+          "art": "betrag",
+          "betragCents": 500
+        }
+      ],
+      "erwartetAussen": [
+        {
+          "name": "Mitarbeiter-Rabatt",
+          "kind": "percent",
+          "percentBp": 2000
+        },
+        {
+          "name": "Stammkunde",
+          "kind": "amount",
+          "amountCents": 500
+        }
+      ]
+    },
+    {
+      "name": "leere Vorlagen: keine Chips, auch wenn rabattChips noch Werte traegt",
+      "innen": {
+        "rabattVorlagen": [],
+        "rabattChips": [
+          5,
+          10
+        ]
+      },
+      "aussen": {
+        "discountPresets": [],
+        "discountChips": [
+          5,
+          10
+        ]
+      },
+      "erwartet": [],
+      "erwartetAussen": []
+    },
+    {
+      "name": "ohne Vorlagen: Prozent-Chips als namenlose Vorlagen (Bestandskonto)",
+      "innen": {
+        "rabattChips": [
+          5,
+          10,
+          15,
+          20
+        ]
+      },
+      "aussen": {
+        "discountChips": [
+          5,
+          10,
+          15,
+          20
+        ]
+      },
+      "erwartet": [
+        {
+          "name": "",
+          "art": "prozent",
+          "prozentBp": 500
+        },
+        {
+          "name": "",
+          "art": "prozent",
+          "prozentBp": 1000
+        },
+        {
+          "name": "",
+          "art": "prozent",
+          "prozentBp": 1500
+        },
+        {
+          "name": "",
+          "art": "prozent",
+          "prozentBp": 2000
+        }
+      ],
+      "erwartetAussen": [
+        {
+          "name": "",
+          "kind": "percent",
+          "percentBp": 500
+        },
+        {
+          "name": "",
+          "kind": "percent",
+          "percentBp": 1000
+        },
+        {
+          "name": "",
+          "kind": "percent",
+          "percentBp": 1500
+        },
+        {
+          "name": "",
+          "kind": "percent",
+          "percentBp": 2000
+        }
+      ]
+    },
+    {
+      "name": "Chip mit einer Nachkommastelle",
+      "innen": {
+        "rabattChips": [
+          2.5,
+          12.5
+        ]
+      },
+      "aussen": {
+        "discountChips": [
+          2.5,
+          12.5
+        ]
+      },
+      "erwartet": [
+        {
+          "name": "",
+          "art": "prozent",
+          "prozentBp": 250
+        },
+        {
+          "name": "",
+          "art": "prozent",
+          "prozentBp": 1250
+        }
+      ],
+      "erwartetAussen": [
+        {
+          "name": "",
+          "kind": "percent",
+          "percentBp": 250
+        },
+        {
+          "name": "",
+          "kind": "percent",
+          "percentBp": 1250
+        }
+      ]
+    },
+    {
+      "name": "weder Vorlagen noch Chips",
+      "innen": {},
+      "aussen": {},
+      "erwartet": [],
+      "erwartetAussen": []
+    }
+  ],
+  "chipText": [
+    {
+      "vorlage": {
+        "name": "",
+        "art": "prozent",
+        "prozentBp": 1000
+      },
+      "vorlageAussen": {
+        "name": "",
+        "kind": "percent",
+        "percentBp": 1000
+      },
+      "chip": "10 %"
+    },
+    {
+      "vorlage": {
+        "name": "",
+        "art": "prozent",
+        "prozentBp": 250
+      },
+      "vorlageAussen": {
+        "name": "",
+        "kind": "percent",
+        "percentBp": 250
+      },
+      "chip": "2,5 %"
+    },
+    {
+      "vorlage": {
+        "name": "",
+        "art": "prozent",
+        "prozentBp": 10000
+      },
+      "vorlageAussen": {
+        "name": "",
+        "kind": "percent",
+        "percentBp": 10000
+      },
+      "chip": "100 %"
+    },
+    {
+      "vorlage": {
+        "name": "Mitarbeiter-Rabatt",
+        "art": "prozent",
+        "prozentBp": 2000
+      },
+      "vorlageAussen": {
+        "name": "Mitarbeiter-Rabatt",
+        "kind": "percent",
+        "percentBp": 2000
+      },
+      "chip": "Mitarbeiter-Rabatt 20 %"
+    },
+    {
+      "vorlage": {
+        "name": "Neueroeffnung",
+        "art": "prozent",
+        "prozentBp": 1050
+      },
+      "vorlageAussen": {
+        "name": "Neueroeffnung",
+        "kind": "percent",
+        "percentBp": 1050
+      },
+      "chip": "Neueroeffnung 10,5 %"
+    },
+    {
+      "vorlage": {
+        "name": "Stammkunde",
+        "art": "betrag",
+        "betragCents": 500
+      },
+      "vorlageAussen": {
+        "name": "Stammkunde",
+        "kind": "amount",
+        "amountCents": 500
+      },
+      "chip": "Stammkunde 5,00 €"
+    },
+    {
+      "vorlage": {
+        "name": "Gutschein extern",
+        "art": "betrag",
+        "betragCents": 123456
+      },
+      "vorlageAussen": {
+        "name": "Gutschein extern",
+        "kind": "amount",
+        "amountCents": 123456
+      },
+      "chip": "Gutschein extern 1.234,56 €"
+    },
+    {
+      "vorlage": {
+        "name": "",
+        "art": "betrag",
+        "betragCents": 5
+      },
+      "vorlageAussen": {
+        "name": "",
+        "kind": "amount",
+        "amountCents": 5
+      },
+      "chip": "0,05 €"
+    },
+    {
+      "vorlage": {
+        "name": "Kleinbetrag",
+        "art": "betrag",
+        "betragCents": 100
+      },
+      "vorlageAussen": {
+        "name": "Kleinbetrag",
+        "kind": "amount",
+        "amountCents": 100
+      },
+      "chip": "Kleinbetrag 1,00 €"
+    }
+  ],
+  "spiegelung": [
+    {
+      "name": "nur Prozent, Reihenfolge bleibt",
+      "vorlagen": [
+        {
+          "name": "Mitarbeiter-Rabatt",
+          "art": "prozent",
+          "prozentBp": 2000
+        },
+        {
+          "name": "Stammkunde",
+          "art": "prozent",
+          "prozentBp": 500
+        }
+      ],
+      "rabattChips": [
+        20,
+        5
+      ]
+    },
+    {
+      "name": "Betrag-Vorlagen fallen weg",
+      "vorlagen": [
+        {
+          "name": "Mitarbeiter-Rabatt",
+          "art": "prozent",
+          "prozentBp": 2000
+        },
+        {
+          "name": "Stammkunde",
+          "art": "betrag",
+          "betragCents": 500
+        }
+      ],
+      "rabattChips": [
+        20
+      ]
+    },
+    {
+      "name": "gleicher Prozentwert nur einmal",
+      "vorlagen": [
+        {
+          "name": "A",
+          "art": "prozent",
+          "prozentBp": 1000
+        },
+        {
+          "name": "B",
+          "art": "prozent",
+          "prozentBp": 1000
+        },
+        {
+          "name": "C",
+          "art": "prozent",
+          "prozentBp": 500
+        }
+      ],
+      "rabattChips": [
+        10,
+        5
+      ]
+    },
+    {
+      "name": "Nachkommastelle",
+      "vorlagen": [
+        {
+          "name": "Neueroeffnung",
+          "art": "prozent",
+          "prozentBp": 1050
+        },
+        {
+          "name": "Halb",
+          "art": "prozent",
+          "prozentBp": 50
+        }
+      ],
+      "rabattChips": [
+        10.5,
+        0.5
+      ]
+    },
+    {
+      "name": "leere Liste",
+      "vorlagen": [],
+      "rabattChips": []
+    }
+  ],
+  "pruefung": [
+    {
+      "name": "gueltig: Prozent und Betrag",
+      "eingabe": [
+        {
+          "name": "Mitarbeiter-Rabatt",
+          "art": "prozent",
+          "prozentBp": 2000
+        },
+        {
+          "name": "Stammkunde",
+          "art": "betrag",
+          "betragCents": 500
+        }
+      ],
+      "ok": true,
+      "wert": [
+        {
+          "name": "Mitarbeiter-Rabatt",
+          "art": "prozent",
+          "prozentBp": 2000
+        },
+        {
+          "name": "Stammkunde",
+          "art": "betrag",
+          "betragCents": 500
+        }
+      ]
+    },
+    {
+      "name": "gueltig: leere Liste",
+      "eingabe": [],
+      "ok": true,
+      "wert": []
+    },
+    {
+      "name": "gueltig: Name wird getrimmt",
+      "eingabe": [
+        {
+          "name": "  Stammkunde  ",
+          "art": "prozent",
+          "prozentBp": 500
+        }
+      ],
+      "ok": true,
+      "wert": [
+        {
+          "name": "Stammkunde",
+          "art": "prozent",
+          "prozentBp": 500
+        }
+      ]
+    },
+    {
+      "name": "gueltig: genau 24 Zeichen",
+      "eingabe": [
+        {
+          "name": "xxxxxxxxxxxxxxxxxxxxxxxx",
+          "art": "betrag",
+          "betragCents": 1
+        }
+      ],
+      "ok": true,
+      "wert": [
+        {
+          "name": "xxxxxxxxxxxxxxxxxxxxxxxx",
+          "art": "betrag",
+          "betragCents": 1
+        }
+      ]
+    },
+    {
+      "name": "gueltig: genau fuenf Vorlagen",
+      "eingabe": [
+        {
+          "name": "V1",
+          "art": "betrag",
+          "betragCents": 1
+        },
+        {
+          "name": "V2",
+          "art": "betrag",
+          "betragCents": 2
+        },
+        {
+          "name": "V3",
+          "art": "betrag",
+          "betragCents": 3
+        },
+        {
+          "name": "V4",
+          "art": "betrag",
+          "betragCents": 4
+        },
+        {
+          "name": "V5",
+          "art": "betrag",
+          "betragCents": 5
+        }
+      ],
+      "ok": true,
+      "wert": [
+        {
+          "name": "V1",
+          "art": "betrag",
+          "betragCents": 1
+        },
+        {
+          "name": "V2",
+          "art": "betrag",
+          "betragCents": 2
+        },
+        {
+          "name": "V3",
+          "art": "betrag",
+          "betragCents": 3
+        },
+        {
+          "name": "V4",
+          "art": "betrag",
+          "betragCents": 4
+        },
+        {
+          "name": "V5",
+          "art": "betrag",
+          "betragCents": 5
+        }
+      ]
+    },
+    {
+      "name": "gueltig: Grenzen Prozent 0,1 und 100",
+      "eingabe": [
+        {
+          "name": "Min",
+          "art": "prozent",
+          "prozentBp": 10
+        },
+        {
+          "name": "Max",
+          "art": "prozent",
+          "prozentBp": 10000
+        }
+      ],
+      "ok": true,
+      "wert": [
+        {
+          "name": "Min",
+          "art": "prozent",
+          "prozentBp": 10
+        },
+        {
+          "name": "Max",
+          "art": "prozent",
+          "prozentBp": 10000
+        }
+      ]
+    },
+    {
+      "name": "gueltig: Grenze Betrag 1.000.000,00 Euro",
+      "eingabe": [
+        {
+          "name": "Gross",
+          "art": "betrag",
+          "betragCents": 100000000
+        }
+      ],
+      "ok": true,
+      "wert": [
+        {
+          "name": "Gross",
+          "art": "betrag",
+          "betragCents": 100000000
+        }
+      ]
+    },
+    {
+      "name": "Fehler: sechs Vorlagen",
+      "eingabe": [
+        {
+          "name": "V1",
+          "art": "betrag",
+          "betragCents": 1
+        },
+        {
+          "name": "V2",
+          "art": "betrag",
+          "betragCents": 2
+        },
+        {
+          "name": "V3",
+          "art": "betrag",
+          "betragCents": 3
+        },
+        {
+          "name": "V4",
+          "art": "betrag",
+          "betragCents": 4
+        },
+        {
+          "name": "V5",
+          "art": "betrag",
+          "betragCents": 5
+        },
+        {
+          "name": "V6",
+          "art": "betrag",
+          "betragCents": 6
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": null,
+          "feld": null,
+          "meldung": "Höchstens 5 Rabatt-Vorlagen als Liste."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: keine Liste",
+      "eingabe": "Stammkunde",
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": null,
+          "feld": null,
+          "meldung": "Höchstens 5 Rabatt-Vorlagen als Liste."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Eintrag kein Objekt",
+      "eingabe": [
+        "Stammkunde"
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": null,
+          "meldung": "Eine Rabatt-Vorlage ist ein Objekt mit Name, Art und Wert."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Name leer",
+      "eingabe": [
+        {
+          "name": "   ",
+          "art": "prozent",
+          "prozentBp": 1000
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "name",
+          "meldung": "Name mit 1 bis 24 Zeichen, ohne Steuerzeichen."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Name fehlt",
+      "eingabe": [
+        {
+          "art": "prozent",
+          "prozentBp": 1000
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "name",
+          "meldung": "Name mit 1 bis 24 Zeichen, ohne Steuerzeichen."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Name 25 Zeichen",
+      "eingabe": [
+        {
+          "name": "xxxxxxxxxxxxxxxxxxxxxxxxx",
+          "art": "betrag",
+          "betragCents": 1
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "name",
+          "meldung": "Name mit 1 bis 24 Zeichen, ohne Steuerzeichen."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Zeilenumbruch im Namen",
+      "eingabe": [
+        {
+          "name": "A\nB",
+          "art": "betrag",
+          "betragCents": 1
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "name",
+          "meldung": "Name mit 1 bis 24 Zeichen, ohne Steuerzeichen."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Name doppelt, Gross/Klein egal",
+      "eingabe": [
+        {
+          "name": "Stammkunde",
+          "art": "prozent",
+          "prozentBp": 500
+        },
+        {
+          "name": "STAMMKUNDE",
+          "art": "betrag",
+          "betragCents": 100
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 1,
+          "feld": "name",
+          "meldung": "Diesen Namen gibt es schon."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: unbekannte Art",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "staffel",
+          "prozentBp": 1000
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "art",
+          "meldung": "Prozent oder Betrag."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Prozent 0",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "prozent",
+          "prozentBp": 0
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "prozentBp",
+          "meldung": "Prozent zwischen 0,1 und 100 mit höchstens einer Nachkommastelle."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Prozent ueber 100",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "prozent",
+          "prozentBp": 10010
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "prozentBp",
+          "meldung": "Prozent zwischen 0,1 und 100 mit höchstens einer Nachkommastelle."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Prozent nicht auf 0,1 genau",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "prozent",
+          "prozentBp": 1005
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "prozentBp",
+          "meldung": "Prozent zwischen 0,1 und 100 mit höchstens einer Nachkommastelle."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Prozent Kommazahl",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "prozent",
+          "prozentBp": 10.5
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "prozentBp",
+          "meldung": "Prozent zwischen 0,1 und 100 mit höchstens einer Nachkommastelle."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Prozent fehlt",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "prozent"
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "prozentBp",
+          "meldung": "Prozent zwischen 0,1 und 100 mit höchstens einer Nachkommastelle."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Betrag 0",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "betrag",
+          "betragCents": 0
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "betragCents",
+          "meldung": "Betrag zwischen 0,01 € und 1.000.000,00 €."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Betrag ueber Grenze",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "betrag",
+          "betragCents": 100000001
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "betragCents",
+          "meldung": "Betrag zwischen 0,01 € und 1.000.000,00 €."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Betrag Kommazahl",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "betrag",
+          "betragCents": 1.5
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "betragCents",
+          "meldung": "Betrag zwischen 0,01 € und 1.000.000,00 €."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: Wertfeld der falschen Art",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "betrag",
+          "prozentBp": 1000,
+          "betragCents": 5
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "prozentBp",
+          "meldung": "Unbekanntes Feld."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: unbekanntes Feld",
+      "eingabe": [
+        {
+          "name": "A",
+          "art": "betrag",
+          "betragCents": 5,
+          "farbe": "rot"
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "farbe",
+          "meldung": "Unbekanntes Feld."
+        }
+      ]
+    },
+    {
+      "name": "Fehler: mehrere Fehler in mehreren Vorlagen",
+      "eingabe": [
+        {
+          "name": "",
+          "art": "prozent",
+          "prozentBp": 5
+        },
+        {
+          "name": "B",
+          "art": "betrag",
+          "betragCents": 0
+        }
+      ],
+      "ok": false,
+      "code": "invalid_discount_preset",
+      "fehler": [
+        {
+          "index": 0,
+          "feld": "name",
+          "meldung": "Name mit 1 bis 24 Zeichen, ohne Steuerzeichen."
+        },
+        {
+          "index": 0,
+          "feld": "prozentBp",
+          "meldung": "Prozent zwischen 0,1 und 100 mit höchstens einer Nachkommastelle."
+        },
+        {
+          "index": 1,
+          "feld": "betragCents",
+          "meldung": "Betrag zwischen 0,01 € und 1.000.000,00 €."
+        }
+      ]
+    }
+  ],
+  "bonBlock": [
+    {
+      "name": "keine Rabatte: kein Block",
+      "rabatte": [],
+      "zeilen": []
+    },
+    {
+      "name": "ein Rabatt: keine Summenzeile",
+      "rabatte": [
+        {
+          "name": "Stammkunde",
+          "cents": 500,
+          "anzahl": 1
+        }
+      ],
+      "zeilen": [
+        {
+          "label": "Stammkunde (1×)",
+          "cents": -500
+        }
+      ]
+    },
+    {
+      "name": "mehrere Rabatte: Summe",
+      "rabatte": [
+        {
+          "name": "Mitarbeiter-Rabatt",
+          "cents": 1200,
+          "anzahl": 3
+        },
+        {
+          "name": "Stammkunde",
+          "cents": 500,
+          "anzahl": 1
+        }
+      ],
+      "zeilen": [
+        {
+          "label": "Mitarbeiter-Rabatt (3×)",
+          "cents": -1200
+        },
+        {
+          "label": "Stammkunde (1×)",
+          "cents": -500
+        },
+        {
+          "label": "Rabatte gesamt",
+          "cents": -1700
+        }
+      ]
+    },
+    {
+      "name": "Name leer: Standardname",
+      "rabatte": [
+        {
+          "name": "",
+          "cents": 100,
+          "anzahl": 2
+        },
+        {
+          "name": "Stammkunde",
+          "cents": 50,
+          "anzahl": 1
+        }
+      ],
+      "zeilen": [
+        {
+          "label": "Rabatt (2×)",
+          "cents": -100
+        },
+        {
+          "label": "Stammkunde (1×)",
+          "cents": -50
+        },
+        {
+          "label": "Rabatte gesamt",
+          "cents": -150
+        }
+      ]
+    }
+  ]
+}

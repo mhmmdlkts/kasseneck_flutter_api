@@ -1,0 +1,1411 @@
+{
+  "_hinweis": "Z-Bon (closeMyShift/success_manager) mit Block Rabatte; ohne Rabatte bleibt der Bon wie fixtures/expected/shift-close.*. Zeilen und 32er-Raster von Hand gegen discount-preset-cases.json (bonBlock) geprueft.",
+  "eins": {
+    "discounts": [
+      {
+        "name": "Stammkunde",
+        "cents": 500,
+        "count": 1
+      }
+    ],
+    "lines": [
+      {
+        "kind": "banner",
+        "text": "Schichtabschluss",
+        "tone": "receipt_type"
+      },
+      {
+        "kind": "text",
+        "text": "Café Welt",
+        "align": "center",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Kasse",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Theke 1",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Lade",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Hauptlade",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Schicht",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Nr. 2",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Geöffnet",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "25.09.2026 17:00",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "von",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Anna Chef",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Geschlossen",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "26.09.2026 10:00",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "von",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Anna Chef",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Startgeld übernommen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "150,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Anfang übernommen, nicht gezählt",
+        "align": "left",
+        "bold": false
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Bar aus Verkäufen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "94,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Bar aus Storno",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Bewegungen",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Nr. 3 Wechselgeld",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "50,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Nr. 4 Trinkgeld-Auszahlung",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Soll",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "290,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Ist",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "290,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  1 x 200,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "200,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  1 x 50,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "50,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  2 x 20,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "40,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Differenz",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "text",
+        "text": "Unbar (nur Information)",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Kartenzahlung",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "32,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Rabatte",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Stammkunde (1×)",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-5,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Belege",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "3",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Stornos",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Öffnungen ohne Verkauf",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "1",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "text",
+        "text": "Trinkgeld",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "text",
+        "text": "Ben Kellner",
+        "align": "left",
+        "bold": false
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  verdient",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  schon genommen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      }
+    ],
+    "grid32": "================================\n        Schichtabschluss        \n================================\n           Café Welt            \nKasse                    Theke 1\nLade                   Hauptlade\nSchicht                    Nr. 2\nGeöffnet        25.09.2026 17:00\nvon                    Anna Chef\nGeschlossen     26.09.2026 10:00\nvon                    Anna Chef\n--------------------------------\nStartgeld übernommen      150,00\nAnfang übernommen, nicht gezählt\nBar aus Verkäufen          94,00\nBar aus Storno              0,00\nBewegungen                      \nNr. 3 Wechselgeld          50,00\nNr. 4                      -4,00\nTrinkgeld-Auszahlung            \nSoll                      290,00\nIst                       290,00\n  1 x 200,00              200,00\n  1 x 50,00                50,00\n  2 x 20,00                40,00\nDifferenz                   0,00\n--------------------------------\nUnbar (nur Information)         \nKartenzahlung              32,00\nRabatte                         \nStammkunde (1×)            -5,00\nBelege                         3\nStornos                        0\nÖffnungen ohne                 1\nVerkauf                         \n--------------------------------\nTrinkgeld                       \nBen Kellner                     \n  verdient                  4,00\n  schon genommen            4,00"
+  },
+  "mehrere": {
+    "discounts": [
+      {
+        "name": "Mitarbeiter-Rabatt",
+        "cents": 1200,
+        "count": 3
+      },
+      {
+        "name": "Stammkunde",
+        "cents": 500,
+        "count": 1
+      }
+    ],
+    "lines": [
+      {
+        "kind": "banner",
+        "text": "Schichtabschluss",
+        "tone": "receipt_type"
+      },
+      {
+        "kind": "text",
+        "text": "Café Welt",
+        "align": "center",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Kasse",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Theke 1",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Lade",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Hauptlade",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Schicht",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Nr. 2",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Geöffnet",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "25.09.2026 17:00",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "von",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Anna Chef",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Geschlossen",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "26.09.2026 10:00",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "von",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Anna Chef",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Startgeld übernommen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "150,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Anfang übernommen, nicht gezählt",
+        "align": "left",
+        "bold": false
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Bar aus Verkäufen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "94,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Bar aus Storno",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Bewegungen",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Nr. 3 Wechselgeld",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "50,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Nr. 4 Trinkgeld-Auszahlung",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Soll",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "290,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Ist",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "290,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  1 x 200,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "200,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  1 x 50,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "50,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  2 x 20,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "40,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Differenz",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "text",
+        "text": "Unbar (nur Information)",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Kartenzahlung",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "32,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Rabatte",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Mitarbeiter-Rabatt (3×)",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-12,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Stammkunde (1×)",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-5,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Rabatte gesamt",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-17,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Belege",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "3",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Stornos",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Öffnungen ohne Verkauf",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "1",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "text",
+        "text": "Trinkgeld",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "text",
+        "text": "Ben Kellner",
+        "align": "left",
+        "bold": false
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  verdient",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  schon genommen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      }
+    ],
+    "grid32": "================================\n        Schichtabschluss        \n================================\n           Café Welt            \nKasse                    Theke 1\nLade                   Hauptlade\nSchicht                    Nr. 2\nGeöffnet        25.09.2026 17:00\nvon                    Anna Chef\nGeschlossen     26.09.2026 10:00\nvon                    Anna Chef\n--------------------------------\nStartgeld übernommen      150,00\nAnfang übernommen, nicht gezählt\nBar aus Verkäufen          94,00\nBar aus Storno              0,00\nBewegungen                      \nNr. 3 Wechselgeld          50,00\nNr. 4                      -4,00\nTrinkgeld-Auszahlung            \nSoll                      290,00\nIst                       290,00\n  1 x 200,00              200,00\n  1 x 50,00                50,00\n  2 x 20,00                40,00\nDifferenz                   0,00\n--------------------------------\nUnbar (nur Information)         \nKartenzahlung              32,00\nRabatte                         \nMitarbeiter-Rabatt        -12,00\n(3×)                            \nStammkunde (1×)            -5,00\nRabatte gesamt            -17,00\nBelege                         3\nStornos                        0\nÖffnungen ohne                 1\nVerkauf                         \n--------------------------------\nTrinkgeld                       \nBen Kellner                     \n  verdient                  4,00\n  schon genommen            4,00"
+  },
+  "unbenannt": {
+    "discounts": [
+      {
+        "name": "",
+        "cents": 100,
+        "count": 2
+      },
+      {
+        "name": "Stammkunde",
+        "cents": 50,
+        "count": 1
+      }
+    ],
+    "lines": [
+      {
+        "kind": "banner",
+        "text": "Schichtabschluss",
+        "tone": "receipt_type"
+      },
+      {
+        "kind": "text",
+        "text": "Café Welt",
+        "align": "center",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Kasse",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Theke 1",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Lade",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Hauptlade",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Schicht",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Nr. 2",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Geöffnet",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "25.09.2026 17:00",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "von",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Anna Chef",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Geschlossen",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "26.09.2026 10:00",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "von",
+            "width": 5,
+            "align": "left"
+          },
+          {
+            "text": "Anna Chef",
+            "width": 7,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Startgeld übernommen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "150,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Anfang übernommen, nicht gezählt",
+        "align": "left",
+        "bold": false
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Bar aus Verkäufen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "94,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Bar aus Storno",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Bewegungen",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Nr. 3 Wechselgeld",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "50,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Nr. 4 Trinkgeld-Auszahlung",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Soll",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "290,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Ist",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "290,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  1 x 200,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "200,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  1 x 50,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "50,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  2 x 20,00",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "40,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Differenz",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "text",
+        "text": "Unbar (nur Information)",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Kartenzahlung",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "32,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "text",
+        "text": "Rabatte",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Rabatt (2×)",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-1,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Stammkunde (1×)",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-0,50",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Rabatte gesamt",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "-1,50",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Belege",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "3",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Stornos",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "0",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "Öffnungen ohne Verkauf",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "1",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "rule",
+        "char": "-"
+      },
+      {
+        "kind": "text",
+        "text": "Trinkgeld",
+        "align": "left",
+        "bold": true
+      },
+      {
+        "kind": "text",
+        "text": "Ben Kellner",
+        "align": "left",
+        "bold": false
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  verdient",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      },
+      {
+        "kind": "columns",
+        "columns": [
+          {
+            "text": "  schon genommen",
+            "width": 8,
+            "align": "left"
+          },
+          {
+            "text": "4,00",
+            "width": 4,
+            "align": "right"
+          }
+        ]
+      }
+    ],
+    "grid32": "================================\n        Schichtabschluss        \n================================\n           Café Welt            \nKasse                    Theke 1\nLade                   Hauptlade\nSchicht                    Nr. 2\nGeöffnet        25.09.2026 17:00\nvon                    Anna Chef\nGeschlossen     26.09.2026 10:00\nvon                    Anna Chef\n--------------------------------\nStartgeld übernommen      150,00\nAnfang übernommen, nicht gezählt\nBar aus Verkäufen          94,00\nBar aus Storno              0,00\nBewegungen                      \nNr. 3 Wechselgeld          50,00\nNr. 4                      -4,00\nTrinkgeld-Auszahlung            \nSoll                      290,00\nIst                       290,00\n  1 x 200,00              200,00\n  1 x 50,00                50,00\n  2 x 20,00                40,00\nDifferenz                   0,00\n--------------------------------\nUnbar (nur Information)         \nKartenzahlung              32,00\nRabatte                         \nRabatt (2×)                -1,00\nStammkunde (1×)            -0,50\nRabatte gesamt             -1,50\nBelege                         3\nStornos                        0\nÖffnungen ohne                 1\nVerkauf                         \n--------------------------------\nTrinkgeld                       \nBen Kellner                     \n  verdient                  4,00\n  schon genommen            4,00"
+  }
+}

@@ -103,6 +103,7 @@ export 'src/kasse/einstellungen.dart';
 export 'src/kasse/farbe.dart';
 export 'src/kasse/thema.dart';
 export 'src/kasse/einstellungen_client.dart';
+export 'src/kasse/rabatt_vorlagen.dart';
 export 'src/kasse/kacheln.dart';
 export 'src/kasse/kassieren.dart';
 // Die Leser bleiben paketintern; sie gehoeren zu RegisterReceiptClient.

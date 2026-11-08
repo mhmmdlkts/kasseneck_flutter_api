@@ -199,6 +199,46 @@ enum PosTipKeptMode implements PosSettingValue {
   String get value => name;
 }
 
+/// Art einer Rabatt-Vorlage (`business.discountPresets[].kind`): Prozent oder
+/// fester Betrag (gespeichert `art`: `prozent | betrag`).
+enum PosDiscountPresetKind implements PosSettingValue {
+  percent,
+  amount;
+
+  @override
+  String get value => name;
+}
+
+/// Benannte Rabatt-Chips der Kasse: [PosDiscountPresetKind.percent] traegt
+/// [percentBp] (Basispunkte, 10 % = 1000), [PosDiscountPresetKind.amount] traegt
+/// [amountCents] (Cent). Der Name steht auf dem Chip und als Text der Rabattzeile
+/// am Beleg; ohne Namen (`''`) bleibt die Zeile „Rabatt“. Pruefen vor dem
+/// Schreiben: `checkDiscountPresets`. Zwilling von `PosDiscountPreset`.
+class PosDiscountPreset {
+  const PosDiscountPreset({required this.name, required this.kind, this.percentBp, this.amountCents});
+
+  final String name;
+  final PosDiscountPresetKind kind;
+  final int? percentBp;
+  final int? amountCents;
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'kind': kind.value,
+        if (kind == PosDiscountPresetKind.percent) 'percentBp': percentBp else 'amountCents': amountCents,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is PosDiscountPreset && other.name == name && other.kind == kind && other.percentBp == percentBp && other.amountCents == amountCents;
+
+  @override
+  int get hashCode => Object.hash(name, kind, percentBp, amountCents);
+
+  @override
+  String toString() => 'PosDiscountPreset(${toJson()})';
+}
+
 /// Breite der rechten Spalte (Korb) an diesem Geraet (`device.cartWidth`); in
 /// der schmalen Ansicht ohne Wirkung.
 enum PosCartWidth implements PosSettingValue {
@@ -495,6 +535,7 @@ class PosBusinessSettings {
     this.tipKinds,
     this.tipStart,
     this.tipKeptMode,
+    this.discountPresets,
     this.unknownValues = const {},
   });
 
@@ -611,6 +652,14 @@ class PosBusinessSettings {
   /// [posTipKeptMode], entscheiden ueber [tipKeptFor].
   final PosTipKeptMode? tipKeptMode;
 
+  /// Benannte Rabatt-Chips (Prozent oder Betrag, hoechstens 5). Optional: der
+  /// Server sendet das Feld nur, wenn es gespeichert ist; dann sind die
+  /// Vorlagen die Quelle der Chips und [discountChips] spiegelt ihre
+  /// Prozentwerte fuer aeltere Kassen. `null` = nicht gespeichert, es gelten
+  /// [discountChips]. Eine Vorlage mit unbekannter Art verwirft der Leser.
+  /// Lesen ueber `posDiscountPresets`, pruefen mit `checkDiscountPresets`.
+  final List<PosDiscountPreset>? discountPresets;
+
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
@@ -636,7 +685,8 @@ class PosBusinessSettings {
   /// niemandem auf.
   PosBusinessSettings merge(Map<String, dynamic> patch) {
     _pruefeAenderung(
-        'business', patch, {..._betriebSchluessel, ...posBusinessOptionalFields, ...posBusinessOptionalChoices}, legacyBusinessKeys);
+        'business', patch,
+        {..._betriebSchluessel, ...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists}, legacyBusinessKeys);
     // Der optionale Schalter hat keinen Standardwert, den `_mische` fortschreiben
     // koennte: er wird getrennt gefuehrt und nur als Wahrheitswert genommen.
     final behalten = patch.containsKey('tipKeptByDefault') ? patch['tipKeptByDefault'] : tipKeptByDefault;
@@ -651,9 +701,19 @@ class PosBusinessSettings {
     _pruefeWahlfeld('business', 'tipKinds', wahl['tipKinds']);
     _pruefeWahlfeld('business', 'tipStart', wahl['tipStart']);
     _pruefeWahlfeld('business', 'tipKeptMode', wahl['tipKeptMode']);
-    final weg = {'tipKeptByDefault', ...posBusinessOptionalChoices};
+    // Die Vorlagen-Liste ebenso: `null` entfernt sie, sonst muss es eine Liste sein.
+    final vorlagen = patch.containsKey('discountPresets') ? patch['discountPresets'] : aktuell['discountPresets'];
+    if (vorlagen != null && vorlagen is! List) {
+      throw ArgumentError('business.discountPresets: eine Liste erwartet');
+    }
+    final weg = {'tipKeptByDefault', ...posBusinessOptionalChoices, ...posBusinessOptionalLists};
     final json = _mische(toJson()..removeWhere((k, _) => weg.contains(k)), {...patch}..removeWhere((k, _) => weg.contains(k)));
-    return PosBusinessSettings.fromJson({...json, 'tipKeptByDefault': ?behalten, for (final e in wahl.entries) e.key: ?e.value});
+    return PosBusinessSettings.fromJson({
+      ...json,
+      'tipKeptByDefault': ?behalten,
+      for (final e in wahl.entries) e.key: ?e.value,
+      'discountPresets': ?vorlagen,
+    });
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
@@ -716,6 +776,7 @@ class PosBusinessSettings {
       tipKinds: _wahlliste(raw, 'tipKinds', PosTipKind.values, fremd),
       tipStart: _wahlOptional(raw, 'tipStart', PosTipKind.values, fremd),
       tipKeptMode: _wahlOptional(raw, 'tipKeptMode', PosTipKeptMode.values, fremd),
+      discountPresets: _vorlagenLesen(raw['discountPresets']),
       unknownValues: Map.unmodifiable(fremd),
     );
   }
@@ -774,6 +835,7 @@ class PosBusinessSettings {
         'tipKinds': ?(tipKinds == null ? null : [for (final k in tipKinds!) k.value]),
         'tipStart': ?tipStart?.value,
         'tipKeptMode': ?tipKeptMode?.value,
+        'discountPresets': ?(discountPresets == null ? null : [for (final v in discountPresets!) v.toJson()]),
         ...unknownValues,
       };
 }
@@ -1219,6 +1281,7 @@ const Map<String, Map<String, String>> legacyValues = {
   'cardProvider': {'keiner': 'none', 'extern': 'external'},
   'checkoutMode': {'seite': 'page'},
   'discount': {'aus': 'off', 'an': 'on'},
+  'discountPresets[]': {'prozent': 'percent', 'betrag': 'amount'},
   'quantity': {'aus': 'off'},
   'receiptOutput': {'druck': 'print', 'mail': 'email', 'fragen': 'ask'},
   'theme': {'klar': 'clear', 'nacht': 'night', 'kontrast': 'contrast'},
@@ -1300,6 +1363,33 @@ const List<String> posBusinessOptionalFields = ['tipKeptByDefault'];
 /// nur, wenn sie gespeichert sind. `tipKinds` ist eine Liste, `tipStart` und
 /// `tipKeptMode` je ein Wert.
 const List<String> posBusinessOptionalChoices = ['tipKinds', 'tipStart', 'tipKeptMode'];
+
+/// Optionale Betriebs-Listen aus Objekten (Zwilling von
+/// `POS_BUSINESS_OPTIONAL_LISTS`): ohne Standardwert, der Server sendet sie nur,
+/// wenn sie gespeichert sind (auch als leere Liste). Der Leser uebernimmt die
+/// Eintraege mit der Form einer Vorlage; eine mit unbekannter Art faellt weg.
+const List<String> posBusinessOptionalLists = ['discountPresets'];
+
+/// Die lesbaren Vorlagen einer Liste vom Draht; keine Liste -> `null` (Feld
+/// fehlt). Zwilling von `_vorlagenLesen`: Name als Text, bekannte Art, ganzzahliges
+/// Wertfeld der Art; alles andere faellt weg.
+List<PosDiscountPreset>? _vorlagenLesen(Object? wert) {
+  if (wert is! List) return null;
+  final raus = <PosDiscountPreset>[];
+  for (final e in wert) {
+    if (e is! Map || e['name'] is! String) continue;
+    final name = e['name'] as String;
+    if (e['kind'] == 'percent' && _sicherGanz(e['percentBp'])) {
+      raus.add(PosDiscountPreset(name: name, kind: PosDiscountPresetKind.percent, percentBp: (e['percentBp'] as num).toInt()));
+    } else if (e['kind'] == 'amount' && _sicherGanz(e['amountCents'])) {
+      raus.add(PosDiscountPreset(name: name, kind: PosDiscountPresetKind.amount, amountCents: (e['amountCents'] as num).toInt()));
+    }
+  }
+  return List.unmodifiable(raus);
+}
+
+/// Ganzzahl im sicheren JavaScript-Bereich (`Number.isSafeInteger`).
+bool _sicherGanz(Object? w) => w is num && w == w.truncateToDouble() && w.abs() <= 9007199254740991;
 
 /// Optionale Geraete-Einstellungen mit Wertemenge (`POS_DEVICE_OPTIONAL_CHOICES`).
 const List<String> posDeviceOptionalChoices = ['cartWidth'];

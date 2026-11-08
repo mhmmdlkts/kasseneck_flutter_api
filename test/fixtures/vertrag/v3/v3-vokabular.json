@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "bcdcbb7ada8059ee5356a6dca9677d17fb7dc6eac4ba103a28288cc91751b002",
-    "inputsSha256": "bb4cba4e8db53869a6c52bd0734884ff6fb24f88aa3cb9b6e217adce80c85456",
+    "sha256": "b8461e82376da744f138a9f65aecabbd9c1176d86185911cff77e5bcc1993c7a",
+    "inputsSha256": "4df5c5076af303d39013139b1f1fdbc787500a088a0185e24bda9820022469d0",
     "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -977,6 +977,10 @@
       "aus": "off",
       "an": "on"
     },
+    "KASSE_BETRIEB_WERTE.discountPresets[].kind": {
+      "prozent": "percent",
+      "betrag": "amount"
+    },
     "KASSE_BETRIEB_WERTE.quantity": {
       "aus": "off",
       "x": "x",
@@ -1398,6 +1402,7 @@
       "invalid_date",
       "invalid_denominations",
       "invalid_dimensions",
+      "invalid_discount_preset",
       "invalid_distribution",
       "invalid_document",
       "invalid_e1a_group",
@@ -1904,6 +1909,7 @@
       "invalid_connect_report",
       "invalid_cursor",
       "invalid_denominations",
+      "invalid_discount_preset",
       "invalid_file",
       "invalid_items",
       "invalid_line",
@@ -2759,6 +2765,7 @@
         "cashregister_not_assigned"
       ],
       "setMyKasseSettings": [
+        "invalid_discount_preset",
         "not_permitted",
         "validation"
       ],
@@ -4603,7 +4610,15 @@
           "watermarkScale": "wzSkala",
           "glass": "glas",
           "hints": "hinweise",
-          "discountChips": "rabattChips"
+          "discountChips": "rabattChips",
+          "discountPresets": [
+            {
+              "__": "rabattVorlagen",
+              "kind": "art",
+              "percentBp": "prozentBp",
+              "amountCents": "betragCents"
+            }
+          ]
         },
         "device": {
           "__": "geraet",
@@ -4770,6 +4785,9 @@
         },
         "business.tipKeptMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.discountPresets[].kind": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -6284,7 +6302,15 @@
             "watermarkScale": "wzSkala",
             "glass": "glas",
             "hints": "hinweise",
-            "discountChips": "rabattChips"
+            "discountChips": "rabattChips",
+            "discountPresets": [
+              {
+                "__": "rabattVorlagen",
+                "kind": "art",
+                "percentBp": "prozentBp",
+                "amountCents": "betragCents"
+              }
+            ]
           },
           "device": {
             "__": "geraet",
@@ -6390,6 +6416,9 @@
         },
         "settings.business.tipKeptMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "settings.business.discountPresets[].kind": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
         },
         "settings.business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -7779,7 +7808,15 @@
           "watermarkScale": "wzSkala",
           "glass": "glas",
           "hints": "hinweise",
-          "discountChips": "rabattChips"
+          "discountChips": "rabattChips",
+          "discountPresets": [
+            {
+              "__": "rabattVorlagen",
+              "kind": "art",
+              "percentBp": "prozentBp",
+              "amountCents": "betragCents"
+            }
+          ]
         }
       },
       "paramWerte": {
@@ -7812,6 +7849,9 @@
         },
         "business.tipKeptMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.discountPresets[].kind": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -7878,7 +7918,15 @@
           "watermarkScale": "wzSkala",
           "glass": "glas",
           "hints": "hinweise",
-          "discountChips": "rabattChips"
+          "discountChips": "rabattChips",
+          "discountPresets": [
+            {
+              "__": "rabattVorlagen",
+              "kind": "art",
+              "percentBp": "prozentBp",
+              "amountCents": "betragCents"
+            }
+          ]
         }
       },
       "werte": {
@@ -7911,6 +7959,9 @@
         },
         "business.tipKeptMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.discountPresets[].kind": {
+          "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"

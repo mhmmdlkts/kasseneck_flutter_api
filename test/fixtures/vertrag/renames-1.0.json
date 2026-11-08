@@ -1202,6 +1202,10 @@
         "aus": "off",
         "an": "on"
       },
+      "*.discountPresets[]": {
+        "prozent": "percent",
+        "betrag": "amount"
+      },
       "*.quantity": {
         "aus": "off",
         "x": "x",
@@ -1305,6 +1309,10 @@
       "enums.discount[]": {
         "aus": "off",
         "an": "on"
+      },
+      "enums.discountPresets[][]": {
+        "prozent": "percent",
+        "betrag": "amount"
       },
       "enums.quantity[]": {
         "aus": "off",

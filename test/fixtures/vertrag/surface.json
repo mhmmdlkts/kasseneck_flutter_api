@@ -722,6 +722,10 @@
       "interim",
       "closing"
     ],
+    "discountPresetKind": [
+      "percent",
+      "amount"
+    ],
     "eurDenominations": [
       50000,
       20000,
@@ -820,6 +824,9 @@
     "posBusinessOptionalFields": [
       "tipKeptByDefault"
     ],
+    "posBusinessOptionalLists": [
+      "discountPresets"
+    ],
     "posDeviceOptionalChoices": [
       "cartWidth"
     ],
@@ -855,6 +862,7 @@
       "invalid_amount",
       "invalid_cursor",
       "invalid_denominations",
+      "invalid_discount_preset",
       "invalid_movement_type",
       "invalid_quantity",
       "invalid_serial",

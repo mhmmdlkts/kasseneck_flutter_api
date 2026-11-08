@@ -26,6 +26,7 @@ import '../aufrufe.dart';
 import '../register/fehler.dart';
 import '../register/transport.dart';
 import 'einstellungen.dart';
+import 'rabatt_vorlagen.dart';
 
 class PosSettingsClient {
   const PosSettingsClient(this.transport, {required this.deviceId});
@@ -59,7 +60,7 @@ class PosSettingsClient {
     final gesendet = patch.containsKey('tipKeptByDefault') && patch.length == 1
         ? <String, dynamic>{}
         : _pruefeTeil(name, 'business', {...patch}..remove('tipKeptByDefault'), const PosBusinessSettings().toJson(), posBusinessValues,
-            wahlfelder: posBusinessOptionalChoices);
+            wahlfelder: posBusinessOptionalChoices, listen: posBusinessOptionalLists);
     if (patch.containsKey('tipKeptByDefault')) gesendet['tipKeptByDefault'] = behalten;
     if (gesendet.containsKey('vatRates')) {
       final karte = gesendet['vatRates'];
@@ -180,6 +181,7 @@ class PosSettingsClient {
     Map<String, dynamic> standard,
     Map<String, List<Object>> werte, {
     List<String> wahlfelder = const [],
+    List<String> listen = const [],
   }) {
     // Ein Wahlfeld mit `null` ginge nicht hinaus und wuerde nicht geprueft: hier
     // ist `null` kein Entfernen, sondern ein Fehler (wie im npm-Paket).
@@ -198,8 +200,19 @@ class PosSettingsClient {
       throw KasseneckValidationError(name, '$teil: keine Einstellungen uebergeben', 'request');
     }
     for (final e in gesendet.entries) {
-      if (!standard.containsKey(e.key) && !wahlfelder.contains(e.key)) {
+      if (!standard.containsKey(e.key) && !wahlfelder.contains(e.key) && !listen.contains(e.key)) {
         throw KasseneckValidationError(name, '$teil.${e.key}: unbekanntes Feld', 'request');
+      }
+      // Rabatt-Vorlagen: dieselbe Pruefung wie am Server, der erste Fehler mit
+      // Vorlage, Feld und Satz.
+      if (listen.contains(e.key)) {
+        final geprueft = checkDiscountPresets(e.value);
+        if (!geprueft.ok) {
+          final f = geprueft.errors.first;
+          final ort = '$teil.${e.key}${f.index == null ? '' : '[${f.index}]'}${f.field == null ? '' : '.${f.field}'}';
+          throw KasseneckValidationError(name, '$ort: ${f.message} ($invalidDiscountPreset)', 'request');
+        }
+        continue;
       }
       final erlaubt = werte[e.key];
       final wert = e.value;

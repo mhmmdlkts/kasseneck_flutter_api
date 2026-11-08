@@ -46,6 +46,7 @@ const List<String> posErrorCodes = [
   'invalid_amount',
   'invalid_cursor',
   'invalid_denominations',
+  'invalid_discount_preset',
   'invalid_movement_type',
   'invalid_quantity',
   'invalid_serial',
