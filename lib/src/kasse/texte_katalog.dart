@@ -48,6 +48,8 @@ const Map<String, PosText> posMessages = {
   'checkout.locked': PosText('Kassieren gesperrt: {reason}', placeholders: ['reason']),
   'tip.over_half': PosText('Über 50 % Trinkgeld – wirklich? Steuerfrei ist nur ortsübliches Trinkgeld.'),
   'tip.kept_setting_hint': PosText('Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen.'),
+  'tip.kept_hint': PosText('Trinkgeld kommt als eigene Position auf den Beleg; der angemeldete Benutzer nimmt es gleich bar aus der Lade.'),
+  'tip.open_hint': PosText('Trinkgeld kommt als eigene Position auf den Beleg und bleibt für den angemeldeten Benutzer offen, bis es ausgezahlt wird.'),
   'completion.failed': PosText('Der Abschluss ist fehlgeschlagen.'),
   'completion.unknown': PosText('Unklar, ob der Beleg entstanden ist – die Antwort kam nicht an. Bitte nicht noch einmal abschließen: der Beleg kann bereits erstellt und signiert sein. Im Panel unter „Belege“ nachsehen; nur wenn er dort fehlt, den Verkauf erneut abschließen.'),
   'completion.zero_receipt_failed': PosText('Der Nullbeleg konnte nicht erstellt werden.'),
@@ -318,6 +320,10 @@ const Map<String, PosText> posLabels = {
   'checkout.change': PosText('Rückgeld'),
   'checkout.tip_kept': PosText('gleich behalten'),
   'tip.kept_setting': PosText('Bar-Trinkgeld behält der Mitarbeiter gleich'),
+  'tip_kept_mode.title': PosText('Trinkgeld gleich behalten'),
+  'tip_kept_mode.always': PosText('Immer gleich behalten'),
+  'tip_kept_mode.never': PosText('Immer offen lassen'),
+  'tip_kept_mode.ask': PosText('Jedes Mal fragen'),
   'card_payment.amount_on_terminal': PosText('Betrag steht am Terminal'),
   'card_payment.present_card': PosText('Karte vorhalten oder stecken · noch {time}', placeholders: ['time']),
   'completion.receipt_exists': PosText('Beleg ist vorhanden – erledigen'),
@@ -952,4 +958,11 @@ const Map<String, String> externalVouchersLabels = {
 const Map<String, String> externalVoucherKindLabels = {
   'multi_purpose': 'external_voucher.kind_value',
   'single_purpose': 'external_voucher.kind_service',
+};
+
+/// Trinkgeld gleich behalten (`ask`, `always`, `never`) -> Schluessel der Beschriftung.
+const Map<String, String> tipKeptModeLabels = {
+  'ask': 'tip_kept_mode.ask',
+  'always': 'tip_kept_mode.always',
+  'never': 'tip_kept_mode.never',
 };

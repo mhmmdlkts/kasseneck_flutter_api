@@ -133,6 +133,12 @@
     "tip.kept_setting_hint": {
       "text": "Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen."
     },
+    "tip.kept_hint": {
+      "text": "Trinkgeld kommt als eigene Position auf den Beleg; der angemeldete Benutzer nimmt es gleich bar aus der Lade."
+    },
+    "tip.open_hint": {
+      "text": "Trinkgeld kommt als eigene Position auf den Beleg und bleibt für den angemeldeten Benutzer offen, bis es ausgezahlt wird."
+    },
     "completion.failed": {
       "text": "Der Abschluss ist fehlgeschlagen."
     },
@@ -1464,6 +1470,18 @@
     },
     "tip.kept_setting": {
       "text": "Bar-Trinkgeld behält der Mitarbeiter gleich"
+    },
+    "tip_kept_mode.title": {
+      "text": "Trinkgeld gleich behalten"
+    },
+    "tip_kept_mode.always": {
+      "text": "Immer gleich behalten"
+    },
+    "tip_kept_mode.never": {
+      "text": "Immer offen lassen"
+    },
+    "tip_kept_mode.ask": {
+      "text": "Jedes Mal fragen"
     },
     "card_payment.amount_on_terminal": {
       "text": "Betrag steht am Terminal"
@@ -3247,5 +3265,10 @@
   "externalVoucherKindLabels": {
     "multi_purpose": "external_voucher.kind_value",
     "single_purpose": "external_voucher.kind_service"
+  },
+  "tipKeptModeLabels": {
+    "ask": "tip_kept_mode.ask",
+    "always": "tip_kept_mode.always",
+    "never": "tip_kept_mode.never"
   }
 }

@@ -1224,6 +1224,11 @@
         "streifen": "stripe",
         "voll": "full"
       },
+      "*.tipKeptMode": {
+        "fragen": "ask",
+        "immer": "always",
+        "nie": "never"
+      },
       "*.tipKinds[]": {
         "prozent": "percent",
         "aufrunden": "round_up",
@@ -1322,6 +1327,11 @@
       "enums.tileStyle[]": {
         "streifen": "stripe",
         "voll": "full"
+      },
+      "enums.tipKeptMode[]": {
+        "fragen": "ask",
+        "immer": "always",
+        "nie": "never"
       },
       "enums.tipKinds[][]": {
         "prozent": "percent",

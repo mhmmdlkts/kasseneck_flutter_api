@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "f5ab5e9bba448c05e6ee51f66a4f55c30e5efbff766b5b2e6814d77e3f53eb74",
-    "inputsSha256": "e57d371007798cc1eb865a609ac5975e0397fbce036680288b017448582ad8da",
+    "sha256": "bcdcbb7ada8059ee5356a6dca9677d17fb7dc6eac4ba103a28288cc91751b002",
+    "inputsSha256": "bb4cba4e8db53869a6c52bd0734884ff6fb24f88aa3cb9b6e217adce80c85456",
     "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -998,6 +998,11 @@
     "KASSE_BETRIEB_WERTE.tileStyle": {
       "streifen": "stripe",
       "voll": "full"
+    },
+    "KASSE_BETRIEB_WERTE.tipKeptMode": {
+      "fragen": "ask",
+      "immer": "always",
+      "nie": "never"
     },
     "KASSE_BETRIEB_WERTE.tipKinds[]": {
       "prozent": "percent",
@@ -4583,6 +4588,7 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
@@ -4761,6 +4767,9 @@
         },
         "business.tipStart": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
+        "business.tipKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -6260,6 +6269,7 @@
             "tipChips": "tgChips",
             "exactCash": "schnellbar",
             "tipKeptByDefault": "tgDirekt",
+            "tipKeptMode": "tgDirektModus",
             "tipKinds": "tgArten",
             "tipStart": "tgStart",
             "checkoutMode": "kassierenModus",
@@ -6377,6 +6387,9 @@
         },
         "settings.business.tipStart": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
+        "settings.business.tipKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
         },
         "settings.business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -7751,6 +7764,7 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
@@ -7795,6 +7809,9 @@
         },
         "business.tipStart": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
+        "business.tipKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"
@@ -7846,6 +7863,7 @@
           "tipChips": "tgChips",
           "exactCash": "schnellbar",
           "tipKeptByDefault": "tgDirekt",
+          "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
           "checkoutMode": "kassierenModus",
@@ -7890,6 +7908,9 @@
         },
         "business.tipStart": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipStart"
+        },
+        "business.tipKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
         },
         "business.checkoutMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.checkoutMode"

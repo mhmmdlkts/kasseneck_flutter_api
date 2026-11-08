@@ -36,6 +36,7 @@ const List<String> _dateiSchluessel = [
   'returnDispositionLabels',
   'externalVouchersLabels',
   'externalVoucherKindLabels',
+  'tipKeptModeLabels',
 ];
 
 /// `plain_text` -> `plainText`: der Name des Enum-Werts zum Drahtwert.
@@ -157,6 +158,8 @@ String erzeugeKatalog(Map<String, dynamic> vertrag) {
       'Freigabe der Fremdgutscheine (`off`, `multi_purpose`, `all`) -> Schluessel der Beschriftung.');
   zuordnung('externalVoucherKindLabels', 'externalVoucherKindLabels',
       'Art eines fremden Gutscheins (`multi_purpose`, `single_purpose`) -> Schluessel der Beschriftung.');
+  zuordnung('tipKeptModeLabels', 'tipKeptModeLabels',
+      'Trinkgeld gleich behalten (`ask`, `always`, `never`) -> Schluessel der Beschriftung.');
   return sb.toString().replaceFirst(RegExp(r'\n+$'), '\n');
 }
 

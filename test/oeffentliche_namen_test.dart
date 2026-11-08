@@ -120,7 +120,7 @@ final Set<String> woerter = _liste('''
   annual based closings contact holder inspection manufacturer outage product section
   arch features https issued os trusted
   prompts strict templates
-  shape shapes
+  shape shapes decision switch
   display ons ordered parent references remap selectable
   suggestions interim given part narrow wide
   deprecation truncated

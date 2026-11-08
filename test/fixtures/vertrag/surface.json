@@ -814,7 +814,8 @@
     ],
     "posBusinessOptionalChoices": [
       "tipKinds",
-      "tipStart"
+      "tipStart",
+      "tipKeptMode"
     ],
     "posBusinessOptionalFields": [
       "tipKeptByDefault"
@@ -949,6 +950,11 @@
       "store",
       "vehicle",
       "other"
+    ],
+    "tipKeptMode": [
+      "ask",
+      "always",
+      "never"
     ],
     "tipKinds": [
       "percent",

@@ -187,6 +187,18 @@ enum PosTipKind implements PosSettingValue {
   final String value;
 }
 
+/// Bar-Trinkgeld gleich behalten (`business.tipKeptMode`, 11.22.0): [ask] =
+/// Schalter an der Kasse, vorbelegt mit `tipKeptByDefault`; [always]/[never] =
+/// kein Schalter, die Kasse setzt die Wahl selbst. Entscheidung ueber [tipKeptFor].
+enum PosTipKeptMode implements PosSettingValue {
+  ask,
+  always,
+  never;
+
+  @override
+  String get value => name;
+}
+
 /// Breite der rechten Spalte (Korb) an diesem Geraet (`device.cartWidth`); in
 /// der schmalen Ansicht ohne Wirkung.
 enum PosCartWidth implements PosSettingValue {
@@ -482,6 +494,7 @@ class PosBusinessSettings {
     this.tipKeptByDefault,
     this.tipKinds,
     this.tipStart,
+    this.tipKeptMode,
     this.unknownValues = const {},
   });
 
@@ -591,6 +604,13 @@ class PosBusinessSettings {
   /// angebotene Art). Lesen ueber [posTipStart].
   final PosTipKind? tipStart;
 
+  /// Ob die Kasse beim Bar-Trinkgeld fragt ([PosTipKeptMode.ask]) oder es
+  /// immer ([PosTipKeptMode.always]) bzw. nie ([PosTipKeptMode.never]) gleich
+  /// behalten wird. Optional und ohne Standardwert: `null` heisst `ask`, ein
+  /// unbekannter Wert bleibt woertlich in [unknownValues]. Lesen ueber
+  /// [posTipKeptMode], entscheiden ueber [tipKeptFor].
+  final PosTipKeptMode? tipKeptMode;
+
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
@@ -630,6 +650,7 @@ class PosBusinessSettings {
     };
     _pruefeWahlfeld('business', 'tipKinds', wahl['tipKinds']);
     _pruefeWahlfeld('business', 'tipStart', wahl['tipStart']);
+    _pruefeWahlfeld('business', 'tipKeptMode', wahl['tipKeptMode']);
     final weg = {'tipKeptByDefault', ...posBusinessOptionalChoices};
     final json = _mische(toJson()..removeWhere((k, _) => weg.contains(k)), {...patch}..removeWhere((k, _) => weg.contains(k)));
     return PosBusinessSettings.fromJson({...json, 'tipKeptByDefault': ?behalten, for (final e in wahl.entries) e.key: ?e.value});
@@ -694,6 +715,7 @@ class PosBusinessSettings {
       tipKeptByDefault: raw['tipKeptByDefault'] is bool ? raw['tipKeptByDefault'] as bool : null,
       tipKinds: _wahlliste(raw, 'tipKinds', PosTipKind.values, fremd),
       tipStart: _wahlOptional(raw, 'tipStart', PosTipKind.values, fremd),
+      tipKeptMode: _wahlOptional(raw, 'tipKeptMode', PosTipKeptMode.values, fremd),
       unknownValues: Map.unmodifiable(fremd),
     );
   }
@@ -751,6 +773,7 @@ class PosBusinessSettings {
         'tipKeptByDefault': ?tipKeptByDefault,
         'tipKinds': ?(tipKinds == null ? null : [for (final k in tipKinds!) k.value]),
         'tipStart': ?tipStart?.value,
+        'tipKeptMode': ?tipKeptMode?.value,
         ...unknownValues,
       };
 }
@@ -1058,6 +1081,7 @@ final Map<String, List<Object>> posBusinessValues = Map.unmodifiable({
   'watermarkScale': _werte(PosWatermarkScale.values),
   'tipKinds': _werte(PosTipKind.values),
   'tipStart': _werte(PosTipKind.values),
+  'tipKeptMode': _werte(PosTipKeptMode.values),
 });
 
 /// Wie [posBusinessValues] für die Geräte-Einstellungen (`POS_DEVICE_VALUES`).
@@ -1202,6 +1226,7 @@ const Map<String, Map<String, String>> legacyValues = {
   'tipKinds[]': {'prozent': 'percent', 'aufrunden': 'round_up', 'gesamt': 'total'},
   'tipMode': {'betrag': 'amount', 'gesamt': 'total', 'beides': 'both'},
   'tipStart': {'prozent': 'percent', 'aufrunden': 'round_up', 'gesamt': 'total'},
+  'tipKeptMode': {'fragen': 'ask', 'immer': 'always', 'nie': 'never'},
   'watermark': {'aus': 'off', 'anmeldung': 'login', 'ueberall': 'everywhere'},
   'watermarkSide': {'links': 'left', 'mitte': 'center', 'rechts': 'right'},
   'cartWidth': {'schmal': 'narrow', 'mittel': 'medium', 'breit': 'wide'},
@@ -1272,8 +1297,9 @@ const List<String> posBusinessOptionalFields = ['tipKeptByDefault'];
 
 /// Optionale Betriebs-Einstellungen mit Wertemenge (Zwilling von
 /// `POS_BUSINESS_OPTIONAL_CHOICES`): ohne Standardwert, der Server sendet sie
-/// nur, wenn sie gespeichert sind. `tipKinds` ist eine Liste, `tipStart` ein Wert.
-const List<String> posBusinessOptionalChoices = ['tipKinds', 'tipStart'];
+/// nur, wenn sie gespeichert sind. `tipKinds` ist eine Liste, `tipStart` und
+/// `tipKeptMode` je ein Wert.
+const List<String> posBusinessOptionalChoices = ['tipKinds', 'tipStart', 'tipKeptMode'];
 
 /// Optionale Geraete-Einstellungen mit Wertemenge (`POS_DEVICE_OPTIONAL_CHOICES`).
 const List<String> posDeviceOptionalChoices = ['cartWidth'];
@@ -1300,6 +1326,26 @@ PosCartWidth posCartWidth(PosDeviceSettings? device) => device?.cartWidth ?? Pos
 /// Bar-Trinkgeld „gleich behalten“ vorbelegt? Fehlt die Einstellung, gilt aus
 /// (Zwilling von `posTipKeptByDefault`).
 bool posTipKeptByDefault(PosBusinessSettings? business) => business?.tipKeptByDefault == true;
+
+/// Wirksame Stufe „Trinkgeld gleich behalten“: die gespeicherte, sonst
+/// [PosTipKeptMode.ask] (fehlt, unbekannt, Altwert); Zwilling von `posTipKeptMode`.
+PosTipKeptMode posTipKeptMode(PosBusinessSettings? business) => business?.tipKeptMode ?? PosTipKeptMode.ask;
+
+/// Ergebnis von [tipKeptFor]: zeigt die Kasse den Schalter, und wird das
+/// Bar-Trinkgeld gleich behalten?
+typedef TipKeptDecision = ({bool showSwitch, bool kept});
+
+/// Die eine Regel fuer Web-Kasse und Kassen-App beim Bar-Trinkgeld:
+/// [PosTipKeptMode.ask] zeigt den Schalter, gewaehlt ist [wanted] (die Wahl am
+/// Schalter), sonst die Vorbelegung `tipKeptByDefault`; `always` bzw. `never`
+/// zeigen keinen Schalter und behalten gleich bzw. lassen offen, eine
+/// Schalterwahl zaehlt dann nicht. `kept` geht als `KeckTip.keptByEmployee`
+/// an den Beleg (der Server erzwingt die Stufe dort nicht). Zwilling von `tipKeptFor`.
+TipKeptDecision tipKeptFor(PosBusinessSettings? business, [bool? wanted]) => switch (posTipKeptMode(business)) {
+      PosTipKeptMode.always => (showSwitch: false, kept: true),
+      PosTipKeptMode.never => (showSwitch: false, kept: false),
+      PosTipKeptMode.ask => (showSwitch: true, kept: wanted ?? posTipKeptByDefault(business)),
+    };
 
 final RegExp _optionaleKennung = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 
