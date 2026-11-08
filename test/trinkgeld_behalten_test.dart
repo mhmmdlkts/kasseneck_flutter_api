@@ -33,7 +33,7 @@ void main() {
   });
 
   test('Einstellung tipKeptByDefault: optional, Standard aus, nur ein Wahrheitswert', () {
-    expect(posBusinessOptionalFields, ['tipKeptByDefault']);
+    expect(posBusinessOptionalFields, ['tipKeptByDefault', 'customDiscountAllowed']);
     const standard = PosBusinessSettings();
     expect(standard.toJson().containsKey('tipKeptByDefault'), isFalse);
     expect(posTipKeptByDefault(standard), isFalse);

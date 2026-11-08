@@ -536,6 +536,7 @@ class PosBusinessSettings {
     this.tipStart,
     this.tipKeptMode,
     this.discountPresets,
+    this.customDiscountAllowed,
     this.unknownValues = const {},
   });
 
@@ -660,6 +661,13 @@ class PosBusinessSettings {
   /// Lesen ueber `posDiscountPresets`, pruefen mit `checkDiscountPresets`.
   final List<PosDiscountPreset>? discountPresets;
 
+  /// Eigener Rabatt an der Kasse: `true` = neben den Rabatt-Chips das freie
+  /// Feld (Betrag oder Prozent), `false` = nur die Chips. Optional wie
+  /// [tipKeptByDefault]: der Server sendet das Feld nur, wenn es gespeichert
+  /// ist; `null` heisst erlaubt (wie bisher). Lesen ueber
+  /// [posCustomDiscountAllowed].
+  final bool? customDiscountAllowed;
+
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
@@ -687,14 +695,18 @@ class PosBusinessSettings {
     _pruefeAenderung(
         'business', patch,
         {..._betriebSchluessel, ...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists}, legacyBusinessKeys);
-    // Der optionale Schalter hat keinen Standardwert, den `_mische` fortschreiben
-    // koennte: er wird getrennt gefuehrt und nur als Wahrheitswert genommen.
-    final behalten = patch.containsKey('tipKeptByDefault') ? patch['tipKeptByDefault'] : tipKeptByDefault;
-    if (behalten != null && behalten is! bool) {
-      throw ArgumentError('business.tipKeptByDefault: true oder false erwartet');
+    // Die optionalen Schalter haben keinen Standardwert, den `_mische` fortschreiben
+    // koennte: sie werden getrennt gefuehrt und nur als Wahrheitswert genommen.
+    final aktuell = toJson();
+    final schalter = <String, Object?>{
+      for (final k in posBusinessOptionalFields) k: patch.containsKey(k) ? patch[k] : aktuell[k],
+    };
+    for (final e in schalter.entries) {
+      if (e.value != null && e.value is! bool) {
+        throw ArgumentError('business.${e.key}: true oder false erwartet');
+      }
     }
     // Ebenso die Wahlfelder: `null` entfernt sie, sonst zaehlt nur die Form.
-    final aktuell = toJson();
     final wahl = <String, Object?>{
       for (final k in posBusinessOptionalChoices) k: patch.containsKey(k) ? patch[k] : aktuell[k],
     };
@@ -706,11 +718,11 @@ class PosBusinessSettings {
     if (vorlagen != null && vorlagen is! List) {
       throw ArgumentError('business.discountPresets: eine Liste erwartet');
     }
-    final weg = {'tipKeptByDefault', ...posBusinessOptionalChoices, ...posBusinessOptionalLists};
+    final weg = {...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists};
     final json = _mische(toJson()..removeWhere((k, _) => weg.contains(k)), {...patch}..removeWhere((k, _) => weg.contains(k)));
     return PosBusinessSettings.fromJson({
       ...json,
-      'tipKeptByDefault': ?behalten,
+      for (final e in schalter.entries) e.key: ?e.value,
       for (final e in wahl.entries) e.key: ?e.value,
       'discountPresets': ?vorlagen,
     });
@@ -777,6 +789,7 @@ class PosBusinessSettings {
       tipStart: _wahlOptional(raw, 'tipStart', PosTipKind.values, fremd),
       tipKeptMode: _wahlOptional(raw, 'tipKeptMode', PosTipKeptMode.values, fremd),
       discountPresets: _vorlagenLesen(raw['discountPresets']),
+      customDiscountAllowed: raw['customDiscountAllowed'] is bool ? raw['customDiscountAllowed'] as bool : null,
       unknownValues: Map.unmodifiable(fremd),
     );
   }
@@ -836,6 +849,7 @@ class PosBusinessSettings {
         'tipStart': ?tipStart?.value,
         'tipKeptMode': ?tipKeptMode?.value,
         'discountPresets': ?(discountPresets == null ? null : [for (final v in discountPresets!) v.toJson()]),
+        'customDiscountAllowed': ?customDiscountAllowed,
         ...unknownValues,
       };
 }
@@ -1355,8 +1369,9 @@ const List<String> posDeviceOptionalFields = ['drawerId'];
 
 /// Optionale Betriebs-Schalter: ohne Standardwert, der Server sendet sie nur,
 /// wenn sie gespeichert sind (Zwilling von `POS_BUSINESS_OPTIONAL_FIELDS`).
-/// Gelesen nur als Wahrheitswert; fehlt einer, gilt aus.
-const List<String> posBusinessOptionalFields = ['tipKeptByDefault'];
+/// Gelesen nur als Wahrheitswert; fehlt einer, gilt sein wirksamer Standard
+/// ([posTipKeptByDefault]: aus, [posCustomDiscountAllowed]: an).
+const List<String> posBusinessOptionalFields = ['tipKeptByDefault', 'customDiscountAllowed'];
 
 /// Optionale Betriebs-Einstellungen mit Wertemenge (Zwilling von
 /// `POS_BUSINESS_OPTIONAL_CHOICES`): ohne Standardwert, der Server sendet sie
@@ -1416,6 +1431,10 @@ PosCartWidth posCartWidth(PosDeviceSettings? device) => device?.cartWidth ?? Pos
 /// Bar-Trinkgeld „gleich behalten“ vorbelegt? Fehlt die Einstellung, gilt aus
 /// (Zwilling von `posTipKeptByDefault`).
 bool posTipKeptByDefault(PosBusinessSettings? business) => business?.tipKeptByDefault == true;
+
+/// Darf an der Kasse ein eigener Rabatt (Betrag oder Prozent) eingetippt
+/// werden? Fehlt die Einstellung, gilt ja (Zwilling von `posCustomDiscountAllowed`).
+bool posCustomDiscountAllowed(PosBusinessSettings? business) => business?.customDiscountAllowed != false;
 
 /// Wirksame Stufe „Trinkgeld gleich behalten“: die gespeicherte, sonst
 /// [PosTipKeptMode.ask] (fehlt, unbekannt, Altwert); Zwilling von `posTipKeptMode`.

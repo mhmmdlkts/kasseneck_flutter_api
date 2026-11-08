@@ -822,7 +822,8 @@
       "tipKeptMode"
     ],
     "posBusinessOptionalFields": [
-      "tipKeptByDefault"
+      "tipKeptByDefault",
+      "customDiscountAllowed"
     ],
     "posBusinessOptionalLists": [
       "discountPresets"

@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "b8461e82376da744f138a9f65aecabbd9c1176d86185911cff77e5bcc1993c7a",
-    "inputsSha256": "4df5c5076af303d39013139b1f1fdbc787500a088a0185e24bda9820022469d0",
+    "sha256": "04ab5e1d031979a4f0aa31ea000f4cbe1d6e557e2411e439899ac19a1bba0325",
+    "inputsSha256": "86a250bbb73c1f29d29793605274079ef3644f8f9c82609a80a1f4c481572c32",
     "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -4618,7 +4618,8 @@
               "percentBp": "prozentBp",
               "amountCents": "betragCents"
             }
-          ]
+          ],
+          "customDiscountAllowed": "rabattFrei"
         },
         "device": {
           "__": "geraet",
@@ -6310,7 +6311,8 @@
                 "percentBp": "prozentBp",
                 "amountCents": "betragCents"
               }
-            ]
+            ],
+            "customDiscountAllowed": "rabattFrei"
           },
           "device": {
             "__": "geraet",
@@ -7816,7 +7818,8 @@
               "percentBp": "prozentBp",
               "amountCents": "betragCents"
             }
-          ]
+          ],
+          "customDiscountAllowed": "rabattFrei"
         }
       },
       "paramWerte": {
@@ -7926,7 +7929,8 @@
               "percentBp": "prozentBp",
               "amountCents": "betragCents"
             }
-          ]
+          ],
+          "customDiscountAllowed": "rabattFrei"
         }
       },
       "werte": {

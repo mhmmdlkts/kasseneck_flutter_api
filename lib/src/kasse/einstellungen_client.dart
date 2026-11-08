@@ -51,17 +51,23 @@ class PosSettingsClient {
   /// immer als ganze Karte.
   Future<PosBusinessSettings> saveBusiness(Map<String, dynamic> patch) async {
     const name = Aufrufe.setMyKasseSettings;
-    // Der optionale Schalter getrennt: er steht nicht in den Standardwerten,
+    // Die optionalen Schalter getrennt: sie stehen nicht in den Standardwerten,
     // gegen die `_pruefeTeil` die Schluessel prueft.
-    final behalten = patch['tipKeptByDefault'];
-    if (patch.containsKey('tipKeptByDefault') && behalten is! bool) {
-      throw const KasseneckValidationError(name, 'business.tipKeptByDefault: true oder false erwartet', 'request');
+    final schalter = <String, Object?>{
+      for (final k in posBusinessOptionalFields)
+        if (patch.containsKey(k)) k: patch[k],
+    };
+    for (final e in schalter.entries) {
+      if (e.value is! bool) {
+        throw KasseneckValidationError(name, 'business.${e.key}: true oder false erwartet', 'request');
+      }
     }
-    final gesendet = patch.containsKey('tipKeptByDefault') && patch.length == 1
+    final rest = {...patch}..removeWhere((k, _) => schalter.containsKey(k));
+    final gesendet = schalter.isNotEmpty && rest.isEmpty
         ? <String, dynamic>{}
-        : _pruefeTeil(name, 'business', {...patch}..remove('tipKeptByDefault'), const PosBusinessSettings().toJson(), posBusinessValues,
+        : _pruefeTeil(name, 'business', rest, const PosBusinessSettings().toJson(), posBusinessValues,
             wahlfelder: posBusinessOptionalChoices, listen: posBusinessOptionalLists);
-    if (patch.containsKey('tipKeptByDefault')) gesendet['tipKeptByDefault'] = behalten;
+    gesendet.addAll(schalter);
     if (gesendet.containsKey('vatRates')) {
       final karte = gesendet['vatRates'];
       // Unter /v3 prüft der Server die übergebene Karte für sich: ein
