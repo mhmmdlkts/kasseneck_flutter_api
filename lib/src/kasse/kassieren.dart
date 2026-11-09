@@ -15,7 +15,7 @@ import '../../models/kasseneck_item.dart';
 import '../../models/keck_payment.dart';
 import '../vat_math.dart';
 import 'einstellungen.dart';
-import 'texte.dart' show depositErrorMessage;
+import 'texte.dart' show depositErrorMessage, messageText;
 import 'warenkorb.dart';
 import 'zusaetze.dart';
 
@@ -117,6 +117,12 @@ CompletionCheck completionCheck({
     return const CompletionCheck(ready: false, reason: 'Gegeben ist weniger als der Betrag.');
   }
   return const CompletionCheck(ready: true);
+}
+
+/// Der Satz zu einem Pfand-Fehlercode; ein unbekannter Code bleibt als Code stehen.
+String _pfandSatz(String code) {
+  final schluessel = depositErrorMessage(code);
+  return schluessel == null ? code : messageText(schluessel);
 }
 
 /// Was der Kassier am Kassieren-Bildschirm eingestellt hat.
@@ -248,7 +254,7 @@ CheckoutTotals checkoutTotals(Cart cart, PosBusinessSettings business, CheckoutS
   final gegeben = bar ? state.tenderedCents : null;
   final CompletionCheck pruefung;
   if (pfand.code != null) {
-    pruefung = CompletionCheck(ready: false, reason: depositErrorMessage(pfand.code) ?? pfand.code);
+    pruefung = CompletionCheck(ready: false, reason: _pfandSatz(pfand.code!));
   } else if (auszahlung) {
     pruefung = CompletionCheck(ready: !cart.isEmpty);
   } else {

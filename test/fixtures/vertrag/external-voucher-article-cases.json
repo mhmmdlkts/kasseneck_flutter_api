@@ -289,6 +289,26 @@
       "reason": "asks_quantity"
     },
     {
+      "name": "Pfand an der Kachel",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "deposits": [{ "depositTypeId": "einweg", "quantity": 1 }]
+      },
+      "ok": false,
+      "code": "article_external_voucher_invalid",
+      "reason": "deposit"
+    },
+    {
+      "name": "Pfand leer: kein Pfand ist erlaubt",
+      "article": {
+        "externalVoucher": "multi_purpose",
+        "unitPriceCents": 2500,
+        "deposits": []
+      },
+      "ok": true
+    },
+    {
       "name": "Menge nicht abfragen",
       "article": {
         "externalVoucher": "multi_purpose",

@@ -1,5 +1,5 @@
 {
-  "version": "1.32.0",
+  "version": "1.32.1",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -792,6 +792,7 @@
       "stock_tracked",
       "reference",
       "asks_quantity",
+      "deposit",
       "rate_required",
       "invalid_rate",
       "price_required"

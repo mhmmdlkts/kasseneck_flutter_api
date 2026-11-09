@@ -12,6 +12,7 @@ import '../../enums/voucher_action.dart';
 import '../../enums/voucher_type.dart';
 import '../../models/kasseneck_item.dart';
 import '../../models/keck_voucher.dart';
+import '../../models/keck_payment.dart';
 import '../register/fehler.dart';
 
 /// Eine Gutscheinzeile (`kind` `voucher`/`voucher_float`) setzt nur der
@@ -60,6 +61,16 @@ String? voucherWishError(List<KeckVoucher> vouchers, List<KasseneckItem> items, 
 /// Trinkgelds): genau eine Barzahlung ueber den negativen Zahlbetrag.
 bool isPayoutOnly(List<KeckVoucher> vouchers, List<KasseneckItem> items, {required bool withTip}) =>
     vouchers.isNotEmpty && vouchers.every((v) => v.action == VoucherAction.payout) && items.isEmpty && !withTip;
+
+/// Leergut-Auszahlung (Server `pfand-core.istLeergutAuszahlung`): der Beleg hat
+/// Leergutzeilen und eine Zahlung ist negativ. Liefert die Summe der
+/// Leergutzeilen (Deckel fuer den Betrag), sonst `null`; ein Beleg mit Leergut
+/// und positivem Betrag bleibt ein normaler Verkauf.
+int? depositPayoutCents(List<KasseneckItem> items, List<KeckPaymentInput> payments) {
+  final leergut = items.where((p) => p.isDepositReturn);
+  if (leergut.isEmpty || !payments.any((z) => z.amountCents < 0)) return null;
+  return leergut.fold<int>(0, (s, p) => s + p.totalCents.abs());
+}
 
 /// Kombinationen der Gutscheine eines Belegs, wie der Server sie annimmt.
 /// Altform wie bisher; dazu fuer die neue Form: Verkauf und Einloesung nie

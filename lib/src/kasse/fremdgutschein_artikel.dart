@@ -24,7 +24,7 @@ const String articleExternalVoucherInvalid = 'article_external_voucher_invalid';
 /// Welche Regel verletzt ist (Antwortfeld `data.grund`), in der Reihenfolge,
 /// in der der Server prueft.
 const List<String> externalVoucherArticleReasons = [
-  'invalid_type', 'service_voucher', 'add_ons', 'stock_tracked', 'reference', 'asks_quantity', 'rate_required', 'invalid_rate', 'price_required',
+  'invalid_type', 'service_voucher', 'add_ons', 'stock_tracked', 'reference', 'asks_quantity', 'deposit', 'rate_required', 'invalid_rate', 'price_required',
 ];
 
 /// Saetze, mit denen ein Einzweckgutschein verkauft werden kann (Prozent wie
@@ -48,14 +48,14 @@ bool _wahr(Object? wert) => switch (wert) {
 
 /// Regeln am wirksamen Artikelstand (Bestand + Aenderung) in `/v3`-Form
 /// (`externalVoucher`, `unitPriceCents`, `vatRate`, `askPrice`,
-/// `serviceVoucher`, `addOns`, `stockTracked`, `reference`, `askQuantity`;
-/// [PosArticle.toJson] liefert diese Form). `null` = passt, sonst ein Wert aus
+/// `serviceVoucher`, `addOns`, `stockTracked`, `reference`, `askQuantity`,
+/// `deposits`; [PosArticle.toJson] liefert diese Form). `null` = passt, sonst ein Wert aus
 /// [externalVoucherArticleReasons]. Ohne `externalVoucher` gilt keine Regel.
 ///
 /// Einzweck verlangt einen Satz der Kasse (0 = befreit verkauft), Mehrzweck
 /// ignoriert ihn; nie zusammen mit Leistungsgutschein, eigener Zusatzliste,
-/// Lagerbestand, Referenz oder Mengenabfrage (die Kasse fragt die Nummer
-/// selbst und bucht genau einen); ohne `askPrice` braucht er einen Preis ab
+/// Lagerbestand, Referenz, Mengenabfrage (die Kasse fragt die Nummer
+/// selbst und bucht genau einen) oder Pfand; ohne `askPrice` braucht er einen Preis ab
 /// 1 Cent. Zwilling von `checkExternalVoucherArticle` (Backend `pruefeArtikel`).
 String? checkExternalVoucherArticle(Map<String, Object?> article) {
   final wert = article['externalVoucher'];
@@ -68,6 +68,8 @@ String? checkExternalVoucherArticle(Map<String, Object?> article) {
   if (article['stockTracked'] == true) return 'stock_tracked';
   if (_wahr(article['reference'])) return 'reference';
   if (article['askQuantity'] == true) return 'asks_quantity';
+  final pfand = article['deposits'];
+  if (pfand is List && pfand.isNotEmpty) return 'deposit';
   if (art == ArticleExternalVoucher.singlePurpose) {
     final satz = article['vatRate'];
     if (satz is! num || !satz.isFinite) return 'rate_required';

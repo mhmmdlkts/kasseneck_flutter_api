@@ -1,5 +1,5 @@
 {
-  "version": "1.32.0",
+  "version": "1.32.1",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -530,6 +530,9 @@
     },
     "external_voucher_article.asks_quantity": {
       "text": "Ein fremder Gutschein fragt keine Menge ab."
+    },
+    "external_voucher_article.deposit": {
+      "text": "Ein fremder Gutschein hat kein Pfand."
     },
     "external_voucher_article.rate_required": {
       "text": "Ein Einzweckgutschein braucht den Steuersatz, mit dem er verkauft wird."
@@ -1451,6 +1454,7 @@
     "stock_tracked": "external_voucher_article.stock_tracked",
     "reference": "external_voucher_article.reference",
     "asks_quantity": "external_voucher_article.asks_quantity",
+    "deposit": "external_voucher_article.deposit",
     "rate_required": "external_voucher_article.rate_required",
     "invalid_rate": "external_voucher_article.invalid_rate",
     "price_required": "external_voucher_article.price_required"

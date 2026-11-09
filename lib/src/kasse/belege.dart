@@ -491,8 +491,11 @@ class RegisterReceiptClient {
       final gutscheinFehler = voucherWishError(gutscheine, items, training: false);
       if (gutscheinFehler != null) throw KasseneckValidationError(name, gutscheinFehler, 'request');
     }
+    final leergut = depositPayoutCents(items, payments);
     final fehler = paymentsError(payments,
-        cancellation: false, payout: isPayoutOnly(gutscheine, items, withTip: mitTrinkgeld));
+        cancellation: false,
+        payout: isPayoutOnly(gutscheine, items, withTip: mitTrinkgeld) || leergut != null,
+        depositReturnCents: leergut);
     if (fehler != null) throw KasseneckValidationError(name, fehler, 'request');
     if (drawerId != null) _ladeKennung(name, drawerId);
     final schluesselFehler = idempotencyKey == null ? null : belegSchluesselFehler(idempotencyKey);

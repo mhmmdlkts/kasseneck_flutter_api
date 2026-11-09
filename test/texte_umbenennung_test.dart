@@ -91,7 +91,8 @@ const _nach10 = (
     'external_voucher.not_enabled', 'external_voucher.type_not_enabled', 'cancellation.external_voucher_check',
     'settings.external_vouchers_hint', 'external_voucher_article.invalid', 'external_voucher_article.service_voucher',
     'external_voucher_article.add_ons', 'external_voucher_article.stock_tracked', 'external_voucher_article.reference',
-    'external_voucher_article.asks_quantity', 'external_voucher_article.rate_required',
+    'external_voucher_article.asks_quantity', 'external_voucher_article.deposit',
+    'external_voucher_article.rate_required',
     'external_voucher_article.invalid_rate', 'external_voucher_article.price_required',
     'external_voucher.looks_like_own_code',
     // Trinkgeld gleich behalten in drei Stufen (11.22.0, npm 1.31.0)

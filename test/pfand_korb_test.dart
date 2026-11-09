@@ -147,7 +147,7 @@ void main() {
       final t = checkoutTotals(korb, business, bar, deposit: _kontext(arten: {}));
       expect(t.depositCode, 'deposit_type_not_found');
       expect(t.ready, isFalse);
-      expect(t.reason, depositErrorMessage('deposit_type_not_found'));
+      expect(t.reason, 'Diese Pfandart gibt es nicht mehr.');
       expect(t.depositCents, 0);
     });
   });
