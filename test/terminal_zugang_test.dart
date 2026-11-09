@@ -426,8 +426,16 @@ void main() {
       'terminal_code_manual',
       'terminal_code_rate_limited',
       'terminal_not_assigned',
+      'terminal_fixed',
+      'terminal_device_fixed',
       'server_error',
     });
+  });
+
+  test('terminalErrorCodes ist errorCodes.terminal des gezogenen Vertrags', () {
+    final vertrag = jsonDecode(File('test/fixtures/vertrag/v3/v3-vokabular.json').readAsStringSync()) as Map<String, dynamic>;
+    final liste = ((vertrag['errorCodes'] as Map)['terminal'] as List).cast<String>();
+    expect(terminalErrorCodes, liste.toSet());
   });
 
   group('claimTerminal', () {

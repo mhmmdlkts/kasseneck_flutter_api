@@ -4,7 +4,7 @@ Twin of `@kreiseck/kasseneck-api` `1.34.0` (gap): `KasseneckApi.listDepositTypes
 
 - `listDepositTypes` takes no parameters. `deposit: null` (deposit switched off) returns `null`; an answer without a readable `deposit` block throws a `KasseneckValidationError` (`kind: response`). Like the npm client, the Dart client still asks for the till token; the server does not check it for this call.
 - `DepositSettings`, `DepositType` and `DepositAmount` are now also exported from `kasseneck_api.dart`.
-- `unfixTerminal` is known by name only (`Aufrufe`); the package has no method of its own for it.
+- `unfixTerminal` is known by name only (`Aufrufe`); the package has no method of its own for it. `terminalErrorCodes` gains `terminal_fixed` and `terminal_device_fixed`, and a test now compares the list with `errorCodes.terminal` of the contract.
 - The till text catalog is taken over from npm `1.33.0`/`1.34.0` with the generator (`tool/texte_erzeugen.dart`): `terminal.several_found`, `terminal.tid_not_found` and `connect.local_network_blocked` (web only), placeholders `hosts` and `tid`.
 - Contract and `special-characters` layout pulled from npm `1.34.0`.
 

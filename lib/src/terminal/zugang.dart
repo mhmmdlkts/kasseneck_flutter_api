@@ -44,6 +44,10 @@ const Set<String> terminalErrorCodes = {
   'terminal_code_rate_limited',
   // Dem Geraet ist keine Terminal-ID zugeordnet: erst getTerminalAccess.
   'terminal_not_assigned',
+  // Die Terminal-ID gehoert fest einem anderen Geraet.
+  'terminal_fixed',
+  // Dem Geraet ist eine Terminal-ID fest zugeordnet: Wechsel nur ueber den Support.
+  'terminal_device_fixed',
   'server_error',
 };
 
