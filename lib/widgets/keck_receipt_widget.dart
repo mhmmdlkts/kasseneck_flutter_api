@@ -20,7 +20,8 @@ import '../enums/voucher_type.dart';
 import '../models/keck_voucher.dart';
 import '../models/print_paper.dart';
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
-import '../src/kasse/zusaetze.dart' show addOnDisplayOrder, isValidAddOnAt;
+import '../src/kasse/zusaetze.dart' show isValidAddOnAt;
+import '../src/receipt/pfand_bon.dart';
 
 
 /// Ein Beleg am Bildschirm. Traegt er ein vollstaendiges Zeilenmodell des
@@ -215,6 +216,10 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
   Widget receiptWidget() {
     setTemp();
     final gutscheinZuordnung = voucherItemMatches(widget.receipt.items, widget.receipt.vouchers ?? const []);
+    final anzeige = receiptDisplayOrder(widget.receipt.items);
+    final einwegCents = singleUseDepositCents(widget.receipt.items);
+    final auszahlung = returnOnlyPayoutLines(widget.receipt, formatCents: formatCents);
+    final ruecknahme = returnPointLine(widget.receipt);
     return SizedBox(
       child: Container(
         decoration: BoxDecoration(
@@ -236,6 +241,13 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             Text(widget.receipt.taxInfo, style: textStyle),
             Text(widget.receipt.phone, style: textStyle),
             const SizedBox(height: 32),
+
+            // Reiner Leergutbeleg: Ueberschrift unter dem Kopf.
+            if (isReturnOnlyReceipt(widget.receipt))
+              ...[
+                Text(returnHeading, style: textStyle.copyWith(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                const SizedBox(height: 32),
+              ],
 
             if (widget.receipt.customerDetails.isNotEmpty)
               Column(
@@ -284,8 +296,9 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
             const SizedBox(height: 32),
 
             // Zusatz-Kacheln: Zusaetze direkt unter ihrer Hauptposition, eingerueckt.
-            for (final i in addOnDisplayOrder(widget.receipt.items))
-              ..._positionsZeilen(widget.receipt.items[i], gutscheinZuordnung[i], zusatz: isValidAddOnAt(widget.receipt.items, i)),
+            // Pfand: die Pfandzeile steht als Unterzeile unter ihrer Position, nach deren Zusaetzen.
+            for (final i in anzeige.order)
+              ..._positionsZeilen(widget.receipt.items[i], gutscheinZuordnung[i], zusatz: isValidAddOnAt(widget.receipt.items, i) || anzeige.boundDeposit.contains(i)),
             // Betrag steht als Position (Einzweck, Leistung, 0-%-Topf): keine Zeile aus dem Eintrag.
             for (KeckVoucher voucher in (widget.receipt.vouchers??[]).where((v) => !voucherStandsAsItem(v)))
               if (voucher.action == VoucherAction.sell && artOderNull(voucher) == VoucherType.value)
@@ -332,6 +345,8 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 children: e.where((element) => element.runtimeType==String).map((e) => Text(e, style: textStyle)).toList(),
               )).toList(),
             ),
+            // Einwegpfand liegt auf dem 0-%-Satz, ist aber kein Entgelt.
+            if (einwegCents != null) _paarZeile(depositNotTaxableLabel, formatCents(einwegCents)),
             Divider(color: widget.qrColor),
             if (displayedTotalCents(widget.receipt) != widget.receipt.subSumCents)
               ...[
@@ -357,12 +372,16 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
                 Text('${formatCents(displayedTotalCents(widget.receipt))} EUR', style: textStyle)
               ],
             ),
+            // Reiner Leergutbeleg: das Pfand geht bar zurueck an den Kunden.
+            if (auszahlung != null)
+              for (final z in auszahlung) _paarZeile(z.left, z.right),
             // Rueckgabe als Gutschein: Zahlwege mit Betrag wie der Druck (returnPaymentLines).
-            for (final z in returnPaymentLines(widget.receipt, currency: 'EUR', formatCents: formatCents) ??
-                const <VoucherBonPairLine>[])
-              _paarZeile(z.left, z.right),
+            if (auszahlung == null)
+              for (final z in returnPaymentLines(widget.receipt, currency: 'EUR', formatCents: formatCents) ??
+                  const <VoucherBonPairLine>[])
+                _paarZeile(z.left, z.right),
             // Voll vom Gutschein gedeckt: keine Zahlungsart (paymentMethodText), wie der Druck.
-            if (returnPaymentLines(widget.receipt, currency: 'EUR', formatCents: formatCents) == null)
+            if (auszahlung == null && returnPaymentLines(widget.receipt, currency: 'EUR', formatCents: formatCents) == null)
               if (paymentMethodText(widget.receipt) case final zahlungsart?)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -405,6 +424,8 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
               Text(widget.receipt.footer3!, style: textStyle),
             if (widget.receipt.footer4 != null)
               Text(widget.receipt.footer4!, style: textStyle),
+            // Gemeinsame Ruecknahmestelle fuer Leergut (nur, wenn der Server sie gestempelt hat).
+            if (ruecknahme != null) Text(ruecknahme, style: textStyle, textAlign: TextAlign.center),
             if (widget.receipt.showKreiseckLogo)
               ...[
                 const SizedBox(height: 24),

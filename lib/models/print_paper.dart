@@ -23,8 +23,9 @@ import '../src/printing/printable.dart' show printableText;
 import '../src/printing/qr_groesse.dart';
 import '../src/receipt/aufdruck.dart' show belegartBlock, nacherfassungBlock, warnrahmen;
 import '../src/receipt/einzug.dart';
+import '../src/receipt/pfand_bon.dart';
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
-import '../src/kasse/zusaetze.dart' show addOnDisplayOrder, isValidAddOnAt;
+import '../src/kasse/zusaetze.dart' show isValidAddOnAt;
 import '../src/receipt/gutschein_bon.dart';
 import '../src/vat_math.dart';
 import 'kasseneck_item.dart';
@@ -430,6 +431,12 @@ class PrintPaper {
       }
     }
 
+    // Reiner Leergutbeleg: Ueberschrift unter dem Kopf.
+    if (isReturnOnlyReceipt(receipt) && belegart.isEmpty) {
+      addFeed();
+      addText(returnHeading, styles: PosStyles(align: PosAlign.center, bold: true));
+    }
+
     // Nacherfassung eines Handbelegs unter dem Kopf, vor den Pflichtangaben.
     final nacherfassung = nacherfassungBlock(receipt);
     if (nacherfassung.isNotEmpty) {
@@ -463,9 +470,12 @@ class PrintPaper {
     final gutscheinZuordnung = voucherItemMatches(receipt.items, receipt.vouchers ?? const []);
     // Zusatz-Kacheln: Zusaetze direkt unter ihrer Hauptposition, eingerueckt
     // (wie buildReceiptLayout ab npm 1.27.0); ohne Verweise Belegreihenfolge.
-    for (final i in addOnDisplayOrder(receipt.items)) {
+    // Pfand (npm 1.32.0): die Pfandzeile steht als Unterzeile unter ihrer
+    // Position, nach deren Zusaetzen, ebenso eingerueckt.
+    final anzeige = receiptDisplayOrder(receipt.items);
+    for (final i in anzeige.order) {
       final item = receipt.items[i];
-      final zusatz = isValidAddOnAt(receipt.items, i);
+      final zusatz = isValidAddOnAt(receipt.items, i) || anzeige.boundDeposit.contains(i);
       if (itemsByVat[item.vat] == null) {
         itemsByVat[item.vat] = [];
       }
@@ -581,6 +591,9 @@ class PrintPaper {
 
       _addTable('${key.category} ${key.rate.toString().replaceAll('.', ',')}%', formatCents(mwstCents), formatCents(nettoCents), formatCents(bruttoCents));
     });
+    // Einwegpfand liegt auf dem 0-%-Satz, ist aber kein Entgelt.
+    final einwegCents = singleUseDepositCents(receipt.items);
+    if (einwegCents != null) addDoubleText(depositNotTaxableLabel, formatCents(einwegCents), leftWidth: 9, rightWidth: 3);
 
     addFullHorizontalLine();
 
@@ -602,9 +615,11 @@ class PrintPaper {
       addFullHorizontalLine();
     }
     addDoubleText('Gesamt:', '${formatCents(gesamtCents)} EUR');
+    // Reiner Leergutbeleg: die negative Barzahlung ist eine Auszahlung an den Kunden.
+    final auszahlung = returnOnlyPayoutLines(receipt, formatCents: formatCents);
     // Rueckgabe als Gutschein: der neue Gutschein (und ein Bar-Trinkgeld) als Zahlwege mit Betrag, 8:4 wie
     // im npm-Layout; sonst die Zahlungsart, voll vom Gutschein gedeckt keine (paymentMethodText).
-    final rueckgabe = returnPaymentLines(receipt, currency: 'EUR', formatCents: formatCents);
+    final rueckgabe = auszahlung ?? returnPaymentLines(receipt, currency: 'EUR', formatCents: formatCents);
     if (rueckgabe != null) {
       for (final z in rueckgabe) {
         addDoubleText(z.left, z.right, leftWidth: 8, rightWidth: 4);
@@ -681,6 +696,10 @@ class PrintPaper {
     if (receipt.footer4 != null) {
       addText(receipt.footer4!, styles: PosStyles(align: PosAlign.center));
     }
+
+    // Gemeinsame Ruecknahmestelle fuer Leergut (nur, wenn der Server sie gestempelt hat).
+    final ruecknahme = returnPointLine(receipt);
+    if (ruecknahme != null) addText(ruecknahme, styles: PosStyles(align: PosAlign.center));
 
     // Warnrahmen unten wie im Server-Layout.
     final warnungen = warnrahmen(receipt);

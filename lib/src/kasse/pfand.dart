@@ -198,6 +198,15 @@ class DepositSharedReturnPoint {
   final String name;
   final String address;
 
+  /// Liest die Stelle eines Belegs (`sharedReturnPoint`); `null`, wenn weder
+  /// Name noch Anschrift als Text da sind (wie `pfandStelleFeld` im npm-Paket).
+  static DepositSharedReturnPoint? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final name = raw['name'] is String ? raw['name'] as String : '';
+    final address = raw['address'] is String ? raw['address'] as String : '';
+    return name.isEmpty && address.isEmpty ? null : DepositSharedReturnPoint(name: name, address: address);
+  }
+
   Map<String, dynamic> toJson() => {'name': name, 'address': address};
 }
 
