@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.32.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.32.1). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.32.0';
+const String posTextsVersion = '1.32.1';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -154,6 +154,7 @@ const Map<String, PosText> posMessages = {
   'external_voucher_article.stock_tracked': PosText('Ein fremder Gutschein führt keinen Lagerbestand.'),
   'external_voucher_article.reference': PosText('Ein fremder Gutschein fragt keine Referenz ab, die Kasse fragt die Gutscheinnummer.'),
   'external_voucher_article.asks_quantity': PosText('Ein fremder Gutschein fragt keine Menge ab.'),
+  'external_voucher_article.deposit': PosText('Ein fremder Gutschein hat kein Pfand.'),
   'external_voucher_article.rate_required': PosText('Ein Einzweckgutschein braucht den Steuersatz, mit dem er verkauft wird.'),
   'external_voucher_article.invalid_rate': PosText('Ein Einzweckgutschein braucht einen Steuersatz der Kasse: 20, 13, 10, 4,9, 0 oder 19 %.'),
   'external_voucher_article.price_required': PosText('Ein fremder Gutschein braucht einen Preis oder „Betrag beim Antippen eingeben“.'),
@@ -972,6 +973,7 @@ const Map<String, String> externalVoucherArticleMessages = {
   'stock_tracked': 'external_voucher_article.stock_tracked',
   'reference': 'external_voucher_article.reference',
   'asks_quantity': 'external_voucher_article.asks_quantity',
+  'deposit': 'external_voucher_article.deposit',
   'rate_required': 'external_voucher_article.rate_required',
   'invalid_rate': 'external_voucher_article.invalid_rate',
   'price_required': 'external_voucher_article.price_required',

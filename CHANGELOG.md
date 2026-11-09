@@ -6,6 +6,8 @@ Twin of `@kreiseck/kasseneck-api` `1.32.1` (fix): `RegisterReceiptClient.sell` a
 
 Reason: the server allows this payout (`istLeergutAuszahlung`), but the client check demanded `amountCents > 0` unless the receipt was a voucher payout.
 
+- `checkExternalVoucherArticle`: an article marked as external voucher with a non-empty `deposits` list is refused with reason `deposit` (text "Ein fremder Gutschein hat kein Pfand."), like the backend; an empty or missing list stays allowed.
+
 ## 11.24.0 (2026-11-09)
 
 Twin of `@kreiseck/kasseneck-api` `1.32.0` (gap): `RegisterReceiptClient.sell` and `KasseneckApi.sellReceipt` send `autoDeposits` and `onPremises` to `createReceipt`, and refuse a `deposit` line that carries an `articleId` before sending (`invalid_deposit`). Additive; without the new parameters the payload is byte-identical.
