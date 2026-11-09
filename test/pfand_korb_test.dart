@@ -203,14 +203,25 @@ void main() {
       korb = korb.addedReturn(_art['flasche']!, 2, day: tag, smallBusiness: false);
       expect(korb.items, hasLength(1));
       expect(korb.items.single.quantity, 5);
-      korb = korb.addedReturn(_art['flasche']!, 999, day: tag, smallBusiness: false);
-      expect(korb.items.single.quantity, 1000, reason: 'Zusammenfuehren kappt wie eine einzelne Zeile');
-      expect(korb.items.single.codes, isNull);
+      expect(() => korb.addedReturn(_art['flasche']!, 999, day: tag, smallBusiness: false), throwsStateError, reason: '5 + 999 wird nicht still gekappt');
+      expect(korb.items.single.quantity, 5, reason: 'der Korb bleibt unveraendert');
       korb = korb.withQuantity(id, 1001);
       expect(korb.items.single.quantity, 1000, reason: 'hoechstens 1000 Stueck');
       expect(korb.hasReturns, isTrue);
       korb = korb.withQuantity(id, 0);
       expect(korb.isEmpty, isTrue);
+    });
+
+    test('Grenze 1000: genau 1000 einzeln ok, 1 + 999 mit Codes ok, darueber abgelehnt', () {
+      final einzeln = const Cart.empty().addedReturn(_art['flasche']!, 1000, day: tag, smallBusiness: false);
+      expect(einzeln.items.single.quantity, 1000);
+      expect(() => const Cart.empty().addedReturn(_art['flasche']!, 1001, day: tag, smallBusiness: false), throwsStateError);
+      var korb = const Cart.empty().addedReturn(_art['flasche']!, 1, day: tag, smallBusiness: false, codes: {'4006381333931': 1});
+      korb = korb.addedReturn(_art['flasche']!, 999, day: tag, smallBusiness: false, codes: {'4006381333931': 999});
+      expect(korb.items.single.quantity, 1000);
+      expect(korb.items.single.codes, {'4006381333931': 1000});
+      expect(() => korb.addedReturn(_art['flasche']!, 1, day: tag, smallBusiness: false), throwsStateError);
+      expect(korb.items.single.quantity, 1000);
     });
 
     test('Leergut ohne Betrag am Tag oder mit unmoeglicher Menge gibt es nicht', () {

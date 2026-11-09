@@ -358,18 +358,21 @@ class Cart {
   /// Legt Leergut in den Korb: [quantity] Stueck der Pfandart [type] zum Betrag
   /// des Tages [day] (die Zeile baut [depositReturnLine], wie der Server sie
   /// bucht). Dieselbe Pfandart addiert sich zur vorhandenen Zeile (hoechstens
-  /// 1000 Stueck je Zeile, wie bei [withQuantity]: darueber wird auf 1000
-  /// gekappt und die gelernten Codes entfallen); gelernte [codes] bleiben nur,
-  /// wenn beide Seiten welche tragen und die Menge nicht gekappt wurde.
-  /// Wirft einen [StateError], wenn sich keine Zeile ergibt.
+  /// 1000 Stueck je Zeile; die Summe darueber wirft einen [StateError], der
+  /// Korb bleibt unveraendert, nichts wird still gekappt: jedes Stueck Leergut
+  /// ist Geld); gelernte [codes] bleiben nur, wenn beide Seiten welche tragen.
+  /// Wirft einen [StateError], wenn sich keine Zeile ergibt oder die Zeile
+  /// ueber 1000 Stueck kaeme.
   Cart addedReturn(DepositType type, int quantity, {required String day, required bool smallBusiness, Map<String, int>? codes}) {
     final zeile = depositReturnLine(type, quantity, day: day, smallBusiness: smallBusiness, codes: codes);
     final vorhanden = items.indexWhere((p) => p.isDepositReturn && p.depositTypeId == type.id);
     if (vorhanden >= 0) {
       final alt = items[vorhanden];
-      final summe = alt.quantity + quantity;
-      final menge = summe > _maxReturnQuantity ? _maxReturnQuantity : summe;
-      final neueCodes = summe == menge && alt.codes != null && codes != null
+      final menge = alt.quantity + quantity;
+      if (menge > _maxReturnQuantity) {
+        throw StateError('Leergut: hoechstens $_maxReturnQuantity Stueck je Zeile (im Korb ${alt.quantity}, dazu $quantity)');
+      }
+      final neueCodes = alt.codes != null && codes != null
           ? {
               ...alt.codes!,
               for (final e in codes.entries) e.key: (alt.codes![e.key] ?? 0) + e.value,
