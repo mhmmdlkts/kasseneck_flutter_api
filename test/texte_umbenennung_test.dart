@@ -114,6 +114,8 @@ const _nach10 = (
     'deposit.changed', 'deposit_error.not_enabled', 'deposit_error.type_not_found', 'deposit_error.set_by_server',
     'deposit_error.invalid_quantity', 'deposit_error.return_not_offered', 'deposit_error.type_not_issued',
     'deposit_error.follows_item', 'deposit_error.invalid',
+    // Terminal-Suche im lokalen Netz (npm 1.33.0)
+    'terminal.several_found', 'terminal.tid_not_found', 'connect.local_network_blocked',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -258,6 +260,8 @@ const _nach10 = (
     'depositErrors',
   ],
   placeholders: {
+    // Terminal-Suche im lokalen Netz (npm 1.33.0)
+    'hosts', 'tid',
     'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type',
     // Kassenstand und Trinkgeld-Liste (11.2.0)
     'duration', 'days', 'hours', 'minutes',

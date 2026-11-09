@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "168261a0b5130d454fc3b5d51e8ee567d6a3e9a5d2d8e172829e9ccb17c47f31",
-    "inputsSha256": "fc428e5da1337f9ca7db6ce8234aa2594a5e46a7587de2487e3990d6b3fcb93a",
+    "sha256": "820ce0391fbe5a2f51ad441f6b0777e4c2370cafd83fe69b94edb349836caad5",
+    "inputsSha256": "ffa47dedd9b849e0d26f40c379d66e3ba6f2587d785bd2c3cc48fcdb26ea6769",
     "backendPackage": "@kreiseck/kasseneck-api@0.39.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -153,7 +153,9 @@
       "requestTerminalCode",
       "getTerminalCode",
       "reportTerminalLogin",
-      "reportTerminalReady"
+      "reportTerminalReady",
+      "unfixTerminal",
+      "listDepositTypes"
     ],
     "v3Routed": [
       "createReceipt",
@@ -275,7 +277,9 @@
       "requestTerminalCode",
       "getTerminalCode",
       "reportTerminalLogin",
-      "reportTerminalReady"
+      "reportTerminalReady",
+      "unfixTerminal",
+      "listDepositTypes"
     ],
     "register": [
       "pairRegisterDevice",
@@ -464,6 +468,7 @@
       "listArticles",
       "listBrands",
       "listCustomerCashregisters",
+      "listDepositTypes",
       "listInvoiceItems",
       "listInvoices",
       "listLocations",
@@ -552,6 +557,7 @@
       "stripeCaptureIntent",
       "transferStock",
       "unblockMyVoucher",
+      "unfixTerminal",
       "unpairRegisterDevice",
       "updateArticle",
       "updateCustomer",
@@ -1667,7 +1673,9 @@
       "terminal_code_manual",
       "terminal_code_rate_limited",
       "terminal_device_blocked",
+      "terminal_device_fixed",
       "terminal_device_unknown",
+      "terminal_fixed",
       "terminal_not_assigned",
       "terminal_not_enabled",
       "terminal_not_in_business",
@@ -2419,6 +2427,8 @@
       "terminal_code_manual",
       "terminal_code_rate_limited",
       "terminal_not_assigned",
+      "terminal_fixed",
+      "terminal_device_fixed",
       "server_error"
     ],
     "registerCases": [
@@ -6076,6 +6086,42 @@
         }
       }
     },
+    "listDepositTypes": {
+      "data": {
+        "deposit": {
+          "__": "pfand",
+          "singleUse": "einweg",
+          "reusable": "mehrweg",
+          "depositTypes": [
+            {
+              "__": "pfandarten",
+              "kind": "art",
+              "type": "typ",
+              "amounts": [
+                {
+                  "__": "betraege",
+                  "from": "ab"
+                }
+              ],
+              "returnRate": "rueckgabeSatz",
+              "used": "verwendet",
+              "active": "aktiv"
+            }
+          ]
+        }
+      },
+      "werte": {
+        "deposit.depositTypes[].kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "deposit.depositTypes[].type": {
+          "$catalog": "PFAND_TYP"
+        }
+      },
+      "ergaenze": {
+        "$function": "anonymous"
+      }
+    },
     "listInvoiceItems": {},
     "listInvoices": {
       "paramWerte": {
@@ -9052,6 +9098,7 @@
         }
       }
     },
+    "unfixTerminal": {},
     "unpairRegisterDevice": {},
     "updateArticle": {
       "data": {

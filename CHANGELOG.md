@@ -1,3 +1,13 @@
+## 11.25.0 (2026-11-09)
+
+Twin of `@kreiseck/kasseneck-api` `1.34.0` (gap): `KasseneckApi.listDepositTypes()` reads the deposit settings and deposit types of the business with the API key (`Future<DepositSettings?>`), next to `listReceipts`. Additive.
+
+- `listDepositTypes` takes no parameters. `deposit: null` (deposit switched off) returns `null`; an answer without a readable `deposit` block throws a `KasseneckValidationError` (`kind: response`). Like the npm client, the Dart client still asks for the till token; the server does not check it for this call.
+- `DepositSettings`, `DepositType` and `DepositAmount` are now also exported from `kasseneck_api.dart`.
+- `unfixTerminal` is known by name only (`Aufrufe`); the package has no method of its own for it.
+- The till text catalog is taken over from npm `1.33.0`/`1.34.0` with the generator (`tool/texte_erzeugen.dart`): `terminal.several_found`, `terminal.tid_not_found` and `connect.local_network_blocked` (web only), placeholders `hosts` and `tid`.
+- Contract and `special-characters` layout pulled from npm `1.34.0`.
+
 ## 11.24.1 (2026-11-09)
 
 Twin of `@kreiseck/kasseneck-api` `1.32.1` (fix): `RegisterReceiptClient.sell` and `KasseneckApi.sellReceipt` no longer refuse a deposit payout before sending. A receipt with a `deposit_return` line and one negative cash payment (no `tenderedCents`, no `tipCents`, at most the sum of the return lines) goes out; the new helper `depositPayoutCents` and the `depositReturnCents` argument of `paymentsError` carry the rule. Without empties a negative payment is still refused; empties with a positive amount stay an ordinary sale.

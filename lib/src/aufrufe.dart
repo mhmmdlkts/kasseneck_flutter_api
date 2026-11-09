@@ -42,6 +42,7 @@ abstract final class Aufrufe {
   static const issueInvoice = 'issueInvoice';
   static const listBrands = 'listBrands';
   static const recordInvoicePayment = 'recordInvoicePayment';
+  static const listDepositTypes = 'listDepositTypes';
   static const listInvoices = 'listInvoices';
   static const listMyArticleGroups = 'listMyArticleGroups';
   static const listMyArticles = 'listMyArticles';
@@ -54,6 +55,7 @@ abstract final class Aufrufe {
   static const listRegisterUsersForDevice = 'listRegisterUsersForDevice';
   static const pairRegisterDevice = 'pairRegisterDevice';
   static const registerPinLogin = 'registerPinLogin';
+  static const unfixTerminal = 'unfixTerminal';
   static const registerUserLogin = 'registerUserLogin';
   static const renewRegisterSession = 'renewRegisterSession';
   static const revokeDepHandoverLink = 'revokeDepHandoverLink';
@@ -186,6 +188,7 @@ abstract final class Aufrufe {
     issueInvoice,
     listBrands,
     recordInvoicePayment,
+    listDepositTypes,
     listInvoices,
     listMyArticleGroups,
     listMyArticles,
@@ -198,6 +201,7 @@ abstract final class Aufrufe {
     listRegisterUsersForDevice,
     pairRegisterDevice,
     registerPinLogin,
+    unfixTerminal,
     registerUserLogin,
     renewRegisterSession,
     revokeDepHandoverLink,

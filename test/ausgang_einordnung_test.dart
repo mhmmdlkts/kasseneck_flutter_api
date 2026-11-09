@@ -75,6 +75,8 @@ const Set<String> _lesen = {
   'hobexGetStatus',
   'listArticles',
   'listBrands',
+  // Pfandarten des Betriebs: liest nur.
+  'listDepositTypes',
   'listInvoices',
   'listLocations',
   'listMyArticleGroups',
@@ -136,6 +138,8 @@ const Set<String> _wiederholbar = {
   'reportTerminalLogin',
   'reportTerminalReady',
   'requestTerminalCode',
+  // Loest nur die feste Zuordnung eines Geraets (npm 1.33.0); nur dem Namen nach bekannt.
+  'unfixTerminal',
 };
 
 const _kennzeichen = {'kasseneck-api-version': 'v3'};
