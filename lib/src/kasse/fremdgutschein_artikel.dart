@@ -48,14 +48,14 @@ bool _wahr(Object? wert) => switch (wert) {
 
 /// Regeln am wirksamen Artikelstand (Bestand + Aenderung) in `/v3`-Form
 /// (`externalVoucher`, `unitPriceCents`, `vatRate`, `askPrice`,
-/// `serviceVoucher`, `addOns`, `stockTracked`, `reference`, `askQuantity`;
-/// [PosArticle.toJson] liefert diese Form). `null` = passt, sonst ein Wert aus
+/// `serviceVoucher`, `addOns`, `stockTracked`, `reference`, `askQuantity`,
+/// `deposits`; [PosArticle.toJson] liefert diese Form). `null` = passt, sonst ein Wert aus
 /// [externalVoucherArticleReasons]. Ohne `externalVoucher` gilt keine Regel.
 ///
 /// Einzweck verlangt einen Satz der Kasse (0 = befreit verkauft), Mehrzweck
 /// ignoriert ihn; nie zusammen mit Leistungsgutschein, eigener Zusatzliste,
-/// Lagerbestand, Referenz oder Mengenabfrage (die Kasse fragt die Nummer
-/// selbst und bucht genau einen); ohne `askPrice` braucht er einen Preis ab
+/// Lagerbestand, Referenz, Mengenabfrage (die Kasse fragt die Nummer
+/// selbst und bucht genau einen) oder Pfand; ohne `askPrice` braucht er einen Preis ab
 /// 1 Cent. Zwilling von `checkExternalVoucherArticle` (Backend `pruefeArtikel`).
 String? checkExternalVoucherArticle(Map<String, Object?> article) {
   final wert = article['externalVoucher'];
