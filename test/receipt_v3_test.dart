@@ -601,7 +601,7 @@ void main() {
   test('gespeicherter Gutschein-Beleg (Leistung eingeloest, Auszahlung): Layout bleibt das des Servers (0.38.0), nichts baut es neu', () {
     // Der Server gibt den Beleg seit Paket 0.34.0 roh an das Paket (keine Aufbereitung mehr). Hier wird
     // das Layout nie aus dem gespeicherten Beleg nachgebaut, sondern nur gelesen; das haelt diese Probe fest.
-    expect((_json('antworten/kasse-belege.json')['_quelle'] as Map)['backendPackage'], '@kreiseck/kasseneck-api@0.38.0');
+    expect((_json('antworten/kasse-belege.json')['_quelle'] as Map)['backendPackage'], '@kreiseck/kasseneck-api@0.39.0');
     for (final name in ['redeem_service_voucher', 'payout_multi_purpose_voucher']) {
       final daten = (_fall(_kasseBelege, name)['response'] as Map)['data'] as Map<String, dynamic>;
       final gespeichert = jsonDecode(jsonEncode(KasseneckReceipt.fromJson(daten).toJson())) as Map<String, dynamic>;
@@ -657,5 +657,68 @@ void main() {
     }
     // Ohne Lagerfelder bleibt alles, wie es war.
     expect(migrateStoredReceiptJson({'items': [{'name': 'A'}]}), {'items': [{'name': 'A'}]});
+  });
+
+  test('migrateStoredReceiptJson: Pfand, Leergut und Zusatz in der gespeicherten Form lesen wie /v3 (Ruling 22)', () {
+    final katalog = (_vokabular['catalogs'] as Map).cast<String, dynamic>();
+    final position = (katalog['PFAND_POSITION'] as Map).cast<String, String>();
+    final kinds = (katalog['PFAND_KIND'] as Map).cast<String, String>();
+    final arten = (katalog['PFAND_ART'] as Map).cast<String, String>();
+    // Die Goldens des Vertrags in /v3-Form; daraus die gespeicherte Form (deutsche Namen) und zurueck.
+    for (final name in ['deposit', 'deposit-return', 'add-ons']) {
+      final ein = (jsonDecode(File('test/fixtures/vertrag/receipts/$name.json').readAsStringSync()) as Map<String, dynamic>);
+      final v3 = (ein['receipt'] as Map).cast<String, dynamic>();
+      final gespeichert = jsonDecode(jsonEncode(v3)) as Map<String, dynamic>;
+      for (final p in (gespeichert['items'] as List).cast<Map<String, dynamic>>()) {
+        for (final MapEntry(:key, :value) in position.entries) {
+          if (p.containsKey(key)) p[value] = p.remove(key);
+        }
+        if (p.containsKey('addOnOf')) p['zusatzZu'] = p.remove('addOnOf');
+        for (final MapEntry(:key, :value) in kinds.entries) {
+          if (p['kind'] == value) p['kind'] = key;
+        }
+        for (final MapEntry(:key, :value) in arten.entries) {
+          if (p['pfandArt'] == value) p['pfandArt'] = key;
+        }
+      }
+      if (gespeichert.containsKey('onPremises')) gespeichert['vorOrt'] = gespeichert.remove('onPremises');
+      if (gespeichert['sharedReturnPoint'] is Map) {
+        final stelle = gespeichert.remove('sharedReturnPoint') as Map;
+        gespeichert['pfandStelle'] = {'name': stelle['name'], 'adresse': stelle['address']};
+      }
+      final kopie = jsonDecode(jsonEncode(gespeichert)) as Map<String, dynamic>;
+      final soll = KasseneckReceipt.fromMetadata(v3, const {'company': 'Baeckerei Kornblum'});
+      final migriert = migrateStoredReceiptJson(kopie);
+      expect(jsonEncode(kopie), jsonEncode(gespeichert), reason: '$name: die Eingabe bleibt unberuehrt');
+      final gelesen = KasseneckReceipt.fromMetadata(migriert, const {'company': 'Baeckerei Kornblum'});
+      expect(jsonEncode(gelesen.items.map((e) => e.toJson()).toList()), jsonEncode(soll.items.map((e) => e.toJson()).toList()), reason: name);
+      expect(gelesen.onPremises, soll.onPremises, reason: name);
+      expect(gelesen.sharedReturnPoint?.toJson(), soll.sharedReturnPoint?.toJson(), reason: name);
+      // Ohne Migration gingen Pfandart, Verweis und Ruecknahmestelle still verloren.
+      final ohne = KasseneckReceipt.fromMetadata(kopie, const {'company': 'Baeckerei Kornblum'});
+      if (name == 'deposit') {
+        expect(ohne.items[2].isDeposit, isFalse);
+        expect(ohne.sharedReturnPoint, isNull);
+        expect(gelesen.items[2].isDeposit, isTrue);
+        expect(gelesen.items[2].depositKind, 'single_use');
+        expect(gelesen.items[2].depositFor, 0);
+        expect(gelesen.items[2].perUnit, 25);
+        expect(gelesen.items[1].addOnOf, 0);
+        expect(gelesen.onPremises, isFalse);
+        expect(gelesen.sharedReturnPoint!.address, 'Mühlweg 9, 4600 Wels');
+      }
+      if (name == 'deposit-return') expect(gelesen.items.every((e) => e.isDepositReturn), isTrue);
+    }
+    // Jeder Wert der Kataloge wird so uebersetzt wie im Vertrag; ein englischer Schluessel gewinnt.
+    for (final MapEntry(:key, :value) in arten.entries) {
+      expect((migrateStoredReceiptJson({'items': [{'pfandArt': key}]})['items'] as List).single, {'depositKind': value});
+    }
+    for (final MapEntry(:key, :value) in kinds.entries) {
+      expect((migrateStoredReceiptJson({'items': [{'kind': key}]})['items'] as List).single, {'kind': value});
+    }
+    expect((migrateStoredReceiptJson({'items': [{'pfandZu': 3, 'depositFor': 1, 'eigen': true}]})['items'] as List).single, {'depositFor': 1, 'ownFilling': true});
+    // Schon /v3: bleibt, wie es ist.
+    final v3 = {'items': [{'kind': 'deposit', 'depositFor': 0, 'depositKind': 'reusable'}], 'onPremises': true};
+    expect(migrateStoredReceiptJson(v3), v3);
   });
 }

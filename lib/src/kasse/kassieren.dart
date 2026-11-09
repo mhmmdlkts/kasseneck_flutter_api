@@ -15,6 +15,7 @@ import '../../models/kasseneck_item.dart';
 import '../../models/keck_payment.dart';
 import '../vat_math.dart';
 import 'einstellungen.dart';
+import 'texte.dart' show depositErrorMessage;
 import 'warenkorb.dart';
 import 'zusaetze.dart';
 
@@ -34,6 +35,9 @@ List<KeckPaymentMethod> offeredPaymentMethods(PosBusinessSettings business) {
 enum DiscountKind { percent, amount }
 
 /// Rabatt in Cent aus der Eingabe; außerhalb von 0 … Summe gibt es keinen.
+///
+/// [total] ist die **Warensumme** ([Cart.goodsCents]), nicht die Korbsumme mit
+/// Leergut ([Cart.totalCents]): Leergut und Pfand werden nie rabattiert.
 int? discountCentsFor(DiscountKind kind, num value, int total) {
   if (value.isNaN || value.isInfinite || value < 0) return null;
   if (kind == DiscountKind.percent && value > 100) return null;
@@ -48,6 +52,12 @@ int? discountCentsFor(DiscountKind kind, num value, int total) {
 /// (`addOnOf`); fehlt die Hauptzeile im übergebenen Korb (etwa vorher
 /// herausgefilterte Gutschein-Verkäufe), werden sie gewöhnliche Positionen.
 /// Die Rabattzeilen hängen hinten an und verschieben keinen Verweis.
+///
+/// **Pfand** (npm 1.32.0) steht hier nicht: abgeleitetes Pfand zu Artikeln bucht
+/// der Server (die Kasse sendet `autoDeposits: true`), die Vorschau liefert
+/// [Cart.lines]. **Leergut** im Korb dagegen reist als `deposit_return`-Zeile
+/// mit („Mit Einkauf verrechnen“); der Server rechnet es neu und nimmt es nur
+/// zurück, wenn die Kasse es annimmt.
 List<KasseneckItem> receiptItems(Cart cart, int discount) {
   final basis = [
     for (final z in orderAddOnLines(cart.items, idOf: (p) => p.id, parentOf: (p) => p.addOnOf)) z.line.toReceiptItem(addOnOf: z.addOnOf),
@@ -56,10 +66,12 @@ List<KasseneckItem> receiptItems(Cart cart, int discount) {
   return [...basis, ...distributeDiscount(basis, discount)];
 }
 
-/// Zu zahlen nach Rabatt — nie unter null.
+/// Zu zahlen nach Rabatt — nie unter null, außer mit Leergut im Korb: dann
+/// ist ein negativer Betrag die Auszahlung an den Gast (Ware und Leergut
+/// verrechnet; der Rabatt trifft das Leergut nicht).
 int amountDue(Cart cart, int discount) {
   final rest = cart.totalCents - discount;
-  return rest < 0 ? 0 : rest;
+  return rest < 0 && !cart.hasReturns ? 0 : rest;
 }
 
 int computeChange(int dueCents, int tenderedCents) {
@@ -158,13 +170,34 @@ class CheckoutTotals {
     required this.changeCents,
     required this.ready,
     this.reason,
+    this.depositCents = 0,
+    this.returnCents = 0,
+    this.payoutCents = 0,
+    this.depositCode,
   });
 
-  /// Warenkorb ohne Rabatt.
+  /// Ware im Warenkorb ohne Rabatt — ohne Pfand und ohne Leergut.
   final int subtotalCents;
   final int discountCents;
 
-  /// **Belegbetrag** nach Rabatt — ohne Trinkgeld.
+  /// Pfand, das der Server zu den Artikeln bucht (nur mit Vorschau-Kontext,
+  /// sonst 0). Ein Rabatt trifft es nie.
+  final int depositCents;
+
+  /// Leergut im Korb in Cent (null oder negativ).
+  final int returnCents;
+
+  /// Auszahlung an den Gast, wenn Leergut mehr wert ist als der Einkauf
+  /// (sonst 0); [dueCents] ist dann negativ, Trinkgeld gibt es nicht. Die Kasse
+  /// zahlt nur **bar** aus: die App muss bei [payoutCents] > 0 die Zahlart Bar
+  /// waehlen, der Server lehnt jede andere ab.
+  final int payoutCents;
+
+  /// Ein Fehlercode der Pfand-Vorschau ([depositPreviewErrorCodes]), mit dem
+  /// der Server den Verkauf abwiese; dann ist [ready] falsch.
+  final String? depositCode;
+
+  /// **Belegbetrag** nach Rabatt, mit Pfand und Leergut — ohne Trinkgeld.
   final int dueCents;
 
   /// Trinkgeld; steht nicht im Belegbetrag, aber im Gegebenen.
@@ -194,22 +227,44 @@ class CheckoutTotals {
 /// trägt den Warenwert; das Trinkgeld bucht das Backend als eigene Positionen.
 /// Für das Rückgeld zählt trotzdem beides zusammen — sonst bekäme der Gast sein
 /// Trinkgeld als Wechselgeld zurück.
-CheckoutTotals checkoutTotals(Cart cart, PosBusinessSettings business, CheckoutState state) {
-  final summe = cart.totalCents;
+///
+/// **Pfand und Leergut** (npm 1.32.0): mit [deposit] zählt das Pfand zu den
+/// Artikeln mit, wie der Server es bucht; Leergut im Korb zählt auch ohne
+/// (negativ). Beides läuft durch: der Belegrabatt trifft es nie. Ist das
+/// Leergut mehr wert als der Einkauf, ist [CheckoutTotals.dueCents] negativ
+/// ([CheckoutTotals.payoutCents] > 0, Barauszahlung). Ohne [deposit] und ohne
+/// Leergut rechnet es byte-gleich wie vorher.
+CheckoutTotals checkoutTotals(Cart cart, PosBusinessSettings business, CheckoutState state, {DepositPreviewContext? deposit}) {
+  final summe = cart.goodsCents;
   final rabatt = state.discountCents > summe ? summe : (state.discountCents < 0 ? 0 : state.discountCents);
-  final zahlen = amountDue(cart, rabatt);
-  final trinkgeld = business.tip && state.tipCents > 0 ? state.tipCents : 0;
+  final pfand = deposit == null ? const CartDeposits({}) : cart.deposits(deposit);
+  final leergut = cart.returnCents;
+  final zahlen = summe - rabatt + pfand.totalCents + leergut;
+  // Nur Leergut kann den Betrag unter null druecken (der Rabatt reicht nie ueber die Ware).
+  final auszahlung = zahlen < 0;
+  final trinkgeld = !auszahlung && business.tip && state.tipCents > 0 ? state.tipCents : 0;
   final gesamt = zahlen + trinkgeld;
-  final bar = state.paymentMethod == KeckPaymentMethod.cash && business.change;
+  final bar = !auszahlung && state.paymentMethod == KeckPaymentMethod.cash && business.change;
   final gegeben = bar ? state.tenderedCents : null;
-  final pruefung = completionCheck(
-    paymentMethod: state.paymentMethod,
-    dueCents: gesamt,
-    tenderedCents: state.tenderedCents,
-    changeEnabled: business.change,
-    cartEmpty: cart.isEmpty,
-  );
+  final CompletionCheck pruefung;
+  if (pfand.code != null) {
+    pruefung = CompletionCheck(ready: false, reason: depositErrorMessage(pfand.code) ?? pfand.code);
+  } else if (auszahlung) {
+    pruefung = CompletionCheck(ready: !cart.isEmpty);
+  } else {
+    pruefung = completionCheck(
+      paymentMethod: state.paymentMethod,
+      dueCents: gesamt,
+      tenderedCents: state.tenderedCents,
+      changeEnabled: business.change,
+      cartEmpty: cart.isEmpty,
+    );
+  }
   return CheckoutTotals(
+    depositCents: pfand.totalCents,
+    returnCents: leergut,
+    payoutCents: auszahlung ? -zahlen : 0,
+    depositCode: pfand.code,
     subtotalCents: summe,
     discountCents: rabatt,
     dueCents: zahlen,
@@ -262,6 +317,10 @@ KeckPaymentInput cashPayment(CheckoutTotals invoice, {int? amountCents}) {
 ///    Belegposition ([distributeDiscount]) und senkt den Umsatz seines Satzes.
 ///
 /// [discountCents] ist derselbe Wert, der auch in [receiptItems] geht.
+///
+/// Zeigt die USt **ohne Pfand-Vorschau**: abgeleitetes Pfand bucht der Server
+/// und steht hier nicht (Leergut im Korb zaehlt mit). Nur Anzeige; der Beleg
+/// rechnet richtig.
 int vatTotalCents(Cart cart, {int discountCents = 0}) =>
     vatTotalCentsOfItems(receiptItems(cart, discountCents));
 
@@ -285,7 +344,7 @@ int vatTotalCentsOfItems(List<KasseneckItem> items) {
 /// Summe der Zeilen ist **immer genau** der Rabatt.
 ///
 /// Rabatt- und Stornozeilen (negativ) zählen nicht als Umsatz: ein zweiter
-/// Rabatt rechnet nur auf die Ware.
+/// Rabatt rechnet nur auf die Ware. Pfand- und Leergutzeilen ebenso nicht.
 List<KasseneckItem> distributeDiscount(List<KasseneckItem> items, int discountCents, {String name = 'Rabatt'}) {
   if (discountCents < 0) {
     throw ArgumentError.value(discountCents, 'rabattCents', 'Rabatt muss eine ganze Zahl in Cent >= 0 sein');
@@ -294,6 +353,8 @@ List<KasseneckItem> distributeDiscount(List<KasseneckItem> items, int discountCe
 
   final gruppen = <VatRate, int>{};
   for (final p in items) {
+    // Pfand und Leergut werden nie rabattiert (durchlaufend, Spec E17).
+    if (p.isDeposit || p.isDepositReturn) continue;
     final betrag = p.totalCents;
     if (betrag <= 0) continue;
     gruppen[p.vat] = (gruppen[p.vat] ?? 0) + betrag;

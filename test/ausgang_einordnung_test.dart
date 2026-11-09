@@ -80,6 +80,8 @@ const Set<String> _lesen = {
   'listMyArticleGroups',
   'listMyArticles',
   'listMyCashregisters',
+  // Gelernte Leergut-Codes: liest nur.
+  'listMyLeergutCodes',
   'listMyPrinters',
   'listMyReceipts',
   'listMyStock',

@@ -21,6 +21,13 @@ String? voucherItemError(List<KasseneckItem> items) => items.any((p) => p.isVouc
     ? 'voucher_invalid: Gutschein-Positionen (kind voucher, voucher_float) setzt nur der Server.'
     : null;
 
+/// Pfandzeilen setzt der Server aus den Artikeln (`autoDeposits`): eine Zeile
+/// `deposit` mit `articleId` waere doppelt gemeint (`invalid_deposit`).
+String? depositItemError(List<KasseneckItem> items) =>
+    items.any((p) => p.isDeposit && p.articleId != null && p.articleId!.isNotEmpty)
+        ? 'invalid_deposit: Eine Pfandzeile (kind deposit) traegt keine articleId; der Server setzt sie aus dem Artikel (autoDeposits).'
+        : null;
+
 /// Braucht dieser Verkauf keine Positionen? Ein Gutscheinverkauf ist ein
 /// Umsatz ohne Positionen, eine Auszahlung der neuen Form ebenso.
 bool vouchersWithoutItems(List<KeckVoucher> vouchers) =>

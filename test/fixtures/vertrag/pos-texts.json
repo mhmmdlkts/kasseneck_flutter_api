@@ -1,5 +1,5 @@
 {
-  "version": "1.31.0",
+  "version": "1.32.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -1162,6 +1162,33 @@
     },
     "tip.unassigned_hint": {
       "text": "Trinkgeld ohne angemeldeten Benutzer."
+    },
+    "deposit.changed": {
+      "text": "Pfand wurde geändert. Bitte Summe prüfen."
+    },
+    "deposit_error.not_enabled": {
+      "text": "Pfand ist für diesen Betrieb nicht eingeschaltet."
+    },
+    "deposit_error.type_not_found": {
+      "text": "Diese Pfandart gibt es nicht mehr."
+    },
+    "deposit_error.set_by_server": {
+      "text": "Das Pfand bucht die Kasse selbst."
+    },
+    "deposit_error.invalid_quantity": {
+      "text": "Pfand gibt es nur für ganze Stück."
+    },
+    "deposit_error.return_not_offered": {
+      "text": "Diese Kasse nimmt kein Leergut zurück."
+    },
+    "deposit_error.type_not_issued": {
+      "text": "Dieses Leergut wurde hier nie verkauft."
+    },
+    "deposit_error.follows_item": {
+      "text": "Pfand wird mit seinem Artikel storniert."
+    },
+    "deposit_error.invalid": {
+      "text": "Die Pfand-Angaben stimmen nicht."
     }
   },
   "errorRules": [
@@ -3314,6 +3341,30 @@
     },
     "settings.tip_start": {
       "text": "Zuerst offen"
+    },
+    "deposit.return": {
+      "text": "Leergut"
+    },
+    "deposit.payout": {
+      "text": "Bar auszahlen"
+    },
+    "deposit.offset": {
+      "text": "Mit Einkauf verrechnen"
+    },
+    "deposit.unknown_code": {
+      "text": "Welches Leergut ist das?"
+    },
+    "deposit.over_usual": {
+      "text": "Mehr als üblich – trotzdem annehmen?"
+    },
+    "deposit.on_premises": {
+      "text": "Vor Ort"
+    },
+    "deposit.takeaway": {
+      "text": "Mitnahme"
+    },
+    "deposit.sum": {
+      "text": "Summe Leergut"
     }
   },
   "returnDispositionLabels": {
@@ -3334,5 +3385,15 @@
     "ask": "tip_kept_mode.ask",
     "always": "tip_kept_mode.always",
     "never": "tip_kept_mode.never"
+  },
+  "depositErrors": {
+    "deposit_not_enabled": "deposit_error.not_enabled",
+    "deposit_type_not_found": "deposit_error.type_not_found",
+    "deposit_set_by_server": "deposit_error.set_by_server",
+    "invalid_deposit_quantity": "deposit_error.invalid_quantity",
+    "deposit_return_not_offered": "deposit_error.return_not_offered",
+    "deposit_type_not_issued": "deposit_error.type_not_issued",
+    "deposit_follows_item": "deposit_error.follows_item",
+    "invalid_deposit": "deposit_error.invalid"
   }
 }

@@ -164,8 +164,20 @@ String topfFuerSatz(double vat) {
 
 bool _istGutscheinZeile(Innen p) => p.kind == 'voucher' || p.kind == 'voucher_float';
 
-/// Position, die ein Gutschein decken darf: weder Trinkgeld noch Gutscheinzeile.
-bool istDeckbar(Innen p) => p.tip == null && p.kind != 'tip' && !_istGutscheinZeile(p);
+/// Pfand- oder Leergutzeile: durchlaufend wie das Trinkgeld, nie rabattiert, nie von einem Gutschein gedeckt.
+bool istPfandZeile(Innen p) => p.kind == 'deposit' || p.kind == 'deposit_return';
+
+/// Position, die ein Gutschein decken darf: weder Trinkgeld noch Gutscheinzeile noch Pfand oder Leergut (E18).
+bool istDeckbar(Innen p) => p.tip == null && p.kind != 'tip' && !_istGutscheinZeile(p) && !istPfandZeile(p);
+
+/// Summe der Leergutzeilen in Cent (<= 0), wie `pfand-core.leergutCents` im Backend: Menge mal Einzelpreis, auf Cent gerundet.
+int leergutCents(Iterable<Innen> positionen) {
+  var summe = 0.0;
+  for (final p in positionen) {
+    if (p.kind == 'deposit_return') summe += jsRound(p.amount * jsRound(p.priceOne * 100));
+  }
+  return summe.toInt();
+}
 
 /// Summe der Trinkgeldzeilen (Personal und Inhaber) in Cent, wie `centSumme(kunde.filter(istTip))` im Backend.
 int trinkgeldCents(Iterable<Innen> kunde) => centSumme(kunde.where((p) => p.tip != null || p.kind == 'tip'));

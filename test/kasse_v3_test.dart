@@ -81,6 +81,9 @@ const _kasseninfo = ['getRegisterInspectionInfo'];
 /// geprueft wird nur, dass der Code des Vertrags ankommt.
 const _connect = ['reportConnectState'];
 
+/// Leergut-Codes lernen und lesen (Pfand & Leergut, npm 1.32.0): Recht `depositReturn`.
+const _leergut = ['learnMyLeergutCode', 'listMyLeergutCodes'];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
   'openMyShift/key_conflict':
@@ -95,6 +98,7 @@ const _nichtDieserWeg = {
   'cancelReceipt/payments_conflict': 'paymentMethod am Storno, sendet dieser Weg nie',
   'cancelReceipt/card_data_without_card': 'cardPaymentId am Storno, sendet dieser Weg nie',
   'cancelReceipt/items_no_array': 'items ist hier immer eine Liste (Stornoposition)',
+  'learnMyLeergutCode/data_missing': 'ohne depositTypeId: ReturnCode verlangt die Kennung schon im Typ',
   'reportConnectState/data_missing': 'ohne deviceId: ConnectStateReport verlangt die Kennung schon im Typ, das Paket prueft sie vor dem Senden',
   'cancelReceipt/tip_source_invalid': 'eine Quelle ausserhalb von tipRefundSources wirft vor dem Senden (storno_trinkgeld_test.dart)',
   'setMyCashregisterStockLocation/data_missing':
@@ -454,6 +458,10 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         return belege.revokeDepHandoverLink(_s(p['linkId']));
       case 'getRegisterInspectionInfo':
         return belege.getRegisterInspectionInfo();
+      case 'learnMyLeergutCode':
+        return belege.learnReturnCode(ReturnCode(gtin: _s(p['gtin']), depositTypeId: _s(p['depositTypeId'])));
+      case 'listMyLeergutCodes':
+        return belege.listReturnCodes();
       case 'reportConnectState':
         await belege.reportConnectState(ConnectStateReport(
           deviceId: _s(p['deviceId']),
@@ -631,7 +639,7 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
     expect(isRegisterError(lauf.fehler, code as String), isTrue, reason: '$name: $code in registerErrorCodes');
   }
   if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt) || _schicht.contains(endpunkt) ||
-      _kasseninfo.contains(endpunkt)) {
+      _kasseninfo.contains(endpunkt) || _leergut.contains(endpunkt)) {
     expect(isPosError(lauf.fehler, code as String), isTrue, reason: '$name: $code in posErrorCodes');
   }
   if (_ausgaben.contains(endpunkt)) {
@@ -647,7 +655,7 @@ void main() {
   group('jeder Fall des Kassenwegs', () {
     for (final endpunkt in [
       ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
-      ..._kasseninfo, ..._connect,
+      ..._kasseninfo, ..._connect, ..._leergut,
     ]) {
       test(endpunkt, () async {
         var gelaufen = 0;
@@ -673,12 +681,12 @@ void main() {
       }
     });
 
-    test('alle 50 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+    test('alle 52 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
       final hier = {
         ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
-        ..._kasseninfo, ..._connect,
+        ..._kasseninfo, ..._connect, ..._leergut,
       };
-      expect((_vertrag['calls']['pos'] as List), hasLength(50));
+      expect((_vertrag['calls']['pos'] as List), hasLength(52));
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });
@@ -1341,7 +1349,8 @@ void main() {
         'listRegisterUsersForDevice': (RegisterDeviceUsers.fields, const {}),
         'listRegisterUsersForDevice.users[]': (RegisterUserSummary.fields, const {}),
         'listRegisterUsersForDevice.policy': (RegisterPinPolicy.fields, const {}),
-        'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.fields, const {'stockLocationId'}),
+        // Pfand & Leergut (1.32.0): der Block deposit steht nur bei eingeschaltetem Pfand in der Antwort.
+        'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.fields, const {'stockLocationId', 'deposit'}),
         'listRegisterSessionsForDevice': (RegisterSessionOverview.fields, const {}),
         'listRegisterSessionsForDevice.sessions[]': (RegisterSession.fields, const {}),
         'registerUserLogin': (RegisterUserSession.fields, const {}),
@@ -1355,7 +1364,8 @@ void main() {
         'generateFullReceiptId': (const {'fullReceiptId'}, const {}),
         'listMyArticleGroups': (const {'groups'}, const {}),
         // Zusatz-Kacheln (11.18.0): addOns zeigt der Vertrag an keiner Gruppe.
-        'listMyArticleGroups.groups[]': (ArticleGroup.fields, const {'symbol', 'vatRate', 'addOns'}),
+        // Pfand & Leergut (1.32.0): deposits zeigt der Vertrag an keiner Gruppe.
+        'listMyArticleGroups.groups[]': (ArticleGroup.fields, const {'symbol', 'vatRate', 'addOns', 'deposits'}),
         'listMyArticles': (const {'articles'}, const {}),
         'listMyArticles.articles[]':
             (PosArticle.fields, const {
@@ -1369,6 +1379,8 @@ void main() {
               'addOns',
               // Fremdgutscheine an der Kasse (11.22.0): der Vertrag zeigt sie in keinem Artikelfall.
               'externalVoucher',
+              // Pfand & Leergut (1.32.0): der Vertrag zeigt es in keinem Artikelfall.
+              'deposits',
             }),
         'listMyArticles.articles[].tile': (PosArticle.tileFields, const {}),
         'setMyKasseLogo': (const {'logoImage'}, const {}),

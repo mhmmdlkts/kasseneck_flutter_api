@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../aufrufe.dart';
 import '../kasse/einstellungen.dart';
+import '../kasse/pfand.dart' show CashRegisterDeposit;
 import '../v3.dart';
 import 'fehler.dart';
 import 'transport.dart';
@@ -179,9 +180,9 @@ enum RegisterLoginMode { selectUser, pin }
 class RegisterCashregisterState {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'ready', 'reason', 'stockLocationId'};
+  static const Set<String> fields = {'ready', 'reason', 'stockLocationId', 'deposit'};
 
-  const RegisterCashregisterState({required this.ready, this.reason, this.stockLocationId});
+  const RegisterCashregisterState({required this.ready, this.reason, this.stockLocationId, this.deposit});
 
   final bool ready;
   final String? reason;
@@ -189,6 +190,10 @@ class RegisterCashregisterState {
   /// Lager-Standort der Kasse; `null` = Standard-Standort des Betriebs (der
   /// Server laesst das Feld dann weg).
   final String? stockLocationId;
+
+  /// Pfand & Leergut der Kasse (Ruecknahme, Vorgaben); `null`, solange der
+  /// Betrieb kein Pfand eingeschaltet hat (der Server laesst den Block dann weg).
+  final CashRegisterDeposit? deposit;
 }
 
 /// Antwort von [RegisterClient.listRegisterUsersForDevice].
@@ -270,6 +275,7 @@ class RegisterUserPerms {
     this.voucherSell,
     this.voucherRedeem,
     this.voucherManage,
+    this.depositReturn,
     this.cancelScope = RegisterScope.none,
     this.receiptsScope = RegisterScope.all,
     this.other = const {},
@@ -345,6 +351,10 @@ class RegisterUserPerms {
   /// [voucherPermsOf].
   final bool? voucherManage;
 
+  /// Leergut annehmen (Pfand & Leergut). `null`, wenn der Schluessel fehlt;
+  /// dann gilt das Recht als erteilt, siehe [depositReturnOf].
+  final bool? depositReturn;
+
   /// Storno-Reichweite; fehlt sie (Altbestand), entscheidet [cancel].
   final RegisterScope cancelScope;
 
@@ -400,6 +410,8 @@ class RegisterUserPerms {
         return voucherRedeem ?? false;
       case 'voucherManage':
         return voucherManage ?? false;
+      case 'depositReturn':
+        return depositReturn ?? false;
       default:
         return other[name] ?? false;
     }
@@ -411,6 +423,12 @@ class RegisterUserPerms {
 /// `false` sperrt; alle anderen Lager-Rechte gelten ohne Schluessel als
 /// verweigert. Ohne Rechte ([perms] `null`) nichts.
 bool stockViewOf(RegisterUserPerms? perms) => perms != null && (perms.stockView ?? true);
+
+/// Darf der Benutzer Leergut annehmen? Ohne Schluessel gilt das Recht als
+/// erteilt (Rollenvorgabe: Kassier und Chef; ein alter Server kennt es nicht);
+/// nur ein ausdrueckliches `false` sperrt. Ohne Rechte ([perms] `null`): nein.
+/// Zwilling von `depositReturnOf` im npm-Paket.
+bool depositReturnOf(RegisterUserPerms? perms) => perms != null && (perms.depositReturn ?? true);
 
 /// Die drei Gutschein-Rechte, aufgeloest (kein Schluessel fehlt mehr).
 class VoucherPerms {
@@ -654,6 +672,7 @@ class RegisterClient {
               stockLocationId: kasse['stockLocationId'] is String && (kasse['stockLocationId'] as String).isNotEmpty
                   ? kasse['stockLocationId'] as String
                   : null,
+              deposit: CashRegisterDeposit.fromJson(kasse['deposit']),
             )
           : null,
     );
@@ -883,7 +902,7 @@ RegisterUserPerms _rechte(Object? wert) {
     'sell', 'cancel', 'articles', 'layout', 'reports', 'takeover',
     'drawer', 'discount', 'tipAssign', 'cancelScope', 'receiptsScope',
     'stockView', 'stockCosts', 'stockMove', 'stockLoss', 'stocktakeCount', 'stocktakeClose', 'stockLocation',
-    'voucherSell', 'voucherRedeem', 'voucherManage',
+    'voucherSell', 'voucherRedeem', 'voucherManage', 'depositReturn',
   };
   final weitere = <String, bool>{};
   for (final eintrag in roh.entries) {
@@ -914,6 +933,8 @@ RegisterUserPerms _rechte(Object? wert) {
     voucherSell: roh.containsKey('voucherSell') ? roh['voucherSell'] == true : null,
     voucherRedeem: roh.containsKey('voucherRedeem') ? roh['voucherRedeem'] == true : null,
     voucherManage: roh.containsKey('voucherManage') ? roh['voucherManage'] == true : null,
+    // Wie stockView: fehlend bleibt offen (null), die Regel steht in depositReturnOf.
+    depositReturn: roh.containsKey('depositReturn') ? roh['depositReturn'] == true : null,
     // Altbestand ohne Reichweite: der Schalter entscheidet (so migriert es auch
     // das Backend, register-auth.js).
     cancelScope: roh.containsKey('cancelScope') ? _scope(roh['cancelScope']) : (cancel ? RegisterScope.all : RegisterScope.none),

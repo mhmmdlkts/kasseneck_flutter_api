@@ -234,6 +234,11 @@ String? receiptOutputLabel(ReceiptOutput output) {
 /// E-Mail-Versand entscheiden beide Kassen am Code, nie am Wortlaut.
 String? voucherErrorMessage(String? code) => code == null ? null : voucherErrorMessages[code];
 
+/// Der Satz zu einem Pfand-/Leergut-`code` des Backends (`deposit_*`,
+/// `invalid_deposit*`); `null` fuer jeden anderen Code. Zwilling von
+/// `depositErrorMessage` im npm-Paket.
+String? depositErrorMessage(String? code) => code == null ? null : depositErrorMessages[code];
+
 /// Der Satz zu einer Absage beim Speichern eines Artikels als fremder
 /// Gutschein: nur fuer `article_external_voucher_invalid` (sonst `null`), je
 /// [reason] (`data.grund`); ein unbekannter oder fehlender Grund bekommt den

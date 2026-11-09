@@ -4,8 +4,8 @@
     "default": {
       "sha256": "b3ed9b5e54fb6a0c27c2e9b494c8676926b80b4527236f0f4f71403c455fa477",
       "head": [],
-      "inputsSha256": "4166a7ee4a74f32f6cfb2e7ba6304c2de470469b9d97363e7ae6601f1b3557ba",
-      "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
+      "inputsSha256": "ecd4022225db5cea61146c96b571358e81dfbe3a9d833b23df1c039b4f747c2f",
+      "backendPackage": "@kreiseck/kasseneck-api@0.39.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
         "functions/gemeinsam/api-rand.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "1ea9e8da42c9f02eb58e68806be7584d9ccb42b372cd777458f13fd427c92570",
+      "sha256": "5f6919dd346b1cb2c1b86ee4b56d7bdba714e6046a5266e25c779e5a5ae1c837",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "5411d8b31e1af456da3f2938fafa5e2ba335977f7f4b8c64b86677ae1202b6f7",
+      "inputsSha256": "43b0986e9cf1980bf7dd66e6eec114b6cfef7d3d4c7c9f9e94465834584e63b0",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -3461,7 +3461,8 @@
                   "receiptsScope": "all",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": true
+                  "voucherManage": true,
+                  "depositReturn": true
                 }
               }
             }
@@ -3510,7 +3511,8 @@
                   "receiptsScope": "all",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": true
+                  "voucherManage": true,
+                  "depositReturn": true
                 }
               }
             }
@@ -3601,7 +3603,8 @@
                   "receiptsScope": "own",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": false
+                  "voucherManage": false,
+                  "depositReturn": true
                 }
               }
             }
@@ -3653,7 +3656,8 @@
                   "receiptsScope": "all",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": true
+                  "voucherManage": true,
+                  "depositReturn": true
                 }
               }
             }
@@ -4007,7 +4011,8 @@
                   "receiptsScope": "own",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": false
+                  "voucherManage": false,
+                  "depositReturn": true
                 }
               }
             }
@@ -4106,7 +4111,8 @@
                   "receiptsScope": "all",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": true
+                  "voucherManage": true,
+                  "depositReturn": true
                 }
               }
             }
@@ -4148,7 +4154,8 @@
                   "receiptsScope": "own",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": false
+                  "voucherManage": false,
+                  "depositReturn": true
                 }
               }
             }
@@ -4205,7 +4212,8 @@
                   "receiptsScope": "own",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": false
+                  "voucherManage": false,
+                  "depositReturn": true
                 }
               }
             }
@@ -4251,7 +4259,8 @@
                   "receiptsScope": "own",
                   "voucherSell": true,
                   "voucherRedeem": true,
-                  "voucherManage": false
+                  "voucherManage": false,
+                  "depositReturn": true
                 }
               }
             }
@@ -25922,6 +25931,412 @@
             "status": "success",
             "message": "",
             "data": {}
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "learnMyLeergutCode": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "gtin": "9012345000011",
+            "depositTypeId": "einweg"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "deposit_off",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "gtin": "9012345000011",
+            "depositTypeId": "einweg"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Pfand & Leergut ist für dieses Konto nicht eingeschaltet.",
+            "data": {
+              "code": "deposit_not_enabled"
+            },
+            "code": "deposit_not_enabled"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "gtin": "9012345000011",
+            "depositTypeId": "einweg"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Leergut zurückzunehmen ist hier nicht erlaubt.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "gtin": "9012345000011"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: gtin, depositTypeId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "depositTypeId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "gtin_invalid",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "gtin": "9012345000012",
+            "depositTypeId": "einweg"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Code ist keine gültige GTIN.",
+            "data": {
+              "code": "invalid_deposit"
+            },
+            "code": "invalid_deposit"
+          }
+        },
+        {
+          "case": "deposit_type_unknown",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "gtin": "9012345000011",
+            "depositTypeId": "gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Pfandart gibt es nicht (mehr).",
+            "data": {
+              "code": "deposit_type_not_found"
+            },
+            "code": "deposit_type_not_found"
+          }
+        },
+        {
+          "case": "deposit_type_decommissioned",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "gtin": "9012345000011",
+            "depositTypeId": "alt"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Pfandart gibt es nicht (mehr).",
+            "data": {
+              "code": "deposit_type_not_found"
+            },
+            "code": "deposit_type_not_found"
+          }
+        },
+        {
+          "case": "success_owner",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "gtin": "9012345000011",
+            "depositTypeId": "einweg"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "gtin": "9012345000011",
+              "depositTypeId": "einweg"
+            }
+          }
+        },
+        {
+          "case": "success_manager_reusable",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "gtin": "9012345000028",
+            "depositTypeId": "kiste"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "gtin": "9012345000028",
+              "depositTypeId": "kiste"
+            }
+          }
+        },
+        {
+          "case": "success_overwrites",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "gtin": "9012345000011",
+            "depositTypeId": "kiste"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "gtin": "9012345000011",
+              "depositTypeId": "kiste"
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "listMyLeergutCodes": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "deposit_off",
+          "method": "POST",
+          "caller": "owner",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Pfand & Leergut ist für dieses Konto nicht eingeschaltet.",
+            "data": {
+              "code": "deposit_not_enabled"
+            },
+            "code": "deposit_not_enabled"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Leergut zurückzunehmen ist hier nicht erlaubt.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "success_owner",
+          "method": "POST",
+          "caller": "owner",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "codes": [
+                {
+                  "gtin": "9012345000011",
+                  "depositTypeId": "einweg"
+                },
+                {
+                  "gtin": "9012345000028",
+                  "depositTypeId": "kiste"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "codes": [
+                {
+                  "gtin": "9012345000011",
+                  "depositTypeId": "einweg"
+                },
+                {
+                  "gtin": "9012345000028",
+                  "depositTypeId": "kiste"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_empty",
+          "method": "POST",
+          "caller": "owner",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "codes": []
+            }
           }
         },
         {

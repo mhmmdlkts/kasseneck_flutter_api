@@ -58,6 +58,7 @@ import 'belegmail.dart';
 import '../receipt/codes.dart' show receiptOutputEntryErrorCodes, receiptOutputErrorCodes;
 import '../receipt/idempotenz.dart';
 import 'lager.dart';
+import 'pfand.dart' show ReturnCode, returnCodeNutzlast;
 import 'schicht.dart';
 import 'storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'storno_nutzlast.dart';
@@ -444,6 +445,13 @@ class RegisterReceiptClient {
   /// wiederholt nie. Eine stabile Kennung des Vorgangs nehmen (Bestellnummer,
   /// Nummer des Ersatzbelegs). Text mit 1 bis 120 Zeichen, unveraendert
   /// gesendet; leer, nur Leerraum oder laenger wirft vor dem Senden.
+  ///
+  /// [autoDeposits]: Pfand & Leergut -- der Server setzt die Pfandzeilen aus den
+  /// Artikeln selbst und rechnet den Betrag. Die Kasse mit Pfand sendet `true`.
+  /// Ohne Angabe fehlt das Feld (Vorgabe des Servers). [onPremises]: vor Ort
+  /// verzehrt (`true`) oder mitgenommen (`false`); ohne Angabe gilt die Vorgabe
+  /// der Kasse. Eine Zeile `deposit` mit `articleId` wirft vor dem Senden
+  /// (`invalid_deposit`): Pfandzeilen setzt der Server aus dem Artikel.
   Future<KasseneckReceipt> sell({
     required List<KasseneckItem> items,
     required List<KeckPaymentInput> payments,
@@ -455,11 +463,15 @@ class RegisterReceiptClient {
     List<KeckVoucher>? vouchers,
     ManualReceipt? manualReceipt,
     String? idempotencyKey,
+    bool? autoDeposits,
+    bool? onPremises,
   }) async {
     const name = Aufrufe.createReceipt;
     final gutscheine = vouchers ?? const <KeckVoucher>[];
     final zeilenFehler = voucherItemError(items);
     if (zeilenFehler != null) throw KasseneckValidationError(name, zeilenFehler, 'request');
+    final pfandFehler = depositItemError(items);
+    if (pfandFehler != null) throw KasseneckValidationError(name, pfandFehler, 'request');
     if (items.isEmpty && !vouchersWithoutItems(gutscheine)) {
       // Ein leerer Verkauf ist kein Verkauf, und der Fehler soll fallen,
       // bevor irgendetwas in die Signaturkette geraet.
@@ -503,6 +515,8 @@ class RegisterReceiptClient {
           'drawerId': ?drawerId,
           'manualReceipt': ?manualReceipt?.toJson(),
           'idempotencyKey': ?idempotencyKey,
+          'autoDeposits': ?autoDeposits,
+          'onPremises': ?onPremises,
         },
       );
     } on KasseneckApiError catch (fehler) {
@@ -815,6 +829,27 @@ class RegisterReceiptClient {
   Future<void> reportConnectState(ConnectStateReport report) async {
     const name = Aufrufe.reportConnectState;
     await transport.call(name, params: connectStateNutzlast(name, report));
+  }
+
+  /// Lernt einen Leergut-Code (`learnMyLeergutCode`, nur Kassenweg, Recht
+  /// `depositReturn`): [code] ordnet eine GTIN einer aktiven Pfandart zu. Die Form
+  /// wird vor dem Senden geprueft; was der Server nicht annimmt, lehnt er mit
+  /// `invalid_deposit` oder `deposit_type_not_found` ab. Nach einer Frist ist der
+  /// Ausgang unklar (`unknownOutcomeCalls`); ein zweites Lernen schadet nie.
+  /// Zwilling von `learnReturnCode` im npm-Paket.
+  Future<ReturnCode> learnReturnCode(ReturnCode code) async {
+    const name = Aufrufe.learnMyLeergutCode;
+    final antwort = await transport.call(name, params: returnCodeNutzlast(name, code));
+    return ReturnCode.fromJson(antwort) ?? code;
+  }
+
+  /// Die gelernten Leergut-Codes (`listMyLeergutCodes`, nur Kassenweg): nur
+  /// aktive Pfandarten, nach GTIN sortiert; Unlesbares faellt weg. Zwilling von
+  /// `listReturnCodes` im npm-Paket.
+  Future<List<ReturnCode>> listReturnCodes() async {
+    final daten = await transport.call(Aufrufe.listMyLeergutCodes);
+    final liste = daten['codes'];
+    return liste is List ? [for (final e in liste) ?ReturnCode.fromJson(e)] : const [];
   }
 
   /// Artikelgruppen (Kategorien der Kachel-Kasse).

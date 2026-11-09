@@ -2,7 +2,7 @@ import '../enums/vat_rate.dart';
 import '../src/kasse/rueckgabe.dart';
 
 /// Die Kennzeichnungen, die eine Position tragen kann ([KasseneckItem.kind]).
-const _bekannteArten = {'tip', 'discount', 'voucher', 'voucher_float'};
+const _bekannteArten = {'tip', 'discount', 'voucher', 'voucher_float', 'deposit', 'deposit_return'};
 
 class KasseneckItem {
   /// Name des Artikels / der Dienstleistung
@@ -25,7 +25,9 @@ class KasseneckItem {
   /// Parameter `tip` erzeugt), `'discount'` (Rabatt, [distributeDiscount])
   /// oder eine Gutscheinzeile der neuen Form, die nur der Server setzt:
   /// `'voucher'` (Einzweck/Leistung) bzw. `'voucher_float'` (0-%-Topf,
-  /// Mehrzweck-Verkauf ab dem Stichtag und Auszahlung). Steuert nur die
+  /// Mehrzweck-Verkauf ab dem Stichtag und Auszahlung), oder eine Pfandzeile,
+  /// die ebenfalls nur der Server setzt: `'deposit'` (Pfand zur Ware) bzw.
+  /// `'deposit_return'` (Leergut, negativer Betrag). Steuert nur die
   /// Beleg-Darstellung und die Berichts-Zuordnung, nie die Beträge. Zwilling
   /// von `ReceiptItem.kind` im JS-Paket.
   final String? kind;
@@ -72,6 +74,33 @@ class KasseneckItem {
   /// eine Warenposition, die selbst kein Zusatz ist (`invalid_add_on_reference`).
   final int? addOnOf;
 
+  /// Pfand & Leergut: Pfandart (Kennung aus `getKasseSettings`
+  /// `deposit.depositTypes[].id`); nur an `deposit`- und `deposit_return`-Zeilen.
+  final String? depositTypeId;
+
+  /// Index der Warenposition im selben Beleg, zu der die Pfandzeile gehoert
+  /// (nur `deposit`).
+  final int? depositFor;
+
+  /// Art der Pfandart zum Belegzeitpunkt: `single_use` oder `reusable`.
+  final String? depositKind;
+
+  /// Pfand je Stueck in Cent bei einer Pfandzeile; der Zeilenpreis ist Menge
+  /// mal dieser Betrag.
+  final num? perUnit;
+
+  /// Strichcode des Gebindes (GTIN), falls bekannt.
+  final String? gtin;
+
+  /// Strichcode des Artikels (EAN), falls bekannt.
+  final String? ean;
+
+  /// Das Gebinde wurde im Betrieb selbst befuellt (eigene Abfuellung).
+  final bool? ownFilling;
+
+  /// Gelernte Leergut-Codes der Zeile (Code -> Menge); nur an `deposit_return`.
+  final Map<String, int>? codes;
+
   KasseneckItem({
     required this.name,
     required this.quantity,
@@ -87,6 +116,14 @@ class KasseneckItem {
     this.originalIndex,
     this.returnDisposition,
     this.addOnOf,
+    this.depositTypeId,
+    this.depositFor,
+    this.depositKind,
+    this.perUnit,
+    this.gtin,
+    this.ean,
+    this.ownFilling,
+    this.codes,
   });
 
   /// Trinkgeld-Position? Die eine Erkennungsstelle — niemand prüft [kind] selbst.
@@ -102,6 +139,14 @@ class KasseneckItem {
   /// Gutscheinzeile als durchlaufender Posten im 0-%-Topf (Mehrzweck:
   /// Verkauf ab dem Stichtag, Auszahlung). Zwilling von `isVoucherFloatItem`.
   bool get isVoucherFloat => kind == 'voucher_float';
+
+  /// Pfandzeile (Pfand zum Verkauf)? Die eine Erkennungsstelle. Zwilling von
+  /// `isDepositItem` im JS-Paket.
+  bool get isDeposit => kind == 'deposit';
+
+  /// Leergutzeile (Ruecknahme, negativer Betrag)? Zwilling von
+  /// `isDepositReturnItem` im JS-Paket.
+  bool get isDepositReturn => kind == 'deposit_return';
 
   /// Trinkgeld an den Inhaber? Dann ist es Entgelt (§ 4 UStG) und traegt den
   /// Steuersatz der Leistung; Trinkgeld an Mitarbeiter ist durchlaufender
@@ -188,6 +233,20 @@ class KasseneckItem {
       // gelesene Belege wieder. Ein Verkauf traegt sie nie (createReceipt
       // weist sie vor dem Senden als voucher_invalid ab).
       if (kind == 'voucher' || kind == 'voucher_float') 'kind': kind,
+      // Pfand & Leergut: Kennzeichen und Felder reisen mit (der Zwischenspeicher
+      // schreibt gelesene Belege wieder; ein Wunsch an den Server traegt `deposit`
+      // nie mit `articleId`). Zwilling von toReceiptItemPayload im JS-Paket.
+      if (kind == 'deposit' || kind == 'deposit_return') ...{
+        'kind': kind,
+        if (depositTypeId != null && depositTypeId!.isNotEmpty) 'depositTypeId': depositTypeId,
+        if (depositFor != null && depositFor! >= 0) 'depositFor': depositFor,
+        if (depositKind == 'single_use' || depositKind == 'reusable') 'depositKind': depositKind,
+        if (perUnit != null && perUnit!.isFinite) 'perUnit': perUnit,
+        if (gtin != null && gtin!.isNotEmpty) 'gtin': gtin,
+        if (ean != null && ean!.isNotEmpty) 'ean': ean,
+        'ownFilling': ?ownFilling,
+        if (codes != null && codes!.isNotEmpty) 'codes': codes,
+      },
       if (articleId != null && articleId!.isNotEmpty) 'articleId': articleId,
       // Nur an gelesenen Storno-Zeilen gesetzt (der Zwischenspeicher behaelt
       // sie); eine Verkaufszeile traegt beides nie.
@@ -210,6 +269,7 @@ class KasseneckItem {
     final quantity = json['quantity'] ?? json['amount'];
     final rate = json['vatRate'] ?? json['vat'];
     final kind = json['kind'];
+    final pfand = kind == 'deposit' || kind == 'deposit_return';
     final satzBekannt = VatRate.values.any((e) => e.rate == rate);
     final String? ungenau = quantity is num && quantity != quantity.toInt()
         ? 'Menge $quantity ist keine ganze Zahl'
@@ -233,6 +293,15 @@ class KasseneckItem {
       returnDisposition: isReturnDisposition(json['returnDisposition']) ? json['returnDisposition'] as String : null,
       // Zusatz-Kacheln: nur eine ganze Zahl >= 0 (wie im JS-Zwilling).
       addOnOf: json['addOnOf'] is int && (json['addOnOf'] as int) >= 0 ? json['addOnOf'] as int : null,
+      // Pfand & Leergut (wie im JS-Zwilling nur an Pfandzeilen gelesen).
+      depositTypeId: pfand && json['depositTypeId'] is String && (json['depositTypeId'] as String).isNotEmpty ? json['depositTypeId'] as String : null,
+      depositFor: pfand && json['depositFor'] is int && (json['depositFor'] as int) >= 0 ? json['depositFor'] as int : null,
+      depositKind: pfand && (json['depositKind'] == 'single_use' || json['depositKind'] == 'reusable') ? json['depositKind'] as String : null,
+      perUnit: pfand && json['perUnit'] is num && (json['perUnit'] as num).isFinite ? json['perUnit'] as num : null,
+      gtin: pfand && json['gtin'] is String && (json['gtin'] as String).isNotEmpty ? json['gtin'] as String : null,
+      ean: pfand && json['ean'] is String && (json['ean'] as String).isNotEmpty ? json['ean'] as String : null,
+      ownFilling: pfand && json['ownFilling'] is bool ? json['ownFilling'] as bool : null,
+      codes: pfand ? _leergutCodes(json['codes']) : null,
     );
   }
 
@@ -255,6 +324,28 @@ class KasseneckItem {
       lossyRead: lossyRead,
       // Die Spiegelung behaelt die Reihenfolge, der Verweis bleibt gueltig.
       addOnOf: addOnOf,
+      depositTypeId: depositTypeId,
+      depositFor: depositFor,
+      depositKind: depositKind,
+      perUnit: perUnit,
+      gtin: gtin,
+      ean: ean,
+      ownFilling: ownFilling,
+      codes: codes,
     );
   }
+}
+
+/// Gelernte Codes (Code -> ganze Menge ab 1); ohne brauchbaren Eintrag `null`.
+/// Zwilling von `leergutCodes` im JS-Paket.
+Map<String, int>? _leergutCodes(Object? wert) {
+  if (wert is! Map) return null;
+  final raus = <String, int>{};
+  for (final e in wert.entries) {
+    final menge = e.value;
+    if (e.key is String && (e.key as String).isNotEmpty && menge is num && menge == menge.truncate() && menge >= 1) {
+      raus[e.key as String] = menge.toInt();
+    }
+  }
+  return raus.isEmpty ? null : raus;
 }

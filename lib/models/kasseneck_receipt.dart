@@ -24,6 +24,7 @@ import '../src/kasse/rueckgabe.dart';
 import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
+import '../src/kasse/pfand.dart' show DepositSharedReturnPoint;
 import 'kasseneck_item.dart';
 import 'registration_info.dart';
 import 'keck_payment.dart';
@@ -196,6 +197,14 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// Nur an nacherfassten Belegen: der Handbeleg (siehe [ManualReceipt]).
   ManualReceipt? manualReceipt;
 
+  /// Pfand: wurde vor Ort getrunken (Einweg entfaellt)? `null`, wenn der Beleg
+  /// es nicht nennt (Antwortfeld `onPremises`).
+  bool? onPremises;
+
+  /// Pfand: die gemeinsame Ruecknahmestelle fuer Leergut, die der Server nur
+  /// stempelt, wenn der Betrieb sie fuehrt (`sharedReturnPoint`); sonst `null`.
+  DepositSharedReturnPoint? sharedReturnPoint;
+
   /// Nur am Storno-Beleg: der Grund, Code aus `cancellationReasons` (englisch, wie
   /// unter `/v3`; ein unbekannter kuenftiger Code bleibt roh stehen).
   String? cancellationReason;
@@ -278,6 +287,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.cancellationReason,
     this.cancellations = const [],
     this.manualReceipt,
+    this.onPremises,
+    this.sharedReturnPoint,
   });
 
   factory KasseneckReceipt.create({
@@ -370,6 +381,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       zeroKind: _nichtLeer(receipt['zeroKind']),
       cancellationReason: _nichtLeer(receipt['cancellationReason']),
       manualReceipt: ManualReceipt.fromJson(receipt['manualReceipt']),
+      onPremises: receipt['onPremises'] is bool ? receipt['onPremises'] as bool : null,
+      sharedReturnPoint: DepositSharedReturnPoint.fromJson(receipt['sharedReturnPoint']),
     );
   }
 
@@ -451,6 +464,8 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'cancellationReason': ?cancellationReason,
       if (cancellations.isNotEmpty) 'cancellations': cancellations,
       'manualReceipt': ?manualReceipt?.toJson(),
+      'onPremises': ?onPremises,
+      'sharedReturnPoint': ?sharedReturnPoint?.toJson(),
     };
   }
 
@@ -809,6 +824,49 @@ Object? _zeilenMitRueckgabe(Object? positionen) {
   ];
 }
 
+/// Pfand und Zusatz in der gespeicherten Form -> `/v3` an den Positionen
+/// (Zwilling von `stored/vokabular.ts`): `kind` `pfand`/`pfand_rueckgabe` ->
+/// `deposit`/`deposit_return`, `pfandartId` -> `depositTypeId`, `pfandZu` ->
+/// `depositFor`, `pfandArt` `einweg`/`mehrweg` -> `depositKind`
+/// `single_use`/`reusable`, `jeStueck` -> `perUnit`, `eigen` -> `ownFilling`,
+/// `zusatzZu` -> `addOnOf`. Ein schon englischer Schluessel gewinnt; kopiert,
+/// veraendert die Eingabe nie.
+const Map<String, String> _positionNamen = {
+  'zusatzZu': 'addOnOf',
+  'pfandartId': 'depositTypeId',
+  'pfandZu': 'depositFor',
+  'pfandArt': 'depositKind',
+  'jeStueck': 'perUnit',
+  'eigen': 'ownFilling',
+};
+const Map<Object?, String> _pfandArtNachAussen = {'einweg': 'single_use', 'mehrweg': 'reusable'};
+const Map<Object?, String> _pfandKindNachAussen = {'pfand': 'deposit', 'pfand_rueckgabe': 'deposit_return'};
+
+Object? _zeilenMitPfand(Object? positionen) {
+  if (positionen is! List) return positionen;
+  return [
+    for (final p in positionen)
+      if (p is Map && (p.keys.any(_positionNamen.containsKey) || _pfandKindNachAussen.containsKey(p['kind'])))
+        _positionMitPfand(p)
+      else
+        p,
+  ];
+}
+
+Map<String, dynamic> _positionMitPfand(Map p) {
+  final raus = <String, dynamic>{};
+  for (final MapEntry(:key, :value) in p.entries) {
+    final neu = _positionNamen['$key'];
+    // Ein englischer Schluessel an derselben Position gewinnt.
+    if (neu != null && p.containsKey(neu)) continue;
+    var wert = value;
+    if (key == 'kind') wert = _pfandKindNachAussen[value] ?? value;
+    if (key == 'pfandArt') wert = _pfandArtNachAussen[value] ?? value;
+    raus[neu ?? '$key'] = wert;
+  }
+  return raus;
+}
+
 /// Bringt einen Beleg in der gespeicherten Form von 9.x (`toJson` mit 0.x-
 /// Namen: `uid`, `taxnr`, `logo_skala`, `testCashregister`, `testSignatur`, `kopfId`,
 /// Layout mit `regelwerk`/`ton`; an Storno-Zeilen und in `cancellations[]`
@@ -842,12 +900,24 @@ Map<String, dynamic> migrateStoredReceiptJson(Map<String, dynamic> stored) {
   for (final feld in _interneBelegFelder) {
     neu.remove(feld);
   }
-  if (neu['items'] is List) neu['items'] = _zeilenMitRueckgabe(neu['items']);
+  if (neu['items'] is List) neu['items'] = _zeilenMitPfand(_zeilenMitRueckgabe(neu['items']));
   if (neu['cancellations'] is List) {
     neu['cancellations'] = [
       for (final c in neu['cancellations'] as List)
-        if (c is Map && c['items'] is List) {...c, 'items': _zeilenMitRueckgabe(c['items'])} else c,
+        if (c is Map && c['items'] is List) {...c, 'items': _zeilenMitPfand(_zeilenMitRueckgabe(c['items']))} else c,
     ];
+  }
+  // Pfand am Beleg: `vorOrt` -> `onPremises`, `pfandStelle {name, adresse}` ->
+  // `sharedReturnPoint {name, address}`.
+  if (neu.containsKey('vorOrt')) {
+    final wert = neu.remove('vorOrt');
+    neu.putIfAbsent('onPremises', () => wert);
+  }
+  if (neu.containsKey('pfandStelle')) {
+    final stelle = neu.remove('pfandStelle');
+    if (!neu.containsKey('sharedReturnPoint')) {
+      neu['sharedReturnPoint'] = stelle is Map ? _umbenannt(stelle, const {'adresse': 'address'}) : stelle;
+    }
   }
   final pruef = neu.remove('pruefangaben');
   if (pruef is Map && !neu.containsKey('registrationInfo')) {

@@ -121,6 +121,22 @@
       "sheet32": "977ffdca4aadec64e6775a71462c1f477a15edc68ae5397f93db8a43b4987733",
       "sheet48": "30502dc11ab7350bf340631671176ca9da3e1ec1e26fd8800c06c94b6ff7ce7a"
     },
+    "deposit": {
+      "input": "72b61777566f5ecc0b97c570797fc132fb4286c77b6a0459cd2f284c09ff6dfb",
+      "expected": "6f3af328000594da75af0d07f7c6b95ed5ecd455d17c7422e4fa35d80f9fc333",
+      "grid32": "0cb4311cb45c9857d181d176fbb662508149e6597ea986f72e4ee9afbf2aa0e5",
+      "grid48": "c3fa02b731afd1f83e0b442a5c22dc56d6da196ef6fa171b3341aa8c1d69db1d",
+      "sheet32": "33007c2a0c6ff10220963255ebc640bf6402de8b45e65245ae2c099e5954bc5c",
+      "sheet48": "4a15e0fb5f82f7e4f363fd64d86a3d90215656fb988adadca34b48373ee0869a"
+    },
+    "deposit-return": {
+      "input": "cb723d86a769d9d3d571d64d13ce726fd7c978d4b07143542d877cb546c4209d",
+      "expected": "0765ce7e9577f016e89c63c7269989f9179e503c4579d2accd5448a01ced9bdf",
+      "grid32": "59d2a5b68cd848be21978b2167c6b837934ffb2c2e49a06bd5aeedeae1ea8a13",
+      "grid48": "af6fccc41e6364cbe8a7f0cb03c5a4a984d6bc7b2ab0505a62c1d7761d6f0c5b",
+      "sheet32": "5e4dbaafe9b2195d966a75672778fdf799f3bc391ebff3371d96c2ce6cbc61c3",
+      "sheet48": "c997e70ceb6c705d4a7cb70125b258956da52be2d015f9a14994a184b095dcaa"
+    },
     "discount-lines": {
       "input": "d3d26eaa132e9d4e3634ac44c80244d59c75d3baff449a52d32afcb013e67943",
       "expected": "7f9b53b3e9dd49b4439ebafb3c547041905b0868684bed009b2f053ac0e5add3",

@@ -17,8 +17,10 @@ library;
 
 import '../../enums/vat_rate.dart';
 import '../../models/kasseneck_item.dart';
+import 'artikel.dart';
 import 'artikel_id.dart';
 import 'einstellungen.dart';
+import 'pfand.dart';
 import 'zusaetze.dart';
 
 /// Eine Position des laufenden Verkaufs.
@@ -32,6 +34,13 @@ class Position {
     this.maxQuantity,
     this.articleId,
     this.addOnOf,
+    this.kind,
+    this.depositTypeId,
+    this.depositKind,
+    this.depositOf,
+    this.perUnit,
+    this.ean,
+    this.codes,
   });
 
   /// Kennung nur fuer diesen Bildschirm: zwei gleich aussehende Positionen sind
@@ -58,6 +67,37 @@ class Position {
   /// `addOnOf` der Belegposition rechnet erst [receiptItems].
   final String? addOnOf;
 
+  /// Pfand & Leergut: `'deposit'` bei einer abgeleiteten Pfandzeile (nur in der
+  /// Vorschau von [Cart.lines], nie im Korb), `'deposit_return'` bei Leergut im
+  /// Korb (negativer Einzelpreis); sonst `null`.
+  final String? kind;
+
+  /// Pfandart (nur Pfand und Leergut).
+  final String? depositTypeId;
+
+  /// `single_use` oder `reusable` (nur Pfand und Leergut).
+  final String? depositKind;
+
+  /// Nur an einer abgeleiteten Pfandzeile: Kennung der Position, zu der das
+  /// Pfand gehoert. Die Zeile ist nicht aenderbar und nicht loeschbar; ihre
+  /// Menge folgt der Position.
+  final String? depositOf;
+
+  /// Pfandstueck je Stueck der Position (nur Pfandzeile).
+  final num? perUnit;
+
+  /// Strichcode des Gebindes (Einweg: EWP-GTIN).
+  final String? ean;
+
+  /// Nur an Leergut: gelernte Codes (Code -> Menge); ihre Summe ist die Menge.
+  final Map<String, int>? codes;
+
+  /// Leergut im Korb („Mit Einkauf verrechnen“)?
+  bool get isDepositReturn => kind == 'deposit_return';
+
+  /// Abgeleitete Pfandzeile der Vorschau?
+  bool get isDerivedDeposit => depositOf != null;
+
   /// Zeilensumme in ganzen Cent — beide Faktoren sind ganze Zahlen.
   int get lineTotalCents => priceCents * quantity;
 
@@ -70,13 +110,33 @@ class Position {
         maxQuantity: maxQuantity,
         articleId: articleId,
         addOnOf: addOnOf,
+        kind: kind,
+        depositTypeId: depositTypeId,
+        depositKind: depositKind,
+        depositOf: depositOf,
+        perUnit: perUnit,
+        ean: ean,
+        // Gelernte Codes gelten fuer genau diese Menge.
+        codes: quantity == this.quantity ? codes : null,
       );
 
   /// Als Belegposition – ohne die Kassen-Kennung, die das Backend nichts
   /// angeht; mit dem Artikel-Verweis, wenn es einen gibt. [addOnOf] ist der
   /// Index der Hauptposition im Beleg (setzt [receiptItems]).
-  KasseneckItem toReceiptItem({int? addOnOf}) =>
-      KasseneckItem(name: name, quantity: quantity, priceCents: priceCents, vat: vat, articleId: articleId, addOnOf: addOnOf);
+  KasseneckItem toReceiptItem({int? addOnOf}) => KasseneckItem(
+        name: name,
+        quantity: quantity,
+        priceCents: priceCents,
+        vat: vat,
+        articleId: articleId,
+        addOnOf: addOnOf,
+        kind: kind,
+        depositTypeId: depositTypeId,
+        depositKind: depositKind,
+        perUnit: perUnit,
+        ean: ean,
+        codes: codes,
+      );
 }
 
 /// Was der Kassier eingegeben hat, bevor daraus eine Position wird.
@@ -117,7 +177,96 @@ class CartLine {
   final Position item;
   final int quantity;
   final int amountCents;
+
+  /// Abgeleitete Pfandzeile: nicht loeschbar und nicht aenderbar, ihre Menge
+  /// folgt der Position darueber.
+  bool get derived => item.isDerivedDeposit;
+
+  /// Leergutzeile im Korb (negativ, mit +/- aenderbar und loeschbar).
+  bool get isReturn => item.isDepositReturn;
 }
+
+/// Alles, was die Pfand-Vorschau des Korbs braucht: was der Server aus Konto,
+/// Kasse und Beleg wuesste. Ohne dieses Objekt zeigt der Korb kein Pfand und
+/// rechnet wie bisher ([Cart.lines], [checkoutTotals]).
+class DepositPreviewContext {
+  const DepositPreviewContext({
+    required this.articles,
+    required this.groups,
+    required this.depositTypes,
+    required this.day,
+    this.onPremises = false,
+    this.smallBusiness = false,
+    this.cashRegister,
+  });
+
+  /// Artikel nach Kennung.
+  final Map<String, PosArticle> articles;
+
+  /// Artikelgruppen nach Kennung.
+  final Map<String, ArticleGroup> groups;
+
+  /// Pfandarten nach Kennung (`deposit.depositTypes`).
+  final Map<String, DepositType> depositTypes;
+
+  /// Wiener Tag des Verkaufs, `YYYY-MM-DD` ([viennaDay]).
+  final String day;
+
+  /// Vor Ort getrunken: Einweg entfaellt.
+  final bool onPremises;
+  final bool smallBusiness;
+
+  /// Pfand-Angaben der Kasse; ohne Angabe nimmt sie kein Leergut zurueck.
+  final CashRegisterDeposit? cashRegister;
+
+  DepositPreviewInput get _input => DepositPreviewInput(
+        auto: true,
+        articles: articles,
+        groups: groups,
+        depositTypes: depositTypes,
+        day: day,
+        onPremises: onPremises,
+        smallBusiness: smallBusiness,
+        mayReturn: true,
+        cashRegister: cashRegister,
+      );
+}
+
+/// Die abgeleiteten Pfandzeilen des Korbs: je Position (Kennung) ihre Zeilen,
+/// oder der Fehlercode der Vorschau ([depositPreviewErrorCodes]).
+class CartDeposits {
+  const CartDeposits(this.byPosition, [this.code]);
+
+  /// Position (Kennung) -> ihre Pfandzeilen in Belegreihenfolge.
+  final Map<String, List<Position>> byPosition;
+
+  /// Ein Wert aus [depositPreviewErrorCodes], wenn der Server den Verkauf so
+  /// abweisen wuerde; dann ist [byPosition] leer.
+  final String? code;
+
+  /// Alle Pfandzeilen.
+  Iterable<Position> get all => byPosition.values.expand((l) => l);
+
+  /// Summe aller Pfandzeilen in Cent.
+  int get totalCents => all.fold(0, (s, p) => s + p.lineTotalCents);
+}
+
+/// Hoechstmenge einer Leergutzeile (wie der Server).
+const int _maxReturnQuantity = 1000;
+
+/// Eine Warenposition in der Leitungsform, die [withDepositLines] liest.
+Map<String, Object?> _alsDraht(Position p) => {
+      'name': p.name,
+      'quantity': p.quantity,
+      'amount': p.quantity,
+      'unitPriceCents': p.priceCents,
+      'priceOneCents': p.priceCents,
+      'vatRate': p.vat.rate,
+      'vat': p.vat.rate,
+      'articleId': p.articleId,
+    };
+
+VatRate? _satzVon(num rate) => VatRate.values.where((v) => v.rate == rate).firstOrNull;
 
 /// Fortlaufende Nummer fuer die Kennung — sie braucht nur Eindeutigkeit
 /// innerhalb dieser Sitzung.
@@ -197,6 +346,110 @@ class Cart {
     return getroffen ? Cart(items: neu) : this;
   }
 
+  /// Hat der Korb Leergut („Mit Einkauf verrechnen“)?
+  bool get hasReturns => items.any((p) => p.isDepositReturn);
+
+  /// Summe der Ware in Cent, ohne Leergut.
+  int get goodsCents => items.where((p) => !p.isDepositReturn).fold(0, (s, p) => s + p.lineTotalCents);
+
+  /// Summe des Leerguts in Cent (null oder negativ).
+  int get returnCents => items.where((p) => p.isDepositReturn).fold(0, (s, p) => s + p.lineTotalCents);
+
+  /// Legt Leergut in den Korb: [quantity] Stueck der Pfandart [type] zum Betrag
+  /// des Tages [day] (die Zeile baut [depositReturnLine], wie der Server sie
+  /// bucht). Dieselbe Pfandart addiert sich zur vorhandenen Zeile (hoechstens
+  /// 1000 Stueck je Zeile; die Summe darueber wirft einen [StateError], der
+  /// Korb bleibt unveraendert, nichts wird still gekappt: jedes Stueck Leergut
+  /// ist Geld); gelernte [codes] bleiben nur, wenn beide Seiten welche tragen.
+  /// Wirft einen [StateError], wenn sich keine Zeile ergibt oder die Zeile
+  /// ueber 1000 Stueck kaeme.
+  Cart addedReturn(DepositType type, int quantity, {required String day, required bool smallBusiness, Map<String, int>? codes}) {
+    final zeile = depositReturnLine(type, quantity, day: day, smallBusiness: smallBusiness, codes: codes);
+    final vorhanden = items.indexWhere((p) => p.isDepositReturn && p.depositTypeId == type.id);
+    if (vorhanden >= 0) {
+      final alt = items[vorhanden];
+      final menge = alt.quantity + quantity;
+      if (menge > _maxReturnQuantity) {
+        throw StateError('Leergut: hoechstens $_maxReturnQuantity Stueck je Zeile (im Korb ${alt.quantity}, dazu $quantity)');
+      }
+      final neueCodes = alt.codes != null && codes != null
+          ? {
+              ...alt.codes!,
+              for (final e in codes.entries) e.key: (alt.codes![e.key] ?? 0) + e.value,
+            }
+          : null;
+      final neu = Position(
+        id: alt.id,
+        name: alt.name,
+        quantity: menge,
+        priceCents: alt.priceCents,
+        vat: alt.vat,
+        maxQuantity: _maxReturnQuantity,
+        kind: 'deposit_return',
+        depositTypeId: alt.depositTypeId,
+        depositKind: alt.depositKind,
+        ean: alt.ean,
+        codes: neueCodes,
+      );
+      return Cart(items: [...items.sublist(0, vorhanden), neu, ...items.sublist(vorhanden + 1)]);
+    }
+    _laufendeNummer += 1;
+    return Cart(items: [
+      ...items,
+      Position(
+        id: 'p$_laufendeNummer',
+        name: zeile.name,
+        quantity: zeile.quantity,
+        priceCents: zeile.priceCents,
+        vat: zeile.vat,
+        maxQuantity: _maxReturnQuantity,
+        kind: 'deposit_return',
+        depositTypeId: zeile.depositTypeId,
+        depositKind: zeile.depositKind,
+        ean: zeile.ean,
+        codes: zeile.codes,
+      ),
+    ]);
+  }
+
+  /// Die Pfandzeilen der Positionen, wie der Server sie aus Artikel, Gruppe,
+  /// Tag und Ort ableitet ([withDepositLines] mit `autoDeposits`). Eine Zeile
+  /// gehoert ihrer Position: Menge folgt, Loeschen der Position loescht sie, die
+  /// Zeile selbst ist nicht aenderbar. Leergut im Korb ist keine Ableitung.
+  /// Meldet der Server den Verkauf ab (etwa eine Pfandart ohne Betrag am Tag),
+  /// steht der Code in [CartDeposits.code].
+  CartDeposits deposits(DepositPreviewContext context) {
+    final je = <String, List<Position>>{};
+    for (final p in items) {
+      if (p.isDepositReturn || p.articleId == null) continue;
+      final r = withDepositLines([_alsDraht(p)], context._input);
+      if (!r.ok) return CartDeposits(const {}, r.code);
+      final zeilen = r.items!.skip(1).whereType<Map>().toList();
+      if (zeilen.isEmpty) continue;
+      final aus = <Position>[];
+      for (var k = 0; k < zeilen.length; k++) {
+        final z = zeilen[k];
+        final vat = _satzVon(z['vatRate'] as num);
+        if (vat == null) return const CartDeposits({}, 'invalid_deposit');
+        aus.add(Position(
+          id: '${p.id}~pfand$k',
+          name: z['name'] as String,
+          quantity: z['quantity'] as int,
+          priceCents: z['unitPriceCents'] as int,
+          vat: vat,
+          kind: 'deposit',
+          depositTypeId: z['depositTypeId'] as String?,
+          depositKind: z['depositKind'] as String?,
+          depositOf: p.id,
+          perUnit: z['perUnit'] as num?,
+          ean: z['ean'] as String?,
+        ));
+      }
+      je[p.id] = aus;
+    }
+    return CartDeposits(je);
+  }
+
   /// Zieht die verkauften Positionen ab.
   ///
   /// Gebraucht, weil der Abschluss **dauert** (Signatur, DEP) und die Erfassung
@@ -224,8 +477,33 @@ class Cart {
   /// Zeilen fuer die Anzeige je Mengenmodus: [PosQuantity.off] loest gebuendelte
   /// Positionen in eine Zeile je Stueck zum Einzelpreis auf. Zusaetze stehen
   /// direkt hinter ihrer Hauptzeile.
-  List<CartLine> lines(PosQuantity mode) {
-    final geordnet = [for (final z in orderAddOnLines(items, idOf: (p) => p.id, parentOf: (p) => p.addOnOf)) z.line];
+  ///
+  /// Mit [deposit] erscheint das Pfand (npm 1.32.0) als abgeleitete Unterzeile
+  /// direkt unter seiner Position, nach deren Zusaetzen ([CartLine.derived]).
+  /// Ohne bleibt alles wie bisher.
+  List<CartLine> lines(PosQuantity mode, {DepositPreviewContext? deposit}) {
+    var geordnet = [for (final z in orderAddOnLines(items, idOf: (p) => p.id, parentOf: (p) => p.addOnOf)) z.line];
+    if (deposit != null) {
+      final pfand = deposits(deposit).byPosition;
+      if (pfand.isNotEmpty) {
+        final mit = <Position>[];
+        final offen = <Position>[];
+        for (final p in geordnet) {
+          if (p.addOnOf == null) {
+            mit.addAll(offen);
+            offen.clear();
+            mit.add(p);
+            offen.addAll(pfand[p.id] ?? const []);
+          } else {
+            mit.add(p);
+            // Der Zusatz traegt sein eigenes Pfand direkt unter sich.
+            mit.addAll(pfand[p.id] ?? const []);
+          }
+        }
+        mit.addAll(offen);
+        geordnet = mit;
+      }
+    }
     if (mode != PosQuantity.off) {
       return geordnet
           .map((p) => CartLine(key: p.id, item: p, quantity: p.quantity, amountCents: p.lineTotalCents))

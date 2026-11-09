@@ -1,0 +1,316 @@
+{
+  "lines": [
+    {
+      "kind": "text",
+      "text": "Bäckerei Kornblum",
+      "align": "center",
+      "bold": true
+    },
+    {
+      "kind": "text",
+      "text": "Mühlweg 7",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "4600 Wels",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "ATU12345675",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Datum:",
+          "width": 4,
+          "align": "left"
+        },
+        {
+          "text": "13.08.2026 10:15:30",
+          "width": 8,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Kassen-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "KASSE1",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Beleg-ID:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "AT0-KASSE1-91",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "6  x Cola Dose je 2,00",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "12,00 A",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  + 1  x Eiswürfel",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "0,50 A",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  + 6  x Pfand Einweg je 0,25",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "1,50 D",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "2  x Bier Flasche 0,5 l je 1,80",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "3,60 A",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "  + 2  x Pfand Flasche je 0,20",
+          "width": 7,
+          "align": "left"
+        },
+        {
+          "text": "0,40 A",
+          "width": 5,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "MwSt%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "MwSt",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Netto",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "Brutto",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "A 20%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "2,75",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "13,75",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "16,50",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "D 0%",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "0,00",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "1,50",
+          "width": 3,
+          "align": "left"
+        },
+        {
+          "text": "1,50",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Pfand, nicht steuerbar",
+          "width": 9,
+          "align": "left"
+        },
+        {
+          "text": "1,50",
+          "width": 3,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "rule",
+      "char": "-"
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Gesamt:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "18,00 €",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "columns",
+      "columns": [
+        {
+          "text": "Zahlungsart:",
+          "width": 6,
+          "align": "left"
+        },
+        {
+          "text": "Barzahlung",
+          "width": 6,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "qr",
+      "data": "_R1-AT1_KASSE1_AT0-KASSE1-91_2026-08-13T10:15:30_16,50_0,00_0,00_0,00_1,50_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR"
+    },
+    {
+      "kind": "space",
+      "lines": 1
+    },
+    {
+      "kind": "text",
+      "text": "Danke für Ihren Einkauf",
+      "align": "center",
+      "bold": false
+    },
+    {
+      "kind": "text",
+      "text": "Leergut-Rückgabe: Max Hollerer GmbH, Mühlweg 9, 4600 Wels",
+      "align": "center",
+      "bold": false
+    }
+  ],
+  "paperSize": "mm58",
+  "ruleset": 2
+}

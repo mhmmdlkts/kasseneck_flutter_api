@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "04ab5e1d031979a4f0aa31ea000f4cbe1d6e557e2411e439899ac19a1bba0325",
-    "inputsSha256": "86a250bbb73c1f29d29793605274079ef3644f8f9c82609a80a1f4c481572c32",
-    "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
+    "sha256": "168261a0b5130d454fc3b5d51e8ee567d6a3e9a5d2d8e172829e9ccb17c47f31",
+    "inputsSha256": "fc428e5da1337f9ca7db6ce8234aa2594a5e46a7587de2487e3990d6b3fcb93a",
+    "backendPackage": "@kreiseck/kasseneck-api@0.39.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -327,7 +327,9 @@
       "createDepHandoverLink",
       "revokeDepHandoverLink",
       "getRegisterInspectionInfo",
-      "reportConnectState"
+      "reportConnectState",
+      "learnMyLeergutCode",
+      "listMyLeergutCodes"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -368,7 +370,9 @@
       "recordMyShiftCount",
       "logReceiptOutputs",
       "getRegisterInspectionInfo",
-      "reportConnectState"
+      "reportConnectState",
+      "learnMyLeergutCode",
+      "listMyLeergutCodes"
     ],
     "withSchema": [
       "activateCashregister",
@@ -402,6 +406,7 @@
       "createVariantGroup",
       "createWebhook",
       "deactivateArticle",
+      "deleteMyPfandart",
       "deleteMyVoucherLabelTemplate",
       "deleteMyVoucherType",
       "deletePartnerWebhook",
@@ -429,6 +434,9 @@
       "getKasseSettings",
       "getMyDrawerState",
       "getMyOpenVouchers",
+      "getMyPfand",
+      "getMyPfandBericht",
+      "getMyPfandJahr",
       "getMyShiftReport",
       "getMyVoucher",
       "getMyVoucherSettings",
@@ -452,6 +460,7 @@
       "hobexPayApi",
       "hobexRefundApi",
       "issueInvoice",
+      "learnMyLeergutCode",
       "listArticles",
       "listBrands",
       "listCustomerCashregisters",
@@ -461,6 +470,7 @@
       "listMyArticleGroups",
       "listMyArticles",
       "listMyCashregisters",
+      "listMyLeergutCodes",
       "listMyPrinters",
       "listMyReceipts",
       "listMyStock",
@@ -522,6 +532,7 @@
       "revokeDepHandoverLink",
       "rotatePartnerWebhookSecret",
       "rotateWebhookSecret",
+      "saveMyPfandart",
       "saveMyVoucherLabelTemplate",
       "saveMyVoucherType",
       "searchCustomers",
@@ -530,11 +541,14 @@
       "sendReceiptEmail",
       "sendWebhookTest",
       "setCustomerMandate",
+      "setMyCashregisterPfand",
       "setMyCashregisterStockLocation",
       "setMyKasseLogo",
       "setMyKasseSettings",
+      "setMyPfand",
       "setMyRegisterDeviceSettings",
       "setMyVoucherSettings",
+      "setPfandAdmin",
       "stripeCaptureIntent",
       "transferStock",
       "unblockMyVoucher",
@@ -1169,6 +1183,39 @@
       "entnehmen": "cash_drop",
       "einlegen": "change_in"
     },
+    "PFAND_ART": {
+      "einweg": "single_use",
+      "mehrweg": "reusable"
+    },
+    "PFAND_KIND": {
+      "pfand": "deposit",
+      "pfand_rueckgabe": "deposit_return"
+    },
+    "PFAND_POSITION": {
+      "depositTypeId": "pfandartId",
+      "depositFor": "pfandZu",
+      "depositKind": "pfandArt",
+      "perUnit": "jeStueck",
+      "ownFilling": "eigen"
+    },
+    "PFAND_RUECKNAHME": {
+      "hier": "here",
+      "gemeinsam": "shared",
+      "keine": "none"
+    },
+    "PFAND_TYP": {
+      "flasche": "bottle",
+      "kiste": "crate",
+      "fass": "keg",
+      "becher": "cup",
+      "glas": "glass",
+      "sonstiges": "other"
+    },
+    "PFAND_VOR_ORT": {
+      "vorOrt": "on_premises",
+      "mitnahme": "takeaway",
+      "fragen": "ask"
+    },
     "PIN_ZEICHEN": {
       "ziffern": "digits",
       "zeichen": "alphanumeric"
@@ -1348,6 +1395,13 @@
       "customer_exists",
       "customer_limit",
       "customer_not_found",
+      "deposit_follows_item",
+      "deposit_not_enabled",
+      "deposit_return_not_offered",
+      "deposit_set_by_server",
+      "deposit_type_in_use",
+      "deposit_type_not_found",
+      "deposit_type_not_issued",
       "device_bound_elsewhere",
       "device_not_found",
       "device_not_paired",
@@ -1372,6 +1426,7 @@
       "external_voucher_number_is_own_code",
       "external_voucher_type_not_enabled",
       "file_not_available",
+      "filler_role_required",
       "final_receipt_expired",
       "final_receipt_not_allowed",
       "finanzonline_error",
@@ -1401,12 +1456,15 @@
       "invalid_cursor",
       "invalid_date",
       "invalid_denominations",
+      "invalid_deposit",
+      "invalid_deposit_quantity",
       "invalid_dimensions",
       "invalid_discount_preset",
       "invalid_distribution",
       "invalid_document",
       "invalid_e1a_group",
       "invalid_file",
+      "invalid_item_kind",
       "invalid_items",
       "invalid_landed_cost",
       "invalid_limit",
@@ -1631,6 +1689,7 @@
       "too_many_assets",
       "too_many_attempts",
       "too_many_counts",
+      "too_many_deposit_types",
       "too_many_documents",
       "too_many_entries",
       "too_many_exports",
@@ -1801,7 +1860,19 @@
       "land_ungueltig": "invalid_country",
       "leistung_fehlt": "service_line_not_found",
       "leistung_ungueltig": "invalid_service_line",
-      "waehrung_ungueltig": "invalid_currency"
+      "waehrung_ungueltig": "invalid_currency",
+      "pfand_nicht_aktiv": "deposit_not_enabled",
+      "pfandart_unbekannt": "deposit_type_not_found",
+      "pfand_vom_server": "deposit_set_by_server",
+      "pfand_menge_ungueltig": "invalid_deposit_quantity",
+      "pfand_ruecknahme_aus": "deposit_return_not_offered",
+      "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
+      "pfand_folgt_position": "deposit_follows_item",
+      "pfandart_in_verwendung": "deposit_type_in_use",
+      "pfand_ungueltig": "invalid_deposit",
+      "zu_viele_pfandarten": "too_many_deposit_types",
+      "ewp_nicht_abfueller": "filler_role_required",
+      "kind_ungueltig": "invalid_item_kind"
     },
     "edge": [
       "validation",
@@ -1886,6 +1957,13 @@
       "comment_required",
       "count_already_voided",
       "count_not_found",
+      "deposit_follows_item",
+      "deposit_not_enabled",
+      "deposit_return_not_offered",
+      "deposit_set_by_server",
+      "deposit_type_in_use",
+      "deposit_type_not_found",
+      "deposit_type_not_issued",
       "device_bound_elsewhere",
       "device_not_found",
       "device_not_paired",
@@ -1902,6 +1980,7 @@
       "external_voucher_number_is_own_code",
       "external_voucher_type_not_enabled",
       "file_not_available",
+      "filler_role_required",
       "idempotency_conflict",
       "idempotency_key_required",
       "invalid_address",
@@ -1909,8 +1988,11 @@
       "invalid_connect_report",
       "invalid_cursor",
       "invalid_denominations",
+      "invalid_deposit",
+      "invalid_deposit_quantity",
       "invalid_discount_preset",
       "invalid_file",
+      "invalid_item_kind",
       "invalid_items",
       "invalid_line",
       "invalid_manual_receipt",
@@ -1939,6 +2021,7 @@
       "manual_receipt_range_not_allowed",
       "method_not_allowed",
       "module_inactive",
+      "not_found",
       "not_permitted",
       "note_required",
       "note_too_long",
@@ -2001,6 +2084,7 @@
       "tip_refund_source_requires_cash",
       "too_many_attempts",
       "too_many_counts",
+      "too_many_deposit_types",
       "too_many_exports",
       "too_many_links",
       "too_many_requests",
@@ -2353,6 +2437,8 @@
       "comment_required",
       "count_already_voided",
       "count_not_found",
+      "deposit_not_enabled",
+      "deposit_type_not_found",
       "device_bound_elsewhere",
       "device_not_found",
       "device_not_paired",
@@ -2365,6 +2451,7 @@
       "invalid_connect_report",
       "invalid_cursor",
       "invalid_denominations",
+      "invalid_deposit",
       "invalid_items",
       "invalid_movement_type",
       "invalid_quantity",
@@ -2535,7 +2622,19 @@
       "invalid_country",
       "service_line_not_found",
       "invalid_service_line",
-      "invalid_currency"
+      "invalid_currency",
+      "deposit_not_enabled",
+      "deposit_type_not_found",
+      "deposit_set_by_server",
+      "invalid_deposit_quantity",
+      "deposit_return_not_offered",
+      "deposit_type_not_issued",
+      "deposit_follows_item",
+      "deposit_type_in_use",
+      "invalid_deposit",
+      "too_many_deposit_types",
+      "filler_role_required",
+      "invalid_item_kind"
     ],
     "receiptMessagesByEndpoint": {
       "createReceipt": [
@@ -2638,12 +2737,20 @@
       ],
       "getReceipt": [],
       "createReceipt": [
+        "deposit_not_enabled",
+        "deposit_return_not_offered",
+        "deposit_set_by_server",
+        "deposit_type_not_found",
+        "deposit_type_not_issued",
         "external_voucher_duplicate",
         "external_voucher_not_enabled",
         "external_voucher_number_invalid",
         "external_voucher_number_is_own_code",
         "external_voucher_type_not_enabled",
         "idempotency_conflict",
+        "invalid_deposit",
+        "invalid_deposit_quantity",
+        "invalid_item_kind",
         "invalid_manual_receipt",
         "manual_receipt_date_in_future",
         "manual_receipt_duplicate",
@@ -2699,6 +2806,7 @@
         "cancellation_refund_reference_unknown",
         "cashregister_incomplete",
         "cashregister_not_assigned",
+        "deposit_follows_item",
         "idempotency_conflict",
         "idempotency_key_required",
         "invalid_items",
@@ -3050,6 +3158,42 @@
         "cashregister_not_assigned",
         "invalid_connect_report",
         "server_error"
+      ],
+      "learnMyLeergutCode": [
+        "cashregister_not_found",
+        "deposit_follows_item",
+        "deposit_not_enabled",
+        "deposit_return_not_offered",
+        "deposit_set_by_server",
+        "deposit_type_in_use",
+        "deposit_type_not_found",
+        "deposit_type_not_issued",
+        "filler_role_required",
+        "invalid_deposit",
+        "invalid_deposit_quantity",
+        "invalid_item_kind",
+        "not_found",
+        "not_permitted",
+        "server_error",
+        "too_many_deposit_types"
+      ],
+      "listMyLeergutCodes": [
+        "cashregister_not_found",
+        "deposit_follows_item",
+        "deposit_not_enabled",
+        "deposit_return_not_offered",
+        "deposit_set_by_server",
+        "deposit_type_in_use",
+        "deposit_type_not_found",
+        "deposit_type_not_issued",
+        "filler_role_required",
+        "invalid_deposit",
+        "invalid_deposit_quantity",
+        "invalid_item_kind",
+        "not_found",
+        "not_permitted",
+        "server_error",
+        "too_many_deposit_types"
       ]
     }
   },
@@ -3236,7 +3380,12 @@
               "__": "items",
               "receivedImmediately": "sofortErhalten",
               "keptByEmployee": "direkt",
-              "addOnOf": "zusatzZu"
+              "addOnOf": "zusatzZu",
+              "depositTypeId": "pfandartId",
+              "depositFor": "pfandZu",
+              "depositKind": "pfandArt",
+              "perUnit": "jeStueck",
+              "ownFilling": "eigen"
             }
           ],
           "manualReceipt": {
@@ -3248,6 +3397,11 @@
             "time": "uhrzeit",
             "reason": "grund",
             "note": "grundText"
+          },
+          "onPremises": "vorOrt",
+          "sharedReturnPoint": {
+            "__": "pfandStelle",
+            "address": "adresse"
           }
         },
         "issuedVouchers": [
@@ -3284,6 +3438,12 @@
         },
         "issuedVouchers[].validity.pattern": {
           "$catalog": "GUTSCHEIN_MUSTER"
+        },
+        "receipt.items[].kind": {
+          "$catalog": "PFAND_KIND"
+        },
+        "receipt.items[].depositKind": {
+          "$catalog": "PFAND_ART"
         }
       },
       "ergaenze": {
@@ -3681,7 +3841,19 @@
             "land_ungueltig": "invalid_country",
             "leistung_fehlt": "service_line_not_found",
             "leistung_ungueltig": "invalid_service_line",
-            "waehrung_ungueltig": "invalid_currency"
+            "waehrung_ungueltig": "invalid_currency",
+            "pfand_nicht_aktiv": "deposit_not_enabled",
+            "pfandart_unbekannt": "deposit_type_not_found",
+            "pfand_vom_server": "deposit_set_by_server",
+            "pfand_menge_ungueltig": "invalid_deposit_quantity",
+            "pfand_ruecknahme_aus": "deposit_return_not_offered",
+            "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
+            "pfand_folgt_position": "deposit_follows_item",
+            "pfandart_in_verwendung": "deposit_type_in_use",
+            "pfand_ungueltig": "invalid_deposit",
+            "zu_viele_pfandarten": "too_many_deposit_types",
+            "ewp_nicht_abfueller": "filler_role_required",
+            "kind_ungueltig": "invalid_item_kind"
           }
         }
       }
@@ -3829,9 +4001,16 @@
             "__": "items",
             "receivedImmediately": "sofortErhalten",
             "keptByEmployee": "direkt",
-            "addOnOf": "zusatzZu"
+            "addOnOf": "zusatzZu",
+            "depositTypeId": "pfandartId",
+            "depositFor": "pfandZu",
+            "depositKind": "pfandArt",
+            "perUnit": "jeStueck",
+            "ownFilling": "eigen"
           }
         ],
+        "autoDeposits": "pfandAuto",
+        "onPremises": "vorOrt",
         "drawerId": "ladeId",
         "vouchers": [
           {
@@ -3871,6 +4050,12 @@
         },
         "manualReceipt.reason": {
           "$catalog": "HANDBELEG_GRUND"
+        },
+        "items[].kind": {
+          "$catalog": "PFAND_KIND"
+        },
+        "items[].depositKind": {
+          "$catalog": "PFAND_ART"
         }
       },
       "data": {
@@ -3888,7 +4073,12 @@
               "__": "items",
               "receivedImmediately": "sofortErhalten",
               "keptByEmployee": "direkt",
-              "addOnOf": "zusatzZu"
+              "addOnOf": "zusatzZu",
+              "depositTypeId": "pfandartId",
+              "depositFor": "pfandZu",
+              "depositKind": "pfandArt",
+              "perUnit": "jeStueck",
+              "ownFilling": "eigen"
             }
           ],
           "manualReceipt": {
@@ -3900,6 +4090,11 @@
             "time": "uhrzeit",
             "reason": "grund",
             "note": "grundText"
+          },
+          "onPremises": "vorOrt",
+          "sharedReturnPoint": {
+            "__": "pfandStelle",
+            "address": "adresse"
           }
         },
         "taxNumber": "taxnr",
@@ -3954,6 +4149,12 @@
         },
         "layout.lines[].tone": {
           "$catalog": "LAYOUT_TON"
+        },
+        "receipt.items[].kind": {
+          "$catalog": "PFAND_KIND"
+        },
+        "receipt.items[].depositKind": {
+          "$catalog": "PFAND_ART"
         },
         "issuedVouchers[].type": {
           "$catalog": "GUTSCHEIN_ART"
@@ -4220,6 +4421,7 @@
         }
       }
     },
+    "deleteMyPfandart": {},
     "deleteMyVoucherLabelTemplate": {},
     "deleteMyVoucherType": {},
     "deletePartnerWebhook": {
@@ -4399,7 +4601,19 @@
           "land_ungueltig": "invalid_country",
           "leistung_fehlt": "service_line_not_found",
           "leistung_ungueltig": "invalid_service_line",
-          "waehrung_ungueltig": "invalid_currency"
+          "waehrung_ungueltig": "invalid_currency",
+          "pfand_nicht_aktiv": "deposit_not_enabled",
+          "pfandart_unbekannt": "deposit_type_not_found",
+          "pfand_vom_server": "deposit_set_by_server",
+          "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_ruecknahme_aus": "deposit_return_not_offered",
+          "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
+          "pfand_folgt_position": "deposit_follows_item",
+          "pfandart_in_verwendung": "deposit_type_in_use",
+          "pfand_ungueltig": "invalid_deposit",
+          "zu_viele_pfandarten": "too_many_deposit_types",
+          "ewp_nicht_abfueller": "filler_role_required",
+          "kind_ungueltig": "invalid_item_kind"
         },
         "signatures[].error.code": {
           "zeitraum_offen": "period_not_closed",
@@ -4516,7 +4730,19 @@
           "land_ungueltig": "invalid_country",
           "leistung_fehlt": "service_line_not_found",
           "leistung_ungueltig": "invalid_service_line",
-          "waehrung_ungueltig": "invalid_currency"
+          "waehrung_ungueltig": "invalid_currency",
+          "pfand_nicht_aktiv": "deposit_not_enabled",
+          "pfandart_unbekannt": "deposit_type_not_found",
+          "pfand_vom_server": "deposit_set_by_server",
+          "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_ruecknahme_aus": "deposit_return_not_offered",
+          "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
+          "pfand_folgt_position": "deposit_follows_item",
+          "pfandart_in_verwendung": "deposit_type_in_use",
+          "pfand_ungueltig": "invalid_deposit",
+          "zu_viele_pfandarten": "too_many_deposit_types",
+          "ewp_nicht_abfueller": "filler_role_required",
+          "kind_ungueltig": "invalid_item_kind"
         }
       }
     },
@@ -4754,9 +4980,36 @@
           "__": "connect",
           "minimumVersion": "mindestversion",
           "deadline": "frist"
+        },
+        "deposit": {
+          "__": "pfand",
+          "singleUse": "einweg",
+          "reusable": "mehrweg",
+          "depositTypes": [
+            {
+              "__": "pfandarten",
+              "kind": "art",
+              "type": "typ",
+              "amounts": [
+                {
+                  "__": "betraege",
+                  "from": "ab"
+                }
+              ],
+              "returnRate": "rueckgabeSatz",
+              "used": "verwendet",
+              "active": "aktiv"
+            }
+          ]
         }
       },
       "werte": {
+        "deposit.depositTypes[].kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "deposit.depositTypes[].type": {
+          "$catalog": "PFAND_TYP"
+        },
         "business.watermark": {
           "$catalog": "KASSE_BETRIEB_WERTE.watermark"
         },
@@ -4930,6 +5183,129 @@
       "werte": {
         "vouchers[].type": {
           "$catalog": "GUTSCHEIN_ART"
+        }
+      }
+    },
+    "getMyPfand": {
+      "data": {
+        "deposit": {
+          "__": "pfand",
+          "enabled": "aktiv",
+          "singleUse": "einweg",
+          "reusable": "mehrweg",
+          "filler": "abfueller",
+          "hintOff": "hinweisAus",
+          "registeredGtins": [
+            {
+              "__": "ewpGtins"
+            }
+          ],
+          "since": "seit",
+          "by": "von"
+        },
+        "depositTypes": [
+          {
+            "__": "pfandarten",
+            "kind": "art",
+            "type": "typ",
+            "amounts": [
+              {
+                "__": "betraege",
+                "from": "ab"
+              }
+            ],
+            "returnRate": "rueckgabeSatz",
+            "used": "verwendet",
+            "active": "aktiv"
+          }
+        ]
+      },
+      "werte": {
+        "deposit.by": {
+          "kunde": "customer",
+          "admin": "admin"
+        },
+        "depositTypes[].kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "depositTypes[].type": {
+          "$catalog": "PFAND_TYP"
+        },
+        "depositType.kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "depositType.type": {
+          "$catalog": "PFAND_TYP"
+        }
+      },
+      "ergaenze": {
+        "$function": "anonymous"
+      }
+    },
+    "getMyPfandBericht": {
+      "params": {
+        "from": "von",
+        "to": "bis"
+      },
+      "data": {
+        "from": "von",
+        "to": "bis",
+        "types": [
+          {
+            "__": "arten",
+            "depositTypeId": "pfandartId",
+            "kind": "art",
+            "issuedQuantity": "ausStk",
+            "issuedCents": "ausCents",
+            "returnedQuantity": "zurStk",
+            "returnedCents": "zurCents",
+            "balanceCents": "saldoCents"
+          }
+        ],
+        "total": {
+          "__": "summe",
+          "issuedCents": "ausCents",
+          "returnedCents": "zurCents",
+          "balanceCents": "saldoCents"
+        }
+      },
+      "werte": {
+        "types[].kind": {
+          "$catalog": "PFAND_ART"
+        }
+      }
+    },
+    "getMyPfandJahr": {
+      "params": {
+        "year": "jahr"
+      },
+      "data": {
+        "year": "jahr",
+        "asOf": "stand",
+        "provisional": "vorlaeufig",
+        "types": [
+          {
+            "__": "arten",
+            "depositTypeId": "pfandartId",
+            "kind": "art",
+            "issuedQuantity": "ausStk",
+            "returnedQuantity": "zurStk",
+            "returnRateBp": "quoteBp",
+            "excessQuantity": "ueberhangStk",
+            "vatCorrectionCents": "korrekturUStCents",
+            "notice": "hinweis"
+          }
+        ],
+        "singleUse": {
+          "__": "einweg",
+          "issuedQuantity": "ausStk",
+          "returnedQuantity": "zurStk",
+          "balanceCents": "saldoCents"
+        }
+      },
+      "werte": {
+        "types[].kind": {
+          "$catalog": "PFAND_ART"
         }
       }
     },
@@ -5209,7 +5585,12 @@
               "__": "items",
               "receivedImmediately": "sofortErhalten",
               "keptByEmployee": "direkt",
-              "addOnOf": "zusatzZu"
+              "addOnOf": "zusatzZu",
+              "depositTypeId": "pfandartId",
+              "depositFor": "pfandZu",
+              "depositKind": "pfandArt",
+              "perUnit": "jeStueck",
+              "ownFilling": "eigen"
             }
           ],
           "manualReceipt": {
@@ -5221,6 +5602,11 @@
             "time": "uhrzeit",
             "reason": "grund",
             "note": "grundText"
+          },
+          "onPremises": "vorOrt",
+          "sharedReturnPoint": {
+            "__": "pfandStelle",
+            "address": "adresse"
           }
         },
         "taxNumber": "taxnr",
@@ -5285,6 +5671,12 @@
         "layout.lines[].tone": {
           "$catalog": "LAYOUT_TON"
         },
+        "receipt.items[].kind": {
+          "$catalog": "PFAND_KIND"
+        },
+        "receipt.items[].depositKind": {
+          "$catalog": "PFAND_ART"
+        },
         "issuedVouchers[].type": {
           "$catalog": "GUTSCHEIN_ART"
         },
@@ -5328,7 +5720,12 @@
                 "__": "items",
                 "receivedImmediately": "sofortErhalten",
                 "keptByEmployee": "direkt",
-                "addOnOf": "zusatzZu"
+                "addOnOf": "zusatzZu",
+                "depositTypeId": "pfandartId",
+                "depositFor": "pfandZu",
+                "depositKind": "pfandArt",
+                "perUnit": "jeStueck",
+                "ownFilling": "eigen"
               }
             ],
             "manualReceipt": {
@@ -5340,6 +5737,11 @@
               "time": "uhrzeit",
               "reason": "grund",
               "note": "grundText"
+            },
+            "onPremises": "vorOrt",
+            "sharedReturnPoint": {
+              "__": "pfandStelle",
+              "address": "adresse"
             }
           }
         ],
@@ -5355,6 +5757,12 @@
         },
         "receipts[].manualReceipt.reason": {
           "$catalog": "HANDBELEG_GRUND"
+        },
+        "receipts[].items[].kind": {
+          "$catalog": "PFAND_KIND"
+        },
+        "receipts[].items[].depositKind": {
+          "$catalog": "PFAND_ART"
         }
       },
       "ergaenze": {
@@ -5508,6 +5916,19 @@
         ]
       }
     },
+    "learnMyLeergutCode": {
+      "params": {
+        "depositTypeId": "pfandartId"
+      },
+      "data": {
+        "depositTypeId": "pfandartId"
+      },
+      "fehler": {
+        "nachrichtWoerter": {
+          "pfandartId": "depositTypeId"
+        }
+      }
+    },
     "listArticles": {
       "data": {
         "articles": [
@@ -5639,7 +6060,19 @@
           "land_ungueltig": "invalid_country",
           "leistung_fehlt": "service_line_not_found",
           "leistung_ungueltig": "invalid_service_line",
-          "waehrung_ungueltig": "invalid_currency"
+          "waehrung_ungueltig": "invalid_currency",
+          "pfand_nicht_aktiv": "deposit_not_enabled",
+          "pfandart_unbekannt": "deposit_type_not_found",
+          "pfand_vom_server": "deposit_set_by_server",
+          "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_ruecknahme_aus": "deposit_return_not_offered",
+          "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
+          "pfand_folgt_position": "deposit_follows_item",
+          "pfandart_in_verwendung": "deposit_type_in_use",
+          "pfand_ungueltig": "invalid_deposit",
+          "zu_viele_pfandarten": "too_many_deposit_types",
+          "ewp_nicht_abfueller": "filler_role_required",
+          "kind_ungueltig": "invalid_item_kind"
         }
       }
     },
@@ -5732,7 +6165,15 @@
               "patternStrict": "musterStreng"
             },
             "addOns": "zusaetze",
-            "externalVoucher": "fremdgutschein"
+            "externalVoucher": "fremdgutschein",
+            "deposits": [
+              {
+                "__": "pfand",
+                "depositTypeId": "pfandartId",
+                "quantity": "menge",
+                "ownFilling": "eigen"
+              }
+            ]
           }
         ]
       },
@@ -5767,6 +6208,16 @@
               "start_receipt_transmitted_at": "startbeleg_transmitted_at"
             },
             "stockLocationId": "lagerStandortId",
+            "deposit": {
+              "__": "pfand",
+              "returns": "ruecknahme",
+              "onPremisesDefault": "vorOrt",
+              "usualQuantity": "ueblicheMenge",
+              "sharedReturnPoint": {
+                "__": "gemeinsameStelle",
+                "address": "adresse"
+              }
+            },
             "autoLogout": {
               "__": "autoAbmelden",
               "autoLogoutMinutes": "autoAbMin",
@@ -5775,11 +6226,29 @@
           }
         ]
       },
+      "werte": {
+        "cashregisters[].deposit.returns": {
+          "$catalog": "PFAND_RUECKNAHME"
+        },
+        "cashregisters[].deposit.onPremisesDefault": {
+          "$catalog": "PFAND_VOR_ORT"
+        }
+      },
       "fehler": {
         "meldungen": [
           {
             "text": "Server error.",
             "code": "server_error"
+          }
+        ]
+      }
+    },
+    "listMyLeergutCodes": {
+      "data": {
+        "codes": [
+          {
+            "__": "codes",
+            "depositTypeId": "pfandartId"
           }
         ]
       }
@@ -6176,7 +6645,12 @@
                 "__": "items",
                 "receivedImmediately": "sofortErhalten",
                 "keptByEmployee": "direkt",
-                "addOnOf": "zusatzZu"
+                "addOnOf": "zusatzZu",
+                "depositTypeId": "pfandartId",
+                "depositFor": "pfandZu",
+                "depositKind": "pfandArt",
+                "perUnit": "jeStueck",
+                "ownFilling": "eigen"
               }
             ],
             "manualReceipt": {
@@ -6188,6 +6662,11 @@
               "time": "uhrzeit",
               "reason": "grund",
               "note": "grundText"
+            },
+            "onPremises": "vorOrt",
+            "sharedReturnPoint": {
+              "__": "pfandStelle",
+              "address": "adresse"
             },
             "cancellationStatus": "stornoStand",
             "testSignature": "testSignatur"
@@ -6218,6 +6697,12 @@
         },
         "receipts[].manualReceipt.reason": {
           "$catalog": "HANDBELEG_GRUND"
+        },
+        "receipts[].items[].kind": {
+          "$catalog": "PFAND_KIND"
+        },
+        "receipts[].items[].depositKind": {
+          "$catalog": "PFAND_ART"
         }
       },
       "ergaenze": {
@@ -6378,7 +6863,17 @@
           "__": "kasse",
           "ready": "bereit",
           "reason": "grund",
-          "stockLocationId": "lagerStandortId"
+          "stockLocationId": "lagerStandortId",
+          "deposit": {
+            "__": "pfand",
+            "returns": "ruecknahme",
+            "onPremisesDefault": "vorOrt",
+            "usualQuantity": "ueblicheMenge",
+            "sharedReturnPoint": {
+              "__": "gemeinsameStelle",
+              "address": "adresse"
+            }
+          }
         },
         "testEnvironment": "testUmgebung"
       },
@@ -6451,6 +6946,12 @@
         },
         "settings.device.cartWidth": {
           "$catalog": "KASSE_GERAET_WERTE.cartWidth"
+        },
+        "cashregister.deposit.returns": {
+          "$catalog": "PFAND_RUECKNAHME"
+        },
+        "cashregister.deposit.onPremisesDefault": {
+          "$catalog": "PFAND_VOR_ORT"
         }
       }
     },
@@ -7496,7 +7997,19 @@
           "land_ungueltig": "invalid_country",
           "leistung_fehlt": "service_line_not_found",
           "leistung_ungueltig": "invalid_service_line",
-          "waehrung_ungueltig": "invalid_currency"
+          "waehrung_ungueltig": "invalid_currency",
+          "pfand_nicht_aktiv": "deposit_not_enabled",
+          "pfandart_unbekannt": "deposit_type_not_found",
+          "pfand_vom_server": "deposit_set_by_server",
+          "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_ruecknahme_aus": "deposit_return_not_offered",
+          "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
+          "pfand_folgt_position": "deposit_follows_item",
+          "pfandart_in_verwendung": "deposit_type_in_use",
+          "pfand_ungueltig": "invalid_deposit",
+          "zu_viele_pfandarten": "too_many_deposit_types",
+          "ewp_nicht_abfueller": "filler_role_required",
+          "kind_ungueltig": "invalid_item_kind"
         }
       },
       "fehler": {
@@ -7558,6 +8071,64 @@
         "webhook.lastDelivery.status": {
           "$catalog": "ZUSTELLUNG"
         }
+      }
+    },
+    "saveMyPfandart": {
+      "params": {
+        "kind": "art",
+        "type": "typ",
+        "amounts": [
+          {
+            "__": "betraege",
+            "from": "ab"
+          }
+        ],
+        "active": "aktiv"
+      },
+      "paramWerte": {
+        "kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "type": {
+          "$catalog": "PFAND_TYP"
+        }
+      },
+      "data": {
+        "depositType": {
+          "__": "pfandart",
+          "kind": "art",
+          "type": "typ",
+          "amounts": [
+            {
+              "__": "betraege",
+              "from": "ab"
+            }
+          ],
+          "returnRate": "rueckgabeSatz",
+          "used": "verwendet",
+          "active": "aktiv"
+        }
+      },
+      "werte": {
+        "deposit.by": {
+          "kunde": "customer",
+          "admin": "admin"
+        },
+        "depositTypes[].kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "depositTypes[].type": {
+          "$catalog": "PFAND_TYP"
+        },
+        "depositType.kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "depositType.type": {
+          "$catalog": "PFAND_TYP"
+        }
+      },
+      "ergaenze": {
+        "$function": "anonymous"
       }
     },
     "saveMyVoucherLabelTemplate": {
@@ -7732,6 +8303,48 @@
       }
     },
     "setCustomerMandate": {},
+    "setMyCashregisterPfand": {
+      "params": {
+        "deposit": {
+          "__": "pfand",
+          "returns": "ruecknahme",
+          "onPremisesDefault": "vorOrt",
+          "usualQuantity": "ueblicheMenge",
+          "sharedReturnPoint": {
+            "__": "gemeinsameStelle",
+            "address": "adresse"
+          }
+        }
+      },
+      "paramWerte": {
+        "deposit.returns": {
+          "$catalog": "PFAND_RUECKNAHME"
+        },
+        "deposit.onPremisesDefault": {
+          "$catalog": "PFAND_VOR_ORT"
+        }
+      },
+      "data": {
+        "deposit": {
+          "__": "pfand",
+          "returns": "ruecknahme",
+          "onPremisesDefault": "vorOrt",
+          "usualQuantity": "ueblicheMenge",
+          "sharedReturnPoint": {
+            "__": "gemeinsameStelle",
+            "address": "adresse"
+          }
+        }
+      },
+      "werte": {
+        "deposit.returns": {
+          "$catalog": "PFAND_RUECKNAHME"
+        },
+        "deposit.onPremisesDefault": {
+          "$catalog": "PFAND_VOR_ORT"
+        }
+      }
+    },
     "setMyCashregisterStockLocation": {
       "params": {
         "stockLocationId": "standortId"
@@ -7976,6 +8589,70 @@
         "business.watermarkSide": {
           "$catalog": "KASSE_BETRIEB_WERTE.watermarkSide"
         }
+      }
+    },
+    "setMyPfand": {
+      "params": {
+        "enabled": "aktiv",
+        "singleUse": "einweg",
+        "reusable": "mehrweg",
+        "filler": "abfueller",
+        "hintOff": "hinweisAus",
+        "registeredGtins": "ewpGtins"
+      },
+      "data": {
+        "deposit": {
+          "__": "pfand",
+          "enabled": "aktiv",
+          "singleUse": "einweg",
+          "reusable": "mehrweg",
+          "filler": "abfueller",
+          "hintOff": "hinweisAus",
+          "registeredGtins": [
+            {
+              "__": "ewpGtins"
+            }
+          ],
+          "since": "seit",
+          "by": "von"
+        },
+        "depositTypes": [
+          {
+            "__": "pfandarten",
+            "kind": "art",
+            "type": "typ",
+            "amounts": [
+              {
+                "__": "betraege",
+                "from": "ab"
+              }
+            ],
+            "returnRate": "rueckgabeSatz",
+            "used": "verwendet",
+            "active": "aktiv"
+          }
+        ]
+      },
+      "werte": {
+        "deposit.by": {
+          "kunde": "customer",
+          "admin": "admin"
+        },
+        "depositTypes[].kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "depositTypes[].type": {
+          "$catalog": "PFAND_TYP"
+        },
+        "depositType.kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "depositType.type": {
+          "$catalog": "PFAND_TYP"
+        }
+      },
+      "ergaenze": {
+        "$function": "anonymous"
       }
     },
     "setMyRegisterDeviceSettings": {
@@ -8242,6 +8919,51 @@
         },
         "suggestion.notice": {
           "$catalog": "GUTSCHEIN_VORSCHLAG_HINWEIS"
+        }
+      }
+    },
+    "setPfandAdmin": {
+      "params": {
+        "enabled": "aktiv",
+        "singleUse": "einweg",
+        "reusable": "mehrweg",
+        "filler": "abfueller",
+        "hintOff": "hinweisAus",
+        "registeredGtins": "ewpGtins"
+      },
+      "data": {
+        "deposit": {
+          "__": "pfand",
+          "enabled": "aktiv",
+          "singleUse": "einweg",
+          "reusable": "mehrweg",
+          "filler": "abfueller",
+          "hintOff": "hinweisAus",
+          "registeredGtins": [
+            {
+              "__": "ewpGtins"
+            }
+          ],
+          "since": "seit",
+          "by": "von"
+        }
+      },
+      "werte": {
+        "deposit.by": {
+          "kunde": "customer",
+          "admin": "admin"
+        },
+        "depositTypes[].kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "depositTypes[].type": {
+          "$catalog": "PFAND_TYP"
+        },
+        "depositType.kind": {
+          "$catalog": "PFAND_ART"
+        },
+        "depositType.type": {
+          "$catalog": "PFAND_TYP"
         }
       }
     },
@@ -8556,7 +9278,19 @@
           "land_ungueltig": "invalid_country",
           "leistung_fehlt": "service_line_not_found",
           "leistung_ungueltig": "invalid_service_line",
-          "waehrung_ungueltig": "invalid_currency"
+          "waehrung_ungueltig": "invalid_currency",
+          "pfand_nicht_aktiv": "deposit_not_enabled",
+          "pfandart_unbekannt": "deposit_type_not_found",
+          "pfand_vom_server": "deposit_set_by_server",
+          "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_ruecknahme_aus": "deposit_return_not_offered",
+          "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
+          "pfand_folgt_position": "deposit_follows_item",
+          "pfandart_in_verwendung": "deposit_type_in_use",
+          "pfand_ungueltig": "invalid_deposit",
+          "zu_viele_pfandarten": "too_many_deposit_types",
+          "ewp_nicht_abfueller": "filler_role_required",
+          "kind_ungueltig": "invalid_item_kind"
         }
       }
     },
@@ -8596,7 +9330,12 @@
               "__": "items",
               "receivedImmediately": "sofortErhalten",
               "keptByEmployee": "direkt",
-              "addOnOf": "zusatzZu"
+              "addOnOf": "zusatzZu",
+              "depositTypeId": "pfandartId",
+              "depositFor": "pfandZu",
+              "depositKind": "pfandArt",
+              "perUnit": "jeStueck",
+              "ownFilling": "eigen"
             }
           ],
           "manualReceipt": {
@@ -8608,6 +9347,11 @@
             "time": "uhrzeit",
             "reason": "grund",
             "note": "grundText"
+          },
+          "onPremises": "vorOrt",
+          "sharedReturnPoint": {
+            "__": "pfandStelle",
+            "address": "adresse"
           },
           "cancellationStatus": "stornoStand",
           "testSignature": "testSignatur"
@@ -8622,6 +9366,12 @@
         },
         "receipt.manualReceipt.reason": {
           "$catalog": "HANDBELEG_GRUND"
+        },
+        "receipt.items[].kind": {
+          "$catalog": "PFAND_KIND"
+        },
+        "receipt.items[].depositKind": {
+          "$catalog": "PFAND_ART"
         }
       },
       "ergaenze": {
@@ -8644,7 +9394,12 @@
               "__": "items",
               "receivedImmediately": "sofortErhalten",
               "keptByEmployee": "direkt",
-              "addOnOf": "zusatzZu"
+              "addOnOf": "zusatzZu",
+              "depositTypeId": "pfandartId",
+              "depositFor": "pfandZu",
+              "depositKind": "pfandArt",
+              "perUnit": "jeStueck",
+              "ownFilling": "eigen"
             }
           ],
           "manualReceipt": {
@@ -8656,6 +9411,11 @@
             "time": "uhrzeit",
             "reason": "grund",
             "note": "grundText"
+          },
+          "onPremises": "vorOrt",
+          "sharedReturnPoint": {
+            "__": "pfandStelle",
+            "address": "adresse"
           },
           "cancellationStatus": "stornoStand",
           "testSignature": "testSignatur"
@@ -8670,6 +9430,12 @@
         },
         "receipt.manualReceipt.reason": {
           "$catalog": "HANDBELEG_GRUND"
+        },
+        "receipt.items[].kind": {
+          "$catalog": "PFAND_KIND"
+        },
+        "receipt.items[].depositKind": {
+          "$catalog": "PFAND_ART"
         }
       },
       "ergaenze": {
@@ -8856,7 +9622,19 @@
           "land_ungueltig": "invalid_country",
           "leistung_fehlt": "service_line_not_found",
           "leistung_ungueltig": "invalid_service_line",
-          "waehrung_ungueltig": "invalid_currency"
+          "waehrung_ungueltig": "invalid_currency",
+          "pfand_nicht_aktiv": "deposit_not_enabled",
+          "pfandart_unbekannt": "deposit_type_not_found",
+          "pfand_vom_server": "deposit_set_by_server",
+          "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_ruecknahme_aus": "deposit_return_not_offered",
+          "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
+          "pfand_folgt_position": "deposit_follows_item",
+          "pfandart_in_verwendung": "deposit_type_in_use",
+          "pfand_ungueltig": "invalid_deposit",
+          "zu_viele_pfandarten": "too_many_deposit_types",
+          "ewp_nicht_abfueller": "filler_role_required",
+          "kind_ungueltig": "invalid_item_kind"
         }
       }
     },
@@ -8951,7 +9729,8 @@
       "askPrice",
       "reference",
       "addOns",
-      "externalVoucher"
+      "externalVoucher",
+      "deposits"
     ],
     "inner": [
       "id",
@@ -8982,7 +9761,8 @@
       "preisFragen",
       "referenz",
       "zusaetze",
-      "fremdgutschein"
+      "fremdgutschein",
+      "pfand"
     ]
   },
   "articleGroupFields": [
@@ -8992,6 +9772,7 @@
     "symbol",
     "sort",
     "vatRate",
-    "addOns"
+    "addOns",
+    "deposits"
   ]
 }

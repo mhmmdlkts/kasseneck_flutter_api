@@ -58,7 +58,17 @@ void main() {
     expect(receiptEmailErrorCodes, mitRand(liste('receiptEmail'), ['route_missing']));
     expect(receiptEmailSendErrorCodes, liste('receiptEmail'));
     final je = (codes['receiptMessagesByEndpoint'] as Map).cast<String, dynamic>();
-    final beleg = {...(je['createReceipt'] as List).cast<String>(), ...(je['getReceipt'] as List).cast<String>()}.toList()..sort();
+    // Pfandzeilen (Pfand & Leergut): die Codes dieser Zeilen kennt createReceipt als Handler-Codes der Kasse
+    // (errorCodes.registerHandlersByEndpoint), nicht als Belegmeldung; die Liste hier nennt sie ausdruecklich.
+    const pfandCodes = [
+      'deposit_not_enabled', 'deposit_return_not_offered', 'deposit_set_by_server', 'deposit_type_not_found',
+      'deposit_type_not_issued', 'invalid_deposit', 'invalid_deposit_quantity', 'invalid_item_kind',
+    ];
+    final handler = ((codes['registerHandlersByEndpoint'] as Map)['createReceipt'] as List).cast<String>();
+    for (final c in pfandCodes) {
+      expect(handler, contains(c), reason: c);
+    }
+    final beleg = {...(je['createReceipt'] as List).cast<String>(), ...(je['getReceipt'] as List).cast<String>(), ...pfandCodes}.toList()..sort();
     expect(receiptErrorCodes, mitRand(beleg, signierend));
     // Die oeffentlichen Namen zeigen auf dieselben Listen.
     expect(cancellationErrorCodes, same(cancellationErrorCodes));

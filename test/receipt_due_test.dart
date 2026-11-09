@@ -29,8 +29,21 @@ Map<String, dynamic> _json(String pfad) => jsonDecode(File('${_wurzel.path}/$pfa
 
 ReceiptType _typ(String name) => ReceiptType.values.byName(name);
 
+/// Pfand- und Leergutzeilen stehen im Vertrag in der Form des Servers (`pfand`,
+/// `pfand_rueckgabe`, `pfandArt`); /v3 nennt sie `deposit`, `deposit_return`.
+Map<String, dynamic> _vonServerForm(Map<String, dynamic> p) {
+  if (p['kind'] != 'pfand' && p['kind'] != 'pfand_rueckgabe') return p;
+  return {
+    ...p,
+    'kind': p['kind'] == 'pfand' ? 'deposit' : 'deposit_return',
+    'depositTypeId': p['pfandartId'],
+    'depositKind': p['pfandArt'] == 'einweg' ? 'single_use' : 'reusable',
+  };
+}
+
 /// Eine Position des Vertrags (v1- oder v2-Form, auch Bruchmengen) als Zeile.
-ReceiptDueLine _zeile(Map<String, dynamic> p) {
+ReceiptDueLine _zeile(Map<String, dynamic> roh) {
+  final p = _vonServerForm(roh);
   final owner = p['owner'] == true || (p['recipient'] is Map && (p['recipient'] as Map)['owner'] == true);
   return ReceiptDueLine(
     quantity: (p['quantity'] ?? p['amount']) as num,
@@ -114,6 +127,7 @@ void main() {
       'tip_staff_value_voucher_capped', 'tip_owner_value_voucher_capped', 'tip_owner_value_voucher_over_tip', 'tip_payment_tipcents_value_voucher',
       'tip_promo_and_value_voucher', 'tip_value_voucher_boundary_accepted', 'tip_value_voucher_boundary_rejected', 'tip_single_purpose_voucher_goods_only',
       'tip_owner_promo_and_value_voucher', 'tip_owner_promo_and_value_voucher_over_tip', 'tip_owner_promotion_voucher', 'tip_promotion_and_value_voucher_rejected',
+      'pfand_einweg', 'pfand_mehrweg_promo', 'leergut_rein', 'leergut_misch',
     ];
     expect([for (final f in faelle) f['name'] as String]..sort(), [...bekannt]..sort());
     for (final f in faelle.where(istAbgelehnt)) {
@@ -195,7 +209,7 @@ void main() {
       final t = trinkgeldAus(fall);
       final welt = angabenAusSetup(fall['setup'] as Map<String, dynamic>?);
       final cents = receiptDueCents(
-        [for (final p in roh) KasseneckItem.fromJson(p)],
+        [for (final p in roh) KasseneckItem.fromJson(_vonServerForm(p))],
         [for (final v in (input['vouchers'] as List).cast<Map<String, dynamic>>()) _gutschein(v)],
         _typ(input['receiptType'] as String),
         tip: t.tip,

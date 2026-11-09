@@ -1,0 +1,1338 @@
+{
+  "version": 1,
+  "notes": "Pruefaelle Leergut-Scan: matchReturnCode(code, { articles, groups, learned, depositTypes }) ordnet einen Scan im Leergut-Blatt einer Pfandart zu. Reihenfolge: gelernter Code (1 Stueck), gtin eines Pfandeintrags an Artikel oder Gruppe (1 Stueck), Artikel-EAN/-Nummer/-Code mit wirksamer Pfandliste (jeder Eintrag mit seiner quantity), sonst unknown. Nur aktive Pfandarten zaehlen. Paket-eigen; der Dart-Zwilling kopiert die Datei byte-gleich. GTINs sind erfunden und pruefziffernrichtig.",
+  "cases": [
+    {
+      "name": "gelernter Code: ein Stueck der gelernten Pfandart",
+      "input": {
+        "code": "9012345001049",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "depositTypeId": "flasche",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "gelernter Code geht vor Artikel und Pfandeintrag",
+      "input": {
+        "code": "9012345001049",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "depositTypeId": "flasche",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Gebinde-GTIN am Pfandeintrag des Artikels: ein Stueck dieser Pfandart",
+      "input": {
+        "code": "9012345001025",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "depositTypeId": "flasche",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Gebinde-GTIN am Pfandeintrag der Gruppe: ein Stueck dieser Pfandart",
+      "input": {
+        "code": "9012345001018",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "depositTypeId": "kiste",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Kisten-EAN: eine Kiste und zwanzig Flaschen",
+      "input": {
+        "code": "9012345001063",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "depositTypeId": "kiste",
+            "quantity": 1
+          },
+          {
+            "depositTypeId": "flasche",
+            "quantity": 20
+          }
+        ]
+      }
+    },
+    {
+      "name": "Artikelnummer zaehlt wie die EAN",
+      "input": {
+        "code": "B-100",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "depositTypeId": "kiste",
+            "quantity": 1
+          },
+          {
+            "depositTypeId": "flasche",
+            "quantity": 20
+          }
+        ]
+      }
+    },
+    {
+      "name": "Dose mit Gruppenregel: ein Stueck Einwegpfand",
+      "input": {
+        "code": "9012345001032",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "depositTypeId": "einweg",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Code mit Leerraum wird getrimmt",
+      "input": {
+        "code": "  9012345001032 \n",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "entries": [
+          {
+            "depositTypeId": "einweg",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Artikel ohne Pfand: unbekannt",
+      "input": {
+        "code": "9012345001070",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "unknown": true
+      }
+    },
+    {
+      "name": "Stillgelegte Pfandart am gelernten Code: unbekannt",
+      "input": {
+        "code": "9012345001056",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "unknown": true
+      }
+    },
+    {
+      "name": "Unbekannter Code: unbekannt",
+      "input": {
+        "code": "9012345001995",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "unknown": true
+      }
+    },
+    {
+      "name": "Leerer Code: unbekannt",
+      "input": {
+        "code": "   ",
+        "articles": [
+          {
+            "id": "bier",
+            "groupId": "bier",
+            "ean": "9012345001063",
+            "number": "B-100",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20,
+                "gtin": "9012345001025"
+              }
+            ]
+          },
+          {
+            "id": "cola",
+            "groupId": "dosen",
+            "ean": "9012345001032",
+            "number": "C-1",
+            "internalCode": null,
+            "deposits": null
+          },
+          {
+            "id": "brot",
+            "groupId": null,
+            "ean": "9012345001070",
+            "number": "K-1",
+            "internalCode": null,
+            "deposits": []
+          },
+          {
+            "id": "altbier",
+            "groupId": null,
+            "ean": "9012345001056",
+            "number": "A-1",
+            "internalCode": null,
+            "deposits": [
+              {
+                "depositTypeId": "retired",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "groups": [
+          {
+            "id": "bier",
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1,
+                "gtin": "9012345001018"
+              }
+            ]
+          },
+          {
+            "id": "dosen",
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          }
+        ],
+        "learned": [
+          {
+            "gtin": "9012345001049",
+            "depositTypeId": "flasche"
+          },
+          {
+            "gtin": "9012345001056",
+            "depositTypeId": "retired"
+          }
+        ],
+        "depositTypes": [
+          {
+            "id": "einweg",
+            "active": true
+          },
+          {
+            "id": "flasche",
+            "active": true
+          },
+          {
+            "id": "kiste",
+            "active": true
+          },
+          {
+            "id": "retired",
+            "active": false
+          }
+        ]
+      },
+      "expected": {
+        "unknown": true
+      }
+    }
+  ]
+}

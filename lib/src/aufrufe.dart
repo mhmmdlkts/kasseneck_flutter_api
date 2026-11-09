@@ -142,6 +142,9 @@ abstract final class Aufrufe {
   static const getRegisterInspectionInfo = 'getRegisterInspectionInfo';
   // Bestand von Kasseneck Connect melden (npm 1.24.0): nur ueber den Kassenweg.
   static const reportConnectState = 'reportConnectState';
+  // Leergut-Codes lernen und lesen (Pfand & Leergut, npm 1.32.0): nur ueber den Kassenweg.
+  static const learnMyLeergutCode = 'learnMyLeergutCode';
+  static const listMyLeergutCodes = 'listMyLeergutCodes';
   // Kartenterminal-Zugang zentral (KasseneckApi, nur /v3 mit api_key).
   static const registerTerminalDevice = 'registerTerminalDevice';
   static const getTerminalAccess = 'getTerminalAccess';
@@ -273,6 +276,8 @@ abstract final class Aufrufe {
     logReceiptOutputs,
     getRegisterInspectionInfo,
     reportConnectState,
+    learnMyLeergutCode,
+    listMyLeergutCodes,
     registerTerminalDevice,
     getTerminalAccess,
     claimTerminal,

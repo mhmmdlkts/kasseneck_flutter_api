@@ -1,0 +1,4758 @@
+{
+  "version": 1,
+  "notes": "Vertrag Pfand und Leergut: Quelle ist functions/test/unit/fixtures/pfand-faelle.json (leiteAb in gemeinsam/pfand-core.js), hier in der englischen /v3-Form. Byte-gleich als Kopie in npm fixtures/deposit-cases.json und in Dart ueber die Zwillinge; die Pakete rechnen dieselben Faelle nach (Vorschau im Kassenkorb centgenau wie der Server). articles, groups und depositTypes sind nach Id geschluesselt; belegSaetze ist servereigen und steht nicht in den Faellen. Aenderung immer auf allen Seiten.",
+  "cases": [
+    {
+      "name": "Dose sechsmal mit Einwegpfand: eine Pfandzeile, 25 Cent, 0 Prozent, EWP-GTIN",
+      "input": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 6,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 6,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 6,
+            "amount": 6,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 0,
+            "depositKind": "single_use",
+            "perUnit": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bierkiste: Kiste und zwanzig Flaschen zu 20 Prozent, Mengen 1 und 20, in Listenreihenfolge hinter dem Bier",
+      "input": {
+        "items": [
+          {
+            "name": "Bier Kiste",
+            "amount": 1,
+            "priceOne": 24,
+            "priceOneCents": 2400,
+            "vat": 20,
+            "articleId": "bier"
+          },
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Bier Kiste",
+            "amount": 1,
+            "priceOne": 24,
+            "priceOneCents": 2400,
+            "vat": 20,
+            "articleId": "bier"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Kiste",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 300,
+            "priceOneCents": 300,
+            "priceOne": 3,
+            "vatRate": 20,
+            "vat": 20,
+            "depositTypeId": "kiste",
+            "depositFor": 0,
+            "depositKind": "reusable",
+            "perUnit": 1
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Flasche",
+            "quantity": 20,
+            "amount": 20,
+            "unitPriceCents": 20,
+            "priceOneCents": 20,
+            "priceOne": 0.2,
+            "vatRate": 20,
+            "vat": 20,
+            "depositTypeId": "flasche",
+            "depositFor": 0,
+            "depositKind": "reusable",
+            "perUnit": 20
+          },
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vor Ort: kein Einwegpfand, Mehrweg bleibt",
+      "input": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 2,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "name": "Bier Kiste",
+            "amount": 1,
+            "priceOne": 24,
+            "priceOneCents": 2400,
+            "vat": 20,
+            "articleId": "bier"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": true,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 2,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "name": "Bier Kiste",
+            "amount": 1,
+            "priceOne": 24,
+            "priceOneCents": 2400,
+            "vat": 20,
+            "articleId": "bier"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Kiste",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 300,
+            "priceOneCents": 300,
+            "priceOne": 3,
+            "vatRate": 20,
+            "vat": 20,
+            "depositTypeId": "kiste",
+            "depositFor": 1,
+            "depositKind": "reusable",
+            "perUnit": 1
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Flasche",
+            "quantity": 20,
+            "amount": 20,
+            "unitPriceCents": 20,
+            "priceOneCents": 20,
+            "priceOne": 0.2,
+            "vatRate": 20,
+            "vat": 20,
+            "depositTypeId": "flasche",
+            "depositFor": 1,
+            "depositKind": "reusable",
+            "perUnit": 20
+          }
+        ]
+      }
+    },
+    {
+      "name": "Kleinunternehmer: Mehrweg-Pfand mit 0 Prozent",
+      "input": {
+        "items": [
+          {
+            "name": "Bier Kiste",
+            "amount": 1,
+            "priceOne": 24,
+            "priceOneCents": 2400,
+            "vat": 0,
+            "articleId": "bier"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": true,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Bier Kiste",
+            "amount": 1,
+            "priceOne": 24,
+            "priceOneCents": 2400,
+            "vat": 0,
+            "articleId": "bier"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Kiste",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 300,
+            "priceOneCents": 300,
+            "priceOne": 3,
+            "vatRate": 0,
+            "vat": 0,
+            "depositTypeId": "kiste",
+            "depositFor": 0,
+            "depositKind": "reusable",
+            "perUnit": 1
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Flasche",
+            "quantity": 20,
+            "amount": 20,
+            "unitPriceCents": 20,
+            "priceOneCents": 20,
+            "priceOne": 0.2,
+            "vatRate": 0,
+            "vat": 0,
+            "depositTypeId": "flasche",
+            "depositFor": 0,
+            "depositKind": "reusable",
+            "perUnit": 20
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ausdrückliche Pfandzeile bei auto aus: Betrag und Satz vom Server, Client-Preis ignoriert, eigene GTIN bleibt",
+      "input": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 24,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "quantity": 24,
+            "gtin": "4006381333931",
+            "priceOneCents": 999,
+            "vatRate": 20,
+            "depositTypeId": "einweg",
+            "depositFor": 0,
+            "ownFilling": true
+          }
+        ],
+        "auto": false,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 24,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 24,
+            "amount": 24,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "gtin": "4006381333931",
+            "depositTypeId": "einweg",
+            "depositFor": 0,
+            "depositKind": "single_use",
+            "perUnit": 1,
+            "ownFilling": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ausdrückliche Pfandzeile ohne Menge: Standard ist die Positionsmenge",
+      "input": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 3,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "depositTypeId": "einweg",
+            "depositFor": 0
+          }
+        ],
+        "auto": false,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 3,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 3,
+            "amount": 3,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 0,
+            "depositKind": "single_use",
+            "perUnit": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ausdrückliche Pfandzeile an Position, die der Server selbst bepfandet: pfand_vom_server",
+      "input": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 2,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "kind": "deposit",
+            "quantity": 2,
+            "depositTypeId": "einweg",
+            "depositFor": 0
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "deposit_set_by_server"
+      }
+    },
+    {
+      "name": "Ausdrückliche Pfandzeile zeigt auf eine Pfandzeile: pfand_ungueltig",
+      "input": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 2,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "depositTypeId": "einweg",
+            "depositFor": 0
+          },
+          {
+            "kind": "deposit",
+            "depositTypeId": "einweg",
+            "depositFor": 1
+          }
+        ],
+        "auto": false,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "invalid_deposit"
+      }
+    },
+    {
+      "name": "Ausdrückliche Pfandzeile mit nicht teilbarer Menge: pfand_menge_ungueltig",
+      "input": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 5,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "quantity": 12,
+            "depositTypeId": "einweg",
+            "depositFor": 0
+          }
+        ],
+        "auto": false,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "invalid_deposit_quantity"
+      }
+    },
+    {
+      "name": "Ausdrückliche Pfandzeile mit ungültiger GTIN: pfand_ungueltig",
+      "input": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 1,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "gtin": "4006381333932",
+            "depositTypeId": "einweg",
+            "depositFor": 0
+          }
+        ],
+        "auto": false,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "invalid_deposit"
+      }
+    },
+    {
+      "name": "Ausdrückliche Mehrweg-Zeile mit neuem Satz meldet ihn in belegSaetze",
+      "input": {
+        "items": [
+          {
+            "name": "Fassbier",
+            "amount": 1,
+            "priceOne": 90,
+            "priceOneCents": 9000,
+            "vat": 10
+          },
+          {
+            "kind": "deposit",
+            "depositTypeId": "kiste",
+            "depositFor": 0
+          }
+        ],
+        "auto": false,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Fassbier",
+            "amount": 1,
+            "priceOne": 90,
+            "priceOneCents": 9000,
+            "vat": 10
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Kiste",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 300,
+            "priceOneCents": 300,
+            "priceOne": 3,
+            "vatRate": 10,
+            "vat": 10,
+            "depositTypeId": "kiste",
+            "depositFor": 0,
+            "depositKind": "reusable",
+            "perUnit": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Positionsmenge 1,5 mit Pfandregel: pfand_menge_ungueltig",
+      "input": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 1.5,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "invalid_deposit_quantity"
+      }
+    },
+    {
+      "name": "Negative Menge (Rückgabe an der Kasse): Pfand minus zwei",
+      "input": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": -2,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": -2,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": -2,
+            "amount": -2,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 0,
+            "depositKind": "single_use",
+            "perUnit": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Zusatz vor und nach dem Einfügen zeigt auf dieselbe Position",
+      "input": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "name": "Zitrone",
+            "amount": 1,
+            "priceOne": 0.5,
+            "priceOneCents": 50,
+            "vat": 20,
+            "addOnOf": 0
+          },
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          },
+          {
+            "name": "Butter",
+            "amount": 1,
+            "priceOne": 0.4,
+            "priceOneCents": 40,
+            "vat": 10,
+            "addOnOf": 2
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 0,
+            "depositKind": "single_use",
+            "perUnit": 1
+          },
+          {
+            "name": "Zitrone",
+            "amount": 1,
+            "priceOne": 0.5,
+            "priceOneCents": 50,
+            "vat": 20,
+            "addOnOf": 0
+          },
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          },
+          {
+            "name": "Butter",
+            "amount": 1,
+            "priceOne": 0.4,
+            "priceOneCents": 40,
+            "vat": 10,
+            "addOnOf": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pfandart der Liste fehlt: pfandart_unbekannt (kein Getränk ohne Pfand)",
+      "input": {
+        "items": [
+          {
+            "name": "Geisterartikel",
+            "amount": 1,
+            "priceOne": 1,
+            "priceOneCents": 100,
+            "vat": 20,
+            "articleId": "ghost"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "deposit_type_not_found"
+      }
+    },
+    {
+      "name": "Unbekannter Artikel und Trinkgeld: kein Pfand, Array bleibt unverändert",
+      "input": {
+        "items": [
+          {
+            "name": "Etwas",
+            "amount": 1,
+            "priceOne": 1,
+            "priceOneCents": 100,
+            "vat": 20,
+            "articleId": "nirgends"
+          },
+          {
+            "kind": "tip",
+            "name": "Trinkgeld",
+            "amount": 1,
+            "priceOneCents": 50,
+            "priceOne": 0.5,
+            "vat": 0
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Etwas",
+            "amount": 1,
+            "priceOne": 1,
+            "priceOneCents": 100,
+            "vat": 20,
+            "articleId": "nirgends"
+          },
+          {
+            "kind": "tip",
+            "name": "Trinkgeld",
+            "amount": 1,
+            "priceOneCents": 50,
+            "priceOne": 0.5,
+            "vat": 0
+          }
+        ]
+      }
+    },
+    {
+      "name": "Leergut Einweg zehn Stück: minus 25 Cent je Stück, 0 Prozent",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 10,
+            "depositTypeId": "einweg"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "name": "Leergut Einweg",
+            "quantity": 10,
+            "amount": 10,
+            "unitPriceCents": -25,
+            "priceOneCents": -25,
+            "priceOne": -0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositKind": "single_use"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Leergut Mehrweg mit Codes und Rückgabesatz",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 3,
+            "codes": {
+              "4006381333931": 3
+            },
+            "depositTypeId": "flasche"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "name": "Leergut Flasche",
+            "quantity": 3,
+            "amount": 3,
+            "unitPriceCents": -20,
+            "priceOneCents": -20,
+            "priceOne": -0.2,
+            "vatRate": 20,
+            "vat": 20,
+            "codes": {
+              "4006381333931": 3
+            },
+            "depositTypeId": "flasche",
+            "depositKind": "reusable"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Leergut neben Ware bleibt an seiner Stelle, Zusatz-Verweise bleiben",
+      "input": {
+        "items": [
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          },
+          {
+            "kind": "deposit_return",
+            "quantity": 2,
+            "depositTypeId": "einweg"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          },
+          {
+            "kind": "deposit_return",
+            "name": "Leergut Einweg",
+            "quantity": 2,
+            "amount": 2,
+            "unitPriceCents": -25,
+            "priceOneCents": -25,
+            "priceOne": -0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositKind": "single_use"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Mehrweg-Leergut einer nie ausgegebenen Pfandart: pfandart_nicht_ausgegeben",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 1,
+            "depositTypeId": "frisch"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "frisch": {
+            "id": "frisch",
+            "name": "Pfand Frisch",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 50,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": false,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "deposit_type_not_issued"
+      }
+    },
+    {
+      "name": "Rücknahme ausgeschaltet: pfand_ruecknahme_aus",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 1,
+            "depositTypeId": "einweg"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "none",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "deposit_return_not_offered"
+      }
+    },
+    {
+      "name": "Gemeinsame Rückgabestelle nimmt hier nicht zurück: pfand_ruecknahme_aus",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 1,
+            "depositTypeId": "einweg"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "shared",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": {
+            "name": "Sammelstelle Kornblum",
+            "address": "Hauptplatz 1, 4020 Linz"
+          }
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "deposit_return_not_offered"
+      }
+    },
+    {
+      "name": "Kein Recht für Leergut: not_permitted",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 1,
+            "depositTypeId": "einweg"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": false
+      },
+      "expected": {
+        "code": "not_permitted"
+      }
+    },
+    {
+      "name": "Leergut: Summe der Codes ungleich Menge: pfand_ungueltig",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 3,
+            "codes": {
+              "4006381333931": 2
+            },
+            "depositTypeId": "flasche"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "invalid_deposit"
+      }
+    },
+    {
+      "name": "Leergut Menge null: pfand_ungueltig",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 0,
+            "depositTypeId": "einweg"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "code": "invalid_deposit"
+      }
+    },
+    {
+      "name": "Leergut Mehrweg bei Kleinunternehmer: 0 Prozent",
+      "input": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "quantity": 1,
+            "depositTypeId": "flasche"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": true,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "kind": "deposit_return",
+            "name": "Leergut Flasche",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": -20,
+            "priceOneCents": -20,
+            "priceOne": -0.2,
+            "vatRate": 0,
+            "vat": 0,
+            "depositTypeId": "flasche",
+            "depositKind": "reusable"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Hauptposition und Zusatz mit Einwegregel: jede bekommt ihre Pfandzeile direkt dahinter, Verweise stimmen",
+      "input": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola",
+            "addOnOf": 0
+          },
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          },
+          {
+            "name": "Butter",
+            "amount": 1,
+            "priceOne": 0.4,
+            "priceOneCents": 40,
+            "vat": 10,
+            "addOnOf": 2
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 0,
+            "depositKind": "single_use",
+            "perUnit": 1
+          },
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola",
+            "addOnOf": 0
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 2,
+            "depositKind": "single_use",
+            "perUnit": 1
+          },
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          },
+          {
+            "name": "Butter",
+            "amount": 1,
+            "priceOne": 0.4,
+            "priceOneCents": 40,
+            "vat": 10,
+            "addOnOf": 4
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ausdrückliche Pfandzeile an einem Zusatz",
+      "input": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 1,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "name": "Mehr Brause",
+            "amount": 2,
+            "priceOne": 1,
+            "priceOneCents": 100,
+            "vat": 20,
+            "addOnOf": 0
+          },
+          {
+            "kind": "deposit",
+            "depositTypeId": "einweg",
+            "depositFor": 1
+          }
+        ],
+        "auto": false,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Hausbrause",
+            "amount": 1,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "name": "Mehr Brause",
+            "amount": 2,
+            "priceOne": 1,
+            "priceOneCents": 100,
+            "vat": 20,
+            "addOnOf": 0
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 2,
+            "amount": 2,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 1,
+            "depositKind": "single_use",
+            "perUnit": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vor Ort: abgeleitetes Einweg entfällt, die ausdrückliche Einwegzeile bleibt",
+      "input": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "name": "Hausbrause",
+            "amount": 3,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "depositTypeId": "einweg",
+            "depositFor": 1
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": true,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "name": "Hausbrause",
+            "amount": 3,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 3,
+            "amount": 3,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 1,
+            "depositKind": "single_use",
+            "perUnit": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Leerstelle (null) in der Positionsliste bleibt erhalten, Pfand wird trotzdem eingefügt",
+      "input": {
+        "items": [
+          null,
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              },
+              {
+                "depositTypeId": "flasche",
+                "quantity": 20
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          null,
+          {
+            "name": "Cola",
+            "amount": 1,
+            "priceOne": 2,
+            "priceOneCents": 200,
+            "vat": 20,
+            "articleId": "cola"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Einweg",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 25,
+            "priceOneCents": 25,
+            "priceOne": 0.25,
+            "vatRate": 0,
+            "vat": 0,
+            "ean": "9010945000011",
+            "depositTypeId": "einweg",
+            "depositFor": 1,
+            "depositKind": "single_use",
+            "perUnit": 1
+          },
+          {
+            "name": "Brot",
+            "amount": 1,
+            "priceOne": 3,
+            "priceOneCents": 300,
+            "vat": 10,
+            "articleId": "brot"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Betragswechsel genau am ab-Tag: der neue Betrag gilt",
+      "input": {
+        "items": [
+          {
+            "name": "Bier",
+            "amount": 1,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20,
+            "articleId": "bier"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              },
+              {
+                "cents": 350,
+                "from": "2026-11-07"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-07",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Bier",
+            "amount": 1,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20,
+            "articleId": "bier"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Kiste",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 350,
+            "priceOneCents": 350,
+            "priceOne": 3.5,
+            "vatRate": 20,
+            "vat": 20,
+            "depositTypeId": "kiste",
+            "depositFor": 0,
+            "depositKind": "reusable",
+            "perUnit": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "Betragswechsel einen Tag vor dem ab-Tag: der alte Betrag gilt",
+      "input": {
+        "items": [
+          {
+            "name": "Bier",
+            "amount": 1,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20,
+            "articleId": "bier"
+          }
+        ],
+        "auto": true,
+        "articles": {
+          "cola": {
+            "id": "cola",
+            "groupId": "g",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "einweg",
+                "quantity": 1
+              }
+            ]
+          },
+          "bier": {
+            "id": "bier",
+            "vatRate": 20,
+            "deposits": [
+              {
+                "depositTypeId": "kiste",
+                "quantity": 1
+              }
+            ]
+          },
+          "brot": {
+            "id": "brot",
+            "vatRate": 10
+          },
+          "dose": {
+            "id": "dose",
+            "deposits": [
+              {
+                "gtin": "4006381333931",
+                "depositTypeId": "einweg",
+                "quantity": 1,
+                "ownFilling": true
+              }
+            ]
+          },
+          "ghost": {
+            "id": "ghost",
+            "deposits": [
+              {
+                "depositTypeId": "missing",
+                "quantity": 1
+              }
+            ]
+          }
+        },
+        "groups": {},
+        "depositTypes": {
+          "einweg": {
+            "id": "einweg",
+            "name": "Pfand Einweg",
+            "kind": "single_use",
+            "amounts": [
+              {
+                "cents": 25,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 0,
+            "used": true,
+            "active": true
+          },
+          "kiste": {
+            "id": "kiste",
+            "name": "Pfand Kiste",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 300,
+                "from": "2025-01-01"
+              },
+              {
+                "cents": 350,
+                "from": "2026-11-07"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          },
+          "flasche": {
+            "id": "flasche",
+            "name": "Pfand Flasche",
+            "kind": "reusable",
+            "amounts": [
+              {
+                "cents": 20,
+                "from": "2025-01-01"
+              }
+            ],
+            "returnRate": 20,
+            "used": true,
+            "active": true
+          }
+        },
+        "day": "2026-11-06",
+        "onPremises": false,
+        "cashRegister": {
+          "returns": "here",
+          "onPremisesDefault": "takeaway",
+          "usualQuantity": 24,
+          "sharedReturnPoint": null
+        },
+        "smallBusiness": false,
+        "mayReturn": true
+      },
+      "expected": {
+        "items": [
+          {
+            "name": "Bier",
+            "amount": 1,
+            "priceOne": 1.5,
+            "priceOneCents": 150,
+            "vat": 20,
+            "articleId": "bier"
+          },
+          {
+            "kind": "deposit",
+            "name": "Pfand Kiste",
+            "quantity": 1,
+            "amount": 1,
+            "unitPriceCents": 300,
+            "priceOneCents": 300,
+            "priceOne": 3,
+            "vatRate": 20,
+            "vat": 20,
+            "depositTypeId": "kiste",
+            "depositFor": 0,
+            "depositKind": "reusable",
+            "perUnit": 1
+          }
+        ]
+      }
+    }
+  ]
+}
