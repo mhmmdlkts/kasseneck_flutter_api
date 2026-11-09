@@ -6,6 +6,7 @@ Twin of `@kreiseck/kasseneck-api` `1.34.0` (gap): `KasseneckApi.listDepositTypes
 - `DepositSettings`, `DepositType` and `DepositAmount` are now also exported from `kasseneck_api.dart`.
 - `unfixTerminal` is known by name only (`Aufrufe`); the package has no method of its own for it. `terminalErrorCodes` gains `terminal_fixed` and `terminal_device_fixed`, and a test now compares the list with `errorCodes.terminal` of the contract.
 - The till text catalog is taken over from npm `1.33.0`/`1.34.0` with the generator (`tool/texte_erzeugen.dart`): `terminal.several_found`, `terminal.tid_not_found` and `connect.local_network_blocked` (web only), placeholders `hosts` and `tid`.
+- Doc comment of `sell`/`autoDeposits` corrected: without `autoDeposits` (or with `false`) the server derives no deposit and only checks explicit deposit lines; it is not a server default.
 - Contract and `special-characters` layout pulled from npm `1.34.0`.
 
 ## 11.24.1 (2026-11-09)

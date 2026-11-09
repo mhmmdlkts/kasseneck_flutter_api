@@ -448,7 +448,8 @@ class RegisterReceiptClient {
   ///
   /// [autoDeposits]: Pfand & Leergut -- der Server setzt die Pfandzeilen aus den
   /// Artikeln selbst und rechnet den Betrag. Die Kasse mit Pfand sendet `true`.
-  /// Ohne Angabe fehlt das Feld (Vorgabe des Servers). [onPremises]: vor Ort
+  /// Ohne Angabe oder mit `false` leitet der Server nichts ab; nur ausdrueckliche
+  /// Pfandzeilen werden geprueft. [onPremises]: vor Ort
   /// verzehrt (`true`) oder mitgenommen (`false`); ohne Angabe gilt die Vorgabe
   /// der Kasse. Eine Zeile `deposit` mit `articleId` wirft vor dem Senden
   /// (`invalid_deposit`): Pfandzeilen setzt der Server aus dem Artikel.

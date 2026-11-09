@@ -6,7 +6,7 @@ import 'package:http/testing.dart';
 import 'package:kasseneck_api/kasseneck_api.dart';
 
 /// `listDepositTypes`: die Pfandarten des Betriebs mit dem API-Schluessel
-/// lesen. Zwilling von `test/pfand-lesen.test.ts` im JS-Paket (npm 1.34.0).
+/// lesen. Zwilling von `test/list-deposit-types.test.ts` im JS-Paket (npm 1.34.0).
 
 const _kopf = {'content-type': 'application/json', 'kasseneck-api-version': 'v3'};
 
@@ -44,6 +44,18 @@ void main() {
             'reusable': true,
             'depositTypes': [
               {
+                'id': 'einweg',
+                'kind': 'single_use',
+                'name': 'Pfand Einweg',
+                'type': null,
+                'amounts': [
+                  {'from': '2026-01-01', 'cents': 25}
+                ],
+                'returnRate': 0,
+                'used': false,
+                'active': true,
+              },
+              {
                 'id': 'p1',
                 'kind': 'reusable',
                 'name': 'Bierflasche',
@@ -62,15 +74,23 @@ void main() {
     expect(d, isNotNull);
     expect(d!.singleUse, isTrue);
     expect(d.reusable, isTrue);
-    expect(d.depositTypes.single.id, 'p1');
-    expect(d.depositTypes.single.kind, 'reusable');
-    expect(d.depositTypes.single.amounts.single.cents, 9);
+    expect(d.depositTypes, hasLength(2));
+    final einweg = d.depositTypes[0];
+    expect(einweg.id, 'einweg');
+    expect(einweg.kind, 'single_use');
+    expect(einweg.type, isNull);
+    expect(einweg.returnRate, 0);
+    expect(einweg.amounts.single.cents, 25);
+    expect(d.depositTypes[1].id, 'p1');
+    expect(d.depositTypes[1].kind, 'reusable');
+    expect(d.depositTypes[1].amounts.single.cents, 9);
   });
 
   test('unlesbare Antwort wirft den Antwortfehler', () async {
     for (final daten in <Object?>[
       {'deposit': 'x'},
       {'deposit': 5},
+      {'deposit': <Object?>[]},
       <String, dynamic>{},
     ]) {
       final api = _api(MockClient((_) async => _erfolg(daten)));
