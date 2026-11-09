@@ -180,11 +180,13 @@ const int maxPayments = 20;
 /// `tenderedCents`. [payout]: ein Beleg nur aus Gutschein-Auszahlungen; der
 /// Betrag geht bar hinaus, genau eine Zahlung, negativ, ohne `tenderedCents`
 /// und ohne `tipCents` (Server `pruefeZahlungen` mit Auszahlung).
+/// [depositReturnCents]: Leergut-Auszahlung (Summe der Leergutzeilen, siehe
+/// `depositPayoutCents`); gilt wie [payout] und deckelt den Betrag.
 /// [payoutCancellation]: Storno einer Gutschein-Auszahlung, der Kunde gibt das
 /// Geld zurueck; die eine Barzahlung ist positiv (`zahlungen-core`
 /// `stornoAuszahlung`). Ob sie vorliegt, entscheidet `isPayoutCancellation`.
 String? paymentsError(List<KeckPaymentInput> payments,
-    {required bool cancellation, bool payout = false, bool payoutCancellation = false}) {
+    {required bool cancellation, bool payout = false, bool payoutCancellation = false, int? depositReturnCents}) {
   if (payments.length > maxPayments) {
     return 'payments: es sind hoechstens $maxPayments Eintraege erlaubt.';
   }
@@ -195,6 +197,10 @@ String? paymentsError(List<KeckPaymentInput> payments,
     if (z.method != KeckPaymentMethod.cash) return 'Auszahlung: nur in bar moeglich.';
     if (z.tenderedCents != null) return 'Auszahlung: tenderedCents ist nicht moeglich.';
     if (z.tipCents != null) return 'Auszahlung: tipCents ist nicht moeglich.';
+    // Leergut-Auszahlung: Ware zahlt nie aus, hoechstens die Leergutsumme (der Server prueft ebenso).
+    if (depositReturnCents != null && -z.amountCents > depositReturnCents) {
+      return 'Auszahlung: der Betrag ist hoeher als die Leergutsumme des Belegs.';
+    }
   }
   for (final (i, z) in payments.indexed) {
     final nr = i + 1;

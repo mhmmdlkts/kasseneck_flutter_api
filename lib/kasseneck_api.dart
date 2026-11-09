@@ -870,7 +870,8 @@ class KasseneckApi {
       }
       // Beleg nur aus Gutschein-Auszahlungen: genau eine negative Barzahlung.
       final auszahlung = isPayoutOnly(vouchers ?? const [], items ?? const [], withTip: tip != null);
-      final fehler = paymentsError(payments, cancellation: false, payout: auszahlung);
+      final leergut = depositPayoutCents(items ?? const [], payments);
+      final fehler = paymentsError(payments, cancellation: false, payout: auszahlung || leergut != null, depositReturnCents: leergut);
       if (fehler != null) throw _belegEingabe(fehler);
       params['payments'] = [for (final p in payments) p.toJson()];
     } else if (payments != null) {
