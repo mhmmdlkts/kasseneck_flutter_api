@@ -67,6 +67,7 @@ void main() {
     expect(receiptEmailErrorMessages, _vertrag['receiptEmailErrors']);
     expect(cancellationPaymentErrorMessages, _vertrag['cancellationPaymentErrors']);
     expect(voucherErrorMessages, _vertrag['voucherErrors']);
+    expect(depositErrorMessages, _vertrag['depositErrors']);
     expect(returnDispositionLabels, _vertrag['returnDispositionLabels']);
   });
 

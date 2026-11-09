@@ -61,6 +61,12 @@ final List<String> receiptErrorCodes = _mitRand(const [
   'cancellation_reference_unavailable',
   'cashregister_closed',
   'cashregister_decommissioned',
+  // Seit Pfand & Leergut (Vertrag 1.32.0): Pfandzeilen an createReceipt.
+  'deposit_not_enabled',
+  'deposit_return_not_offered',
+  'deposit_set_by_server',
+  'deposit_type_not_found',
+  'deposit_type_not_issued',
   'final_receipt_expired',
   'final_receipt_not_allowed',
   // Seit 11.7 (Vertrag 1.16.0): derselbe idempotencyKey mit anderem Inhalt,
@@ -71,6 +77,9 @@ final List<String> receiptErrorCodes = _mitRand(const [
   // Seit 11.18 (Vertrag 1.27.0, Zusatz-Kacheln): addOnOf zeigt nicht nach
   // vorne auf eine Warenposition, die selbst kein Zusatz ist.
   'invalid_add_on_reference',
+  'invalid_deposit',
+  'invalid_deposit_quantity',
+  'invalid_item_kind',
   'module_inactive',
   'not_permitted',
   'receipt_limit_exceeded',

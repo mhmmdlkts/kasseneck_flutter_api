@@ -58,6 +58,7 @@ import 'belegmail.dart';
 import '../receipt/codes.dart' show receiptOutputEntryErrorCodes, receiptOutputErrorCodes;
 import '../receipt/idempotenz.dart';
 import 'lager.dart';
+import 'pfand.dart' show ReturnCode, returnCodeNutzlast;
 import 'schicht.dart';
 import 'storno.dart' show assertCardRefunds, cancellationReasons, isPayoutCancellation;
 import 'storno_nutzlast.dart';
@@ -815,6 +816,27 @@ class RegisterReceiptClient {
   Future<void> reportConnectState(ConnectStateReport report) async {
     const name = Aufrufe.reportConnectState;
     await transport.call(name, params: connectStateNutzlast(name, report));
+  }
+
+  /// Lernt einen Leergut-Code (`learnMyLeergutCode`, nur Kassenweg, Recht
+  /// `depositReturn`): [code] ordnet eine GTIN einer aktiven Pfandart zu. Die Form
+  /// wird vor dem Senden geprueft; was der Server nicht annimmt, lehnt er mit
+  /// `invalid_deposit` oder `deposit_type_not_found` ab. Nach einer Frist ist der
+  /// Ausgang unklar (`unknownOutcomeCalls`); ein zweites Lernen schadet nie.
+  /// Zwilling von `learnReturnCode` im npm-Paket.
+  Future<ReturnCode> learnReturnCode(ReturnCode code) async {
+    const name = Aufrufe.learnMyLeergutCode;
+    final antwort = await transport.call(name, params: returnCodeNutzlast(name, code));
+    return ReturnCode.fromJson(antwort) ?? code;
+  }
+
+  /// Die gelernten Leergut-Codes (`listMyLeergutCodes`, nur Kassenweg): nur
+  /// aktive Pfandarten, nach GTIN sortiert; Unlesbares faellt weg. Zwilling von
+  /// `listReturnCodes` im npm-Paket.
+  Future<List<ReturnCode>> listReturnCodes() async {
+    final daten = await transport.call(Aufrufe.listMyLeergutCodes);
+    final liste = daten['codes'];
+    return liste is List ? [for (final e in liste) ?ReturnCode.fromJson(e)] : const [];
   }
 
   /// Artikelgruppen (Kategorien der Kachel-Kasse).

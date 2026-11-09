@@ -109,6 +109,10 @@ const _nach10 = (
     'reference.missing', 'reference.format_invalid', 'reference.format_warning',
     // Schicht-Ablauf der Kasse (11.19.0, npm 1.28.0)
     'shift.started_taken_over', 'tip.summary', 'tip.total_below_sum', 'shift.interim_saved', 'shift.finish_step_first', 'tip.revenue_hint', 'tip.unassigned_hint',
+    // Pfand und Leergut (npm 1.32.0)
+    'deposit.changed', 'deposit_error.not_enabled', 'deposit_error.type_not_found', 'deposit_error.set_by_server',
+    'deposit_error.invalid_quantity', 'deposit_error.return_not_offered', 'deposit_error.type_not_issued',
+    'deposit_error.follows_item', 'deposit_error.invalid',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -208,6 +212,9 @@ const _nach10 = (
     'shift.start_new', 'shift.drawer_from_to', 'shift.running_since_by', 'shift.z_receipt_printed',
     'shift.count_now', 'shift.interim_entry', 'drawer.open', 'time.today_at', 'tip.summary_percent',
     'settings.tip_kinds', 'settings.tip_start',
+    // Pfand und Leergut (npm 1.32.0)
+    'deposit.return', 'deposit.payout', 'deposit.offset', 'deposit.unknown_code', 'deposit.over_usual',
+    'deposit.on_premises', 'deposit.takeaway', 'deposit.sum',
     // Pruefung kompakt (11.19.0, npm 1.28.0)
     'zero_receipt.done_title', 'zero_receipt.back', 'dep.export', 'dep.period_question', 'common.close',
     // Navigation, Mengengrenzen, Beleg-Fertigseite, Gutschein-Auszahlung (11.5.0, npm 1.14.0)
@@ -246,6 +253,8 @@ const _nach10 = (
     'externalVoucherTileMessages', 'externalVoucherArticleErrors',
     'returnDispositionLabels',
     'externalVouchersLabels', 'externalVoucherKindLabels', 'tipKeptModeLabels',
+    // Pfand und Leergut (npm 1.32.0)
+    'depositErrors',
   ],
   placeholders: {
     'cents', 'chars', 'quantity', 'count', 'counted', 'since', 'type',

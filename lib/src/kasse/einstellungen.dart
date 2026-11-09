@@ -24,6 +24,7 @@
 library;
 
 import 'gutschein.dart' show PosVoucherSettings;
+import 'pfand.dart' show DepositSettings;
 
 // ------------------------------------------------------------------ Enums
 
@@ -1054,13 +1055,14 @@ class PosDeviceSettings {
 // ------------------------------------------------------------------ Ganzes
 
 class PosSettings {
-  const PosSettings({required this.business, required this.device, this.vouchers = PosVoucherSettings.off});
+  const PosSettings({required this.business, required this.device, this.vouchers = PosVoucherSettings.off, this.deposit});
 
   /// Die Standardwerte, deckungsgleich mit Backend und Browser-Kasse.
   const PosSettings.standard()
       : business = const PosBusinessSettings(),
         device = const PosDeviceSettings(),
-        vouchers = PosVoucherSettings.off;
+        vouchers = PosVoucherSettings.off,
+        deposit = null;
 
   final PosBusinessSettings business;
   final PosDeviceSettings device;
@@ -1071,6 +1073,12 @@ class PosSettings {
   /// zu den Standardwerten (`pos-settings-defaults.json`): der Server setzt
   /// ihn allein, die Kasse schreibt ihn nie.
   final PosVoucherSettings vouchers;
+
+  /// Pfand & Leergut (Block `deposit` aus `getKasseSettings`); `null`, solange
+  /// der Betrieb kein Pfand eingeschaltet hat (der Server laesst den Block dann
+  /// weg). Wie [vouchers] gehoert er nicht zu den Standardwerten: der Server
+  /// setzt ihn allein, die Kasse schreibt ihn nie.
+  final DepositSettings? deposit;
 
   /// Standard + Gespeichertes in der Drahtform `{business, device}`. Was
   /// fehlt, bleibt beim Standard; ein Schlüssel, den der Standard nicht
@@ -1119,6 +1127,7 @@ class PosSettings {
       business: PosBusinessSettings.fromJson(teil('business', 'betrieb', legacyBusinessKeys)),
       device: PosDeviceSettings.fromJson(teil('device', 'geraet', legacyDeviceKeys)),
       vouchers: PosVoucherSettings.fromJson(roh['vouchers']),
+      deposit: DepositSettings.fromJson(roh['deposit']),
     );
   }
 
@@ -1129,6 +1138,7 @@ class PosSettings {
         'business': business.toJson(),
         'device': device.toJson(),
         if (vouchers != PosVoucherSettings.off) 'vouchers': vouchers.toJson(),
+        if (deposit != null) 'deposit': deposit!.toJson(),
       };
 }
 

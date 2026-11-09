@@ -5,12 +5,13 @@ library;
 
 import '../../enums/voucher_type.dart';
 import 'kachel_referenz.dart';
+import 'pfand.dart';
 
 /// Kategorie der Kachel-Kasse.
 class ArticleGroup {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'color', 'symbol', 'sort', 'vatRate', 'addOns'};
+  static const Set<String> fields = {'id', 'name', 'color', 'symbol', 'sort', 'vatRate', 'addOns', 'deposits'};
 
   const ArticleGroup({
     required this.id,
@@ -20,6 +21,7 @@ class ArticleGroup {
     this.symbol,
     this.vatRate,
     this.addOns,
+    this.deposits,
   });
 
   final String id;
@@ -40,6 +42,10 @@ class ArticleGroup {
   /// ueber [addOnsFor].
   final List<String>? addOns;
 
+  /// Pfand der Gruppe (Pfand & Leergut): gilt fuer Artikel ohne eigene Liste;
+  /// `null` = keines. Wirksam wird es ueber [depositsFor].
+  final List<DepositEntry>? deposits;
+
   factory ArticleGroup.fromJson(Map<String, dynamic> json) => ArticleGroup(
         id: json['id'] is String ? json['id'] as String : '',
         name: json['name'] is String ? json['name'] as String : '',
@@ -48,6 +54,7 @@ class ArticleGroup {
         sort: json['sort'] is num ? (json['sort'] as num).toInt() : 0,
         vatRate: json['vatRate'] is num ? json['vatRate'] as num : null,
         addOns: _addOnListe(json['addOns']),
+        deposits: DepositEntry.listFromJson(json['deposits']),
       );
 
   /// Zurück in die Form, aus der [ArticleGroup.fromJson] wieder liest – für
@@ -60,6 +67,7 @@ class ArticleGroup {
         'sort': sort,
         'vatRate': vatRate,
         'addOns': addOns,
+        'deposits': deposits == null ? null : [for (final d in deposits!) d.toJson()],
       };
 }
 
@@ -153,7 +161,7 @@ enum ArticleExternalVoucher {
 class PosArticle {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher', 'askPrice', 'reference', 'addOns', 'externalVoucher'};
+  static const Set<String> fields = {'id', 'name', 'unitPriceCents', 'vatRate', 'unit', 'groupId', 'revenueGroupId', 'tile', 'active', 'quantityRule', 'askQuantity', 'maxQuantity', 'stockLocationIds', 'number', 'ean', 'internalCode', 'stockTracked', 'serviceVoucher', 'askPrice', 'reference', 'addOns', 'externalVoucher', 'deposits'};
 
   /// Die Felder von `tile`.
   static const Set<String> tileFields = {'visible', 'sort'};
@@ -182,6 +190,7 @@ class PosArticle {
     this.reference,
     this.addOns,
     this.externalVoucher,
+    this.deposits,
   });
 
   final String id;
@@ -262,6 +271,12 @@ class PosArticle {
   /// [stockTracked] werten: ein Fremdgutschein fuehrt nie Bestand.
   final ArticleExternalVoucher? externalVoucher;
 
+  /// Pfand des Artikels (Pfand & Leergut): `null` = keine eigene Angabe (die
+  /// Gruppe gilt), leer = ausdruecklich ohne Pfand, sonst die Eintraege. Der
+  /// Server setzt die Pfandzeilen am Beleg daraus (`autoDeposits`); wirksam wird
+  /// die Liste ueber [depositsFor].
+  final List<DepositEntry>? deposits;
+
   /// Aus der Drahtform `/api/v3` (`tile {visible, sort}`, `quantityRule`,
   /// `askQuantity`, `maxQuantity`, `revenueGroupId`, `stockLocationIds`,
   /// `number`, `ean`, `internalCode`, `stockTracked`, `serviceVoucher`).
@@ -315,6 +330,7 @@ class PosArticle {
       reference: PosReference.fromJson(json['reference']),
       addOns: _addOnListe(json['addOns']),
       externalVoucher: ArticleExternalVoucher.fromWire(json['externalVoucher']),
+      deposits: DepositEntry.listFromJson(json['deposits']),
     );
   }
 
@@ -343,6 +359,7 @@ class PosArticle {
         'reference': reference?.toJson(),
         'addOns': addOns,
         'externalVoucher': externalVoucher?.wire,
+        'deposits': deposits == null ? null : [for (final d in deposits!) d.toJson()],
       };
 }
 

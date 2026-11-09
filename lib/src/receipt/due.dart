@@ -303,6 +303,7 @@ class ReceiptDueBreakdown {
     required this.counterDeltaCents,
     required this.valueVoucherFlowCents,
     required this.bucketsCents,
+    this.payout,
   });
 
   /// Was die Zahlungen zusammen ergeben muessen.
@@ -318,6 +319,12 @@ class ReceiptDueBreakdown {
   /// Backends (`amountRateStandard` … `amountRatOthers`); `null` bei Start-
   /// und Nullbeleg.
   final Map<String, int>? bucketsCents;
+
+  /// `'deposit'`: der negative Zahlbetrag ist eine Leergut-Auszahlung (Beleg mit
+  /// Leergut, Betrag hoechstens die Leergutsumme): genau eine Barzahlung ueber
+  /// den Betrag, ohne Trinkgeld und ohne `tendered`. Ware fuehrt nie zu einer
+  /// Auszahlung. `null` sonst.
+  final String? payout;
 }
 
 /// Zahlbetrag in Cent, siehe Bibliothekskommentar.
@@ -765,21 +772,27 @@ _Rechnung _rechne(List<ReceiptDueLine> lines, List<KeckVoucher> vouchers, Receip
   final fluss = _wertgutscheinFlussCents(gutscheine, receiptType);
   final dueCents = t.zaehlerDeltaCents + fluss;
   // Ohne Auszahlungen darf der Zahlbetrag nicht negativ werden (Einloesung hoeher als die Summe).
-  if (plan.mitPlan && dueCents + plan.auszahlungCents < 0) {
+  // Leergut ist nie deckbar und darf als Barauszahlung hinausgehen: es zaehlt in diesen Pruefungen nicht mit.
+  final leergut = leergutCents(kunde);
+  final nachGutscheinen = dueCents + plan.auszahlungCents - leergut;
+  if (plan.mitPlan && nachGutscheinen < 0) {
     throw const ReceiptDueError('invalid_voucher', 'die Gutscheine uebersteigen die Summe des Belegs.', 'voucher_exceeds_total');
   }
   // Ein Gutschein deckt nie das Trinkgeld (Personal wie Inhaber): der Zahlbetrag nach den Gutscheinen
   // muss die Trinkgeldzeilen tragen. Storno ausgenommen (dort gibt es keinen Plan).
   final trinkgeld = trinkgeldCents(kunde);
-  if (plan.mitPlan && receiptType != ReceiptType.cancellation && trinkgeld > 0 && dueCents + plan.auszahlungCents < trinkgeld) {
+  if (plan.mitPlan && receiptType != ReceiptType.cancellation && trinkgeld > 0 && nachGutscheinen < trinkgeld) {
     throw const ReceiptDueError('invalid_voucher', 'die Gutscheine decken das Trinkgeld.', 'voucher_exceeds_total');
   }
+  // pfand-core.istLeergutAuszahlung: negativer Zahlbetrag eines Verkaufs mit Leergut, hoechstens die Leergutsumme.
+  final leergutAuszahlung = receiptType != ReceiptType.cancellation && leergut < 0 && dueCents < 0 && dueCents >= leergut;
   return _Rechnung(
     ReceiptDueBreakdown(
       dueCents: dueCents,
       counterDeltaCents: t.zaehlerDeltaCents,
       valueVoucherFlowCents: fluss,
       bucketsCents: {for (final n in topfReihenfolge) n: _euroToCent(t.toepfe[n]!)},
+      payout: leergutAuszahlung ? 'deposit' : null,
     ),
     kunde,
     plan.minusJeTopf,
@@ -938,10 +951,15 @@ const _fuenf = [topfStandard, topfReduced1, topfReduced2, topfZero, topfSpecial]
 /// `receipt-toepfe.belegToepfe`, Schritt fuer Schritt.
 ({Map<String, double> toepfe, int zaehlerDeltaCents}) _belegToepfe(List<Innen> positionen, List<PlanGutschein> gutscheine) {
   final t = {for (final n in topfReihenfolge) n: 0.0};
-  var personal = 0.0;
+  // Durchlaufende Posten (beleg-toepfe.durchlaufUndRest): Personal-Trinkgeld im 0-%-Topf, Pfand und Leergut im Topf ihres
+  // Satzes (Einweg hat 0 %, also Null). Sie liegen ungekuerzt im Topf, nach dem Rabatt, und zaehlen nicht in dessen Deckel.
+  final durchlauf = {for (final n in topfReihenfolge) n: 0.0};
   for (final p in positionen) {
     if (p.tip == TrinkgeldArt.staff) {
-      personal += p.amount * p.priceOne;
+      durchlauf[topfZero] = durchlauf[topfZero]! + p.amount * p.priceOne;
+    } else if (istPfandZeile(p)) {
+      final n = topfFuerSatz(p.vat);
+      durchlauf[n] = durchlauf[n]! + p.amount * p.priceOne;
     } else {
       final n = topfFuerSatz(p.vat);
       t[n] = t[n]! + p.priceOne * p.amount;
@@ -976,7 +994,9 @@ const _fuenf = [topfStandard, topfReduced1, topfReduced2, topfZero, topfSpecial]
       t[_fuenf[i]] = (cents[i] - anteil[i]) / 100;
     }
   }
-  t[topfZero] = t[topfZero]! + personal;
+  for (final n in topfReihenfolge) {
+    t[n] = t[n]! + durchlauf[n]!;
+  }
   var delta = 0;
   for (final n in topfReihenfolge) {
     delta += _euroToCent(t[n]!);

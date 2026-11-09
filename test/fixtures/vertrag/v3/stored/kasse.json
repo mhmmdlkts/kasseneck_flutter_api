@@ -4,7 +4,7 @@
     "default": {
       "sha256": "e5ed8eb2bdb2b8cba51102c6e00f73fe20bcaa0d8c355ed93901508fa7abc97e",
       "head": [],
-      "inputsSha256": "4166a7ee4a74f32f6cfb2e7ba6304c2de470469b9d97363e7ae6601f1b3557ba",
+      "inputsSha256": "cc0005c32e9184aa87f4c2dc3823e67c27a1d708a64445f2e13ab9052ea7cfe7",
       "backendPackage": "@kreiseck/kasseneck-api@0.38.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "c9377d30b69fe1595a826337fcf03fbc18e995af024867b0a473cdc65c174724",
+      "sha256": "1079f1d667a65baf277a2fc6a7a2f6afce9f5dd1d9c9cfc37519727a67447386",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "5411d8b31e1af456da3f2938fafa5e2ba335977f7f4b8c64b86677ae1202b6f7",
+      "inputsSha256": "6956976ad44a3d9bc4552f7c247120d790c075da11695bb194d57f6865aa5d35",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -9722,6 +9722,44 @@
             "bluetooth": null,
             "erstmalsAm": 1790409600000,
             "zuletztAm": 1790409600000
+          }
+        }
+      }
+    },
+    "learnMyLeergutCode": {
+      "codebase": "kasse",
+      "cases": {
+        "success_owner": {
+          "users/kw_betrieb1/leergut_codes/9012345000011": {
+            "pfandartId": "einweg",
+            "gelerntAm": 1790409600000,
+            "von": {
+              "uid": "kw_betrieb1",
+              "rolle": "kunde",
+              "name": null
+            }
+          }
+        },
+        "success_manager_reusable": {
+          "users/kw_betrieb1/leergut_codes/9012345000028": {
+            "pfandartId": "kiste",
+            "gelerntAm": 1790409600000,
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            }
+          }
+        },
+        "success_overwrites": {
+          "users/kw_betrieb1/leergut_codes/9012345000011": {
+            "pfandartId": "kiste",
+            "gelerntAm": 1790409600000,
+            "von": {
+              "uid": "kw_betrieb1",
+              "rolle": "kunde",
+              "name": null
+            }
           }
         }
       }

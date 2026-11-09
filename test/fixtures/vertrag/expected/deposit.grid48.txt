@@ -1,0 +1,32 @@
+               Bäckerei Kornblum                
+                   Mühlweg 7                    
+                   4600 Wels                    
+                  ATU12345675                   
+                                                
+                                                
+Datum:                       13.08.2026 10:15:30
+Kassen-ID:                                KASSE1
+Beleg-ID:                          AT0-KASSE1-91
+                                                
+6  x Cola Dose je 2,00                   12,00 A
+  + 1  x Eiswürfel                        0,50 A
+  + 6  x Pfand Einweg                     1,50 D
+    je 0,25                                     
+2  x Bier Flasche 0,5 l                   3,60 A
+je 1,80                                         
+  + 2  x Pfand Flasche                    0,40 A
+    je 0,20                                     
+                                                
+MwSt%       MwSt        Netto             Brutto
+A 20%       2,75        13,75              16,50
+D 0%        0,00        1,50                1,50
+Pfand, nicht steuerbar                      1,50
+------------------------------------------------
+Gesamt:                                  18,00 €
+Zahlungsart:                          Barzahlung
+                                                
+                   [QR-Code]                    
+                                                
+            Danke für Ihren Einkauf             
+Leergut-Rückgabe: Max Hollerer GmbH, Mühlweg 9, 
+                   4600 Wels                    

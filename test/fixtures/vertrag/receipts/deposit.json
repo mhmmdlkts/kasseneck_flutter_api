@@ -1,0 +1,83 @@
+{
+  "company": {
+    "companyName": "Bäckerei Kornblum",
+    "street": "Mühlweg 7",
+    "zip": "4600",
+    "city": "Wels",
+    "phone": "",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Danke für Ihren Einkauf",
+    "footer2": "",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-91",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-08-13T10:15:30",
+    "items": [
+      {
+        "name": "Cola Dose",
+        "quantity": 6,
+        "unitPriceCents": 200,
+        "vatRate": 20
+      },
+      {
+        "name": "Eiswürfel",
+        "quantity": 1,
+        "unitPriceCents": 50,
+        "vatRate": 20,
+        "addOnOf": 0
+      },
+      {
+        "name": "Pfand Einweg",
+        "quantity": 6,
+        "unitPriceCents": 25,
+        "vatRate": 0,
+        "kind": "deposit",
+        "depositFor": 0,
+        "depositKind": "single_use",
+        "depositTypeId": "einweg",
+        "perUnit": 25
+      },
+      {
+        "name": "Bier Flasche 0,5 l",
+        "quantity": 2,
+        "unitPriceCents": 180,
+        "vatRate": 20
+      },
+      {
+        "name": "Pfand Flasche",
+        "quantity": 2,
+        "unitPriceCents": 20,
+        "vatRate": 20,
+        "kind": "deposit",
+        "depositFor": 3,
+        "depositKind": "reusable",
+        "depositTypeId": "flasche",
+        "perUnit": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "cash",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-91_2026-08-13T10:15:30_16,50_0,00_0,00_0,00_1,50_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "sharedReturnPoint": {
+      "name": "Max Hollerer GmbH",
+      "address": "Mühlweg 9, 4600 Wels"
+    },
+    "onPremises": false
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}

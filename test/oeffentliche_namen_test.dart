@@ -52,6 +52,7 @@ final Set<String> woerter = _liste('''
   declined decommissioned default defaults defective delete deleted deliveries delivery delta denied density depth
   description detail details device devices diagnosis differs digits
   dimensions direct directory disabled discount discover discovered discovery
+  container deposit deposits filling learn learned match point premises returns reusable use usual
   dispose disposed disposition dispositions distance distribute divider documented done dots double download
   draft drawer dry due duplicate duration effect email emoji employee empty enable enabled encode encoded end endpoints
   enrollment entered entry enums envelope environment error errors euro event events
@@ -132,7 +133,7 @@ final Set<String> woerter = _liste('''
 /// Code-Tabellen `pc858`/`wpc1252`/`iso8859_15` und `ESC t`).
 final Set<String> kuerzel = _liste('''
   a acc aes aid api app b bic bin c ch codabar cols cor cp cvm d dec doc e ean
-  einvoice elv emv esc escpos f fn g gen geo girocode gln h hex hps hr hri hsv
+  einvoice elv emv esc escpos f fn g gen geo girocode gln gtin h hex hps hr hri hsv
   http iban icm id img init ios ip ipv iso itf j json k kg l lat len lng m mac max
   micros millis min mm ms n ok params pc pct pdf perms pin pos pre pro q qr
   qrcode r ref res rgb rgba s scep sdk sdp sec sepa sig sms src sub t tcp tid

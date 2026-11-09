@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.31.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.32.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.31.0';
+const String posTextsVersion = '1.32.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -306,6 +306,15 @@ const Map<String, PosText> posMessages = {
   'shift.finish_step_first': PosText('Erst den Schritt rechts abschließen oder abbrechen.'),
   'tip.revenue_hint': PosText('Steuerpflichtiges Trinkgeld zählt als Umsatz des Betriebs und wird nicht ausgezahlt.'),
   'tip.unassigned_hint': PosText('Trinkgeld ohne angemeldeten Benutzer.'),
+  'deposit.changed': PosText('Pfand wurde geändert. Bitte Summe prüfen.'),
+  'deposit_error.not_enabled': PosText('Pfand ist für diesen Betrieb nicht eingeschaltet.'),
+  'deposit_error.type_not_found': PosText('Diese Pfandart gibt es nicht mehr.'),
+  'deposit_error.set_by_server': PosText('Das Pfand bucht die Kasse selbst.'),
+  'deposit_error.invalid_quantity': PosText('Pfand gibt es nur für ganze Stück.'),
+  'deposit_error.return_not_offered': PosText('Diese Kasse nimmt kein Leergut zurück.'),
+  'deposit_error.type_not_issued': PosText('Dieses Leergut wurde hier nie verkauft.'),
+  'deposit_error.follows_item': PosText('Pfand wird mit seinem Artikel storniert.'),
+  'deposit_error.invalid': PosText('Die Pfand-Angaben stimmen nicht.'),
 };
 
 /// Beschriftungen: Knoepfe, Ueberschriften, Zeilennamen, was kein Satz ist.
@@ -833,6 +842,14 @@ const Map<String, PosText> posLabels = {
   'tip.summary_percent': PosText('Trinkgeld {tip} ({percent} %)', placeholders: ['tip', 'percent']),
   'settings.tip_kinds': PosText('Trinkgeld-Arten'),
   'settings.tip_start': PosText('Zuerst offen'),
+  'deposit.return': PosText('Leergut'),
+  'deposit.payout': PosText('Bar auszahlen'),
+  'deposit.offset': PosText('Mit Einkauf verrechnen'),
+  'deposit.unknown_code': PosText('Welches Leergut ist das?'),
+  'deposit.over_usual': PosText('Mehr als üblich – trotzdem annehmen?'),
+  'deposit.on_premises': PosText('Vor Ort'),
+  'deposit.takeaway': PosText('Mitnahme'),
+  'deposit.sum': PosText('Summe Leergut'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].
@@ -985,4 +1002,16 @@ const Map<String, String> tipKeptModeLabels = {
   'ask': 'tip_kept_mode.ask',
   'always': 'tip_kept_mode.always',
   'never': 'tip_kept_mode.never',
+};
+
+/// Pfand und Leergut: Code des Backends -> Schluessel des Satzes; siehe [depositErrorMessage].
+const Map<String, String> depositErrorMessages = {
+  'deposit_not_enabled': 'deposit_error.not_enabled',
+  'deposit_type_not_found': 'deposit_error.type_not_found',
+  'deposit_set_by_server': 'deposit_error.set_by_server',
+  'invalid_deposit_quantity': 'deposit_error.invalid_quantity',
+  'deposit_return_not_offered': 'deposit_error.return_not_offered',
+  'deposit_type_not_issued': 'deposit_error.type_not_issued',
+  'deposit_follows_item': 'deposit_error.follows_item',
+  'invalid_deposit': 'deposit_error.invalid',
 };

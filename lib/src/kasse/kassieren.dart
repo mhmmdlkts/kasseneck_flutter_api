@@ -285,7 +285,7 @@ int vatTotalCentsOfItems(List<KasseneckItem> items) {
 /// Summe der Zeilen ist **immer genau** der Rabatt.
 ///
 /// Rabatt- und Stornozeilen (negativ) zählen nicht als Umsatz: ein zweiter
-/// Rabatt rechnet nur auf die Ware.
+/// Rabatt rechnet nur auf die Ware. Pfand- und Leergutzeilen ebenso nicht.
 List<KasseneckItem> distributeDiscount(List<KasseneckItem> items, int discountCents, {String name = 'Rabatt'}) {
   if (discountCents < 0) {
     throw ArgumentError.value(discountCents, 'rabattCents', 'Rabatt muss eine ganze Zahl in Cent >= 0 sein');
@@ -294,6 +294,8 @@ List<KasseneckItem> distributeDiscount(List<KasseneckItem> items, int discountCe
 
   final gruppen = <VatRate, int>{};
   for (final p in items) {
+    // Pfand und Leergut werden nie rabattiert (durchlaufend, Spec E17).
+    if (p.isDeposit || p.isDepositReturn) continue;
     final betrag = p.totalCents;
     if (betrag <= 0) continue;
     gruppen[p.vat] = (gruppen[p.vat] ?? 0) + betrag;
