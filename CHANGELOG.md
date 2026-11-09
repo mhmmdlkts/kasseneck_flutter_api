@@ -2,6 +2,8 @@
 
 Twin of `@kreiseck/kasseneck-api` `1.32.1` (fix): `RegisterReceiptClient.sell` and `KasseneckApi.sellReceipt` no longer refuse a deposit payout before sending. A receipt with a `deposit_return` line and one negative cash payment (no `tenderedCents`, no `tipCents`, at most the sum of the return lines) goes out; the new helper `depositPayoutCents` and the `depositReturnCents` argument of `paymentsError` carry the rule. Without empties a negative payment is still refused; empties with a positive amount stay an ordinary sale.
 
+- `checkoutTotals` with `deposit`: `reason` of a deposit preview error is now the sentence (e.g. "Pfand gibt es nur für ganze Stück."), like every other `reason`, not the catalog key; `depositCode` stays the /v3 code.
+
 Reason: the server allows this payout (`istLeergutAuszahlung`), but the client check demanded `amountCents > 0` unless the receipt was a voucher payout.
 
 ## 11.24.0 (2026-11-09)
