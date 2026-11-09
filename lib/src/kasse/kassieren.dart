@@ -35,6 +35,9 @@ List<KeckPaymentMethod> offeredPaymentMethods(PosBusinessSettings business) {
 enum DiscountKind { percent, amount }
 
 /// Rabatt in Cent aus der Eingabe; außerhalb von 0 … Summe gibt es keinen.
+///
+/// [total] ist die **Warensumme** ([Cart.goodsCents]), nicht die Korbsumme mit
+/// Leergut ([Cart.totalCents]): Leergut und Pfand werden nie rabattiert.
 int? discountCentsFor(DiscountKind kind, num value, int total) {
   if (value.isNaN || value.isInfinite || value < 0) return null;
   if (kind == DiscountKind.percent && value > 100) return null;
@@ -185,7 +188,9 @@ class CheckoutTotals {
   final int returnCents;
 
   /// Auszahlung an den Gast, wenn Leergut mehr wert ist als der Einkauf
-  /// (sonst 0); [dueCents] ist dann negativ, Trinkgeld gibt es nicht.
+  /// (sonst 0); [dueCents] ist dann negativ, Trinkgeld gibt es nicht. Die Kasse
+  /// zahlt nur **bar** aus: die App muss bei [payoutCents] > 0 die Zahlart Bar
+  /// waehlen, der Server lehnt jede andere ab.
   final int payoutCents;
 
   /// Ein Fehlercode der Pfand-Vorschau ([depositPreviewErrorCodes]), mit dem
@@ -312,6 +317,10 @@ KeckPaymentInput cashPayment(CheckoutTotals invoice, {int? amountCents}) {
 ///    Belegposition ([distributeDiscount]) und senkt den Umsatz seines Satzes.
 ///
 /// [discountCents] ist derselbe Wert, der auch in [receiptItems] geht.
+///
+/// Zeigt die USt **ohne Pfand-Vorschau**: abgeleitetes Pfand bucht der Server
+/// und steht hier nicht (Leergut im Korb zaehlt mit). Nur Anzeige; der Beleg
+/// rechnet richtig.
 int vatTotalCents(Cart cart, {int discountCents = 0}) =>
     vatTotalCentsOfItems(receiptItems(cart, discountCents));
 

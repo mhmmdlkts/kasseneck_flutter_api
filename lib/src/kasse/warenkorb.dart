@@ -358,16 +358,18 @@ class Cart {
   /// Legt Leergut in den Korb: [quantity] Stueck der Pfandart [type] zum Betrag
   /// des Tages [day] (die Zeile baut [depositReturnLine], wie der Server sie
   /// bucht). Dieselbe Pfandart addiert sich zur vorhandenen Zeile (hoechstens
-  /// 1000 Stueck); gelernte [codes] bleiben nur, wenn beide Seiten welche tragen.
+  /// 1000 Stueck je Zeile, wie bei [withQuantity]: darueber wird auf 1000
+  /// gekappt und die gelernten Codes entfallen); gelernte [codes] bleiben nur,
+  /// wenn beide Seiten welche tragen und die Menge nicht gekappt wurde.
   /// Wirft einen [StateError], wenn sich keine Zeile ergibt.
   Cart addedReturn(DepositType type, int quantity, {required String day, required bool smallBusiness, Map<String, int>? codes}) {
     final zeile = depositReturnLine(type, quantity, day: day, smallBusiness: smallBusiness, codes: codes);
     final vorhanden = items.indexWhere((p) => p.isDepositReturn && p.depositTypeId == type.id);
     if (vorhanden >= 0) {
       final alt = items[vorhanden];
-      final menge = alt.quantity + quantity;
-      if (menge > _maxReturnQuantity) return this;
-      final neueCodes = alt.codes != null && codes != null
+      final summe = alt.quantity + quantity;
+      final menge = summe > _maxReturnQuantity ? _maxReturnQuantity : summe;
+      final neueCodes = summe == menge && alt.codes != null && codes != null
           ? {
               ...alt.codes!,
               for (final e in codes.entries) e.key: (alt.codes![e.key] ?? 0) + e.value,

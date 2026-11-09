@@ -203,6 +203,9 @@ void main() {
       korb = korb.addedReturn(_art['flasche']!, 2, day: tag, smallBusiness: false);
       expect(korb.items, hasLength(1));
       expect(korb.items.single.quantity, 5);
+      korb = korb.addedReturn(_art['flasche']!, 999, day: tag, smallBusiness: false);
+      expect(korb.items.single.quantity, 1000, reason: 'Zusammenfuehren kappt wie eine einzelne Zeile');
+      expect(korb.items.single.codes, isNull);
       korb = korb.withQuantity(id, 1001);
       expect(korb.items.single.quantity, 1000, reason: 'hoechstens 1000 Stueck');
       expect(korb.hasReturns, isTrue);
