@@ -28,6 +28,7 @@ import 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
 import 'src/kasse/beleg_ausgaben.dart' show LogReceiptOutputsResult, ReceiptOutputEntry, ausgabenGemeldet, ausgabenNutzlast;
 import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
 import 'src/kasse/gutschein_wunsch.dart';
+import 'src/kasse/pfand.dart' show DepositSettings;
 import 'src/receipt/codes.dart' show receiptEmailErrorCodes, receiptOutputErrorCodes;
 import 'src/dep/nachschau.dart';
 import 'src/receipt/idempotenz.dart';
@@ -109,6 +110,8 @@ export 'src/terminal/zugang.dart'
         terminalNoFreeTerminal,
         terminalPlatforms,
         terminalSetupStates;
+// Pfandarten des Betriebs (KasseneckApi.listDepositTypes).
+export 'src/kasse/pfand.dart' show DepositAmount, DepositSettings, DepositType;
 // Belege auflisten (KasseneckApi.listReceipts): Seite, Zeile, Tagessumme und
 // Grenzen. Storno-Stand und Bediener der Zeile sind dieselben Typen wie in der
 // Belegliste der Kasse (pos.dart), damit beide Listen gleich lesbar sind.
@@ -1117,6 +1120,27 @@ class KasseneckApi {
     receiptListParams(view: 'full', date: date, from: from, to: to, limit: limit, order: order);
     return _alleSeiten((c) => listFullReceipts(
         date: date, from: from, to: to, limit: limit ?? receiptListLimitMax, order: order, cursor: c));
+  }
+
+  /// Die Pfandarten und Pfand-Einstellungen des Betriebs (`listDepositTypes`),
+  /// gelesen mit dem API-Schluessel; ohne Parameter. Wie beim npm-Paket
+  /// verlangt der Client auch hier den Kassen-Token, der Server prueft ihn fuer
+  /// diesen Aufruf nicht.
+  ///
+  /// `null`, wenn der Betrieb Pfand nicht eingeschaltet hat. Eine Antwort ohne
+  /// lesbaren Pfand-Block ist ein [KasseneckValidationError] (`kind: response`).
+  Future<DepositSettings?> listDepositTypes() async {
+    const name = Aufrufe.listDepositTypes;
+    final resJson = await _kasseneckJson(endpoint: name);
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    final daten = _daten(name, resJson);
+    final roh = daten['deposit'];
+    if (roh == null && daten.containsKey('deposit')) return null;
+    final pfand = DepositSettings.fromJson(roh);
+    if (pfand == null) {
+      throw const KasseneckValidationError(name, 'Antwort ohne lesbaren Pfand-Block (deposit)', 'response');
+    }
+    return pfand;
   }
 
   Future<ReceiptListPage<T>> _belegSeite<T>(

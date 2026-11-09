@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.32.1). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.34.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.32.1';
+const String posTextsVersion = '1.34.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -78,6 +78,8 @@ const Map<String, PosText> posMessages = {
   'card_payment.unpair_card_charged': PosText('Auf diesem Gerät liegt noch eine gebuchte Kartenzahlung ohne Beleg – sie muss von Hand am Terminal zurückerstattet werden (Betrag siehe unten).'),
   'terminal.none_found': PosText('Kein Hobex-Terminal gefunden – ist es eingeschaltet und im selben Netz wie dieser Rechner?', only: [PosSurface.web]),
   'terminal.not_ready': PosText('Terminal antwortet, ist aber nicht betriebsbereit: {response} – TID prüfen.', placeholders: ['response'], only: [PosSurface.web]),
+  'terminal.several_found': PosText('Mehrere Terminals gefunden: {hosts}. Die IP-Adresse des richtigen von Hand eintragen.', placeholders: ['hosts'], only: [PosSurface.web]),
+  'terminal.tid_not_found': PosText('Mehrere Terminals gefunden: {hosts}. Keines meldet die TID {tid} – TID prüfen oder die IP-Adresse von Hand eintragen.', placeholders: ['hosts', 'tid'], only: [PosSurface.web]),
   'gptom.app_missing': PosText('Die GP-Tom-App ist auf diesem Gerät nicht da.', only: [PosSurface.app]),
   'gptom.search_failed': PosText('GP Tom: Suche nach der App fehlgeschlagen: {reason}', placeholders: ['reason'], only: [PosSurface.app]),
   'gptom.payment_failed': PosText('GP Tom: Zahlung fehlgeschlagen: {reason}', placeholders: ['reason'], only: [PosSurface.app]),
@@ -237,6 +239,7 @@ const Map<String, PosText> posMessages = {
   'connect.printer_unknown': PosText('Diesen Drucker kennt Kasseneck Connect nicht (mehr) – bitte neu suchen.', only: [PosSurface.web]),
   'connect.origin_not_allowed': PosText('Kasseneck Connect nimmt von dieser Adresse nichts an (Ursprung nicht freigegeben).', only: [PosSurface.web]),
   'connect.not_installed': PosText('Kasseneck Connect nicht gefunden – bitte installieren.', only: [PosSurface.web]),
+  'connect.local_network_blocked': PosText('Der Browser sperrt den Zugang zu Kasseneck Connect. Freigeben: Schloss neben der Adresse (installierte App: Menü ⋮ → App-Info) → Website-Einstellungen → „Lokales Netzwerk“ → „Zulassen“.', only: [PosSurface.web]),
   'connect.unpair_question': PosText('Diesen Browser wirklich von Connect trennen? Der Bondruck geht dann nicht mehr.', only: [PosSurface.web]),
   'settings.load_failed': PosText('Die Einstellungen konnten nicht geladen werden.'),
   'settings.save_failed': PosText('Die Einstellung konnte nicht gespeichert werden.'),

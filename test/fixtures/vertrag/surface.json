@@ -1,5 +1,5 @@
 {
-  "version": "1.32.1",
+  "version": "1.34.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -114,7 +114,9 @@
       "requestTerminalCode",
       "getTerminalCode",
       "reportTerminalLogin",
-      "reportTerminalReady"
+      "reportTerminalReady",
+      "unfixTerminal",
+      "listDepositTypes"
     ],
     "pos": [
       "cancelReceipt",
@@ -292,7 +294,9 @@
       "requestTerminalCode",
       "getTerminalCode",
       "reportTerminalLogin",
-      "reportTerminalReady"
+      "reportTerminalReady",
+      "unfixTerminal",
+      "listDepositTypes"
     ],
     "pos": [
       "pairRegisterDevice",
