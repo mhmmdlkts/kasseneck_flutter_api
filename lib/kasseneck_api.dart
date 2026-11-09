@@ -748,8 +748,12 @@ class KasseneckApi {
     KeckTip? tip,
     ManualReceipt? manualReceipt,
     String? idempotencyKey,
+    bool? autoDeposits,
+    bool? onPremises,
   }) async {
     return _createReceipt(
+      autoDeposits: autoDeposits,
+      onPremises: onPremises,
       receiptType: ReceiptType.standard,
       tip: tip,
       manualReceipt: manualReceipt,
@@ -790,11 +794,15 @@ class KasseneckApi {
     KeckTip? tip,
     ManualReceipt? manualReceipt,
     String? idempotencyKey,
+    bool? autoDeposits,
+    bool? onPremises,
   }) async {
 
     // Gutscheinzeilen setzt nur der Server; vor jeder anderen Positionspruefung.
     final zeilenFehler = voucherItemError(items ?? const []);
     if (zeilenFehler != null) throw _belegEingabe(zeilenFehler);
+    final pfandFehler = depositItemError(items ?? const []);
+    if (pfandFehler != null) throw _belegEingabe(pfandFehler);
 
     if (receiptType.needsItems) {
       // Ein reiner Gutscheinverkauf (und eine Auszahlung) ist ein Umsatz ohne Positionen.
@@ -890,6 +898,8 @@ class KasseneckApi {
       if (fehler != null) throw _belegEingabe(fehler);
       params['idempotencyKey'] = idempotencyKey;
     }
+    if (autoDeposits != null) params['autoDeposits'] = autoDeposits;
+    if (onPremises != null) params['onPremises'] = onPremises;
 
     // Ein Servertext, der einen Code wiederholt, wird geschwaerzt (wie bei checkVoucher).
     final geheim = voucherSecrets(vouchers ?? const []);

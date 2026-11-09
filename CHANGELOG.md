@@ -1,3 +1,12 @@
+## 11.24.0 (2026-11-09)
+
+Twin of `@kreiseck/kasseneck-api` `1.32.0` (gap): `RegisterReceiptClient.sell` and `KasseneckApi.sellReceipt` send `autoDeposits` and `onPremises` to `createReceipt`, and refuse a `deposit` line that carries an `articleId` before sending (`invalid_deposit`). Additive; without the new parameters the payload is byte-identical.
+
+Reason: 11.23.0 could preview and book deposit in the basket, but the sale had no way to ask the server for it. Without `autoDeposits: true` the server derives no deposit lines, so a till with deposit would run into `payments_sum_mismatch` on every sale with a deposit item.
+
+- **`autoDeposits`** (`bool?`): the server sets the deposit lines from the articles. **`onPremises`** (`bool?`): consumed on the premises (`true`) or taken away (`false`); otherwise the till default applies. Both are only sent when set.
+- New test `test/beleg_pfand_felder_test.dart` covers both ways (payload with and without, deposit line with `articleId`).
+
 ## 11.23.0 (2026-11-09)
 
 Twin of `@kreiseck/kasseneck-api` `1.32.0` (contract files pulled from the registry, copy proven real by `tool/zwillinge.sh pruefen`): deposit and returnable containers (Pfand and Leergut) at the till. Additive; baskets, receipts and settings without deposit read, send and print exactly as before (all existing goldens unchanged, the contract grew by the receipts `deposit` and `deposit-return`).

@@ -445,6 +445,13 @@ class RegisterReceiptClient {
   /// wiederholt nie. Eine stabile Kennung des Vorgangs nehmen (Bestellnummer,
   /// Nummer des Ersatzbelegs). Text mit 1 bis 120 Zeichen, unveraendert
   /// gesendet; leer, nur Leerraum oder laenger wirft vor dem Senden.
+  ///
+  /// [autoDeposits]: Pfand & Leergut -- der Server setzt die Pfandzeilen aus den
+  /// Artikeln selbst und rechnet den Betrag. Die Kasse mit Pfand sendet `true`.
+  /// Ohne Angabe fehlt das Feld (Vorgabe des Servers). [onPremises]: vor Ort
+  /// verzehrt (`true`) oder mitgenommen (`false`); ohne Angabe gilt die Vorgabe
+  /// der Kasse. Eine Zeile `deposit` mit `articleId` wirft vor dem Senden
+  /// (`invalid_deposit`): Pfandzeilen setzt der Server aus dem Artikel.
   Future<KasseneckReceipt> sell({
     required List<KasseneckItem> items,
     required List<KeckPaymentInput> payments,
@@ -456,11 +463,15 @@ class RegisterReceiptClient {
     List<KeckVoucher>? vouchers,
     ManualReceipt? manualReceipt,
     String? idempotencyKey,
+    bool? autoDeposits,
+    bool? onPremises,
   }) async {
     const name = Aufrufe.createReceipt;
     final gutscheine = vouchers ?? const <KeckVoucher>[];
     final zeilenFehler = voucherItemError(items);
     if (zeilenFehler != null) throw KasseneckValidationError(name, zeilenFehler, 'request');
+    final pfandFehler = depositItemError(items);
+    if (pfandFehler != null) throw KasseneckValidationError(name, pfandFehler, 'request');
     if (items.isEmpty && !vouchersWithoutItems(gutscheine)) {
       // Ein leerer Verkauf ist kein Verkauf, und der Fehler soll fallen,
       // bevor irgendetwas in die Signaturkette geraet.
@@ -504,6 +515,8 @@ class RegisterReceiptClient {
           'drawerId': ?drawerId,
           'manualReceipt': ?manualReceipt?.toJson(),
           'idempotencyKey': ?idempotencyKey,
+          'autoDeposits': ?autoDeposits,
+          'onPremises': ?onPremises,
         },
       );
     } on KasseneckApiError catch (fehler) {
