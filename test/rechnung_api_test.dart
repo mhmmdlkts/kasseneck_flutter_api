@@ -1044,11 +1044,13 @@ void main() {
       const voll = IssueInvoiceItemInput(
         description: 'a', subtitle: 'b', quantity: 1, unit: 'piece', kind: 'goods', unitPriceCents: 1, vatRate: 20,
         discountPct: 1, articleId: 'x', reservationId: 'r',
+        deposit: InvoiceItemDepositInput(depositTypeId: 'd', depositFor: 0, gtin: '9012345000011', ownFilling: true),
       );
       const micro = InvoiceItemInput(description: 'a', quantity: 1, unitPriceMicros: 1, vatRate: 20);
       const gutschriftVoll = CreditNoteItemInput(
         description: 'a', subtitle: 'b', quantity: 1, unit: 'piece', kind: 'goods', unitPriceCents: 1, vatRate: 20,
         discountPct: 1, articleId: 'x', returnDisposition: 'restock',
+        deposit: InvoiceItemDepositInput(depositTypeId: 'd', depositFor: 0),
       );
       expect({...voll.toJson().keys, ...micro.toJson().keys}, positionsFelder('issueInvoice'));
       expect({...gutschriftVoll.toJson().keys, ...micro.toJson().keys}, positionsFelder('createCreditNote'));
@@ -1150,14 +1152,21 @@ void main() {
     });
 
     test('neue Codes hinten, in der Reihenfolge des Backends', () {
-      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 8, invoiceErrorCodes.length - 6),
-          ['einvoice_unavailable', 'amount_too_large']);
-      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 6, invoiceErrorCodes.length - 4),
-          ['vat_id_invalid', 'vat_id_check_pending']);
-      expect(invoiceErrorCodes.sublist(invoiceErrorCodes.length - 4, invoiceErrorCodes.length - 1),
+      final n = invoiceErrorCodes.length;
+      expect(invoiceErrorCodes.sublist(n - 13, n - 11), ['einvoice_unavailable', 'amount_too_large']);
+      expect(invoiceErrorCodes.sublist(n - 11, n - 9), ['vat_id_invalid', 'vat_id_check_pending']);
+      expect(invoiceErrorCodes.sublist(n - 9, n - 6),
           ['reservation_not_found', 'reservation_mismatch', 'reservation_not_active']);
-      // 11.7 (npm 1.16.0): Rechnungsnummer schon vergeben, hinten angehaengt.
-      expect(invoiceErrorCodes.last, 'invoice_number_taken');
+      // 11.7 (npm 1.16.0): Rechnungsnummer schon vergeben, hinter den Reservierungen.
+      expect(invoiceErrorCodes[n - 6], 'invoice_number_taken');
+      // 11.27 (npm 1.36.0): Pfand an Positionen, hinten angehaengt.
+      expect(invoiceErrorCodes.sublist(n - 5), [
+        'deposit_not_enabled',
+        'deposit_type_not_found',
+        'deposit_set_by_server',
+        'invalid_deposit_quantity',
+        'invalid_deposit',
+      ]);
       expect(invoiceNoticeCodes.last, 'reservation_expired');
       for (final code in invoiceNoticeCodes) {
         expect(invoiceErrorCodes, isNot(contains(code)), reason: code);

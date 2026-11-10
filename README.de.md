@@ -12,7 +12,7 @@ Die vollständige Dokumentation steht im englischen README:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.26.1
+  kasseneck_api: ^11.27.0
 ```
 
 Voraussetzungen: Dart SDK `^3.12.1`, Flutter `>=3.44.0`, ein Kasseneck-API-Schlüssel
@@ -37,6 +37,11 @@ final beleg = await kasseneck.sellReceipt(
 );
 print('Beleg ${beleg?.receiptId}, signiert: ${beleg?.signatureSuccess}');
 ```
+
+Ohne Kasse genügt der API-Schlüssel für die Aufrufe, die dem Betrieb gelten
+(`listDepositTypes`, `getEwpReport`, `downloadEwpReport`,
+`setEwpExtraQuantities`): `cashregisterToken` weglassen, dann geht die
+Kopfzeile `cashregister-token` nicht mit. Ein leerer Token gilt als kein Token.
 
 Stornos laufen über `kasseneck.cancelReceipt(...)` bzw.
 `RegisterReceiptClient.cancelReceipt(...)`, immer mit Bezug auf den Originalbeleg.

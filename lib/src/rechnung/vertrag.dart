@@ -73,6 +73,16 @@ const List<String> invoiceErrorCodes = [
   // Seit 11.7 (Vertrag 1.16.0): die Rechnungsnummer ist schon vergeben
   // (§ 11 Abs. 1 Z 3 lit. h UStG), nichts ausgestellt.
   'invoice_number_taken',
+  // Seit 11.27 (Vertrag 1.36.0): Pfand an Positionen (`items[].deposit`),
+  // hinten angehaengt. Pfand nicht eingeschaltet; Pfandart unbekannt oder
+  // stillgelegt; Pfand zu einer Artikelposition leitet der Server selbst ab;
+  // Pfandmenge passt nicht zur Menge der Position; sonstige Pfandangabe
+  // unzulaessig (`index` nennt die Position).
+  'deposit_not_enabled',
+  'deposit_type_not_found',
+  'deposit_set_by_server',
+  'invalid_deposit_quantity',
+  'invalid_deposit',
 ];
 
 /// Fehlercodes, die nicht die Rechnung, sondern die Anfrage betreffen:

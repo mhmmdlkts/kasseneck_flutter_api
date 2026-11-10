@@ -1,0 +1,39 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Pfandangabe: leere Pfandart, Bezug auf eine Position ueber 499, GTIN mit Buchstaben",
+  "request": {
+    "idempotencyKey": "ex-31",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "gross",
+    "serviceStart": "2026-11-10",
+    "items": [
+      {
+        "description": "Mineralwasser Dose 0,5 l",
+        "quantity": 24,
+        "unitPriceCents": 120,
+        "vatRate": 20
+      },
+      {
+        "description": "Pfand Einweg Dose",
+        "quantity": 24,
+        "unitPriceCents": 25,
+        "vatRate": 0,
+        "deposit": {
+          "depositTypeId": "",
+          "depositFor": 500,
+          "gtin": "12ab"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "ok": false,
+    "code": "validation",
+    "fields": [
+      "items[1].deposit.depositTypeId",
+      "items[1].deposit.depositFor",
+      "items[1].deposit.gtin"
+    ]
+  }
+}

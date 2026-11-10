@@ -1,5 +1,5 @@
 {
-  "version": "1.35.1",
+  "version": "1.36.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -116,7 +116,9 @@
       "reportTerminalLogin",
       "reportTerminalReady",
       "unfixTerminal",
-      "listDepositTypes"
+      "listDepositTypes",
+      "getEwpReport",
+      "setEwpExtraQuantities"
     ],
     "pos": [
       "cancelReceipt",
@@ -296,7 +298,9 @@
       "reportTerminalLogin",
       "reportTerminalReady",
       "unfixTerminal",
-      "listDepositTypes"
+      "listDepositTypes",
+      "getEwpReport",
+      "setEwpExtraQuantities"
     ],
     "pos": [
       "pairRegisterDevice",
@@ -1336,7 +1340,12 @@
       "reservation_not_found",
       "reservation_mismatch",
       "reservation_not_active",
-      "invoice_number_taken"
+      "invoice_number_taken",
+      "deposit_not_enabled",
+      "deposit_type_not_found",
+      "deposit_set_by_server",
+      "invalid_deposit_quantity",
+      "invalid_deposit"
     ],
     "invoiceLanguages": [
       "de",
