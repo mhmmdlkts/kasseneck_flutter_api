@@ -109,8 +109,10 @@ export 'src/kasse/drucker.dart';
 export 'src/kasse/drucker_katalog.dart'
     show
         PrinterCatalogApproval,
+        PrinterCatalogDeviceSettings,
         PrinterCatalogEntry,
         PrinterCatalogSettings,
+        PrinterCatalogValueField,
         PrinterCatalogValues,
         PrinterDeviceTest,
         printerCatalogEntry,

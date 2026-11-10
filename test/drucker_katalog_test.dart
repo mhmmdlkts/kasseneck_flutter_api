@@ -6,6 +6,7 @@ import 'package:kasseneck_api/pos.dart';
 import 'package:kasseneck_api/src/kasse/drucker_katalog.dart'
     show
         PrinterCatalogProblemReason,
+        PrinterCatalogValueField,
         findPrinterCatalogEntry,
         normalizePrinterModel,
         printerCatalog,
@@ -37,6 +38,8 @@ List<PrinterCatalogEntry> _freigegeben(Iterable<String> ids) => [
             manufacturer: e.manufacturer,
             model: e.model,
             matchNames: e.matchNames,
+            paperSizes: e.paperSizes,
+            nativeCharsPerLine: e.nativeCharsPerLine,
             values: e.values,
             approval: PrinterCatalogApproval(approved: true, deviceTest: _geraetetest),
           )
@@ -44,6 +47,10 @@ List<PrinterCatalogEntry> _freigegeben(Iterable<String> ids) => [
 ];
 
 final List<PrinterCatalogEntry> _alleFrei = _freigegeben([for (final e in printerCatalog) e.id]);
+
+List<PrinterCatalogEntry> _katalogAus(Object? liste) => [
+  for (final p in (liste as List).cast<Map<String, dynamic>>()) PrinterCatalogEntry.fromJson(p),
+];
 
 List<Map<String, String>> _funde(List<PrinterCatalogEntry> katalog) => [
   for (final p in printerCatalogProblems(katalog)) p.toJson(),
@@ -58,6 +65,7 @@ void main() {
         'lookupShipped',
         'lookup',
         'lookupPartial',
+        'lookupOtherCatalog',
         'deviceTest',
         'settings',
         'problems',
@@ -71,6 +79,7 @@ void main() {
       expect(regeln['cut'], [for (final c in printerCatalogCuts) c.value]);
       expect(regeln['qrMode'], [for (final q in printerCatalogQrModes) q.value]);
       expect(regeln['codePage'], [for (final c in PosCodePage.values) c.value]);
+      expect(regeln['valueFields'], [for (final f in PrinterCatalogValueField.values) f.value]);
       expect(regeln['problemReasons'], [for (final r in PrinterCatalogProblemReason.values) r.value]);
     });
   });
@@ -80,9 +89,26 @@ void main() {
       expect([for (final e in printerCatalog) e.toJson()], _vertrag['printers']);
     });
 
+    test('der Geraetetest kennt jedes Wertfeld', () {
+      for (final e in printerCatalog) {
+        expect(e.values.toJson().keys, [for (final f in PrinterCatalogValueField.values) f.value], reason: e.id);
+      }
+    });
+
     test('der ausgelieferte Katalog hat keinen Fund, auch ganz freigegeben nicht', () {
       expect(_funde(printerCatalog), isEmpty);
       expect(_funde(_alleFrei), isEmpty);
+    });
+
+    test('TM-T88 bekommt das 32-Zeichen-Layout, nie mm80 und keine Breitenbestaetigung', () {
+      for (final id in ['epson-tm-t88vi', 'epson-tm-t88vii']) {
+        final e = printerCatalog.firstWhere((x) => x.id == id);
+        final vorschlag = printerCatalogSettings(e);
+        expect(e.nativeCharsPerLine, 42, reason: id);
+        expect(e.paperSizes, [PosPaperSize.mm58], reason: id);
+        expect(vorschlag.device.paperSize, PosPaperSize.mm58, reason: id);
+        expect(vorschlag.paperSizeNeedsCheck, isFalse, reason: id);
+      }
     });
 
     test('jeder Name fuehrt genau zu seinem Eintrag', () {
@@ -127,6 +153,18 @@ void main() {
     }
   });
 
+  group('printerCatalogEntry (eigener Katalog): Hersteller aus dem Katalog, laengste Vorsilbe zuerst', () {
+    final anderer = (_faelle['lookupOtherCatalog'] as Map).cast<String, dynamic>();
+    final katalog = _katalogAus(anderer['printers']);
+    test('der Katalog hat keinen Fund', () => expect(_funde(katalog), isEmpty));
+    for (final f in (anderer['cases'] as List).cast<Map<String, dynamic>>()) {
+      test(
+        jsonEncode(f['model']),
+        () => expect(findPrinterCatalogEntry(katalog, f['model'] as String?)?.id, f['expected']),
+      );
+    }
+  });
+
   group('printerCatalogEntry (teilweise freigegeben)', () {
     for (final f in _liste('lookupPartial')) {
       test('${jsonEncode(f['approve'])}: ${jsonEncode(f['model'])}', () {
@@ -137,13 +175,15 @@ void main() {
     }
   });
 
-  test('printerCatalogSettings: je Eintrag die Einstellungen der Datei, alles gueltige Geraete-Werte', () {
+  test('printerCatalogSettings: je Eintrag der Vorschlag der Datei, alles gueltige Geraete-Werte', () {
     expect([for (final f in _liste('settings')) f['id']], [for (final e in printerCatalog) e.id]);
     for (final f in _liste('settings')) {
       final eintrag = printerCatalog.firstWhere((e) => e.id == f['id']);
-      // Der Vorschlag geht unveraendert als Teil der Geraete-Einstellungen hinaus (saveDevice).
-      final teil = printerCatalogSettings(eintrag).toJson();
-      expect(teil, f['settings'], reason: f['id'] as String);
+      final vorschlag = printerCatalogSettings(eintrag);
+      expect(vorschlag.toJson(), f['settings'], reason: f['id'] as String);
+      expect(vorschlag.paperSizeNeedsCheck, eintrag.paperSizes.length > 1, reason: f['id'] as String);
+      // `device` geht unveraendert als Teil der Geraete-Einstellungen hinaus (saveDevice).
+      final teil = vorschlag.device.toJson();
       for (final MapEntry(key: feld, value: wert) in teil.entries) {
         final erlaubt = posDeviceValues[feld];
         if (erlaubt != null) {
@@ -158,10 +198,7 @@ void main() {
   group('printerCatalogProblems', () {
     for (final f in _liste('problems')) {
       test(f['name'] as String, () {
-        final katalog = [
-          for (final p in (f['printers'] as List).cast<Map<String, dynamic>>()) PrinterCatalogEntry.fromJson(p),
-        ];
-        expect(_funde(katalog), f['expected']);
+        expect(_funde(_katalogAus(f['printers'])), f['expected']);
       });
     }
 

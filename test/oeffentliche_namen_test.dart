@@ -94,7 +94,7 @@ final Set<String> woerter = _liste('''
   secret seen select selected selection sell sellable send sent september sequence serial server
   service services session sessions set setting settings setup shadow share
   shared sheet short shortcut shortcuts shorten shortfall shortfalls show side sign signature signed
-  signing since single site size sizing sleep small software sold sort
+  signing since single site size sizes sizing sleep small software sold sort
   source sources space special split staff stamp standard start started state states
   statement status statuses step steps stock stocktake stop storage store stored street strength
   strengths string style styles subnet subtitle subtotal subtracted succeeded

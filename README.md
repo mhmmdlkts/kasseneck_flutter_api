@@ -698,6 +698,15 @@ if (patch.isNotEmpty) await settings.saveBusiness(patch);
   `terminalPort` 8080, and the 16 shortcut actions follow the contract
   (`customAmount` Mod+D, `receipts` Mod+J, `fullscreen` Mod+F).
 - `setLogo(dataUrl)` and `removeLogo()` change the register logo.
+- **Printer catalog.** `printerCatalogEntry(model)` finds the approved catalog
+  entry for a model name as Kasseneck Connect reports it (case, a leading
+  `EPSON` and the kind of separator do not count; `null` for an unknown
+  model), and `printerCatalogSettings(entry)` returns what it proposes for the
+  first setup: `device` (`toJson()` is a patch for `saveDevice`) and
+  `paperSizeNeedsCheck`, `true` when the model can be switched to another paper
+  width and the till should confirm it with a test print. Only entries approved
+  after a complete device test count; entries and test cases are the same as in
+  the npm package (`printer-catalog.json`).
 
 ## Error handling
 
