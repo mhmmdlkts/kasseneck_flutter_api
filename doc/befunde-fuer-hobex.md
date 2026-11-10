@@ -84,9 +84,10 @@ nicht gegen die Originalzahlung geprüft.
 - eine Zahlung, bei der die Karte nicht aufgelegt wurde.
 
 Für die Klärung eines Vorgangs mit ausgebliebener Antwort ist `9027` damit
-keine Aussage, sondern eine Wissenslücke. Wir verwenden deshalb den Abbruch
-als Unterscheidungsmerkmal: er gelingt (`0`), solange der Vorgang abbrechbar
-ist, und scheitert (`100010`), sobald er abgeschlossen ist.
+keine Aussage, sondern eine Wissenslücke. Bis 10.11.2026 haben wir deshalb den
+Abbruch als Unterscheidungsmerkmal verwendet: er gelang (`0`), solange der
+Vorgang abbrechbar war, und scheiterte (`100010`), sobald er abgeschlossen war.
+Seit der Messung unter 9. taugt er dafür nicht mehr.
 
 **Anmerkung:** Das Feld `state` ist auf dieser Firmware in **jeder** bisher
 gesehenen Antwort `null` — auch bei genehmigten, abgebrochenen und
@@ -191,11 +192,50 @@ nichts belastet. Offen bleiben die Aufbewahrung und der 404 beim Abbruch.
 Die Liste nennt `100011 "Not Found"`; ob der 404 im Rumpf diesen Code trägt,
 ist ungemessen.
 
+## 9. Nachtrag 10.11.2026: Abbruch mit `0`, Zahlung trotzdem genehmigt; TID nur ohne führende Null
+
+**Gerät:** TID 3600335 · HPS 1.14.4 · Firmware 7.3.6 · Testsystem
+`tecstest.hobex.at`.
+
+**Abbruch.** Zahlung über 0,01 € gestartet, nach 4 s
+`POST /api/transaction/abort/3600335/<kennung>`. Antwort nach 0,18 s:
+HTTP 200, `{"responseCode":"0","responseText":"Authorized",…}`. Die laufende
+Zahlung endete trotzdem genehmigt (kontaktlos), die
+Statusabfrage danach ebenso. Am 26.08.2026 hatte derselbe Abbruch während des
+Wartens auf die Karte die Zahlung mit `100002` beendet.
+
+Zum Vergleich: Zahlung ohne Karte, Void (`DELETE …/payment/…`) während der
+laufenden Zahlung. Der Void blieb 30 s ohne Antwort, die Zahlung endete nach
+7,9 s mit `100004 "Card read failed"`, die Statusabfrage danach `9027`. Eine
+zweite Zahlung während einer laufenden: sofort HTTP 409. Die Diagnose wird
+während einer laufenden Zahlung beantwortet.
+
+**Fragen:**
+
+- Was bedeutet `responseCode 0` auf `/api/transaction/abort`: „Anfrage
+  angenommen“ oder „Vorgang abgebrochen“? Gibt es eine Antwort, die nur dann
+  kommt, wenn der Vorgang wirklich abgebrochen ist?
+- Wie lange kann nach einem angenommenen Abbruch eine Zahlung noch genehmigt
+  werden (längste Wartezeit auf den Host)?
+- Gibt es einen Aufruf, der sicher sagt, dass am Terminal kein Vorgang mehr
+  läuft? Die Statusabfrage antwortet in beiden Fällen `9027`.
+
+**TID.** `GET /api/terminals/03600335/diagnosis` antwortet
+`{"responseCode":"100108","responseText":"Invalid TID","tid":"03600335"}`,
+`…/3600335/diagnosis` liefert die volle Diagnose. Auch eine Zahlung mit
+`"tid":"03600335"` endet sofort mit `100108`; `003600335`, `0360033` und
+`36003350` ebenso. Auf dem Beleg und am Gerät steht die TID achtstellig mit
+führender Null. Anders als bei der `transactionId` (siehe 2.) normalisiert das
+Terminal die TID also nicht.
+
+**Frage:** Ist das beabsichtigt? Unsere Pakete entfernen die führende Null jetzt
+selbst.
+
 ## Beobachtete Antwortcodes
 
 | Code | Text | Lage |
 |---|---|---|
-| `0` | Genehmigt / Authorized / Tx Canceled | genehmigt bzw. gelungener Abbruch/Void |
+| `0` | Genehmigt / Authorized / Tx Canceled | genehmigt, Void, angenommener Abbruch (heißt nicht, dass abgebrochen ist, siehe 9.) |
 | `9002` | Invalid Transaction | Gutschrift oder Void auf unbekannte Original-Kennung |
 | `9011` | Transaction Canceled | Originalkennung nach erfolgreichem Void |
 | `9027` | Original Tx not found | keine Auskunft (siehe 4.) |

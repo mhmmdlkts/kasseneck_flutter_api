@@ -1,0 +1,654 @@
+{
+  "_note": "Prueffaelle des HPS-Zahlwegs, Vertrag mit dem Dart-Zwilling (HpsClient, HpsPayments, HobexReceipt.fromHps). tid: welche Schreibweise der TID hinausgeht (normalizeHpsTid bzw. HpsClient.tid). receipts: Beleg aus einer Terminal-Antwort (hobexReceiptFromHps + hobexReceiptToCardPaymentData bzw. HobexReceipt.fromHps + toCardPaymentData), overrides ersetzt Felder der Antwort. clarify: Klaerung einer Zahlung oder Gutschrift, deren Antwort ausblieb oder nichts entschied. Je Weg die Antworten des Terminals als Name aus responses, \"transport\" (die Leitung reisst ab, keine Antwort) oder \"http404\" bzw. \"http409\" (das Terminal antwortet mit diesem HTTP-Status); status ist eine Folge, die letzte Antwort gilt weiter; reversal ist die Antwort auf das nachgeschickte Storno. abortWhilePaymentRuns: die Kasse schickt selbst einen Abbruch, waehrend die Zahlung laeuft, und die Zahlung antwortet erst danach. Eingetragen ist die TID clarifyTid wie auf Beleg und Geraet; ein Aufruf mit einer anderen TID als hpsTid bekommt die gemessene Antwort invalidTid. Uhr ohne Wanduhr: Zeit vergeht nur in den Pausen der Klaerung. Erwartet: Ausgang, Grund, Felder der festschreibenden Antwort (response) bzw. Code der letzten Antwort (lastResponseCode), die Zahl der Abbrueche, Statusabfragen und Stornos, der Stornobetrag in Cent (reversalAmountCents) und ein Schritt des Nachweises (stepIncludes). reversalAnswers: dieselbe Zahlung mit Host-Timeout je Antwort auf das nachgeschickte Storno, einmal mit einer Genehmigung, einmal mit 9011 in der Statusabfrage (\"noCode\" = Antwort ohne Ergebniscode). Ausser bei declined darf kein Schritt \"nichts belastet\" sagen. Kartendaten (Nummer, Ablauf, BIN, Kryptogramm), Genehmigungs- und Belegnummer und VU sind erfunden (Testkarte 541333******0021, Ablauf 2912); Form und uebrige Werte wie am Testterminal 3600335 (HPS 1.14.4, Firmware 7.3.6, tecstest.hobex.at) gemessen, siehe _measured je Antwort. Von Hand gepflegt.",
+  "responses": {
+    "abortAccepted": {
+      "_measured": "2026-11-10, POST /api/transaction/abort/3600335/261110033825505723 vier Sekunden nach dem Start der Zahlung, Antwort nach 0,18 s; die Zahlung endete trotzdem genehmigt",
+      "responseCode": "0",
+      "responseText": "Authorized",
+      "tid": "3600335",
+      "transactionId": "261110033825505723"
+    },
+    "paymentApproved": {
+      "_measured": "2026-11-10, Antwort auf POST /api/transaction/payment (0,01 EUR) nach dem angenommenen Abbruch, vollstaendig; Kartendaten, approvalCode, receipt und vu erfunden",
+      "amount": 0.01,
+      "applicationId": "A0000000041010",
+      "approvalCode": "000287",
+      "bin": "541333",
+      "brand": "MASTERCARD",
+      "cardExpiry": "2912",
+      "cardIssuer": "MASTERCARD",
+      "cardNumber": "541333******0021_2912",
+      "crypto": "5D1C0FA27B3E9640",
+      "currency": "EUR",
+      "cvm": 0,
+      "originalTransactionId": "00261110033825505723",
+      "panEntryMode": "CTLS",
+      "receipt": "400128",
+      "reference": null,
+      "responseCode": "0",
+      "responseText": "Genehmigt",
+      "signature": null,
+      "tid": "3600335",
+      "tip": 0.0,
+      "transactionDate": "2026-11-10T03:38:24.7290000+01:00",
+      "transactionId": "261110033825505723",
+      "transactionType": "SELL",
+      "vu": "000000123456789"
+    },
+    "statusApproved": {
+      "_measured": "Form aus der gekuerzten Mitschrift von GET /api/v2/transactions/3600335/<kennung> nach einer genehmigten Zahlung am 10.11.2026 (aid statt applicationId, cvm als Zahl, currency null, originalTransactionId mit fuehrendem 00), Werte erfunden. Dass transactionId fehlt, ist ANGENOMMEN, nicht gemessen: die vollstaendige Statusantwort vom 28.08.2026 (aufgehobene Zahlung) traegt eine; receipts prueft beides. Volle Antwort beim naechsten Geraetetest nachtragen",
+      "aid": "A0000000041010",
+      "amount": 0.01,
+      "approvalCode": "000287",
+      "brand": "MASTERCARD",
+      "cardExpiry": "2912",
+      "cardIssuer": "MASTERCARD",
+      "cardNumber": "541333******0021_2912",
+      "cleared": null,
+      "crypto": "5D1C0FA27B3E9640",
+      "currency": null,
+      "cvm": 3,
+      "originalTransactionId": "00261110033825505723",
+      "receipt": "400128",
+      "responseCode": "0",
+      "tid": "3600335",
+      "transactionDate": "2026-11-10T03:38:24.7290000+01:00",
+      "transactionType": "S"
+    },
+    "statusNoStatement": {
+      "_measured": "2026-11-10, Status nach einer Zahlung ohne Karte (Ende mit 100004)",
+      "responseCode": "9027",
+      "responseText": "Original Tx not found"
+    },
+    "statusCanceled": {
+      "_measured": "2026-11-10, Status nach Aufhebung (DELETE) der genehmigten Zahlung",
+      "responseCode": "9011",
+      "responseText": "Transaction Canceled"
+    },
+    "abortNotAbortable": {
+      "_measured": "2026-08-26, Abbruch auf eine bereits genehmigte Zahlung (HPS 1.10.0)",
+      "responseCode": "100010",
+      "responseText": "Unable to abort transaction"
+    },
+    "paymentAborted": {
+      "_measured": "2026-08-26, Zahlung nach einem Abbruch waehrend des Wartens auf die Karte (HPS 1.10.0)",
+      "responseCode": "100002",
+      "responseText": "Aborted"
+    },
+    "hostTimeout": {
+      "_measured": "dokumentiert (TECS-Liste 16.09.2026), im Betrieb gesehen 11.09.2026 (TID 3556988); Text wie in der TECS-Liste",
+      "responseCode": "9908",
+      "responseText": "Technical Error: Time Out received from acquirer"
+    },
+    "reversalAccepted": {
+      "_measured": "2026-11-10, DELETE /api/transaction/payment/3600335/<kennung>?amount=0.01&currency=EUR auf eine genehmigte Zahlung (gekuerzt)",
+      "responseCode": "0",
+      "responseText": "Genehmigt"
+    },
+    "reversalCanceledCode": {
+      "_measured": "nicht gemessen: 9011 als direkte Antwort auf einen Void (gemessen ist 0 / Tx Canceled auf einen zweiten Void, 27.08.2026)",
+      "responseCode": "9011",
+      "responseText": "Transaction Canceled"
+    },
+    "reversalRejected": {
+      "_measured": "2026-08-27, Void auf eine unbekannte, rein numerische Kennung",
+      "responseCode": "9002",
+      "responseText": "Invalid Transaction"
+    },
+    "unknownCode": {
+      "responseCode": "424242"
+    },
+    "invalidTid": {
+      "_measured": "2026-11-10, GET /api/terminals/03600335/diagnosis und POST /api/transaction/payment mit tid 03600335",
+      "responseCode": "100108",
+      "responseText": "Invalid TID",
+      "tid": "03600335"
+    }
+  },
+  "tid": [
+    { "input": "3600335", "expected": "3600335" },
+    { "input": "03600335", "expected": "3600335", "_note": "wie auf Beleg und Geraet; so gesendet gemessen 100108 Invalid TID" },
+    { "input": "003600335", "expected": "3600335" },
+    { "input": " 03600335 ", "expected": "3600335" },
+    { "input": "\t03600335\n", "expected": "3600335" },
+    { "input": "\r\u000b03600335\u000c", "expected": "3600335", "_note": "ASCII-Leerraum: Leerzeichen, Tab, LF, CR, VT, FF" },
+    { "name": "U+0085 (NEL) vor der TID", "input": "\u008503600335", "expected": "\u008503600335", "_note": "U+0085 ist kein ASCII-Leerraum: unveraendert (Dart trim() kuerzte ihn, JavaScript nicht)" },
+    { "name": "U+00A0 (geschuetztes Leerzeichen) vor der TID", "input": "\u00a003600335", "expected": "\u00a003600335", "_note": "geschuetztes Leerzeichen: unveraendert" },
+    { "input": "36003350", "expected": "36003350", "_note": "eine Null am Ende gehoert zur TID" },
+    { "input": "0", "expected": "0", "_note": "Erkennungsprobe von Connect" },
+    { "input": "000", "expected": "000", "_note": "lauter Nullen: unveraendert statt leer" },
+    { "input": " 0 ", "expected": " 0 " },
+    { "input": "", "expected": "" },
+    { "input": "   ", "expected": "   " },
+    { "input": "0360 0335", "expected": "0360 0335", "_note": "nicht rein ziffrig: unveraendert" },
+    { "input": "0A600335", "expected": "0A600335" },
+    { "input": "-03600335", "expected": "-03600335" },
+    { "input": "+3600335", "expected": "+3600335" },
+    { "input": "\uff103600335", "expected": "\uff103600335", "_note": "Vollbreiten-Null ist keine Ziffer 0-9" }
+  ],
+  "receipts": [
+    {
+      "name": "Zahlungsantwort, vollstaendige gemessene Form",
+      "response": "paymentApproved",
+      "expected": {
+        "amountCents": 1,
+        "tipCents": 0,
+        "cardPaymentData": {
+          "transactionId": "261110033825505723",
+          "date": "2026-11-10 03:38:24",
+          "tid": "3600335",
+          "no": "400128",
+          "type": "SELL",
+          "cardBrand": "MASTERCARD",
+          "cardNumber": "541333******0021_2912",
+          "responseCode": "0",
+          "cvm": "0",
+          "approvalCode": "000287",
+          "cardExpiry": "2912",
+          "cardIssuer": "MASTERCARD",
+          "amount": "0.01",
+          "currency": "EUR"
+        }
+      }
+    },
+    {
+      "name": "Zahlungsantwort mit Trinkgeld",
+      "response": "paymentApproved",
+      "overrides": { "amount": 12.5, "tip": 1.5 },
+      "expected": {
+        "amountCents": 1250,
+        "tipCents": 150,
+        "cardPaymentData": {
+          "transactionId": "261110033825505723",
+          "date": "2026-11-10 03:38:24",
+          "tid": "3600335",
+          "no": "400128",
+          "type": "SELL",
+          "cardBrand": "MASTERCARD",
+          "cardNumber": "541333******0021_2912",
+          "responseCode": "0",
+          "cvm": "0",
+          "approvalCode": "000287",
+          "cardExpiry": "2912",
+          "cardIssuer": "MASTERCARD",
+          "amount": "12.50",
+          "currency": "EUR"
+        }
+      }
+    },
+    {
+      "name": "Statusantwort in der v2-Form mit transactionId (wie die vollstaendige Antwort vom 28.08.2026)",
+      "response": "statusApproved",
+      "overrides": { "transactionId": "261110033825505723" },
+      "expected": {
+        "amountCents": 1,
+        "tipCents": 0,
+        "cardPaymentData": {
+          "transactionId": "261110033825505723",
+          "date": "2026-11-10 03:38:24",
+          "tid": "3600335",
+          "no": "400128",
+          "type": "S",
+          "cardBrand": "MASTERCARD",
+          "cardNumber": "541333******0021_2912",
+          "responseCode": "0",
+          "cvm": "3",
+          "approvalCode": "000287",
+          "cardExpiry": "2912",
+          "cardIssuer": "MASTERCARD",
+          "amount": "0.01",
+          "currency": ""
+        }
+      }
+    },
+    {
+      "name": "Statusantwort in der v2-Form ohne transactionId (angenommen), currency null, cvm als Zahl",
+      "response": "statusApproved",
+      "expected": {
+        "amountCents": 1,
+        "tipCents": 0,
+        "cardPaymentData": {
+          "transactionId": "",
+          "date": "2026-11-10 03:38:24",
+          "tid": "3600335",
+          "no": "400128",
+          "type": "S",
+          "cardBrand": "MASTERCARD",
+          "cardNumber": "541333******0021_2912",
+          "responseCode": "0",
+          "cvm": "3",
+          "approvalCode": "000287",
+          "cardExpiry": "2912",
+          "cardIssuer": "MASTERCARD",
+          "amount": "0.01",
+          "currency": ""
+        }
+      }
+    }
+  ],
+  "clarifyTid": "03600335",
+  "hpsTid": "3600335",
+  "clarify": [
+    {
+      "name": "Zahlung ohne Antwort, Abbruch angenommen (0), Status genehmigt -> approved",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505723",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "abortAccepted",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0", "approvalCode": "000287", "brand": "MASTERCARD" },
+        "abortCalls": 1,
+        "statusCalls": 1
+      }
+    },
+    {
+      "name": "Kasse bricht die laufende Zahlung ab (0), die Zahlung meldet genehmigt -> approved",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505723",
+      "resolveBudgetMs": 30000,
+      "abortWhilePaymentRuns": true,
+      "request": "paymentApproved",
+      "abort": "abortAccepted",
+      "status": ["statusNoStatement"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0", "approvalCode": "000287", "receipt": "400128", "brand": "MASTERCARD", "cardNumber": "541333******0021_2912" },
+        "abortCalls": 1,
+        "statusCalls": 0
+      }
+    },
+    {
+      "name": "Kasse bricht die laufende Zahlung ab (0), die Zahlung meldet 100002 -> declined, ohne Statusabfrage",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505731",
+      "resolveBudgetMs": 30000,
+      "abortWhilePaymentRuns": true,
+      "request": "paymentAborted",
+      "abort": "abortAccepted",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "declined",
+        "reason": "aborted",
+        "response": { "responseCode": "100002" },
+        "abortCalls": 1,
+        "statusCalls": 0
+      }
+    },
+    {
+      "name": "Zahlung ohne Antwort, Abbruch angenommen (0), Status bleibt 9027 -> unresolved, nicht declined",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505724",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "abortAccepted",
+      "status": ["statusNoStatement"],
+      "expected": {
+        "outcome": "unresolved",
+        "reason": "noStatement",
+        "lastResponseCode": "9027",
+        "abortCalls": 1,
+        "statusCalls": 6
+      }
+    },
+    {
+      "name": "Zahlung ohne Antwort, Abbruch angenommen (0), Status 9027, 9027, dann genehmigt -> approved",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505732",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "abortAccepted",
+      "status": ["statusNoStatement", "statusNoStatement", "statusApproved"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0", "approvalCode": "000287" },
+        "abortCalls": 1,
+        "statusCalls": 3
+      }
+    },
+    {
+      "name": "Zahlung mit unbekanntem Code beantwortet, Abbruch angenommen (0), Status zweimal 9027 -> declined",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505725",
+      "resolveBudgetMs": 30000,
+      "request": "unknownCode",
+      "abort": "abortAccepted",
+      "status": ["statusNoStatement", "statusNoStatement"],
+      "expected": {
+        "outcome": "declined",
+        "reason": "unknown",
+        "response": { "responseCode": "9027" },
+        "abortCalls": 1,
+        "statusCalls": 2
+      }
+    },
+    {
+      "name": "Zahlung ohne Antwort, Abbruch angenommen (0), Status 9011 aufgehoben -> declined",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505726",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "abortAccepted",
+      "status": ["statusCanceled"],
+      "expected": {
+        "outcome": "declined",
+        "reason": "canceled",
+        "response": { "responseCode": "9011" },
+        "abortCalls": 1,
+        "statusCalls": 1
+      }
+    },
+    {
+      "name": "Zahlung ohne Antwort, Abbruch reisst ab, Status genehmigt -> approved",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505727",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "transport",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0", "approvalCode": "000287" },
+        "abortCalls": 1,
+        "statusCalls": 1
+      }
+    },
+    {
+      "name": "Zahlung ohne Antwort, Abbruch mit HTTP 404, Status genehmigt -> approved",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505733",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "http404",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0", "approvalCode": "000287" },
+        "abortCalls": 1,
+        "statusCalls": 1,
+        "stepIncludes": "Abbruch nicht bestaetigt (HTTP 404)"
+      }
+    },
+    {
+      "name": "Zahlung ohne Antwort, Abbruch abgelehnt (100010), Status genehmigt -> approved",
+      "operation": "pay",
+      "amountCents": 1,
+      "transactionId": "261110033825505728",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "abortNotAbortable",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0", "approvalCode": "000287" },
+        "abortCalls": 1,
+        "statusCalls": 1
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno mit Trinkgeld quittiert (0), Status 9011 -> declined",
+      "operation": "pay",
+      "amountCents": 1000,
+      "tipCents": 150,
+      "transactionId": "261110033825505734",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "reversalAccepted",
+      "status": ["statusCanceled"],
+      "expected": {
+        "outcome": "declined",
+        "reason": "voidedAfterHostFault",
+        "response": { "responseCode": "9011" },
+        "abortCalls": 0,
+        "statusCalls": 1,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1150
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno quittiert (0), Status genehmigt -> unresolved",
+      "operation": "pay",
+      "amountCents": 1000,
+      "tipCents": 150,
+      "transactionId": "261110033825505735",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "reversalAccepted",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "unresolved",
+        "reason": "hostTimeout",
+        "lastResponseCode": "0",
+        "abortCalls": 0,
+        "statusCalls": 2,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1150
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno quittiert (0), Status 9027 -> unresolved",
+      "operation": "pay",
+      "amountCents": 1000,
+      "tipCents": 150,
+      "transactionId": "261110033825505736",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "reversalAccepted",
+      "status": ["statusNoStatement"],
+      "expected": {
+        "outcome": "unresolved",
+        "reason": "hostTimeout",
+        "lastResponseCode": "9027",
+        "abortCalls": 0,
+        "statusCalls": 2,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1150
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno reisst ab, Status genehmigt -> unresolved",
+      "operation": "pay",
+      "amountCents": 1000,
+      "tipCents": 150,
+      "transactionId": "261110033825505737",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "transport",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "unresolved",
+        "reason": "hostTimeout",
+        "lastResponseCode": "0",
+        "abortCalls": 0,
+        "statusCalls": 2,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1150
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno abgewiesen (9002), Status genehmigt -> approved",
+      "operation": "pay",
+      "amountCents": 1000,
+      "transactionId": "261110033825505738",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "reversalRejected",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0", "approvalCode": "000287" },
+        "abortCalls": 0,
+        "statusCalls": 1,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1000
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno quittiert (0), Status genehmigt, dann 9011 -> declined",
+      "operation": "pay",
+      "amountCents": 1000,
+      "tipCents": 150,
+      "transactionId": "261110033825505739",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "reversalAccepted",
+      "status": ["statusApproved", "statusCanceled"],
+      "expected": {
+        "outcome": "declined",
+        "reason": "voidedAfterHostFault",
+        "response": { "responseCode": "9011" },
+        "abortCalls": 0,
+        "statusCalls": 2,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1150
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno antwortet selbst 9908, Status genehmigt -> unresolved",
+      "operation": "pay",
+      "amountCents": 1000,
+      "transactionId": "261110033825505740",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "hostTimeout",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "unresolved",
+        "reason": "hostTimeout",
+        "lastResponseCode": "0",
+        "abortCalls": 0,
+        "statusCalls": 2,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1000
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno antwortet direkt 9011, Status genehmigt -> unresolved (9011 auf den Void ist ungemessen)",
+      "operation": "pay",
+      "amountCents": 1000,
+      "transactionId": "261110033825505741",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "reversalCanceledCode",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "unresolved",
+        "reason": "hostTimeout",
+        "lastResponseCode": "0",
+        "abortCalls": 0,
+        "statusCalls": 2,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1000
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno abgewiesen (9002), Status 9011 -> declined, aufgehoben, aber nicht durch das Storno",
+      "operation": "pay",
+      "amountCents": 1000,
+      "transactionId": "261110033825505742",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "reversalRejected",
+      "status": ["statusCanceled"],
+      "expected": {
+        "outcome": "declined",
+        "reason": "canceled",
+        "response": { "responseCode": "9011" },
+        "abortCalls": 0,
+        "statusCalls": 1,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1000,
+        "stepIncludes": "obwohl das nachgeschickte Storno nicht ausgefuehrt wurde"
+      }
+    },
+    {
+      "name": "Host-Timeout (9908), Storno nicht angenommen (HTTP 409), Status genehmigt -> approved",
+      "operation": "pay",
+      "amountCents": 1000,
+      "transactionId": "261110033825505743",
+      "resolveBudgetMs": 30000,
+      "request": "hostTimeout",
+      "abort": "abortAccepted",
+      "reversal": "http409",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0", "approvalCode": "000287" },
+        "abortCalls": 0,
+        "statusCalls": 1,
+        "reversalCalls": 1,
+        "reversalAmountCents": 1000,
+        "stepIncludes": "Storno nicht angenommen (HTTP 409)"
+      }
+    },
+    {
+      "name": "Gutschrift ohne Antwort, Abbruch angenommen (0), Status genehmigt -> approved",
+      "operation": "refund",
+      "amountCents": 1,
+      "transactionId": "261110033825505729",
+      "originalTransactionId": "261110033825505723",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "abortAccepted",
+      "status": ["statusApproved"],
+      "expected": {
+        "outcome": "approved",
+        "reason": "approved",
+        "response": { "responseCode": "0" },
+        "abortCalls": 1,
+        "statusCalls": 1
+      }
+    },
+    {
+      "name": "Gutschrift ohne Antwort, Abbruch angenommen (0), Status bleibt 9027 -> unresolved, nicht declined",
+      "operation": "refund",
+      "amountCents": 1,
+      "transactionId": "261110033825505730",
+      "originalTransactionId": "261110033825505723",
+      "resolveBudgetMs": 30000,
+      "request": "transport",
+      "abort": "abortAccepted",
+      "status": ["statusNoStatement"],
+      "expected": {
+        "outcome": "unresolved",
+        "reason": "noStatement",
+        "lastResponseCode": "9027",
+        "abortCalls": 1,
+        "statusCalls": 6
+      }
+    }
+  ],
+  "reversalAnswers": {
+    "_note": "Zahlung 1000 Cent + 150 Cent Trinkgeld, Antwort 9908 (Host-Timeout), Storno ueber 1150 Cent. notExecuted: nach der Positivliste nicht ausgefuehrt (rejectsRequest, cancelDenied, amountInvalid, HTTP 409) -> Status genehmigt = approved (eine Statusabfrage), Status 9011 = declined/canceled. mayHaveWorked: alles andere, ausdruecklich die Storniert-Codes 8009, 100029, 3053, 3055, 3056, 3057, 3062, 3063, 9032 -> Status genehmigt = unresolved/hostTimeout (zwei Statusabfragen), Status 9011 = declined/voidedAfterHostFault.",
+    "notExecuted": ["9002", "9023", "9222", "9003", "100019", "13", "100998", "8014", "100108", "100001", "9031", "8015", "http409"],
+    "mayHaveWorked": ["0", "transport", "noCode", "424242", "9011", "9908", "8009", "100029", "3053", "3055", "3056", "3057", "3062", "3063", "9032", "100002", "17", "8004", "5", "9033", "100004", "9900"]
+  }
+}

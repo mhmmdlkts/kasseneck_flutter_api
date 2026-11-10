@@ -34,7 +34,8 @@ Autorisierungshost `tecstest.hobex.at:23443` (Testsystem). Erreicht über
 | Lage | Antwort der Zahlung | `transactionStatus` | `abort` |
 |---|---|---|---|
 | genehmigt | `0` Genehmigt | `0` Genehmigt, bleibt erhalten | `100010` — **scheitert** |
-| Kartenfluss läuft | (offen) | `9027` | `0` — **gelingt** |
+| Kartenfluss wartet auf die Karte | (offen) | `9027` | `0`, die Zahlung endet `100002` |
+| Abbruch 4 s nach dem Start einer kontaktlosen Zahlung (10.11.2026; ob die Karte schon gelesen war, ist ungemessen) | (offen), endet `0` Genehmigt | danach `0` Genehmigt | `0` „Authorized“ – **greift nicht** |
 | Karte nicht aufgelegt | `100003` Card not present | `9027` | — |
 | abgebrochen | `100002` Aborted | `9027` | — |
 | Kennung nie gesehen | — | `9027` | — |
@@ -50,34 +51,61 @@ erste Vorgang geht durch, die Wiederholung belastet ein zweites Mal.
 
 Genau das hätte die erste Fassung dieses Pakets getan.
 
-### `abort` unterscheidet, was der Status nicht unterscheidet
+### Ein quittierter Abbruch ist keine Aussage (10.11.2026)
 
-Der Abbruch gelingt, solange der Vorgang abbrechbar ist, und scheitert mit
-`100010`, sobald er abgeschlossen ist — die genehmigte Zahlung bleibt dabei
-unangetastet. Das ist der Diskriminator, den die Statusabfrage nicht liefert.
+Bis 11.26.0 galt hier: der Abbruch gelingt (`0`), solange der Vorgang
+abbrechbar ist, und scheitert mit `100010`, sobald er abgeschlossen ist – also
+heißt `0` „nichts belastet“. Gemessen war das am 26.08.2026 an einem Abbruch,
+der kam, während das Terminal noch auf die Karte wartete.
 
-**Falle:** Das Terminal meldet das Scheitern mit **HTTP 200** und `100010` im
-Rumpf. Wer nur auf „hat nicht geworfen" prüft, hält einen gescheiterten Abbruch
-für einen geglückten — und macht daraus wieder `declined` für eine echte
-Belastung.
+Am 10.11.2026 widerlegt, Testterminal 3600335, HPS 1.14.4, Firmware 7.3.6,
+Testsystem `tecstest.hobex.at`:
+
+1. Zahlung über 0,01 € gestartet (`POST /api/transaction/payment`).
+2. Nach 4 s `POST /api/transaction/abort/3600335/<kennung>`, Antwort nach
+   0,18 s: HTTP 200, `{"responseCode":"0","responseText":"Authorized",…}`.
+3. Die laufende Zahlung endete trotzdem **genehmigt** (kontaktlos).
+4. Die Statusabfrage danach: genehmigt.
+
+`0` auf den Abbruch heißt also nur, dass das Terminal die Anfrage angenommen
+hat. Ob die Zahlung danach abbricht, sagt es nicht. Als `declined` gelesen,
+hätte die Kasse „nichts belastet, noch einmal versuchen“ gemeldet – für eine
+belastete Karte, also der Weg zur Doppelbelastung vom 24.08.2026.
+
+Auch ein `9027` kurz nach einem angenommenen Abbruch beweist nichts: solange
+eine Zahlung läuft, antwortet die Statusabfrage `9027` (Tabelle oben), und die
+Messung zeigt, dass sie nach dem Abbruch weiterlaufen kann. Wie lange danach
+noch eine Genehmigung kommen kann, ist **ungemessen**.
+
+**Falle, unverändert:** Das Terminal meldet auch das Scheitern des Abbruchs mit
+**HTTP 200** (`100010` im Rumpf). Den Ausgang liest man nie am Abbruch ab.
 
 ### Der Klärweg, der daraus folgt
 
-Bleibt die Antwort auf eine Zahlung aus:
+Bleibt die Antwort auf eine Zahlung aus oder sagt sie nichts:
 
-1. **`abort` einmalig versuchen.**
-2. `responseCode == '0'` → der Vorgang war noch abbrechbar, also nicht
-   abgeschlossen → **`declined`**, beweisbar.
-3. Ein anderer Code (gemessen: `100010`) → der Vorgang ist über den abbrechbaren
-   Punkt hinaus → **jetzt** `transactionStatus` pollen; sie liefert nun eine
-   echte Aussage.
-4. Scheitert der Abbruch am Transport → pollen wie in 3.
-5. Beim Pollen ist `9027` **kein Ergebnis**: weiter klären. Budget erschöpft →
-   `unresolved`.
+1. **`abort` einmalig versuchen.** Die Absicht: ein Kartenfluss, der noch auf
+   die Karte wartet, soll enden, damit nach der Klärung keine spät aufgelegte
+   Karte mehr belastet wird. Eine Garantie ist das nicht, ob der Abbruch
+   greift, sagt seine Quittung nicht.
+2. Die Antwort auf den Abbruch **entscheidet nichts**, auch `0` nicht. Sie
+   steht nur im Nachweis (`steps`).
+3. Dann `transactionStatus` pollen: `0` → **`approved`**, mit der Antwort des
+   Status als Beleg; ein schlüssiger Code (etwa `9011` aufgehoben) →
+   **`declined`**.
+4. Beim Pollen ist `9027` **kein Ergebnis**: weiter klären. Nur wenn die Zahlung
+   selbst mit einem Code beantwortet war, macht die Zwei-`9027`-Regel daraus
+   `declined` (siehe unten). Budget erschöpft → `unresolved`.
 
-Ein Abbruch, der gelingt, während der Kunde gerade die Karte auflegt, reißt
-dessen Zahlung ab. Geldseitig sicher, und die bewusste Wahl: lieber ein
-abgerissener Vorgang als eine ungeklärte Belastung.
+Eine Zahlung ohne Antwort, ein angenommener Abbruch und ein Status, der bei
+`9027` bleibt, enden damit bei `unresolved`, nicht mehr bei `declined`. Das
+kostet im seltenen Fall eines Leitungsabrisses einen Blick auf den
+Terminal-Beleg, statt ihn mit einer Behauptung zu ersparen.
+
+Bricht die **Kasse** eine laufende Zahlung selbst ab (Abbrechen-Knopf, eigener
+`abort`, während `pay` noch wartet), entscheidet die Antwort auf die Zahlung:
+genehmigt, wenn sie genehmigt meldet, abgelehnt mit `100002`. `pay` liest die
+Quittung dieses fremden Abbruchs nicht.
 
 ## Zwei widerlegte Annahmen
 
@@ -101,8 +129,10 @@ heißt ausdrücklich, dass die Aufhebung **nicht** gewirkt hat.
 ### Gutschriften verhalten sich wie Zahlungen
 
 `abort` auf eine laufende **Gutschrift** liefert ebenfalls `responseCode "0"`,
-und die Gutschrift endet mit `100002 Aborted`. Der Klärweg oben gilt dort
-unverändert.
+und die Gutschrift endete am 26.08.2026 mit `100002 Aborted`. Der Klärweg oben
+gilt dort unverändert – auch darin, dass die Quittung allein nichts beweist:
+eine Gutschrift, die nach dem angenommenen Abbruch doch durchgeht, als
+`declined` zu melden, lädt zu einer zweiten Gutschrift ein.
 
 Das ist der entscheidende Unterschied zur **Aufhebung**: Bei `refund` ist die
 übergebene Kennung die des *neuen* Vorgangs, wie bei `pay`. Bei `cancel` ist sie
@@ -405,20 +435,37 @@ nachgeschickt werden.“ Dasselbe gilt für die HPS-Codes, bei denen hobex „No
 auto-reversal“ vermerkt (`100006`, `100007`) und die übrigen ungewissen
 Host-Codes der HPS-Liste (`100023`, `100024`, `100026`, `100027`).
 `HpsCode.sendReversal` markiert sie; `HpsPayments.pay` schickt dann **genau
-einmal** einen Void mit Kennung und Betrag der Zahlung, bevor die
-Statusabfrage läuft:
+einmal** einen Void mit der Kennung der Zahlung und dem Betrag, den das
+Terminal belastet hat – Betrag **und** Trinkgeld, wie die Rückbuchung der
+Web-Kasse. Danach läuft immer die Statusabfrage (Stand 10.11.2026):
 
-- Void mit `0` quittiert → `declined`, Grund `voidedAfterHostFault`.
-- Void scheitert oder nennt einen anderen Code → Klärung wie bei jeder
-  Störung beim Host. Meldet die Statusabfrage danach `9011`, hat das Storno
-  gegriffen → ebenfalls `declined`. Meldet sie `0`, gilt die Genehmigung.
+- Status `9011` → `declined`, Grund `voidedAfterHostFault`. Nur so schreibt
+  das Storno einen Ausgang fest.
+- Die Quittung `0` auf den Void beweist allein nichts – dieselbe Lehre wie
+  beim Abbruch. Hat der Void womöglich gewirkt (quittiert, abgerissen, ohne
+  oder mit unbekanntem Code), ist auch `0` im Status keine Aussage: der Void
+  kann noch unterwegs sein oder nicht gegriffen haben. Zweimal ohne Neues
+  (`0` oder `9027`) → `unresolved`.
+- Nur wenn der Void nach einer ausdrücklichen Positivliste nicht ausgeführt
+  wurde, gilt `0` im Status als Genehmigung: nicht angenommen (HTTP 409) oder
+  abgewiesen mit einem Code, der die Anfrage selbst abweist
+  (`rejectsRequest`), die Aufhebung ablehnt (`cancelDenied`: `9023`, `9222`)
+  oder den Betrag ablehnt (`amountInvalid`). Gemessen ist davon nur `9002`
+  auf eine unbekannte Kennung (27.08.2026), der Rest stützt sich auf die
+  Codelisten von hobex und TECS. Ein Code, der selbst „storniert“ heißt
+  (`8009`, `100029`, `3053`–`3063`, `9032`, `9011`), ein Abbruch-Code und
+  jede Host-Ablehnung zählen nicht dazu: der Void kann gewirkt haben, und
+  `0` im Status bleibt `unresolved`. Zeigt der Status `9011`, obwohl der
+  Void nicht ausgeführt wurde, ist die Zahlung trotzdem aufgehoben
+  (`declined`, Grund `canceled`).
 
-Das ist die sichere Richtung: schlimmstenfalls wird eine Zahlung aufgehoben,
-die der Host genehmigt hätte, und der Kunde zahlt noch einmal. **Am Gerät
-ungemessen** ist, wie das Terminal einen Void nach einem Host-Timeout
-beantwortet; gemessen ist nur `0` auf eine bestehende und `9002` auf eine
-unbekannte Kennung. Eine Gutschrift bekommt kein Storno — TECS lässt ihre
-Aufhebung nicht zu (`9031`).
+Bis 11.26.0 hieß die Quittung `0` sofort `declined`. Das ist zurückgenommen:
+die Kasse hätte „nichts belastet“ gemeldet, ohne dass der Status es zeigt.
+**Am Gerät ungemessen** ist, wie das Terminal einen Void nach einem
+Host-Timeout beantwortet und ob es den Betrag samt Trinkgeld so erwartet;
+gemessen ist nur `0` auf eine bestehende und `9002` auf eine unbekannte
+Kennung. Eine Gutschrift bekommt kein Storno — TECS lässt ihre Aufhebung
+nicht zu (`9031`).
 
 **Zwei Einordnungen, die vom ersten Blick abweichen:**
 
@@ -485,13 +532,28 @@ Dazu kommen seit 11.09.2026 die Codes aus der Antwortcodeliste von hobex
   Keiner davon ist bisher an einem Gerät aufgetreten.
 - Was HTTP `404` beim `abort` auf einen LAUFENDEN Vorgang heißt (Firmware
   2.3.9, siehe oben).
+- Wie lange nach einem angenommenen Abbruch (`0`) eine Zahlung noch genehmigt
+  werden kann, und ob es einen Aufruf gibt, der sicher sagt, dass am Terminal
+  nichts mehr läuft. Erst damit ließe sich ein anhaltendes `9027` nach dem
+  Abbruch als „nichts belastet“ lesen.
+
+## TID nur ohne führende Null (10.11.2026)
+
+Auf Beleg und Gerät steht die TID achtstellig mit führender Null (`03600335`).
+Das HPS nimmt sie nur ohne an: `GET /api/terminals/03600335/diagnosis` und eine
+Zahlung mit `"tid":"03600335"` antworten sofort `100108 "Invalid TID"`, es wird
+nichts belastet; `003600335`, `0360033` und `36003350` ebenso. `HpsClient`
+entfernt deshalb Leerraum am Rand und führende Nullen, aber nur bei einer rein
+ziffrigen TID mit mindestens einer Ziffer ungleich `0` – alles andere geht
+unverändert hinaus. Dieselbe Regel gilt im npm-Zwilling (`normalizeHpsTid`),
+die Prüffälle stehen im Vertrag `hobex-hps-cases.json`.
 
 ## Selbst nachmessen
 
 Alles Folgende ist folgenlos und braucht keine Karte:
 
 ```bash
-T=<ip>:8080; TID=<tid>
+T=<ip>:8080; TID=<tid ohne führende Null>  # 3600335, nicht 03600335
 
 # Erreichbarkeit, Firmware, Autorisierungshost
 curl -s "http://$T/api/terminals/$TID/diagnosis"
