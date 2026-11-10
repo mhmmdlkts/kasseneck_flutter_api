@@ -53,10 +53,12 @@ ist ein Fehler, kein Stil.
 
 **2. `declined` heißt „definitiv kein Geld geflossen".** Es entsteht
 ausschließlich aus einer **positiven Aussage** des Terminals oder des Dienstes.
-Niemals aus einem Transportfehler, einem Zeitablauf, einer leeren Antwort oder
-einem Code, der „ich habe keinen Eintrag" bedeutet. Im Zweifel `unresolved` —
-„ich weiß es nicht" ist eine brauchbare Antwort, „nichts passiert" ist eine
-Behauptung.
+Niemals aus einem Transportfehler, einem Zeitablauf, einer leeren Antwort, einem
+Code, der „ich habe keinen Eintrag" bedeutet, oder der Quittung eines Abbruchs
+oder Stornos (`abort` mit `0`: am 10.11.2026 endete eine Zahlung danach
+genehmigt; ein nachgeschicktes Storno zählt erst mit `9011` im Status). Im
+Zweifel `unresolved` — „ich weiß es nicht" ist eine brauchbare Antwort,
+„nichts passiert" ist eine Behauptung.
 
 **3. Die Kennung steht vor dem ersten Netzweg fest** und ist in **jedem**
 zurückgegebenen Ergebnis gesetzt, auch bei `unresolved`. Eine Kennung, die erst

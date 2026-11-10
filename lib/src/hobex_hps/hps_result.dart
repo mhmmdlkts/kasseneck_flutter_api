@@ -41,8 +41,9 @@ class HpsResult {
   /// fuer den Bediener in [HpsCodeReason.hint].
   ///
   /// Gesetzt an der Stelle, die den Ausgang entschieden hat, nicht aus
-  /// [response] abgeleitet: ein bestaetigter Abbruch antwortet `'0'` und ist
-  /// trotzdem [HpsCodeReason.aborted], und wenn die Zwei-`9027`-Regel eine
+  /// [response] abgeleitet: ein quittiertes Storno nach einer Stoerung beim
+  /// Host antwortet `'0'` und ist trotzdem
+  /// [HpsCodeReason.voidedAfterHostFault], und wenn die Zwei-`9027`-Regel eine
   /// Zahlung als abgelehnt klaert, zaehlt der Code der ZAHLUNG (etwa
   /// `100004`, Karte nicht gelesen), nicht das `9027` der Statusabfrage.
   ///

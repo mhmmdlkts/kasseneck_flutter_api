@@ -47,13 +47,13 @@ class HobexCloudResult {
 /// gemeldet und den Kunden ein zweites Mal belastet.
 ///
 /// Anders als `HpsPayments` kennt der Cloud-Weg kein `abort()`: es gibt kein
-/// lokales Terminal, das einen laufenden Vorgang abbrechen koennte. Damit
-/// fehlt hier die zweite positive Quelle fuer [CardPaymentOutcome.declined],
-/// die der HPS-Weg seit den Messungen vom 26.08.2026 hat -- den nachweislich
-/// gelungenen Abbruch. Bleibt die erste Antwort aus, bleibt nur Klaeren --
-/// wiederholtes Abfragen des Standes ueber [KasseneckApi.hobexGetStatus] --
-/// oder, wenn das Budget aufgebraucht ist, Offenlassen. `unresolved` ist auf
-/// dem Cloud-Weg deshalb weiterhin der haeufigere Ausgang.
+/// lokales Terminal, das einen laufenden Vorgang abbrechen koennte. Eine
+/// positive Quelle fuer [CardPaymentOutcome.declined] fehlt dadurch nicht:
+/// auch auf dem HPS-Weg entscheidet die Quittung eines Abbruchs seit dem
+/// 10.11.2026 nichts mehr (eine Zahlung endete danach genehmigt). Bleibt die
+/// erste Antwort aus, bleibt nur Klaeren -- wiederholtes Abfragen des Standes
+/// ueber [KasseneckApi.hobexGetStatus] -- oder, wenn das Budget aufgebraucht
+/// ist, Offenlassen.
 ///
 /// Ebenfalls HPS-eigen und hier ohne Entsprechung:
 /// `TransactionResponse.noStatementCode` (`9027`). Der Cloud-Dienst

@@ -17,9 +17,12 @@ import 'transaction_response.dart';
 /// pass a [baseUrl] pointing at the terminal's IP, e.g.
 /// `Uri.parse('http://192.168.0.187:8080')`.
 ///
-/// The [tid] is normalized by the client itself: a leading zero (e.g.
-/// `03600335`) is stripped, so callers may pass the tid as printed on the
-/// terminal without worrying about the format HPS expects.
+/// The [tid] is normalized by the client itself: surrounding white space and
+/// leading zeros (e.g. `03600335`) are stripped, so callers may pass the tid
+/// as printed on the terminal and the receipt. HPS only accepts it without
+/// the leading zero and answers anything else with `100108 "Invalid TID"`.
+/// A tid that is not made of digits only, or only of zeros, is passed on
+/// unchanged.
 class HpsClient {
   HpsClient({
     Uri? baseUrl,
@@ -37,7 +40,8 @@ class HpsClient {
   /// Base URL of the HPS. Defaults to `http://127.0.0.1:8080`.
   final Uri baseUrl;
 
-  /// Terminal identifier — normalisiert (ohne fuehrende Null).
+  /// Terminal identifier -- normalisiert (ohne fuehrende Null), siehe
+  /// [_normalizeTid].
   final String tid;
 
   /// Currency used when a request does not specify one. Defaults to `EUR`.
@@ -262,23 +266,24 @@ class HpsClient {
   /// Liefert die volle [TransactionResponse] -- der `responseCode` ist die
   /// eigentliche Auskunft, nicht der HTTP-Status.
   ///
-  /// Am 26.08.2026 an einem hobex-HPS gemessen (TID 3600335, HPS 1.10.0,
-  /// Firmware 7.3.6):
+  /// Gemessen an einem hobex-HPS (TID 3600335, Firmware 7.3.6):
   ///
-  /// - laeuft der Kartenfluss noch, antwortet der Abbruch mit
-  ///   `responseCode == '0'` und greift;
+  /// - wartet der Kartenfluss noch auf die Karte, antwortet der Abbruch mit
+  ///   `responseCode == '0'`, und die Zahlung endet mit `100002` (26.08.2026,
+  ///   HPS 1.10.0);
+  /// - vier Sekunden nach dem Start einer kontaktlosen Zahlung (vermutlich war
+  ///   die Karte schon gelesen; gemessen ist das nicht) antwortet er EBENFALLS
+  ///   mit `'0'` "Authorized" -- und die Zahlung endet trotzdem genehmigt
+  ///   (10.11.2026, HPS 1.14.4);
   /// - ist der Vorgang abgeschlossen (genehmigt), antwortet er mit
   ///   `responseCode == '100010'` und greift NICHT -- die genehmigte Zahlung
   ///   bleibt dabei unangetastet.
   ///
-  /// Und zwar beides mit **HTTP 200**. Deshalb reicht es nicht, nur bei
-  /// Nicht-2xx zu werfen und sonst die `transactionId` herauszugeben: ein
-  /// gescheiterter Abbruch saehe dann aus wie ein geglueckter, und aus einer
-  /// echten Belastung wuerde "nichts belastet".
-  ///
-  /// Der Abbruch ist damit der Diskriminator, den die Statusabfrage nicht
-  /// liefert: sie antwortet auf jeden nicht genehmigten Vorgang mit
-  /// [TransactionResponse.noStatementCode].
+  /// Und zwar alles mit **HTTP 200**. `'0'` heisst also nur, dass das
+  /// Terminal die Abbruch-Anfrage angenommen hat, NICHT, dass nichts belastet
+  /// ist. Den Ausgang sagt die Antwort auf die Zahlung selbst oder
+  /// [transactionStatus] -- siehe `HpsPayments`, "Ein quittierter Abbruch ist
+  /// keine Aussage".
   Future<TransactionResponse> abort({required String transactionId}) {
     _checkTransactionId(transactionId, 'transactionId');
     final uri = _uri('api/transaction/abort/$tid/$transactionId', null);
@@ -317,8 +322,9 @@ class HpsClient {
   /// mit [TransactionResponse.transactionCanceledCode] (`9011`).
   ///
   /// `9027` ist deshalb KEIN Ergebnis, sondern ein Grund, weiterzufragen --
-  /// siehe [TransactionResponse.isConclusive]. Wer einen laufenden Vorgang
-  /// vom abgebrochenen trennen will, braucht [abort], nicht diese Abfrage.
+  /// siehe [TransactionResponse.isConclusive]. Einen laufenden Vorgang vom
+  /// abgebrochenen trennt auch [abort] nicht: seine Quittung `'0'` kam am
+  /// 10.11.2026 auch fuer eine Zahlung, die danach genehmigt wurde.
   ///
   /// [TransactionResponse.isInProgress] (`responseCode == null`) wurde auf
   /// dieser Firmware nie beobachtet, bleibt aber ebenfalls eine Nicht-Aussage.
@@ -594,12 +600,46 @@ class HpsClient {
     return baseUrl.replace(path: '$basePath$suffix', queryParameters: query);
   }
 
-  /// HPS verlangt die TID OHNE fuehrende Null (z.B. 3600335, nicht 03600335).
-  /// Eine Kennung aus lauter Nullen bleibt unveraendert, statt leer zu werden.
+  /// Die TID in der Form, die das HPS annimmt: Leerraum am Rand
+  /// ([_randLeerraum]) und fuehrende Nullen fallen weg.
+  ///
+  /// Am 10.11.2026 gemessen (TID 3600335, HPS 1.14.4, Firmware 7.3.6):
+  /// Diagnose und Zahlung mit `03600335` antworten sofort `100108 "Invalid
+  /// TID"` (nichts belastet), mit `3600335` normal; `003600335`, `0360033`
+  /// und `36003350` sind ebenfalls `Invalid TID`. Auf Beleg und Geraet steht
+  /// die TID achtstellig mit fuehrender Null.
+  ///
+  /// Umgeschrieben wird NUR eine rein ziffrige TID mit mindestens einer
+  /// Ziffer ungleich `0`. Alles andere bleibt UNVERAENDERT, auch eine TID aus
+  /// lauter Nullen (etwa die `0` einer Erkennungsprobe): still etwas anderes
+  /// daraus zu machen, hiesse ein anderes Terminal anzusprechen als das
+  /// eingetragene. Bewusst kein Wurf: das HPS weist eine TID, die es nicht
+  /// kennt, mit `100108` ab, bevor etwas geschieht, und der Aufrufer bekommt
+  /// den Grund auf dem Weg, den er fuer jede andere Abweisung auch auswertet
+  /// -- ein [ArgumentError] im Konstruktor braeche dagegen jeden, der heute
+  /// eine solche TID uebergibt.
+  ///
+  /// Zwilling: `normalizeHpsTid` im npm-Paket; Faelle im Vertrag
+  /// `hobex-hps-cases.json`.
   static String _normalizeTid(String raw) {
-    final stripped = raw.replaceFirst(RegExp(r'^0+'), '');
-    return stripped.isEmpty ? raw : stripped;
+    final ohneRand = raw.replaceAll(_randLeerraum, '');
+    if (!_nurZiffern.hasMatch(ohneRand)) return raw;
+    final ohneNullen = ohneRand.replaceFirst(_fuehrendeNullen, '');
+    return ohneNullen.isEmpty ? raw : ohneNullen;
   }
+
+  /// Nur eine rein ziffrige TID wird umgeschrieben.
+  static final RegExp _nurZiffern = RegExp(r'^[0-9]+$');
+  static final RegExp _fuehrendeNullen = RegExp(r'^0+');
+
+  /// Leerraum am Rand, der wegfaellt: nur ASCII (Leerzeichen, Tab,
+  /// Zeilenvorschub, Wagenruecklauf, vertikaler Tab, Seitenvorschub). Bewusst
+  /// eine feste Liste statt [String.trim]: Dart und JavaScript zaehlen
+  /// Unicode-Leerraum verschieden (U+0085 trimmt Dart, JavaScript nicht), und
+  /// die Zwillinge sollen dieselbe TID hinausschicken. Jedes andere Zeichen am
+  /// Rand laesst die TID unveraendert.
+  static final RegExp _randLeerraum =
+      RegExp(r'^[ \t\n\r\x0B\x0C]+|[ \t\n\r\x0B\x0C]+$');
 
   /// Letzte vergebene Millisekunde bzw. laufender Zaehler innerhalb dieser
   /// Millisekunde -- Prozessweiter Zustand fuer [newTransactionId].
