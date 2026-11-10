@@ -37,18 +37,22 @@ void main() {
     expect(api.cashregisterToken, _token);
   });
 
-  test('ein leerer Text oder nur Leerraum wirft beim Einrichten, ohne den Wert zu nennen', () {
-    for (final leer in ['', ' ', '   ', '\t\n']) {
-      expect(
-        () => KasseneckApi(apiKey: 'kr_test_x', cashregisterToken: leer),
-        throwsA(isA<ArgumentError>().having((e) => e.toString(), 'text', allOf(contains('cashregisterToken'), contains('leer')))),
-        reason: jsonEncode(leer),
-      );
+  test('ein leerer Text oder nur Leerraum gilt als kein Token: nichts wirft, keine Kopfzeile', () async {
+    // Eine App setzt den Client beim Abmelden mit leerem Schluessel und leerem
+    // Token zurueck; das muss wie bisher ohne Fehler gehen.
+    expect(() => KasseneckApi(apiKey: '', cashregisterToken: ''), returnsNormally);
+    for (final leer in ['', ' ', '\t\n']) {
+      final (:api, :log) = _mit(token: leer);
+      await api.listDepositTypes();
+      expect(log.single.headers.keys.map((k) => k.toLowerCase()), isNot(contains('cashregister-token')),
+          reason: jsonEncode(leer));
     }
   });
 
-  test('cashregisterId ohne Token wirft eine FormatException, mit Token liest sie die Kasse', () {
+  test('cashregisterId: null wirft, leer liest leer, mit Token liest sie die Kasse', () {
     expect(() => KasseneckApi(apiKey: 'kr_test_x').cashregisterId, throwsFormatException);
+    // Leerer Token: wie in 11.26.1 eine leere Kennung, kein Fehler.
+    expect(KasseneckApi(apiKey: '', cashregisterToken: '').cashregisterId, '');
     final mit = KasseneckApi(apiKey: 'kr_test_x', cashregisterToken: 'cb_test_${base64Url.encode(utf8.encode('KECK-1:geheim')).replaceAll('=', '')}');
     expect(mit.cashregisterId, 'KECK-1');
   });

@@ -41,8 +41,7 @@ print('Beleg ${beleg?.receiptId}, signiert: ${beleg?.signatureSuccess}');
 Ohne Kasse genügt der API-Schlüssel für die Aufrufe, die dem Betrieb gelten
 (`listDepositTypes`, `getEwpReport`, `downloadEwpReport`,
 `setEwpExtraQuantities`): `cashregisterToken` weglassen, dann geht die
-Kopfzeile `cashregister-token` nicht mit. Ein leerer Token wirft schon beim
-Anlegen.
+Kopfzeile `cashregister-token` nicht mit. Ein leerer Token gilt als kein Token.
 
 Stornos laufen über `kasseneck.cancelReceipt(...)` bzw.
 `RegisterReceiptClient.cancelReceipt(...)`, immer mit Bezug auf den Originalbeleg.

@@ -271,9 +271,16 @@ class KasseneckApi {
   /// Aufrufe, die dem Betrieb statt einer Kasse gelten, brauchen ihn nicht
   /// ([listDepositTypes], [getEwpReport], [downloadEwpReport],
   /// [setEwpExtraQuantities]); ohne Token geht die Kopfzeile `cashregister-token`
-  /// nicht mit. Ein Aufruf, der eine Kasse braucht, antwortet ohne Token mit
-  /// `cashregister_token_missing`.
+  /// nicht mit; ein leerer Text zaehlt als kein Token. Ein Aufruf, der eine
+  /// Kasse braucht, antwortet ohne Token mit `cashregister_token_missing`.
   final String? cashregisterToken;
+
+  /// Der Wert der Kopfzeile `cashregister-token`: ein leerer Text oder nur
+  /// Leerraum zaehlt wie kein Token und wird nicht gesendet.
+  String? get _kassenKopf {
+    final token = cashregisterToken;
+    return token == null || token.trim().isEmpty ? null : token;
+  }
   final ReceiptPrintType? printType;
   String? printerAddress;
 
@@ -289,7 +296,7 @@ class KasseneckApi {
 
   KasseneckApi({
     required this.apiKey,
-    String? cashregisterToken,
+    this.cashregisterToken,
     this.printType,
     http.Client? httpClient,
     this.readTimeout = const Duration(seconds: 30),
@@ -297,19 +304,8 @@ class KasseneckApi {
     this.signatureTimeout = const Duration(seconds: 90),
     String? clientHeader,
     bool omitKasseneckHeaders = false,
-  })  : cashregisterToken = _kassenToken(cashregisterToken),
-        _http = httpClient ?? http.Client(),
+  })  : _http = httpClient ?? http.Client(),
         _kopf = V3Headers('KasseneckApi', clientHeader: clientHeader, omit: omitKasseneckHeaders);
-
-  /// Ein leerer Text oder nur Leerraum waere ein Fehler beim Einrichten, kein
-  /// Token: er wirft sofort ([ArgumentError], ohne den Wert zu nennen), wie
-  /// `apiKeyAuth` im npm-Paket. `null` heisst: keine Kasse.
-  static String? _kassenToken(String? token) {
-    if (token != null && token.trim().isEmpty) {
-      throw ArgumentError('cashregisterToken ist leer', 'cashregisterToken');
-    }
-    return token;
-  }
 
   /// Kasseneck-Kopfzeilen der Anfragen ([clientHeader] nennt die App in der
   /// Zaehlung des Backends, Vorgabe `kasseneck_api/<version>`).
@@ -351,7 +347,7 @@ class KasseneckApi {
       name: name,
       headers: {
         'Authorization': 'Bearer $apiKey',
-        'cashregister-token': ?cashregisterToken,
+        'cashregister-token': ?_kassenKopf,
         'Content-Type': 'application/json',
       },
       kasseneck: _kopf,
@@ -1699,8 +1695,9 @@ class KasseneckApi {
         Aufrufe.stripeCaptureIntent, () => StripeUrlSession.fromJson(resJson['data'] as Map<String, dynamic>));
   }
 
-  /// Die Kassen-ID, gelesen aus [cashregisterToken]; ohne Token (Client ohne
-  /// Kasse) wirft sie eine [FormatException].
+  /// Die Kassen-ID, gelesen aus [cashregisterToken]; ohne Token (`null`, Client
+  /// ohne Kasse) wirft sie eine [FormatException]. Ein leerer Text liest wie
+  /// bisher eine leere Kennung.
   ///
   /// Liest dieselben Formate wie `cashboxIdFromToken` im Backend
   /// (`functions/gemeinsam/keys.js`):

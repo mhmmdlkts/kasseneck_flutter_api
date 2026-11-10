@@ -118,8 +118,7 @@ Without a register, the API key is enough for the calls that belong to the
 business and not to a register (`listDepositTypes`, `getEwpReport`,
 `downloadEwpReport`, `setEwpExtraQuantities`): leave `cashregisterToken` out and
 the `cashregister-token` header is not sent. A call that needs a register
-answers `cashregister_token_missing`. An empty or blank token throws an
-`ArgumentError` when the client is created.
+answers `cashregister_token_missing`. An empty token counts as no token.
 
 ## Upgrading from 9.x
 
