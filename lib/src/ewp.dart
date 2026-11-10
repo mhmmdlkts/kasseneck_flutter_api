@@ -175,7 +175,7 @@ class EwpExtraQuantity {
     required this.foreign,
     required this.reason,
     this.text,
-    required this.at,
+    this.at,
     this.by,
   });
 
@@ -185,7 +185,8 @@ class EwpExtraQuantity {
         foreign: _pflichtZahl(j, 'foreign'),
         reason: _pflichtText(j, 'reason'),
         text: j['text'] is String ? j['text'] as String : null,
-        at: _pflichtZahl(j, 'at'),
+        // Zeitpunkt nachsichtig lesen wie npm: fehlt er, bleibt die Zusatzmenge trotzdem lesbar.
+        at: j['at'] is num ? (j['at'] as num).toInt() : null,
         by: j['by'] is String ? j['by'] as String : null,
       );
 
@@ -198,7 +199,7 @@ class EwpExtraQuantity {
   final String? text;
 
   /// Zeitpunkt des Eintrags (Millisekunden).
-  final int at;
+  final int? at;
 
   /// Kennung des Absenders: die uid der Anmeldung im Panel, `'api'` fuer einen
   /// API-Schluessel; bei Altbestand `null`.

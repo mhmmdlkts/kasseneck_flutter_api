@@ -75,6 +75,14 @@ Map<String, dynamic> _meldung() => {
 Map<String, dynamic> _params(http.Request r) => (jsonDecode(r.body) as Map<String, dynamic>)['params'] as Map<String, dynamic>;
 
 void main() {
+  test('Zusatzmenge ohne Zeitpunkt bleibt lesbar (at null), wie npm', () {
+    final z = EwpExtraQuantity.fromJson({'gtin': '9012345000011', 'domestic': -12, 'foreign': 0, 'reason': 'return', 'text': null});
+    expect(z.at, isNull);
+    expect(z.domestic, -12);
+    final mitZeit = EwpExtraQuantity.fromJson({'gtin': '9012345000011', 'domestic': 6, 'foreign': 0, 'reason': 'own_consumption', 'at': 1794297739537});
+    expect(mitZeit.at, 1794297739537);
+  });
+
   test('getEwpReport ruft /v3/getEwpReport mit { month } und liest die Meldung', () async {
     final (:api, :log) = _server(_meldung());
     final bericht = await api.getEwpReport(month: '2026-11');
