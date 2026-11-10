@@ -103,6 +103,20 @@ export 'src/kasse/connect_bestand.dart' show ConnectStateReport;
 export 'src/kasse/beleg_ausgaben.dart' hide ausgabenGemeldet, ausgabenLesen, ausgabenNutzlast;
 export 'src/kasse/codes.dart';
 export 'src/kasse/drucker.dart';
+// Druckerkatalog (Connect-Einrichtung mit einem Klick, Vertrag 1.35.0): nach
+// aussen nur das Erkennen und die vorgeschlagenen Einstellungen; Normierung,
+// Pruefung und der Katalog selbst bleiben paketintern.
+export 'src/kasse/drucker_katalog.dart'
+    show
+        PrinterCatalogApproval,
+        PrinterCatalogDeviceSettings,
+        PrinterCatalogEntry,
+        PrinterCatalogSettings,
+        PrinterCatalogValueField,
+        PrinterCatalogValues,
+        PrinterDeviceTest,
+        printerCatalogEntry,
+        printerCatalogSettings;
 export 'src/kasse/einstellungen.dart';
 export 'src/kasse/farbe.dart';
 export 'src/kasse/thema.dart';

@@ -40,7 +40,7 @@ final Set<String> woerter = _liste('''
   bits blank block blocked blocks body bold bolt book bookable booking border both
   brand brands breakdown buckets budget build builder bundle business busy by
   byte bytes cache call calls can cancel canceled cancellation cancellations
-  cap capability capture card carried cart cash cashbox cashregister cashregisters
+  cap capability capture card carried cart cash cashbox cashregister cashregisters catalog
   categories category cause causes cent center cents certificate change changed changes char
   charge chars charset check checked checker checkout chinese chip chips choices city
   clear cleared client clock clone close cloud code codes color colors column
@@ -66,7 +66,7 @@ final Set<String> woerter = _liste('''
   host hosts house hue huge idempotency ids image immediately in included index
   info input installments instant insufficient intent interface interfaces
   internal intro invalid inventory invert invoice invoices is issue issuer item items iterate
-  january job journal july june kept key keys kind kinds label labels landed language languages
+  january job journal july june kept key keys kick kind kinds label labels landed language languages
   large last layout lead left legacy legal length level license licenses light limit line
   lines link list load loader local location locations lock login logo logout lookup loss
   lossy lot lots luminance mandate mandatory map march mark matrix may meaning measured
@@ -94,12 +94,12 @@ final Set<String> woerter = _liste('''
   secret seen select selected selection sell sellable send sent september sequence serial server
   service services session sessions set setting settings setup shadow share
   shared sheet short shortcut shortcuts shorten shortfall shortfalls show side sign signature signed
-  signing since single site size sizing sleep small software sold sort
+  signing since single site size sizes sizing sleep small software sold sort
   source sources space special split staff stamp standard start started state states
   statement status statuses step steps stock stocktake stop storage store stored street strength
   strengths string style styles subnet subtitle subtotal subtracted succeeded
   success sum summary supplier supply supported surface symbol system table tables takeover tax technical
-  tendered term terminal terminals test text texts thanks theme tile tiles
+  tendered term terminal terminals test tested text texts thanks theme tile tiles
   time timeout timestamp tip title to today token tolerance tone top total totals touch
   tracked tracking training transaction transfer transmitted transport tries turn
   turnover twelfths type types unassigned unavailable uncertain underline ungrouped unit

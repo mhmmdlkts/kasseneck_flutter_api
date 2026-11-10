@@ -1,0 +1,1802 @@
+{
+  "_note": "Printer catalog of the till (Kasseneck Connect, setup with one click). printers: the shipped entries; only an approved entry counts, one that is not approved behaves like an unknown model, and approval needs a device test that checked every value field and every paper size. Model names are normalized: a-z to A-Z (ASCII only); any other character outside ASCII that is neither punctuation nor white space (Unicode P, Z) makes the name unknown (null); every run of characters other than A-Z and 0-9 becomes one \"-\", none at the edges; then one leading manufacturer of the catalog in use is dropped, longest first (\"STAR-MICRONICS-\" before \"STAR-\"); nothing left = null. cases.lookupShipped uses the catalog as shipped, cases.lookup approves every entry and cases.lookupPartial only the listed ids (approved with cases.deviceTest); cases.lookupOtherCatalog uses its own catalog. npm src/pos/drucker-katalog.ts and Dart lib/src/kasse/drucker_katalog.dart compute every case.",
+  "rules": {
+    "paperSize": [
+      "mm58",
+      "mm80"
+    ],
+    "charsPerLine": {
+      "mm58": 32,
+      "mm80": 48
+    },
+    "cut": [
+      "partial",
+      "none"
+    ],
+    "qrMode": [
+      "escpos",
+      "raster"
+    ],
+    "codePage": [
+      "CP1252",
+      "CP437"
+    ],
+    "valueFields": [
+      "paperSize",
+      "charsPerLine",
+      "cut",
+      "drawerKick",
+      "qrMode",
+      "codePage"
+    ],
+    "problemReasons": [
+      "duplicate_id",
+      "match_names_missing",
+      "match_name_not_normalized",
+      "match_name_ambiguous",
+      "model_not_matched",
+      "paper_sizes_invalid",
+      "paper_size_not_listed",
+      "paper_size_too_wide",
+      "cut_not_allowed",
+      "qr_mode_not_allowed",
+      "chars_per_line_mismatch",
+      "device_test_missing",
+      "device_test_incomplete"
+    ]
+  },
+  "printers": [
+    {
+      "id": "epson-tm-m30iii",
+      "manufacturer": "Epson",
+      "model": "TM-m30III",
+      "matchNames": [
+        "TM-M30III"
+      ],
+      "paperSizes": [
+        "mm58",
+        "mm80"
+      ],
+      "nativeCharsPerLine": 48,
+      "values": {
+        "paperSize": "mm80",
+        "charsPerLine": 48,
+        "cut": "partial",
+        "drawerKick": true,
+        "qrMode": "escpos",
+        "codePage": "CP1252"
+      },
+      "approval": {
+        "approved": false,
+        "deviceTest": null
+      }
+    },
+    {
+      "id": "epson-tm-m30ii",
+      "manufacturer": "Epson",
+      "model": "TM-m30II",
+      "matchNames": [
+        "TM-M30II"
+      ],
+      "paperSizes": [
+        "mm58",
+        "mm80"
+      ],
+      "nativeCharsPerLine": 48,
+      "values": {
+        "paperSize": "mm80",
+        "charsPerLine": 48,
+        "cut": "partial",
+        "drawerKick": true,
+        "qrMode": "escpos",
+        "codePage": "CP1252"
+      },
+      "approval": {
+        "approved": false,
+        "deviceTest": null
+      }
+    },
+    {
+      "id": "epson-tm-t20iii",
+      "manufacturer": "Epson",
+      "model": "TM-T20III",
+      "matchNames": [
+        "TM-T20III"
+      ],
+      "paperSizes": [
+        "mm58",
+        "mm80"
+      ],
+      "nativeCharsPerLine": 48,
+      "values": {
+        "paperSize": "mm80",
+        "charsPerLine": 48,
+        "cut": "partial",
+        "drawerKick": true,
+        "qrMode": "escpos",
+        "codePage": "CP1252"
+      },
+      "approval": {
+        "approved": false,
+        "deviceTest": null
+      }
+    },
+    {
+      "id": "epson-tm-t88vi",
+      "manufacturer": "Epson",
+      "model": "TM-T88VI",
+      "matchNames": [
+        "TM-T88VI"
+      ],
+      "paperSizes": [
+        "mm58"
+      ],
+      "nativeCharsPerLine": 42,
+      "values": {
+        "paperSize": "mm58",
+        "charsPerLine": 32,
+        "cut": "partial",
+        "drawerKick": true,
+        "qrMode": "escpos",
+        "codePage": "CP1252"
+      },
+      "approval": {
+        "approved": false,
+        "deviceTest": null
+      }
+    },
+    {
+      "id": "epson-tm-t88vii",
+      "manufacturer": "Epson",
+      "model": "TM-T88VII",
+      "matchNames": [
+        "TM-T88VII"
+      ],
+      "paperSizes": [
+        "mm58"
+      ],
+      "nativeCharsPerLine": 42,
+      "values": {
+        "paperSize": "mm58",
+        "charsPerLine": 32,
+        "cut": "partial",
+        "drawerKick": true,
+        "qrMode": "escpos",
+        "codePage": "CP1252"
+      },
+      "approval": {
+        "approved": false,
+        "deviceTest": null
+      }
+    },
+    {
+      "id": "epson-tm-m10",
+      "manufacturer": "Epson",
+      "model": "TM-m10",
+      "matchNames": [
+        "TM-M10"
+      ],
+      "paperSizes": [
+        "mm58"
+      ],
+      "nativeCharsPerLine": 35,
+      "values": {
+        "paperSize": "mm58",
+        "charsPerLine": 32,
+        "cut": "partial",
+        "drawerKick": true,
+        "qrMode": "escpos",
+        "codePage": "CP1252"
+      },
+      "approval": {
+        "approved": false,
+        "deviceTest": null
+      }
+    }
+  ],
+  "cases": {
+    "normalize": [
+      {
+        "input": "TM-m30III",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "TM-M30III",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "EPSON TM-m30III",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "tm m30iii",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "(EPSON TM-m30III)",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "  Epson_TM--m30III  ",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "TM‑m30III",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "TM m30III",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "„TM-m30III“",
+        "output": "TM-M30III"
+      },
+      {
+        "input": "Epson-TM-m10",
+        "output": "TM-M10"
+      },
+      {
+        "input": "TM-T20II-i",
+        "output": "TM-T20II-I"
+      },
+      {
+        "input": "TM-T88V-i",
+        "output": "TM-T88V-I"
+      },
+      {
+        "input": "TM-T20IIi",
+        "output": "TM-T20III"
+      },
+      {
+        "input": "TM-T88Vi",
+        "output": "TM-T88VI"
+      },
+      {
+        "input": "TMM30III",
+        "output": "TMM30III"
+      },
+      {
+        "input": "EPSONTM-m10",
+        "output": "EPSONTM-M10"
+      },
+      {
+        "input": "EPSON EPSON TM-m30III",
+        "output": "EPSON-TM-M30III"
+      },
+      {
+        "input": "EPSON",
+        "output": "EPSON"
+      },
+      {
+        "input": "Star TSP143IIIU",
+        "output": "STAR-TSP143IIIU"
+      },
+      {
+        "input": "TM-m30IIÏ",
+        "output": null
+      },
+      {
+        "input": "TM-m30IIı",
+        "output": null
+      },
+      {
+        "input": "TM-T88Vı",
+        "output": null
+      },
+      {
+        "input": "TM-m30IIIé",
+        "output": null
+      },
+      {
+        "input": "TM-m30III®",
+        "output": null
+      },
+      {
+        "input": "ﬀ",
+        "output": null
+      },
+      {
+        "input": "",
+        "output": null
+      },
+      {
+        "input": "   ",
+        "output": null
+      },
+      {
+        "input": "---",
+        "output": null
+      },
+      {
+        "input": null,
+        "output": null
+      }
+    ],
+    "lookupShipped": [
+      {
+        "model": "TM-m30III",
+        "expected": null
+      },
+      {
+        "model": "EPSON TM-m30III",
+        "expected": null
+      },
+      {
+        "model": "TM-m30II",
+        "expected": null
+      },
+      {
+        "model": "TM-T20III",
+        "expected": null
+      },
+      {
+        "model": "TM-m10",
+        "expected": null
+      },
+      {
+        "model": "TM-T88VI",
+        "expected": null
+      },
+      {
+        "model": "TM-P20",
+        "expected": null
+      },
+      {
+        "model": null,
+        "expected": null
+      }
+    ],
+    "lookup": [
+      {
+        "model": "TM-m30III",
+        "expected": "epson-tm-m30iii"
+      },
+      {
+        "model": "TM-M30III",
+        "expected": "epson-tm-m30iii"
+      },
+      {
+        "model": "EPSON TM-m30III",
+        "expected": "epson-tm-m30iii"
+      },
+      {
+        "model": "tm m30iii",
+        "expected": "epson-tm-m30iii"
+      },
+      {
+        "model": "(EPSON TM-m30III)",
+        "expected": "epson-tm-m30iii"
+      },
+      {
+        "model": "TM-m30II",
+        "expected": "epson-tm-m30ii"
+      },
+      {
+        "model": "TM-T20III",
+        "expected": "epson-tm-t20iii"
+      },
+      {
+        "model": "EPSON TM-m10",
+        "expected": "epson-tm-m10"
+      },
+      {
+        "model": "TM-T20IIi",
+        "expected": "epson-tm-t20iii"
+      },
+      {
+        "model": "TM-T20II-i",
+        "expected": null
+      },
+      {
+        "model": "TM-T88VI",
+        "expected": "epson-tm-t88vi"
+      },
+      {
+        "model": "EPSON TM-T88VII",
+        "expected": "epson-tm-t88vii"
+      },
+      {
+        "model": "TM-T88Vi",
+        "expected": "epson-tm-t88vi"
+      },
+      {
+        "model": "TM-T88V-i",
+        "expected": null
+      },
+      {
+        "model": "TM-T88V",
+        "expected": null
+      },
+      {
+        "model": "TM-m30",
+        "expected": null
+      },
+      {
+        "model": "TM-m30III-H",
+        "expected": null
+      },
+      {
+        "model": "TM-m30IIÏ",
+        "expected": null
+      },
+      {
+        "model": "TM-m30IIı",
+        "expected": null
+      },
+      {
+        "model": "TMM30III",
+        "expected": null
+      },
+      {
+        "model": "EPSON EPSON TM-m30III",
+        "expected": null
+      },
+      {
+        "model": "TM-P20",
+        "expected": null
+      },
+      {
+        "model": "Star TSP143IIIU",
+        "expected": null
+      },
+      {
+        "model": "EPSON",
+        "expected": null
+      },
+      {
+        "model": "",
+        "expected": null
+      },
+      {
+        "model": null,
+        "expected": null
+      }
+    ],
+    "lookupPartial": [
+      {
+        "model": "TM-m30III",
+        "approve": [],
+        "expected": null
+      },
+      {
+        "model": "TM-m30III",
+        "approve": [
+          "epson-tm-m30ii"
+        ],
+        "expected": null
+      },
+      {
+        "model": "TM-m30II",
+        "approve": [
+          "epson-tm-m30iii"
+        ],
+        "expected": null
+      },
+      {
+        "model": "TM-m30III",
+        "approve": [
+          "epson-tm-m30iii"
+        ],
+        "expected": "epson-tm-m30iii"
+      }
+    ],
+    "lookupOtherCatalog": {
+      "printers": [
+        {
+          "id": "star-tsp100",
+          "manufacturer": "Star",
+          "model": "TSP100",
+          "matchNames": [
+            "TSP100"
+          ],
+          "paperSizes": [
+            "mm80"
+          ],
+          "nativeCharsPerLine": 48,
+          "values": {
+            "paperSize": "mm80",
+            "charsPerLine": 48,
+            "cut": "partial",
+            "drawerKick": true,
+            "qrMode": "raster",
+            "codePage": "CP1252"
+          },
+          "approval": {
+            "approved": true,
+            "deviceTest": {
+              "date": "2026-11-10",
+              "connectVersion": "1.5.0",
+              "firmware": "1.00",
+              "testedBy": "KE",
+              "checked": [
+                "paperSize",
+                "charsPerLine",
+                "cut",
+                "drawerKick",
+                "qrMode",
+                "codePage"
+              ],
+              "checkedPaperSizes": [
+                "mm80"
+              ]
+            }
+          }
+        },
+        {
+          "id": "star-micronics-tsp143iiiu",
+          "manufacturer": "Star Micronics",
+          "model": "TSP143IIIU",
+          "matchNames": [
+            "TSP143IIIU"
+          ],
+          "paperSizes": [
+            "mm80"
+          ],
+          "nativeCharsPerLine": 48,
+          "values": {
+            "paperSize": "mm80",
+            "charsPerLine": 48,
+            "cut": "partial",
+            "drawerKick": true,
+            "qrMode": "raster",
+            "codePage": "CP1252"
+          },
+          "approval": {
+            "approved": true,
+            "deviceTest": {
+              "date": "2026-11-10",
+              "connectVersion": "1.5.0",
+              "firmware": "1.00",
+              "testedBy": "KE",
+              "checked": [
+                "paperSize",
+                "charsPerLine",
+                "cut",
+                "drawerKick",
+                "qrMode",
+                "codePage"
+              ],
+              "checkedPaperSizes": [
+                "mm80"
+              ]
+            }
+          }
+        }
+      ],
+      "cases": [
+        {
+          "model": "Star Micronics TSP143IIIU",
+          "expected": "star-micronics-tsp143iiiu"
+        },
+        {
+          "model": "Star TSP143IIIU",
+          "expected": "star-micronics-tsp143iiiu"
+        },
+        {
+          "model": "Star Micronics TSP100",
+          "expected": "star-tsp100"
+        },
+        {
+          "model": "STAR TSP100",
+          "expected": "star-tsp100"
+        },
+        {
+          "model": "Micronics TSP100",
+          "expected": null
+        },
+        {
+          "model": "EPSON TM-m30III",
+          "expected": null
+        }
+      ]
+    },
+    "deviceTest": {
+      "date": "2026-11-10",
+      "connectVersion": "1.5.0",
+      "firmware": "1.00",
+      "testedBy": "KE",
+      "checked": [
+        "paperSize",
+        "charsPerLine",
+        "cut",
+        "drawerKick",
+        "qrMode",
+        "codePage"
+      ],
+      "checkedPaperSizes": [
+        "mm58",
+        "mm80"
+      ]
+    },
+    "settings": [
+      {
+        "id": "epson-tm-m30iii",
+        "settings": {
+          "device": {
+            "paperSize": "mm80",
+            "codePage": "CP1252",
+            "cut": "partial",
+            "qrMode": "escpos",
+            "drawerEnabled": true
+          },
+          "paperSizeNeedsCheck": true
+        }
+      },
+      {
+        "id": "epson-tm-m30ii",
+        "settings": {
+          "device": {
+            "paperSize": "mm80",
+            "codePage": "CP1252",
+            "cut": "partial",
+            "qrMode": "escpos",
+            "drawerEnabled": true
+          },
+          "paperSizeNeedsCheck": true
+        }
+      },
+      {
+        "id": "epson-tm-t20iii",
+        "settings": {
+          "device": {
+            "paperSize": "mm80",
+            "codePage": "CP1252",
+            "cut": "partial",
+            "qrMode": "escpos",
+            "drawerEnabled": true
+          },
+          "paperSizeNeedsCheck": true
+        }
+      },
+      {
+        "id": "epson-tm-t88vi",
+        "settings": {
+          "device": {
+            "paperSize": "mm58",
+            "codePage": "CP1252",
+            "cut": "partial",
+            "qrMode": "escpos",
+            "drawerEnabled": true
+          },
+          "paperSizeNeedsCheck": false
+        }
+      },
+      {
+        "id": "epson-tm-t88vii",
+        "settings": {
+          "device": {
+            "paperSize": "mm58",
+            "codePage": "CP1252",
+            "cut": "partial",
+            "qrMode": "escpos",
+            "drawerEnabled": true
+          },
+          "paperSizeNeedsCheck": false
+        }
+      },
+      {
+        "id": "epson-tm-m10",
+        "settings": {
+          "device": {
+            "paperSize": "mm58",
+            "codePage": "CP1252",
+            "cut": "partial",
+            "qrMode": "escpos",
+            "drawerEnabled": true
+          },
+          "paperSizeNeedsCheck": false
+        }
+      }
+    ],
+    "problems": [
+      {
+        "name": "valid entry",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": []
+      },
+      {
+        "name": "approved with a complete device test",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": true,
+              "deviceTest": {
+                "date": "2026-11-10",
+                "connectVersion": "1.5.0",
+                "firmware": "1.00",
+                "testedBy": "KE",
+                "checked": [
+                  "paperSize",
+                  "charsPerLine",
+                  "cut",
+                  "drawerKick",
+                  "qrMode",
+                  "codePage"
+                ],
+                "checkedPaperSizes": [
+                  "mm58",
+                  "mm80"
+                ]
+              }
+            }
+          }
+        ],
+        "expected": []
+      },
+      {
+        "name": "32-character layout on a printer with 42 columns, checked at 58 mm",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58"
+            ],
+            "nativeCharsPerLine": 42,
+            "values": {
+              "paperSize": "mm58",
+              "charsPerLine": 32,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": true,
+              "deviceTest": {
+                "date": "2026-11-10",
+                "connectVersion": "1.5.0",
+                "firmware": "1.00",
+                "testedBy": "KE",
+                "checked": [
+                  "paperSize",
+                  "charsPerLine",
+                  "cut",
+                  "drawerKick",
+                  "qrMode",
+                  "codePage"
+                ],
+                "checkedPaperSizes": [
+                  "mm58"
+                ]
+              }
+            }
+          }
+        ],
+        "expected": []
+      },
+      {
+        "name": "two entries with the same id",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          },
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30II",
+            "matchNames": [
+              "TM-M30II"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "duplicate_id"
+          }
+        ]
+      },
+      {
+        "name": "no match name",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "match_names_missing"
+          },
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "model_not_matched"
+          }
+        ]
+      },
+      {
+        "name": "match name in lower case",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III",
+              "tm m30iii"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "match_name_not_normalized"
+          }
+        ]
+      },
+      {
+        "name": "match name with manufacturer",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III",
+              "EPSON-TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "match_name_not_normalized"
+          }
+        ]
+      },
+      {
+        "name": "match name with a space",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III",
+              "TM M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "match_name_not_normalized"
+          }
+        ]
+      },
+      {
+        "name": "same match name in two entries",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          },
+          {
+            "id": "epson-tm-m30ii",
+            "manufacturer": "Epson",
+            "model": "TM-m30II",
+            "matchNames": [
+              "TM-M30II",
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30ii",
+            "reason": "match_name_ambiguous"
+          }
+        ]
+      },
+      {
+        "name": "model name not among the match names",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30II"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "model_not_matched"
+          }
+        ]
+      },
+      {
+        "name": "paper sizes out of order",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm80",
+              "mm58"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "paper_sizes_invalid"
+          }
+        ]
+      },
+      {
+        "name": "paper size twice",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm80",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "paper_sizes_invalid"
+          }
+        ]
+      },
+      {
+        "name": "80 mm on a printer with 42 columns",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 42,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "paper_size_too_wide"
+          }
+        ]
+      },
+      {
+        "name": "58 mm on a printer with 30 columns",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58"
+            ],
+            "nativeCharsPerLine": 30,
+            "values": {
+              "paperSize": "mm58",
+              "charsPerLine": 32,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "paper_size_too_wide"
+          }
+        ]
+      },
+      {
+        "name": "factory paper size not among the paper sizes",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "paper_size_not_listed"
+          }
+        ]
+      },
+      {
+        "name": "cut full",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "full",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "cut_not_allowed"
+          }
+        ]
+      },
+      {
+        "name": "qr mode auto",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "auto",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "qr_mode_not_allowed"
+          }
+        ]
+      },
+      {
+        "name": "80 mm with 42 characters",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 42,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "chars_per_line_mismatch"
+          }
+        ]
+      },
+      {
+        "name": "58 mm with 48 characters",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm58",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "chars_per_line_mismatch"
+          }
+        ]
+      },
+      {
+        "name": "approved without device test",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": true,
+              "deviceTest": null
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "device_test_missing"
+          }
+        ]
+      },
+      {
+        "name": "device test with a date in another format",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": true,
+              "deviceTest": {
+                "date": "10.11.2026",
+                "connectVersion": "1.5.0",
+                "firmware": "1.00",
+                "testedBy": "KE",
+                "checked": [
+                  "paperSize",
+                  "charsPerLine",
+                  "cut",
+                  "drawerKick",
+                  "qrMode",
+                  "codePage"
+                ],
+                "checkedPaperSizes": [
+                  "mm58",
+                  "mm80"
+                ]
+              }
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "device_test_incomplete"
+          }
+        ]
+      },
+      {
+        "name": "device test without firmware",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": false,
+              "deviceTest": {
+                "date": "2026-11-10",
+                "connectVersion": "1.5.0",
+                "firmware": "",
+                "testedBy": "KE",
+                "checked": [
+                  "paperSize",
+                  "charsPerLine",
+                  "cut",
+                  "drawerKick",
+                  "qrMode",
+                  "codePage"
+                ],
+                "checkedPaperSizes": [
+                  "mm58",
+                  "mm80"
+                ]
+              }
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "device_test_incomplete"
+          }
+        ]
+      },
+      {
+        "name": "device test without testedBy",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": true,
+              "deviceTest": {
+                "date": "2026-11-10",
+                "connectVersion": "1.5.0",
+                "firmware": "1.00",
+                "testedBy": "",
+                "checked": [
+                  "paperSize",
+                  "charsPerLine",
+                  "cut",
+                  "drawerKick",
+                  "qrMode",
+                  "codePage"
+                ],
+                "checkedPaperSizes": [
+                  "mm58",
+                  "mm80"
+                ]
+              }
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "device_test_incomplete"
+          }
+        ]
+      },
+      {
+        "name": "device test without connectVersion",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": true,
+              "deviceTest": {
+                "date": "2026-11-10",
+                "connectVersion": "",
+                "firmware": "1.00",
+                "testedBy": "KE",
+                "checked": [
+                  "paperSize",
+                  "charsPerLine",
+                  "cut",
+                  "drawerKick",
+                  "qrMode",
+                  "codePage"
+                ],
+                "checkedPaperSizes": [
+                  "mm58",
+                  "mm80"
+                ]
+              }
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "device_test_incomplete"
+          }
+        ]
+      },
+      {
+        "name": "device test without the code page",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": true,
+              "deviceTest": {
+                "date": "2026-11-10",
+                "connectVersion": "1.5.0",
+                "firmware": "1.00",
+                "testedBy": "KE",
+                "checked": [
+                  "paperSize",
+                  "charsPerLine",
+                  "cut",
+                  "drawerKick",
+                  "qrMode"
+                ],
+                "checkedPaperSizes": [
+                  "mm58",
+                  "mm80"
+                ]
+              }
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "device_test_incomplete"
+          }
+        ]
+      },
+      {
+        "name": "device test without the 58 mm paper size",
+        "printers": [
+          {
+            "id": "epson-tm-m30iii",
+            "manufacturer": "Epson",
+            "model": "TM-m30III",
+            "matchNames": [
+              "TM-M30III"
+            ],
+            "paperSizes": [
+              "mm58",
+              "mm80"
+            ],
+            "nativeCharsPerLine": 48,
+            "values": {
+              "paperSize": "mm80",
+              "charsPerLine": 48,
+              "cut": "partial",
+              "drawerKick": true,
+              "qrMode": "escpos",
+              "codePage": "CP1252"
+            },
+            "approval": {
+              "approved": true,
+              "deviceTest": {
+                "date": "2026-11-10",
+                "connectVersion": "1.5.0",
+                "firmware": "1.00",
+                "testedBy": "KE",
+                "checked": [
+                  "paperSize",
+                  "charsPerLine",
+                  "cut",
+                  "drawerKick",
+                  "qrMode",
+                  "codePage"
+                ],
+                "checkedPaperSizes": [
+                  "mm80"
+                ]
+              }
+            }
+          }
+        ],
+        "expected": [
+          {
+            "id": "epson-tm-m30iii",
+            "reason": "device_test_incomplete"
+          }
+        ]
+      }
+    ]
+  }
+}
