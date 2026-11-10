@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 2,
-  "package": "1.35.1",
+  "package": "1.36.0",
   "endpoints": {
     "createCustomer": {
       "request": {
@@ -471,6 +471,35 @@
                   "type": "string",
                   "minLength": 1,
                   "maxLength": 128
+                },
+                "deposit": {
+                  "type": "object",
+                  "properties": {
+                    "depositTypeId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "depositFor": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 499
+                    },
+                    "gtin": {
+                      "type": "string",
+                      "minLength": 8,
+                      "maxLength": 14,
+                      "pattern": "^[0-9]{8,14}$"
+                    },
+                    "ownFilling": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "depositTypeId",
+                    "depositFor"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -757,6 +786,35 @@
                     "defective",
                     "disposed"
                   ]
+                },
+                "deposit": {
+                  "type": "object",
+                  "properties": {
+                    "depositTypeId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128
+                    },
+                    "depositFor": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 499
+                    },
+                    "gtin": {
+                      "type": "string",
+                      "minLength": 8,
+                      "maxLength": 14,
+                      "pattern": "^[0-9]{8,14}$"
+                    },
+                    "ownFilling": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "depositTypeId",
+                    "depositFor"
+                  ],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -1013,7 +1071,12 @@
     "reservation_not_found",
     "reservation_mismatch",
     "reservation_not_active",
-    "invoice_number_taken"
+    "invoice_number_taken",
+    "deposit_not_enabled",
+    "deposit_type_not_found",
+    "deposit_set_by_server",
+    "invalid_deposit_quantity",
+    "invalid_deposit"
   ],
   "creditNoteReasons": [
     "cancellation",

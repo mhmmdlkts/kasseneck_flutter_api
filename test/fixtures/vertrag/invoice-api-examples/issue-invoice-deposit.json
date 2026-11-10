@@ -1,0 +1,55 @@
+{
+  "endpoint": "issueInvoice",
+  "description": "Einweg- und Mehrweg-Pfand als eigene Positionen, je mit deposit zur Ware",
+  "request": {
+    "idempotencyKey": "ex-30",
+    "customerId": "customer_example",
+    "taxScheme": "normal",
+    "priceMode": "gross",
+    "serviceStart": "2026-11-10",
+    "items": [
+      {
+        "description": "Mineralwasser Dose 0,5 l",
+        "quantity": 24,
+        "unitPriceCents": 120,
+        "vatRate": 20
+      },
+      {
+        "description": "Pfand Einweg Dose",
+        "quantity": 24,
+        "unitPriceCents": 25,
+        "vatRate": 0,
+        "deposit": {
+          "depositTypeId": "pf_einweg_dose",
+          "depositFor": 0,
+          "gtin": "9012345000011"
+        }
+      },
+      {
+        "description": "Bier Kiste",
+        "quantity": 2,
+        "unitPriceCents": 1500,
+        "vatRate": 20
+      },
+      {
+        "description": "Pfand Mehrweg Kiste",
+        "quantity": 2,
+        "unitPriceCents": 300,
+        "vatRate": 20,
+        "deposit": {
+          "depositTypeId": "pf_mehrweg_kiste",
+          "depositFor": 2,
+          "ownFilling": true
+        }
+      }
+    ]
+  },
+  "expected": {
+    "ok": true,
+    "totals": {
+      "netCents": 6000,
+      "vatCents": 1080,
+      "grossCents": 7080
+    }
+  }
+}

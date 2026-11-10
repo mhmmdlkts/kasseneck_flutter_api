@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "820ce0391fbe5a2f51ad441f6b0777e4c2370cafd83fe69b94edb349836caad5",
-    "inputsSha256": "ffa47dedd9b849e0d26f40c379d66e3ba6f2587d785bd2c3cc48fcdb26ea6769",
+    "sha256": "3c10f47f66f048d8b25adb8996414674261ec8eb4c55f82a1d2a239be13d289f",
+    "inputsSha256": "36b24d02c477cfd624cb31b13dc229a261a951132688f755a800778b329ee998",
     "backendPackage": "@kreiseck/kasseneck-api@0.39.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -155,7 +155,9 @@
       "reportTerminalLogin",
       "reportTerminalReady",
       "unfixTerminal",
-      "listDepositTypes"
+      "listDepositTypes",
+      "getEwpReport",
+      "setEwpExtraQuantities"
     ],
     "v3Routed": [
       "createReceipt",
@@ -279,7 +281,9 @@
       "reportTerminalLogin",
       "reportTerminalReady",
       "unfixTerminal",
-      "listDepositTypes"
+      "listDepositTypes",
+      "getEwpReport",
+      "setEwpExtraQuantities"
     ],
     "register": [
       "pairRegisterDevice",
@@ -429,6 +433,7 @@
       "getCustomerSignatureStatus",
       "getDepExport",
       "getDepExportFile",
+      "getEwpReport",
       "getFirstReceiptDate",
       "getInvoice",
       "getInvoiceItem",
@@ -437,6 +442,7 @@
       "getInvoiceXml",
       "getKasseSettings",
       "getMyDrawerState",
+      "getMyEwpMeldung",
       "getMyOpenVouchers",
       "getMyPfand",
       "getMyPfandBericht",
@@ -546,8 +552,10 @@
       "sendReceiptEmail",
       "sendWebhookTest",
       "setCustomerMandate",
+      "setEwpExtraQuantities",
       "setMyCashregisterPfand",
       "setMyCashregisterStockLocation",
+      "setMyEwpZusatzmengen",
       "setMyKasseLogo",
       "setMyKasseSettings",
       "setMyPfand",
@@ -1403,6 +1411,7 @@
       "customer_not_found",
       "deposit_follows_item",
       "deposit_not_enabled",
+      "deposit_outdated",
       "deposit_return_not_offered",
       "deposit_set_by_server",
       "deposit_type_in_use",
@@ -1873,6 +1882,7 @@
       "pfandart_unbekannt": "deposit_type_not_found",
       "pfand_vom_server": "deposit_set_by_server",
       "pfand_menge_ungueltig": "invalid_deposit_quantity",
+      "pfand_veraltet": "deposit_outdated",
       "pfand_ruecknahme_aus": "deposit_return_not_offered",
       "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
       "pfand_folgt_position": "deposit_follows_item",
@@ -2225,7 +2235,12 @@
       "reservation_not_found",
       "reservation_mismatch",
       "reservation_not_active",
-      "invoice_number_taken"
+      "invoice_number_taken",
+      "deposit_not_enabled",
+      "deposit_type_not_found",
+      "deposit_set_by_server",
+      "invalid_deposit_quantity",
+      "invalid_deposit"
     ],
     "partner": [
       "validation",
@@ -2637,6 +2652,7 @@
       "deposit_type_not_found",
       "deposit_set_by_server",
       "invalid_deposit_quantity",
+      "deposit_outdated",
       "deposit_return_not_offered",
       "deposit_type_not_issued",
       "deposit_follows_item",
@@ -3856,6 +3872,7 @@
             "pfandart_unbekannt": "deposit_type_not_found",
             "pfand_vom_server": "deposit_set_by_server",
             "pfand_menge_ungueltig": "invalid_deposit_quantity",
+            "pfand_veraltet": "deposit_outdated",
             "pfand_ruecknahme_aus": "deposit_return_not_offered",
             "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
             "pfand_folgt_position": "deposit_follows_item",
@@ -4616,6 +4633,7 @@
           "pfandart_unbekannt": "deposit_type_not_found",
           "pfand_vom_server": "deposit_set_by_server",
           "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_veraltet": "deposit_outdated",
           "pfand_ruecknahme_aus": "deposit_return_not_offered",
           "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
           "pfand_folgt_position": "deposit_follows_item",
@@ -4745,6 +4763,7 @@
           "pfandart_unbekannt": "deposit_type_not_found",
           "pfand_vom_server": "deposit_set_by_server",
           "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_veraltet": "deposit_outdated",
           "pfand_ruecknahme_aus": "deposit_return_not_offered",
           "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
           "pfand_folgt_position": "deposit_follows_item",
@@ -4758,6 +4777,77 @@
     },
     "getDepExport": {},
     "getDepExportFile": {},
+    "getEwpReport": {
+      "params": {
+        "month": "monat"
+      },
+      "data": {
+        "month": "monat",
+        "dueDate": "faelligAm",
+        "provisional": "vorlaeufig",
+        "downloadedAt": "heruntergeladenAm",
+        "lines": [
+          {
+            "__": "zeilen",
+            "masterData": "stammdaten",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "sources": {
+              "__": "quellen",
+              "register": "kasse",
+              "invoices": "rechnung",
+              "deliveryNotes": "lieferschein",
+              "extra": "zusatz"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "__": "warnungen",
+            "fields": "felder",
+            "country": "land",
+            "quantity": "stk",
+            "count": "anzahl",
+            "column": "spalte",
+            "amount": "menge"
+          }
+        ],
+        "extraQuantities": [
+          {
+            "__": "zusaetze",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "reason": "grund",
+            "at": "am",
+            "by": "von"
+          }
+        ]
+      },
+      "werte": {
+        "extraQuantities[].reason": {
+          "haustrunk": "own_consumption",
+          "sampling": "sampling",
+          "spende": "donation",
+          "diebstahl": "theft",
+          "naturalrabatt": "free_goods",
+          "inventur": "stocktake",
+          "retoure": "return",
+          "fremdsystem": "external_system",
+          "sonstiges": "other"
+        },
+        "warnings[].code": {
+          "nicht_registriert": "gtin_not_registered",
+          "ausland_nicht_meldepflichtig": "foreign_not_reportable",
+          "stammdaten_fehlen": "master_data_missing",
+          "menge_negativ": "negative_quantity",
+          "posten_ungueltig": "invalid_posting"
+        },
+        "warnings[].column": {
+          "inland": "domestic",
+          "ausland": "foreign"
+        }
+      }
+    },
     "getFirstReceiptDate": {},
     "getInvoice": {
       "werte": {
@@ -5131,6 +5221,77 @@
         },
         "nachrichtWoerter": {
           "ladeId": "drawerId"
+        }
+      }
+    },
+    "getMyEwpMeldung": {
+      "params": {
+        "month": "monat"
+      },
+      "data": {
+        "month": "monat",
+        "dueDate": "faelligAm",
+        "provisional": "vorlaeufig",
+        "downloadedAt": "heruntergeladenAm",
+        "lines": [
+          {
+            "__": "zeilen",
+            "masterData": "stammdaten",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "sources": {
+              "__": "quellen",
+              "register": "kasse",
+              "invoices": "rechnung",
+              "deliveryNotes": "lieferschein",
+              "extra": "zusatz"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "__": "warnungen",
+            "fields": "felder",
+            "country": "land",
+            "quantity": "stk",
+            "count": "anzahl",
+            "column": "spalte",
+            "amount": "menge"
+          }
+        ],
+        "extraQuantities": [
+          {
+            "__": "zusaetze",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "reason": "grund",
+            "at": "am",
+            "by": "von"
+          }
+        ]
+      },
+      "werte": {
+        "extraQuantities[].reason": {
+          "haustrunk": "own_consumption",
+          "sampling": "sampling",
+          "spende": "donation",
+          "diebstahl": "theft",
+          "naturalrabatt": "free_goods",
+          "inventur": "stocktake",
+          "retoure": "return",
+          "fremdsystem": "external_system",
+          "sonstiges": "other"
+        },
+        "warnings[].code": {
+          "nicht_registriert": "gtin_not_registered",
+          "ausland_nicht_meldepflichtig": "foreign_not_reportable",
+          "stammdaten_fehlen": "master_data_missing",
+          "menge_negativ": "negative_quantity",
+          "posten_ungueltig": "invalid_posting"
+        },
+        "warnings[].column": {
+          "inland": "domestic",
+          "ausland": "foreign"
         }
       }
     },
@@ -6075,6 +6236,7 @@
           "pfandart_unbekannt": "deposit_type_not_found",
           "pfand_vom_server": "deposit_set_by_server",
           "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_veraltet": "deposit_outdated",
           "pfand_ruecknahme_aus": "deposit_return_not_offered",
           "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
           "pfand_folgt_position": "deposit_follows_item",
@@ -8048,6 +8210,7 @@
           "pfandart_unbekannt": "deposit_type_not_found",
           "pfand_vom_server": "deposit_set_by_server",
           "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_veraltet": "deposit_outdated",
           "pfand_ruecknahme_aus": "deposit_return_not_offered",
           "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
           "pfand_folgt_position": "deposit_follows_item",
@@ -8349,6 +8512,100 @@
       }
     },
     "setCustomerMandate": {},
+    "setEwpExtraQuantities": {
+      "params": {
+        "month": "monat",
+        "extraQuantities": [
+          {
+            "__": "zusaetze",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "reason": "grund",
+            "at": "am",
+            "by": "von"
+          }
+        ]
+      },
+      "paramWerte": {
+        "extraQuantities[].reason": {
+          "haustrunk": "own_consumption",
+          "sampling": "sampling",
+          "spende": "donation",
+          "diebstahl": "theft",
+          "naturalrabatt": "free_goods",
+          "inventur": "stocktake",
+          "retoure": "return",
+          "fremdsystem": "external_system",
+          "sonstiges": "other"
+        }
+      },
+      "data": {
+        "month": "monat",
+        "dueDate": "faelligAm",
+        "provisional": "vorlaeufig",
+        "downloadedAt": "heruntergeladenAm",
+        "lines": [
+          {
+            "__": "zeilen",
+            "masterData": "stammdaten",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "sources": {
+              "__": "quellen",
+              "register": "kasse",
+              "invoices": "rechnung",
+              "deliveryNotes": "lieferschein",
+              "extra": "zusatz"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "__": "warnungen",
+            "fields": "felder",
+            "country": "land",
+            "quantity": "stk",
+            "count": "anzahl",
+            "column": "spalte",
+            "amount": "menge"
+          }
+        ],
+        "extraQuantities": [
+          {
+            "__": "zusaetze",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "reason": "grund",
+            "at": "am",
+            "by": "von"
+          }
+        ]
+      },
+      "werte": {
+        "extraQuantities[].reason": {
+          "haustrunk": "own_consumption",
+          "sampling": "sampling",
+          "spende": "donation",
+          "diebstahl": "theft",
+          "naturalrabatt": "free_goods",
+          "inventur": "stocktake",
+          "retoure": "return",
+          "fremdsystem": "external_system",
+          "sonstiges": "other"
+        },
+        "warnings[].code": {
+          "nicht_registriert": "gtin_not_registered",
+          "ausland_nicht_meldepflichtig": "foreign_not_reportable",
+          "stammdaten_fehlen": "master_data_missing",
+          "menge_negativ": "negative_quantity",
+          "posten_ungueltig": "invalid_posting"
+        },
+        "warnings[].column": {
+          "inland": "domestic",
+          "ausland": "foreign"
+        }
+      }
+    },
     "setMyCashregisterPfand": {
       "params": {
         "deposit": {
@@ -8401,6 +8658,100 @@
       "fehler": {
         "nachrichtWoerter": {
           "standortId": "stockLocationId"
+        }
+      }
+    },
+    "setMyEwpZusatzmengen": {
+      "params": {
+        "month": "monat",
+        "extraQuantities": [
+          {
+            "__": "zusaetze",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "reason": "grund",
+            "at": "am",
+            "by": "von"
+          }
+        ]
+      },
+      "paramWerte": {
+        "extraQuantities[].reason": {
+          "haustrunk": "own_consumption",
+          "sampling": "sampling",
+          "spende": "donation",
+          "diebstahl": "theft",
+          "naturalrabatt": "free_goods",
+          "inventur": "stocktake",
+          "retoure": "return",
+          "fremdsystem": "external_system",
+          "sonstiges": "other"
+        }
+      },
+      "data": {
+        "month": "monat",
+        "dueDate": "faelligAm",
+        "provisional": "vorlaeufig",
+        "downloadedAt": "heruntergeladenAm",
+        "lines": [
+          {
+            "__": "zeilen",
+            "masterData": "stammdaten",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "sources": {
+              "__": "quellen",
+              "register": "kasse",
+              "invoices": "rechnung",
+              "deliveryNotes": "lieferschein",
+              "extra": "zusatz"
+            }
+          }
+        ],
+        "warnings": [
+          {
+            "__": "warnungen",
+            "fields": "felder",
+            "country": "land",
+            "quantity": "stk",
+            "count": "anzahl",
+            "column": "spalte",
+            "amount": "menge"
+          }
+        ],
+        "extraQuantities": [
+          {
+            "__": "zusaetze",
+            "domestic": "inland",
+            "foreign": "ausland",
+            "reason": "grund",
+            "at": "am",
+            "by": "von"
+          }
+        ]
+      },
+      "werte": {
+        "extraQuantities[].reason": {
+          "haustrunk": "own_consumption",
+          "sampling": "sampling",
+          "spende": "donation",
+          "diebstahl": "theft",
+          "naturalrabatt": "free_goods",
+          "inventur": "stocktake",
+          "retoure": "return",
+          "fremdsystem": "external_system",
+          "sonstiges": "other"
+        },
+        "warnings[].code": {
+          "nicht_registriert": "gtin_not_registered",
+          "ausland_nicht_meldepflichtig": "foreign_not_reportable",
+          "stammdaten_fehlen": "master_data_missing",
+          "menge_negativ": "negative_quantity",
+          "posten_ungueltig": "invalid_posting"
+        },
+        "warnings[].column": {
+          "inland": "domestic",
+          "ausland": "foreign"
         }
       }
     },
@@ -9330,6 +9681,7 @@
           "pfandart_unbekannt": "deposit_type_not_found",
           "pfand_vom_server": "deposit_set_by_server",
           "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_veraltet": "deposit_outdated",
           "pfand_ruecknahme_aus": "deposit_return_not_offered",
           "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
           "pfand_folgt_position": "deposit_follows_item",
@@ -9674,6 +10026,7 @@
           "pfandart_unbekannt": "deposit_type_not_found",
           "pfand_vom_server": "deposit_set_by_server",
           "pfand_menge_ungueltig": "invalid_deposit_quantity",
+          "pfand_veraltet": "deposit_outdated",
           "pfand_ruecknahme_aus": "deposit_return_not_offered",
           "pfandart_nicht_ausgegeben": "deposit_type_not_issued",
           "pfand_folgt_position": "deposit_follows_item",

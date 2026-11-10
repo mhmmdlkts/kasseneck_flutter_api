@@ -28,6 +28,7 @@ import 'src/kasse/belege.dart' show CancelReceiptResult, CancellationItem;
 import 'src/kasse/beleg_ausgaben.dart' show LogReceiptOutputsResult, ReceiptOutputEntry, ausgabenGemeldet, ausgabenNutzlast;
 import 'src/kasse/belegmail.dart' show SendReceiptEmailResult;
 import 'src/kasse/gutschein_wunsch.dart';
+import 'src/ewp.dart';
 import 'src/kasse/pfand.dart' show DepositSettings;
 import 'src/receipt/codes.dart' show receiptEmailErrorCodes, receiptOutputErrorCodes;
 import 'src/dep/nachschau.dart';
@@ -112,6 +113,19 @@ export 'src/terminal/zugang.dart'
         terminalSetupStates;
 // Pfandarten des Betriebs (KasseneckApi.listDepositTypes).
 export 'src/kasse/pfand.dart' show DepositAmount, DepositSettings, DepositType;
+// EWP-Meldung (KasseneckApi.getEwpReport, downloadEwpReport, setEwpExtraQuantities).
+export 'src/ewp.dart'
+    show
+        EwpExtraQuantity,
+        EwpExtraQuantityInput,
+        EwpLine,
+        EwpLineSources,
+        EwpMasterData,
+        EwpReport,
+        EwpReportFile,
+        EwpWarning,
+        ewpReasons,
+        ewpWarningCodes;
 // Belege auflisten (KasseneckApi.listReceipts): Seite, Zeile, Tagessumme und
 // Grenzen. Storno-Stand und Bediener der Zeile sind dieselben Typen wie in der
 // Belegliste der Kasse (pos.dart), damit beide Listen gleich lesbar sind.
@@ -225,7 +239,10 @@ export 'widgets/keck_receipt_sheet_widget.dart' show KeckReceiptSheetWidget;
 ///
 /// Create one instance with your [apiKey] and [cashregisterToken] (request both
 /// from Kreiseck — office@kreiseck.com), then issue receipts, take card
-/// payments, print and pull reports through it.
+/// payments, print and pull reports through it. Without a cash register, the
+/// [apiKey] alone is enough for the calls that belong to the business and not
+/// to a register ([listDepositTypes], [getEwpReport], [downloadEwpReport],
+/// [setEwpExtraQuantities]); leave [cashregisterToken] out then.
 ///
 /// ```dart
 /// final kasseneck = KasseneckApi(apiKey: '…', cashregisterToken: '…');
@@ -233,6 +250,10 @@ export 'widgets/keck_receipt_sheet_widget.dart' show KeckReceiptSheetWidget;
 ///   payments: const [KeckPaymentInput(method: KeckPaymentMethod.cash, amountCents: 320)],
 ///   items: [KasseneckItem(name: 'Coffee', quantity: 1, vat: VatRate.vat20, priceCents: 320)],
 /// );
+///
+/// // Only an API key, no register: business-level calls such as the deposit report.
+/// final business = KasseneckApi(apiKey: '…');
+/// final report = await business.getEwpReport(month: '2026-11');
 /// ```
 class KasseneckApi {
   /// Die oeffentliche Basis: alle Aufrufe dieses Clients sind oeffentlich,
@@ -245,7 +266,14 @@ class KasseneckApi {
   static const Set<String> _nurKassenweg = {Aufrufe.logReceiptOutputs};
   static final String downloadBaseUrl = 'https://beleg.kasseneck.at';
   final String apiKey;
-  final String cashregisterToken;
+
+  /// Kassen-Token der Kasse, an der gearbeitet wird (`cb_<env>_<...>`). Optional:
+  /// Aufrufe, die dem Betrieb statt einer Kasse gelten, brauchen ihn nicht
+  /// ([listDepositTypes], [getEwpReport], [downloadEwpReport],
+  /// [setEwpExtraQuantities]); ohne Token geht die Kopfzeile `cashregister-token`
+  /// nicht mit. Ein Aufruf, der eine Kasse braucht, antwortet ohne Token mit
+  /// `cashregister_token_missing`.
+  final String? cashregisterToken;
   final ReceiptPrintType? printType;
   String? printerAddress;
 
@@ -261,7 +289,7 @@ class KasseneckApi {
 
   KasseneckApi({
     required this.apiKey,
-    required this.cashregisterToken,
+    String? cashregisterToken,
     this.printType,
     http.Client? httpClient,
     this.readTimeout = const Duration(seconds: 30),
@@ -269,8 +297,19 @@ class KasseneckApi {
     this.signatureTimeout = const Duration(seconds: 90),
     String? clientHeader,
     bool omitKasseneckHeaders = false,
-  })  : _http = httpClient ?? http.Client(),
+  })  : cashregisterToken = _kassenToken(cashregisterToken),
+        _http = httpClient ?? http.Client(),
         _kopf = V3Headers('KasseneckApi', clientHeader: clientHeader, omit: omitKasseneckHeaders);
+
+  /// Ein leerer Text oder nur Leerraum waere ein Fehler beim Einrichten, kein
+  /// Token: er wirft sofort ([ArgumentError], ohne den Wert zu nennen), wie
+  /// `apiKeyAuth` im npm-Paket. `null` heisst: keine Kasse.
+  static String? _kassenToken(String? token) {
+    if (token != null && token.trim().isEmpty) {
+      throw ArgumentError('cashregisterToken ist leer', 'cashregisterToken');
+    }
+    return token;
+  }
 
   /// Kasseneck-Kopfzeilen der Anfragen ([clientHeader] nennt die App in der
   /// Zaehlung des Backends, Vorgabe `kasseneck_api/<version>`).
@@ -312,7 +351,7 @@ class KasseneckApi {
       name: name,
       headers: {
         'Authorization': 'Bearer $apiKey',
-        'cashregister-token': cashregisterToken,
+        'cashregister-token': ?cashregisterToken,
         'Content-Type': 'application/json',
       },
       kasseneck: _kopf,
@@ -1123,9 +1162,8 @@ class KasseneckApi {
   }
 
   /// Die Pfandarten und Pfand-Einstellungen des Betriebs (`listDepositTypes`),
-  /// gelesen mit dem API-Schluessel; ohne Parameter. Wie beim npm-Paket
-  /// verlangt der Client auch hier den Kassen-Token, der Server prueft ihn fuer
-  /// diesen Aufruf nicht.
+  /// gelesen mit dem API-Schluessel; ohne Parameter. Der Aufruf braucht keinen
+  /// Kassen-Token: ohne [cashregisterToken] geht die Kopfzeile nicht mit.
   ///
   /// `null`, wenn der Betrieb Pfand nicht eingeschaltet hat. Eine Antwort ohne
   /// lesbaren Pfand-Block ist ein [KasseneckValidationError] (`kind: response`).
@@ -1141,6 +1179,54 @@ class KasseneckApi {
       throw const KasseneckValidationError(name, 'Antwort ohne lesbaren Pfand-Block (deposit)', 'response');
     }
     return pfand;
+  }
+
+  /// Die EWP-Meldung (Einwegpfand-Meldung) des Monats [month] (`JJJJ-MM`):
+  /// Zeilen je GTIN mit Mengen im Inland und Ausland, Warnungen und die
+  /// Zusatzmengen (`getEwpReport`, nur /v3, mit dem API-Schluessel, nur fuer
+  /// Betriebe mit der Rolle Abfueller, ohne Kassen-Token).
+  ///
+  /// Ein leerer [month] wirft vor dem Senden ein [KasseneckValidationError]
+  /// (`kind: request`), eine Antwort, die keine Meldung ist, eines mit
+  /// `kind: response`. Der Aufruf ist wiederholbar, kein Fall fuer
+  /// "Ausgang unklar".
+  Future<EwpReport> getEwpReport({required String month}) async {
+    const name = Aufrufe.getEwpReport;
+    final m = ewpMonat(name, month);
+    return EwpReport.fromJson(name, await _ewpDaten(name, {'month': m}));
+  }
+
+  /// Die CSV der EWP-Meldung fuer den Upload beim Pfandsystem (`getEwpReport`
+  /// mit `format: 'csv'`). Ein abgeschlossener Monat gilt danach als
+  /// heruntergeladen ([EwpReport.downloadedAt]).
+  Future<EwpReportFile> downloadEwpReport({required String month}) async {
+    const name = Aufrufe.getEwpReport;
+    final m = ewpMonat('downloadEwpReport', month);
+    return EwpReportFile.fromJson('downloadEwpReport', await _ewpDaten(name, {'month': m, 'format': 'csv'}));
+  }
+
+  /// Ersetzt die Zusatzmengen des Monats [month] (Haustrunk, Muster, Spende ...,
+  /// `setEwpExtraQuantities`): die gesendete Liste ist die ganze Liste, eine
+  /// leere leert sie. Unveraenderte Eintraege behalten `at` und `by`. Die
+  /// Antwort ist die neu gerechnete Meldung.
+  Future<EwpReport> setEwpExtraQuantities({
+    required String month,
+    required List<EwpExtraQuantityInput> extraQuantities,
+  }) async {
+    const name = Aufrufe.setEwpExtraQuantities;
+    final m = ewpMonat(name, month);
+    return EwpReport.fromJson(name, await _ewpDaten(name, {
+      'month': m,
+      'extraQuantities': [for (final e in extraQuantities) e.toJson()],
+    }));
+  }
+
+  /// Das `data` einer erfolgreichen EWP-Antwort, roh: ob es eine Meldung ist,
+  /// entscheidet der Leser (sonst `kind: response`, nie ein `TypeError`).
+  Future<Object?> _ewpDaten(String name, Map<String, dynamic> params) async {
+    final resJson = await _kasseneckJson(endpoint: name, params: params);
+    if (resJson['status'] != 'success') throw envelopeError(name, resJson);
+    return resJson['data'];
   }
 
   Future<ReceiptListPage<T>> _belegSeite<T>(
@@ -1613,7 +1699,8 @@ class KasseneckApi {
         Aufrufe.stripeCaptureIntent, () => StripeUrlSession.fromJson(resJson['data'] as Map<String, dynamic>));
   }
 
-  /// Die Kassen-ID, gelesen aus [cashregisterToken].
+  /// Die Kassen-ID, gelesen aus [cashregisterToken]; ohne Token (Client ohne
+  /// Kasse) wirft sie eine [FormatException].
   ///
   /// Liest dieselben Formate wie `cashboxIdFromToken` im Backend
   /// (`functions/gemeinsam/keys.js`):
@@ -1628,7 +1715,9 @@ class KasseneckApi {
     // Praefix cb_live_/cb_test_ abtrennen; base64.normalize gleicht das
     // base64url-Alphabet an und ergaenzt fehlendes Padding.
     final praefix = RegExp(r'^cb_(live|test)_', caseSensitive: false);
-    final rumpf = cashregisterToken.replaceFirst(praefix, '');
+    final token = cashregisterToken;
+    if (token == null) throw const FormatException('cashregisterToken fehlt');
+    final rumpf = token.replaceFirst(praefix, '');
     final decoded = utf8.decode(base64.decode(base64.normalize(rumpf)));
     return decoded.split(':').first;
   }

@@ -58,6 +58,11 @@ List<InvoiceNotice> _hinweise(Map<String, dynamic> j) {
   ];
 }
 
+InvoiceItemDepositInput? _depositEingabe(Map<String, dynamic> j) {
+  final roh = _objektOderNull(j, 'deposit');
+  return roh == null ? null : InvoiceItemDepositInput.fromJson(roh);
+}
+
 void _setzen(Map<String, dynamic> ziel, String feld, Object? wert) {
   if (wert != null) ziel[feld] = wert;
 }
@@ -288,6 +293,75 @@ class _SummenPosition implements TotalsItem {
   num get priceInCents => unitPriceCents ?? (unitPriceMicros ?? 0) / 10000;
 }
 
+/// Pfandangabe an einer Position (`deposit`): die Position ist eine Pfandzeile
+/// zu der Position [depositFor] derselben Anfrage. Die Pfandarten des Betriebs
+/// liefert `KasseneckApi.listDepositTypes`. Ohne eingeschaltetes Pfand antwortet
+/// der Server mit `deposit_not_enabled`; zu einer Position mit `articleId`
+/// leitet er das Pfand selbst ab (`deposit_set_by_server`).
+class InvoiceItemDepositInput {
+  const InvoiceItemDepositInput({
+    required this.depositTypeId,
+    required this.depositFor,
+    this.gtin,
+    this.ownFilling,
+  });
+
+  factory InvoiceItemDepositInput.fromJson(Map<String, dynamic> j) => InvoiceItemDepositInput(
+        depositTypeId: _pflicht<String>(j, 'depositTypeId'),
+        depositFor: _pflicht<int>(j, 'depositFor'),
+        gtin: _text(j, 'gtin'),
+        ownFilling: j['ownFilling'] is bool ? j['ownFilling'] as bool : null,
+      );
+
+  /// Kennung der Pfandart (`DepositType.id`).
+  final String depositTypeId;
+
+  /// Index der Position in `items`, zu der dieses Pfand gehoert (0 bis 499).
+  final int depositFor;
+
+  /// GTIN der Verpackung, 8 bis 14 Ziffern (fuer die EWP-Meldung). Die Form
+  /// prueft der Server (`validation` mit Feldpfad).
+  final String? gtin;
+
+  /// Eigene Abfuellung (Mehrweg des Betriebs selbst).
+  final bool? ownFilling;
+
+  Map<String, dynamic> toJson() {
+    final j = <String, dynamic>{'depositTypeId': depositTypeId, 'depositFor': depositFor};
+    _setzen(j, 'gtin', gtin);
+    _setzen(j, 'ownFilling', ownFilling);
+    return j;
+  }
+}
+
+/// Die Pfandangabe einer gespeicherten Position (`getInvoice`): wie gesendet,
+/// dazu die Art der Pfandart, die der Server setzt.
+class InvoiceItemDeposit {
+  const InvoiceItemDeposit({
+    required this.depositTypeId,
+    required this.depositKind,
+    required this.depositFor,
+    this.gtin,
+    this.ownFilling,
+  });
+
+  factory InvoiceItemDeposit.fromJson(Map<String, dynamic> j) => InvoiceItemDeposit(
+        depositTypeId: _pflicht<String>(j, 'depositTypeId'),
+        depositKind: _pflicht<String>(j, 'depositKind'),
+        depositFor: _pflicht<int>(j, 'depositFor'),
+        gtin: _text(j, 'gtin'),
+        ownFilling: j['ownFilling'] is bool ? j['ownFilling'] as bool : null,
+      );
+
+  final String depositTypeId;
+
+  /// `single_use` oder `reusable` (`depositKinds`), vom Server aus der Pfandart gesetzt.
+  final String depositKind;
+  final int depositFor;
+  final String? gtin;
+  final bool? ownFilling;
+}
+
 class InvoiceItemInput implements TotalsItem {
   /// Genau eines von [unitPriceCents] und [unitPriceMicros] (§ 9.1). Der
   /// `assert` fängt den Irrtum schon im Debug-Lauf; der Server weist ihn sonst
@@ -408,6 +482,7 @@ class IssueInvoiceItemInput extends InvoiceItemInput {
     super.discountPct,
     super.articleId,
     this.reservationId,
+    this.deposit,
   });
 
   factory IssueInvoiceItemInput.fromJson(Map<String, dynamic> j) {
@@ -424,6 +499,7 @@ class IssueInvoiceItemInput extends InvoiceItemInput {
       discountPct: p.discountPct,
       articleId: p.articleId,
       reservationId: _text(j, 'reservationId'),
+      deposit: _depositEingabe(j),
     );
   }
 
@@ -435,10 +511,14 @@ class IssueInvoiceItemInput extends InvoiceItemInput {
   /// der Standard-Standort). Weniger verkauft als reserviert gibt den Rest frei.
   final String? reservationId;
 
+  /// Diese Position ist eine Pfandzeile ([InvoiceItemDepositInput]).
+  final InvoiceItemDepositInput? deposit;
+
   @override
   Map<String, dynamic> toJson() {
     final j = super.toJson();
     _setzen(j, 'reservationId', reservationId);
+    _setzen(j, 'deposit', deposit?.toJson());
     return j;
   }
 }
@@ -461,6 +541,7 @@ class CreditNoteItemInput extends InvoiceItemInput {
     super.discountPct,
     super.articleId,
     this.returnDisposition,
+    this.deposit,
   });
 
   factory CreditNoteItemInput.fromJson(Map<String, dynamic> j) {
@@ -477,6 +558,7 @@ class CreditNoteItemInput extends InvoiceItemInput {
       discountPct: p.discountPct,
       articleId: p.articleId,
       returnDisposition: _text(j, 'returnDisposition'),
+      deposit: _depositEingabe(j),
     );
   }
 
@@ -487,10 +569,14 @@ class CreditNoteItemInput extends InvoiceItemInput {
   /// `validation` mit Feldpfad zurückkommt.
   final String? returnDisposition;
 
+  /// Diese Position ist eine Pfandzeile ([InvoiceItemDepositInput]).
+  final InvoiceItemDepositInput? deposit;
+
   @override
   Map<String, dynamic> toJson() {
     final j = super.toJson();
     _setzen(j, 'returnDisposition', returnDisposition);
+    _setzen(j, 'deposit', deposit?.toJson());
     return j;
   }
 }
@@ -894,6 +980,7 @@ class InvoiceItem {
     this.unitPriceMicros,
     this.subtitle = '',
     this.discountPct = 0,
+    this.deposit,
   });
 
   factory InvoiceItem.fromJson(Map<String, dynamic> j) => InvoiceItem(
@@ -906,11 +993,13 @@ class InvoiceItem {
         unitPriceMicros: j['unitPriceMicros'] is num ? j['unitPriceMicros'] as num : null,
         vatRate: _pflicht<num>(j, 'vatRate'),
         discountPct: j['discountPct'] is num ? j['discountPct'] as num : 0,
+        deposit: _objektOderNull(j, 'deposit') == null ? null : InvoiceItemDeposit.fromJson(_objekt(j, 'deposit')),
       );
 
   /// `unitPriceMicros` fehlt beim Altbestand, den der Server nicht darstellen kann.
   static const fields = {
     'description', 'subtitle', 'quantity', 'unit', 'kind', 'unitPriceCents', 'unitPriceMicros', 'vatRate', 'discountPct',
+    'deposit',
   };
 
   final String description;
@@ -936,6 +1025,10 @@ class InvoiceItem {
   final num? unitPriceMicros;
   final num vatRate;
   final num discountPct;
+
+  /// Nur an Pfandzeilen: die Pfandangabe, wie der Server sie fuehrt; an jeder
+  /// anderen Position `null`.
+  final InvoiceItemDeposit? deposit;
 
   /// Der Preis in Cent, gleich welches Feld ihn trägt.
   num get priceInCents => unitPriceMicros != null ? unitPriceMicros! / 10000 : unitPriceCents;

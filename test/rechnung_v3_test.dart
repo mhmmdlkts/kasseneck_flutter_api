@@ -189,8 +189,9 @@ class _Spur extends MapBase<String, dynamic> {
 }
 
 /// Felder, die eine Sicht fuehrt, die aber in einer Antwort fehlen duerfen.
-/// `reservationId` steht nur am Hinweis `reservation_expired` (seit 10.4).
-const _optional = {'unitPriceMicros', 'notice', 'reservationId'};
+/// `reservationId` steht nur am Hinweis `reservation_expired` (seit 10.4),
+/// `deposit` nur an Pfandzeilen (seit 11.27).
+const _optional = {'unitPriceMicros', 'notice', 'reservationId', 'deposit'};
 
 /// Prueft eine Sicht in drei Richtungen: jedes gesendete Feld steht in der
 /// Liste des Modells und in der Antwort fehlt keines der Liste (bis auf

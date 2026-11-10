@@ -140,6 +140,10 @@ const Set<String> _wiederholbar = {
   'requestTerminalCode',
   // Loest nur die feste Zuordnung eines Geraets (npm 1.33.0); nur dem Namen nach bekannt.
   'unfixTerminal',
+  // EWP-Meldung (npm 1.36.0): Lesen vermerkt bei der CSV eines abgeschlossenen Monats nur den Abruf; Setzen ersetzt
+  // die ganze Liste der Zusatzmengen, eine Wiederholung aendert nichts mehr.
+  'getEwpReport',
+  'setEwpExtraQuantities',
 };
 
 const _kennzeichen = {'kasseneck-api-version': 'v3'};

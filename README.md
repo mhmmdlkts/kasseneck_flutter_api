@@ -61,6 +61,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 - [Reports, receipt history, FinanzOnline status](#reports-receipt-history-finanzonline-status)
 - [Card terminal access (managed centrally)](#card-terminal-access-managed-centrally)
 - [Invoices (invoice API)](#invoices-invoice-api)
+- [EWP report (single-use deposit)](#ewp-report-single-use-deposit)
 - [Inventory API](#inventory-api)
 - [RKSV details](#rksv-details)
 - [Glossary](#glossary)
@@ -69,7 +70,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.26.1
+  kasseneck_api: ^11.27.0
 ```
 
 ```bash
@@ -112,6 +113,13 @@ DEP. Models and enums live in their own files; import the ones you need
 
 You need a Kasseneck **API key** and a **cashbox token**. Ask for them via
 [kasseneck.at/kontakt](https://kasseneck.at/kontakt).
+
+Without a register, the API key is enough for the calls that belong to the
+business and not to a register (`listDepositTypes`, `getEwpReport`,
+`downloadEwpReport`, `setEwpExtraQuantities`): leave `cashregisterToken` out and
+the `cashregister-token` header is not sent. A call that needs a register
+answers `cashregister_token_missing`. An empty or blank token throws an
+`ArgumentError` when the client is created.
 
 ## Upgrading from 9.x
 
@@ -263,7 +271,7 @@ payments, you do not need to write any code:
 
 | Client | Import | Credentials | Use it for |
 | --- | --- | --- | --- |
-| `KasseneckApi` | `kasseneck_api.dart` | API key as bearer + `cashregister-token` header, base URL `https://api.kasseneck.at/v3` | POS devices and apps: selling, cancelling, reports, card payments |
+| `KasseneckApi` | `kasseneck_api.dart` | API key as bearer + `cashregister-token` header (the header is optional: without a register only the business-level calls work), base URL `https://api.kasseneck.at/v3` | POS devices and apps: selling, cancelling, reports, card payments |
 | `RegisterClient`, `RegisterReceiptClient` | `register.dart`, `pos.dart` | pairing code, then device secret + PIN, then a Firebase ID token and a register session, base URL `https://kasse.kasseneck.at/api/v3` | Register apps where staff log in personally (permissions per user) |
 | `InvoiceApi` | `invoice.dart` | API key only, no cashbox token, base URL `https://api.kasseneck.at/v3` | Invoices and customers, typically from a server |
 
@@ -1420,6 +1428,49 @@ invoice `cash_receipt_required`. Decide on the code, not the text:
 if (issued.notice.any((n) => n.code == 'cash_receipt_required')) {
   // Cash sale: issue a receipt through the fiscal cash register
 }
+```
+
+### Deposit on invoice positions
+
+A position that carries `deposit` is a deposit line for another position of the
+same request (`depositFor` is its index in `items`). The deposit types of the
+business come from `KasseneckApi.listDepositTypes()`. The type is
+`InvoiceItemDepositInput` on `IssueInvoiceItemInput` and `CreditNoteItemInput`;
+`getInvoice` returns it as `InvoiceItem.deposit` (with `depositKind`, set by the
+server). Errors: `deposit_not_enabled`, `deposit_type_not_found`,
+`deposit_set_by_server`, `invalid_deposit_quantity`, `invalid_deposit`.
+
+```dart
+const items = [
+  IssueInvoiceItemInput(description: 'Mineral water can 0.5 l', quantity: 24, unitPriceCents: 120, vatRate: 20),
+  IssueInvoiceItemInput(
+    description: 'Deposit single-use can',
+    quantity: 24,
+    unitPriceCents: 25,
+    vatRate: 0,
+    deposit: InvoiceItemDepositInput(depositTypeId: 'pf_einweg_dose', depositFor: 0, gtin: '9012345000011'),
+  ),
+];
+```
+
+## EWP report (single-use deposit)
+
+A business with the filler role reports its single-use packaging to the deposit
+system by the 5th of the following month. `KasseneckApi.getEwpReport(month:)`
+returns the report (lines per GTIN, warnings, extra quantities),
+`downloadEwpReport(month:)` the CSV for the upload and
+`setEwpExtraQuantities(month:, extraQuantities:)` replaces the extra quantities
+(own consumption, sampling, donation ...; an empty list clears them). All three
+need only the API key.
+
+```dart
+final business = KasseneckApi(apiKey: 'kr_live_…');
+final report = await business.getEwpReport(month: '2026-11');
+for (final w in report.warnings) {
+  print('${w.code} ${w.gtin ?? ''}');
+}
+final file = await business.downloadEwpReport(month: '2026-11');
+print('${file.filename}: ${file.csv.length} characters');
 ```
 
 ## Inventory API

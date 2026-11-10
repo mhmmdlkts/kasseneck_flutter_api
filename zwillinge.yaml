@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.35.1
+npm_version: 1.36.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -28,6 +28,11 @@ npm_version: 1.35.1
 # zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.36.0: Pfand an Rechnungspositionen (items[].deposit) und die EWP-Meldung
+# (getEwpReport, setEwpExtraQuantities in calls.public); hier gedeckt durch
+# KasseneckApi (Dart 11.27.0), ohne Eintrag hier. Der Kassen-Token ist optional.
+# Die Rechnungstexte fuer Einwegpfand fuehrt nur npm (Katalog invoice-texts.json).
 #
 # Stand 1.35.1: HPS-Zahlweg (Quittung eines Abbruchs entscheidet nichts, TID
 # ohne fuehrende Null, Vertrag hobex-hps-cases.json); Dart 11.26.1. Kein neuer

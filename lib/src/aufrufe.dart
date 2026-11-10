@@ -28,6 +28,7 @@ abstract final class Aufrufe {
   static const getCustomer = 'getCustomer';
   static const getDepExport = 'getDepExport';
   static const getDepExportFile = 'getDepExportFile';
+  static const getEwpReport = 'getEwpReport';
   static const getFirstReceiptDate = 'getFirstReceiptDate';
   static const getInvoice = 'getInvoice';
   static const getInvoicePdf = 'getInvoicePdf';
@@ -56,6 +57,7 @@ abstract final class Aufrufe {
   static const pairRegisterDevice = 'pairRegisterDevice';
   static const registerPinLogin = 'registerPinLogin';
   static const unfixTerminal = 'unfixTerminal';
+  static const setEwpExtraQuantities = 'setEwpExtraQuantities';
   static const registerUserLogin = 'registerUserLogin';
   static const renewRegisterSession = 'renewRegisterSession';
   static const revokeDepHandoverLink = 'revokeDepHandoverLink';
@@ -174,6 +176,7 @@ abstract final class Aufrufe {
     getCustomer,
     getDepExport,
     getDepExportFile,
+    getEwpReport,
     getFirstReceiptDate,
     getInvoice,
     getInvoicePdf,
@@ -202,6 +205,7 @@ abstract final class Aufrufe {
     pairRegisterDevice,
     registerPinLogin,
     unfixTerminal,
+    setEwpExtraQuantities,
     registerUserLogin,
     renewRegisterSession,
     revokeDepHandoverLink,

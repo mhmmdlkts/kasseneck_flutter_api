@@ -43,6 +43,13 @@ final _strukturKasse = ((_tabelle['structure'] as Map)['pos-texts.json'] as Map)
 /// die der Schicht (`shift.*`, `cash_movement.*`, `drawer.*`, `shift_receipt.*`),
 /// dazu die Verfeinerungen der Fehlerregeln als eigene Dateischluessel neben
 /// `errorRules` und seit 1.3.0 die Beschriftung je Rueckgabe-Wahl.
+/// Rechnungstexte ohne 0.x-Vorgaenger: Pfand auf der Rechnung (npm 1.36.0, Wortlaut wie
+/// `ZUSATZ_TEXTE` im Backend).
+const _rechnungsTexteNach10 = {
+  'pdf.totals.single_use_deposit', 'pdf.totals.head_rate', 'pdf.totals.head_net', 'pdf.totals.head_vat',
+  'einvoice.exemption.single_use_deposit',
+};
+
 const _nach10 = (
   messages: {
     'network.outcome_unknown', 'server.connection_disturbed', 'server.response_unreadable',
@@ -425,7 +432,9 @@ void main() {
         final alt = ((_altRechnung['texte'] as Map)[sprache] as Map).cast<String, dynamic>();
         final neu = ((_neuRechnung['texts'] as Map)[sprache] as Map).cast<String, dynamic>();
         expect(_texteRechnung.keys.toSet(), alt.keys.toSet(), reason: sprache);
-        expect(_texteRechnung.values.toSet(), neu.keys.toSet(), reason: sprache);
+        expect(_texteRechnung.values.toSet(), neu.keys.toSet().difference(_rechnungsTexteNach10), reason: sprache);
+        expect(neu.keys.toSet(), containsAll(_rechnungsTexteNach10), reason: sprache);
+        expect(_texteRechnung.values.toSet().intersection(_rechnungsTexteNach10), isEmpty, reason: sprache);
       }
       // Schreibweise wie npm: jeder Teil klein mit Unterstrich, nur
       // Laendercodes gross (`country.AT`).
