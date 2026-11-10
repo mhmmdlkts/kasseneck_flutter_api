@@ -1,3 +1,13 @@
+## 11.26.0 (2026-11-10)
+
+Twin of `@kreiseck/kasseneck-api` `1.35.0`: printer catalog for setting up a receipt printer through Kasseneck Connect with one click (`package:kasseneck_api/pos.dart`). Additive.
+
+- `printerCatalogEntry(String? model)` returns the approved catalog entry for a model name as Connect reports it (mDNS, `GS I`), or `null` for an unknown model; `printerCatalogSettings(entry)` returns the device settings it proposes as `PrinterCatalogSettings` (`PosPaperSize`, `PosCodePage`, `PosCut`, `PosQrMode`, `drawerEnabled`), with `toJson()` as a patch for `saveDevice`. Reason: the Kassen-App gets the same catalog as the browser till, offline and versioned with the package.
+- Only approved entries count; an entry that is not approved behaves like an unknown model. The starting stock (six Epson models) waits for the device test, so `printerCatalogEntry` answers `null` for every model in this version.
+- Model names are normalized exactly as in npm: `a-z` to upper case (ASCII only), every run of other characters than `A-Z`/`0-9` becomes one `-`, and one leading manufacturer of the catalog (`EPSON-`) is dropped. Separators stay, because `TM-T20II-i` and `TM-T88V-i` are models of their own.
+- The value types are the existing enums of the device settings; their `value` is the only mapping to the contract names. `cut` is `partial` or `none`, `qrMode` `escpos` or `raster`, `charsPerLine` must match the paper size. A catalog that breaks a rule fails in the tests (`printer-catalog.json`, same cases as npm), never silently at run time.
+- Contract pulled from npm `1.35.0` (local tarball until the npm release; `tool/zwillinge.sh pruefen` against the registry follows the release).
+
 ## 11.25.0 (2026-11-09)
 
 Twin of `@kreiseck/kasseneck-api` `1.34.0` (gap): `KasseneckApi.listDepositTypes()` reads the deposit settings and deposit types of the business with the API key (`Future<DepositSettings?>`), next to `listReceipts`. Additive.

@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.34.0
+npm_version: 1.35.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -28,6 +28,10 @@ npm_version: 1.34.0
 # zusammen), `enums.<feld>.<wert>`, `posShortcutActions.<aktion>`,
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
+#
+# Stand 1.35.0: Druckerkatalog (printerCatalogEntry, printerCatalogSettings,
+# Vertrag printer-catalog.json); Dart 11.26.0. Kein neuer Aufruf und keine neue
+# Liste in surface.json; die Pruefaelle rechnet test/drucker_katalog_test.dart.
 #
 # Stand 1.31.0: Fremdgutscheine an der Kasse (PosArticle.externalVoucher,
 # checkExternalVoucherArticle, externalVoucherTileBlock, Zusatz-Grund
