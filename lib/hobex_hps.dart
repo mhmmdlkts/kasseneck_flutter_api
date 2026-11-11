@@ -37,7 +37,13 @@ export 'src/hobex_hps/exceptions.dart'
     show HpsException, HpsHttpException, HpsConnectionException;
 export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
 export 'src/hobex_hps/hps_result.dart' show HpsResult;
-export 'src/hobex_hps/hps_payments.dart' show HpsPayments;
+export 'src/hobex_hps/hps_payments.dart'
+    show
+        HpsPayments,
+        HpsClarifyPrevious,
+        HpsClarifyUnresolved,
+        HpsClarifyBeforeResolve,
+        HpsClarifyUnknown;
 // Die Adresssuche steht bewusst im selben Einstiegspunkt: wer ein Terminal
 // ansprechen will, braucht zuerst dessen Adresse, und ein zweiter Import
 // dafuer waere eine Huerde ohne Nutzen.

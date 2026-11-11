@@ -42,7 +42,7 @@ final Set<String> woerter = _liste('''
   byte bytes cache call calls can cancel canceled cancellation cancellations
   cap capability capture card carried cart cash cashbox cashregister cashregisters catalog
   categories category cause causes cent center cents certificate change changed changes char
-  charge chars charset check checked checker checkout chinese chip chips choices city
+  charge chars charset check checked checker checkout chinese chip chips choices city clarified clarify
   clear cleared client clock clone close cloud code codes color colors column
   columns combination commands communication company compare complete
   completion compute conclusive concurrency condition conditions conflict connect

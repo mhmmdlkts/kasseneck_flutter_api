@@ -70,7 +70,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.27.0
+  kasseneck_api: ^11.28.0
 ```
 
 ```bash
@@ -888,9 +888,13 @@ await kasseneck.sellReceipt(
 );
 ```
 
-`hps.refund(...)` and `hps.cancel(...)` return the same resolved outcome. An
-`HpsObserver` passed to `HpsPayments` (`observer:`) logs requests, failures and
-how an outcome was resolved.
+`hps.refund(...)` and `hps.cancel(...)` return the same resolved outcome.
+`hps.clarifyPayment(transactionId: ..., previous: ...)` asks the terminal
+later about a payment whose outcome stayed open: it only reads the status
+(no abort, no reversal) and decides only what the previous clarification
+(`HpsClarifyPrevious`) still allows. An `HpsObserver` passed to
+`HpsPayments` (`observer:`) logs requests, failures and how an outcome was
+resolved.
 
 To find a terminal in the local network:
 

@@ -411,6 +411,260 @@ class HpsPayments {
     return _resolveCancel(transactionId, steps, antwort: res);
   }
 
+  /// Fragt den Ausgang einer Zahlung SPAETER noch einmal ab -- etwa wenn der
+  /// Kassier eine unklare Karte klaert. Liest nur: kein Abbruch, kein Storno,
+  /// kein neuer Vorgang. Das Ergebnis hat dieselbe Form wie das von [pay].
+  ///
+  /// [transactionId] ist die Kennung der Zahlung aus [pay] -- keine
+  /// Gutschrift, keine Aufhebung. [previous] ist, was ueber die bisherige
+  /// Klaerung dieser Zahlung feststeht ([HpsClarifyPrevious]).
+  ///
+  /// Entschieden wird nur, was nach [previous] feststeht ([_nachfrageRegel]):
+  ///
+  /// | bisher | `'0'` | `9011` | andere Ablehnung |
+  /// |---|---|---|---|
+  /// | [HpsClarifyPrevious.beforeResolve], oder offen ohne Stoerung beim Host | approved | declined | declined |
+  /// | Stoerung beim Host, Storno sicher versucht ([HpsCodeReason.hostFault], [HpsCodeReason.hostTimeout]) | offen | declined | offen |
+  /// | andere Stoerung beim Host | offen | offen | offen |
+  /// | [HpsClarifyPrevious.unknown], auch das Ergebnis einer frueheren Nachfrage ([HpsResult.clarified]) | offen | offen | offen |
+  ///
+  /// Nach einer Stoerung beim Host kann die Klaerung von [pay] ein Storno
+  /// nachgeschickt haben -- auch wenn der erste Code keines verlangte, denn
+  /// ein spaeterer Status kann es noch ausloesen. Ein `'0'` beweist dann
+  /// nichts (siehe Klassendoku, "Storno nach ausbleibender Host-Antwort").
+  /// `9011` (aufgehoben) heisst nur dann sicher "nichts belastet", wenn ein
+  /// Storno sicher versucht wurde -- wie in der Klaerung von [pay]. `9027`
+  /// bleibt hier immer ohne Aussage: die Zwei-`9027`-Regel braucht die
+  /// Antwort auf die Zahlung selbst. Meldet der Status selbst eine Stoerung
+  /// beim Host, entscheidet danach nur noch `'0'`.
+  ///
+  /// Sagt der Status zweimal in Folge nichts, endet die Nachfrage sofort als
+  /// [CardPaymentOutcome.unresolved] -- die Zahlung ist laengst beendet, das
+  /// Terminal wird es auch spaeter nicht wissen. Budget: ein Sechstel von
+  /// [resolveBudget] ([_clarifyBudget], bei der Vorgabe 15 s).
+  ///
+  /// Jedes Ergebnis traegt [HpsResult.clarified]: es ist keine Vorgeschichte
+  /// fuer eine weitere Nachfrage, sein Grund stammt aus der Nachfrage, nicht
+  /// aus der Zahlung.
+  ///
+  /// Wirft wie [pay] nur [ArgumentError]: die Kennung ist keine gueltige
+  /// HPS-Kennung, geprueft BEVOR etwas hinausgeht. Alles andere endet in
+  /// einem Ergebnis mit Kennung.
+  Future<HpsResult> clarifyPayment({
+    required String transactionId,
+    required HpsClarifyPrevious previous,
+  }) async {
+    final id = transactionId;
+    final regel = _nachfrageRegel(previous);
+    final vorherGrund = switch (previous) {
+      HpsClarifyUnresolved(:final reason) => reason,
+      HpsClarifyBeforeResolve() || HpsClarifyUnknown() => null,
+    };
+    final vorherGestoert = vorherGrund?.hostUncertain ?? false;
+    final steps = <String>[_nachfrageAnfang(previous, regel)];
+    _emit(HpsEventKind.resolving, steps.first, id);
+
+    final clock = _clock()..start();
+    final budget = _clarifyBudget;
+    var wait = Duration.zero;
+    var transportFailures = 0;
+    var ohneAussage = 0;
+    // Die erste Stoerung beim Host, die der Status in DIESER Nachfrage meldet.
+    TransactionResponse? stoerung;
+    TransactionResponse? letzteAntwort;
+
+    // Ein schluessiger Code, der hier nicht entscheiden durfte (`'0'`,
+    // `9011`, eine Ablehnung), erklaert den offenen Ausgang nicht -- sonst
+    // stuende etwa "genehmigt" als Grund an einem offenen Ergebnis
+    // (Geraetetest 11.11.2026, Vorgeschichte unbekannt).
+    HpsResult offen() {
+      final antwort = letzteAntwort;
+      final erklaerend =
+          antwort != null && !antwort.isConclusiveAsStatus ? antwort : null;
+      return _alsNachfrage(_open(
+        id,
+        steps,
+        letzteAntwort,
+        vorherGrund ?? _offenerGrund(stoerung, erklaerend),
+      ));
+    }
+
+    /// Warum eine Antwort, die sonst entschiede, hier nichts sagt.
+    String vorbehalt() {
+      if (previous is HpsClarifyUnknown) {
+        return 'der bisherige Klaerweg ist nicht bekannt, ein Storno kann '
+            'nachgeschickt sein';
+      }
+      if (vorherGestoert) {
+        return 'nach der Stoerung beim hobex-Host (${vorherGrund!.name}) kann '
+            'ein Storno nachgeschickt sein';
+      }
+      return 'das Terminal meldet eine Stoerung beim hobex-Host';
+    }
+
+    while (clock.elapsed < budget) {
+      if (wait > Duration.zero) {
+        final left = budget - clock.elapsed;
+        await _sleep(wait < left ? wait : left);
+        if (clock.elapsed >= budget) break;
+      }
+
+      TransactionResponse status;
+      try {
+        status = await _withinBudget(
+          clock,
+          () => _client.transactionStatus(transactionId: id),
+          budget: budget,
+        );
+        transportFailures = 0;
+        letzteAntwort = status;
+      } on ArgumentError {
+        // Wie bei [pay]: die Laengenpruefung der Kennung schlaegt zu, BEVOR
+        // etwas gesendet wurde -- ein Aufruffehler, kein offener Ausgang.
+        rethrow;
+      } catch (e) {
+        transportFailures++;
+        steps.add('Statusabfrage gescheitert ($transportFailures): $e');
+        _noteUnexpected(e, id);
+        if (transportFailures >= maxTransportFailures) {
+          steps.add('Terminal antwortet nicht -- Ausgang bleibt offen');
+          return offen();
+        }
+        wait = _nextWait(wait);
+        continue;
+      }
+
+      if (status.isHostUncertain) stoerung ??= status;
+      // Wie in [_resolve]: nach einer Stoerung beim Host -- vorher oder jetzt
+      // gemeldet -- entscheidet hoechstens noch die Genehmigung.
+      final gestoert = vorherGestoert || stoerung != null;
+
+      if (status.isApproved) {
+        if (regel.genehmigt) {
+          final settled = _fromResponse(status, id, steps);
+          if (settled != null) return _alsNachfrage(settled);
+        }
+        steps.add('Status: genehmigt (${status.responseCode}) -- '
+            '${vorbehalt()}, keine Aussage');
+      } else if (status.isCanceled &&
+          regel.aufgehoben &&
+          (vorherGestoert || stoerung == null)) {
+        steps.add('Status: Zahlung aufgehoben '
+            '(${TransactionResponse.transactionCanceledCode}) -- es ist '
+            'nichts belastet');
+        _emit(HpsEventKind.resolved, steps.last, id);
+        return HpsResult(
+          outcome: CardPaymentOutcome.declined,
+          transactionId: id,
+          response: status,
+          reason: HpsCodeReason.canceled,
+          steps: List<String>.unmodifiable(steps),
+          clarified: true,
+        );
+      } else if (regel.abgelehnt && !gestoert && status.isConclusiveAsStatus) {
+        final settled = _fromResponse(status, id, steps);
+        if (settled != null) return _alsNachfrage(settled);
+      } else if (status.isConclusiveAsStatus) {
+        final info = status.codeInfo!;
+        final was = status.isCanceled ? 'aufgehoben' : 'abgelehnt';
+        steps.add('Status: $was (${info.code} "${info.title}") -- '
+            '${vorbehalt()}, keine Aussage');
+      } else {
+        steps.add(
+            _statusOhneErgebnis(status) ?? 'Status: noch kein Ergebniscode');
+      }
+
+      ohneAussage++;
+      if (ohneAussage >= 2) {
+        steps.add('Statusabfrage zweimal ohne Aussage -- das Terminal kann es '
+            'nicht sagen, Ausgang bleibt offen');
+        return offen();
+      }
+      wait = _nextWait(wait);
+    }
+
+    steps.add('Ausgang bleibt offen');
+    return offen();
+  }
+
+  /// Dasselbe Ergebnis mit der Marke [HpsResult.clarified]: es stammt aus
+  /// einer Nachfrage und taugt nicht als deren Vorgeschichte.
+  static HpsResult _alsNachfrage(HpsResult r) => HpsResult(
+        outcome: r.outcome,
+        transactionId: r.transactionId,
+        response: r.response,
+        lastResponse: r.lastResponse,
+        reason: r.reason,
+        steps: r.steps,
+        clarified: true,
+      );
+
+  /// Teiler fuer das Budget von [clarifyPayment].
+  static const int _clarifyBudgetDivisor = 6;
+
+  /// Wie lange eine spaete Nachfrage hoechstens laeuft: ein Sechstel des
+  /// [resolveBudget], bei der Vorgabe 15 s. Die Zahlung ist laengst beendet;
+  /// was das Terminal nicht in zwei Abfragen sagt, sagt es auch spaeter nicht.
+  Duration get _clarifyBudget => resolveBudget ~/ _clarifyBudgetDivisor;
+
+  /// `true`, wenn die Klaerung von [pay] bei diesem Grund sicher ein Storno
+  /// versucht hat: der Grund kommt von der ersten Stoerung beim Host
+  /// ([_offenerGrund]), und JEDER Code mit diesem Grund verlangt ein Storno
+  /// ([HpsCode.sendReversal]). Aus der Tabelle gerechnet, damit ein neuer
+  /// Code ohne Storno die Regel nicht still bricht.
+  static bool _stornoSicherVersucht(HpsCodeReason reason) {
+    final codes = HpsCodes.all.where((c) => c.reason == reason);
+    return codes.isNotEmpty && codes.every((c) => c.sendReversal);
+  }
+
+  /// Siehe Tabelle an [clarifyPayment].
+  static _NachfrageRegel _nachfrageRegel(HpsClarifyPrevious previous) =>
+      switch (previous) {
+        HpsClarifyUnknown() => _NachfrageRegel.nichts,
+        HpsClarifyBeforeResolve() => _NachfrageRegel.alles,
+        HpsClarifyUnresolved(:final reason)
+            when reason != null && reason.hostUncertain =>
+          _NachfrageRegel(
+            genehmigt: false,
+            aufgehoben: _stornoSicherVersucht(reason),
+            abgelehnt: false,
+          ),
+        HpsClarifyUnresolved() => _NachfrageRegel.alles,
+      };
+
+  /// Erster Eintrag im Nachweis einer spaeten Nachfrage: was sie entscheiden
+  /// darf.
+  static String _nachfrageAnfang(
+    HpsClarifyPrevious previous,
+    _NachfrageRegel regel,
+  ) {
+    const anfang = 'Spaete Nachfrage beim Terminal -- nur lesend, ohne '
+        'Abbruch und ohne Storno';
+    switch (previous) {
+      case HpsClarifyUnknown(clarified: true):
+        return '$anfang; als Vorgeschichte kam das Ergebnis einer frueheren '
+            'Nachfrage, nicht das der Zahlung -- der Klaerweg der Zahlung '
+            'bleibt unbekannt, keine Antwort entscheidet';
+      case HpsClarifyUnknown():
+        return '$anfang; der bisherige Klaerweg ist nicht bekannt, keine '
+            'Antwort entscheidet';
+      case HpsClarifyBeforeResolve():
+        return '$anfang; die Klaerung der Zahlung hatte nicht begonnen, es '
+            'wurde kein Storno nachgeschickt';
+      case HpsClarifyUnresolved(:final reason):
+        if (reason != null && reason.hostUncertain) {
+          return regel.aufgehoben
+              ? '$anfang; nach der Stoerung beim hobex-Host (${reason.name}) '
+                  'wurde ein Storno versucht, entscheidet nur "aufgehoben" '
+                  '(${TransactionResponse.transactionCanceledCode})'
+              : '$anfang; nach der Stoerung beim hobex-Host (${reason.name}) '
+                  'entscheidet keine Antwort';
+        }
+        return '$anfang; die Klaerung der Zahlung endete offen ohne Stoerung '
+            'beim hobex-Host';
+    }
+  }
+
   /// Ordnet die DIREKTE Antwort auf einen Aufhebungs-Request ein.
   ///
   /// Fast dasselbe wie [_fromResponse] -- diese Antwort betrifft ja die
@@ -1343,16 +1597,20 @@ class HpsPayments {
   /// sondern durch [HpsClient.timeout] je einzelnem Request.
   ///
   /// [cap] deckelt zusaetzlich, wenn ein einzelner Schritt nicht das ganze
-  /// verbleibende Budget verbrauchen darf -- siehe [_abortBudget].
+  /// verbleibende Budget verbrauchen darf -- siehe [_abortBudget]. [budget]
+  /// ersetzt [resolveBudget], wenn ein Weg ein eigenes, kuerzeres Budget hat
+  /// -- siehe [_clarifyBudget].
   Future<T> _withinBudget<T>(
     Stopwatch clock,
     Future<T> Function() call, {
     Duration? cap,
+    Duration? budget,
   }) {
-    var left = resolveBudget - clock.elapsed;
+    final gesamt = budget ?? resolveBudget;
+    var left = gesamt - clock.elapsed;
     if (cap != null && cap < left) left = cap;
     if (left <= Duration.zero) {
-      throw TimeoutException('Klaerungsbudget aufgebraucht', resolveBudget);
+      throw TimeoutException('Klaerungsbudget aufgebraucht', gesamt);
     }
     return call().timeout(left);
   }
@@ -1434,6 +1692,117 @@ class HpsPayments {
       // bewusst still -- das Protokoll darf den Zahlweg nie mitreissen
     }
   }
+}
+
+/// Was ueber die bisherige Klaerung einer Zahlung feststeht -- Eingabe fuer
+/// [HpsPayments.clarifyPayment]. Davon haengt ab, was eine Antwort des
+/// Terminals jetzt noch beweist, siehe dort.
+///
+/// Drei Faelle, als eigene Typen statt als Zeichenketten, damit ein Aufrufer
+/// keinen vierten erfinden kann:
+///
+/// - [HpsClarifyPrevious.unresolved]: das offene Ergebnis von
+///   [HpsPayments.pay] -- es zaehlt nur [HpsResult.reason];
+///   [HpsClarifyPrevious.fromResult] nimmt ihn aus dem Ergebnis. NIE das
+///   Ergebnis einer Nachfrage ([HpsResult.clarified]): dessen Grund stammt
+///   aus der Nachfrage, nicht aus der Zahlung, und wuerde eine unbekannte
+///   Vorgeschichte reinwaschen -- [fromResult] bildet es deshalb auf
+///   [HpsClarifyPrevious.unknown] ab.
+/// - [HpsClarifyPrevious.beforeResolve]: die Zahlung wurde gestartet, ihre
+///   Klaerung hat aber nie begonnen -- etwa weil die App waehrend des
+///   Kartenflows abriss. Es wurde dann sicher kein Storno nachgeschickt. Nur
+///   angeben, wenn das Beobachter-Ereignis [HpsEventKind.resolving]
+///   nachweislich nie kam (es wird vor dem ersten Abbruch- oder
+///   Storno-Aufruf gemeldet); im Zweifel [HpsClarifyPrevious.unknown].
+/// - [HpsClarifyPrevious.unknown]: nicht bekannt (etwa ein Eintrag aus einer
+///   aelteren Fassung, oder die App riss waehrend der Klaerung ab).
+sealed class HpsClarifyPrevious {
+  const HpsClarifyPrevious();
+
+  /// Das offene Ergebnis von [HpsPayments.pay]; es zaehlt nur [reason].
+  const factory HpsClarifyPrevious.unresolved({HpsCodeReason? reason}) =
+      HpsClarifyUnresolved;
+
+  /// Die Vorgeschichte aus [result], dem Ergebnis von [HpsPayments.pay]:
+  /// [HpsClarifyPrevious.unresolved] mit dessen Grund -- oder
+  /// [HpsClarifyPrevious.unknown], wenn [result] selbst aus einer Nachfrage
+  /// stammt ([HpsResult.clarified]); die Nachfrage sagt dann im ersten
+  /// Schritt, dass keine Antwort entscheidet.
+  ///
+  /// Wirft [ArgumentError], wenn [result] nicht
+  /// [CardPaymentOutcome.unresolved] ist: ein entschiedener Ausgang hat keine
+  /// Nachfrage mehr noetig, und ihn als Vorgeschichte zu uebergeben, ist ein
+  /// Aufruffehler, der sichtbar bleiben soll.
+  factory HpsClarifyPrevious.fromResult(HpsResult result) {
+    if (!result.isUnresolved) {
+      throw ArgumentError.value(
+        result,
+        'result',
+        'nur ein offenes Ergebnis (unresolved) ist eine Vorgeschichte, '
+            'dieses ist ${result.outcome.name}',
+      );
+    }
+    if (result.clarified) return const HpsClarifyUnknown(clarified: true);
+    return HpsClarifyUnresolved(reason: result.reason);
+  }
+
+  /// Die Klaerung der Zahlung hat nie begonnen; sicher kein Storno. Siehe
+  /// Klassendoku: nur, wenn [HpsEventKind.resolving] nachweislich nie kam.
+  const factory HpsClarifyPrevious.beforeResolve() = HpsClarifyBeforeResolve;
+
+  /// Der bisherige Klaerweg ist nicht bekannt.
+  const factory HpsClarifyPrevious.unknown() = HpsClarifyUnknown;
+}
+
+/// Siehe [HpsClarifyPrevious.unresolved].
+final class HpsClarifyUnresolved extends HpsClarifyPrevious {
+  const HpsClarifyUnresolved({this.reason});
+
+  /// [HpsResult.reason] des offenen Ergebnisses; `null`, wenn kein Code
+  /// etwas erklaerte (die Leitung riss ab, bevor das Terminal etwas sagte).
+  final HpsCodeReason? reason;
+}
+
+/// Siehe [HpsClarifyPrevious.beforeResolve].
+final class HpsClarifyBeforeResolve extends HpsClarifyPrevious {
+  const HpsClarifyBeforeResolve();
+}
+
+/// Siehe [HpsClarifyPrevious.unknown].
+final class HpsClarifyUnknown extends HpsClarifyPrevious {
+  const HpsClarifyUnknown({this.clarified = false});
+
+  /// `true`, wenn als Vorgeschichte das Ergebnis einer frueheren Nachfrage
+  /// kam ([HpsResult.clarified], ueber [HpsClarifyPrevious.fromResult]). Die
+  /// Regel ist dieselbe wie ohne Vorgeschichte; der Nachweis benennt es.
+  final bool clarified;
+}
+
+/// Welche Antworten eine spaete Nachfrage entscheiden duerfen, siehe
+/// [HpsPayments.clarifyPayment].
+class _NachfrageRegel {
+  const _NachfrageRegel({
+    required this.genehmigt,
+    required this.aufgehoben,
+    required this.abgelehnt,
+  });
+
+  /// Jede schluessige Antwort entscheidet.
+  static const alles =
+      _NachfrageRegel(genehmigt: true, aufgehoben: true, abgelehnt: true);
+
+  /// Keine Antwort entscheidet.
+  static const nichts =
+      _NachfrageRegel(genehmigt: false, aufgehoben: false, abgelehnt: false);
+
+  /// `'0'` heisst belastet.
+  final bool genehmigt;
+
+  /// `9011` heisst nichts belastet.
+  final bool aufgehoben;
+
+  /// Jeder andere schluessige Code ungleich `'0'` heisst nichts belastet.
+  final bool abgelehnt;
 }
 
 /// Was ein nachgeschicktes Storno bewirkt haben kann, siehe Klassendoku von

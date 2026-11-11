@@ -15,6 +15,7 @@ class HpsResult {
     this.lastResponse,
     this.reason,
     this.steps = const <String>[],
+    this.clarified = false,
   });
 
   final CardPaymentOutcome outcome;
@@ -61,6 +62,17 @@ class HpsResult {
 
   /// Verlauf der Klaerung, in Reihenfolge -- fuer Anzeige und Protokoll.
   final List<String> steps;
+
+  /// `true`, wenn dieses Ergebnis aus einer SPAETEN Nachfrage stammt
+  /// (`HpsPayments.clarifyPayment`). Ein solches Ergebnis taugt nicht als
+  /// Vorgeschichte einer weiteren Nachfrage: die Vorgeschichte einer Zahlung
+  /// ist das Ergebnis von `HpsPayments.pay`, und das bleibt sie -- ein
+  /// [reason] aus der Nachfrage selbst (etwa [HpsCodeReason.noStatement])
+  /// sagt nichts darueber, ob die Klaerung von `pay` ein Storno nachgeschickt
+  /// hat. `HpsClarifyPrevious.fromResult` bildet ein so markiertes Ergebnis
+  /// deshalb auf "nicht bekannt" ab: keine Antwort entscheidet. Die
+  /// Ergebnisse von `pay`, `refund` und `cancel` tragen die Marke nie.
+  final bool clarified;
 
   bool get isApproved => outcome == CardPaymentOutcome.approved;
 
