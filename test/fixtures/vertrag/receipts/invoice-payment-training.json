@@ -1,0 +1,63 @@
+{
+  "company": {
+    "companyName": "Bäckerei Kornblum",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-121",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-11-11T14:10:09",
+    "items": [
+      {
+        "name": "Zahlung auf Rechnung 2026-0044",
+        "quantity": 1,
+        "unitPriceCents": 12000,
+        "vatRate": 0,
+        "kind": "invoice_payment"
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "cash",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "training",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-121_2026-11-11T14:10:09_0,00_0,00_0,00_120,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "cash",
+        "amountCents": 12000
+      }
+    ],
+    "invoicePayments": [
+      {
+        "invoiceId": "inv_6Rc8",
+        "invoiceNumber": "2026-0044",
+        "paymentId": "pay_6",
+        "customerId": "cus_7",
+        "amountCents": 12000,
+        "partial": false,
+        "paidOn": "2026-11-11",
+        "includesVat": true
+      }
+    ]
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

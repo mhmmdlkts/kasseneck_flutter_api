@@ -48,6 +48,17 @@ final _strukturKasse = ((_tabelle['structure'] as Map)['pos-texts.json'] as Map)
 const _rechnungsTexteNach10 = {
   'pdf.totals.single_use_deposit', 'pdf.totals.head_rate', 'pdf.totals.head_net', 'pdf.totals.head_vat',
   'einvoice.exemption.single_use_deposit',
+  // Kassenteil und Zahlungsbestaetigung (npm 1.38.0, Zahlung auf Rechnung)
+  'pdf.title.payment_confirmation', 'pdf.title.refund_confirmation', 'pdf.cash_register.header',
+  'pdf.cash_register.receipt_number', 'pdf.cash_register.date', 'pdf.confirmation.intro',
+  'pdf.confirmation.not_invoice', 'pdf.confirmation.table.invoice', 'pdf.confirmation.table.amount',
+  'pdf.confirmation.table.paid_so_far', 'pdf.confirmation.table.received_today', 'pdf.confirmation.table.still_open',
+};
+
+/// Rechnungstexte, deren Wortlaut nach 1.0 bewusst gekuerzt wurde (neuer Schluessel -> Grund). Fuer sie
+/// gilt statt „derselbe Satz“: der neue Text ist der Anfang des alten, und er ist kuerzer.
+const _gekuerztNach10 = {
+  'pdf.paid.text': 'Bezahlt-Vermerk ohne „Es ist nichts weiter zu tun.“ (npm 1.38.0)',
 };
 
 const _nach10 = (
@@ -138,6 +149,8 @@ const _nach10 = (
     // HPS ohne Terminal-Beleg, Terminal belegt beim Klaeren (npm 1.37.0)
     'card_payment.unknown_hps', 'card_payment.unknown_with_id_hps', 'split.card_reverse_failed_hps', 'split.card_reverse_unknown_hps',
     'split.card_already_reversed_hps', 'split.clarify_busy', 'split.clarify_no_answer',
+    // Zahlung auf Rechnung (npm 1.38.0)
+    'cancellation.invoice_payment_not_cancellable',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -231,7 +244,7 @@ const _nach10 = (
     'discount_presets.remove', 'discount_presets.limit', 'shift_receipt.discounts', 'shift_receipt.discounts_total',
     'shift_receipt.discount_line', 'shift_receipt.discount_unnamed',
     // Schicht-Ablauf der Kasse (11.19.0, npm 1.28.0)
-    'shift.state_closed', 'shift.start_title', 'shift.band_closed', 'shift.band_closing', 'shift.band_interim', 'shift.band_cash', 'tip.revenue_title', 'tip.revenue_badge', 'tip.unassigned', 'shift.last_shift', 'shift.in_drawer_by_system', 'shift.take_over_amount', 'shift.top_up', 'shift.missing', 'shift.count_coins', 'shift.count_please', 'drawer.open_for_count', 'drawer.open_for_tips', 'drawer.open_for_take', 'shift.close_title_numbered', 'shift.closed_title', 'shift.running_since_drawer', 'shift.step_count', 'shift.step_tips', 'shift.step_take', 'shift.step_done', 'shift.expected', 'shift.of_which_cash_tips', 'shift.breakdown', 'shift.part_opening', 'shift.part_cash_sales', 'shift.part_cash_tips', 'shift.part_cancellations', 'shift.part_cash_in', 'shift.part_cash_out', 'shift.part_interim', 'tip.who_takes_now', 'tip.later_hint', 'tip.later', 'tip.pay_out', 'tip.pay_out_amount', 'shift.now_in_drawer', 'shift.interim_title', 'shift.interim_save', 'shift.opening_not_counted', 'shift.taken_over_unchecked_by', 'shift.taken_over_unchecked', 'tip.kind_percent', 'tip.kind_round_up', 'tip.kind_total', 'tip.round_to', 'tip.guest_pays_total', 'tip.remainder_is_tip', 'voucher.section', 'voucher.code_placeholder', 'settings.cart_width', 'settings.cart_width_narrow', 'settings.cart_width_medium', 'settings.cart_width_wide', 'shift_receipt.opening_not_counted', 'shift_receipt.interim_count', 'shift_receipt.counted_before_payout', 'shift_receipt.difference_part_interim', 'shift_receipt.difference_part_closing', 'cash_movement.type_interim_difference',
+    'shift.state_closed', 'shift.start_title', 'shift.band_closed', 'shift.band_closing', 'shift.band_interim', 'shift.band_cash', 'tip.revenue_title', 'tip.revenue_badge', 'tip.unassigned', 'shift.last_shift', 'shift.in_drawer_by_system', 'shift.take_over_amount', 'shift.top_up', 'shift.missing', 'shift.count_coins', 'shift.count_please', 'drawer.open_for_count', 'drawer.open_for_tips', 'drawer.open_for_take', 'shift.close_title_numbered', 'shift.closed_title', 'shift.running_since_drawer', 'shift.step_count', 'shift.step_tips', 'shift.step_take', 'shift.step_done', 'shift.expected', 'shift.of_which_cash_tips', 'shift.breakdown', 'shift.part_opening', 'shift.part_cash_sales', 'shift.part_cash_tips', 'shift.part_cancellations', 'shift.part_cash_in', 'shift.part_cash_out', 'shift.part_interim', 'tip.who_takes_now', 'tip.later_hint', 'tip.later', 'tip.pay_out', 'tip.pay_out_amount', 'shift.now_in_drawer', 'shift.interim_title', 'shift.interim_save', 'shift.opening_not_counted', 'shift.taken_over_unchecked_by', 'shift.taken_over_unchecked', 'tip.kind_percent', 'tip.kind_round_up', 'tip.kind_total', 'tip.round_to', 'tip.guest_pays_total', 'tip.remainder_is_tip', 'voucher.section', 'voucher.code_placeholder', 'settings.cart_width', 'settings.cart_width_narrow', 'settings.cart_width_medium', 'settings.cart_width_wide', 'shift_receipt.opening_not_counted', 'shift_receipt.interim_count', 'shift_receipt.counted_before_payout', 'shift_receipt.difference_part_interim', 'shift_receipt.difference_part_closing', 'cash_movement.type_interim_difference', 'shift_receipt.invoice_payments',
     // Nachtrag Schicht-Ablauf (11.19.0, npm 1.28.0)
     'shift.state_closing', 'shift.state_interim', 'shift.tips_paid_out', 'shift.difference_none',
     'shift.start_new', 'shift.drawer_from_to', 'shift.running_since_by', 'shift.z_receipt_printed',
@@ -486,6 +499,11 @@ void main() {
         final neu = ((_neuRechnung['texts'] as Map)[sprache] as Map).cast<String, dynamic>();
         for (final e in _texteRechnung.entries) {
           final a = alt[e.key] as String;
+          if (_gekuerztNach10.containsKey(e.value)) {
+            final jetzt = neu[e.value] as String;
+            expect(a.startsWith(jetzt) && jetzt.length < a.length, isTrue, reason: '$sprache ${e.value} ist nicht der gekuerzte alte Text');
+            continue;
+          }
           final gefuelltAlt = _fuelle(e.key, a, _rechnungsMuster, _werteAlt());
           final gefuelltNeu = _fuelle(e.value, neu[e.value] as String, _rechnungsMuster, _werteNeu());
           expect(gefuelltNeu, gefuelltAlt, reason: '$sprache ${e.value}');

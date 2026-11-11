@@ -1,0 +1,22 @@
+       Bäckerei Kornblum        
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345675           
+         +43 6134 12345         
+                                
+Datum:       11.11.2026 09:14:22
+Kassen-ID:                KASSE1
+Beleg-ID:         AT0-KASSE1-117
+                                
+Zahlung auf Rechnung   1569,60  
+2026-0042                       
+  inkl. USt                     
+--------------------------------
+Gesamt:                1569,60 €
+Zahlungsart:          Barzahlung
+  Gegeben:             1600,00 €
+  Rückgeld:              30,40 €
+                                
+           [QR-Code]            
+                                
+ Vielen Dank für Ihren Einkauf  

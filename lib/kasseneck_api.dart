@@ -178,6 +178,7 @@ export 'src/receipt/codes.dart'
         receiptOutputResults;
 // Die Typen, die der Beleg unter /v3 traegt, und der Leser fuer gespeicherte 9.x-Belege.
 export 'models/registration_info.dart' show CancellationOf, RegistrationInfo;
+export 'models/invoice_payment_ref.dart' show InvoicePaymentRef;
 export 'models/manual_receipt.dart' show ManualReceipt, manualReceiptReasons, manualReceiptErrorCodes, isManualReceiptErrorCode;
 export 'models/kasseneck_receipt.dart' show migrateStoredReceiptJson, storedLayoutJson;
 // Nachdruck als Belegduplikat kennzeichnen (Erlass BMF-AV Nr. 2/2026, Abschnitt 4.5.6).

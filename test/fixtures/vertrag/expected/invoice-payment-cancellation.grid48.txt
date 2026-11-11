@@ -1,0 +1,26 @@
+               Bäckerei Kornblum                
+                  Hauptplatz 1                  
+                 4830 Hallstatt                 
+                  ATU12345675                   
+                 +43 6134 12345                 
+                                                
+================================================
+                  STORNOBELEG                   
+================================================
+     Stornobuchung zu Beleg AT0-KASSE1-117      
+           vom 11.11.2026, 09:14 Uhr            
+               Grund: Fehleingabe               
+                                                
+Datum:                       11.11.2026 11:02:05
+Kassen-ID:                                KASSE1
+Beleg-ID:                         AT0-KASSE1-119
+                                                
+Zahlung auf Rechnung 2026-0042        -1569,60  
+  inkl. USt                                     
+------------------------------------------------
+Gesamt:                               -1569,60 €
+Zahlungsart:                          Barzahlung
+                                                
+                   [QR-Code]                    
+                                                
+         Vielen Dank für Ihren Einkauf          

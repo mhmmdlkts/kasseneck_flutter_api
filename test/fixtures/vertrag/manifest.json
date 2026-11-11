@@ -177,6 +177,70 @@
       "sheet32": "2fb764e8bc779bb1c9c3f5178acf964056f1d954e1f1da0c262780ae663b1ad5",
       "sheet48": "b1e0a62370ff79e541c67f4f7d1b7476d608d8aecb5718582dde8ccf84d9bd99"
     },
+    "invoice-payment-cancellation": {
+      "input": "fe79c6e7656f7796fcbea8dd02003b48f84bd50e9cb6fca532dd4380d79a35d5",
+      "expected": "a94190ea6a10b2d6890484f34199b400fd2c96fbe4ce5dfbae0e498da0852574",
+      "grid32": "2e264dde01f2eacd5a920899214f39254bd4d48440a67b094377b16f1f997def",
+      "grid48": "6481baefc57b42bd04c778306f30f2ee30a60ab795e89ab1dc0b6f30dbc8e5f3",
+      "sheet32": "7d132c172a2f59cd66bcc1f4661b13dd539891e0098b0dfc4588edd9090a44e5",
+      "sheet48": "a928348fac573209f4ba0d0eb5c7e1aeabf32c577f9cdc24da254ca28d3cd7da"
+    },
+    "invoice-payment-manual-receipt": {
+      "input": "364840c5b7a148219a25040f7734cf4d78db0f305949bb0f110219905c5dcb16",
+      "expected": "a94f2d5e389c08da8f141df9a8e3de1cabc41b51a344c0b9e7eb161c457bdad2",
+      "grid32": "7721a1a4321119dd073a944f53a99e6b8cb77ea8f83f2c34d7c31a4d8d7f9ebd",
+      "grid48": "940a4cf74e5eff4a04d5896f44660b7d5f8af09e702e46be67a1dca8e3433cc8",
+      "sheet32": "cdf777214f5e0ae00120623de51f929962df04f2ed1dff2dbf7d72c02613e34d",
+      "sheet48": "45dcf9e9f494d5f8eb6c05f0bd4ab0e3da35eb13ea9ee10c2df4fd4bc831a104"
+    },
+    "invoice-payment-normal": {
+      "input": "cf24f09554ce3a42eb0959bf866ca246af1c61cdd11b7c4abc6fdb64acf3abc7",
+      "expected": "37bb14a4b70f72950f9e03fb8b455ca819a8e1f3dd05a7c2a1df70f78f39f046",
+      "grid32": "033c16d54fcc88ceb2cf9ed7c4009a08c5ad828fcb4f2cde5365edca06e3baf6",
+      "grid48": "00e8bc20d0653946461b9b681b677c431fb1da799a44abcb2d120a67ac9808da",
+      "sheet32": "aa3ec81d5180c1ec0e51c6205c48d04a490dc0b9d245d670de9a713a86dba1d9",
+      "sheet48": "36d36073df933c4b67e5906a4f0e54a9f7c7877bf3925ad6551135beb1965791"
+    },
+    "invoice-payment-outage": {
+      "input": "dc4a7bd78186290353d5434485425fe8f989cd3da2fe810e2148f08c39ac5d21",
+      "expected": "f2cabcd3a5a83208f8f16a8b58940f54e922fcf3f9860c93bc40a96c403d5ec7",
+      "grid32": "cca1b54e31ab76626f6a1a17fcc209a3cdf3d0f5b260b795b68046d0bdf2b58b",
+      "grid48": "bc21ec35b88d77247e19095345ea437532d26ffdd888263a6a9901f930ffffef",
+      "sheet32": "897cdb3d3b7664b77460cf80b9c2316eb4d2a6cc555206e5d120e0b5b29bb6c7",
+      "sheet48": "f398c2e90728b838fe560bf890bc687e7ffa837c034601bc16cc70ce8037980e"
+    },
+    "invoice-payment-partial": {
+      "input": "150e5617ea5491f176b8cd2bfff875ae5080d8e790c310d278cdfc4210f6e9f9",
+      "expected": "b8d12672a1e6f58c94d17dbf238083eb279ea94cad7c4db8c869912af76be7b2",
+      "grid32": "3dd42b81afd43460b9d9c63390ea65d8576ef255b2e7a37d8cab0914ba467435",
+      "grid48": "e0969539773ea3ce0952a29b416e4cd8d0bc5c8495520963899ab32b0323fec0",
+      "sheet32": "cb7079890972bd4d1eb02e45e24163acc777cdac3440dcd41c48c1bdcc9bfa88",
+      "sheet48": "b797f4e42c61ffd3e1ba79efcd27ad92043c6ac33e395624c98adcdb923bd83d"
+    },
+    "invoice-payment-refund": {
+      "input": "e90bf7c3dbc6f1f123510ddba74a920bbf7b14cafe9b642ce667af5801f52623",
+      "expected": "2b3152739fc7458afd95dc67464d8fe19fb940fd71edfe4d57e401165bc1cf7d",
+      "grid32": "37df525c3dd8be7fe69c510490386d6128074c56f1d55a65e09d464e88466a64",
+      "grid48": "45b4d14048329ddf3a928bc5d9f0af42c5984b9dc05a7391874e7e16c2164c16",
+      "sheet32": "7e70ad957d81f4e6a1cc03a7b5aef532fe18204b361d60a70fa051058581d09c",
+      "sheet48": "124e06f34996d90a4f28060907dc2fc4518ecea42e2b5a7db9fc8d99d6685580"
+    },
+    "invoice-payment-training": {
+      "input": "45546847795742c02349e4e14a50aa18df3875698ad3353fad2d3384e92c2f8d",
+      "expected": "53d575fbbd82e9a0519667da97cc3c8a34218aa1f717af448e0021c23e1683c8",
+      "grid32": "a54a0ba84b8d5cfd23f27cf2270889085a5d16fbd070e0bfe591dad7cfd31fcb",
+      "grid48": "ea9bb191c4231058456ea5b0524fdd7b42a90cd4cd2b0e1bcd7e553fc9ead828",
+      "sheet32": "cc4d78e21dbe2aa3e6630b1f49f79c13bf0d32b3f20a968e2ee9e5b608fcc1ab",
+      "sheet48": "05cdca19831442d099a9ce13c202ceb17862ae5bf25f5afad613e16941109695"
+    },
+    "invoice-payment-without-vat": {
+      "input": "41eb6a77d1d7f1129da989e040e09760231db617487bc6c85a6701048b0b09b9",
+      "expected": "aad0886e3cc1b84273fc4a4fd12bb3ac21b0d589f8f99e857b49f359946f733a",
+      "grid32": "cd3043b086076a0a09ea7cbb6e13cf1aaff4baf2cb2954e28c78708fe13bd56a",
+      "grid48": "796deea6a3f919ba728325bbdcf388f88ef7b8d8314388272531c56e2722bd61",
+      "sheet32": "f8f752423c0571ed1dbdc3c74e698d14b80a0d686093e779587f4aaa753082d6",
+      "sheet48": "c4bd37a37fbb2a58fbb49d2f10a1c02e10a3f255efe37067f18e4e0362b7c52a"
+    },
     "long-item-name": {
       "input": "83339c2bfa15526106d9eb07db19f859ae2733e4fb08f0741cb0c4b44b2da915",
       "expected": "856cfb1afb714d2d057f44cb93554a25f0c5b1c1884348d51bf56e5066b390bc",

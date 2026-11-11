@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.37.0
+npm_version: 1.38.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -29,6 +29,11 @@ npm_version: 1.37.0
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
 #
+# Stand 1.38.0: Zahlung auf Rechnung (Positionsart invoice_payment, Receipt.invoicePayments,
+# Storno-Code invoice_payment_not_cancellable, Schichtzeile invoicePaymentCents); Dart 11.29.0.
+# Kein neuer Aufruf und keine neue Liste in surface.json; die Pruefaelle rechnen
+# test/aufdruck_rueckfall_test.dart und test/rechnungszahlung_kasse_test.dart. Die Rechnungstexte
+# (Kassenteil, Zahlungsbestaetigung) fuehrt nur npm.
 # Stand 1.37.0: spaete Nachfrage beim HPS-Terminal (HpsPayments.clarifyPayment),
 # HOBEX_SUPPORT (hier hobexSupport) und Kartentrinkgeld an der Kasse
 # (getMyTipBalance in calls.pos, gedeckt durch RegisterReceiptClient; Stufe,

@@ -1,5 +1,6 @@
 import 'package:kasseneck_api/enums/receipt_type.dart';
 import 'package:kasseneck_api/models/receipt_layout.dart';
+import 'package:kasseneck_api/models/invoice_payment_ref.dart';
 import 'package:kasseneck_api/models/kasseneck_receipt.dart';
 import 'package:kasseneck_api/services/vienna_time.dart';
 
@@ -104,7 +105,7 @@ String _handbelegDatum(String tag) {
 /// Tag des Handbelegs bzw. der Handbelege eines Tagessammelbelegs, dazu der
 /// Hinweis, dass der Beleg fuer die USt ein Duplikat ist
 /// (Registrierkassenerlass 3.3 Faelle 5 und 6, 2.4.11); nicht bei
-/// Kleinunternehmern. Leer ohne Handbeleg.
+/// Kleinunternehmern und nicht an einem Zahlungsbeleg (Zahlung auf Rechnung). Leer ohne Handbeleg.
 /// Zwilling von `nacherfassungBlock` im npm-Paket.
 List<LayoutLine> nacherfassungBlock(KasseneckReceipt beleg) {
   final m = beleg.manualReceipt;
@@ -112,6 +113,9 @@ List<LayoutLine> nacherfassungBlock(KasseneckReceipt beleg) {
   LayoutTextLine mitte(String text) => LayoutTextLine(text: text, align: LayoutAlign.center);
   final grund = m.reason == 'other' ? m.note : _nacherfassungGrund[m.reason];
   final tag = _handbelegDatum(m.date);
+  // Kleinunternehmer (keine USt am Beleg) bekommen den Hinweis nicht, ebenso ein Zahlungsbeleg: seine
+  // Umsatzsteuer steht auf der Rechnung.
+  final ustHinweis = !beleg.isSmallBusiness && !istNurRechnungszahlung(beleg);
   return [
     const LayoutBannerLine(text: 'NACHERFASSUNG', tone: LayoutBannerTone.receiptType),
     mitte(m.reason == 'outside_premises' ? 'Leistung außer Haus' : 'nach Ausfall der Kasse'),
@@ -121,11 +125,44 @@ List<LayoutLine> nacherfassungBlock(KasseneckReceipt beleg) {
       mitte('Tagessammelbeleg'),
       mitte('Handbelege Nr. ${m.number} bis ${m.numberTo}'),
       mitte('${m.count != null ? '${m.count} Belege ' : ''}vom $tag'),
-      if (!beleg.isSmallBusiness) mitte('USt: Duplikat der Handbelege'),
+      if (ustHinweis) mitte('USt: Duplikat der Handbelege'),
     ] else ...[
       mitte('Handbeleg Nr. ${m.number}'),
       mitte('vom $tag${m.time != null ? ', ${m.time} Uhr' : ''}'),
-      if (!beleg.isSmallBusiness) mitte('USt: Duplikat des Handbelegs'),
+      if (ustHinweis) mitte('USt: Duplikat des Handbelegs'),
     ],
   ];
+}
+
+/// Text, den der Server statt einer Signatur ablegt, wenn die Karte ausfaellt (RKSV § 17 Abs. 4).
+const String signaturAusgefallenText = 'Sicherheitseinrichtung ausgefallen';
+
+/// Vermerk „Sicherheitseinrichtung ausgefallen“ (zentriert), wenn der Beleg ohne funktionierende
+/// Signatureinheit ausgestellt wurde; sonst leer. Zwilling von `signaturausfallVermerk` im npm-Paket.
+List<LayoutLine> signaturausfallBlock(KasseneckReceipt beleg) =>
+    beleg.isSigFailed ? [const LayoutTextLine(text: signaturAusgefallenText, align: LayoutAlign.center)] : const [];
+
+// ----------------------------------------------------------- Zahlung auf Rechnung
+
+/// Steuerhinweis unter einer Zahlung auf eine Rechnung, die Umsatzsteuer ausweist (eingerueckt wie
+/// „  USt bei Einloesung“).
+const String inklUstText = '  inkl. USt';
+
+/// Zahlungsbeleg: jede Position ist eine Zahlung auf Rechnung (ein Beleg mit einer solchen Position
+/// besteht nur aus solchen, das prueft der Server).
+bool istNurRechnungszahlung(KasseneckReceipt beleg) => beleg.items.isNotEmpty && beleg.items.every((p) => p.isInvoicePayment);
+
+/// Bezug je Position „Zahlung auf Rechnung“: die n-te solche Position (Belegreihenfolge) gehoert zur
+/// n-ten Rechnung in `invoicePayments`; der Server legt beide in derselben Reihenfolge an, eine Zeile je
+/// Rechnung. Ohne Bezug bleibt die Position ohne Steuerhinweis. Schluessel ist der Index in `items`.
+Map<int, InvoicePaymentRef> rechnungszahlungBezuege(KasseneckReceipt beleg) {
+  final bezuege = beleg.invoicePayments ?? const <InvoicePaymentRef>[];
+  final zu = <int, InvoicePaymentRef>{};
+  var n = 0;
+  for (var i = 0; i < beleg.items.length; i++) {
+    if (!beleg.items[i].isInvoicePayment) continue;
+    if (n < bezuege.length) zu[i] = bezuege[n];
+    n += 1;
+  }
+  return zu;
 }

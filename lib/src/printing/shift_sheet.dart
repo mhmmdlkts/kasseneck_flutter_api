@@ -202,8 +202,14 @@ ReceiptLayout shiftReceiptLayout(ShiftSummaryReceipt receipt, {PosPaperSize pape
   if (kommentar != null && kommentar.isNotEmpty) zeilen.add(_text('${labelText('shift_receipt.comment')}: $kommentar'));
   zeilen.addAll(_nachZaehlungZeilen(bon));
 
-  // Zur Information: unbar, Zaehler.
+  // Zur Information: Zahlungen auf Rechnungen, unbar, Zaehler.
   zeilen.add(_regel());
+  // Zahlungen auf Rechnungen (npm 1.38.0): nur Information, das Geld steckt schon im Barumsatz bzw. unbar.
+  // Ohne Betrag (fehlt oder 0) keine Zeile, der Bon bleibt wie bisher.
+  final rechnungszahlungen = bon.invoicePaymentCents;
+  if (rechnungszahlungen != null && rechnungszahlungen != 0) {
+    zeilen.add(_betrag(labelText('shift_receipt.invoice_payments'), rechnungszahlungen));
+  }
   if (bon.nonCashByMethod.isNotEmpty) {
     zeilen.add(_text(labelText('shift_receipt.non_cash'), bold: true));
     for (final u in bon.nonCashByMethod) {

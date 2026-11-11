@@ -28,6 +28,11 @@ Set<String> _kassenwegFaelle() {
   return codes;
 }
 
+/// Codes, die das Paket kennt, bevor der Vertrags-Export des Servers sie fuehrt: das Backend legt sie in
+/// derselben Lieferung an (Zahlung auf Rechnung, npm 1.38.0). Sie stehen hinter den Codes ihres Endpunkts.
+/// Sobald der Vertrag neu geholt ist und sie fuehrt, wird der Test unten rot und der Eintrag faellt weg.
+const _vorDemVertrag = ['invoice_payment_not_cancellable'];
+
 void main() {
   final vok = _json('v3-vokabular.json');
   final codes = (vok['errorCodes'] as Map).cast<String, dynamic>();
@@ -53,7 +58,10 @@ void main() {
         [...eigen, ...anmeldungUndRandCodes.where((c) => !eigen.contains(c)), ...paket];
     const signierend = ['route_missing', 'response_unreadable'];
     expect(clientErrorCodes, signierend.toSet());
-    expect(cancellationErrorCodes, mitRand(liste('cancellation'), signierend));
+    expect(cancellationErrorCodes, mitRand([...liste('cancellation'), ..._vorDemVertrag], signierend));
+    for (final code in _vorDemVertrag) {
+      expect(liste('all').contains(code), isFalse, reason: '$code steht jetzt im Vertrag: aus _vorDemVertrag nehmen');
+    }
     expect(paymentErrorCodes, mitRand(liste('payments'), ['route_missing']));
     expect(receiptEmailErrorCodes, mitRand(liste('receiptEmail'), ['route_missing']));
     expect(receiptEmailSendErrorCodes, liste('receiptEmail'));
@@ -99,7 +107,7 @@ void main() {
   test('jeder Code ist ein /v3-Code (klein, englisch) oder einer des Pakets', () {
     final alle = liste('all').toSet();
     for (final code in [...cancellationErrorCodes, ...paymentErrorCodes, ...receiptEmailErrorCodes, ...receiptErrorCodes]) {
-      expect(alle.contains(code) || clientErrorCodes.contains(code), isTrue, reason: code);
+      expect(alle.contains(code) || clientErrorCodes.contains(code) || _vorDemVertrag.contains(code), isTrue, reason: code);
       expect(code, code.toLowerCase(), reason: code);
     }
     expect(receiptErrorCodes, contains('receipt_outcome_unknown'));

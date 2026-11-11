@@ -6,6 +6,7 @@ import 'package:kasseneck_api/enums/keck_paper_size.dart';
 import 'package:kasseneck_api/enums/vat_rate.dart';
 import 'package:kasseneck_api/kasseneck_api.dart' show KasseneckApi, KasseneckReceiptFormatError;
 import 'package:kasseneck_api/models/keck_voucher.dart';
+import 'package:kasseneck_api/models/invoice_payment_ref.dart';
 import 'package:kasseneck_api/models/manual_receipt.dart';
 import 'package:kasseneck_api/services/logo_service.dart';
 import 'package:kasseneck_api/services/printer_service.dart';
@@ -205,6 +206,10 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// stempelt, wenn der Betrieb sie fuehrt (`sharedReturnPoint`); sonst `null`.
   DepositSharedReturnPoint? sharedReturnPoint;
 
+  /// Nur am Zahlungsbeleg (Zahlung auf Rechnung, Positionen `kind: 'invoice_payment'`): je Rechnung ein
+  /// Bezug, in der Reihenfolge der Positionen (gespeichert `rechnungszahlung`); sonst `null`.
+  List<InvoicePaymentRef>? invoicePayments;
+
   /// Nur am Storno-Beleg: der Grund, Code aus `cancellationReasons` (englisch, wie
   /// unter `/v3`; ein unbekannter kuenftiger Code bleibt roh stehen).
   String? cancellationReason;
@@ -289,6 +294,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     this.manualReceipt,
     this.onPremises,
     this.sharedReturnPoint,
+    this.invoicePayments,
   });
 
   factory KasseneckReceipt.create({
@@ -383,6 +389,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       manualReceipt: ManualReceipt.fromJson(receipt['manualReceipt']),
       onPremises: receipt['onPremises'] is bool ? receipt['onPremises'] as bool : null,
       sharedReturnPoint: DepositSharedReturnPoint.fromJson(receipt['sharedReturnPoint']),
+      invoicePayments: InvoicePaymentRef.fromJsonList(receipt['invoicePayments']),
     );
   }
 
@@ -466,6 +473,7 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
       'manualReceipt': ?manualReceipt?.toJson(),
       'onPremises': ?onPremises,
       'sharedReturnPoint': ?sharedReturnPoint?.toJson(),
+      if (invoicePayments != null) 'invoicePayments': [for (final b in invoicePayments!) b.toJson()],
     };
   }
 

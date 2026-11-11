@@ -1,0 +1,63 @@
+{
+  "company": {
+    "companyName": "Bäckerei Kornblum",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-122",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-11-11T12:30:00",
+    "items": [
+      {
+        "name": "Rückzahlung zu Gutschrift 2026-G007",
+        "quantity": 1,
+        "unitPriceCents": -4990,
+        "vatRate": 0,
+        "kind": "invoice_payment"
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "cash",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-122_2026-11-11T12:30:00_0,00_0,00_0,00_-49,90_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "cash",
+        "amountCents": -4990
+      }
+    ],
+    "invoicePayments": [
+      {
+        "invoiceId": "cn_5Hb1",
+        "invoiceNumber": "2026-G007",
+        "paymentId": "pay_9",
+        "customerId": "cus_7",
+        "amountCents": -4990,
+        "partial": false,
+        "paidOn": "2026-11-11",
+        "includesVat": true
+      }
+    ]
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}
