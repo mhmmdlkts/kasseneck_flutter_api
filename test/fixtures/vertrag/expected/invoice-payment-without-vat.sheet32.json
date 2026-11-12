@@ -86,6 +86,12 @@
     },
     {
       "kind": "line",
+      "text": "  0 % USt                       ",
+      "bold": false,
+      "blank": false
+    },
+    {
+      "kind": "line",
       "text": "--------------------------------",
       "bold": false,
       "blank": false

@@ -178,7 +178,7 @@
       "sheet48": "b1e0a62370ff79e541c67f4f7d1b7476d608d8aecb5718582dde8ccf84d9bd99"
     },
     "invoice-payment-cancellation": {
-      "input": "fe79c6e7656f7796fcbea8dd02003b48f84bd50e9cb6fca532dd4380d79a35d5",
+      "input": "1afe3bb548fee7f4fe169ec77d10fbfe0547ea9ca0ec6614206454c4438664f2",
       "expected": "a94190ea6a10b2d6890484f34199b400fd2c96fbe4ce5dfbae0e498da0852574",
       "grid32": "2e264dde01f2eacd5a920899214f39254bd4d48440a67b094377b16f1f997def",
       "grid48": "6481baefc57b42bd04c778306f30f2ee30a60ab795e89ab1dc0b6f30dbc8e5f3",
@@ -186,7 +186,7 @@
       "sheet48": "a928348fac573209f4ba0d0eb5c7e1aeabf32c577f9cdc24da254ca28d3cd7da"
     },
     "invoice-payment-manual-receipt": {
-      "input": "364840c5b7a148219a25040f7734cf4d78db0f305949bb0f110219905c5dcb16",
+      "input": "fb50d38626bc167b3b13e801256d9cb91bf1183ee73dcf62e06e2b2b3c385dc3",
       "expected": "a94f2d5e389c08da8f141df9a8e3de1cabc41b51a344c0b9e7eb161c457bdad2",
       "grid32": "7721a1a4321119dd073a944f53a99e6b8cb77ea8f83f2c34d7c31a4d8d7f9ebd",
       "grid48": "940a4cf74e5eff4a04d5896f44660b7d5f8af09e702e46be67a1dca8e3433cc8",
@@ -194,7 +194,7 @@
       "sheet48": "45dcf9e9f494d5f8eb6c05f0bd4ab0e3da35eb13ea9ee10c2df4fd4bc831a104"
     },
     "invoice-payment-normal": {
-      "input": "cf24f09554ce3a42eb0959bf866ca246af1c61cdd11b7c4abc6fdb64acf3abc7",
+      "input": "2b00c740e708606d72776cd397871ae8b84839cc879a2091d9c96ce7b88f986a",
       "expected": "37bb14a4b70f72950f9e03fb8b455ca819a8e1f3dd05a7c2a1df70f78f39f046",
       "grid32": "033c16d54fcc88ceb2cf9ed7c4009a08c5ad828fcb4f2cde5365edca06e3baf6",
       "grid48": "00e8bc20d0653946461b9b681b677c431fb1da799a44abcb2d120a67ac9808da",
@@ -202,7 +202,7 @@
       "sheet48": "36d36073df933c4b67e5906a4f0e54a9f7c7877bf3925ad6551135beb1965791"
     },
     "invoice-payment-outage": {
-      "input": "dc4a7bd78186290353d5434485425fe8f989cd3da2fe810e2148f08c39ac5d21",
+      "input": "6029bd4160eb72cc5fffb3b7c4d3519e04555f8ef5bc089d32cb55249f81071b",
       "expected": "f2cabcd3a5a83208f8f16a8b58940f54e922fcf3f9860c93bc40a96c403d5ec7",
       "grid32": "cca1b54e31ab76626f6a1a17fcc209a3cdf3d0f5b260b795b68046d0bdf2b58b",
       "grid48": "bc21ec35b88d77247e19095345ea437532d26ffdd888263a6a9901f930ffffef",
@@ -210,7 +210,7 @@
       "sheet48": "f398c2e90728b838fe560bf890bc687e7ffa837c034601bc16cc70ce8037980e"
     },
     "invoice-payment-partial": {
-      "input": "150e5617ea5491f176b8cd2bfff875ae5080d8e790c310d278cdfc4210f6e9f9",
+      "input": "31a0daf5a8d0fc48330a3d9e61fb19beca1a4387049e945090c66b27f301b27e",
       "expected": "b8d12672a1e6f58c94d17dbf238083eb279ea94cad7c4db8c869912af76be7b2",
       "grid32": "3dd42b81afd43460b9d9c63390ea65d8576ef255b2e7a37d8cab0914ba467435",
       "grid48": "e0969539773ea3ce0952a29b416e4cd8d0bc5c8495520963899ab32b0323fec0",
@@ -218,15 +218,23 @@
       "sheet48": "b797f4e42c61ffd3e1ba79efcd27ad92043c6ac33e395624c98adcdb923bd83d"
     },
     "invoice-payment-refund": {
-      "input": "e90bf7c3dbc6f1f123510ddba74a920bbf7b14cafe9b642ce667af5801f52623",
+      "input": "3a0115d7f3246dcaf633d869fb0b36ef45cfc04c1e22757a79bc18ef9a53f4be",
       "expected": "2b3152739fc7458afd95dc67464d8fe19fb940fd71edfe4d57e401165bc1cf7d",
       "grid32": "37df525c3dd8be7fe69c510490386d6128074c56f1d55a65e09d464e88466a64",
       "grid48": "45b4d14048329ddf3a928bc5d9f0af42c5984b9dc05a7391874e7e16c2164c16",
       "sheet32": "7e70ad957d81f4e6a1cc03a7b5aef532fe18204b361d60a70fa051058581d09c",
       "sheet48": "124e06f34996d90a4f28060907dc2fc4518ecea42e2b5a7db9fc8d99d6685580"
     },
+    "invoice-payment-see-invoice": {
+      "input": "d09f40107fb5f7be217161ed7bc7d9cc63a8db9115e858ed95585aed01f9cde1",
+      "expected": "ed362a97b5ef8d87ae427aed2e524311d09f0e6323d393d9a9e36fcfe2a68f1b",
+      "grid32": "599e69f8dd5ca66efd60b60380a370172c44038a0e0e1fd37245c5fed5870280",
+      "grid48": "e09ebf144099f4795eebfbe696a97b76165d173bccd870742dedeb24acad57a9",
+      "sheet32": "2050e59178890695a039d28d756fd4d3509a60ec044acd09e846013b2d509693",
+      "sheet48": "27842118912d454ce72f8e4f8244dd8925f5daacdee43958451ea0f4e2cb6374"
+    },
     "invoice-payment-training": {
-      "input": "45546847795742c02349e4e14a50aa18df3875698ad3353fad2d3384e92c2f8d",
+      "input": "d60755e1e29926f99ef76fd2bfe8b78ec8d0cef8923fa26d7704dcafb8581a92",
       "expected": "53d575fbbd82e9a0519667da97cc3c8a34218aa1f717af448e0021c23e1683c8",
       "grid32": "a54a0ba84b8d5cfd23f27cf2270889085a5d16fbd070e0bfe591dad7cfd31fcb",
       "grid48": "ea9bb191c4231058456ea5b0524fdd7b42a90cd4cd2b0e1bcd7e553fc9ead828",
@@ -234,12 +242,20 @@
       "sheet48": "05cdca19831442d099a9ce13c202ceb17862ae5bf25f5afad613e16941109695"
     },
     "invoice-payment-without-vat": {
-      "input": "41eb6a77d1d7f1129da989e040e09760231db617487bc6c85a6701048b0b09b9",
-      "expected": "aad0886e3cc1b84273fc4a4fd12bb3ac21b0d589f8f99e857b49f359946f733a",
-      "grid32": "cd3043b086076a0a09ea7cbb6e13cf1aaff4baf2cb2954e28c78708fe13bd56a",
-      "grid48": "796deea6a3f919ba728325bbdcf388f88ef7b8d8314388272531c56e2722bd61",
-      "sheet32": "f8f752423c0571ed1dbdc3c74e698d14b80a0d686093e779587f4aaa753082d6",
-      "sheet48": "c4bd37a37fbb2a58fbb49d2f10a1c02e10a3f255efe37067f18e4e0362b7c52a"
+      "input": "5a73e0f1613f1928e312cf8d0de58c23dae9b553223a3ff9e6ee6e0d7c948f10",
+      "expected": "baa9a6825020716dbd24582b5290dc3e9bcc324a9811e74eacc8edd243a1ee9f",
+      "grid32": "d4d8fa47d54ecfd57ad9d7cdf6a1224a182b9278306a574f700727b8d712eaed",
+      "grid48": "7b67714be22cbeaeaef9cb2de970d254d61c6628132905be4958f5a4b365d775",
+      "sheet32": "217dbbdc3b263f74eb8d24ab516c81edc4178a3438e668d1e204fd8962c3d106",
+      "sheet48": "7b2477dc3f957324d4ed2a2ae8ee8dd62ecf6e7a0b89ded393648718caa3c298"
+    },
+    "invoice-payment-zero-percent": {
+      "input": "9e76c65eaa5768f9367fe6033b7e450fed510bb80ea86a044da796a3fdad83e1",
+      "expected": "1cbfb5d7117c342323815c6c89134c411911a28fb0b555f97d9f47bb8e7136cd",
+      "grid32": "6cf531d23540139df68e16544b3f9dfcb5c3248de3321e6924a03319202e253e",
+      "grid48": "92496fbbe904380af9cc13b129d179634dab1abbba3f034563bb4e1cf9303b90",
+      "sheet32": "6fa0a0552d751533f9655700cf4a39e93e3f57db2d3aa22d8c24a116b0095c47",
+      "sheet48": "2d96bd392f1418b1b05e650f6889b3eb310dd6270c65b2a81ae6de54f8eb19ad"
     },
     "long-item-name": {
       "input": "83339c2bfa15526106d9eb07db19f859ae2733e4fb08f0741cb0c4b44b2da915",

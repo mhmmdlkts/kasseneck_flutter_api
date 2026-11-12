@@ -53,6 +53,8 @@ const _rechnungsTexteNach10 = {
   'pdf.cash_register.receipt_number', 'pdf.cash_register.date', 'pdf.confirmation.intro',
   'pdf.confirmation.not_invoice', 'pdf.confirmation.table.invoice', 'pdf.confirmation.table.amount',
   'pdf.confirmation.table.paid_so_far', 'pdf.confirmation.table.received_today', 'pdf.confirmation.table.still_open',
+  'pdf.paid.cash', 'pdf.paid.card', 'pdf.cash_register.tax.incl_vat', 'pdf.cash_register.tax.zero_percent',
+  'pdf.cash_register.tax.see_invoice',
 };
 
 /// Rechnungstexte, deren Wortlaut nach 1.0 bewusst gekuerzt wurde (neuer Schluessel -> Grund). Fuer sie

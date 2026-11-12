@@ -10,6 +10,7 @@ Beleg-ID:          AT0-KASSE1-31
                                 
 Zahlung auf Rechnung     85,00  
 2026-0007                       
+  0 % USt                       
 --------------------------------
 Gesamt:                  85,00 €
 Zahlungsart:          Barzahlung

@@ -99,6 +99,12 @@
       ]
     },
     {
+      "kind": "text",
+      "text": "  0 % USt",
+      "align": "left",
+      "bold": false
+    },
+    {
       "kind": "rule",
       "char": "-"
     },
