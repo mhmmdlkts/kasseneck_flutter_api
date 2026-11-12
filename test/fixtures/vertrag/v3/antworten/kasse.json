@@ -19,7 +19,7 @@
       ]
     },
     "kasse": {
-      "sha256": "02c8202d02272409bed93e6818f7e18346d02b87deb47559fad68dd94b8165b3",
+      "sha256": "c5a50ebc95beb71721025f9cc4a1bfe861df4b93422398063146657d1dadca68",
       "head": [
         "channel",
         "note"
@@ -18996,27 +18996,12 @@
               "longOpenWarning": true,
               "tipClaims": [
                 {
-                  "registerUserId": "ru_chef",
-                  "name": "Anna Chef",
-                  "cents": 300
-                },
-                {
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
                   "cents": 150
                 }
               ],
               "tips": [
-                {
-                  "registerUserId": "ru_chef",
-                  "name": "Anna Chef",
-                  "receivedImmediatelyCents": 0,
-                  "retainedCents": 0,
-                  "paidOutCents": 0,
-                  "refundedByEmployeeCents": 0,
-                  "carriedOverCents": 0,
-                  "openCents": 300
-                },
                 {
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
