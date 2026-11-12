@@ -21,7 +21,7 @@ import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/printable.dart' show printableText;
 import '../src/printing/qr_groesse.dart';
 import '../src/receipt/aufdruck.dart'
-    show belegartBlock, inklUstText, istNurRechnungszahlung, nacherfassungBlock, rechnungszahlungBezuege, signaturausfallBlock, warnrahmen;
+    show belegartBlock, steuerhinweisText, istNurRechnungszahlung, nacherfassungBlock, rechnungszahlungBezuege, signaturausfallBlock, warnrahmen;
 import '../src/receipt/einzug.dart';
 import '../src/receipt/pfand_bon.dart';
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
@@ -477,10 +477,11 @@ class PrintPaper {
     for (final i in anzeige.order) {
       final item = receipt.items[i];
       // Zahlung auf Rechnung: eigene Zeilen, nicht in der Steuertabelle (die Umsatzsteuer steht auf der
-      // Rechnung); ohne Menge und ohne Satzkennzeichen, „inkl. USt“ nur bei Rechnungen mit Umsatzsteuer.
+      // Rechnung); ohne Menge und ohne Satzkennzeichen, Steuerhinweis je `taxNote` der Rechnung.
       if (item.isInvoicePayment) {
         addDoubleText(item.name.check(), '${formatCents(item.totalCents)}  ', leftWidth: 8, rightWidth: 4);
-        if (rechnungszahlungen[i]?.includesVat == true) addText(inklUstText);
+        final hinweis = steuerhinweisText(rechnungszahlungen[i]?.taxNote);
+        if (hinweis != null) addText(hinweis);
         continue;
       }
       final zusatz = isValidAddOnAt(receipt.items, i) || anzeige.boundDeposit.contains(i);

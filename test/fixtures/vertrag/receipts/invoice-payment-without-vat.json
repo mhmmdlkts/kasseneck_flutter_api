@@ -53,7 +53,7 @@
         "amountCents": 8500,
         "partial": false,
         "paidOn": "2026-11-11",
-        "includesVat": false
+        "taxNote": null
       }
     ]
   },

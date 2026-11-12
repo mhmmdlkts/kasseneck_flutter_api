@@ -17,7 +17,7 @@ class InvoicePaymentRef {
     required this.amountCents,
     this.partial = false,
     this.paidOn,
-    this.includesVat = false,
+    this.taxNote,
   });
 
   final String invoiceId;
@@ -38,13 +38,17 @@ class InvoicePaymentRef {
   /// Zahlungstag `YYYY-MM-DD` (Wiener Tag), `null` wenn unbekannt.
   final String? paidOn;
 
-  /// Weist die Rechnung Umsatzsteuer aus? Nur dann steht „inkl. USt“ am Beleg.
-  final bool includesVat;
+  /// Steuerhinweis der Rechnung am Beleg: `incl_vat` („inkl. USt“), `zero_percent` („0 % USt“) oder
+  /// `see_invoice` („Steuerangaben siehe Rechnung“); `null` = kein Hinweis (fehlender oder unbekannter Wert).
+  final String? taxNote;
+
+  /// Erlaubte Werte von [taxNote].
+  static const List<String> taxNotes = ['incl_vat', 'zero_percent', 'see_invoice'];
 
   /// Liest `invoicePayments` vom Draht. Ein Eintrag ohne Rechnungs-ID, Nummer, Zahlungs-ID oder
   /// ganzzahligen Betrag faellt weg (lesen tolerant, der Beleg bleibt anzeigbar); ohne brauchbaren
-  /// Eintrag gibt es keinen Bezug (`null`). `includesVat` gilt nur bei ausdruecklichem `true`: ein Beleg
-  /// behauptet nie eine Steuer, die er nicht kennt.
+  /// Eintrag gibt es keinen Bezug (`null`). `taxNote` gilt nur mit einem der drei bekannten Werte, sonst
+  /// `null` (kein Hinweis): ein Beleg behauptet nie eine Steuer, die er nicht kennt.
   static List<InvoicePaymentRef>? fromJsonList(Object? raw) {
     if (raw is! List) return null;
     String? text(Object? w) => w is String && w.isNotEmpty ? w : null;
@@ -65,7 +69,7 @@ class InvoicePaymentRef {
         amountCents: betrag.toInt(),
         partial: e['partial'] == true,
         paidOn: text(e['paidOn']),
-        includesVat: e['includesVat'] == true,
+        taxNote: e['taxNote'] is String && taxNotes.contains(e['taxNote']) ? e['taxNote'] as String : null,
       ));
     }
     return raus.isEmpty ? null : raus;
@@ -79,6 +83,6 @@ class InvoicePaymentRef {
         'amountCents': amountCents,
         'partial': partial,
         'paidOn': paidOn,
-        'includesVat': includesVat,
+        'taxNote': taxNote,
       };
 }

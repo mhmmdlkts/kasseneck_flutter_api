@@ -144,9 +144,14 @@ List<LayoutLine> signaturausfallBlock(KasseneckReceipt beleg) =>
 
 // ----------------------------------------------------------- Zahlung auf Rechnung
 
-/// Steuerhinweis unter einer Zahlung auf eine Rechnung, die Umsatzsteuer ausweist (eingerueckt wie
-/// „  USt bei Einloesung“).
-const String inklUstText = '  inkl. USt';
+/// Steuerhinweis unter einer Zahlung auf eine Rechnung (eingerueckt wie „  USt bei Einloesung“), je Wert
+/// von `InvoicePaymentRef.taxNote`; unbekannt oder fehlend: kein Hinweis (`null`).
+String? steuerhinweisText(String? taxNote) => switch (taxNote) {
+      'incl_vat' => '  inkl. USt',
+      'zero_percent' => '  0 % USt',
+      'see_invoice' => '  Steuerangaben siehe Rechnung',
+      _ => null,
+    };
 
 /// Zahlungsbeleg: jede Position ist eine Zahlung auf Rechnung (ein Beleg mit einer solchen Position
 /// besteht nur aus solchen, das prueft der Server).

@@ -53,7 +53,7 @@
         "amountCents": 35000,
         "partial": false,
         "paidOn": "2026-11-10",
-        "includesVat": true
+        "taxNote": "incl_vat"
       }
     ],
     "manualReceipt": {

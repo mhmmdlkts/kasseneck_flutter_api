@@ -90,7 +90,7 @@ void main() {
       expect(beleg.invoicePayments, hasLength(1));
       expect(beleg.invoicePayments!.single.invoiceNumber, '2026-0042');
       expect(beleg.invoicePayments!.single.amountCents, 156960);
-      expect(beleg.invoicePayments!.single.includesVat, isTrue);
+      expect(beleg.invoicePayments!.single.taxNote, 'incl_vat');
       // Speichern und wieder lesen (Zwischenspeicher): Position und Bezug bleiben.
       final zurueck = KasseneckReceipt.fromJson(jsonDecode(jsonEncode(beleg.toJson())) as Map<String, dynamic>);
       expect(zurueck.items.single.isInvoicePayment, isTrue);
@@ -99,16 +99,54 @@ void main() {
       expect(laden('manual-receipt-range-network-outage-count').invoicePayments, isNull);
     });
 
-    test('includesVat gilt nur bei ausdruecklichem true', () {
+    test('taxNote gilt nur mit einem der drei Werte', () {
       final ein = _json('${_wurzel.path}/receipts/invoice-payment-normal.json');
       final roh = ein['receipt'] as Map<String, dynamic>;
-      final bezug = Map<String, dynamic>.from((roh['invoicePayments'] as List).single as Map)..['includesVat'] = 'ja';
-      final beleg = KasseneckReceipt.fromMetadata({...roh, 'invoicePayments': [bezug, 'kaputt', {'invoiceId': 'x'}]}, {'company': 'Testbetrieb'});
-      expect(beleg.invoicePayments, hasLength(1));
-      expect(beleg.invoicePayments!.single.includesVat, isFalse);
+      KasseneckReceipt mit(Object? wert) {
+        final bezug = Map<String, dynamic>.from((roh['invoicePayments'] as List).single as Map)..['taxNote'] = wert;
+        return KasseneckReceipt.fromMetadata({...roh, 'invoicePayments': [bezug, 'kaputt', {'invoiceId': 'x'}]}, {'company': 'Testbetrieb'});
+      }
+
+      expect(mit('incl_vat').invoicePayments, hasLength(1));
+      expect(mit('zero_percent').invoicePayments!.single.taxNote, 'zero_percent');
+      expect(mit('see_invoice').invoicePayments!.single.taxNote, 'see_invoice');
+      for (final v in <Object?>['ja', true, 'inkl_ust', '', 7, null]) {
+        expect(mit(v).invoicePayments!.single.taxNote, isNull, reason: '$v');
+      }
     });
 
-    test('Rueckfall: Zahlung ohne Satzkennzeichen und ohne Steuertabelle, inkl. USt nur mit includesVat', () async {
+    test('Rueckfall: Steuerhinweis je Wert, „0 %“ nur bei zero_percent', () async {
+      KasseneckReceipt mit(Object? wert) {
+        final ein = _json('${_wurzel.path}/receipts/invoice-payment-normal.json');
+        final roh = ein['receipt'] as Map<String, dynamic>;
+        final bezug = Map<String, dynamic>.from((roh['invoicePayments'] as List).single as Map);
+        wert == '__fehlt__' ? bezug.remove('taxNote') : bezug['taxNote'] = wert;
+        return KasseneckReceipt.fromMetadata({...roh, 'invoicePayments': [bezug]}, {'company': 'Testbetrieb'});
+      }
+
+      final inkl = await _gedruckt(mit('incl_vat'));
+      expect(inkl, contains('inkl. USt'));
+      expect(inkl, isNot(contains('0 % USt')));
+      expect(inkl, isNot(contains('siehe Rechnung')));
+      final null0 = await _gedruckt(mit('zero_percent'));
+      expect(null0, contains('0 % USt'));
+      expect(null0, isNot(contains('inkl. USt')));
+      expect(null0, isNot(contains('MwSt')));
+      final siehe = await _gedruckt(mit('see_invoice'));
+      expect(siehe, contains('Steuerangaben siehe Rechnung'));
+      expect(siehe, isNot(contains('0 %')));
+      expect(siehe, isNot(contains('inkl. USt')));
+      for (final v in <Object?>['__fehlt__', null, 'unbekannt']) {
+        final t = await _gedruckt(mit(v));
+        expect(t, contains('Zahlung auf Rechnung'), reason: '$v');
+        expect(t, isNot(contains('inkl. USt')), reason: '$v');
+        expect(t, isNot(contains('0 %')), reason: '$v');
+        expect(t, isNot(contains('siehe Rechnung')), reason: '$v');
+        expect(t, isNot(contains('MwSt')), reason: '$v');
+      }
+    });
+
+    test('Rueckfall: Zahlung ohne Satzkennzeichen und ohne Steuertabelle', () async {
       final mit = await _gedruckt(laden('invoice-payment-normal'));
       expect(mit, contains('Zahlung auf Rechnung'));
       expect(mit, contains('1569,60'));
