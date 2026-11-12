@@ -1,5 +1,5 @@
 {
-  "version": "1.37.0",
+  "version": "1.38.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -466,6 +466,9 @@
     },
     "cancellation.voucher_type_changed": {
       "text": "Die Gutschein-Sorte für Rückgaben hat sich geändert – bitte erneut versuchen."
+    },
+    "cancellation.invoice_payment_not_cancellable": {
+      "text": "Diese Zahlung gehört zu einer Rechnung. Storniere sie im Kundenbereich bei der Rechnung."
     },
     "voucher_error.not_found": {
       "text": "Diesen Gutschein gibt es in diesem Betrieb nicht."
@@ -1496,6 +1499,13 @@
         "too_many_exports"
       ],
       "key": "dep.too_many_exports"
+    },
+    {
+      "kind": "api",
+      "codes": [
+        "invoice_payment_not_cancellable"
+      ],
+      "key": "cancellation.invoice_payment_not_cancellable"
     }
   ],
   "errorOutcomeRules": [
@@ -3472,6 +3482,9 @@
     },
     "shift_receipt.difference_part_closing": {
       "text": "davon Abschluss"
+    },
+    "shift_receipt.invoice_payments": {
+      "text": "Zahlungen auf Rechnungen"
     },
     "shift.state_closing": {
       "text": "Schicht wird geschlossen"

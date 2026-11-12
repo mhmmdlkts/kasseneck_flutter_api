@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "78eb90dbffbd44f2b16d78963d35c6e977245f5f53bb171a19b73b15d5cb0a3c",
-    "inputsSha256": "d736f3d749e4a91d825a72c07541a0cf6cb2de8e056b7805fb3a1bb06f3546ad",
-    "backendPackage": "@kreiseck/kasseneck-api@0.39.0",
+    "sha256": "7e41f406752cf109d3809bd187db0dfccceafbc3c9d88305edf32c98d57bced3",
+    "inputsSha256": "3871d026aba2c14a25c3561c8d33ab4991636f3755131b23a360d4577a0caa1d",
+    "backendPackage": "@kreiseck/kasseneck-api@0.40.0",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -1249,6 +1249,11 @@
       "admin_papier": "admin_paper",
       "papier_upload": "paper_upload"
     },
+    "RECHNUNGSZAHLUNG_STEUERHINWEIS": {
+      "inkl_ust": "incl_vat",
+      "null_prozent": "zero_percent",
+      "siehe_rechnung": "see_invoice"
+    },
     "RECHTSFORM": {
       "einzel": "sole_proprietor",
       "eu": "eu",
@@ -1402,6 +1407,7 @@
       "card_pool_unavailable",
       "card_tips_require_shift_mode",
       "cash_movement_exceeds_balance",
+      "cash_receipt_pending",
       "cashregister_closed",
       "cashregister_decommissioned",
       "cashregister_in_use",
@@ -1493,6 +1499,7 @@
       "invalid_document",
       "invalid_e1a_group",
       "invalid_file",
+      "invalid_invoice_payment",
       "invalid_item_kind",
       "invalid_items",
       "invalid_landed_cost",
@@ -1535,6 +1542,9 @@
       "invoice_api_not_enabled",
       "invoice_not_found",
       "invoice_number_taken",
+      "invoice_payment_mixed",
+      "invoice_payment_not_cancellable",
+      "invoice_payment_server_only",
       "invoice_requirements_missing",
       "invoice_setup_incomplete",
       "kind_not_allowed",
@@ -1906,7 +1916,11 @@
       "zu_viele_pfandarten": "too_many_deposit_types",
       "ewp_nicht_abfueller": "filler_role_required",
       "kind_ungueltig": "invalid_item_kind",
-      "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
+      "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode",
+      "rechnungszahlung_nur_server": "invoice_payment_server_only",
+      "rechnungszahlung_gemischt": "invoice_payment_mixed",
+      "rechnungszahlung_ungueltig": "invalid_invoice_payment",
+      "rechnungszahlung_nicht_stornierbar": "invoice_payment_not_cancellable"
     },
     "edge": [
       "validation",
@@ -2026,6 +2040,7 @@
       "invalid_deposit_quantity",
       "invalid_discount_preset",
       "invalid_file",
+      "invalid_invoice_payment",
       "invalid_item_kind",
       "invalid_items",
       "invalid_line",
@@ -2037,6 +2052,9 @@
       "invalid_return_disposition",
       "invalid_serial",
       "invalid_tip_refund_source",
+      "invoice_payment_mixed",
+      "invoice_payment_not_cancellable",
+      "invoice_payment_server_only",
       "licenses_exhausted",
       "link_not_found",
       "location_inactive",
@@ -2182,7 +2200,8 @@
       "refund_as_voucher_with_voucher",
       "refund_as_voucher_no_type",
       "refund_as_voucher_amount",
-      "idempotency_key_required"
+      "idempotency_key_required",
+      "invoice_payment_not_cancellable"
     ],
     "payments": [
       "payments_invalid",
@@ -2257,7 +2276,8 @@
       "deposit_type_not_found",
       "deposit_set_by_server",
       "invalid_deposit_quantity",
-      "invalid_deposit"
+      "invalid_deposit",
+      "cash_receipt_pending"
     ],
     "partner": [
       "validation",
@@ -2680,7 +2700,11 @@
       "too_many_deposit_types",
       "filler_role_required",
       "invalid_item_kind",
-      "card_tips_require_shift_mode"
+      "card_tips_require_shift_mode",
+      "invoice_payment_server_only",
+      "invoice_payment_mixed",
+      "invalid_invoice_payment",
+      "invoice_payment_not_cancellable"
     ],
     "receiptMessagesByEndpoint": {
       "createReceipt": [
@@ -2796,8 +2820,11 @@
         "idempotency_conflict",
         "invalid_deposit",
         "invalid_deposit_quantity",
+        "invalid_invoice_payment",
         "invalid_item_kind",
         "invalid_manual_receipt",
+        "invoice_payment_mixed",
+        "invoice_payment_server_only",
         "manual_receipt_date_in_future",
         "manual_receipt_duplicate",
         "manual_receipt_not_allowed",
@@ -2859,6 +2886,7 @@
         "invalid_line",
         "invalid_return_disposition",
         "invalid_tip_refund_source",
+        "invoice_payment_not_cancellable",
         "manual_receipt_not_allowed",
         "not_permitted",
         "note_too_long",
@@ -3457,7 +3485,18 @@
           "sharedReturnPoint": {
             "__": "pfandStelle",
             "address": "adresse"
-          }
+          },
+          "invoicePayments": [
+            {
+              "__": "rechnungszahlung",
+              "invoiceNumber": "nummer",
+              "customerId": "kundeId",
+              "amountCents": "betragCents",
+              "partial": "teil",
+              "paidOn": "zahlungVom",
+              "taxNote": "steuerhinweis"
+            }
+          ]
         },
         "issuedVouchers": [
           {
@@ -3499,6 +3538,9 @@
         },
         "receipt.items[].depositKind": {
           "$catalog": "PFAND_ART"
+        },
+        "receipt.invoicePayments[].taxNote": {
+          "$catalog": "RECHNUNGSZAHLUNG_STEUERHINWEIS"
         }
       },
       "ergaenze": {
@@ -3910,7 +3952,11 @@
             "zu_viele_pfandarten": "too_many_deposit_types",
             "ewp_nicht_abfueller": "filler_role_required",
             "kind_ungueltig": "invalid_item_kind",
-            "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
+            "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode",
+            "rechnungszahlung_nur_server": "invoice_payment_server_only",
+            "rechnungszahlung_gemischt": "invoice_payment_mixed",
+            "rechnungszahlung_ungueltig": "invalid_invoice_payment",
+            "rechnungszahlung_nicht_stornierbar": "invoice_payment_not_cancellable"
           }
         }
       }
@@ -4152,7 +4198,18 @@
           "sharedReturnPoint": {
             "__": "pfandStelle",
             "address": "adresse"
-          }
+          },
+          "invoicePayments": [
+            {
+              "__": "rechnungszahlung",
+              "invoiceNumber": "nummer",
+              "customerId": "kundeId",
+              "amountCents": "betragCents",
+              "partial": "teil",
+              "paidOn": "zahlungVom",
+              "taxNote": "steuerhinweis"
+            }
+          ]
         },
         "taxNumber": "taxnr",
         "vatId": "uid",
@@ -4212,6 +4269,9 @@
         },
         "receipt.items[].depositKind": {
           "$catalog": "PFAND_ART"
+        },
+        "receipt.invoicePayments[].taxNote": {
+          "$catalog": "RECHNUNGSZAHLUNG_STEUERHINWEIS"
         },
         "issuedVouchers[].type": {
           "$catalog": "GUTSCHEIN_ART"
@@ -4672,7 +4732,11 @@
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
           "kind_ungueltig": "invalid_item_kind",
-          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode",
+          "rechnungszahlung_nur_server": "invoice_payment_server_only",
+          "rechnungszahlung_gemischt": "invoice_payment_mixed",
+          "rechnungszahlung_ungueltig": "invalid_invoice_payment",
+          "rechnungszahlung_nicht_stornierbar": "invoice_payment_not_cancellable"
         },
         "signatures[].error.code": {
           "zeitraum_offen": "period_not_closed",
@@ -4803,7 +4867,11 @@
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
           "kind_ungueltig": "invalid_item_kind",
-          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode",
+          "rechnungszahlung_nur_server": "invoice_payment_server_only",
+          "rechnungszahlung_gemischt": "invoice_payment_mixed",
+          "rechnungszahlung_ungueltig": "invalid_invoice_payment",
+          "rechnungszahlung_nicht_stornierbar": "invoice_payment_not_cancellable"
         }
       }
     },
@@ -5844,7 +5912,18 @@
           "sharedReturnPoint": {
             "__": "pfandStelle",
             "address": "adresse"
-          }
+          },
+          "invoicePayments": [
+            {
+              "__": "rechnungszahlung",
+              "invoiceNumber": "nummer",
+              "customerId": "kundeId",
+              "amountCents": "betragCents",
+              "partial": "teil",
+              "paidOn": "zahlungVom",
+              "taxNote": "steuerhinweis"
+            }
+          ]
         },
         "taxNumber": "taxnr",
         "vatId": "uid",
@@ -5914,6 +5993,9 @@
         "receipt.items[].depositKind": {
           "$catalog": "PFAND_ART"
         },
+        "receipt.invoicePayments[].taxNote": {
+          "$catalog": "RECHNUNGSZAHLUNG_STEUERHINWEIS"
+        },
         "issuedVouchers[].type": {
           "$catalog": "GUTSCHEIN_ART"
         },
@@ -5979,7 +6061,18 @@
             "sharedReturnPoint": {
               "__": "pfandStelle",
               "address": "adresse"
-            }
+            },
+            "invoicePayments": [
+              {
+                "__": "rechnungszahlung",
+                "invoiceNumber": "nummer",
+                "customerId": "kundeId",
+                "amountCents": "betragCents",
+                "partial": "teil",
+                "paidOn": "zahlungVom",
+                "taxNote": "steuerhinweis"
+              }
+            ]
           }
         ],
         "metadata": {
@@ -6000,6 +6093,9 @@
         },
         "receipts[].items[].depositKind": {
           "$catalog": "PFAND_ART"
+        },
+        "receipts[].invoicePayments[].taxNote": {
+          "$catalog": "RECHNUNGSZAHLUNG_STEUERHINWEIS"
         }
       },
       "ergaenze": {
@@ -6311,7 +6407,11 @@
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
           "kind_ungueltig": "invalid_item_kind",
-          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode",
+          "rechnungszahlung_nur_server": "invoice_payment_server_only",
+          "rechnungszahlung_gemischt": "invoice_payment_mixed",
+          "rechnungszahlung_ungueltig": "invalid_invoice_payment",
+          "rechnungszahlung_nicht_stornierbar": "invoice_payment_not_cancellable"
         }
       }
     },
@@ -6943,6 +7043,17 @@
               "__": "pfandStelle",
               "address": "adresse"
             },
+            "invoicePayments": [
+              {
+                "__": "rechnungszahlung",
+                "invoiceNumber": "nummer",
+                "customerId": "kundeId",
+                "amountCents": "betragCents",
+                "partial": "teil",
+                "paidOn": "zahlungVom",
+                "taxNote": "steuerhinweis"
+              }
+            ],
             "cancellationStatus": "stornoStand",
             "testSignature": "testSignatur"
           }
@@ -6978,6 +7089,9 @@
         },
         "receipts[].items[].depositKind": {
           "$catalog": "PFAND_ART"
+        },
+        "receipts[].invoicePayments[].taxNote": {
+          "$catalog": "RECHNUNGSZAHLUNG_STEUERHINWEIS"
         }
       },
       "ergaenze": {
@@ -8293,7 +8407,11 @@
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
           "kind_ungueltig": "invalid_item_kind",
-          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode",
+          "rechnungszahlung_nur_server": "invoice_payment_server_only",
+          "rechnungszahlung_gemischt": "invoice_payment_mixed",
+          "rechnungszahlung_ungueltig": "invalid_invoice_payment",
+          "rechnungszahlung_nicht_stornierbar": "invoice_payment_not_cancellable"
         }
       },
       "fehler": {
@@ -9777,7 +9895,11 @@
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
           "kind_ungueltig": "invalid_item_kind",
-          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode",
+          "rechnungszahlung_nur_server": "invoice_payment_server_only",
+          "rechnungszahlung_gemischt": "invoice_payment_mixed",
+          "rechnungszahlung_ungueltig": "invalid_invoice_payment",
+          "rechnungszahlung_nicht_stornierbar": "invoice_payment_not_cancellable"
         }
       }
     },
@@ -9840,6 +9962,17 @@
             "__": "pfandStelle",
             "address": "adresse"
           },
+          "invoicePayments": [
+            {
+              "__": "rechnungszahlung",
+              "invoiceNumber": "nummer",
+              "customerId": "kundeId",
+              "amountCents": "betragCents",
+              "partial": "teil",
+              "paidOn": "zahlungVom",
+              "taxNote": "steuerhinweis"
+            }
+          ],
           "cancellationStatus": "stornoStand",
           "testSignature": "testSignatur"
         }
@@ -9859,6 +9992,9 @@
         },
         "receipt.items[].depositKind": {
           "$catalog": "PFAND_ART"
+        },
+        "receipt.invoicePayments[].taxNote": {
+          "$catalog": "RECHNUNGSZAHLUNG_STEUERHINWEIS"
         }
       },
       "ergaenze": {
@@ -9904,6 +10040,17 @@
             "__": "pfandStelle",
             "address": "adresse"
           },
+          "invoicePayments": [
+            {
+              "__": "rechnungszahlung",
+              "invoiceNumber": "nummer",
+              "customerId": "kundeId",
+              "amountCents": "betragCents",
+              "partial": "teil",
+              "paidOn": "zahlungVom",
+              "taxNote": "steuerhinweis"
+            }
+          ],
           "cancellationStatus": "stornoStand",
           "testSignature": "testSignatur"
         }
@@ -9923,6 +10070,9 @@
         },
         "receipt.items[].depositKind": {
           "$catalog": "PFAND_ART"
+        },
+        "receipt.invoicePayments[].taxNote": {
+          "$catalog": "RECHNUNGSZAHLUNG_STEUERHINWEIS"
         }
       },
       "ergaenze": {
@@ -10123,7 +10273,11 @@
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
           "kind_ungueltig": "invalid_item_kind",
-          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode",
+          "rechnungszahlung_nur_server": "invoice_payment_server_only",
+          "rechnungszahlung_gemischt": "invoice_payment_mixed",
+          "rechnungszahlung_ungueltig": "invalid_invoice_payment",
+          "rechnungszahlung_nicht_stornierbar": "invoice_payment_not_cancellable"
         }
       }
     },
