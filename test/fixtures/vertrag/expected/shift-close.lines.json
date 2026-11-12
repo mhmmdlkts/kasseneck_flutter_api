@@ -402,7 +402,7 @@
       "kind": "columns",
       "columns": [
         {
-          "text": "  schon genommen",
+          "text": "  genommen",
           "width": 8,
           "align": "left"
         },

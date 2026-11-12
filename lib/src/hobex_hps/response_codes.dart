@@ -110,9 +110,11 @@ enum HpsCodeSource {
 enum HpsCodeReason {
   approved('Vom Terminal genehmigt.'),
   approvedWithCondition(
+    // Das HPS-Terminal druckt keinen Beleg, an dem der Kassier nachsehen
+    // koennte (Inhaber, 12.11.2026): den Ausgang weiss hobex.
     'Das Terminal meldet eine Genehmigung mit Vorbehalt (etwa nur über '
-    'einen Teilbetrag). Ob und in welcher Höhe belastet wurde, bitte am '
-    'Terminalbeleg prüfen – nicht erneut kassieren, bevor es geklärt ist.',
+    'einen Teilbetrag). Ob und in welcher Höhe belastet wurde, weiß hobex '
+    '– nicht erneut kassieren, bevor es geklärt ist.',
   ),
   aborted('Der Vorgang wurde abgebrochen. Es wurde kein Geld bewegt.'),
   noCard(

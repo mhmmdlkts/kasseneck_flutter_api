@@ -156,6 +156,13 @@ ReceiptLayout shiftReceiptLayout(ShiftSummaryReceipt receipt, {PosPaperSize pape
   // Nur wenn der Server den Anfang ausdruecklich als nicht gezaehlt meldet; ohne das Feld bleibt der Bon wie bisher.
   if (bon.openingCounted == false) zeilen.add(_text(labelText('shift_receipt.opening_not_counted')));
   if (bon.cashSalesCents != null) zeilen.add(_betrag(labelText('shift_receipt.cash_sales'), bon.cashSalesCents!));
+  // Kartentrinkgeld bar aus der Lade genommen (Spec keck 2026-11-11-kartentrinkgeld, § 4.3): verlaesst die Lade ohne
+  // Bewegung; ohne diese Zeile ginge Start + Bar + Bewegungen nicht im Soll auf. Steht wie die Bewegungen auch blind.
+  // Fehlt ohne Karten-direkt (Feld fehlt oder 0) -- der Bon bleibt dann Byte fuer Byte wie bisher.
+  final kartentrinkgeld = bon.cardTipsTakenCents;
+  if (kartentrinkgeld != null && kartentrinkgeld != 0) {
+    zeilen.add(_betrag(labelText('shift.part_card_tips_taken'), -kartentrinkgeld));
+  }
   if (bon.cashCancellationsCents != null) {
     zeilen.add(_betrag(labelText('shift_receipt.cash_cancellations'), bon.cashCancellationsCents!));
   }
@@ -215,7 +222,7 @@ ReceiptLayout shiftReceiptLayout(ShiftSummaryReceipt receipt, {PosPaperSize pape
   zeilen.add(_anzahl(labelText('shift_receipt.cancellations'), bon.cancellationCount));
   zeilen.add(_anzahl(labelText('shift_receipt.openings_without_sale'), bon.openingsWithoutSale));
 
-  // Trinkgeld je Mitarbeiter (shiftTipLines): verdient immer, ueber Lohn, schon genommen und offen
+  // Trinkgeld je Mitarbeiter (shiftTipLines): verdient immer, ueber Lohn, genommen und offen
   // nur ungleich 0; wer ueberall 0 hat, entfaellt, ohne Mitarbeiter auch die Ueberschrift.
   final trinkgeld = [
     for (final t in bon.tips)

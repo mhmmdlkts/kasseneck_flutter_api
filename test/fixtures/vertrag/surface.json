@@ -1,5 +1,5 @@
 {
-  "version": "1.36.0",
+  "version": "1.37.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -172,7 +172,8 @@
       "getRegisterInspectionInfo",
       "reportConnectState",
       "learnMyLeergutCode",
-      "listMyLeergutCodes"
+      "listMyLeergutCodes",
+      "getMyTipBalance"
     ]
   },
   "routes": {
@@ -354,7 +355,8 @@
       "getRegisterInspectionInfo",
       "reportConnectState",
       "learnMyLeergutCode",
-      "listMyLeergutCodes"
+      "listMyLeergutCodes",
+      "getMyTipBalance"
     ]
   },
   "unknownOutcomeCalls": [
@@ -783,6 +785,7 @@
       "opening",
       "cash_sales",
       "cash_tips",
+      "card_tips_taken",
       "cancellations",
       "cash_in",
       "cash_out",
@@ -856,11 +859,14 @@
     "posBusinessOptionalChoices": [
       "tipKinds",
       "tipStart",
-      "tipKeptMode"
+      "tipKeptMode",
+      "tipCardKeptMode"
     ],
     "posBusinessOptionalFields": [
       "tipKeptByDefault",
-      "customDiscountAllowed"
+      "customDiscountAllowed",
+      "tipCardKeptByDefault",
+      "tipSelfPayout"
     ],
     "posBusinessOptionalLists": [
       "discountPresets"
@@ -924,6 +930,7 @@
       "method_not_allowed",
       "mfa_required",
       "module_inactive",
+      "not_a_person_login",
       "not_found",
       "not_permitted",
       "note_required",
@@ -1008,6 +1015,15 @@
       "store",
       "vehicle",
       "other"
+    ],
+    "tipCardKeptMode": [
+      "ask",
+      "always",
+      "never"
+    ],
+    "tipClaimScopes": [
+      "per_drawer",
+      "per_person"
     ],
     "tipKeptMode": [
       "ask",

@@ -33,7 +33,8 @@ void main() {
   });
 
   test('Einstellung tipKeptByDefault: optional, Standard aus, nur ein Wahrheitswert', () {
-    expect(posBusinessOptionalFields, ['tipKeptByDefault', 'customDiscountAllowed']);
+    // Seit 1.37.0 dazu die Karten-Vorbelegung und der Not-Aus Selbst-Auszahlen.
+    expect(posBusinessOptionalFields, ['tipKeptByDefault', 'customDiscountAllowed', 'tipCardKeptByDefault', 'tipSelfPayout']);
     const standard = PosBusinessSettings();
     expect(standard.toJson().containsKey('tipKeptByDefault'), isFalse);
     expect(posTipKeptByDefault(standard), isFalse);

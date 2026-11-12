@@ -26,6 +26,8 @@ const _schicht = [
   'getMyShiftReport',
   'closeMyShift',
   'recordMyShiftCount',
+  // „Mein Trinkgeld“ (npm 1.37.0, wie ENDPUNKTE in pos-schicht.test.ts).
+  'getMyTipBalance',
 ];
 
 Iterable<Map<String, dynamic>> _faelle(String endpunkt) => ((_endpunkte[endpunkt] as Map)['cases'] as List)
@@ -143,6 +145,7 @@ Future<Object?> _rufe(RegisterReceiptClient c, String endpunkt, Map<String, dyna
     denominations: _karte(p['denominations']),
     comment: p['comment'] as String?,
   ),
+  'getMyTipBalance' => c.getMyTipBalance(drawerId: p['drawerId'] as String?, cashregisterId: p['cashregisterId'] as String?),
   _ => throw StateError(endpunkt),
 };
 
@@ -154,6 +157,7 @@ Object? _modell(Object? e) => switch (e) {
   ShiftReport s => s.toJson(),
   ShiftCloseResult s => s.toJson(),
   ShiftCountResult s => s.toJson(),
+  TipBalance s => s.toJson(),
   _ => throw StateError('unbekanntes Ergebnis $e'),
 };
 
@@ -677,11 +681,12 @@ void main() {
     expect(messageText('shift.required_other'), 'Die Schicht muss ein berechtigter Mitarbeiter öffnen.');
     expect(messageText('shift.closed', {'number': 7}), 'Schicht 7 geschlossen.');
     expect(labelText('cash_movement.type_change_in'), 'Wechselgeld');
-    // Trinkgeld je Mitarbeiter (Nachtrag 3): verdient, ueber Lohn, schon genommen, offen; „sofort“ ist weg.
+    // Trinkgeld je Mitarbeiter (Nachtrag 3): verdient, ueber Lohn, genommen, offen; „sofort“ ist weg.
+    // „genommen“ statt „schon genommen“ seit 1.37.0 (Inhaber, 12.11.2026).
     expect(labelText('shift_receipt.tips'), 'Trinkgeld');
     expect(labelText('shift_receipt.tip_earned'), 'verdient');
     expect(labelText('shift_receipt.tip_retained'), 'über Lohn');
-    expect(labelText('shift_receipt.tip_paid_out'), 'schon genommen');
+    expect(labelText('shift_receipt.tip_paid_out'), 'genommen');
     expect(labelText('shift_receipt.tip_open'), 'offen');
     expect(labelText('shift.pay_out_tips'), 'Trinkgeld auszahlen');
     expect(posLabels.containsKey('shift_receipt.tip_immediately'), isFalse);

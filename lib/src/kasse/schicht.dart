@@ -249,6 +249,7 @@ class ShiftTipTotals {
     required this.retainedCents,
     required this.paidOutCents,
     this.refundedByEmployeeCents = 0,
+    this.cardTipsTakenCents,
   });
 
   final String registerUserId;
@@ -260,14 +261,21 @@ class ShiftTipTotals {
   /// Behaelt der Betrieb und zahlt es ueber den Lohn („über Lohn“).
   final int retainedCents;
 
-  /// In dieser Schicht aus der Lade ausgezahlt („schon genommen“).
+  /// In dieser Schicht aus der Lade ausgezahlt („genommen“).
   final int paidOutCents;
 
   /// Beim Storno selbst zurueckgegeben („selbst zurückgegeben“, Fix-Runde 1,
-  /// R62). Eigene Zahl, damit „schon genommen“ nie negativ wird: offen =
+  /// R62). Eigene Zahl, damit „genommen“ nie negativ wird: offen =
   /// verdient − genommen + selbst zurueckgegeben. Fehlt es in der Antwort
   /// (Backend vor dieser Regel), gilt 0.
   final int refundedByEmployeeCents;
+
+  /// Kartentrinkgeld, das die Mitarbeiterin beim Verkauf bar aus der Lade
+  /// genommen hat (Spec 2026-11-11-kartentrinkgeld, § 4.3; Teil von
+  /// [paidOutCents]). Der Server sendet es nur, wenn es eines gibt; `null` =
+  /// 0, gelesen wie gesendet. Auf Bon und Kassenstand die Zeile „davon
+  /// Kartentrinkgeld“ ([shiftTipLines]).
+  final int? cardTipsTakenCents;
 
   Map<String, dynamic> toJson() => {
         'registerUserId': registerUserId,
@@ -276,6 +284,7 @@ class ShiftTipTotals {
         'retainedCents': retainedCents,
         'paidOutCents': paidOutCents,
         'refundedByEmployeeCents': refundedByEmployeeCents,
+        'cardTipsTakenCents': ?cardTipsTakenCents,
       };
 }
 
@@ -290,6 +299,7 @@ class ShiftTip extends ShiftTipTotals {
     required super.retainedCents,
     required super.paidOutCents,
     super.refundedByEmployeeCents,
+    super.cardTipsTakenCents,
     this.carriedOverCents = 0,
     required this.openCents,
   });
@@ -297,7 +307,7 @@ class ShiftTip extends ShiftTipTotals {
   /// Offene Forderung an die Lade beim Oeffnen der Schicht („aus früheren
   /// Schichten“, Fix-Runde 2, R64); ohne offene Schicht der ganze Anspruch.
   /// Fehlt es, 0. Fuer den Leser geht auf: offen = aus frueheren Schichten +
-  /// verdient − ueber Lohn − schon genommen + selbst zurueckgegeben.
+  /// verdient − ueber Lohn − genommen + selbst zurueckgegeben.
   final int carriedOverCents;
 
   final int openCents;
@@ -313,7 +323,8 @@ typedef ShiftReceiptTip = ShiftTip;
 class ShiftTipLine {
   const ShiftTipLine({required this.key, required this.text, required this.cents});
 
-  /// `shift_receipt.tip_earned`, `tip_retained`, `tip_paid_out` oder `tip_open`.
+  /// `shift_receipt.tip_carried_over`, `tip_earned`, `tip_retained`,
+  /// `tip_paid_out`, `tip_card_taken`, `tip_refunded_by_employee` oder `tip_open`.
   final String key;
 
   /// Das Wort aus dem Katalog ([labelText]).
@@ -323,9 +334,11 @@ class ShiftTipLine {
 
 /// Was vom Trinkgeld eines Mitarbeiters dasteht, auf dem Bon, im Kassenstand
 /// und beim Abschluss gleich (Rulings R50/R51): „verdient“ (sofort + ueber
-/// Lohn) immer, „über Lohn“, „schon genommen“, „selbst zurückgegeben“ (R62)
+/// Lohn) immer, „über Lohn“, „genommen“, „selbst zurückgegeben“ (R62)
 /// und „offen“ nur, wenn nicht 0. Davor „aus früheren Schichten“ (R64, nur
-/// wenn nicht 0).
+/// wenn nicht 0). Hinter „genommen“ steht „davon Kartentrinkgeld“ (bar aus der
+/// Lade genommen; Spec 2026-11-11-kartentrinkgeld, nur wenn nicht 0, Teil von
+/// „genommen“, kein eigener Summand).
 /// Ist alles 0, gibt es keine Zeile, und der Mitarbeiter entfaellt ganz. Ohne
 /// `openCents` (Laufstand, [ShiftTipTotals]) zaehlt offen als 0. Gemeinsame
 /// Faelle mit dem JS-Zwilling: `shift-cases.json`.
@@ -334,6 +347,7 @@ List<ShiftTipLine> shiftTipLines(ShiftTipTotals tip) {
   final rest = <(String, int)>[
     ('shift_receipt.tip_retained', tip.retainedCents),
     ('shift_receipt.tip_paid_out', tip.paidOutCents),
+    ('shift_receipt.tip_card_taken', tip.cardTipsTakenCents ?? 0),
     ('shift_receipt.tip_refunded_by_employee', tip.refundedByEmployeeCents),
     ('shift_receipt.tip_open', tip is ShiftTip ? tip.openCents : 0),
   ].where((z) => z.$2 != 0).toList();
@@ -485,6 +499,8 @@ const List<String> expectedPartKeys = [
   'opening',
   'cash_sales',
   'cash_tips',
+  // Kartentrinkgeld bar aus der Lade genommen (11.28.0): Soll = … − dieser Teil.
+  'card_tips_taken',
   'cancellations',
   'cash_in',
   'cash_out',
@@ -703,6 +719,59 @@ class TipClaim {
   final int cents;
 
   Map<String, dynamic> toJson() => {'registerUserId': registerUserId, 'name': name, 'cents': cents};
+}
+
+/// Wo der offene Trinkgeld-Anspruch gefuehrt wird (Spec
+/// 2026-11-11-kartentrinkgeld, F2; Katalog `TRINKGELD_ANSPRUCH`): `per_drawer`
+/// = je Lade (Vorgabe), `per_person` = ein Stand je Person ueber alle Laden.
+/// Beschriftung ueber [tipClaimScopeLabels]. Zwilling von `TIP_CLAIM_SCOPES`.
+const List<String> tipClaimScopes = ['per_drawer', 'per_person'];
+
+/// Eine andere Lade des Kontos mit offenem Betrag der Person (nur bei
+/// `per_drawer`).
+class TipBalanceOtherDrawer {
+  const TipBalanceOtherDrawer({required this.drawerId, this.name, required this.openCents});
+
+  final String drawerId;
+  final String? name;
+  final int openCents;
+
+  Map<String, dynamic> toJson() => {'drawerId': drawerId, 'name': name, 'openCents': openCents};
+}
+
+/// „Mein Trinkgeld“ ([RegisterReceiptClient.getMyTipBalance]): der Stand der
+/// angemeldeten Person. [openCents] kann negativ sein (zu viel ausgezahlt, wird
+/// mit dem naechsten Trinkgeld verrechnet); [keptTodayCents] = heute genommen
+/// (ausgezahlt, bar gleich behalten, Kartentrinkgeld bar). Bei `per_person` die
+/// Summe ueber alle Laden, [otherDrawers] leer. Ohne Schichtbetrieb der Lade
+/// immer 0 (kein Anspruch). Zwilling von `TipBalance`.
+class TipBalance {
+  const TipBalance({
+    required this.drawerId,
+    required this.claimScope,
+    required this.openCents,
+    required this.keptTodayCents,
+    required this.currency,
+    this.otherDrawers = const [],
+  });
+
+  final String drawerId;
+
+  /// Ein Wert aus [tipClaimScopes] oder ein kuenftiger.
+  final String claimScope;
+  final int openCents;
+  final int keptTodayCents;
+  final String currency;
+  final List<TipBalanceOtherDrawer> otherDrawers;
+
+  Map<String, dynamic> toJson() => {
+        'drawerId': drawerId,
+        'claimScope': claimScope,
+        'openCents': openCents,
+        'keptTodayCents': keptTodayCents,
+        'currency': currency,
+        'otherDrawers': [for (final l in otherDrawers) l.toJson()],
+      };
 }
 
 /// Eine gemeldete Oeffnung der Lade (nur mit `cashView`).
@@ -945,6 +1014,7 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
     this.countedBeforePayoutCents,
     this.countedBeforePayoutDenominations,
     this.discounts,
+    this.cardTipsTakenCents,
   });
 
   /// Nummer der Schicht (Draht: `shift.number`).
@@ -982,6 +1052,10 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
 
   /// Gewaehrte Rabatte je Name; `null`, wenn es keine gab (der Bon bleibt dann wie bisher).
   final List<ShiftDiscount>? discounts;
+
+  /// Kartentrinkgeld bar aus der Lade genommen, Summe (Soll − Betrag); `null`
+  /// ohne Kartentrinkgeld ueber die Lade (der Bon bleibt dann wie bisher).
+  final int? cardTipsTakenCents;
 
   /// Entnommen bzw. eingelegt nach dem Zaehlen; `null`, wenn kein Geld bewegt wurde.
   final AfterCount? afterCount;
@@ -1034,6 +1108,7 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
         'comment': comment,
         'openingsWithoutSale': openingsWithoutSale,
         if (discounts != null) 'discounts': [for (final r in discounts!) r.toJson()],
+        if (cardTipsTakenCents != null) 'cardTipsTakenCents': cardTipsTakenCents,
         if (afterCount != null) 'afterCount': afterCount!.toJson(),
         if (afterCount != null) 'leftInDrawerCents': leftInDrawerCents,
         if (openingCounted != null) 'openingCounted': openingCounted,
@@ -1378,6 +1453,8 @@ ShiftTipTotals _trinkgeld(_Ort ort, Object? w) {
     paidOutCents: _ganzzahl(ort, o, 'paidOutCents'),
     // Fehlt bei einem Backend vor der Regel R62: dann 0, statt die ganze Antwort zu verwerfen.
     refundedByEmployeeCents: o['refundedByEmployeeCents'] == null ? 0 : _ganzzahl(ort, o, 'refundedByEmployeeCents'),
+    // Kartentrinkgeld bar genommen: der Server sendet es nur, wenn es eines gibt -- gelesen wie gesendet.
+    cardTipsTakenCents: _ganzzahlOderNull(ort, o, 'cardTipsTakenCents'),
   );
 }
 
@@ -1392,6 +1469,7 @@ ShiftTip _trinkgeldMitOffen(_Ort ort, Object? w) {
     retainedCents: t.retainedCents,
     paidOutCents: t.paidOutCents,
     refundedByEmployeeCents: t.refundedByEmployeeCents,
+    cardTipsTakenCents: t.cardTipsTakenCents,
     // Fehlt bei einem Backend vor der Regel R64: dann 0.
     carriedOverCents: o['carriedOverCents'] == null ? 0 : _ganzzahl(ort, o, 'carriedOverCents'),
     openCents: _ganzzahl(ort, o, 'openCents'),
@@ -1562,6 +1640,26 @@ DrawerState ladeStand(String name, Map<String, dynamic> daten) {
   );
 }
 
+/// `getMyTipBalance` -> [TipBalance] („Mein Trinkgeld“), Drahtform Feld fuer Feld.
+TipBalance tipStand(String name, Map<String, dynamic> daten) {
+  final ort = _Ort(name, '');
+  return TipBalance(
+    drawerId: _kennung(ort, daten, 'drawerId'),
+    claimScope: _kennung(ort, daten, 'claimScope'),
+    openCents: _ganzzahl(ort, daten, 'openCents'),
+    keptTodayCents: _ganzzahl(ort, daten, 'keptTodayCents'),
+    currency: _kennung(ort, daten, 'currency'),
+    otherDrawers: _liste(ort, daten, 'otherDrawers', (lOrt, lw) {
+      final l = _pflichtObjekt(lOrt, lw);
+      return TipBalanceOtherDrawer(
+        drawerId: _kennung(lOrt, l, 'drawerId'),
+        name: _text(l['name']),
+        openCents: _ganzzahl(lOrt, l, 'openCents'),
+      );
+    }),
+  );
+}
+
 CashMovement _bewegung(_Ort ort, Object? w) {
   final o = _pflichtObjekt(ort, w);
   final empfaenger = objekt(o['recipient']);
@@ -1642,6 +1740,8 @@ ShiftSummaryReceipt _schichtBon(_Ort ort, Object? w) {
     interimDifferenceCents: _ganzzahlOderNull(ort, o, 'interimDifferenceCents'),
     // Nur Anzeige: gewaehrte Rabatte je Name; der Server sendet sie erst ab dem ersten Rabatt.
     discounts: o['discounts'] == null ? null : _liste(ort, o, 'discounts', _rabatt),
+    // Kartentrinkgeld bar aus der Lade genommen (Summe); nur mit Karten-direkt.
+    cardTipsTakenCents: _ganzzahlOderNull(ort, o, 'cardTipsTakenCents'),
     differenceParts: o['differenceParts'] == null ? null : _liste(ort, o, 'differenceParts', _differenzTeil),
     countedBeforePayoutCents: _ganzzahlOderNull(ort, o, 'countedBeforePayoutCents'),
     countedBeforePayoutDenominations: _stueckelung(ort, o, 'countedBeforePayoutDenominations'),

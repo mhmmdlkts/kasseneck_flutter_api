@@ -62,6 +62,8 @@ const Set<String> _lesen = {
   'getKasseSettings',
   'getMyDrawerState',
   'getMyShiftReport',
+  // „Mein Trinkgeld“ (npm 1.37.0): CALLS_WITHOUT_EFFECT 'read'.
+  'getMyTipBalance',
   'getPrintJob',
   'getReceipt',
   // Kasseninfo fuer die Pruefung: liest nur.

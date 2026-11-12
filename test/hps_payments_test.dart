@@ -182,6 +182,7 @@ HpsPayments paymentsFor(
   FakeTerminal terminal, {
   Duration? budget,
   Duration? maxBackoff,
+  int? maxTransportFailures,
   HpsObserver? observer,
   List<Duration>? pausen,
 }) {
@@ -195,6 +196,7 @@ HpsPayments paymentsFor(
     client,
     resolveBudget: budget ?? const Duration(minutes: 10),
     maxBackoff: maxBackoff ?? const Duration(seconds: 10),
+    maxTransportFailures: maxTransportFailures ?? 3,
     // Kein echtes Warten im Test: die Pause wird mitgeschrieben und laesst
     // stattdessen die Uhr vorruecken. Nur so vergeht Zeit -- ein Test kann
     // deshalb genau ausrechnen, wann das Budget aufgebraucht ist.
@@ -2538,6 +2540,325 @@ void main() {
       // hat.
       final ids = List.generate(200, (_) => HpsClient.newTransactionId());
       expect(ids.toSet().length, 200);
+    });
+  });
+
+  // Spaete Nachfrage (clarifyPayment): liest nur, entscheidet nur, was die
+  // bisherige Klaerung zulaesst. Jede Regel unten hat eine Rot-Probe: wer sie
+  // lockert (etwa "'0' heisst immer belastet"), macht den jeweiligen Test rot.
+  group('Spaete Nachfrage (clarifyPayment)', () {
+    http.Response genehmigt(http.Request _) => json({
+          'responseCode': '0',
+          'transactionId': '700',
+          'approvalCode': '654321',
+        });
+    http.Response aufgehoben(http.Request _) =>
+        json({'responseCode': '9011', 'transactionId': '700'});
+    http.Response keineAuskunft(http.Request _) =>
+        json({'responseCode': '9027', 'transactionId': '700'});
+    http.Response abgelehnt(http.Request _) =>
+        json({'responseCode': '100003', 'transactionId': '700'});
+    http.Response hostTimeout(http.Request _) =>
+        json({'responseCode': '9908', 'transactionId': '700'});
+
+    const vorKlaerung = HpsClarifyPrevious.beforeResolve();
+    const unbekannt = HpsClarifyPrevious.unknown();
+    HpsClarifyPrevious offenMit(HpsCodeReason? reason) =>
+        HpsClarifyPrevious.unresolved(reason: reason);
+
+    ({FakeTerminal terminal, Future<HpsResult> lauf}) nachfrage(
+      HpsClarifyPrevious previous,
+      List<Responder> status, {
+      int? maxTransportFailures,
+    }) {
+      final t = FakeTerminal(status: status);
+      final lauf = paymentsFor(
+        t,
+        budget: const Duration(seconds: 90),
+        maxTransportFailures: maxTransportFailures,
+      ).clarifyPayment(transactionId: '700', previous: previous);
+      return (terminal: t, lauf: lauf);
+    }
+
+    /// Nichts ausser Statusabfragen -- kein Abbruch, kein Storno, keine neue
+    /// Zahlung.
+    void nurStatus(FakeTerminal t) {
+      expect(t.log, isNotEmpty, reason: 'mindestens eine Statusabfrage');
+      for (final r in t.log) {
+        expect(r.method, 'GET', reason: r.url.path);
+        expect(r.url.path, '/api/v2/transactions/3600335/700');
+      }
+    }
+
+    test(
+        'Nachfrage vor der Klaerung (App riss waehrend der Zahlung ab), '
+        'Status 0 -- approved mit der Antwort', () async {
+      final n = nachfrage(vorKlaerung, [genehmigt]);
+      final r = await n.lauf;
+      expect(r.outcome, CardPaymentOutcome.approved);
+      expect(r.transactionId, '700');
+      expect(r.response?.approvalCode, '654321',
+          reason: 'die Antwort traegt die Belegdaten');
+      nurStatus(n.terminal);
+      expect(n.terminal.log.length, 1);
+    });
+
+    test(
+        'Nachfrage nach offener Klaerung ohne Stoerung (Leitung riss ab, kein '
+        'Code), Status 0 -- approved', () async {
+      final n = nachfrage(offenMit(null), [genehmigt]);
+      expect((await n.lauf).outcome, CardPaymentOutcome.approved);
+      nurStatus(n.terminal);
+    });
+
+    test('Nachfrage ohne Stoerung, Status 9011 -- declined (aufgehoben), '
+        'nichts belastet', () async {
+      final n = nachfrage(vorKlaerung, [aufgehoben]);
+      final r = await n.lauf;
+      expect(r.outcome, CardPaymentOutcome.declined);
+      expect(r.reason, HpsCodeReason.canceled);
+      nurStatus(n.terminal);
+    });
+
+    test('Nachfrage ohne Stoerung, schluessige Ablehnung -- declined',
+        () async {
+      final n = nachfrage(offenMit(HpsCodeReason.unknown), [abgelehnt]);
+      final r = await n.lauf;
+      expect(r.outcome, CardPaymentOutcome.declined);
+      expect(r.response?.responseCode, '100003');
+      nurStatus(n.terminal);
+    });
+
+    // Rot-Probe: "'0' heisst immer belastet" -- nach einem moeglichen Storno
+    // falsch.
+    test('Nachfrage nach Host-Timeout (Storno nachgeschickt), Status 0 -- '
+        'bleibt offen, nie approved', () async {
+      final n = nachfrage(offenMit(HpsCodeReason.hostTimeout), [genehmigt]);
+      final r = await n.lauf;
+      expect(r.outcome, CardPaymentOutcome.unresolved);
+      expect(r.reason, HpsCodeReason.hostTimeout,
+          reason: 'der Grund der Zahlung bleibt der Grund');
+      expect(r.lastResponse?.responseCode, '0');
+      expect(r.response, isNull);
+      expect(
+        r.steps.any((s) =>
+            s.startsWith('Status: genehmigt (0)') && s.contains('Storno')),
+        isTrue,
+        reason: r.steps.join(' | '),
+      );
+      nurStatus(n.terminal);
+      expect(n.terminal.log.length, 2,
+          reason: 'zweimal ohne Aussage, dann Schluss');
+    });
+
+    test('Nachfrage nach Host-Stoerung mit Storno, Status 9011 -- declined, '
+        'wie in der Klaerung von pay', () async {
+      for (final reason in [
+        HpsCodeReason.hostTimeout,
+        HpsCodeReason.hostFault,
+      ]) {
+        final n = nachfrage(offenMit(reason), [aufgehoben]);
+        final r = await n.lauf;
+        expect(r.outcome, CardPaymentOutcome.declined, reason: reason.name);
+        expect(r.reason, HpsCodeReason.canceled);
+        nurStatus(n.terminal);
+      }
+    });
+
+    // Rot-Probe: "nach einer Host-Stoerung entscheidet jede Ablehnung" -- der
+    // Host weiss es, nicht das Terminal. Gehalten von `!gestoert` im
+    // Ablehnungszweig (die Regel-Tabelle sagt es zusaetzlich).
+    test('Nachfrage nach Host-Stoerung, schluessige Ablehnung -- bleibt offen',
+        () async {
+      final n = nachfrage(offenMit(HpsCodeReason.hostFault), [abgelehnt]);
+      expect((await n.lauf).outcome, CardPaymentOutcome.unresolved);
+    });
+
+    // Rot-Probe: eine Stoerung ohne Storno-Pflicht (interner Fehler) kann
+    // spaeter trotzdem eines ausgeloest haben -- weder 0 noch 9011
+    // entscheiden.
+    test('Nachfrage nach Stoerung ohne sicheres Storno (internalError, '
+        'approvedWithCondition) -- 0 und 9011 bleiben offen', () async {
+      for (final reason in [
+        HpsCodeReason.internalError,
+        HpsCodeReason.approvedWithCondition,
+      ]) {
+        for (final status in [genehmigt, aufgehoben]) {
+          final n = nachfrage(offenMit(reason), [status]);
+          final r = await n.lauf;
+          expect(r.outcome, CardPaymentOutcome.unresolved,
+              reason: '${reason.name} ${r.lastResponse?.responseCode}');
+          expect(r.reason, reason);
+          nurStatus(n.terminal);
+        }
+      }
+    });
+
+    // Rot-Probe: "unbekannte Vorgeschichte wie ohne Stoerung behandeln".
+    // Der Grund kommt nie aus einem Code, der nicht entscheiden durfte (am
+    // Terminal 11.11.2026 gesehen: sonst stand "approved" an einem offenen
+    // Ergebnis).
+    test('Nachfrage ohne bekannte Vorgeschichte (unknown) -- keine Antwort '
+        'entscheidet, kein Grund aus ihr', () async {
+      for (final status in [genehmigt, aufgehoben, abgelehnt]) {
+        final n = nachfrage(unbekannt, [status]);
+        final r = await n.lauf;
+        expect(r.outcome, CardPaymentOutcome.unresolved);
+        expect(r.reason, isNull,
+            reason: 'kein Grund aus ${r.lastResponse?.responseCode}');
+        expect(r.steps.first, contains('nicht bekannt'));
+        nurStatus(n.terminal);
+      }
+    });
+
+    // Rot-Probe: die Zwei-9027-Regel ohne Antwort auf die Zahlung -- 9027
+    // heisst hier nie "abgelehnt".
+    test('Nachfrage, Status zweimal 9027 -- unresolved nach genau zwei '
+        'Abfragen, nie declined', () async {
+      for (final previous in [
+        vorKlaerung,
+        offenMit(HpsCodeReason.unknown),
+        offenMit(null),
+      ]) {
+        final n = nachfrage(previous, [keineAuskunft]);
+        final r = await n.lauf;
+        expect(r.outcome, CardPaymentOutcome.unresolved);
+        expect(n.terminal.log.length, 2);
+        expect(
+          r.steps.any((s) => s.startsWith('Statusabfrage zweimal ohne Aussage')),
+          isTrue,
+          reason: r.steps.join(' | '),
+        );
+      }
+    });
+
+    test('Nachfrage: erst 9027, dann 0 -- approved (ohne Aussage zaehlt nur in '
+        'Folge)', () async {
+      final n = nachfrage(vorKlaerung, [keineAuskunft, genehmigt]);
+      expect((await n.lauf).outcome, CardPaymentOutcome.approved);
+      expect(n.terminal.log.length, 2);
+    });
+
+    // Rot-Probe: meldet der Status selbst eine Host-Stoerung, entscheidet
+    // danach nur noch die Genehmigung.
+    test('Nachfrage: Status meldet Host-Timeout, dann 9011 -- offen; dann 0 '
+        '-- approved', () async {
+      final offen = await nachfrage(vorKlaerung, [hostTimeout, aufgehoben]).lauf;
+      expect(offen.outcome, CardPaymentOutcome.unresolved);
+      expect(offen.reason, HpsCodeReason.hostTimeout);
+      final genehmigtDanach =
+          await nachfrage(vorKlaerung, [hostTimeout, genehmigt]).lauf;
+      expect(genehmigtDanach.outcome, CardPaymentOutcome.approved);
+    });
+
+    test('Nachfrage: Terminal antwortet nicht -- nach maxTransportFailures '
+        'offen, nie ein Storno', () async {
+      final n = nachfrage(vorKlaerung, [boom]);
+      final r = await n.lauf;
+      expect(r.outcome, CardPaymentOutcome.unresolved);
+      expect(n.terminal.log.length, 3);
+      nurStatus(n.terminal);
+      expect(
+        r.steps.any(
+            (s) => s == 'Terminal antwortet nicht -- Ausgang bleibt offen'),
+        isTrue,
+        reason: r.steps.join(' | '),
+      );
+    });
+
+    test('Nachfrage: das Budget ist ein Sechstel der Klaerung (15 s bei 90 s)',
+        () async {
+      final pausen = <Duration>[];
+      final t = FakeTerminal(status: [boom]);
+      final r = await paymentsFor(
+        t,
+        budget: const Duration(seconds: 90),
+        maxTransportFailures: 100,
+        pausen: pausen,
+      ).clarifyPayment(transactionId: '700', previous: vorKlaerung);
+      expect(r.outcome, CardPaymentOutcome.unresolved);
+      final vergangen = pausen.fold(Duration.zero, (a, b) => a + b);
+      expect(vergangen, lessThanOrEqualTo(const Duration(seconds: 15)),
+          reason: 'nach $vergangen');
+      expect(vergangen, greaterThanOrEqualTo(const Duration(seconds: 7)),
+          reason: 'die Pausen laufen bis ans Budget ($vergangen)');
+    });
+
+    test('Nachfrage: ungueltige Kennung wirft ArgumentError wie bei der '
+        'Zahlung, bevor etwas hinausgeht', () async {
+      final t = FakeTerminal(status: [genehmigt]);
+      await expectLater(
+        paymentsFor(t).clarifyPayment(
+          transactionId: 'keine-ziffern',
+          previous: vorKlaerung,
+        ),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(t.log, isEmpty);
+    });
+
+    test('Nachfrage meldet sich beim Beobachter (resolving, resolved) mit der '
+        'Kennung', () async {
+      final ereignisse = <String>[];
+      final t = FakeTerminal(status: [genehmigt]);
+      await paymentsFor(
+        t,
+        observer: (e) => ereignisse.add('${e.kind.name}:${e.transactionId}'),
+      ).clarifyPayment(transactionId: '700', previous: vorKlaerung);
+      expect(ereignisse, ['resolving:700', 'resolved:700']);
+    });
+
+    // Rot-Probe: ein Nachfrage-Ergebnis als Vorgeschichte. Sein Grund
+    // (noStatement aus dem 9027 der ersten Nachfrage) stammt aus der
+    // Nachfrage, nicht aus der Zahlung, und ist kein Grund der Zahlung. Ohne
+    // die Marke `clarified` endete die zweite Nachfrage mit Status 0 als
+    // approved.
+    test('Nachfrage: ein Nachfrage-Ergebnis als Vorgeschichte entscheidet nie '
+        '-- auch nicht mit Status 0', () async {
+      final erste = await nachfrage(unbekannt, [keineAuskunft]).lauf;
+      expect(erste.outcome, CardPaymentOutcome.unresolved);
+      expect(erste.clarified, isTrue);
+      expect(erste.reason, HpsCodeReason.noStatement);
+      for (final status in [genehmigt, aufgehoben, abgelehnt]) {
+        final n = nachfrage(HpsClarifyPrevious.fromResult(erste), [status]);
+        final zweite = await n.lauf;
+        expect(zweite.outcome, CardPaymentOutcome.unresolved);
+        expect(zweite.reason, isNot(HpsCodeReason.noStatement),
+            reason: 'kein geerbter Grund aus der ersten Nachfrage');
+        expect(zweite.steps.first, contains('frueheren Nachfrage'));
+        nurStatus(n.terminal);
+      }
+      // Auch ein entschiedenes Nachfrage-Ergebnis traegt die Marke.
+      final genehmigtNachfrage = await nachfrage(vorKlaerung, [genehmigt]).lauf;
+      expect(genehmigtNachfrage.clarified, isTrue);
+      // Das Ergebnis von pay traegt sie nie.
+      final t = FakeTerminal(
+        payment: [
+          (_) => json({'responseCode': '0', 'transactionId': '701'})
+        ],
+      );
+      final zahlung = await paymentsFor(t).pay(amount: 1, transactionId: '701');
+      expect(zahlung.clarified, isFalse);
+    });
+
+    test('fromResult: offenes Ergebnis von pay traegt seinen Grund, ein '
+        'entschiedenes ist ein Aufruffehler', () {
+      const offen = HpsResult(
+        outcome: CardPaymentOutcome.unresolved,
+        transactionId: '700',
+        reason: HpsCodeReason.hostTimeout,
+      );
+      final previous = HpsClarifyPrevious.fromResult(offen);
+      expect(previous, isA<HpsClarifyUnresolved>());
+      expect((previous as HpsClarifyUnresolved).reason,
+          HpsCodeReason.hostTimeout);
+      const entschieden = HpsResult(
+        outcome: CardPaymentOutcome.approved,
+        transactionId: '700',
+        reason: HpsCodeReason.approved,
+      );
+      expect(() => HpsClarifyPrevious.fromResult(entschieden),
+          throwsA(isA<ArgumentError>()));
     });
   });
 }

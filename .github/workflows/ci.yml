@@ -14,6 +14,10 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Fest auf die zuletzt gruene Fassung: 3.50.0 (stable seit 11.11.2026) meldet
+          # `package:flutter/material.dart` als veraltet (Umstieg auf material_ui steht aus),
+          # und `flutter analyze` scheitert an diesen Hinweisen. Umstieg als eigener Schritt.
+          flutter-version: 3.47.9
           cache: true
 
       - name: pub get
