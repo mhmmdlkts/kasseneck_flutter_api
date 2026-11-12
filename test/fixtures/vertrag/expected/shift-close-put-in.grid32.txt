@@ -36,4 +36,4 @@ Verkauf
 Trinkgeld                       
 Ben Kellner                     
   verdient                  4,00
-  schon genommen            4,00
+  genommen                  4,00

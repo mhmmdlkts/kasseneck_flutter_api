@@ -1,5 +1,5 @@
 {
-  "version": "1.36.0",
+  "version": "1.37.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -158,13 +158,31 @@
       "text": "Über 50 % Trinkgeld – wirklich? Steuerfrei ist nur ortsübliches Trinkgeld."
     },
     "tip.kept_setting_hint": {
-      "text": "Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen."
+      "text": "Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als genommen. An der Kasse lässt es sich je Verkauf umstellen."
     },
     "tip.kept_hint": {
       "text": "Trinkgeld kommt als eigene Position auf den Beleg; der angemeldete Benutzer nimmt es gleich bar aus der Lade."
     },
     "tip.open_hint": {
       "text": "Trinkgeld kommt als eigene Position auf den Beleg und bleibt für den angemeldeten Benutzer offen, bis es ausgezahlt wird."
+    },
+    "tip.card_kept_setting_hint": {
+      "text": "Der Mitarbeiter nimmt das Kartentrinkgeld beim Verkauf bar aus der Lade: das Soll der Lade sinkt, es gilt als genommen. An der Kasse lässt es sich je Verkauf umstellen. Das geht nur bei offener Schicht, mit genug Bargeld in der Lade und für Mitarbeiter, die den Kassenstand sehen – sonst bleibt es offen."
+    },
+    "tip.self_payout_hint": {
+      "text": "Jeder persönlich angemeldete Mitarbeiter sieht sein Trinkgeld und zahlt es sich selbst aus. Aus: nur mit dem Recht „Schicht“."
+    },
+    "tip.overpaid_hint": {
+      "text": "Es wurde mehr ausgezahlt, als offen war. Das nächste Trinkgeld gleicht das aus."
+    },
+    "tip.terminal_hint": {
+      "text": "Trinkgeld wird an der Kasse eingetragen, nicht am Terminal – ein am Terminal getipptes Trinkgeld kennt die Kasse nicht."
+    },
+    "tip_claim_scope.hint": {
+      "text": "Je Kassenlade: das Trinkgeld steht an der Kassenlade, an der es entstand, und wird dort ausgezahlt. Je Person: ein Stand über alle Kassenladen, an jeder auszahlbar."
+    },
+    "my_tips.payout_not_allowed": {
+      "text": "Auszahlen nur mit dem Recht „Schicht“."
     },
     "completion.failed": {
       "text": "Der Abschluss ist fehlgeschlagen."
@@ -202,6 +220,22 @@
     "card_payment.unknown_with_id": {
       "text": "Unklar, ob die Kartenzahlung durchgegangen ist – die Verbindung zum Terminal riss ab. Bitte am Terminal-Beleg nachsehen, BEVOR neu kassiert wird: die Karte kann belastet sein. Kennung der Zahlung: {reference}.",
       "placeholders": [
+        "reference"
+      ]
+    },
+    "card_payment.unknown_hps": {
+      "text": "Unklar, ob die Kartenzahlung durchgegangen ist – die Verbindung zum Terminal riss ab. Die Karte kann belastet sein: erst klären, dann neu kassieren."
+    },
+    "card_payment.unknown_with_id_hps": {
+      "text": "Unklar, ob die Kartenzahlung durchgegangen ist – die Verbindung zum Terminal riss ab. Die Karte kann belastet sein: erst klären, dann neu kassieren. Kennung der Zahlung: {reference}.",
+      "placeholders": [
+        "reference"
+      ]
+    },
+    "card_payment.unclear_short": {
+      "text": "Kartenzahlung {amount} unklar – bitte klären. Kennung {reference}.",
+      "placeholders": [
+        "amount",
         "reference"
       ]
     },
@@ -688,6 +722,27 @@
         "reference"
       ]
     },
+    "split.card_reverse_failed_hps": {
+      "text": "Die Kartenzahlung über {amount} (Kennung {reference}) ließ sich nicht zurückbuchen – sie bleibt in der Liste. Bitte erneut versuchen.",
+      "placeholders": [
+        "amount",
+        "reference"
+      ]
+    },
+    "split.card_reverse_unknown_hps": {
+      "text": "Unklar, ob die Rückbuchung über {amount} (Kennung {reference}) durchgegangen ist – die Zahlung bleibt in der Liste. Nicht noch einmal zurückbuchen, bevor das geklärt ist.",
+      "placeholders": [
+        "amount",
+        "reference"
+      ]
+    },
+    "split.card_already_reversed_hps": {
+      "text": "Das Terminal meldet, dass die Kartenzahlung über {amount} bereits gutgeschrieben wurde (Kennung {reference}) – bitte nicht erneut zurückbuchen.",
+      "placeholders": [
+        "amount",
+        "reference"
+      ]
+    },
     "split.external_reverse": {
       "text": "Diese Karte ist nicht an die Kasse angebunden. Bitte {amount} jetzt am Terminal zurückbuchen und danach bestätigen.",
       "placeholders": [
@@ -720,6 +775,52 @@
     },
     "split.tendered_missing": {
       "text": "Erst eintippen, was der Gast für diese Zahlung gibt – der Rückgeld-Rechner ist an."
+    },
+    "split.clarify_asking": {
+      "text": "Das Terminal wird gefragt …"
+    },
+    "split.clarify_charged": {
+      "text": "Das Terminal meldet: belastet. Die Zahlung wurde übernommen."
+    },
+    "split.clarify_not_charged": {
+      "text": "Das Terminal meldet: nicht belastet. Die Zahlung wurde verworfen."
+    },
+    "split.clarify_open": {
+      "text": "Das Terminal weiß es nicht. hobex kann die Zahlung nachsehen."
+    },
+    "split.clarify_not_asked": {
+      "text": "Das Terminal konnte nicht gefragt werden ({reason}). Bitte später erneut klären.",
+      "placeholders": [
+        "reason"
+      ]
+    },
+    "split.clarify_busy": {
+      "text": "Das Terminal ist gerade belegt. Bitte gleich erneut klären."
+    },
+    "split.clarify_no_answer": {
+      "text": "Das Terminal hat nicht geantwortet. Bitte später erneut klären."
+    },
+    "split.clarify_manual": {
+      "text": "Das Terminal kann es nicht sicher sagen. hobex kann die Zahlung nachsehen."
+    },
+    "split.clarify_reason_host_fault": {
+      "text": "Grund: Störung zwischen Terminal und hobex."
+    },
+    "split.clarify_reason_host_timeout": {
+      "text": "Grund: hobex hat nicht rechtzeitig geantwortet."
+    },
+    "split.clarify_reason_internal_error": {
+      "text": "Grund: Das Terminal meldet einen internen Fehler."
+    },
+    "split.clarify_reason_approved_with_condition": {
+      "text": "Grund: Genehmigung mit Vorbehalt, etwa nur über einen Teilbetrag."
+    },
+    "split.clarify_reason_terminal": {
+      "text": "Grund: Das Terminal meldete „{text}“ (Code {code}).",
+      "placeholders": [
+        "text",
+        "code"
+      ]
     },
     "receipt.link_copied": {
       "text": "Der Link zum Beleg liegt in der Zwischenablage."
@@ -1158,6 +1259,12 @@
       ],
       "only": [
         "app"
+      ]
+    },
+    "version.new_available": {
+      "text": "Neue Fassung verfügbar – bei Gelegenheit neu laden.",
+      "only": [
+        "web"
       ]
     },
     "shift.started_taken_over": {
@@ -1691,8 +1798,62 @@
     "split.clarify": {
       "text": "Klären"
     },
+    "split.clarify_title": {
+      "text": "Karte klären · {amount}",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "split.clarify_reference": {
+      "text": "Kennung {reference}",
+      "placeholders": [
+        "reference"
+      ]
+    },
     "split.reverse_again": {
       "text": "Erneut zurückbuchen"
+    },
+    "hobex_help.open": {
+      "text": "Technik von hobex …"
+    },
+    "hobex_help.title": {
+      "text": "Technik von hobex"
+    },
+    "hobex_help.data": {
+      "text": "Das fragt hobex"
+    },
+    "hobex_help.tid": {
+      "text": "TID"
+    },
+    "hobex_help.reference": {
+      "text": "Kennung der Zahlung"
+    },
+    "hobex_help.reversal_reference": {
+      "text": "Kennung der Rückbuchung"
+    },
+    "hobex_help.amount": {
+      "text": "Betrag"
+    },
+    "hobex_help.time": {
+      "text": "Zeit"
+    },
+    "hobex_help.reason": {
+      "text": "Meldung"
+    },
+    "hobex_help.protocol": {
+      "text": "Anbindung"
+    },
+    "hobex_help.address": {
+      "text": "Adresse"
+    },
+    "hobex_help.serial": {
+      "text": "Seriennummer"
+    },
+    "hobex_help.copy": {
+      "text": "Angaben kopieren"
+    },
+    "hobex_help.copied": {
+      "text": "Kopiert"
     },
     "split.was_charged": {
       "text": "Wurde belastet – übernehmen"
@@ -2167,7 +2328,7 @@
       "text": "über Lohn"
     },
     "shift_receipt.tip_paid_out": {
-      "text": "schon genommen"
+      "text": "genommen"
     },
     "shift_receipt.tip_refunded_by_employee": {
       "text": "selbst zurückgegeben"
@@ -2673,6 +2834,9 @@
     },
     "tip_payout.done": {
       "text": "erledigt"
+    },
+    "tip_payout.nothing_open": {
+      "text": "nichts offen"
     },
     "tip_payout.for_all": {
       "text": "Für alle"
@@ -3394,6 +3558,135 @@
     },
     "deposit.sum": {
       "text": "Summe Leergut"
+    },
+    "version.reload": {
+      "text": "Neu laden",
+      "only": [
+        "web"
+      ]
+    },
+    "tip.line_cash_kept": {
+      "text": "{amount} gleich einstecken",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "tip.line_cash_open": {
+      "text": "{amount} in der Lade lassen",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "tip.line_card_kept": {
+      "text": "{amount} aus der Lade nehmen",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "tip.line_card_open": {
+      "text": "{amount} später auszahlen",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "done.tip_title": {
+      "text": "Trinkgeld {name}",
+      "placeholders": [
+        "name"
+      ]
+    },
+    "done.tip_open": {
+      "text": "{amount} · offen {open}",
+      "placeholders": [
+        "amount",
+        "open"
+      ]
+    },
+    "done.tip_open_loading": {
+      "text": "{amount}",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "done.tip_kept_card": {
+      "text": "{amount} · jetzt aus der Lade nehmen",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "done.tip_kept_cash": {
+      "text": "{amount} · gleich einstecken",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "done.tip_pay_out": {
+      "text": "Auszahlen"
+    },
+    "my_tips.title": {
+      "text": "Mein Trinkgeld"
+    },
+    "my_tips.open_here": {
+      "text": "Offen an dieser Lade"
+    },
+    "my_tips.open_total": {
+      "text": "Offen (alle Laden)"
+    },
+    "my_tips.kept_today": {
+      "text": "Heute genommen"
+    },
+    "my_tips.other_drawer": {
+      "text": "{drawer}: {amount} offen",
+      "placeholders": [
+        "drawer",
+        "amount"
+      ]
+    },
+    "my_tips.nothing_open": {
+      "text": "Nichts offen"
+    },
+    "my_tips.overpaid": {
+      "text": "Zu viel ausgezahlt: {amount}, wird verrechnet",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "my_tips.pay_out": {
+      "text": "Auszahlen"
+    },
+    "my_tips.pay_out_amount": {
+      "text": "Betrag"
+    },
+    "cancellation.tip_deducted": {
+      "text": "{amount} Trinkgeld werden vom Guthaben von {name} abgezogen",
+      "placeholders": [
+        "amount",
+        "name"
+      ]
+    },
+    "shift_receipt.tip_card_taken": {
+      "text": "davon Kartentrinkgeld"
+    },
+    "shift.part_card_tips_taken": {
+      "text": "Kartentrinkgeld bar genommen"
+    },
+    "tip_card_kept_mode.title": {
+      "text": "Kartentrinkgeld gleich behalten"
+    },
+    "tip.card_kept_setting": {
+      "text": "Kartentrinkgeld nimmt der Mitarbeiter gleich bar aus der Lade"
+    },
+    "tip_self_payout.title": {
+      "text": "Mitarbeiter zahlen sich ihr Trinkgeld selbst aus"
+    },
+    "tip_claim_scope.title": {
+      "text": "Offenes Trinkgeld zählt"
+    },
+    "tip_claim_scope.per_drawer": {
+      "text": "Je Kassenlade"
+    },
+    "tip_claim_scope.per_person": {
+      "text": "Je Person (alle Kassenladen)"
     }
   },
   "returnDispositionLabels": {
@@ -3414,6 +3707,10 @@
     "ask": "tip_kept_mode.ask",
     "always": "tip_kept_mode.always",
     "never": "tip_kept_mode.never"
+  },
+  "tipClaimScopeLabels": {
+    "per_drawer": "tip_claim_scope.per_drawer",
+    "per_person": "tip_claim_scope.per_person"
   },
   "depositErrors": {
     "deposit_not_enabled": "deposit_error.not_enabled",

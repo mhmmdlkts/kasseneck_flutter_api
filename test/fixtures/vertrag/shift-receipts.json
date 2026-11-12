@@ -3,9 +3,9 @@
   "receipts": {
     "shift-close": {
       "source": "closeMyShift/success_manager",
-      "expected": "6f9dd224c47de70442168eab614a8fbca89af5d00584e249bf2cb2e1b296b672",
-      "grid32": "b8f124c7cdd212093c32e6a33b9768ec5ece6a1cd31691f551c99af76298cd05",
-      "grid48": "0cd809561f0b2cad187f9be4e6b0421b5e2ca789def43d538ff9ccfc6fa2157b"
+      "expected": "15bd4257a0e7bbbeeb1aafb42372638763c8d84be149b289ec0ee3929fc35a33",
+      "grid32": "4d8cbe97125abf68022d35a87938866472b6c0db156b07a0e6f6c59091b21ad1",
+      "grid48": "026ccec8e95daf0344f9e593dcd1afd80f377f30db5e08310ff481a337c79799"
     },
     "shift-close-blind": {
       "source": "closeMyShift/success_cashier_blind",
@@ -15,15 +15,15 @@
     },
     "shift-close-take-out": {
       "source": "closeMyShift/success_manager_take_out",
-      "expected": "b9b3ded5d28a37dc95e4fe5e61660f6ce69f2782be4ce918d408e718a4ee5930",
-      "grid32": "edaf603feea839bdf46f88e5bb469c6e1c456c7e3d7ceb6a84d330455da2a9e0",
-      "grid48": "6332a5a5c9d9bc7f108153632d2826f8aa81fb1d05fd771ea29296aea5d2d5e5"
+      "expected": "cad831a41084ff2aa5c35e5041306a98db910ebd8def1b21a8b5767a504c39fb",
+      "grid32": "41ade8073e3acdc98782dff3293d4fc9d04915a061546ac94901f20f599034bc",
+      "grid48": "d6a6e5378e4244a3d0dd65084964feb3a51c0946aadc7e5ba847345920c686c2"
     },
     "shift-close-put-in": {
       "source": "closeMyShift/success_manager_put_in",
-      "expected": "6953b81e3d1407c8eff38653d55a6a3e3799649e21785ac406d6d251df4c6eaa",
-      "grid32": "2058c902d3f851ed4ba55eb522ca67f391741f38bf3227813fda6900f1f6d42f",
-      "grid48": "4b4f7e3f066037222ff08831da4354ce79c5ce2a2c4fc48262e5204ba64861f4"
+      "expected": "ce8e776f35a81fd36a7de5f1f4df8936b36a0ae452b41a339f9f9cff5e51607b",
+      "grid32": "7f2ebf7fa1f2b343240d2076b7db4d3f6e0ea6941a41f96b485e6679346fd847",
+      "grid48": "f147a5c621397cb07d74ad6317baf7bde9647b4784b737a6b636220134728649"
     },
     "shift-interim": {
       "source": "getMyShiftReport/success_manager",

@@ -37,6 +37,9 @@ export 'src/hobex_hps/exceptions.dart'
     show HpsException, HpsHttpException, HpsConnectionException;
 export 'src/hobex_hps/observer.dart' show HpsEvent, HpsEventKind, HpsObserver;
 export 'src/hobex_hps/hps_result.dart' show HpsResult;
+// Technik von hobex (Nummer, Erreichbarkeit) fuer das Fenster „Technik von
+// hobex“ der Kasse; Zwilling von `HOBEX_SUPPORT`.
+export 'src/hobex_hps/support.dart' show hobexSupport;
 export 'src/hobex_hps/hps_payments.dart'
     show
         HpsPayments,

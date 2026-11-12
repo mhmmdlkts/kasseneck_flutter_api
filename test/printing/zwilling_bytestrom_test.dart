@@ -82,6 +82,10 @@ void main() {
   // Bon der Schicht mit fetter Spaltenzeile („Bleibt in der Kassenlade“, Wechselgeld 11.2.0):
   // der einzige Weg, auf dem eine Spaltenzeile fett gedruckt wird. Ohne Marke;
   // dieselben Digests stehen im npm-Paket.
+  //
+  // Trinkgeld „genommen“ statt „schon genommen“ (npm 1.37.0, Inhaber
+  // 12.11.2026): der Bon traegt die kuerzere Zeile, beide Digests sind mit dem
+  // Vertrag neu gezogen (`test/zwilling-bytestrom.test.ts` im npm-Paket).
   final ReceiptLayout schichtBon = ReceiptLayout.fromJson(jsonDecode(
       File('test/fixtures/vertrag/expected/shift-close-take-out.lines.json').readAsStringSync()))!;
 
@@ -92,10 +96,10 @@ void main() {
   }
 
   test('Z-Bon mit Entnahme, 58 mm: Byte fuer Byte wie das npm-Paket', () async {
-    expect(await schichtDigest(KeckPaperSize.mm58), '44f5b442f94b50e400fb02bca545b5b902821a95640833f618751799506dd845');
+    expect(await schichtDigest(KeckPaperSize.mm58), '68c12b1750eb7b0b919ccbbc22ee59ba6e5345251ffa192d7325caaab46b3bac');
   });
 
   test('Z-Bon mit Entnahme, 80 mm: Byte fuer Byte wie das npm-Paket', () async {
-    expect(await schichtDigest(KeckPaperSize.mm80), '07e4b23d5861922cf74edd9092d0ecb49c21f1c89d0082ae9db1fb7cc273c340');
+    expect(await schichtDigest(KeckPaperSize.mm80), '465e61f5d112a2268a3273aa69a7df2a18a947f07ac2ce6aeb7f43969266751c');
   });
 }

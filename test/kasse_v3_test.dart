@@ -48,10 +48,12 @@ const _inventur = [
   'listMyStocktakes', 'listMyStocktakeItems', 'listMyStocktakeCounts', 'recordMyStocktakeCount', 'voidMyStocktakeCount',
 ];
 
-/// Schicht, Kassenstand und Lade-Protokoll (seit 11.1). Die Modelle prueft
-/// `kasse_schicht_test.dart` verlustfrei ueber `toJson`.
+/// Schicht, Kassenstand und Lade-Protokoll (seit 11.1), „Mein Trinkgeld“
+/// (11.28.0, npm 1.37.0). Die Modelle prueft `kasse_schicht_test.dart`
+/// verlustfrei ueber `toJson`.
 const _schicht = [
   'getMyDrawerState', 'openMyShift', 'recordMyCashMovement', 'logMyDrawerOpenings', 'getMyShiftReport', 'closeMyShift', 'recordMyShiftCount',
+  'getMyTipBalance',
 ];
 
 /// Gutscheine der neuen Form (seit 11.3): pruefen und Etikett nachdrucken.
@@ -371,6 +373,9 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
       case 'getMyDrawerState':
         return belege.getMyDrawerState(
             drawerId: p['drawerId'] as String?, cashregisterId: p['cashregisterId'] as String?);
+      case 'getMyTipBalance':
+        return belege.getMyTipBalance(
+            drawerId: p['drawerId'] as String?, cashregisterId: p['cashregisterId'] as String?);
       case 'openMyShift':
         return belege.openMyShift(
           idempotencyKey: _s(p['idempotencyKey']),
@@ -681,12 +686,13 @@ void main() {
       }
     });
 
-    test('alle 52 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+    test('alle 53 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
       final hier = {
         ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
         ..._kasseninfo, ..._connect, ..._leergut,
       };
-      expect((_vertrag['calls']['pos'] as List), hasLength(52));
+      // 53 seit getMyTipBalance (npm 1.37.0).
+      expect((_vertrag['calls']['pos'] as List), hasLength(53));
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });
@@ -1350,7 +1356,9 @@ void main() {
         'listRegisterUsersForDevice.users[]': (RegisterUserSummary.fields, const {}),
         'listRegisterUsersForDevice.policy': (RegisterPinPolicy.fields, const {}),
         // Pfand & Leergut (1.32.0): der Block deposit steht nur bei eingeschaltetem Pfand in der Antwort.
-        'listRegisterUsersForDevice.cashregister': (RegisterCashregisterState.fields, const {'stockLocationId', 'deposit'}),
+        // Kartentrinkgeld (1.37.0): cardTips steht nur an umgestellten Konten, der Vertrag zeigt es in keinem Fall.
+        'listRegisterUsersForDevice.cashregister':
+            (RegisterCashregisterState.fields, const {'stockLocationId', 'deposit', 'cardTips'}),
         'listRegisterSessionsForDevice': (RegisterSessionOverview.fields, const {}),
         'listRegisterSessionsForDevice.sessions[]': (RegisterSession.fields, const {}),
         'registerUserLogin': (RegisterUserSession.fields, const {}),

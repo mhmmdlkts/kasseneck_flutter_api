@@ -423,7 +423,7 @@ class RegisterReceiptClient {
   /// [tipKeptByEmployee]: Bar-Trinkgeld „gleich behalten“ -- die
   /// Mitarbeiterin steckt das Trinkgeld beim Verkauf gleich ein. Der Beleg
   /// bleibt, wie er ist; im Kassenstand zaehlt der Betrag nicht ins Bar-Soll
-  /// und gilt sofort als „schon genommen“. Nur mit Trinkgeld; dann geht
+  /// und gilt sofort als „genommen“. Nur mit Trinkgeld; dann geht
   /// `tip: {cents, keptByEmployee: true}` hinaus, sonst bleibt die Nutzlast
   /// Byte fuer Byte wie bisher. Der Server nimmt es nur bei Mitarbeiter-
   /// Trinkgeld, bar und sofort erhalten. Vorbelegung: [posTipKeptByDefault].
@@ -1415,6 +1415,24 @@ class RegisterReceiptClient {
     pruefeSchluessel(name, p);
     pruefeGanzzahlen(name, p);
     return gezaehltLesen(name, await transport.call(name, params: p));
+  }
+
+  /// „Mein Trinkgeld“ (`getMyTipBalance`, Spec 2026-11-11-kartentrinkgeld,
+  /// § 4.6, § 5): der Trinkgeld-Stand der angemeldeten Person an dieser Lade --
+  /// offen (auch negativ: zu viel ausgezahlt), heute genommen, andere Laden mit
+  /// offenem Betrag. Nur fuer eine persoenliche Anmeldung (Kassen-Benutzer
+  /// `kind: person`); eine gemeinsame Geraete-Anmeldung und der Inhaber
+  /// bekommen `not_a_person_login`. Nie der Stand einer anderen Person. Lesen
+  /// ohne Wirkung. Ohne [drawerId] gilt die Hauptlade der Kasse
+  /// ([cashregisterId], sonst die Kasse der Anmeldung); ein leeres [drawerId]
+  /// gilt wie keines. Zwilling von `getMyTipBalance` (npm 1.37.0).
+  Future<TipBalance> getMyTipBalance({String? drawerId, String? cashregisterId}) async {
+    const name = Aufrufe.getMyTipBalance;
+    final daten = await transport.call(name, params: {
+      if (drawerId != null && drawerId.isNotEmpty) 'drawerId': drawerId,
+      'cashregisterId': ?cashregisterId,
+    });
+    return tipStand(name, daten);
   }
 
   /// Die Lade eines Belegs: ein nicht leerer Text, sonst wirft der Aufruf vor

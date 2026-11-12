@@ -80,7 +80,7 @@ class KeckTip {
 
   /// Bar-Trinkgeld „gleich behalten“: die Mitarbeiterin steckt es beim
   /// Verkauf gleich ein. Nur ein Merkmal fuer den Kassenstand (nicht ins
-  /// Bar-Soll, sofort „schon genommen“); der Beleg bleibt, wie er ist. Geht
+  /// Bar-Soll, sofort „genommen“); der Beleg bleibt, wie er ist. Geht
   /// nur als `true` hinaus; der Server nimmt es nur bei Mitarbeiter-
   /// Trinkgeld, bar und sofort erhalten.
   final bool keptByEmployee;

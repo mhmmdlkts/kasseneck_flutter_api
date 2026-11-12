@@ -180,9 +180,15 @@ enum RegisterLoginMode { selectUser, pin }
 class RegisterCashregisterState {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
   /// in test/kasse_v3_test.dart gegen `v3/antworten/kasse.json`).
-  static const Set<String> fields = {'ready', 'reason', 'stockLocationId', 'deposit'};
+  static const Set<String> fields = {'ready', 'reason', 'stockLocationId', 'deposit', 'cardTips'};
 
-  const RegisterCashregisterState({required this.ready, this.reason, this.stockLocationId, this.deposit});
+  const RegisterCashregisterState({
+    required this.ready,
+    this.reason,
+    this.stockLocationId,
+    this.deposit,
+    this.cardTips = false,
+  });
 
   final bool ready;
   final String? reason;
@@ -194,6 +200,13 @@ class RegisterCashregisterState {
   /// Pfand & Leergut der Kasse (Ruecknahme, Vorgaben); `null`, solange der
   /// Betrieb kein Pfand eingeschaltet hat (der Server laesst den Block dann weg).
   final CashRegisterDeposit? deposit;
+
+  /// Kartentrinkgeld laeuft an diesem Konto ueber die Kasse (Spec
+  /// 2026-11-11-kartentrinkgeld, § 7): die Kasse zeigt die Karten-Stufe, die
+  /// Trinkgeld-Zeile nach dem Kassieren und „Mein Trinkgeld“. Nur ein echtes
+  /// `true` am Draht schaltet um; fehlt es (oder steht etwas anderes da),
+  /// bleibt es `false` und die Kasse genau wie bisher.
+  final bool cardTips;
 }
 
 /// Antwort von [RegisterClient.listRegisterUsersForDevice].
@@ -673,6 +686,8 @@ class RegisterClient {
                   ? kasse['stockLocationId'] as String
                   : null,
               deposit: CashRegisterDeposit.fromJson(kasse['deposit']),
+              // Nur ein echtes `true` schaltet die Oberflaeche um; alles andere (fehlt, false, Muell) laesst sie wie bisher.
+              cardTips: kasse['cardTips'] == true,
             )
           : null,
     );

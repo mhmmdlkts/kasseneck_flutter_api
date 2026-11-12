@@ -50,6 +50,8 @@ void main() {
         retainedCents: t['retainedCents'] as int,
         paidOutCents: t['paidOutCents'] as int,
         refundedByEmployeeCents: (t['refundedByEmployeeCents'] as int?) ?? 0,
+        // Kartentrinkgeld bar genommen (1.37.0): nur, wenn der Fall es fuehrt.
+        cardTipsTakenCents: t['cardTipsTakenCents'] as int?,
         carriedOverCents: (t['carriedOverCents'] as int?) ?? 0,
         openCents: t['openCents'] as int,
       );
@@ -72,9 +74,9 @@ void main() {
 
   test('shiftTipLines: Laufstand ohne openCents zaehlt offen als 0; Woerter fuer Menschen', () {
     const laufstand = ShiftTipTotals(registerUserId: 'ru_kellner', receivedImmediatelyCents: 400, retainedCents: 150, paidOutCents: 250);
-    expect([for (final z in shiftTipLines(laufstand)) z.text], ['verdient', 'über Lohn', 'schon genommen']);
+    expect([for (final z in shiftTipLines(laufstand)) z.text], ['verdient', 'über Lohn', 'genommen']);
     const voll = ShiftTip(registerUserId: 'ru_kellner', receivedImmediatelyCents: 400, retainedCents: 150, paidOutCents: 250, openCents: 150);
-    expect([for (final z in shiftTipLines(voll)) z.text], ['verdient', 'über Lohn', 'schon genommen', 'offen']);
+    expect([for (final z in shiftTipLines(voll)) z.text], ['verdient', 'über Lohn', 'genommen', 'offen']);
   });
 
   test('shiftTipLines: selbst zurueckgegeben als eigene Zeile (Fix-Runde 1, R62)', () {

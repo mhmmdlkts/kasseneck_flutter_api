@@ -70,6 +70,8 @@ const List<String> posErrorCodes = [
   'method_not_allowed',
   'mfa_required',
   'module_inactive',
+  // „Mein Trinkgeld“ nur fuer eine persoenliche Anmeldung (getMyTipBalance, 1.37.0).
+  'not_a_person_login',
   'not_found',
   'not_permitted',
   'note_required',

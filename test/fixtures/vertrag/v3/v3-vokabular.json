@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "3c10f47f66f048d8b25adb8996414674261ec8eb4c55f82a1d2a239be13d289f",
-    "inputsSha256": "36b24d02c477cfd624cb31b13dc229a261a951132688f755a800778b329ee998",
+    "sha256": "78eb90dbffbd44f2b16d78963d35c6e977245f5f53bb171a19b73b15d5cb0a3c",
+    "inputsSha256": "d736f3d749e4a91d825a72c07541a0cf6cb2de8e056b7805fb3a1bb06f3546ad",
     "backendPackage": "@kreiseck/kasseneck-api@0.39.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -337,7 +337,8 @@
       "getRegisterInspectionInfo",
       "reportConnectState",
       "learnMyLeergutCode",
-      "listMyLeergutCodes"
+      "listMyLeergutCodes",
+      "getMyTipBalance"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -380,7 +381,8 @@
       "getRegisterInspectionInfo",
       "reportConnectState",
       "learnMyLeergutCode",
-      "listMyLeergutCodes"
+      "listMyLeergutCodes",
+      "getMyTipBalance"
     ],
     "withSchema": [
       "activateCashregister",
@@ -448,6 +450,7 @@
       "getMyPfandBericht",
       "getMyPfandJahr",
       "getMyShiftReport",
+      "getMyTipBalance",
       "getMyVoucher",
       "getMyVoucherSettings",
       "getPartnerBilling",
@@ -1031,6 +1034,11 @@
       "streifen": "stripe",
       "voll": "full"
     },
+    "KASSE_BETRIEB_WERTE.tipCardKeptMode": {
+      "fragen": "ask",
+      "immer": "always",
+      "nie": "never"
+    },
     "KASSE_BETRIEB_WERTE.tipKeptMode": {
       "fragen": "ask",
       "immer": "always",
@@ -1297,6 +1305,7 @@
       "anfang": "opening",
       "barverkauf": "cash_sales",
       "trinkgeldBar": "cash_tips",
+      "trinkgeldKarteBar": "card_tips_taken",
       "storno": "cancellations",
       "ein": "cash_in",
       "aus": "cash_out",
@@ -1333,6 +1342,10 @@
       "offen": "none",
       "teil": "partial",
       "voll": "full"
+    },
+    "TRINKGELD_ANSPRUCH": {
+      "je_lade": "per_drawer",
+      "je_person": "per_person"
     },
     "VERTRAG_ART": {
       "avv": "avv",
@@ -1387,6 +1400,7 @@
       "car_useful_life_too_short",
       "card_pool_empty",
       "card_pool_unavailable",
+      "card_tips_require_shift_mode",
       "cash_movement_exceeds_balance",
       "cashregister_closed",
       "cashregister_decommissioned",
@@ -1558,6 +1572,7 @@
       "no_positions",
       "no_version",
       "not_a_partner",
+      "not_a_person_login",
       "not_cancellable",
       "not_found",
       "not_payable",
@@ -1890,7 +1905,8 @@
       "pfand_ungueltig": "invalid_deposit",
       "zu_viele_pfandarten": "too_many_deposit_types",
       "ewp_nicht_abfueller": "filler_role_required",
-      "kind_ungueltig": "invalid_item_kind"
+      "kind_ungueltig": "invalid_item_kind",
+      "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
     },
     "edge": [
       "validation",
@@ -2039,6 +2055,7 @@
       "manual_receipt_range_not_allowed",
       "method_not_allowed",
       "module_inactive",
+      "not_a_person_login",
       "not_found",
       "not_permitted",
       "note_required",
@@ -2389,6 +2406,7 @@
       "idempotency_conflict",
       "shift_mode_off",
       "after_count_not_permitted",
+      "not_a_person_login",
       "server_error"
     ],
     "cardOrder": [
@@ -2495,6 +2513,7 @@
       "logo_too_large",
       "method_not_allowed",
       "module_inactive",
+      "not_a_person_login",
       "not_permitted",
       "note_required",
       "note_too_long",
@@ -2660,7 +2679,8 @@
       "invalid_deposit",
       "too_many_deposit_types",
       "filler_role_required",
-      "invalid_item_kind"
+      "invalid_item_kind",
+      "card_tips_require_shift_mode"
     ],
     "receiptMessagesByEndpoint": {
       "createReceipt": [
@@ -3220,6 +3240,15 @@
         "not_permitted",
         "server_error",
         "too_many_deposit_types"
+      ],
+      "getMyTipBalance": [
+        "cashregister_not_assigned",
+        "drawer_not_found",
+        "module_inactive",
+        "not_a_person_login",
+        "not_permitted",
+        "server_error",
+        "validation"
       ]
     }
   },
@@ -3880,7 +3909,8 @@
             "pfand_ungueltig": "invalid_deposit",
             "zu_viele_pfandarten": "too_many_deposit_types",
             "ewp_nicht_abfueller": "filler_role_required",
-            "kind_ungueltig": "invalid_item_kind"
+            "kind_ungueltig": "invalid_item_kind",
+            "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
           }
         }
       }
@@ -4641,7 +4671,8 @@
           "pfand_ungueltig": "invalid_deposit",
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
-          "kind_ungueltig": "invalid_item_kind"
+          "kind_ungueltig": "invalid_item_kind",
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
         },
         "signatures[].error.code": {
           "zeitraum_offen": "period_not_closed",
@@ -4771,7 +4802,8 @@
           "pfand_ungueltig": "invalid_deposit",
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
-          "kind_ungueltig": "invalid_item_kind"
+          "kind_ungueltig": "invalid_item_kind",
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
         }
       }
     },
@@ -4924,6 +4956,9 @@
           "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
+          "tipCardKeptByDefault": "tgKarteDirekt",
+          "tipCardKeptMode": "tgKarteModus",
+          "tipSelfPayout": "tgSelbstAuszahlen",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",
@@ -5139,6 +5174,9 @@
         },
         "business.tipKeptMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.tipCardKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipCardKeptMode"
         },
         "business.discountPresets[].kind": {
           "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
@@ -5486,6 +5524,34 @@
       },
       "ergaenze": {
         "$function": "schichtBerichtNachAussen"
+      },
+      "fehler": {
+        "data": {
+          "shiftId": "schichtId"
+        },
+        "felder": {
+          "ladeId": "drawerId",
+          "stueckelung": "denominations",
+          "auszahlungen": "tipPayouts",
+          "eintraege": "entries",
+          "grund": "reason",
+          "zeitGeraet": "deviceTime",
+          "text": "note",
+          "fehler": "error",
+          "nachZaehlung": "afterCount",
+          "art": "type"
+        },
+        "nachrichtWoerter": {
+          "ladeId": "drawerId"
+        }
+      }
+    },
+    "getMyTipBalance": {
+      "params": {
+        "drawerId": "ladeId"
+      },
+      "ergaenze": {
+        "$function": "tipStandNachAussen"
       },
       "fehler": {
         "data": {
@@ -6244,7 +6310,8 @@
           "pfand_ungueltig": "invalid_deposit",
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
-          "kind_ungueltig": "invalid_item_kind"
+          "kind_ungueltig": "invalid_item_kind",
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
         }
       }
     },
@@ -6984,6 +7051,9 @@
             "tipKeptMode": "tgDirektModus",
             "tipKinds": "tgArten",
             "tipStart": "tgStart",
+            "tipCardKeptByDefault": "tgKarteDirekt",
+            "tipCardKeptMode": "tgKarteModus",
+            "tipSelfPayout": "tgSelbstAuszahlen",
             "checkoutMode": "kassierenModus",
             "receiptOutput": "belegAusgabe",
             "doneScreenSeconds": "fertigSekunden",
@@ -7081,7 +7151,8 @@
               "__": "gemeinsameStelle",
               "address": "adresse"
             }
-          }
+          },
+          "cardTips": "trinkgeldKarte"
         },
         "testEnvironment": "testUmgebung"
       },
@@ -7121,6 +7192,9 @@
         },
         "settings.business.tipKeptMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "settings.business.tipCardKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipCardKeptMode"
         },
         "settings.business.discountPresets[].kind": {
           "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
@@ -8218,7 +8292,8 @@
           "pfand_ungueltig": "invalid_deposit",
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
-          "kind_ungueltig": "invalid_item_kind"
+          "kind_ungueltig": "invalid_item_kind",
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
         }
       },
       "fehler": {
@@ -8808,6 +8883,9 @@
           "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
+          "tipCardKeptByDefault": "tgKarteDirekt",
+          "tipCardKeptMode": "tgKarteModus",
+          "tipSelfPayout": "tgSelbstAuszahlen",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",
@@ -8862,6 +8940,9 @@
         },
         "business.tipKeptMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.tipCardKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipCardKeptMode"
         },
         "business.discountPresets[].kind": {
           "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
@@ -8919,6 +9000,9 @@
           "tipKeptMode": "tgDirektModus",
           "tipKinds": "tgArten",
           "tipStart": "tgStart",
+          "tipCardKeptByDefault": "tgKarteDirekt",
+          "tipCardKeptMode": "tgKarteModus",
+          "tipSelfPayout": "tgSelbstAuszahlen",
           "checkoutMode": "kassierenModus",
           "receiptOutput": "belegAusgabe",
           "doneScreenSeconds": "fertigSekunden",
@@ -8973,6 +9057,9 @@
         },
         "business.tipKeptMode": {
           "$catalog": "KASSE_BETRIEB_WERTE.tipKeptMode"
+        },
+        "business.tipCardKeptMode": {
+          "$catalog": "KASSE_BETRIEB_WERTE.tipCardKeptMode"
         },
         "business.discountPresets[].kind": {
           "$catalog": "KASSE_BETRIEB_WERTE.discountPresets[].kind"
@@ -9689,7 +9776,8 @@
           "pfand_ungueltig": "invalid_deposit",
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
-          "kind_ungueltig": "invalid_item_kind"
+          "kind_ungueltig": "invalid_item_kind",
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
         }
       }
     },
@@ -10034,7 +10122,8 @@
           "pfand_ungueltig": "invalid_deposit",
           "zu_viele_pfandarten": "too_many_deposit_types",
           "ewp_nicht_abfueller": "filler_role_required",
-          "kind_ungueltig": "invalid_item_kind"
+          "kind_ungueltig": "invalid_item_kind",
+          "kartentrinkgeld_schichtbetrieb_noetig": "card_tips_require_shift_mode"
         }
       }
     },

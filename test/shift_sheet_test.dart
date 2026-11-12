@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -19,6 +20,11 @@ Map<String, dynamic> _json(String pfad) => jsonDecode(File(pfad).readAsStringSyn
 
 final _endpunkte = _json('${_wurzel.path}/v3/antworten/kasse.json')['endpoints'] as Map<String, dynamic>;
 final _bons = (_json('${_wurzel.path}/shift-receipts.json')['receipts'] as Map).cast<String, Map<String, dynamic>>();
+
+/// Bons mit Kartentrinkgeld bar aus der Lade (npm 1.37.0): eigenes Manifest,
+/// Eingabe = Vertragsfall + `overlay` (flach ueber `data.receipt`).
+final _kartenBons =
+    (_json('${_wurzel.path}/shift-receipts-card-tips.json')['receipts'] as Map).cast<String, Map<String, dynamic>>();
 
 Map<String, dynamic> _fall(String quelle) {
   final teile = quelle.split('/');
@@ -45,9 +51,16 @@ RegisterReceiptClient _client(Map<String, dynamic> fall) {
 }
 
 /// Bon-Daten wie die Kasse sie aus der Antwort des Falls bekommt.
-Future<Object> _bon(String name) async {
-  final quelle = _bons[name]!['source'] as String;
-  final fall = _fall(quelle);
+Future<Object> _bon(String name) async => _bonAus(_bons[name]!['source'] as String);
+
+/// Bon-Daten aus dem Fall [quelle]; [overlay] liegt flach ueber
+/// `data.receipt` (wie `{ ...quelle, ...overlay }` im npm-Paket).
+Future<Object> _bonAus(String quelle, {Map<String, dynamic> overlay = const {}}) async {
+  final fall = jsonDecode(jsonEncode(_fall(quelle))) as Map<String, dynamic>;
+  ((fall['response'] as Map)['data'] as Map)['receipt'] = {
+    ...(((fall['response'] as Map)['data'] as Map)['receipt'] as Map).cast<String, dynamic>(),
+    ...overlay,
+  };
   final c = _client(fall);
   return switch (quelle.split('/')[0]) {
     'closeMyShift' => (await c.closeMyShift(idempotencyKey: 'k', shiftId: 's', countedCents: 0)).receipt!,
@@ -90,6 +103,69 @@ void main() {
         }
       });
     }
+  });
+
+  group('Goldens Kartentrinkgeld', () {
+    test('eigenes Manifest: nur die zwei Bons, keiner davon im alten Manifest', () {
+      expect(_kartenBons.keys.toSet(), {'shift-close-card-tips', 'shift-interim-card-tips'});
+      for (final name in _kartenBons.keys) {
+        expect(_bons.containsKey(name), isFalse, reason: '$name steht nicht im alten Manifest');
+      }
+    });
+    for (final e in _kartenBons.entries) {
+      test('${e.key}: Vertragsfall + overlay ergeben Zeilen und Raster wie aufgenommen', () async {
+        final layout =
+            _layout(await _bonAus(e.value['source'] as String, overlay: (e.value['overlay'] as Map).cast<String, dynamic>()));
+        final soll = _json('${_wurzel.path}/expected/${e.key}.lines.json');
+        expect(layout.toJson(), soll, reason: 'Zeilenmodell');
+        for (final zeichen in [32, 48]) {
+          final grid = File('${_wurzel.path}/expected/${e.key}.grid$zeichen.txt').readAsStringSync();
+          final text = ReceiptGrid.render(layout, charsPerLine: zeichen).toText();
+          expect(text, grid, reason: '${e.key} @$zeichen');
+          expect(sha256.convert(utf8.encode(text)).toString(), e.value['grid$zeichen'], reason: '${e.key} grid$zeichen');
+        }
+      });
+    }
+
+    test('Kartentrinkgeld bar genommen: eigene Zeile mit Minus nach „Bar aus Verkäufen“, Soll geht auf; ohne Feld oder 0 kein Unterschied', () async {
+      final overlay = (_kartenBons['shift-close-card-tips']!['overlay'] as Map).cast<String, dynamic>();
+      final text = ReceiptGrid.render(_layout(await _bonAus('closeMyShift/success_manager', overlay: overlay)), charsPerLine: 48).toText();
+      expect(text, matches(RegExp(r'^Bar aus Verkäufen +94,00\nKartentrinkgeld bar genommen +-5,00\nBar aus Storno', multiLine: true)));
+      // Start + Bar − Kartentrinkgeld + Storno + Bewegungen = Soll (150 + 94 − 5 + 0 + 50 − 4 = 285).
+      expect(text, matches(RegExp(r'^Soll +285,00$', multiLine: true)));
+      // Je Mitarbeiter: „davon Kartentrinkgeld“ hinter „genommen“ (shiftTipLines).
+      expect(text, matches(RegExp(r'^ {2}genommen +9,00\n {2}davon Kartentrinkgeld +5,00$', multiLine: true)));
+      // Ohne das Feld und mit 0: genau der Bon von vorher (Zeilenmodell gleich).
+      final vorher = jsonEncode(_layout(await _bonAus('closeMyShift/success_manager')).toJson());
+      expect(jsonEncode(_layout(await _bonAus('closeMyShift/success_manager', overlay: {'cardTipsTakenCents': 0})).toJson()), vorher);
+      expect(ReceiptGrid.render(_layout(await _bonAus('closeMyShift/success_manager')), charsPerLine: 48).toText(),
+          isNot(contains('Kartentrinkgeld')));
+      // Blind steht die Zeile wie die Bewegungen (das Geld hat die Lade sichtbar verlassen), Soll nicht.
+      final blind = ReceiptGrid.render(
+              _layout(await _bonAus('closeMyShift/success_cashier_blind', overlay: {'cardTipsTakenCents': 500})),
+              charsPerLine: 48)
+          .toText();
+      expect(blind, matches(RegExp(r'^Kartentrinkgeld bar genommen +-5,00$', multiLine: true)));
+      expect(blind, isNot(contains('Soll')));
+    });
+
+    test('Bon-Daten: cardTipsTakenCents am Bon und je Mitarbeiter gelesen wie gesendet, fehlt sonst', () async {
+      final overlay = (_kartenBons['shift-close-card-tips']!['overlay'] as Map).cast<String, dynamic>();
+      final mit = await _bonAus('closeMyShift/success_manager', overlay: overlay) as ShiftSummaryReceipt;
+      expect(mit.cardTipsTakenCents, 500);
+      expect(mit.tips.single.cardTipsTakenCents, 500);
+      expect(mit.toJson()['cardTipsTakenCents'], 500);
+      expect((mit.toJson()['tips'] as List).single['cardTipsTakenCents'], 500);
+      final ohne = await _bonAus('closeMyShift/success_manager') as ShiftSummaryReceipt;
+      expect(ohne.cardTipsTakenCents, isNull);
+      expect(ohne.toJson().containsKey('cardTipsTakenCents'), isFalse);
+      expect((ohne.toJson()['tips'] as List).single.containsKey('cardTipsTakenCents'), isFalse);
+      // Kein Ersatzwert: ein Betrag, der keine ganze Zahl ist, ist eine kaputte Antwort.
+      await expectLater(
+        _bonAus('closeMyShift/success_manager', overlay: {'cardTipsTakenCents': 'viel'}),
+        throwsA(isA<KasseneckValidationError>().having((e) => e.kind, 'kind', 'response')),
+      );
+    });
   });
 
   group('Regeln', () {
@@ -205,7 +281,7 @@ void main() {
       expect(text.join('\n'), isNot(contains('Kasse |')));
     });
 
-    test('Trinkgeld: verdient immer, ueber Lohn, schon genommen und offen nur ungleich 0 (Nachtrag 3, R51, wie im npm-Paket)', () async {
+    test('Trinkgeld: verdient immer, ueber Lohn, genommen und offen nur ungleich 0 (Nachtrag 3, R51, wie im npm-Paket)', () async {
       String block(String text) {
         final i = text.indexOf(RegExp(r'^Trinkgeld +$', multiLine: true));
         return i < 0 ? '' : text.substring(i);
@@ -214,11 +290,11 @@ void main() {
       final z = block(ReceiptGrid.render(_layout(await _bon('shift-close')), charsPerLine: 48).toText());
       expect(z, matches(RegExp(r'^Ben Kellner +$', multiLine: true)));
       expect(z, matches(RegExp(r'^ {2}verdient +4,00$', multiLine: true)));
-      expect(z, matches(RegExp(r'^ {2}schon genommen +4,00$', multiLine: true)));
+      expect(z, matches(RegExp(r'^ {2}genommen +4,00$', multiLine: true)));
       expect(z, isNot(matches(RegExp('über Lohn|offen|sofort|0,00'))));
       final x = block(ReceiptGrid.render(_layout(await _bon('shift-interim')), charsPerLine: 48).toText());
       expect(x, matches(RegExp(r'^ {2}offen +4,00$', multiLine: true)));
-      expect(x, isNot(matches(RegExp('schon genommen|über Lohn|0,00'))));
+      expect(x, isNot(matches(RegExp('genommen|über Lohn|0,00'))));
       // Wer ueberall 0 hat, entfaellt ganz -- ohne Mitarbeiter auch keine Ueberschrift.
       const leer = ShiftSummaryReceipt(
         kind: 'shift_interim',

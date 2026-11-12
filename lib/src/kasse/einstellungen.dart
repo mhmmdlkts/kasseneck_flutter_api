@@ -191,6 +191,9 @@ enum PosTipKind implements PosSettingValue {
 /// Bar-Trinkgeld gleich behalten (`business.tipKeptMode`, 11.22.0): [ask] =
 /// Schalter an der Kasse, vorbelegt mit `tipKeptByDefault`; [always]/[never] =
 /// kein Schalter, die Kasse setzt die Wahl selbst. Entscheidung ueber [tipKeptFor].
+///
+/// Dieselben drei Stufen gelten fuer Kartentrinkgeld (`business.tipCardKeptMode`,
+/// 11.28.0; npm `TIP_CARD_KEPT_MODE = TIP_KEPT_MODE`).
 enum PosTipKeptMode implements PosSettingValue {
   ask,
   always,
@@ -538,6 +541,9 @@ class PosBusinessSettings {
     this.tipKeptMode,
     this.discountPresets,
     this.customDiscountAllowed,
+    this.tipCardKeptByDefault,
+    this.tipCardKeptMode,
+    this.tipSelfPayout,
     this.unknownValues = const {},
   });
 
@@ -669,6 +675,26 @@ class PosBusinessSettings {
   /// [posCustomDiscountAllowed].
   final bool? customDiscountAllowed;
 
+  /// Kartentrinkgeld „gleich behalten“ (Spec 2026-11-11-kartentrinkgeld,
+  /// § 4.1): die Mitarbeiterin nimmt den Betrag beim Verkauf bar aus der Lade.
+  /// Vorbelegung des Schalters bei Stufe [PosTipKeptMode.ask]. Optional wie
+  /// [tipKeptByDefault]; `null` heisst aus. Wirkt nur an Konten mit
+  /// Kartentrinkgeld ueber die Kasse (`RegisterCashregisterState.cardTips`).
+  /// Lesen ueber [posTipCardKeptByDefault].
+  final bool? tipCardKeptByDefault;
+
+  /// Stufe fuer Kartentrinkgeld wie [tipKeptMode]; `null` heisst `ask`, ein
+  /// unbekannter Wert bleibt woertlich in [unknownValues]. Lesen ueber
+  /// [posTipCardKeptMode], entscheiden ueber [tipKeptFor] mit
+  /// [TipPaymentKind.card].
+  final PosTipKeptMode? tipCardKeptMode;
+
+  /// Not-Aus „Mitarbeiter zahlen sich ihr Trinkgeld selbst aus“ (Spec
+  /// 2026-11-11-kartentrinkgeld, § 4.6): `null` heisst an; `false` = eigenes
+  /// Trinkgeld nur mit dem Recht `shift` auszahlbar (R49). Lesen ueber
+  /// [posTipSelfPayout].
+  final bool? tipSelfPayout;
+
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
@@ -714,6 +740,7 @@ class PosBusinessSettings {
     _pruefeWahlfeld('business', 'tipKinds', wahl['tipKinds']);
     _pruefeWahlfeld('business', 'tipStart', wahl['tipStart']);
     _pruefeWahlfeld('business', 'tipKeptMode', wahl['tipKeptMode']);
+    _pruefeWahlfeld('business', 'tipCardKeptMode', wahl['tipCardKeptMode']);
     // Die Vorlagen-Liste ebenso: `null` entfernt sie, sonst muss es eine Liste sein.
     final vorlagen = patch.containsKey('discountPresets') ? patch['discountPresets'] : aktuell['discountPresets'];
     if (vorlagen != null && vorlagen is! List) {
@@ -791,6 +818,9 @@ class PosBusinessSettings {
       tipKeptMode: _wahlOptional(raw, 'tipKeptMode', PosTipKeptMode.values, fremd),
       discountPresets: _vorlagenLesen(raw['discountPresets']),
       customDiscountAllowed: raw['customDiscountAllowed'] is bool ? raw['customDiscountAllowed'] as bool : null,
+      tipCardKeptByDefault: raw['tipCardKeptByDefault'] is bool ? raw['tipCardKeptByDefault'] as bool : null,
+      tipCardKeptMode: _wahlOptional(raw, 'tipCardKeptMode', PosTipKeptMode.values, fremd),
+      tipSelfPayout: raw['tipSelfPayout'] is bool ? raw['tipSelfPayout'] as bool : null,
       unknownValues: Map.unmodifiable(fremd),
     );
   }
@@ -851,6 +881,9 @@ class PosBusinessSettings {
         'tipKeptMode': ?tipKeptMode?.value,
         'discountPresets': ?(discountPresets == null ? null : [for (final v in discountPresets!) v.toJson()]),
         'customDiscountAllowed': ?customDiscountAllowed,
+        'tipCardKeptByDefault': ?tipCardKeptByDefault,
+        'tipCardKeptMode': ?tipCardKeptMode?.value,
+        'tipSelfPayout': ?tipSelfPayout,
         ...unknownValues,
       };
 }
@@ -1168,6 +1201,7 @@ final Map<String, List<Object>> posBusinessValues = Map.unmodifiable({
   'tipKinds': _werte(PosTipKind.values),
   'tipStart': _werte(PosTipKind.values),
   'tipKeptMode': _werte(PosTipKeptMode.values),
+  'tipCardKeptMode': _werte(PosTipKeptMode.values),
 });
 
 /// Wie [posBusinessValues] für die Geräte-Einstellungen (`POS_DEVICE_VALUES`).
@@ -1314,6 +1348,7 @@ const Map<String, Map<String, String>> legacyValues = {
   'tipMode': {'betrag': 'amount', 'gesamt': 'total', 'beides': 'both'},
   'tipStart': {'prozent': 'percent', 'aufrunden': 'round_up', 'gesamt': 'total'},
   'tipKeptMode': {'fragen': 'ask', 'immer': 'always', 'nie': 'never'},
+  'tipCardKeptMode': {'fragen': 'ask', 'immer': 'always', 'nie': 'never'},
   'watermark': {'aus': 'off', 'anmeldung': 'login', 'ueberall': 'everywhere'},
   'watermarkSide': {'links': 'left', 'mitte': 'center', 'rechts': 'right'},
   'cartWidth': {'schmal': 'narrow', 'mittel': 'medium', 'breit': 'wide'},
@@ -1380,14 +1415,15 @@ const List<String> posDeviceOptionalFields = ['drawerId'];
 /// Optionale Betriebs-Schalter: ohne Standardwert, der Server sendet sie nur,
 /// wenn sie gespeichert sind (Zwilling von `POS_BUSINESS_OPTIONAL_FIELDS`).
 /// Gelesen nur als Wahrheitswert; fehlt einer, gilt sein wirksamer Standard
-/// ([posTipKeptByDefault]: aus, [posCustomDiscountAllowed]: an).
-const List<String> posBusinessOptionalFields = ['tipKeptByDefault', 'customDiscountAllowed'];
+/// ([posTipKeptByDefault]: aus, [posCustomDiscountAllowed]: an,
+/// [posTipCardKeptByDefault]: aus, [posTipSelfPayout]: an).
+const List<String> posBusinessOptionalFields = ['tipKeptByDefault', 'customDiscountAllowed', 'tipCardKeptByDefault', 'tipSelfPayout'];
 
 /// Optionale Betriebs-Einstellungen mit Wertemenge (Zwilling von
 /// `POS_BUSINESS_OPTIONAL_CHOICES`): ohne Standardwert, der Server sendet sie
-/// nur, wenn sie gespeichert sind. `tipKinds` ist eine Liste, `tipStart` und
-/// `tipKeptMode` je ein Wert.
-const List<String> posBusinessOptionalChoices = ['tipKinds', 'tipStart', 'tipKeptMode'];
+/// nur, wenn sie gespeichert sind. `tipKinds` ist eine Liste, `tipStart`,
+/// `tipKeptMode` und `tipCardKeptMode` je ein Wert.
+const List<String> posBusinessOptionalChoices = ['tipKinds', 'tipStart', 'tipKeptMode', 'tipCardKeptMode'];
 
 /// Optionale Betriebs-Listen aus Objekten (Zwilling von
 /// `POS_BUSINESS_OPTIONAL_LISTS`): ohne Standardwert, der Server sendet sie nur,
@@ -1450,20 +1486,82 @@ bool posCustomDiscountAllowed(PosBusinessSettings? business) => business?.custom
 /// [PosTipKeptMode.ask] (fehlt, unbekannt, Altwert); Zwilling von `posTipKeptMode`.
 PosTipKeptMode posTipKeptMode(PosBusinessSettings? business) => business?.tipKeptMode ?? PosTipKeptMode.ask;
 
+/// Kartentrinkgeld „gleich behalten“ (bar aus der Lade) vorbelegt? Fehlt die
+/// Einstellung, gilt aus (Zwilling von `posTipCardKeptByDefault`).
+bool posTipCardKeptByDefault(PosBusinessSettings? business) => business?.tipCardKeptByDefault == true;
+
+/// Wirksame Stufe fuer Kartentrinkgeld: die gespeicherte, sonst
+/// [PosTipKeptMode.ask] (fehlt, unbekannt, Altwert); Zwilling von `posTipCardKeptMode`.
+PosTipKeptMode posTipCardKeptMode(PosBusinessSettings? business) => business?.tipCardKeptMode ?? PosTipKeptMode.ask;
+
+/// Zahlen sich Mitarbeiter ihr Trinkgeld selbst aus (Not-Aus)? Fehlt die
+/// Einstellung, gilt ja (Zwilling von `posTipSelfPayout`).
+bool posTipSelfPayout(PosBusinessSettings? business) => business?.tipSelfPayout != false;
+
+/// Zahlart des Trinkgelds, nach der die Stufe gilt: bar (`tipKeptMode`) oder
+/// Karte (`tipCardKeptMode`). Zwilling von `TipPaymentKind` (`'cash' | 'card'`).
+enum TipPaymentKind {
+  cash,
+  card;
+
+  /// Der Wert am Draht und im npm-Zwilling.
+  String get value => name;
+}
+
 /// Ergebnis von [tipKeptFor]: zeigt die Kasse den Schalter, und wird das
-/// Bar-Trinkgeld gleich behalten?
+/// Trinkgeld gleich behalten?
 typedef TipKeptDecision = ({bool showSwitch, bool kept});
 
-/// Die eine Regel fuer Web-Kasse und Kassen-App beim Bar-Trinkgeld:
+/// Die eine Regel fuer Web-Kasse und Kassen-App beim Trinkgeld:
 /// [PosTipKeptMode.ask] zeigt den Schalter, gewaehlt ist [wanted] (die Wahl am
-/// Schalter), sonst die Vorbelegung `tipKeptByDefault`; `always` bzw. `never`
-/// zeigen keinen Schalter und behalten gleich bzw. lassen offen, eine
-/// Schalterwahl zaehlt dann nicht. `kept` geht als `KeckTip.keptByEmployee`
-/// an den Beleg (der Server erzwingt die Stufe dort nicht). Zwilling von `tipKeptFor`.
-TipKeptDecision tipKeptFor(PosBusinessSettings? business, [bool? wanted]) => switch (posTipKeptMode(business)) {
-      PosTipKeptMode.always => (showSwitch: false, kept: true),
-      PosTipKeptMode.never => (showSwitch: false, kept: false),
-      PosTipKeptMode.ask => (showSwitch: true, kept: wanted ?? posTipKeptByDefault(business)),
+/// Schalter), sonst die Vorbelegung (`tipKeptByDefault` bzw. bei Karte
+/// `tipCardKeptByDefault`); `always` bzw. `never` zeigen keinen Schalter und
+/// behalten gleich bzw. lassen offen, eine Schalterwahl zaehlt dann nicht.
+/// `kept` geht als `KeckTip.keptByEmployee` an den Beleg (der Server erzwingt
+/// die Stufe dort nicht). [method] waehlt die Stufe der Zahlart: ohne Angabe
+/// bar wie bisher, [TipPaymentKind.card] die Karten-Stufe (Spec
+/// 2026-11-11-kartentrinkgeld, § 4.1) -- „gleich behalten“ heisst bei Karte:
+/// bar aus der Lade nehmen. Zwilling von `tipKeptFor`.
+TipKeptDecision tipKeptFor(PosBusinessSettings? business, [bool? wanted, TipPaymentKind method = TipPaymentKind.cash]) {
+  final karte = method == TipPaymentKind.card;
+  final stufe = karte ? posTipCardKeptMode(business) : posTipKeptMode(business);
+  return switch (stufe) {
+    PosTipKeptMode.always => (showSwitch: false, kept: true),
+    PosTipKeptMode.never => (showSwitch: false, kept: false),
+    PosTipKeptMode.ask => (
+        showSwitch: true,
+        kept: wanted ?? (karte ? posTipCardKeptByDefault(business) : posTipKeptByDefault(business)),
+      ),
+  };
+}
+
+/// Was mit dem Trinkgeld dieses Verkaufs geschieht ([tipStatus]): gleich
+/// behalten oder offen. Zwilling von `TipStatusKind`.
+enum TipStatusKind {
+  kept,
+  open;
+
+  /// Der Wert im npm-Zwilling.
+  String get value => name;
+}
+
+/// Ergebnis von [tipStatus]: [TipStatusKind.kept] = gleich behalten,
+/// [TipStatusKind.open] = offen; `key` die Zeile aus dem Katalog mit
+/// `{amount}`. Zwilling von `TipStatus`.
+typedef TipStatus = ({TipStatusKind status, String key});
+
+/// Die eine Zeile beim Kassieren und auf der Fertig-Seite (Spec
+/// 2026-11-11-kartentrinkgeld, § 4.4): sie sagt, was mit dem
+/// Mitarbeiter-Trinkgeld wirklich geschieht -- nicht die Stufe, sondern das
+/// Ergebnis von [tipKeptFor] (und bei Karte der Deckung durch das Soll, F1).
+/// Bar: „{amount} gleich einstecken“ / „{amount} in der Lade lassen“, Karte:
+/// „{amount} aus der Lade nehmen“ / „{amount} später auszahlen“. Den Text
+/// liefert `labelText(key, {'amount': …})`. Zwilling von `tipStatus`.
+TipStatus tipStatus(TipPaymentKind method, bool kept) => switch ((method, kept)) {
+      (TipPaymentKind.card, true) => (status: TipStatusKind.kept, key: 'tip.line_card_kept'),
+      (TipPaymentKind.card, false) => (status: TipStatusKind.open, key: 'tip.line_card_open'),
+      (TipPaymentKind.cash, true) => (status: TipStatusKind.kept, key: 'tip.line_cash_kept'),
+      (TipPaymentKind.cash, false) => (status: TipStatusKind.open, key: 'tip.line_cash_open'),
     };
 
 final RegExp _optionaleKennung = RegExp(r'^[A-Za-z0-9_-]{1,64}$');

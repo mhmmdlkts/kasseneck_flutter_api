@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.36.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.37.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.36.0';
+const String posTextsVersion = '1.37.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -56,9 +56,15 @@ const Map<String, PosText> posMessages = {
   'checkout.tendered_too_little': PosText('Gegeben ist weniger als der Betrag.'),
   'checkout.locked': PosText('Kassieren gesperrt: {reason}', placeholders: ['reason']),
   'tip.over_half': PosText('Über 50 % Trinkgeld – wirklich? Steuerfrei ist nur ortsübliches Trinkgeld.'),
-  'tip.kept_setting_hint': PosText('Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als schon genommen. An der Kasse lässt es sich je Verkauf umstellen.'),
+  'tip.kept_setting_hint': PosText('Der Mitarbeiter steckt das Bar-Trinkgeld beim Verkauf gleich ein: es zählt nicht ins Soll der Lade und gilt als genommen. An der Kasse lässt es sich je Verkauf umstellen.'),
   'tip.kept_hint': PosText('Trinkgeld kommt als eigene Position auf den Beleg; der angemeldete Benutzer nimmt es gleich bar aus der Lade.'),
   'tip.open_hint': PosText('Trinkgeld kommt als eigene Position auf den Beleg und bleibt für den angemeldeten Benutzer offen, bis es ausgezahlt wird.'),
+  'tip.card_kept_setting_hint': PosText('Der Mitarbeiter nimmt das Kartentrinkgeld beim Verkauf bar aus der Lade: das Soll der Lade sinkt, es gilt als genommen. An der Kasse lässt es sich je Verkauf umstellen. Das geht nur bei offener Schicht, mit genug Bargeld in der Lade und für Mitarbeiter, die den Kassenstand sehen – sonst bleibt es offen.'),
+  'tip.self_payout_hint': PosText('Jeder persönlich angemeldete Mitarbeiter sieht sein Trinkgeld und zahlt es sich selbst aus. Aus: nur mit dem Recht „Schicht“.'),
+  'tip.overpaid_hint': PosText('Es wurde mehr ausgezahlt, als offen war. Das nächste Trinkgeld gleicht das aus.'),
+  'tip.terminal_hint': PosText('Trinkgeld wird an der Kasse eingetragen, nicht am Terminal – ein am Terminal getipptes Trinkgeld kennt die Kasse nicht.'),
+  'tip_claim_scope.hint': PosText('Je Kassenlade: das Trinkgeld steht an der Kassenlade, an der es entstand, und wird dort ausgezahlt. Je Person: ein Stand über alle Kassenladen, an jeder auszahlbar.'),
+  'my_tips.payout_not_allowed': PosText('Auszahlen nur mit dem Recht „Schicht“.'),
   'completion.failed': PosText('Der Abschluss ist fehlgeschlagen.'),
   'completion.unknown': PosText('Unklar, ob der Beleg entstanden ist – die Antwort kam nicht an. Bitte nicht noch einmal abschließen: der Beleg kann bereits erstellt und signiert sein. Im Panel unter „Belege“ nachsehen; nur wenn er dort fehlt, den Verkauf erneut abschließen.'),
   'completion.zero_receipt_failed': PosText('Der Nullbeleg konnte nicht erstellt werden.'),
@@ -69,6 +75,9 @@ const Map<String, PosText> posMessages = {
   'card_payment.not_started': PosText('Kartenzahlung nicht gestartet: {reason}', placeholders: ['reason']),
   'card_payment.unknown': PosText('Unklar, ob die Kartenzahlung durchgegangen ist – die Verbindung zum Terminal riss ab. Bitte am Terminal-Beleg nachsehen, BEVOR neu kassiert wird: die Karte kann belastet sein.'),
   'card_payment.unknown_with_id': PosText('Unklar, ob die Kartenzahlung durchgegangen ist – die Verbindung zum Terminal riss ab. Bitte am Terminal-Beleg nachsehen, BEVOR neu kassiert wird: die Karte kann belastet sein. Kennung der Zahlung: {reference}.', placeholders: ['reference']),
+  'card_payment.unknown_hps': PosText('Unklar, ob die Kartenzahlung durchgegangen ist – die Verbindung zum Terminal riss ab. Die Karte kann belastet sein: erst klären, dann neu kassieren.'),
+  'card_payment.unknown_with_id_hps': PosText('Unklar, ob die Kartenzahlung durchgegangen ist – die Verbindung zum Terminal riss ab. Die Karte kann belastet sein: erst klären, dann neu kassieren. Kennung der Zahlung: {reference}.', placeholders: ['reference']),
+  'card_payment.unclear_short': PosText('Kartenzahlung {amount} unklar – bitte klären. Kennung {reference}.', placeholders: ['amount', 'reference']),
   'card_payment.waiting_for_terminal': PosText('Bitte am Terminal fortfahren …'),
   'card_payment.terminal_cancelling': PosText('Das Terminal bricht gleich von selbst ab …'),
   'card_payment.card_charged_receipt_open': PosText('Die Karte ist bereits mit {amount} belastet (Kennung {reference}) – der Beleg dazu fehlt noch. Bitte jetzt den Beleg erstellen und nicht erneut kassieren.', placeholders: ['amount', 'reference']),
@@ -189,6 +198,9 @@ const Map<String, PosText> posMessages = {
   'split.card_reverse_failed': PosText('Die Kartenzahlung über {amount} (Kennung {reference}) ließ sich nicht zurückbuchen – sie bleibt in der Liste. Bitte am Terminal-Beleg nachsehen und erneut versuchen.', placeholders: ['amount', 'reference']),
   'split.card_reverse_unknown': PosText('Unklar, ob die Rückbuchung über {amount} (Kennung {reference}) durchgegangen ist – die Zahlung bleibt in der Liste. Bitte am Terminal-Beleg nachsehen, BEVOR erneut zurückgebucht wird.', placeholders: ['amount', 'reference']),
   'split.card_already_reversed': PosText('Das Terminal meldet, dass die Kartenzahlung über {amount} bereits gutgeschrieben wurde (Kennung {reference}) – bitte am Terminal-Beleg prüfen und nicht erneut zurückbuchen.', placeholders: ['amount', 'reference']),
+  'split.card_reverse_failed_hps': PosText('Die Kartenzahlung über {amount} (Kennung {reference}) ließ sich nicht zurückbuchen – sie bleibt in der Liste. Bitte erneut versuchen.', placeholders: ['amount', 'reference']),
+  'split.card_reverse_unknown_hps': PosText('Unklar, ob die Rückbuchung über {amount} (Kennung {reference}) durchgegangen ist – die Zahlung bleibt in der Liste. Nicht noch einmal zurückbuchen, bevor das geklärt ist.', placeholders: ['amount', 'reference']),
+  'split.card_already_reversed_hps': PosText('Das Terminal meldet, dass die Kartenzahlung über {amount} bereits gutgeschrieben wurde (Kennung {reference}) – bitte nicht erneut zurückbuchen.', placeholders: ['amount', 'reference']),
   'split.external_reverse': PosText('Diese Karte ist nicht an die Kasse angebunden. Bitte {amount} jetzt am Terminal zurückbuchen und danach bestätigen.', placeholders: ['amount']),
   'split.session_open': PosText('Eine getrennte Zahlung ist nicht abgeschlossen, {amount} sind schon kassiert. Bitte weiter kassieren oder alles zurückbuchen.', placeholders: ['amount']),
   'split.session_unreadable': PosText('Eine gespeicherte getrennte Zahlung auf diesem Gerät ließ sich nicht lesen – bitte prüfen, ob schon Karten belastet wurden (Kasseneck-Panel oder Terminal), und offene Beträge von Hand ausgleichen.'),
@@ -198,6 +210,19 @@ const Map<String, PosText> posMessages = {
   'split.items_locked': PosText('Nach Positionen geht nicht mehr – eine Zahlung ist schon als Betrag kassiert.'),
   'split.select_items': PosText('Bitte zuerst antippen, was dieser Gast zahlt.'),
   'split.tendered_missing': PosText('Erst eintippen, was der Gast für diese Zahlung gibt – der Rückgeld-Rechner ist an.'),
+  'split.clarify_asking': PosText('Das Terminal wird gefragt …'),
+  'split.clarify_charged': PosText('Das Terminal meldet: belastet. Die Zahlung wurde übernommen.'),
+  'split.clarify_not_charged': PosText('Das Terminal meldet: nicht belastet. Die Zahlung wurde verworfen.'),
+  'split.clarify_open': PosText('Das Terminal weiß es nicht. hobex kann die Zahlung nachsehen.'),
+  'split.clarify_not_asked': PosText('Das Terminal konnte nicht gefragt werden ({reason}). Bitte später erneut klären.', placeholders: ['reason']),
+  'split.clarify_busy': PosText('Das Terminal ist gerade belegt. Bitte gleich erneut klären.'),
+  'split.clarify_no_answer': PosText('Das Terminal hat nicht geantwortet. Bitte später erneut klären.'),
+  'split.clarify_manual': PosText('Das Terminal kann es nicht sicher sagen. hobex kann die Zahlung nachsehen.'),
+  'split.clarify_reason_host_fault': PosText('Grund: Störung zwischen Terminal und hobex.'),
+  'split.clarify_reason_host_timeout': PosText('Grund: hobex hat nicht rechtzeitig geantwortet.'),
+  'split.clarify_reason_internal_error': PosText('Grund: Das Terminal meldet einen internen Fehler.'),
+  'split.clarify_reason_approved_with_condition': PosText('Grund: Genehmigung mit Vorbehalt, etwa nur über einen Teilbetrag.'),
+  'split.clarify_reason_terminal': PosText('Grund: Das Terminal meldete „{text}“ (Code {code}).', placeholders: ['text', 'code']),
   'receipt.link_copied': PosText('Der Link zum Beleg liegt in der Zwischenablage.'),
   'receipt.share_text': PosText('Beleg {number} von {business} über {amount}: {link}', placeholders: ['business', 'number', 'amount', 'link']),
   'receipt.not_shareable': PosText('Für diesen Beleg gibt es keinen Link – er stammt aus einer älteren Kasse.'),
@@ -303,6 +328,7 @@ const Map<String, PosText> posMessages = {
   'zero_receipt.check_first': PosText('Der letzte Nullbeleg ging unklar aus und kann schon erstellt sein. Erst unter „Belege“ die Liste neu laden und nachsehen, dann ist ein neuer möglich.'),
   'app.not_in_browser': PosText('Die Kassen-App läuft nicht im Browser – dafür gibt es kasse.kasseneck.at.', only: [PosSurface.app]),
   'app.open_in_browser': PosText('Bitte im Browser öffnen: {target}', placeholders: ['target'], only: [PosSurface.app]),
+  'version.new_available': PosText('Neue Fassung verfügbar – bei Gelegenheit neu laden.', only: [PosSurface.web]),
   'shift.started_taken_over': PosText('Schicht {number} hat begonnen – mit {amount} in der Lade, übernommen von Schicht {from} ({time}).', placeholders: ['number', 'amount', 'from', 'time']),
   'tip.summary': PosText('Trinkgeld {tip} · der Gast zahlt {total}', placeholders: ['tip', 'total']),
   'tip.total_below_sum': PosText('Der Betrag liegt unter der Summe.'),
@@ -381,7 +407,23 @@ const Map<String, PosText> posLabels = {
   'split.pair_again_anyway': PosText('Trotzdem neu koppeln'),
   'split.keep_payment': PosText('Zahlung behalten'),
   'split.clarify': PosText('Klären'),
+  'split.clarify_title': PosText('Karte klären · {amount}', placeholders: ['amount']),
+  'split.clarify_reference': PosText('Kennung {reference}', placeholders: ['reference']),
   'split.reverse_again': PosText('Erneut zurückbuchen'),
+  'hobex_help.open': PosText('Technik von hobex …'),
+  'hobex_help.title': PosText('Technik von hobex'),
+  'hobex_help.data': PosText('Das fragt hobex'),
+  'hobex_help.tid': PosText('TID'),
+  'hobex_help.reference': PosText('Kennung der Zahlung'),
+  'hobex_help.reversal_reference': PosText('Kennung der Rückbuchung'),
+  'hobex_help.amount': PosText('Betrag'),
+  'hobex_help.time': PosText('Zeit'),
+  'hobex_help.reason': PosText('Meldung'),
+  'hobex_help.protocol': PosText('Anbindung'),
+  'hobex_help.address': PosText('Adresse'),
+  'hobex_help.serial': PosText('Seriennummer'),
+  'hobex_help.copy': PosText('Angaben kopieren'),
+  'hobex_help.copied': PosText('Kopiert'),
   'split.was_charged': PosText('Wurde belastet – übernehmen'),
   'split.not_charged': PosText('Nicht belastet – verwerfen'),
   'split.continue': PosText('Weiter · {amount} getrennt', placeholders: ['amount']),
@@ -518,7 +560,7 @@ const Map<String, PosText> posLabels = {
   'shift_receipt.tips': PosText('Trinkgeld'),
   'shift_receipt.tip_earned': PosText('verdient'),
   'shift_receipt.tip_retained': PosText('über Lohn'),
-  'shift_receipt.tip_paid_out': PosText('schon genommen'),
+  'shift_receipt.tip_paid_out': PosText('genommen'),
   'shift_receipt.tip_refunded_by_employee': PosText('selbst zurückgegeben'),
   'shift_receipt.tip_carried_over': PosText('aus früheren Schichten'),
   'shift_receipt.tip_open': PosText('offen'),
@@ -658,6 +700,7 @@ const Map<String, PosText> posLabels = {
   'duration.minutes': PosText('{minutes} Min.', placeholders: ['minutes']),
   'tip_payout.open_amount': PosText('offen {amount}', placeholders: ['amount']),
   'tip_payout.done': PosText('erledigt'),
+  'tip_payout.nothing_open': PosText('nichts offen'),
   'tip_payout.for_all': PosText('Für alle'),
   'tip_payout.nothing': PosText('Nichts'),
   'tip_payout.all_open': PosText('Alles Offene'),
@@ -854,6 +897,35 @@ const Map<String, PosText> posLabels = {
   'deposit.on_premises': PosText('Vor Ort'),
   'deposit.takeaway': PosText('Mitnahme'),
   'deposit.sum': PosText('Summe Leergut'),
+  'version.reload': PosText('Neu laden', only: [PosSurface.web]),
+  'tip.line_cash_kept': PosText('{amount} gleich einstecken', placeholders: ['amount']),
+  'tip.line_cash_open': PosText('{amount} in der Lade lassen', placeholders: ['amount']),
+  'tip.line_card_kept': PosText('{amount} aus der Lade nehmen', placeholders: ['amount']),
+  'tip.line_card_open': PosText('{amount} später auszahlen', placeholders: ['amount']),
+  'done.tip_title': PosText('Trinkgeld {name}', placeholders: ['name']),
+  'done.tip_open': PosText('{amount} · offen {open}', placeholders: ['amount', 'open']),
+  'done.tip_open_loading': PosText('{amount}', placeholders: ['amount']),
+  'done.tip_kept_card': PosText('{amount} · jetzt aus der Lade nehmen', placeholders: ['amount']),
+  'done.tip_kept_cash': PosText('{amount} · gleich einstecken', placeholders: ['amount']),
+  'done.tip_pay_out': PosText('Auszahlen'),
+  'my_tips.title': PosText('Mein Trinkgeld'),
+  'my_tips.open_here': PosText('Offen an dieser Lade'),
+  'my_tips.open_total': PosText('Offen (alle Laden)'),
+  'my_tips.kept_today': PosText('Heute genommen'),
+  'my_tips.other_drawer': PosText('{drawer}: {amount} offen', placeholders: ['drawer', 'amount']),
+  'my_tips.nothing_open': PosText('Nichts offen'),
+  'my_tips.overpaid': PosText('Zu viel ausgezahlt: {amount}, wird verrechnet', placeholders: ['amount']),
+  'my_tips.pay_out': PosText('Auszahlen'),
+  'my_tips.pay_out_amount': PosText('Betrag'),
+  'cancellation.tip_deducted': PosText('{amount} Trinkgeld werden vom Guthaben von {name} abgezogen', placeholders: ['amount', 'name']),
+  'shift_receipt.tip_card_taken': PosText('davon Kartentrinkgeld'),
+  'shift.part_card_tips_taken': PosText('Kartentrinkgeld bar genommen'),
+  'tip_card_kept_mode.title': PosText('Kartentrinkgeld gleich behalten'),
+  'tip.card_kept_setting': PosText('Kartentrinkgeld nimmt der Mitarbeiter gleich bar aus der Lade'),
+  'tip_self_payout.title': PosText('Mitarbeiter zahlen sich ihr Trinkgeld selbst aus'),
+  'tip_claim_scope.title': PosText('Offenes Trinkgeld zählt'),
+  'tip_claim_scope.per_drawer': PosText('Je Kassenlade'),
+  'tip_claim_scope.per_person': PosText('Je Person (alle Kassenladen)'),
 };
 
 /// Genau eine Regel je Art, der Stand von 1.0.0-rc.4; siehe [findErrorRule].
@@ -1007,6 +1079,12 @@ const Map<String, String> tipKeptModeLabels = {
   'ask': 'tip_kept_mode.ask',
   'always': 'tip_kept_mode.always',
   'never': 'tip_kept_mode.never',
+};
+
+/// Offenes Trinkgeld zaehlt (`per_drawer`, `per_person`) -> Schluessel der Beschriftung.
+const Map<String, String> tipClaimScopeLabels = {
+  'per_drawer': 'tip_claim_scope.per_drawer',
+  'per_person': 'tip_claim_scope.per_person',
 };
 
 /// Pfand und Leergut: Code des Backends -> Schluessel des Satzes; siehe [depositErrorMessage].

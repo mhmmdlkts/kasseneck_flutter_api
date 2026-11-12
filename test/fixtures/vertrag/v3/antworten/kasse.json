@@ -4,7 +4,7 @@
     "default": {
       "sha256": "b3ed9b5e54fb6a0c27c2e9b494c8676926b80b4527236f0f4f71403c455fa477",
       "head": [],
-      "inputsSha256": "3d2ec0220b073e43a4a8fd494569bf51f5cb273f746bf5183256621b053c8e73",
+      "inputsSha256": "ecb47590acdd2127284e882ab4f44ffd4685a980cc75046db62619ee5409d63d",
       "backendPackage": "@kreiseck/kasseneck-api@0.39.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "5f6919dd346b1cb2c1b86ee4b56d7bdba714e6046a5266e25c779e5a5ae1c837",
+      "sha256": "a65b3e509ed51d7a2aec90109bad158f03dcc0dc7ebfcd0e47dac857ee9f24ba",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "2ad88d5a2ca82d2f8958d4e94881637da0f45ef60c2f78fc619650c218449cdb",
+      "inputsSha256": "a53cd1f038a746b62af29ab189d7d515f9b5336f41e96d5036662d3fc7d9cb48",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -26336,6 +26336,243 @@
             "message": "",
             "data": {
               "codes": []
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getMyTipBalance": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "owner",
+          "method": "POST",
+          "caller": "owner",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Trinkgeld-Stand gibt es nur für eine persönliche Anmeldung.",
+            "data": {
+              "code": "not_a_person_login"
+            },
+            "code": "not_a_person_login"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "drawerId",
+                  "message": "drawerId oder cashregisterId angeben."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "drawer_unknown",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Lade nicht gefunden.",
+            "data": {
+              "code": "drawer_not_found"
+            },
+            "code": "drawer_not_found"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "lade_terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawerId": "haupt_KASSE1",
+              "claimScope": "per_drawer",
+              "openCents": 400,
+              "keptTodayCents": 0,
+              "currency": "EUR",
+              "otherDrawers": []
+            }
+          }
+        },
+        {
+          "case": "success_cashier_other_drawer",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "cashregisterId": "KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawerId": "haupt_KASSE1",
+              "claimScope": "per_drawer",
+              "openCents": 400,
+              "keptTodayCents": 0,
+              "currency": "EUR",
+              "otherDrawers": [
+                {
+                  "drawerId": "lade_bar",
+                  "name": "Bar",
+                  "openCents": 150
+                }
+              ]
+            }
+          }
+        },
+        {
+          "case": "success_cashier_per_person",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "drawerId": "haupt_KASSE1"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "drawerId": "haupt_KASSE1",
+              "claimScope": "per_person",
+              "openCents": 550,
+              "keptTodayCents": 0,
+              "currency": "EUR",
+              "otherDrawers": []
             }
           }
         },

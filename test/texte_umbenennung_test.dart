@@ -123,6 +123,21 @@ const _nach10 = (
     'deposit_error.follows_item', 'deposit_error.invalid',
     // Terminal-Suche im lokalen Netz (npm 1.33.0)
     'terminal.several_found', 'terminal.tid_not_found', 'connect.local_network_blocked',
+    // Kartentrinkgeld an der Kasse (11.28.0, npm 1.37.0)
+    'tip.card_kept_setting_hint', 'tip.self_payout_hint', 'tip.overpaid_hint', 'tip.terminal_hint',
+    'tip_claim_scope.hint', 'my_tips.payout_not_allowed',
+    // Klaeren einer unklaren Karte: Nachfrage beim Terminal (11.28.0, npm 1.37.0)
+    'split.clarify_asking', 'split.clarify_charged', 'split.clarify_not_charged', 'split.clarify_open', 'split.clarify_not_asked',
+    // Browser-Kasse: neue Fassung verfuegbar (npm 1.37.0)
+    'version.new_available',
+    // Unklare Kartenzahlung kurz mit Kennung, Klaeren ohne Nachfrage (npm 1.37.0)
+    'split.clarify_manual', 'card_payment.unclear_short',
+    // Grund im Klaeren-Fenster, Technik von hobex (npm 1.37.0)
+    'split.clarify_reason_host_fault', 'split.clarify_reason_host_timeout', 'split.clarify_reason_internal_error',
+    'split.clarify_reason_approved_with_condition', 'split.clarify_reason_terminal',
+    // HPS ohne Terminal-Beleg, Terminal belegt beim Klaeren (npm 1.37.0)
+    'card_payment.unknown_hps', 'card_payment.unknown_with_id_hps', 'split.card_reverse_failed_hps', 'split.card_reverse_unknown_hps',
+    'split.card_already_reversed_hps', 'split.clarify_busy', 'split.clarify_no_answer',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -256,6 +271,23 @@ const _nach10 = (
     'inspection.closings', 'inspection.closings_monthly_first', 'inspection.closings_monthly_day',
     'inspection.closings_annual_december', 'inspection.contact', 'inspection.how_it_works', 'inspection.printed_at',
     'inspection.print', 'inspection.print_yes', 'inspection.print_no', 'zero_receipt.create', 'zero_receipt.created',
+    // Kartentrinkgeld an der Kasse (11.28.0, npm 1.37.0): Zeile je Zahlart, Fertig-Seite, „Mein Trinkgeld“,
+    // Storno-Zeile, Bon, Einstellungen, Anspruchs-Modus.
+    'tip.line_cash_kept', 'tip.line_cash_open', 'tip.line_card_kept', 'tip.line_card_open',
+    'done.tip_title', 'done.tip_open', 'done.tip_open_loading', 'done.tip_kept_card', 'done.tip_kept_cash', 'done.tip_pay_out',
+    'my_tips.title', 'my_tips.open_here', 'my_tips.open_total', 'my_tips.kept_today', 'my_tips.other_drawer',
+    'my_tips.nothing_open', 'my_tips.overpaid', 'my_tips.pay_out', 'my_tips.pay_out_amount',
+    'cancellation.tip_deducted', 'shift_receipt.tip_card_taken', 'shift.part_card_tips_taken', 'tip_card_kept_mode.title',
+    'tip.card_kept_setting', 'tip_self_payout.title',
+    'tip_claim_scope.title', 'tip_claim_scope.per_drawer', 'tip_claim_scope.per_person', 'tip_payout.nothing_open',
+    // Browser-Kasse: neue Fassung verfuegbar (npm 1.37.0)
+    'version.reload',
+    // Klaeren-Fenster: Titel mit Betrag, Kennungszeile (npm 1.37.0)
+    'split.clarify_title', 'split.clarify_reference',
+    // Fenster „Technik von hobex“ (npm 1.37.0)
+    'hobex_help.open', 'hobex_help.title', 'hobex_help.data', 'hobex_help.tid', 'hobex_help.reference',
+    'hobex_help.reversal_reference', 'hobex_help.amount', 'hobex_help.time', 'hobex_help.reason', 'hobex_help.protocol',
+    'hobex_help.address', 'hobex_help.serial', 'hobex_help.copy', 'hobex_help.copied',
   },
   fileKeys: [
     'errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'cancellationVoucherErrors', 'voucherErrors',
@@ -263,6 +295,8 @@ const _nach10 = (
     'externalVoucherTileMessages', 'externalVoucherArticleErrors',
     'returnDispositionLabels',
     'externalVouchersLabels', 'externalVoucherKindLabels', 'tipKeptModeLabels',
+    // Kartentrinkgeld an der Kasse (11.28.0, npm 1.37.0): Anspruchs-Modus -> Beschriftung
+    'tipClaimScopeLabels',
     // Pfand und Leergut (npm 1.32.0)
     'depositErrors',
   ],
@@ -288,6 +322,8 @@ const _nach10 = (
     'refunds',
     // Schicht-Ablauf der Kasse (11.19.0)
     'drawer', 'tip',
+    // Grund im Klaeren-Fenster: was das Terminal meldete (split.clarify_reason_terminal, npm 1.37.0)
+    'text',
   },
 );
 

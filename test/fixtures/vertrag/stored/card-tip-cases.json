@@ -1,0 +1,132 @@
+{
+  "_note": "Shared cases for card tips at the register (Spec 2026-11-11-kartentrinkgeld, § 9): the drawer arithmetic of one receipt as the backend computes it (schicht-beleg.laufstandDeltaLade, schicht-core.sollCents) and the lines the npm package prints for the employee (shiftTipLines). Receipts are in stored form (German keys); every amount is an integer in cents. expectedDeltaCents = change of the drawer's expected cash from this receipt alone: cash sales + cash cancellations - card tips taken in cash. claimDeltaCents = change of the employee's open claim at a drawer with shift mode (sofort - direkt - kartenDirekt + zurueck); a cancellation without `direkt` lowers it, also below 0. The twin in the npm package (fixtures/stored/card-tip-cases.json) replays tipLines and tipStatus; the backend replays the drawer arithmetic.",
+  "receipts": [
+    {
+      "name": "card_tip_kept",
+      "description": "Card 50,00 + 5,00 tip, kept: the employee takes 5,00 in cash out of the drawer.",
+      "receipt": {
+        "receiptType": "standard", "paymentMethod": "creditCard",
+        "payments": [{ "id": "p1", "method": "creditCard", "amountCents": 5500 }],
+        "items": [
+          { "name": "Maniküre", "amount": 1, "priceOne": 50, "priceOneCents": 5000, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "amount": 1, "priceOne": 5, "priceOneCents": 500, "vat": 0, "paymentMethod": "creditCard", "recipient": { "registerUserId": "ru_livia", "name": "Livia Lindmayr" }, "sofortErhalten": true, "direkt": true }
+        ]
+      },
+      "expected": { "cashSalesCents": 0, "cashCancellationsCents": 0, "cardTipsTakenCents": 500, "expectedDeltaCents": -500, "claimDeltaCents": { "ru_livia": 0 } },
+      "tips": { "ru_livia": { "registerUserId": "ru_livia", "name": "Livia Lindmayr", "receivedImmediatelyCents": 500, "retainedCents": 0, "paidOutCents": 500, "refundedByEmployeeCents": 0, "cardTipsTakenCents": 500, "carriedOverCents": 0, "openCents": 0 } },
+      "tipLines": [["shift_receipt.tip_earned", 500], ["shift_receipt.tip_paid_out", 500], ["shift_receipt.tip_card_taken", 500]],
+      "tipStatus": { "method": "card", "kept": true, "status": "kept", "key": "tip.line_card_kept" }
+    },
+    {
+      "name": "card_tip_open",
+      "description": "Card 50,00 + 5,00 tip, left open: claim +5,00, nothing leaves the drawer.",
+      "receipt": {
+        "receiptType": "standard", "paymentMethod": "creditCard",
+        "payments": [{ "id": "p1", "method": "creditCard", "amountCents": 5500 }],
+        "items": [
+          { "name": "Maniküre", "amount": 1, "priceOne": 50, "priceOneCents": 5000, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "amount": 1, "priceOne": 5, "priceOneCents": 500, "vat": 0, "paymentMethod": "creditCard", "recipient": { "registerUserId": "ru_livia", "name": "Livia Lindmayr" }, "sofortErhalten": true }
+        ]
+      },
+      "expected": { "cashSalesCents": 0, "cashCancellationsCents": 0, "cardTipsTakenCents": 0, "expectedDeltaCents": 0, "claimDeltaCents": { "ru_livia": 500 } },
+      "tips": { "ru_livia": { "registerUserId": "ru_livia", "name": "Livia Lindmayr", "receivedImmediatelyCents": 500, "retainedCents": 0, "paidOutCents": 0, "refundedByEmployeeCents": 0, "carriedOverCents": 0, "openCents": 500 } },
+      "tipLines": [["shift_receipt.tip_earned", 500], ["shift_receipt.tip_open", 500]],
+      "tipStatus": { "method": "card", "kept": false, "status": "open", "key": "tip.line_card_open" }
+    },
+    {
+      "name": "cash_tip_kept",
+      "description": "Cash 50,00 + 5,00 tip, kept: the tip never enters the drawer (as before).",
+      "receipt": {
+        "receiptType": "standard", "paymentMethod": "cash",
+        "payments": [{ "id": "p1", "method": "cash", "amountCents": 5500 }],
+        "items": [
+          { "name": "Maniküre", "amount": 1, "priceOne": 50, "priceOneCents": 5000, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "amount": 1, "priceOne": 5, "priceOneCents": 500, "vat": 0, "paymentMethod": "cash", "recipient": { "registerUserId": "ru_livia", "name": "Livia Lindmayr" }, "sofortErhalten": true, "direkt": true }
+        ]
+      },
+      "expected": { "cashSalesCents": 5000, "cashCancellationsCents": 0, "cardTipsTakenCents": 0, "expectedDeltaCents": 5000, "claimDeltaCents": { "ru_livia": 0 } },
+      "tips": { "ru_livia": { "registerUserId": "ru_livia", "name": "Livia Lindmayr", "receivedImmediatelyCents": 500, "retainedCents": 0, "paidOutCents": 500, "refundedByEmployeeCents": 0, "carriedOverCents": 0, "openCents": 0 } },
+      "tipLines": [["shift_receipt.tip_earned", 500], ["shift_receipt.tip_paid_out", 500]],
+      "tipStatus": { "method": "cash", "kept": true, "status": "kept", "key": "tip.line_cash_kept" }
+    },
+    {
+      "name": "cash_tip_open",
+      "description": "Cash 50,00 + 5,00 tip, left in the drawer: claim +5,00 (as before).",
+      "receipt": {
+        "receiptType": "standard", "paymentMethod": "cash",
+        "payments": [{ "id": "p1", "method": "cash", "amountCents": 5500 }],
+        "items": [
+          { "name": "Maniküre", "amount": 1, "priceOne": 50, "priceOneCents": 5000, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "amount": 1, "priceOne": 5, "priceOneCents": 500, "vat": 0, "paymentMethod": "cash", "recipient": { "registerUserId": "ru_livia", "name": "Livia Lindmayr" }, "sofortErhalten": true }
+        ]
+      },
+      "expected": { "cashSalesCents": 5500, "cashCancellationsCents": 0, "cardTipsTakenCents": 0, "expectedDeltaCents": 5500, "claimDeltaCents": { "ru_livia": 500 } },
+      "tips": { "ru_livia": { "registerUserId": "ru_livia", "name": "Livia Lindmayr", "receivedImmediatelyCents": 500, "retainedCents": 0, "paidOutCents": 0, "refundedByEmployeeCents": 0, "carriedOverCents": 0, "openCents": 500 } },
+      "tipLines": [["shift_receipt.tip_earned", 500], ["shift_receipt.tip_open", 500]],
+      "tipStatus": { "method": "cash", "kept": false, "status": "open", "key": "tip.line_cash_open" }
+    },
+    {
+      "name": "mixed_cash_and_card_tip_kept",
+      "description": "Split payment: 30,00 cash, 25,00 card with a 5,00 card tip kept in cash. Cash sales stay what the guest gave in cash; the drawer loses 5,00 for the tip.",
+      "receipt": {
+        "receiptType": "standard", "paymentMethod": "mixed",
+        "payments": [{ "id": "p1", "method": "cash", "amountCents": 3000 }, { "id": "p2", "method": "creditCard", "amountCents": 2500 }],
+        "items": [
+          { "name": "Maniküre", "amount": 1, "priceOne": 50, "priceOneCents": 5000, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "amount": 1, "priceOne": 5, "priceOneCents": 500, "vat": 0, "paymentMethod": "creditCard", "recipient": { "registerUserId": "ru_livia", "name": "Livia Lindmayr" }, "sofortErhalten": true, "direkt": true }
+        ]
+      },
+      "expected": { "cashSalesCents": 3000, "cashCancellationsCents": 0, "cardTipsTakenCents": 500, "expectedDeltaCents": 2500, "claimDeltaCents": { "ru_livia": 0 } },
+      "tips": { "ru_livia": { "registerUserId": "ru_livia", "name": "Livia Lindmayr", "receivedImmediatelyCents": 500, "retainedCents": 0, "paidOutCents": 500, "refundedByEmployeeCents": 0, "cardTipsTakenCents": 500, "carriedOverCents": 0, "openCents": 0 } },
+      "tipLines": [["shift_receipt.tip_earned", 500], ["shift_receipt.tip_paid_out", 500], ["shift_receipt.tip_card_taken", 500]],
+      "tipStatus": { "method": "card", "kept": true, "status": "kept", "key": "tip.line_card_kept" }
+    },
+    {
+      "name": "cancellation_card_refund",
+      "description": "Cancellation of card_tip_kept with the refund to the card: nobody puts money back; the drawer is untouched, the claim drops by 5,00 (below 0 if it was 0).",
+      "receipt": {
+        "receiptType": "cancellation", "paymentMethod": "creditCard",
+        "payments": [{ "id": "p1", "method": "creditCard", "amountCents": -5500, "refundOf": "p1" }],
+        "items": [
+          { "name": "Maniküre", "amount": -1, "priceOne": 50, "priceOneCents": 5000, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "amount": -1, "priceOne": 5, "priceOneCents": 500, "vat": 0, "paymentMethod": "creditCard", "recipient": { "registerUserId": "ru_livia", "name": "Livia Lindmayr" }, "sofortErhalten": true }
+        ]
+      },
+      "expected": { "cashSalesCents": 0, "cashCancellationsCents": 0, "cardTipsTakenCents": 0, "expectedDeltaCents": 0, "claimDeltaCents": { "ru_livia": -500 } },
+      "tips": { "ru_livia": { "registerUserId": "ru_livia", "name": "Livia Lindmayr", "receivedImmediatelyCents": -500, "retainedCents": 0, "paidOutCents": 0, "refundedByEmployeeCents": 0, "carriedOverCents": 0, "openCents": -500 } },
+      "tipLines": [["shift_receipt.tip_earned", -500], ["shift_receipt.tip_open", -500]]
+    },
+    {
+      "name": "cancellation_cash_refund",
+      "description": "Cancellation of card_tip_kept paid back in cash: the drawer pays the whole amount (goods and tip), the claim drops by 5,00.",
+      "receipt": {
+        "receiptType": "cancellation", "paymentMethod": "cash",
+        "payments": [{ "id": "p1", "method": "cash", "amountCents": -5500 }],
+        "items": [
+          { "name": "Maniküre", "amount": -1, "priceOne": 50, "priceOneCents": 5000, "vat": 20 },
+          { "kind": "tip", "name": "Trinkgeld Personal", "amount": -1, "priceOne": 5, "priceOneCents": 500, "vat": 0, "paymentMethod": "creditCard", "recipient": { "registerUserId": "ru_livia", "name": "Livia Lindmayr" }, "sofortErhalten": true }
+        ]
+      },
+      "expected": { "cashSalesCents": 0, "cashCancellationsCents": -5500, "cardTipsTakenCents": 0, "expectedDeltaCents": -5500, "claimDeltaCents": { "ru_livia": -500 } },
+      "tips": { "ru_livia": { "registerUserId": "ru_livia", "name": "Livia Lindmayr", "receivedImmediatelyCents": -500, "retainedCents": 0, "paidOutCents": 0, "refundedByEmployeeCents": 0, "carriedOverCents": 0, "openCents": -500 } },
+      "tipLines": [["shift_receipt.tip_earned", -500], ["shift_receipt.tip_open", -500]]
+    }
+  ],
+  "payouts": [
+    {
+      "name": "payout_of_open_card_tip",
+      "description": "card_tip_open, then the employee pays herself 5,00 out of the drawer: claim 0, drawer -5,00.",
+      "openBeforeCents": 500, "payoutCents": 500, "openAfterCents": 0, "expectedDeltaCents": -500
+    },
+    {
+      "name": "payout_then_cancellation",
+      "description": "After the payout the sale is cancelled with the refund to the card: the claim goes to -5,00 (paid out too much); the next tip settles it.",
+      "openBeforeCents": 0, "claimDeltaCents": -500, "openAfterCents": -500, "expectedDeltaCents": 0
+    },
+    {
+      "name": "payout_over_claim_rejected",
+      "description": "A payout above the open claim is refused (tip_payout_exceeds_claim); nothing moves.",
+      "openBeforeCents": 300, "payoutCents": 301, "error": "tip_payout_exceeds_claim"
+    }
+  ]
+}

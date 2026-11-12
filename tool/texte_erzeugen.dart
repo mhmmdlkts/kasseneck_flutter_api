@@ -37,6 +37,7 @@ const List<String> _dateiSchluessel = [
   'externalVouchersLabels',
   'externalVoucherKindLabels',
   'tipKeptModeLabels',
+  'tipClaimScopeLabels',
   'depositErrors',
 ];
 
@@ -161,6 +162,8 @@ String erzeugeKatalog(Map<String, dynamic> vertrag) {
       'Art eines fremden Gutscheins (`multi_purpose`, `single_purpose`) -> Schluessel der Beschriftung.');
   zuordnung('tipKeptModeLabels', 'tipKeptModeLabels',
       'Trinkgeld gleich behalten (`ask`, `always`, `never`) -> Schluessel der Beschriftung.');
+  zuordnung('tipClaimScopeLabels', 'tipClaimScopeLabels',
+      'Offenes Trinkgeld zaehlt (`per_drawer`, `per_person`) -> Schluessel der Beschriftung.');
   zuordnung('depositErrorMessages', 'depositErrors',
       'Pfand und Leergut: Code des Backends -> Schluessel des Satzes; siehe [depositErrorMessage].');
   return sb.toString().replaceFirst(RegExp(r'\n+$'), '\n');

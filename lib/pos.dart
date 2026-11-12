@@ -174,6 +174,7 @@ export 'src/kasse/schicht.dart'
         gemeldetLesen,
         geoeffnetLesen,
         ladeStand,
+        tipStand,
         zBonPruefen;
 // Die Bons der Schicht als Zeilenmodell (Z-Bon, X-Bon, Kassenbewegung).
 export 'src/printing/shift_sheet.dart';

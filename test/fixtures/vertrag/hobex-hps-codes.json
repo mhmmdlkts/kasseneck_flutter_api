@@ -1,5 +1,5 @@
 {
-  "version": "1.36.0",
+  "version": "1.37.0",
   "measuredOn": {
     "tid": "3600335",
     "hpsVersion": "1.10.0",
@@ -4412,7 +4412,7 @@
   ],
   "reasons": {
     "approved": "Vom Terminal genehmigt.",
-    "approvedWithCondition": "Das Terminal meldet eine Genehmigung mit Vorbehalt (etwa nur über einen Teilbetrag). Ob und in welcher Höhe belastet wurde, bitte am Terminalbeleg prüfen – nicht erneut kassieren, bevor es geklärt ist.",
+    "approvedWithCondition": "Das Terminal meldet eine Genehmigung mit Vorbehalt (etwa nur über einen Teilbetrag). Ob und in welcher Höhe belastet wurde, weiß hobex – nicht erneut kassieren, bevor es geklärt ist.",
     "aborted": "Der Vorgang wurde abgebrochen. Es wurde kein Geld bewegt.",
     "noCard": "Es wurde keine Karte vorgehalten. Es wurde kein Geld bewegt – bitte erneut versuchen.",
     "cardReadFailed": "Die Karte konnte nicht gelesen werden. Es wurde kein Geld bewegt – bitte erneut versuchen, notfalls die Karte stecken statt auflegen.",

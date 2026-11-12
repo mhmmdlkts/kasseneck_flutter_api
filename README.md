@@ -464,6 +464,12 @@ on a zero receipt, an item without a VAT rate, ...), `receiptDueCents` throws a
 - `tip`: `KeckTip.forRecipient(registerUserId, cents: 200)` or `KeckTip(cents: …, recipients: …)`.
   The backend books it as its own line; `listTipRecipients()` returns the people
   a tip can be assigned to. A receipt needs at least one item for a tip.
+  `tipKeptFor(business, wanted, TipPaymentKind.card)` decides the card tip
+  stage (`tipCardKeptMode`) like the cash one, `tipStatus(method, kept)` names
+  the one line the register shows, and `getMyTipBalance()` on
+  `RegisterReceiptClient` returns "Mein Trinkgeld" of the logged-in person.
+  The card stage only applies when `RegisterCashregisterState.cardTips` is
+  `true`.
 - `customerDetails`, `legalMessage`: extra lines on the receipt.
 - card payments carry `provider`, `providerPaymentId` and `providerData` on
   their `KeckPaymentInput`: see [Card payments](#card-payments).
@@ -894,7 +900,10 @@ later about a payment whose outcome stayed open: it only reads the status
 (no abort, no reversal) and decides only what the previous clarification
 (`HpsClarifyPrevious`) still allows. An `HpsObserver` passed to
 `HpsPayments` (`observer:`) logs requests, failures and how an outcome was
-resolved.
+resolved. `hobexSupport` holds the number of hobex technical support
+(`phone`, `display`, `availability`) for a help window; show it only where
+hobex can help (a fault at the hobex host, the terminal not ready, a wrong
+TID), never for errors in the own network or at Kasseneck Connect.
 
 To find a terminal in the local network:
 

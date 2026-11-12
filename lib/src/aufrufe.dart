@@ -149,6 +149,8 @@ abstract final class Aufrufe {
   // Leergut-Codes lernen und lesen (Pfand & Leergut, npm 1.32.0): nur ueber den Kassenweg.
   static const learnMyLeergutCode = 'learnMyLeergutCode';
   static const listMyLeergutCodes = 'listMyLeergutCodes';
+  // „Mein Trinkgeld“ (Kartentrinkgeld, npm 1.37.0): Stand der angemeldeten Person; nur ueber den Kassenweg.
+  static const getMyTipBalance = 'getMyTipBalance';
   // Kartenterminal-Zugang zentral (KasseneckApi, nur /v3 mit api_key).
   static const registerTerminalDevice = 'registerTerminalDevice';
   static const getTerminalAccess = 'getTerminalAccess';
@@ -286,6 +288,7 @@ abstract final class Aufrufe {
     reportConnectState,
     learnMyLeergutCode,
     listMyLeergutCodes,
+    getMyTipBalance,
     registerTerminalDevice,
     getTerminalAccess,
     claimTerminal,

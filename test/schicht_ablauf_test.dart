@@ -336,10 +336,12 @@ void main() {
       () {
         expect(movementTypes, contains('interim_difference'));
         expect(manualMovementTypes, isNot(contains('interim_difference')));
+        // card_tips_taken seit 1.37.0: Kartentrinkgeld bar aus der Lade genommen.
         expect(expectedPartKeys, [
           'opening',
           'cash_sales',
           'cash_tips',
+          'card_tips_taken',
           'cancellations',
           'cash_in',
           'cash_out',
