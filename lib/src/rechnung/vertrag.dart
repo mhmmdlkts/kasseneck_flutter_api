@@ -83,6 +83,9 @@ const List<String> invoiceErrorCodes = [
   'deposit_set_by_server',
   'invalid_deposit_quantity',
   'invalid_deposit',
+  // Seit 11.29 (Vertrag 1.38.0): Barzahlung, der Kassenbeleg der Zahlung ist noch nicht fertig; der Aufruf
+  // wird kurz danach wiederholt. Hinten angehaengt.
+  'cash_receipt_pending',
 ];
 
 /// Fehlercodes, die nicht die Rechnung, sondern die Anfrage betreffen:

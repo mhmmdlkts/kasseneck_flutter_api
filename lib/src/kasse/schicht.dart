@@ -400,6 +400,7 @@ class ShiftRunningTotals {
     this.ownerTips,
     this.unassignedTipCents,
     this.discounts,
+    this.invoicePaymentCents,
   });
 
   final int cashSalesCents;
@@ -434,6 +435,12 @@ class ShiftRunningTotals {
   /// auf dem Z-Bon steht es als Block (`discountBlockLines`).
   final List<ShiftDiscount>? discounts;
 
+  /// Zahlungen auf Rechnungen in Cent (npm 1.38.0): Summe der Positionen „Zahlung auf Rechnung“ der
+  /// Schicht, bar und unbar, ein Storno negativ. Nur Information, nie zusaetzlich im Soll: das Geld
+  /// steckt schon im Barumsatz bzw. in [nonCashByMethod]. Der Server sendet es nur, wenn es etwas gibt;
+  /// `null` = keine.
+  final int? invoicePaymentCents;
+
   Map<String, dynamic> toJson() => {
         'cashSalesCents': cashSalesCents,
         'cashCancellationsCents': cashCancellationsCents,
@@ -448,6 +455,7 @@ class ShiftRunningTotals {
         if (ownerTips != null) 'ownerTips': [for (final t in ownerTips!) t.toJson()],
         if (unassignedTipCents != null) 'unassignedTipCents': unassignedTipCents,
         if (discounts != null) 'discounts': [for (final r in discounts!) r.toJson()],
+        if (invoicePaymentCents != null) 'invoicePaymentCents': invoicePaymentCents,
       };
 }
 
@@ -1015,6 +1023,7 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
     this.countedBeforePayoutDenominations,
     this.discounts,
     this.cardTipsTakenCents,
+    this.invoicePaymentCents,
   });
 
   /// Nummer der Schicht (Draht: `shift.number`).
@@ -1056,6 +1065,9 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
   /// Kartentrinkgeld bar aus der Lade genommen, Summe (Soll − Betrag); `null`
   /// ohne Kartentrinkgeld ueber die Lade (der Bon bleibt dann wie bisher).
   final int? cardTipsTakenCents;
+  /// Zahlungen auf Rechnungen in Cent, wie [ShiftRunningTotals.invoicePaymentCents]; `null` ohne solche
+  /// (der Bon bleibt dann wie bisher).
+  final int? invoicePaymentCents;
 
   /// Entnommen bzw. eingelegt nach dem Zaehlen; `null`, wenn kein Geld bewegt wurde.
   final AfterCount? afterCount;
@@ -1109,6 +1121,7 @@ class ShiftSummaryReceipt extends ShiftReceiptHeader {
         'openingsWithoutSale': openingsWithoutSale,
         if (discounts != null) 'discounts': [for (final r in discounts!) r.toJson()],
         if (cardTipsTakenCents != null) 'cardTipsTakenCents': cardTipsTakenCents,
+        if (invoicePaymentCents != null) 'invoicePaymentCents': invoicePaymentCents,
         if (afterCount != null) 'afterCount': afterCount!.toJson(),
         if (afterCount != null) 'leftInDrawerCents': leftInDrawerCents,
         if (openingCounted != null) 'openingCounted': openingCounted,
@@ -1494,6 +1507,8 @@ ShiftRunningTotals _laufstand(_Ort ort, Object? w) {
     ownerTips: o['ownerTips'] == null ? null : _liste(ort, o, 'ownerTips', _inhaberTrinkgeld),
     unassignedTipCents: o['unassignedTipCents'] == null ? null : _ganzzahl(ort, o, 'unassignedTipCents'),
     discounts: o['discounts'] == null ? null : _liste(ort, o, 'discounts', _rabatt),
+    // Nur Information (npm 1.38.0): Zahlungen auf Rechnungen, gelesen wie gesendet, fehlt = null.
+    invoicePaymentCents: o['invoicePaymentCents'] == null ? null : _ganzzahl(ort, o, 'invoicePaymentCents'),
   );
 }
 
@@ -1742,6 +1757,8 @@ ShiftSummaryReceipt _schichtBon(_Ort ort, Object? w) {
     discounts: o['discounts'] == null ? null : _liste(ort, o, 'discounts', _rabatt),
     // Kartentrinkgeld bar aus der Lade genommen (Summe); nur mit Karten-direkt.
     cardTipsTakenCents: _ganzzahlOderNull(ort, o, 'cardTipsTakenCents'),
+    // Nur Information: Zahlungen auf Rechnungen (npm 1.38.0); der Server sendet sie erst mit dem ersten Zahlungsbeleg.
+    invoicePaymentCents: o['invoicePaymentCents'] == null ? null : _ganzzahl(ort, o, 'invoicePaymentCents'),
     differenceParts: o['differenceParts'] == null ? null : _liste(ort, o, 'differenceParts', _differenzTeil),
     countedBeforePayoutCents: _ganzzahlOderNull(ort, o, 'countedBeforePayoutCents'),
     countedBeforePayoutDenominations: _stueckelung(ort, o, 'countedBeforePayoutDenominations'),

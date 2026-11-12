@@ -4,8 +4,8 @@
     "default": {
       "sha256": "b3ed9b5e54fb6a0c27c2e9b494c8676926b80b4527236f0f4f71403c455fa477",
       "head": [],
-      "inputsSha256": "ecb47590acdd2127284e882ab4f44ffd4685a980cc75046db62619ee5409d63d",
-      "backendPackage": "@kreiseck/kasseneck-api@0.39.0",
+      "inputsSha256": "c6f99c9f83910d436b65673792017a081b6bd6728abeb089824bbb3a89a50fe3",
+      "backendPackage": "@kreiseck/kasseneck-api@0.40.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
         "functions/gemeinsam/api-rand.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "a65b3e509ed51d7a2aec90109bad158f03dcc0dc7ebfcd0e47dac857ee9f24ba",
+      "sha256": "c5a50ebc95beb71721025f9cc4a1bfe861df4b93422398063146657d1dadca68",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "a53cd1f038a746b62af29ab189d7d515f9b5336f41e96d5036662d3fc7d9cb48",
+      "inputsSha256": "757d890593921c8947e4a90ecea3c36169265fbcb9d224c764372dd4a13dbb52",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -18996,27 +18996,12 @@
               "longOpenWarning": true,
               "tipClaims": [
                 {
-                  "registerUserId": "ru_chef",
-                  "name": "Anna Chef",
-                  "cents": 300
-                },
-                {
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
                   "cents": 150
                 }
               ],
               "tips": [
-                {
-                  "registerUserId": "ru_chef",
-                  "name": "Anna Chef",
-                  "receivedImmediatelyCents": 0,
-                  "retainedCents": 0,
-                  "paidOutCents": 0,
-                  "refundedByEmployeeCents": 0,
-                  "carriedOverCents": 0,
-                  "openCents": 300
-                },
                 {
                   "registerUserId": "ru_kellner",
                   "name": "Ben Kellner",
@@ -21613,7 +21598,7 @@
           }
         },
         {
-          "case": "success_cashier",
+          "case": "cashier_blind_open",
           "method": "POST",
           "caller": "register_user_cashier",
           "params": {
@@ -21625,114 +21610,12 @@
             "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
           },
           "response": {
-            "status": "success",
-            "message": "",
+            "status": "error",
+            "message": "Keine Berechtigung für diesen Vorgang.",
             "data": {
-              "shift": {
-                "id": "haupt_KASSE1_s2",
-                "drawerId": "haupt_KASSE1",
-                "cashregisterId": "KASSE1",
-                "number": 2,
-                "status": "open",
-                "openedAt": "2026-09-25T15:00:00.000Z",
-                "openedBy": {
-                  "registerUserId": "ru_chef",
-                  "name": "Anna Chef",
-                  "role": "register_user"
-                },
-                "openedDeviceId": "dev_pin",
-                "closedAt": null,
-                "closedBy": null,
-                "closedDeviceId": null,
-                "openingFloatCents": null,
-                "openingDenominations": null,
-                "openingFloatTakenOver": true,
-                "comment": null,
-                "blind": null
-              },
-              "movements": [
-                {
-                  "id": "b0000003",
-                  "number": 3,
-                  "shiftId": "haupt_KASSE1_s2",
-                  "type": "change_in",
-                  "amountCents": 5000,
-                  "location": "bank",
-                  "note": null,
-                  "by": {
-                    "registerUserId": "ru_chef",
-                    "name": "Anna Chef",
-                    "role": "register_user"
-                  },
-                  "at": "2026-09-25T15:03:00.000Z",
-                  "recipient": null,
-                  "counterpart": null
-                }
-              ],
-              "receipt": {
-                "kind": "shift_interim",
-                "blind": true,
-                "business": {
-                  "name": "Café Welt"
-                },
-                "cashregister": {
-                  "id": "KASSE1",
-                  "name": "Theke 1"
-                },
-                "drawer": {
-                  "name": "Hauptlade"
-                },
-                "shift": {
-                  "number": 2,
-                  "openedAt": "2026-09-25T15:00:00.000Z",
-                  "closedAt": null,
-                  "openedByName": "Anna Chef",
-                  "closedByName": null
-                },
-                "openingFloatCents": null,
-                "openingFloatTakenOver": true,
-                "openingCounted": false,
-                "openingDenominations": null,
-                "cashSalesCents": null,
-                "cashCancellationsCents": null,
-                "receiptCount": 3,
-                "cancellationCount": 0,
-                "nonCashByMethod": [
-                  {
-                    "method": "card",
-                    "cents": 3200
-                  }
-                ],
-                "movements": [
-                  {
-                    "number": 3,
-                    "type": "change_in",
-                    "amountCents": 5000,
-                    "note": null,
-                    "byName": "Anna Chef",
-                    "at": "2026-09-25T15:03:00.000Z"
-                  }
-                ],
-                "tips": [
-                  {
-                    "registerUserId": "ru_kellner",
-                    "name": "Ben Kellner",
-                    "receivedImmediatelyCents": 400,
-                    "retainedCents": 0,
-                    "paidOutCents": 0,
-                    "refundedByEmployeeCents": 0,
-                    "carriedOverCents": 0,
-                    "openCents": 400
-                  }
-                ],
-                "expectedCents": null,
-                "countedCents": null,
-                "countedDenominations": null,
-                "differenceCents": null,
-                "comment": null,
-                "openingsWithoutSale": 1
-              }
-            }
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
           }
         },
         {

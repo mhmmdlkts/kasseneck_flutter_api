@@ -2,7 +2,7 @@ import '../enums/vat_rate.dart';
 import '../src/kasse/rueckgabe.dart';
 
 /// Die Kennzeichnungen, die eine Position tragen kann ([KasseneckItem.kind]).
-const _bekannteArten = {'tip', 'discount', 'voucher', 'voucher_float', 'deposit', 'deposit_return'};
+const _bekannteArten = {'tip', 'discount', 'voucher', 'voucher_float', 'deposit', 'deposit_return', 'invoice_payment'};
 
 class KasseneckItem {
   /// Name des Artikels / der Dienstleistung
@@ -148,6 +148,12 @@ class KasseneckItem {
   /// `isDepositReturnItem` im JS-Paket.
   bool get isDepositReturn => kind == 'deposit_return';
 
+  /// Zahlung auf Rechnung (Zahlungsbeleg, nur vom Server; Bezug in
+  /// `KasseneckReceipt.invoicePayments`)? Die Position zaehlt im RKSV-Feld „Null“, ist aber kein
+  /// steuerfreier Umsatz: die Umsatzsteuer steht auf der Rechnung. Am Bon steht sie ohne
+  /// Satzkennzeichen und nicht in der Steuertabelle. Zwilling von `isInvoicePaymentItem` im npm-Paket.
+  bool get isInvoicePayment => kind == 'invoice_payment';
+
   /// Trinkgeld an den Inhaber? Dann ist es Entgelt (§ 4 UStG) und traegt den
   /// Steuersatz der Leistung; Trinkgeld an Mitarbeiter ist durchlaufender
   /// Posten mit 0 % (Erlass 2.4.6 / 2.4.2.1). Der Vermerk ist eine
@@ -233,6 +239,9 @@ class KasseneckItem {
       // gelesene Belege wieder. Ein Verkauf traegt sie nie (createReceipt
       // weist sie vor dem Senden als voucher_invalid ab).
       if (kind == 'voucher' || kind == 'voucher_float') 'kind': kind,
+      // Zahlung auf Rechnung (vom Server): reist mit wie die Gutscheinzeilen; ein Wunsch an den Server
+      // traegt sie nie (createReceipt weist sie ausser beim Selbstaufruf ab).
+      if (kind == 'invoice_payment') 'kind': kind,
       // Pfand & Leergut: Kennzeichen und Felder reisen mit (der Zwischenspeicher
       // schreibt gelesene Belege wieder; ein Wunsch an den Server traegt `deposit`
       // nie mit `articleId`). Zwilling von toReceiptItemPayload im JS-Paket.

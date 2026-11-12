@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.37.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.38.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.37.0';
+const String posTextsVersion = '1.38.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -127,6 +127,7 @@ const Map<String, PosText> posMessages = {
   'cancellation.voucher_no_type': PosText('Keine Gutschein-Sorte für Rückgaben eingestellt – bitte wie bezahlt zurückgeben.'),
   'cancellation.voucher_amount': PosText('Dieser Betrag geht nicht als Gutschein – bitte wie bezahlt zurückgeben.'),
   'cancellation.voucher_type_changed': PosText('Die Gutschein-Sorte für Rückgaben hat sich geändert – bitte erneut versuchen.'),
+  'cancellation.invoice_payment_not_cancellable': PosText('Diese Zahlung gehört zu einer Rechnung. Storniere sie im Kundenbereich bei der Rechnung.'),
   'voucher_error.not_found': PosText('Diesen Gutschein gibt es in diesem Betrieb nicht.'),
   'voucher_error.invalid': PosText('Dieser Gutschein ist nicht gültig.'),
   'voucher_error.invalid_code': PosText('Der Code ist nicht vollständig oder falsch abgetippt.'),
@@ -874,6 +875,7 @@ const Map<String, PosText> posLabels = {
   'shift_receipt.counted_before_payout': PosText('Gezählt'),
   'shift_receipt.difference_part_interim': PosText('davon Zwischenzählung'),
   'shift_receipt.difference_part_closing': PosText('davon Abschluss'),
+  'shift_receipt.invoice_payments': PosText('Zahlungen auf Rechnungen'),
   'shift.state_closing': PosText('Schicht wird geschlossen'),
   'shift.state_interim': PosText('Zwischenzählung'),
   'shift.tips_paid_out': PosText('Trinkgeld ausgezahlt'),
@@ -960,6 +962,7 @@ const List<ErrorRule> errorCodeRules = [
   ErrorRule(kind: ErrorKind.api, codes: ['manager_only'], key: 'dep.manager_only'),
   ErrorRule(kind: ErrorKind.api, codes: ['export_running'], key: 'dep.running'),
   ErrorRule(kind: ErrorKind.api, codes: ['too_many_exports'], key: 'dep.too_many_exports'),
+  ErrorRule(kind: ErrorKind.api, codes: ['invoice_payment_not_cancellable'], key: 'cancellation.invoice_payment_not_cancellable'),
 ];
 
 /// Regeln je Ausgang, nach den Code-Regeln; siehe [findErrorRule] und [messageOutcome].

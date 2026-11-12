@@ -1153,20 +1153,22 @@ void main() {
 
     test('neue Codes hinten, in der Reihenfolge des Backends', () {
       final n = invoiceErrorCodes.length;
-      expect(invoiceErrorCodes.sublist(n - 13, n - 11), ['einvoice_unavailable', 'amount_too_large']);
-      expect(invoiceErrorCodes.sublist(n - 11, n - 9), ['vat_id_invalid', 'vat_id_check_pending']);
-      expect(invoiceErrorCodes.sublist(n - 9, n - 6),
+      expect(invoiceErrorCodes.sublist(n - 14, n - 12), ['einvoice_unavailable', 'amount_too_large']);
+      expect(invoiceErrorCodes.sublist(n - 12, n - 10), ['vat_id_invalid', 'vat_id_check_pending']);
+      expect(invoiceErrorCodes.sublist(n - 10, n - 7),
           ['reservation_not_found', 'reservation_mismatch', 'reservation_not_active']);
       // 11.7 (npm 1.16.0): Rechnungsnummer schon vergeben, hinter den Reservierungen.
-      expect(invoiceErrorCodes[n - 6], 'invoice_number_taken');
+      expect(invoiceErrorCodes[n - 7], 'invoice_number_taken');
       // 11.27 (npm 1.36.0): Pfand an Positionen, hinten angehaengt.
-      expect(invoiceErrorCodes.sublist(n - 5), [
+      expect(invoiceErrorCodes.sublist(n - 6, n - 1), [
         'deposit_not_enabled',
         'deposit_type_not_found',
         'deposit_set_by_server',
         'invalid_deposit_quantity',
         'invalid_deposit',
       ]);
+      // 11.29 (npm 1.38.0): Kassenbeleg der Barzahlung noch nicht fertig, hinten angehaengt.
+      expect(invoiceErrorCodes.last, 'cash_receipt_pending');
       expect(invoiceNoticeCodes.last, 'reservation_expired');
       for (final code in invoiceNoticeCodes) {
         expect(invoiceErrorCodes, isNot(contains(code)), reason: code);

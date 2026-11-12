@@ -16,12 +16,12 @@ import '../enums/qr_print_mode.dart';
 import '../enums/vat_rate.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
-import '../services/rksv_service.dart';
 import '../services/vienna_time.dart';
 import '../src/printing/code_tables.dart' show CodeTableId;
 import '../src/printing/printable.dart' show printableText;
 import '../src/printing/qr_groesse.dart';
-import '../src/receipt/aufdruck.dart' show belegartBlock, nacherfassungBlock, warnrahmen;
+import '../src/receipt/aufdruck.dart'
+    show belegartBlock, steuerhinweisText, istNurRechnungszahlung, nacherfassungBlock, rechnungszahlungBezuege, signaturausfallBlock, warnrahmen;
 import '../src/receipt/einzug.dart';
 import '../src/receipt/pfand_bon.dart';
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
@@ -473,8 +473,17 @@ class PrintPaper {
     // Pfand (npm 1.32.0): die Pfandzeile steht als Unterzeile unter ihrer
     // Position, nach deren Zusaetzen, ebenso eingerueckt.
     final anzeige = receiptDisplayOrder(receipt.items);
+    final rechnungszahlungen = rechnungszahlungBezuege(receipt);
     for (final i in anzeige.order) {
       final item = receipt.items[i];
+      // Zahlung auf Rechnung: eigene Zeilen, nicht in der Steuertabelle (die Umsatzsteuer steht auf der
+      // Rechnung); ohne Menge und ohne Satzkennzeichen, Steuerhinweis je `taxNote` der Rechnung.
+      if (item.isInvoicePayment) {
+        addDoubleText(item.name.check(), '${formatCents(item.totalCents)}  ', leftWidth: 8, rightWidth: 4);
+        final hinweis = steuerhinweisText(rechnungszahlungen[i]?.taxNote);
+        if (hinweis != null) addText(hinweis);
+        continue;
+      }
       final zusatz = isValidAddOnAt(receipt.items, i) || anzeige.boundDeposit.contains(i);
       if (itemsByVat[item.vat] == null) {
         itemsByVat[item.vat] = [];
@@ -576,9 +585,13 @@ class PrintPaper {
       });
     }
 
-    addFeed();
+    // Ein Zahlungsbeleg hat keine Steuertabelle (seine Umsatzsteuer steht auf der Rechnung).
+    final bool ohneSteuertabelle = istNurRechnungszahlung(receipt) && vatTableBruttoByVatCents.isEmpty;
+    if (!ohneSteuertabelle) {
+      addFeed();
 
-    _addTable('MwSt%', 'MwSt', 'Netto', 'Brutto');
+      _addTable('MwSt%', 'MwSt', 'Netto', 'Brutto');
+    }
 
     vatTableBruttoByVatCents.forEach((key, bruttoCents) {
       // Ganzzahlig zerlegen und die MwSt als Differenz nehmen -- getrennt aus
@@ -637,8 +650,11 @@ class PrintPaper {
       }
       addFeed();
     }
-    if (receipt.isSigFailed) {
-      addText(RKSVService.signatureDeviceDamagedKey, styles: PosStyles(align: PosAlign.center));
+    final ausfall = signaturausfallBlock(receipt);
+    if (ausfall.isNotEmpty) {
+      for (final z in ausfall) {
+        _aufdruckZeile(z);
+      }
       addFeed();
     }
 

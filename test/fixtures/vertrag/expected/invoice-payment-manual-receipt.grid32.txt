@@ -1,0 +1,30 @@
+       Bäckerei Kornblum        
+          Hauptplatz 1          
+         4830 Hallstatt         
+          ATU12345675           
+         +43 6134 12345         
+                                
+================================
+         NACHERFASSUNG          
+================================
+     nach Ausfall der Kasse     
+          Grund: Strom          
+                                
+       Handbeleg Nr. 0815       
+   vom 10.11.2026, 16:30 Uhr    
+                                
+Datum:       11.11.2026 08:05:12
+Kassen-ID:                KASSE1
+Beleg-ID:         AT0-KASSE1-123
+                                
+Zahlung vom             350,00  
+10.11.2026 auf Rechnung         
+2026-0045                       
+  inkl. USt                     
+--------------------------------
+Gesamt:                 350,00 €
+Zahlungsart:          Barzahlung
+                                
+           [QR-Code]            
+                                
+ Vielen Dank für Ihren Einkauf  

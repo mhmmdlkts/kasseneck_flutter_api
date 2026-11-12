@@ -1,0 +1,63 @@
+{
+  "company": {
+    "companyName": "Bäckerei Kornblum",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-118",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-11-11T10:20:41",
+    "items": [
+      {
+        "name": "Teilzahlung auf Rechnung 2026-0051",
+        "quantity": 1,
+        "unitPriceCents": 50000,
+        "vatRate": 0,
+        "kind": "invoice_payment"
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "creditCard",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-118_2026-11-11T10:20:41_0,00_0,00_0,00_500,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "creditCard",
+        "amountCents": 50000
+      }
+    ],
+    "invoicePayments": [
+      {
+        "invoiceId": "inv_3Tz9",
+        "invoiceNumber": "2026-0051",
+        "paymentId": "pay_2",
+        "customerId": "cus_7",
+        "amountCents": 50000,
+        "partial": true,
+        "paidOn": "2026-11-11",
+        "taxNote": "incl_vat"
+      }
+    ]
+  },
+  "options": {
+    "paperSize": "mm58"
+  }
+}

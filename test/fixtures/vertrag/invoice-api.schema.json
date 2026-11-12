@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Kasseneck Rechnungs-API",
   "version": 2,
-  "package": "1.37.0",
+  "package": "1.38.0",
   "endpoints": {
     "createCustomer": {
       "request": {
@@ -1076,7 +1076,8 @@
     "deposit_type_not_found",
     "deposit_set_by_server",
     "invalid_deposit_quantity",
-    "invalid_deposit"
+    "invalid_deposit",
+    "cash_receipt_pending"
   ],
   "creditNoteReasons": [
     "cancellation",

@@ -138,6 +138,8 @@ final List<String> cancellationErrorCodes = _mitRand(const [
   'refund_as_voucher_no_type', // keine passende Rueckgabe-Sorte eingestellt
   'refund_as_voucher_amount', // Betrag ohne Trinkgeld ausserhalb 1,00 bis 10.000,00 Euro
   'idempotency_key_required', // refundAs ohne idempotencyKey
+  // Zahlung auf Rechnung (npm 1.38.0): ein Zahlungsbeleg wird nur im Kundenbereich bei der Rechnung storniert
+  'invoice_payment_not_cancellable', // Original ist ein Zahlungsbeleg (Positionen invoice_payment)
 ], _signierend);
 
 /// Codes rund um `payments` an `createReceipt` und `cancelReceipt`.

@@ -601,7 +601,7 @@ void main() {
   test('gespeicherter Gutschein-Beleg (Leistung eingeloest, Auszahlung): Layout bleibt das des Servers (0.38.0), nichts baut es neu', () {
     // Der Server gibt den Beleg seit Paket 0.34.0 roh an das Paket (keine Aufbereitung mehr). Hier wird
     // das Layout nie aus dem gespeicherten Beleg nachgebaut, sondern nur gelesen; das haelt diese Probe fest.
-    expect((_json('antworten/kasse-belege.json')['_quelle'] as Map)['backendPackage'], '@kreiseck/kasseneck-api@0.39.0');
+    expect((_json('antworten/kasse-belege.json')['_quelle'] as Map)['backendPackage'], '@kreiseck/kasseneck-api@0.40.0');
     for (final name in ['redeem_service_voucher', 'payout_multi_purpose_voucher']) {
       final daten = (_fall(_kasseBelege, name)['response'] as Map)['data'] as Map<String, dynamic>;
       final gespeichert = jsonDecode(jsonEncode(KasseneckReceipt.fromJson(daten).toJson())) as Map<String, dynamic>;

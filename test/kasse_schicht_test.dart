@@ -241,10 +241,11 @@ void main() {
       final stand = await client.getMyDrawerState(drawerId: 'haupt_KASSE1');
       expect(stand.rights.cashView, isFalse);
       expect(stand.expectedCents, isNull);
+      // Ohne cashView und cashMove nur das eigene Trinkgeld (keck#936, Vertrag ab npm 1.38.0): Anna Chef fehlt.
       expect([for (final t in stand.tips) (t.registerUserId, t.name, t.receivedImmediatelyCents, t.retainedCents, t.paidOutCents, t.openCents)], [
-        ('ru_chef', 'Anna Chef', 0, 0, 0, 300),
         ('ru_kellner', 'Ben Kellner', 400, 150, 250, 150),
       ]);
+      expect([for (final t in stand.tipClaims) t.registerUserId], ['ru_kellner']);
       final (client: inhaber, anfragen: _) = _kasse((_) async => _antwort(_fall('getMyDrawerState', 'success_owner_new_main_drawer')));
       expect((await inhaber.getMyDrawerState(cashregisterId: 'KASSE1')).tips, isEmpty);
     });
