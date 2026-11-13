@@ -4136,6 +4136,105 @@
       "only": [
         "web"
       ]
+    },
+    "connect.status_title": {
+      "text": "Verbindung"
+    },
+    "connect.install_title": {
+      "text": "Connect installieren"
+    },
+    "connect.name": {
+      "text": "Kasseneck Connect"
+    },
+    "connect.switch_title": {
+      "text": "Auf Kasseneck Connect umstellen"
+    },
+    "printer.use": {
+      "text": "Bondrucker verwenden"
+    },
+    "printer.use_hint": {
+      "text": "aus = der Beleg wird als QR am Bildschirm gezeigt"
+    },
+    "printer.bluetooth_title": {
+      "text": "Bluetooth-Drucker"
+    },
+    "printer.bluetooth_hint": {
+      "text": "Für einen Bondrucker direkt am Kassengerät. Der Ablauf verbindet, druckt eine Testseite und probiert beide QR-Arten aus – gespeichert wird erst, wenn beides passt."
+    },
+    "printer.print_qr": {
+      "text": "QR-Code drucken"
+    },
+    "printer.old_way_title": {
+      "text": "Bisheriger Druckweg"
+    },
+    "printer.code_page_hint": {
+      "text": "CP1252 kann Umlaute und €, CP437 nur bei alten Druckern"
+    },
+    "printer.cut_title": {
+      "text": "Papier abschneiden"
+    },
+    "printer.cut_hint": {
+      "text": "Der Drucker schneidet den Bon bis auf einen schmalen Steg ab (mehr können Bondrucker nicht – ganz durch gibt es nicht). Aus: für Drucker ohne Messer"
+    },
+    "printer.bon_texts_title": {
+      "text": "Bon-Texte"
+    },
+    "printer.bon_texts_hint": {
+      "text": "Dankeszeile und Fußzeilen kommen aus dem Panel – Freitexte werden dort geprüft, bevor sie auf den Bon dürfen."
+    },
+    "printer.test_page_print": {
+      "text": "Testseite drucken"
+    },
+    "printer.drawer_title": {
+      "text": "Kassenlade am Drucker"
+    },
+    "printer.drawer_hint": {
+      "text": "die Lade hängt am Drucker (RJ11) und wird über ihn geöffnet"
+    },
+    "printer.drawer_auto_title": {
+      "text": "Lade öffnet von selbst"
+    },
+    "printer.drawer_auto_hint": {
+      "text": "wer sie ohne Verkauf öffnen darf, steht unter Berechtigungen (Panel)"
+    },
+    "printer.drawer_open_now": {
+      "text": "Lade jetzt öffnen"
+    },
+    "terminal.card_terminal": {
+      "text": "Kartenterminal"
+    },
+    "terminal.none_assigned": {
+      "text": "kein Terminal zugewiesen"
+    },
+    "terminal.tid_title": {
+      "text": "Terminal-ID (TID)"
+    },
+    "terminal.tid_source_hint": {
+      "text": "kommt aus dem Hobex-Vertrag und wird im Panel je Gerät gepflegt; ohne TID keine Kartenzahlung über das Terminal."
+    },
+    "terminal.tid_missing": {
+      "text": "noch keine TID zugewiesen – im Panel eintragen"
+    },
+    "terminal.search_title": {
+      "text": "Terminal suchen"
+    },
+    "terminal.search_hint": {
+      "text": "sucht das Hobex-Terminal im Kassen-Netz und übernimmt Adresse und Port – kein Ablesen am Gerät nötig"
+    },
+    "terminal.ip_title": {
+      "text": "IP-Adresse"
+    },
+    "terminal.port_title": {
+      "text": "Port"
+    },
+    "terminal.port_hint": {
+      "text": "8080 = Hobex-HPS-Standard"
+    },
+    "terminal.test_title": {
+      "text": "Verbindung testen"
+    },
+    "terminal.test_hint": {
+      "text": "fragt das Terminal über Kasseneck Connect (keine Zahlung); mit TID kommt der volle Gerätestatus"
     }
   },
   "returnDispositionLabels": {
