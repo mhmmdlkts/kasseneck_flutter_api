@@ -1161,15 +1161,6 @@
         "web"
       ]
     },
-    "connect.paired_then": {
-      "text": "Gekoppelt ✓ – {text}",
-      "placeholders": [
-        "text"
-      ],
-      "only": [
-        "web"
-      ]
-    },
     "connect.unpaired_done": {
       "text": "Entkoppelt – dieser Browser hat keinen Zugriff mehr. Neu koppeln geht jederzeit.",
       "only": [
@@ -1178,63 +1169,6 @@
     },
     "connect.switched_over": {
       "text": "Umgestellt – jetzt unten koppeln und den Drucker wählen.",
-      "only": [
-        "web"
-      ]
-    },
-    "connect.too_old_terminal_search": {
-      "text": "Kasseneck Connect ist zu alt für die Terminal-Suche – bitte die neueste Fassung installieren (Abschnitt Kasseneck Connect).",
-      "only": [
-        "web"
-      ]
-    },
-    "connect.too_old_terminal": {
-      "text": "Kasseneck Connect ist zu alt für das Terminal – bitte die neueste Fassung installieren (Download unter Drucker & Lade).",
-      "only": [
-        "web"
-      ]
-    },
-    "printer.found_one": {
-      "text": "Gefunden: {names}.",
-      "placeholders": [
-        "names"
-      ],
-      "only": [
-        "web"
-      ]
-    },
-    "printer.found_one_taken": {
-      "text": "Gefunden: {names} – übernommen.",
-      "placeholders": [
-        "names"
-      ],
-      "only": [
-        "web"
-      ]
-    },
-    "printer.found_several": {
-      "text": "{count} Drucker gefunden: {names} – bitte oben wählen.",
-      "placeholders": [
-        "count",
-        "names"
-      ],
-      "only": [
-        "web"
-      ]
-    },
-    "printer.found_several_taken": {
-      "text": "{count} Drucker gefunden ({names}) – „{first}“ übernommen, unten umwählbar.",
-      "placeholders": [
-        "count",
-        "names",
-        "first"
-      ],
-      "only": [
-        "web"
-      ]
-    },
-    "terminal.ip_missing": {
-      "text": "Zuerst die IP-Adresse des Terminals eintragen.",
       "only": [
         "web"
       ]
@@ -4080,6 +4014,39 @@
     "devices.save": {
       "text": "Speichern"
     },
+    "devices.check": {
+      "text": "prüfen"
+    },
+    "devices.searching": {
+      "text": "Sucht …"
+    },
+    "devices.yes": {
+      "text": "ja"
+    },
+    "devices.no": {
+      "text": "nein"
+    },
+    "terminal.change_in_panel": {
+      "text": "Im Panel ändern"
+    },
+    "connect.pair": {
+      "text": "Koppeln",
+      "only": [
+        "web"
+      ]
+    },
+    "connect.unpair": {
+      "text": "Entkoppeln",
+      "only": [
+        "web"
+      ]
+    },
+    "connect.unpair_yes": {
+      "text": "Ja, entkoppeln",
+      "only": [
+        "web"
+      ]
+    },
     "printer.hint_setting": {
       "text": "Warnen, wenn der Drucker nicht antwortet"
     },
@@ -4137,14 +4104,8 @@
     "terminal.card_terminal": {
       "text": "Kartenterminal"
     },
-    "terminal.none_assigned": {
-      "text": "kein Terminal zugewiesen"
-    },
     "terminal.tid_title": {
       "text": "Terminal-ID (TID)"
-    },
-    "terminal.tid_missing": {
-      "text": "noch keine TID zugewiesen – im Panel eintragen"
     },
     "terminal.search_title": {
       "text": "Terminal suchen"
@@ -4154,9 +4115,6 @@
     },
     "terminal.port_title": {
       "text": "Port"
-    },
-    "terminal.test_title": {
-      "text": "Verbindung testen"
     }
   },
   "returnDispositionLabels": {
