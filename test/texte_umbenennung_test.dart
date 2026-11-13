@@ -153,6 +153,8 @@ const _nach10 = (
     'split.card_already_reversed_hps', 'split.clarify_busy', 'split.clarify_no_answer',
     // Zahlung auf Rechnung (npm 1.38.0)
     'cancellation.invoice_payment_not_cancellable',
+    // Geraete im Betrieb (npm 1.39.0)
+    'printer.paper_out', 'printer.cover_open', 'printer.not_ready', 'printer.paper_near_end', 'printer.unreachable', 'printer.none', 'printer.no_status_answer', 'manager.ask', 'terminal.unreachable', 'terminal.tid_mismatch', 'terminal.tid_hint', 'lock_screen.card_payment_unclear', 'lock_screen.receipt_unclear', 'lock_screen.payout_unclear', 'lock_screen.reversal_unclear', 'lock_screen.split_open', 'print.test_ruler_hint', 'connect.browser_blocks', 'connect.updating', 'connect.other_installation', 'connect.other_installation_hint', 'connect.pair_invalid', 'connect.pair_request_throttled', 'connect.print_in_progress', 'connect.printer_timeout', 'connect.printer_refused', 'connect.bad_request', 'connect.unreadable_answer', 'connect.error_generic', 'connect.paired_then', 'connect.unpaired_done', 'connect.switched_over', 'connect.too_old_terminal_search', 'connect.too_old_terminal', 'connect.status_hint', 'connect.install_hint', 'printer.old_way_hint', 'printer.switch_hint', 'printer.connect_missing_hint', 'printer.pick_hint', 'printer.found_one', 'printer.found_one_taken', 'printer.found_several', 'printer.found_several_taken', 'terminal.panel_missing_hint', 'terminal.connect_missing_hint', 'terminal.ip_missing',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -303,6 +305,8 @@ const _nach10 = (
     'hobex_help.open', 'hobex_help.title', 'hobex_help.data', 'hobex_help.tid', 'hobex_help.reference',
     'hobex_help.reversal_reference', 'hobex_help.amount', 'hobex_help.time', 'hobex_help.reason', 'hobex_help.protocol',
     'hobex_help.address', 'hobex_help.serial', 'hobex_help.copy', 'hobex_help.copied',
+    // Geraete im Betrieb (npm 1.39.0)
+    'devices.title', 'devices.connect', 'devices.printer', 'devices.terminal', 'devices.computer', 'devices.pairing', 'devices.environment', 'devices.live', 'devices.test_environment', 'devices.printer_ready', 'devices.printer_missing', 'devices.checking', 'devices.test_print_sent', 'devices.terminal_ready', 'devices.terminal_found', 'devices.terminals_found', 'devices.printer_found', 'devices.printers_found', 'devices.no_printer_found', 'devices.no_terminal_found', 'devices.no_terminal_assigned', 'devices.connected', 'devices.connecting', 'devices.not_connected', 'devices.connect_missing', 'devices.settings_applied', 'devices.model_unknown', 'devices.paper_width_question', 'devices.line_wrapped', 'devices.tid_of_this_register', 'devices.tid_example', 'devices.hobex_terminal', 'devices.tid_value', 'devices.address_port', 'devices.paper_width', 'devices.cut', 'devices.code_page', 'devices.qr_code', 'devices.from_printer', 'devices.address', 'devices.test_page', 'devices.drawer', 'devices.drawer_opens_on_cash', 'devices.check_again', 'devices.not_now', 'devices.change', 'devices.advanced', 'devices.search_again', 'devices.view', 'devices.use_this', 'devices.how_it_works', 'devices.update_after_payment', 'devices.print', 'devices.save', 'printer.hint_setting', 'connect.code_prompt',
   },
   fileKeys: [
     'errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'cancellationVoucherErrors', 'voucherErrors',
@@ -339,6 +343,8 @@ const _nach10 = (
     'drawer', 'tip',
     // Grund im Klaeren-Fenster: was das Terminal meldete (split.clarify_reason_terminal, npm 1.37.0)
     'text',
+    // Geraete im Betrieb (npm 1.39.0)
+    'names', 'first', 'width', 'ip', 'port',
   },
 );
 
