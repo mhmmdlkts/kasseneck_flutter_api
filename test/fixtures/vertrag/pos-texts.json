@@ -1194,42 +1194,6 @@
         "web"
       ]
     },
-    "connect.status_hint": {
-      "text": "Connect nimmt Belege und Terminal-Aufträge entgegen und reicht sie ins Kassen-Netz weiter.",
-      "only": [
-        "web"
-      ]
-    },
-    "connect.install_hint": {
-      "text": "Einmal je Kassen-Rechner installieren; Connect startet danach bei jeder Anmeldung von selbst mit. Windows: „Weitere Informationen → Trotzdem ausführen“.",
-      "only": [
-        "web"
-      ]
-    },
-    "printer.old_way_hint": {
-      "text": "Diese Kasse druckt noch über den früher eingerichteten Weg. Das funktioniert weiter; neu eingerichtet wird nur noch Kasseneck Connect.",
-      "only": [
-        "web"
-      ]
-    },
-    "printer.switch_hint": {
-      "text": "Danach hier koppeln und den Drucker wählen – die bisherigen Angaben bleiben gespeichert.",
-      "only": [
-        "web"
-      ]
-    },
-    "printer.connect_missing_hint": {
-      "text": "Der Bondrucker läuft über Kasseneck Connect – zuerst links im Abschnitt „Kasseneck Connect“ verbinden, dann geht es hier weiter.",
-      "only": [
-        "web"
-      ]
-    },
-    "printer.pick_hint": {
-      "text": "Der Beleg geht an diesen Drucker. Die Suche fragt das Kassen-Netz (Bonjour/mDNS und Port 9100).",
-      "only": [
-        "web"
-      ]
-    },
     "printer.found_one": {
       "text": "Gefunden: {names}.",
       "placeholders": [
@@ -1265,18 +1229,6 @@
         "names",
         "first"
       ],
-      "only": [
-        "web"
-      ]
-    },
-    "terminal.panel_missing_hint": {
-      "text": "Diesem GERÄT ist kein Terminal zugewiesen. Im Panel unter Einstellungen → Kassen → Ihre Kasse → Zahlung für dieses Gerät „Hobex HPS“ samt TID wählen – danach geht es hier weiter.",
-      "only": [
-        "web"
-      ]
-    },
-    "terminal.connect_missing_hint": {
-      "text": "Das Terminal läuft über Kasseneck Connect – zuerst links im Abschnitt „Kasseneck Connect“ verbinden, dann geht es hier weiter.",
       "only": [
         "web"
       ]
