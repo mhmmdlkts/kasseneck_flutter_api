@@ -2,7 +2,7 @@
   "_note": "Erzeugt von scripts/v3-zahlbetrag-generieren.mjs mit dem echten Backend-Code. Nicht von Hand pflegen.",
   "_source": {
     "beleg-toepfe.js": "4d365bec3d5df7e60942352605ec8593bc0aeda15f5a0b02a463a81402d19467",
-    "tip-core.js": "c432d7b339a572474ae1623225ee35416b171895eb6f1f26d9870c7f95f73440",
+    "tip-core.js": "024444c4bd0410c8f04e5ccad9245f259710db6509ab4cc7f4076e01b40d8f8b",
     "zahlungen-core.js": "27e7850c3327378aa9dc4b66b251bab2d310134b96e4865de8dc45c15f3555f1",
     "vat-buckets.js": "92c69632c0120dbb09a22cef5a36b052e81605d99907eeda7289b0d3db78454c"
   },

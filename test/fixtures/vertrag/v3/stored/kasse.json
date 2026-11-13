@@ -4,7 +4,7 @@
     "default": {
       "sha256": "e5ed8eb2bdb2b8cba51102c6e00f73fe20bcaa0d8c355ed93901508fa7abc97e",
       "head": [],
-      "inputsSha256": "0afda801437fa4cd28ba8c4aeb0e5d132fee1ac3d219348852d020eee9759b62",
+      "inputsSha256": "118cb2b3acbbbcaea3f023515fcc35eb7039ea61a5f36b9ae8a5195937f4b1d2",
       "backendPackage": "@kreiseck/kasseneck-api@0.40.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "167b9ec8592fde0ff91c09649efef502ed3b33e56de54166213765d7ab625cf8",
+      "sha256": "f248a07aa81553e98889d6e33e9f6c2def83827d27348b5fcad9981c99c0a80f",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "5b0fac08b5dfb41d6201b40792f6d3f57194e0df5a28896faf26e846efa83905",
+      "inputsSha256": "3b4223dfb5d1c0d7820864612081a503d600215abea7e595585e1cc6d1f2a392",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -9872,6 +9872,99 @@
             "terminalAdresse": {
               "tag": "2026-09-26",
               "anzahl": 1
+            }
+          }
+        }
+      }
+    },
+    "reportMyRegisterClient": {
+      "codebase": "kasse",
+      "cases": {
+        "success_new": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "client": {
+              "app": "1.39.0/2026-11-13T18:20Z",
+              "gemeldetAt": 1790409600000
+            }
+          }
+        },
+        "success_other_identifier": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "client": {
+              "app": "1.39.0/2026-11-13T18:20Z",
+              "gemeldetAt": 1790409600000
+            }
+          }
+        },
+        "success_app": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "client": {
+              "app": "kasse-app/1.0.3+34",
+              "gemeldetAt": 1790409600000
+            }
+          }
+        },
+        "success_old_enough": {
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790409600000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58"
+            },
+            "client": {
+              "app": "1.39.0/2026-11-13T18:20Z",
+              "gemeldetAt": 1790409600000
             }
           }
         }

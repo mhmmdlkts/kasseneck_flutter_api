@@ -174,7 +174,8 @@
       "learnMyLeergutCode",
       "listMyLeergutCodes",
       "getMyTipBalance",
-      "reportMyTerminalAddress"
+      "reportMyTerminalAddress",
+      "reportMyRegisterClient"
     ]
   },
   "routes": {
@@ -358,7 +359,8 @@
       "learnMyLeergutCode",
       "listMyLeergutCodes",
       "getMyTipBalance",
-      "reportMyTerminalAddress"
+      "reportMyTerminalAddress",
+      "reportMyRegisterClient"
     ]
   },
   "unknownOutcomeCalls": [

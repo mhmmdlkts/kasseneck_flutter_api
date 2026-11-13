@@ -1,8 +1,8 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "5416ed0a27c25efb60b934972320c2bf25b23fc57718570882cbe76793cf6480",
-    "inputsSha256": "25a951021d7aea490ed4e3df98ed5a17a398437d2bf1d7d4ad1addccd9f7bac1",
+    "sha256": "ab188a33a1f0d07b187347e0293b935e41435fa61dc1078cd164b10cc2be5f46",
+    "inputsSha256": "3b7cad5647581d0ca295e69cf4d08f43e3ae17cd7f3de6241c572ade3691f13e",
     "backendPackage": "@kreiseck/kasseneck-api@0.40.0",
     "inputs": [
       "docs/api/fehlercodes.json",
@@ -339,7 +339,8 @@
       "learnMyLeergutCode",
       "listMyLeergutCodes",
       "getMyTipBalance",
-      "reportMyTerminalAddress"
+      "reportMyTerminalAddress",
+      "reportMyRegisterClient"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -384,7 +385,8 @@
       "learnMyLeergutCode",
       "listMyLeergutCodes",
       "getMyTipBalance",
-      "reportMyTerminalAddress"
+      "reportMyTerminalAddress",
+      "reportMyRegisterClient"
     ],
     "withSchema": [
       "activateCashregister",
@@ -536,6 +538,7 @@
       "renewRegisterSession",
       "reportConnectState",
       "reportCustomerVertrag",
+      "reportMyRegisterClient",
       "reportMyTerminalAddress",
       "reportTerminalLogin",
       "reportTerminalReady",
@@ -3303,6 +3306,12 @@
         "server_error",
         "terminal_id_mismatch",
         "too_many_changes",
+        "validation"
+      ],
+      "reportMyRegisterClient": [
+        "device_not_paired",
+        "method_not_allowed",
+        "server_error",
         "validation"
       ]
     }
@@ -8141,6 +8150,7 @@
         }
       }
     },
+    "reportMyRegisterClient": {},
     "reportMyTerminalAddress": {},
     "reportTerminalLogin": {},
     "reportTerminalReady": {},

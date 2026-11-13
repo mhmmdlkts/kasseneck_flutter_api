@@ -1405,6 +1405,15 @@
         "web"
       ]
     },
+    "version.updated": {
+      "text": "Kasse aktualisiert auf {version}.",
+      "placeholders": [
+        "version"
+      ],
+      "only": [
+        "web"
+      ]
+    },
     "shift.started_taken_over": {
       "text": "Schicht {number} hat begonnen – mit {amount} in der Lade, übernommen von Schicht {from} ({time}).",
       "placeholders": [
@@ -3711,6 +3720,13 @@
       "text": "Neu laden",
       "only": [
         "web"
+      ]
+    },
+    "version.line": {
+      "text": "Fassung {version} · {time}",
+      "placeholders": [
+        "version",
+        "time"
       ]
     },
     "tip.line_cash_kept": {
