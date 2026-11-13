@@ -139,6 +139,8 @@ const Set<String> _wiederholbar = {
   'getTerminalAccess',
   'reportTerminalLogin',
   'reportTerminalReady',
+  // Neue Terminal-Adresse melden (npm 1.39.0): dieselbe Adresse noch einmal aendert nichts (`changed: false`).
+  'reportMyTerminalAddress',
   'requestTerminalCode',
   // Loest nur die feste Zuordnung eines Geraets (npm 1.33.0); nur dem Namen nach bekannt.
   'unfixTerminal',

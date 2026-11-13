@@ -524,6 +524,22 @@ class RegisterSession {
   final String? userName;
 }
 
+/// Antwort von [RegisterClient.reportMyTerminalAddress]: ob der Server die
+/// Adresse geändert hat (`false` = war schon so gespeichert).
+class ReportedTerminalAddress {
+  const ReportedTerminalAddress({required this.changed});
+  final bool changed;
+
+  @override
+  bool operator ==(Object other) => other is ReportedTerminalAddress && other.changed == changed;
+
+  @override
+  int get hashCode => changed.hashCode;
+
+  @override
+  String toString() => 'ReportedTerminalAddress(changed: $changed)';
+}
+
 /// Antwort von [RegisterClient.listRegisterSessionsForDevice].
 class RegisterSessionOverview {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
@@ -704,6 +720,50 @@ class RegisterClient {
     const name = Aufrufe.unpairRegisterDevice;
     _ausweisPflicht(name, ownerUid, deviceId, deviceSecret);
     await _rufen(name, {'ownerUid': ownerUid, 'deviceId': deviceId, 'deviceSecret': deviceSecret});
+  }
+
+  /// Meldet still, dass das Kartenterminal der Kasse unter einer neuen Adresse
+  /// antwortet (nur Kassenweg `/api/v3`; Ausweis des Geräts wie bei
+  /// [listRegisterUsersForDevice], keine Sitzung einer Person nötig; Zwilling
+  /// von npm 1.39.0).
+  ///
+  /// Der Server schreibt genau zwei Felder (IP und Port des Terminals) und nur,
+  /// wenn die TID zur Einrichtung dieses Geräts passt; jede Änderung steht im
+  /// Kassen-Protokoll. Antwort: `changed` ist `true`, wenn er die Adresse
+  /// geändert hat, `false`, wenn sie schon so gespeichert war. Wiederholen ist
+  /// gefahrlos. Die Kasse zeigt dazu nichts an.
+  ///
+  /// Fehlercodes: `terminal_id_mismatch`, `invalid_terminal_address`,
+  /// `too_many_changes` (heute zu oft geändert), dazu `device_not_paired`.
+  /// Geprüft wird hier nur die Form; die Adresse beurteilt der Server.
+  Future<ReportedTerminalAddress> reportMyTerminalAddress({
+    required String ownerUid,
+    required String deviceId,
+    required String deviceSecret,
+    required String tid,
+    required String host,
+    required int port,
+  }) async {
+    const name = Aufrufe.reportMyTerminalAddress;
+    _ausweisPflicht(name, ownerUid, deviceId, deviceSecret);
+    _pflicht(name, 'tid', tid);
+    _pflicht(name, 'host', host);
+    if (port < 1 || port > 65535) {
+      throw const KasseneckValidationError(name, 'port muss eine ganze Zahl von 1 bis 65535 sein', 'request');
+    }
+    final daten = await _rufen(name, {
+      'ownerUid': ownerUid,
+      'deviceId': deviceId,
+      'deviceSecret': deviceSecret,
+      'tid': tid,
+      'host': host,
+      'port': port,
+    });
+    final geaendert = daten['changed'];
+    if (geaendert is! bool) {
+      throw const KasseneckValidationError(name, 'Antwort enthaelt kein changed', 'response');
+    }
+    return ReportedTerminalAddress(changed: geaendert);
   }
 
   /// Kassen-Benutzer per PIN anmelden.

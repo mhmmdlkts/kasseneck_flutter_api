@@ -916,6 +916,7 @@ class PosDeviceSettings {
     this.drawerAutoOpen = PosDrawerAutoOpen.cash,
     this.drawerId,
     this.cartWidth,
+    this.printerHint,
     this.terminalIp = '',
     this.terminalPort = 8080,
     this.terminalTid = '',
@@ -977,6 +978,12 @@ class PosDeviceSettings {
   /// unbekannter Wert bleibt woertlich in [unknownValues]. Lesen ueber
   /// [posCartWidth].
   final PosCartWidth? cartWidth;
+
+  /// Hinweis an den Druckknoepfen, wenn der Drucker auf die Statusabfrage nicht
+  /// antwortet. Optional und ohne Standardwert: der Server sendet das Feld nur,
+  /// wenn es gespeichert ist; `null` heisst an. Lesen ueber [posPrinterHint],
+  /// Schreiben `true`/`false` ([posDeviceOptionalSwitches]).
+  final bool? printerHint;
   final String terminalIp;
   final int terminalPort;
 
@@ -995,7 +1002,8 @@ class PosDeviceSettings {
 
   /// Siehe [PosBusinessSettings.merge]; `shortcuts` wird je Aktion gemischt.
   PosDeviceSettings merge(Map<String, dynamic> patch) {
-    _pruefeAenderung('device', patch, {..._geraetSchluessel, ...posDeviceOptionalFields, ...posDeviceOptionalChoices}, legacyDeviceKeys);
+    _pruefeAenderung(
+        'device', patch, {..._geraetSchluessel, ...posDeviceOptionalFields, ...posDeviceOptionalSwitches, ...posDeviceOptionalChoices}, legacyDeviceKeys);
     // Die optionale Lade hat keinen Standardwert, den `_mische` fortschreiben
     // koennte: sie wird getrennt gefuehrt, `null` entfernt die Zuordnung.
     final lade = patch.containsKey('drawerId') ? patch['drawerId'] : drawerId;
@@ -1005,9 +1013,24 @@ class PosDeviceSettings {
     // Ebenso die Spaltenbreite: `null` entfernt sie.
     final breite = patch.containsKey('cartWidth') ? patch['cartWidth'] : toJson()['cartWidth'];
     _pruefeWahlfeld('device', 'cartWidth', breite);
-    final weg = {'drawerId', ...posDeviceOptionalChoices};
+    // Die optionalen Schalter ebenso: nur Wahrheitswert, `null` entfernt sie.
+    final aktuell = toJson();
+    final schalter = <String, Object?>{
+      for (final k in posDeviceOptionalSwitches) k: patch.containsKey(k) ? patch[k] : aktuell[k],
+    };
+    for (final e in schalter.entries) {
+      if (e.value != null && e.value is! bool) {
+        throw ArgumentError('device.${e.key}: true oder false erwartet');
+      }
+    }
+    final weg = {'drawerId', ...posDeviceOptionalSwitches, ...posDeviceOptionalChoices};
     final json = _mische(toJson()..removeWhere((k, _) => weg.contains(k)), {...patch}..removeWhere((k, _) => weg.contains(k)));
-    return PosDeviceSettings.fromJson({...json, 'drawerId': lade, 'cartWidth': ?breite});
+    return PosDeviceSettings.fromJson({
+      ...json,
+      'drawerId': lade,
+      'cartWidth': ?breite,
+      for (final e in schalter.entries) e.key: ?e.value,
+    });
   }
 
   /// Aus der Drahtform (schon mit den Standardwerten gemischt oder nicht).
@@ -1041,6 +1064,7 @@ class PosDeviceSettings {
       // alles andere fehlt still (der Server sendet es so nie).
       drawerId: isPosOptionalId(raw['drawerId']) ? raw['drawerId'] as String : null,
       cartWidth: _wahlOptional(raw, 'cartWidth', PosCartWidth.values, fremd),
+      printerHint: raw['printerHint'] is bool ? raw['printerHint'] as bool : null,
       terminalIp: _text(g['terminalIp'], s.terminalIp),
       terminalPort: _ganz(g, 'terminalPort', 1, 65535, s.terminalPort, fremd),
       terminalTid: _text(g['terminalTid'], s.terminalTid),
@@ -1075,6 +1099,7 @@ class PosDeviceSettings {
         'drawerAutoOpen': drawerAutoOpen.value,
         'drawerId': ?drawerId,
         'cartWidth': ?cartWidth?.value,
+        'printerHint': ?printerHint,
         'terminalIp': terminalIp,
         'terminalPort': terminalPort,
         'terminalTid': terminalTid,
@@ -1412,6 +1437,12 @@ final Set<String> _geraetSchluessel = const PosDeviceSettings().toJson().keys.to
 /// Kennung, der Schreibweg nimmt Kennung oder `null` (Zuordnung entfernen).
 const List<String> posDeviceOptionalFields = ['drawerId'];
 
+/// Optionale Geraete-Schalter: ohne Standardwert, der Server sendet sie nur,
+/// wenn sie gespeichert sind (Zwilling von `POS_DEVICE_OPTIONAL_SWITCHES`).
+/// Gelesen werden sie nur als Wahrheitswert, der Schreibweg nimmt `true`,
+/// `false` oder `null` (entfernen); fehlt `printerHint`, gilt an.
+const List<String> posDeviceOptionalSwitches = ['printerHint'];
+
 /// Optionale Betriebs-Schalter: ohne Standardwert, der Server sendet sie nur,
 /// wenn sie gespeichert sind (Zwilling von `POS_BUSINESS_OPTIONAL_FIELDS`).
 /// Gelesen nur als Wahrheitswert; fehlt einer, gilt sein wirksamer Standard
@@ -1473,6 +1504,10 @@ PosTipKind posTipStart(PosBusinessSettings? business) {
 
 /// Wirksame Breite der rechten Spalte; ohne Angabe schmal (`posCartWidth`).
 PosCartWidth posCartWidth(PosDeviceSettings? device) => device?.cartWidth ?? PosCartWidth.narrow;
+
+/// Hinweis „Drucker antwortet nicht“ an den Druckknoepfen an? Fehlt die
+/// Einstellung, gilt ja (Zwilling von `posPrinterHint`).
+bool posPrinterHint(PosDeviceSettings? device) => device?.printerHint != false;
 
 /// Bar-Trinkgeld „gleich behalten“ vorbelegt? Fehlt die Einstellung, gilt aus
 /// (Zwilling von `posTipKeptByDefault`).

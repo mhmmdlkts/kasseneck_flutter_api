@@ -97,10 +97,22 @@ class PosSettingsClient {
       throw const KasseneckValidationError(
           name, 'device.drawerId: keine Kennung (1-64 Zeichen aus A-Z a-z 0-9 _ -, oder null zum Entfernen)', 'request');
     }
-    final gesendet = mitLade && patch.length == 1
+    // Die optionalen Schalter (`printerHint`): nur Wahrheitswert, `null` ist hier ein Fehler (wie im npm-Paket).
+    final schalter = <String, Object?>{
+      for (final k in posDeviceOptionalSwitches)
+        if (patch.containsKey(k)) k: patch[k],
+    };
+    for (final e in schalter.entries) {
+      if (e.value is! bool) {
+        throw KasseneckValidationError(name, 'device.${e.key}: true oder false erwartet', 'request');
+      }
+    }
+    final rest = {...patch}..removeWhere((k, _) => k == 'drawerId' || schalter.containsKey(k));
+    final gesendet = rest.isEmpty && (mitLade || schalter.isNotEmpty)
         ? <String, dynamic>{}
-        : _pruefeTeil(name, 'device', {...patch}..remove('drawerId'), const PosDeviceSettings().toJson(), posDeviceValues,
+        : _pruefeTeil(name, 'device', rest, const PosDeviceSettings().toJson(), posDeviceValues,
             wahlfelder: posDeviceOptionalChoices);
+    gesendet.addAll(schalter);
     if (mitLade) gesendet['drawerId'] = lade;
     if (gesendet.containsKey('shortcuts')) {
       final karte = gesendet['shortcuts'];
