@@ -4017,6 +4017,19 @@
     "devices.check": {
       "text": "prüfen"
     },
+    "devices.none": {
+      "text": "keiner"
+    },
+    "devices.search": {
+      "text": "Suchen"
+    },
+    "devices.test_print_paper": {
+      "text": "Testdruck auf Papier ({width}, {count} Zeichen)",
+      "placeholders": [
+        "width",
+        "count"
+      ]
+    },
     "devices.searching": {
       "text": "Sucht …"
     },
