@@ -4,7 +4,7 @@
     "default": {
       "sha256": "e5ed8eb2bdb2b8cba51102c6e00f73fe20bcaa0d8c355ed93901508fa7abc97e",
       "head": [],
-      "inputsSha256": "c6f99c9f83910d436b65673792017a081b6bd6728abeb089824bbb3a89a50fe3",
+      "inputsSha256": "0afda801437fa4cd28ba8c4aeb0e5d132fee1ac3d219348852d020eee9759b62",
       "backendPackage": "@kreiseck/kasseneck-api@0.40.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "1079f1d667a65baf277a2fc6a7a2f6afce9f5dd1d9c9cfc37519727a67447386",
+      "sha256": "167b9ec8592fde0ff91c09649efef502ed3b33e56de54166213765d7ab625cf8",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "757d890593921c8947e4a90ecea3c36169265fbcb9d224c764372dd4a13dbb52",
+      "inputsSha256": "5b0fac08b5dfb41d6201b40792f6d3f57194e0df5a28896faf26e846efa83905",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -9759,6 +9759,119 @@
               "uid": "kw_betrieb1",
               "rolle": "kunde",
               "name": null
+            }
+          }
+        }
+      }
+    },
+    "reportMyTerminalAddress": {
+      "codebase": "kasse",
+      "cases": {
+        "success_changed": {
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "system",
+              "name": null
+            },
+            "geraetId": "dev_pin",
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "terminalIp",
+                "alt": "192.168.1.50",
+                "neu": "192.168.1.60"
+              }
+            ],
+            "geraet": {
+              "id": "dev_pin",
+              "name": "Tablet vorne"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58",
+              "terminalArt": "hps",
+              "terminalTid": "12345",
+              "terminalIp": "192.168.1.60",
+              "terminalPort": 8080
+            },
+            "terminalAdresse": {
+              "tag": "2026-09-26",
+              "anzahl": 1
+            }
+          }
+        },
+        "success_only_port": {
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "geraet",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": null,
+              "rolle": "system",
+              "name": null
+            },
+            "geraetId": "dev_pin",
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "terminalPort",
+                "alt": 8080,
+                "neu": 8081
+              }
+            ],
+            "geraet": {
+              "id": "dev_pin",
+              "name": "Tablet vorne"
+            },
+            "kasse": {
+              "id": "KASSE1",
+              "name": "Theke 1"
+            }
+          },
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58",
+              "terminalArt": "hps",
+              "terminalTid": "12345",
+              "terminalIp": "192.168.1.50",
+              "terminalPort": 8081
+            },
+            "terminalAdresse": {
+              "tag": "2026-09-26",
+              "anzahl": 1
             }
           }
         }
