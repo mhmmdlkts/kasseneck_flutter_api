@@ -143,6 +143,7 @@ const _nach10 = (
     'split.clarify_asking', 'split.clarify_charged', 'split.clarify_not_charged', 'split.clarify_open', 'split.clarify_not_asked',
     // Browser-Kasse: neue Fassung verfuegbar (npm 1.37.0)
     'version.new_available',
+    'version.updated',
     // Unklare Kartenzahlung kurz mit Kennung, Klaeren ohne Nachfrage (npm 1.37.0)
     'split.clarify_manual', 'card_payment.unclear_short',
     // Grund im Klaeren-Fenster, Technik von hobex (npm 1.37.0)
@@ -308,7 +309,7 @@ const _nach10 = (
     // Geraete im Betrieb (npm 1.39.0)
     'devices.title', 'devices.connect', 'devices.printer', 'devices.terminal', 'devices.computer', 'devices.pairing', 'devices.environment', 'devices.live', 'devices.test_environment', 'devices.printer_ready', 'devices.printer_missing', 'devices.checking', 'devices.test_print_sent', 'devices.terminal_ready', 'devices.terminal_found', 'devices.terminals_found', 'devices.printer_found', 'devices.printers_found', 'devices.no_printer_found', 'devices.no_terminal_found', 'devices.no_terminal_assigned', 'devices.connected', 'devices.connecting', 'devices.not_connected', 'devices.connect_missing', 'devices.settings_applied', 'devices.model_unknown', 'devices.paper_width_question', 'devices.line_wrapped', 'devices.tid_of_this_register', 'devices.tid_example', 'devices.hobex_terminal', 'devices.tid_value', 'devices.address_port', 'devices.paper_width', 'devices.cut', 'devices.code_page', 'devices.qr_code', 'devices.from_printer', 'devices.address', 'devices.test_page', 'devices.drawer', 'devices.drawer_opens_on_cash', 'devices.check_again', 'devices.not_now', 'devices.change', 'devices.advanced', 'devices.search_again', 'devices.view', 'devices.use_this', 'devices.how_it_works', 'devices.update_after_payment', 'devices.print', 'devices.save', 'printer.hint_setting', 'connect.code_prompt',
     // Titel der Geraete-Einstellungen (npm 1.39.0)
-    'connect.status_title', 'connect.install_title', 'connect.name', 'connect.switch_title', 'printer.use', 'printer.bluetooth_title', 'printer.print_qr', 'printer.old_way_title', 'printer.cut_title', 'printer.bon_texts_title', 'printer.test_page_print', 'printer.drawer_title', 'printer.drawer_auto_title', 'printer.drawer_open_now', 'terminal.card_terminal', 'terminal.tid_title', 'terminal.search_title', 'terminal.ip_title', 'terminal.port_title', 'printer.section_title', 'devices.check', 'devices.none', 'devices.search', 'devices.test_print_paper', 'devices.searching', 'devices.yes', 'devices.no', 'terminal.change_in_panel', 'connect.pair', 'connect.unpair', 'connect.unpair_yes',
+    'connect.status_title', 'connect.install_title', 'connect.name', 'connect.switch_title', 'printer.use', 'printer.bluetooth_title', 'printer.print_qr', 'printer.old_way_title', 'printer.cut_title', 'printer.bon_texts_title', 'printer.test_page_print', 'printer.drawer_title', 'printer.drawer_auto_title', 'printer.drawer_open_now', 'terminal.card_terminal', 'terminal.tid_title', 'terminal.search_title', 'terminal.ip_title', 'terminal.port_title', 'printer.section_title', 'devices.check', 'devices.none', 'devices.search', 'devices.test_print_paper', 'devices.searching', 'devices.yes', 'devices.no', 'terminal.change_in_panel', 'connect.pair', 'connect.unpair', 'connect.unpair_yes', 'version.line',
   },
   fileKeys: [
     'errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'cancellationVoucherErrors', 'voucherErrors',
@@ -347,6 +348,8 @@ const _nach10 = (
     'text',
     // Geraete im Betrieb (npm 1.39.0)
     'width', 'ip', 'port',
+    // Fassung der Kasse (npm 1.39.0)
+    'version',
   },
 );
 

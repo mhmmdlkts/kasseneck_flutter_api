@@ -540,6 +540,22 @@ class ReportedTerminalAddress {
   String toString() => 'ReportedTerminalAddress(changed: $changed)';
 }
 
+/// Antwort von [RegisterClient.reportMyRegisterClient]: ob der Server die
+/// Kennung geschrieben hat (`false` = unverändert und jung genug).
+class ReportedRegisterClient {
+  const ReportedRegisterClient({required this.written});
+  final bool written;
+
+  @override
+  bool operator ==(Object other) => other is ReportedRegisterClient && other.written == written;
+
+  @override
+  int get hashCode => written.hashCode;
+
+  @override
+  String toString() => 'ReportedRegisterClient(written: $written)';
+}
+
 /// Antwort von [RegisterClient.listRegisterSessionsForDevice].
 class RegisterSessionOverview {
   /// Die Felder der Antwort `/v3`, die dieses Modell liest (Feldmengen-Waechter
@@ -764,6 +780,41 @@ class RegisterClient {
       throw const KasseneckValidationError(name, 'Antwort enthaelt kein changed', 'response');
     }
     return ReportedTerminalAddress(changed: geaendert);
+  }
+
+  /// Meldet still, welche Fassung der Kasse auf diesem Gerät läuft (nur
+  /// Kassenweg `/api/v3`; Ausweis des Geräts wie bei
+  /// [listRegisterUsersForDevice], keine Sitzung einer Person nötig; Zwilling
+  /// von npm 1.39.0). [app] ist die Bau-Kennung, z. B. `kasse-app/1.0.3+34`.
+  /// Gedacht für den Start, nach der Anmeldung und einen Takt von etwa
+  /// 15 Minuten.
+  ///
+  /// Der Server schreibt nur, wenn sich die Kennung geändert hat oder die
+  /// letzte Meldung mindestens 10 Minuten alt ist; sonst `written: false`.
+  /// Wiederholen ist gefahrlos. Die Kasse zeigt dazu nichts an.
+  ///
+  /// Fehlercodes: `device_not_paired`, `server_error`. Geprüft wird hier nur
+  /// die Form.
+  Future<ReportedRegisterClient> reportMyRegisterClient({
+    required String ownerUid,
+    required String deviceId,
+    required String deviceSecret,
+    required String app,
+  }) async {
+    const name = Aufrufe.reportMyRegisterClient;
+    _ausweisPflicht(name, ownerUid, deviceId, deviceSecret);
+    _pflicht(name, 'app', app);
+    final daten = await _rufen(name, {
+      'ownerUid': ownerUid,
+      'deviceId': deviceId,
+      'deviceSecret': deviceSecret,
+      'app': app,
+    });
+    final geschrieben = daten['written'];
+    if (geschrieben is! bool) {
+      throw const KasseneckValidationError(name, 'Antwort enthaelt kein written', 'response');
+    }
+    return ReportedRegisterClient(written: geschrieben);
   }
 
   /// Kassen-Benutzer per PIN anmelden.
