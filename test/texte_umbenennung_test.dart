@@ -160,6 +160,7 @@ const _nach10 = (
     'sumup.key_missing', 'sumup.not_bound', 'sumup.not_logged_in', 'sumup.other_account', 'sumup.bind_question', 'sumup.unbind_question', 'sumup.wrong_currency',
     'sumup.login_failed', 'sumup.declined', 'sumup.amount_mismatch', 'sumup.below_minimum', 'sumup.check_in_app', 'sumup.code_optional_label',
     'sumup.refund_hint', 'sumup.ios_external', 'sumup.status_logged_in', 'sumup.status_logged_out',
+    'sumup.location_question', 'sumup.location_denied', 'sumup.location_off', 'sumup.location_missing',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
