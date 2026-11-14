@@ -1,5 +1,5 @@
 {
-  "version": "1.38.0",
+  "version": "1.39.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -173,7 +173,9 @@
       "reportConnectState",
       "learnMyLeergutCode",
       "listMyLeergutCodes",
-      "getMyTipBalance"
+      "getMyTipBalance",
+      "reportMyTerminalAddress",
+      "reportMyRegisterClient"
     ]
   },
   "routes": {
@@ -356,7 +358,9 @@
       "reportConnectState",
       "learnMyLeergutCode",
       "listMyLeergutCodes",
-      "getMyTipBalance"
+      "getMyTipBalance",
+      "reportMyTerminalAddress",
+      "reportMyRegisterClient"
     ]
   },
   "unknownOutcomeCalls": [
@@ -635,6 +639,7 @@
     "device_takeover_required",
     "dialect_mismatch",
     "internal_translation_error",
+    "invalid_terminal_address",
     "licenses_exhausted",
     "live_not_enabled",
     "location_outside",
@@ -656,11 +661,14 @@
     "register_user_only",
     "response_translation_failed",
     "second_factor_required",
+    "server_error",
     "session_ended",
     "session_expired",
     "session_not_running",
     "session_other_cashregister",
+    "terminal_id_mismatch",
     "too_many_attempts",
+    "too_many_changes",
     "unauthorized",
     "user_disabled",
     "user_verification_failed",
@@ -876,6 +884,9 @@
     ],
     "posDeviceOptionalFields": [
       "drawerId"
+    ],
+    "posDeviceOptionalSwitches": [
+      "printerHint"
     ],
     "posErrorCodes": [
       "account_not_found",

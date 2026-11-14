@@ -188,4 +188,24 @@ void main() {
     }
     expect(labelText(returnDispositionLabels['restock']!), 'Zurück ins Lager');
   });
+
+  test('Geraete im Betrieb (npm 1.39.0): Drucker-, Terminal- und Sperrbild-Saetze gelten auf beiden Seiten, Connect nur im Browser', () {
+    expect(messageText('printer.paper_out'), 'Drucker: Papier leer – neue Rolle einlegen.');
+    expect(messageText('printer.no_status_answer'), 'Drucker antwortet nicht – Deckel und Papier prüfen.');
+    expect(messageText('terminal.tid_mismatch'), 'Die TID passt nicht zum Terminal.');
+    expect(messageText('lock_screen.split_open'), 'Eine getrennte Zahlung ist offen – bitte anmelden und prüfen.');
+    expect(messageText('print.test_ruler_hint'), 'Linie in einer Zeile? Sonst 58 mm wählen.');
+    for (final k in ['printer.paper_out', 'printer.cover_open', 'printer.not_ready', 'printer.paper_near_end', 'printer.unreachable', 'printer.none', 'printer.no_status_answer', 'manager.ask', 'terminal.unreachable', 'terminal.tid_mismatch', 'terminal.tid_hint', 'lock_screen.card_payment_unclear', 'lock_screen.receipt_unclear', 'lock_screen.payout_unclear', 'lock_screen.reversal_unclear', 'lock_screen.split_open', 'print.test_ruler_hint']) {
+      expect(messageAppliesTo(k, PosSurface.app), isTrue, reason: k);
+      expect(messageAppliesTo(k, PosSurface.web), isTrue, reason: k);
+    }
+    for (final k in ['connect.browser_blocks', 'connect.updating', 'connect.other_installation', 'connect.other_installation_hint']) {
+      expect(messageAppliesTo(k, PosSurface.web), isTrue, reason: k);
+      expect(messageAppliesTo(k, PosSurface.app), isFalse, reason: k);
+    }
+    expect(labelText('printer.hint_setting'), 'Warnen, wenn der Drucker nicht antwortet');
+    expect(labelText('devices.terminals_found', {'n': 2}), '2 Terminals gefunden');
+    expect(labelText('devices.settings_applied', {'width': '80 mm'}), '80 mm – Einstellungen übernommen');
+    expect(labelText('devices.address_port', {'ip': '192.168.1.50', 'port': 8080}), '192.168.1.50 · Port 8080');
+  });
 }

@@ -32,7 +32,8 @@ final _vertrag = jsonDecode(File('test/fixtures/vertrag/surface.json').readAsStr
 
 const _anmeldung = [
   'pairRegisterDevice', 'listRegisterUsersForDevice', 'listRegisterSessionsForDevice', 'registerUserLogin',
-  'registerPinLogin', 'renewRegisterSession', 'endRegisterSession', 'unpairRegisterDevice',
+  'registerPinLogin', 'renewRegisterSession', 'endRegisterSession', 'unpairRegisterDevice', 'reportMyTerminalAddress',
+  'reportMyRegisterClient',
 ];
 const _kassenAufrufe = [
   'listMyArticleGroups', 'listMyArticles', 'getKasseSettings', 'setMyKasseSettings', 'setMyKasseLogo',
@@ -282,6 +283,21 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         await register.unpairRegisterDevice(
             ownerUid: _s(p['ownerUid']), deviceId: _s(p['deviceId']), deviceSecret: _s(p['deviceSecret']));
         return true;
+      case 'reportMyTerminalAddress':
+        if (p['port'] is! int) throw const _NichtDarstellbar();
+        return register.reportMyTerminalAddress(
+            ownerUid: _s(p['ownerUid']),
+            deviceId: _s(p['deviceId']),
+            deviceSecret: _s(p['deviceSecret']),
+            tid: _s(p['tid']),
+            host: _s(p['host']),
+            port: p['port'] as int);
+      case 'reportMyRegisterClient':
+        return register.reportMyRegisterClient(
+            ownerUid: _s(p['ownerUid']),
+            deviceId: _s(p['deviceId']),
+            deviceSecret: _s(p['deviceSecret']),
+            app: _s(p['app']));
       case 'registerUserLogin':
         return register.registerUserLogin(
           ownerUid: _s(p['ownerUid']),
@@ -686,13 +702,13 @@ void main() {
       }
     });
 
-    test('alle 53 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+    test('alle 55 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
       final hier = {
         ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
         ..._kasseninfo, ..._connect, ..._leergut,
       };
-      // 53 seit getMyTipBalance (npm 1.37.0).
-      expect((_vertrag['calls']['pos'] as List), hasLength(53));
+      // 55 seit reportMyTerminalAddress und reportMyRegisterClient (npm 1.39.0).
+      expect((_vertrag['calls']['pos'] as List), hasLength(55));
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });
@@ -1360,6 +1376,8 @@ void main() {
         'listRegisterUsersForDevice.cashregister':
             (RegisterCashregisterState.fields, const {'stockLocationId', 'deposit', 'cardTips'}),
         'listRegisterSessionsForDevice': (RegisterSessionOverview.fields, const {}),
+        'reportMyTerminalAddress': (const {'changed'}, const {}),
+        'reportMyRegisterClient': (const {'written'}, const {}),
         'listRegisterSessionsForDevice.sessions[]': (RegisterSession.fields, const {}),
         'registerUserLogin': (RegisterUserSession.fields, const {}),
         'registerUserLogin.user': (RegisterUser.fields, const {}),
