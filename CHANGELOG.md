@@ -6,7 +6,7 @@ Twin of `@kreiseck/kasseneck-api` `1.40.0`: SumUp in the register app (backend s
 - **`PosBusinessSettings.sumupMerchantCode`** (optional, `posBusinessOptionalIds`, `isPosSumupMerchantCode`): the SumUp merchant code the business is bound to; `null` while none is bound. Read only as a code of 4 to 20 letters or digits; `merge` and `PosSettingsClient.saveBusiness` take the code or `null` (release the binding) and reject anything else. The server rejects a different code while one is bound (`sumup_merchant_already_bound`, new in `posErrorCodes`).
 - **`PosSettings.cardTerminal`** (`PosCardTerminal`, `SumupTerminalAccess.affiliateKey`): the block `cardTerminal` from `getKasseSettings` and from the settings of `listRegisterUsersForDevice`, only for a device whose card provider is `sumup`; `null` otherwise.
 - **`SumupCheckoutResponse`**: new fields `foreignTransactionId` and `merchantCode` (written only when set, so existing `providerData` stays byte-identical); `fromMap` reads numbers as number or string, empty strings as `null` and never throws (a missing `success` counts as no success).
-- **Till texts** `sumup.*` (generated from the contract, app only).
+- **Till texts** `sumup.*` (generated from the contract, app only), among them `sumup.not_bound`; `sumup.declined` carries no raw SDK reason.
 - Contract pulled from npm `1.40.0` (local tarball until the npm release). The layout of `special-characters` is regenerated for the version (unchanged).
 
 ## 11.30.0 (2026-11-14)

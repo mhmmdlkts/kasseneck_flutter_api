@@ -436,10 +436,13 @@
       ]
     },
     "sumup.declined": {
-      "text": "SumUp hat die Zahlung nicht durchgeführt: {reason}",
-      "placeholders": [
-        "reason"
-      ],
+      "text": "SumUp hat die Zahlung nicht durchgeführt, es wurde nichts abgebucht.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.not_bound": {
+      "text": "Die Kasse ist noch mit keinem SumUp-Konto verbunden. Bitte in den Einstellungen unter Kartenterminal verbinden.",
       "only": [
         "app"
       ]

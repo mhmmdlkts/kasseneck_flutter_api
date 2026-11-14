@@ -157,7 +157,7 @@ const _nach10 = (
     // Geraete im Betrieb (npm 1.39.0)
     'printer.paper_out', 'printer.cover_open', 'printer.not_ready', 'printer.paper_near_end', 'printer.unreachable', 'printer.none', 'printer.no_status_answer', 'manager.ask', 'terminal.unreachable', 'terminal.tid_mismatch', 'terminal.tid_hint', 'lock_screen.card_payment_unclear', 'lock_screen.receipt_unclear', 'lock_screen.payout_unclear', 'lock_screen.reversal_unclear', 'lock_screen.split_open', 'print.test_ruler_hint', 'connect.browser_blocks', 'connect.updating', 'connect.other_installation', 'connect.other_installation_hint', 'connect.pair_invalid', 'connect.pair_request_throttled', 'connect.print_in_progress', 'connect.printer_timeout', 'connect.printer_refused', 'connect.bad_request', 'connect.unreadable_answer', 'connect.error_generic', 'connect.unpaired_done', 'connect.switched_over',
     // SumUp in der Kassen-App (npm 1.40.0)
-    'sumup.key_missing', 'sumup.not_logged_in', 'sumup.other_account', 'sumup.bind_question', 'sumup.unbind_question', 'sumup.wrong_currency',
+    'sumup.key_missing', 'sumup.not_bound', 'sumup.not_logged_in', 'sumup.other_account', 'sumup.bind_question', 'sumup.unbind_question', 'sumup.wrong_currency',
     'sumup.login_failed', 'sumup.declined', 'sumup.amount_mismatch', 'sumup.below_minimum', 'sumup.check_in_app', 'sumup.code_optional_label',
     'sumup.refund_hint', 'sumup.ios_external', 'sumup.status_logged_in', 'sumup.status_logged_out',
   },
