@@ -507,19 +507,31 @@
       ]
     },
     "sumup.location_question": {
-      "text": "SumUp braucht für Kartenzahlungen den Standort dieses Geräts. Gleich fragt Android danach: bitte erlauben. Weiter?",
+      "text": "SumUp verlangt für Kartenzahlungen den Standort dieses Geräts. Gleich fragt Android danach.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_hint": {
+      "text": "Bitte „Bei Nutzung der App“ wählen.",
       "only": [
         "app"
       ]
     },
     "sumup.location_denied": {
-      "text": "Der Standort ist für die Kasse gesperrt, ohne ihn meldet SumUp nicht an. Einstellungen der App öffnen und unter Berechtigungen den Standort erlauben?",
+      "text": "Der Standort ist für die Kasse gesperrt. Ohne ihn meldet SumUp nicht an.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_denied_hint": {
+      "text": "In den Einstellungen der App unter „Berechtigungen“ den Standort erlauben.",
       "only": [
         "app"
       ]
     },
     "sumup.location_off": {
-      "text": "Der Standort ist an diesem Gerät ausgeschaltet, SumUp braucht ihn für Kartenzahlungen. Standort-Einstellungen öffnen?",
+      "text": "Der Standort ist an diesem Gerät ausgeschaltet. SumUp braucht ihn für Kartenzahlungen.",
       "only": [
         "app"
       ]
@@ -3874,6 +3886,66 @@
       "placeholders": [
         "version",
         "time"
+      ]
+    },
+    "sumup.location_title": {
+      "text": "Standort für SumUp",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_allow": {
+      "text": "Standort erlauben",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_denied_title": {
+      "text": "Standort gesperrt",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.open_app_settings": {
+      "text": "Einstellungen öffnen",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_off_title": {
+      "text": "Standort ist aus",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_turn_on": {
+      "text": "Standort einschalten",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.bind_title": {
+      "text": "Mit SumUp verbinden",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.bind": {
+      "text": "Verbinden",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.unbind_title": {
+      "text": "Verbindung lösen",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.unbind": {
+      "text": "Lösen",
+      "only": [
+        "app"
       ]
     },
     "tip.line_cash_kept": {
