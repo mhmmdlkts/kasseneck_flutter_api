@@ -536,6 +536,15 @@
         "app"
       ]
     },
+    "sumup.reader_ready": {
+      "text": "Leser {name} ist eingerichtet.",
+      "placeholders": [
+        "name"
+      ],
+      "only": [
+        "app"
+      ]
+    },
     "sumup.location_missing": {
       "text": "Ohne Standort keine Anmeldung bei SumUp. Bitte den Standort erlauben und erneut anmelden.",
       "only": [
@@ -3944,6 +3953,12 @@
     },
     "sumup.unbind": {
       "text": "Lösen",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.reader_change": {
+      "text": "Leser ändern",
       "only": [
         "app"
       ]

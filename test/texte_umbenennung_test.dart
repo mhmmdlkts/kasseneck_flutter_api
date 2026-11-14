@@ -161,7 +161,7 @@ const _nach10 = (
     'sumup.login_failed', 'sumup.declined', 'sumup.amount_mismatch', 'sumup.below_minimum', 'sumup.check_in_app', 'sumup.code_optional_label',
     'sumup.refund_hint', 'sumup.ios_external', 'sumup.status_logged_in', 'sumup.status_logged_out',
     'sumup.location_question', 'sumup.location_denied', 'sumup.location_off', 'sumup.location_missing',
-    'sumup.location_hint', 'sumup.location_denied_hint',
+    'sumup.location_hint', 'sumup.location_denied_hint', 'sumup.reader_ready',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -319,6 +319,7 @@ const _nach10 = (
     // SumUp in der Kassen-App: Blätter für Standort und Bindung (npm 1.40.0)
     'sumup.location_title', 'sumup.location_allow', 'sumup.location_denied_title', 'sumup.open_app_settings',
     'sumup.location_off_title', 'sumup.location_turn_on', 'sumup.bind_title', 'sumup.bind', 'sumup.unbind_title', 'sumup.unbind',
+    'sumup.reader_change',
   },
   fileKeys: [
     'errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'cancellationVoucherErrors', 'voucherErrors',
