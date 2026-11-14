@@ -1,4 +1,4 @@
-## 11.30.0 (unveröffentlicht)
+## 11.30.0 (2026-11-14)
 
 Twin of `@kreiseck/kasseneck-api` `1.39.0`: texts for the device operation of both registers (printer, paper, terminal, lock screen), the calls `reportMyTerminalAddress` and `reportMyRegisterClient` and the device switch `printerHint`. Additive; every existing call, receipt and text behaves as before. This package has no Kasseneck Connect client, so the new `onEndpoint` option of `createHpsConnectClient` (npm) has no counterpart here.
 
