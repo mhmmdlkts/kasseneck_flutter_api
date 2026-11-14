@@ -90,7 +90,7 @@
           "cardType": "MASTERCARD",
           "cardLastDigits": "4720",
           "paymentType": "CONTACTLESS",
-          "amount": 2200,
+          "amount": 22,
           "currency": "EUR",
           "transactionCode": "TEZBA9K7QK",
           "entryMode": "contactless"
@@ -129,7 +129,7 @@
           "cardType": "VISA",
           "cardLastDigits": "1881",
           "paymentType": "CONTACTLESS",
-          "amount": 2400,
+          "amount": 24,
           "currency": "EUR",
           "transactionCode": "TFQ2M8C4XP",
           "entryMode": "contactless"

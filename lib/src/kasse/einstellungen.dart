@@ -153,13 +153,18 @@ enum PosDiscount implements PosSettingValue {
 /// - `gptom`: GP Tom, angesprochen über die Terminal-App auf demselben Gerät.
 /// - `hobex`: Hobex HPS über die Terminal-Adresse im Kassennetz
 ///   ([PosDeviceSettings.terminalIp] / `terminalPort`).
+/// - `sumup`: SumUp-Leser über das SumUp-SDK, nur in der Kassen-App auf
+///   Android (Spec 2026-11-14-sumup-kasse). Den Affiliate Key liefert der
+///   Server im Block [PosSettings.cardTerminal]. Browser-Kasse und iOS
+///   kassieren damit wie `external`.
 enum PosCardProvider implements PosSettingValue {
   none,
   external,
   gptom,
   hobex,
   mypos,
-  stripe;
+  stripe,
+  sumup;
 
   @override
   String get value => name;
@@ -544,6 +549,7 @@ class PosBusinessSettings {
     this.tipCardKeptByDefault,
     this.tipCardKeptMode,
     this.tipSelfPayout,
+    this.sumupMerchantCode,
     this.unknownValues = const {},
   });
 
@@ -695,6 +701,12 @@ class PosBusinessSettings {
   /// [posTipSelfPayout].
   final bool? tipSelfPayout;
 
+  /// SumUp-Händlernummer, an die der Betrieb gebunden ist (Spec
+  /// 2026-11-14-sumup-kasse); `null`, solange keine gebunden ist. Der Server
+  /// nimmt eine andere Nummer erst nach dem Lösen (`null`) an
+  /// (`sumup_merchant_already_bound`). Siehe [posBusinessOptionalIds].
+  final String? sumupMerchantCode;
+
   /// Werte des Servers, die dieses Paket nicht kennt, wörtlich (Feld ->
   /// Wert). Die Kasse arbeitet für diese Felder mit dem Standard; `toJson`
   /// gibt den Wert unverändert aus.
@@ -721,7 +733,8 @@ class PosBusinessSettings {
   PosBusinessSettings merge(Map<String, dynamic> patch) {
     _pruefeAenderung(
         'business', patch,
-        {..._betriebSchluessel, ...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists}, legacyBusinessKeys);
+        {..._betriebSchluessel, ...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists, ...posBusinessOptionalIds},
+        legacyBusinessKeys);
     // Die optionalen Schalter haben keinen Standardwert, den `_mische` fortschreiben
     // koennte: sie werden getrennt gefuehrt und nur als Wahrheitswert genommen.
     final aktuell = toJson();
@@ -746,12 +759,22 @@ class PosBusinessSettings {
     if (vorlagen != null && vorlagen is! List) {
       throw ArgumentError('business.discountPresets: eine Liste erwartet');
     }
-    final weg = {...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists};
+    // Optionale Kennungen (sumupMerchantCode): `null` löst, sonst nur eine gültige Nummer.
+    final kennungen = <String, Object?>{
+      for (final k in posBusinessOptionalIds) k: patch.containsKey(k) ? patch[k] : aktuell[k],
+    };
+    for (final e in kennungen.entries) {
+      if (e.value != null && !isPosSumupMerchantCode(e.value)) {
+        throw ArgumentError('business.${e.key}: Nummer (4 bis 20 Buchstaben oder Ziffern) oder null erwartet');
+      }
+    }
+    final weg = {...posBusinessOptionalFields, ...posBusinessOptionalChoices, ...posBusinessOptionalLists, ...posBusinessOptionalIds};
     final json = _mische(toJson()..removeWhere((k, _) => weg.contains(k)), {...patch}..removeWhere((k, _) => weg.contains(k)));
     return PosBusinessSettings.fromJson({
       ...json,
       for (final e in schalter.entries) e.key: ?e.value,
       for (final e in wahl.entries) e.key: ?e.value,
+      for (final e in kennungen.entries) e.key: ?e.value,
       'discountPresets': ?vorlagen,
     });
   }
@@ -821,6 +844,7 @@ class PosBusinessSettings {
       tipCardKeptByDefault: raw['tipCardKeptByDefault'] is bool ? raw['tipCardKeptByDefault'] as bool : null,
       tipCardKeptMode: _wahlOptional(raw, 'tipCardKeptMode', PosTipKeptMode.values, fremd),
       tipSelfPayout: raw['tipSelfPayout'] is bool ? raw['tipSelfPayout'] as bool : null,
+      sumupMerchantCode: isPosSumupMerchantCode(raw['sumupMerchantCode']) ? raw['sumupMerchantCode'] as String : null,
       unknownValues: Map.unmodifiable(fremd),
     );
   }
@@ -884,6 +908,7 @@ class PosBusinessSettings {
         'tipCardKeptByDefault': ?tipCardKeptByDefault,
         'tipCardKeptMode': ?tipCardKeptMode?.value,
         'tipSelfPayout': ?tipSelfPayout,
+        'sumupMerchantCode': ?sumupMerchantCode,
         ...unknownValues,
       };
 }
@@ -1113,14 +1138,15 @@ class PosDeviceSettings {
 // ------------------------------------------------------------------ Ganzes
 
 class PosSettings {
-  const PosSettings({required this.business, required this.device, this.vouchers = PosVoucherSettings.off, this.deposit});
+  const PosSettings({required this.business, required this.device, this.vouchers = PosVoucherSettings.off, this.deposit, this.cardTerminal});
 
   /// Die Standardwerte, deckungsgleich mit Backend und Browser-Kasse.
   const PosSettings.standard()
       : business = const PosBusinessSettings(),
         device = const PosDeviceSettings(),
         vouchers = PosVoucherSettings.off,
-        deposit = null;
+        deposit = null,
+        cardTerminal = null;
 
   final PosBusinessSettings business;
   final PosDeviceSettings device;
@@ -1137,6 +1163,12 @@ class PosSettings {
   /// weg). Wie [vouchers] gehoert er nicht zu den Standardwerten: der Server
   /// setzt ihn allein, die Kasse schreibt ihn nie.
   final DepositSettings? deposit;
+
+  /// Zugang zu einem angebundenen Kartenterminal (Block `cardTerminal`); `null`,
+  /// solange an diesem Gerät kein angebundenes Terminal gilt. Der Server liefert
+  /// den SumUp-Affiliate-Key nur an ein Gerät mit Anbieter `sumup`; die Kasse
+  /// schreibt den Block nie.
+  final PosCardTerminal? cardTerminal;
 
   /// Standard + Gespeichertes in der Drahtform `{business, device}`. Was
   /// fehlt, bleibt beim Standard; ein Schlüssel, den der Standard nicht
@@ -1186,6 +1218,7 @@ class PosSettings {
       device: PosDeviceSettings.fromJson(teil('device', 'geraet', legacyDeviceKeys)),
       vouchers: PosVoucherSettings.fromJson(roh['vouchers']),
       deposit: DepositSettings.fromJson(roh['deposit']),
+      cardTerminal: PosCardTerminal.fromJson(roh['cardTerminal']),
     );
   }
 
@@ -1197,7 +1230,36 @@ class PosSettings {
         'device': device.toJson(),
         if (vouchers != PosVoucherSettings.off) 'vouchers': vouchers.toJson(),
         if (deposit != null) 'deposit': deposit!.toJson(),
+        if (cardTerminal != null) 'cardTerminal': cardTerminal!.toJson(),
       };
+}
+
+/// Zugang zu einem angebundenen Kartenterminal (Spec 2026-11-14-sumup-kasse).
+class PosCardTerminal {
+  const PosCardTerminal({this.sumup});
+
+  /// SumUp: der Affiliate Key der App (an ihre App-ID gebunden).
+  final SumupTerminalAccess? sumup;
+
+  /// Den Block lesen; unbrauchbar oder ohne Inhalt → `null`.
+  static PosCardTerminal? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final s = raw['sumup'];
+    final key = s is Map ? s['affiliateKey'] : null;
+    if (key is! String || key.isEmpty) return null;
+    return PosCardTerminal(sumup: SumupTerminalAccess(affiliateKey: key));
+  }
+
+  Map<String, dynamic> toJson() => {
+        if (sumup != null) 'sumup': {'affiliateKey': sumup!.affiliateKey},
+      };
+}
+
+/// SumUp-Zugang eines Geräts.
+class SumupTerminalAccess {
+  const SumupTerminalAccess({required this.affiliateKey});
+
+  final String affiliateKey;
 }
 
 // ------------------------------------------- Wertemengen, Aenderungen, Pruefung
@@ -1449,6 +1511,17 @@ const List<String> posDeviceOptionalSwitches = ['printerHint'];
 /// ([posTipKeptByDefault]: aus, [posCustomDiscountAllowed]: an,
 /// [posTipCardKeptByDefault]: aus, [posTipSelfPayout]: an).
 const List<String> posBusinessOptionalFields = ['tipKeptByDefault', 'customDiscountAllowed', 'tipCardKeptByDefault', 'tipSelfPayout'];
+
+/// Optionale Betriebs-Kennungen (Zwilling von `POS_BUSINESS_OPTIONAL_IDS`):
+/// ohne Standardwert, der Server sendet sie nur, wenn sie gesetzt sind.
+/// Gelesen nur als gültige Nummer ([isPosSumupMerchantCode]); der Schreibweg
+/// nimmt die Nummer oder `null` (Bindung lösen).
+const List<String> posBusinessOptionalIds = ['sumupMerchantCode'];
+
+final RegExp _sumupHaendler = RegExp(r'^[A-Za-z0-9]{4,20}$');
+
+/// Ist [value] eine SumUp-Händlernummer (Backend `sumup-kasse-core.HAENDLER_MUSTER`)?
+bool isPosSumupMerchantCode(Object? value) => value is String && _sumupHaendler.hasMatch(value);
 
 /// Optionale Betriebs-Einstellungen mit Wertemenge (Zwilling von
 /// `POS_BUSINESS_OPTIONAL_CHOICES`): ohne Standardwert, der Server sendet sie

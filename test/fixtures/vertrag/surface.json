@@ -1,5 +1,5 @@
 {
-  "version": "1.39.0",
+  "version": "1.40.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -454,7 +454,8 @@
       "gptom",
       "hobex",
       "mypos",
-      "stripe"
+      "stripe",
+      "sumup"
     ],
     "categoryPosition": [
       "top",
@@ -876,6 +877,9 @@
       "tipCardKeptByDefault",
       "tipSelfPayout"
     ],
+    "posBusinessOptionalIds": [
+      "sumupMerchantCode"
+    ],
     "posBusinessOptionalLists": [
       "discountPresets"
     ],
@@ -969,6 +973,7 @@
       "stocktake_closing",
       "stocktake_not_found",
       "stocktake_not_open",
+      "sumup_merchant_already_bound",
       "tip_payout_exceeds_claim",
       "too_many_counts",
       "too_many_deposit_types",

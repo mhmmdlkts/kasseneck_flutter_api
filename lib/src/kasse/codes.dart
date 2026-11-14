@@ -99,6 +99,7 @@ const List<String> posErrorCodes = [
   'stocktake_closing',
   'stocktake_not_found',
   'stocktake_not_open',
+  'sumup_merchant_already_bound',
   'tip_payout_exceeds_claim',
   'too_many_counts',
   'too_many_deposit_types',

@@ -43,7 +43,7 @@ class PosSettingsClient {
       Aufrufe.getKasseSettings,
       params: {if (deviceId.trim().isNotEmpty) 'deviceId': deviceId},
     );
-    return PosSettings.fromJson({'business': daten['business'], 'device': daten['device'], 'vouchers': daten['vouchers'], 'deposit': daten['deposit']});
+    return PosSettings.fromJson({'business': daten['business'], 'device': daten['device'], 'vouchers': daten['vouchers'], 'deposit': daten['deposit'], 'cardTerminal': daten['cardTerminal']});
   }
 
   /// Betriebsweite Einstellungen schreiben (Recht `layout`). [patch] mit
@@ -62,6 +62,17 @@ class PosSettingsClient {
         throw KasseneckValidationError(name, 'business.${e.key}: true oder false erwartet', 'request');
       }
     }
+    // Optionale Kennungen (sumupMerchantCode): Nummer oder null (Bindung lösen).
+    final kennungen = <String, Object?>{
+      for (final k in posBusinessOptionalIds)
+        if (patch.containsKey(k)) k: patch[k],
+    };
+    for (final e in kennungen.entries) {
+      if (e.value != null && !isPosSumupMerchantCode(e.value)) {
+        throw KasseneckValidationError(name, 'business.${e.key}: Nummer (4 bis 20 Buchstaben oder Ziffern) oder null erwartet', 'request');
+      }
+    }
+    schalter.addAll(kennungen);
     final rest = {...patch}..removeWhere((k, _) => schalter.containsKey(k));
     final gesendet = schalter.isNotEmpty && rest.isEmpty
         ? <String, dynamic>{}

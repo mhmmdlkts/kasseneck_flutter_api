@@ -16,6 +16,14 @@ class SumupCheckoutResponse {
   final String? cardType;
   final String? cardLastDigits;
 
+  /// Eigene Kennung der Zahlung (SumUp `foreignTransactionId`), mit der sie
+  /// sich bei SumUp wiederfinden lässt; nur gesetzt, wenn die Kasse eine
+  /// mitgab.
+  final String? foreignTransactionId;
+
+  /// Händlernummer des SumUp-Kontos, auf das gebucht wurde.
+  final String? merchantCode;
+
   SumupCheckoutResponse({
     required this.success,
     this.transactionCode,
@@ -28,21 +36,43 @@ class SumupCheckoutResponse {
     this.installments,
     this.cardType,
     this.cardLastDigits,
+    this.foreignTransactionId,
+    this.merchantCode,
   });
 
+  /// Liest jede Form, die das Plugin oder ein gespeicherter Beleg liefert:
+  /// Zahlen als Zahl oder Zeichenkette, leere Zeichenketten als `null`
+  /// (iOS meldet fehlende Felder als `""`). Wirft nie; fehlt `success`, gilt
+  /// kein Erfolg.
   factory SumupCheckoutResponse.fromMap(Map<String, dynamic> response) {
+    String? text(String k) {
+      final v = response[k];
+      if (v == null) return null;
+      final s = v.toString();
+      return s.isEmpty ? null : s;
+    }
+
+    double? zahl(String k) {
+      final v = response[k];
+      if (v is num) return v.toDouble();
+      if (v is String && v.trim().isNotEmpty) return double.tryParse(v.trim());
+      return null;
+    }
+
     return SumupCheckoutResponse(
-      success: response['success'] as bool,
-      transactionCode: response['transactionCode'] as String?,
-      amount: (response['amount'] as num?)?.toDouble(),
-      currency: response['currency'] as String?,
-      vatAmount: (response['vatAmount'] as num?)?.toDouble(),
-      tipAmount: (response['tipAmount'] as num?)?.toDouble(),
-      paymentType: response['paymentType'] as String?,
-      entryMode: response['entryMode'] as String?,
-      installments: int.tryParse(response['installments'].toString()),
-      cardType: response['cardType'] as String?,
-      cardLastDigits: response['cardLastDigits'] as String?,
+      success: response['success'] == true,
+      transactionCode: text('transactionCode'),
+      amount: zahl('amount'),
+      currency: text('currency'),
+      vatAmount: zahl('vatAmount'),
+      tipAmount: zahl('tipAmount'),
+      paymentType: text('paymentType'),
+      entryMode: text('entryMode'),
+      installments: int.tryParse(response['installments']?.toString() ?? ''),
+      cardType: text('cardType'),
+      cardLastDigits: text('cardLastDigits'),
+      foreignTransactionId: text('foreignTransactionId'),
+      merchantCode: text('merchantCode'),
     );
   }
 
@@ -59,6 +89,8 @@ class SumupCheckoutResponse {
       'installments': installments?.toString(),
       'cardType': cardType,
       'cardLastDigits': cardLastDigits,
+      'foreignTransactionId': ?foreignTransactionId,
+      'merchantCode': ?merchantCode,
     };
   }
 }
