@@ -151,6 +151,10 @@ abstract final class Aufrufe {
   static const listMyLeergutCodes = 'listMyLeergutCodes';
   // „Mein Trinkgeld“ (Kartentrinkgeld, npm 1.37.0): Stand der angemeldeten Person; nur ueber den Kassenweg.
   static const getMyTipBalance = 'getMyTipBalance';
+  // Neue Adresse des Kartenterminals still melden (npm 1.39.0, Ausweis des Geraets): nur ueber den Kassenweg.
+  static const reportMyTerminalAddress = 'reportMyTerminalAddress';
+  // Laufende Fassung der Kasse still melden (npm 1.39.0, Ausweis des Geraets): nur ueber den Kassenweg.
+  static const reportMyRegisterClient = 'reportMyRegisterClient';
   // Kartenterminal-Zugang zentral (KasseneckApi, nur /v3 mit api_key).
   static const registerTerminalDevice = 'registerTerminalDevice';
   static const getTerminalAccess = 'getTerminalAccess';
@@ -289,6 +293,8 @@ abstract final class Aufrufe {
     learnMyLeergutCode,
     listMyLeergutCodes,
     getMyTipBalance,
+    reportMyTerminalAddress,
+    reportMyRegisterClient,
     registerTerminalDevice,
     getTerminalAccess,
     claimTerminal,

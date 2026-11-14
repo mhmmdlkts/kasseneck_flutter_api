@@ -4,7 +4,7 @@
     "default": {
       "sha256": "b3ed9b5e54fb6a0c27c2e9b494c8676926b80b4527236f0f4f71403c455fa477",
       "head": [],
-      "inputsSha256": "c6f99c9f83910d436b65673792017a081b6bd6728abeb089824bbb3a89a50fe3",
+      "inputsSha256": "118cb2b3acbbbcaea3f023515fcc35eb7039ea61a5f36b9ae8a5195937f4b1d2",
       "backendPackage": "@kreiseck/kasseneck-api@0.40.0",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "c5a50ebc95beb71721025f9cc4a1bfe861df4b93422398063146657d1dadca68",
+      "sha256": "d3d6dbd4df6439d688cf7e531d1c46aab17a8495f854b70d8d95f54cb594475e",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "757d890593921c8947e4a90ecea3c36169265fbcb9d224c764372dd4a13dbb52",
+      "inputsSha256": "3b4223dfb5d1c0d7820864612081a503d600215abea7e595585e1cc6d1f2a392",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -26456,6 +26456,698 @@
               "keptTodayCents": 0,
               "currency": "EUR",
               "otherDrawers": []
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "reportMyTerminalAddress": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "get",
+          "method": "GET",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.60",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Fehlende Daten: tid, host, port",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "tid",
+                  "message": "Pflichtfeld fehlt."
+                },
+                {
+                  "field": "host",
+                  "message": "Pflichtfeld fehlt."
+                },
+                {
+                  "field": "port",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "device_unknown",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_gibtsnicht",
+            "deviceSecret": "EXAMPLEAE539BF8AAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.60",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Gerät nicht gekoppelt oder widerrufen.",
+            "data": {
+              "code": "device_not_paired"
+            },
+            "code": "device_not_paired"
+          }
+        },
+        {
+          "case": "secret_wrong",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLEB3C3E0F5AAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.60",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Gerät nicht gekoppelt oder widerrufen.",
+            "data": {
+              "code": "device_not_paired"
+            },
+            "code": "device_not_paired"
+          }
+        },
+        {
+          "case": "device_locked",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_gesperrt",
+            "deviceSecret": "EXAMPLE2E5E4EBAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.60",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Gerät nicht gekoppelt oder widerrufen.",
+            "data": {
+              "code": "device_not_paired"
+            },
+            "code": "device_not_paired"
+          }
+        },
+        {
+          "case": "terminal_id_matches_not",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "12346",
+            "host": "192.168.1.60",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Terminal-ID passt nicht zu diesem Gerät.",
+            "data": {
+              "code": "terminal_id_mismatch"
+            },
+            "code": "terminal_id_mismatch"
+          }
+        },
+        {
+          "case": "kind_none",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.60",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Terminal-ID passt nicht zu diesem Gerät.",
+            "data": {
+              "code": "terminal_id_mismatch"
+            },
+            "code": "terminal_id_mismatch"
+          }
+        },
+        {
+          "case": "address_invalid",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.300",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Adresse des Terminals ist ungültig.",
+            "data": {
+              "code": "invalid_terminal_address"
+            },
+            "code": "invalid_terminal_address"
+          }
+        },
+        {
+          "case": "port_invalid",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.60",
+            "port": 70000
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Adresse des Terminals ist ungültig.",
+            "data": {
+              "code": "invalid_terminal_address"
+            },
+            "code": "invalid_terminal_address"
+          }
+        },
+        {
+          "case": "too_many_changes",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.60",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Adresse hat sich heute zu oft geändert.",
+            "data": {
+              "code": "too_many_changes"
+            },
+            "code": "too_many_changes"
+          }
+        },
+        {
+          "case": "success_changed",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.60",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "changed": true
+            }
+          }
+        },
+        {
+          "case": "success_only_port",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.50",
+            "port": 8081
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "changed": true
+            }
+          }
+        },
+        {
+          "case": "success_unchanged",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "tid": "0012345",
+            "host": "192.168.1.50",
+            "port": 8080
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "changed": false
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "reportMyRegisterClient": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "get",
+          "method": "GET",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Fehlende Daten: app",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "app",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "app_empty",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "   "
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Fehlende Daten: app",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "app",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "device_unknown",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_gibtsnicht",
+            "deviceSecret": "EXAMPLEAE539BF8AAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Gerät nicht gekoppelt oder widerrufen.",
+            "data": {
+              "code": "device_not_paired"
+            },
+            "code": "device_not_paired"
+          }
+        },
+        {
+          "case": "format",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "a/b",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE2D711642AAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Gerät nicht gekoppelt oder widerrufen.",
+            "data": {
+              "code": "device_not_paired"
+            },
+            "code": "device_not_paired"
+          }
+        },
+        {
+          "case": "secret_wrong",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLEB3C3E0F5AAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Gerät nicht gekoppelt oder widerrufen.",
+            "data": {
+              "code": "device_not_paired"
+            },
+            "code": "device_not_paired"
+          }
+        },
+        {
+          "case": "device_locked",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_gesperrt",
+            "deviceSecret": "EXAMPLE2E5E4EBAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Gerät nicht gekoppelt oder widerrufen.",
+            "data": {
+              "code": "device_not_paired"
+            },
+            "code": "device_not_paired"
+          }
+        },
+        {
+          "case": "success_new",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "written": true
+            }
+          }
+        },
+        {
+          "case": "success_other_identifier",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "written": true
+            }
+          }
+        },
+        {
+          "case": "success_app",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "kasse-app/1.0.3+34"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "written": true
+            }
+          }
+        },
+        {
+          "case": "success_old_enough",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "written": true
+            }
+          }
+        },
+        {
+          "case": "success_nothing_too_do",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "ownerUid": "kw_betrieb1",
+            "deviceId": "dev_pin",
+            "deviceSecret": "EXAMPLE6BEF019FAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "app": "1.39.0/2026-11-13T18:20Z"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "written": false
             }
           }
         },

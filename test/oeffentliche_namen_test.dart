@@ -53,6 +53,7 @@ final Set<String> woerter = _liste('''
   description detail details device devices diagnosis differs digits
   dimensions direct directory disabled discount discover discovered discovery
   container context deposit deposits derived filling learn learned match point premises returns reusable use usual
+  reported switches
   csv domestic downloaded eco ewp fee foreign impact int master origin producer provisional usage
   dispose disposed disposition dispositions distance distribute divider documented done dots double download
   draft drawer drawers dry due duplicate duration effect email emoji employee empty enable enabled encode encoded end endpoints

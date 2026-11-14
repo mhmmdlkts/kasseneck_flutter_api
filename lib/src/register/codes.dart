@@ -12,7 +12,7 @@ library;
 import 'fehler.dart';
 
 /// Die Codes der Anmeldung, gleich `registerErrorCodes` im Vertrag
-/// (`surface.json`): Fehlerfälle der acht Anmelde-Endpunkte und ihre
+/// (`surface.json`): Fehlerfälle der neun Anmelde-Endpunkte und ihre
 /// Handler-Codes, dazu Anmelde- und Randcodes (ohne den Partner-Zugang) und
 /// der Paketcode `route_missing`. Ein Code, der hier nicht steht, bleibt über
 /// [KasseneckApiError.code] lesbar; die Kasse braucht dafür einen
@@ -35,6 +35,7 @@ const List<String> registerErrorCodes = [
   'device_takeover_required',
   'dialect_mismatch',
   'internal_translation_error',
+  'invalid_terminal_address',
   'licenses_exhausted',
   'live_not_enabled',
   'location_outside',
@@ -56,11 +57,14 @@ const List<String> registerErrorCodes = [
   'register_user_only',
   'response_translation_failed',
   'second_factor_required',
+  'server_error',
   'session_ended',
   'session_expired',
   'session_not_running',
   'session_other_cashregister',
+  'terminal_id_mismatch',
   'too_many_attempts',
+  'too_many_changes',
   'unauthorized',
   'user_disabled',
   'user_verification_failed',
