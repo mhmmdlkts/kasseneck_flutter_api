@@ -707,6 +707,7 @@ class RegisterClient {
       settings: PosSettings.fromJson({
         'business': settings is Map ? settings['business'] : null,
         'device': settings is Map ? settings['device'] : null,
+        'cardTerminal': settings is Map ? settings['cardTerminal'] : null,
       }),
       receiptHeader: kopf is Map ? Map<String, dynamic>.from(kopf) : null,
       cashregister: kasse is Map && kasse['ready'] is bool

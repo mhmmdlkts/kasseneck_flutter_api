@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.39.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.40.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.39.0';
+const String posTextsVersion = '1.40.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -99,6 +99,30 @@ const Map<String, PosText> posMessages = {
   'gptom.not_opened': PosText('GP Tom ließ sich nicht öffnen – bitte die GP-Tom-App prüfen und erneut versuchen.', only: [PosSurface.app]),
   'gptom.timeout': PosText('Das Terminal hat in der Frist nicht geantwortet – die Karte kann belastet sein. Bitte am Terminal-Beleg nachsehen, BEVOR neu kassiert wird.', only: [PosSurface.app]),
   'gptom.timeout_with_id': PosText('Das Terminal hat in der Frist nicht geantwortet – die Karte kann belastet sein. Bitte am Terminal-Beleg nachsehen, BEVOR neu kassiert wird. Kennung der Zahlung: {reference}.', placeholders: ['reference'], only: [PosSurface.app]),
+  'sumup.key_missing': PosText('SumUp ist für diese Kasse noch nicht eingerichtet – bitte Kasseneck kontaktieren.', only: [PosSurface.app]),
+  'sumup.not_logged_in': PosText('Nicht bei SumUp angemeldet. Bitte in den Einstellungen unter Kartenterminal anmelden.', only: [PosSurface.app]),
+  'sumup.other_account': PosText('Hier ist ein anderes SumUp-Konto angemeldet ({current}) als das der Kasse ({bound}). Bitte abmelden und mit dem richtigen Konto anmelden.', placeholders: ['current', 'bound'], only: [PosSurface.app]),
+  'sumup.bind_question': PosText('Diese Kasse mit dem SumUp-Konto {merchant} verbinden? Danach kassieren alle Geräte nur noch auf dieses Konto.', placeholders: ['merchant'], only: [PosSurface.app]),
+  'sumup.unbind_question': PosText('Die Verbindung zum SumUp-Konto lösen? Danach kann sich ein anderes Konto verbinden.', only: [PosSurface.app]),
+  'sumup.wrong_currency': PosText('Das SumUp-Konto rechnet in {currency}, die Kasse in Euro. Bitte ein Konto in Euro verwenden.', placeholders: ['currency'], only: [PosSurface.app]),
+  'sumup.login_failed': PosText('Die Anmeldung bei SumUp hat nicht geklappt. Bitte erneut versuchen.', only: [PosSurface.app]),
+  'sumup.declined': PosText('SumUp hat die Zahlung nicht durchgeführt, es wurde nichts abgebucht.', only: [PosSurface.app]),
+  'sumup.not_bound': PosText('Die Kasse ist noch mit keinem SumUp-Konto verbunden. Bitte in den Einstellungen unter Kartenterminal verbinden.', only: [PosSurface.app]),
+  'sumup.amount_mismatch': PosText('SumUp meldet einen anderen Betrag als die Kasse. Bitte in der SumUp-App nachsehen, BEVOR neu kassiert wird.', only: [PosSurface.app]),
+  'sumup.below_minimum': PosText('Mit SumUp geht Karte erst ab 1,00 €.', only: [PosSurface.app]),
+  'sumup.check_in_app': PosText('In der SumUp-App unter Transaktionen nachsehen: {amount}, {time}.', placeholders: ['amount', 'time'], only: [PosSurface.app]),
+  'sumup.code_optional_label': PosText('SumUp-Transaktionscode (aus der SumUp-App, freiwillig)', only: [PosSurface.app]),
+  'sumup.refund_hint': PosText('Die Kartenzahlung bitte in der SumUp-App zurückbuchen (Transaktion {code}, Karte endet auf {digits}).', placeholders: ['code', 'digits'], only: [PosSurface.app]),
+  'sumup.ios_external': PosText('SumUp ist auf diesem Gerät nicht angebunden: den Betrag am SumUp-Gerät eintippen, die Kasse bucht Karte.', only: [PosSurface.app]),
+  'sumup.status_logged_in': PosText('Bei SumUp angemeldet als {merchant}.', placeholders: ['merchant'], only: [PosSurface.app]),
+  'sumup.status_logged_out': PosText('Nicht bei SumUp angemeldet.', only: [PosSurface.app]),
+  'sumup.location_question': PosText('SumUp verlangt für Kartenzahlungen den Standort dieses Geräts. Gleich fragt Android danach.', only: [PosSurface.app]),
+  'sumup.location_hint': PosText('Bitte „Bei Nutzung der App“ wählen.', only: [PosSurface.app]),
+  'sumup.location_denied': PosText('Der Standort ist für die Kasse gesperrt. Ohne ihn meldet SumUp nicht an.', only: [PosSurface.app]),
+  'sumup.location_denied_hint': PosText('In den Einstellungen der App unter „Berechtigungen“ den Standort erlauben.', only: [PosSurface.app]),
+  'sumup.location_off': PosText('Der Standort ist an diesem Gerät ausgeschaltet. SumUp braucht ihn für Kartenzahlungen.', only: [PosSurface.app]),
+  'sumup.reader_ready': PosText('Leser {name} ist eingerichtet.', placeholders: ['name'], only: [PosSurface.app]),
+  'sumup.location_missing': PosText('Ohne Standort keine Anmeldung bei SumUp. Bitte den Standort erlauben und erneut anmelden.', only: [PosSurface.app]),
   'log.empty': PosText('Noch keine Einträge – das Protokoll füllt sich mit der ersten Kartenzahlung.'),
   'log.copied': PosText('Das Protokoll liegt in der Zwischenablage.'),
   'receipts.load_failed': PosText('Die Belege konnten nicht geladen werden.'),
@@ -933,6 +957,17 @@ const Map<String, PosText> posLabels = {
   'deposit.sum': PosText('Summe Leergut'),
   'version.reload': PosText('Neu laden', only: [PosSurface.web]),
   'version.line': PosText('Fassung {version} · {time}', placeholders: ['version', 'time']),
+  'sumup.location_title': PosText('Standort für SumUp', only: [PosSurface.app]),
+  'sumup.location_allow': PosText('Standort erlauben', only: [PosSurface.app]),
+  'sumup.location_denied_title': PosText('Standort gesperrt', only: [PosSurface.app]),
+  'sumup.open_app_settings': PosText('Einstellungen öffnen', only: [PosSurface.app]),
+  'sumup.location_off_title': PosText('Standort ist aus', only: [PosSurface.app]),
+  'sumup.location_turn_on': PosText('Standort einschalten', only: [PosSurface.app]),
+  'sumup.bind_title': PosText('Mit SumUp verbinden', only: [PosSurface.app]),
+  'sumup.bind': PosText('Verbinden', only: [PosSurface.app]),
+  'sumup.unbind_title': PosText('Verbindung lösen', only: [PosSurface.app]),
+  'sumup.unbind': PosText('Lösen', only: [PosSurface.app]),
+  'sumup.reader_change': PosText('Leser ändern', only: [PosSurface.app]),
   'tip.line_cash_kept': PosText('{amount} gleich einstecken', placeholders: ['amount']),
   'tip.line_cash_open': PosText('{amount} in der Lade lassen', placeholders: ['amount']),
   'tip.line_card_kept': PosText('{amount} aus der Lade nehmen', placeholders: ['amount']),

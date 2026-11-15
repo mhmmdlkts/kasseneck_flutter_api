@@ -1,5 +1,5 @@
 {
-  "version": "1.39.0",
+  "version": "1.40.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -379,6 +379,174 @@
       "placeholders": [
         "reference"
       ],
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.key_missing": {
+      "text": "SumUp ist für diese Kasse noch nicht eingerichtet – bitte Kasseneck kontaktieren.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.not_logged_in": {
+      "text": "Nicht bei SumUp angemeldet. Bitte in den Einstellungen unter Kartenterminal anmelden.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.other_account": {
+      "text": "Hier ist ein anderes SumUp-Konto angemeldet ({current}) als das der Kasse ({bound}). Bitte abmelden und mit dem richtigen Konto anmelden.",
+      "placeholders": [
+        "current",
+        "bound"
+      ],
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.bind_question": {
+      "text": "Diese Kasse mit dem SumUp-Konto {merchant} verbinden? Danach kassieren alle Geräte nur noch auf dieses Konto.",
+      "placeholders": [
+        "merchant"
+      ],
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.unbind_question": {
+      "text": "Die Verbindung zum SumUp-Konto lösen? Danach kann sich ein anderes Konto verbinden.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.wrong_currency": {
+      "text": "Das SumUp-Konto rechnet in {currency}, die Kasse in Euro. Bitte ein Konto in Euro verwenden.",
+      "placeholders": [
+        "currency"
+      ],
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.login_failed": {
+      "text": "Die Anmeldung bei SumUp hat nicht geklappt. Bitte erneut versuchen.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.declined": {
+      "text": "SumUp hat die Zahlung nicht durchgeführt, es wurde nichts abgebucht.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.not_bound": {
+      "text": "Die Kasse ist noch mit keinem SumUp-Konto verbunden. Bitte in den Einstellungen unter Kartenterminal verbinden.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.amount_mismatch": {
+      "text": "SumUp meldet einen anderen Betrag als die Kasse. Bitte in der SumUp-App nachsehen, BEVOR neu kassiert wird.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.below_minimum": {
+      "text": "Mit SumUp geht Karte erst ab 1,00 €.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.check_in_app": {
+      "text": "In der SumUp-App unter Transaktionen nachsehen: {amount}, {time}.",
+      "placeholders": [
+        "amount",
+        "time"
+      ],
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.code_optional_label": {
+      "text": "SumUp-Transaktionscode (aus der SumUp-App, freiwillig)",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.refund_hint": {
+      "text": "Die Kartenzahlung bitte in der SumUp-App zurückbuchen (Transaktion {code}, Karte endet auf {digits}).",
+      "placeholders": [
+        "code",
+        "digits"
+      ],
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.ios_external": {
+      "text": "SumUp ist auf diesem Gerät nicht angebunden: den Betrag am SumUp-Gerät eintippen, die Kasse bucht Karte.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.status_logged_in": {
+      "text": "Bei SumUp angemeldet als {merchant}.",
+      "placeholders": [
+        "merchant"
+      ],
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.status_logged_out": {
+      "text": "Nicht bei SumUp angemeldet.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_question": {
+      "text": "SumUp verlangt für Kartenzahlungen den Standort dieses Geräts. Gleich fragt Android danach.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_hint": {
+      "text": "Bitte „Bei Nutzung der App“ wählen.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_denied": {
+      "text": "Der Standort ist für die Kasse gesperrt. Ohne ihn meldet SumUp nicht an.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_denied_hint": {
+      "text": "In den Einstellungen der App unter „Berechtigungen“ den Standort erlauben.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_off": {
+      "text": "Der Standort ist an diesem Gerät ausgeschaltet. SumUp braucht ihn für Kartenzahlungen.",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.reader_ready": {
+      "text": "Leser {name} ist eingerichtet.",
+      "placeholders": [
+        "name"
+      ],
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_missing": {
+      "text": "Ohne Standort keine Anmeldung bei SumUp. Bitte den Standort erlauben und erneut anmelden.",
       "only": [
         "app"
       ]
@@ -3727,6 +3895,72 @@
       "placeholders": [
         "version",
         "time"
+      ]
+    },
+    "sumup.location_title": {
+      "text": "Standort für SumUp",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_allow": {
+      "text": "Standort erlauben",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_denied_title": {
+      "text": "Standort gesperrt",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.open_app_settings": {
+      "text": "Einstellungen öffnen",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_off_title": {
+      "text": "Standort ist aus",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.location_turn_on": {
+      "text": "Standort einschalten",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.bind_title": {
+      "text": "Mit SumUp verbinden",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.bind": {
+      "text": "Verbinden",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.unbind_title": {
+      "text": "Verbindung lösen",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.unbind": {
+      "text": "Lösen",
+      "only": [
+        "app"
+      ]
+    },
+    "sumup.reader_change": {
+      "text": "Leser ändern",
+      "only": [
+        "app"
       ]
     },
     "tip.line_cash_kept": {

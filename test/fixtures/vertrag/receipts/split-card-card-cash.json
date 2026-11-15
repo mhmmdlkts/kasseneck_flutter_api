@@ -59,7 +59,7 @@
           "cardType": "MASTERCARD",
           "cardLastDigits": "4720",
           "paymentType": "CONTACTLESS",
-          "amount": 2000,
+          "amount": 20,
           "currency": "EUR",
           "transactionCode": "TEZBA9K7QK",
           "entryMode": "contactless"

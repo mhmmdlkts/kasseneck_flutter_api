@@ -1,3 +1,14 @@
+## 11.31.0 (unveröffentlicht)
+
+Twin of `@kreiseck/kasseneck-api` `1.40.0`: SumUp in the register app (backend spec 2026-11-14-sumup-kasse, stage 1, Android only). Additive; every existing call, receipt and text behaves as before. The SumUp plugin itself stays out of this package (`sumup_getrennt_test.dart`); the app binds it.
+
+- **Card provider `PosCardProvider.sumup`**. Only the register app on Android connects it; the browser register and iOS take it like `external`.
+- **`PosBusinessSettings.sumupMerchantCode`** (optional, `posBusinessOptionalIds`, `isPosSumupMerchantCode`): the SumUp merchant code the business is bound to; `null` while none is bound. Read only as a code of 4 to 20 letters or digits; `merge` and `PosSettingsClient.saveBusiness` take the code or `null` (release the binding) and reject anything else. The server rejects a different code while one is bound (`sumup_merchant_already_bound`, new in `posErrorCodes`).
+- **`PosSettings.cardTerminal`** (`PosCardTerminal`, `SumupTerminalAccess.affiliateKey`): the block `cardTerminal` from `getKasseSettings` and from the settings of `listRegisterUsersForDevice`, only for a device whose card provider is `sumup`; `null` otherwise.
+- **`SumupCheckoutResponse`**: new fields `foreignTransactionId` and `merchantCode` (written only when set, so existing `providerData` stays byte-identical); `fromMap` reads numbers as number or string, empty strings as `null` and never throws (a missing `success` counts as no success).
+- **Till texts** `sumup.*` (generated from the contract, app only), among them `sumup.not_bound` the six location sentences `sumup.location_question`, `.location_hint`, `.location_denied`, `.location_denied_hint`, `.location_off`, `.location_missing` (the app asks for the location before the SumUp login) and the labels of the sheets for location and binding (`sumup.location_title`, `.location_allow`, `.location_denied_title`, `.open_app_settings`, `.location_off_title`, `.location_turn_on`, `.bind_title`, `.bind`, `.unbind_title`, `.unbind`, `.reader_change`) and the status line `sumup.reader_ready`; `sumup.declined` carries no raw SDK reason.
+- Contract pulled from npm `1.40.0` (local tarball until the npm release). The layout of `special-characters` is regenerated for the version (unchanged).
+
 ## 11.30.0 (2026-11-14)
 
 Twin of `@kreiseck/kasseneck-api` `1.39.0`: texts for the device operation of both registers (printer, paper, terminal, lock screen), the calls `reportMyTerminalAddress` and `reportMyRegisterClient` and the device switch `printerHint`. Additive; every existing call, receipt and text behaves as before. This package has no Kasseneck Connect client, so the new `onEndpoint` option of `createHpsConnectClient` (npm) has no counterpart here.
