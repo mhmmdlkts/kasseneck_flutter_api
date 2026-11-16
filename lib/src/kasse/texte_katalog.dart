@@ -1,12 +1,12 @@
 // ERZEUGT aus test/fixtures/vertrag/pos-texts.json
-// (@kreiseck/kasseneck-api 1.40.0). Nicht von Hand aendern;
+// (@kreiseck/kasseneck-api 1.41.0). Nicht von Hand aendern;
 // neu erzeugen: dart run tool/texte_erzeugen.dart
 // dart format off
 
 part of 'texte.dart';
 
 /// Version des Vertrags, aus dem dieser Katalog erzeugt ist.
-const String posTextsVersion = '1.40.0';
+const String posTextsVersion = '1.41.0';
 
 /// Was die Kasse selbst sagt: ein Satz je Schluessel (`bereich.name`), gleich wie im Web.
 const Map<String, PosText> posMessages = {
@@ -987,6 +987,10 @@ const Map<String, PosText> posLabels = {
   'my_tips.overpaid': PosText('Zu viel ausgezahlt: {amount}, wird verrechnet', placeholders: ['amount']),
   'my_tips.pay_out': PosText('Auszahlen'),
   'my_tips.pay_out_amount': PosText('Betrag'),
+  'my_tips.open_for_you': PosText('für dich offen'),
+  'my_tips.open_for_you_here': PosText('für dich offen an dieser Lade'),
+  'my_tips.open_for_you_total': PosText('für dich offen, alle Laden'),
+  'my_tips.received_today': PosText('heute schon bekommen: {amount}', placeholders: ['amount']),
   'cancellation.tip_deducted': PosText('{amount} Trinkgeld werden vom Guthaben von {name} abgezogen', placeholders: ['amount', 'name']),
   'shift_receipt.tip_card_taken': PosText('davon Kartentrinkgeld'),
   'shift.part_card_tips_taken': PosText('Kartentrinkgeld bar genommen'),

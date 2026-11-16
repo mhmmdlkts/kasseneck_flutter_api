@@ -1,4 +1,11 @@
-## 11.31.0 (unveröffentlicht)
+## 11.32.0 (unveröffentlicht)
+
+Twin of `@kreiseck/kasseneck-api` `1.41.0`: "Mein Trinkgeld" with the open amount large. Additive; every existing call, receipt and text behaves as before.
+
+- **Till texts** (generated from the contract, `lib/src/kasse/texte_katalog.dart`): the labels `my_tips.open_for_you` („für dich offen“), `my_tips.open_for_you_here` („für dich offen an dieser Lade“, only when another drawer also holds an open amount), `my_tips.open_for_you_total` („für dich offen, alle Laden“, claim per person) under the large amount, and `my_tips.received_today` („heute schon bekommen: {amount}“), shown small and only above 0. Reason: with "always leave open" the line „Heute genommen 0,00 €“ stood there all day and read like money already taken. `my_tips.open_here`, `my_tips.open_total` and `my_tips.kept_today` stay for older apps.
+- Contract pulled from npm `1.41.0` (local tarball until the npm release). The layout of `special-characters` is regenerated for the version (unchanged).
+
+## 11.31.0 (2026-11-15)
 
 Twin of `@kreiseck/kasseneck-api` `1.40.0`: SumUp in the register app (backend spec 2026-11-14-sumup-kasse, stage 1, Android only). Additive; every existing call, receipt and text behaves as before. The SumUp plugin itself stays out of this package (`sumup_getrennt_test.dart`); the app binds it.
 
