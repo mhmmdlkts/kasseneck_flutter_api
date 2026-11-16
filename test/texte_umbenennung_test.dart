@@ -304,6 +304,8 @@ const _nach10 = (
     'cancellation.tip_deducted', 'shift_receipt.tip_card_taken', 'shift.part_card_tips_taken', 'tip_card_kept_mode.title',
     'tip.card_kept_setting', 'tip_self_payout.title',
     'tip_claim_scope.title', 'tip_claim_scope.per_drawer', 'tip_claim_scope.per_person', 'tip_payout.nothing_open',
+    // „Mein Trinkgeld“ gross (11.32.0, npm 1.41.0): Unterzeile zum Betrag, „heute schon bekommen“.
+    'my_tips.open_for_you', 'my_tips.open_for_you_here', 'my_tips.open_for_you_total', 'my_tips.received_today', 'my_tips.other_drawer_extra',
     // Browser-Kasse: neue Fassung verfuegbar (npm 1.37.0)
     'version.reload',
     // Klaeren-Fenster: Titel mit Betrag, Kennungszeile (npm 1.37.0)

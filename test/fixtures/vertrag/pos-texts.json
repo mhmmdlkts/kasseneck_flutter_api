@@ -1,5 +1,5 @@
 {
-  "version": "1.40.0",
+  "version": "1.41.0",
   "messages": {
     "network.no_connection": {
       "text": "Keine Verbindung zum Server. Bitte die Internetverbindung prüfen und erneut versuchen."
@@ -4054,6 +4054,28 @@
     },
     "my_tips.pay_out_amount": {
       "text": "Betrag"
+    },
+    "my_tips.open_for_you": {
+      "text": "für dich offen"
+    },
+    "my_tips.open_for_you_here": {
+      "text": "für dich offen an dieser Lade"
+    },
+    "my_tips.open_for_you_total": {
+      "text": "für dich offen, alle Laden"
+    },
+    "my_tips.received_today": {
+      "text": "heute schon bekommen: {amount}",
+      "placeholders": [
+        "amount"
+      ]
+    },
+    "my_tips.other_drawer_extra": {
+      "text": "dazu {amount} an der Lade „{drawer}“",
+      "placeholders": [
+        "amount",
+        "drawer"
+      ]
     },
     "cancellation.tip_deducted": {
       "text": "{amount} Trinkgeld werden vom Guthaben von {name} abgezogen",
