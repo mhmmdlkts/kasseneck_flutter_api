@@ -4,7 +4,7 @@ Twin of `@kreiseck/kasseneck-api` `1.41.0`: "Mein Trinkgeld" with the open amoun
 
 - **Till texts** (generated from the contract, `lib/src/kasse/texte_katalog.dart`): the labels `my_tips.open_for_you` („für dich offen“), `my_tips.open_for_you_here` („für dich offen an dieser Lade“, only when another drawer also holds an open amount), `my_tips.open_for_you_total` („für dich offen, alle Laden“, claim per person) under the large amount, and `my_tips.received_today` („heute schon bekommen: {amount}“), shown small and only above 0. Reason: with "always leave open" the line „Heute genommen 0,00 €“ stood there all day and read like money already taken. `my_tips.open_here`, `my_tips.open_total` and `my_tips.kept_today` stay for older apps.
 - **Label `my_tips.other_drawer_extra`** („dazu {amount} an der Lade „{drawer}““) for an open amount at another drawer (claim per drawer). Reason: „Bar: 1,50 € offen“ (`my_tips.other_drawer`) read like cash when a drawer is called „Bar“. `my_tips.other_drawer` stays for older apps.
-- Contract pulled from npm `1.41.0` (local tarball until the npm release). The layout of `special-characters` is regenerated for the version (unchanged).
+- Contract pulled from the published npm `1.41.0`. The layout of `special-characters` is regenerated for the version (unchanged).
 
 ## 11.31.0 (2026-11-15)
 
