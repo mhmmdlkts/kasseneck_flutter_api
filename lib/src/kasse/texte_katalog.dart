@@ -991,6 +991,7 @@ const Map<String, PosText> posLabels = {
   'my_tips.open_for_you_here': PosText('für dich offen an dieser Lade'),
   'my_tips.open_for_you_total': PosText('für dich offen, alle Laden'),
   'my_tips.received_today': PosText('heute schon bekommen: {amount}', placeholders: ['amount']),
+  'my_tips.other_drawer_extra': PosText('dazu {amount} an der Lade „{drawer}“', placeholders: ['amount', 'drawer']),
   'cancellation.tip_deducted': PosText('{amount} Trinkgeld werden vom Guthaben von {name} abgezogen', placeholders: ['amount', 'name']),
   'shift_receipt.tip_card_taken': PosText('davon Kartentrinkgeld'),
   'shift.part_card_tips_taken': PosText('Kartentrinkgeld bar genommen'),

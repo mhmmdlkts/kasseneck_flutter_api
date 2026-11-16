@@ -4070,6 +4070,13 @@
         "amount"
       ]
     },
+    "my_tips.other_drawer_extra": {
+      "text": "dazu {amount} an der Lade „{drawer}“",
+      "placeholders": [
+        "amount",
+        "drawer"
+      ]
+    },
     "cancellation.tip_deducted": {
       "text": "{amount} Trinkgeld werden vom Guthaben von {name} abgezogen",
       "placeholders": [
