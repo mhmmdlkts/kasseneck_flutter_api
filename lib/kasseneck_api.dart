@@ -6,6 +6,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:kasseneck_api/enums/cashbox_status.dart';
 import 'package:kasseneck_api/enums/keck_paper_size.dart';
+import 'package:kasseneck_api/models/receipt_layout.dart' show ReceiptLayout;
 import 'package:kasseneck_api/enums/receipt_print_type.dart';
 import 'package:kasseneck_api/enums/stripe_link_mode.dart';
 import 'package:kasseneck_api/models/hobex_receipt.dart';
@@ -502,6 +503,34 @@ class KasseneckApi {
       params = {'year': year, 'month': month, 'day': ?day};
     }
     return _bytes(Aufrufe.getCashregisterReport, params);
+  }
+
+  /// Monatsbericht eines abgeschlossenen Monats als Bon: `getCashregisterReport` mit `format: 'receipt'`
+  /// (Backend-Spec 2026-11-21-monatsbericht-bon). Kurze Zusammenfassung fuer die Buchhaltung, Zeilen und Wortlaut
+  /// vom Server; gedruckt wird [layout] wie ein Beleg-Layout ([KeckPrinterService.getPaperFromLayout]). Kein
+  /// Registrierkassenbeleg. [reportNumber] ist die Pruefnummer des gespeicherten Monats-PDFs, `null`, wenn ein Monat
+  /// von vor dem Bon neu berechnet wurde und vom PDF abweicht (das steht dann auf dem Bon). Laufender Monat:
+  /// `period_not_closed`.
+  Future<({ReceiptLayout layout, String? reportNumber, bool recalculated})> getCashregisterReportReceipt({
+    required int year,
+    required int month,
+    KeckPaperSize paperSize = KeckPaperSize.mm58,
+  }) async {
+    if (month < 1 || month > 12) {
+      throw ArgumentError('getCashregisterReportReceipt: month must be 1-12, was "$month"');
+    }
+    final resJson = await _kasseneckJson(
+      endpoint: Aufrufe.getCashregisterReport,
+      params: {'year': year, 'month': month, 'format': 'receipt', 'paperSize': paperSize.name},
+    );
+    if (resJson['status'] != 'success') throw envelopeError(Aufrufe.getCashregisterReport, resJson);
+    final daten = resJson['data'];
+    final layout = daten is Map ? ReceiptLayout.fromJson(daten['layout']) : null;
+    if (daten is! Map || layout == null || layout.lines.isEmpty) {
+      throw const FormatException('getCashregisterReportReceipt: Antwort ohne Layout');
+    }
+    final nummer = daten['reportNumber'];
+    return (layout: layout, reportNumber: nummer is String ? nummer : null, recalculated: daten['recalculated'] == true);
   }
 
   Future<ReportMonth?> getFirstReceiptDate() async {

@@ -86,7 +86,7 @@ final Set<String> woerter = _liste('''
   print printed printer printers printing probe production profile progress project
   promo proof provider public purchase quantities quantity quick quiet radius raised random
   range raster rasters rate rated rates ratio raw read readable ready
-  reason reasons receipt receipts receive received recipient recipients record redeem
+  reason reasons recalculated receipt receipts receive received recipient recipients record redeem
   redeemed reduced reference refresh refund refunded refunds register registered registration rejected
   rejects related release released remaining remove removed render renew replacement replayed report
   reports request requested required requirement requirements reservation reservations reserved reset resolve restock

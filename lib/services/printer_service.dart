@@ -303,6 +303,42 @@ class KeckPrinterService {
     return await MyPos.printPaper(paper);
   }
 
+  /// Ein fertiges Layout ohne Beleg drucken (z. B. Monatsbericht als Bon, [KasseneckApi.getCashregisterReportReceipt]):
+  /// dasselbe Blatt wie bei einem Beleg mit Server-Layout ([getPaperFromReceipt]), ohne Logo und Marke. Das Blatt
+  /// traegt Bytes (Bluetooth/WLAN) und das myPOS-Papier zugleich.
+  static Future<PrintPaper> getPaperFromLayout(
+    ReceiptLayout layout,
+    KeckPaperSize paperSize, {
+    CodeTableId? codeTable,
+    bool cut = true,
+    PosCutMode cutMode = PosCutMode.full,
+  }) async {
+    final PrintPaper paper =
+        PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile(), codeTable: codeTable);
+    await paper.setReceiptSheet(layout, cut: cut, cutMode: cutMode, qrMode: QrPrintMode.native);
+    return paper;
+  }
+
+  /// Papierbreite, fuer die das Layout gebaut ist (`mm58`, sonst `mm80`).
+  static KeckPaperSize _breiteVon(ReceiptLayout layout) =>
+      layout.paperSize == KeckPaperSize.mm80.name ? KeckPaperSize.mm80 : KeckPaperSize.mm58;
+
+  /// Fertiges Layout auf dem myPOS-Drucker.
+  static Future<PrintResponse> printLayoutMyPos(ReceiptLayout layout) async =>
+      MyPos.printPaper((await getPaperFromLayout(layout, _breiteVon(layout))).myPosPaper);
+
+  /// Fertiges Layout auf dem verbundenen Bluetooth-Drucker (gleicher Sende-Pfad wie [printReceiptBluetooth]).
+  static Future printLayoutBluetooth(ReceiptLayout layout) async {
+    final PrintPaper paper = await getPaperFromLayout(layout, _breiteVon(layout));
+    return _sendToBluetoothPrinter(<int>[for (final p in paper.bytes) ...p]);
+  }
+
+  /// Fertiges Layout auf dem WLAN-Drucker (gleicher Sende-Pfad wie [printReceiptWifi]).
+  static Future printLayoutWifi(ReceiptLayout layout) async {
+    final PrintPaper paper = await getPaperFromLayout(layout, _breiteVon(layout));
+    await _sendToSocketPrinter(<int>[for (final p in paper.bytes) ...p]);
+  }
+
   static Future printReceiptWifi(KasseneckReceipt receipt) async {
     await _sendToSocketPrinter(await _getListIntBytesFromReceipt(receipt, paperSize));
   }
