@@ -312,10 +312,11 @@ class KeckPrinterService {
     CodeTableId? codeTable,
     bool cut = true,
     PosCutMode cutMode = PosCutMode.full,
+    bool brandMark = false,
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile(), codeTable: codeTable);
-    await paper.setReceiptSheet(layout, cut: cut, cutMode: cutMode, qrMode: QrPrintMode.native);
+    await paper.setReceiptSheet(layout, brandMark: brandMark, cut: cut, cutMode: cutMode, qrMode: QrPrintMode.native);
     return paper;
   }
 
@@ -323,19 +324,19 @@ class KeckPrinterService {
   static KeckPaperSize _breiteVon(ReceiptLayout layout) =>
       layout.paperSize == KeckPaperSize.mm80.name ? KeckPaperSize.mm80 : KeckPaperSize.mm58;
 
-  /// Fertiges Layout auf dem myPOS-Drucker.
-  static Future<PrintResponse> printLayoutMyPos(ReceiptLayout layout) async =>
-      MyPos.printPaper((await getPaperFromLayout(layout, _breiteVon(layout))).myPosPaper);
+  /// Fertiges Layout auf dem myPOS-Drucker; [brandMark] setzt das Kasseneck-Zeichen ans Ende.
+  static Future<PrintResponse> printLayoutMyPos(ReceiptLayout layout, {bool brandMark = false}) async =>
+      MyPos.printPaper((await getPaperFromLayout(layout, _breiteVon(layout), brandMark: brandMark)).myPosPaper);
 
   /// Fertiges Layout auf dem verbundenen Bluetooth-Drucker (gleicher Sende-Pfad wie [printReceiptBluetooth]).
-  static Future printLayoutBluetooth(ReceiptLayout layout) async {
-    final PrintPaper paper = await getPaperFromLayout(layout, _breiteVon(layout));
+  static Future printLayoutBluetooth(ReceiptLayout layout, {bool brandMark = false}) async {
+    final PrintPaper paper = await getPaperFromLayout(layout, _breiteVon(layout), brandMark: brandMark);
     return _sendToBluetoothPrinter(<int>[for (final p in paper.bytes) ...p]);
   }
 
   /// Fertiges Layout auf dem WLAN-Drucker (gleicher Sende-Pfad wie [printReceiptWifi]).
-  static Future printLayoutWifi(ReceiptLayout layout) async {
-    final PrintPaper paper = await getPaperFromLayout(layout, _breiteVon(layout));
+  static Future printLayoutWifi(ReceiptLayout layout, {bool brandMark = false}) async {
+    final PrintPaper paper = await getPaperFromLayout(layout, _breiteVon(layout), brandMark: brandMark);
     await _sendToSocketPrinter(<int>[for (final p in paper.bytes) ...p]);
   }
 

@@ -107,6 +107,14 @@ void main() {
   });
 
   group('KeckPrinterService.getPaperFromLayout', () {
+    test('mit brandMark: Kasseneck-Zeichen am Ende (Bytes und myPOS-Blatt laenger)', () async {
+      final layout = ReceiptLayout.fromJson((_bonAntwort['data'] as Map)['layout'])!;
+      final ohne = await KeckPrinterService.getPaperFromLayout(layout, KeckPaperSize.mm58);
+      final mit = await KeckPrinterService.getPaperFromLayout(layout, KeckPaperSize.mm58, brandMark: true);
+      expect(mit.bytes.expand((e) => e).length, greaterThan(ohne.bytes.expand((e) => e).length + 100));
+      expect(mit.myPosPaper.commands.length, greaterThan(ohne.myPosPaper.commands.length));
+    });
+
     test('fertiges Layout ergibt ESC/POS-Bytes und ein myPOS-Blatt', () async {
       final layout = ReceiptLayout.fromJson((_bonAntwort['data'] as Map)['layout'])!;
       for (final papier in KeckPaperSize.values) {
