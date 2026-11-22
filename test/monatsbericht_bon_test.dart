@@ -107,6 +107,16 @@ void main() {
   });
 
   group('KeckPrinterService.getPaperFromLayout', () {
+    test('QR-Code nach der Einstellung des Druckers (Rasterbild oder nativ)', () async {
+      final layout = ReceiptLayout(lines: [
+        LayoutQrLine(data: '_R1-AT1_KECK-6_KECK-6-ID-412_2027-01-01T00:05:00_0,00_0,00_0,00_0,00_0,00_x_y_z_w'),
+      ], paperSize: 'mm58', ruleset: 2);
+      final nativ = await KeckPrinterService.getPaperFromLayout(layout, KeckPaperSize.mm58);
+      final bild = await KeckPrinterService.getPaperFromLayout(layout, KeckPaperSize.mm58,
+          qrMode: QrPrintMode.imageRaster, qrModuleSize: QrModuleSize.small);
+      expect(bild.bytes.expand((e) => e).length, greaterThan(nativ.bytes.expand((e) => e).length));
+    });
+
     test('mit brandMark: Kasseneck-Zeichen am Ende (Bytes und myPOS-Blatt laenger)', () async {
       final layout = ReceiptLayout.fromJson((_bonAntwort['data'] as Map)['layout'])!;
       final ohne = await KeckPrinterService.getPaperFromLayout(layout, KeckPaperSize.mm58);

@@ -313,10 +313,14 @@ class KeckPrinterService {
     bool cut = true,
     PosCutMode cutMode = PosCutMode.full,
     bool brandMark = false,
+    QrPrintMode qrMode = QrPrintMode.native,
+    QrModuleSize qrModuleSize = QrModuleSize.auto,
   }) async {
     final PrintPaper paper =
         PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile(), codeTable: codeTable);
-    await paper.setReceiptSheet(layout, brandMark: brandMark, cut: cut, cutMode: cutMode, qrMode: QrPrintMode.native);
+    // myPOS zeichnet den QR-Code immer selbst (natives Papier); fuer Bytes gilt die Einstellung des Druckers.
+    await paper.setReceiptSheet(layout,
+        brandMark: brandMark, cut: cut, cutMode: cutMode, qrMode: qrMode, qrModuleSize: qrModuleSize);
     return paper;
   }
 
