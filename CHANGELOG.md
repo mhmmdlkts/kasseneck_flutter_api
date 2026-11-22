@@ -3,6 +3,7 @@
 Twin of `@kreiseck/kasseneck-api` `1.42.0`: the monthly report as a receipt (backend spec 2026-11-21-monatsbericht-bon) and printing a finished layout. Additive; every existing call behaves as before.
 
 - **`getCashregisterReportReceipt(year:, month:, paperSize:)`**: the monthly report of a closed month as a receipt (`getCashregisterReport` with `format: 'receipt'`, backend spec 2026-11-21-monatsbericht-bon), twin of the npm function. Returns `(layout, reportNumber, recalculated)`. **`KeckPrinterService.getPaperFromLayout`**, **`printLayoutMyPos`**, **`printLayoutBluetooth`**, **`printLayoutWifi`** print a finished layout without a receipt (same sheet as a receipt with a server layout, no company logo; `brandMark: true` adds the Kasseneck mark at the end; `qrMode`/`qrModuleSize` follow the printer setting for byte printers, myPOS always draws the QR code natively). **`KeckPrinterService.printBytesBluetooth`** sends finished bytes to the connected Bluetooth printer and throws without a connection (unlike `printRawBytes`, which then silently takes the WLAN path). Reason: taxi businesses that only have the card terminal want the short summary for their accountant on paper. Not a cash register receipt.
+- Contract pulled from the published npm `1.42.0`; the till text catalog and the layout of `special-characters` are regenerated from it.
 
 ## 11.32.0 (2026-11-16)
 
