@@ -360,6 +360,14 @@ class KeckPrinterService {
     return _sendToBluetoothPrinter(data);
   }
 
+  /// Fertige Bytes an den verbundenen Bluetooth-Drucker, ueber denselben Sende-Pfad wie [printReceiptBluetooth].
+  /// Ohne Verbindung ein Fehler -- anders als [printRawBytes], das dann still den WLAN-Weg nimmt.
+  static Future<void> printBytesBluetooth(List<int> bytes) async {
+    final d = _devicePrinter;
+    if (d == null || !d.isConnected) throw StateError('Kein Bluetooth-Drucker verbunden.');
+    await _sendToBluetoothPrinter(bytes);
+  }
+
   /// Sendet einen fertigen Byte-Strom an den aktuell verbundenen Bluetooth-Drucker.
   /// Nutzt exakt den Sende-Pfad (MTU-Aushandlung, Flow-Control/Pacing) von
   /// [printReceiptBluetooth] — ausgelagert nach [writeToBluetoothDevice].

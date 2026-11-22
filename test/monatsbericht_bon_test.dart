@@ -109,7 +109,7 @@ void main() {
   group('KeckPrinterService.getPaperFromLayout', () {
     test('QR-Code nach der Einstellung des Druckers (Rasterbild oder nativ)', () async {
       final layout = ReceiptLayout(lines: [
-        LayoutQrLine(data: '_R1-AT1_KECK-6_KECK-6-ID-412_2027-01-01T00:05:00_0,00_0,00_0,00_0,00_0,00_x_y_z_w'),
+        LayoutQrLine(data: '_R1-AT1_TAXI-1_TAXI-1-ID-412_2027-01-01T00:05:00_0,00_0,00_0,00_0,00_0,00_x_y_z_w'),
       ], paperSize: 'mm58', ruleset: 2);
       final nativ = await KeckPrinterService.getPaperFromLayout(layout, KeckPaperSize.mm58);
       final bild = await KeckPrinterService.getPaperFromLayout(layout, KeckPaperSize.mm58,
@@ -133,5 +133,9 @@ void main() {
         expect(paper.myPosPaper.commands, isNotEmpty, reason: papier.name);
       }
     });
+  });
+
+  test('printBytesBluetooth ohne verbundenen Drucker: Fehler statt stillem WLAN-Rueckfall', () async {
+    await expectLater(KeckPrinterService.printBytesBluetooth([0x1b, 0x40]), throwsStateError);
   });
 }
