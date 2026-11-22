@@ -1,5 +1,5 @@
 {
-  "version": "1.41.0",
+  "version": "1.42.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -1248,6 +1248,8 @@
       "cashregister.created",
       "cashregister.live",
       "cashregister.failed",
+      "cashregister.reported",
+      "cashregister.report_failed",
       "app.version.accepted",
       "app.version.rejected",
       "webhook.test"

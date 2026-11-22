@@ -303,6 +303,47 @@ class KeckPrinterService {
     return await MyPos.printPaper(paper);
   }
 
+  /// Ein fertiges Layout ohne Beleg drucken (z. B. Monatsbericht als Bon, [KasseneckApi.getCashregisterReportReceipt]):
+  /// dasselbe Blatt wie bei einem Beleg mit Server-Layout ([getPaperFromReceipt]), ohne Logo und Marke. Das Blatt
+  /// traegt Bytes (Bluetooth/WLAN) und das myPOS-Papier zugleich.
+  static Future<PrintPaper> getPaperFromLayout(
+    ReceiptLayout layout,
+    KeckPaperSize paperSize, {
+    CodeTableId? codeTable,
+    bool cut = true,
+    PosCutMode cutMode = PosCutMode.full,
+    bool brandMark = false,
+    QrPrintMode qrMode = QrPrintMode.native,
+    QrModuleSize qrModuleSize = QrModuleSize.auto,
+  }) async {
+    final PrintPaper paper =
+        PrintPaper(paperSize: paperSize, profile: KeckPrinterService.profile ?? CapabilityProfile(), codeTable: codeTable);
+    // myPOS zeichnet den QR-Code immer selbst (natives Papier); fuer Bytes gilt die Einstellung des Druckers.
+    await paper.setReceiptSheet(layout,
+        brandMark: brandMark, cut: cut, cutMode: cutMode, qrMode: qrMode, qrModuleSize: qrModuleSize);
+    return paper;
+  }
+
+  /// Papierbreite, fuer die das Layout gebaut ist (`mm58`, sonst `mm80`).
+  static KeckPaperSize _breiteVon(ReceiptLayout layout) =>
+      layout.paperSize == KeckPaperSize.mm80.name ? KeckPaperSize.mm80 : KeckPaperSize.mm58;
+
+  /// Fertiges Layout auf dem myPOS-Drucker; [brandMark] setzt das Kasseneck-Zeichen ans Ende.
+  static Future<PrintResponse> printLayoutMyPos(ReceiptLayout layout, {bool brandMark = false}) async =>
+      MyPos.printPaper((await getPaperFromLayout(layout, _breiteVon(layout), brandMark: brandMark)).myPosPaper);
+
+  /// Fertiges Layout auf dem verbundenen Bluetooth-Drucker (gleicher Sende-Pfad wie [printReceiptBluetooth]).
+  static Future printLayoutBluetooth(ReceiptLayout layout, {bool brandMark = false}) async {
+    final PrintPaper paper = await getPaperFromLayout(layout, _breiteVon(layout), brandMark: brandMark);
+    return _sendToBluetoothPrinter(<int>[for (final p in paper.bytes) ...p]);
+  }
+
+  /// Fertiges Layout auf dem WLAN-Drucker (gleicher Sende-Pfad wie [printReceiptWifi]).
+  static Future printLayoutWifi(ReceiptLayout layout, {bool brandMark = false}) async {
+    final PrintPaper paper = await getPaperFromLayout(layout, _breiteVon(layout), brandMark: brandMark);
+    await _sendToSocketPrinter(<int>[for (final p in paper.bytes) ...p]);
+  }
+
   static Future printReceiptWifi(KasseneckReceipt receipt) async {
     await _sendToSocketPrinter(await _getListIntBytesFromReceipt(receipt, paperSize));
   }
@@ -317,6 +358,14 @@ class KeckPrinterService {
     // Ein durchgehender Byte-Strom -> einheitliches Chunking ueber den ganzen Beleg.
     final List<int> data = <int>[for (final p in parts) ...p];
     return _sendToBluetoothPrinter(data);
+  }
+
+  /// Fertige Bytes an den verbundenen Bluetooth-Drucker, ueber denselben Sende-Pfad wie [printReceiptBluetooth].
+  /// Ohne Verbindung ein Fehler -- anders als [printRawBytes], das dann still den WLAN-Weg nimmt.
+  static Future<void> printBytesBluetooth(List<int> bytes) async {
+    final d = _devicePrinter;
+    if (d == null || !d.isConnected) throw StateError('Kein Bluetooth-Drucker verbunden.');
+    await _sendToBluetoothPrinter(bytes);
   }
 
   /// Sendet einen fertigen Byte-Strom an den aktuell verbundenen Bluetooth-Drucker.
