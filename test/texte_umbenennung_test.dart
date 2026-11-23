@@ -162,6 +162,17 @@ const _nach10 = (
     'sumup.refund_hint', 'sumup.ios_external', 'sumup.status_logged_in', 'sumup.status_logged_out',
     'sumup.location_question', 'sumup.location_denied', 'sumup.location_off', 'sumup.location_missing',
     'sumup.location_hint', 'sumup.location_denied_hint', 'sumup.reader_ready',
+    // SumUp Solo ueber die Cloud-API (npm 1.43.0)
+    'solo.not_connected', 'solo.connection_expired', 'solo.connect_unavailable', 'solo.connect_waiting', 'solo.connected_as',
+    'solo.disconnect_question', 'solo.pair_hint', 'solo.code_invalid', 'solo.not_waiting', 'solo.too_many', 'solo.not_found',
+    'solo.no_reader', 'solo.busy', 'solo.busy_short', 'solo.waiting', 'solo.checking', 'solo.check_hint', 'solo.offline',
+    'solo.declined', 'solo.cancelled', 'solo.expired', 'solo.setup', 'solo.amount_mismatch', 'solo.module_inactive',
+    'solo.below_minimum', 'solo.unavailable', 'solo.refund_running', 'solo.refund_checking', 'solo.refund_declined',
+    'solo.refund_not_enabled', 'solo.refund_unknown', 'solo.refund_too_high', 'solo.refund_not_sent',
+    'solo.cancelling', 'solo.clarify_charged', 'solo.unclear_short',
+    'solo.waiting_for_reader', 'solo.card_reverse_running', 'solo.card_reversed', 'solo.external_reverse', 'solo.refund_cards',
+    'solo.cards_not_checked', 'solo.outcome_unknown_cards', 'solo.unpair_card_charged', 'solo.unpair_open_cards',
+    'solo.unpair_unclear_cards',
   },
   labels: {
     'register.device_unnamed', 'login.locked_seconds', 'split.remaining_with_rounding',
@@ -322,6 +333,12 @@ const _nach10 = (
     'sumup.location_title', 'sumup.location_allow', 'sumup.location_denied_title', 'sumup.open_app_settings',
     'sumup.location_off_title', 'sumup.location_turn_on', 'sumup.bind_title', 'sumup.bind', 'sumup.unbind_title', 'sumup.unbind',
     'sumup.reader_change',
+    // SumUp Solo ueber die Cloud-API (npm 1.43.0)
+    'solo.section_title', 'solo.connect', 'solo.disconnect', 'solo.pair', 'solo.code_label', 'solo.name_label', 'solo.rename',
+    'solo.remove', 'solo.assign', 'solo.assigned', 'solo.use_bluetooth', 'solo.status_paired', 'solo.status_pairing',
+    'solo.status_expired', 'solo.online', 'solo.offline_label', 'solo.battery', 'solo.choose_title', 'solo.remember',
+    'solo.other_reader', 'solo.refund_to_card', 'solo.refund_cash', 'solo.real_payment',
+    'solo.amount_on_reader', 'solo.payment_label', 'solo.loading', 'solo.reversed_on_card',
   },
   fileKeys: [
     'errorCodeRules', 'errorOutcomeRules', 'callsWithEffect', 'cancellationVoucherErrors', 'voucherErrors',
@@ -335,6 +352,8 @@ const _nach10 = (
     'depositErrors',
   ],
   placeholders: {
+    // SumUp Solo: Geraet, das den Solo belegt (npm 1.43.0); `{time}` kennt schon die Tabelle
+    'device',
     // SumUp in der Kassen-App (npm 1.40.0)
     'bound', 'currency', 'current', 'digits', 'merchant',
     // Terminal-Suche im lokalen Netz (npm 1.33.0)

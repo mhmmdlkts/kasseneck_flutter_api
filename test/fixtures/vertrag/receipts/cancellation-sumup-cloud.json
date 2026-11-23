@@ -1,0 +1,64 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-111",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-08-13T11:20:00",
+    "items": [
+      {
+        "name": "Behandlung",
+        "quantity": -1,
+        "unitPriceCents": 1090,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "creditCard",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "cancellation",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-111_2026-08-13T11:20:00_-10,90_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "creditCard",
+        "amountCents": -1090,
+        "provider": "sumup",
+        "providerPaymentId": "TCMENT0001",
+        "providerData": {
+          "channel": "cloud",
+          "refund": true,
+          "transactionId": "txn_refund-0001"
+        },
+        "refundOf": "p1"
+      }
+    ],
+    "cancellationOf": {
+      "receiptId": "AT0-KASSE1-63",
+      "fullReceiptId": null,
+      "timeStamp": "2026-08-13T10:15:30"
+    },
+    "cancellationReason": "customer_cancelled"
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

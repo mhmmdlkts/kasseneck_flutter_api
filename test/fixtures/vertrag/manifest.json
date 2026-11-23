@@ -49,6 +49,14 @@
       "sheet32": "b6c256d2cace322d2cd0d907e5003ce5ec7f5ef22335d0a4f3bd0340be74a67f",
       "sheet48": "2bb97770ab8bba077055e89a3f6370562804f70ab24f55a45db081b4ffb78738"
     },
+    "cancellation-sumup-cloud": {
+      "input": "5bf55fcc57d1e0e58ccb0e3d8539ce56a2ccfd613c58b118f860bd7d0b65985f",
+      "expected": "dc5e770c8448cf46a62c935ce2330886c94aef5798da200b8675cd9c3ce95e01",
+      "grid32": "d43fd9896ae399656aca777db949f5d556de5832967d63b2a1d9ed8ff4b929f7",
+      "grid48": "f7fcadb32e2553e1e3915e9cceb7065b354b58c1b424c6b4b0a33044055c3bbf",
+      "sheet32": "5a24cb6094714c653d7f4b8894479d46ef49bcf9a863f3bd088a8e6d10fce008",
+      "sheet48": "bdcfc794e7bbc2c65dd1fc4c6800c5213ac14f35f81a5b8642c47834eef16996"
+    },
     "card-custom": {
       "input": "c6ee84d45f712f2c99aa3f1f80918f92ac4d09e0eb4e67c0099fb8233eca7c98",
       "expected": "54158e7b9c8ac8f4d6e18d28e3e4950f5f6fc71ec31ca4d91e91dc3f521cfc9b",
@@ -120,6 +128,22 @@
       "grid48": "1d3cf060ccecbcb608aeb383c3f63cb649983b02351f0ec53b2a5208aa888f22",
       "sheet32": "977ffdca4aadec64e6775a71462c1f477a15edc68ae5397f93db8a43b4987733",
       "sheet48": "30502dc11ab7350bf340631671176ca9da3e1ec1e26fd8800c06c94b6ff7ce7a"
+    },
+    "card-sumup-cloud": {
+      "input": "338adb8d8ed18c09bbdef85b24ac6d7d83b5cb1f36243f982b6842ef7cccbcde",
+      "expected": "98b780ef0a73301d7ab0a5c1053fbca8a980151a4d6c591cdd904a2526a399af",
+      "grid32": "7ce956ae070f280ddecf7b56dd35a61855457fd366157675f0d384a80b6a2bff",
+      "grid48": "bd5d8c62250157ba0fb594e4874d5f68deb70ad983cccc067d3539f0342e07ea",
+      "sheet32": "797ec60efb0f0edd6051d0a1bcbcc2c0ace869fd5ea0ab033a246c4f74b5ce6f",
+      "sheet48": "d4354927bdf2577ebdcee30aa20cb1ba40b777a28779fdaaf50cf828e75d46ed"
+    },
+    "card-sumup-cloud-hand": {
+      "input": "2a3266b4cf7e15bf51db6f290260dd59542a15ca840bd071fb1ad897b5d59849",
+      "expected": "61f2b017af38ea22f39a38d53c9a0f2baf0697a8b3188ad3952c6b1ed5c0700a",
+      "grid32": "92440a71dfc9db7d219e93fb4947f2668eecd9f7a4d0eaf47dcee5e933154d17",
+      "grid48": "e4d452f9dd34e30066ed7cf9860a30a2c2b5cee7d6029e1cb38b6e0890895ff2",
+      "sheet32": "b9b01b17ca458af4c71c0e8aa30247d4114ebbfe34f296f6efff2d100ba59842",
+      "sheet48": "a4a9136d0777a055889c18e91dc367b64378ee2b282139fec0b5d2b91cc4a210"
     },
     "deposit": {
       "input": "72b61777566f5ecc0b97c570797fc132fb4286c77b6a0459cd2f284c09ff6dfb",

@@ -11,7 +11,7 @@
 # Nachziehen: npm_version hochsetzen, `tool/zwillinge.sh ziehen`, `flutter test`.
 # Der Testlauf sagt dann genau, was fehlt.
 #
-npm_version: 1.42.0
+npm_version: 1.43.0
 
 # Alle benannten Abweichungen stehen in dieser Datei, in zwei Abschnitten und
 # unter derselben Strenge (test/zwillinge_liste.dart liest beide gleich):
@@ -29,6 +29,13 @@ npm_version: 1.42.0
 # `registerPerms.<recht>`, `device.<feld>`. Die alten Namen (aufrufe.*,
 # enums.druckerArt.*, tastenAktionen.*, geraet.*) übersetzt renames-1.0.json.
 #
+# Stand 1.43.0: SumUp Solo ueber die Cloud. Die dreizehn Kartenleser-Aufrufe stehen in
+# calls.pos (68) und sind am Kassenweg gedeckt durch RegisterReceiptClient (Dart 11.34.0),
+# ohne Eintrag hier. Die Listen pos.cardAccountStates, pos.cardAccountMethods,
+# pos.cardReaderStatuses, pos.cardReaderPaymentStatuses, pos.cardReaderReasons und
+# pos.cardReaderDecisions sowie die Prueffaelle card-reader-choice-cases.json und
+# card-reader-message-cases.json rechnet test/kartenleser_test.dart, den Druck der
+# Cloud-Zahlung test/print_rendering_test.dart an den Goldens card-sumup-cloud*.
 # Stand 1.38.0: Zahlung auf Rechnung (Positionsart invoice_payment, Receipt.invoicePayments,
 # Storno-Code invoice_payment_not_cancellable, Schichtzeile invoicePaymentCents); Dart 11.29.0.
 # Kein neuer Aufruf und keine neue Liste in surface.json; die Pruefaelle rechnen

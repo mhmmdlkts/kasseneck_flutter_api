@@ -4,8 +4,8 @@
     "default": {
       "sha256": "b3ed9b5e54fb6a0c27c2e9b494c8676926b80b4527236f0f4f71403c455fa477",
       "head": [],
-      "inputsSha256": "efd33a5fa19b037f661d4d25f448276127c6b6c2c67b93c06487c923c9adb153",
-      "backendPackage": "@kreiseck/kasseneck-api@0.41.0",
+      "inputsSha256": "9803c40e450448257ef4e1f34ea46d030b66be529a1a389a9677029f3ae34865",
+      "backendPackage": "@kreiseck/kasseneck-api@0.41.1",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
         "functions/gemeinsam/api-rand.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "d3d6dbd4df6439d688cf7e531d1c46aab17a8495f854b70d8d95f54cb594475e",
+      "sha256": "6051f21b9a44bb8819a1d28239e70683b4c83ebe6d9049f8079b998011beb766",
       "head": [
         "channel",
         "note"
       ],
-      "inputsSha256": "99d1fe8fb3c8925e8cc9b139bed843234ce5358715b57902027f6cfe71b9f90f",
+      "inputsSha256": "ea7b1bc1eab2e6976922f381d25bf484d2b5afc02276cd8b52fd5c72af063bdf",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -27148,6 +27148,2681 @@
             "message": "",
             "data": {
               "written": false
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getCardReaderSetup": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "device_unknown",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_gibtsnicht"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Gerät nicht gefunden.",
+            "data": {
+              "code": "device_not_found"
+            },
+            "code": "device_not_found"
+          }
+        },
+        {
+          "case": "success_not_connected",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "connection": {
+                "state": "none",
+                "refundsEnabled": false,
+                "connectAvailable": false
+              },
+              "readers": [],
+              "deviceReader": null,
+              "canManage": false
+            }
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "connection": {
+                "state": "connected",
+                "method": "api_key",
+                "merchantCode": "MZK4711X",
+                "refundsEnabled": true,
+                "connectAvailable": true
+              },
+              "readers": [
+                {
+                  "readerId": "rdr_01KORNBLUMTERRASSE0000000",
+                  "name": "Terrasse",
+                  "serial": "100000000002",
+                  "model": "solo",
+                  "status": "paired",
+                  "busy": true,
+                  "busyDevice": "Tablet hinten"
+                },
+                {
+                  "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+                  "name": "Theke",
+                  "serial": "100000000001",
+                  "model": "solo",
+                  "status": "paired",
+                  "busy": false
+                }
+              ],
+              "deviceReader": "rdr_01KORNBLUMTHEKE00000000000",
+              "canManage": false
+            }
+          }
+        },
+        {
+          "case": "success_manager_device_status",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "withStatus": true
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "connection": {
+                "state": "connected",
+                "method": "api_key",
+                "merchantCode": "MZK4711X",
+                "refundsEnabled": true,
+                "connectAvailable": true
+              },
+              "readers": [
+                {
+                  "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+                  "name": "Theke",
+                  "serial": "100000000001",
+                  "model": "solo",
+                  "status": "paired",
+                  "busy": false,
+                  "online": true,
+                  "battery": 80
+                }
+              ],
+              "deviceReader": null,
+              "canManage": true
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "startCardAccountConnection": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für Kassen-Einstellungen.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "not_available",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Verbindung zu SumUp ist gerade nicht möglich. Bitte später noch einmal versuchen.",
+            "data": {
+              "code": "card_account_connect_unavailable"
+            },
+            "code": "card_account_connect_unavailable"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "authorizeUrl": "https://api.sumup.com/authorize?response_type=code&client_id=cc_test_kasseneck&redirect_uri=https%3A%2F%2Fapi.kasseneck.at%2Fsumup%2Fverbunden&scope=payments+readers.read+readers.write&state=ERERERERERERERERERERERERERERERERERERERERERE"
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "disconnectCardAccount": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {},
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für Kassen-Einstellungen.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "in_use",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Das Kartenterminal ist gerade in Verwendung.",
+            "data": {
+              "busyDevice": "Tablet hinten",
+              "code": "card_reader_busy"
+            },
+            "code": "card_reader_busy"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "disconnected": true
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "pairCardReader": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "pairingCode": "K7P4M2Q9",
+            "name": "Terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "pairingCode": "K7P4M2Q9",
+            "name": "Terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "pairingCode": "K7P4M2Q9",
+            "name": "Terrasse",
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "pairingCode": "K7P4M2Q9",
+            "name": "Terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für Kassen-Einstellungen.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "not_connected",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "pairingCode": "K7P4M2Q9",
+            "name": "Terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Das SumUp-Konto ist noch nicht verbunden.",
+            "data": {
+              "code": "card_account_not_connected"
+            },
+            "code": "card_account_not_connected"
+          }
+        },
+        {
+          "case": "code_invalid",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "pairingCode": "K7P4",
+            "name": "Terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Kopplungscode ist ungültig.",
+            "data": {
+              "code": "card_reader_code_invalid"
+            },
+            "code": "card_reader_code_invalid"
+          }
+        },
+        {
+          "case": "code_unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "pairingCode": "Z9Z9Z9Z9",
+            "name": "Terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Kopplungscode ist ungültig.",
+            "data": {
+              "code": "card_reader_code_invalid"
+            },
+            "code": "card_reader_code_invalid"
+          }
+        },
+        {
+          "case": "account_expired",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "pairingCode": "K7P4M2Q9",
+            "name": "Terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Die Verbindung zum SumUp-Konto ist abgelaufen. Bitte neu verbinden.",
+            "data": {
+              "code": "card_account_expired"
+            },
+            "code": "card_account_expired"
+          }
+        },
+        {
+          "case": "name_missing",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "pairingCode": "K7P4M2Q9"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "name",
+                  "message": "Name mit 1 bis 40 Zeichen."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "pairingCode": "K7P4M2Q9",
+            "name": "Terrasse"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "readerId": "rdr_01KORNBLUMTERRASSE0000000",
+              "name": "Terrasse",
+              "serial": "100000000002",
+              "model": "solo",
+              "status": "pairing",
+              "busy": false
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "renameCardReader": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke vorne"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke vorne"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke vorne",
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke vorne"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für Kassen-Einstellungen.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTERRASSE0000000",
+            "name": "Theke vorne"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Dieses Kartenterminal gibt es nicht.",
+            "data": {
+              "code": "card_reader_not_found"
+            },
+            "code": "card_reader_not_found"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke vorne"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+              "name": "Theke vorne",
+              "serial": "100000000001",
+              "model": "solo",
+              "status": "paired",
+              "busy": false
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "removeCardReader": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "cashier_without_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für Kassen-Einstellungen.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTERRASSE0000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Dieses Kartenterminal gibt es nicht.",
+            "data": {
+              "code": "card_reader_not_found"
+            },
+            "code": "card_reader_not_found"
+          }
+        },
+        {
+          "case": "in_use",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Das Kartenterminal ist gerade in Verwendung.",
+            "data": {
+              "busyDevice": "Tablet hinten",
+              "code": "card_reader_busy"
+            },
+            "code": "card_reader_busy"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+              "removed": true
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "setDeviceCardReader": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "card_reader_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "readerId",
+                  "message": "Kennung eines Solos, bluetooth oder null."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTERRASSE0000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Dieses Kartenterminal gibt es nicht.",
+            "data": {
+              "code": "card_reader_not_found"
+            },
+            "code": "card_reader_not_found"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "deviceReader": "rdr_01KORNBLUMTHEKE00000000000"
+            }
+          }
+        },
+        {
+          "case": "success_bluetooth",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": "bluetooth"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "deviceReader": "bluetooth"
+            }
+          }
+        },
+        {
+          "case": "success_automatic",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "readerId": null
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "deviceReader": null
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "startCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "payment-0001",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "payment-0001",
+            "amountCents": 1090,
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "module_off",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Modul „Registrierkasse\" ist nicht aktiv.",
+            "data": {
+              "code": "module_inactive"
+            },
+            "code": "module_inactive"
+          }
+        },
+        {
+          "case": "cashier_without_sell_permission",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung zum Kassieren.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "identifier_invalid",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "kz/1",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "reference",
+                  "message": "Kennung mit 8 bis 64 Zeichen aus A–Z, a–z, 0–9, _ und -."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "amount_invalid",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 99
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Betrag ist ungültig.",
+            "data": {
+              "code": "card_payment_amount_invalid"
+            },
+            "code": "card_payment_amount_invalid"
+          }
+        },
+        {
+          "case": "not_connected",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Das SumUp-Konto ist noch nicht verbunden.",
+            "data": {
+              "code": "card_account_not_connected"
+            },
+            "code": "card_account_not_connected"
+          }
+        },
+        {
+          "case": "select_required",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte ein Kartenterminal auswählen.",
+            "data": {
+              "readers": [
+                {
+                  "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+                  "name": "Theke"
+                },
+                {
+                  "readerId": "rdr_01KORNBLUMTERRASSE0000000",
+                  "name": "Terrasse"
+                }
+              ],
+              "code": "card_reader_choice_needed"
+            },
+            "code": "card_reader_choice_needed"
+          }
+        },
+        {
+          "case": "in_use",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Das Kartenterminal ist gerade in Verwendung.",
+            "data": {
+              "busyDevice": "Tablet hinten",
+              "code": "card_reader_busy"
+            },
+            "code": "card_reader_busy"
+          }
+        },
+        {
+          "case": "identifier_conflict",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 2000
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kennung wurde schon für eine andere Zahlung verwendet.",
+            "data": {
+              "code": "card_payment_reference_conflict"
+            },
+            "code": "card_payment_reference_conflict"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 1090
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "payment-0001",
+              "status": "pending",
+              "amountCents": 1090,
+              "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+              "readerName": "Theke"
+            }
+          }
+        },
+        {
+          "case": "success_chosen",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "amountCents": 1090,
+            "readerId": "rdr_01KORNBLUMTERRASSE0000000"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "payment-0001",
+              "status": "pending",
+              "amountCents": 1090,
+              "readerId": "rdr_01KORNBLUMTERRASSE0000000",
+              "readerName": "Terrasse"
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "payment-0001",
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kartenzahlung gibt es nicht.",
+            "data": {
+              "code": "card_payment_not_found"
+            },
+            "code": "card_payment_not_found"
+          }
+        },
+        {
+          "case": "success_open",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "payment-0001",
+              "status": "pending",
+              "amountCents": 1090,
+              "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+              "readerName": "Theke"
+            }
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "payment-0001",
+              "status": "successful",
+              "amountCents": 1090,
+              "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+              "readerName": "Theke",
+              "transaction": {
+                "id": "txn_payment-0001",
+                "code": "TCMENT0001",
+                "cardType": "VISA",
+                "cardLastDigits": "4242",
+                "entryMode": "contactless",
+                "authCode": "123456",
+                "amountCents": 1090,
+                "timeMs": 1790409575000
+              },
+              "receiptPayment": {
+                "provider": "sumup",
+                "providerPaymentId": "TCMENT0001",
+                "providerData": {
+                  "channel": "cloud",
+                  "transactionCode": "TCMENT0001",
+                  "transactionId": "txn_payment-0001",
+                  "amount": 10.9,
+                  "currency": "EUR",
+                  "cardType": "VISA",
+                  "cardLastDigits": "4242",
+                  "entryMode": "contactless",
+                  "authCode": "123456",
+                  "merchantCode": "MZK4711X",
+                  "foreignTransactionId": "payment-0001",
+                  "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "cancelCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "payment-0001",
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kartenzahlung gibt es nicht.",
+            "data": {
+              "code": "card_payment_not_found"
+            },
+            "code": "card_payment_not_found"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "payment-0001",
+              "status": "cancelled",
+              "amountCents": 1090,
+              "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+              "readerName": "Theke",
+              "reason": "cancelled"
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "resolveCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "decision": "discard"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "payment-0001",
+            "decision": "discard"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "payment-0001",
+            "decision": "discard",
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "decision": "discard"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kartenzahlung gibt es nicht.",
+            "data": {
+              "code": "card_payment_not_found"
+            },
+            "code": "card_payment_not_found"
+          }
+        },
+        {
+          "case": "decision_invalid",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "decision": "later"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte Eingaben prüfen.",
+            "data": {
+              "errors": [
+                {
+                  "field": "decision",
+                  "message": "receipt oder discard."
+                }
+              ],
+              "code": "validation"
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "success_cashier",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "decision": "discard"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "payment-0001",
+              "status": "cancelled",
+              "amountCents": 1090,
+              "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+              "readerName": "Theke",
+              "reason": "cancelled"
+            }
+          }
+        },
+        {
+          "case": "success_already_ready",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "payment-0001",
+            "decision": "discard"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "payment-0001",
+              "status": "successful",
+              "amountCents": 1090,
+              "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+              "readerName": "Theke",
+              "transaction": {
+                "id": "txn_payment-0001",
+                "code": "TCMENT0001",
+                "cardType": "VISA",
+                "cardLastDigits": "4242",
+                "entryMode": "contactless",
+                "authCode": "123456",
+                "amountCents": 1090,
+                "timeMs": 1790409575000
+              },
+              "receiptPayment": {
+                "provider": "sumup",
+                "providerPaymentId": "TCMENT0001",
+                "providerData": {
+                  "channel": "cloud",
+                  "transactionCode": "TCMENT0001",
+                  "transactionId": "txn_payment-0001",
+                  "amount": 10.9,
+                  "currency": "EUR",
+                  "cardType": "VISA",
+                  "cardLastDigits": "4242",
+                  "entryMode": "contactless",
+                  "authCode": "123456",
+                  "merchantCode": "MZK4711X",
+                  "foreignTransactionId": "payment-0001",
+                  "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+                }
+              }
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "refundCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001",
+            "paymentReference": "payment-0001",
+            "amountCents": 590
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "refund-0001",
+            "paymentReference": "payment-0001",
+            "amountCents": 590
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "refund-0001",
+            "paymentReference": "payment-0001",
+            "amountCents": 590,
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "without_cancellation_permission",
+          "method": "POST",
+          "caller": "register_user_without_cancel_permission",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001",
+            "paymentReference": "payment-0001",
+            "amountCents": 590
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Keine Berechtigung für Stornos.",
+            "data": {
+              "code": "not_permitted"
+            },
+            "code": "not_permitted"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001",
+            "paymentReference": "payment-0404",
+            "amountCents": 590
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kartenzahlung gibt es nicht.",
+            "data": {
+              "code": "card_payment_not_found"
+            },
+            "code": "card_payment_not_found"
+          }
+        },
+        {
+          "case": "not_enabled",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001",
+            "paymentReference": "payment-0001",
+            "amountCents": 590
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Rückbuchungen sind für dieses SumUp-Konto nicht freigeschaltet.",
+            "data": {
+              "code": "card_refund_not_enabled"
+            },
+            "code": "card_refund_not_enabled"
+          }
+        },
+        {
+          "case": "amount_too_high",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001",
+            "paymentReference": "payment-0001",
+            "amountCents": 1091
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Der Rückbuchungsbetrag ist ungültig.",
+            "data": {
+              "code": "card_refund_amount_invalid"
+            },
+            "code": "card_refund_amount_invalid"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001",
+            "paymentReference": "payment-0001",
+            "amountCents": 590
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "refund-0001",
+              "paymentReference": "payment-0001",
+              "status": "successful",
+              "amountCents": 590
+            }
+          }
+        },
+        {
+          "case": "preflight_options",
+          "method": "OPTIONS",
+          "caller": "other",
+          "params": {
+            "$body": {}
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Bitte verwenden Sie eine POST-Anfrage",
+            "data": {
+              "code": "method_not_allowed"
+            },
+            "code": "method_not_allowed"
+          }
+        }
+      ]
+    },
+    "getCardReaderRefund": {
+      "codebase": "kasse",
+      "cases": [
+        {
+          "case": "without_token",
+          "method": "POST",
+          "caller": "none",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültiger Request: Authorization key erwartet.",
+            "data": {
+              "code": "unauthorized"
+            },
+            "code": "unauthorized"
+          }
+        },
+        {
+          "case": "data_missing",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "refund-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Ungültige Daten: Nicht alle erforderlichen Parameter wurden übergeben oder Typen stimmen nicht überein: deviceId",
+            "data": {
+              "code": "validation",
+              "errors": [
+                {
+                  "field": "deviceId",
+                  "message": "Pflichtfeld fehlt."
+                }
+              ]
+            },
+            "code": "validation"
+          }
+        },
+        {
+          "case": "foreign_cashregister",
+          "method": "POST",
+          "caller": "register_user_cashier",
+          "params": {
+            "reference": "refund-0001",
+            "deviceId": "dev_kasse3"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kasse ist dem Benutzer nicht zugewiesen.",
+            "data": {
+              "code": "cashregister_not_assigned"
+            },
+            "code": "cashregister_not_assigned"
+          }
+        },
+        {
+          "case": "unknown",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "error",
+            "message": "Diese Kartenzahlung gibt es nicht.",
+            "data": {
+              "code": "card_payment_not_found"
+            },
+            "code": "card_payment_not_found"
+          }
+        },
+        {
+          "case": "success_manager",
+          "method": "POST",
+          "caller": "register_user_manager",
+          "params": {
+            "deviceId": "dev_pin",
+            "reference": "refund-0001"
+          },
+          "httpStatus": 200,
+          "headers": {
+            "Kasseneck-Api-Version": "v3",
+            "Access-Control-Expose-Headers": "Kasseneck-Api-Version"
+          },
+          "response": {
+            "status": "success",
+            "message": "",
+            "data": {
+              "reference": "refund-0001",
+              "paymentReference": "payment-0001",
+              "status": "successful",
+              "amountCents": 590
             }
           }
         },

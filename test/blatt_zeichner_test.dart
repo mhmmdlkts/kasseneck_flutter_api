@@ -80,8 +80,10 @@ const _qrNativ = '\x1d(k'; // GS ( k
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('Blatt-Zeichner: alle Golden-Belege liegen vor (wie npm: 89)', () {
-    expect(_namen, hasLength(89));
+  // 92 seit npm 1.43.0: dazu die drei SumUp-Solo-Belege card-sumup-cloud, card-sumup-cloud-hand und
+  // cancellation-sumup-cloud.
+  test('Blatt-Zeichner: alle Golden-Belege liegen vor (wie npm: 92)', () {
+    expect(_namen, hasLength(92));
     for (final name in _namen) {
       for (final zeichen in [32, 48]) {
         expect(File('${_wurzel.path}/expected/$name.sheet$zeichen.json').existsSync(), isTrue, reason: '$name/$zeichen');

@@ -1,9 +1,9 @@
 {
   "_hinweis": "Vertrags-Export /v3, erzeugt aus den echten Handlern (npm run vertrag:v3 in functions/ und functions-kasse/). Nicht von Hand pflegen.",
   "_quelle": {
-    "sha256": "06e6f7fbf3ebd4e287ef1ba056d1accd25df6346ea63d875a7817e1054e40271",
-    "inputsSha256": "be13e3491dfec864aa8fad322460b5cf0644af3b4021fc227f24814a5fbc38af",
-    "backendPackage": "@kreiseck/kasseneck-api@0.41.0",
+    "sha256": "ec1663d0242bc5edb6046c6119e0e44fe36b0139997c8946981abac63051df4d",
+    "inputsSha256": "7fd02164216ace507f92977b445874b1de1d158a86920dc58cd2e443a873a89a",
+    "backendPackage": "@kreiseck/kasseneck-api@0.41.1",
     "inputs": [
       "docs/api/fehlercodes.json",
       "functions-kasse/test/unit/fixtures/kassen-codes-v3.js",
@@ -340,7 +340,20 @@
       "listMyLeergutCodes",
       "getMyTipBalance",
       "reportMyTerminalAddress",
-      "reportMyRegisterClient"
+      "reportMyRegisterClient",
+      "getCardReaderSetup",
+      "startCardAccountConnection",
+      "disconnectCardAccount",
+      "pairCardReader",
+      "renameCardReader",
+      "removeCardReader",
+      "setDeviceCardReader",
+      "startCardReaderPayment",
+      "getCardReaderPayment",
+      "cancelCardReaderPayment",
+      "resolveCardReaderPayment",
+      "refundCardReaderPayment",
+      "getCardReaderRefund"
     ],
     "registerInternal": [
       "pairRegisterDevice",
@@ -386,12 +399,26 @@
       "listMyLeergutCodes",
       "getMyTipBalance",
       "reportMyTerminalAddress",
-      "reportMyRegisterClient"
+      "reportMyRegisterClient",
+      "getCardReaderSetup",
+      "startCardAccountConnection",
+      "disconnectCardAccount",
+      "pairCardReader",
+      "renameCardReader",
+      "removeCardReader",
+      "setDeviceCardReader",
+      "startCardReaderPayment",
+      "getCardReaderPayment",
+      "cancelCardReaderPayment",
+      "resolveCardReaderPayment",
+      "refundCardReaderPayment",
+      "getCardReaderRefund"
     ],
     "withSchema": [
       "activateCashregister",
       "addVariant",
       "blockMyVoucher",
+      "cancelCardReaderPayment",
       "cancelInvoice",
       "cancelReceipt",
       "cancelStocktake",
@@ -425,6 +452,7 @@
       "deleteMyVoucherType",
       "deletePartnerWebhook",
       "deleteWebhook",
+      "disconnectCardAccount",
       "downloadDailyReport",
       "downloadReceipt",
       "downloadReport",
@@ -433,6 +461,9 @@
       "financeWebService",
       "generateFullReceiptId",
       "getArticle",
+      "getCardReaderPayment",
+      "getCardReaderRefund",
+      "getCardReaderSetup",
       "getCashregisterReport",
       "getCustomer",
       "getCustomerCredentials",
@@ -522,6 +553,7 @@
       "lookupArticleByCode",
       "openMyShift",
       "orderSignatureCard",
+      "pairCardReader",
       "pairRegisterDevice",
       "receiveGoods",
       "recordInvoicePayment",
@@ -531,10 +563,13 @@
       "recordStockLoss",
       "recordStocktakeCount",
       "recountStocktake",
+      "refundCardReaderPayment",
       "registerPinLogin",
       "registerTerminalDevice",
       "registerUserLogin",
       "releaseReservation",
+      "removeCardReader",
+      "renameCardReader",
       "renewRegisterSession",
       "reportConnectState",
       "reportCustomerVertrag",
@@ -546,6 +581,7 @@
       "reprintVoucherLabel",
       "requestCustomerSignature",
       "requestTerminalCode",
+      "resolveCardReaderPayment",
       "reverseStockMovement",
       "reviewStocktake",
       "revokeCustomerMandate",
@@ -561,6 +597,7 @@
       "sendReceiptEmail",
       "sendWebhookTest",
       "setCustomerMandate",
+      "setDeviceCardReader",
       "setEwpExtraQuantities",
       "setMyCashregisterPfand",
       "setMyCashregisterStockLocation",
@@ -571,6 +608,8 @@
       "setMyRegisterDeviceSettings",
       "setMyVoucherSettings",
       "setPfandAdmin",
+      "startCardAccountConnection",
+      "startCardReaderPayment",
       "stripeCaptureIntent",
       "transferStock",
       "unblockMyVoucher",
@@ -1410,8 +1449,24 @@
       "cancellation_refund_reference_required",
       "cancellation_refund_reference_unknown",
       "car_useful_life_too_short",
+      "card_account_connect_unavailable",
+      "card_account_currency",
+      "card_account_expired",
+      "card_account_not_connected",
+      "card_payment_amount_invalid",
+      "card_payment_not_found",
+      "card_payment_reference_conflict",
       "card_pool_empty",
       "card_pool_unavailable",
+      "card_provider_unavailable",
+      "card_reader_busy",
+      "card_reader_choice_needed",
+      "card_reader_code_invalid",
+      "card_reader_not_found",
+      "card_reader_not_waiting",
+      "card_refund_amount_invalid",
+      "card_refund_not_enabled",
+      "card_refund_not_possible",
       "card_tips_require_shift_mode",
       "cash_movement_exceeds_balance",
       "cash_receipt_pending",
@@ -1742,6 +1797,7 @@
       "too_many_asset_records",
       "too_many_assets",
       "too_many_attempts",
+      "too_many_card_readers",
       "too_many_changes",
       "too_many_counts",
       "too_many_deposit_types",
@@ -2017,6 +2073,21 @@
       "cancellation_refund_exceeds_payment",
       "cancellation_refund_reference_required",
       "cancellation_refund_reference_unknown",
+      "card_account_connect_unavailable",
+      "card_account_expired",
+      "card_account_not_connected",
+      "card_payment_amount_invalid",
+      "card_payment_not_found",
+      "card_payment_reference_conflict",
+      "card_provider_unavailable",
+      "card_reader_busy",
+      "card_reader_choice_needed",
+      "card_reader_code_invalid",
+      "card_reader_not_found",
+      "card_reader_not_waiting",
+      "card_refund_amount_invalid",
+      "card_refund_not_enabled",
+      "card_refund_not_possible",
       "cash_movement_exceeds_balance",
       "cashregister_incomplete",
       "cashregister_not_assigned",
@@ -2158,6 +2229,7 @@
       "tip_refund_conflict",
       "tip_refund_source_requires_cash",
       "too_many_attempts",
+      "too_many_card_readers",
       "too_many_changes",
       "too_many_counts",
       "too_many_deposit_types",
@@ -2507,6 +2579,32 @@
       "terminal_device_fixed",
       "server_error"
     ],
+    "cardReader": [
+      "card_account_not_connected",
+      "card_account_expired",
+      "card_account_connect_unavailable",
+      "card_account_currency",
+      "card_reader_not_found",
+      "card_reader_busy",
+      "card_reader_choice_needed",
+      "card_reader_code_invalid",
+      "card_reader_not_waiting",
+      "too_many_card_readers",
+      "card_payment_not_found",
+      "card_payment_reference_conflict",
+      "card_payment_amount_invalid",
+      "card_refund_not_enabled",
+      "card_refund_not_possible",
+      "card_refund_amount_invalid",
+      "card_provider_unavailable",
+      "sumup_merchant_already_bound",
+      "not_permitted",
+      "validation",
+      "device_not_found",
+      "cashregister_not_assigned",
+      "module_inactive",
+      "server_error"
+    ],
     "registerCases": [
       "after_count_not_permitted",
       "already_cancelled",
@@ -2514,6 +2612,18 @@
       "article_not_in_scope",
       "cancellation_failed",
       "cancellation_outcome_unknown",
+      "card_account_connect_unavailable",
+      "card_account_expired",
+      "card_account_not_connected",
+      "card_payment_amount_invalid",
+      "card_payment_not_found",
+      "card_payment_reference_conflict",
+      "card_reader_busy",
+      "card_reader_choice_needed",
+      "card_reader_code_invalid",
+      "card_reader_not_found",
+      "card_refund_amount_invalid",
+      "card_refund_not_enabled",
       "cash_movement_exceeds_balance",
       "cashregister_in_use",
       "cashregister_incomplete",
@@ -3325,6 +3435,132 @@
         "method_not_allowed",
         "server_error",
         "validation"
+      ],
+      "getCardReaderSetup": [
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "server_error"
+      ],
+      "startCardAccountConnection": [
+        "card_account_connect_unavailable",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error"
+      ],
+      "disconnectCardAccount": [
+        "card_reader_busy",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error"
+      ],
+      "pairCardReader": [
+        "card_account_expired",
+        "card_account_not_connected",
+        "card_provider_unavailable",
+        "card_reader_code_invalid",
+        "card_reader_not_waiting",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "too_many_card_readers",
+        "validation"
+      ],
+      "renameCardReader": [
+        "card_account_expired",
+        "card_account_not_connected",
+        "card_provider_unavailable",
+        "card_reader_not_found",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "validation"
+      ],
+      "removeCardReader": [
+        "card_reader_busy",
+        "card_reader_not_found",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error"
+      ],
+      "setDeviceCardReader": [
+        "card_reader_not_found",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "server_error",
+        "validation"
+      ],
+      "startCardReaderPayment": [
+        "card_account_expired",
+        "card_account_not_connected",
+        "card_payment_amount_invalid",
+        "card_payment_reference_conflict",
+        "card_provider_unavailable",
+        "card_reader_busy",
+        "card_reader_choice_needed",
+        "card_reader_not_found",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "validation"
+      ],
+      "getCardReaderPayment": [
+        "card_payment_not_found",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "server_error"
+      ],
+      "cancelCardReaderPayment": [
+        "card_payment_not_found",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "server_error"
+      ],
+      "resolveCardReaderPayment": [
+        "card_payment_not_found",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "server_error",
+        "validation"
+      ],
+      "refundCardReaderPayment": [
+        "card_account_expired",
+        "card_account_not_connected",
+        "card_payment_not_found",
+        "card_payment_reference_conflict",
+        "card_provider_unavailable",
+        "card_refund_amount_invalid",
+        "card_refund_not_enabled",
+        "card_refund_not_possible",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "not_permitted",
+        "server_error",
+        "validation"
+      ],
+      "getCardReaderRefund": [
+        "card_payment_not_found",
+        "cashregister_not_assigned",
+        "device_not_found",
+        "module_inactive",
+        "server_error"
       ]
     }
   },
@@ -3440,6 +3676,7 @@
         }
       }
     },
+    "cancelCardReaderPayment": {},
     "cancelInvoice": {
       "werte": {
         "creditNote.docType": {
@@ -4605,6 +4842,7 @@
         "deleted": "geloescht"
       }
     },
+    "disconnectCardAccount": {},
     "downloadDailyReport": {},
     "downloadReceipt": {},
     "downloadReport": {},
@@ -4649,6 +4887,9 @@
         }
       }
     },
+    "getCardReaderPayment": {},
+    "getCardReaderRefund": {},
+    "getCardReaderSetup": {},
     "getCashregisterReport": {
       "params": {
         "format": "format",
@@ -7941,6 +8182,7 @@
       }
     },
     "orderSignatureCard": {},
+    "pairCardReader": {},
     "pairRegisterDevice": {
       "data": {
         "companyName": "betrieb",
@@ -8164,6 +8406,7 @@
         }
       }
     },
+    "refundCardReaderPayment": {},
     "registerPinLogin": {},
     "registerTerminalDevice": {},
     "registerUserLogin": {},
@@ -8191,6 +8434,8 @@
         }
       }
     },
+    "removeCardReader": {},
+    "renameCardReader": {},
     "renewRegisterSession": {},
     "reportConnectState": {},
     "reportCustomerVertrag": {
@@ -8555,6 +8800,7 @@
       }
     },
     "requestTerminalCode": {},
+    "resolveCardReaderPayment": {},
     "reverseStockMovement": {
       "data": {
         "operationId": "vorgangId",
@@ -8839,6 +9085,7 @@
       }
     },
     "setCustomerMandate": {},
+    "setDeviceCardReader": {},
     "setEwpExtraQuantities": {
       "params": {
         "month": "monat",
@@ -9714,6 +9961,8 @@
         }
       }
     },
+    "startCardAccountConnection": {},
+    "startCardReaderPayment": {},
     "stripeCaptureIntent": {},
     "transferStock": {
       "data": {

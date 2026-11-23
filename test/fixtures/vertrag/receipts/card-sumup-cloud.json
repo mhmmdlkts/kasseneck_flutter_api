@@ -1,0 +1,66 @@
+{
+  "company": {
+    "companyName": "Bäckerei Muster",
+    "street": "Hauptplatz 1",
+    "zip": "4830",
+    "city": "Hallstatt",
+    "phone": "+43 6134 12345",
+    "vatId": "ATU12345675",
+    "taxNumber": "",
+    "isSmallBusiness": false,
+    "footer1": "Vielen Dank für Ihren Einkauf",
+    "footer2": "www.baeckerei-muster.at",
+    "thanksMessage": [],
+    "showKreiseckLogo": false
+  },
+  "receipt": {
+    "receiptId": "AT0-KASSE1-63",
+    "cashregisterId": "KASSE1",
+    "timeStamp": "2026-08-13T10:15:30",
+    "items": [
+      {
+        "name": "Behandlung",
+        "quantity": 1,
+        "unitPriceCents": 1090,
+        "vatRate": 20
+      }
+    ],
+    "vouchers": [],
+    "paymentMethod": "creditCard",
+    "turnoverCounterAES256ICM": "UMSATZ",
+    "signaturePreviousReceipt": "VORGAENGER",
+    "certificateSerialNumber": "5A1C3E07",
+    "receiptType": "standard",
+    "sig": "eyJhbGciOiJFUzI1NiJ9.QVQx.SIGNATURWERT",
+    "qr": "_R1-AT1_KASSE1_AT0-KASSE1-63_2026-08-13T10:15:30_10,90_0,00_0,00_0,00_0,00_UMSATZ_VORGAENGER_5A1C3E07_SIGNATUR",
+    "fullReceiptId": "VOLL",
+    "customerDetails": [],
+    "legalMessage": [],
+    "payments": [
+      {
+        "id": "p1",
+        "method": "creditCard",
+        "amountCents": 1090,
+        "provider": "sumup",
+        "providerPaymentId": "TCMENT0001",
+        "providerData": {
+          "channel": "cloud",
+          "transactionCode": "TCMENT0001",
+          "transactionId": "txn_payment-0001",
+          "amount": 10.9,
+          "currency": "EUR",
+          "cardType": "VISA",
+          "cardLastDigits": "4242",
+          "entryMode": "contactless",
+          "authCode": "Q7X2K9",
+          "merchantCode": "MZK4711X",
+          "foreignTransactionId": "payment-0001",
+          "readerId": "rdr_01KORNBLUMTHEKE00000000000"
+        }
+      }
+    ]
+  },
+  "options": {
+    "paperSize": "mm80"
+  }
+}

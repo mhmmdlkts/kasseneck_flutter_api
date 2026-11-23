@@ -122,6 +122,8 @@ pflicht=(
   pos-message-cases.json
   hobex-hps-codes.json
   hobex-hps-cases.json
+  card-reader-choice-cases.json
+  card-reader-message-cases.json
   item-from-euro.json
   invoice-api.schema.json
   invoice-api-examples
