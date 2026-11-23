@@ -1,6 +1,6 @@
 name: kasseneck_api
 description: "Austrian fiscal cash register (RKSV, Registrierkasse) for Flutter: signed receipts, cancellations, hobex and Stripe card payments, ESC/POS receipt printing."
-version: 11.34.0
+version: 11.34.1
 homepage: https://kasseneck.at/api-doku
 repository: https://github.com/mhmmdlkts/kasseneck_flutter_api
 issue_tracker: https://github.com/mhmmdlkts/kasseneck_flutter_api/issues
@@ -22,7 +22,7 @@ dependencies:
   flutter_blue_plus: ^2.3.4
   kreiseck_design: '>=0.7.0 <0.9.0'
   kreiseck_validator: ^0.14.1 # Gutscheincode: Pruefzeichen vor dem Senden (VoucherCode)
-  my_pos: ^0.3.0
+  my_pos: '>=0.3.0 <0.5.0'
     #path: ../mypos_flutter_package/my_pos/my_pos
 
 dev_dependencies:

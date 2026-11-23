@@ -1,4 +1,8 @@
-## 11.34.0 (unveröffentlicht)
+## 11.34.1 (2026-11-23)
+
+- **`my_pos` 0.4 erlaubt** (`>=0.3.0 <0.5.0` statt `^0.3.0`). Grund: `my_pos` 0.4.0 bringt Storno, Rückerstattung und Terminal-Infos, die Apps wie karteck direkt nutzen; mit `^0.3.0` ließ sich das Paket nicht zusammen mit 0.4 auflösen. Zahlung und Druck sind in `my_pos` 0.4.0 unverändert, dieses Paket nutzt davon nur den Druck (`MyPos.printPaper`, `MyPosPaper`). Kein Code geändert, keine neuen öffentlichen Symbole.
+
+## 11.34.0 (2026-11-23)
 
 Twin of `@kreiseck/kasseneck-api` `1.43.0`: SumUp Solo, the card reader through the SumUp cloud (backend spec 2026-11-18-sumup-solo-cloud-design, keck#1010), with the thirteen register calls, the choice of the reader, sentences and printing. Additive; every existing call, receipt and text behaves as before. Contract pulled from the published npm `1.43.0`.
 
