@@ -101,6 +101,34 @@ const Map<String, dynamic> _erstattung = {
 ({RegisterReceiptClient client, List<http.Request> anfragen}) _mit(Object? daten) =>
     _kasse({'status': 'success', 'data': daten});
 
+/// Ein Transport wie die Huellen der Kassen-App (`_AusgabeTransport`, `_KopfTransport`, `_WarteTransport`):
+/// er kennt an `call` und `callRaw` nur `params` und `timeout` und reicht beides an den inneren weiter.
+class _Huelle implements RegisterTransport {
+  _Huelle(this._innen);
+
+  final RegisterTransport _innen;
+
+  @override
+  Future<String?> Function() get idToken => _innen.idToken;
+
+  @override
+  Future<String?> Function() get sessionId => _innen.sessionId;
+
+  @override
+  String get cashregisterId => _innen.cashregisterId;
+
+  @override
+  String get baseUrl => _innen.baseUrl;
+
+  @override
+  Future<Map<String, dynamic>> call(String name, {Map<String, dynamic> params = const {}, Duration? timeout}) =>
+      _innen.call(name, params: params, timeout: timeout);
+
+  @override
+  Future<http.Response> callRaw(String name, {Map<String, dynamic> params = const {}, Duration? timeout}) =>
+      _innen.callRaw(name, params: params, timeout: timeout);
+}
+
 /// Die gesendeten Parameter ohne die Kasse, die der Transport jeder Nutzlast beilegt.
 Map<String, dynamic> _gesendet(http.Request r) =>
     (((jsonDecode(r.body) as Map)['params'] as Map).cast<String, dynamic>())..remove('cashregisterId');
@@ -379,6 +407,65 @@ void main() {
       await k.client.startCardReaderPayment(deviceId: _d, reference: _ref, amountCents: 1090);
       final roh = (jsonDecode(k.anfragen.single.body) as Map)['params'] as Map;
       expect(roh.containsKey('readerId'), isFalse);
+    });
+
+    test('der Transport laesst null weiter weg; die Schnittstelle von call und callRaw bleibt params und timeout', () async {
+      final anfragen = <http.Request>[];
+      final t = RegisterTransport(
+        idToken: () async => 'id-token',
+        sessionId: () async => 'sess-1',
+        cashregisterId: 'KASSE1',
+        httpClient: MockClient((r) async {
+          anfragen.add(r);
+          return http.Response('{"status":"success","data":{}}', 200,
+              headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
+        }),
+      );
+      await t.call('getMyTipBalance', params: {'drawerId': null, 'cashregisterId': 'KASSE1'});
+      await _Huelle(t).callRaw('getMyTipBalance', params: {'drawerId': null});
+      for (final a in anfragen) {
+        expect((jsonDecode(a.body) as Map)['params'], {'cashregisterId': 'KASSE1'});
+      }
+    });
+
+    // Die Kassen-App legt eigene Huellen um den Transport (Gutschein-Codes, Kopf, Warten). Ein ausdrueckliches
+    // null muss durch sie hindurch, ohne dass sie etwas davon wissen: es reist in `params`, nicht in einem
+    // eigenen Parameter, den eine Huelle nicht kennt und still fallen liesse.
+    test('automatisch: readerId null geht auch durch eine Huelle wie die der Kassen-App als null hinaus', () async {
+      final anfragen = <http.Request>[];
+      final innen = RegisterTransport(
+        idToken: () async => 'id-token',
+        sessionId: () async => 'sess-1',
+        cashregisterId: 'KASSE1',
+        httpClient: MockClient((r) async {
+          anfragen.add(r);
+          return http.Response('{"status":"success","data":{"deviceReader":null}}', 200,
+              headers: {'content-type': 'application/json', 'kasseneck-api-version': 'v3'});
+        }),
+      );
+      final client = RegisterReceiptClient(_Huelle(innen));
+      expect(await client.setDeviceCardReader(deviceId: _d, readerId: null), isNull);
+      expect(anfragen.single.body, contains('"readerId":null'));
+      expect(_gesendet(anfragen.single), {'deviceId': _d, 'readerId': null});
+      await client.getCardReaderSetup(deviceId: _d);
+      expect(_gesendet(anfragen.last), {'deviceId': _d});
+    });
+
+    test('Erfolg ohne data ist bei Einrichtung und Zuweisung ein Antwortfehler (wie npm „Antwort ist leer“)', () async {
+      for (final huelle in [
+        {'status': 'success'},
+        {'status': 'success', 'data': null},
+      ]) {
+        final wo = jsonEncode(huelle);
+        expect(await _fehler(_kasse(huelle).client.getCardReaderSetup(deviceId: _d)), _antwortfehler, reason: wo);
+        expect(await _fehler(_kasse(huelle).client.setDeviceCardReader(deviceId: _d, readerId: null)), _antwortfehler,
+            reason: wo);
+        expect(await _fehler(_kasse(huelle).client.setDeviceCardReader(deviceId: _d, readerId: 'rdr_01')), _antwortfehler,
+            reason: wo);
+      }
+      // Ein leeres Objekt ist eine Antwort: Vorgaben wie im npm-Paket.
+      expect((await _mit({}).client.getCardReaderSetup(deviceId: _d)).connection.state, 'none');
+      expect(await _mit({}).client.setDeviceCardReader(deviceId: _d, readerId: null), isNull);
     });
 
     test('Zahlung und Rueckbuchung', () async {

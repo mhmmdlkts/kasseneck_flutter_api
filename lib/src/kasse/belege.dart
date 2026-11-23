@@ -1448,7 +1448,7 @@ class RegisterReceiptClient {
   /// Wirkung.
   Future<CardReaderSetup> getCardReaderSetup({required String deviceId, bool withStatus = false}) async {
     const name = Aufrufe.getCardReaderSetup;
-    final daten = await transport.call(name, params: {
+    final daten = await rufeMitDaten(transport, name, {
       'deviceId': kartenleserGeraet(name, deviceId),
       if (withStatus) 'withStatus': true,
     });
@@ -1510,14 +1510,10 @@ class RegisterReceiptClient {
   /// Dieselbe Zuweisung noch einmal aendert nichts.
   Future<String?> setDeviceCardReader({required String deviceId, required String? readerId}) async {
     const name = Aufrufe.setDeviceCardReader;
-    final daten = await transport.call(
-      name,
-      params: {
-        'deviceId': kartenleserGeraet(name, deviceId),
-        'readerId': readerId == null ? null : kartenleserLeser(name, readerId),
-      },
-      sendNull: const {'readerId'},
-    );
+    final daten = await rufeMitDaten(transport, name, {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      'readerId': readerId == null ? nullAmDraht : kartenleserLeser(name, readerId),
+    });
     final zugewiesen = daten['deviceReader'];
     return zugewiesen is String && zugewiesen.isNotEmpty ? zugewiesen : null;
   }

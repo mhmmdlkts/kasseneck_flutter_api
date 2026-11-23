@@ -123,7 +123,7 @@ final Set<String> woerter = _liste('''
   annual based closings contact holder inspection manufacturer outage product section
   arch features https issued os trusted
   prompts strict templates
-  battery choice choose chosen decisions disconnect null option pairing reader readers rename why
+  battery choice choose chosen decisions disconnect option pairing reader readers rename why
   shape shapes decision switch
   presets preset discounts messages lists
   display ons ordered parent references remap selectable
