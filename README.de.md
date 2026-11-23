@@ -12,7 +12,7 @@ Die vollständige Dokumentation steht im englischen README:
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.33.0
+  kasseneck_api: ^11.34.0
 ```
 
 Voraussetzungen: Dart SDK `^3.12.1`, Flutter `>=3.44.0`, ein Kasseneck-API-Schlüssel
@@ -84,6 +84,16 @@ Codes der Kassen-Benutzer und ihrer Sitzung), der `/v3`-Rand vor dem Handler
 (`not_found`, `internal_translation_error`), das Modul- und Rechte-Tor
 (`module_inactive`, `not_permitted`) und das paketeigene `route_missing`. Die
 vollständige Liste steht im englischen README unter „Unknown outcome“.
+
+Beim Kartenleser SumUp Solo (seit 11.34) ist eine Zahlung ein Vorgang mit
+eigener Kennung (`newCardReaderReference`, vor dem ersten Aufruf
+festgehalten), kein einzelner Aufruf: starten, dann mit derselben Kennung
+nachfragen, bis `isCardReaderFinal`. Melden `startCardReaderPayment` oder
+`refundCardReaderPayment` `server_error` (oder eine Hülle ohne Code), ist der
+Ausgang `unknown`: die Karte kann belastet sein. Dann mit derselben Kennung
+nachfragen (`getCardReaderPayment`, `getCardReaderRefund`), nie mit einer
+neuen starten. Eine bezahlte Zahlung trägt `receiptPayment`, die fertige
+Zahlung für `payments` des Verkaufs.
 
 Was der Kassier dazu liest, entscheidet `findErrorRule` aus `pos.dart`
 (Code-Regel, dann Ausgangs-Regel, dann die Regel der Art) mit dem Ausgang aus

@@ -138,7 +138,12 @@ Cent. Es darf nicht zwei Rechenwege für dieselbe Zahl geben.
   `hobexRefund` und `stripeCaptureIntent` ist nur ein Code aus
   `paymentCallRejectedCodes` (`lib/src/register/fehler.dart`) eine Ablehnung;
   jede andere Fehlerhülle, auch eine ohne Code, ist `unknown`. Wer dort einen
-  Code ergänzt, belegt, dass er vor dem Anbieter entsteht.
+  Code ergänzt, belegt, dass er vor dem Anbieter entsteht. Beim Kartenleser
+  (SumUp Solo) gilt für `startCardReaderPayment` und `refundCardReaderPayment`
+  umgekehrt: nur `server_error` und eine Hülle ohne Code sind `unknown`, jeder
+  andere Code entsteht vor dem Anbieter. Nach `unknown` fragt die Kasse mit
+  **derselben** Kennung nach (`getCardReaderPayment`, `getCardReaderRefund`),
+  nie mit einer neuen.
 - Verändernde Aufrufe ohne Idempotenzschlüssel sind nicht folgenlos
   wiederholbar. Wenn du einen hinzufügst, sag im CHANGELOG, welcher Aufruf es
   betrifft.
