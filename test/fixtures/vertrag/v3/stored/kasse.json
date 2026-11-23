@@ -4,8 +4,8 @@
     "default": {
       "sha256": "e5ed8eb2bdb2b8cba51102c6e00f73fe20bcaa0d8c355ed93901508fa7abc97e",
       "head": [],
-      "inputsSha256": "efd33a5fa19b037f661d4d25f448276127c6b6c2c67b93c06487c923c9adb153",
-      "backendPackage": "@kreiseck/kasseneck-api@0.41.0",
+      "inputsSha256": "9803c40e450448257ef4e1f34ea46d030b66be529a1a389a9677029f3ae34865",
+      "backendPackage": "@kreiseck/kasseneck-api@0.41.1",
       "inputs": [
         "functions-kasse/test/unit/fixtures/kassen-welt.js",
         "functions/gemeinsam/api-rand.js",
@@ -19,12 +19,12 @@
       ]
     },
     "kasse": {
-      "sha256": "f248a07aa81553e98889d6e33e9f6c2def83827d27348b5fcad9981c99c0a80f",
+      "sha256": "251cf556c0a02e9826cb2215d2ad2907e94bc46336348d8f32b89251b9d5ca80",
       "head": [
         "note",
         "baseline"
       ],
-      "inputsSha256": "99d1fe8fb3c8925e8cc9b139bed843234ce5358715b57902027f6cfe71b9f90f",
+      "inputsSha256": "ea7b1bc1eab2e6976922f381d25bf484d2b5afc02276cd8b52fd5c72af063bdf",
       "backendPackage": "@kreiseck/kasseneck-api@0.14.0",
       "inputs": [
         "functions-kasse/gemeinsam/api-rand.js",
@@ -9966,6 +9966,723 @@
               "app": "1.39.0/2026-11-13T18:20Z",
               "gemeldetAt": 1790409600000
             }
+          }
+        }
+      }
+    },
+    "startCardAccountConnection": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "sumup_oauth_status/b59e65c402a629e6c5b28355c7628a1002262b55b43a52f941c02740e3bdfafc": {
+            "ownerUid": "kw_betrieb1",
+            "tenantUid": "kw_betrieb1",
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_chef",
+            "benutzerName": "Anna Chef",
+            "authUid": null,
+            "angelegtMs": 1790409600000,
+            "ablaufMs": 1790410500000,
+            "verbraucht": false
+          }
+        }
+      }
+    },
+    "disconnectCardAccount": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTHEKE00000000000": null,
+          "sumup_verbindungen/kw_betrieb1": null,
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kartenterminal",
+            "aktion": "getrennt",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "haendler",
+                "alt": "MZK4711X",
+                "neu": null
+              }
+            ]
+          },
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58",
+              "sumupLeser": null
+            }
+          }
+        }
+      }
+    },
+    "pairCardReader": {
+      "codebase": "kasse",
+      "cases": {
+        "account_expired": {
+          "sumup_verbindungen/kw_betrieb1": {
+            "art": "apikey",
+            "haendler": "MZK4711X",
+            "zugang": "<geheim>",
+            "erneuerung": null,
+            "zugangBisMs": null,
+            "erneuertBisMs": null,
+            "scopes": [],
+            "rueckbuchung": true,
+            "stand": "abgelaufen",
+            "verbundenAm": 1790323200000,
+            "verbundenVon": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            },
+            "leserGelesenMs": 1790409599000
+          }
+        },
+        "success_manager": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTERRASSE0000000": {
+            "anbieter": "sumup",
+            "betriebUid": "kw_betrieb1",
+            "haendler": "MZK4711X",
+            "readerId": "rdr_01KORNBLUMTERRASSE0000000",
+            "name": "Terrasse",
+            "seriennummer": "100000000002",
+            "modell": "solo",
+            "status": "koppeln",
+            "laeuft": null,
+            "angelegtAm": 1790409600000,
+            "angelegtVon": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            }
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kartenterminal",
+            "aktion": "gekoppelt",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [],
+            "leser": {
+              "id": "rdr_01KORNBLUMTERRASSE0000000",
+              "name": "Terrasse"
+            }
+          }
+        }
+      }
+    },
+    "renameCardReader": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTHEKE00000000000": {
+            "anbieter": "sumup",
+            "betriebUid": "kw_betrieb1",
+            "haendler": "MZK4711X",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke vorne",
+            "seriennummer": "100000000001",
+            "modell": "solo",
+            "status": "gekoppelt",
+            "laeuft": null,
+            "angelegtAm": 1790323200000,
+            "angelegtVon": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            }
+          },
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kartenterminal",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "name",
+                "alt": "Theke",
+                "neu": "Theke vorne"
+              }
+            ],
+            "leser": {
+              "id": "rdr_01KORNBLUMTHEKE00000000000",
+              "name": "Theke vorne"
+            }
+          }
+        }
+      }
+    },
+    "removeCardReader": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTHEKE00000000000": null,
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kartenterminal",
+            "aktion": "entfernt",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_chef",
+              "rolle": "kassenbenutzer",
+              "name": "Anna Chef"
+            },
+            "geraetId": null,
+            "antragId": null,
+            "aenderungen": [],
+            "leser": {
+              "id": "rdr_01KORNBLUMTHEKE00000000000",
+              "name": "Theke"
+            }
+          },
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58",
+              "sumupLeser": null
+            }
+          }
+        }
+      }
+    },
+    "setDeviceCardReader": {
+      "codebase": "kasse",
+      "cases": {
+        "success_cashier": {
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kartenterminal",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_kellner",
+              "rolle": "kassenbenutzer",
+              "name": "Ben Kellner"
+            },
+            "geraetId": "dev_pin",
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "sumupLeser",
+                "alt": null,
+                "neu": "rdr_01KORNBLUMTHEKE00000000000"
+              }
+            ],
+            "geraet": {
+              "id": "dev_pin",
+              "name": "Tablet vorne"
+            },
+            "leser": {
+              "id": "rdr_01KORNBLUMTHEKE00000000000",
+              "name": "Theke"
+            }
+          },
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58",
+              "sumupLeser": "rdr_01KORNBLUMTHEKE00000000000"
+            }
+          }
+        },
+        "success_bluetooth": {
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kartenterminal",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_kellner",
+              "rolle": "kassenbenutzer",
+              "name": "Ben Kellner"
+            },
+            "geraetId": "dev_pin",
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "sumupLeser",
+                "alt": "rdr_01KORNBLUMTHEKE00000000000",
+                "neu": "bluetooth"
+              }
+            ],
+            "geraet": {
+              "id": "dev_pin",
+              "name": "Tablet vorne"
+            }
+          },
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58",
+              "sumupLeser": "bluetooth"
+            }
+          }
+        },
+        "success_automatic": {
+          "users/kw_betrieb1/kassen_protokoll/auto1": {
+            "zeit": 1790409600000,
+            "bereich": "kartenterminal",
+            "aktion": "geaendert",
+            "quelle": "kasse",
+            "von": {
+              "uid": "ru_kellner",
+              "rolle": "kassenbenutzer",
+              "name": "Ben Kellner"
+            },
+            "geraetId": "dev_pin",
+            "antragId": null,
+            "aenderungen": [
+              {
+                "feld": "sumupLeser",
+                "alt": "rdr_01KORNBLUMTHEKE00000000000",
+                "neu": null
+              }
+            ],
+            "geraet": {
+              "id": "dev_pin",
+              "name": "Tablet vorne"
+            }
+          },
+          "users/kw_betrieb1/register_devices/dev_pin": {
+            "secretHash": "<geheim>",
+            "label": "Tablet vorne",
+            "cashregisterId": "KASSE1",
+            "disabled": false,
+            "loginMode": "pin",
+            "createdAt": 1790323200000,
+            "lastSeenAt": 1790406000000,
+            "lastUserId": null,
+            "failedAttempts": 0,
+            "lockedUntil": 0,
+            "kasse": {
+              "layout": "links",
+              "papier": "mm58",
+              "sumupLeser": null
+            }
+          }
+        }
+      }
+    },
+    "startCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": {
+        "success_cashier": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTHEKE00000000000": {
+            "anbieter": "sumup",
+            "betriebUid": "kw_betrieb1",
+            "haendler": "MZK4711X",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke",
+            "seriennummer": "100000000001",
+            "modell": "solo",
+            "status": "gekoppelt",
+            "laeuft": {
+              "kennung": "payment-0001",
+              "geraetId": "dev_pin",
+              "tenantUid": "kw_betrieb1",
+              "seitMs": 1790409600000,
+              "bisMs": 1790409900000
+            },
+            "angelegtAm": 1790323200000,
+            "angelegtVon": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            }
+          },
+          "users/kw_betrieb1/kartenzahlungen/payment-0001": {
+            "art": "zahlung",
+            "kennung": "payment-0001",
+            "stand": "laeuft",
+            "grund": null,
+            "betragCents": 1090,
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "readerName": "Theke",
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_kellner",
+            "haendler": "MZK4711X",
+            "checkoutId": "chk_payment-0001",
+            "clientTransactionId": "ctx_payment-0001",
+            "transaktion": null,
+            "rueckbuchungenCents": 0,
+            "belegId": null,
+            "belegKasse": null,
+            "vonHand": null,
+            "gemeldet": false,
+            "angelegtMs": 1790409600000,
+            "ablaufMs": 1790409900000,
+            "fertigMs": null,
+            "gefragtMs": null,
+            "webhookMs": null,
+            "abbruchMs": null,
+            "nachsehen": true,
+            "nachsehenAbMs": 1790409780000
+          }
+        },
+        "success_chosen": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTERRASSE0000000": {
+            "anbieter": "sumup",
+            "betriebUid": "kw_betrieb1",
+            "haendler": "MZK4711X",
+            "readerId": "rdr_01KORNBLUMTERRASSE0000000",
+            "name": "Terrasse",
+            "seriennummer": "100000000002",
+            "modell": "solo",
+            "status": "gekoppelt",
+            "laeuft": {
+              "kennung": "payment-0001",
+              "geraetId": "dev_pin",
+              "tenantUid": "kw_betrieb1",
+              "seitMs": 1790409600000,
+              "bisMs": 1790409900000
+            },
+            "angelegtAm": 1790323200000,
+            "angelegtVon": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            }
+          },
+          "users/kw_betrieb1/kartenzahlungen/payment-0001": {
+            "art": "zahlung",
+            "kennung": "payment-0001",
+            "stand": "laeuft",
+            "grund": null,
+            "betragCents": 1090,
+            "readerId": "rdr_01KORNBLUMTERRASSE0000000",
+            "readerName": "Terrasse",
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_kellner",
+            "haendler": "MZK4711X",
+            "checkoutId": "chk_payment-0001",
+            "clientTransactionId": "ctx_payment-0001",
+            "transaktion": null,
+            "rueckbuchungenCents": 0,
+            "belegId": null,
+            "belegKasse": null,
+            "vonHand": null,
+            "gemeldet": false,
+            "angelegtMs": 1790409600000,
+            "ablaufMs": 1790409900000,
+            "fertigMs": null,
+            "gefragtMs": null,
+            "webhookMs": null,
+            "abbruchMs": null,
+            "nachsehen": true,
+            "nachsehenAbMs": 1790409780000
+          }
+        }
+      }
+    },
+    "getCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": {
+        "success_open": {
+          "users/kw_betrieb1/kartenzahlungen/payment-0001": {
+            "art": "zahlung",
+            "kennung": "payment-0001",
+            "stand": "laeuft",
+            "grund": null,
+            "betragCents": 1090,
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "readerName": "Theke",
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_kellner",
+            "haendler": "MZK4711X",
+            "checkoutId": "chk_payment-0001",
+            "clientTransactionId": "ctx_payment-0001",
+            "transaktion": null,
+            "rueckbuchungenCents": 0,
+            "belegId": null,
+            "belegKasse": null,
+            "vonHand": null,
+            "gemeldet": false,
+            "angelegtMs": 1790409570000,
+            "ablaufMs": 1790409870000,
+            "fertigMs": null,
+            "gefragtMs": 1790409600000,
+            "webhookMs": null,
+            "abbruchMs": null,
+            "nachsehen": true,
+            "nachsehenAbMs": 1790409750000
+          }
+        },
+        "success_cashier": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTHEKE00000000000": {
+            "anbieter": "sumup",
+            "betriebUid": "kw_betrieb1",
+            "haendler": "MZK4711X",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke",
+            "seriennummer": "100000000001",
+            "modell": "solo",
+            "status": "gekoppelt",
+            "laeuft": null,
+            "angelegtAm": 1790323200000,
+            "angelegtVon": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            }
+          },
+          "users/kw_betrieb1/kartenzahlungen/payment-0001": {
+            "art": "zahlung",
+            "kennung": "payment-0001",
+            "stand": "geglueckt",
+            "grund": null,
+            "betragCents": 1090,
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "readerName": "Theke",
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_kellner",
+            "haendler": "MZK4711X",
+            "checkoutId": "chk_payment-0001",
+            "clientTransactionId": "ctx_payment-0001",
+            "transaktion": {
+              "id": "txn_payment-0001",
+              "code": "TCMENT0001",
+              "kartenTyp": "VISA",
+              "endziffern": "4242",
+              "eingabe": "contactless",
+              "autorisierung": "123456",
+              "betragCents": 1090,
+              "zeitMs": 1790409575000
+            },
+            "rueckbuchungenCents": 0,
+            "belegId": null,
+            "belegKasse": null,
+            "vonHand": null,
+            "gemeldet": false,
+            "angelegtMs": 1790409570000,
+            "ablaufMs": 1790409870000,
+            "fertigMs": 1790409600000,
+            "gefragtMs": 1790409600000,
+            "webhookMs": null,
+            "abbruchMs": null,
+            "nachsehen": true,
+            "nachsehenAbMs": 1790413200000
+          }
+        }
+      }
+    },
+    "cancelCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": {
+        "success_cashier": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTHEKE00000000000": {
+            "anbieter": "sumup",
+            "betriebUid": "kw_betrieb1",
+            "haendler": "MZK4711X",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke",
+            "seriennummer": "100000000001",
+            "modell": "solo",
+            "status": "gekoppelt",
+            "laeuft": null,
+            "angelegtAm": 1790323200000,
+            "angelegtVon": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            }
+          },
+          "users/kw_betrieb1/kartenzahlungen/payment-0001": {
+            "art": "zahlung",
+            "kennung": "payment-0001",
+            "stand": "abgebrochen",
+            "grund": "abgebrochen",
+            "betragCents": 1090,
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "readerName": "Theke",
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_kellner",
+            "haendler": "MZK4711X",
+            "checkoutId": "chk_payment-0001",
+            "clientTransactionId": "ctx_payment-0001",
+            "transaktion": null,
+            "rueckbuchungenCents": 0,
+            "belegId": null,
+            "belegKasse": null,
+            "vonHand": null,
+            "gemeldet": false,
+            "angelegtMs": 1790409570000,
+            "ablaufMs": 1790409870000,
+            "fertigMs": 1790409600000,
+            "gefragtMs": 1790409600000,
+            "webhookMs": null,
+            "abbruchMs": 1790409600000,
+            "nachsehen": false,
+            "nachsehenAbMs": null
+          }
+        }
+      }
+    },
+    "resolveCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": {
+        "success_cashier": {
+          "kartenterminals/sumup_rdr_01KORNBLUMTHEKE00000000000": {
+            "anbieter": "sumup",
+            "betriebUid": "kw_betrieb1",
+            "haendler": "MZK4711X",
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "name": "Theke",
+            "seriennummer": "100000000001",
+            "modell": "solo",
+            "status": "gekoppelt",
+            "laeuft": null,
+            "angelegtAm": 1790323200000,
+            "angelegtVon": {
+              "id": "ru_chef",
+              "name": "Anna Chef"
+            }
+          },
+          "users/kw_betrieb1/kartenzahlungen/payment-0001": {
+            "art": "zahlung",
+            "kennung": "payment-0001",
+            "stand": "abgebrochen",
+            "grund": "abgebrochen",
+            "betragCents": 1090,
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "readerName": "Theke",
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_kellner",
+            "haendler": "MZK4711X",
+            "checkoutId": "chk_payment-0001",
+            "clientTransactionId": "ctx_payment-0001",
+            "transaktion": null,
+            "rueckbuchungenCents": 0,
+            "belegId": null,
+            "belegKasse": null,
+            "vonHand": "verworfen",
+            "gemeldet": false,
+            "angelegtMs": 1790409570000,
+            "ablaufMs": 1790409870000,
+            "fertigMs": 1790409600000,
+            "gefragtMs": 1790409600000,
+            "webhookMs": null,
+            "abbruchMs": 1790409600000,
+            "nachsehen": false,
+            "nachsehenAbMs": null
+          }
+        }
+      }
+    },
+    "refundCardReaderPayment": {
+      "codebase": "kasse",
+      "cases": {
+        "success_manager": {
+          "users/kw_betrieb1/kartenzahlungen/payment-0001": {
+            "art": "zahlung",
+            "kennung": "payment-0001",
+            "stand": "geglueckt",
+            "grund": null,
+            "betragCents": 1090,
+            "readerId": "rdr_01KORNBLUMTHEKE00000000000",
+            "readerName": "Theke",
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_kellner",
+            "haendler": "MZK4711X",
+            "checkoutId": "chk_payment-0001",
+            "clientTransactionId": "ctx_payment-0001",
+            "transaktion": {
+              "id": "txn_payment-0001",
+              "code": "TCMENT0001",
+              "kartenTyp": "VISA",
+              "endziffern": "4242",
+              "eingabe": "contactless",
+              "autorisierung": "123456",
+              "betragCents": 1090,
+              "zeitMs": 1790409575000
+            },
+            "rueckbuchungenCents": 590,
+            "belegId": null,
+            "belegKasse": null,
+            "vonHand": null,
+            "gemeldet": false,
+            "angelegtMs": 1790409570000,
+            "ablaufMs": 1790409870000,
+            "fertigMs": 1790409580000,
+            "gefragtMs": 1790409580000,
+            "webhookMs": null,
+            "abbruchMs": null,
+            "nachsehen": true,
+            "nachsehenAbMs": 1790413180000,
+            "rueckbuchungenOffen": {}
+          },
+          "users/kw_betrieb1/kartenzahlungen/refund-0001": {
+            "art": "rueckbuchung",
+            "kennung": "refund-0001",
+            "bezug": "payment-0001",
+            "stand": "geglueckt",
+            "grund": null,
+            "betragCents": 590,
+            "readerId": null,
+            "geraetId": "dev_pin",
+            "benutzerId": "ru_chef",
+            "haendler": "MZK4711X",
+            "transaktionId": "txn_payment-0001",
+            "sumupVorherCents": 0,
+            "angelegtMs": 1790409600000,
+            "fertigMs": 1790409600000,
+            "gefragtMs": null,
+            "nachsehen": false,
+            "nachsehenAbMs": null
           }
         }
       }

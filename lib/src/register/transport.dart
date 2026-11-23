@@ -118,7 +118,11 @@ class RegisterTransport {
 
     final nutzlast = <String, dynamic>{'cashregisterId': cashregisterId};
     params.forEach((schluessel, wert) {
-      if (wert != null) nutzlast[schluessel] = wert;
+      if (identical(wert, nullAmDraht)) {
+        nutzlast[schluessel] = null;
+      } else if (wert != null) {
+        nutzlast[schluessel] = wert;
+      }
     });
 
     // Ausserhalb des Sendens: ein nicht serialisierbarer Parameter ist ein
@@ -147,6 +151,26 @@ class RegisterTransport {
   }
 }
 
+/// Ein ausdrueckliches `null` als Wert in `params`: geht als JSON-`null`
+/// hinaus, waehrend ein gewoehnliches `null` wie bisher wegfaellt. Gebraucht
+/// von `setDeviceCardReader` (`readerId: null` heisst „automatisch“, ein
+/// fehlendes Feld waere am Server ein Eingabefehler).
+///
+/// Bewusst ein Wert in `params` und kein eigener Parameter von `call`: die
+/// Kassen-App legt Huellen um den Transport (`implements RegisterTransport`
+/// mit `call({params, timeout})`), und ein neuer Parameter haette sie nicht
+/// mehr uebersetzen lassen bzw. waere beim Weiterreichen still verloren
+/// gegangen. Ein Wert in `params` reist unveraendert hindurch. Paketintern:
+/// der Barrel zeigt aus dieser Datei nur [RegisterTransport].
+const Object nullAmDraht = _NullAmDraht();
+
+final class _NullAmDraht {
+  const _NullAmDraht();
+
+  @override
+  String toString() => 'null (ausdruecklich)';
+}
+
 /// Die Erfolgshuelle einer Antwort von [RegisterTransport.callRaw]; eine
 /// Fehlerhuelle wirft mit Code und Details (`envelopeError`). Paketintern:
 /// der Barrel zeigt aus dieser Datei nur [RegisterTransport].
@@ -154,6 +178,24 @@ Map<String, dynamic> kassenErfolgsHuelle(String name, http.Response antwort) {
   final huelle = readEnvelope(name, antwort);
   if (huelle['status'] == 'success') return huelle;
   throw envelopeError(name, huelle);
+}
+
+/// Wie [RegisterTransport.call], aber ein Erfolg ohne `data` (oder mit
+/// `data: null`) ist ein Antwortfehler (`KasseneckValidationError`,
+/// `response`, „Antwort ist leer“) statt eines leeren Objekts: fuer Aufrufe,
+/// deren Erfolg ohne Nutzlast nichts bedeutet (Kartenleser: Einrichtung und
+/// Zuweisung, wie `objekt(...) ?? throw` im npm-Paket). Sonst saehe die Kasse
+/// ein nicht verbundenes Konto bzw. „automatisch“, obwohl der Server etwas
+/// anderes zugewiesen haben kann. Ueber [RegisterTransport.callRaw], weil
+/// `call` ein fehlendes `data` als leeres Objekt liefert; Kopf und Huelle
+/// prueft es wie `call`, und Huellen der App reichen es weiter. Paketintern.
+Future<Map<String, dynamic>> rufeMitDaten(RegisterTransport transport, String name, Map<String, dynamic> params) async {
+  final antwort = await transport.callRaw(name, params: params);
+  final huelle = kassenErfolgsHuelle(name, antwort);
+  if (huelle['data'] == null) {
+    throw KasseneckValidationError(name, 'Antwort ist leer (data fehlt)', 'response');
+  }
+  return envelopeData(name, huelle, antwort.statusCode);
 }
 
 /// Der HTTP-Client des Transports fuer Wege ohne Anmeldung (Lese-Link einer

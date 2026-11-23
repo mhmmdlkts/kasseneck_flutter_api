@@ -26,6 +26,7 @@ import '../enums/receipt_type.dart';
 import '../enums/voucher_action.dart';
 import '../enums/voucher_type.dart';
 import '../src/kasse/pfand.dart' show DepositSharedReturnPoint;
+import '../src/receipt/sumup_cloud.dart' show isSumupCloudWithoutBlock;
 import 'kasseneck_item.dart';
 import 'registration_info.dart';
 import 'keck_payment.dart';
@@ -154,6 +155,13 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
   /// ohne Terminaldaten neben gesetzten Altfeldern: dort traegt der alte
   /// Block, wie ohne Liste. `custom` bleibt drin (der Bauer entscheidet, dass
   /// er nichts zeigt), ein unbekannter Anbieter nicht.
+  ///
+  /// Eine SumUp-Zahlung ueber die Cloud-API ohne Transaktionscode und ohne
+  /// Endziffern (Handbeleg einer ungeklaerten Solo-Zahlung, Rueckbuchung am
+  /// Storno) hat keinen Block (`sumupCloudLines`, wie `if (block.length === 0)`
+  /// im npm-Paket): sie faellt hier weg. Sonst verlangte
+  /// [isLayoutComplete] eine Ueberschrift, die das Layout des Servers zu Recht
+  /// nicht traegt, und der Beleg kaeme aus dem Rueckfall statt aus dem Layout.
   List<({CreditCardProvider provider, Map<String, dynamic> data, String? paymentId})> get cardPayments {
     final List<KeckPayment>? zahlungen = payments;
     final bool altfelderTragen = zahlungen != null &&
@@ -164,13 +172,13 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
     if (zahlungen != null && zahlungen.isNotEmpty && !altfelderTragen) {
       return [
         for (final z in zahlungen)
-          if (z.provider != null && z.providerData != null)
+          if (z.provider != null && z.providerData != null && !_ohneKartenblock(z.provider!, z.providerData!))
             (provider: z.provider!, data: z.providerData!, paymentId: z.providerPaymentId),
       ];
     }
     final CreditCardProvider? anbieter = creditCardProvider;
     final Map<String, dynamic>? daten = cardPaymentData;
-    if (anbieter == null || daten == null) return const [];
+    if (anbieter == null || daten == null || _ohneKartenblock(anbieter, daten)) return const [];
     return [(provider: anbieter, data: daten, paymentId: cardPaymentId)];
   }
   /// Beleg einer Testumgebung (Aufdruck TESTKASSE), Drahtfeld `testCashregister`.
@@ -754,6 +762,11 @@ class KasseneckReceipt implements Comparable<KasseneckReceipt> {
 //   rein darstellend. `null` und `''` drucken gleich. Hier zu werfen hiesse,
 //   einen signierten Beleg wegen einer fehlenden Fusszeile zu verlieren; das
 //   ist die teurere Verwechslung.
+
+/// Zeigt der Kartenblock dieser Zahlung nichts? Siehe
+/// [KasseneckReceipt.cardPayments].
+bool _ohneKartenblock(CreditCardProvider anbieter, Map<String, dynamic> daten) =>
+    anbieter == CreditCardProvider.sumup && isSumupCloudWithoutBlock(daten);
 
 /// Die Belegkennung aus einer rohen Belegantwort. Wirft nie.
 String? _kennung(Map<String, dynamic> receipt) {

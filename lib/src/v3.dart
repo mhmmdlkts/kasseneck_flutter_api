@@ -36,7 +36,7 @@ const String kPublicBaseUrl = 'https://api.kasseneck.at/v3';
 const String kPosBaseUrl = 'https://kasse.kasseneck.at/api/v3';
 
 /// Version dieses Pakets, wie in `pubspec.yaml` (ein Test haelt beide gleich).
-const String kPackageVersion = '11.33.0';
+const String kPackageVersion = '11.34.0';
 
 const String _versionKopf = 'Kasseneck-Api-Version';
 const String _clientKopf = 'Kasseneck-Client';
@@ -66,12 +66,19 @@ const Set<String> _kasseneckHosts = {'api.kasseneck.at', 'kasse.kasseneck.at'};
 /// gibt nichts nachzulesen) sowie `createPaymentLinkStripe` (der Link ist nur
 /// der verlorenen Antwort bekannt und wird nie bezahlt).
 ///
+/// Kartenleser (SumUp Solo, 11.34.0): mit Wirkung sind Koppeln, Umbenennen,
+/// Entfernen, Trennen, Starten, Abbrechen, Aufloesen und Rueckbuchen. Fuer
+/// `startCardReaderPayment` und `refundCardReaderPayment` gilt dazu
+/// `server_error` als unklar (`register/fehler.dart`); bei unklarem Ausgang
+/// fragt die Kasse mit DERSELBEN Kennung nach, nie mit einer neuen.
+///
 /// Die Liste sagt nur, ob der **Ausgang** offen ist, nicht dass ein Beleg
 /// entstanden sein kann: was der Kassier liest, waehlt `messageOutcome` in
 /// `kasse/texte.dart`, und der Satz dort spricht vom Vorgang, nicht vom Beleg.
 const Set<String> unknownOutcomeCalls = {
   'activateCashregister',
   'addVariant',
+  'cancelCardReaderPayment',
   'cancelInvoice',
   'cancelReceipt',
   'cancelStocktake',
@@ -94,6 +101,7 @@ const Set<String> unknownOutcomeCalls = {
   'deactivateArticle',
   'deletePartnerWebhook',
   'deleteWebhook',
+  'disconnectCardAccount',
   'extendReservation',
   'financeWebService',
   'getTerminalCode',
@@ -105,6 +113,7 @@ const Set<String> unknownOutcomeCalls = {
   'logReceiptOutputs',
   'openMyShift',
   'orderSignatureCard',
+  'pairCardReader',
   'pairRegisterDevice',
   'receiveGoods',
   'recordInvoicePayment',
@@ -114,11 +123,15 @@ const Set<String> unknownOutcomeCalls = {
   'recordStockLoss',
   'recordStocktakeCount',
   'recountStocktake',
+  'refundCardReaderPayment',
   'registerTerminalDevice',
   'releaseReservation',
+  'removeCardReader',
+  'renameCardReader',
   'reportConnectState',
   'reportCustomerContract',
   'requestCustomerSignature',
+  'resolveCardReaderPayment',
   'reverseStockMovement',
   'reviewStocktake',
   'revokeCustomerMandate',
@@ -133,6 +146,7 @@ const Set<String> unknownOutcomeCalls = {
   'setMyKasseLogo',
   'setMyKasseSettings',
   'setMyRegisterDeviceSettings',
+  'startCardReaderPayment',
   'stripeCaptureIntent',
   'transferStock',
   'unpairRegisterDevice',

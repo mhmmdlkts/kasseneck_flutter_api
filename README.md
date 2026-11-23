@@ -70,7 +70,7 @@ library paths. Upgrading from 9.x is one breaking step; see
 
 ```yaml
 dependencies:
-  kasseneck_api: ^11.33.0
+  kasseneck_api: ^11.34.0
 ```
 
 ```bash
@@ -836,6 +836,7 @@ ID instead of starting a new charge. A lost answer ends in
 | **hobex Cloud** (via the Kasseneck backend) | `HobexCloudPayments.pay` with the same outcome; refunds via `kasseneck.hobexRefund(...)` |
 | **Stripe** | payment links for remote and online payments: `createStripeLink`, `stripeCaptureIntent` |
 | **SumUp** | the app binds the `sumup` plugin itself and stores the result as `SumupCheckoutResponse` (`toJson`) in `providerData`; receipt and preview print the SumUp block from it |
+| **SumUp Solo** (card reader via the SumUp cloud, through the Kasseneck backend) | thirteen calls on `RegisterReceiptClient` (`getCardReaderSetup`, `pairCardReader`, `startCardReaderPayment`, `getCardReaderPayment`, `refundCardReaderPayment`, …); a successful payment carries `receiptPayment`, ready for `payments` of the sale |
 | **any other terminal** (for example GP Tom or myPOS) | pass your terminal's result on the card payment as `KeckPaymentInput(provider: …, providerPaymentId: …, providerData: …)`; it is stored and printed on the receipt |
 
 `HpsPayments` and `HobexCloudPayments.pay` take euros (`amount: 12.50`), as
@@ -990,6 +991,72 @@ final session = await kasseneck.createStripeLink(
   customerEmail: 'guest@example.com',
 );
 print(session?.url);
+```
+</details>
+
+**Card readers (SumUp Solo).** A payment is a process with a reference you
+create yourself (`newCardReaderReference`, 8 to 64 characters of
+`A-Z a-z 0-9 _ -`), not a single call. Start it, then ask again with the same
+reference until `isCardReaderFinal`; a network error while asking never means
+"not paid". Amounts are whole cents (100 to 1,000,000; a refund from 1 cent).
+A successful payment carries `receiptPayment`, a complete `KeckPaymentInput`
+(card payment over the amount, provider `sumup`, `providerData` as the server
+sent it) that goes unchanged into `payments` of the sale. It can be `null`
+even for `successful` (an answer without a usable payment entry): the card is
+charged all the same, so never charge again; settle the receipt by hand.
+
+If `startCardReaderPayment` or `refundCardReaderPayment` fails with
+`server_error` (or without a code), the error has `ErrorOutcome.unknown`: the
+card may have been charged. Ask `getCardReaderPayment` / `getCardReaderRefund`
+with the SAME reference and never start again with a new one. On
+`card_reader_choice_needed` nothing was started: reload `getCardReaderSetup`,
+choose with `cardReaderFor`, and start again with the chosen `readerId`
+(`cardReaderChoices(error)` is only a fallback list of `readerId` and `name`).
+`cardReaderMessageKey` names the sentence to show for a status. A cloud
+payment prints like an SDK payment, without the line "Zahlungstyp" and without
+any line whose value is missing.
+
+<details>
+<summary><b>Example: SumUp Solo payment</b></summary>
+
+```dart
+// One reference per attempt, fixed BEFORE the first call. Keep it.
+final reference = newCardReaderReference(crId);
+
+Future<void> start([String? readerId]) async {
+  try {
+    await client.startCardReaderPayment(
+        deviceId: deviceId, reference: reference, amountCents: 1090, readerId: readerId);
+  } catch (error) {
+    if (isPosError(error, 'card_reader_choice_needed')) {
+      // several readers and none assigned: nothing started, let the cashier choose
+      final choice = cardReaderFor(await client.getCardReaderSetup(deviceId: deviceId));
+      if (choice is! CardReadersToChoose) rethrow;
+      return start(await askWhich(choice.readers));
+    }
+    // outcome unknown: do not start again, keep asking with the same reference below
+    if (!isOutcomeUnknown(error)) rethrow;
+  }
+}
+
+await start();
+var payment = await client.getCardReaderPayment(deviceId: deviceId, reference: reference);
+while (!isCardReaderFinal(payment.status)) {
+  // 'unclear' also keeps asking; resolveCardReaderPayment decides it by hand
+  await Future<void>.delayed(const Duration(seconds: 2));
+  payment = await client.getCardReaderPayment(deviceId: deviceId, reference: reference);
+}
+final payments = <KeckPaymentInput>[];
+if (payment.status == 'successful') {
+  final receiptPayment = payment.receiptPayment;
+  if (receiptPayment == null) {
+    // Charged, but the answer carries no payment entry: never charge again,
+    // settle the receipt by hand.
+    showHint('Karte belastet, Beleg von Hand klären.');
+    return;
+  }
+  payments.add(receiptPayment);
+}
 ```
 </details>
 

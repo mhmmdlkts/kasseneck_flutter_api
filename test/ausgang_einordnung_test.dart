@@ -51,6 +51,11 @@ const Set<String> _lesen = {
   'getCashregisterReport',
   'generateFullReceiptId', // leitet nur einen Link-Schluessel ab, schreibt nichts
   'getArticle',
+  // SumUp Solo (npm 1.43.0, CALLS_WITHOUT_EFFECT 'read'): Einrichtung lesen und nachfragen; am Server stoesst die
+  // Nachfrage hoechstens eine Klaerung an, die selbst idempotent ist.
+  'getCardReaderPayment',
+  'getCardReaderRefund',
+  'getCardReaderSetup',
   'getCustomer',
   'getDepExport',
   'getDepExportFile',
@@ -150,6 +155,10 @@ const Set<String> _wiederholbar = {
   // die ganze Liste der Zusatzmengen, eine Wiederholung aendert nichts mehr.
   'getEwpReport',
   'setEwpExtraQuantities',
+  // SumUp Solo (npm 1.43.0, CALLS_WITHOUT_EFFECT 'repeatable'): der Anmeldelink verfaellt nach 15 min und bucht nichts;
+  // dieselbe Zuweisung noch einmal aendert nichts. Die uebrigen Kartenleser-Aufrufe stehen in unknownOutcomeCalls.
+  'startCardAccountConnection',
+  'setDeviceCardReader',
 };
 
 const _kennzeichen = {'kasseneck-api-version': 'v3'};

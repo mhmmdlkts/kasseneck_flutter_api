@@ -54,6 +54,9 @@ late Map<String, dynamic> storedMap;
 late KeckPrinter printer;
 late IssueResult issued;
 late PosArticle article;
+late String deviceId;
+// Das Kartenleser-Beispiel (SumUp Solo): die Kasse fragt, welcher Solo kassiert.
+Future<String> askWhich(List<CardReader> readers) async => readers.first.readerId;
 void showHint(String text) {}
 // Der Helfer aus „What the cashier sees“ (README), im DEP-Beispiel wiederverwendet.
 String sentence(Object e, String fallback) => fallback;

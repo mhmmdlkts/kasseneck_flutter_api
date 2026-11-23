@@ -1,0 +1,859 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "Konto nicht verbunden",
+      "setup": {
+        "connection": {
+          "state": "none",
+          "method": null,
+          "merchantCode": null,
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "not_connected"
+      }
+    },
+    {
+      "name": "Konto nicht verbunden, trotz Solo und Zuweisung",
+      "setup": {
+        "connection": {
+          "state": "none",
+          "method": null,
+          "merchantCode": null,
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "rdr_a",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "not_connected"
+      }
+    },
+    {
+      "name": "Konto abgelaufen",
+      "setup": {
+        "connection": {
+          "state": "expired",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "expired"
+      }
+    },
+    {
+      "name": "Konto abgelaufen mit gekoppelten Solos",
+      "setup": {
+        "connection": {
+          "state": "expired",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "rdr_a",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "expired"
+      }
+    },
+    {
+      "name": "Konto nicht verbunden, Bluetooth zugewiesen",
+      "setup": {
+        "connection": {
+          "state": "none",
+          "method": null,
+          "merchantCode": null,
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [],
+        "deviceReader": "bluetooth",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "bluetooth"
+      }
+    },
+    {
+      "name": "Konto abgelaufen, Bluetooth zugewiesen",
+      "setup": {
+        "connection": {
+          "state": "expired",
+          "method": null,
+          "merchantCode": null,
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [],
+        "deviceReader": "bluetooth",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "bluetooth"
+      }
+    },
+    {
+      "name": "Bluetooth zugewiesen, ohne Solo",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [],
+        "deviceReader": "bluetooth",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "bluetooth"
+      }
+    },
+    {
+      "name": "Bluetooth zugewiesen, trotz gekoppelter Solos",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "bluetooth",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "bluetooth"
+      }
+    },
+    {
+      "name": "Zuweisung auf gekoppelten Solo, mehrere vorhanden",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "rdr_b",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "reader",
+        "readerId": "rdr_b"
+      }
+    },
+    {
+      "name": "Zuweisung auf besetzten gekoppelten Solo",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": true,
+            "busyDevice": "Kasse 2"
+          }
+        ],
+        "deviceReader": "rdr_b",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "reader",
+        "readerId": "rdr_b"
+      }
+    },
+    {
+      "name": "Zuweisung auf Solo im Stand pairing, ein gekoppelter",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "pairing",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "rdr_b",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "reader",
+        "readerId": "rdr_a"
+      }
+    },
+    {
+      "name": "Zuweisung auf Solo im Stand pairing, zwei gekoppelte",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_c",
+            "name": "Solo rdr_c",
+            "serial": null,
+            "model": "solo",
+            "status": "pairing",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "rdr_c",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "choose",
+        "readerIds": [
+          "rdr_a",
+          "rdr_b"
+        ]
+      }
+    },
+    {
+      "name": "Zuweisung auf Solo im Stand pairing, kein gekoppelter",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_c",
+            "name": "Solo rdr_c",
+            "serial": null,
+            "model": "solo",
+            "status": "pairing",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "rdr_c",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "no_reader"
+      }
+    },
+    {
+      "name": "Zuweisung auf entfernten Solo, ein gekoppelter",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "rdr_gone",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "reader",
+        "readerId": "rdr_a"
+      }
+    },
+    {
+      "name": "Zuweisung auf entfernten Solo, mehrere gekoppelte",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": "rdr_gone",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "choose",
+        "readerIds": [
+          "rdr_a",
+          "rdr_b"
+        ]
+      }
+    },
+    {
+      "name": "Zuweisung auf entfernten Solo, kein Solo",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [],
+        "deviceReader": "rdr_gone",
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "no_reader"
+      }
+    },
+    {
+      "name": "genau ein gekoppelter Solo, keine Zuweisung",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "reader",
+        "readerId": "rdr_a"
+      }
+    },
+    {
+      "name": "ein gekoppelter plus einer pairing",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "pairing",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "reader",
+        "readerId": "rdr_a"
+      }
+    },
+    {
+      "name": "ein gekoppelter plus einer abgelaufen",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "expired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "reader",
+        "readerId": "rdr_b"
+      }
+    },
+    {
+      "name": "ein gekoppelter, Stand unbekannt (null) daneben",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": null,
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "reader",
+        "readerId": "rdr_b"
+      }
+    },
+    {
+      "name": "mehrere gekoppelte, Reihenfolge wie geliefert",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          },
+          {
+            "readerId": "rdr_c",
+            "name": "Solo rdr_c",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "choose",
+        "readerIds": [
+          "rdr_b",
+          "rdr_a",
+          "rdr_c"
+        ]
+      }
+    },
+    {
+      "name": "mehrere gekoppelte, besetzte bleiben drin",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": true,
+            "busyDevice": "Kasse 2"
+          },
+          {
+            "readerId": "rdr_b",
+            "name": "Solo rdr_b",
+            "serial": null,
+            "model": "solo",
+            "status": "paired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "choose",
+        "readerIds": [
+          "rdr_a",
+          "rdr_b"
+        ]
+      }
+    },
+    {
+      "name": "kein Solo",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "no_reader"
+      }
+    },
+    {
+      "name": "nur Solos im Stand pairing",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "pairing",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "no_reader"
+      }
+    },
+    {
+      "name": "nur abgelaufene Solos",
+      "setup": {
+        "connection": {
+          "state": "connected",
+          "method": "oauth",
+          "merchantCode": "MDEMO0001",
+          "refundsEnabled": true,
+          "connectAvailable": true
+        },
+        "readers": [
+          {
+            "readerId": "rdr_a",
+            "name": "Solo rdr_a",
+            "serial": null,
+            "model": "solo",
+            "status": "expired",
+            "online": null,
+            "battery": null,
+            "busy": false,
+            "busyDevice": null
+          }
+        ],
+        "deviceReader": null,
+        "canManage": true
+      },
+      "expected": {
+        "kind": "none",
+        "why": "no_reader"
+      }
+    }
+  ]
+}

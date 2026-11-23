@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kasseneck_api/src/printing/escpos/escpos.dart';
@@ -217,6 +218,113 @@ void main() {
       ));
       expect(texts(p), contains('Footer Eins'));
       expect(texts(p), contains('Footer Zwei'));
+    });
+  });
+
+  // SumUp Solo (npm 1.43.0): eine Zahlung ueber die Cloud-API (`providerData.channel == 'cloud'`) druckt wie eine
+  // ueber das SDK, aber nur die Zeilen, deren Wert sie kennt (nie „n/a“, nie den Autorisierungscode). Ohne
+  // Transaktionscode und ohne Endziffern (Handbeleg einer ungeklaerten Zahlung, Rueckbuchung am Storno) steht gar
+  // kein SumUp-Block da. Die Golden-Belege `card-sumup-cloud*` und `cancellation-sumup-cloud` sind der Vertrag.
+  group('SumUp Cloud (Solo): nur vorhandene Zeilen, duenne Zahlung ohne Block', () {
+    const sumupLinks = {'Kartentyp:', 'Kartennummer:', 'Zahlungstyp:', 'Gesamtbetrag:', 'Transaktionscode:', 'Modus:'};
+    Map<String, dynamic> datei(String pfad) =>
+        jsonDecode(File('test/fixtures/vertrag/$pfad').readAsStringSync()) as Map<String, dynamic>;
+
+    /// Der Beleg des Vertrags, wahlweise mit dem Layout eines Golden-Belegs (sonst druckt der Rueckfall).
+    KasseneckReceipt beleg(String name, {String? layoutVon}) {
+      final f = datei('receipts/$name.json');
+      final firma = f['company'] as Map<String, dynamic>;
+      return KasseneckReceipt.fromJson({
+        'receipt': {...(f['receipt'] as Map<String, dynamic>), 'customerDetails': '', 'legalMessage': ''},
+        'company': firma['companyName'],
+        'street': firma['street'],
+        'zip': firma['zip'],
+        'city': firma['city'],
+        'is_small_business': false,
+        'footer1': firma['footer1'] ?? '',
+        'footer2': firma['footer2'] ?? '',
+        'layout': ?(layoutVon == null ? null : datei('expected/$layoutVon.lines.json')),
+      });
+    }
+
+    List<({String left, String right})> sumupPaare(PrintPaper p) =>
+        [for (final d in doubles(p)) if (sumupLinks.contains(d.left)) d];
+
+    test('card-sumup-cloud: der Rueckfall druckt den Block des Golden-Belegs, ohne Zahlungstyp', () async {
+      final golden = datei('expected/card-sumup-cloud.lines.json')['lines'] as List;
+      final start = golden.indexWhere((z) => (z as Map)['text'] == 'Sumup Beleg');
+      final soll = <({String left, String right})>[];
+      for (final z in golden.skip(start + 1)) {
+        if ((z as Map)['kind'] != 'columns') break;
+        final spalten = z['columns'] as List;
+        soll.add((left: (spalten[0] as Map)['text'] as String, right: (spalten[1] as Map)['text'] as String));
+      }
+      expect(soll.map((x) => x.left), isNot(contains('Zahlungstyp:')));
+      final p = await render(beleg('card-sumup-cloud'));
+      expect(texts(p).where((t) => t == 'Sumup Beleg'), hasLength(1));
+      expect(sumupPaare(p), soll);
+      // Der Autorisierungscode steht in den Anbieterdaten, aber nie auf dem Bon.
+      expect([...texts(p), for (final d in doubles(p)) '${d.left} ${d.right}'].join('\n'), isNot(contains('Q7X2K9')));
+    });
+
+    for (final name in ['card-sumup-cloud-hand', 'cancellation-sumup-cloud']) {
+      test('$name: kein SumUp-Block (ohne Transaktionscode und Endziffern)', () async {
+        final golden = (datei('expected/$name.lines.json')['lines'] as List).map((z) => (z as Map)['text']);
+        expect(golden, isNot(contains('Sumup Beleg')));
+        final p = await render(beleg(name));
+        expect(texts(p), isNot(contains('Sumup Beleg')));
+        expect(sumupPaare(p), isEmpty);
+      });
+    }
+
+    test('das gelieferte Layout gilt als vollstaendig, auch ohne Block der duennen Zahlung', () {
+      for (final name in ['card-sumup-cloud', 'card-sumup-cloud-hand', 'cancellation-sumup-cloud']) {
+        expect(beleg(name, layoutVon: name).isLayoutComplete, isTrue, reason: name);
+      }
+      // Die volle Cloud-Zahlung braucht ihren Block: ein Layout ohne ihn druckt der Rueckfall.
+      expect(beleg('card-sumup-cloud', layoutVon: 'sale-cash').isLayoutComplete, isFalse);
+      expect(beleg('card-sumup-cloud-hand').cardPayments, isEmpty);
+      expect(beleg('card-sumup-cloud').cardPayments, hasLength(1));
+    });
+
+    test('fehlende Werte fallen als Zeile weg, nie „n/a“', () async {
+      final p = await render(buildReceipt(
+        items: cartA().items,
+        cardProvider: CreditCardProvider.sumup,
+        cardPaymentData: {'channel': 'cloud', 'transactionCode': 'TC1', 'amount': 12.5, 'currency': 'EUR', 'authCode': 'Q7X2K9'},
+      ));
+      expect(texts(p), contains('Sumup Beleg'));
+      expect(sumupPaare(p), [(left: 'Gesamtbetrag:', right: '12,50 EUR'), (left: 'Transaktionscode:', right: 'TC1')]);
+      final p2 = await render(buildReceipt(
+        items: cartA().items,
+        cardProvider: CreditCardProvider.sumup,
+        cardPaymentData: {'channel': 'cloud', 'cardLastDigits': '4242', 'paymentType': 'POS', 'entryMode': 'chip'},
+      ));
+      expect(sumupPaare(p2), [
+        (left: 'Kartennummer:', right: '**** **** **** 4242'),
+        (left: 'Zahlungstyp:', right: 'POS'),
+        (left: 'Modus:', right: 'CHIP'),
+      ]);
+      for (final d in [...doubles(p), ...doubles(p2)]) {
+        expect(d.right, isNot(contains('n/a')));
+        expect(d.right, isNot(contains('Q7X2K9')));
+      }
+    });
+
+    test('SDK-Zahlung bleibt, wie sie war (Zahlungstyp mit n/a)', () async {
+      final p = await render(buildReceipt(
+        items: cartA().items,
+        cardProvider: CreditCardProvider.sumup,
+        cardPaymentData: {'cardLastDigits': '1234', 'amount': 12.5, 'currency': 'EUR', 'transactionCode': 'TC1'},
+      ));
+      expect(sumupPaare(p), [
+        (left: 'Kartentyp:', right: 'n/a'),
+        (left: 'Kartennummer:', right: '**** **** **** 1234'),
+        (left: 'Zahlungstyp:', right: 'n/a'),
+        (left: 'Gesamtbetrag:', right: '12,50 EUR'),
+        (left: 'Transaktionscode:', right: 'TC1'),
+        (left: 'Modus:', right: ''),
+      ]);
     });
   });
 

@@ -54,6 +54,27 @@ void main() {
       expect(texts, containsAll(['SumUp Beleg', 'VISA', '**** 1234', 'TC1', 'NFC']));
     });
 
+    // SumUp Solo (npm 1.43.0): dieselben Zeilen wie der Bon (print_rendering_test.dart), nie „n/a“.
+    testWidgets('sumup Cloud: nur vorhandene Zeilen, ohne Code und Endziffern kein Block', (tester) async {
+      final texts = await pump(tester, buildReceipt(
+        items: cartA().items,
+        cardProvider: CreditCardProvider.sumup,
+        cardPaymentData: {'channel': 'cloud', 'cardType': 'VISA', 'cardLastDigits': '4242', 'amount': 10.9,
+          'currency': 'EUR', 'transactionCode': 'TC1', 'entryMode': 'contactless', 'authCode': 'Q7X2K9'},
+      ));
+      expect(texts, containsAll(['SumUp Beleg', 'Kartentyp:', 'VISA', '**** **** **** 4242', '10,90 EUR', 'TC1', 'CONTACTLESS']));
+      expect(texts, isNot(contains('Zahlungstyp:')));
+      expect(texts, isNot(contains('n/a')));
+      expect(texts.join('\n'), isNot(contains('Q7X2K9')));
+      final duenn = await pump(tester, buildReceipt(
+        items: cartA().items,
+        cardProvider: CreditCardProvider.sumup,
+        cardPaymentData: {'channel': 'cloud', 'foreignTransactionId': 'payment-0001', 'amount': 10.9, 'currency': 'EUR'},
+      ));
+      expect(duenn, isNot(contains('SumUp Beleg')));
+      expect(duenn, isNot(contains('Gesamtbetrag:')));
+    });
+
     testWidgets('custom-Provider rendert keinen Karten-Block', (tester) async {
       final texts = await pump(tester, buildReceipt(
         items: cartA().items,

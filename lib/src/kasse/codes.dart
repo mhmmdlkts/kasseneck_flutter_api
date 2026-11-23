@@ -1,5 +1,6 @@
 /// Fehler der Kassen-Aufrufe um den Verkauf herum (Einstellungen, Logo,
-/// Artikel, Drucker, Trinkgeld-Empfänger, Lager, Inventur zaehlen) auswerten:
+/// Artikel, Drucker, Trinkgeld-Empfänger, Lager, Inventur zaehlen,
+/// Kartenleser) auswerten:
 /// am `code`, nie am Text.
 /// Zwilling von `pos/errors.ts` im JS-Paket. Belege, Storno und Belegmail
 /// haben eigene Listen (`receiptErrorCodes` …), die Anmeldung
@@ -28,6 +29,22 @@ const List<String> posErrorCodes = [
   'article_not_found',
   'article_not_in_scope',
   'article_not_tracked',
+  // Kartenleser SumUp Solo (npm 1.43.0).
+  'card_account_connect_unavailable',
+  'card_account_expired',
+  'card_account_not_connected',
+  'card_payment_amount_invalid',
+  'card_payment_not_found',
+  'card_payment_reference_conflict',
+  'card_provider_unavailable',
+  'card_reader_busy',
+  'card_reader_choice_needed',
+  'card_reader_code_invalid',
+  'card_reader_not_found',
+  'card_reader_not_waiting',
+  'card_refund_amount_invalid',
+  'card_refund_not_enabled',
+  'card_refund_not_possible',
   'cash_movement_exceeds_balance',
   'cashregister_not_assigned',
   'cashregister_not_found',
@@ -101,6 +118,7 @@ const List<String> posErrorCodes = [
   'stocktake_not_open',
   'sumup_merchant_already_bound',
   'tip_payout_exceeds_claim',
+  'too_many_card_readers',
   'too_many_counts',
   'too_many_deposit_types',
   'transfer_same_drawer',

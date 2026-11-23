@@ -98,6 +98,22 @@ export 'src/kasse/dep.dart';
 // und Bondrucker; der Aufruf steht an RegisterReceiptClient.
 export 'src/kasse/kasseninfo.dart';
 export 'src/kasse/connect_bestand.dart' show ConnectStateReport;
+// Kartenleser SumUp Solo ueber die Cloud (11.34.0, npm 1.43.0): Kataloge,
+// Modelle und Helfer; die dreizehn Aufrufe stehen an RegisterReceiptClient,
+// Pruefen und Lesen bleiben paketintern.
+export 'src/kasse/kartenleser.dart'
+    hide
+        kartenleserAnmeldelink,
+        kartenleserAntwort,
+        kartenleserEntscheidung,
+        kartenleserGeldweg,
+        kartenleserGeraet,
+        kartenleserKennung,
+        kartenleserLeser,
+        kartenzahlungBetrag,
+        kartenzahlungLesen,
+        rueckbuchungBetrag,
+        rueckbuchungLesen;
 // Ausgaben eines Belegs (logReceiptOutputs, `outputs` am Beleg); die Leser
 // bleiben paketintern.
 export 'src/kasse/beleg_ausgaben.dart' hide ausgabenGemeldet, ausgabenLesen, ausgabenNutzlast;

@@ -87,6 +87,15 @@ const _connect = ['reportConnectState'];
 /// Leergut-Codes lernen und lesen (Pfand & Leergut, npm 1.32.0): Recht `depositReturn`.
 const _leergut = ['learnMyLeergutCode', 'listMyLeergutCodes'];
 
+/// Kartenleser SumUp Solo ueber die Cloud (11.34.0, npm 1.43.0), in der
+/// Reihenfolge von `endpoints.register`. Lesen der Antworten, Echo der Kennung
+/// und Pruefungen vor dem Senden prueft `kartenleser_test.dart`.
+const _kartenleser = [
+  'getCardReaderSetup', 'startCardAccountConnection', 'disconnectCardAccount', 'pairCardReader', 'renameCardReader',
+  'removeCardReader', 'setDeviceCardReader', 'startCardReaderPayment', 'getCardReaderPayment', 'cancelCardReaderPayment',
+  'resolveCardReaderPayment', 'refundCardReaderPayment', 'getCardReaderRefund',
+];
+
 /// Fälle, die dieser Weg bewusst nicht senden kann, mit Grund.
 const _nichtDieserWeg = {
   'openMyShift/key_conflict':
@@ -106,6 +115,9 @@ const _nichtDieserWeg = {
   'cancelReceipt/tip_source_invalid': 'eine Quelle ausserhalb von tipRefundSources wirft vor dem Senden (storno_trinkgeld_test.dart)',
   'setMyCashregisterStockLocation/data_missing':
       'ohne stockLocationId: null geht als leerer Text hinaus (Zuruecksetzen), weglassen kann dieser Weg nicht',
+  'pairCardReader/name_missing': 'ohne name: der Name ist im Typ Pflicht und geht unveraendert hinaus, der Server prueft',
+  'setDeviceCardReader/card_reader_missing':
+      'ohne readerId: der Weg sendet readerId immer, ohne Kennung als ausdrueckliches null (automatisch)',
 };
 
 /// Erfolgsfälle, die das Paket bewusst schon vor dem Senden abweist: genau
@@ -535,6 +547,47 @@ Future<_Lauf?> _rufe(String endpunkt, Map<String, dynamic> fall) async {
         );
       case 'getPrintJob':
         return drucker.getPrintJob(printerId: _s(p['printerId']), jobId: _s(p['jobId']));
+      case 'getCardReaderSetup':
+        return belege.getCardReaderSetup(deviceId: _s(p['deviceId']), withStatus: p['withStatus'] == true);
+      case 'startCardAccountConnection':
+        return belege.startCardAccountConnection(deviceId: _s(p['deviceId']));
+      case 'disconnectCardAccount':
+        await belege.disconnectCardAccount(deviceId: _s(p['deviceId']));
+        return true;
+      case 'pairCardReader':
+        return belege.pairCardReader(deviceId: _s(p['deviceId']), pairingCode: _s(p['pairingCode']), name: _s(p['name']));
+      case 'renameCardReader':
+        return belege.renameCardReader(deviceId: _s(p['deviceId']), readerId: _s(p['readerId']), name: _s(p['name']));
+      case 'removeCardReader':
+        await belege.removeCardReader(deviceId: _s(p['deviceId']), readerId: _s(p['readerId']));
+        return true;
+      case 'setDeviceCardReader':
+        // Ergebnis `null` heisst „automatisch“; fuer die Pruefung zaehlt, dass kein Fehler kam.
+        return (await belege.setDeviceCardReader(deviceId: _s(p['deviceId']), readerId: p['readerId'] as String?)) ??
+            'automatisch';
+      case 'startCardReaderPayment':
+        return belege.startCardReaderPayment(
+          deviceId: _s(p['deviceId']),
+          reference: _s(p['reference']),
+          amountCents: p['amountCents'] as int,
+          readerId: p['readerId'] as String?,
+        );
+      case 'getCardReaderPayment':
+        return belege.getCardReaderPayment(deviceId: _s(p['deviceId']), reference: _s(p['reference']));
+      case 'cancelCardReaderPayment':
+        return belege.cancelCardReaderPayment(deviceId: _s(p['deviceId']), reference: _s(p['reference']));
+      case 'resolveCardReaderPayment':
+        return belege.resolveCardReaderPayment(
+            deviceId: _s(p['deviceId']), reference: _s(p['reference']), decision: _s(p['decision']));
+      case 'refundCardReaderPayment':
+        return belege.refundCardReaderPayment(
+          deviceId: _s(p['deviceId']),
+          reference: _s(p['reference']),
+          paymentReference: _s(p['paymentReference']),
+          amountCents: p['amountCents'] as int,
+        );
+      case 'getCardReaderRefund':
+        return belege.getCardReaderRefund(deviceId: _s(p['deviceId']), reference: _s(p['reference']));
       case 'createReceipt':
         // Der Nullbeleg (seit 11.15) hat einen eigenen Aufruf ohne Positionen und Zahlungen.
         if (p['receiptType'] == 'zero') return belege.zeroReceipt();
@@ -660,7 +713,7 @@ void _pruefeFall(String endpunkt, Map<String, dynamic> fall, _Lauf lauf) {
     expect(isRegisterError(lauf.fehler, code as String), isTrue, reason: '$name: $code in registerErrorCodes');
   }
   if (_kassenAufrufe.contains(endpunkt) || _inventur.contains(endpunkt) || _schicht.contains(endpunkt) ||
-      _kasseninfo.contains(endpunkt) || _leergut.contains(endpunkt)) {
+      _kasseninfo.contains(endpunkt) || _leergut.contains(endpunkt) || _kartenleser.contains(endpunkt)) {
     expect(isPosError(lauf.fehler, code as String), isTrue, reason: '$name: $code in posErrorCodes');
   }
   if (_ausgaben.contains(endpunkt)) {
@@ -676,7 +729,7 @@ void main() {
   group('jeder Fall des Kassenwegs', () {
     for (final endpunkt in [
       ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
-      ..._kasseninfo, ..._connect, ..._leergut,
+      ..._kasseninfo, ..._connect, ..._leergut, ..._kartenleser,
     ]) {
       test(endpunkt, () async {
         var gelaufen = 0;
@@ -702,13 +755,14 @@ void main() {
       }
     });
 
-    test('alle 55 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
+    test('alle 68 Endpunkte des Vertrags sind abgedeckt (Belegwelt in receipt_v3_test)', () {
       final hier = {
         ..._anmeldung, ..._kassenAufrufe, ..._weitere, ..._inventur, ..._schicht, ..._gutschein, ..._ausgaben, ..._dep,
-        ..._kasseninfo, ..._connect, ..._leergut,
+        ..._kasseninfo, ..._connect, ..._leergut, ..._kartenleser,
       };
-      // 55 seit reportMyTerminalAddress und reportMyRegisterClient (npm 1.39.0).
-      expect((_vertrag['calls']['pos'] as List), hasLength(55));
+      // 55 seit reportMyTerminalAddress und reportMyRegisterClient (npm 1.39.0), 68 seit den dreizehn
+      // Kartenleser-Aufrufen (SumUp Solo, npm 1.43.0).
+      expect((_vertrag['calls']['pos'] as List), hasLength(68));
       final belegwelt = {'listMyReceipts', 'getReceipt', 'sendReceiptEmail'};
       expect({...hier, ...belegwelt}, (_vertrag['calls']['pos'] as List).toSet());
     });
@@ -1425,12 +1479,32 @@ void main() {
         'listMyStock.stock[]': (StockLevel.fields, const {}),
         'listMyStock.values[]': (StockValue.fields, const {}),
         'setMyCashregisterStockLocation': (CashregisterStockLocation.fields, const {}),
+        // Kartenleser (SumUp Solo, npm 1.43.0). `busyDevice` steht nur an einem belegten Leser, `online` und
+        // `battery` nur mit `withStatus`; `reason`, `transaction` und `receiptPayment` je nach Stand.
+        'getCardReaderSetup': (CardReaderSetup.fields, const {}),
+        'getCardReaderSetup.connection': (CardAccountConnection.fields, const {}),
+        'getCardReaderSetup.readers[]': (CardReader.fields, const {'busyDevice'}),
+        'startCardAccountConnection': (const {'authorizeUrl'}, const {}),
+        'pairCardReader': (CardReader.fields, const {'online', 'battery', 'busyDevice'}),
+        'renameCardReader': (CardReader.fields, const {'online', 'battery', 'busyDevice'}),
+        'setDeviceCardReader': (const {'deviceReader'}, const {}),
+        'startCardReaderPayment': (CardReaderPayment.fields, const {'reason', 'transaction', 'receiptPayment'}),
+        'getCardReaderPayment': (CardReaderPayment.fields, const {'reason'}),
+        'getCardReaderPayment.transaction': (CardReaderTransaction.fields, const {}),
+        'getCardReaderPayment.receiptPayment': (CardReaderPayment.receiptPaymentFields, const {}),
+        'cancelCardReaderPayment': (CardReaderPayment.fields, const {'transaction', 'receiptPayment'}),
+        'resolveCardReaderPayment': (CardReaderPayment.fields, const {}),
+        'resolveCardReaderPayment.transaction': (CardReaderTransaction.fields, const {}),
+        'resolveCardReaderPayment.receiptPayment': (CardReaderPayment.receiptPaymentFields, const {}),
+        'refundCardReaderPayment': (CardReaderRefund.fields, const {'reason'}),
+        'getCardReaderRefund': (CardReaderRefund.fields, const {'reason'}),
       };
-      // Ohne Nutzlast, die ein Modell liest: Bestätigungen (ok, id).
-      const ohneModell = {'endRegisterSession', 'unpairRegisterDevice'};
+      // Ohne Nutzlast, die ein Modell liest: Bestätigungen (ok, id; Konto getrennt, Leser entfernt).
+      const ohneModell = {'endRegisterSession', 'unpairRegisterDevice', 'disconnectCardAccount', 'removeCardReader'};
       // Rohdaten bzw. eigene Prüfung: Einstellungen (verlustfrei getestet),
-      // Belegkopf (Rohdaten), Rechte (RegisterUserPerms kennt jeden Schlüssel).
-      const roh = {'settings', 'receiptHeader', 'perms', 'business', 'device'};
+      // Belegkopf (Rohdaten), Rechte (RegisterUserPerms kennt jeden Schlüssel),
+      // Anbieterdaten der Kartenzahlung (gehen unveraendert in den Beleg).
+      const roh = {'settings', 'receiptHeader', 'perms', 'business', 'device', 'providerData'};
       // Einstellungen: der Test „jede Einstellungs-Antwort liest sich verlustfrei“.
       const einstellungen = {'getKasseSettings', 'setMyKasseSettings', 'setMyRegisterDeviceSettings'};
 
@@ -1449,7 +1523,7 @@ void main() {
           }
         }
 
-        for (final ep in [..._anmeldung, ..._kassenAufrufe, 'listMyCashregisters', 'generateFullReceiptId']) {
+        for (final ep in [..._anmeldung, ..._kassenAufrufe, ..._kartenleser, 'listMyCashregisters', 'generateFullReceiptId']) {
           if (ohneModell.contains(ep) || einstellungen.contains(ep)) continue;
           for (final f in _faelle(ep).where((f) => f['response']['status'] == 'success')) {
             lauf(ep, f['response']['data']);
@@ -1494,6 +1568,17 @@ void main() {
             CashregisterEntry.fromJson,
           ),
           (KeckTipPerson.fields, {for (final f in KeckTipPerson.fields) f: null}, KeckTipPerson.fromJson),
+          // Kartenleser (SumUp Solo): ohne Kennung liest CardReader nichts weiter, darum eine gesetzte.
+          (CardReader.fields, {for (final f in CardReader.fields) f: null, 'readerId': 'rdr_1'}, CardReader.fromJson),
+          (
+            {...CardReaderSetup.fields, for (final k in CardAccountConnection.fields) 'connection.$k'},
+            {
+              for (final f in CardReaderSetup.fields) f: null,
+              'connection': {for (final k in CardAccountConnection.fields) k: null},
+            },
+            CardReaderSetup.fromJson,
+          ),
+          (CardReaderTransaction.fields, {for (final f in CardReaderTransaction.fields) f: null}, CardReaderTransaction.fromJson),
         ];
         for (final (soll, roh, lesen) in beispiele) {
           expect(gelesen(roh, lesen), soll);

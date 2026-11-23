@@ -1,5 +1,5 @@
 {
-  "version": "1.42.0",
+  "version": "1.43.0",
   "baseUrls": {
     "public": "https://api.kasseneck.at/v3",
     "pos": "https://kasse.kasseneck.at/api/v3"
@@ -175,7 +175,20 @@
       "listMyLeergutCodes",
       "getMyTipBalance",
       "reportMyTerminalAddress",
-      "reportMyRegisterClient"
+      "reportMyRegisterClient",
+      "getCardReaderSetup",
+      "startCardAccountConnection",
+      "disconnectCardAccount",
+      "pairCardReader",
+      "renameCardReader",
+      "removeCardReader",
+      "setDeviceCardReader",
+      "startCardReaderPayment",
+      "getCardReaderPayment",
+      "cancelCardReaderPayment",
+      "resolveCardReaderPayment",
+      "refundCardReaderPayment",
+      "getCardReaderRefund"
     ]
   },
   "routes": {
@@ -360,12 +373,26 @@
       "listMyLeergutCodes",
       "getMyTipBalance",
       "reportMyTerminalAddress",
-      "reportMyRegisterClient"
+      "reportMyRegisterClient",
+      "getCardReaderSetup",
+      "startCardAccountConnection",
+      "disconnectCardAccount",
+      "pairCardReader",
+      "renameCardReader",
+      "removeCardReader",
+      "setDeviceCardReader",
+      "startCardReaderPayment",
+      "getCardReaderPayment",
+      "cancelCardReaderPayment",
+      "resolveCardReaderPayment",
+      "refundCardReaderPayment",
+      "getCardReaderRefund"
     ]
   },
   "unknownOutcomeCalls": [
     "activateCashregister",
     "addVariant",
+    "cancelCardReaderPayment",
     "cancelInvoice",
     "cancelReceipt",
     "cancelStocktake",
@@ -388,6 +415,7 @@
     "deactivateArticle",
     "deletePartnerWebhook",
     "deleteWebhook",
+    "disconnectCardAccount",
     "extendReservation",
     "financeWebService",
     "getTerminalCode",
@@ -399,6 +427,7 @@
     "logReceiptOutputs",
     "openMyShift",
     "orderSignatureCard",
+    "pairCardReader",
     "pairRegisterDevice",
     "receiveGoods",
     "recordInvoicePayment",
@@ -408,11 +437,15 @@
     "recordStockLoss",
     "recordStocktakeCount",
     "recountStocktake",
+    "refundCardReaderPayment",
     "registerTerminalDevice",
     "releaseReservation",
+    "removeCardReader",
+    "renameCardReader",
     "reportConnectState",
     "reportCustomerContract",
     "requestCustomerSignature",
+    "resolveCardReaderPayment",
     "reverseStockMovement",
     "reviewStocktake",
     "revokeCustomerMandate",
@@ -427,6 +460,7 @@
     "setMyKasseLogo",
     "setMyKasseSettings",
     "setMyRegisterDeviceSettings",
+    "startCardReaderPayment",
     "stripeCaptureIntent",
     "transferStock",
     "unpairRegisterDevice",
@@ -734,6 +768,44 @@
       "createPrintJob",
       "sendReceiptEmail"
     ],
+    "cardAccountMethods": [
+      "oauth",
+      "api_key"
+    ],
+    "cardAccountStates": [
+      "none",
+      "connected",
+      "expired"
+    ],
+    "cardReaderDecisions": [
+      "receipt",
+      "discard"
+    ],
+    "cardReaderPaymentStatuses": [
+      "pending",
+      "successful",
+      "failed",
+      "cancelled",
+      "declined",
+      "unclear"
+    ],
+    "cardReaderReasons": [
+      "busy",
+      "offline",
+      "declined",
+      "cancelled",
+      "expired",
+      "setup",
+      "amount_mismatch",
+      "no_response",
+      "not_refundable",
+      "amount_too_high"
+    ],
+    "cardReaderStatuses": [
+      "pairing",
+      "paired",
+      "expired"
+    ],
     "cartWidth": [
       "narrow",
       "medium",
@@ -903,6 +975,21 @@
       "article_not_found",
       "article_not_in_scope",
       "article_not_tracked",
+      "card_account_connect_unavailable",
+      "card_account_expired",
+      "card_account_not_connected",
+      "card_payment_amount_invalid",
+      "card_payment_not_found",
+      "card_payment_reference_conflict",
+      "card_provider_unavailable",
+      "card_reader_busy",
+      "card_reader_choice_needed",
+      "card_reader_code_invalid",
+      "card_reader_not_found",
+      "card_reader_not_waiting",
+      "card_refund_amount_invalid",
+      "card_refund_not_enabled",
+      "card_refund_not_possible",
       "cash_movement_exceeds_balance",
       "cashregister_not_assigned",
       "cashregister_not_found",
@@ -975,6 +1062,7 @@
       "stocktake_not_open",
       "sumup_merchant_already_bound",
       "tip_payout_exceeds_claim",
+      "too_many_card_readers",
       "too_many_counts",
       "too_many_deposit_types",
       "transfer_same_drawer",

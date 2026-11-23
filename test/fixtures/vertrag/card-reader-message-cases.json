@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "cases": [
+    {"kind": "payment", "status": "successful", "reason": null, "key": null},
+    {"kind": "payment", "status": "pending", "reason": null, "key": null},
+    {"kind": "payment", "status": "unclear", "reason": null, "key": "solo.checking"},
+    {"kind": "payment", "status": "failed", "reason": "busy", "key": "solo.busy_short"},
+    {"kind": "payment", "status": "failed", "reason": "offline", "key": "solo.offline"},
+    {"kind": "payment", "status": "failed", "reason": "setup", "key": "solo.setup"},
+    {"kind": "payment", "status": "failed", "reason": "expired", "key": "solo.expired"},
+    {"kind": "payment", "status": "failed", "reason": "declined", "key": "solo.declined"},
+    {"kind": "payment", "status": "failed", "reason": null, "key": "solo.declined"},
+    {"kind": "payment", "status": "declined", "reason": null, "key": "solo.declined"},
+    {"kind": "payment", "status": "declined", "reason": "declined", "key": "solo.declined"},
+    {"kind": "payment", "status": "declined", "reason": "busy", "key": "solo.declined"},
+    {"kind": "payment", "status": "cancelled", "reason": null, "key": "solo.cancelled"},
+    {"kind": "payment", "status": "cancelled", "reason": "cancelled", "key": "solo.cancelled"},
+    {"kind": "payment", "status": "unclear", "reason": "amount_mismatch", "key": "solo.amount_mismatch"},
+    {"kind": "payment", "status": "failed", "reason": "amount_mismatch", "key": "solo.amount_mismatch"},
+    {"kind": "payment", "status": "declined", "reason": "amount_mismatch", "key": "solo.amount_mismatch"},
+    {"kind": "payment", "status": "cancelled", "reason": "amount_mismatch", "key": "solo.amount_mismatch"},
+    {"kind": "refund", "status": "successful", "reason": null, "key": null},
+    {"kind": "refund", "status": "pending", "reason": null, "key": "solo.refund_running"},
+    {"kind": "refund", "status": "unclear", "reason": null, "key": "solo.refund_checking"},
+    {"kind": "refund", "status": "declined", "reason": "no_response", "key": "solo.refund_unknown"},
+    {"kind": "refund", "status": "declined", "reason": "amount_too_high", "key": "solo.refund_too_high"},
+    {"kind": "refund", "status": "declined", "reason": null, "key": "solo.refund_declined"},
+    {"kind": "refund", "status": "declined", "reason": "not_refundable", "key": "solo.refund_declined"},
+    {"kind": "refund", "status": "failed", "reason": null, "key": "solo.refund_not_sent"},
+    {"kind": "refund", "status": "failed", "reason": "offline", "key": "solo.refund_not_sent"},
+    {"kind": "refund", "status": "cancelled", "reason": null, "key": "solo.refund_not_sent"}
+  ]
+}
