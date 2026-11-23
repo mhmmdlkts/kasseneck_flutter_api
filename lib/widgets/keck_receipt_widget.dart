@@ -14,6 +14,7 @@ import 'package:kasseneck_api/widgets/keck_receipt_sheet_widget.dart';
 import 'package:kasseneck_api/services/rksv_service.dart';
 import 'package:kasseneck_api/src/receipt/einzug.dart';
 import 'package:kasseneck_api/src/receipt/gutschein_bon.dart';
+import 'package:kasseneck_api/src/receipt/sumup_cloud.dart' show sumupCloudLines;
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../enums/voucher_type.dart';
@@ -494,7 +495,9 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
         case CreditCardProvider.gpTomIos:
           return _gpTomPart(daten);
         case CreditCardProvider.sumup:
-          return _sumupPart(SumupCheckoutResponse.fromMap(daten));
+          // Cloud-Zahlung (SumUp Solo): dieselben Zeilen wie der Bon, ohne Code und Endziffern kein Block.
+          final cloud = sumupCloudLines(daten);
+          return cloud == null ? _sumupPart(SumupCheckoutResponse.fromMap(daten)) : _sumupCloudPart(cloud);
         case CreditCardProvider.myposPro:
           return _myPosProPart(daten);
         case CreditCardProvider.hobexCloudApi:
@@ -510,6 +513,29 @@ class _KeckReceiptWidgetState extends State<KeckReceiptWidget> {
       // Unerwartete/fehlende cardPaymentData darf die Beleg-Anzeige nicht crashen
       return const SizedBox.shrink();
     }
+  }
+
+  Widget _sumupCloudPart(List<({String label, String value})> zeilen) {
+    if (zeilen.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('SumUp Beleg', style: textStyle.copyWith(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        for (final z in zeilen)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(z.label, style: textStyle),
+              Text(z.value, style: textStyle),
+            ],
+          ),
+      ],
+    );
   }
 
   Widget _sumupPart(SumupCheckoutResponse sumup) {

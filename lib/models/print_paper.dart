@@ -24,6 +24,7 @@ import '../src/receipt/aufdruck.dart'
     show belegartBlock, steuerhinweisText, istNurRechnungszahlung, nacherfassungBlock, rechnungszahlungBezuege, signaturausfallBlock, warnrahmen;
 import '../src/receipt/einzug.dart';
 import '../src/receipt/pfand_bon.dart';
+import '../src/receipt/sumup_cloud.dart' show sumupCloudLines;
 import '../src/kasse/gutschein_wunsch.dart' show artOderNull;
 import '../src/kasse/zusaetze.dart' show isValidAddOnAt;
 import '../src/receipt/gutschein_bon.dart';
@@ -974,7 +975,17 @@ class PrintPaper {
   }
 
   void _sumup(Map<String, dynamic> data) {
+    // Cloud-Zahlung (SumUp Solo): nur die Zeilen, deren Wert sie kennt; ohne Code und Endziffern kein Block.
+    final cloud = sumupCloudLines(data);
+    if (cloud != null && cloud.isEmpty) return;
     addText(cardBlockHeadings[CreditCardProvider.sumup]!, styles: PosStyles(align: PosAlign.center, bold: true));
+    if (cloud != null) {
+      for (final z in cloud) {
+        addDoubleText(z.label, z.value);
+      }
+      addFeed();
+      return;
+    }
     addDoubleText('Kartentyp:', data['cardType'] ?? 'n/a');
     addDoubleText('Kartennummer:', '**** **** **** ${data['cardLastDigits'] ?? ''}');
     addDoubleText('Zahlungstyp:', data['paymentType'] ?? 'n/a');
