@@ -163,6 +163,20 @@ abstract final class Aufrufe {
   static const getTerminalCode = 'getTerminalCode';
   static const reportTerminalLogin = 'reportTerminalLogin';
   static const reportTerminalReady = 'reportTerminalReady';
+  // Kartenleser SumUp Solo ueber die Cloud (npm 1.43.0): nur ueber den Kassenweg, in der Reihenfolge von `endpoints.register`.
+  static const getCardReaderSetup = 'getCardReaderSetup';
+  static const startCardAccountConnection = 'startCardAccountConnection';
+  static const disconnectCardAccount = 'disconnectCardAccount';
+  static const pairCardReader = 'pairCardReader';
+  static const renameCardReader = 'renameCardReader';
+  static const removeCardReader = 'removeCardReader';
+  static const setDeviceCardReader = 'setDeviceCardReader';
+  static const startCardReaderPayment = 'startCardReaderPayment';
+  static const getCardReaderPayment = 'getCardReaderPayment';
+  static const cancelCardReaderPayment = 'cancelCardReaderPayment';
+  static const resolveCardReaderPayment = 'resolveCardReaderPayment';
+  static const refundCardReaderPayment = 'refundCardReaderPayment';
+  static const getCardReaderRefund = 'getCardReaderRefund';
 
   /// Alle Namen, die dieses Paket kennt.
   static const Set<String> alle = {
@@ -302,5 +316,18 @@ abstract final class Aufrufe {
     getTerminalCode,
     reportTerminalLogin,
     reportTerminalReady,
+    getCardReaderSetup,
+    startCardAccountConnection,
+    disconnectCardAccount,
+    pairCardReader,
+    renameCardReader,
+    removeCardReader,
+    setDeviceCardReader,
+    startCardReaderPayment,
+    getCardReaderPayment,
+    cancelCardReaderPayment,
+    resolveCardReaderPayment,
+    refundCardReaderPayment,
+    getCardReaderRefund,
   };
 }

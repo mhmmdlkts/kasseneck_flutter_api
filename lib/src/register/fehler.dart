@@ -114,9 +114,25 @@ const Set<String> paymentCallRejectedCodes = {
   'route_missing',
 };
 
+/// Kartenleser (SumUp Solo): Start und Rueckbuchung. Ihre Handler antworten
+/// bei jeder unerwarteten Ausnahme mit `server_error`, auch NACH dem
+/// Anbieteraufruf (Start: der Uebergang nach dem Checkout; Rueckbuchung: nach
+/// dem Erstatten). Darum gilt dort `server_error` und eine Huelle ohne Code
+/// als Ausgang unklar; jeder andere Code bleibt abgelehnt
+/// (`card_reader_busy`, `card_reader_choice_needed` usw. entstehen vor dem
+/// Anbieteraufruf). Bei unklarem Ausgang fragt die Kasse
+/// `getCardReaderPayment` bzw. `getCardReaderRefund` mit DERSELBEN Kennung,
+/// nie mit einer neuen. Bewusst nicht in [_geldwege]: dort gilt „alles
+/// ausserhalb der Ablehnliste ist unklar“, das ordnete `card_reader_busy`
+/// falsch ein. Zwilling von `KARTENLESER_UNKLAR_BEI_SERVERFEHLER` (npm 1.43.0).
+const Set<String> _kartenleserUnklarBeiServerfehler = {'startCardReaderPayment', 'refundCardReaderPayment'};
+
 ErrorOutcome _ausgangAusCode(String functionName, String? code, Map<String, dynamic> details) {
   if (_geldwege.contains(functionName.split('/').first)) {
     return code != null && paymentCallRejectedCodes.contains(code) ? ErrorOutcome.rejected : ErrorOutcome.unknown;
+  }
+  if (_kartenleserUnklarBeiServerfehler.contains(functionName) && (code == null || code == 'server_error')) {
+    return ErrorOutcome.unknown;
   }
   if (code == null) return ErrorOutcome.rejected;
   if (_ausgangUnklarCodes.contains(code)) return ErrorOutcome.unknown;
@@ -172,7 +188,9 @@ class KasseneckApiError implements Exception {
   /// sonst [ErrorOutcome.rejected]. Die Geldwege (`hobexPay`, `hobexRefund`,
   /// `stripeCaptureIntent`) sind umgekehrt: dort ist nur ein Code aus
   /// `paymentCallRejectedCodes` rejected, jeder andere und eine Huelle ohne
-  /// Code unknown. Bei unknown nie wiederholen, nachlesen.
+  /// Code unknown. Bei `startCardReaderPayment` und `refundCardReaderPayment`
+  /// ist `server_error` (und eine Huelle ohne Code) unknown, jeder andere Code
+  /// rejected. Bei unknown nie wiederholen, nachlesen.
   ErrorOutcome get outcome => _ausgangAusCode(functionName, code, details);
 
   @override

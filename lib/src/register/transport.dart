@@ -78,14 +78,20 @@ class RegisterTransport {
   /// [timeout] überschreibt die Vorgabe für diesen einen Aufruf – der Abschluss
   /// eines Belegs darf länger warten als eine Belegliste.
   ///
+  /// [sendNull] nennt Schlüssel aus [params], die auch mit dem Wert `null`
+  /// hinausgehen: dort ist `null` eine Angabe und nicht „nicht gesetzt“
+  /// (`setDeviceCardReader`: `readerId: null` heißt „automatisch“, ein
+  /// fehlendes Feld wäre am Server ein Eingabefehler).
+  ///
   /// Fehler tragen `outcome`: bei [ErrorOutcome.unknown] nie wiederholen,
   /// sondern nachlesen (siehe `v3Post`).
   Future<Map<String, dynamic>> call(
     String name, {
     Map<String, dynamic> params = const {},
     Duration? timeout,
+    Set<String> sendNull = const {},
   }) async {
-    final antwort = await callRaw(name, params: params, timeout: timeout);
+    final antwort = await callRaw(name, params: params, timeout: timeout, sendNull: sendNull);
     // Fehlendes `data` ist erlaubt — nicht jeder Aufruf hat eine Nutzlast.
     // Ein `data`, das da ist und **kein Objekt** ist (Array, Zahl, Text), ist
     // dagegen kaputt und darf nicht als leeres Objekt durchgehen: aus dem
@@ -105,6 +111,7 @@ class RegisterTransport {
     String name, {
     Map<String, dynamic> params = const {},
     Duration? timeout,
+    Set<String> sendNull = const {},
   }) async {
     // Beides frisch — siehe Klassenkommentar.
     final token = await idToken();
@@ -118,7 +125,7 @@ class RegisterTransport {
 
     final nutzlast = <String, dynamic>{'cashregisterId': cashregisterId};
     params.forEach((schluessel, wert) {
-      if (wert != null) nutzlast[schluessel] = wert;
+      if (wert != null || sendNull.contains(schluessel)) nutzlast[schluessel] = wert;
     });
 
     // Ausserhalb des Sendens: ein nicht serialisierbarer Parameter ist ein

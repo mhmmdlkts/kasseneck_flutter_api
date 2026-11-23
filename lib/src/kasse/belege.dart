@@ -50,6 +50,7 @@ import 'gutschein.dart' as gutschein show checkVoucher, reprintVoucherLabel;
 import 'gutschein.dart' show ReturnIssuedVoucher, VoucherCheck;
 import 'gutschein_wunsch.dart';
 import 'kasseninfo.dart' show RegisterInspectionInfo;
+import 'kartenleser.dart';
 import 'connect_bestand.dart';
 import '../../models/keck_voucher.dart';
 import '../../models/registration_info.dart';
@@ -1433,6 +1434,194 @@ class RegisterReceiptClient {
       'cashregisterId': ?cashregisterId,
     });
     return tipStand(name, daten);
+  }
+
+  // ---- Kartenleser SumUp Solo (npm 1.43.0, `kartenleser.dart`) ----------------
+  //
+  // Jeder Aufruf nennt das Geraet ([deviceId]), dessen Zuweisung gilt; was
+  // nicht passt (leeres Geraet, Kennung ausserhalb von 8 bis 64 Zeichen
+  // `A-Z a-z 0-9 _ -`, Betrag ausserhalb der Grenzen, unbekannte Entscheidung),
+  // wirft vor dem Senden (`KasseneckValidationError`, `kind: 'request'`).
+
+  /// Konto, Leser und Zuweisung dieses Geraets. [withStatus] fragt bei SumUp
+  /// nach Netz und Akku (`online`, `battery`) und dauert laenger. Lesen ohne
+  /// Wirkung.
+  Future<CardReaderSetup> getCardReaderSetup({required String deviceId, bool withStatus = false}) async {
+    const name = Aufrufe.getCardReaderSetup;
+    final daten = await transport.call(name, params: {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      if (withStatus) 'withStatus': true,
+    });
+    return CardReaderSetup.fromJson(daten);
+  }
+
+  /// Adresse, auf der der Chef sein SumUp-Konto freigibt (verfaellt nach 15
+  /// Minuten). Fehler `card_account_connect_unavailable`.
+  Future<String> startCardAccountConnection({required String deviceId}) async {
+    const name = Aufrufe.startCardAccountConnection;
+    return kartenleserAnmeldelink(name, await transport.call(name, params: {'deviceId': kartenleserGeraet(name, deviceId)}));
+  }
+
+  /// Trennt das Konto (alle Solos werden entkoppelt). Solange ein Leser belegt
+  /// ist: `card_reader_busy` ([cardReaderBusyDevice]).
+  Future<void> disconnectCardAccount({required String deviceId}) async {
+    const name = Aufrufe.disconnectCardAccount;
+    // Die Bestaetigung (`disconnected: true`) wird nicht gelesen: ein Fehler kommt als Wurf.
+    await transport.call(name, params: {'deviceId': kartenleserGeraet(name, deviceId)});
+  }
+
+  /// Koppelt einen Solo mit dem Code aus dessen Anzeige. Code und Name gehen
+  /// unveraendert hinaus, der Server prueft (`card_reader_code_invalid`,
+  /// `validation`).
+  Future<CardReader> pairCardReader({required String deviceId, required String pairingCode, required String name}) async {
+    const aufruf = Aufrufe.pairCardReader;
+    final daten = await transport.call(aufruf, params: {
+      'deviceId': kartenleserGeraet(aufruf, deviceId),
+      'pairingCode': pairingCode,
+      'name': name,
+    });
+    return kartenleserAntwort(aufruf, daten);
+  }
+
+  Future<CardReader> renameCardReader({required String deviceId, required String readerId, required String name}) async {
+    const aufruf = Aufrufe.renameCardReader;
+    final daten = await transport.call(aufruf, params: {
+      'deviceId': kartenleserGeraet(aufruf, deviceId),
+      'readerId': kartenleserLeser(aufruf, readerId),
+      'name': name,
+    });
+    return kartenleserAntwort(aufruf, daten);
+  }
+
+  /// Entfernt einen Solo. Solange er belegt ist: `card_reader_busy`.
+  Future<void> removeCardReader({required String deviceId, required String readerId}) async {
+    const name = Aufrufe.removeCardReader;
+    // Die Bestaetigung (`readerId`, `removed: true`) wird nicht gelesen.
+    await transport.call(name, params: {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      'readerId': kartenleserLeser(name, readerId),
+    });
+  }
+
+  /// Weist diesem Geraet einen Leser zu: Kennung, [cardReaderBluetooth] oder
+  /// `null` (automatisch). [readerId] geht immer hinaus, auch als
+  /// ausdrueckliches `null`: ein fehlendes Feld waere am Server ein
+  /// Eingabefehler. Antwort ist der zugewiesene Stand (`deviceReader`).
+  /// Dieselbe Zuweisung noch einmal aendert nichts.
+  Future<String?> setDeviceCardReader({required String deviceId, required String? readerId}) async {
+    const name = Aufrufe.setDeviceCardReader;
+    final daten = await transport.call(
+      name,
+      params: {
+        'deviceId': kartenleserGeraet(name, deviceId),
+        'readerId': readerId == null ? null : kartenleserLeser(name, readerId),
+      },
+      sendNull: const {'readerId'},
+    );
+    final zugewiesen = daten['deviceReader'];
+    return zugewiesen is String && zugewiesen.isNotEmpty ? zugewiesen : null;
+  }
+
+  /// Startet eine Kartenzahlung am Leser. [reference] ist die Kennung der
+  /// Kasse ([newCardReaderReference], vor dem Senden festgehalten);
+  /// wiederholt sie sich fuer dieselbe Zahlung, antwortet der Server mit dem
+  /// Stand, bei anderem Betrag mit `card_payment_reference_conflict`. Danach
+  /// mit [getCardReaderPayment] nachfragen, bis [isCardReaderFinal].
+  ///
+  /// Ohne [readerId] waehlt der Server; bei mehreren Lesern kommt
+  /// `card_reader_choice_needed` (nichts gestartet): Einrichtung neu laden,
+  /// mit [cardReaderFor] waehlen und mit der gewaehlten `readerId` erneut
+  /// starten. `server_error` und ein unlesbarer Erfolg haben **Ausgang
+  /// unklar**: die Karte kann belastet sein; mit DERSELBEN Kennung nachfragen,
+  /// nie mit einer neuen starten.
+  Future<CardReaderPayment> startCardReaderPayment({
+    required String deviceId,
+    required String reference,
+    required int amountCents,
+    String? readerId,
+  }) async {
+    const name = Aufrufe.startCardReaderPayment;
+    final params = {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      'reference': kartenleserKennung(name, 'reference', reference),
+      'amountCents': kartenzahlungBetrag(name, amountCents),
+      if (readerId != null) 'readerId': kartenleserLeser(name, readerId),
+    };
+    final daten = await kartenleserGeldweg(transport, name, params);
+    return readSignedResponse(name, () => kartenzahlungLesen(name, daten, reference));
+  }
+
+  /// Stand der Zahlung mit [reference]. Lesen ohne Wirkung; am Server stoesst
+  /// es hoechstens eine Klaerung an, die selbst idempotent ist.
+  Future<CardReaderPayment> getCardReaderPayment({required String deviceId, required String reference}) async {
+    const name = Aufrufe.getCardReaderPayment;
+    final daten = await transport.call(name, params: {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      'reference': kartenleserKennung(name, 'reference', reference),
+    });
+    return kartenzahlungLesen(name, daten, reference);
+  }
+
+  /// Bricht die Zahlung am Leser ab. Der zurueckgegebene Stand gilt, auch
+  /// `successful` (die Karte war schneller).
+  Future<CardReaderPayment> cancelCardReaderPayment({required String deviceId, required String reference}) async {
+    const name = Aufrufe.cancelCardReaderPayment;
+    final daten = await kartenleserGeldweg(transport, name, {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      'reference': kartenleserKennung(name, 'reference', reference),
+    });
+    return readSignedResponse(name, () => kartenzahlungLesen(name, daten, reference));
+  }
+
+  /// Entscheidung der Kasse bei unklarer Zahlung ([decision] aus
+  /// [cardReaderDecisions]): `receipt` (die Kasse behandelt sie als bezahlt)
+  /// oder `discard` (verwerfen). Der Stand am Server aendert sich dadurch
+  /// NICHT; die Kasse richtet sich nach dem zurueckgegebenen Stand, auch nach
+  /// `discard` kann er `successful` sein (die Zahlung kam doch an).
+  Future<CardReaderPayment> resolveCardReaderPayment({
+    required String deviceId,
+    required String reference,
+    required String decision,
+  }) async {
+    const name = Aufrufe.resolveCardReaderPayment;
+    final daten = await kartenleserGeldweg(transport, name, {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      'reference': kartenleserKennung(name, 'reference', reference),
+      'decision': kartenleserEntscheidung(name, decision),
+    });
+    return readSignedResponse(name, () => kartenzahlungLesen(name, daten, reference));
+  }
+
+  /// Bucht einen Teil oder die ganze Kartenzahlung [paymentReference] auf die
+  /// Karte zurueck; [reference] ist die Kennung der Rueckbuchung (eine je
+  /// Versuch, vor dem Senden festgehalten). [amountCents] ab 1 Cent, die
+  /// Obergrenze (Rest der Zahlung) prueft der Server. `server_error` und ein
+  /// unlesbarer Erfolg haben **Ausgang unklar**: mit [getCardReaderRefund] und
+  /// DERSELBEN Kennung nachfragen.
+  Future<CardReaderRefund> refundCardReaderPayment({
+    required String deviceId,
+    required String reference,
+    required String paymentReference,
+    required int amountCents,
+  }) async {
+    const name = Aufrufe.refundCardReaderPayment;
+    final daten = await kartenleserGeldweg(transport, name, {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      'reference': kartenleserKennung(name, 'reference', reference),
+      'paymentReference': kartenleserKennung(name, 'paymentReference', paymentReference),
+      'amountCents': rueckbuchungBetrag(name, amountCents),
+    });
+    return readSignedResponse(name, () => rueckbuchungLesen(name, daten, reference, zahlung: paymentReference));
+  }
+
+  /// Stand der Rueckbuchung mit [reference]. Lesen ohne Wirkung.
+  Future<CardReaderRefund> getCardReaderRefund({required String deviceId, required String reference}) async {
+    const name = Aufrufe.getCardReaderRefund;
+    final daten = await transport.call(name, params: {
+      'deviceId': kartenleserGeraet(name, deviceId),
+      'reference': kartenleserKennung(name, 'reference', reference),
+    });
+    return rueckbuchungLesen(name, daten, reference);
   }
 
   /// Die Lade eines Belegs: ein nicht leerer Text, sonst wirft der Aufruf vor
