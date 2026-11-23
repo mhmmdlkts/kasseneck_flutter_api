@@ -93,7 +93,9 @@ nachfragen, bis `isCardReaderFinal`. Melden `startCardReaderPayment` oder
 Ausgang `unknown`: die Karte kann belastet sein. Dann mit derselben Kennung
 nachfragen (`getCardReaderPayment`, `getCardReaderRefund`), nie mit einer
 neuen starten. Eine bezahlte Zahlung trägt `receiptPayment`, die fertige
-Zahlung für `payments` des Verkaufs.
+Zahlung für `payments` des Verkaufs. Fehlt sie trotz `successful` (Antwort
+ohne brauchbaren Zahlungsblock), ist die Karte trotzdem belastet: nicht neu
+kassieren, den Beleg von Hand klären.
 
 Was der Kassier dazu liest, entscheidet `findErrorRule` aus `pos.dart`
 (Code-Regel, dann Ausgangs-Regel, dann die Regel der Art) mit dem Ausgang aus

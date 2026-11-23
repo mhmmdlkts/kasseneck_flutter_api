@@ -1001,7 +1001,9 @@ reference until `isCardReaderFinal`; a network error while asking never means
 "not paid". Amounts are whole cents (100 to 1,000,000; a refund from 1 cent).
 A successful payment carries `receiptPayment`, a complete `KeckPaymentInput`
 (card payment over the amount, provider `sumup`, `providerData` as the server
-sent it) that goes unchanged into `payments` of the sale.
+sent it) that goes unchanged into `payments` of the sale. It can be `null`
+even for `successful` (an answer without a usable payment entry): the card is
+charged all the same, so never charge again; settle the receipt by hand.
 
 If `startCardReaderPayment` or `refundCardReaderPayment` fails with
 `server_error` (or without a code), the error has `ErrorOutcome.unknown`: the
@@ -1045,7 +1047,16 @@ while (!isCardReaderFinal(payment.status)) {
   payment = await client.getCardReaderPayment(deviceId: deviceId, reference: reference);
 }
 final payments = <KeckPaymentInput>[];
-if (payment.status == 'successful') payments.add(payment.receiptPayment!);
+if (payment.status == 'successful') {
+  final receiptPayment = payment.receiptPayment;
+  if (receiptPayment == null) {
+    // Charged, but the answer carries no payment entry: never charge again,
+    // settle the receipt by hand.
+    showHint('Karte belastet, Beleg von Hand klären.');
+    return;
+  }
+  payments.add(receiptPayment);
+}
 ```
 </details>
 
